@@ -14,7 +14,7 @@ T-1/etc/plugin/__init__.py
 T-1/etc/plugin/buildout-T-1-status.py
 T-1/etc/plugin/caucased.py
 T-1/etc/plugin/check-free-disk-space.py
-T-1/etc/plugin/expose-csr_id-ip-port-listening.py
+T-1/etc/plugin/expose-csr-ip-port-listening.py
 T-1/etc/plugin/kedifa-http-reply.py
 T-1/etc/plugin/monitor-bootstrap-status.py
 T-1/etc/plugin/monitor-http-frontend.py
@@ -33,7 +33,7 @@ T-2/etc/plugin/caddy_frontend_ipv6_http.py
 T-2/etc/plugin/caddy_frontend_ipv6_https.py
 T-2/etc/plugin/caucase-updater.py
 T-2/etc/plugin/check-free-disk-space.py
-T-2/etc/plugin/expose-csr_id-ip-port-listening.py
+T-2/etc/plugin/expose-csr-ip-port-listening.py
 T-2/etc/plugin/frontend-caddy-configuration-promise.py
 T-2/etc/plugin/monitor-bootstrap-status.py
 T-2/etc/plugin/monitor-http-frontend.py

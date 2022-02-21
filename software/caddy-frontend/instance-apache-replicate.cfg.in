@@ -286,7 +286,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
+return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
@@ -362,15 +362,15 @@ warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=Tr
 {% if not aikc_enabled or not aibcc_enabled %}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-csr_id-certificate = {{ section_part }}:connection-csr_id-certificate}
+{{ frontend }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
 {% endfor %}
 {% endif %}
 {% if not aikc_enabled %}
-kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
-kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
+kedifa-csr-url = ${request-kedifa:connection-kedifa-csr-url}
+kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-csr_id-url = {{ section_part }}:connection-csr_id-url}
+{{ frontend }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
 {% endfor %}
 {% endif %}
 {% for frontend in frontend_list %}
@@ -380,7 +380,7 @@ kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 {% if not aibcc_enabled %}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-backend-client-csr_id-url = {{ section_part }}:connection-backend-client-csr_id-url}
+{{ frontend }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
 {% endfor %}
 {% endif %}
 
@@ -431,7 +431,7 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = kedifa
 name = kedifa
-return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url csr_id-url csr_id-certificate  monitor-base-url
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url kedifa-csr-url csr-certificate  monitor-base-url
 {% set sla_kedifa_key = "-sla-kedifa-" %}
 {% set sla_kedifa_key_length = sla_kedifa_key | length %}
 {% for key in slapparameter_dict.keys() %}
@@ -505,7 +505,6 @@ crl = ${directory:aikc}/crl.pem
 user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
 user-crl = ${directory:aikc}/user-crl.pem
 user-created = ${directory:aikc}/user-created
-csr_id = ${directory:aikc}/csr_id
 data_dir = ${directory:aikc}/caucase-updater
 
 [aikc-user-csr]
@@ -552,11 +551,12 @@ recipe = plone.recipe.command
 {#- The called command is smart enough to survive errors and retry #}
 stop-on-error = False
 update-command = ${:command}
+csr_id = ${directory:aikc}/csr_id
 command =
   if ! [ -f ${aikc-config:user-created} ] ; then
-    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${aikc-config:csr_id} || exit 1
-    cut -d ' ' -f 1 ${aikc-config:csr_id} || exit 1
-    csr_id=`cut -d ' ' -f 1 ${aikc-config:csr_id}`
+    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${:csr_id} || exit 1
+    cut -d ' ' -f 1 ${:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
     ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
     touch ${aikc-config:user-created}
@@ -578,43 +578,17 @@ command =
 )}}
 
 
-[aikc-check-certificate]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/aikc-check-certificate
-template = inline:
-  import sys
-  import ssl
-  import urlparse
-  certificate = sys.argv[2]
-  parsed = urlparse.urlparse(sys.argv[1])
-  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
-  sys.exit(0) if certificate.strip() == got_certificate.strip() else sys.exit(1)
-
 {% for csr in frontend_list + ['kedifa'] %}
 [aikc-{{ csr }}-wrapper]
-{# jinja2 instead of wrapper is used with context to remove py'u' #}
-recipe = slapos.recipe.template:jinja2
-context =
-  key csr_id_url request-{{ csr }}:connection-csr_id-url
-  key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
-  test -f ${directory:aikc}/{{ csr }}-done && exit 0
-  ${buildout:executable} ${aikc-check-certificate:rendered} \
-{# raw block to use context #}
-{% raw %}
-  {{ csr_id_url }} \
-  """{{ csr_id_certificate }}"""
-{% endraw %}
-  if [ $? = 0 ]; then
-    csr_id=`{{ software_parameter_dict['curl'] }}/bin/curl -s -k -g \
-{% raw %}
-  {{ csr_id_url }} \
-{% endraw %}
-  ` || exit 1
-    ${aikc-caucase-wrapper:rendered} --user-key ${aikc-config:key} --sign-csr $csr_id && touch ${directory:aikc}/{{ csr }}-done
-  fi
-rendered = ${directory:bin}/aikc-{{ csr }}-wrapper
-mode = 0700
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/aikc-{{ csr }}-wrapper
+command-line = {{ software_parameter_dict['smart_caucase_signer'] }}
+  ${aikc-config:caucase-url}
+  ${aikc-config:ca-certificate}
+  ${directory:aikc}/{{ csr }}-done
+  ${aikc-config:key}
+  ${request-{{ csr }}:connection-kedifa-csr-url}
+  "${request-{{ csr }}:connection-csr-certificate}"
 
 {% do part_list.append('aikc-%s' % (csr,)) %}
 [aikc-{{ csr }}]
@@ -622,7 +596,7 @@ recipe = plone.recipe.command
 {#- The called command is smart enough to survive errors and retry #}
 stop-on-error = False
 command =
-  ${aikc-{{ csr }}-wrapper:rendered}
+  ${aikc-{{ csr }}-wrapper:wrapper-path}
 update-command = ${:command}
 {% endfor %}
 {% endif %} {# if aikc_enabled #}
@@ -641,7 +615,6 @@ crl = ${directory:aibcc}/crl.pem
 user-ca-certificate = ${directory:aibcc}/user-ca-certificate.pem
 user-crl = ${directory:aibcc}/user-crl.pem
 user-created = ${directory:aibcc}/user-created
-csr_id = ${directory:aibcc}/csr_id
 data_dir = ${directory:aibcc}/caucase-updater
 
 [aibcc-user-csr]
@@ -668,6 +641,7 @@ recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aibcc-config:caucase-url
 template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+
   exec {{ software_parameter_dict['bin_directory'] }}/caucase \
 {# raw block to use context #}
 {% raw %}
@@ -690,11 +664,12 @@ recipe = plone.recipe.command
 {#- XXX: Create promise #}
 stop-on-error = False
 update-command = ${:command}
+csr_id = ${directory:aibcc}/csr_id
 command =
   if ! [ -f ${aibcc-config:user-created} ] ; then
-    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${aibcc-config:csr_id} || exit 1
-    cut -d ' ' -f 1 ${aibcc-config:csr_id} || exit 1
-    csr_id=`cut -d ' ' -f 1 ${aibcc-config:csr_id}`
+    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${:csr_id} || exit 1
+    cut -d ' ' -f 1 ${:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
     ${aibcc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
     touch ${aibcc-config:user-created}
@@ -715,43 +690,17 @@ command =
      mode='user',
 )}}
 
-[aibcc-check-certificate]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/aibcc-check-certificate
-template = inline:
-  import sys
-  import ssl
-  import urlparse
-  certificate = sys.argv[2]
-  parsed = urlparse.urlparse(sys.argv[1])
-  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
-  sys.exit(0) if certificate.strip() == got_certificate.strip() else sys.exit(1)
-
 {% for csr in frontend_list %}
 [aibcc-{{ csr }}-wrapper]
-{# jinja2 instead of wrapper is used with context to remove py'u' #}
-recipe = slapos.recipe.template:jinja2
-context =
-  key csr_id_url request-{{ csr }}:connection-backend-client-csr_id-url
-  key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
-  test -f ${directory:aibcc}/{{ csr }}-done && exit 0
-  ${buildout:executable} ${aibcc-check-certificate:rendered} \
-{# raw block to use context #}
-{% raw %}
-  {{ csr_id_url }} \
-  """{{ csr_id_certificate }}"""
-{% endraw %}
-  if [ $? = 0 ]; then
-    csr_id=`{{ software_parameter_dict['curl'] }}/bin/curl -s -k -g \
-{% raw %}
-  {{ csr_id_url }} \
-{% endraw %}
-  ` || exit 1
-    ${aibcc-caucase-wrapper:rendered} --user-key ${aibcc-config:key} --sign-csr $csr_id && touch ${directory:aibcc}/{{ csr }}-done
-  fi
-rendered = ${directory:bin}/aibcc-{{ csr }}-wrapper
-mode = 0700
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/aibcc-{{ csr }}-wrapper
+command-line = {{ software_parameter_dict['smart_caucase_signer'] }}
+  ${aibcc-config:caucase-url}
+  ${aibcc-config:ca-certificate}
+  ${directory:aibcc}/{{ csr }}-done
+  ${aibcc-config:key}
+  ${request-{{ csr }}:connection-backend-client-csr-url}
+  "${request-{{ csr }}:connection-csr-certificate}"
 
 {% do part_list.append('aibcc-%s' % (csr,)) %}
 [aibcc-{{ csr }}]
@@ -759,7 +708,7 @@ recipe = plone.recipe.command
 {#- The called command is smart enough to survive errors and retry #}
 stop-on-error = False
 command =
-  ${aibcc-{{ csr }}-wrapper:rendered}
+  ${aibcc-{{ csr }}-wrapper:wrapper-path}
 update-command = ${:command}
 {% endfor %}
 {% endif %} {# if aibcc_enabled #}
