@@ -17,6 +17,10 @@
     "backend-url": {
       "description": "Theia Backend URL",
       "type": "string"
+    },
+    "ipv6": {
+      "description": "Theia ipv6",
+      "type": "string"
     }
   },
   "type": "object"
