@@ -37,7 +37,11 @@ additional-url = $${remote-additional-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
-
+<<<<<<< HEAD
+ipv6 =[{{ ipv6_random }}]
+=======
+ipv6 = {{ ipv6_random }}
+>>>>>>> 59cad5821 (fixup)
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
