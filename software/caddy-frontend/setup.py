@@ -9,10 +9,14 @@ setup(
     'validators',
     'furl',
     'orderedmultidict',
+    'caucase',
   ],
   entry_points={
     'zc.buildout': [
       'default = caddyprofiledummy:Recipe',
+    ],
+    'console_scripts': [
+      'smart-caucase-signer = caddyprofiledummy:smart_sign'
     ]
   }
 )
