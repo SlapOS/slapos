@@ -45,10 +45,10 @@ rendered = ${directory:apache.d}/matomo.conf
 context =
   section parameter_dict apache-php-configuration
 
-[matomo-install.sh]
+[matomo-remove.sh]
 recipe = slapos.recipe.template:jinja2
-template = {{ matomo_install_sh }}
-rendered = ${directory:scripts}/matomo-install
+template = {{ matomo_remove_sh }}
+rendered = ${directory:scripts}/matomo-remove
 context =
   section parameter_dict instance-parameter
 depends =
