@@ -353,7 +353,7 @@ template =
   #!/bin/sh
   export HOME=$${directory:home}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
-
+  export THEIA_IPV6={{ ipv6_random }}
 
 # Theia Backend
 # -------------
