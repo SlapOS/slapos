@@ -581,41 +581,24 @@ command =
 )}}
 
 
-[aikc-check-certificate]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/aikc-check-certificate
-template = inline:
-  import sys
-  import ssl
-  import urlparse
-  certificate = sys.argv[2]
-  parsed = urlparse.urlparse(sys.argv[1])
-  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
-  sys.exit(0) if certificate.strip() == got_certificate.strip() else sys.exit(1)
-
 {% for csr in frontend_list + ['kedifa'] %}
 [aikc-{{ csr }}-wrapper]
 {# jinja2 instead of wrapper is used with context to remove py'u' #}
 recipe = slapos.recipe.template:jinja2
 context =
-  key csr_id_url request-{{ csr }}:connection-csr_id-url
-  key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
+  key csr_url request-{{ csr }}:connection-csr_id-url
+  key csr_url_certificate request-{{ csr }}:connection-csr_id-certificate
 template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
-  test -f ${directory:aikc}/{{ csr }}-done && exit 0
-  ${buildout:executable} ${aikc-check-certificate:rendered} \
+  exec {{ software_parameter_dict['smart_caucase_signer'] }} \
+  {{ software_parameter_dict['curl'] }}/bin/curl \
+  ${aikc-caucase-wrapper:rendered} \
+  ${directory:aikc}/{{ csr }}-done \
+  ${aikc-config:key} \
 {# raw block to use context #}
 {% raw %}
-  {{ csr_id_url }} \
-  """{{ csr_id_certificate }}"""
+  {{ csr_url }} \
+  """{{ csr_url_certificate }}"""
 {% endraw %}
-  if [ $? = 0 ]; then
-    csr_id=`{{ software_parameter_dict['curl'] }}/bin/curl -s -k -g \
-{% raw %}
-  {{ csr_id_url }} \
-{% endraw %}
-  ` || exit 1
-    ${aikc-caucase-wrapper:rendered} --user-key ${aikc-config:key} --sign-csr $csr_id && touch ${directory:aikc}/{{ csr }}-done
-  fi
 rendered = ${directory:bin}/aikc-{{ csr }}-wrapper
 mode = 0700
 

@@ -1,0 +1,30 @@
+#!${buildout:executable}
+from __future__ import print_function
+
+import sys
+import json
+import subprocess
+import ssl
+import urlparse
+
+
+def check_certificate(url, certificate):
+  parsed = urlparse.urlparse(url)
+  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
+  if certificate.strip() != got_certificate.strip():
+    raise ValueError('Certificate for %s does not match expected one' % (url,))
+
+
+def main():
+  curl, caucase_wrapper, done_file, user_key, csr_url, csr_url_certificate = sys.argv[1:]
+  print('Hello world!')
+  check_certificate(csr_url, csr_url_certificate)
+  print(curl)
+  print(caucase_wrapper)
+  print(done_file)
+  print(user_key)
+  print(csr_url)
+  print(csr_url_certificate)
+
+if __name__ == '__main__':
+  main()
