@@ -23,6 +23,16 @@ php.max_input_time = 3600
 php.output_buffering = 'Off'
 php.max_file_uploads = 100
 
+#SMTP settings
+mail.from = ${slap-parameter:instance.mail-from}
+mail.domain = ${slap-parameter:instance.mail-domain}
+mail.smtpauthtype = ${slap-parameter:instance.mail-smtpauthtype}
+mail.smtpauth = ${slap-parameter:instance.mail-smtpauth}
+mail.smtpport = ${slap-parameter:instance.mail-smtpport}
+mail.smtphost = ${slap-parameter:instance.mail-smtphost}
+mail.smtpname = ${slap-parameter:instance.mail-smtpname}
+mail.smtppassword = ${slap-parameter:instance.mail-smtppassword}
+
 # Instance configuration
 collabora-url = ${slap-parameter:instance.collabora-url}
 stun-server = ${slap-parameter:instance.stun-server}
@@ -54,7 +64,21 @@ context =
 depends =
   ${matomo-apache-httpd:recipe}
 
+[matomo-install-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = check-matomo-install.py
+config-command = ${nc-install-wrapper:output}
+
 [slap-parameter]
+instance.mail-from = matomo
+instance.mail-domain = matomo@example.com
+instance.mail-smtpauthtype = LOGIN
+instance.mail-smtpauth = 1
+instance.mail-smtpport = 587
+instance.mail-smtphost =
+instance.mail-smtpname =
+instance.mail-smtppassword =
 instance.collabora-url = https://collabora.host.vifib.net/
 instance.stun-server = turn.vifib.com:5349
 instance.turn-server =
@@ -65,5 +89,6 @@ instance.trusted-domain-1 =
 instance.trusted-domain-2 =
 instance.trusted-domain-3 =
 instance.trusted-proxy-list =
+
 
 

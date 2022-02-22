@@ -13,4 +13,13 @@ cd {{ parameter_dict['document-root'] }}
 mv ./matomo/* .
 rmdir ./matomo
 
+# while 1; do
+#   if [-f ./config/config.ini.php]; then
+#     echo "[General]" >> ./config/config.ini.php 
+#     echo "enable_trusted_host_check=0" >> ./config/config.ini.php 
+#     break
+#   fi
+#   sleep 1
+# done
+
 
