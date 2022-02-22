@@ -538,19 +538,18 @@ command =
 recipe = plone.recipe.command
 stop-on-error = False
 update-command = ${:command}
+csr_path = {{ directory['csr_id'] }}/${:filename}
 command =
-  ln -sf {{ backend_haproxy_configuration['csr'] }} ${:csr_path}
+  ln -sf ${:csr} ${:csr_path}
 
 [store-backend-haproxy-csr]
 <= store-csr
 filename = backend-haproxy-csr.pem
-csr_path = {{ directory['csr_id'] }}/${:filename}
 csr = {{ backend_haproxy_configuration['csr'] }}
 
 [store-kedifa-csr]
 <= store-csr
-filename = kedifa-csr.prm
-csr_path = {{ directory['csr_id'] }}/{:filename}
+filename = kedifa-csr.pem
 csr = {{ kedifa_configuration['csr'] }}
 
 ##<Backend haproxy>
