@@ -508,7 +508,6 @@ crl = ${directory:aikc}/crl.pem
 user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
 user-crl = ${directory:aikc}/user-crl.pem
 user-created = ${directory:aikc}/user-created
-csr_id = ${directory:aikc}/csr_id
 data_dir = ${directory:aikc}/caucase-updater
 
 [aikc-user-csr]
@@ -555,11 +554,12 @@ recipe = plone.recipe.command
 {#- The called command is smart enough to survive errors and retry #}
 stop-on-error = False
 update-command = ${:command}
+csr_id = ${directory:aikc}/csr_id
 command =
   if ! [ -f ${aikc-config:user-created} ] ; then
-    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${aikc-config:csr_id} || exit 1
-    cut -d ' ' -f 1 ${aikc-config:csr_id} || exit 1
-    csr_id=`cut -d ' ' -f 1 ${aikc-config:csr_id}`
+    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${:csr_id} || exit 1
+    cut -d ' ' -f 1 ${:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
     ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
     touch ${aikc-config:user-created}
@@ -644,7 +644,6 @@ crl = ${directory:aibcc}/crl.pem
 user-ca-certificate = ${directory:aibcc}/user-ca-certificate.pem
 user-crl = ${directory:aibcc}/user-crl.pem
 user-created = ${directory:aibcc}/user-created
-csr_id = ${directory:aibcc}/csr_id
 data_dir = ${directory:aibcc}/caucase-updater
 
 [aibcc-user-csr]
@@ -693,11 +692,12 @@ recipe = plone.recipe.command
 {#- XXX: Create promise #}
 stop-on-error = False
 update-command = ${:command}
+csr_id = ${directory:aibcc}/csr_id
 command =
   if ! [ -f ${aibcc-config:user-created} ] ; then
-    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${aibcc-config:csr_id} || exit 1
-    cut -d ' ' -f 1 ${aibcc-config:csr_id} || exit 1
-    csr_id=`cut -d ' ' -f 1 ${aibcc-config:csr_id}`
+    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${:csr_id} || exit 1
+    cut -d ' ' -f 1 ${:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
     ${aibcc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
     touch ${aibcc-config:user-created}
