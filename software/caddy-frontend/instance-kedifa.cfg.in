@@ -17,7 +17,6 @@ parts =
   caucased
   caucased-promise
   caucase-updater
-  expose-csr_id
   promise-expose-csr_id-ip-port
   promise-logrotate-setup
 
@@ -133,6 +132,15 @@ command =
     --send-csr ${caucase-updater-csr:csr} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
+[store-csr]
+recipe = plone.recipe.command
+filename = csr.pem
+csr_path = ${directory:csr_id}/${:filename}
+stop-on-error = False
+update-command = ${:command}
+command =
+  ln -sf ${caucase-updater-csr:csr} ${:csr_path}
+
 [certificate-csr_id]
 recipe = plone.recipe.command
 certificate = ${directory:certificate-csr_id}/certificate.pem
@@ -204,6 +212,7 @@ depends = ${store-csr_id:command}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
   -c ${expose-csr_id-template:rendered}
+url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}
 
 wrapper-path = ${directory:service}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -327,6 +336,7 @@ master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:por
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
+csr-url = ${expose-csr_id:url}/${store-csr:filename}
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
 
