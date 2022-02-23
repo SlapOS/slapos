@@ -8,6 +8,7 @@ import subprocess
 import sys
 import urlparse
 
+from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
 class Recipe(object):
@@ -63,21 +64,19 @@ def _get_caucase_csr_list(ca_url, ca_crt, user_key):
   return csr_list
 
 
-def _get_modulus(openssl, csr):
-  popen = subprocess.Popen([
-    openssl, 'req', '-noout', '-modulus'], stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE)
-  modulus = popen.communicate(csr)[0]
-  if popen.returncode != 0:
-    raise ValueError('Failed to get modulus')
-  return modulus
+def _csr_match(*csr_list):
+  number_list = set([])
+  for csr in csr_list:
+    number_list.add(
+      x509.load_pem_x509_csr(str(csr)).public_key().public_numbers())
+  return len(number_list) == 1
 
 
-def _sign_csr(ca_url, ca_crt, user_key, openssl, csr, csr_list):
+def _sign_csr(ca_url, ca_crt, user_key, csr, csr_list):
   signed = False
   client = _get_caucase_client(ca_url, ca_crt, user_key)
   for csr_entry in csr_list:
-    if _get_modulus(openssl, csr) == _get_modulus(openssl, csr_entry['csr']):
+    if _csr_match(csr, csr_entry['csr']):
       client.createCertificate(int(csr_entry['csr_id']))
       print('Signed csr with id %s' % (csr_entry['csr_id'],))
       signed = True
@@ -98,7 +97,7 @@ def _is_done(filename):
 
 
 def smart_sign():
-  curl, openssl, ca_url, ca_crt, done_file, user_key, csr_url, \
+  curl, ca_url, ca_crt, done_file, user_key, csr_url, \
     csr_url_certificate = sys.argv[1:]
   if _is_done(done_file):
     return
@@ -106,7 +105,7 @@ def smart_sign():
   exposed_csr = _get_exposed_csr(curl, csr_url)
   caucase_csr_list = _get_caucase_csr_list(ca_url, ca_crt, user_key)
   if _sign_csr(
-    ca_url, ca_crt, user_key, openssl, exposed_csr, caucase_csr_list):
+    ca_url, ca_crt, user_key, exposed_csr, caucase_csr_list):
     _mark_done(done_file)
   else:
     print('Failed to sign %s' % (csr_url,))

@@ -588,7 +588,6 @@ context =
 template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   exec {{ software_parameter_dict['smart_caucase_signer'] }} \
   {{ software_parameter_dict['curl'] }}/bin/curl \
-  {{ software_parameter_dict['openssl'] }} \
   ${aikc-config:caucase-url} \
   ${aikc-config:ca-certificate} \
   ${directory:aikc}/{{ csr }}-done \
