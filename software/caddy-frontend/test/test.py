@@ -1335,6 +1335,42 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     )
 
 
+class TestMasterAIKCDisabledAIBCCDisabledRequest(HttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'false',
+      'automatic-internal-backend-client-caucase-csr': 'false',
+    }
+
+  @classmethod
+  def setUpMaster(cls):
+    import pdb ; pdb.set_trace()
+    pass
+
+  def test(self):
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'domain': 'None',
+        'accepted-slave-amount': '0',
+        'rejected-slave-amount': '0',
+        'slave-amount': '0',
+        'rejected-slave-dict': {}},
+      parameter_dict
+    )
+
+
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
