@@ -518,7 +518,7 @@ backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries'
 recipe = plone.recipe.command
 stop-on-error = False
 update-command = ${:command}
-csr_path = {{ directory['csr'] }}/${:filename}
+csr_path = {{ directory['expose-csr'] }}/${:filename}
 command =
   ln -sf ${:csr} ${:csr_path}
 
@@ -557,8 +557,8 @@ cache-access = {{ cache_access }}
 
 [certificate-csr]
 recipe = plone.recipe.command
-certificate = {{ directory['certificate-csr'] }}/certificate.pem
-key = {{ directory['certificate-csr'] }}/key.pem
+certificate = {{ directory['expose-csr-etc'] }}/certificate.pem
+key = {{ directory['expose-csr-etc'] }}/key.pem
 
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
@@ -581,7 +581,7 @@ error-log = {{ directory['log'] }}/expose-csr.log
 recipe = slapos.recipe.template:jinja2
 var = {{ directory['expose-csr-var'] }}
 pid = {{ directory['var'] }}/nginx-expose-csr.pid
-rendered = {{ directory['etc'] }}/nginx-expose-csr.conf
+rendered = {{ directory['expose-csr-etc'] }}/nginx.conf
 template = inline:
   daemon off;
   pid ${:pid};
@@ -606,7 +606,7 @@ template = inline:
       scgi_temp_path ${:var} 1 2;
 
       location / {
-        alias {{ directory['csr'] }}/;
+        alias {{ directory['expose-csr'] }}/;
         autoindex off;
         sendfile on;
         sendfile_max_chunk 1m;

@@ -90,8 +90,8 @@ bbb-ssl-dir = ${:srv}/bbb-ssl
 frontend_cluster = ${:var}/frontend_cluster
 
 # CSR publication
-csr = ${:srv}/csr
-certificate-csr = ${:etc}/certificate-csr
+expose-csr = ${:srv}/expose-csr
+expose-csr-etc = ${:etc}/expose-csr
 expose-csr-var = ${:var}/expose-csr
 
 # slave introspection
