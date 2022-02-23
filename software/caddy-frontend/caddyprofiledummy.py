@@ -112,3 +112,12 @@ def smart_sign():
     _mark_done(done_file)
   else:
     print('Failed to sign %s' % (csr_url,))
+
+
+def caucase_csr_sign_check():
+  ca_url, ca_crt, user_key = sys.argv[1:]
+  if len(_get_caucase_csr_list(ca_url, ca_crt, user_key)) != 0:
+    print('ERR There are CSR to sign on %s' % (ca_url,))
+    sys.exit(1)
+  else:
+    print('OK No CSR to sign on %s' % (ca_url,))

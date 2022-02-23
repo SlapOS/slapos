@@ -16,7 +16,8 @@ setup(
       'default = caddyprofiledummy:Recipe',
     ],
     'console_scripts': [
-      'smart-caucase-signer = caddyprofiledummy:smart_sign'
+      'smart-caucase-signer = caddyprofiledummy:smart_sign',
+      'caucase-csr-sign-check = caddyprofiledummy:caucase_csr_sign_check'
     ]
   }
 )
