@@ -90,8 +90,8 @@ bbb-ssl-dir = ${:srv}/bbb-ssl
 frontend_cluster = ${:var}/frontend_cluster
 
 # CSR publication
-csr = ${:srv}/csr
-certificate-csr = ${:etc}/certificate-csr
+expose-csr = ${:srv}/expose-csr
+expose-csr-etc = ${:etc}/expose-csr
 expose-csr-var = ${:var}/expose-csr
 
 # slave introspection
@@ -179,6 +179,7 @@ template-empty = {{ software_parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ software_parameter_dict['template_default_slave_virtualhost'] }}
 template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
 template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
+template-expose-csr-nginx-conf = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -300,6 +301,7 @@ extra-context =
     key global_ipv6 slap-configuration:ipv6-random
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
+    key template_expose_csr_nginx_conf software-release-path:template-expose-csr-nginx-conf
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
