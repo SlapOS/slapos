@@ -53,6 +53,7 @@ import sys
 import logging
 import random
 import string
+from slapos.slap.standalone import SlapOSNodeInstanceError
 
 
 try:
@@ -1315,6 +1316,51 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
+
+  def test(self):
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'domain': 'None',
+        'accepted-slave-amount': '0',
+        'rejected-slave-amount': '0',
+        'slave-amount': '0',
+        'rejected-slave-dict': {}},
+      parameter_dict
+    )
+
+
+class TestMasterAIKCDisabledAIBCCDisabledRequest(HttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'false',
+      'automatic-internal-backend-client-caucase-csr': 'false',
+    }
+
+
+  @classmethod
+  def _setUpClass(cls):
+    instance_max_retry = cls.instance_max_retry
+    try:
+      cls.instance_max_retry = 3
+      super(TestMasterAIKCDisabledAIBCCDisabledRequest, cls)._setUpClass()
+    except SlapOSNodeInstanceError:
+      # Note: Does not work with SLAPOS_TEST_DEBUG=1
+      # Sign kedifa and backend certificate users
+      raise NotImplementedError
+      cls.instance_max_retry = instance_max_retry
+    super(TestMasterAIKCDisabledAIBCCDisabledRequest, cls)._setUpClass()
 
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
