@@ -1,0 +1,30 @@
+daemon off;
+pid {{ configuration['pid'] }};
+error_log {{ configuration['error-log'] }};
+events {
+}
+http {
+  include {{ configuration['nginx_mime'] }};
+  server {
+    server_name_in_redirect off;
+    port_in_redirect off;
+    error_log {{ configuration['error-log'] }};
+    access_log /dev/null;
+    listen [{{ configuration['ip'] }}]:{{ configuration['port'] }} ssl;
+    ssl_certificate {{ configuration['certificate'] }};
+    ssl_certificate_key {{ configuration['key'] }};
+    default_type application/octet-stream;
+    client_body_temp_path {{ configuration['var'] }} 1 2;
+    proxy_temp_path {{ configuration['var'] }} 1 2;
+    fastcgi_temp_path {{ configuration['var'] }} 1 2;
+    uwsgi_temp_path {{ configuration['var'] }} 1 2;
+    scgi_temp_path {{ configuration['var'] }} 1 2;
+
+    location / {
+      alias {{ configuration['root'] }}/;
+      autoindex off;
+      sendfile on;
+      sendfile_max_chunk 1m;
+    }
+  }
+}

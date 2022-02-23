@@ -74,8 +74,8 @@ backup-caucased = ${:backup}/caucased
 reservation = ${:srv}/reservation
 
 # CSR publication
-csr = ${:srv}/csr
-certificate-csr = ${:var}/certificate-csr
+expose-csr = ${:srv}/expose-csr
+expose-csr-etc = ${:etc}/expose-csr
 expose-csr-var = ${:var}/expose-csr
 
 [kedifa-csr]
@@ -112,19 +112,19 @@ stop-on-error = True
      template_csr='${kedifa-csr:template-csr}'
 )}}
 
-[store-csr]
+[expose-csr-link-csr]
 recipe = plone.recipe.command
 filename = csr.pem
-csr_path = ${directory:csr}/${:filename}
+csr_path = ${directory:expose-csr}/${:filename}
 stop-on-error = False
 update-command = ${:command}
 command =
   ln -sf ${caucase-updater-csr:csr} ${:csr_path}
 
-[certificate-csr]
+[expose-csr-certificate]
 recipe = plone.recipe.command
-certificate = ${directory:certificate-csr}/certificate.pem
-key = ${directory:certificate-csr}/key.pem
+certificate = ${directory:expose-csr-etc}/certificate.pem
+key = ${directory:expose-csr-etc}/key.pem
 
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
@@ -139,46 +139,20 @@ command =
 [expose-csr-configuration]
 ip = {{ instance_parameter_dict['ipv6-random'] }}
 port = 17000
-key = ${certificate-csr:key}
-certificate = ${certificate-csr:certificate}
+key = ${expose-csr-certificate:key}
+certificate = ${expose-csr-certificate:certificate}
 error-log = ${directory:log}/expose-csr.log
+var = ${directory:expose-csr-var}
+pid = ${directory:var}/nginx-expose-csr.pid
+root = ${directory:expose-csr}
+nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
 
 [expose-csr-template]
 recipe = slapos.recipe.template:jinja2
-var = ${directory:expose-csr-var}
-pid = ${directory:var}/nginx-expose-csr.pid
-rendered = ${directory:etc}/nginx-expose-csr.conf
-template = inline:
-  daemon off;
-  pid ${:pid};
-  error_log ${expose-csr-configuration:error-log};
-  events {
-  }
-  http {
-    include {{ software_parameter_dict['nginx_mime'] }};
-    server {
-      server_name_in_redirect off;
-      port_in_redirect off;
-      error_log ${expose-csr-configuration:error-log};
-      access_log /dev/null;
-      listen [${expose-csr-configuration:ip}]:${expose-csr-configuration:port} ssl;
-      ssl_certificate ${expose-csr-configuration:certificate};
-      ssl_certificate_key ${expose-csr-configuration:key};
-      default_type application/octet-stream;
-      client_body_temp_path ${:var} 1 2;
-      proxy_temp_path ${:var} 1 2;
-      fastcgi_temp_path ${:var} 1 2;
-      uwsgi_temp_path ${:var} 1 2;
-      scgi_temp_path ${:var} 1 2;
-
-      location / {
-        alias ${directory:csr}/;
-        autoindex off;
-        sendfile on;
-        sendfile_max_chunk 1m;
-      }
-    }
-  }
+rendered = ${directory:expose-csr-etc}/nginx.conf
+template = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
+context =
+  section configuration expose-csr-configuration
 
 [promise-expose-csr-ip-port]
 <= monitor-promise-base
@@ -196,10 +170,10 @@ url = https://[${expose-csr-configuration:ip}]:${expose-csr-configuration:port}
 wrapper-path = ${directory:service}/expose-csr
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-[get-csr-certificate]
+[expose-csr-certificate-get]
 recipe = collective.recipe.shelloutput
 commands =
-  certificate = cat ${certificate-csr:certificate}
+  certificate = cat ${expose-csr-certificate:certificate}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -314,8 +288,8 @@ caucase-url = {{ caucase_url }}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
-kedifa-csr-url = ${expose-csr:url}/${store-csr:filename}
-csr-certificate = ${get-csr-certificate:certificate}
+kedifa-csr-url = ${expose-csr:url}/${expose-csr-link-csr:filename}
+csr-certificate = ${expose-csr-certificate-get:certificate}
 monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
 
 [promise-logrotate-setup]
