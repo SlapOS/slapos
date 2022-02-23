@@ -4,8 +4,8 @@ import caucase.client
 import caucase.utils
 import os
 import ssl
-import subprocess
 import sys
+import urllib
 import urlparse
 
 from cryptography import x509
@@ -39,8 +39,12 @@ def _check_certificate(url, certificate):
     raise ValueError('Certificate for %s does not match expected one' % (url,))
 
 
-def _get_exposed_csr(curl, url):
-  return subprocess.check_output([curl, '-s', '-k', '-g', url]).strip()
+def _get_exposed_csr(url, certificate):
+  _check_certificate(url, certificate)
+  self_signed = ssl.create_default_context()
+  self_signed.check_hostname = False
+  self_signed.verify_mode = ssl.CERT_NONE
+  return urllib.urlopen(url, context=self_signed).read()
 
 
 def _get_caucase_client(ca_url, ca_crt, user_key):
@@ -97,12 +101,11 @@ def _is_done(filename):
 
 
 def smart_sign():
-  curl, ca_url, ca_crt, done_file, user_key, csr_url, \
+  ca_url, ca_crt, done_file, user_key, csr_url, \
     csr_url_certificate = sys.argv[1:]
   if _is_done(done_file):
     return
-  _check_certificate(csr_url, csr_url_certificate)
-  exposed_csr = _get_exposed_csr(curl, csr_url)
+  exposed_csr = _get_exposed_csr(csr_url, csr_url_certificate)
   caucase_csr_list = _get_caucase_csr_list(ca_url, ca_crt, user_key)
   if _sign_csr(
     ca_url, ca_crt, user_key, exposed_csr, caucase_csr_list):

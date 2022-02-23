@@ -587,7 +587,6 @@ context =
   key csr_url_certificate request-{{ csr }}:connection-csr-certificate
 template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   exec {{ software_parameter_dict['smart_caucase_signer'] }} \
-  {{ software_parameter_dict['curl'] }}/bin/curl \
   ${aikc-config:caucase-url} \
   ${aikc-config:ca-certificate} \
   ${directory:aikc}/{{ csr }}-done \
@@ -710,9 +709,8 @@ context =
 
 template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   exec {{ software_parameter_dict['smart_caucase_signer'] }} \
-  {{ software_parameter_dict['curl'] }}/bin/curl \
-  {{ software_parameter_dict['openssl'] }} \
-  ${aibcc-caucase-wrapper:rendered} \
+  ${aibcc-config:caucase-url} \
+  ${aibcc-config:ca-certificate} \
   ${directory:aibcc}/{{ csr }}-done \
   ${aibcc-config:key} \
 {# raw block to use context #}
