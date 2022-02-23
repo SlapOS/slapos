@@ -580,24 +580,15 @@ command =
 
 {% for csr in frontend_list + ['kedifa'] %}
 [aikc-{{ csr }}-wrapper]
-{# jinja2 instead of wrapper is used with context to remove py'u' #}
-recipe = slapos.recipe.template:jinja2
-context =
-  key csr_url request-{{ csr }}:connection-kedifa-csr-url
-  key csr_url_certificate request-{{ csr }}:connection-csr-certificate
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
-  exec {{ software_parameter_dict['smart_caucase_signer'] }} \
-  ${aikc-config:caucase-url} \
-  ${aikc-config:ca-certificate} \
-  ${directory:aikc}/{{ csr }}-done \
-  ${aikc-config:key} \
-{# raw block to use context #}
-{% raw %}
-  {{ csr_url }} \
-  """{{ csr_url_certificate }}"""
-{% endraw %}
-rendered = ${directory:bin}/aikc-{{ csr }}-wrapper
-mode = 0700
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/aikc-{{ csr }}-wrapper
+command-line = {{ software_parameter_dict['smart_caucase_signer'] }}
+  ${aikc-config:caucase-url}
+  ${aikc-config:ca-certificate}
+  ${directory:aikc}/{{ csr }}-done
+  ${aikc-config:key}
+  ${request-{{ csr }}:connection-kedifa-csr-url}
+  "${request-{{ csr }}:connection-csr-certificate}"
 
 {% do part_list.append('aikc-%s' % (csr,)) %}
 [aikc-{{ csr }}]
@@ -605,7 +596,7 @@ recipe = plone.recipe.command
 {#- The called command is smart enough to survive errors and retry #}
 stop-on-error = False
 command =
-  ${aikc-{{ csr }}-wrapper:rendered}
+  ${aikc-{{ csr }}-wrapper:wrapper-path}
 update-command = ${:command}
 {% endfor %}
 {% endif %} {# if aikc_enabled #}
@@ -701,25 +692,15 @@ command =
 
 {% for csr in frontend_list %}
 [aibcc-{{ csr }}-wrapper]
-{# jinja2 instead of wrapper is used with context to remove py'u' #}
-recipe = slapos.recipe.template:jinja2
-context =
-  key csr_url request-{{ csr }}:connection-backend-client-csr-url
-  key csr_url_certificate request-{{ csr }}:connection-csr-certificate
-
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
-  exec {{ software_parameter_dict['smart_caucase_signer'] }} \
-  ${aibcc-config:caucase-url} \
-  ${aibcc-config:ca-certificate} \
-  ${directory:aibcc}/{{ csr }}-done \
-  ${aibcc-config:key} \
-{# raw block to use context #}
-{% raw %}
-  {{ csr_url }} \
-  """{{ csr_url_certificate }}"""
-{% endraw %}
-rendered = ${directory:bin}/aibcc-{{ csr }}-wrapper
-mode = 0700
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/aibcc-{{ csr }}-wrapper
+command-line = {{ software_parameter_dict['smart_caucase_signer'] }}
+  ${aibcc-config:caucase-url}
+  ${aibcc-config:ca-certificate}
+  ${directory:aibcc}/{{ csr }}-done
+  ${aibcc-config:key}
+  ${request-{{ csr }}:connection-backend-client-csr-url}
+  "${request-{{ csr }}:connection-csr-certificate}"
 
 {% do part_list.append('aibcc-%s' % (csr,)) %}
 [aibcc-{{ csr }}]
@@ -727,7 +708,7 @@ recipe = plone.recipe.command
 {#- The called command is smart enough to survive errors and retry #}
 stop-on-error = False
 command =
-  ${aibcc-{{ csr }}-wrapper:rendered}
+  ${aibcc-{{ csr }}-wrapper:wrapper-path}
 update-command = ${:command}
 {% endfor %}
 {% endif %} {# if aibcc_enabled #}
