@@ -577,6 +577,20 @@ command =
      mode='user',
 )}}
 
+[aikc-sign-promise-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['caucase_csr_sign_check'] }}
+  ${aikc-config:caucase-url}
+  ${aikc-config:ca-certificate}
+  ${aikc-config:key}
+wrapper-path = ${directory:bin}/aikc-caucase-csr-sign-check
+
+{% do part_list.append('aikc-sign-promise') %}
+[aikc-sign-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = ${aikc-sign-promise-wrapper:wrapper-path}
 
 {% for csr in frontend_list + ['kedifa'] %}
 [aikc-{{ csr }}-wrapper]
@@ -689,6 +703,21 @@ command =
      key_path='${aibcc-config:key}',
      mode='user',
 )}}
+
+[aibcc-sign-promise-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['caucase_csr_sign_check'] }}
+  ${aibcc-config:caucase-url}
+  ${aibcc-config:ca-certificate}
+  ${aibcc-config:key}
+wrapper-path = ${directory:bin}/aibcc-caucase-csr-sign-check
+
+{% do part_list.append('aibcc-sign-promise') %}
+[aibcc-sign-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = ${aibcc-sign-promise-wrapper:wrapper-path}
 
 {% for csr in frontend_list %}
 [aibcc-{{ csr }}-wrapper]
