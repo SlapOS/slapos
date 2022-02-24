@@ -752,49 +752,61 @@ class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 
 class FakeImageServerMixin(KvmMixin):
-  def startImageHttpServer(self):
-    self.image_source_directory = tempfile.mkdtemp()
+  @classmethod
+  def startImageHttpServer(cls):
+    cls.image_source_directory = tempfile.mkdtemp()
     server = SocketServer.TCPServer(
-      (self._ipv4_address, findFreeTCPPort(self._ipv4_address)),
+      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
       FakeImageHandler)
 
+    # c89f17758be13adeb06886ef935d5ff1
     fake_image_content = b'fake_image_content'
-    self.fake_image_md5sum = hashlib.md5(fake_image_content).hexdigest()
+    cls.fake_image_md5sum = hashlib.md5(fake_image_content).hexdigest()
     with open(os.path.join(
-      self.image_source_directory, self.fake_image_md5sum), 'wb') as fh:
+      cls.image_source_directory, cls.fake_image_md5sum), 'wb') as fh:
       fh.write(fake_image_content)
 
+    # bc81d2aee81e030c6cee210c802339c2
     fake_image2_content = b'fake_image2_content'
-    self.fake_image2_md5sum = hashlib.md5(fake_image2_content).hexdigest()
+    cls.fake_image2_md5sum = hashlib.md5(fake_image2_content).hexdigest()
     with open(os.path.join(
-      self.image_source_directory, self.fake_image2_md5sum), 'wb') as fh:
+      cls.image_source_directory, cls.fake_image2_md5sum), 'wb') as fh:
       fh.write(fake_image2_content)
 
-    self.fake_image_wrong_md5sum = self.fake_image2_md5sum
+    cls.fake_image_wrong_md5sum = cls.fake_image2_md5sum
+
+    # c5ef5d70ad5a0dbfd890a734f588e344
+    fake_image3_content = b'fake_image3_content'
+    cls.fake_image3_md5sum = hashlib.md5(fake_image3_content).hexdigest()
+    with open(os.path.join(
+      cls.image_source_directory, cls.fake_image3_md5sum), 'wb') as fh:
+      fh.write(fake_image3_content)
 
     url = 'http://%s:%s' % server.server_address
-    self.fake_image = '/'.join([url, self.fake_image_md5sum])
-    self.fake_image2 = '/'.join([url, self.fake_image2_md5sum])
+    cls.fake_image = '/'.join([url, cls.fake_image_md5sum])
+    cls.fake_image2 = '/'.join([url, cls.fake_image2_md5sum])
+    cls.fake_image3 = '/'.join([url, cls.fake_image3_md5sum])
 
     old_dir = os.path.realpath(os.curdir)
-    os.chdir(self.image_source_directory)
+    os.chdir(cls.image_source_directory)
     try:
-      self.server_process = multiprocessing.Process(
+      cls.server_process = multiprocessing.Process(
         target=server.serve_forever, name='FakeImageHttpServer')
-      self.server_process.start()
+      cls.server_process.start()
     finally:
       os.chdir(old_dir)
 
-  def stopImageHttpServer(self):
-    self.logger.debug('Stopping process %s' % (self.server_process,))
-    self.server_process.join(10)
-    self.server_process.terminate()
+  @classmethod
+  def stopImageHttpServer(cls):
+    cls.logger.debug('Stopping process %s' % (cls.server_process,))
+    cls.server_process.join(10)
+    cls.server_process.terminate()
     time.sleep(0.1)
-    if self.server_process.is_alive():
-      self.logger.warning(
-        'Process %s still alive' % (self.server_process, ))
+    if cls.server_process.is_alive():
+      cls.logger.warning(
+        'Process %s still alive' % (cls.server_process, ))
 
-    shutil.rmtree(self.image_source_directory)
+    shutil.rmtree(cls.image_source_directory)
 
 
 @skipUnlessKvm
@@ -830,12 +842,21 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    # start with empty, but working configuration
-    return {}
+    return {
+      cls.key: cls.test_input % (
+        cls.fake_image, cls.fake_image_md5sum, cls.fake_image2,
+        cls.fake_image2_md5sum)
+    }
 
-  def setUp(self):
-    super(InstanceTestCase, self).setUp()
-    self.startImageHttpServer()
+  @classmethod
+  def setUpClass(cls):
+    cls.startImageHttpServer()
+    super(InstanceTestCase, cls).setUpClass()
+
+  @classmethod
+  def tearDownClass(cls):
+    super(InstanceTestCase, cls).tearDownClass()
+    cls.stopImageHttpServer()
 
   def tearDown(self):
     # clean up the instance for other tests
@@ -845,7 +866,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
-    self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
 
   def getRunningImageList(self, kvm_instance_partition,
@@ -862,57 +882,56 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
       m = _match_cdrom(entry)
       if m:
         path = m.group(1)
-        st = os.stat(path)
-        if stat.S_ISREG(st.st_mode) and st.st_size:
-          image_list.append(
-            _sub_iso(r'\1-${ver}\3',
-            sub_shared(r'${shared}/',
-            path.replace(kvm_instance_partition, '${inst}')
-          )))
+        image_list.append(
+          _sub_iso(r'\1-${ver}\3',
+          sub_shared(r'${shared}/',
+          path.replace(kvm_instance_partition, '${inst}')
+        )))
     return image_list
 
   def test(self):
-    partition_parameter_kw = {
-      self.key: self.test_input % (
-        self.fake_image, self.fake_image_md5sum, self.fake_image2,
-        self.fake_image2_md5sum)
-    }
-    self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
-    # check that image is correctly downloaded and linked
+    # check that image is correctly downloaded
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     image_repository = os.path.join(
       kvm_instance_partition, 'srv', self.image_directory)
     image = os.path.join(image_repository, self.fake_image_md5sum)
-    image_link = os.path.join(image_repository, 'image_001')
     self.assertTrue(os.path.exists(image))
     with open(image, 'rb') as fh:
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
     self.assertEqual(image_md5sum, self.fake_image_md5sum)
-    self.assertTrue(os.path.islink(image_link))
-    self.assertEqual(os.readlink(image_link), image)
 
     image2 = os.path.join(image_repository, self.fake_image2_md5sum)
-    image2_link = os.path.join(image_repository, 'image_002')
     self.assertTrue(os.path.exists(image2))
     with open(image2, 'rb') as fh:
       image2_md5sum = hashlib.md5(fh.read()).hexdigest()
     self.assertEqual(image2_md5sum, self.fake_image2_md5sum)
-    self.assertTrue(os.path.islink(image2_link))
-    self.assertEqual(os.readlink(image2_link), image2)
-
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
 
     self.assertEqual(
       [
-        '${inst}/srv/%s/image_001' % self.image_directory,
-        '${inst}/srv/%s/image_002' % self.image_directory,
+        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image_md5sum),
+        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image2_md5sum),
+        '${shared}/debian-${ver}-amd64-netinst.iso',
+      ],
+      self.getRunningImageList(kvm_instance_partition)
+    )
+
+    # Switch image
+    self.rerequestInstance({
+      self.key: self.test_input % (
+        self.fake_image3, self.fake_image3_md5sum,
+        self.fake_image2, self.fake_image2_md5sum)
+    })
+    self.slap.waitForInstance(max_retry=10)
+    self.assertTrue(os.path.exists(os.path.join(
+      image_repository, self.fake_image3_md5sum)))
+    self.assertTrue(os.path.exists(os.path.join(
+      image_repository, self.fake_image2_md5sum)))
+
+    self.assertEqual(
+      [
+        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image3_md5sum),
+        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image2_md5sum),
         '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
@@ -920,20 +939,12 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    partition_parameter_kw[self.key] = ''
-    self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=2)
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=10)
     self.assertEqual(
       os.listdir(image_repository),
       []
     )
-
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -1054,35 +1065,27 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     }
     self.rerequestInstance(partition_parameter_kw)
     self.slap.waitForInstance(max_retry=10)
-    # check that image is correctly downloaded and linked
+    # check that image is correctly downloaded
     for image_directory in [
       'boot-image-url-list-repository', 'boot-image-url-select-repository']:
       image_repository = os.path.join(
         self.slap.instance_directory, self.kvm_instance_partition_reference,
         'srv', image_directory)
       image = os.path.join(image_repository, self.fake_image_md5sum)
-      image_link = os.path.join(image_repository, 'image_001')
       self.assertTrue(os.path.exists(image))
       with open(image, 'rb') as fh:
         image_md5sum = hashlib.md5(fh.read()).hexdigest()
       self.assertEqual(image_md5sum, self.fake_image_md5sum)
-      self.assertTrue(os.path.islink(image_link))
-      self.assertEqual(os.readlink(image_link), image)
 
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
-
     self.assertEqual(
       [
-        '${inst}/srv/boot-image-url-select-repository/image_001',
-        '${inst}/srv/boot-image-url-list-repository/image_001',
+        '${inst}/srv/boot-image-url-select-repository/%s' % (
+          self.fake_image_md5sum,),
+        '${inst}/srv/boot-image-url-list-repository/%s' % (
+          self.fake_image_md5sum,),
         '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
@@ -1112,13 +1115,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
       os.listdir(image_repository),
       []
     )
-
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -1486,7 +1482,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
           'destination-tmp': 'tmp',
           'url': self.fake_image,
           'destination': 'destination',
-          'link': 'image_001',
+          'image-number': '001',
           'gzipped': False,
           'md5sum': self.fake_image_md5sum,
         }
@@ -1501,12 +1497,10 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
 INF: Storing errors in %(error_state_file)s
 INF: %(fake_image)s : Downloading
 INF: %(fake_image)s : Stored with checksum %(checksum)s
-INF: %(fake_image)s : Symlinking %(symlink)s -> %(destination)s
 """.strip() % {
         'fake_image': self.fake_image,
         'checksum': self.fake_image_md5sum,
         'error_state_file': self.error_state_file,
-        'symlink': os.path.join(self.destination_directory, 'image_001'),
         'destination': os.path.join(self.destination_directory, 'destination'),
       })
     )
@@ -1533,7 +1527,6 @@ INF: %(fake_image)s : already downloaded
         'fake_image': self.fake_image,
         'checksum': self.fake_image_md5sum,
         'error_state_file': self.error_state_file,
-        'symlink': os.path.join(self.destination_directory, 'image_001'),
         'destination': os.path.join(self.destination_directory, 'destination'),
       })
     )
@@ -1548,7 +1541,7 @@ INF: %(fake_image)s : already downloaded
           'destination-tmp': 'tmp',
           'url': self.fake_image,
           'destination': 'destination',
-          'link': 'image_001',
+          'image-number': '001',
           'gzipped': False,
           'md5sum': self.fake_image_wrong_md5sum,
         }
@@ -1566,7 +1559,6 @@ INF: %(fake_image)s : Downloading
 """.  strip() % {
           'fake_image': self.fake_image,
           'error_state_file': self.error_state_file,
-          'symlink': os.path.join(self.destination_directory, 'image_001'),
           'destination': os.path.join(
             self.destination_directory, 'destination'),
         })
@@ -1602,7 +1594,6 @@ INF: Storing errors in %(error_state_file)s
 """.  strip() % {
         'fake_image': self.fake_image,
         'error_state_file': self.error_state_file,
-        'symlink': os.path.join(self.destination_directory, 'image_001'),
         'destination': os.path.join(
           self.destination_directory, 'destination'),
       })
