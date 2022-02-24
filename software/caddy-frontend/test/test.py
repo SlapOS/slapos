@@ -54,6 +54,8 @@ import logging
 import random
 import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
+import caucase.client
+import caucase.utils
 
 
 try:
@@ -743,24 +745,40 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         'Process %s still alive' % (self.server_https_auth_process, ))
 
   @classmethod
+  def _fetchKedifaCaucaseCaCertificateFile(cls, parameter_dict):
+    ca_certificate = requests.get(
+      parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
+    assert ca_certificate.status_code == httplib.OK
+    cls.kedifa_caucase_ca_certificate_file = os.path.join(
+      cls.working_directory, 'kedifa-caucase.ca.crt.pem')
+    open(cls.kedifa_caucase_ca_certificate_file, 'w').write(
+        ca_certificate.text)
+
+  @classmethod
+  def _fetchBackendClientCaCertificateFile(cls, parameter_dict):
+    ca_certificate = requests.get(
+      parameter_dict['backend-client-caucase-url'] + '/cas/crt/ca.crt.pem')
+    assert ca_certificate.status_code == httplib.OK
+    cls.backend_client_caucase_ca_certificate_file = os.path.join(
+      cls.working_directory, 'backend-client-caucase.ca.crt.pem')
+    open(cls.backend_client_caucase_ca_certificate_file, 'w').write(
+      ca_certificate.text)
+
+  @classmethod
   def setUpMaster(cls):
     # run partition until AIKC finishes
     cls.runComputerPartitionUntil(
       cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    ca_certificate = requests.get(
-      parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
-    cls.ca_certificate_file = os.path.join(cls.working_directory, 'ca.crt.pem')
-    open(cls.ca_certificate_file, 'w').write(ca_certificate.text)
+    cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     auth = requests.get(
       parameter_dict['master-key-generate-auth-url'],
-      verify=cls.ca_certificate_file)
+      verify=cls.kedifa_caucase_ca_certificate_file)
     assert auth.status_code == httplib.CREATED
     upload = requests.put(
       parameter_dict['master-key-upload-url'] + auth.text,
       data=cls.key_pem + cls.certificate_pem,
-      verify=cls.ca_certificate_file)
+      verify=cls.kedifa_caucase_ca_certificate_file)
     assert upload.status_code == httplib.CREATED
     cls.runKedifaUpdater()
 
@@ -1065,6 +1083,17 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     super(HttpFrontendTestCase, cls)._cleanup(snapshot_name)
 
   @classmethod
+  def _workingDirectorySetUp(cls):
+      # do working directory
+      cls.working_directory = os.path.join(os.path.realpath(
+          os.environ.get(
+              'SLAPOS_TEST_WORKING_DIR',
+              os.path.join(os.getcwd(), '.slapos'))),
+          'caddy-frontend-test')
+      if not os.path.isdir(cls.working_directory):
+        os.mkdir(cls.working_directory)
+
+  @classmethod
   def setUpClass(cls):
     try:
       cls.createWildcardExampleComCertificate()
@@ -1085,19 +1114,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     super(HttpFrontendTestCase, cls).setUpClass()
 
     try:
+      cls._workingDirectorySetUp()
       # expose instance directory
       cls.instance_path = cls.slap.instance_directory
       # expose software directory, extract from found computer partition
       cls.software_path = os.path.realpath(os.path.join(
           cls.computer_partition_root_path, 'software_release'))
-      # do working directory
-      cls.working_directory = os.path.join(os.path.realpath(
-          os.environ.get(
-              'SLAPOS_TEST_WORKING_DIR',
-              os.path.join(os.getcwd(), '.slapos'))),
-          'caddy-frontend-test')
-      if not os.path.isdir(cls.working_directory):
-        os.mkdir(cls.working_directory)
       cls.setUpMaster()
       cls.waitForCaddy()
     except BaseException:
@@ -1336,7 +1358,8 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     )
 
 
-class TestMasterAIKCDisabledAIBCCDisabledRequest(HttpFrontendTestCase, TestDataMixin):
+class TestMasterAIKCDisabledAIBCCDisabledRequest(
+  HttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -1348,7 +1371,6 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(HttpFrontendTestCase, TestDataM
       'automatic-internal-backend-client-caucase-csr': 'false',
     }
 
-
   @classmethod
   def _setUpClass(cls):
     instance_max_retry = cls.instance_max_retry
@@ -1357,10 +1379,65 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(HttpFrontendTestCase, TestDataM
       super(TestMasterAIKCDisabledAIBCCDisabledRequest, cls)._setUpClass()
     except SlapOSNodeInstanceError:
       # Note: Does not work with SLAPOS_TEST_DEBUG=1
-      # Sign kedifa and backend certificate users
-      raise NotImplementedError
+      # Sign kedifa and backend certificate users and services
+      cls._workingDirectorySetUp()
+      _, kedifa_key_pem, _, kedifa_csr_pem = createCSR('Kedifa User')
+      _, backend_client_key_pem, _, backend_client_csr_pem = createCSR(
+        'Backend Client User')
+      parameter_dict = cls.requestDefaultInstance(
+        ).getConnectionParameterDict()
+      cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
+      cls._fetchBackendClientCaCertificateFile(parameter_dict)
+      with open(cls.kedifa_caucase_ca_certificate_file) as fh:
+        kedifa_ca_pem = fh.read()
+      with open(cls.backend_client_caucase_ca_certificate_file) as fh:
+        backend_client_ca_pem = fh.read()
+
+      kedifa_caucase_url = parameter_dict['kedifa-caucase-url']
+      backend_client_caucase_url = parameter_dict['backend-client-caucase-url']
+
+      # Create user keys
+      def getCauCertificate(ca_url, ca_pem, csr_pem):
+        cau_client = caucase.client.CaucaseClient(
+          ca_url=ca_url + '/cau',
+          ca_crt_pem_list=caucase.utils.getCertList(ca_pem),
+        )
+        csr_id = cau_client.createCertificateSigningRequest(csr_pem)
+        return cau_client.getCertificate(csr_id)
+
+      kedifa_crt_pem = getCauCertificate(
+        kedifa_caucase_url, kedifa_ca_pem, kedifa_csr_pem)
+      backend_client_crt_pem = getCauCertificate(
+        backend_client_caucase_url, backend_client_ca_pem,
+        backend_client_csr_pem)
+      kedifa_key_file = os.path.join(cls.working_directory, 'kedifa-key.pem')
+      with open(kedifa_key_file, 'w') as fh:
+        fh.write(kedifa_crt_pem + kedifa_key_pem)
+      backend_client_key_file = os.path.join(
+        cls.working_directory, 'backend-client-key.pem')
+      with open(backend_client_key_file, 'w') as fh:
+        fh.write(backend_client_crt_pem + backend_client_key_pem)
+
+      # Create service keys
+      def signAllCasCsr(ca_url, ca_pem, user_key):
+        client = caucase.client.CaucaseClient(
+          ca_url=ca_url + '/cas',
+          ca_crt_pem_list=caucase.utils.getCertList(ca_pem), user_key=user_key)
+        for csr_entry in client.getPendingCertificateRequestList():
+          client.createCertificate(int(csr_entry['id']))
+
+      signAllCasCsr(kedifa_caucase_url, kedifa_ca_pem, kedifa_key_file)
+      signAllCasCsr(
+        backend_client_caucase_url, backend_client_ca_pem,
+        backend_client_key_file)
+      # Continue instance processing, copy&paste from
+      # slapos.testing.testcase.SlapOSInstanceTestCase._setUpClass
+      # as we hack a lot
       cls.instance_max_retry = instance_max_retry
-    super(TestMasterAIKCDisabledAIBCCDisabledRequest, cls)._setUpClass()
+      cls.waitForInstance()
+      cls.computer_partition = cls.requestDefaultInstance()
+      cls.computer_partition_root_path = os.path.join(
+        cls.slap._instance_root, cls.computer_partition.getId())
 
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
@@ -1368,6 +1445,13 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(HttpFrontendTestCase, TestDataM
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
+    self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
+    self.assertKeyWithPop('caddy-frontend-1-kedifa-csr-url', parameter_dict)
+    self.assertKeyWithPop(
+      'caddy-frontend-1-backend-client-csr-url', parameter_dict)
+    self.assertKeyWithPop(
+      'caddy-frontend-1-csr-certificate', parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -2581,7 +2665,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = self.customdomain_ca_certificate_pem + \
@@ -2591,7 +2675,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
@@ -2631,7 +2715,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = self.ca.certificate_pem
@@ -2639,7 +2723,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
 
     self.assertEqual(httplib.UNPROCESSABLE_ENTITY, upload.status_code)
     self.assertEqual('Key incorrect', upload.text)
@@ -2664,7 +2748,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     _, ca_key_pem, csr, _ = createCSR(
@@ -2675,7 +2759,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
 
     self.assertEqual(httplib.CREATED, upload.status_code)
     self.runKedifaUpdater()
@@ -2717,7 +2801,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = self.certificate_pem + self.key_pem + self.ca.certificate_pem
@@ -2725,7 +2809,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
 
     self.assertEqual(httplib.CREATED, upload.status_code)
     self.runKedifaUpdater()
@@ -2878,14 +2962,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
     data = self.customdomain_certificate_pem + \
         self.customdomain_key_pem
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
@@ -5103,11 +5187,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
 
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    ca_certificate = requests.get(
-      parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
-    cls.ca_certificate_file = os.path.join(cls.working_directory, 'ca.crt.pem')
-    open(cls.ca_certificate_file, 'w').write(ca_certificate.text)
+    cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
 
   @classmethod
@@ -5166,11 +5246,11 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
         self.requestDefaultInstance().getConnectionParameterDict()
     auth = requests.get(
       master_parameter_dict['master-key-generate-auth-url'],
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     requests.put(
       master_parameter_dict['master-key-upload-url'] + auth.text,
       data=key_pem + certificate_pem,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -5193,11 +5273,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
 
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    ca_certificate = requests.get(
-      parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
-    cls.ca_certificate_file = os.path.join(cls.working_directory, 'ca.crt.pem')
-    open(cls.ca_certificate_file, 'w').write(ca_certificate.text)
+    cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
 
   @classmethod
@@ -5459,7 +5535,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
@@ -5467,7 +5543,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
@@ -5550,7 +5626,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
@@ -5558,7 +5634,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
 
     self.runKedifaUpdater()
@@ -5634,7 +5710,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
@@ -5642,7 +5718,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
 
     self.runKedifaUpdater()
@@ -5727,7 +5803,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     # as now the place to put the key is known put the key there
     auth = requests.get(
       generate_auth,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
@@ -5735,7 +5811,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     upload = requests.put(
       upload_url + auth.text,
       data=data,
-      verify=self.ca_certificate_file)
+      verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
 
     self.runKedifaUpdater()
@@ -5953,11 +6029,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
 
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    ca_certificate = requests.get(
-      parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
-    cls.ca_certificate_file = os.path.join(cls.working_directory, 'ca.crt.pem')
-    open(cls.ca_certificate_file, 'w').write(ca_certificate.text)
+    cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
 
   instance_parameter_dict = {
