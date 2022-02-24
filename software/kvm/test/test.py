@@ -902,13 +902,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.assertTrue(os.path.islink(image2_link))
     self.assertEqual(os.readlink(image2_link), image2)
 
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
-
     self.assertEqual(
       [
         '${inst}/srv/%s/image_001' % self.image_directory,
@@ -927,13 +920,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
       os.listdir(image_repository),
       []
     )
-
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -1072,13 +1058,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
-
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/image_001',
@@ -1112,13 +1091,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
       os.listdir(image_repository),
       []
     )
-
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
