@@ -1,0 +1,14 @@
+{
+  "name": "Matomo",
+  "description": "Matomo",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Instance Matomo",
+      "request": "matomo-input-schema.json",
+      "response": "matomo-output-schema.json",
+      "index": 0
+    }
+  }
+}
