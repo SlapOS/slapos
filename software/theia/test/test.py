@@ -125,6 +125,9 @@ class TestTheia(TheiaTestCase):
       resp = self.get(urljoin(authenticated_url, url))
       self.assertTrue(resp.raw)
 
+  def test_ipv6(self):
+    self.assertIn('ipv6', self.connection_parameters)
+
   def test_theia_slapos(self):
     # Make sure we can use the shell and the integrated slapos command
     process = pexpect.spawnu(
