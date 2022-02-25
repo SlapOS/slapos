@@ -45,7 +45,7 @@ from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 
 
 software_cfg = 'software%s.cfg' % ('-py3' if six.PY3 else '')
-theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', software_cfg))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', software_cfg))q
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
 
@@ -124,6 +124,10 @@ class TestTheia(TheiaTestCase):
     for url in css_urls:
       resp = self.get(urljoin(authenticated_url, url))
       self.assertTrue(resp.raw)
+
+  def test_ipv6(self):
+    print(self.connection_parameters)
+    self.assertIn('ipv6', self.connection_parameters)
 
   def test_theia_slapos(self):
     # Make sure we can use the shell and the integrated slapos command
