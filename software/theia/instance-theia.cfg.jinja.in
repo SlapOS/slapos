@@ -38,10 +38,14 @@ username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
 <<<<<<< HEAD
+<<<<<<< HEAD
 ipv6 =[{{ ipv6_random }}]
 =======
 ipv6 = {{ ipv6_random }}
 >>>>>>> 59cad5821 (fixup)
+=======
+ipv6 = [{{ ipv6_random }}]
+>>>>>>> f69c499ee (theia/test/test.py: Add test for ipv6 connection parameter)
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
