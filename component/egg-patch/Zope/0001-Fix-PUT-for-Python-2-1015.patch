@@ -1,0 +1,25 @@
+From 9a603533bacd9311ee634d8509c090037112b637 Mon Sep 17 00:00:00 2001
+From: Arnaud Fontaine <arnaud.fontaine@nexedi.com>
+Date: Fri, 25 Feb 2022 14:46:34 +0100
+Subject: [PATCH] Fix PUT() for Python 2 (#1015).
+
+---
+ src/OFS/Image.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/OFS/Image.py b/src/OFS/Image.py
+index d81d2a0fa..c33ef68a5 100644
+--- a/src/OFS/Image.py
++++ b/src/OFS/Image.py
+@@ -661,7 +661,7 @@ class File(
+         file = REQUEST['BODYFILE']
+ 
+         data, size = self._read_data(file)
+-        if isinstance(data, str):
++        if isinstance(data, text_type):
+             data = data.encode('UTF-8')
+         content_type = self._get_content_type(file, data, self.__name__,
+                                               type or self.content_type)
+-- 
+2.35.1
+
