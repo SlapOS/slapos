@@ -5,7 +5,7 @@
 set -e
 set -x
 
-if [ ! -d parameter_dict['document-root'] ]; then
+if [ ! -d {{ parameter_dict['document-root'] }} ]; then
   exit 1;
 fi
 

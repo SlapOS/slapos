@@ -1,21 +1,13 @@
 # parameters required by the configuration instance
 [instance-parameter]
 matomo = ${:document-root}
-admin-user = admin
-admin-password = admin
 trusted-domain-list = 
   [${apache-php-configuration:ip}]:${apache-php-configuration:port}
   ${slap-parameter:instance.trusted-domain-1}
   ${slap-parameter:instance.trusted-domain-2}
 
 trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
-cli-url = ${slap-parameter:instance.cli-url}
-    
-# Instance configuration
-collabora-url = ${slap-parameter:instance.collabora-url}
-stun-server = ${slap-parameter:instance.stun-server}
-turn-server = ${slap-parameter:instance.turn-server}
-turn-secret = ${slap-parameter:instance.turn-secret}
+
 
 #php.ini parameters
 php.memory_limit = 512M
@@ -31,11 +23,7 @@ php.max_file_uploads = 100
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
-
-[publish-connection-information]
-admin-user = ${instance-parameter:admin-user}
-admin-password = ${instance-parameter:admin-password}
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
 
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -53,18 +41,7 @@ context =
 depends =
   ${matomo-apache-httpd:recipe}
 
-[matomo-install-promise]
-<= monitor-promise-base
-promise = check_command_execute
-name = check-matomo-install.py
-config-command = ${nc-install-wrapper:output}
-
 [slap-parameter]
-instance.collabora-url = https://collabora.host.vifib.net/
-instance.stun-server = turn.vifib.com:5349
-instance.turn-server =
-instance.turn-secret =
-
 instance.cli-url = ${apache-php-configuration:url}
 instance.trusted-domain-1 =
 instance.trusted-domain-2 =

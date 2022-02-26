@@ -6,7 +6,7 @@
     "default": {
       "title": "Default",
       "description": "Instance Matomo",
-      "request": "matomo-input-schema.json",
+      "request": "",
       "response": "matomo-output-schema.json",
       "index": 0
     }
