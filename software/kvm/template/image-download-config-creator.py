@@ -51,7 +51,7 @@ if __name__ == "__main__":
           'url': url,
           'destination': md5sum,
           'destination-tmp': md5sum + '_tmp',
-          'link': 'image_%03i' % (image_number,),
+          'image-number': '%03i' % (image_number,),
         })
       else:
         print('INF: checksum %s repeated, used url %s' % (url, ))
