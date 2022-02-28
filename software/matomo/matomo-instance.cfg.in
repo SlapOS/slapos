@@ -1,12 +1,6 @@
 # parameters required by the configuration instance
 [instance-parameter]
 matomo = ${:document-root}
-trusted-domain-list = 
-  [${apache-php-configuration:ip}]:${apache-php-configuration:port}
-  ${slap-parameter:instance.trusted-domain-1}
-  ${slap-parameter:instance.trusted-domain-2}
-
-trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 
 #php.ini parameters
 php.memory_limit = 512M
@@ -18,45 +12,32 @@ php.max_execution_time = 1800
 php.max_input_time = 3600
 php.output_buffering = 'Off'
 php.max_file_uploads = 100
+dir-temp = ${directory:tmp}
 
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
 
-[matomo-update]
-output = ${directory:scripts}/matomo-update
-recipe = collective.recipe.template
-input = inline:#!/bin/sh
-  if [ ! -d ${directory:www}config ]; then
-    exit 0;
-  fi
-  if [ ! -f ${directory:www}config/config.ini.php ]; then
-    exit 0;
-  fi
-  cp ${directory:www}config/config.ini.php ${directory:tmp}/config.ini.php
-  cd ${directory:www}
-  rm -f ./*
-  wget https://builds.matomo.org/matomo.zip
-  unzip matomo.zip
-  rm matomo.zip
-  mv -f ./matomo/* .
-  rmdir matomo
-  cp ${directory:tmp}/config.ini.php ${directory:www}config/config.ini.php
-  rm ${directory:tmp}/config.ini.php
-  ${php-bin:wrapper-path} ${directory:www}console core:update
-  exit 0
-mode = 777
-
 [matomo-backup]
 recipe = collective.recipe.template
 input = inline:#!/bin/bash
   touch ${directory:backup}/plugins_list
-  ${php-bin:wrapper-path} ${directory:www}console plugin:list > ${directory:backup}/plugins_list
-  cp -rf ${directory:www}config {directory:backup}
+  if [ -d ${directory:backup}/config ]; then     
+    rm -rf ${directory:backup}/config   
+  fi  
+
+  if [ -d ${directory:backup}/plugins ]; then     
+    rm -rf ${directory:backup}/plugins   
+  fi    
+
+  ${php-bin:wrapper-path} ${directory:www}/matomo/console plugin:list > ${directory:backup}/plugins_list
+  cp -rf ${directory:www}/matomo/config ${directory:backup}
+  cp -rf ${directory:www}/matomo/plugins ${directory:backup}
   exit 0
-output = ${directory:bin}/nextcloud-backup
+output = ${directory:bin}/matomo-backup
 mode = 777
+
 
 [matomo-backup-cron]
 recipe = slapos.cookbook:cron.d
@@ -70,7 +51,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = matomo-update
 frequency = 0 0 * * *
-command = ${matomo-update:output}
+command = ${matomo-update.sh:rendered}
 
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -79,22 +60,21 @@ rendered = ${directory:apache.d}/matomo.conf
 context =
   section parameter_dict apache-php-configuration
 
-[matomo-move.sh]
+[matomo-update.sh]
 recipe = slapos.recipe.template:jinja2
-template = {{ matomo_move_sh }}
-rendered = ${directory:scripts}/matomo-move
+template = {{ matomo_update_sh }}
+rendered = ${directory:scripts}/matomo-update
 context =
   section parameter_dict instance-parameter
+  key dir_temp instance-parameter:dir-temp
+  key php_bin php-bin:wrapper-path
 depends =
   ${matomo-apache-httpd:recipe}
-  ${matomo-update-cron:recipe}
   ${matomo-backup-cron:recipe}
+  ${matomo-update-cron:recipe}
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
-instance.trusted-domain-1 =
-instance.trusted-domain-2 =
-instance.trusted-proxy-list =
 
 
 
