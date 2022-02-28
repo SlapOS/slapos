@@ -41,11 +41,13 @@ if __name__ == "__main__":
     print('ERR: There are problems with configuration')
 
   print('INF: Storing errors in %s' % (error_state_file,))
+  # switch to error state during image download
+  with open(error_state_file, 'w') as fh:
+    fh.write('\n'.join(['INF Download in progress']))
   # clean the destination directory
   file_to_keep_list = []
   for image in config['image-list']:
     file_to_keep_list.append(image['destination'])
-    file_to_keep_list.append(image['link'])
   for fname in os.listdir(config['destination-directory']):
     if fname not in file_to_keep_list:
       print('INF: Removing obsolete %s' % (fname,))
@@ -118,20 +120,6 @@ if __name__ == "__main__":
       os.rename(destination_tmp, destination)
       print('INF: %s : Stored with checksum %s' % (
         image['url'], image['md5sum']))
-  for image in config['image-list']:
-    destination = os.path.join(
-      config['destination-directory'], image['destination'])
-    link = os.path.join(config['destination-directory'], image['link'])
-    if os.path.exists(destination):
-      if os.path.lexists(link):
-        if not os.path.islink(link):
-          os.remove(link)
-        if os.path.islink(link) and os.readlink(link) != destination:
-            os.remove(link)
-      if not os.path.lexists(link):
-        print('INF: %s : Symlinking %s -> %s' % (
-          image['url'], link, destination))
-        os.symlink(destination, link)
   with open(md5sum_fail_file, 'w') as fh:
     if new_md5sum_state_dict != {}:
       json.dump(new_md5sum_state_dict, fh, indent=2)
