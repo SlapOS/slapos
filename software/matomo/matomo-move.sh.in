@@ -12,8 +12,10 @@ fi
 cd {{ parameter_dict['document-root'] }}
 mv ./matomo/* .
 rmdir ./matomo
+rm ./How to install Matomo.html
 
-# while 1; do
+# while :
+# do
 #   if [-f ./config/config.ini.php]; then
 #     echo "[General]" >> ./config/config.ini.php 
 #     echo "enable_trusted_host_check=0" >> ./config/config.ini.php 

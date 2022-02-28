@@ -8,7 +8,6 @@ trusted-domain-list =
 
 trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 
-
 #php.ini parameters
 php.memory_limit = 512M
 php.date.timezone = Europe/Paris
@@ -24,6 +23,14 @@ php.max_file_uploads = 100
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
+mode = 777
+
+[matomo-update]
+output = ${directory:scripts}/matomo-update
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  ${php-bin:wrapper-path} ${directory:www}console core:update
+mode = 777
 
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -40,6 +47,7 @@ context =
   section parameter_dict instance-parameter
 depends =
   ${matomo-apache-httpd:recipe}
+  ${matomo-update:recipe}
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
