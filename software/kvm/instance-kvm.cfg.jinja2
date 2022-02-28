@@ -162,7 +162,8 @@ config-filename = ${boot-image-url-select-json-config:error-state-file}
 # wrapper to execute boot-image-url-select-download on each run
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/boot-image-url-select-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-select-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-select-processed-config:processed-md5sum}
+command-line = {{ python_executable }} {{ image_download_controller }} ${:config} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-select-processed-config:processed-md5sum}
+config = ${boot-image-url-select-json-config:rendered}
 md5sum-state-filename = boot-image-url-select-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:boot-image-url-select-expose}/${:md5sum-state-filename}
 error-state-filename = boot-image-url-select-download-controller-error.text
@@ -258,7 +259,8 @@ config-filename = ${boot-image-url-list-json-config:error-state-file}
 # wrapper to execute boot-image-url-list-download on each run
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/boot-image-url-list-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-list-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-list-processed-config:processed-md5sum}
+command-line = {{ python_executable }} {{ image_download_controller }} ${:config} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-list-processed-config:processed-md5sum}
+config = ${boot-image-url-list-json-config:rendered}
 md5sum-state-filename = boot-image-url-list-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:boot-image-url-list-expose}/${:md5sum-state-filename}
 error-state-filename = boot-image-url-list-download-controller-error.text
@@ -355,7 +357,8 @@ config-filename = ${virtual-hard-drive-url-json-config:error-state-file}
 # wrapper to execute virtual-hard-drive-url-download on each run
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/virtual-hard-drive-url-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${virtual-hard-drive-url-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${virtual-hard-drive-url-processed-config:processed-md5sum}
+command-line = {{ python_executable }} {{ image_download_controller }} ${:config} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${virtual-hard-drive-url-processed-config:processed-md5sum}
+config = ${virtual-hard-drive-url-json-config:rendered}
 md5sum-state-filename = virtual-hard-drive-url-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:virtual-hard-drive-url-expose}/${:md5sum-state-filename}
 error-state-filename = virtual-hard-drive-url-download-controller-error.text
@@ -547,13 +550,13 @@ command = [ ! -f {{ '${' + key + '}' }} ] && touch {{ '${' +  key + '}' }}
 {%- endmacro %}
 {#- Create depending sections, as state files appear late, so it's better to have empty file which will impact the hash anyway #}
 {%- if boot_image_url_list_enabled %}
-{{    generate_depend_section('boot-image-url-list-depend', 'boot-image-url-list-download-wrapper:md5sum-state-file') }}
+{{    generate_depend_section('boot-image-url-list-depend', 'boot-image-url-list-download-wrapper:config') }}
 {%- endif %}
 {%- if boot_image_url_select_enabled %}
-{{    generate_depend_section('boot-image-url-select-depend', 'boot-image-url-select-download-wrapper:md5sum-state-file') }}
+{{    generate_depend_section('boot-image-url-select-depend', 'boot-image-url-select-download-wrapper:config') }}
 {%- endif %}
 {%- if virtual_hard_drive_url_enabled %}
-{{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:md5sum-state-file') }}
+{{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:config') }}
 {%- endif %}
 
 [kvm-instance]
