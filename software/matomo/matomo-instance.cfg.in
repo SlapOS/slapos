@@ -8,7 +8,6 @@ trusted-domain-list =
 
 trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 
-
 #php.ini parameters
 php.memory_limit = 512M
 php.date.timezone = Europe/Paris
@@ -25,6 +24,54 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
 
+[matomo-update]
+output = ${directory:scripts}/matomo-update
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  if [ ! -d ${directory:www}config ]; then
+    exit 0;
+  fi
+  if [ ! -f ${directory:www}config/config.ini.php ]; then
+    exit 0;
+  fi
+  cp ${directory:www}config/config.ini.php ${directory:tmp}/config.ini.php
+  cd ${directory:www}
+  rm -f ./*
+  wget https://builds.matomo.org/matomo.zip
+  unzip matomo.zip
+  rm matomo.zip
+  mv -f ./matomo/* .
+  rmdir matomo
+  cp ${directory:tmp}/config.ini.php ${directory:www}config/config.ini.php
+  rm ${directory:tmp}/config.ini.php
+  ${php-bin:wrapper-path} ${directory:www}console core:update
+  exit 0
+mode = 777
+
+[matomo-backup]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  touch ${directory:backup}/plugins_list
+  ${php-bin:wrapper-path} ${directory:www}console plugin:list > ${directory:backup}/plugins_list
+  cp -rf ${directory:www}config {directory:backup}
+  exit 0
+output = ${directory:bin}/nextcloud-backup
+mode = 777
+
+[matomo-backup-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-backup
+frequency = 0 0 * * *
+command = ${matomo-backup:output}
+
+[matomo-update-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-update
+frequency = 0 0 * * *
+command = ${matomo-update:output}
+
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
 template = {{ matomo_apache_httpd }}
@@ -40,6 +87,8 @@ context =
   section parameter_dict instance-parameter
 depends =
   ${matomo-apache-httpd:recipe}
+  ${matomo-update-cron:recipe}
+  ${matomo-backup-cron:recipe}
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
