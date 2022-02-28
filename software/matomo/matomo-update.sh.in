@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+set -x
+if [ ! -d {{ parameter_dict['document-root'] }}/matomo/config ]; then
+  exit 1;
+fi
+if [ ! -f { parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; then
+  exit 0;
+fi
+cp { parameter_dict['document-root'] }}/matomo/config/config.ini.php {{ dir_temp }}/config.ini.php
+cd { parameter_dict['document-root'] }}
+rm -f ./matomo
+wget https://builds.matomo.org/matomo.zip
+unzip matomo.zip
+rm matomo.zip
+cp {{ dir_temp }}/config.ini.php {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php
+rm {{ dir_temp }}/config.ini.php
+{{ php_bin }} {{ parameter_dict['document-root'] }}/matomo/console core:update
+exit 0
