@@ -21,17 +21,17 @@ environment =
   DISPLAY=${xserver:display}
 
 [runTestSuite]
-env.sh  = ${beremiz-env.sh:rendered}
-workdir = {{ beremiz_location }}
+env.sh  = ${beremiz-env.sh:output}
+workdir = {{ nxdtest_dir }}
 
 [beremiz-tests]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 mode = 0700
-template =
-  inline:#!/bin/sh
+inline =
+  #!/bin/sh -e
   cd {{ beremiz_location }}/tests
   make test_dir=${directory:tests} xserver_command='echo "Using ${xserver:display} on Slapos X Server !";' "$@"
-rendered = ${directory:bin}/beremiztest
+output = ${directory:bin}/beremiztest
 
 [sikulix]
 recipe = slapos.cookbook:wrapper
@@ -39,6 +39,22 @@ command-line = {{ sikulix_bin }} -v
 wrapper-path = ${directory:bin}/sikulix
 environment =
   JAVA_TOOL_OPTIONS=-Duser.home=${buildout:directory} -Djava.io.tmpdir=${directory:tmp}
+
+[libopencv_java430.so]
+recipe = plone.recipe.command
+opencv-link = ${buildout:directory}/.Sikulix/SikulixLibs/libopencv_java430.so
+# We run sikulix with a random not existing projet so it will initialise all files
+# and extract libopencv_java430.so from jar. We can then replace it with slapos
+# compiled lib which solves GLIBC issues (version `GLIBC_2.27' not found).
+command =
+  LINK=${:opencv-link}
+  if [ ! -e "$LINK" ]; then
+    ${sikulix:wrapper-path} -r not_found_for_slapos.sikulix > /dev/null 2>&1 || true
+  fi
+  rm -f $LINK
+  ln -sf {{ opencv_location }}/lib/libopencv_java430.so $LINK
+update-command = ${:command}
+stop-on-error = true
 
 [buildout]
 extends =
@@ -51,6 +67,7 @@ parts +=
   xdotool
   beremiz-tests
   runTestSuite
+  libopencv_java430.so
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
