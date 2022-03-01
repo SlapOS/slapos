@@ -21,17 +21,16 @@ environment =
   DISPLAY=${xserver:display}
 
 [runTestSuite]
-env.sh  = ${beremiz-env.sh:rendered}
+env.sh  = ${beremiz-env.sh:output}
 workdir = {{ beremiz_location }}
 
 [beremiz-tests]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 mode = 0700
-template =
-  inline:#!/bin/sh
+inline = #!/bin/sh
   cd {{ beremiz_location }}/tests
   make test_dir=${directory:tests} xserver_command='echo "Using ${xserver:display} on Slapos X Server !";' "$@"
-rendered = ${directory:bin}/beremiztest
+output = ${directory:bin}/beremiztest
 
 [sikulix]
 recipe = slapos.cookbook:wrapper
