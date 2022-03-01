@@ -27,11 +27,27 @@ command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
 recipe = collective.recipe.template
 input = inline:#!/bin/bash
   touch ${directory:backup}/plugins_list
+  if [ -d {directory:backup}/config ]; then     
+    rm -rf {directory:backup}/config   
+  fi  
+
+  if [ -d ${directory:backup}/plugins ]; then     
+    rm -rf ${directory:backup}/plugins   
+  fi    
+
   ${php-bin:wrapper-path} ${directory:www}/matomo/console plugin:list > ${directory:backup}/plugins_list
-  cp -rf ${directory:www}/matomo/config {directory:backup}
+  cp -rf ${directory:www}/matomo/config ${directory:backup}
+  cp -rf ${directory:www}/matomo/plugins ${directory:backup}
   exit 0
 output = ${directory:bin}/matomo-backup
 mode = 777
+
+[cron-database-backup]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = db-backup
+frequency = 0 0 * * *
+commmand = time "${binary-wrap-mysqldump:wrapper-path}" --extended-insert --no-autocommit --quick --single-transaction ${instance-parameter:db-name} -u${instance-parameter:db-user} -p > ${directory:backup}/matomo_backup_database.sql
 
 [matomo-backup-cron]
 recipe = slapos.cookbook:cron.d
@@ -65,6 +81,8 @@ context =
 depends =
   ${matomo-apache-httpd:recipe}
   ${matomo-backup-cron:recipe}
+  ${matomo-update-cron:recipe}
+  ${cron-database-backup:recipe}
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
