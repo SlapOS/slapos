@@ -5,27 +5,20 @@
 #############################
 [buildout]
 parts =
-  directory
   publish-connection-parameter
   download-plc
   beremiz-runtime
-#  beremiz-runtime-promise
+#beremiz-runtime-promise
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 extends = {{ template_monitor }}
 
-
 [download-plc]
-recipe = plone.recipe.command
-update-command = ${:command}
+recipe = slapos.recipe.build:download-unpacked
+offline = false
 url = ${instance-parameter:configuration.runtime_plc_url}
-md5sum = ${instance-parameter:configuration.runtime_plc_md5sum}
-# XXX:  do check md5sum !
-command = 
-  wget ${:url} -O plc.tgz
-  tar zxvf plc.tgz 
 
 [instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
@@ -42,7 +35,6 @@ configuration.autostart = 1
 configuration.interface = 0.0.0.0
 # XXX: randomly generated one on slap's interface?
 configuration.port = 61248
-configuration.plc_runtime_path = ${directory:home}/${:configuration.runtime_plc_name}
 
 # Create all needed directories, depending on your needs
 [directory]
@@ -50,7 +42,7 @@ recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
 etc = ${:home}/etc
 var = ${:home}/var
-script = ${:etc}/run/
+script = ${:etc}/run
 service = ${:etc}/service
 log = ${:var}/log
 
@@ -58,7 +50,7 @@ log = ${:var}/log
 logfile = ${directory:log}/beremiz-runtime.log
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/src/beremiz/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/${instance-parameter:configuration.runtime_plc_name}
+    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/parts/download-plc
 wrapper-path = ${directory:service}/beremiz-runtime
 
 [beremiz-runtime-promise]
