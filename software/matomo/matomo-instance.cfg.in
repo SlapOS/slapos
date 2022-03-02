@@ -6,8 +6,6 @@ trusted-domain-list =
   ${slap-parameter:instance.trusted-domain-1}
   ${slap-parameter:instance.trusted-domain-2}
 
-trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
-
 #php.ini parameters
 php.memory_limit = 512M
 php.date.timezone = Europe/Paris
@@ -24,7 +22,6 @@ dir-temp = ${directory:tmp}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
-
 
 [matomo-backup]
 recipe = collective.recipe.template
@@ -84,7 +81,6 @@ depends =
 instance.cli-url = ${apache-php-configuration:url}
 instance.trusted-domain-1 =
 instance.trusted-domain-2 =
-instance.trusted-proxy-list =
 
 
 

@@ -9,12 +9,12 @@ if [ ! -d {{ parameter_dict['document-root'] }}/matomo/config ]; then
   exit 1;
 fi
 
-if [ ! -f { parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; then
+if [ ! -f {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; then
   exit 0;
 fi
 
 
-cd { parameter_dict['document-root'] }}
+cd {{ parameter_dict['document-root'] }}
 
 #get the matomo version now used and the latest released version
 version_last=$(curl https://builds.matomo.org|grep matomo-[[:digit:]].[[:digit:]].[[:digit:]].zip|head -n 1|sed "s/.*matomo-\([[:digit:]].[[:digit:]].[[:digit:]]\).zip.*/\1/g")
@@ -25,7 +25,7 @@ if [ "$version_last" = "$version_now" ]; then
     exit 0；
 else
     #backup configration file
-    cp { parameter_dict['document-root'] }}/matomo/config/config.ini.php {{ dir_temp }}/config.ini.php
+    cp {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php {{ dir_temp }}/config.ini.php
     wget https://builds.matomo.org/matomo.zip
 fi
 
