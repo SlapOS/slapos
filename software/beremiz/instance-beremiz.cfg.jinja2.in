@@ -18,6 +18,7 @@ ssl = ${:etc}/ssl
 auth = ${:tmp}/auth
 workdir = ${:srv}/workdir
 framebuffer = ${:srv}/framebuffer
+fluxbox = ${buildout:directory}/.fluxbox
 
 [gen-certificate]
 recipe = plone.recipe.command
@@ -136,11 +137,25 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/xserver-is-up
 command-line = bash -c "[ -S ${xserver:lock-dir}/.X11-unix/X${xserver:display-num} ]"
 
-[fluxbox]
+[fluxbox-menu]
+recipe = slapos.recipe.template:jinja2
+template = {{ fluxbox_menu }}
+rendered = ${directory:fluxbox}/menu
+context =
+  key beremiz_bin      beremiz-x11:rendered
+  raw fluxbox_location {{ fluxbox_location }}
+
+[fluxbox-toolbar]
+recipe = plone.recipe.command
+command =
+  if [ ! -s "${directory:fluxbox}/init" ]; then
+    echo "session.screen0.toolbar.placement:      TopCenter" > ${directory:fluxbox}/init;
+  fi
+
+[fluxbox-bin]
 recipe = slapos.cookbook:wrapper
 command-line = {{ fluxbox_location }}/bin/fluxbox -display ${xserver:display}
-  -log ${directory:log}/fluxbox.log
-wrapper-path = ${directory:services}/fluxbox
+wrapper-path = ${directory:bin}/fluxbox
 environment =
   HOME=${buildout:directory}
   XORG_LOCK_DIR=${xserver:lock-dir}
@@ -148,6 +163,14 @@ environment =
   LANG=en_US.UTF-8
   LANGUAGE=en_US:en
   LC_ALL=en_US.UTF-8
+depends =
+  ${fluxbox-menu:recipe}
+  ${fluxbox-toolbar:recipe}
+
+[fluxbox]
+recipe = slapos.cookbook:wrapper
+command-line = ${fluxbox-bin:wrapper-path} -log ${directory:log}/fluxbox.log
+wrapper-path = ${directory:services}/fluxbox
 
 [beremiz-env.sh]
 recipe = slapos.recipe.template:jinja2
@@ -186,7 +209,7 @@ template =
 <= beremiz-wrapper-base
 command-line =
   {{ python_bin }} {{ beremiz_location }}/Beremiz.py
-rendered = ${directory:scripts}/beremiz-x11
+rendered = ${directory:bin}/beremiz-x11
 
 [beremiz-runtime]
 <= beremiz-wrapper-base

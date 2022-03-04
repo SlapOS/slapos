@@ -1,9 +1,6 @@
 [directory]
 tests = ${:srv}/tests
 
-[beremiz-x11]
-rendered = ${directory:bin}/beremiz-x11
-
 [xserver]
 display-num = 42
 

@@ -53,6 +53,7 @@ extra-context =
   raw bison_location     {{ bison_location }}
   raw flex_location      {{ flex_location }}
   raw fluxbox_location   {{ fluxbox_location }}
+  raw fluxbox_menu       {{ template_fluxbox_menu }}
   raw font_config_loc    {{ fontconfig_location }}
   raw font_config_tmplt  {{ template_fonts_conf_target }}
   raw font_dejavu        {{ font_dejavu }}
