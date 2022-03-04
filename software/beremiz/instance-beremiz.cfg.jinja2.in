@@ -18,6 +18,7 @@ ssl = ${:etc}/ssl
 auth = ${:tmp}/auth
 workdir = ${:srv}/workdir
 framebuffer = ${:srv}/framebuffer
+fluxbox = ${buildout:directory}/.fluxbox
 
 [gen-certificate]
 recipe = plone.recipe.command
@@ -80,6 +81,7 @@ config-port = ${x11vnc:port}
 [random-password]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.passwd
+bytes = 8
 
 [x11vnc-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -136,11 +138,25 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/xserver-is-up
 command-line = bash -c "[ -S ${xserver:lock-dir}/.X11-unix/X${xserver:display-num} ]"
 
-[fluxbox]
+[fluxbox-menu]
+recipe = slapos.recipe.template:jinja2
+template = {{ fluxbox_menu }}
+rendered = ${directory:fluxbox}/menu
+context =
+  key beremiz_bin      beremiz-x11:rendered
+  raw fluxbox_location {{ fluxbox_location }}
+
+[fluxbox-toolbar]
+recipe = plone.recipe.command
+command =
+  if [ ! -s "${directory:fluxbox}/init" ]; then
+    echo "session.screen0.toolbar.placement:      TopCenter" > ${directory:fluxbox}/init;
+  fi
+
+[fluxbox-bin]
 recipe = slapos.cookbook:wrapper
 command-line = {{ fluxbox_location }}/bin/fluxbox -display ${xserver:display}
-  -log ${directory:log}/fluxbox.log
-wrapper-path = ${directory:services}/fluxbox
+wrapper-path = ${directory:bin}/fluxbox
 environment =
   HOME=${buildout:directory}
   XORG_LOCK_DIR=${xserver:lock-dir}
@@ -148,6 +164,14 @@ environment =
   LANG=en_US.UTF-8
   LANGUAGE=en_US:en
   LC_ALL=en_US.UTF-8
+depends =
+  ${fluxbox-menu:recipe}
+  ${fluxbox-toolbar:recipe}
+
+[fluxbox]
+recipe = slapos.cookbook:wrapper
+command-line = ${fluxbox-bin:wrapper-path} -log ${directory:log}/fluxbox.log
+wrapper-path = ${directory:services}/fluxbox
 
 [beremiz-env.sh]
 recipe = slapos.recipe.template:jinja2
@@ -160,9 +184,6 @@ template =
   export GSETTINGS_SCHEMA_DIR={{ gtk3_location }}/share/glib-2.0/schemas
   export FONTCONFIG_FILE=${font-config:rendered}
   export DISPLAY=${xserver:display}
-  # Export pythonpath here as beremiz will use sys.executable to start internal
-  # processes then they won't have eggs in sys.path.
-  export PYTHONPATH=$(python -c "import sys; print ':'.join(sys.path)")
   export XORG_LOCK_DIR=${xserver:lock-dir}
   export LANG=en_US.UTF-8
   export LANGUAGE=en_US:en
@@ -186,7 +207,7 @@ template =
 <= beremiz-wrapper-base
 command-line =
   {{ python_bin }} {{ beremiz_location }}/Beremiz.py
-rendered = ${directory:scripts}/beremiz-x11
+rendered = ${directory:bin}/beremiz-x11
 
 [beremiz-runtime]
 <= beremiz-wrapper-base
@@ -198,7 +219,7 @@ twisted = 1
 webservice-port = 8009
 command-line =
   {{ python_bin }} {{ beremiz_location }}/Beremiz_service.py
-  -p ${:port} -i ${:ip} -x ${:wx-taskbar} -a ${:auto-plc} ${directory:workdir}
+  -p ${:port} -i ${:ip} -x ${:wx-taskbar} -a ${:auto-plc} -w ${:webservice-port} ${directory:workdir}
 rendered = ${directory:bin}/beremiz-runtime
 
 [request-vnc-frontend]
