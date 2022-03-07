@@ -331,6 +331,8 @@ https_port = {{ dumps('' ~ configuration['port']) }}
 http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 caddy-version = {{ software_parameter_dict['caddy_version'] }}
+caddy-version-hash = {{ caddy_version_hash }}
+node-uuid = {{ node_uuid }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps(value) }}
@@ -464,6 +466,10 @@ csr-certificate = ${expose-csr-certificate-get:certificate}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
 {%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
+node-uuid = {{ node_uuid }}
+rapid-cdn-backend-hash-version-mapping = ${backend-haproxy-config:haproxy-version-hash}:${backend-haproxy-config:haproxy-version}
+rapid-cdn-cache-hash-version-mapping = {{ trafficserver_version_hash }}:{{ software_parameter_dict['trafficserver_version'] }}
+rapid-cdn-frontend-hash-version-mapping = {{ caddy_version_hash }}:{{ software_parameter_dict['caddy_version'] }}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
@@ -514,7 +520,9 @@ global-ipv6 = ${slap-configuration:ipv6-random}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
-haproxy-version = {{ dumps(software_parameter_dict['haproxy_version']) }}
+haproxy-version = {{ software_parameter_dict['haproxy_version'] }}
+haproxy-version-hash = {{ backend_haproxy_version_hash }}
+node-uuid = {{ node_uuid }}
 
 [template-expose-csr-link-csr]
 recipe = plone.recipe.command
