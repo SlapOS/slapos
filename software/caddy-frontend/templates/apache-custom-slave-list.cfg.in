@@ -464,6 +464,7 @@ csr-certificate = ${expose-csr-certificate-get:certificate}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
 {%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
+node-uuid = {{ node_uuid }}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
