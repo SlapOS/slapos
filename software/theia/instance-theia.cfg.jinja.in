@@ -229,10 +229,9 @@ location =
   $${:cert-file}
 
 [frontend-instance-config]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
   :$${:port} {
     bind $${:ip}
     tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
@@ -268,7 +267,7 @@ port = $${frontend-instance-port:port}
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${frontend-instance-config:rendered} -pidfile $${:pidfile}
+  ${caddy:output} -conf $${frontend-instance-config:output} -pidfile $${:pidfile}
 
 ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
@@ -298,8 +297,8 @@ stop-on-error = true
 
 [frontend-instance-slapos.css]
 recipe = slapos.recipe.template:jinja2
-template = ${slapos.css.in:output}
-rendered = $${directory:frontend-static}/$${:folder-name}/slapos.css
+url = ${slapos.css.in:output}
+output = $${directory:frontend-static}/$${:folder-name}/slapos.css
 folder-name = css
 context =
   key logo_image frontend-instance-logo:filename
@@ -312,7 +311,7 @@ command-line =
   "kill -s USR1 $$(${coreutils:location}/bin/cat $${frontend-instance:pidfile}) \
     && ${coreutils:location}/bin/sleep infinity"
 hash-files =
-  $${frontend-instance-config:rendered}
+  $${frontend-instance-config:output}
   $${frontend-instance:wrapper-path}
 wait-for-files = $${frontend-instance:pidfile}
 
@@ -345,11 +344,9 @@ filename = $${:_buildout_section_name_}
 # ------------------
 
 [common-environment]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
   #!/bin/sh
   export HOME=$${directory:home}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
@@ -365,11 +362,10 @@ maximum = 3600
 ip = {{ ipv4_random }}
 
 [theia-service]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh
   {{ "{% raw %}" }}
   {% raw %}
   export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
@@ -378,15 +374,15 @@ template =
   {{ "{% endraw %}" }}
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
-  export THEIA_SHELL=$${theia-shell:rendered}
+  export THEIA_SHELL=$${theia-shell:output}
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
   export TERMINFO=${ncurses:location}/lib/terminfo/
-  export EDITOR="${theia-open:rendered} --wait"
+  export EDITOR="${theia-open:output} --wait"
   export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
-  . $${common-environment:rendered}
-  exec ${theia-wrapper:rendered} "$@"
+  . $${common-environment:output}
+  exec ${theia-wrapper:output} "$@"
 ip =  $${theia-service-port:ip}
 port = $${theia-service-port:port}
 base-url = http://$${:ip}:$${:port}/
@@ -394,10 +390,10 @@ base-url = http://$${:ip}:$${:port}/
 [theia-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
+command-line = $${theia-service:output}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
 hash-existing-files =
   ${yarn.lock:target}
-  ${theia-wrapper:rendered}
+  ${theia-wrapper:output}
 ip =  {{ ipv4_random }}
 hostname = $${:ip}
 port = $${theia-service:port}
@@ -405,11 +401,10 @@ base-url = $${theia-service:base-url}
 
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
   {% raw %}
-  inline:#!{{ bash }}
+  #!{{ bash }}
   SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if [ $# = 0 ]; then
@@ -421,14 +416,13 @@ template =
   {% endraw %}
 context =
   raw bash ${bash:location}/bin/bash
-  key activate slapos-standalone-activate:rendered
-  key bashrc theia-bashrc:rendered
+  key activate slapos-standalone-activate:output
+  key bashrc theia-bashrc:output
 
 [theia-bashrc]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
   # enable bash completion
   . ${bash-completion:location}/etc/profile.d/bash_completion.sh
   # source user's .bashrc
@@ -456,23 +450,22 @@ command =
 {%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
 {%-   endif %}
 [request-embedded-instance-script]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:project}/request_embedded.sh
-mode = 0700
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+output = $${directory:project}/request_embedded.sh
+inline =
+  #!/bin/sh
 
   slapos supply {{ embedded_sr }} slaprunner
 
   slapos request "embedded_instance" {{ embedded_sr }}
 {%-   if embedded_sr_type %} --type {{ embedded_sr_type }} {%- endif %}
-{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:rendered}
+{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:output}
 
 [embedded-instance-parameters]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:project}/$${:_buildout_section_name_}.json
-template =
-  inline:{{ embedded_instance_parameters | indent(2) }}
+recipe = slapos.recipe.template
+output = $${directory:project}/$${:_buildout_section_name_}.json
+inline =
+  {{ embedded_instance_parameters | indent(2) }}
 {%-   endif %}
 {%- endif %}
 
@@ -499,20 +492,19 @@ computer-id = slaprunner
 abstract-socket-path = $${directory:home}/standalone-{{ embedded_digest_hash[:16] }}
 
 [slapos-standalone-activate]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
   export PATH=${buildout:bin-directory}:$PATH
   export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
   echo 'Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` activated'
 
 [slapos-standalone-script]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-template =
-  inline:#!${python-for-standalone:executable}
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
+  #!${python-for-standalone:executable}
   import glob
   import json
   import os
@@ -583,13 +575,13 @@ template =
       print("Exception in compatibility layer, printing and moving on")
       traceback.print_exc()
     # Run request script
-    print("Running SlapOS script $${request-embedded-instance-script:rendered}")
+    print("Running SlapOS script $${request-embedded-instance-script:output}")
     slapos_env = {
       'PATH': os.path.dirname(standalone._slapos_bin),
       'SLAPOS_CONFIGURATION': standalone._slapos_config,
       'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config
     }
-    subprocess.call(("$${request-embedded-instance-script:rendered}",), env=slapos_env)
+    subprocess.call(("$${request-embedded-instance-script:output}",), env=slapos_env)
 {%- endif %}
     s = socket.socket(socket.AF_UNIX)
     s.bind("\0$${slapos-standalone-config:abstract-socket-path}")
@@ -603,24 +595,23 @@ template =
     print("Exiting")
 
 [slapos-standalone]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  inline:#!/bin/sh
-  . $${common-environment:rendered}
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  . $${common-environment:output}
   #XXX find out where the extra nodejs in theia's PATH comes from
   export PATH=${nodejs:location}/bin/:$PATH
-  . $${slapos-standalone-activate:rendered}
-  exec $${slapos-standalone-script:rendered}
+  . $${slapos-standalone-activate:output}
+  exec $${slapos-standalone-script:output}
 
 [slapos-standalone-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${slapos-standalone:rendered}
+command-line = $${slapos-standalone:output}
 hash-files =
-  $${slapos-standalone:rendered}
-  $${slapos-standalone-script:rendered}
+  $${slapos-standalone:output}
+  $${slapos-standalone-script:output}
 hostname = $${slapos-standalone-config:ipv4}
 port = $${slapos-standalone-config:port}
 
@@ -645,10 +636,9 @@ autorun = {{ parameter_dict['autorun'] }}
 # -----------------------------
 
 [tasks.json]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:dot-theia}/tasks.json
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:dot-theia}/tasks.json
+inline =
   {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
@@ -715,10 +705,9 @@ git-executable = ${git:location}/bin/git
 
 [settings.json]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:dot-theia}$${:_buildout_section_name_}
-once = $${:rendered}
-template =
-  inline:
+output = $${directory:dot-theia}$${:_buildout_section_name_}
+once = $${:output}
+inline =
   {
     "files.watcherExclude": {
       "**/.eggs/**": true,
@@ -737,11 +726,10 @@ target-directory = $${directory:project}
 link-binary = $${directory:runner}
 
 [request-script-template]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:project}/$${:_buildout_section_name_}.sh
-mode = 0700
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+output = $${directory:project}/$${:_buildout_section_name_}.sh
+inline =
+  #!/bin/sh
   # This template is generated automatically, copy it in order to supply and request.
   # Any manual change to this file may be lost.
   software_name=html5as-base #replace the software name writen in ~/srv/project/slapos/software/
