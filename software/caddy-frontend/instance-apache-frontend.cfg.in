@@ -37,6 +37,7 @@ parts =
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
+  frontend-node-uuid
 ## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
@@ -62,6 +63,19 @@ parts =
 
 [caddyprofiledeps]
 recipe = caddyprofiledeps
+
+[frontend-node-uuid]
+uuid-file = ${directory:var}/node-uuid.txt
+location = ${buildout:bin-directory}/${:_buildout_section_name_}
+recipe = slapos.recipe.build
+init =
+  import os
+  import uuid
+  if not os.path.exists(options['uuid-file']):
+    with open(options['uuid-file'], 'w') as fh:
+      fh.write(uuid.uuid4().hex)
+  with open(options['uuid-file'], 'r') as fh:
+    options['value'] = fh.read()
 
 # Create all needed directories
 [directory]
@@ -305,6 +319,7 @@ extra-context =
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
+    key node_uuid frontend-node-uuid:value
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
@@ -463,6 +478,7 @@ ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
 trafficserver-version = {{ software_parameter_dict['trafficserver_version'] }}
+node-uuid = ${frontend-node-uuid:value}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
