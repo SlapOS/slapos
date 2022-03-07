@@ -37,6 +37,7 @@ parts =
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
+  frontend-node-uuid
 ## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
@@ -62,6 +63,18 @@ parts =
 
 [caddyprofiledeps]
 recipe = caddyprofiledeps
+
+[frontend-node-uuid]
+uuid-file = ${directory:var}/node-uuid.txt
+recipe = slapos.recipe.build
+update = ${:install}
+install =
+  import os
+  import uuid
+  if os.path.exists(options['uuid-file']):
+    return
+  with open(options['uuid-file'], 'w') as fh:
+    fh.write(uuid.uuid4().encode())
 
 # Create all needed directories
 [directory]
