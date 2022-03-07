@@ -22,7 +22,7 @@ CONFIG proxy.config.http.response_server_enabled INT 0
 CONFIG proxy.config.http.insert_request_via_str INT 1
 CONFIG proxy.config.http.request_via_str STRING trafficserver-{{ ats_configuration['trafficserver-version'] }}
 CONFIG proxy.config.http.insert_response_via_str INT 1
-CONFIG proxy.config.http.response_via_str STRING ATS-RESPONSE
+CONFIG proxy.config.http.response_via_str STRING cache-{{ ats_configuration['node-uuid'] }}-{{ ats_configuration['trafficserver-version-hash'] }}
 
 # Implement RFC 5861 with core
 CONFIG proxy.config.http.cache.open_write_fail_action INT 2

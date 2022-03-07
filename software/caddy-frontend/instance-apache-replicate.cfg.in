@@ -286,7 +286,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url
+return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-uuid haproxy-version-hash trafficserver-version-hash caddy-version-hash
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
@@ -376,6 +376,10 @@ kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
+{{ frontend }}-node-uuid = {{ section_part }}:connection-node-uuid}
+{{ frontend }}-haproxy-version-hash = {{ section_part }}:connection-haproxy-version-hash}
+{{ frontend }}-trafficserver-version-hash = {{ section_part }}:connection-trafficserver-version-hash}
+{{ frontend }}-caddy-version-hash = {{ section_part }}:connection-caddy-version-hash}
 {% endfor %}
 {% if not aibcc_enabled %}
 {% for frontend in frontend_list %}
