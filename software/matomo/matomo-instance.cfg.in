@@ -1,10 +1,6 @@
 # parameters required by the configuration instance
 [instance-parameter]
 matomo = ${:document-root}
-trusted-domain-list = 
-  [${apache-php-configuration:ip}]:${apache-php-configuration:port}
-  ${slap-parameter:instance.trusted-domain-1}
-  ${slap-parameter:instance.trusted-domain-2}
 
 #php.ini parameters
 php.memory_limit = 512M
@@ -79,8 +75,6 @@ depends =
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
-instance.trusted-domain-1 =
-instance.trusted-domain-2 =
 
 
 
