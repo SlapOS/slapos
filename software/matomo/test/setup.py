@@ -27,27 +27,26 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.metabase'
+name = 'slapos.test.matomo'
 with open("README.md") as f:
   long_description = f.read()
 
-setup(name=name,
-      version=version,
-      description="Test for SlapOS' metabase",
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      maintainer="Nexedi",
-      maintainer_email="info@nexedi.com",
-      url="https://lab.nexedi.com/nexedi/slapos",
-      packages=find_packages(),
-      install_requires=[
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' matomo",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
         'slapos.core',
-        'slapos.cookbook',
         'slapos.libnetworkcache',
-        'supervisor',
-        'six',
-        'requests'
-        ],
-      zip_safe=True,
-      test_suite='test',
-    )
+        'erp5.util',
+        'requests',
+    ],
+    zip_safe=True,
+    test_suite='test',
+)
