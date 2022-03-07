@@ -1,0 +1,80 @@
+# parameters required by the configuration instance
+[instance-parameter]
+matomo = ${:document-root}
+
+#php.ini parameters
+php.memory_limit = 512M
+php.date.timezone = Europe/Paris
+php.upload_max_filesize = 10240M
+php.post_max_size = 10240M
+php.session.cookie_secure = True
+php.max_execution_time = 1800
+php.max_input_time = 3600
+php.output_buffering = 'Off'
+php.max_file_uploads = 100
+dir-temp = ${directory:tmp}
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
+
+[matomo-backup]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  touch ${directory:backup}/plugins_list
+  if [ -d ${directory:backup}/config ]; then     
+    rm -rf ${directory:backup}/config   
+  fi  
+
+  if [ -d ${directory:backup}/plugins ]; then     
+    rm -rf ${directory:backup}/plugins   
+  fi    
+
+  ${php-bin:wrapper-path} ${directory:www}/matomo/console plugin:list > ${directory:backup}/plugins_list
+  cp -rf ${directory:www}/matomo/config ${directory:backup}
+  cp -rf ${directory:www}/matomo/plugins ${directory:backup}
+  exit 0
+output = ${directory:bin}/matomo-backup
+mode = 777
+
+
+[matomo-backup-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-backup
+frequency = 0 0 * * *
+command = ${matomo-backup:output}
+
+[matomo-update-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-update
+frequency = 0 0 * * *
+command = ${matomo-update.sh:rendered}
+
+[matomo-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+template = {{ matomo_apache_httpd }}
+rendered = ${directory:apache.d}/matomo.conf
+context =
+  section parameter_dict apache-php-configuration
+
+[matomo-update.sh]
+recipe = slapos.recipe.template:jinja2
+template = {{ matomo_update_sh }}
+rendered = ${directory:scripts}/matomo-update
+context =
+  section parameter_dict instance-parameter
+  key dir_temp instance-parameter:dir-temp
+  key php_bin php-bin:wrapper-path
+depends =
+  ${matomo-apache-httpd:recipe}
+  ${matomo-backup-cron:recipe}
+  ${matomo-update-cron:recipe}
+
+[slap-parameter]
+instance.cli-url = ${apache-php-configuration:url}
+
+
+
