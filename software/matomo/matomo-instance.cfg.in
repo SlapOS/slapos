@@ -1,6 +1,7 @@
 # parameters required by the configuration instance
 [instance-parameter]
 matomo = ${:document-root}
+dir-backup = ${directory:backup}
 
 #php.ini parameters
 php.memory_limit = 512M
@@ -19,39 +20,13 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
 
-[matomo-backup]
-recipe = collective.recipe.template
-input = inline:#!/bin/bash
-  touch ${directory:backup}/plugins_list
-  if [ -d ${directory:backup}/config ]; then     
-    rm -rf ${directory:backup}/config   
-  fi  
-
-  if [ -d ${directory:backup}/plugins ]; then     
-    rm -rf ${directory:backup}/plugins   
-  fi    
-
-  ${php-bin:wrapper-path} ${directory:www}/matomo/console plugin:list > ${directory:backup}/plugins_list
-  cp -rf ${directory:www}/matomo/config ${directory:backup}
-  cp -rf ${directory:www}/matomo/plugins ${directory:backup}
-  exit 0
-output = ${directory:bin}/matomo-backup
-mode = 777
-
 
 [matomo-backup-cron]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = matomo-backup
 frequency = 0 0 * * *
-command = ${matomo-backup:output}
-
-[matomo-update-cron]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = matomo-update
-frequency = 0 0 * * *
-command = ${matomo-update.sh:rendered}
+command = ${matomo-backup.sh:rendered}
 
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -60,18 +35,17 @@ rendered = ${directory:apache.d}/matomo.conf
 context =
   section parameter_dict apache-php-configuration
 
-[matomo-update.sh]
+[matomo-backup.sh]
 recipe = slapos.recipe.template:jinja2
-template = {{ matomo_update_sh }}
-rendered = ${directory:scripts}/matomo-update
+template = {{ matomo_backup_sh }}
+rendered = ${directory:scripts}/matomo-backup
 context =
   section parameter_dict instance-parameter
-  key dir_temp instance-parameter:dir-temp
+  key dir_backup instance-parameter:dir-backup
   key php_bin php-bin:wrapper-path
 depends =
   ${matomo-apache-httpd:recipe}
   ${matomo-backup-cron:recipe}
-  ${matomo-update-cron:recipe}
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
