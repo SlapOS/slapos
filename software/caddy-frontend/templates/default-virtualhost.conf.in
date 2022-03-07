@@ -22,8 +22,8 @@
     try_duration 3s
     try_interval 250ms
     {#- Theoretically headers can be separated by commas or multuplied, which RFC? SOURCE? #}
-    header_upstream +Via "{proto} caddy-{{ slave_parameter['caddy-version'] }}"
-    header_downstream +Via "{proto} CADDY-RESPONSE"
+    header_upstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-uuid'] }}-{{ slave_parameter['caddy-version'] }}"
+    header_downstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-uuid'] }}-{{ slave_parameter['caddy-version-hash'] }}"
 {%- endmacro %} {# proxy_header #}
 
 {%- macro hsts_header(tls) %}

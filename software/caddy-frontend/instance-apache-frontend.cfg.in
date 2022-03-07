@@ -63,6 +63,38 @@ parts =
 [caddyprofiledeps]
 recipe = caddyprofiledeps
 
+[frontend-node-uuid]
+# Store uuid file in top of hierarchy, so it does not depend on directory creation
+uuid-file = ${buildout:directory}/.frontend-node-uuid.txt
+location = ${buildout:bin-directory}/${:_buildout_section_name_}
+recipe = slapos.recipe.build
+init =
+  import os
+  import uuid
+  if not os.path.exists(options['uuid-file']):
+    with open(options['uuid-file'], 'w') as fh:
+      fh.write(uuid.uuid4().hex)
+  with open(options['uuid-file'], 'r') as fh:
+    options['value'] = fh.read()
+
+[version-hash]
+recipe = slapos.recipe.build
+init =
+  import hashlib
+  options['value'] = hashlib.md5(options['version']).hexdigest()
+
+[trafficserver-version-hash]
+<= version-hash
+version = {{ software_parameter_dict['trafficserver_version'] }}
+
+[caddy-version-hash]
+<= version-hash
+version = {{ software_parameter_dict['caddy_version'] }}
+
+[backend-haproxy-version-hash]
+<= version-hash
+version = {{ software_parameter_dict['haproxy_version'] }}
+
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -305,6 +337,10 @@ extra-context =
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
+    key node_uuid frontend-node-uuid:value
+    key backend_haproxy_version_hash backend-haproxy-version-hash:value
+    key caddy_version_hash caddy-version-hash:value
+    key trafficserver_version_hash trafficserver-version-hash:value
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
@@ -463,6 +499,8 @@ ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
 trafficserver-version = {{ software_parameter_dict['trafficserver_version'] }}
+trafficserver-version-hash = ${trafficserver-version-hash:value}
+node-uuid = ${frontend-node-uuid:value}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
