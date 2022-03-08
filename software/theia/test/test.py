@@ -54,10 +54,53 @@ class TheiaTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'T' # for supervisord sockets in included slapos
 
   @classmethod
+  def _getPath(cls, *components):
+    return os.path.join(cls.computer_partition_root_path, *components)
+
+  @classmethod
   def _getSlapos(cls):
-    partition_root = cls.computer_partition_root_path
-    slapos = os.path.join(partition_root, 'srv', 'runner', 'bin', 'slapos')
-    return slapos
+    try:
+      return cls._theia_slapos
+    except AttributeError:
+      cls._theia_slapos = slapos = cls._getPath('srv', 'runner', 'bin', 'slapos')
+      return slapos
+
+  @classmethod
+  def callSlapos(cls, *command, **kwargs):
+    return subprocess.call((cls._getSlapos(),) + command, **kwargs)
+
+  @classmethod
+  def checkSlapos(cls, *command, **kwargs):
+    kwargs['universal_newlines'] = True
+    return subprocess.check_call((cls._getSlapos(),) + command, **kwargs)
+
+  @classmethod
+  def captureSlapos(cls, *command, **kwargs):
+    kwargs['universal_newlines'] = True
+    return subprocess.check_output((cls._getSlapos(),) + command, **kwargs)
+
+  @classmethod
+  def requestInstance(cls, parameter_dict=None, state='started'):
+    cls.slap.request(
+      software_release=cls.getSoftwareURL(),
+      software_type=cls.getInstanceSoftwareType(),
+      partition_reference=cls.default_partition_reference,
+      partition_parameter_kw=parameter_dict,
+      state=state
+    )
+
+  @classmethod
+  def restartService(cls, service):
+    with cls.slap.instance_supervisor_rpc as supervisor:
+      for process_info in supervisor.getAllProcessInfo():
+        service_name = process_info['name']
+        if service in service_name:
+          service_id = '%s:%s' % (process_info['group'], service_name)
+          supervisor.stopProcess(service_id)
+          supervisor.startProcess(service_id)
+          break
+      else:
+        raise Exception("Service %s not found" % service)
 
 
 class TestTheia(TheiaTestCase):
@@ -188,7 +231,7 @@ class TestTheia(TheiaTestCase):
       self.computer_partition_root_path,
       'srv',
       'project',
-      'request-script-template.sh',
+      'request-script-example.sh',
     )
     self.assertTrue(os.path.exists(script_path))
 
@@ -232,82 +275,70 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
     self.assertFalse(embedded_slapos_process.is_running())
 
 
-class ReRequestMixin(object):
-  def rerequest(self, parameter_dict=None, state='started'):
-    software_url = self.getSoftwareURL()
-    software_type = self.getInstanceSoftwareType()
-    name = self.default_partition_reference
-    self.slap.request(
-      software_release=software_url,
-      software_type=software_type,
-      partition_reference=name,
-      partition_parameter_kw=parameter_dict,
-      state=state)
+class TestTheiaWithEmbeddedInstance(TheiaTestCase):
+  sr_url = '~/bogus/sr/url.cfg'
+  sr_type = 'bogus-type'
+  sr_config = {"bogus": "yes"}
+  regexpr = re.compile(r"([\w/\-\.]+)\s+slaprunner\s+available")
 
-  def reinstantiate(self):
-    # Process at least twice to propagate parameter changes
-    try:
-      self.slap.waitForInstance()
-    except SlapOSNodeCommandError:
-      pass
-    self.slap.waitForInstance(self.instance_max_retry)
+  @classmethod
+  def getInstanceParameterDict(cls, sr_url=None, sr_type=None, sr_config=None):
+    return {
+      'one-time-embedded-instance': json.dumps({
+        'software-url': sr_url or cls.sr_url,
+        'software-type': sr_type or cls.sr_type,
+        'instance-parameters': sr_config or cls.sr_config,
+      }),
+    }
 
+  def expandUrl(self, url):
+    if url.startswith('~/'):
+      url = os.path.join(self.getPath(), url[2:])
+    return url
 
-class TestTheiaWithSR(TheiaTestCase, ReRequestMixin):
-  sr_url = '~/bogus/software.cfg'
-  sr_type = 'bogus_type'
-  instance_parameters = '{\n"bogus_param": "bogus_value",\n"bogus_param2": "bogus_value2"\n}'
+  def assertSupplied(self, sr_url, info=None):
+    info = info or self.captureSlapos('proxy', 'show', text=True)
+    self.assertIn(sr_url, info)
+    self.assertIn(sr_url, self.regexpr.findall(info))
 
-  def proxy_show(self, slapos):
-    return subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
+  def assertNotSupplied(self, sr_url, info=None):
+    info = info or self.captureSlapos('proxy', 'show', text=True)
+    self.assertNotIn(sr_url, info)
+
+  def assertEmbedded(self, sr_url, sr_type, config):
+    proxy_info = self.captureSlapos('proxy', 'show', text=True)
+    self.assertSupplied(sr_url, info=proxy_info)
+    name = 'embedded_instance'
+    self.assertIn(name, self.captureSlapos('service', 'list', text=True))
+    info = self.captureSlapos('service', 'info', name, text=True)
+    self.assertIn(sr_url, info)
+    self.assertIn(sr_type, proxy_info)
+    self.assertIn(repr(config).replace("u'", "'"), info)
+
+  def assertNotEmbedded(self, sr_url, sr_type, config):
+    sr_url = self.expandUrl(sr_url)
+    proxy_info = self.captureSlapos('proxy', 'show', text=True)
+    self.assertNotSupplied(sr_url, info=proxy_info)
+    self.assertNotIn(sr_type, proxy_info)
 
   def test(self):
-    slapos = self._getSlapos()
-    home = self.computer_partition_root_path
+    # Check that embedded instance is supplied and requested
+    initial_sr_url = self.expandUrl(self.sr_url)
+    self.assertEmbedded(initial_sr_url, self.sr_type, self.sr_config)
 
-    # Check that no request script was generated
-    request_script = os.path.join(home, 'srv', 'project', 'request_embedded.sh')
-    self.assertFalse(os.path.exists(request_script))
+    # Change parameters for embedded instance
+    sr_url = '/bogus/sr/url-2.cfg'
+    sr_type = 'bogus-type-2'
+    sr_config = {"bogus-2": "true"}
+    self.requestInstance(
+      self.getInstanceParameterDict(sr_url, sr_type, sr_config))
+    self.waitForInstance()
 
-    # Manually request old-name 'Embedded Instance'
-    old_instance_name = "Embedded Instance"
-    subprocess.check_call((slapos, 'request', old_instance_name, 'bogus_url'))
-    self.assertIn(old_instance_name, self.proxy_show(slapos))
+    # Check that parameters have not been taken into account
+    self.assertNotEmbedded(sr_url, sr_type, sr_config)
 
-    # Update Theia instance parameters
-    embedded_request_parameters = {
-      'embedded-sr': self.sr_url,
-      'embedded-sr-type': self.sr_type,
-      'embedded-instance-parameters': self.instance_parameters
-    }
-    self.rerequest(embedded_request_parameters)
-    self.reinstantiate()
-
-    # Check that embedded instance was requested
-    instance_name = "embedded_instance"
-    info = self.proxy_show(slapos)
-    try:
-      self.assertIn(instance_name, info)
-    except AssertionError:
-      for filename in os.listdir(home):
-        if 'standalone' in filename and '.log' in filename:
-          filepath = os.path.join(home, filename)
-          with open(filepath) as f:
-            print("Contents of filepath: " + filepath)
-            print(f.read())
-      raise
-
-    # Check that old-name instance was renamed
-    self.assertNotIn(old_instance_name, info)
-
-    # Check embedded instance parameters
-    bogus_sr = os.path.join(home, self.sr_url[2:])
-
-    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (bogus_sr,), info), info)
-    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (bogus_sr, self.sr_type, instance_name), info), info)
-
-    service_info = subprocess.check_output((slapos, 'service', 'info', instance_name), universal_newlines=True)
-    self.assertIn("{'bogus_param': 'bogus_value', 'bogus_param2': 'bogus_value2'}", service_info)
+    # Check that previous instance has not been changed
+    self.assertEmbedded(initial_sr_url, self.sr_type, self.sr_config)
 
 
 class TestTheiaFrontend(TheiaTestCase):
@@ -332,7 +363,9 @@ class TestTheiaEnv(TheiaTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'embedded-sr': cls.dummy_software_path,
+      'one-time-embedded-instance': json.dumps({
+        'software-url': cls.dummy_software_path,
+      }),
       'autorun': 'stopped',
     }
 
@@ -445,6 +478,11 @@ class ResilientTheiaMixin(object):
   def getInstanceSoftwareType(cls):
     return 'resilient'
 
+  def waitForinstance(self, *args, **kwargs):
+    # process twice to propagate to all instances
+    for _ in range(2):
+      super(ResilientTheiaMixin, self).waitForinstance(*args, **kwargs)
+
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
   @classmethod
@@ -454,9 +492,9 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
     cls.computer_partition_root_path = cls._getPartitionPath('export')
 
 
-class TestTheiaResilientWithSR(ResilientTheiaMixin, TestTheiaWithSR):
+class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   @classmethod
   def setUpClass(cls):
-    super(TestTheiaResilientWithSR, cls).setUpClass()
+    super(TestTheiaResilientWithEmbeddedInstance, cls).setUpClass()
     # Patch the computer root path to that of the export theia instance
     cls.computer_partition_root_path = cls._getPartitionPath('export')
