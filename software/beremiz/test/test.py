@@ -41,7 +41,7 @@ class TestBeremizInstance(SlapOSInstanceTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return 'test'
+    return 'default'
 
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
