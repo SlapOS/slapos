@@ -77,23 +77,21 @@ init =
   with open(options['uuid-file'], 'r') as fh:
     options['value'] = fh.read()
 
+[frontend-node-private-uuid]
+<= frontend-node-uuid
+# Private, not communicated, stable hash, which can be used to salt other
+# hashes, so their values are connected to the node, but practicaly impossible
+# to crack (until the node is hacked itself, but then those values are
+# stolen anyway)
+uuid-file = ${buildout:directory}/.frontend-node-private-uuid.txt
+
 [version-hash]
 recipe = slapos.recipe.build
+software-release-url = ${slap-connection:software-release-url}
+hash-salt = ${frontend-node-private-uuid:value}
 init =
   import hashlib
-  options['value'] = hashlib.md5(options['version']).hexdigest()
-
-[trafficserver-version-hash]
-<= version-hash
-version = {{ software_parameter_dict['trafficserver_version'] }}
-
-[caddy-version-hash]
-<= version-hash
-version = {{ software_parameter_dict['caddy_version'] }}
-
-[backend-haproxy-version-hash]
-<= version-hash
-version = {{ software_parameter_dict['haproxy_version'] }}
+  options['value'] = hashlib.md5(''.join([options['software-release-url'].strip(), options['hash-salt']])).hexdigest()
 
 # Create all needed directories
 [directory]
@@ -338,9 +336,8 @@ extra-context =
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key node_uuid frontend-node-uuid:value
-    key backend_haproxy_version_hash backend-haproxy-version-hash:value
-    key caddy_version_hash caddy-version-hash:value
-    key trafficserver_version_hash trafficserver-version-hash:value
+    key version_hash version-hash:value
+    key software_release_url version-hash:software-release-url
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
@@ -498,8 +495,7 @@ disk-cache-size = ${configuration:disk-cache-size}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
-trafficserver-version = {{ software_parameter_dict['trafficserver_version'] }}
-trafficserver-version-hash = ${trafficserver-version-hash:value}
+version-hash = ${version-hash:value}
 node-uuid = ${frontend-node-uuid:value}
 
 [trafficserver-configuration-directory]
