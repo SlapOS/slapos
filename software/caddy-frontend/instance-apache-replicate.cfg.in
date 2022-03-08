@@ -376,11 +376,8 @@ kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
-{{ frontend }}-node-uuid = {{ section_part }}:connection-node-uuid}
-{{ frontend }}-rapid-cdn-hash-version-mapping = {{ section_part }}:connection-rapid-cdn-hash-version-mapping}
-{% endfor %}
-{% if not aibcc_enabled %}
-{% for frontend in frontend_list %}
+{{ frontend }}-node-uuid = ${frontend-information:{{ frontend }}-node-uuid}
+{{ frontend }}-rapid-cdn-hash-version-mapping = ${frontend-information:{{ frontend }}-rapid-cdn-hash-version-mapping}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
 {% endfor %}
@@ -463,6 +460,13 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
+[frontend-information]
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-node-uuid = {{ section_part }}:connection-node-uuid}
+{{ frontend }}-rapid-cdn-hash-version-mapping = {{ section_part }}:connection-rapid-cdn-hash-version-mapping}
+{% endfor %}
+
 [dynamic-publish-slave-information]
 < = jinja2-template-base
 template = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
@@ -470,6 +474,7 @@ filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
+    section frontend_information frontend-information
     section rejected_slave_information rejected-slave-information
     section active_slave_instance_dict active-slave-instance
     section warning_slave_information warning-slave-information
