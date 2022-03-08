@@ -54,10 +54,53 @@ class TheiaTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'T' # for supervisord sockets in included slapos
 
   @classmethod
+  def _getPath(cls, *components):
+    return os.path.join(cls.computer_partition_root_path, *components)
+
+  @classmethod
   def _getSlapos(cls):
-    partition_root = cls.computer_partition_root_path
-    slapos = os.path.join(partition_root, 'srv', 'runner', 'bin', 'slapos')
-    return slapos
+    try:
+      return cls._theia_slapos
+    except AttributeError:
+      cls._theia_slapos = slapos = cls._getPath('srv', 'runner', 'bin', 'slapos')
+      return slapos
+
+  @classmethod
+  def callSlapos(cls, *command, **kwargs):
+    return subprocess.call((cls._getSlapos(),) + command, **kwargs)
+
+  @classmethod
+  def checkSlapos(cls, *command, **kwargs):
+    kwargs['universal_newlines'] = True
+    return subprocess.check_call((cls._getSlapos(),) + command, **kwargs)
+
+  @classmethod
+  def captureSlapos(cls, *command, **kwargs):
+    kwargs['universal_newlines'] = True
+    return subprocess.check_output((cls._getSlapos(),) + command, **kwargs)
+
+  @classmethod
+  def requestInstance(cls, parameter_dict=None, state='started'):
+    cls.slap.request(
+      software_release=cls.getSoftwareURL(),
+      software_type=cls.getInstanceSoftwareType(),
+      partition_reference=cls.default_partition_reference,
+      partition_parameter_kw=parameter_dict,
+      state=state
+    )
+
+  @classmethod
+  def restartService(cls, service):
+    with cls.slap.instance_supervisor_rpc as supervisor:
+      for process_info in supervisor.getAllProcessInfo():
+        service_name = process_info['name']
+        if service in service_name:
+          service_id = '%s:%s' % (process_info['group'], service_name)
+          supervisor.stopProcess(service_id)
+          supervisor.startProcess(service_id)
+          break
+      else:
+        raise Exception("Service %s not found" % service)
 
 
 class TestTheia(TheiaTestCase):
