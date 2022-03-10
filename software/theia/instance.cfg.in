@@ -31,6 +31,7 @@ pull-backup = template-pull-backup:rendered
 recipe = slapos.recipe.template:jinja2
 url = ${instance-theia:output}
 output = $${buildout:directory}/instance-theia.cfg
+extensions = jinja2.ext.do
 context =
   jsonkey default_parameter_dict :default-parameters
   key parameter_dict slap-configuration:configuration
@@ -38,14 +39,12 @@ context =
   key partition_root_path buildout:directory
   key ipv6_random slap-configuration:ipv6-random
   key ipv4_random slap-configuration:ipv4-random
-  import os_module os
-  import hashlib_module hashlib
+  import os os
+  import json json
 default-parameters =
   {
     "autorun": "running",
-    "embedded-sr": null,
-    "embedded-sr-type": null,
-    "embedded-instance-parameters": null,
+    "initial-embedded-instance": null,
     "frontend-name": "Theia Frontend",
     "frontend-sr": "$${:frontend-sr}",
     "frontend-sr-type": "RootSoftwareInstance",
