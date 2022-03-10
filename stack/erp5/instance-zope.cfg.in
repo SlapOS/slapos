@@ -417,7 +417,7 @@ config-maximum-delay = {{ slapparameter_dict["zope-longrequest-logger-maximum-de
 < = logrotate-entry-base
 name = {{ name }}
 log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
-post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
+copytruncate = true
 {% endmacro -%}
 
 {% for i in instance_index_list -%}
