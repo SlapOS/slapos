@@ -15,19 +15,9 @@
       ],
       "default": "running"
     },
-    "embedded-sr": {
-      "title": "Embedded Software URL",
-      "description": "Optional URL of a software to be embedded",
-      "type": "string"
-    },
-    "embedded-sr-type": {
-      "title": "Embedded Software Type",
-      "description": "Type of the optional embedded software",
-      "type": "string"
-    },
-    "embedded-instance-parameters": {
-      "title": "Embedded Instance Parameters",
-      "description": "Parameters for the embedded instance, as a JSON dict",
+    "one-time-embedded-instance": {
+      "title": "One-Time-Only Embedded Software Instance Pre-Configuration",
+      "description": "Optional JSON configuration for an embedded instance.",
       "type": "string"
     },
     "frontend-guid": {
