@@ -1,5 +1,7 @@
-{% set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
-{% set additional_frontend = parameter_dict['additional-frontend-guid'] %}
+{%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
+{%- set additional_frontend = parameter_dict['additional-frontend-guid'] %}
+{%- set embedded_sr_list = parameter_dict['embedded-sr-list'] %}
+{%- set embedded_instance_sr = parameter_dict['embedded-sr'] -%}
 
 [buildout]
 extends =
@@ -438,39 +440,114 @@ command =
   ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
 
+# Embedded SR List
+# ----------------
+
+[supply-embedded-sr-list]
+script = $${supply-embedded-sr-list-script:output}
+
+[supply-embedded-sr-list-script]
+output = $${directory:etc}/supply_embedded.sh
+
+{%- if embedded_sr_list %}
+
+{%- set parsed_embedded_sr_list = json.loads(embedded_sr_list) %}
+
+{%- set fixed_embedded_sr_list = [] %}
+{%- for sr_url in parsed_embedded_sr_list %}
+{%-   if sr_url %}
+{%-     if sr_url.startswith('~/') %}
+{%-       set sr_url = os.path.join(partition_root_path, sr_url[2:]) %}
+{%-       set sr_url = os.path.normpath(sr_url) %}
+{%-     endif %}
+{%-     do fixed_embedded_sr_list.append(sr_url) %}
+{%-   endif %}
+{%- endfor %}
+
+{%- set embedded_sr_list = fixed_embedded_sr_list %}
+
+[supply-embedded-sr-list]
+recipe = slapos.recipe.build
+socket-path = $${slapos-standalone-config:abstract-socket-path}
+update =
+  import socket
+  s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+  try:
+    s.connect("\0" + options['socket-path'])
+    s.sendall(b"s") # 's' for 'supply'
+  except socket.error:
+    pass
+  finally:
+    s.close()
+
+[supply-embedded-sr-list-script]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+{%-   for sr_url in embedded_sr_list %}
+  slapos supply {{ sr_url }} slaprunner
+{%-   endfor %}
+
+{%- endif %}
+
+
 # Embedded Instance
 # -----------------
 
-{%- set embedded_sr = parameter_dict['embedded-sr'] %}
-{%- set embedded_sr_type = parameter_dict['embedded-sr-type'] %}
-{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
-{%- if embedded_sr %}
-{%-   if embedded_sr.startswith('~/') %}
-{%-     set embedded_sr = os_module.path.join(partition_root_path, embedded_sr[2:]) %}
-{%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
+[request-embedded-instance]
+script = $${request-embedded-instance-script:output}
+
+[request-embedded-instance-script]
+output = $${directory:etc}/request_embedded.sh
+
+{%- if embedded_instance_sr %}
+
+{%-   if embedded_instance_sr.startswith('~/') %}
+{%-     set embedded_instance_sr = os.path.join(partition_root_path, embedded_instance_sr[2:]) %}
+{%-     set embedded_instance_sr = os.path.normpath(embedded_instance_sr) %}
 {%-   endif %}
+
+{%- set embedded_instance_type = parameter_dict['embedded-sr-type'] %}
+{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
+
+[request-embedded-instance]
+recipe = slapos.recipe.build
+depends = $${request-embedded-instance-script:recipe}
+socket-path = $${slapos-standalone-config:abstract-socket-path}
+update =
+  import socket
+  s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+  try:
+    s.connect("\0" + options['socket-path'])
+    s.sendall(b"r") # 'r' for 'request'
+  except socket.error:
+    pass
+  finally:
+    s.close()
+
 [request-embedded-instance-script]
 recipe = slapos.recipe.template
-output = $${directory:project}/request_embedded.sh
 inline =
   #!/bin/sh
+  slapos supply {{ embedded_instance_sr }} slaprunner
+  slapos request "embedded_instance" {{ embedded_instance_sr }}
+{%-   if embedded_instance_type %} --type {{ embedded_instance_type }} {%- endif %}
+{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:output} {%- endif %}
 
-  slapos supply {{ embedded_sr }} slaprunner
-
-  slapos request "embedded_instance" {{ embedded_sr }}
-{%-   if embedded_sr_type %} --type {{ embedded_sr_type }} {%- endif %}
-{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:output}
-
+{%-   if embedded_instance_parameters %}
 [embedded-instance-parameters]
-recipe = slapos.recipe.template
-output = $${directory:project}/$${:_buildout_section_name_}.json
+recipe = slapos.recipe.template:jinja2
+output = $${directory:etc}/$${:_buildout_section_name_}.json
+config = {{ dumps(embedded_instance_parameters) }}
+context =
+  key config :config
 inline =
-  {{ embedded_instance_parameters | indent(2) }}
+{%-     raw %}
+  {{ config }}
+{%-     endraw %}
 {%-   endif %}
-{%- endif %}
 
-{%- set embedded_digest = str(embedded_sr) + str(embedded_sr_type) + str(embedded_instance_parameters) %}
-{%- set embedded_digest_hash = hashlib_module.md5(embedded_digest.encode()).hexdigest() %}
+{%- endif %}
 
 
 # SlapOS Standalone
@@ -489,7 +566,7 @@ port = $${slapos-standalone-port:port}
 local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
-abstract-socket-path = $${directory:home}/standalone-{{ embedded_digest_hash[:16] }}
+abstract-socket-path = $${directory:home}/standalone-ready
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template
@@ -507,18 +584,17 @@ inline =
   #!${python-for-standalone:executable}
   import glob
   import json
+  import logging
   import os
   import signal
   import socket
   import subprocess
   import sys
   import time
-  import traceback
 
   import slapos.slap.standalone
 
-  # Include this hash, so that if it changes the standalone service will be restarted
-  # {{ embedded_digest_hash }}
+  logging.basicConfig(format="[%(asctime)s] %(message)s", level=logging.DEBUG)
 
   shared_parts = """{{ '''${buildout:shared-part-list}''' | indent(2) }}"""
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
@@ -548,51 +624,77 @@ inline =
   )
 
   def signal_handler(signum, frame):
-    print("Signal {signum} received".format(signum=signum))
+    logging.info("Signal %d received", signum)
     sys.exit()
   signal.signal(signal.SIGTERM, signal_handler)
 
   standalone.start()
   try:
     partition_count = 20
-    print("Standalone SlapOS: Formatting %d partitions" % partition_count)
+    logging.info("Standalone SlapOS: Formatting %d partitions" % partition_count)
     standalone.format(partition_count, '$${slapos-standalone-config:ipv4}', '$${slapos-standalone-config:ipv6}')
-    print("Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` started")
+    logging.info("Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` started")
     # Run instance at least once, to start the supervisor managing instances.
     try:
       standalone.waitForInstance(max_retry=0)
     except slapos.slap.standalone.SlapOSNodeCommandError as e:
-      print("Error instanciating: {}".format(e))
-{%- if embedded_sr %}
-    # Compatibility layer
+      logging.info("Error instanciating: {}".format(e))
+
+    # Compatibility layer to rename the embedded instance
     try:
       for cp in standalone.computer.getComputerPartitionList():
         if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
-          print("Renaming 'Embedded Instance' into 'embedded_instance'")
+          logging.info("Renaming 'Embedded Instance' into 'embedded_instance'")
           cp.rename(new_name="embedded_instance")
           break
     except Exception:
-      print("Exception in compatibility layer, printing and moving on")
-      traceback.print_exc()
-    # Run request script
-    print("Running SlapOS script $${request-embedded-instance-script:output}")
+      logging.info("Exception in compatibility layer ignored", exc_info=True)
+
+    # Prepare for calling slapos scripts
     slapos_env = {
       'PATH': os.path.dirname(standalone._slapos_bin),
       'SLAPOS_CONFIGURATION': standalone._slapos_config,
       'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config
     }
-    subprocess.call(("$${request-embedded-instance-script:output}",), env=slapos_env)
-{%- endif %}
+
+    def call(script):
+      subprocess.call((script,), env=slapos_env)
+
+    supply_script = "$${supply-embedded-sr-list:script}"
+    request_script = "$${request-embedded-instance:script}"
+
+    # Call supply script if it exists
+    if os.path.exists(supply_script):
+      call(supply_script)
+
+    # Call request script if it exists
+    if os.path.exists(request_script):
+      call(request_script)
+
     s = socket.socket(socket.AF_UNIX)
     s.bind("\0$${slapos-standalone-config:abstract-socket-path}")
     s.listen(5)
-    print("Standalone SlapOS ready")
+    logging.info("Standalone SlapOS ready")
+
     while True:
-      s.accept()[0].close()
+      conn = s.accept()[0]
+      try:
+        msg = conn.recv(1)
+        if msg == b"s":
+          # Call supply script when notified
+          call(supply_script)
+        elif msg == b"r":
+          # Call request script when notified
+          call(request_script)
+      except socket.error:
+        pass
+      finally:
+        conn.close()
+
   finally:
-    print("Stopping standalone subsystem")
+    logging.info("Stopping standalone subsystem")
     standalone.stop()
-    print("Exiting")
+    logging.info("Exiting")
 
 [slapos-standalone]
 recipe = slapos.recipe.template
