@@ -15,19 +15,24 @@
       ],
       "default": "running"
     },
+    "embedded-sr-list": {
+      "title": "Embedded Software URLs",
+      "description": "Optional URL list of softwares to be embedded, as a JSON list",
+      "type": "string"
+    },
     "embedded-sr": {
-      "title": "Embedded Software URL",
-      "description": "Optional URL of a software to be embedded",
+      "title": "Embedded Instance Software URL",
+      "description": "Optional software URL of an instance to be embedded",
       "type": "string"
     },
     "embedded-sr-type": {
-      "title": "Embedded Software Type",
-      "description": "Type of the optional embedded software",
+      "title": "Embedded Instance Software Type",
+      "description": "Type of the optional embedded instance",
       "type": "string"
     },
     "embedded-instance-parameters": {
       "title": "Embedded Instance Parameters",
-      "description": "Parameters for the embedded instance, as a JSON dict",
+      "description": "Parameters for the optional embedded instance, as a JSON dict",
       "type": "string"
     },
     "frontend-guid": {
