@@ -79,3 +79,4 @@ extra-context =
   raw xvfb_bin           {{ xserver_location }}/bin/Xvfb
   raw wmctrl_bin         {{ wmctrl_location }}/bin/wmctrl
   raw instance_nxdtest   {{ nxdtest_template }}
+  raw xdotool_bin        {{ xdotool_location }}/bin/xdotool

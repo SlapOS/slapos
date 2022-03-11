@@ -12,6 +12,14 @@ environment =
   XORG_LOCK_DIR=${xserver:lock-dir}
   DISPLAY=${xserver:display}
 
+[xdotool]
+recipe = slapos.cookbook:wrapper
+command-line = {{ xdotool_bin }}
+wrapper-path = ${directory:bin}/xdotool
+environment =
+  XORG_LOCK_DIR=${xserver:lock-dir}
+  DISPLAY=${xserver:display}
+
 [runTestSuite]
 env.sh  = ${beremiz-env.sh:rendered}
 workdir = {{ beremiz_location }}
@@ -40,6 +48,7 @@ extends =
 parts +=
   sikulix
   wmctrl
+  xdotool
   beremiz-tests
   runTestSuite
 
