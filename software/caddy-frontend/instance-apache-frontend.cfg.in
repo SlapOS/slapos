@@ -89,10 +89,10 @@ bbb-ssl-dir = ${:srv}/bbb-ssl
 
 frontend_cluster = ${:var}/frontend_cluster
 
-# csr_id publication
-csr_id = ${:srv}/csr_id
-certificate-csr_id = ${:etc}/certificate-csr_id
-expose-csr_id-var = ${:var}/expose-csr_id
+# CSR publication
+expose-csr = ${:srv}/expose-csr
+expose-csr-etc = ${:etc}/expose-csr
+expose-csr-var = ${:var}/expose-csr
 
 # slave introspection
 slave-introspection-var = ${:var}/slave-introspection
@@ -179,6 +179,7 @@ template-empty = {{ software_parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ software_parameter_dict['template_default_slave_virtualhost'] }}
 template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
 template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
+template-expose-csr-nginx-conf = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -295,11 +296,12 @@ extra-context =
     key master_key_download_url :master_key_download_url
     key autocert caddy-directory:autocert
     key caddy_log_directory caddy-directory:slave-log
-    key expose_csr_id_organization :organization
-    key expose_csr_id_organizational_unit :organizational-unit
+    key expose_csr_organization :organization
+    key expose_csr_organizational_unit :organizational-unit
     key global_ipv6 slap-configuration:ipv6-random
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
+    key template_expose_csr_nginx_conf software-release-path:template-expose-csr-nginx-conf
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 

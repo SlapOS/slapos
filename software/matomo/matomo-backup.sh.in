@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+set -x
+
+#checkout if directory and matomo resources exist
+
+if [ ! -d {{ parameter_dict['document-root'] }}/matomo/config ]; then
+  exit 1;
+fi
+
+if [ ! -f {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; then
+  exit 0;
+fi
+
+#create plugins backup file
+touch {{ parameter_dict['dir-backup'] }}/plugins_list
+
+#remove backup file before
+if [ -d {{ parameter_dict['dir-backup'] }}/config ]; then     
+  rm -rf {{ parameter_dict['dir-backup'] }}/config   
+fi  
+
+if [ -d {{ parameter_dict['dir-backup'] }}/plugins ]; then     
+  rm -rf {{ parameter_dict['dir-backup'] }}/plugins   
+fi    
+
+#backup
+{{ php_bin }} {{ parameter_dict['document-root'] }}/matomo/console plugin:list > {{ parameter_dict['dir-backup'] }}/plugins_list
+cp -rf {{ parameter_dict['document-root'] }}/matomo/config {{ parameter_dict['dir-backup'] }}
+cp -rf {{ parameter_dict['document-root'] }}/matomo/plugins {{ parameter_dict['dir-backup'] }}
+exit 0

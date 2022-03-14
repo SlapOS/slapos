@@ -29,11 +29,8 @@ key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 configuration.runtime_plc_url =
 configuration.runtime_plc_md5sum =
-# XXX: we can get rid of plc_name in future
-configuration.runtime_plc_name = 
 configuration.autostart = 1
 configuration.interface = 0.0.0.0
-# XXX: randomly generated one on slap's interface?
 configuration.port = 61248
 
 # Create all needed directories, depending on your needs
