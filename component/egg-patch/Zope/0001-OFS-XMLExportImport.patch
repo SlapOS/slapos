@@ -15,7 +15,6 @@ diff -Naur Zope-4.5.3/src/OFS/XMLExportImport.py Zope-4.5.3-Nexedi/OFS/XMLExport
 +#
 +##############################################################################
 +from base64 import encodestring
-+from cStringIO import StringIO
 +from ZODB.serialize import referencesf
 +from ZODB.ExportImport import TemporaryFile, export_end_marker
 +from ZODB.utils import p64
@@ -23,11 +22,12 @@ diff -Naur Zope-4.5.3/src/OFS/XMLExportImport.py Zope-4.5.3-Nexedi/OFS/XMLExport
 +from Shared.DC.xml import ppml
 +
 +
-+magic='<?xm' # importXML(jar, file, clue)}
++magic=b'<?xm' # importXML(jar, file, clue)}
 +
 +def XMLrecord(oid, len, p):
++    from io import BytesIO
 +    q=ppml.ToXMLUnpickler
-+    f=StringIO(p)
++    f=BytesIO(p)
 +    u=q(f)
 +    id=u64(oid)
 +    aka=encodestring(oid)[:-1]
@@ -166,8 +166,8 @@ diff -Naur Zope-4.5.3/src/Shared/DC/xml/ppml.py Zope-4.5.3-Nexedi/Shared/DC/xml/
 +import base64
 +import re
 +from marshal import loads as mloads
-+from xyap import NoBlanks
-+from xyap import xyap
++from .xyap import NoBlanks
++from .xyap import xyap
 +
 +binary = re.compile('[^\x1f-\x7f]').search
 +
@@ -434,11 +434,11 @@ diff -Naur Zope-4.5.3/src/Shared/DC/xml/ppml.py Zope-4.5.3-Nexedi/Shared/DC/xml/
 +        for q in "\"'":
 +            if rep.startswith(q):
 +                if not rep.endswith(q):
-+                    raise ValueError, 'insecure string pickle'
++                    raise ValueError('insecure string pickle')
 +                rep = rep[len(q):-len(q)]
 +                break
 +        else:
-+            raise ValueError, 'insecure string pickle'
++            raise ValueError('insecure string pickle')
 +        self.append(String(rep.decode('string-escape')))
 +    dispatch[STRING] = load_string
 +
@@ -571,7 +571,7 @@ diff -Naur Zope-4.5.3/src/Shared/DC/xml/ppml.py Zope-4.5.3-Nexedi/Shared/DC/xml/
 +    return ToXMLUnpickler(file).load()
 +
 +def ToXMLloads(str):
-+    from StringIO import StringIO
++    from io import StringIO
 +    file = StringIO(str)
 +    return ToXMLUnpickler(file).load()
 +
