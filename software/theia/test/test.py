@@ -54,7 +54,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'T' # for supervisord sockets in included slapos
 
   @classmethod
-  def _getPath(cls, *components):
+  def getPath(cls, *components):
     return os.path.join(cls.computer_partition_root_path, *components)
 
   @classmethod
@@ -62,7 +62,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
     try:
       return cls._theia_slapos
     except AttributeError:
-      cls._theia_slapos = slapos = cls._getPath('srv', 'runner', 'bin', 'slapos')
+      cls._theia_slapos = slapos = cls.getPath('srv', 'runner', 'bin', 'slapos')
       return slapos
 
   @classmethod
@@ -71,12 +71,11 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def checkSlapos(cls, *command, **kwargs):
-    kwargs['universal_newlines'] = True
     return subprocess.check_call((cls._getSlapos(),) + command, **kwargs)
 
   @classmethod
   def captureSlapos(cls, *command, **kwargs):
-    kwargs['universal_newlines'] = True
+    kwargs.setdefault('universal_newlines', kwargs.pop('text', None))
     return subprocess.check_output((cls._getSlapos(),) + command, **kwargs)
 
   @classmethod
@@ -148,7 +147,7 @@ class TestTheia(TheiaTestCase):
 
     # there's a public folder to serve file
     with open('{}/srv/frontend-static/public/test_file'.format(
-        self.computer_partition_root_path), 'w') as f:
+        self.getPath()), 'w') as f:
       f.write("hello")
     resp = self.get(urljoin(authenticated_url, '/public/'))
     self.assertIn('test_file', resp.text)
@@ -169,10 +168,9 @@ class TestTheia(TheiaTestCase):
       self.assertTrue(resp.raw)
 
   def test_theia_slapos(self):
+    home = self.getPath()
     # Make sure we can use the shell and the integrated slapos command
-    process = pexpect.spawnu(
-        '{}/bin/theia-shell'.format(self.computer_partition_root_path),
-        env={'HOME': self.computer_partition_root_path})
+    process = pexpect.spawnu(home + '/bin/theia-shell', env={'HOME': home})
 
     # use a large enough terminal so that slapos proxy show table fit in the screen
     process.setwinsize(5000, 5000)
@@ -214,10 +212,11 @@ class TestTheia(TheiaTestCase):
     process.wait()
 
   def test_theia_shell_execute_tasks(self):
+    home = self.getPath()
     # shell needs to understand -c "command" arguments for theia tasks feature
-    test_file = '{}/test file'.format(self.computer_partition_root_path)
+    test_file = home + '/test file'
     subprocess.check_call([
-        '{}/bin/theia-shell'.format(self.computer_partition_root_path),
+        home + '/bin/theia-shell',
         '-c',
         'touch "{}"'.format(test_file)
     ])
@@ -225,7 +224,7 @@ class TestTheia(TheiaTestCase):
 
   def test_theia_request_script(self):
     script_path = os.path.join(
-      self.computer_partition_root_path,
+      self.getPath(),
       'srv',
       'project',
       'request-script-template.sh',
@@ -233,18 +232,15 @@ class TestTheia(TheiaTestCase):
     self.assertTrue(os.path.exists(script_path))
 
   def test_slapos_cli(self):
-    slapos = self._getSlapos()
-    proxy_show_output = subprocess.check_output((slapos, 'proxy', 'show'))
-    self.assertIn(b'slaprunner', proxy_show_output)
-    computer_list_output = subprocess.check_output((slapos, 'computer', 'list'))
-    self.assertIn(b'slaprunner', computer_list_output)
+    self.assertIn(b'slaprunner', self.captureSlapos('proxy', 'show'))
+    self.assertIn(b'slaprunner', self.captureSlapos('computer', 'list'))
 
 
 class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
   def test_stopping_instance_stops_embedded_slapos(self):
     embedded_slapos_supervisord_socket = _getSupervisordSocketPath(
         os.path.join(
-            self.computer_partition_root_path,
+            self.getPath(),
             'srv',
             'runner',
             'instance',
@@ -283,9 +279,9 @@ class TestTheiaWithSRList(TheiaTestCase):
     }
 
   def assertSupplied(self, sr_list):
-    info = self.captureSlapos('proxy', 'show')
+    info = self.captureSlapos('proxy', 'show', text=True)
     matches = self.regexpr.findall(info)
-    home = self._getPath()
+    home = self.getPath()
     for sr_url in sr_list:
       if sr_url.startswith('~/'):
         sr_url = os.path.join(home, sr_url[2:])
@@ -325,22 +321,22 @@ class TestTheiaWithEmbeddedInstance(TheiaTestCase):
 
   def expandUrl(self, url):
     if url.startswith('~/'):
-      url = os.path.join(self._getPath(), url[2:])
+      url = os.path.join(self.getPath(), url[2:])
     return url
 
   def assertSupplied(self, sr_url, info=None):
     sr_url = self.expandUrl(sr_url)
-    info = info or self.captureSlapos('proxy', 'show')
+    info = info or self.captureSlapos('proxy', 'show', text=True)
     self.assertIn(sr_url, info)
     self.assertIn(sr_url, self.regexpr.findall(info))
 
   def assertEmbedded(self, sr_url, sr_type, config):
     sr_url = self.expandUrl(sr_url)
-    proxy_info = self.captureSlapos('proxy', 'show')
+    proxy_info = self.captureSlapos('proxy', 'show', text=True)
     self.assertSupplied(sr_url, info=proxy_info)
     name = 'embedded_instance'
-    self.assertIn(name, self.captureSlapos('service', 'list'))
-    info = self.captureSlapos('service', 'info', name)
+    self.assertIn(name, self.captureSlapos('service', 'list', text=True))
+    info = self.captureSlapos('service', 'info', name, text=True)
     self.assertIn(sr_url, info)
     self.assertIn(sr_type, proxy_info)
     self.assertIn(repr(config).replace("u'", "'"), info)
@@ -400,7 +396,7 @@ class TestTheiaEnv(TheiaTestCase):
     """Make sure environment variables are the same whether we use shell or supervisor services.
     """
     # The path of the env.json file expected to be generated by building the dummy software release
-    env_json_path = os.path.join(self.computer_partition_root_path, 'srv', 'runner', 'software', 'env.json')
+    env_json_path = self.getPath('srv', 'runner', 'software', 'env.json')
 
     # Get the pid of the theia process from the test node's instance-supervisord
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -418,7 +414,7 @@ class TestTheiaEnv(TheiaTestCase):
 
     # Start a theia shell that inherits the environment of the theia process
     # This simulates the environment of a shell launched from the browser application
-    theia_shell_process = pexpect.spawnu('{}/bin/theia-shell'.format(self.computer_partition_root_path), env=theia_env)
+    theia_shell_process = pexpect.spawnu('{}/bin/theia-shell'.format(self.getPath()), env=theia_env)
     try:
       theia_shell_process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
 
@@ -438,7 +434,7 @@ class TestTheiaEnv(TheiaTestCase):
       # Note that we have two services, slapos-node-software and slapos-node-software-all
       # The later uses --all which is what we want to use here, because the software
       # is already installed and we want to install it again, this time from supervisor
-      embedded_run_path = os.path.join(self.computer_partition_root_path, 'srv', 'runner', 'var', 'run')
+      embedded_run_path = self.getPath('srv', 'runner', 'var', 'run')
       embedded_supervisord_socket_path = _getSupervisordSocketPath(embedded_run_path, self.logger)
       with getSupervisorRPC(embedded_supervisord_socket_path) as embedded_supervisor:
         previous_stop_time = embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop']
@@ -471,6 +467,8 @@ class ResilientTheiaMixin(object):
   @classmethod
   def setUpClass(cls):
     super(ResilientTheiaMixin, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = cls.getPartitionPath('export')
     # Add resiliency files to snapshot patterns
     cls._save_instance_file_pattern_list += (
       '*/srv/export-exitcode-file',
@@ -480,56 +478,57 @@ class ResilientTheiaMixin(object):
     )
 
   @classmethod
-  def _getPartition(cls, software_type):
+  def getPartitionId(cls, instance_type):
     software_url = cls.getSoftwareURL()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
       partition_url = computer_partition.getSoftwareRelease()._software_release
       partition_type = computer_partition.getType()
-      if partition_url == software_url and partition_type == software_type:
-        return computer_partition
-    raise Exception("Theia %s partition not found" % software_type)
+      if partition_url == software_url and partition_type == instance_type:
+        return computer_partition.getId()
+    raise Exception("Theia %s partition not found" % instance_type)
 
   @classmethod
-  def _getPartitionId(cls, software_type):
-    return cls._getPartition(software_type).getId()
+  def getPartitionPath(cls, instance_type='export', *paths):
+    return os.path.join(cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
 
   @classmethod
-  def _getPartitionPath(cls, software_type, *paths):
-    return os.path.join(cls.slap._instance_root, cls._getPartitionId(software_type), *paths)
+  def _getSlapos(cls, instance_type='export'):
+    return cls.getPartitionPath(instance_type, 'srv', 'runner', 'bin', 'slapos')
 
   @classmethod
-  def _getSlapos(cls, software_type='export'):
-    return cls._getPartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
+  def callSlapos(cls, *command, **kwargs):
+    instance_type = kwargs.pop('instance_type', 'export')
+    return subprocess.call((cls._getSlapos(instance_type),) + command, **kwargs)
+
+  @classmethod
+  def checkSlapos(cls, *command, **kwargs):
+    instance_type = kwargs.pop('instance_type', 'export')
+    return subprocess.check_call((cls._getSlapos(instance_type),) + command, **kwargs)
+
+  @classmethod
+  def captureSlapos(cls, *command, **kwargs):
+    kwargs.setdefault('universal_newlines', kwargs.pop('text', None))
+    instance_type = kwargs.pop('instance_type', 'export')
+    return subprocess.check_output((cls._getSlapos(instance_type),) + command, **kwargs)
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'resilient'
 
-  def waitForinstance(self, *args, **kwargs):
+  @classmethod
+  def waitForInstance(cls):
     # process twice to propagate to all instances
     for _ in range(2):
-      super(ResilientTheiaMixin, self).waitForinstance(*args, **kwargs)
+      super(ResilientTheiaMixin, cls).waitForInstance()
 
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
-  @classmethod
-  def setUpClass(cls):
-    super(TestTheiaResilientInterface, cls).setUpClass()
-    # Patch the computer root path to that of the export theia instance
-    cls.computer_partition_root_path = cls._getPartitionPath('export')
+  pass
 
 
 class TestTheiaResilientWithSRList(ResilientTheiaMixin, TestTheiaWithSRList):
-  @classmethod
-  def setUpClass(cls):
-    super(TestTheiaResilientWithSRList, cls).setUpClass()
-    # Patch the computer root path to that of the export theia instance
-    cls.computer_partition_root_path = cls._getPartitionPath('export')
+  pass
 
 
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
-  @classmethod
-  def setUpClass(cls):
-    super(TestTheiaResilientWithEmbeddedInstance, cls).setUpClass()
-    # Patch the computer root path to that of the export theia instance
-    cls.computer_partition_root_path = cls._getPartitionPath('export')
+  pass
