@@ -286,7 +286,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-uuid rapid-cdn-hash-version-mapping
+return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-id rapid-cdn-hash-version-mapping
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
@@ -376,7 +376,7 @@ kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
-{{ frontend }}-node-uuid = ${frontend-information:{{ frontend }}-node-uuid}
+{{ frontend }}-node-id = ${frontend-information:{{ frontend }}-node-id}
 {{ frontend }}-rapid-cdn-hash-version-mapping = ${frontend-information:{{ frontend }}-rapid-cdn-hash-version-mapping}
 {% endfor %}
 {% if not aibcc_enabled %}
@@ -466,7 +466,7 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 [frontend-information]
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-node-uuid = {{ section_part }}:connection-node-uuid}
+{{ frontend }}-node-id = {{ section_part }}:connection-node-id}
 {{ frontend }}-rapid-cdn-hash-version-mapping = {{ section_part }}:connection-rapid-cdn-hash-version-mapping}
 {% endfor %}
 
