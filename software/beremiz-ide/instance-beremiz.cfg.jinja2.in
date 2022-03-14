@@ -84,22 +84,22 @@ storage-path = ${directory:etc}/.passwd
 bytes = 8
 
 [x11vnc-passwd]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 passfile = ${directory:vnc}/passwd
-template = inline:#!/bin/sh
+inline = #!/bin/sh
   if [ -s "${:passfile}" ]; then
     echo "Password initialized.";
   else
     chmod 700 $(dirname ${:passfile});
     {{ x11vnc_bin }} -storepasswd ${random-password:passwd} ${:passfile};
   fi
-rendered = ${directory:bin}/x11vnc_passwd
+output = ${directory:bin}/x11vnc_passwd
 mode = 700
 
 [generate-vnc-password]
 recipe = plone.recipe.command
 stop-on-error = true
-command = ${x11vnc-passwd:rendered}
+command = ${x11vnc-passwd:output}
 update-command = ${:command}
 
 # Generate a fonts.conf file.
@@ -143,7 +143,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ fluxbox_menu }}
 rendered = ${directory:fluxbox}/menu
 context =
-  key beremiz_bin      beremiz-x11:rendered
+  key beremiz_bin      beremiz-x11:output
   raw fluxbox_location {{ fluxbox_location }}
 
 [fluxbox-toolbar]
@@ -174,10 +174,8 @@ command-line = ${fluxbox-bin:wrapper-path} -log ${directory:log}/fluxbox.log
 wrapper-path = ${directory:services}/fluxbox
 
 [beremiz-env.sh]
-recipe = slapos.recipe.template:jinja2
-mode = 0640
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+inline = #!/bin/sh
   export LD_LIBRARY_PATH={{ mesa_location }}/lib
   export PATH=${directory:bin}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
   export XDG_DATA_DIR={{ gtk3_location }}/share
@@ -190,37 +188,17 @@ template =
   export LC_ALL=en_US.UTF-8
   export BEREMIZPYTHONPATH={{ python_bin }}
 
-rendered = ${directory:bin}/beremiz-env.sh
-
-[beremiz-wrapper-base]
-recipe = slapos.recipe.template:jinja2
-mode = 0700
-template =
-  inline:#!/bin/sh
-  . ${beremiz-env.sh:rendered}
-
-  # wait a bit for xserver
-  sleep 1
-  exec ${:command-line}
+output = ${directory:bin}/beremiz-env.sh
 
 [beremiz-x11]
-<= beremiz-wrapper-base
-command-line =
-  {{ python_bin }} {{ beremiz_location }}/Beremiz.py
-rendered = ${directory:bin}/beremiz-x11
-
-[beremiz-runtime]
-<= beremiz-wrapper-base
-ip = {{ ipv4 }}
-port = 3000
-auto-plc = 1
-wx-taskbar = 0
-twisted = 1
-webservice-port = 8009
-command-line =
-  {{ python_bin }} {{ beremiz_location }}/Beremiz_service.py
-  -p ${:port} -i ${:ip} -x ${:wx-taskbar} -a ${:auto-plc} -w ${:webservice-port} ${directory:workdir}
-rendered = ${directory:bin}/beremiz-runtime
+recipe = slapos.recipe.template
+mode = 0700
+inline = #!/bin/sh
+  . ${beremiz-env.sh:output}
+  # wait a bit for xserver
+  sleep 1
+  exec {{ python_bin }} {{ beremiz_location }}/Beremiz.py
+output = ${directory:bin}/beremiz-x11
 
 [request-vnc-frontend]
 <= slap-connection
@@ -254,7 +232,6 @@ parts =
   xserver-promise
   x11vnc-listen-promise
   beremiz-x11
-  beremiz-runtime
   websockify-sighandler-service
   request-vnc-frontend
   generate-vnc-password
