@@ -62,10 +62,9 @@ class ERP5Mixin(object):
   _test_software_url = erp5_software_release_url
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
 
-  def _getERP5ConnexionParameters(self, software_type='export'):
-    slapos = self._getSlapos(software_type)
-    out = subprocess.check_output(
-      (slapos, 'request', 'test_instance', self._test_software_url),
+  def _getERP5ConnexionParameters(self, instance_type='export'):
+    out = self.captureSlapos(
+      'request', 'test_instance', self._test_software_url,
       stderr=subprocess.STDOUT,
     )
     print(out)
@@ -110,10 +109,10 @@ class ERP5Mixin(object):
       raise Exception("Found several partitions for ERP5 %s" % servicename)
     return found.pop()
 
-  def _getERP5PartitionPath(self, software_type, servicename, *paths):
+  def _getERP5PartitionPath(self, instance_type, servicename, *paths):
     partition = self._getERP5Partition(servicename)
-    return self._getPartitionPath(
-      software_type, 'srv', 'runner', 'instance', partition, *paths)
+    return self.getPartitionPath(
+      instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
 
 class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
@@ -161,16 +160,15 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Update ERP5 parameters
     print('Requesting ERP5 with parameters %s' % params)
-    slapos = self._getSlapos()
-    subprocess.check_call((slapos, 'request', 'test_instance', self._test_software_url, '--parameters', params))
+    self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
 
     # Process twice to propagate parameter changes
     for _ in range(2):
-      subprocess.check_call((slapos, 'node', 'instance'))
+      self.checkSlapos('node', 'instance')
 
     # Restart cron (actually all) services to let them take the new date into account
     # XXX this should not be required, updating ERP5 parameters should be enough
-    subprocess.call((slapos, 'node', 'restart', 'all'))
+    self.callSlapos('node', 'restart', 'all')
 
     # Wait until after the programmed backup date, and a bit more
     t = (soon - datetime.now()).total_seconds()
@@ -213,9 +211,8 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     self.assertNotIn(self._erp5_new_title, out)
 
     # Stop all services
-    slapos = self._getSlapos()
     print("Stop all services")
-    subprocess.call((slapos, 'node', 'stop', 'all'))
+    self.callSlapos('node', 'stop', 'all')
 
     # Manually restore mariadb from backup
     mariadb_restore_script = os.path.join(mariadb_partition, 'bin', 'restore-from-backup')
