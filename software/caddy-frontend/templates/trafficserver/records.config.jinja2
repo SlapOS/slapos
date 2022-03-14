@@ -20,9 +20,9 @@ CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 CONFIG proxy.config.http.response_server_enabled INT 0
 # Handle Via header
 CONFIG proxy.config.http.insert_request_via_str INT 1
-CONFIG proxy.config.http.request_via_str STRING rapid-cdn-cache-{{ ats_configuration['node-uuid'] }}-{{ ats_configuration['version-hash'] }}
+CONFIG proxy.config.http.request_via_str STRING rapid-cdn-cache-{{ ats_configuration['node-id'] }}-{{ ats_configuration['version-hash'] }}
 CONFIG proxy.config.http.insert_response_via_str INT 1
-CONFIG proxy.config.http.response_via_str STRING rapid-cdn-cache-{{ ats_configuration['node-uuid'] }}-{{ ats_configuration['version-hash'] }}
+CONFIG proxy.config.http.response_via_str STRING rapid-cdn-cache-{{ ats_configuration['node-id'] }}-{{ ats_configuration['version-hash'] }}
 
 # Implement RFC 5861 with core
 CONFIG proxy.config.http.cache.open_write_fail_action INT 2

@@ -21,9 +21,8 @@
     # workaround for lost connection to haproxy by reconnecting
     try_duration 3s
     try_interval 250ms
-    {#- Theoretically headers can be separated by commas or multuplied, which RFC? SOURCE? #}
-    header_upstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-uuid'] }}-{{ slave_parameter['version-hash'] }}"
-    header_downstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-uuid'] }}-{{ slave_parameter['version-hash'] }}"
+    header_upstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-id'] }}-{{ slave_parameter['version-hash'] }}"
+    header_downstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-id'] }}-{{ slave_parameter['version-hash'] }}"
 {%- endmacro %} {# proxy_header #}
 
 {%- macro hsts_header(tls) %}
