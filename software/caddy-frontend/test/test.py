@@ -1317,21 +1317,27 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       ]
     )
 
-  def assertSlaveBase(self, reference):
+  def assertSlaveBase(
+    self, reference, expected_parameter_dict=None, hostname=None):
+    if expected_parameter_dict is None:
+      expected_parameter_dict = {}
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.current_generate_auth, self.current_upload_url = \
+        self.assertKedifaKeysWithPop(parameter_dict, '')
     self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-').lower()
+    if hostname is None:
+      hostname = reference.translate(None, '_-').lower()
+    expected_parameter_dict.update(**{
+      'domain': '%s.example.com' % (hostname,),
+      'replication_number': '1',
+      'url': 'http://%s.example.com' % (hostname, ),
+      'site_url': 'http://%s.example.com' % (hostname, ),
+      'secure_access': 'https://%s.example.com' % (hostname, ),
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    })
     self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
+      expected_parameter_dict,
       parameter_dict
     )
 
@@ -2173,27 +2179,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
 
   def test_url(self):
-    reference = 'Url'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-').lower()
-    self.assertEqual(
+    parameter_dict = self.assertSlaveBase(
+      'Url',
       {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
-      },
-      parameter_dict
+      }
     )
-
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -2424,25 +2417,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_compressed_result(self):
-    reference = 'Url'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-').lower()
-    self.assertEqual(
+    parameter_dict = self.assertSlaveBase(
+      'Url',
       {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
-      },
-      parameter_dict
+      }
     )
 
     result_compressed = fakeHTTPSResult(
@@ -2477,25 +2458,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('Content-Encoding' in result_not_compressed.headers)
 
   def test_no_content_type_alter(self):
-    reference = 'Url'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-').lower()
-    self.assertEqual(
+    parameter_dict = self.assertSlaveBase(
+      'Url',
       {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
-      },
-      parameter_dict
+      }
     )
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -2664,21 +2633,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_server_alias_wildcard(self):
-    parameter_dict = self.parseSlaveParameterDict('server-alias-wildcard')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'serveraliaswildcard.example.com',
-        'replication_number': '1',
-        'url': 'http://serveraliaswildcard.example.com',
-        'site_url': 'http://serveraliaswildcard.example.com',
-        'secure_access': 'https://serveraliaswildcard.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('server-alias-wildcard')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -2705,21 +2660,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_server_alias_duplicated(self):
-    parameter_dict = self.parseSlaveParameterDict('server-alias-duplicated')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'serveraliasduplicated.example.com',
-        'replication_number': '1',
-        'url': 'http://serveraliasduplicated.example.com',
-        'site_url': 'http://serveraliasduplicated.example.com',
-        'secure_access': 'https://serveraliasduplicated.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('server-alias-duplicated')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -2740,23 +2681,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_server_alias_custom_domain_duplicated(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'server-alias_custom_domain-duplicated')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'alias4.example.com',
-        'replication_number': '1',
-        'url': 'http://alias4.example.com',
-        'site_url': 'http://alias4.example.com',
-        'secure_access': 'https://alias4.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
+    parameter_dict = self.assertSlaveBase(
+      'server-alias_custom_domain-duplicated', hostname='alias4')
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
 
@@ -2772,27 +2698,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     raise NotImplementedError(self.id())
 
   def test_ssl_ca_crt(self):
-    parameter_dict = self.parseSlaveParameterDict(
+    parameter_dict = self.assertSlaveBase(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
-        'replication_number': '1',
-        'url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
-        'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
-        'secure_access':
-        'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
@@ -2801,7 +2712,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         self.ca.certificate_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
@@ -2825,32 +2736,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertEqual(data, out.read())
 
   def test_ssl_ca_crt_only(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_only')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'sslcacrtonly.example.com',
-        'replication_number': '1',
-        'url': 'http://sslcacrtonly.example.com',
-        'site_url': 'http://sslcacrtonly.example.com',
-        'secure_access':
-        'https://sslcacrtonly.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    self.assertSlaveBase('ssl_ca_crt_only')
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = self.ca.certificate_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
 
@@ -2858,26 +2754,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual('Key incorrect', upload.text)
 
   def test_ssl_ca_crt_garbage(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_garbage')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'sslcacrtgarbage.example.com',
-        'replication_number': '1',
-        'url': 'http://sslcacrtgarbage.example.com',
-        'site_url': 'http://sslcacrtgarbage.example.com',
-        'secure_access':
-        'https://sslcacrtgarbage.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('ssl_ca_crt_garbage')
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
@@ -2887,7 +2768,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     data = ca_certificate_pem + ca_key_pem + 'some garbage'
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
 
@@ -2913,32 +2794,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertEqual(data, out.read())
 
   def test_ssl_ca_crt_does_not_match(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'sslcacrtdoesnotmatch.example.com',
-        'replication_number': '1',
-        'url': 'http://sslcacrtdoesnotmatch.example.com',
-        'site_url': 'http://sslcacrtdoesnotmatch.example.com',
-        'secure_access':
-        'https://sslcacrtdoesnotmatch.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('ssl_ca_crt_does_not_match')
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = self.certificate_pem + self.key_pem + self.ca.certificate_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
 
@@ -2982,23 +2848,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
 
   def test_custom_domain(self):
-    reference = 'custom_domain'
-    hostname = 'mycustomdomain'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'custom_domain', hostname='mycustomdomain')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -3010,23 +2861,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_server_alias(self):
-    reference = 'custom_domain_server_alias'
-    hostname = 'mycustomdomainserveralias'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'custom_domain_server_alias', hostname='mycustomdomainserveralias')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -3048,21 +2884,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
   def test_custom_domain_wildcard(self):
-    parameter_dict = self.parseSlaveParameterDict('custom_domain_wildcard')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '*.customdomain.example.com',
-        'replication_number': '1',
-        'url': 'http://*.customdomain.example.com',
-        'site_url': 'http://*.customdomain.example.com',
-        'secure_access': 'https://*.customdomain.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    self.assertSlaveBase(
+      'custom_domain_wildcard', hostname='*.customdomain')
 
     result = fakeHTTPSResult(
       'wild.customdomain.example.com',
@@ -3075,34 +2898,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_ssl_crt_ssl_key(self):
-    reference = 'custom_domain_ssl_crt_ssl_key'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('custom_domain_ssl_crt_ssl_key')
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
     data = self.customdomain_certificate_pem + \
         self.customdomain_key_pem
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
@@ -3349,23 +3155,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_type_notebook(self):
-    reference = 'type-notebook'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('type-notebook')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3624,23 +3414,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_type_redirect_custom_domain(self):
-    reference = 'type-redirect-custom_domain'
-    hostname = 'customdomaintyperedirect'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-custom_domain', hostname='customdomaintyperedirect')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3661,25 +3436,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
-    parameter_dict = self.parseSlaveParameterDict(
+    parameter_dict = self.assertSlaveBase(
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified')
-
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'sslproxyverifysslproxycacrtunverified.example.com',
-        'replication_number': '1',
-        'url': 'http://sslproxyverifysslproxycacrtunverified.example.com',
-        'site_url':
-        'http://sslproxyverifysslproxycacrtunverified.example.com',
-        'secure_access':
-        'https://sslproxyverifysslproxycacrtunverified.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -3871,23 +3629,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_enable_cache_custom_domain(self):
-    reference = 'enable_cache_custom_domain'
-    hostname = 'customdomainenablecache'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'enable_cache_custom_domain',
+      hostname='customdomainenablecache')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4893,64 +4637,19 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_enable_http2_default(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2default.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2default.example.com',
-        'site_url': 'http://enablehttp2default.example.com',
-        'secure_access':
-        'https://enablehttp2default.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-default')
 
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_false(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2false.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2false.example.com',
-        'site_url': 'http://enablehttp2false.example.com',
-        'secure_access':
-        'https://enablehttp2false.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-false')
 
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_true(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2true.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2true.example.com',
-        'site_url': 'http://enablehttp2true.example.com',
-        'secure_access':
-        'https://enablehttp2true.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-true')
 
     self.assertTrue(
       isHTTP2(parameter_dict['domain']))
@@ -4986,64 +4685,19 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_enable_http2_default(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2default.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2default.example.com',
-        'site_url': 'http://enablehttp2default.example.com',
-        'secure_access':
-        'https://enablehttp2default.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-default')
 
     self.assertTrue(
       isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_false(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2false.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2false.example.com',
-        'site_url': 'http://enablehttp2false.example.com',
-        'secure_access':
-        'https://enablehttp2false.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-false')
 
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_true(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2true.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-        'replication_number': '1',
-        'url': 'http://enablehttp2true.example.com',
-        'site_url': 'http://enablehttp2true.example.com',
-        'secure_access':
-        'https://enablehttp2true.example.com',
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-true')
 
     self.assertTrue(
       isHTTP2(parameter_dict['domain']))
@@ -5054,6 +4708,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
   @classmethod
   def getInstanceParameterDict(cls):
     return {
+      'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -5075,21 +4730,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     return True
 
   def test_default(self):
-    parameter_dict = self.parseSlaveParameterDict('default')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'default.None',
-        'replication_number': '1',
-        'url': 'http://default.None',
-        'site_url': 'http://default.None',
-        'secure_access': 'https://default.None',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    self.assertSlaveBase('default')
 
     re6st_connectivity_promise_list = glob.glob(
       os.path.join(
@@ -5142,21 +4783,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     except Exception:
       pass
 
-    parameter_dict = self.parseSlaveParameterDict('default')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-        'domain': 'default.example.com',
-        'replication_number': '1',
-        'url': 'http://default.example.com',
-        'site_url': 'http://default.example.com',
-        'secure_access': 'https://default.example.com',
-      },
-      parameter_dict
-    )
+    self.assertSlaveBase('default')
 
     re6st_connectivity_promise_list = glob.glob(
       os.path.join(
@@ -5183,22 +4810,7 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
     return instance_parameter_dict
 
   def test_enable_http2_default(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2default.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2default.example.com',
-        'site_url': 'http://enablehttp2default.example.com',
-        'secure_access':
-        'https://enablehttp2default.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-default')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5233,22 +4845,7 @@ class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
     return instance_parameter_dict
 
   def test_enable_http2_true(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2true.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2true.example.com',
-        'site_url': 'http://enablehttp2true.example.com',
-        'secure_access':
-        'https://enablehttp2true.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-true')
 
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
@@ -5265,43 +4862,13 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
     return instance_parameter_dict
 
   def test_enable_http2_true(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2true.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2true.example.com',
-        'site_url': 'http://enablehttp2true.example.com',
-        'secure_access':
-        'https://enablehttp2true.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-true')
 
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_default(self):
-    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'enablehttp2default.example.com',
-        'replication_number': '1',
-        'url': 'http://enablehttp2default.example.com',
-        'site_url': 'http://enablehttp2default.example.com',
-        'secure_access':
-        'https://enablehttp2default.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('enable-http2-default')
 
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
@@ -5342,23 +4909,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     }
 
   def test_ssl_from_master_kedifa_overrides_master_certificate(self):
-    reference = 'ssl_from_master_kedifa_overrides_master_certificate'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'ssl_from_master_kedifa_overrides_master_certificate')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5608,22 +5160,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
   def test_ssl_from_master(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_from_master')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = 'ssl_from_master'.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('ssl_from_master')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5635,23 +5172,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_from_master_kedifa_overrides(self):
-    reference = 'ssl_from_master_kedifa_overrides'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('ssl_from_master_kedifa_overrides')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5667,14 +5188,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
@@ -5690,28 +5211,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_from_slave(self):
-    reference = 'ssl_from_slave'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    parameter_dict = self.assertSlaveBase(
+      'ssl_from_slave',
+      expected_parameter_dict={
         'warning-list': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
          ]
-      },
-      parameter_dict
-    )
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5723,28 +5230,12 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_from_slave_kedifa_overrides(self):
-    reference = 'ssl_from_slave_kedifa_overrides'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-        'warning-list': [
-          'ssl_crt is obsolete, please use key-upload-url',
-          'ssl_key is obsolete, please use key-upload-url',
-         ]
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'ssl_from_slave_kedifa_overrides',
+      expected_parameter_dict={
+        'warning-list': ['ssl_crt is obsolete, please use key-upload-url',
+                         'ssl_key is obsolete, please use key-upload-url']
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5760,14 +5251,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
@@ -5784,23 +5275,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_type_notebook_ssl_from_master(self):
-    reference = 'type-notebook-ssl_from_master'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('type-notebook-ssl_from_master')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
@@ -5813,23 +5288,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_type_notebook_ssl_from_master_kedifa_overrides(self):
-    reference = 'type-notebook-ssl_from_master_kedifa_overrides'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'type-notebook-ssl_from_master_kedifa_overrides')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
@@ -5846,14 +5306,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
@@ -5871,27 +5331,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_type_notebook_ssl_from_slave(self):
-    reference = 'type-notebook-ssl_from_slave'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    parameter_dict = self.assertSlaveBase(
+      'type-notebook-ssl_from_slave',
+      expected_parameter_dict={
         'warning-list': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
          ]
-      },
-      parameter_dict
-    )
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
@@ -5904,27 +5351,12 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_type_notebook_ssl_from_slave_kedifa_overrides(self):
-    reference = 'type-notebook-ssl_from_slave_kedifa_overrides'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-        'warning-list': [
-          'ssl_crt is obsolete, please use key-upload-url',
-          'ssl_key is obsolete, please use key-upload-url',
-         ]
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'type-notebook-ssl_from_slave_kedifa_overrides',
+      expected_parameter_dict={
+        'warning-list': ['ssl_crt is obsolete, please use key-upload-url',
+                         'ssl_key is obsolete, please use key-upload-url']
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
@@ -5941,14 +5373,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     # as now the place to put the key is known put the key there
     auth = requests.get(
-      generate_auth,
+      self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
     upload = requests.put(
-      upload_url + auth.text,
+      self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
@@ -5967,26 +5399,12 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
   @skip('Not implemented in new test system')
   def test_custom_domain_ssl_crt_ssl_key(self):
-    reference = 'custom_domain_ssl_crt_ssl_key'
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-
-    hostname = reference.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    parameter_dict = self.assertSlaveBase(
+      'custom_domain_ssl_crt_ssl_key',
+      expected_parameter_dict={
         'warning-list': ['ssl_key is obsolete, please use key-upload-url',
                          'ssl_crt is obsolete, please use key-upload-url']
-      },
-      parameter_dict
-    )
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -5998,28 +5416,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_ca_crt(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
-        'replication_number': '1',
-        'url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
-        'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
-        'secure_access':
-        'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    parameter_dict = self.assertSlaveBase(
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
+      expected_parameter_dict={
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url'
         ]
-      },
-      parameter_dict
-    )
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6088,26 +5493,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       )
 
   def test_ssl_ca_crt_garbage(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_garbage')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'sslcacrtgarbage.example.com',
-        'replication_number': '1',
-        'url': 'http://sslcacrtgarbage.example.com',
-        'site_url': 'http://sslcacrtgarbage.example.com',
-        'secure_access':
-        'https://sslcacrtgarbage.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    parameter_dict = self.assertSlaveBase(
+      'ssl_ca_crt_garbage',
+      expected_parameter_dict={
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url']
-      },
-      parameter_dict
-    )
+      })
 
     result = fakeHTTPSResult(
         parameter_dict['domain'], 'test-path')
@@ -6120,27 +5513,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_ca_crt_does_not_match(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'sslcacrtdoesnotmatch.example.com',
-        'replication_number': '1',
-        'url': 'http://sslcacrtdoesnotmatch.example.com',
-        'site_url': 'http://sslcacrtdoesnotmatch.example.com',
-        'secure_access':
-        'https://sslcacrtdoesnotmatch.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+    parameter_dict = self.assertSlaveBase(
+      'ssl_ca_crt_does_not_match',
+      expected_parameter_dict={
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url'
         ]
-      },
-      parameter_dict
-    )
+      })
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6230,22 +5611,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     )
 
   def test_apache_key_apache_certificate_update(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_from_master')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertNodeInformationWithPop(parameter_dict)
-    hostname = 'ssl_from_master'.translate(None, '_-')
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('ssl_from_master')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6736,21 +6102,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_server_alias_same(self):
-    parameter_dict = self.parseSlaveParameterDict('SERVER-ALIAS-SAME')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'serveraliassame.example.com',
-        'replication_number': '1',
-        'url': 'http://serveraliassame.example.com',
-        'site_url': 'http://serveraliassame.example.com',
-        'secure_access': 'https://serveraliassame.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase(
+      'SERVER-ALIAS-SAME')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6860,21 +6213,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_monitor_ipv4_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('MONITOR-IPV4-TEST-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'monitoripv4testunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://monitoripv4testunsafe.example.com',
-        'site_url': 'http://monitoripv4testunsafe.example.com',
-        'secure_access': 'https://monitoripv4testunsafe.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('MONITOR-IPV4-TEST-UNSAFE')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6905,21 +6244,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_monitor_ipv6_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('MONITOR-IPV6-TEST-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'monitoripv6testunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://monitoripv6testunsafe.example.com',
-        'site_url': 'http://monitoripv6testunsafe.example.com',
-        'secure_access': 'https://monitoripv6testunsafe.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    parameter_dict = self.assertSlaveBase('MONITOR-IPV6-TEST-UNSAFE')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6948,21 +6273,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_site_1(self):
-    parameter_dict = self.parseSlaveParameterDict('SITE_1')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'duplicate.example.com',
-        'replication_number': '1',
-        'url': 'http://duplicate.example.com',
-        'site_url': 'http://duplicate.example.com',
-        'secure_access': 'https://duplicate.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
+    self.assertSlaveBase('SITE_1', hostname='duplicate')
 
   def test_site_2(self):
     parameter_dict = self.parseSlaveParameterDict('SITE_2')
@@ -7078,38 +6389,10 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   def test(self):
-    parameter_dict_wildcard = self.parseSlaveParameterDict('wildcard')
-    self.assertLogAccessUrlWithPop(parameter_dict_wildcard)
-    self.assertKedifaKeysWithPop(parameter_dict_wildcard, '')
-    self.assertNodeInformationWithPop(parameter_dict_wildcard)
-    hostname = '*.alias1'
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict_wildcard
-    )
-    parameter_dict_specific = self.parseSlaveParameterDict('zspecific')
-    self.assertLogAccessUrlWithPop(parameter_dict_specific)
-    self.assertKedifaKeysWithPop(parameter_dict_specific, '')
-    self.assertNodeInformationWithPop(parameter_dict_specific)
-    hostname = 'zspecific.alias1'
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict_specific
-    )
+    self.assertSlaveBase(
+      'wildcard', hostname='*.alias1')
+    self.assertSlaveBase(
+      'zspecific', hostname='zspecific.alias1')
 
     result_wildcard = fakeHTTPSResult(
       'other.alias1.example.com',
