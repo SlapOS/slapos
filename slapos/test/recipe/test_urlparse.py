@@ -12,10 +12,10 @@ class UrlparseTest(unittest.TestCase):
   def test_options(self):
     buildout = self.buildout
     self.assertTrue(buildout['urlinfo'])
-    self.assertTrue(buildout['urlinfo']['path'])
-    self.assertTrue(buildout['urlinfo']['scheme'])
-    self.assertTrue(buildout['urlinfo']['host'])
-    self.assertTrue(buildout['urlinfo']['query'])
+    self.assertEqual(buildout['urlinfo']['path'], '/search')
+    self.assertEqual(buildout['urlinfo']['scheme'], 'http')
+    self.assertEqual(buildout['urlinfo']['host'], 'www.google.com')
+    self.assertEqual(buildout['urlinfo']['query'], 'hl=en&q=urlparse&btnG=Google+Search')
 
   def test_install(self):
     self.assertEqual(self.recipe.install(), [])
