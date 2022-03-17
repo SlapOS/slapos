@@ -1726,3 +1726,12 @@ class TestParameterCluster(TestParameterDefault):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
+
+
+@skipUnlessKvm
+class TestExternalDisk(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'ed'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
