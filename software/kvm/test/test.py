@@ -1735,3 +1735,48 @@ class TestExternalDisk(InstanceTestCase, KvmMixin):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'default'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'external-disk-amount': 2
+    }
+
+  @classmethod
+  def _prepareExternalStorageList(cls):
+    external_storage_path = os.path.join(cls.working_directory, 'STORAGE')
+    os.mkdir(external_storage_path)
+    for partition in os.listdir(cls.slap.instance_directory):
+      if not partition.startswith(cls.__partition_reference__):
+        continue
+      partition_store_list = []
+      for number in range(10):
+        storage = os.path.join(external_storage_path, 'data%s' % (number,))
+        if not os.path.exists(storage):
+          os.mkdir(storage)
+        partition_store = os.path.join(storage, partition)
+        os.mkdir(partition_store)
+        partition_store_list.append(partition_store)
+      with open(
+        os.path.join(
+          cls.slap.instance_directory, partition, '.slapos-resource'),
+        'w') as fh:
+        json.dump(
+          {'external_storage_list': partition_store_list}, fh, indent=2)
+
+  @classmethod
+  def _setUpClass(cls):
+    super(InstanceTestCase, cls)._setUpClass()
+    cls.working_directory = tempfile.mkdtemp()
+    # setup the external_storage_list, to mimic part of slapformat
+    cls._prepareExternalStorageList()
+    # re-run the instance, as information has been updated
+    cls.waitForInstance()
+
+  @classmethod
+  def _tearDownClass(cls):
+    super(InstanceTestCase, cls)._tearDownClass()
+    shutil.rmtree(cls.working_directory)
+
+  def test(self):
+    self.fail('NOTIMPLEMENTED')
