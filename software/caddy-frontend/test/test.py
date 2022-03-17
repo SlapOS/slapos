@@ -296,7 +296,7 @@ class TestDataMixin(object):
   def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
     if hash_value_dict is None:
       hash_value_dict = {}
-    filename = '%s-%s.txt' % (self.id(), 'CADDY')
+    filename = '%s-%s.txt' % (self.id().replace('zz_', ''), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
@@ -341,7 +341,9 @@ class TestDataMixin(object):
     runtime_data = '\n'.join(sorted(runtime_data))
     self.assertTestData(runtime_data)
 
-  def test_file_list_log(self):
+  # convince test to be run last; it's a hack, but log files shall be checked
+  # after all other tests had chance to execute
+  def zz_test_file_list_log(self):
     self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
