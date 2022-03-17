@@ -455,8 +455,8 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
     self.slap.waitForInstance(max_retry=10)
     # END: mock .slapos-resource with tap.ipv4_addr
 
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    cp = self.computer_partition
+    connection_parameter_dict = cp.getConnectionParameterDict()
 
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
@@ -887,13 +887,14 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.slap.waitForInstance(max_retry=10)
     super(InstanceTestCase, self).tearDown()
 
-  def getRunningImageList(self, kvm_instance_partition,
+  def getRunningImageList(
+      self, kvm_instance_partition,
       _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
       _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
-      ):
+    ):
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                       if 'kvm-' in q['name'])['pid']
+                     if 'kvm-' in q['name'])['pid']
     sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
                             % re.escape(self.slap.shared_directory)).sub
     image_list = []
@@ -902,10 +903,12 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
       if m:
         path = m.group(1)
         image_list.append(
-          _sub_iso(r'\1-${ver}\3',
-          sub_shared(r'${shared}/',
-          path.replace(kvm_instance_partition, '${inst}')
-        )))
+          _sub_iso(
+            r'\1-${ver}\3',
+            sub_shared(
+              r'${shared}/',
+              path.replace(kvm_instance_partition, '${inst}')
+            )))
     return image_list
 
   def test(self):
@@ -1039,6 +1042,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 @skipUnlessKvm
 class TestBootImageUrlListResilient(TestBootImageUrlList):
   kvm_instance_partition_reference = 'biul2'
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
@@ -1149,6 +1153,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 @skipUnlessKvm
 class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
   kvm_instance_partition_reference = 'bius2'
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
@@ -1264,6 +1269,7 @@ class TestNatRulesKvmCluster(InstanceTestCase):
   __partition_reference__ = 'nrkc'
 
   nat_rules = ["100", "200", "300"]
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
@@ -1340,6 +1346,7 @@ class TestWhitelistFirewall(InstanceTestCase):
 @skipUnlessKvm
 class TestWhitelistFirewallRequest(TestWhitelistFirewall):
   whitelist_domains = '2.2.2.2 3.3.3.3\n4.4.4.4'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -1655,7 +1662,7 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
   def _test(self, parameter_dict, expected):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
     self.slap.waitForInstance(max_retry=10)
-    
+
     kvm_raw = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
     self.assertEqual(len(kvm_raw), 1)
@@ -1704,6 +1711,7 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
 @skipUnlessKvm
 class TestParameterResilient(TestParameterDefault):
   __partition_reference__ = 'pr'
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
