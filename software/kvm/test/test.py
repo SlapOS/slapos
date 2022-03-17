@@ -1847,3 +1847,126 @@ class TestParameterCluster(TestParameterDefault):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
+
+
+@skipUnlessKvm
+class TestExternalDisk(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'ed'
+  kvm_instance_partition_reference = 'ed0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'external-disk-number': 2,
+      'external-disk-size': 1
+    }
+
+  @classmethod
+  def _prepareExternalStorageList(cls):
+    external_storage_path = os.path.join(cls.working_directory, 'STORAGE')
+    os.mkdir(external_storage_path)
+    # reuse .slapos-resource infomration of the containing partition
+    # it's similar to slapos/recipe/slapconfiguration.py
+    _resource_home = cls.slap.instance_directory
+    parent_slapos_resource = None
+    while not os.path.exists(os.path.join(_resource_home, '.slapos-resource')):
+      _resource_home = os.path.normpath(os.path.join(_resource_home, '..'))
+      if _resource_home == "/":
+        break
+    else:
+      with open(os.path.join(_resource_home, '.slapos-resource')) as fh:
+        parent_slapos_resource = json.load(fh)
+    assert parent_slapos_resource is not None
+
+    for partition in os.listdir(cls.slap.instance_directory):
+      if not partition.startswith(cls.__partition_reference__):
+        continue
+      partition_store_list = []
+      for number in range(10):
+        storage = os.path.join(external_storage_path, 'data%s' % (number,))
+        if not os.path.exists(storage):
+          os.mkdir(storage)
+        partition_store = os.path.join(storage, partition)
+        os.mkdir(partition_store)
+        partition_store_list.append(partition_store)
+      slapos_resource = parent_slapos_resource.copy()
+      slapos_resource['external_storage_list'] = partition_store_list
+      with open(
+        os.path.join(
+          cls.slap.instance_directory, partition, '.slapos-resource'),
+        'w') as fh:
+        json.dump(slapos_resource, fh, indent=2)
+    # above is not enough: the presence of parameter is required in slapos.cfg
+    with open(cls.slap._slapos_config) as fh:
+      slapos_config = fh.read()
+    slapos_config += '\n' + """
+[slapos]
+instance_storage_home = %s
+""" % (external_storage_path,)
+    with open(cls.slap._slapos_config, 'w') as fh:
+      fh.write(slapos_config)
+
+  @classmethod
+  def _setUpClass(cls):
+    super(TestExternalDisk, cls)._setUpClass()
+    cls.working_directory = tempfile.mkdtemp()
+    # setup the external_storage_list, to mimic part of slapformat
+    cls._prepareExternalStorageList()
+    # re-run the instance, as information has been updated
+    cls.waitForInstance()
+
+  @classmethod
+  def tearDownClass(cls):
+    super(TestExternalDisk, cls).tearDownClass()
+    shutil.rmtree(cls.working_directory)
+
+  def getRunningDriveList(
+      self, kvm_instance_partition,
+      _match_drive=re.compile('file=(.+),if=virtio$').match
+    ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    dirve_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_drive(entry)
+      if m:
+        path = m.group(1)
+        dirve_list.append(
+          path.replace(kvm_instance_partition, '${partition}')
+        )
+    return dirve_list
+
+  def test(self):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    drive_list = self.getRunningDriveList(kvm_instance_partition)
+
+    self.assertEqual(
+      1 + 2,  # 1 the default drive, 2 additional ones
+      len(drive_list))
+
+    # restart the VM
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstance()
+    self.requestDefaultInstance(state='started')
+    self.waitForInstance()
+    restarted_drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(drive_list, restarted_drive_list)
+    # prove that even on resetting parameters, drives are still there
+    self.rerequestInstance({}, state='stopped')
+    self.waitForInstance()
+    self.rerequestInstance({})
+    self.waitForInstance()
+    dropped_drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(drive_list, dropped_drive_list)
+
+
+@skipUnlessKvm
+class TestExternalDiskJson(
+  KvmMixinJson, TestExternalDisk):
+  pass
