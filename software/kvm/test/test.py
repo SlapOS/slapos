@@ -120,6 +120,10 @@ bootstrap_machine_param_dict = {
 
 
 class KvmMixin(object):
+  def getConnectionParameterDictJson(self):
+    return json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+
   def getProcessInfo(self):
     hash_value = generateHashFromFiles([
       os.path.join(self.computer_partition_root_path, hash_file)
@@ -162,13 +166,25 @@ class KvmMixin(object):
         state=state)
 
 
+class KvmMixinJson(object):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps(super(KvmMixinJson, cls).getInstanceParameterDict())}
+
+  def rerequestInstance(self, parameter_dict, *args, **kwargs):
+    return super(KvmMixinJson, self).rerequestInstance(
+      parameter_dict={'_': json.dumps(parameter_dict)},
+      *args, **kwargs
+    )
+
+
 @skipUnlessKvm
 class TestInstance(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'i'
 
   def test(self):
-    connection_parameter_dict = self\
-      .computer_partition.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     present_key_list = []
     assert_key_list = [
      'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
@@ -309,7 +325,12 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
     )
 
 
-class MonitorAccessMixin(object):
+@skipUnlessKvm
+class TestMemoryManagementJson(KvmMixinJson, TestMemoryManagement):
+  pass
+
+
+class MonitorAccessMixin(KvmMixin):
   def sqlite3_connect(self):
     sqlitedb_file = os.path.join(
       os.path.abspath(
@@ -336,8 +357,7 @@ class MonitorAccessMixin(object):
       db.close()
 
   def test_access_monitor(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     monitor_setup_url = connection_parameter_dict['monitor-setup-url']
     monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
 
@@ -350,8 +370,8 @@ class MonitorAccessMixin(object):
       connection_xml = partition_information.get('connection_xml')
       if not connection_xml:
         continue
-      connection_dict = slapos.util.xml2dict(
-        connection_xml if six.PY3 else connection_xml.encode('utf-8'))
+      connection_dict = json.loads(slapos.util.xml2dict(
+        connection_xml if six.PY3 else connection_xml.encode('utf-8'))['_'])
       monitor_base_url = connection_dict.get('monitor-base-url')
       if not monitor_base_url:
         continue
@@ -378,8 +398,7 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
   expected_partition_with_monitor_base_url_count = 1
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -387,6 +406,11 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
     self.assertNotIn('url-additional', connection_parameter_dict)
+
+
+@skipUnlessKvm
+class TestAccessDefaultJson(KvmMixinJson, TestAccessDefault):
+  pass
 
 
 @skipUnlessKvm
@@ -401,8 +425,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
     }
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
 
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
@@ -421,6 +444,12 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
 
 
 @skipUnlessKvm
+class TestAccessDefaultAdditionalJson(
+  KvmMixinJson, TestAccessDefaultAdditional):
+  pass
+
+
+@skipUnlessKvm
 class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'adb'
   expected_partition_with_monitor_base_url_count = 1
@@ -433,8 +462,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
       bootstrap_common_param_dict, **bootstrap_machine_param_dict))}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
 
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
@@ -470,8 +498,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
     })}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -504,8 +531,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     })}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -551,8 +577,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
     }))}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(
       connection_parameter_dict['test-machine1-url'], verify=False)
     self.assertEqual(
@@ -678,12 +703,24 @@ ir3:sshd-on-watch RUNNING""",
 
 
 @skipUnlessKvm
+class TestInstanceResilientJson(
+  KvmMixinJson, TestInstanceResilient):
+  pass
+
+
+@skipUnlessKvm
 class TestInstanceResilientDiskTypeIde(InstanceTestCase, KvmMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'disk-type': 'ide'
     }
+
+
+@skipUnlessKvm
+class TestInstanceResilientDiskTypeIdeJson(
+  KvmMixinJson, TestInstanceResilientDiskTypeIde):
+  pass
 
 
 @skipUnlessKvm
@@ -721,6 +758,12 @@ class TestAccessResilientAdditional(InstanceTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
 
 
+@skipUnlessKvm
+class TestAccessResilientAdditionalJson(
+  KvmMixinJson, TestAccessResilientAdditional):
+  pass
+
+
 class TestInstanceNbdServer(InstanceTestCase):
   __partition_reference__ = 'ins'
   instance_max_retry = 5
@@ -747,6 +790,12 @@ class TestInstanceNbdServer(InstanceTestCase):
     )
     self.assertIn('<title>Upload new File</title>', result.text)
     self.assertIn("WARNING", connection_parameter_dict['status_message'])
+
+
+@skipUnlessKvm
+class TestInstanceNbdServerJson(
+  KvmMixinJson, TestInstanceNbdServer):
+  pass
 
 
 class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -1028,12 +1077,24 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
 
 @skipUnlessKvm
+class TestBootImageUrlListJson(
+  KvmMixinJson, TestBootImageUrlList):
+  pass
+
+
+@skipUnlessKvm
 class TestBootImageUrlListResilient(TestBootImageUrlList):
   kvm_instance_partition_reference = 'biul2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestBootImageUrlListResilientJson(
+  KvmMixinJson, TestBootImageUrlListResilient):
+  pass
 
 
 @skipUnlessKvm
@@ -1139,12 +1200,24 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
 
 @skipUnlessKvm
+class TestBootImageUrlSelectJson(
+  KvmMixinJson, TestBootImageUrlSelect):
+  pass
+
+
+@skipUnlessKvm
 class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
   kvm_instance_partition_reference = 'bius2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestBootImageUrlSelectResilientJson(
+  KvmMixinJson, TestBootImageUrlSelectResilient):
+  pass
 
 
 @skipUnlessKvm
@@ -1236,8 +1309,7 @@ class TestNatRules(InstanceTestCase):
     }
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
 
     self.assertIn('nat-rule-port-tcp-100', connection_parameter_dict)
     self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
@@ -1250,6 +1322,12 @@ class TestNatRules(InstanceTestCase):
       '%s : 10200' % (self._ipv6_address,),
       connection_parameter_dict['nat-rule-port-tcp-200']
     )
+
+
+@skipUnlessKvm
+class TestNatRulesJson(
+  KvmMixinJson, TestNatRules):
+  pass
 
 
 @skipUnlessKvm
@@ -1332,6 +1410,12 @@ class TestWhitelistFirewall(InstanceTestCase):
 
 
 @skipUnlessKvm
+class TestWhitelistFirewallJson(
+  KvmMixinJson, TestWhitelistFirewall):
+  pass
+
+
+@skipUnlessKvm
 class TestWhitelistFirewallRequest(TestWhitelistFirewall):
   whitelist_domains = '2.2.2.2 3.3.3.3\n4.4.4.4'
 
@@ -1349,6 +1433,12 @@ class TestWhitelistFirewallRequest(TestWhitelistFirewall):
 
 
 @skipUnlessKvm
+class TestWhitelistFirewallRequestJson(
+  KvmMixinJson, TestWhitelistFirewallRequest):
+  pass
+
+
+@skipUnlessKvm
 class TestWhitelistFirewallResilient(TestWhitelistFirewall):
   kvm_instance_partition_reference = 'wf2'
 
@@ -1358,12 +1448,24 @@ class TestWhitelistFirewallResilient(TestWhitelistFirewall):
 
 
 @skipUnlessKvm
+class TestWhitelistFirewallResilientJson(
+  KvmMixinJson, TestWhitelistFirewallResilient):
+  pass
+
+
+@skipUnlessKvm
 class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
   kvm_instance_partition_reference = 'wf2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequestResilientJson(
+  KvmMixinJson, TestWhitelistFirewallRequestResilient):
+  pass
 
 
 @skipUnlessKvm
@@ -1432,6 +1534,12 @@ dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
 dd if=/dev/zero of=/dev/virt1 bs=4096 count=500k"""
       )
     self.assertTrue(os.access(slapos_wipe_device_disk, os.X_OK))
+
+
+@skipUnlessKvm
+class TestDiskDevicePathWipeDiskOndestroyJson(
+  KvmMixinJson, TestDiskDevicePathWipeDiskOndestroy):
+  pass
 
 
 @skipUnlessKvm
@@ -1697,12 +1805,24 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
 
 
 @skipUnlessKvm
+class TestParameterDefaultJson(
+  KvmMixinJson, TestParameterDefault):
+  pass
+
+
+@skipUnlessKvm
 class TestParameterResilient(TestParameterDefault):
   __partition_reference__ = 'pr'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestParameterResilientJson(
+  KvmMixinJson, TestParameterResilient):
+  pass
 
 
 @skipUnlessKvm
