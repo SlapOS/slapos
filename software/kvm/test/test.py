@@ -162,6 +162,19 @@ class KvmMixin(object):
         state=state)
 
 
+class KvmMixinJson(object):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps(super(KvmMixinJson, cls).getInstanceParameterDict())}
+
+  def rerequestInstance(self, parameter_dict, *args, **kwargs):
+    return super(KvmMixinJson, self).rerequestInstance(
+      parameter_dict={'_': json.dumps(parameter_dict)},
+      *args, **kwargs
+    )
+
+
 @skipUnlessKvm
 class TestInstance(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'i'
@@ -309,6 +322,11 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
     )
 
 
+@skipUnlessKvm
+class TestMemoryManagementJson(KvmMixinJson, TestMemoryManagement):
+  pass
+
+
 class MonitorAccessMixin(object):
   def sqlite3_connect(self):
     sqlitedb_file = os.path.join(
@@ -418,6 +436,12 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
+
+
+@skipUnlessKvm
+class TestAccessDefaultAdditionalJson(
+  KvmMixinJson, TestAccessDefaultAdditional):
+  pass
 
 
 @skipUnlessKvm
@@ -671,12 +695,24 @@ ir3:sshd-on-watch RUNNING""",
 
 
 @skipUnlessKvm
+class TestInstanceResilientJson(
+  KvmMixinJson, TestInstanceResilient):
+  pass
+
+
+@skipUnlessKvm
 class TestInstanceResilientDiskTypeIde(InstanceTestCase, KvmMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'disk-type': 'ide'
     }
+
+
+@skipUnlessKvm
+class TestInstanceResilientDiskTypeIdeJson(
+  KvmMixinJson, TestInstanceResilientDiskTypeIde):
+  pass
 
 
 @skipUnlessKvm
@@ -714,6 +750,12 @@ class TestAccessResilientAdditional(InstanceTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
 
 
+@skipUnlessKvm
+class TestAccessResilientAdditionalJson(
+  KvmMixinJson, TestAccessResilientAdditional):
+  pass
+
+
 class TestInstanceNbdServer(InstanceTestCase):
   __partition_reference__ = 'ins'
   instance_max_retry = 5
@@ -740,6 +782,12 @@ class TestInstanceNbdServer(InstanceTestCase):
     )
     self.assertIn('<title>Upload new File</title>', result.text)
     self.assertIn("WARNING", connection_parameter_dict['status_message'])
+
+
+@skipUnlessKvm
+class TestInstanceNbdServerJson(
+  KvmMixinJson, TestInstanceNbdServer):
+  pass
 
 
 class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -1021,12 +1069,24 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
 
 @skipUnlessKvm
+class TestBootImageUrlListJson(
+  KvmMixinJson, TestBootImageUrlList):
+  pass
+
+
+@skipUnlessKvm
 class TestBootImageUrlListResilient(TestBootImageUrlList):
   kvm_instance_partition_reference = 'biul2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestBootImageUrlListResilientJson(
+  KvmMixinJson, TestBootImageUrlListResilient):
+  pass
 
 
 @skipUnlessKvm
@@ -1132,12 +1192,24 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
 
 @skipUnlessKvm
+class TestBootImageUrlSelectJson(
+  KvmMixinJson, TestBootImageUrlSelect):
+  pass
+
+
+@skipUnlessKvm
 class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
   kvm_instance_partition_reference = 'bius2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestBootImageUrlSelectResilientJson(
+  KvmMixinJson, TestBootImageUrlSelectResilient):
+  pass
 
 
 @skipUnlessKvm
@@ -1246,6 +1318,12 @@ class TestNatRules(InstanceTestCase):
 
 
 @skipUnlessKvm
+class TestNatRulesJson(
+  KvmMixinJson, TestNatRules):
+  pass
+
+
+@skipUnlessKvm
 class TestNatRulesKvmCluster(InstanceTestCase):
   __partition_reference__ = 'nrkc'
 
@@ -1325,6 +1403,12 @@ class TestWhitelistFirewall(InstanceTestCase):
 
 
 @skipUnlessKvm
+class TestWhitelistFirewallJson(
+  KvmMixinJson, TestWhitelistFirewall):
+  pass
+
+
+@skipUnlessKvm
 class TestWhitelistFirewallRequest(TestWhitelistFirewall):
   whitelist_domains = '2.2.2.2 3.3.3.3\n4.4.4.4'
 
@@ -1342,6 +1426,12 @@ class TestWhitelistFirewallRequest(TestWhitelistFirewall):
 
 
 @skipUnlessKvm
+class TestWhitelistFirewallRequestJson(
+  KvmMixinJson, TestWhitelistFirewallRequest):
+  pass
+
+
+@skipUnlessKvm
 class TestWhitelistFirewallResilient(TestWhitelistFirewall):
   kvm_instance_partition_reference = 'wf2'
 
@@ -1351,12 +1441,24 @@ class TestWhitelistFirewallResilient(TestWhitelistFirewall):
 
 
 @skipUnlessKvm
+class TestWhitelistFirewallResilientJson(
+  KvmMixinJson, TestWhitelistFirewallResilient):
+  pass
+
+
+@skipUnlessKvm
 class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
   kvm_instance_partition_reference = 'wf2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequestResilientJson(
+  KvmMixinJson, TestWhitelistFirewallRequestResilient):
+  pass
 
 
 @skipUnlessKvm
@@ -1425,6 +1527,12 @@ dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
 dd if=/dev/zero of=/dev/virt1 bs=4096 count=500k"""
       )
     self.assertTrue(os.access(slapos_wipe_device_disk, os.X_OK))
+
+
+@skipUnlessKvm
+class TestDiskDevicePathWipeDiskOndestroyJson(
+  KvmMixinJson, TestDiskDevicePathWipeDiskOndestroy):
+  pass
 
 
 @skipUnlessKvm
@@ -1690,12 +1798,24 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
 
 
 @skipUnlessKvm
+class TestParameterDefaultJson(
+  KvmMixinJson, TestParameterDefault):
+  pass
+
+
+@skipUnlessKvm
 class TestParameterResilient(TestParameterDefault):
   __partition_reference__ = 'pr'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestParameterResilientJson(
+  KvmMixinJson, TestParameterResilient):
+  pass
 
 
 @skipUnlessKvm
