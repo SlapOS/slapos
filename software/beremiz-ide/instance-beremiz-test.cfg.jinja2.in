@@ -39,6 +39,21 @@ wrapper-path = ${directory:bin}/sikulix
 environment =
   JAVA_TOOL_OPTIONS=-Duser.home=${buildout:directory} -Djava.io.tmpdir=${directory:tmp}
 
+[libopencv_java430.so]
+recipe = plone.recipe.command
+opencv-link = ${buildout:directory}/.Sikulix/SikulixLibs/libopencv_java430.so
+command =
+  if [ ! -L "${:opencv-link}" ]; then
+    # We run sikulix with a random not existing projet so it will initialise all files
+    # and extract libopencv_java430.so from jar. We can then replace it with slapos
+    # compiled lib which solves GLIBC issues (version `GLIBC_2.27' not found).
+    ${sikulix:wrapper-path} -r not_found_for_slapos.sikulix > /dev/null 2>&1 || true
+    rm -f ${:opencv-link}
+    ln -sf {{ opencv_location }}/lib/libopencv_java430.so ${:opencv-link}
+  fi
+update-command = ${:command}
+stop-on-error = true
+
 [buildout]
 extends =
   {{ instance_nxdtest }}
@@ -50,6 +65,7 @@ parts +=
   xdotool
   beremiz-tests
   runTestSuite
+  libopencv_java430.so
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
