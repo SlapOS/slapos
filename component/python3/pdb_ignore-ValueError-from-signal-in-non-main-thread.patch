@@ -1,0 +1,88 @@
+From df5702a647587b07c89ac6405dece5e91f4f2a33 Mon Sep 17 00:00:00 2001
+From: "Miss Islington (bot)"
+ <31488909+miss-islington@users.noreply.github.com>
+Date: Mon, 9 Sep 2019 04:25:21 -0700
+Subject: [PATCH] bpo-36250: ignore ValueError from signal in non-main thread
+ (GH-12251)
+
+Authored-By: blueyed <github@thequod.de>
+(cherry picked from commit 8d64bfafdffd9f866bb6ac2e5b4c4bdfcb16aea0)
+
+Co-authored-by: Daniel Hahler <github@thequod.de>
+---
+ Lib/pdb.py                                    |  8 +++--
+ Lib/test/test_pdb.py                          | 29 +++++++++++++++++++
+ .../2019-03-09-16-04-12.bpo-36250.tSK4N1.rst  |  2 ++
+ 3 files changed, 37 insertions(+), 2 deletions(-)
+ create mode 100644 Misc/NEWS.d/next/Library/2019-03-09-16-04-12.bpo-36250.tSK4N1.rst
+
+diff --git a/Lib/pdb.py b/Lib/pdb.py
+index 806bc6741f..6d76f4e7f4 100755
+--- a/Lib/pdb.py
++++ b/Lib/pdb.py
+@@ -339,8 +339,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
+     def interaction(self, frame, traceback):
+         # Restore the previous signal handler at the Pdb prompt.
+         if Pdb._previous_sigint_handler:
+-            signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
+-            Pdb._previous_sigint_handler = None
++            try:
++                signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
++            except ValueError:  # ValueError: signal only works in main thread
++                pass
++            else:
++                Pdb._previous_sigint_handler = None
+         if self.setup(frame, traceback):
+             # no interaction desired at this time (happens if .pdbrc contains
+             # a command like "continue")
+diff --git a/Lib/test/test_pdb.py b/Lib/test/test_pdb.py
+index 63909e21f2..8eb084c0c7 100644
+--- a/Lib/test/test_pdb.py
++++ b/Lib/test/test_pdb.py
+@@ -1306,6 +1306,35 @@ class PdbTestCase(unittest.TestCase):
+         self.assertNotIn('Error', stdout.decode(),
+                          "Got an error running test script under PDB")
+ 
++    def test_issue36250(self):
++
++        with open(support.TESTFN, 'wb') as f:
++            f.write(textwrap.dedent("""
++                import threading
++                import pdb
++
++                evt = threading.Event()
++
++                def start_pdb():
++                    evt.wait()
++                    pdb.Pdb(readrc=False).set_trace()
++
++                t = threading.Thread(target=start_pdb)
++                t.start()
++                pdb.Pdb(readrc=False).set_trace()
++                evt.set()
++                t.join()""").encode('ascii'))
++        cmd = [sys.executable, '-u', support.TESTFN]
++        proc = subprocess.Popen(cmd,
++            stdout=subprocess.PIPE,
++            stdin=subprocess.PIPE,
++            stderr=subprocess.STDOUT,
++            )
++        self.addCleanup(proc.stdout.close)
++        stdout, stderr = proc.communicate(b'cont\ncont\n')
++        self.assertNotIn('Error', stdout.decode(),
++                         "Got an error running test script under PDB")
++
+     def test_issue16180(self):
+         # A syntax error in the debuggee.
+         script = "def f: pass\n"
+diff --git a/Misc/NEWS.d/next/Library/2019-03-09-16-04-12.bpo-36250.tSK4N1.rst b/Misc/NEWS.d/next/Library/2019-03-09-16-04-12.bpo-36250.tSK4N1.rst
+new file mode 100644
+index 0000000000..8d9fbcbb1c
+--- /dev/null
++++ b/Misc/NEWS.d/next/Library/2019-03-09-16-04-12.bpo-36250.tSK4N1.rst
+@@ -0,0 +1,2 @@
++Ignore ``ValueError`` from ``signal`` with ``interaction`` in non-main
++thread.
+-- 
+2.35.1
+
