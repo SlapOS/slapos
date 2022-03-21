@@ -38,8 +38,7 @@ fi
 
 #if all things go well, change the name of folder with date now
 if [ -d {{ parameter_dict['dir-backup'] }}/temp ]; then
-  mv -f {{ parameter_dict['dir-backup'] }}/temp {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y`
+  mv -f {{ parameter_dict['dir-backup'] }}/temp {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y-%T`
 fi
 
 exit 0
-
