@@ -420,6 +420,20 @@
               "title": "Index of a disk",
               "description": "An index value used to order disks for the VM",
               "type": "integer"
+            },
+            "format": {
+              "title": "Format of a disk image",
+              "description": "Format of a disk image, can be left empty for autodetection.",
+              "type": "string",
+              "enum": [
+                "qcow2",
+                "rdb",
+                "raw",
+                "vdi",
+                "vmdk",
+                "cloop",
+                "qed"
+              ]
             }
           }
         }
