@@ -1848,8 +1848,27 @@ class TestParameterCluster(TestParameterDefault):
     return 'kvm-cluster'
 
 
+class ExternalDiskMixin(KvmMixin):
+  def getRunningDriveList(
+      self, kvm_instance_partition,
+      _match_drive=re.compile('file=(.+),if=virtio$').match
+    ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    dirve_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_drive(entry)
+      if m:
+        path = m.group(1)
+        dirve_list.append(
+          path.replace(kvm_instance_partition, '${partition}')
+        )
+    return dirve_list
+
+
 @skipUnlessKvm
-class TestExternalDisk(InstanceTestCase, KvmMixin):
+class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
   __partition_reference__ = 'ed'
   kvm_instance_partition_reference = 'ed0'
 
@@ -1923,23 +1942,6 @@ instance_storage_home = %s
     super(InstanceTestCase, cls).tearDownClass()
     shutil.rmtree(cls.working_directory)
 
-  def getRunningDriveList(
-      self, kvm_instance_partition,
-      _match_drive=re.compile('file=(.+),if=virtio$').match
-    ):
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
-    dirve_list = []
-    for entry in psutil.Process(kvm_pid).cmdline():
-      m = _match_drive(entry)
-      if m:
-        path = m.group(1)
-        dirve_list.append(
-          path.replace(kvm_instance_partition, '${partition}')
-        )
-    return dirve_list
-
   def test(self):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
@@ -1965,3 +1967,60 @@ instance_storage_home = %s
 class TestExternalDiskJson(
   KvmMixinJson, TestExternalDisk):
   pass
+
+
+@skipUnlessKvm
+class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
+  __partition_reference__ = 'edm'
+  kvm_instance_partition_reference = 'edm0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def setUpClass(cls):
+    super(InstanceTestCase, cls).setUpClass()
+
+  def test(self):
+    self.working_directory = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, self.working_directory)
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.first_disk = os.path.join(self.working_directory, 'first_disk')
+    subprocess.check_call([
+      "qemu-img", "create", "-f", "qcow2", self.first_disk, "1M"])
+    second_disk = 'second_disk'
+    self.second_disk = os.path.join(kvm_instance_partition, second_disk)
+    subprocess.check_call([
+      "qemu-img", "create", "-f", "qcow2", os.path.join(
+        kvm_instance_partition, self.second_disk), "1M"])
+    self.third_disk = os.path.join(self.working_directory, 'third_disk')
+    subprocess.check_call([
+      "qemu-img", "create", "-f", "qcow2", self.third_disk, "1M"])
+    self.rerequestInstance({'_': json.dumps({
+      "external-disk": {
+          "second disk": {
+              "path": second_disk,
+              "index": 2
+          },
+          "third disk": {
+              "path": self.third_disk,
+              "index": 3
+          },
+          "first disk": {
+              "path": self.first_disk,
+              "index": 1
+          },
+      }
+    })})
+    self.waitForInstance()
+    drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(
+      drive_list,
+      [
+        '%s/first_disk' % (self.working_directory,),
+        '${partition}/second_disk',
+        '%s/third_disk' % (self.working_directory,)
+      ]
+    )
