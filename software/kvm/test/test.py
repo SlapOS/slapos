@@ -1868,8 +1868,25 @@ class TestParameterCluster(TestParameterDefault):
     return 'kvm-cluster'
 
 
+class ExternalDiskMixin(KvmMixin):
+  def getRunningDriveList(self, kvm_instance_partition):
+    _match_drive = re.compile('file.*if=virtio.*').match
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    drive_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_drive(entry)
+      if m:
+        path = m.group(0)
+        drive_list.append(
+          path.replace(kvm_instance_partition, '${partition}')
+        )
+    return drive_list
+
+
 @skipUnlessKvm
-class TestExternalDisk(InstanceTestCase, KvmMixin):
+class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
   __partition_reference__ = 'ed'
   kvm_instance_partition_reference = 'ed0'
 
@@ -1958,21 +1975,6 @@ class TestExternalDisk(InstanceTestCase, KvmMixin):
     super(TestExternalDisk, cls).tearDownClass()
     shutil.rmtree(cls.working_directory)
 
-  def getRunningDriveList(self, kvm_instance_partition):
-    _match_drive = re.compile('file=(.+),if=virtio').match
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
-    dirve_list = []
-    for entry in psutil.Process(kvm_pid).cmdline():
-      m = _match_drive(entry)
-      if m:
-        path = m.group(1)
-        dirve_list.append(
-          path.replace(kvm_instance_partition, '${partition}')
-        )
-    return dirve_list
-
   def test(self):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
@@ -2005,3 +2007,191 @@ class TestExternalDisk(InstanceTestCase, KvmMixin):
 class TestExternalDiskJson(
   KvmMixinJson, TestExternalDisk):
   pass
+
+
+@skipUnlessKvm
+class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
+  __partition_reference__ = 'edm'
+  kvm_instance_partition_reference = 'edm0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestExternalDiskModern, cls).setUpClass()
+
+  def getExternalDiskInstanceParameterDict(
+    self, first, second, third, update_dict=None):
+    parameter_dict = {
+      "external-disk": {
+          "second disk": {
+              "path": second,
+              "index": 2,
+          },
+          "third disk": {
+              "path": third,
+              "index": 3,
+              "cache": "none"
+          },
+          "first disk": {
+              "path": first,
+              "index": 1,
+              "format": "qcow"
+          },
+      }
+    }
+    if update_dict is not None:
+      parameter_dict.update(update_dict)
+    return parameter_dict
+
+  def test(self):
+    # Disks can't be created in /tmp, as it's specially mounted on testnodes
+    # and then KVM can't use them:
+    # -drive file=/tmp/tmpX/third_disk,if=virtio,cache=none: Could not open
+    # '/tmp/tmpX/third_disk': filesystem does not support O_DIRECT
+    self.working_directory = tempfile.mkdtemp(dir=self.slap.instance_directory)
+    self.addCleanup(shutil.rmtree, self.working_directory)
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    # find qemu_img from the tested SR via it's partition parameter, as
+    # otherwise qemu-kvm would be dependency of test suite
+    with open(
+      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      qemu_img = [
+        q for q in fh.readlines()
+        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+
+    self.first_disk = os.path.join(self.working_directory, 'first_disk')
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+    second_disk = 'second_disk'
+    self.second_disk = os.path.join(kvm_instance_partition, second_disk)
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow2", os.path.join(
+        kvm_instance_partition, self.second_disk), "1M"])
+    self.third_disk = os.path.join(self.working_directory, 'third_disk')
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow2", self.third_disk, "1M"])
+    self.rerequestInstance({'_': json.dumps(
+        self.getExternalDiskInstanceParameterDict(
+          self.first_disk, second_disk, self.third_disk))})
+    self.waitForInstance()
+    drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(
+      drive_list,
+      [
+        'file=${partition}/srv/virtual.qcow2,if=virtio,discard=on,'
+        'format=qcow2',
+        'file=%s/first_disk,if=virtio,cache=writeback,format=qcow' % (
+          self.working_directory,),
+        'file=${partition}/second_disk,if=virtio,cache=writeback',
+        'file=%s/third_disk,if=virtio,cache=none' % (
+          self.working_directory,)
+      ]
+    )
+    update_dict = {
+      "external-disk-number": 1,
+      "external-disk-size": 100,
+      "external-disk-format": "qcow2",
+    }
+    parameter_dict = self.getExternalDiskInstanceParameterDict(
+      self.first_disk, second_disk, self.third_disk, update_dict)
+    # assert mutual exclusivity
+    self.rerequestInstance({'_': json.dumps(parameter_dict)})
+    self.raising_waitForInstance(3)
+
+
+@skipUnlessKvm
+class TestExternalDiskModernCluster(TestExternalDiskModern):
+  kvm_instance_partition_reference = 'edm1'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "kvm-default": {
+            "disable-ansible-promise": True,
+        }
+      }
+    })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  def getExternalDiskInstanceParameterDict(self, *args, **kwargs):
+    partition_dict = super(
+      TestExternalDiskModernCluster, self
+    ).getExternalDiskInstanceParameterDict(*args, **kwargs)
+    partition_dict.update({"disable-ansible-promise": True})
+    return {
+      "kvm-partition-dict": {
+        "kvm-default": partition_dict
+      }
+    }
+
+
+@skipUnlessKvm
+class TestExternalDiskModernIndexRequired(InstanceTestCase, ExternalDiskMixin):
+  __partition_reference__ = 'edm'
+  kvm_instance_partition_reference = 'edm0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestExternalDiskModernIndexRequired, cls).setUpClass()
+
+  def getExternalDiskInstanceParameterDict(self, first, second, third):
+    return {
+      "external-disk": {
+          "second disk": {
+              "path": second,
+          },
+          "third disk": {
+              "path": third,
+              "index": 3,
+          },
+          "first disk": {
+              "path": first,
+              "index": 1,
+          },
+      }
+    }
+
+  def test(self):
+    # Disks can't be created in /tmp, as it's specially mounted on testnodes
+    # and then KVM can't use them:
+    # -drive file=/tmp/tmpX/third_disk,if=virtio,cache=none: Could not open
+    # '/tmp/tmpX/third_disk': filesystem does not support O_DIRECT
+    self.working_directory = tempfile.mkdtemp(dir=self.slap.instance_directory)
+    self.addCleanup(shutil.rmtree, self.working_directory)
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    # find qemu_img from the tested SR via it's partition parameter, as
+    # otherwise qemu-kvm would be dependency of test suite
+    with open(
+      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      qemu_img = [
+        q for q in fh.readlines()
+        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+
+    self.first_disk = os.path.join(self.working_directory, 'first_disk')
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+    second_disk = 'second_disk'
+    self.second_disk = os.path.join(kvm_instance_partition, second_disk)
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow2", os.path.join(
+        kvm_instance_partition, self.second_disk), "1M"])
+    self.third_disk = os.path.join(self.working_directory, 'third_disk')
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow2", self.third_disk, "1M"])
+    self.rerequestInstance({'_': json.dumps(
+        self.getExternalDiskInstanceParameterDict(
+          self.first_disk, second_disk, self.third_disk))})
+    self.raising_waitForInstance(10)
