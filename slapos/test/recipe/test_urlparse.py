@@ -19,4 +19,3 @@ class UrlparseTest(unittest.TestCase):
 
   def test_install(self):
     self.assertEqual(self.recipe.install(), [])
-    
