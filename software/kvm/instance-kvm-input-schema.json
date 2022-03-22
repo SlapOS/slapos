@@ -424,6 +424,10 @@
           }
         }
       }
+    },
+    "test-parameter": {
+      "title": "Test parameter",
+      "type": "array"
     }
   }
 }
