@@ -545,7 +545,60 @@
               "description": "List of whitelisted domain names to be accessed from the VM. They will be resolved to IPs depending on where the VM end up. IPs can be used too.",
               "type": "string",
               "textarea": true
+            },
+            "external-disk": {
+              "title": "External disks",
+              "description": "Allows to set paths and types of manually provided external disks. Use index to order disks. Changing this parameter leads to kvm process restart.",
+              "type": "object",
+              "default": {},
+              "patternProperties": {
+                ".*": {
+                  "properties": {
+                    "path": {
+                      "title": "Path to the provided image",
+                      "description": "Absolute or relative to the instance root path to the provided image. Image has to be provided, and being fully accessible, read and write, by the instance user for the kvm to start. Please note, that if the name starts with 'rbd:' it's considered special and won't be used as relative path.",
+                      "type": "string"
+                    },
+                    "format": {
+                      "title": "Format of a disk image",
+                      "description": "Format of a disk image.",
+                      "type": "string",
+                      "default": "autodetect",
+                      "enum": [
+                        "autodetect",
+                        "qcow2",
+                        "rbd",
+                        "raw",
+                        "vdi",
+                        "vmdk",
+                        "cloop",
+                        "qed"
+                      ]
+                    },
+                    "cache": {
+                      "title": "Cache value for the disk",
+                      "description": "Cache value directly passed to the kvm -drive invocation as cache=value.",
+                      "type": "string",
+                      "default": "writeback",
+                      "enum": [
+                        "writeback",
+                        "none",
+                        "unsafe",
+                        "directsync",
+                        "writethrough"
+                      ]
+                    },
+                    "index": {
+                      "title": "Index of a disk",
+                      "description": "An index value used to order disks for the VM, if not specified, disk order will be random on each run.",
+                      "type": "integer",
+                      "default": 0
+                    }
+                  }
+                }
+              }
             }
+
           },
           "type": "object"
         }
