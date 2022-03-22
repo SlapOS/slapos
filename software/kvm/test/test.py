@@ -1855,8 +1855,27 @@ class TestParameterCluster(TestParameterDefault):
     return 'kvm-cluster'
 
 
+class ExternalDiskMixin(KvmMixin):
+  def getRunningDriveList(
+      self, kvm_instance_partition,
+      _match_drive=re.compile('file.*if=virtio.*').match
+    ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    dirve_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_drive(entry)
+      if m:
+        path = m.group(0)
+        dirve_list.append(
+          path.replace(kvm_instance_partition, '${partition}')
+        )
+    return dirve_list
+
+
 @skipUnlessKvm
-class TestExternalDisk(InstanceTestCase, KvmMixin):
+class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
   __partition_reference__ = 'ed'
   kvm_instance_partition_reference = 'ed0'
 
@@ -1930,23 +1949,6 @@ instance_storage_home = %s
     super(TestExternalDisk, cls).tearDownClass()
     shutil.rmtree(cls.working_directory)
 
-  def getRunningDriveList(
-      self, kvm_instance_partition,
-      _match_drive=re.compile('file=(.+),if=virtio$').match
-    ):
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
-    dirve_list = []
-    for entry in psutil.Process(kvm_pid).cmdline():
-      m = _match_drive(entry)
-      if m:
-        path = m.group(1)
-        dirve_list.append(
-          path.replace(kvm_instance_partition, '${partition}')
-        )
-    return dirve_list
-
   def test(self):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
@@ -1976,3 +1978,74 @@ instance_storage_home = %s
 class TestExternalDiskJson(
   KvmMixinJson, TestExternalDisk):
   pass
+
+
+@skipUnlessKvm
+class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
+  __partition_reference__ = 'edm'
+  kvm_instance_partition_reference = 'edm0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestExternalDiskModern, cls).setUpClass()
+
+  def test(self):
+    self.working_directory = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, self.working_directory)
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.first_disk = os.path.join(self.working_directory, 'first_disk')
+    # find qemu_img from the tested SR via it's partition parameter, as
+    # otherwise qemu-kvm would be dependency of test suite
+    with open(
+      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      qemu_img = [
+        q for q in fh.readlines()
+        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+    second_disk = 'second_disk'
+    self.second_disk = os.path.join(kvm_instance_partition, second_disk)
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow2", os.path.join(
+        kvm_instance_partition, self.second_disk), "1M"])
+    self.third_disk = os.path.join(self.working_directory, 'third_disk')
+    subprocess.check_call([
+      qemu_img, "create", "-f", "qcow2", self.third_disk, "1M"])
+    self.rerequestInstance({'_': json.dumps({
+      "external-disk": {
+          "second disk": {
+              "path": second_disk,
+              "index": 2,
+          },
+          "third disk": {
+              "path": self.third_disk,
+              "index": 3,
+              "cache": "none"
+          },
+          "first disk": {
+              "path": self.first_disk,
+              "index": 1,
+              "format": "qcow"
+          },
+      }
+    })})
+    self.waitForInstance()
+    drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(
+      drive_list,
+      [
+        'file=${partition}/srv/virtual.qcow2,if=virtio,discard=on,'
+        'format=qcow2',
+        'file=%s/first_disk,if=virtio,cache=writeback,format=qcow' % (
+          self.working_directory,),
+        'file=${partition}/second_disk,if=virtio,cache=writeback',
+        'file=%s/third_disk,if=virtio,cache=none' % (
+          self.working_directory,)
+      ]
+    )
