@@ -1,11 +1,12 @@
 root = true
 
-[*.{cfg,in,md,json}]
+[*.{cfg,in,md,json,py}]
 end_of_line = lf
 charset = utf-8
 insert_final_newline = true
+trim_trailing_whitespace = true
 
-[**.json]
+[*.{json,py}]
 indent_style = space
 indent_size = 2
 
