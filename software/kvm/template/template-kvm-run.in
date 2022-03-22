@@ -130,7 +130,7 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
       # ID are writen in one line: data1 data3 data2 ...
       content = mf.readline()
       for id in content.split(' '):
-        if disk_storage_dict.has_key(id):
+        if id in disk_storage_dict:
           id_list.append(id)
         else:
           # Mean that this disk path has been removed (disk unmounted)
