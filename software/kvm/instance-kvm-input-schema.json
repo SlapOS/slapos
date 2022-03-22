@@ -402,6 +402,29 @@
       "description": "List of whitelisted domain names to be accessed from the VM. They will be resolved to IPs depending on where the VM end up. IPs can be used too.",
       "type": "string",
       "textarea": true
+    },
+    "external-disk": {
+      "title": "External disks",
+      "description": "Allows to set paths and types of manually provided external disks",
+      "type": "object",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "path": {
+              "title": "Path to the image",
+              "description": "Absolute or relative to the instance root path to the provided image. Image has to be provided, and being fully accessible, read and write, by the instance user for the kvm to start.",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type of the image",
+              "type": "string",
+              "description": "Type of the created image, which will be checked before the kvm will start.",
+              "enum": [
+                "qcow",
+                "ceph"
+              ]
+            }
     }
   }
 }
