@@ -22,12 +22,13 @@ environment =
 
 [runTestSuite]
 env.sh  = ${beremiz-env.sh:output}
-workdir = {{ beremiz_location }}
+workdir = {{ nxdtest_dir }}
 
 [beremiz-tests]
 recipe = slapos.recipe.template
 mode = 0700
-inline = #!/bin/sh
+inline =
+  #!/bin/sh -e
   cd {{ beremiz_location }}/tests
   make test_dir=${directory:tests} xserver_command='echo "Using ${xserver:display} on Slapos X Server !";' "$@"
 output = ${directory:bin}/beremiztest
@@ -47,11 +48,11 @@ opencv-link = ${buildout:directory}/.Sikulix/SikulixLibs/libopencv_java430.so
 # compiled lib which solves GLIBC issues (version `GLIBC_2.27' not found).
 command =
   LINK=${:opencv-link}
-  if [ ! -e "$LINK" ] || [ ! -L "$LINK" ]; then
+  if [ ! -e "$LINK" ]; then
     ${sikulix:wrapper-path} -r not_found_for_slapos.sikulix > /dev/null 2>&1 || true
-    rm -f $LINK
-    ln -sf {{ opencv_location }}/lib/libopencv_java430.so $LINK
   fi
+  rm -f $LINK
+  ln -sf {{ opencv_location }}/lib/libopencv_java430.so $LINK
 update-command = ${:command}
 stop-on-error = true
 

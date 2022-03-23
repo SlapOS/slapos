@@ -81,3 +81,4 @@ extra-context =
   raw instance_nxdtest   {{ nxdtest_template }}
   raw xdotool_bin        {{ xdotool_location }}/bin/xdotool
   raw opencv_location    {{ opencv_location }}
+  raw nxdtest_dir        {{ buildout_directory }}

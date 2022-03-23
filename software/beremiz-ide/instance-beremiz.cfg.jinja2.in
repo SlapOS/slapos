@@ -86,7 +86,8 @@ bytes = 8
 [x11vnc-passwd]
 recipe = slapos.recipe.template
 passfile = ${directory:vnc}/passwd
-inline = #!/bin/sh
+inline =
+  #!/bin/sh -e
   if [ -s "${:passfile}" ]; then
     echo "Password initialized.";
   else
@@ -175,7 +176,8 @@ wrapper-path = ${directory:services}/fluxbox
 
 [beremiz-env.sh]
 recipe = slapos.recipe.template
-inline = #!/bin/sh
+inline =
+  #!/bin/sh
   export LD_LIBRARY_PATH={{ mesa_location }}/lib
   export PATH=${directory:bin}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
   export XDG_DATA_DIR={{ gtk3_location }}/share
@@ -193,7 +195,8 @@ output = ${directory:bin}/beremiz-env.sh
 [beremiz-x11]
 recipe = slapos.recipe.template
 mode = 0700
-inline = #!/bin/sh
+inline =
+  #!/bin/sh -e
   . ${beremiz-env.sh:output}
   # wait a bit for xserver
   sleep 1
