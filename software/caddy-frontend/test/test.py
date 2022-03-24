@@ -7079,6 +7079,9 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
         'root_instance_title': 'testing partition 0',
+        'slap_computer_id': 'local',
+        'slap_computer_partition_id': 'T-0',
+        'slap_software_release_url': base_software_url,
         'slap_software_type': 'RootSoftwareInstance',
         'slave_instance_list': []
       }
