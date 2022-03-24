@@ -1,0 +1,70 @@
+commit 1404642f83f788d8caf00ee9d386a2656037db4e
+Author: Łukasz Nowak <luke@nexedi.com>
+Date:   Mon Mar 28 12:37:04 2022 +0200
+
+    ceph: Minimize
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e41125cf4fb..4ec77cb604a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -148,12 +148,10 @@ find_package(Backtrace)
+ option(WITH_RBD "Enable RADOS Block Device related targets" ON)
+ 
+ if(LINUX)
+-  find_package(udev REQUIRED)
+-  set(HAVE_UDEV ${UDEV_FOUND})
+-  find_package(blkid REQUIRED)
+-  set(HAVE_BLKID ${BLKID_FOUND})
+-  find_package(keyutils REQUIRED)
+-  set(HAVE_KEYUTILS ${KEYUTILS_FOUND})
++  set(HAVE_UDEV OFF)
++  set(HAVE_LIBAIO OFF)
++  set(HAVE_BLKID OFF)
++  set(HAVE_KEYUTILS OFF)
+ elseif(FREEBSD)
+   set(HAVE_UDEV OFF)
+   set(HAVE_LIBAIO OFF)
+@@ -207,12 +205,6 @@ if(WITH_BLUESTORE)
+   endif()
+ endif()
+ 
+-# libcryptsetup is only available on linux
+-if(WITH_RBD AND LINUX)
+-  find_package(libcryptsetup 2.0.5 REQUIRED)
+-  set(HAVE_LIBCRYPTSETUP ${LIBCRYPTSETUP_FOUND})
+-endif()
+-
+ include(CMakeDependentOption)
+ 
+ CMAKE_DEPENDENT_OPTION(WITH_ZBD "Enable libzbd bluestore backend" OFF
+@@ -300,8 +292,6 @@ if(LINUX)
+   endif()
+ endif()
+ 
+-find_package(snappy REQUIRED)
+-
+ option(WITH_BROTLI "Brotli compression support" OFF)
+ if(WITH_BROTLI)
+   set(HAVE_BROTLI TRUE)
+diff --git a/cmake/modules/FindCython.cmake b/cmake/modules/FindCython.cmake
+index 8eb9e42f402..e69de29bb2d 100644
+--- a/cmake/modules/FindCython.cmake
++++ b/cmake/modules/FindCython.cmake
+@@ -1,16 +0,0 @@
+-#
+-# Cython
+-#
+-
+-# Try to run Cython, to make sure it works:
+-execute_process(
+-  COMMAND ${Python3_EXECUTABLE} -m cython --version
+-  RESULT_VARIABLE cython_result
+-  ERROR_VARIABLE cython_output)
+-if(cython_result EQUAL 0)
+-  string(REGEX REPLACE "^Cython version ([0-9]+\\.[0-9]+).*" "\\1" CYTHON_VERSION "${cython_output}")
+-else()
+-  message(SEND_ERROR "Could not find cython${PYTHON_VERSION}: ${cython_output}")
+-endif()
+-include(FindPackageHandleStandardArgs)
+-find_package_handle_standard_args(Cython${PYTHON_VERSION} DEFAULT_MSG CYTHON_VERSION)
