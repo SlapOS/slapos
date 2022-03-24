@@ -413,7 +413,7 @@
           "properties": {
             "path": {
               "title": "Path to the provided image",
-              "description": "Absolute or relative to the instance root path to the provided image. Image has to be provided, and being fully accessible, read and write, by the instance user for the kvm to start. Please note, that if the name starts with 'rdb:' it's considered special and won't be used as relative path.",
+              "description": "Absolute or relative to the instance root path to the provided image. Image has to be provided, and being fully accessible, read and write, by the instance user for the kvm to start. Please note, that if the name starts with 'rbd:' it's considered special and won't be used as relative path.",
               "type": "string"
             },
             "format": {
@@ -424,7 +424,7 @@
               "enum": [
                 "autodetect",
                 "qcow2",
-                "rdb",
+                "rbd",
                 "raw",
                 "vdi",
                 "vmdk",

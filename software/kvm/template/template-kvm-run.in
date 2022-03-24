@@ -313,7 +313,7 @@ for entry in external_disk.keys():
     external_disk[entry]['index'] = 0
 # support external-disk parameter
 for disk_info in sorted(external_disk.values(), key=operator.itemgetter('index')):
-  if disk_info['path'].startswith('rdb:') or disk_info['path'].startswith('/'):
+  if disk_info['path'].startswith('rbd:') or disk_info['path'].startswith('/'):
     path = disk_info['path']
   else:
     path = os.path.join(instance_root, disk_info['path'])
