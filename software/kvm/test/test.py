@@ -871,11 +871,11 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
   @classmethod
   def setUpClass(cls):
     cls.startImageHttpServer()
-    super(InstanceTestCase, cls).setUpClass()
+    super(TestBootImageUrlList, cls).setUpClass()
 
   @classmethod
   def tearDownClass(cls):
-    super(InstanceTestCase, cls).tearDownClass()
+    super(TestBootImageUrlList, cls).tearDownClass()
     cls.stopImageHttpServer()
 
   def tearDown(self):
@@ -886,7 +886,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
-    super(InstanceTestCase, self).tearDown()
+    super(TestBootImageUrlList, self).tearDown()
 
   def getRunningImageList(
       self, kvm_instance_partition,
@@ -1173,12 +1173,12 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
   config_file_name = 'boot-image-url-list.conf'
 
   def setUp(self):
-    super(InstanceTestCase, self).setUp()
+    super(TestBootImageUrlListKvmCluster, self).setUp()
     self.startImageHttpServer()
 
   def tearDown(self):
     self.stopImageHttpServer()
-    super(InstanceTestCase, self).tearDown()
+    super(TestBootImageUrlListKvmCluster, self).tearDown()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -1475,7 +1475,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
   def tearDown(self):
     self.stopImageHttpServer()
     shutil.rmtree(self.working_directory)
-    super(InstanceTestCase, self).tearDown()
+    super(TestImageDownloadController, self).tearDown()
 
   def callImageDownloadController(self, *args):
     call_list = [sys.executable, self.image_download_controller] + list(args)
