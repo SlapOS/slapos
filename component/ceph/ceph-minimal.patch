@@ -1,0 +1,41 @@
+--- ceph-17.1.0.orig/CMakeLists.txt	2022-02-25 00:06:35.000000000 +0100
++++ ceph-17.1.0/CMakeLists.txt	2022-03-28 08:59:51.476869636 +0200
+@@ -148,12 +148,10 @@
+ option(WITH_RBD "Enable RADOS Block Device related targets" ON)
+ 
+ if(LINUX)
+-  find_package(udev REQUIRED)
+-  set(HAVE_UDEV ${UDEV_FOUND})
+-  find_package(blkid REQUIRED)
+-  set(HAVE_BLKID ${BLKID_FOUND})
+-  find_package(keyutils REQUIRED)
+-  set(HAVE_KEYUTILS ${KEYUTILS_FOUND})
++  set(HAVE_UDEV OFF)
++  set(HAVE_LIBAIO OFF)
++  set(HAVE_BLKID OFF)
++  set(HAVE_KEYUTILS OFF)
+ elseif(FREEBSD)
+   set(HAVE_UDEV OFF)
+   set(HAVE_LIBAIO OFF)
+@@ -207,12 +205,6 @@
+   endif()
+ endif()
+ 
+-# libcryptsetup is only available on linux
+-if(WITH_RBD AND LINUX)
+-  find_package(libcryptsetup 2.0.5 REQUIRED)
+-  set(HAVE_LIBCRYPTSETUP ${LIBCRYPTSETUP_FOUND})
+-endif()
+-
+ include(CMakeDependentOption)
+ 
+ CMAKE_DEPENDENT_OPTION(WITH_ZBD "Enable libzbd bluestore backend" OFF
+@@ -300,8 +292,6 @@
+   endif()
+ endif()
+ 
+-find_package(snappy REQUIRED)
+-
+ option(WITH_BROTLI "Brotli compression support" OFF)
+ if(WITH_BROTLI)
+   set(HAVE_BROTLI TRUE)
