@@ -37,7 +37,7 @@ additional-url = $${remote-additional-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
-
+ipv6 = {{ ipv6_random }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -353,7 +353,7 @@ template =
   #!/bin/sh
   export HOME=$${directory:home}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
-
+  export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
 # -------------
