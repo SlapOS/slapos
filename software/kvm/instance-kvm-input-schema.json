@@ -448,7 +448,8 @@
             "index": {
               "title": "Index of a disk",
               "description": "An index value used to order disks for the VM",
-              "type": "integer"
+              "type": "integer",
+              "default": 0
             }
           }
         }
