@@ -307,6 +307,10 @@ for disk in additional_disk_list:
   kvm_argument_list.extend([
             '-drive', 'file=%s,if=%s' % (disk, disk_type)])
 
+# allow empty index if one disk is provided
+for entry in external_disk.keys():
+  if 'index' not in external_disk[entry]:
+    external_disk[entry]['index'] = 0
 # support external-disk parameter
 for disk_info in sorted(external_disk.values(), key=operator.itemgetter('index')):
   if disk_info['path'].startswith('rdb:') or disk_info['path'].startswith('/'):
