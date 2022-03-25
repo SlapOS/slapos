@@ -88,19 +88,8 @@
     "community-conf": {
       "title": "Community configuration",
       "description": "Community configuration",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "zone-list": {
-              "title": "Zone list",
-              "description": "Zone list",
-              "type": "string",
-              "default": "*"
-            }
-          }
-        }
-      },
-      "type": "object"
+      "textarea": true,
+      "type": "string"
     }
   }
 }

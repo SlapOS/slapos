@@ -97,9 +97,7 @@ context = section parameter_dict re6st-registry-conf-dict
 [re6st-community-conf]
 recipe = slapos.recipe.template:jinja2
 template =
-  inline:{% for prefix, items in slapparameter_dict.get('community-conf', {}).items() -%}
-  {{ prefix }} {{ items.get('zone-list') }}
-  {% endfor %}
+  inline:{{ community-conf }}
 rendered = ${re6stnet-dirs:conf}/community.conf
 extensions = jinja2.ext.do
 context =
