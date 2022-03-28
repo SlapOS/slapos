@@ -1,0 +1,44 @@
+#!/bin/bash
+
+set -e
+set -x
+
+#checkout if directory and matomo resources exist
+
+if [ ! -d {{ parameter_dict['document-root'] }}/matomo/config ]; then
+  exit 1;
+fi
+
+if [ ! -f {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; then
+  exit 0;
+fi
+
+#we reserve backup folder in a month
+find {{ parameter_dict['dir-backup'] }} -mtime +30 |xargs rm -rf
+
+#backup
+mkdir {{ parameter_dict['dir-backup'] }}/temp
+{{ php_bin }} {{ parameter_dict['document-root'] }}/matomo/console plugin:list > {{ parameter_dict['dir-backup'] }}/temp/plugins_list
+cp -rf {{ parameter_dict['document-root'] }}/matomo/config {{ parameter_dict['dir-backup'] }}/temp/config
+cp -rf {{ parameter_dict['document-root'] }}/matomo/plugins {{ parameter_dict['dir-backup'] }}/temp/plugins
+
+#check if copy-action finish well
+if test ! -z "$(diff -r {{ parameter_dict['dir-backup'] }}/temp/config {{ parameter_dict['document-root'] }}/matomo/config)"; then
+  rm -rf {{ parameter_dict['dir-backup'] }}/temp
+fi
+
+if test ! -z "$(diff -r {{ parameter_dict['dir-backup'] }}/temp/plugins {{ parameter_dict['document-root'] }}/matomo/plugins)"; then
+  rm -rf {{ parameter_dict['dir-backup'] }}/temp
+fi
+
+#check if the file plugins_list has been created
+if [ ! -f {{ parameter_dict['dir-backup'] }}/temp/plugins_list ]; then
+  rm -rf {{ parameter_dict['dir-backup'] }}/temp
+fi
+
+#if all things go well, change the name of folder with date now
+if [ -d {{ parameter_dict['dir-backup'] }}/temp ]; then
+  mv -f {{ parameter_dict['dir-backup'] }}/temp {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y-%T`
+fi
+
+exit 0
