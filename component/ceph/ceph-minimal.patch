@@ -1,0 +1,161 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e41125cf4fb..5342ea0c6a5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -207,12 +207,6 @@ if(WITH_BLUESTORE)
+   endif()
+ endif()
+ 
+-# libcryptsetup is only available on linux
+-if(WITH_RBD AND LINUX)
+-  find_package(libcryptsetup 2.0.5 REQUIRED)
+-  set(HAVE_LIBCRYPTSETUP ${LIBCRYPTSETUP_FOUND})
+-endif()
+-
+ include(CMakeDependentOption)
+ 
+ CMAKE_DEPENDENT_OPTION(WITH_ZBD "Enable libzbd bluestore backend" OFF
+@@ -452,26 +446,6 @@ endif (WITH_RADOSGW)
+ #option for CephFS
+ option(WITH_CEPHFS "CephFS is enabled" ON)
+ 
+-if(NOT WIN32)
+-# Please specify 3.[0-7] if you want to build with a certain version of python3.
+-set(WITH_PYTHON3 "3" CACHE STRING "build with specified python3 version")
+-if(NOT WITH_PYTHON3 STREQUAL "3")
+-  set(find_python3_exact "EXACT")
+-endif()
+-find_package(Python3 ${WITH_PYTHON3} ${find_python3_exact} REQUIRED
+-  COMPONENTS Interpreter Development)
+-unset(find_python3_exact)
+-
+-option(WITH_MGR "ceph-mgr is enabled" ON)
+-if(WITH_MGR)
+-  set(MGR_PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+-  set(MGR_PYTHON_LIBRARIES ${Python3_LIBRARIES})
+-  set(MGR_PYTHON_VERSION_MAJOR ${Python3_VERSION_MAJOR})
+-  set(MGR_PYTHON_VERSION_MINOR ${Python3_VERSION_MINOR})
+-  # Boost dependency check deferred to Boost section
+-endif(WITH_MGR)
+-endif(NOT WIN32)
+-
+ option(WITH_THREAD_SAFE_RES_QUERY "res_query is thread safe" OFF)
+ if(WITH_THREAD_SAFE_RES_QUERY)
+   set(HAVE_THREAD_SAFE_RES_QUERY 1 CACHE INTERNAL "Thread safe res_query supported.")
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 1157df00a19..101a0cfd3ec 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -879,21 +879,12 @@ add_custom_target(vstart-base DEPENDS
+     monmaptool
+     crushtool
+     rados)
+-if(NOT WIN32)
+-  # WIN32 port does not build python bindings
+-  # TODO: introduce an option for enabling python binding
+-  add_dependencies(vstart-base
+-    cython_rados)
+-endif()
+ 
+ if (WITH_MGR)
+   add_dependencies(vstart-base ceph-mgr)
+ endif()
+ 
+ add_custom_target(vstart DEPENDS vstart-base)
+-if(WITH_RBD AND NOT WIN32)
+-  add_dependencies(vstart cython_rbd)
+-endif()
+ if (WITH_CEPHFS)
+   add_dependencies(vstart ceph-mds cephfs cython_cephfs)
+ endif()
+diff --git a/src/common/CMakeLists.txt b/src/common/CMakeLists.txt
+index 3bf28659e1c..1435e49aab8 100644
+--- a/src/common/CMakeLists.txt
++++ b/src/common/CMakeLists.txt
+@@ -184,6 +184,9 @@ add_library(common-common-objs OBJECT
+ # retrieved OpenSSL location. This is especially important when cross
+ # compiling (e.g. targeting Windows).
+ target_include_directories(common-common-objs PRIVATE ${OPENSSL_INCLUDE_DIR})
++# Luke addition
++target_include_directories(common-common-objs PRIVATE ${UDEV_INCLUDE_DIR})
++target_include_directories(common-common-objs PRIVATE ${BLKID_INCLUDE_DIR})
+ # for options.cc
+ target_compile_definitions(common-common-objs PRIVATE
+   "CMAKE_INSTALL_LIBDIR=\"${CMAKE_INSTALL_LIBDIR}\""
+diff --git a/src/pybind/CMakeLists.txt b/src/pybind/CMakeLists.txt
+index cd9b27623d2..e69de29bb2d 100644
+--- a/src/pybind/CMakeLists.txt
++++ b/src/pybind/CMakeLists.txt
+@@ -1,72 +0,0 @@
+-include(Distutils)
+-
+-set(CYTHON_MODULE_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cython_modules)
+-
+-find_package(Cython REQUIRED)
+-
+-add_subdirectory(rados)
+-add_custom_target(cython_modules ALL
+-  DEPENDS cython_rados)
+-
+-if(WITH_RBD)
+-  add_subdirectory(rbd)
+-  add_dependencies(cython_modules cython_rbd)
+-endif()
+-if(WITH_CEPHFS)
+-  add_subdirectory(cephfs)
+-  add_dependencies(cython_modules cython_cephfs)
+-endif()
+-if(WITH_RADOSGW)
+-  add_subdirectory(rgw)
+-  add_dependencies(cython_modules cython_rgw)
+-endif()
+-
+-# if CMAKE_INSTALL_PREFIX is an empty string, must replace
+-# it with "/" to make PYTHON_INSTALL_TEMPLATE an absolute path to be
+-# consistent with all other installation paths.
+-if(CMAKE_INSTALL_PREFIX)
+-  set(PYTHON_INSTALL_TEMPLATE "${CMAKE_INSTALL_PREFIX}")
+-else(CMAKE_INSTALL_PREFIX)
+-  set(PYTHON_INSTALL_TEMPLATE "/")
+-endif(CMAKE_INSTALL_PREFIX)
+-
+-execute_process(
+-  COMMAND
+-  ${Python3_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib(prefix='${PYTHON_INSTALL_TEMPLATE}'))"
+-  OUTPUT_VARIABLE "PYTHON3_INSTDIR"
+-  OUTPUT_STRIP_TRAILING_WHITESPACE)
+-
+-install(FILES
+-  ceph_argparse.py
+-  ceph_daemon.py
+-  DESTINATION ${PYTHON3_INSTDIR})
+-
+-if(WITH_MGR)
+-  execute_process(
+-    COMMAND ${Python3_EXECUTABLE} -c "import ssl; print('.'.join(map(str,ssl.OPENSSL_VERSION_INFO[0:3])))"
+-    RESULT_VARIABLE PYSSL_RESULT
+-    OUTPUT_VARIABLE PYSSL_VER
+-    ERROR_QUIET)
+-  if (NOT ${PYSSL_RESULT})
+-    # the ideal way to get the soversion is to parse the suffix of file name of
+-    # `/lib/x86_64-linux-gnu/libssl.so.1.0.0`, but since we're lazy, and will just
+-    # trust the version number here.
+-    macro(get_openssl_soversion version prefix)
+-      string(REPLACE "." ";" ssl_version_list ${version})
+-      list(GET ssl_version_list 0 ssl_version_major)
+-      list(GET ssl_version_list 1 ssl_version_minor)
+-      set(${prefix}_SOVERSION ${ssl_version_major}.${ssl_version_minor})
+-      unset(ssl_version_list)
+-      unset(ssl_version_major)
+-      unset(ssl_version_minor)
+-    endmacro()
+-    get_openssl_soversion(${OPENSSL_VERSION} OPENSSL)
+-    get_openssl_soversion(${PYSSL_VER} PYSSL)
+-    if(NOT (OPENSSL_SOVERSION VERSION_EQUAL PYSSL_SOVERSION))
+-      message(FATAL_ERROR "Python and Ceph link to different OpenSSL versions: ${PYSSL_VER} vs ${OPENSSL_VERSION}")
+-    endif()
+-  else()
+-    message(WARNING "could not determine ssl version of python crypto lib")
+-  endif()
+-  add_subdirectory(mgr)
+-endif(WITH_MGR)
