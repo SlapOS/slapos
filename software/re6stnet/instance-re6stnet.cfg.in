@@ -99,20 +99,6 @@ template = {{ parameter_dict['template-re6st-registry-conf'] }}
 rendered = ${re6stnet-dirs:conf}/registry.conf
 context = section parameter_dict re6st-registry-conf-dict
 
-depends = ${re6st-compat:recipe}
-[re6st-compat]
-recipe = slapos.recipe.build
-update =
-  import errno, os
-  res6stnet = self.buildout['directory']['srv'] + '/res6stnet'
-  try:
-    os.rename(res6stnet + '/registry', self.buildout['re6stnet-dirs']['data'])
-  except OSError as e:
-    if e.errno != errno.ENOENT:
-      raise
-  else:
-    os.rmdir(res6stnet)
-
 [re6st-registry-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/re6st-registry
