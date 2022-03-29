@@ -1,0 +1,91 @@
+From ad2432a50ff4b906dd9b418b4a30b6b0e553ba6c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Mon, 11 Apr 2022 13:49:17 +0200
+Subject: [PATCH 1/3] XXX cmake: Drop FindCython.cmake
+
+It's not required in XXX context.
+---
+ cmake/modules/FindCython.cmake | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/cmake/modules/FindCython.cmake b/cmake/modules/FindCython.cmake
+index 8eb9e42f402..e69de29bb2d 100644
+--- a/cmake/modules/FindCython.cmake
++++ b/cmake/modules/FindCython.cmake
+@@ -1,16 +0,0 @@
+-#
+-# Cython
+-#
+-
+-# Try to run Cython, to make sure it works:
+-execute_process(
+-  COMMAND ${Python3_EXECUTABLE} -m cython --version
+-  RESULT_VARIABLE cython_result
+-  ERROR_VARIABLE cython_output)
+-if(cython_result EQUAL 0)
+-  string(REGEX REPLACE "^Cython version ([0-9]+\\.[0-9]+).*" "\\1" CYTHON_VERSION "${cython_output}")
+-else()
+-  message(SEND_ERROR "Could not find cython${PYTHON_VERSION}: ${cython_output}")
+-endif()
+-include(FindPackageHandleStandardArgs)
+-find_package_handle_standard_args(Cython${PYTHON_VERSION} DEFAULT_MSG CYTHON_VERSION)
+-- 
+2.30.2
+
+
+From 5ab7d762be36bb185cde78ad9ae7f85982ec3a42 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Mon, 11 Apr 2022 13:50:03 +0200
+Subject: [PATCH 2/3] common: Provide udev and blkid headers
+
+---
+ src/common/CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/common/CMakeLists.txt b/src/common/CMakeLists.txt
+index 3bf28659e1c..23f47b3f8dd 100644
+--- a/src/common/CMakeLists.txt
++++ b/src/common/CMakeLists.txt
+@@ -184,6 +184,8 @@ add_library(common-common-objs OBJECT
+ # retrieved OpenSSL location. This is especially important when cross
+ # compiling (e.g. targeting Windows).
+ target_include_directories(common-common-objs PRIVATE ${OPENSSL_INCLUDE_DIR})
++target_include_directories(common-common-objs PRIVATE ${UDEV_INCLUDE_DIR})
++target_include_directories(common-common-objs PRIVATE ${BLKID_INCLUDE_DIR})
+ # for options.cc
+ target_compile_definitions(common-common-objs PRIVATE
+   "CMAKE_INSTALL_LIBDIR=\"${CMAKE_INSTALL_LIBDIR}\""
+-- 
+2.30.2
+
+
+From a58b578797e00c5de6a69d08b1281cb16b1989ff Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Mon, 11 Apr 2022 13:50:33 +0200
+Subject: [PATCH 3/3] TENTATIVE librbd: drop needless udev
+
+It's automatically added by cmake and such configuration results with linker
+not being able to find libudev in case if it lives outside of typical
+directory structure.
+---
+ src/librbd/CMakeLists.txt | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/librbd/CMakeLists.txt b/src/librbd/CMakeLists.txt
+index ad23f0975fd..5bd011bf242 100644
+--- a/src/librbd/CMakeLists.txt
++++ b/src/librbd/CMakeLists.txt
+@@ -337,10 +337,6 @@ target_link_libraries(librbd PRIVATE
+   pthread
+   ${CMAKE_DL_LIBS}
+   ${EXTRALIBS} ${GSSAPI_LIBRARIES})
+-if(HAVE_UDEV)
+-  target_link_libraries(librbd PRIVATE
+-    udev)
+-endif()
+ if(ENABLE_SHARED)
+   set_target_properties(librbd PROPERTIES
+     OUTPUT_NAME rbd
+-- 
+2.30.2
+
