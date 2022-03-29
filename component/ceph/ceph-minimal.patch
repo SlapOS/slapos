@@ -1,0 +1,123 @@
+commit d77ac789baa88f7c911d893a2d977b2dd60d774f
+Author: Łukasz Nowak <luke@nexedi.com>
+Date:   Tue Mar 29 12:04:52 2022 +0200
+
+    ceph: Minimize
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e41125cf4fb..ea1b0c5232b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -148,12 +148,10 @@ find_package(Backtrace)
+ option(WITH_RBD "Enable RADOS Block Device related targets" ON)
+ 
+ if(LINUX)
+-  find_package(udev REQUIRED)
+-  set(HAVE_UDEV ${UDEV_FOUND})
+-  find_package(blkid REQUIRED)
+-  set(HAVE_BLKID ${BLKID_FOUND})
+-  find_package(keyutils REQUIRED)
+-  set(HAVE_KEYUTILS ${KEYUTILS_FOUND})
++  set(HAVE_UDEV OFF)
++  set(HAVE_LIBAIO OFF)
++  set(HAVE_BLKID OFF)
++  set(HAVE_KEYUTILS OFF)
+ elseif(FREEBSD)
+   set(HAVE_UDEV OFF)
+   set(HAVE_LIBAIO OFF)
+@@ -207,12 +205,6 @@ if(WITH_BLUESTORE)
+   endif()
+ endif()
+ 
+-# libcryptsetup is only available on linux
+-if(WITH_RBD AND LINUX)
+-  find_package(libcryptsetup 2.0.5 REQUIRED)
+-  set(HAVE_LIBCRYPTSETUP ${LIBCRYPTSETUP_FOUND})
+-endif()
+-
+ include(CMakeDependentOption)
+ 
+ CMAKE_DEPENDENT_OPTION(WITH_ZBD "Enable libzbd bluestore backend" OFF
+diff --git a/cmake/modules/FindCython.cmake b/cmake/modules/FindCython.cmake
+index 8eb9e42f402..e69de29bb2d 100644
+--- a/cmake/modules/FindCython.cmake
++++ b/cmake/modules/FindCython.cmake
+@@ -1,16 +0,0 @@
+-#
+-# Cython
+-#
+-
+-# Try to run Cython, to make sure it works:
+-execute_process(
+-  COMMAND ${Python3_EXECUTABLE} -m cython --version
+-  RESULT_VARIABLE cython_result
+-  ERROR_VARIABLE cython_output)
+-if(cython_result EQUAL 0)
+-  string(REGEX REPLACE "^Cython version ([0-9]+\\.[0-9]+).*" "\\1" CYTHON_VERSION "${cython_output}")
+-else()
+-  message(SEND_ERROR "Could not find cython${PYTHON_VERSION}: ${cython_output}")
+-endif()
+-include(FindPackageHandleStandardArgs)
+-find_package_handle_standard_args(Cython${PYTHON_VERSION} DEFAULT_MSG CYTHON_VERSION)
+diff --git a/src/ceph-volume/CMakeLists.txt b/src/ceph-volume/CMakeLists.txt
+index 9166553dc73..e69de29bb2d 100644
+--- a/src/ceph-volume/CMakeLists.txt
++++ b/src/ceph-volume/CMakeLists.txt
+@@ -1,29 +0,0 @@
+-
+-include(Distutils)
+-
+-distutils_install_module(ceph_volume
+-  INSTALL_SCRIPT ${CMAKE_INSTALL_FULL_SBINDIR})
+-
+-if(FREEBSD)
+-  add_subdirectory(plugin/zfs)
+-endif()
+-
+-# Required for running ceph-volume inventory in a vstart environment
+-set(CEPH_VOLUME_VIRTUALENV ${CEPH_BUILD_VIRTUALENV}/ceph-volume-virtualenv)
+-
+-add_custom_command(
+-  OUTPUT ${CEPH_VOLUME_VIRTUALENV}/bin/python
+-  COMMAND ${CMAKE_SOURCE_DIR}/src/tools/setup-virtualenv.sh --python=${Python3_EXECUTABLE} ${CEPH_VOLUME_VIRTUALENV}
+-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ceph-volume
+-  COMMENT "ceph-volume venv is being created")
+-
+-add_custom_command(
+-  OUTPUT ${CEPH_VOLUME_VIRTUALENV}/bin/ceph-volume
+-  DEPENDS ${CEPH_VOLUME_VIRTUALENV}/bin/python
+-  COMMAND . ${CEPH_VOLUME_VIRTUALENV}/bin/activate && ${CEPH_VOLUME_VIRTUALENV}/bin/python setup.py develop && deactivate
+-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ceph-volume
+-  COMMENT "${CMAKE_SOURCE_DIR}/src/ceph-volume")
+-
+-add_custom_target(ceph-volume-venv-setup
+-  DEPENDS ${CEPH_VOLUME_VIRTUALENV}/bin/ceph-volume)
+-
+diff --git a/src/common/options/legacy_config_opts.h b/src/common/options/legacy_config_opts.h
+index 3f8c8244cf0..e69de29bb2d 100644
+--- a/src/common/options/legacy_config_opts.h
++++ b/src/common/options/legacy_config_opts.h
+@@ -1,11 +0,0 @@
+-#include "global_legacy_options.h"
+-#include "cephfs-mirror_legacy_options.h"
+-#include "mds_legacy_options.h"
+-#include "mds-client_legacy_options.h"
+-#include "mgr_legacy_options.h"
+-#include "mon_legacy_options.h"
+-#include "osd_legacy_options.h"
+-#include "rbd_legacy_options.h"
+-#include "rbd-mirror_legacy_options.h"
+-#include "immutable-object-cache_legacy_options.h"
+-#include "rgw_legacy_options.h"
+diff --git a/src/python-common/CMakeLists.txt b/src/python-common/CMakeLists.txt
+index e89bbe2feef..e69de29bb2d 100644
+--- a/src/python-common/CMakeLists.txt
++++ b/src/python-common/CMakeLists.txt
+@@ -1,7 +0,0 @@
+-include(Distutils)
+-distutils_install_module(ceph)
+-
+-if(WITH_TESTS)
+-  include(AddCephTest)
+-  add_tox_test(python-common TOX_ENVS py3 lint)
+-endif()
