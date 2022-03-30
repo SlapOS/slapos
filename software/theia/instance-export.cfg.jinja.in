@@ -92,14 +92,14 @@ inline =
   then
     echo "ERROR export script last ran on " $(date -r {{ repr(exitcodefile) }})
     exit 1
-  elif [ $( cat {{ repr(exitcodefile) }}) -ne 0 ]
+  elif [ "$(cat {{ repr(exitcodefile) }})" = 0 ]
   then
+    echo "OK export script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 0
+  else
     echo "ERROR export script failed on " $(date -r {{ repr(exitcodefile) }})
     cat {{ repr(errorfile) }}
     exit 1
-  else
-    echo "OK export script last ran on " $(date -r {{ repr(exitcodefile) }})
-    exit 0
   fi
 {%- endraw %}
 

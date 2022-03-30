@@ -154,14 +154,14 @@ inline =
   then
     echo "ERROR import script last ran on " $(date -r {{ repr(exitcodefile) }})
     exit 1
-  elif [ $( cat {{ repr(exitcodefile) }}) -ne 0 ]
+  elif [ "$(cat {{ repr(exitcodefile) }})" = 0 ]
   then
+    echo "OK import script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 0
+  else
     echo "ERROR import script failed on " $(date -r {{ repr(exitcodefile) }})
     cat {{ repr(errorfile) }}
     exit 1
-  else
-    echo "OK import script last ran on " $(date -r {{ repr(exitcodefile) }})
-    exit 0
   fi
 {%- endraw %}
 
