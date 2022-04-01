@@ -13,9 +13,9 @@ offline = true
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-gitlab = instance-gitlab.cfg:rendered
-gitlab-export = instance-gitlab-export.cfg:rendered
-gitlab-test = instance-gitlab-test.cfg:rendered
+gitlab = instance-gitlab.cfg:output
+gitlab-export = instance-gitlab-export.cfg:output
+gitlab-test = instance-gitlab-test.cfg:output
 RootSoftwareInstance = $${:gitlab}
 # TODO -import, -pull-backup
 
@@ -56,7 +56,7 @@ configuration.icp_license  =
 [instance-cfg]
 recipe  = slapos.recipe.template:jinja2
 mode    = 0644
-rendered= $${buildout:directory}/$${:_buildout_section_name_}
+output= $${buildout:directory}/$${:_buildout_section_name_}
 context =
     import os os
     import pwd pwd
@@ -79,7 +79,7 @@ context =
     raw git                         ${git:location}/bin/git
     raw git_location                ${git:location}
     raw gitaly_location             ${gitaly-repository:location}
-    raw gitlab_export               ${gitlab-export:rendered}
+    raw gitlab_export               ${gitlab-export:output}
     raw gitlab_workhorse            ${gowork:bin}/gitlab-workhorse
     raw gopath_bin                  ${gowork:bin}
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
@@ -95,14 +95,14 @@ context =
     raw redis_binprefix             ${redis28:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}
     raw tar_location                ${tar:location}
-    raw watcher                     ${watcher:rendered}
+    raw watcher                     ${watcher:output}
     raw xnice_repository_location   ${xnice-repository:location}
     raw yarn_location               ${yarn:location}
 
 # config files
     raw database_yml_in             ${database.yml.in:target}
     raw gitconfig_in                ${gitconfig.in:target}
-    raw monitor_template            ${monitor2-template:rendered}
+    raw monitor_template            ${monitor2-template:output}
     raw gitlab_shell_config_yml_in  ${gitlab-shell-config.yml.in:target}
     raw gitlab_unicorn_startup_in   ${gitlab-unicorn-startup.in:target}
     raw gitlab_yml_in               ${gitlab.yml.in:target}
@@ -121,18 +121,18 @@ context-extra =
 
 [instance-gitlab.cfg]
 <= instance-cfg
-template= ${instance-gitlab.cfg.in:target}
+url = ${instance-gitlab.cfg.in:target}
 
 [instance-gitlab-export.cfg]
 <= instance-cfg
-template= ${instance-gitlab-export.cfg.in:target}
+url = ${instance-gitlab-export.cfg.in:target}
 context-extra =
-    raw instance_gitlab_cfg         $${instance-gitlab.cfg:rendered}
+    raw instance_gitlab_cfg         $${instance-gitlab.cfg:output}
 
 [instance-gitlab-test.cfg]
 <= instance-cfg
-template= ${instance-gitlab-test.cfg.in:target}
+url = ${instance-gitlab-test.cfg.in:target}
 context-extra =
-    raw instance_gitlab_cfg        $${instance-gitlab.cfg:rendered}
-    raw instance_gitlab_export_cfg $${instance-gitlab-export.cfg:rendered}
+    raw instance_gitlab_cfg        $${instance-gitlab.cfg:output}
+    raw instance_gitlab_export_cfg $${instance-gitlab-export.cfg:output}
     raw gitlab_demo_backup_path    ${gitlab-demo-backup.git:location}

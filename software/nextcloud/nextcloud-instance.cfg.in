@@ -82,8 +82,8 @@ turn-secret = ${slap-parameter:instance.turn-secret}
 
 [nextcloud-install.sh]
 recipe = slapos.recipe.template:jinja2
-template = {{ nextcloud_install_sh }}
-rendered = ${directory:scripts}/nextcloud-install
+url = {{ nextcloud_install_sh }}
+output = ${directory:scripts}/nextcloud-install
 context =
   section parameter_dict   instance-parameter
   section nextcloud_apps   nextcloud-apps
@@ -122,8 +122,8 @@ mode = 744
 
 [nextcloud-apache-httpd]
 recipe = slapos.recipe.template:jinja2
-template = {{ nextcloud_apache_httpd }}
-rendered = ${directory:apache.d}/nextcloud.conf
+url = {{ nextcloud_apache_httpd }}
+output = ${directory:apache.d}/nextcloud.conf
 context =
   section parameter_dict apache-php-configuration
 mode = 744
@@ -176,15 +176,15 @@ recipe = collective.recipe.template
 input = inline:#!/bin/sh
   cd {{ news_updater_location }}
   export PATH={{ php_location }}/bin:$PATH
-  {{ python3_location}}/bin/python3 -m nextcloud_news_updater --phpini ${php.ini-conf:rendered} \
+  {{ python3_location}}/bin/python3 -m nextcloud_news_updater --phpini ${php.ini-conf:output} \
     --interval 300 --mode endless --loglevel info ${instance-parameter:nextcloud}
 output = ${directory:scripts}/nextcloud-news-updater
 mode = 744
 
 [nextcloud-config.json]
 recipe = slapos.recipe.template:jinja2
-template = {{ nextcloud_parameter_json }}
-rendered = ${directory:etc}/nextcloud-config.json
+url = {{ nextcloud_parameter_json }}
+output = ${directory:etc}/nextcloud-config.json
 extensions = jinja2.ext.do
 context =
   section parameter_dict   instance-parameter
@@ -198,13 +198,13 @@ input = inline:#!/bin/sh
     # do not run this script if nextcloud is not installed yet.
     exit 1;
   fi
-  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ config:import ${nextcloud-config.json:rendered}
+  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ config:import ${nextcloud-config.json:output}
 mode = 744
 
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
 
 [publish-connection-information]
 admin-user = ${instance-parameter:admin-user}

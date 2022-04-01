@@ -63,8 +63,8 @@ var-spool-postfix-trace = ${:var-spool-postfix}/trace
 # Generate rdiff exclude file
 recipe = slapos.recipe.template:jinja2
 mode = 644
-template = {{ 'inline:{{ "**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+inline = {{ '{{ "**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 {% if divert -%}
 {%   set milter_port = tcpv4_port + 1 -%}
@@ -100,11 +100,11 @@ recipe = slapos.cookbook:userinfo
 
 [smtp-sasl-passwd]
 < = jinja2-template-base
-rendered = ${directory:etc-postfix}/sasl_passwd
+output = ${directory:etc-postfix}/sasl_passwd
 {% if relay -%}
-template = inline:{{ "{{ host }} {{ sasl_credential }}" }}
+inline ={{ "{{ host }} {{ sasl_credential }}" }}
 {%- else -%}
-template = inline:
+inline =
 {%- endif %}
 context =
     key host configuration:relayhost
@@ -113,8 +113,8 @@ mode = 600
 
 [{{ section('cyrus-smtpd-conf') }}]
 < = jinja2-template-base
-rendered = ${directory:etc-cyrus}/smtpd.conf
-template = inline:
+output = ${directory:etc-cyrus}/smtpd.conf
+inline =
     pwcheck_method: auxprop
     mech_list: PLAIN LOGIN
     sasldb_path: {{ '{{ sasldb }}' }}
@@ -146,8 +146,8 @@ update =
 
 [{{ section('postfix-main-cf') }}]
 < = jinja2-template-base
-rendered = ${directory:etc-postfix}/main.cf
-template = {{ parameter_dict['template-postfix-main-cf'] }}
+output = ${directory:etc-postfix}/main.cf
+url = {{ parameter_dict['template-postfix-main-cf'] }}
 context =
     key bin_directory directory:bin
     key usr_directory directory:usr
@@ -169,21 +169,21 @@ context =
 
 [{{ section('postfix-master-cf') }}]
 < = jinja2-template-base
-rendered = ${directory:etc-postfix}/master.cf
-template = {{ parameter_dict['template-postfix-master-cf'] }}
+output = ${directory:etc-postfix}/master.cf
+url = {{ parameter_dict['template-postfix-master-cf'] }}
 context = key smtp configuration:smtp
 
 [aliases]
 < = jinja2-template-base
-template = {{ parameter_dict['template-postfix-aliases'] }}
-rendered = ${directory:etc-postfix}/aliases
+url = {{ parameter_dict['template-postfix-aliases'] }}
+output = ${directory:etc-postfix}/aliases
 context =
     key alias_dict configuration:alias-dict
 
 [typed-paths]
 # Postfix-friendly rendering of file paths, prefixed with database type.
-aliases = hash:${aliases:rendered}
-smtp-sasl-passwd = hash:${smtp-sasl-passwd:rendered}
+aliases = hash:${aliases:output}
+smtp-sasl-passwd = hash:${smtp-sasl-passwd:output}
 
 [{{ section('postalias-db') }}]
 recipe = plone.recipe.command
