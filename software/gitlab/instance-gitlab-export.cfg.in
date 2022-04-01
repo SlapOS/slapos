@@ -60,8 +60,8 @@ output = ${directory:srv}/exporter.exclude
 # this section should be added only on runner import instance
 recipe  = slapos.recipe.template:jinja2
 mode    = 0700
-template= {{ gitlab_restore_sh_in }}
-rendered= ${directory:srv}/runner-import-restore
+url = {{ gitlab_restore_sh_in }}
+output= ${directory:srv}/runner-import-restore
 context =
   raw     bash_bin                {{ bash_bin }}
   raw     go_work_bin             {{ gopath_bin }}
