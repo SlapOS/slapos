@@ -2,7 +2,8 @@
 [instance-parameter]
 matomo = ${:document-root}
 dir-backup = ${directory:backup}
-find_bin = {{ findutils_location }}
+find-bin = {{ findutils_location }}
+diff-bin = {{ diffutils_location }}
 
 #php.ini parameters
 php.memory_limit = 512M
