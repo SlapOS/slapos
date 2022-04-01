@@ -37,8 +37,9 @@ context =
   key parameter_dict slap-configuration:configuration
   key root_title slap-configuration:root-instance-title
   key partition_root_path buildout:directory
-  key ipv6_random slap-configuration:ipv6-random
+  key ipv6_theia slap-configuration:ipv6-random
   key ipv4_random slap-configuration:ipv4-random
+  section slap_resource slap-configuration
   import os os
   import json json
 default-parameters =
