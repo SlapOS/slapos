@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 set -x
@@ -13,32 +13,37 @@ if [ ! -f {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; 
   exit 0;
 fi
 
+trap 'rm -rf "{{ parameter_dict['dir-backup'] }}/$TMPFILE"' EXIT
+
 #we reserve backup folder in a month
-find {{ parameter_dict['dir-backup'] }} -mtime +30 |xargs rm -rf
+{{ parameter_dict['find_bin'] }}/bin/find {{ parameter_dict['dir-backup'] }} -mtime +30 -type d |{{ parameter_dict['find_bin'] }}/bin/xargs rm -rf
 
 #backup
-mkdir {{ parameter_dict['dir-backup'] }}/temp
-{{ php_bin }} {{ parameter_dict['document-root'] }}/matomo/console plugin:list > {{ parameter_dict['dir-backup'] }}/temp/plugins_list
-cp -rf {{ parameter_dict['document-root'] }}/matomo/config {{ parameter_dict['dir-backup'] }}/temp/config
-cp -rf {{ parameter_dict['document-root'] }}/matomo/plugins {{ parameter_dict['dir-backup'] }}/temp/plugins
+mktemp -d -p "{{ parameter_dict['dir-backup'] }}"
+TMPFILE=`ls {{ parameter_dict['dir-backup'] }}|grep tmp`
+
+{{ php_bin }} {{ parameter_dict['document-root'] }}/matomo/console plugin:list > {{ parameter_dict['dir-backup'] }}/$TMPFILE/plugins_list
+cp -rf {{ parameter_dict['document-root'] }}/matomo/config {{ parameter_dict['dir-backup'] }}/$TMPFILE/config
+cp -rf {{ parameter_dict['document-root'] }}/matomo/plugins {{ parameter_dict['dir-backup'] }}/$TMPFILE/plugins
 
 #check if copy-action finish well
-if test ! -z "$(diff -r {{ parameter_dict['dir-backup'] }}/temp/config {{ parameter_dict['document-root'] }}/matomo/config)"; then
-  rm -rf {{ parameter_dict['dir-backup'] }}/temp
+#rm -rf {{ parameter_dict['dir-backup'] }}/$TMPFILE
+if test ! -z "$(diff -r {{ parameter_dict['dir-backup'] }}/$TMPFILE/config {{ parameter_dict['document-root'] }}/matomo/config)"; then
+  exit 1
 fi
 
-if test ! -z "$(diff -r {{ parameter_dict['dir-backup'] }}/temp/plugins {{ parameter_dict['document-root'] }}/matomo/plugins)"; then
-  rm -rf {{ parameter_dict['dir-backup'] }}/temp
+if test ! -z "$(diff -r {{ parameter_dict['dir-backup'] }}/$TMPFILE/plugins {{ parameter_dict['document-root'] }}/matomo/plugins)"; then
+  exit 1
 fi
 
 #check if the file plugins_list has been created
-if [ ! -f {{ parameter_dict['dir-backup'] }}/temp/plugins_list ]; then
-  rm -rf {{ parameter_dict['dir-backup'] }}/temp
+if [ ! -f {{ parameter_dict['dir-backup'] }}/$TMPFILE/plugins_list ]; then
+  exit 1
 fi
 
 #if all things go well, change the name of folder with date now
-if [ -d {{ parameter_dict['dir-backup'] }}/temp ]; then
-  mv -f {{ parameter_dict['dir-backup'] }}/temp {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y-%T`
+if [ -d {{ parameter_dict['dir-backup'] }}/$TMPFILE ]; then
+  mv -f {{ parameter_dict['dir-backup'] }}/$TMPFILE {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y-%T`
 fi
 
 exit 0
