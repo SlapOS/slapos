@@ -20,8 +20,8 @@ template-mime-types = {{ template_mime_types_target }}
 
 [instance-headless-chromium]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_instance_headless_chromium_target }}
-rendered = ${buildout:directory}/${:filename}
+url = {{ template_instance_headless_chromium_target }}
+output = ${buildout:directory}/${:filename}
 filename = instance-headless-chromium.cfg
 context =
   section buildout buildout
@@ -41,7 +41,7 @@ default-parameters =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
-default = instance-headless-chromium:rendered
+default = instance-headless-chromium:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration

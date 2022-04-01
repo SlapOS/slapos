@@ -54,31 +54,31 @@ nginx-mime-types = ${directory:etc}/mime-types
 # Create a launcher script in /etc/service for the headless shell
 # executable.
 [chromium-launcher]
-recipe = slapos.recipe.template:jinja2
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
 
-  export FONTCONFIG_FILE=${font-config:rendered}
+  export FONTCONFIG_FILE=${font-config:output}
   exec {{ parameter_list['chromium-wrapper'] }} \
     --remote-debugging-address=${headless-chromium:ipv4} \
     --remote-debugging-port=${headless-chromium:remote-debugging-port} \
     ${headless-chromium:url}
-rendered = ${directory:service}/chromium
+output = ${directory:service}/chromium
 
 
 # Configure and launch the proxy server.
 [nginx-config]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template-nginx-config'] }}
-rendered = ${headless-chromium:nginx-config-target}
+url = {{ parameter_list['template-nginx-config'] }}
+output = ${headless-chromium:nginx-config-target}
 mode = 700
 context =
   section param_headless_chromium headless-chromium
 
 [nginx-mime-types]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template-mime-types'] }}
-rendered = ${headless-chromium:nginx-mime-types}
+recipe = slapos.recipe.template
+url = {{ parameter_list['template-mime-types'] }}
+output = ${headless-chromium:nginx-mime-types}
 
 [nginx-launcher]
 recipe = slapos.cookbook:wrapper
@@ -128,8 +128,8 @@ environment =
 # Generate a fonts.conf file.
 [font-config]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template-fonts-conf'] }}
-rendered = ${directory:etc}/fonts.conf
+url = {{ parameter_list['template-fonts-conf'] }}
+output = ${directory:etc}/fonts.conf
 context =
   key cachedir :cache-dir
   key fonts :fonts
