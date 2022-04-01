@@ -8,8 +8,8 @@ offline = true
 
 [dynamic-template-validator]
 recipe = slapos.recipe.template:jinja2
-template = ${template-validator:output}
-rendered = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+url = ${template-validator:output}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
 filename = instance-validator.cfg
 context =
 # partition_ipv6 is the random ipv6 allocated to the local partition
@@ -19,7 +19,7 @@ context =
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = $${:validator}
 default = $${:validator}
-validator = dynamic-template-validator:rendered
+validator = dynamic-template-validator:output
 
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.
