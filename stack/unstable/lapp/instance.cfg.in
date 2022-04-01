@@ -10,12 +10,12 @@ offline = true
 [switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${instance-apache-php:output}
-resilient = ${instance-resilient:rendered}
+resilient = ${instance-resilient:output}
 postgres = ${instance-postgres:output}
 postgres-import = ${instance-postgres-import:output}
 postgres-export = ${instance-postgres-export:output}
 apache-import = ${instance-apache-import:output}
-apache-export = ${instance-apache-export:rendered}
+apache-export = ${instance-apache-export:output}
 
 #frozen creates a syntax error, meaning it can keep its data.
 #It's dirty as hell, it needs to be replaced.

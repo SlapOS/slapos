@@ -20,8 +20,8 @@ ssl = ${:etc}/ssl
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_apache_conf }}
-rendered = ${directory:etc}/apache.conf
+url = {{ template_apache_conf }}
+output = ${directory:etc}/apache.conf
 ip = ${slap-network-information:global-ipv6}
 #ipv4 = ${slap-network-information:local-ipv4}
 port = ${slap-parameter:httpd-port}
@@ -45,7 +45,7 @@ context =
 [httpd]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/httpd
-command-line = "{{ apache_location }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+command-line = "{{ apache_location }}/bin/httpd" -f "${apache-conf:output}" -DFOREGROUND
 
 [httpd-graceful]
 recipe = collective.recipe.template
