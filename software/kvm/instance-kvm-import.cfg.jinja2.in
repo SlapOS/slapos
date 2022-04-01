@@ -59,11 +59,11 @@ cronstamps = ${:etc}/cronstamps
 
 [importer]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_kvm_import }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-importer
+url = {{ template_kvm_import }}
+output = ${directory:bin}/${slap-parameter:namebase}-importer
 mode = 0700
 # Resilient stack wants a "wrapper" parameter
-wrapper = ${:rendered}
+wrapper = ${:output}
 context =
     section directory directory
     raw zcat_binary {{ zcat_binary }}

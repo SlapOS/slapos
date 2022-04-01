@@ -77,9 +77,9 @@ caucase.updater(
 )}}
 
 [rest-server-certificate-csr-config]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 mode = 644
-template = inline:
+inline =
   [req]
   prompt = no
   req_extensions = req_ext
@@ -92,7 +92,7 @@ template = inline:
   IP.1 = ${instance-parameter:ipv4-random}
   IP.2 = ${instance-parameter:ipv6-random}
 
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
 
 [rest-server-certificate-prepare-csr]
 recipe = plone.recipe.command
@@ -104,7 +104,7 @@ command =
       -new \
       -nodes \
       -keyout /dev/null \
-      -config '${rest-server-certificate-csr-config:rendered}' \
+      -config '${rest-server-certificate-csr-config:output}' \
       -out '${:csr}'
   fi
 stop-on-error = true
@@ -136,7 +136,7 @@ user = backup
 
 [rest-server-htpassword]
 recipe = plone.recipe.command
-command = 
+command =
   if [ ! -f '${:htpassword}' ] ; then
     {{ htpasswd_bin }} \
       -b \
