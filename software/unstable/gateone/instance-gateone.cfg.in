@@ -111,8 +111,8 @@ tmp = $${directory:tmp}/
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-ngnix-conf'] }}
-rendered = ${directory:etc}/nginx.conf
+url = {{ parameter_dict['template-ngnix-conf'] }}
+output = ${directory:etc}/nginx.conf
 context =
     section parameter_dict nginx-config-dict
     section param_tempdir tempdirectory
@@ -120,7 +120,7 @@ context =
 [nginx-run]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/nginx_proxy
-command-line = {{ parameter_dict['nginx-location'] }}/sbin/nginx -p ${buildout:directory} -c ${nginx-conf:rendered}
+command-line = {{ parameter_dict['nginx-location'] }}/sbin/nginx -p ${buildout:directory} -c ${nginx-conf:output}
 
 [logrotate-apache]
 < = logrotate-entry-base
