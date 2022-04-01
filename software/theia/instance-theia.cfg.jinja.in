@@ -38,7 +38,7 @@ additional-url = $${remote-additional-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
-ipv6 = {{ ipv6_random }}
+ipv6 = {{ ipv6_theia }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -227,7 +227,7 @@ storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
 recipe = slapos.cookbook:free_port
 minimum = 3000
 maximum = 3100
-ip = {{ ipv6_random }}
+ip = {{ ipv6_theia }}
 
 [frontend-instance-certificate]
 recipe = plone.recipe.command
@@ -421,7 +421,7 @@ inline =
   #!/bin/sh
   export HOME=$${directory:home}
   export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$HOME/.local/bin:$PATH
-  export IPV6_SLAPRUNNER={{ ipv6_random }}
+  export IPV6_SLAPRUNNER={{ ipv6_theia }}
 
 # Theia Backend
 # -------------
@@ -566,7 +566,7 @@ ip = {{ ipv4_random }}
 
 [slapos-standalone-config]
 ipv4 = {{ ipv4_random }}
-ipv6 = {{ ipv6_random }}
+ipv6 = {{ slap_resource.get('ipv6-range-network') or ipv6_theia }}
 port = $${slapos-standalone-port:port}
 base-directory = $${directory:runner}
 software-root = $${directory:runner}/software
@@ -603,7 +603,7 @@ context =
   key home_path directory:home
   key forward_frontend_requests :forward-frontend-requests
   section slap_connection slap-connection
-  section slapos_standalone_config slapos-standalone-config
+  section config slapos-standalone-config
 forward-frontend-requests = {{ parameter_dict['forward-slapos-frontend-requests'] }}
 url = ${slapos-standalone-script:output}
 
