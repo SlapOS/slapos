@@ -34,6 +34,7 @@ import string, random
 import json
 import traceback
 from slapos import slap
+from slapos.util import binFromIpv6
 
 class Recipe(GenericBaseRecipe):
   
@@ -54,20 +55,8 @@ class Recipe(GenericBaseRecipe):
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def getSerialFromIpv6(self, ipv6):
-    prefix = ipv6.split('/')[0].lower()
-    hi, lo = struct.unpack('!QQ', socket.inet_pton(socket.AF_INET6, prefix))
-    ipv6_int = (hi << 64) | lo
-    serial = '0x1%x' % ipv6_int
-
-    # delete non significant part
-    for part in prefix.split(':')[::-1]:
-      if part:
-        for i in ['0']*(4 - len(part)):
-          part = i + part
-        serial = serial.split(part)[0] + part
-        break
-
-    return serial
+    prefix, prefix_length = ipv6.split('/')
+    return "0x%x" % int('1%s' % binFromIpv6(prefix)[:int(prefix_length)], 2)
 
   def generateCertificate(self):
     key_file = self.options['key-file'].strip()
