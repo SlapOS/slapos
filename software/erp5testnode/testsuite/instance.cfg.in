@@ -6,12 +6,12 @@ default = $${:test}
 RootSoftwareInstance = $${:test}
 
 # Used for the test of resiliency. The system wants a "test" software_type.
-test = dynamic-template-resilient-test:rendered
+test = dynamic-template-resilient-test:output
 
 [dynamic-template-resilient-test]
 recipe = slapos.recipe.template:jinja2
-template = ${template-resilient-test:target}
-rendered = $${buildout:directory}/template-resilient-test.cfg
+url = ${template-resilient-test:target}
+output = $${buildout:directory}/template-resilient-test.cfg
 bin-directory = ${buildout:bin-directory}
 context =
     key develop_eggs_directory buildout:develop-eggs-directory

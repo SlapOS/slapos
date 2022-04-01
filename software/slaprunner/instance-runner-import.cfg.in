@@ -79,10 +79,10 @@ recipe =
 
 [importer]
 recipe = slapos.recipe.template:jinja2
-template = {{ importer_script_path }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-importer
+url = {{ importer_script_path }}
+output = ${directory:bin}/${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
-wrapper = ${:rendered}
+wrapper = ${:output}
 mode = 700
 restore-exit-code-file = ${directory:srv}/${:restore-exit-code-file-basename}
 restore-exit-code-file-basename = importer-exit-code-file
