@@ -72,8 +72,8 @@ wrapper-path = ${directory:bin}/jscrawler
 
 [jscrawler-build-wrapper]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-jscrawler'] }}
-rendered = ${directory:bin}/jscrawler-build
+url = {{ parameter_dict['template-jscrawler'] }}
+output = ${directory:bin}/jscrawler-build
 extensions = jinja2.ext.do
 mode = 0700
 list = {{ slapparameter_dict.get('urls', "").split("\n") | join('\n  ') }}
@@ -92,7 +92,7 @@ context =
 recipe = slapos.cookbook:cron.d
 name = jscrawler-build
 frequency = * * * * *
-command = ${jscrawler-build-wrapper:rendered}
+command = ${jscrawler-build-wrapper:output}
 
 
 [publish-connection-information]
