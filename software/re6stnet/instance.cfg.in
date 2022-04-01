@@ -13,7 +13,7 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
     key ipv6_set slap-configuration:ipv6
@@ -34,7 +34,7 @@ template-re6st-registry-conf = {{ template_re6st_registry_conf }}
 
 [dynamic-template-re6stnet]
 < = jinja2-template-base
-template = {{ template_re6stnet }}
+url = {{ template_re6stnet }}
 filename = instance-re6stnet.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -45,7 +45,7 @@ extra-context =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 
-default = dynamic-template-re6stnet:rendered
+default = dynamic-template-re6stnet:output
 registry = ${:default}
 # BBB
 RootSoftwareInstance = ${:default}
