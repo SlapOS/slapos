@@ -109,12 +109,17 @@ class Re6stnetTest(unittest.TestCase):
     recipe = self.new_recipe()
     serial = recipe.getSerialFromIpv6(ipv6)
 
-    self.assertEqual(serial, '0x1be280db8fe6a0d8504fe054a00ae0aea')
+    self.assertEqual(serial, '0x1be280db8fe6a0d85')
 
     ipv6 = '2001:db8:24::/48'
     serial = recipe.getSerialFromIpv6(ipv6)
 
     self.assertEqual(serial, '0x120010db80024')
+
+    ipv6 = '2001:db8:24::/47'
+    serial = recipe.getSerialFromIpv6(ipv6)
+
+    self.assertEqual(serial, '0x900086dc0012')
 
   def test_install(self):
     self.options.update({
