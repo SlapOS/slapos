@@ -72,7 +72,8 @@ config-caucase-url = {{ caucase_url }}
 
 [download-proxy-config]
 recipe = slapos.recipe.template:jinja2
-template = inline:#!{{ bash_bin }}
+inline =
+  #!{{ bash_bin }}
   NAME=$1
   HOST=$2
   PORT=$3
@@ -85,7 +86,7 @@ template = inline:#!{{ bash_bin }}
   {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
   tar -xzf proxies-$NAME.tar.gz
   cp etc/proxysql/proxysql.cnf $CONFIG
-rendered = ${directory:bin}/update-proxysql-config
+output = ${directory:bin}/update-proxysql-config
 mode = 755
 
 {% for instance_dict in slave_instance_list -%}
@@ -237,8 +238,8 @@ switchover-wait-write-query = {{ parameter_dict.get('switchover-wait-write-query
 
 [{{ 'config-' ~ name }}]
 recipe = slapos.recipe.template:jinja2
-template = {{ config_cluster_toml_in }}
-rendered = ${repman:clusters}/config-{{ name }}.toml
+url = {{ config_cluster_toml_in }}
+output = ${repman:clusters}/config-{{ name }}.toml
 extra-context =
 context =
   section parameter_dict {{ name ~ '-cluster-parameter' }}
@@ -252,7 +253,7 @@ config = ${proxysql-directory:config}/proxysql.cnf
 data = ${repman:proxy-data}/{{ name }}
 command =
   mkdir -p ${:data} &&
-  ${download-proxy-config:rendered} {{ name }} {{ ipv4 }} {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }} ${:config}
+  ${download-proxy-config:output} {{ name }} {{ ipv4 }} {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }} ${:config}
 update-command = ${:command}
 
 [proxysql-{{ name }}-wrapper]
@@ -308,14 +309,14 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 [{{ name}}-publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = {{ 'dynamic-' ~name ~ '-publish-slave-information:rendered' }}
+default = {{ 'dynamic-' ~name ~ '-publish-slave-information:output' }}
 RootSoftwareInstance = ${:default}
 
 [dynamic-{{ name}}-publish-slave-information]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/database-publish-slave-information.cfg
+output = ${buildout:directory}/database-publish-slave-information.cfg
 extensions = jinja2.ext.do
-template = {{ template_publish_slave_information }}
+url = {{ template_publish_slave_information }}
 context =
     import json_module          json
     key proxy_port              {{ name }}-cluster-parameter:proxy-port
@@ -405,9 +406,8 @@ context =
 [caucase-sign-csr]
 recipe = slapos.recipe.template:jinja2
 mode = 755
-rendered = ${directory:bin}/caucase-sign
-template =
-  inline:#!/bin/sh
+output = ${directory:bin}/caucase-sign
+inline =#!/bin/sh
   cp ${directory:ssl}/caucase.user.key ${directory:ssl}/caucase-full.key
   cat ${directory:ssl}/caucase.user.crt >> ${directory:ssl}/caucase-full.key
   for csr_id in {{ csrid_list | join(' ') }}; do
@@ -422,7 +422,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = caucase-sign-csr
 frequency = * * * * *
-command = ${caucase-sign-csr:rendered}
+command = ${caucase-sign-csr:output}
 {% do part_list.append('cron-caucase-sign-csr') -%}
 
 [slap-configuration]
@@ -520,7 +520,7 @@ update-command = ${:command}
 
 [replication-manager-reload]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_repman_manager_sh }}
+url = {{ template_repman_manager_sh }}
 cluster-list = {{ dumps( list(slapparameter_dict.get('repman-cluster-dict', default_parameter_dict)) ) }}
 context =
   section parameter_dict repman
@@ -531,7 +531,7 @@ context =
   raw jq_bin {{ jq_bin }}
   raw curl_bin {{ curl_bin }}
   raw bash_bin {{ bash_bin }}
-rendered = ${directory:scripts}/repman-reload
+output = ${directory:scripts}/repman-reload
 mode = 755
 
 [replication-manager]
@@ -542,7 +542,7 @@ command-line =
    --monitoring-sharedir=${repman-parameter:share-dir}
    --http-root=${repman-parameter:http-root}
    --monitoring-datadir=${repman:data-dir}
-   --config=${repman-config.toml:rendered}
+   --config=${repman-config.toml:output}
    --log-file=${repman-parameter:log}
    --memprofile=${directory:tmp}/repmgr.mprof
    monitor
@@ -560,8 +560,8 @@ wait-for-files =
 
 [repman-config.toml]
 recipe = slapos.recipe.template:jinja2
-template = {{ config_toml_in }}
-rendered = ${repman:etc}/config.toml
+url = {{ config_toml_in }}
+output = ${repman:etc}/config.toml
 extra-context =
 context =
   section parameter_dict repman-parameter
@@ -582,8 +582,8 @@ config-port = ${repman-parameter:secure-port}
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ nginx_conf_in }}
-rendered = ${nginx-parameter:config-file}
+url = {{ nginx_conf_in }}
+output = ${nginx-parameter:config-file}
 context =
     section parameter_dict nginx-parameter
 
@@ -592,7 +592,7 @@ recipe = slapos.cookbook:wrapper
 command-line =
   {{ nginx_bin }}
   -p ${directory:nginx-prefix}
-  -c ${nginx-conf:rendered}
+  -c ${nginx-conf:output}
 wrapper-path = ${directory:services}/nginx
 wait-for-files =
   ${directory:ssl}/repman-cert.crt
@@ -602,9 +602,10 @@ wait-for-files =
 
 [nginx-graceful-wrapper]
 recipe = slapos.recipe.template:jinja2
-template = inline:#!{{ bash_bin }}
+inline =
+  #!{{ bash_bin }}
   kill -USR1 "$(cat ${nginx-parameter:pid-file})"
-rendered = ${directory:scripts}/nginx-graceful
+output = ${directory:scripts}/nginx-graceful
 context =
 mode = 755
 
@@ -637,7 +638,7 @@ database-list = {{ db_list }}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
 
@@ -674,14 +675,14 @@ config-url = ${nginx-parameter:backend-ssl-url}
 
 [template-proxysql-need-stop-start]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/proxysql_check_stop_start
-template = {{ template_proxy_need_stopstart }}
+output = ${directory:bin}/proxysql_check_stop_start
+url = {{ template_proxy_need_stopstart }}
 mode = 755
 cluster-list = !py![{{ cluster_list | join(', ') }}]
 context =
   key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
   key repman_url          nginx-parameter:backend-url
-  key get_proxy_config    download-proxy-config:rendered
+  key get_proxy_config    download-proxy-config:output
   key cluster_list        :cluster-list
   raw jq_bin              {{ jq_bin }}
   raw bash_bin           {{ bash_bin }}
@@ -692,7 +693,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = proxysql-need-stop-start
 frequency = * * * * *
-command = ${template-proxysql-need-stop-start:rendered}
+command = ${template-proxysql-need-stop-start:output}
 
 #############################
 #
