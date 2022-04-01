@@ -373,7 +373,7 @@ extra-context =
     key template_expose_csr_nginx_conf software-release-path:template-expose-csr-nginx-conf
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
-    key monitor_base_url monitor-instance-parameter:monitor-base-url 
+    key monitor_base_url monitor-instance-parameter:monitor-base-url
     key node_id frontend-node-id:value
     key version_hash version-hash:value
     key software_release_url version-hash:software-release-url
@@ -923,7 +923,7 @@ monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-por
 password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
-private-path-list += 
+private-path-list +=
   ${logrotate-directory:logrotate-backup}
 
 

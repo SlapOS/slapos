@@ -13,7 +13,7 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
@@ -40,7 +40,7 @@ template-ngnix-conf = {{ template_nginx_conf }}
 
 [dynamic-template-gateone]
 < = jinja2-template-base
-template = {{ template_gateone }}
+url = {{ template_gateone }}
 filename = instance-gateone.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -49,5 +49,5 @@ extra-context =
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 
-default = ${dynamic-template-gateone:rendered}
+default = ${dynamic-template-gateone:output}
 gateone = ${:default}

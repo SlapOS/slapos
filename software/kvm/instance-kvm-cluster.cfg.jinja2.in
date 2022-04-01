@@ -272,9 +272,9 @@ port = 9002
 {%   do part_list.append('write-vm-hostname') -%}
 [write-vm-hostname]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_content }}
+url = {{ template_content }}
 filename = hosts
-rendered = ${directory:webroot}/${hash-code:passwd}/${:filename}
+output = ${directory:webroot}/${hash-code:passwd}/${:filename}
 context =
     raw content_list {{ kvm_hostname_list | join('#') }}
     raw sep #

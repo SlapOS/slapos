@@ -16,7 +16,7 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
     key eggs_directory buildout:eggs-directory
@@ -38,14 +38,14 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 
 [dynamic-template-varnish]
 < = jinja2-template-base
-template = {{ template_varnish }}
+url = {{ template_varnish }}
 filename = instance-varnish.cfg
 extra-context =
     section parameter_dict dynamic-template-varnish-parameters
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${dynamic-template-varnish:rendered}
+default = ${dynamic-template-varnish:output}
 
 [slap-connection]
 # part to migrate to new - separated words
