@@ -37,7 +37,8 @@ context =
   key parameter_dict slap-configuration:configuration
   key root_title slap-configuration:root-instance-title
   key partition_root_path buildout:directory
-  key ipv6_random slap-configuration:ipv6-random
+  key ipv6_range slap-configuration:ipv6-range-network
+  key ipv6_theia slap-configuration:ipv6-random
   key ipv4_random slap-configuration:ipv4-random
   import os_module os
   import hashlib_module hashlib

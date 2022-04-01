@@ -491,7 +491,7 @@ ip = {{ ipv4_random }}
 
 [slapos-standalone-config]
 ipv4 = {{ ipv4_random }}
-ipv6 = {{ ipv6_random }}
+ipv6-range = {{ ipv6_range }}
 port = $${slapos-standalone-port:port}
 local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
@@ -564,7 +564,7 @@ template =
   try:
     partition_count = 20
     print("Standalone SlapOS: Formatting %d partitions" % partition_count)
-    standalone.format(partition_count, '$${slapos-standalone-config:ipv4}', '$${slapos-standalone-config:ipv6}')
+    standalone.format(partition_count, '$${slapos-standalone-config:ipv4}', '$${slapos-standalone-config:ipv6-range}')
     print("Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` started")
     # Run instance at least once, to start the supervisor managing instances.
     try:
