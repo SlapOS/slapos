@@ -2,7 +2,7 @@
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
@@ -10,7 +10,7 @@ context =
 
 [slave-test-configuration]
 <=jinja2-template-base
-template = {{ template_json_edgetest_test }}
+url = {{ template_json_edgetest_test }}
 filename = srv/monitor/private/test.json
 extensions = jinja2.ext.do 
 extra-context = 

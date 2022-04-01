@@ -105,23 +105,22 @@ path-nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 docroot = ${basedirectory:data}/${slap-configuration:configuration.site}/public
 
 [hugo-server]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/hugo-server
-mode = 0700
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+output = ${directory:bin}/hugo-server
+inline =
+  #!/bin/sh
   . ${hugo:go-environment}
   cd ${basedirectory:data}/${slap-configuration:configuration.site}
   if [ -d "public" ]; then rm -Rf public; fi
   export TMPDIR=${hugo:path-tmp}
-  hugo && hugo server --bind=${hugo:ip} --port=${hugo:hugo-port} --baseURL=${hugo-frontend:connection-secure_access} --appendPort=false  
+  hugo && hugo server --bind=${hugo:ip} --port=${hugo:hugo-port} --baseURL=${hugo-frontend:connection-secure_access} --appendPort=false
 
 [hugo-server-service]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${basedirectory:service}/hugo-server
-command-line = ${hugo-server:rendered}
+command-line = ${hugo-server:output}
 hash-files =
-  ${hugo-server:rendered}
+  ${hugo-server:output}
 
 [hugo-port-listening-promise]
 <= monitor-promise-base
@@ -152,17 +151,17 @@ config-url = ${:url}
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_nginx_conf'] }}
-rendered = ${hugo:path-nginx-conf}
+url = {{ parameter_list['template_nginx_conf'] }}
+output = ${hugo:path-nginx-conf}
 context =
     section param_hugo hugo
     section param_tempdir tempdirectory
     section param_nginxcert nginx-certificate
 
 [mime-types]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_mime_types'] }}
-rendered = ${hugo:path-mime-types}
+recipe = slapos.recipe.template
+url = {{ parameter_list['template_mime_types'] }}
+output = ${hugo:path-mime-types}
 
 [nginx-launcher]
 recipe = slapos.cookbook:wrapper
@@ -188,27 +187,25 @@ stop-on-error = true
 
 [default-index-html]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_index_html'] }}
-rendered = ${basedirectory:default-public}/index.html
+url = {{ parameter_list['template_index_html'] }}
+output = ${basedirectory:default-public}/index.html
 context =
   key go_environment hugo:go-environment
   key data basedirectory:data
 
 [default-config-toml]
-recipe = slapos.recipe.template:jinja2
-rendered = ${basedirectory:default-site}/config.toml
-template = 
-  inline:
+recipe = slapos.recipe.template
+output = ${basedirectory:default-site}/config.toml
+inline =
   baseURL = "${hugo-frontend:connection-secure_access}"
   languageCode = "en-us"
   title = "My New Hugo Site"
 
 [nginx-graceful]
-recipe = slapos.recipe.template:jinja2
-rendered = ${basedirectory:script}/nginx-graceful
-mode = 0700
-template =
-  inline:#!/bin/sh
+recipe = slapos.recipe.template
+output = ${basedirectory:script}/nginx-graceful
+inline =
+  #!/bin/sh
   exec kill -s SIGHUP $(cat ${hugo:path-pid})
 
 [nginx-port-listening-promise]

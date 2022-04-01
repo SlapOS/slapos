@@ -95,7 +95,6 @@ inline =
     {{ x11vnc_bin }} -storepasswd ${random-password:passwd} ${:passfile};
   fi
 output = ${directory:bin}/x11vnc_passwd
-mode = 700
 
 [generate-vnc-password]
 recipe = plone.recipe.command
