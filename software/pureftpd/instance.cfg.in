@@ -62,7 +62,7 @@ auth-user-file=${auth-user-file:output}
 recipe =slapos.recipe.template:jinja2
 # WARNING pure-uploadscript must be launched AFTER pure-ftpd so keep them in the same wrapper
 # and make sure they are both killed if one of them is killed.
-template = inline:
+inline =
   #!{{ bash_location }}/bin/bash
   {{ pureftpd_bin }} --uploadscript --customerproof --bind ${:host},${:ftp-port} --login puredb:${:auth-user-file} --pidfile ${:pid-file} &
   while ! [ -p ${directory:run}/pure-ftpd.upload.pipe ]
@@ -72,8 +72,8 @@ template = inline:
   {{ pureuploadscript_bin }} -r /opt/pureftpd/upload_script &
   wait -n
   kill 0
-rendered = ${directory:service}/pureftpd
-wrapper-path = ${:rendered}
+output = ${directory:service}/pureftpd
+wrapper-path = ${:output}
 
 [pure-pw]
 # command line to add a user, invoke with:

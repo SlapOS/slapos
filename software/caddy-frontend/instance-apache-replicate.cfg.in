@@ -33,7 +33,7 @@
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
@@ -403,11 +403,11 @@ config-url =
 #-- Publish slave information
 [publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-publish-slave-information:rendered
+default = dynamic-publish-slave-information:output
 RootSoftwareInstance = ${:default}
-replicate = dynamic-publish-slave-information:rendered
-custom-personal = dynamic-publish-slave-information:rendered
-custom-group = dynamic-publish-slave-information:rendered
+replicate = dynamic-publish-slave-information:output
+custom-personal = dynamic-publish-slave-information:output
+custom-group = dynamic-publish-slave-information:output
 
 [request-kedifa]
 <= slap-connection
@@ -470,7 +470,7 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
-template = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
+url {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
 filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -538,7 +538,7 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aikc-config:caucase-url
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+inline =#!{{ software_parameter_dict['dash'] }}/bin/dash
   exec {{ software_parameter_dict['bin_directory'] }}/caucase \
 {# raw block to use context #}
 {% raw %}
@@ -550,7 +550,7 @@ template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   --crl ${aikc-config:crl} \
   "$@"
 
-rendered = ${directory:bin}/aikc-caucase-wrapper
+output = ${directory:bin}/aikc-caucase-wrapper
 mode = 0700
 
 {% do part_list.append('aikc-create-user') %}
@@ -562,11 +562,11 @@ update-command = ${:command}
 csr_id = ${directory:aikc}/csr_id
 command =
   if ! [ -f ${aikc-config:user-created} ] ; then
-    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${:csr_id} || exit 1
+    ${aikc-caucase-wrapper:output} --mode user --send-csr ${aikc-user-csr:csr} > ${:csr_id} || exit 1
     cut -d ' ' -f 1 ${:csr_id} || exit 1
     csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
-    ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
+    ${aikc-caucase-wrapper:output} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
     touch ${aikc-config:user-created}
   fi
 
@@ -662,7 +662,7 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aibcc-config:caucase-url
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+inline =#!{{ software_parameter_dict['dash'] }}/bin/dash
 
   exec {{ software_parameter_dict['bin_directory'] }}/caucase \
 {# raw block to use context #}
@@ -675,7 +675,7 @@ template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   --crl ${aibcc-config:crl} \
   "$@"
 
-rendered = ${directory:bin}/aibcc-caucase-wrapper
+output = ${directory:bin}/aibcc-caucase-wrapper
 mode = 0700
 
 {% do part_list.append('aibcc-create-user') %}
@@ -689,11 +689,11 @@ update-command = ${:command}
 csr_id = ${directory:aibcc}/csr_id
 command =
   if ! [ -f ${aibcc-config:user-created} ] ; then
-    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${:csr_id} || exit 1
+    ${aibcc-caucase-wrapper:output} --mode user --send-csr ${aibcc-user-csr:csr} > ${:csr_id} || exit 1
     cut -d ' ' -f 1 ${:csr_id} || exit 1
     csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
-    ${aibcc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
+    ${aibcc-caucase-wrapper:output} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
     touch ${aibcc-config:user-created}
   fi
 
@@ -754,8 +754,8 @@ update-command = ${:command}
 recipe = slapos.recipe.template:jinja2
 filename = rejected-slave.json
 directory = ${directory:promise-output}
-rendered = ${:directory}/${:filename}
-template = {{ software_parameter_dict['template_empty'] }}
+output = ${:directory}/${:filename}
+url {{ software_parameter_dict['template_empty'] }}
 {% if critical_rejected_slave_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 content = {{ dumps(json_module.dumps(critical_rejected_slave_dict, indent=2, sort_keys=True)) }}
@@ -778,13 +778,13 @@ directory = ${rejected-slave-json:directory}
 url = https://${rejected-slave-password:user}:${rejected-slave-password:passwd}@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${rejected-slave-template:rendered}
+  -c ${rejected-slave-template:output}
 
 wrapper-path = ${directory:service}/rejected-slave-publish
 hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
 hash-files =
-  ${rejected-slave-template:rendered}
+  ${rejected-slave-template:output}
   ${rejected-slave-certificate:certificate}
 
 [rejected-slave-certificate]
@@ -822,7 +822,7 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slav
 recipe = slapos.recipe.template:jinja2
 var = ${directory:rejected-var}
 pid = ${directory:var}/nginx-rejected.pid
-template = inline:
+inline =
   daemon off;
   pid ${:pid};
   error_log stderr;
@@ -856,7 +856,7 @@ template = inline:
     }
   }
 
-rendered = ${directory:etc}/nginx-rejected-slave.conf
+output = ${directory:etc}/nginx-rejected-slave.conf
 
 [promise-rejected-slave-publish-ip-port]
 <= monitor-promise-base
@@ -870,7 +870,7 @@ config-port = ${rejected-slave-publish-configuration:port}
 promise = check_socket_listening
 promise = check_file_state
 name = rejected-slave.py
-config-filename = ${rejected-slave-json:rendered}
+config-filename = ${rejected-slave-json:output}
 config-state = empty
 config-url = ${rejected-slave-publish:url}
 
