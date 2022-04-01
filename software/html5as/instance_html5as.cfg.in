@@ -107,8 +107,8 @@ path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 # Render nginx conf
 [nginx_conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_nginx_conf'] }}
-rendered = ${html5as:path_nginx_conf}
+url = {{ parameter_list['template_nginx_conf'] }}
+output = ${html5as:path_nginx_conf}
 context = 
     section param_html5as html5as
     section param_tempdir tempdirectory
@@ -116,14 +116,14 @@ context =
 # Render necessary mime types file for nginx
 [mime_types]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_mime_types'] }}
-rendered = ${html5as:path_mime_types}
+url = {{ parameter_list['template_mime_types'] }}
+output = ${html5as:path_mime_types}
 
 # Render the script launching nginx
 [launcher]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_launcher'] }}
-rendered = ${html5as:bin_launcher}
+url = {{ parameter_list['template_launcher'] }}
+output = ${html5as:bin_launcher}
 mode = 700
 context = 
     section param_html5as html5as
@@ -137,7 +137,7 @@ location = ${directory:srv}/html5as
 # All the keys in this section will be available as a dict called "self.options"
 # We add: or '', otherwise jinja2 will render a 'None' string
 url = {{ parameter_dict['download_url'] or '' }}
-default_index_html = ${default_index_html:rendered}
+default_index_html = ${default_index_html:output}
 # If a tarball is passed as a parameter in download url
 # it's content will be served by the instance.
 # If the parameter is not provided it fallback to the default template
@@ -167,8 +167,8 @@ install =
 
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_index_html'] }}
-rendered = ${directory:srv}/index.html
+url = {{ parameter_list['template_index_html'] }}
+output = ${directory:srv}/index.html
 title = {{ parameter_dict['title'] }}
 context =
   key title :title
@@ -176,8 +176,8 @@ context =
 ### Nginx Graceful
 [nginx-graceful]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_graceful'] }}
-rendered = ${basedirectory:script}/nginx-graceful
+url = {{ parameter_list['template_graceful'] }}
+output = ${basedirectory:script}/nginx-graceful
 mode = 0700
 context =
     section param_html5as html5as

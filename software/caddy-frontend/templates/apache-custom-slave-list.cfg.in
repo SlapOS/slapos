@@ -290,8 +290,8 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {#-         Store certificates on fs #}
 [{{ cert_title }}]
 < = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ cert_file }}
+url = {{ empty_template }}
+output = {{ cert_file }}
 extra-context =
     key content {{ cert_title + '-config:value' }}
 {#-         BBB: SlapOS Master non-zero knowledge BEGIN #}
@@ -312,8 +312,8 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 
 [{{cert_title}}]
 < = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ cert_file }}
+url = {{ empty_template }}
+output = {{ cert_file }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
 extra-context =
     key content :cert-content
@@ -340,9 +340,9 @@ node-id = {{ node_id }}
 
 [{{ slave_section_title }}]
 < = jinja2-template-base
-rendered = {{ caddy_configuration_directory }}/${:filename}
+output = {{ caddy_configuration_directory }}/${:filename}
 
-template = {{ template_default_slave_configuration }}
+url = {{ template_default_slave_configuration }}
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
 
@@ -430,8 +430,8 @@ pid = {{ caddy_configuration['slave-introspection-pid-file'] }}
 
 [slave-introspection-config]
 <= jinja2-template-base
-template = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
-rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
+url = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
+output = {{ frontend_configuration['slave-introspection-configuration'] }}
 extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_htpasswd slave-htpasswd
@@ -440,7 +440,7 @@ extra-context =
 [slave-introspection]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${slave-introspection-config:rendered}
+  -c ${slave-introspection-config:output}
 
 wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -491,18 +491,18 @@ update-command = ${:command}
 [kedifa-updater-mapping]
 recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_configuration['kedifa-updater-mapping-file'] }}
-template = inline:
+inline =
 {%- for mapping in kedifa_updater_mapping %}
   {{ mapping[0] }} {{ mapping[1] }} {{ mapping[2] }}
 {%- endfor %}
 
-rendered = ${:file}
+output = ${:file}
 
 ##<Backend haproxy>
 [backend-haproxy-configuration]
 < = jinja2-template-base
-template = {{ template_backend_haproxy_configuration }}
-rendered = ${backend-haproxy-config:file}
+url = {{ template_backend_haproxy_configuration }}
+output = ${backend-haproxy-config:file}
 backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
 extra-context =
   key backend_slave_list :backend_slave_list
@@ -589,8 +589,8 @@ nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
 
 [expose-csr-template]
 recipe = slapos.recipe.template:jinja2
-rendered = {{ directory['expose-csr-etc'] }}/nginx.conf
-template = {{ template_expose_csr_nginx_conf }}
+output = {{ directory['expose-csr-etc'] }}/nginx.conf
+url = {{ template_expose_csr_nginx_conf }}
 context =
   section configuration expose-csr-configuration
 
@@ -604,7 +604,7 @@ config-port = ${expose-csr-configuration:port}
 [expose-csr]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${expose-csr-template:rendered}
+  -c ${expose-csr-template:output}
 url = https://[${expose-csr-configuration:ip}]:${expose-csr-configuration:port}
 
 wrapper-path = {{ directory['service'] }}/expose-csr
