@@ -59,10 +59,10 @@ data-dir = ${directory:pureftpd-dir}
 pid-file=${directory:run}/pureftpd.pid
 auth-user-file=${auth-user-file:output}
 
-recipe =slapos.recipe.template:jinja2
+recipe =slapos.recipe.template
 # WARNING pure-uploadscript must be launched AFTER pure-ftpd so keep them in the same wrapper
 # and make sure they are both killed if one of them is killed.
-template = inline:
+inline =
   #!{{ bash_location }}/bin/bash
   {{ pureftpd_bin }} --uploadscript --customerproof --bind ${:host},${:ftp-port} --login puredb:${:auth-user-file} --pidfile ${:pid-file} &
   while ! [ -p ${directory:run}/pure-ftpd.upload.pipe ]
@@ -72,8 +72,8 @@ template = inline:
   {{ pureuploadscript_bin }} -r /opt/pureftpd/upload_script &
   wait -n
   kill 0
-rendered = ${directory:service}/pureftpd
-wrapper-path = ${:rendered}
+output = ${directory:service}/pureftpd
+wrapper-path = ${:output}
 
 [pure-pw]
 # command line to add a user, invoke with:
@@ -89,7 +89,7 @@ command-line =
 recipe = plone.recipe.command
 passwd-file = ${directory:etc}/pureftpd.passwd
 output = ${directory:etc}/pureftpd.pdb
-command = 
+command =
   if [ -f ${:passwd-file} ] && {{ purepw_bin }} show ${pureftpd-password:username} -f ${:passwd-file}
   then
     ( echo ${pureftpd-password:passwd} ; echo ${pureftpd-password:passwd}) | {{ purepw_bin }} passwd ${pureftpd-password:username} -f ${:passwd-file}

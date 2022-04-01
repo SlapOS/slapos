@@ -6,7 +6,7 @@ parts =
   logrotate-entry-nginx
   promises
   publish-connection-information
-extends = ${monitor-template:rendered}
+extends = ${monitor-template:output}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
@@ -46,7 +46,6 @@ command-line =
 recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
-mode = 0600
 access-log = $${directory:log}/nginx-access.log
 error-log = $${directory:log}/nginx-error.log
 pid-file = $${directory:run}/nginx.pid
