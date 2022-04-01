@@ -8,9 +8,9 @@ offline = true
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = template-instance-repman.cfg:rendered
+default = template-instance-repman.cfg:output
 RootSoftwareInstance = ${:default}
-mariadb = template-instance-mariadb.cfg:rendered
+mariadb = template-instance-mariadb.cfg:output
 
 
 [slap-configuration]
@@ -24,9 +24,8 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe  = slapos.recipe.template:jinja2
-mode    = 0644
 extensions = jinja2.ext.do
-rendered= ${buildout:directory}/${:_buildout_section_name_}
+output= ${buildout:directory}/${:_buildout_section_name_}
 supervisord-lib = {{ supervisord_lib }}
 causace-lib = {{ caucase_library }}
 import-list =
@@ -58,7 +57,7 @@ extra-context =
 
 [template-instance-repman.cfg]
 <= jinja2-template-base
-template= {{ template_repman_cfg }}
+url = {{ template_repman_cfg }}
 extra-context =
     key slave_instance_list         slap-configuration:slave-instance-list
     raw gowork_bin                  {{ gowork_bin }}
@@ -104,7 +103,7 @@ groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plug
 
 [template-instance-mariadb.cfg]
 <= jinja2-template-base
-template = {{ template_mariadb }}
+url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict template-mariadb-parameters

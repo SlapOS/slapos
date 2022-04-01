@@ -2,11 +2,11 @@
 extends = {{ instance_common_cfg }}
 
 [jinja2-template-base]
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
+output = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
 
 [neo-cluster]
 <= jinja2-template-base
-template = {{ cluster }}
+url = {{ cluster }}
 extra-context =
     import re re
     import urllib_parse six.moves.urllib.parse
@@ -22,7 +22,7 @@ extra-context +=
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
-default = neo-cluster:rendered
+default = neo-cluster:output
 # BBB
 RootSoftwareInstance = ${:default}
-neo = neo:rendered
+neo = neo:output

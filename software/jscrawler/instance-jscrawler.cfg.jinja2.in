@@ -67,15 +67,14 @@ config-port = ${httpd-wrapper:port}
 [jscrawler-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ parameter_dict['nodejs-location'] }} {{ parameter_dict['jscrawler-location'] }} 
+  {{ parameter_dict['nodejs-location'] }} {{ parameter_dict['jscrawler-location'] }}
 wrapper-path = ${directory:bin}/jscrawler
 
 [jscrawler-build-wrapper]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-jscrawler'] }}
-rendered = ${directory:bin}/jscrawler-build
+url = {{ parameter_dict['template-jscrawler'] }}
+output = ${directory:bin}/jscrawler-build
 extensions = jinja2.ext.do
-mode = 0700
 list = {{ slapparameter_dict.get('urls', "").split("\n") | join('\n  ') }}
 period = {{ slapparameter_dict.get('crawl-periodicity', 0) }}
 context =
@@ -92,7 +91,7 @@ context =
 recipe = slapos.cookbook:cron.d
 name = jscrawler-build
 frequency = * * * * *
-command = ${jscrawler-build-wrapper:rendered}
+command = ${jscrawler-build-wrapper:output}
 
 
 [publish-connection-information]

@@ -20,14 +20,14 @@ import json
 
 os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
 os.environ['DISPLAY'] = '$${xvfb-instance:display}'
-os.environ['FONTCONFIG_FILE'] = '$${fontconfig-conf:rendered}'
+os.environ['FONTCONFIG_FILE'] = '$${fontconfig-conf:output}'
 
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 ETC_DIRECTORY = '$${directory:etc}'
 
 def main():
   parsed_parameters = json.load(
-      open('$${runTestSuite-config-file:rendered}', 'rb'))
+      open('$${runTestSuite-config-file:output}', 'rb'))
   test_runner = parsed_parameters.get('test-runner', {})
 
   parser = argparse.ArgumentParser(description='Run a test suite.')
