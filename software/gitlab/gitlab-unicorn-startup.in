@@ -73,5 +73,5 @@ $RAKE cache:clear   || die "cache:clear failed"
 # 3. finally exec to unicorn
 exec {{ gitlab_unicorn }}   \
     -E production   \
-    -c {{ unicorn_rb.rendered }}    \
+    -c {{ unicorn_rb.output }}    \
     {{ gitlab_work.location }}/config.ru
