@@ -16,7 +16,7 @@ fi
 trap 'rm -rf "$TMPFILE"' EXIT TERM INT
 
 #we reserve backup folder in a month
-{{ parameter_dict['find_bin'] }}/bin/find {{ parameter_dict['dir-backup'] }} -mtime +30 -type d |{{ parameter_dict['find_bin'] }}/bin/xargs rm -rf
+{{ parameter_dict['find-bin'] }}/bin/find {{ parameter_dict['dir-backup'] }} -mtime +30 -type d |{{ parameter_dict['find-bin'] }}/bin/xargs rm -rf
 
 #backup
 
@@ -28,11 +28,11 @@ cp -rf {{ parameter_dict['document-root'] }}/matomo/plugins $TMPFILE/plugins
 
 #check if copy-action finish well
 
-if test ! -z "$(diff -r $TMPFILE/config {{ parameter_dict['document-root'] }}/matomo/config)"; then
+if test ! -z "$({{ parameter_dict['diff-bin'] }}/bin/diff -r $TMPFILE/config {{ parameter_dict['document-root'] }}/matomo/config)"; then
   exit 1
 fi
 
-if test ! -z "$(diff -r $TMPFILE/plugins {{ parameter_dict['document-root'] }}/matomo/plugins)"; then
+if test ! -z "$({{ parameter_dict['diff-bin'] }}/bin/diff -r $TMPFILE/plugins {{ parameter_dict['document-root'] }}/matomo/plugins)"; then
   exit 1
 fi
 
