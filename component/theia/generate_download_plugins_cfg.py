@@ -87,7 +87,7 @@ for plugin_and_version in '''\
     vscjava/vscode-java-debug/0.29.0
     redhat/java/0.61.0
     vscjava/vscode-java-test/0.26.0
-    ms-python/python/2020.9.112786
+    ms-python/python/2020.10.332292344
     perrinjerome/vscode-zc-buildout/latest
     jebbs/plantuml/2.14.0
     rafaelmaiolla/diff/latest
