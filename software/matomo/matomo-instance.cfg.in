@@ -1,0 +1,20 @@
+# parameters required by the configuration instance
+[instance-parameter]
+matomo = ${:document-root}
+dir-backup = ${directory:backup}
+find-bin = {{ findutils_location }}
+diff-bin = {{ diffutils_location }}
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered} 
+
+[matomo-backup.sh]
+recipe = slapos.recipe.template:jinja2
+template = {{ matomo_backup_sh }}
+rendered = ${directory:scripts}/matomo-backup
+context =
+  section parameter_dict instance-parameter
+  key php_bin php-bin:wrapper-path
+depends =

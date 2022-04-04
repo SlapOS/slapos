@@ -1,0 +1,53 @@
+#!/bin/sh
+
+set -e
+set -x
+
+#checkout if directory and matomo resources exist
+
+if [ ! -d /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/config ]; then
+  exit 1;
+fi
+
+if [ ! -f /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/config/config.ini.php ]; then
+  exit 0;
+fi
+
+trap 'rm -rf "$TMPFILE"' EXIT TERM INT
+
+#we reserve backup folder in a month
+/srv/slapgrid/slappart36/srv/runner/shared/findutils/ca243ce8837a35682a5a85f5d5d5ff01/bin/find /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/backup -mtime +30 -type d |/srv/slapgrid/slappart36/srv/runner/shared/findutils/ca243ce8837a35682a5a85f5d5d5ff01/bin/xargs rm -rf
+
+#backup
+
+TMPFILE=$(mktemp -d -p "/srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/backup")
+
+/srv/slapgrid/slappart36/srv/runner/instance/slappart2/bin/php /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/console plugin:list > $TMPFILE/plugins_list
+cp -rf /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/config $TMPFILE/config
+cp -rf /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/plugins $TMPFILE/plugins
+
+#check if copy-action finish well
+
+/srv/slapgrid/slappart36/srv/runner/shared/diffutils/3989866a518d389ac9c0b91e77636fd8/bin/diff -r $TMPFILE/config /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/config
+
+if $?; then
+  exit 1
+fi
+
+/srv/slapgrid/slappart36/srv/runner/shared/diffutils/3989866a518d389ac9c0b91e77636fd8/bin/diff -r $TMPFILE/plugins /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/www//matomo/plugins
+
+if $?; then
+  exit 1
+fi
+
+#check if the file plugins_list has been created
+if [ ! -f $TMPFILE/plugins_list ]; then
+  exit 1
+fi
+
+#if all things go well, change the name of folder with date now
+if [ -d $TMPFILE ]; then
+  mv -f $TMPFILE /srv/slapgrid/slappart36/srv/runner/instance/slappart2/srv/backup/`date +%m-%d-%Y-%T`
+fi
+
+exit 0
