@@ -39,3 +39,9 @@ template = {{ matomo_apache_httpd }}
 rendered = ${directory:apache.d}/matomo.conf
 context =
   section parameter_dict apache-php-configuration
+  [matomo-backup-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-backup
+frequency = 0 0 * * *
+command = ${matomo-backup.sh:rendered}
