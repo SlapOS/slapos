@@ -186,7 +186,9 @@ return =
 {% do publish_dict.__setitem__(instance_name ~ '-ipv6-info', '${' ~ section ~ ':connection-ipv6-network-info}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
+{% if kvm_parameter_dict.get('state', '') != 'stopped' -%}
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
 {% if frontend_dict.get('frontend-additional-instance-guid') %}
