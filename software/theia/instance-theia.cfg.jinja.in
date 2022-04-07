@@ -728,7 +728,8 @@ template =
       "$${directory:runner}/**":true,
       "$${directory:project}/runner/**":true
     },
-    "git.terminalAuthentication": false
+    "git.terminalAuthentication": false,
+    "security.workspace.trust.startupPrompt": "once"
   }
 
 [runner-link]
