@@ -122,7 +122,7 @@ includes =
 
 [xserver]
 recipe = slapos.cookbook:wrapper
-command-line = {{ xvfb_bin }} ${:display} -screen 0 1280x1024x24
+command-line = {{ xvfb_bin }} ${:display} -screen 0 ${:resolution}
   -fbdir ${directory:framebuffer}
 wrapper-path = ${directory:services}/xserver
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -131,6 +131,7 @@ environment =
   FONTCONFIG_FILE=${font-config:rendered}
 display-num = 0
 display = :${:display-num}
+resolution = 1280x1024x24
 lock-dir = ${directory:run}
 lock-file = ${:lock-dir}/.X${:display-num}-lock
 

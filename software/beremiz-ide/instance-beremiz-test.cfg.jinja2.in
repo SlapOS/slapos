@@ -3,6 +3,7 @@ tests = ${:srv}/tests
 
 [xserver]
 display-num = 42
+resolution = 1920x1080x24
 
 [wmctrl]
 recipe = slapos.cookbook:wrapper
