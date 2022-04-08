@@ -172,7 +172,7 @@ slave = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
-config-websocket-path-list = /services /file-upload
+config-websocket-path-list = /services /socket.io /file-upload
 return = domain secure_access
 
 [remote-frontend]
@@ -250,6 +250,9 @@ template =
       except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename} $${frontend-instance-logo:filename}
     }
     proxy /services $${theia-instance:base-url} {
+      websocket
+    }
+    proxy /socket.io $${theia-instance:base-url} {
       websocket
     }
     proxy /file-upload $${theia-instance:base-url} {
