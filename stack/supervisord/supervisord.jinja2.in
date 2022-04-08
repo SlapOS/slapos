@@ -14,7 +14,7 @@ run = ${:var}/run
 supervisord = ${:etc}/supervisord-{{ name }}.conf.d
 
 [controller-parameters]
-socket-path = ${controller-directory:run}/{{ name }}.socket
+socket-path = ${controller-directory:run}/sv.sock
 include-dir = ${controller-directory:supervisord}
 log-file    = ${controller-directory:log}/supervisord-{{ name }}.log
 log-level   = info
@@ -34,7 +34,7 @@ wrapper-path = ${directory:services}/supervisord-{{ name }}
 {% if use_service_hash -%}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {% endif -%}
-depends = 
+depends =
   {{ '${' ~ name ~ '-bin:recipe}' }}
 
 [{{ name }}-bin]
