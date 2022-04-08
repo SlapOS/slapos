@@ -172,7 +172,7 @@ slave = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
-config-websocket-path-list = /services /file-upload
+config-websocket-path-list = /file-upload /socket.io
 return = domain secure_access
 
 [remote-frontend]
