@@ -152,9 +152,12 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
 {% for m in parameter_dict['import-list'] -%}
 %import {{ m }}
 {% endfor -%}
-{% set type_dict = {'neo': 'NEOStorage', 'zeo': 'zeoclient'} %}
+{% set type_dict = {'neo': 'NEOStorage', 'zeo': 'clientstorage'} %}
 {% for name, zodb_dict in six.iteritems(parameter_dict['zodb-dict']) %}
 <zodb_db {{ name }}>
+{%- if zodb_dict['type'] == 'zeo' %}
+  %import ZEO
+{%- endif %}
 {%- set storage_type = type_dict[zodb_dict.pop('type')] %}
 {%- set storage_dict = zodb_dict.pop('storage-dict') %}
 {%- do root_common.apply_overrides(zodb_dict, node_id) %}
