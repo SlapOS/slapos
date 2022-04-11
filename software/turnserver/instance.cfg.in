@@ -43,8 +43,8 @@ default-parameters =
     "server-name" : "turn.example.com",
     "ssl-key": "",
     "ssl-crt": "",
-    "port": "3478",
-    "tls-port": "5349",
+    "port": 3478,
+    "tls-port": 5349,
     "external-ip": ""
 # listening-ip parameter is mandatory
 #"listening-ip": null,

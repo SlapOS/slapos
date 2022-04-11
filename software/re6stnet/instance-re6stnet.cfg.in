@@ -83,26 +83,21 @@ hello = {{ slapparameter_dict.get('hello', 15) }}
 min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
 encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
 same-country = {{ slapparameter_dict.get('same-country', '') }}
+{%- set community = slapparameter_dict.get('community-conf') %}
+{%- if community %}
+community-path = ${re6st-community-conf:output}
+
+[re6st-community-conf]
+recipe = slapos.recipe.template
+inline = {{ dumps(community) }}
+output = ${re6stnet-dirs:conf}/community.conf
+{%- endif %}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['template-re6st-registry-conf'] }}
 rendered = ${re6stnet-dirs:conf}/registry.conf
 context = section parameter_dict re6st-registry-conf-dict
-
-depends = ${re6st-compat:recipe}
-[re6st-compat]
-recipe = slapos.recipe.build
-update =
-  import errno, os
-  res6stnet = self.buildout['directory']['srv'] + '/res6stnet'
-  try:
-    os.rename(res6stnet + '/registry', self.buildout['re6stnet-dirs']['data'])
-  except OSError as e:
-    if e.errno != errno.ENOENT:
-      raise
-  else:
-    os.rmdir(res6stnet)
 
 [re6st-registry-wrapper]
 recipe = slapos.cookbook:wrapper
