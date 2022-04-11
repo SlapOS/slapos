@@ -122,7 +122,7 @@ includes =
 
 [xserver]
 recipe = slapos.cookbook:wrapper
-command-line = {{ xvfb_bin }} ${:display} -screen 0 ${:resolution}
+command-line = {{ xvfb_bin }} ${:display} -screen 0 ${:resolution}x24
   -fbdir ${directory:framebuffer}
 wrapper-path = ${directory:services}/xserver
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -131,7 +131,7 @@ environment =
   FONTCONFIG_FILE=${font-config:rendered}
 display-num = 0
 display = :${:display-num}
-resolution = 1280x1024x24
+resolution = {{ slapparameter_dict.get('screen-resolution', '1280x1024') }}
 lock-dir = ${directory:run}
 lock-file = ${:lock-dir}/.X${:display-num}-lock
 
@@ -146,6 +146,7 @@ template = {{ fluxbox_menu }}
 rendered = ${directory:fluxbox}/menu
 context =
   key beremiz_bin      beremiz-x11:output
+  key xterm_bin        xterm:output
   raw fluxbox_location {{ fluxbox_location }}
 
 [fluxbox-toolbar]
@@ -180,7 +181,7 @@ recipe = slapos.recipe.template
 inline =
   #!/bin/sh
   export LD_LIBRARY_PATH={{ mesa_location }}/lib
-  export PATH=${directory:bin}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
+  export PATH=${directory:bin}:{{ git_bin_dir }}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
   export XDG_DATA_DIR={{ gtk3_location }}/share
   export GSETTINGS_SCHEMA_DIR={{ gtk3_location }}/share/glib-2.0/schemas
   export FONTCONFIG_FILE=${font-config:rendered}
@@ -202,6 +203,15 @@ inline =
   sleep 1
   exec {{ python_bin }} {{ beremiz_location }}/Beremiz.py
 output = ${directory:bin}/beremiz-x11
+
+[xterm]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh -e
+  . ${beremiz-env.sh:output}
+  export SHELL={{bash_bin}}
+  exec {{ xterm_bin }}
+output = ${directory:bin}/xterm
 
 [request-vnc-frontend]
 <= slap-connection

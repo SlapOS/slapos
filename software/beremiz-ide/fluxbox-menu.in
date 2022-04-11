@@ -1,6 +1,7 @@
 [begin] (Fluxbox)
 [encoding] {UTF-8}
       [exec] (Beremiz IDE) { {{ beremiz_bin }} }
+      [exec] (Terminal) { {{ xterm_bin }} }
 [submenu] (Fluxbox menu)
       [config] (Configure)
 [submenu] (System Styles) {Choose a style...}
