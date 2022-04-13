@@ -28,7 +28,7 @@ ip = {{ ipv4 }}
 {%   set current_port = next(ports) -%}
 {%   set known_tid_storage_identifier_host = (ipv4, current_port), -%}
 {%   for name, zodb in zodb -%}
-{%     do storage_dict.__setitem__(name, {'server': ipv4 ~ ':' ~ current_port, 'storage': name}) %}
+{%     do storage_dict.__setitem__(name, {'server': ipv4 ~ ':' ~ current_port, 'storage': name, 'server-sync': 'true'}) %}
 {%     set path = zodb.get('path', '%(zodb)s/%(name)s.fs') % {'zodb': default_zodb_path, 'name': name} -%}
 {%     do storage_list.append((name, path)) -%}
 {%     set backup_directory = zodb.get('backup', '%(backup)s/%(name)s') % {'backup': default_backup_path, 'name': name} -%}
