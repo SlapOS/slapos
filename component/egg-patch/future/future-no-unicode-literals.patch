@@ -1,0 +1,623 @@
+--- future-0.18.2/src/future/backports/datetime.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/datetime.py	2022-04-23 13:15:51.333032000 +0000
+@@ -4,7 +4,6 @@
+ time zone and DST data sources.
+ """
+ from __future__ import division
+-from __future__ import unicode_literals
+ from __future__ import print_function
+ from __future__ import absolute_import
+ from future.builtins import str
+--- future-0.18.2/src/future/backports/email/base64mime.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/base64mime.py	2022-04-23 13:15:51.339699000 +0000
+@@ -23,7 +23,6 @@
+ decoding.  To deal with the various line wrapping issues, use the email.header
+ module.
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import range
+--- future-0.18.2/src/future/backports/email/charset.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/charset.py	2022-04-23 13:15:51.339699000 +0000
+@@ -1,4 +1,3 @@
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import str
+--- future-0.18.2/src/future/backports/email/_encoded_words.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/_encoded_words.py	2022-04-23 13:15:51.336365000 +0000
+@@ -4,7 +4,6 @@
+ to a public API if there is demand.
+ 
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import bytes
+--- future-0.18.2/src/future/backports/email/encoders.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/encoders.py	2022-04-23 13:15:51.339699000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Encodings and related functions."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import str
+--- future-0.18.2/src/future/backports/email/errors.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/errors.py	2022-04-23 13:15:51.339699000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """email package exception classes."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import super
+--- future-0.18.2/src/future/backports/email/feedparser.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/feedparser.py	2022-04-23 13:15:51.339699000 +0000
+@@ -18,7 +18,6 @@
+ the current message.  Defects are just instances that live on the message
+ object's .defects attribute.
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import object, range, super
+--- future-0.18.2/src/future/backports/email/generator.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/generator.py	2022-04-23 13:15:51.339699000 +0000
+@@ -4,7 +4,6 @@
+ 
+ """Classes to generate plain text from a message object tree."""
+ from __future__ import print_function
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import super
+--- future-0.18.2/src/future/backports/email/header.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/header.py	2022-04-23 13:15:51.343032000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Header encoding and decoding functionality."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import bytes, range, str, super, zip
+--- future-0.18.2/src/future/backports/email/headerregistry.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/headerregistry.py	2022-04-23 13:15:51.343032000 +0000
+@@ -7,7 +7,6 @@
+ and will probably change some before that happens.
+ 
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/_header_value_parser.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/_header_value_parser.py	2022-04-23 13:15:51.336365000 +0000
+@@ -67,7 +67,6 @@
+ XXX: provide complete list of token types.
+ """
+ from __future__ import print_function
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import int, range, str, super, list
+--- future-0.18.2/src/future/backports/email/__init__.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/__init__.py	2022-04-23 13:15:51.336365000 +0000
+@@ -7,7 +7,6 @@
+ 
+ A package for parsing, handling, and generating email messages.
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/iterators.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/iterators.py	2022-04-23 13:15:51.343032000 +0000
+@@ -4,7 +4,6 @@
+ 
+ """Various types of useful iterators and generators."""
+ from __future__ import print_function
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/message.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/message.py	2022-04-23 13:15:51.343032000 +0000
+@@ -4,7 +4,7 @@
+ # Contact: email-sig@python.org
+ 
+ """Basic message object for the email package object model."""
+-from __future__ import absolute_import, division, unicode_literals
++from __future__ import absolute_import, division
+ from future.builtins import list, range, str, zip
+ 
+ __all__ = ['Message']
+--- future-0.18.2/src/future/backports/email/mime/application.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/application.py	2022-04-23 13:15:51.346365000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Class representing application/* type MIME documents."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/mime/audio.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/audio.py	2022-04-23 13:15:51.346365000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Class representing audio/* type MIME documents."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/mime/base.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/base.py	2022-04-23 13:15:51.346365000 +0000
+@@ -3,7 +3,7 @@
+ # Contact: email-sig@python.org
+ 
+ """Base class for MIME specializations."""
+-from __future__ import absolute_import, division, unicode_literals
++from __future__ import absolute_import, division
+ from future.backports.email import message
+ 
+ __all__ = ['MIMEBase']
+--- future-0.18.2/src/future/backports/email/mime/image.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/image.py	2022-04-23 13:15:51.346365000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Class representing image/* type MIME documents."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/mime/message.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/message.py	2022-04-23 13:15:51.349699000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Class representing message/* MIME documents."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/mime/multipart.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/multipart.py	2022-04-23 13:15:51.349699000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Base class for MIME multipart/* type messages."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/mime/nonmultipart.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/nonmultipart.py	2022-04-23 13:15:51.349699000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Base class for MIME type messages that are not multipart."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/mime/text.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/mime/text.py	2022-04-23 13:15:51.349699000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """Class representing text/* type MIME documents."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/_parseaddr.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/_parseaddr.py	2022-04-23 13:15:51.336365000 +0000
+@@ -6,7 +6,6 @@
+ Lifted directly from rfc822.py.  This should eventually be rewritten.
+ """
+ 
+-from __future__ import unicode_literals
+ from __future__ import print_function
+ from __future__ import division
+ from __future__ import absolute_import
+--- future-0.18.2/src/future/backports/email/parser.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/parser.py	2022-04-23 13:15:51.343032000 +0000
+@@ -3,7 +3,6 @@
+ # Contact: email-sig@python.org
+ 
+ """A parser of RFC 2822 and MIME email messages."""
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ 
+--- future-0.18.2/src/future/backports/email/_policybase.py	2022-04-25 08:25:44.825652123 +0000
++++ future-0.18.2/src/future/backports/email/_policybase.py	2022-04-23 13:15:51.336365000 +0000
+@@ -2,7 +2,6 @@
+ 
+ Allows fine grained feature control of how the package parses and emits data.
+ """
+-from __future__ import unicode_literals
+ from __future__ import print_function
+ from __future__ import division
+ from __future__ import absolute_import
+--- future-0.18.2/src/future/backports/email/policy.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/policy.py	2022-04-23 13:15:51.343032000 +0000
+@@ -1,7 +1,6 @@
+ """This will be the home for the policy that hooks in the new
+ code that adds all the email6 features.
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import super
+--- future-0.18.2/src/future/backports/email/quoprimime.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/quoprimime.py	2022-04-23 13:15:51.346365000 +0000
+@@ -25,7 +25,6 @@
+ does dumb encoding and decoding.  To deal with the various line
+ wrapping issues, use the email.header module.
+ """
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future.builtins import bytes, chr, dict, int, range, super
+--- future-0.18.2/src/future/backports/email/utils.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/email/utils.py	2022-04-23 13:15:51.346365000 +0000
+@@ -4,7 +4,6 @@
+ 
+ """Miscellaneous utilities."""
+ 
+-from __future__ import unicode_literals
+ from __future__ import division
+ from __future__ import absolute_import
+ from future import utils
+--- future-0.18.2/src/future/backports/html/entities.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/html/entities.py	2022-04-23 13:25:24.898749679 +0000
+@@ -4,7 +4,7 @@
+ """
+ 
+ from __future__ import (absolute_import, division,
+-                        print_function, unicode_literals)
++                        print_function)
+ from future.builtins import *
+ 
+ 
+--- future-0.18.2/src/future/backports/html/__init__.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/html/__init__.py	2022-04-23 13:15:51.349699000 +0000
+@@ -5,7 +5,6 @@
+ module names and locations.
+ """
+ 
+-from __future__ import unicode_literals
+ 
+ 
+ _escape_map = {ord('&'): '&amp;', ord('<'): '&lt;', ord('>'): '&gt;'}
+--- future-0.18.2/src/future/backports/html/parser.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/html/parser.py	2022-04-23 13:25:31.508853990 +0000
+@@ -11,7 +11,7 @@
+ # and CDATA (character data -- only end tags are special).
+ 
+ from __future__ import (absolute_import, division,
+-                        print_function, unicode_literals)
++                        print_function)
+ from future.builtins import *
+ from future.backports import _markupbase
+ import re
+--- future-0.18.2/src/future/backports/http/client.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/http/client.py	2022-04-23 13:25:42.249023477 +0000
+@@ -69,7 +69,7 @@
+ """
+ 
+ from __future__ import (absolute_import, division,
+-                        print_function, unicode_literals)
++                        print_function)
+ from future.builtins import bytes, int, str, super
+ from future.utils import PY2
+ 
+--- future-0.18.2/src/future/backports/http/cookiejar.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/http/cookiejar.py	2022-04-23 13:15:51.353032000 +0000
+@@ -28,7 +28,6 @@
+ 
+ """
+ 
+-from __future__ import unicode_literals
+ from __future__ import print_function
+ from __future__ import division
+ from __future__ import absolute_import
+--- future-0.18.2/src/future/backports/http/cookies.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/http/cookies.py	2022-04-23 13:15:51.353032000 +0000
+@@ -127,7 +127,6 @@
+ 
+ Finis.
+ """
+-from __future__ import unicode_literals
+ from __future__ import print_function
+ from __future__ import division
+ from __future__ import absolute_import
+--- future-0.18.2/src/future/backports/http/server.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/http/server.py	2022-04-23 13:25:36.165594142 +0000
+@@ -34,7 +34,7 @@
+ """
+ 
+ from __future__ import (absolute_import, division,
+-                        print_function, unicode_literals)
++                        print_function)
+ from future import utils
+ from future.builtins import *
+ 
+--- future-0.18.2/src/future/backports/socket.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/socket.py	2022-04-23 13:15:51.333032000 +0000
+@@ -44,7 +44,6 @@
+ the setsockopt() and getsockopt() methods.
+ """
+ 
+-from __future__ import unicode_literals
+ from __future__ import print_function
+ from __future__ import division
+ from __future__ import absolute_import
+--- future-0.18.2/src/future/backports/test/ssl_servers.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/test/ssl_servers.py	2022-04-23 13:15:51.359699000 +0000
+@@ -1,4 +1,4 @@
+-from __future__ import absolute_import, division, print_function, unicode_literals
++from __future__ import absolute_import, division, print_function
+ from future.builtins import filter, str
+ from future import utils
+ import os
+--- future-0.18.2/src/future/backports/test/support.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/test/support.py	2022-04-23 13:25:46.169085336 +0000
+@@ -5,7 +5,7 @@
+ """
+ 
+ from __future__ import (absolute_import, division,
+-                        print_function, unicode_literals)
++                        print_function)
+ from future import utils
+ from future.builtins import str, range, open, int, map, list
+ 
+--- future-0.18.2/src/future/backports/urllib/error.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/urllib/error.py	2022-04-23 13:15:51.359699000 +0000
+@@ -10,7 +10,7 @@
+ an application may want to handle an exception like a regular
+ response.
+ """
+-from __future__ import absolute_import, division, unicode_literals
++from __future__ import absolute_import, division
+ from future import standard_library
+ 
+ from future.backports.urllib import response as urllib_response
+--- future-0.18.2/src/future/backports/urllib/parse.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/urllib/parse.py	2022-04-23 13:39:55.895799811 +0000
+@@ -29,8 +29,8 @@
+ parsing quirks from older RFCs are retained. The testcases in
+ test_urlparse.py provides a good indicator of parsing behavior.
+ """
+-from __future__ import absolute_import, division, unicode_literals
+-from future.builtins import bytes, chr, dict, int, range, str
++from __future__ import absolute_import, division
++from future.builtins import bytes, chr, dict, int, range
+ from future.utils import raise_with_traceback
+ 
+ import re
+--- future-0.18.2/src/future/backports/urllib/request.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/urllib/request.py	2022-04-23 13:15:51.363032000 +0000
+@@ -84,7 +84,7 @@
+ # complex proxies  XXX not sure what exactly was meant by this
+ # abstract factory for opener
+ 
+-from __future__ import absolute_import, division, print_function, unicode_literals
++from __future__ import absolute_import, division, print_function
+ from future.builtins import bytes, dict, filter, input, int, map, open, str
+ from future.utils import PY2, PY3, raise_with_traceback
+ 
+--- future-0.18.2/src/future/backports/urllib/response.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/urllib/response.py	2022-04-23 13:23:33.980332784 +0000
+@@ -5,7 +5,7 @@
+ addinfourl instance, which defines an info() method that returns
+ headers and a geturl() method that returns the url.
+ """
+-from __future__ import absolute_import, division, unicode_literals
++from __future__ import absolute_import, division
+ from future.builtins import object
+ 
+ class addbase(object):
+@@ -100,4 +100,4 @@
+     def geturl(self):
+         return self.url
+ 
+-del absolute_import, division, unicode_literals, object
++del absolute_import, division, object
+--- future-0.18.2/src/future/backports/urllib/robotparser.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/urllib/robotparser.py	2022-04-23 13:15:51.363032000 +0000
+@@ -1,4 +1,4 @@
+-from __future__ import absolute_import, division, unicode_literals
++from __future__ import absolute_import, division
+ from future.builtins import str
+ """ robotparser.py
+ 
+--- future-0.18.2/src/future/backports/xmlrpc/client.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/xmlrpc/client.py	2022-04-23 13:25:09.605175003 +0000
+@@ -129,8 +129,7 @@
+                  name (None if not present).
+ """
+ 
+-from __future__ import (absolute_import, division, print_function,
+-                        unicode_literals)
++from __future__ import absolute_import, division, print_function
+ from future.builtins import bytes, dict, int, range, str
+ 
+ import base64
+--- future-0.18.2/src/future/backports/xmlrpc/server.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/backports/xmlrpc/server.py	2022-04-23 13:15:51.366366000 +0000
+@@ -104,7 +104,7 @@
+ server.handle_request()
+ """
+ 
+-from __future__ import absolute_import, division, print_function, unicode_literals
++from __future__ import absolute_import, division, print_function
+ from future.builtins import int, str
+ 
+ # Written by Brian Quinlan (brian@sweetapp.com).
+--- future-0.18.2/src/future/builtins/__init__.py	2022-04-25 08:25:44.828985509 +0000
++++ future-0.18.2/src/future/builtins/__init__.py	2022-04-23 13:46:16.201783445 +0000
+@@ -30,8 +30,8 @@
+                               newint as int,
+                               newlist as list,
+                               newobject as object,
+-                              newrange as range,
+-                              newstr as str)
++                              newrange as range)
++    str = str
+ from future import utils
+ 
+ 
+--- future-0.18.2/src/future/types/__init__.py	2022-04-25 08:25:44.832318894 +0000
++++ future-0.18.2/src/future/types/__init__.py	2022-04-23 13:51:47.040322151 +0000
+@@ -144,7 +144,6 @@
+             # to prevent circular imports:
+             from .newbytes import newbytes
+             from .newint import newint
+-            from .newstr import newstr
+ 
+             errmsg = "argument can't be {0}"
+             for (argnum, mytype) in zip(argnums, disallowed_types):
+@@ -242,7 +241,6 @@
+     from .newlist import newlist
+     from .newrange import newrange
+     from .newobject import newobject
+-    from .newstr import newstr
+ 
+     newtypes = {bytes: newbytes,
+                 dict: newdict,
+@@ -251,7 +249,7 @@
+                 list: newlist,
+                 object: newobject,
+                 range: newrange,
+-                str: newbytes,
+-                unicode: newstr}
++                str: str,
++                unicode: unicode}
+ 
+-    __all__ = ['newbytes', 'newdict', 'newint', 'newlist', 'newrange', 'newstr', 'newtypes']
++    __all__ = ['newbytes', 'newdict', 'newint', 'newlist', 'newrange', 'newtypes']
+--- future-0.18.2/src/future/types/newbytes.py	2022-04-25 08:25:44.832318894 +0000
++++ future-0.18.2/src/future/types/newbytes.py	2022-04-23 13:53:24.111849461 +0000
+@@ -244,13 +244,11 @@
+         # Py2 str.encode() takes encoding and errors as optional parameter,
+         # not keyword arguments as in Python 3 str.
+ 
+-        from future.types.newstr import newstr
+-
+         if errors == 'surrogateescape':
+             from future.utils.surrogateescape import register_surrogateescape
+             register_surrogateescape()
+ 
+-        return newstr(super(newbytes, self).decode(encoding, errors))
++        return str(super(newbytes, self).decode(encoding, errors))
+ 
+         # This is currently broken:
+         # # We implement surrogateescape error handling here in addition rather
+--- future-0.18.2/src/libfuturize/fixes/fix_bytes.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libfuturize/fixes/fix_bytes.py	2022-04-23 13:15:51.396366000 +0000
+@@ -4,7 +4,6 @@
+ ur'abcd' is a SyntaxError on Python 3 but valid on Python 2.
+ 
+ """
+-from __future__ import unicode_literals
+ 
+ import re
+ from lib2to3.pgen2 import token
+--- future-0.18.2/src/libfuturize/fixes/fix_cmp.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libfuturize/fixes/fix_cmp.py	2022-04-23 13:15:51.396366000 +0000
+@@ -9,7 +9,6 @@
+ if cmp() is called in the code.
+ """
+ 
+-from __future__ import unicode_literals
+ from lib2to3 import fixer_base
+ 
+ from libfuturize.fixer_util import touch_import_top
+--- future-0.18.2/src/libfuturize/fixes/fix_execfile.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libfuturize/fixes/fix_execfile.py	2022-04-23 13:15:51.396366000 +0000
+@@ -13,7 +13,6 @@
+ for the function execfile() that was removed from Py3.
+ """
+ 
+-from __future__ import unicode_literals
+ from lib2to3 import fixer_base
+ 
+ from libfuturize.fixer_util import touch_import_top
+--- future-0.18.2/src/libfuturize/fixes/fix_future_builtins.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libfuturize/fixes/fix_future_builtins.py	2022-04-23 13:15:51.396366000 +0000
+@@ -10,7 +10,6 @@
+ Adds these imports after any other imports (in an initial block of them).
+ """
+ 
+-from __future__ import unicode_literals
+ 
+ from lib2to3 import fixer_base
+ from lib2to3.pygram import python_symbols as syms
+--- future-0.18.2/src/libfuturize/fixes/fix_oldstr_wrap.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libfuturize/fixes/fix_oldstr_wrap.py	2022-04-23 13:15:51.399700000 +0000
+@@ -10,7 +10,6 @@
+ on Py2.6/2.7.
+ """
+ 
+-from __future__ import unicode_literals
+ import re
+ from lib2to3 import fixer_base
+ from lib2to3.pgen2 import token
+--- future-0.18.2/src/libfuturize/main.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libfuturize/main.py	2022-04-23 13:15:51.393033000 +0000
+@@ -61,7 +61,7 @@
+ 
+ """
+ 
+-from __future__ import (absolute_import, print_function, unicode_literals)
++from __future__ import absolute_import, print_function
+ import future.utils
+ from future import __version__
+ 
+--- future-0.18.2/src/libpasteurize/fixes/fix_add_all_future_builtins.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libpasteurize/fixes/fix_add_all_future_builtins.py	2022-04-23 13:15:51.403033000 +0000
+@@ -12,7 +12,6 @@
+ Adds these imports after any other imports (in an initial block of them).
+ """
+ 
+-from __future__ import unicode_literals
+ 
+ from lib2to3 import fixer_base
+ 
+--- future-0.18.2/src/libpasteurize/fixes/fix_future_builtins.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libpasteurize/fixes/fix_future_builtins.py	2022-04-23 13:15:51.406366000 +0000
+@@ -6,7 +6,6 @@
+ for each of the functions XYZ that is used in the module.
+ """
+ 
+-from __future__ import unicode_literals
+ 
+ from lib2to3 import fixer_base
+ from lib2to3.pygram import python_symbols as syms
+--- future-0.18.2/src/libpasteurize/main.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/libpasteurize/main.py	2022-04-23 13:15:51.403033000 +0000
+@@ -36,7 +36,7 @@
+ 
+ """
+ 
+-from __future__ import (absolute_import, print_function, unicode_literals)
++from __future__ import absolute_import, print_function
+ 
+ import sys
+ import logging
+--- future-0.18.2/src/past/builtins/misc.py	2022-04-25 08:25:44.835652280 +0000
++++ future-0.18.2/src/past/builtins/misc.py	2022-04-23 13:15:51.413033000 +0000
+@@ -1,4 +1,3 @@
+-from __future__ import unicode_literals
+ 
+ import inspect
+ 
