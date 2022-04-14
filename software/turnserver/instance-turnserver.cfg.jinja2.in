@@ -20,7 +20,7 @@ recipe = slapos.recipe.template:jinja2
 inline ={{ '{{ content }}' }}
 
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
+{% macro simplefile(section_name, file_path, content) -%}
 {%   set content_section_name = section_name ~ '-content' -%}
 [{{  content_section_name }}]
 content = {{ dumps(content) }}
@@ -28,13 +28,12 @@ content = {{ dumps(content) }}
 < = file-base
 output = {{ file_path }}
 context = key content {{ content_section_name }}:content
-mode = {{ mode }}
 {% do part_list.append(section_name) -%}
 {%- endmacro %}
 
 {% if parameter['ssl-key'] and parameter['ssl-crt'] -%}
 {{ simplefile('ssl-certificate', '${turnserver-ssl:certificate}', parameter['ssl-crt']) }}
-{{ simplefile('ssl-key', '${turnserver-ssl:key}', parameter['ssl-key'], 600) }}
+{{ simplefile('ssl-key', '${turnserver-ssl:key}', parameter['ssl-key']) }}
 {% else -%}
 {%  do part_list.append('gen-certificate') -%}
 [gen-certificate]
@@ -108,7 +107,6 @@ input = inline:
   pidfile=${directory:run}/turnserver.pid
   verbose
 output = ${directory:etc}/turnserver.conf
-mode = 644
 
 [turnserver-wrapper]
 recipe = slapos.cookbook:wrapper

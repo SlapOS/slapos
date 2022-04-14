@@ -144,7 +144,6 @@ input = inline:#!/bin/bash
     exit 1
   fi
 output = ${resilient-directory:bin}/resilient-request-{{namebase}}-public-key
-mode = 700
 
 [resilient-request-{{namebase}}-public-key-promise]
 <= monitor-promise-base
@@ -166,7 +165,6 @@ input = inline:#!/bin/bash
     exit 1
   fi
 output = ${resilient-directory:bin}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
-mode = 700
 
 [resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise]
 <= monitor-promise-base
@@ -234,7 +232,6 @@ input = inline:#!/bin/bash
     exit 1
   fi
 output = ${resilient-directory:bin}/resilient-request-pbs-{{namebase}}-{{id}}-public-key
-mode = 700
 
 [resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
 <= monitor-promise-base

@@ -16,7 +16,6 @@
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 [smtpd-password]
 recipe = slapos.cookbook:generate.password
@@ -62,7 +61,6 @@ var-spool-postfix-trace = ${:var-spool-postfix}/trace
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template
-mode = 644
 inline = {{ '{{ "**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
 
@@ -109,7 +107,6 @@ inline =
 context =
     key host configuration:relayhost
     key sasl_credential configuration:relay-sasl-credential
-mode = 600
 
 [{{ section('cyrus-smtpd-conf') }}]
 < = jinja2-template-base

@@ -17,4 +17,3 @@ recipe = slapos.recipe.template
 url = ${template-runTestSuite:output}
 output = $${directory:bin}/runTestSuite
 buildout-directory = $${buildout:directory}
-mode = 0700
