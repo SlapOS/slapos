@@ -43,7 +43,7 @@ rotate-num = 30
 nextcloud = ${:document-root}
 admin-user = admin
 admin-password = admin
-trusted-domain-list = 
+trusted-domain-list =
   [${apache-php-configuration:ip}]:${apache-php-configuration:port}
   ${slap-parameter:instance.trusted-domain-1}
   ${slap-parameter:instance.trusted-domain-2}
@@ -87,7 +87,6 @@ output = ${directory:scripts}/nextcloud-install
 context =
   section parameter_dict   instance-parameter
   section nextcloud_apps   nextcloud-apps
-mode = 744
 depends =
   ${service-redis:recipe}
   ${redis-promise:recipe}
@@ -126,7 +125,6 @@ url = {{ nextcloud_apache_httpd }}
 output = ${directory:apache.d}/nextcloud.conf
 context =
   section parameter_dict apache-php-configuration
-mode = 744
 
 [nextcloud-cron]
 recipe = slapos.cookbook:cron.d
@@ -188,7 +186,6 @@ output = ${directory:etc}/nextcloud-config.json
 extensions = jinja2.ext.do
 context =
   section parameter_dict   instance-parameter
-mode = 600
 
 [nextcloud-config-update]
 output = ${directory:scripts}/nextcloud-update

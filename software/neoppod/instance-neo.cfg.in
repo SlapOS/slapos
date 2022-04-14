@@ -179,7 +179,6 @@ command-line = ${runTestSuite-ns:output}
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 url = {{ runTestSuite_in }}
-mode = 0755
 context =
     section directory         directory
     section my_cnf_parameters my-cnf-parameters

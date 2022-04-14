@@ -100,7 +100,6 @@ shell = ${bash:location}/bin/bash
 recipe = slapos.recipe.template
 # We cannot use slapos.cookbook:wrapper here because this recipe escapes too much
 socket = $${directory:run}/siab.sock
-mode = 0700
 output = $${basedirectory:services}/shellinaboxd
 inline =
   #!/bin/sh

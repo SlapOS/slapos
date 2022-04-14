@@ -124,7 +124,6 @@ inline =
   #!/bin/sh
   {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json --stdout ${:json}
 output = ${monitor-directory:bin}/${:_buildout_section_name_}
-mode = 0755
 
 {%-     do PART_LIST.append('cron-entry-surykatka-status-%i' % (class,)) %}
 [cron-entry-surykatka-status-{{ class }}]

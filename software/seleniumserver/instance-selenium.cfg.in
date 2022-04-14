@@ -314,7 +314,6 @@ expected-node-count = 18
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0755
 inline =
   #!${buildout:executable}
   import json, urllib, sys

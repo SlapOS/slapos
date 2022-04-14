@@ -10,7 +10,6 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = ${pbsready-export:target}
 output = $${buildout:directory}/pbsready-exporter.cfg
-mode = 640
 context =
   key slapparameter_dict slap-configuration:configuration
   raw pbsready_template_path $${template-pbsready:output}
