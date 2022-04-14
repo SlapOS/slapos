@@ -43,7 +43,6 @@ input = inline:
   verbose
   user=${:user}:${turnserver-password:passwd}
 output = ${directory:etc}/turnserver.conf
-mode = 644
 
 [turnserver-wrapper]
 recipe = slapos.cookbook:wrapper

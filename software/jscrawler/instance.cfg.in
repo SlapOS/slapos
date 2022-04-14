@@ -24,7 +24,6 @@ cert = ${slap-connection:cert-file}
 recipe = slapos.recipe.template:jinja2
 output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
-mode = 0644
 extra-context =
 context =
   key develop_eggs_directory buildout:develop-eggs-directory

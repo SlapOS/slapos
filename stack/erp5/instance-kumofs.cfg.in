@@ -79,7 +79,6 @@ kumofs-data = ${:srv}/kumofs
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
 recipe = slapos.recipe.template
-mode = 644
 inline = {{ '{{ "**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
 

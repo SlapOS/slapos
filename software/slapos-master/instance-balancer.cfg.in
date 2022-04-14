@@ -17,7 +17,6 @@ per partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 {{ caucase.updater(
      prefix='caucase-updater',
@@ -195,10 +194,10 @@ wait-for-files =
 [apache-graceful]
 recipe = collective.recipe.template
 output = ${directory:bin}/apache-httpd-graceful
-mode = 700
 input = inline:
   #!/bin/sh
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
+mode = 700
 
 [{{ section('apache-promise') }}]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently

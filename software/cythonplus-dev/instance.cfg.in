@@ -36,7 +36,6 @@ shared = true
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/$${:_buildout_section_name_}
 url = ${runTestSuite.in:target}
-mode = 0755
 context =
   key tmpdir directory:tmp
   key slapparameter_dict slap-configuration:configuration
