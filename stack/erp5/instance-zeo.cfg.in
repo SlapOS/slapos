@@ -110,7 +110,6 @@ command = ${tidstorage:repozo-wrapper}
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template
-mode = 644
 inline = {{ '{{ "${directory:zodb}/**\\n${directory:log}/**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
 

@@ -83,7 +83,6 @@ url = {{ importer_script_path }}
 output = ${directory:bin}/${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
 wrapper = ${:output}
-mode = 700
 restore-exit-code-file = ${directory:srv}/${:restore-exit-code-file-basename}
 restore-exit-code-file-basename = importer-exit-code-file
 restore-error-message-file = ${directory:srv}/${:restore-error-message-file-basename}
@@ -167,7 +166,6 @@ recipe = slapos.recipe.template
 url = {{ software_release_information_template }}
 output = ${directory:cgi-bin}/resilient_software_release_information.py
 resilient-log-url = ${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
-mode = 0600
 
 [slap-parameter]
 auto-deploy-instance = false

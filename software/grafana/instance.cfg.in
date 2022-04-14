@@ -69,7 +69,6 @@ common-name = ${:_buildout_section_name_}
 recipe = slapos.recipe.template:jinja2
 url = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
 output = ${directory:etc}/${:_buildout_section_name_}.cfg
-mode = 0644
 extensions = jinja2.ext.do
 
 [check-port-listening-promise]
