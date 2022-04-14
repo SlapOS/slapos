@@ -87,7 +87,6 @@ inline =
   tar -xzf proxies-$NAME.tar.gz
   cp etc/proxysql/proxysql.cnf $CONFIG
 output = ${directory:bin}/update-proxysql-config
-mode = 755
 
 {% for instance_dict in slave_instance_list -%}
 {% set slave_dict = {
@@ -405,7 +404,6 @@ context =
 
 [caucase-sign-csr]
 recipe = slapos.recipe.template
-mode = 755
 output = ${directory:bin}/caucase-sign
 inline =#!/bin/sh
   cp ${directory:ssl}/caucase.user.key ${directory:ssl}/caucase-full.key
@@ -532,7 +530,6 @@ context =
   raw curl_bin {{ curl_bin }}
   raw bash_bin {{ bash_bin }}
 output = ${directory:scripts}/repman-reload
-mode = 755
 
 [replication-manager]
 recipe = slapos.cookbook:wrapper
@@ -606,7 +603,7 @@ inline =
   #!{{ bash_bin }}
   kill -USR1 "$(cat ${nginx-parameter:pid-file})"
 output = ${directory:scripts}/nginx-graceful
-mode = 755
+
 
 [logrotate-entry-nginx]
 <= logrotate-entry-base
@@ -676,7 +673,6 @@ config-url = ${nginx-parameter:backend-ssl-url}
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/proxysql_check_stop_start
 url = {{ template_proxy_need_stopstart }}
-mode = 755
 cluster-list = !py![{{ cluster_list | join(', ') }}]
 context =
   key proxysql_controller {{proxysql_controller}}-bin:wrapper-path

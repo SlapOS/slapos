@@ -126,7 +126,6 @@ recipe = slapos.recipe.template:jinja2
 url = ${template-wrapper:output}
 output = $${:wrapper}
 wrapper = $${basedirectory:services}/notifier
-mode = 0700
 feeds = $${directory:notifier-feeds}
 callbacks-directory = $${directory:notifier-callbacks}
 command = ${buildout:bin-directory}/pubsubserver --callbacks $${:callbacks-directory} --feeds $${:feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
@@ -208,7 +207,6 @@ input = inline:#!/bin/sh
     exec $${sshd-raw-server:wrapper-path} >> $${:log} 2>&1
 
 output = $${rootdirectory:bin}/raw_sshd_log
-mode = 700
 
 [sshd-graceful]
 recipe = slapos.cookbook:wrapper
@@ -257,7 +255,6 @@ input = inline:#!${bash:location}/bin/bash
     exit 1
   fi
 output = $${rootdirectory:bin}/public-key-existence
-mode = 700
 
 [resilient-sshkeys-sshd-promise]
 <= monitor-promise-base
@@ -273,7 +270,6 @@ config-command = $${resilient-sshkeys-sshd-promise-bin:output}
 recipe = slapos.recipe.template:jinja2
 url = ${notifier-feed-promise-template:target}
 output = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
-mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds
   raw base_url http://[$${notifier:host}]:$${notifier:port}/get/

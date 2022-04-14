@@ -14,7 +14,6 @@ per partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 {{ caucase.updater(
      prefix='caucase-updater',
@@ -60,7 +59,6 @@ mode = 644
 [caucase-updater-housekeeper]
 recipe = collective.recipe.template
 output = ${directory:bin}/caucase-updater-housekeeper
-mode = 700
 input =
   inline:
   #!${buildout:executable}
@@ -211,7 +209,6 @@ extensions = jinja2.ext.do
 [haproxy-reload]
 recipe = collective.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
-mode = 700
 input =
   inline:
   #!/bin/sh
@@ -233,7 +230,7 @@ caucase-key = ${directory:apache-conf}/apache-caucase.pem
 < = jinja2-template-base
 inline ={{ '{{ content }}' }}
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
+{% macro simplefile(section_name, file_path, content) -%}
 {%   set content_section_name = section_name ~ '-content' -%}
 [{{  content_section_name }}]
 content = {{ dumps(content) }}
@@ -242,7 +239,6 @@ content = {{ dumps(content) }}
 < = simplefile
 output = {{ file_path }}
 context = key content {{content_section_name}}:content
-mode = {{ mode }}
 {%- endmacro %}
 
 [{{ section('haproxy-socat-stats')}}]
