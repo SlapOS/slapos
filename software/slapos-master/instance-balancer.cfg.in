@@ -17,7 +17,6 @@ per partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 {{ caucase.updater(
      prefix='caucase-updater',
@@ -128,7 +127,7 @@ crl = ${directory:apache-conf}/crl.pem
 < = jinja2-template-base
 inline ={{ '{{ content }}' }}
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
+{% macro simplefile(section_name, file_path, content) -%}
 {%   set content_section_name = section_name ~ '-content' -%}
 [{{  content_section_name }}]
 content = {{ dumps(content) }}
@@ -137,7 +136,6 @@ content = {{ dumps(content) }}
 < = simplefile
 output = {{ file_path }}
 context = key content {{content_section_name}}:content
-mode = {{ mode }}
 {%- endmacro %}
 
 
@@ -195,7 +193,6 @@ wait-for-files =
 [apache-graceful]
 recipe = collective.recipe.template
 output = ${directory:bin}/apache-httpd-graceful
-mode = 700
 input = inline:
   #!/bin/sh
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"

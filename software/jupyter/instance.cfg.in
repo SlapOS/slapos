@@ -24,7 +24,6 @@ recipe = slapos.recipe.template:jinja2
 filename = instance-jupyter.cfg.in
 url = ${instance-jupyter:location}/$${:filename}
 output = $${buildout:directory}/template.cfg
-mode = 0644
 context =
   key slapparameter_dict slap-configuration:configuration
   raw bin_directory ${buildout:bin-directory}

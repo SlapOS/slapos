@@ -23,7 +23,6 @@ url = {{ template_kvm_export }}
 output = ${directory:bin}/${slap-parameter:namebase}-exporter
 # Resilient stack wants a "wrapper" parameter
 wrapper = ${:output}
-mode = 0700
 {%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
 {%- if disk_type == "virtio" %}
 device = virtio0
