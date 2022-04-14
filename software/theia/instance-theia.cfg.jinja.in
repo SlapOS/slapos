@@ -172,7 +172,7 @@ slave = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
-config-websocket-path-list = /services /file-upload
+config-websocket-path-list = /services /socket.io
 return = domain secure_access
 
 [remote-frontend]
@@ -252,7 +252,7 @@ template =
     proxy /services $${theia-instance:base-url} {
       websocket
     }
-    proxy /file-upload $${theia-instance:base-url} {
+    proxy /socket.io $${theia-instance:base-url} {
       websocket
     }
     basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
@@ -728,7 +728,8 @@ template =
       "$${directory:runner}/**":true,
       "$${directory:project}/runner/**":true
     },
-    "git.terminalAuthentication": false
+    "git.terminalAuthentication": false,
+    "security.workspace.trust.startupPrompt": "once"
   }
 
 [runner-link]
