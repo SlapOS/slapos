@@ -697,6 +697,7 @@ ir3:sshd-on-watch RUNNING""",
 @skipUnlessKvm
 class TestInstanceResilientJson(
   KvmMixinJson, TestInstanceResilient):
+  maxDiff = None
   pass
 
 
