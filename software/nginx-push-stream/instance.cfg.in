@@ -46,7 +46,6 @@ command-line =
 recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
-mode = 0600
 access-log = $${directory:log}/nginx-access.log
 error-log = $${directory:log}/nginx-error.log
 pid-file = $${directory:run}/nginx.pid

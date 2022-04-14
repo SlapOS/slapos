@@ -14,7 +14,6 @@
 [{{ prefix }}-directory]
 recipe = slapos.cookbook:mkdirectory
 data-dir = {{ data_dir }}
-mode = 0750
 
 [{{ prefix }}]
 recipe = slapos.cookbook:wrapper
@@ -75,7 +74,6 @@ content = {{ template_csr }}
 {%     endif %}
 [{{ prefix }}-provided-csr]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 {%     if template_csr_pem %}
 inline ={{ '{{ content }}' }}
 output = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
