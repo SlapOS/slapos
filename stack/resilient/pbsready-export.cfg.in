@@ -48,7 +48,6 @@ output = ${rootdirectory:etc}/logrotate_notifier.conf
 
 [notifier-exporter-promise-bin]
 recipe = slapos.recipe.template
-mode = 700
 inline =
   #!{{ bash_executable_location }}
   EXPORTER_FEED="${notifier-exporter:log-file}"

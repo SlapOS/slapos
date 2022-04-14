@@ -71,7 +71,6 @@ output = ${directory:service}/chromium
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template-nginx-config'] }}
 output = ${headless-chromium:nginx-config-target}
-mode = 700
 context =
   section param_headless_chromium headless-chromium
 
