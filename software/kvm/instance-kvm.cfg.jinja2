@@ -501,7 +501,6 @@ log-file = ${directory:log}/qemu.log
 recipe = slapos.recipe.template:jinja2
 url = {{ template_kvm_run }}
 output = ${directory:bin}/kvm_raw
-mode = 700
 context =
   section parameter_dict kvm-parameter-dict
 
@@ -509,7 +508,6 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = {{ template_kvm_controller_run }}
 output = ${directory:bin}/kvm_controller_raw
-mode = 700
 context =
   section parameter_dict kvm-controller-parameter-dict
 
@@ -632,7 +630,6 @@ command-line =
 recipe = slapos.recipe.template:jinja2
 url = {{ qemu_start_promise_tpl }}
 output = ${directory:bin}/qemu-virtual-machine-is-ready
-mode = 700
 context =
   raw dash {{ dash_executable_location }}
   raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
@@ -943,7 +940,7 @@ mode = {{ mode }}
 {% endmacro -%}
 
 # write vm-data into file public/data
-{{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', ''), '700') }}
+{{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', '')) }}
 
 {% if slapparameter_dict.get('authorized-key', '') -%}
 # write public key for vms to public/authorized_keys
@@ -1175,7 +1172,6 @@ inline =
   dd if=/dev/zero of={{ disk_device }} bs=4096 count=500k
 {%- endfor %}
 output = ${directory:prerm}/slapos_wipe_device_disk
-mode = 0700
 {% endif -%}
 
 {%   do part_list.append('whitelist-firewall') -%}

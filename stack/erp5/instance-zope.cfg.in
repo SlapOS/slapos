@@ -52,7 +52,6 @@ partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 [run-common]
 <= userhosts-wrapper-base
@@ -127,7 +126,6 @@ includes =
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template:jinja2
-mode = 644
 inline = {{ '{{ "${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
 
@@ -188,7 +186,6 @@ context = key host_dict hosts-parameter:host-dict
 
 [userhosts-bin]
 recipe = slapos.recipe.template:jinja2
-mode = 755
 inline =#!{{ parameter_dict['dash'] }}/bin/dash
   export HOSTS_FILE=${hosts:output}
   export LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
@@ -244,7 +241,6 @@ file-list = {{ parameter_dict['site-zcml'] }}
 < = jinja2-template-base
 output = ${directory:instance}/inituser
 inline ={{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
-mode = 600
 once = ${:output}_done
 
 [zope-conf-parameter-base]
@@ -440,7 +436,6 @@ bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
 <= jinja2-template-base
 url = {{ parameter_dict['run-zelenium-template'] }}
 output = ${directory:bin}/runTestSuite
-mode = 755
 context =
     import json_module json
     key configuration test-zelenium-runner-parameter:configuration

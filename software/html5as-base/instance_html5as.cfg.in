@@ -116,7 +116,6 @@ output = ${html5as:path_mime_types}
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_launcher'] }}
 output = ${html5as:bin_launcher}
-mode = 700
 context =
     section param_html5as html5as
 

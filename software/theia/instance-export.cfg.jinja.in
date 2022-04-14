@@ -29,7 +29,6 @@ wrapper = $${theia-export-script:output}
 [theia-export-script]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/theia-export-script
-mode = 0700
 exitcode-file = $${directory:srv}/export-exitcode-file
 error-file = $${directory:srv}/export-errormessage-file
 context =

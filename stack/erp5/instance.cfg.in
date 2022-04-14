@@ -2,9 +2,6 @@
 extends =
   {{ instance_common_cfg }}
 
-[jinja2-template-base]
-mode = 644
-
 [default-dynamic-template-parameters]
 bin-directory = {{ bin_directory }}
 buildout-bin-directory = {{ buildout_bin_directory }}

@@ -107,7 +107,6 @@ docroot = ${basedirectory:data}/${slap-configuration:configuration.site}/public
 [hugo-server]
 recipe = slapos.recipe.template
 output = ${directory:bin}/hugo-server
-mode = 0700
 inline =#!/bin/sh
   . ${hugo:go-environment}
   cd ${basedirectory:data}/${slap-configuration:configuration.site}
@@ -204,7 +203,6 @@ inline =
 [nginx-graceful]
 recipe = slapos.recipe.template
 output = ${basedirectory:script}/nginx-graceful
-mode = 0700
 inline =#!/bin/sh
   exec kill -s SIGHUP $(cat ${hugo:path-pid})
 

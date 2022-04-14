@@ -77,7 +77,6 @@ inline =
     exit 0;
   fi
 output = $${rootdirectory:bin}/backup-checksum-integrity
-mode = 700
 
 [backup-checksum-integrity-promise]
 <= monitor-promise-base
