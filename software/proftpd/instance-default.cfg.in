@@ -40,7 +40,6 @@ ssh-authorized-keys-dir = ${:etc}/authorized_keys/
 recipe = slapos.recipe.template:jinja2
 url = {{ software_parts_directory }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
 output = ${directory:etc}/${:_buildout_section_name_}.cfg
-mode = 0644
 extensions = jinja2.ext.do
 
 [proftpd-userinfo]

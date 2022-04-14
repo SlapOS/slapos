@@ -31,7 +31,6 @@ pull-backup = template-pull-backup:output
 recipe = slapos.recipe.template:jinja2
 url = ${instance-theia:output}
 output = $${buildout:directory}/instance-theia.cfg
-mode = 0644
 context =
   jsonkey default_parameter_dict :default-parameters
   key parameter_dict slap-configuration:configuration
@@ -63,7 +62,6 @@ frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/ap
 recipe = slapos.recipe.template:jinja2
 url = ${instance-import:output}
 output = $${buildout:directory}/instance-import.cfg
-mode = 0644
 context =
   jsonkey default_parameter_dict theia:default-parameters
   key parameter_dict slap-configuration:configuration
@@ -75,7 +73,6 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = ${instance-export:output}
 output = $${buildout:directory}/instance-export.cfg
-mode = 0644
 context =
   jsonkey default_parameter_dict theia:default-parameters
   key parameter_dict slap-configuration:configuration
@@ -86,7 +83,6 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = ${instance-resilient:output}
 output = $${buildout:directory}/instance-resilient.cfg
-mode = 0644
 extensions = jinja2.ext.do
 context =
   key buildout buildout:bin-directory

@@ -78,7 +78,6 @@ caucase.updater(
 
 [rest-server-certificate-csr-config]
 recipe = slapos.recipe.template
-mode = 644
 inline =
   [req]
   prompt = no

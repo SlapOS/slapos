@@ -88,7 +88,6 @@ json = ${surykatka-config-{{ class }}:json}
 inline =#!/bin/sh
   {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json --stdout ${:json}
 output = ${monitor-directory:bin}/${:_buildout_section_name_}
-mode = 0755
 
 [cron-entry-surykatka-status-{{ class }}]
 recipe = slapos.cookbook:cron.d

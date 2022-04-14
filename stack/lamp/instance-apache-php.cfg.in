@@ -137,10 +137,9 @@ apache-config-dir = ${directory:apache.d}
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['template-apache-conf'] }}
 output = ${directory:etc}/apache.conf
-context = 
+context =
   section parameter_dict apache-php-configuration
 extensions = jinja2.ext.do
-mode = 0644
 
 [apache-php-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -173,11 +172,10 @@ php-upload-dir = ${directory:upload-tmp}
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['template-php-ini'] }}
 output = ${directory:php-ini-dir}/php.ini
-context = 
+context =
   section parameter_dict php.ini-configuration
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
-mode = 0644
 
 [instance-parameter]
 db-user = ${mariadb-urlparse:username}

@@ -35,7 +35,6 @@ input = inline:
   #!/bin/sh
   exec {{ bin_directory }}/runResiliencyUnitTestTestNode $@ ${:test-parameters}
 output = ${directory:bin}/runTestSuite
-mode = 755
 
 [request-resilient-instance]
 <= slap-connection
