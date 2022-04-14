@@ -34,7 +34,7 @@ mode = {{ mode }}
 
 {% if parameter['ssl-key'] and parameter['ssl-crt'] -%}
 {{ simplefile('ssl-certificate', '${turnserver-ssl:certificate}', parameter['ssl-crt']) }}
-{{ simplefile('ssl-key', '${turnserver-ssl:key}', parameter['ssl-key'], 600) }}
+{{ simplefile('ssl-key', '${turnserver-ssl:key}', parameter['ssl-key']) }}
 {% else -%}
 {%  do part_list.append('gen-certificate') -%}
 [gen-certificate]
@@ -108,7 +108,6 @@ input = inline:
   pidfile=${directory:run}/turnserver.pid
   verbose
 output = ${directory:etc}/turnserver.conf
-mode = 644
 
 [turnserver-wrapper]
 recipe = slapos.cookbook:wrapper

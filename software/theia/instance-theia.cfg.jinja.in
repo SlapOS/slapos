@@ -346,7 +346,6 @@ filename = $${:_buildout_section_name_}
 [common-environment]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
@@ -365,7 +364,6 @@ ip = {{ ipv4_random }}
 [theia-service]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
 inline =#!/bin/sh
   {{ "{% raw %}" }}
   {% raw %}
@@ -403,7 +401,6 @@ base-url = $${theia-service:base-url}
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
 inline ={% raw %}#!{{ bash }}
   SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
@@ -452,7 +449,6 @@ command =
 [request-embedded-instance-script]
 recipe = slapos.recipe.template
 output = $${directory:project}/request_embedded.sh
-mode = 0700
 inline =#!/bin/sh
 
   slapos supply {{ embedded_sr }} slaprunner
@@ -596,7 +592,6 @@ inline =
 [slapos-standalone]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
 inline =#!/bin/sh
   . $${common-environment:output}
   #XXX find out where the extra nodejs in theia's PATH comes from
@@ -728,7 +723,6 @@ link-binary = $${directory:runner}
 [request-script-template]
 recipe = slapos.recipe.template
 output = $${directory:project}/$${:_buildout_section_name_}.sh
-mode = 0700
 inline =#!/bin/sh
   # This template is generated automatically, copy it in order to supply and request.
   # Any manual change to this file may be lost.

@@ -84,7 +84,6 @@ recipe = slapos.recipe.template:jinja2
 url = ${template-wrapper:output}
 output = $${:wrapper}
 wrapper = $${basedirectory:services}/notifier
-mode = 0700
 command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
 host = {{ ipv6 }}
 port = $${notifier-port:port}
@@ -225,7 +224,6 @@ config-command = $${pull-push-stalled-promise-bin:wrapper-path}
 recipe = slapos.recipe.template:jinja2
 url = ${notifier-feed-promise-template:target}
 output = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
-mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds
   raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
@@ -264,7 +262,7 @@ username = {{ slapparameter_dict.get('monitor-username', 'admin') }}
 password = {{ slapparameter_dict.get('monitor-password', '$${monitor-htpasswd:passwd}') }}
 
 [monitor-conf-parameters]
-private-path-list += 
+private-path-list +=
   $${logrotate-directory:logrotate-backup}
   $${basedirectory:log}
 
@@ -272,7 +270,6 @@ private-path-list +=
 recipe = slapos.recipe.template:jinja2
 url = ${template-monitor-check-resilient-feed:target}
 output = $${monitor-directory:bin}/check-create-resilient-feed-files
-mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
   key monitor_feed_directory monitor-directory:public
