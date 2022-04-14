@@ -83,7 +83,6 @@ url = {{ importer_script_path }}
 output = ${directory:bin}/${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
 wrapper = ${:output}
-mode = 700
 restore-exit-code-file = ${directory:srv}/${:restore-exit-code-file-basename}
 restore-exit-code-file-basename = importer-exit-code-file
 restore-error-message-file = ${directory:srv}/${:restore-error-message-file-basename}
@@ -130,7 +129,6 @@ input = inline: #!/bin/sh
   fi
   exit 1; # Something else went wrong
 output = ${directory:bin}/importer-consistency-promise
-mode = 755
 
 [importer-consistency-promise]
 <= monitor-promise-base
@@ -154,7 +152,6 @@ input = inline: #!/bin/sh
   fi
   exit 1
 output = ${directory:bin}/software-release-deployment-promise
-mode = 755
 
 [software-release-deployment-promise]
 <= monitor-promise-base
@@ -167,7 +164,6 @@ recipe = slapos.recipe.template
 url = {{ software_release_information_template }}
 output = ${directory:cgi-bin}/resilient_software_release_information.py
 resilient-log-url = ${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
-mode = 0600
 
 [slap-parameter]
 auto-deploy-instance = false
@@ -203,4 +199,3 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ software_release_bin }}/runner-importer-post-notification-run --diff-file ${:diff-file} --proof-signature-file ${:proof-signature-file} --srv-path ${directory:srv} --backup-path ${directory:backup}
 wrapper-path = ${rootdirectory:bin}/post-notification-run
 output = ${:wrapper-path}
-mode = 0700

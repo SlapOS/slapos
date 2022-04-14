@@ -176,7 +176,6 @@ httpd-include-file =
 recipe = slapos.recipe.template:jinja2
 url = {{ monitor_httpd_template }}
 output = ${monitor-directory:etc}/monitor-httpd.conf
-mode = 0744
 context =
   section directory monitor-directory
   section parameter_dict monitor-httpd-conf-parameter
@@ -185,7 +184,6 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = {{ monitor_https_cors }}
 output = ${directory:etc}/httpd-cors.cfg
-mode = 0600
 context =
   key domain monitor-instance-parameter:cors-domains
 
@@ -202,7 +200,6 @@ wait-for-files =
 recipe = slapos.recipe.template:jinja2
 url = {{ template_wrapper }}
 output = ${directory:scripts}/monitor-httpd-graceful
-mode = 0700
 context =
     key content :command
     raw dash_binary {{ dash_executable_location }}
@@ -288,7 +285,6 @@ input = inline:${:log} {
     notifempty
   }
 output = ${logrotate-directory:logrotate-entries}/${:name}
-mode = 600
 
 [logrotate-entry-monitor-promise-history]
 <= logrotate-entry-base

@@ -48,7 +48,7 @@ recipe = slapos.recipe.template
 inline =
   {{ '{{ content }}' }}
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
+{% macro simplefile(section_name, file_path, content) -%}
 {%   set content_section_name = section_name ~ '-content' -%}
 [{{  content_section_name }}]
 content = {{ dumps(content) }}
@@ -57,7 +57,6 @@ content = {{ dumps(content) }}
 < = simplefile
 output = {{ file_path }}
 context = key content {{ content_section_name }}:content
-mode = {{ mode }}
 {%- endmacro %}
 
 

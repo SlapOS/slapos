@@ -110,7 +110,6 @@ command = ${tidstorage:repozo-wrapper}
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template
-mode = 644
 inline = {{ '{{ "${directory:zodb}/**\\n${directory:log}/**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
 
@@ -121,7 +120,6 @@ output = ${directory:srv}/exporter.exclude
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/backup-identity-script-excluding-path --exclude-path "srv/backup/logrotate/**" --exclude-path "srv/backup/zodb/*/*fsz"
 wrapper-path = ${directory:srv}/.backup_identity_script
-mode = 770
 
 [{{ section("resiliency-after-import-script") }}]
 # Generate after import script used by importer instance of webrunner
@@ -171,7 +169,6 @@ input = inline: #!/bin/sh
   {% endfor -%}
   exit $EXIT_CODE
 output = ${directory:srv}/runner-import-restore
-mode = 755
 
 {% endif -%}
 

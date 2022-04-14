@@ -608,6 +608,7 @@ inline =
 output = ${directory:scripts}/nginx-graceful
 mode = 755
 
+
 [logrotate-entry-nginx]
 <= logrotate-entry-base
 name = nginx

@@ -52,7 +52,7 @@ context =
 inline =
   {{ '{{ content }}' }}
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
+{% macro simplefile(section_name, file_path, content) -%}
 {%   set content_section_name = section_name ~ '-content' -%}
 [{{  content_section_name }}]
 content = {{ dumps(content) }}
@@ -61,7 +61,6 @@ content = {{ dumps(content) }}
 < = simplefile
 output = {{ file_path }}
 context = key content {{content_section_name}}:content
-mode = {{ mode }}
 {%- endmacro %}
 
 {% import "caucase" as caucase with context %}
@@ -133,7 +132,6 @@ context = section parameter_dict my-cnf-parameters
 output = ${directory:etc}/.init-root.sql
 url = {{ parameter_dict['template-mariadb-init-root'] }}
 context = section parameter_dict init-script-parameters
-mode = 600
 
 [init-script-parameters]
 password = {{ slapparameter_dict['root-password'] }}
