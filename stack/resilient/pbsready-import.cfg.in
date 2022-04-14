@@ -59,7 +59,6 @@ input = inline:
   find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > $${:proof-signature-file}
   diff -ruw backup.signature $${:proof-signature-file} > $${:diff-file}
 output = $${rootdirectory:bin}/post-notification-run
-mode = 0700
 
 [backup-checksum-integrity-promise-bin]
 recipe = slapos.recipe.template
@@ -77,7 +76,6 @@ inline =
     exit 0;
   fi
 output = $${rootdirectory:bin}/backup-checksum-integrity
-mode = 700
 
 [backup-checksum-integrity-promise]
 <= monitor-promise-base
@@ -113,7 +111,6 @@ recipe = collective.recipe.template
 input = ${resilient-web-takeover-cgi-script-download:target}
 output = $${directory:cgi-bin}/web-takeover.cgi
 password = $${resilient-web-takeover-password:passwd}
-mode = 700
 proof-signature-url = $${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
 
 # XXX could it be something lighter?

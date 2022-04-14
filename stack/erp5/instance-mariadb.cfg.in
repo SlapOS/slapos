@@ -52,17 +52,15 @@ maximum = {{ dumps(2**32 - 1) }}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 [jinja2-template-executable]
 < = jinja2-template-base
-mode = 755
 
 [simplefile]
 < = jinja2-template-base
 inline ={{ '{{ content }}' }}
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
+{% macro simplefile(section_name, file_path, content) -%}
 {%   set content_section_name = section_name ~ '-content' -%}
 [{{  content_section_name }}]
 content = {{ dumps(content) }}
@@ -71,13 +69,12 @@ content = {{ dumps(content) }}
 < = simplefile
 output = {{ file_path }}
 context = key content {{content_section_name}}:content
-mode = {{ mode }}
 {%- endmacro %}
 {% set ssl_dict = {} -%}
-{% macro sslfile(key, content, mode='644') -%}
+{% macro sslfile(key, content) -%}
 {%   set path = '${directory:mariadb-ssl}/' ~ key ~ '.pem' -%}
 {%   do ssl_dict.__setitem__(key, path) -%}
-{{   simplefile('ssl-file-' ~ key, path, content, mode) }}
+{{   simplefile('ssl-file-' ~ key, path, content) }}
 {%- endmacro %}
 {% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
 {% if ssl_parameter_dict -%}
@@ -85,7 +82,7 @@ mode = {{ mode }}
 {# Note: The key content will be stored in .installed.cfg, and this template's
 rendering, so the only point of mode is to avoid risking mariadb complaining
 about laxist file mode. -#}
-{{   sslfile('key', ssl_parameter_dict['key'], mode='600') }}
+{{   sslfile('key', ssl_parameter_dict['key']) }}
 {{   sslfile('crt', ssl_parameter_dict['crt']) }}
 {%   if 'ca-crt' in ssl_parameter_dict -%}
 {{     sslfile('ca-crt', ssl_parameter_dict['ca-crt']) }}
@@ -272,7 +269,6 @@ output = ${directory:srv}/exporter.exclude
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/backup-identity-script-excluding-path --exclude-path "srv/backup/logrotate/**"
 wrapper-path = ${directory:srv}/.backup_identity_script
-mode = 770
 
 [dash]
 dash = {{ dumps(dash) }}
@@ -318,7 +314,6 @@ recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['mariadb-slow-query-report-script'] }}
 output = ${directory:bin}/${:filename}
 filename = generate-mariadb-slow-query-report
-mode = 755
 context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
