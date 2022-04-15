@@ -44,8 +44,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeC
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 
 
-software_cfg = 'software%s.cfg' % ('-py3' if six.PY3 else '')
-theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', software_cfg))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
 
