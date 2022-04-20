@@ -60,8 +60,7 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..',
-                   'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+      os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
@@ -1792,14 +1791,28 @@ class TestExternalDisk(InstanceTestCase, KvmMixin):
         'w') as fh:
         json.dump(slapos_resource, fh, indent=2)
     # above is not enough: the presence of parameter is required in slapos.cfg
+    slapos_config = []
     with open(cls.slap._slapos_config) as fh:
-      slapos_config = fh.read()
-    slapos_config += '\n' + """
-[slapos]
-instance_storage_home = %s
-""" % (external_storage_path,)
+      for line in fh.readlines():
+        if line.strip() == '[slapos]':
+          slapos_config.append('[slapos]\n')
+          slapos_config.append(
+            'instance_storage_home = %s\n' % (external_storage_path,))
+        else:
+          slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
-      fh.write(slapos_config)
+      fh.write(''.join(slapos_config))
+
+  @classmethod
+  def _dropExternalStorageList(cls):
+    slapos_config = []
+    with open(cls.slap._slapos_config) as fh:
+      for line in fh.readlines():
+        if line.startswith("instance_storage_home ="):
+          continue
+        slapos_config.append(line)
+    with open(cls.slap._slapos_config, 'w') as fh:
+      fh.write(''.join(slapos_config))
 
   @classmethod
   def _setUpClass(cls):
@@ -1812,6 +1825,7 @@ instance_storage_home = %s
 
   @classmethod
   def tearDownClass(cls):
+    cls._dropExternalStorageList()
     super(TestExternalDisk, cls).tearDownClass()
     shutil.rmtree(cls.working_directory)
 
