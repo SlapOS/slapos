@@ -1,0 +1,101 @@
+From 3884a23340defa68ce84590e4a3175d7ea59bbbb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Mon, 11 Apr 2022 13:49:17 +0200
+Subject: [PATCH 1/3] cmake: Drop FindCython.cmake
+
+Cython is not required while building minimal ceph - librbd only support,
+and dropping it simplifies build process and removes a lot of additional
+dependencies.
+---
+ cmake/modules/FindCython.cmake | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/cmake/modules/FindCython.cmake b/cmake/modules/FindCython.cmake
+index 8eb9e42f402..e69de29bb2d 100644
+--- a/cmake/modules/FindCython.cmake
++++ b/cmake/modules/FindCython.cmake
+@@ -1,16 +0,0 @@
+-#
+-# Cython
+-#
+-
+-# Try to run Cython, to make sure it works:
+-execute_process(
+-  COMMAND ${Python3_EXECUTABLE} -m cython --version
+-  RESULT_VARIABLE cython_result
+-  ERROR_VARIABLE cython_output)
+-if(cython_result EQUAL 0)
+-  string(REGEX REPLACE "^Cython version ([0-9]+\\.[0-9]+).*" "\\1" CYTHON_VERSION "${cython_output}")
+-else()
+-  message(SEND_ERROR "Could not find cython${PYTHON_VERSION}: ${cython_output}")
+-endif()
+-include(FindPackageHandleStandardArgs)
+-find_package_handle_standard_args(Cython${PYTHON_VERSION} DEFAULT_MSG CYTHON_VERSION)
+-- 
+2.30.2
+
+
+From 17131b5c0619a8bf2e56e6a8d63649d3d1b2a432 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Mon, 11 Apr 2022 13:50:33 +0200
+Subject: [PATCH 2/3] librbd: drop needless udev
+
+It's automatically added by cmake and such configuration results with linker
+not being able to find libudev in case if it lives outside of typical
+directory structure.
+---
+ src/librbd/CMakeLists.txt | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/librbd/CMakeLists.txt b/src/librbd/CMakeLists.txt
+index ad23f0975fd..5bd011bf242 100644
+--- a/src/librbd/CMakeLists.txt
++++ b/src/librbd/CMakeLists.txt
+@@ -337,10 +337,6 @@ target_link_libraries(librbd PRIVATE
+   pthread
+   ${CMAKE_DL_LIBS}
+   ${EXTRALIBS} ${GSSAPI_LIBRARIES})
+-if(HAVE_UDEV)
+-  target_link_libraries(librbd PRIVATE
+-    udev)
+-endif()
+ if(ENABLE_SHARED)
+   set_target_properties(librbd PROPERTIES
+     OUTPUT_NAME rbd
+-- 
+2.30.2
+
+
+From 7d16861edea2609e0f6b29b146ed928c63a6ee08 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Mon, 11 Apr 2022 13:50:03 +0200
+Subject: [PATCH 3/3] common: Fix missing cmake declarations
+
+Original ceph build process can't find some dependencies in case if it's run
+on machines which do not have installed in standard /usr locations.
+---
+ src/common/CMakeLists.txt | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/common/CMakeLists.txt b/src/common/CMakeLists.txt
+index 3bf28659e1c..005d08c1caa 100644
+--- a/src/common/CMakeLists.txt
++++ b/src/common/CMakeLists.txt
+@@ -184,6 +184,8 @@ add_library(common-common-objs OBJECT
+ # retrieved OpenSSL location. This is especially important when cross
+ # compiling (e.g. targeting Windows).
+ target_include_directories(common-common-objs PRIVATE ${OPENSSL_INCLUDE_DIR})
++target_include_directories(common-common-objs PRIVATE ${UDEV_INCLUDE_DIR})
++target_include_directories(common-common-objs PRIVATE ${BLKID_INCLUDE_DIR})
+ # for options.cc
+ target_compile_definitions(common-common-objs PRIVATE
+   "CMAKE_INSTALL_LIBDIR=\"${CMAKE_INSTALL_LIBDIR}\""
+@@ -241,4 +243,5 @@ if(HAVE_KEYUTILS)
+   set(parse_secret_srcs
+     secret.c)
+   add_library(parse_secret_objs OBJECT ${parse_secret_srcs})
++  target_include_directories(parse_secret_objs PRIVATE ${KEYUTILS_INCLUDE_DIR})
+ endif()
+-- 
+2.30.2
+
