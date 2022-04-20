@@ -60,8 +60,7 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..',
-                   'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+      os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
