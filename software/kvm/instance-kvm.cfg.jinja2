@@ -399,7 +399,6 @@ ipv6 = ${slap-network-information:global-ipv6}
 vnc-ip = ${:ipv4}
 vnc-port = 5901
 
-default-cdrom-iso = {{ debian_amd64_netinst_location }}
 {% if virtual_hard_drive_url_enabled %}
 virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:rendered}
 {% else %}
