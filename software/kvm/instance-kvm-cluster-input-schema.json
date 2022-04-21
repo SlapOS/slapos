@@ -454,6 +454,7 @@
             },
             "boot-image-url-select": {
               "title": "Boot image",
+              "description": "Selectable list of provided ISO images.",
               "type": "array",
               "oneOf": [
                 {
