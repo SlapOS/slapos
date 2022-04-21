@@ -490,6 +490,7 @@
               "title": "Boot image",
               "type": "array",
               "default": "Debian Bullseye 11.3 netinst x86_64",
+              "description": "Selectable list of provided ISO images.",
               "oneOf": [
                 {
                   "const": [
