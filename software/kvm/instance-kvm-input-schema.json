@@ -352,6 +352,7 @@
     "boot-image-url-select": {
       "title": "Boot image",
       "type": "array",
+      "default": "Debian Bullseye 11.3 netinst x86_64",
       "oneOf": [
         {
           "const": [
