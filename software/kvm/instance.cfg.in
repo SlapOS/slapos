@@ -81,11 +81,11 @@ extra-context =
   raw dash_executable_location ${dash:location}/bin/dash
   raw dnsresolver_executable ${buildout:bin-directory}/dnsresolver
   raw dcron_executable_location ${dcron:location}/sbin/crond
-  raw debian_amd64_netinst_location ${debian-amd64-bullseye-netinst.iso:target}
   raw whitelist_domains_default ${whitelist-domains-default:target}
-  raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:output}
-  raw image_download_controller ${image-download-controller:output}
-  raw image_download_config_creator ${image-download-config-creator:output}
+  raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:target}
+  raw boot_image_select_source_config ${boot-image-select-source-config:target}
+  raw image_download_controller ${image-download-controller:target}
+  raw image_download_config_creator ${image-download-config-creator:target}
   raw logrotate_cfg ${template-logrotate-base:output}
   raw novnc_location ${noVNC:location}
   raw netcat_bin ${netcat:location}/bin/netcat
