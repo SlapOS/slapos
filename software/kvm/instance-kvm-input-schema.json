@@ -318,56 +318,17 @@
     "boot-image-url-select": {
       "title": "Boot image",
       "description": "Selectable list of provided ISO images.",
-      "type": "array",
-      "oneOf": [
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/bc469019b9057073d36ff8f5402c95ff0a0363657358336dc9a05fc6af66276229aa727ec46cf17b84d308f44b825de7f24ea1a256062a14e0f605cd70bae02f#2dcf188877075d7b58ca46e27ca31bb9"
-          ],
-          "title": "Debian Buster 10.12 netinst x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/ce5ddfdbdaccdf929b7fe321212356347d82a02f6b7733427282b416f113d91e587682b003e9d376ac189c3b731595c50c236962aadf2720c16d9f36913577c0#23bf2a2d60271e553e63525e794415f1"
-          ],
-          "title": "Centos 8.2004 Minimal x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/8017c532ed74586b718662d8b11cf8c34fa638b0affd0413ed38623989b8f98ffd0bcb475246e279ea2f3c194a3e33c55e0f376a9727de13e4bfd87e75e47b5d#e8d2a77c51b599c10651608a5d8c286f"
-          ],
-          "title": "Ubuntu Jammy 22.04.1 Live Server x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/302c990c6d69575ff24c96566e5c7e26bf36908abb0cd546e22687c46fb07bf8dba595bf77a9d4fd9ab63e75c0437c133f35462fd41ea77f6f616140cd0e5e6a#f3a306f40e4a313fb5a584d73b3dee8f"
-          ],
-          "title": "Ubuntu Focal 20.04.1 Live Server x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/6635269a7eb6fbd6b85fda40cd94f14a27bf53cb1fc82ffcce9fe386a025a43e1ab681db7e8cec50416bfbfc90262f0d95273686a101c74b3f17646f0a34c85b#3708a59af6cf820a95cafe0ae73ac399"
-          ],
-          "title": "openSUSE Leap 15.2 NET x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/fc17e8c6ae0790162f4beb8fa6226d945cff638429588999b3a08493ff27b280dc2939fba825ae04be1d9082ea8d7c3c002c5e4c39fbbcf88b8ab5104619e28a#ebcdb2223a77f098af3923fe1fa180aa"
-          ],
-          "title": "Arch Linux 2020.09.01 x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/c5a511f349a1146b615e6fab9c24f9be4362046adcf24f0ff82c470d361fac5f6628895e2110ebf8ff87db49d4c413a0a332699da6b1bec64275e0c17a15b999#ca7a1e555c04b4d9a549065fa2ddf713"
-          ],
-          "title": "Fedora Server 32-1.6 netinst x86_64"
-        },
-        {
-          "const": [
-            "https://shacache.nxdcdn.com/6c355def68b3c0427f21598cb054ffc893568902f205601ac60f192854769b31bc9cff8eeb6ce99ef975a8fb887d8d3e56fc6cd5ea5cb4b3bba1175c520047cb#57088b77f795ca44b00971e44782ee23"
-          ],
-          "title": "FreeBSD 12.1 RELEASE bootonly x86_64"
-        }
+      "type": "string",
+      "default": "Debian Bullseye 11 netinst x86_64",
+      "enum": [
+          "Debian Bullseye 11 netinst x86_64",
+          "Debian Buster 10 netinst x86_64",
+          "Centos 8.2004 Minimal x86_64",
+          "Ubuntu Focal 20.04 Live Server x86_64",
+          "openSUSE Leap 15 NET x86_64",
+          "Arch Linux 2020.09.01 x86_64",
+          "Fedora Server 32 netinst x86_64",
+          "FreeBSD 12.1 RELEASE bootonly x86_64"
       ]
     },
     "whitelist-domains": {
