@@ -492,6 +492,12 @@
               "oneOf": [
                 {
                   "const": [
+                    "https://shacache.nxdcdn.com/2810f894afab9ac2631ddd097599761c1481b85e629d6a3197fe1488713af048d37241eb85def681ba86e62b406dd9b891ee1ae7915416335b6bb000d57c1e53#e7a5a4fc5804ae65f7487e68422368ad"
+                  ],
+                  "title": "Debian Bullseye 11.3 netinst x86_64"
+                },
+                {
+                  "const": [
                     "https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c72871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0"
                   ],
                   "title": "Debian Bullseye 11.1 netinst x86_64"
