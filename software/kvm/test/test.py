@@ -627,13 +627,20 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
       if k in connection_parameter_dict:
         present_key_list.append(k)
         connection_parameter_dict.pop(k)
+    self.assertIn('feed-url-kvm-1-pull', connection_parameter_dict)
+    feed_pull = connection_parameter_dict.pop('feed-url-kvm-1-pull')
+    self.assertRegexpMatches(
+      feed_pull,
+      'http://\\[%s\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull' % (
+        self._ipv6_address,))
+    feed_push = connection_parameter_dict.pop('feed-url-kvm-1-push')
+    self.assertRegexpMatches(
+      feed_push,
+      'http://\\[%s\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push' % (
+        self._ipv6_address,))
     self.assertEqual(
       connection_parameter_dict,
       {
-        'feed-url-kvm-1-pull': 'http://[%s]:8088/get/local-ir0-kvm-1-pull' % (
-          self._ipv6_address,),
-        'feed-url-kvm-1-push': 'http://[%s]:8088/get/local-ir0-kvm-1-push' % (
-          self._ipv6_address,),
         'ipv6': self._ipv6_address,
         'monitor-base-url': 'https://[%s]:8160' % (self._ipv6_address,),
         'monitor-user': 'admin',
