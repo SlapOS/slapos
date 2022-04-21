@@ -19,8 +19,11 @@
 {% set whitelist_domains = slapparameter_dict.get('whitelist-domains', '') -%}
 {% set virtual_hard_drive_url_enabled = 'virtual-hard-drive-url' in slapparameter_dict %}
 {% set virtual_hard_drive_url_gzipped = slapparameter_dict.get('virtual-hard-drive-gzipped', False) %}
-{% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
-{% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
+{% if 'boot-image-url-select' not in slapparameter_dict and ('boot-image-url-list' in slapparameter_dict or 'nbd-host' in slapparameter_dict or 'nbd2-host' in slapparameter_dict or virtual_hard_drive_url_enabled)%}
+{%   set boot_image_url_select_default = '' %}
+{% else %}
+{%   set boot_image_url_select_default = 'Debian Bookworm 12 netinst x86_64' %}
+{% endif %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
 {% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 2)) + 1)) %}
 {% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 4096)) + 512)) %}
@@ -63,16 +66,12 @@ virtual-hard-drive-url-repository = ${:srv}/virtual-hard-drive-url-repository
 virtual-hard-drive-url-var = ${:var}/virtual-hard-drive-url
 virtual-hard-drive-url-expose = ${monitor-directory:private}/virtual-hard-drive-url
 {%- endif %}
-{%- if boot_image_url_list_enabled %}
 boot-image-url-list-repository = ${:srv}/boot-image-url-list-repository
 boot-image-url-list-var = ${:var}/boot-image-url-list
 boot-image-url-list-expose = ${monitor-directory:private}/boot-image-url-list
-{%- endif %}
-{%- if boot_image_url_select_enabled %}
 boot-image-url-select-repository = ${:srv}/boot-image-url-select-repository
 boot-image-url-select-var = ${:var}/boot-image-url-select
 boot-image-url-select-expose = ${monitor-directory:private}/boot-image-url-select
-{%- endif %}
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -88,7 +87,6 @@ storage-path = ${directory:srv}/.passwd
 # VNC protocol supports passwords of 8 characters max
 bytes = 8
 
-{% if boot_image_url_select_enabled %}
 ## boot-image-url-select support BEGIN
 [empty-file-state-base-select-promise]
 <= monitor-promise-base
@@ -99,13 +97,12 @@ config-url = ${monitor-base:base-url}/private/boot-image-url-select/${:filename}
 
 [boot-image-url-select-source-config]
 recipe = slapos.recipe.template:jinja2
-inline =
-{%- raw %}
-  {{ boot_image_url_select }}
-{% endraw -%}
-boot-image-url-select = {{ dumps(slapparameter_dict['boot-image-url-select']) }}
+url = {{ boot_image_select_source_config }}
+boot-image-url-select = {{ dumps(slapparameter_dict.get('boot-image-url-select', '')) }}
+boot-image-url-select-default = {{ dumps(boot_image_url_select_default) }}
 context =
   key boot_image_url_select :boot-image-url-select
+  key boot_image_url_select_default :boot-image-url-select-default
 output = ${directory:etc}/boot-image-url-select.json
 
 [boot-image-url-select-processed-config]
@@ -183,9 +180,7 @@ config-filename = ${boot-image-url-select-download-wrapper:md5sum-state-file}
 filename = ${boot-image-url-select-download-wrapper:error-state-filename}
 config-filename = ${boot-image-url-select-download-wrapper:error-state-file}
 ## boot-image-url-select support END
-{% endif %} {# if boot_image_url_select_enabled #}
 
-{% if boot_image_url_list_enabled %}
 ## boot-image-url-list support BEGIN
 [empty-file-state-base-list-promise]
 <= monitor-promise-base
@@ -200,7 +195,7 @@ inline =
 {%- raw %}
   {{ boot_image_url_list }}
 {% endraw -%}
-boot-image-url-list = {{ dumps(slapparameter_dict['boot-image-url-list']) }}
+boot-image-url-list = {{ dumps(slapparameter_dict.get('boot-image-url-list', '')) }}
 context =
   key boot_image_url_list :boot-image-url-list
 output = ${directory:etc}/boot-image-url-list.conf
@@ -280,7 +275,6 @@ config-filename = ${boot-image-url-list-download-wrapper:md5sum-state-file}
 filename = ${boot-image-url-list-download-wrapper:error-state-filename}
 config-filename = ${boot-image-url-list-download-wrapper:error-state-file}
 ## boot-image-url-list support END
-{% endif %} {# if boot_image_url_list_enabled #}
 
 {% if virtual_hard_drive_url_enabled %}
 ## virtual-hard-drive-url support BEGIN
@@ -399,22 +393,13 @@ ipv6 = ${slap-network-information:global-ipv6}
 vnc-ip = ${:ipv4}
 vnc-websocket-port = 5701
 
-default-cdrom-iso = {{ debian_amd64_netinst_location }}
 {% if virtual_hard_drive_url_enabled %}
 virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:output}
 {% else %}
 virtual-hard-drive-url-json-config =
 {% endif %}
-{% if boot_image_url_list_enabled %}
 boot-image-url-list-json-config = ${boot-image-url-list-json-config:output}
-{% else %}
-boot-image-url-list-json-config =
-{% endif %}
-{% if boot_image_url_select_enabled %}
 boot-image-url-select-json-config = ${boot-image-url-select-json-config:output}
-{% else %}
-boot-image-url-select-json-config =
-{% endif %}
 
 tap-interface = {{ slap_configuration.get('tap-name', '') }}
 tap-ipv6-addr = {{ slap_configuration.get('tap-ipv6-addr', '') }}
@@ -545,12 +530,8 @@ update-command = ${:command}
 command = [ ! -f {{ '${' + key + '}' }} ] && touch {{ '${' +  key + '}' }}
 {%- endmacro %}
 {#- Create depending sections, as state files appear late, so it's better to have empty file which will impact the hash anyway #}
-{%- if boot_image_url_list_enabled %}
 {{    generate_depend_section('boot-image-url-list-depend', 'boot-image-url-list-download-wrapper:config') }}
-{%- endif %}
-{%- if boot_image_url_select_enabled %}
 {{    generate_depend_section('boot-image-url-select-depend', 'boot-image-url-select-download-wrapper:config') }}
-{%- endif %}
 {%- if virtual_hard_drive_url_enabled %}
 {{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:config') }}
 {%- endif %}
@@ -1277,20 +1258,16 @@ parts =
   virtual-hard-drive-url-download-state-promise
   virtual-hard-drive-url-processed-config-promise
 {% endif %}
-{% if boot_image_url_list_enabled %}
   boot-image-url-list-download-wrapper
   boot-image-url-list-config-state-promise
   boot-image-url-list-download-md5sum-promise
   boot-image-url-list-download-state-promise
   boot-image-url-list-processed-config-promise
-{% endif %}
-{% if boot_image_url_select_enabled %}
   boot-image-url-select-download-wrapper
   boot-image-url-select-config-state-promise
   boot-image-url-select-download-md5sum-promise
   boot-image-url-select-download-state-promise
   boot-image-url-select-processed-config-promise
-{% endif %}
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}

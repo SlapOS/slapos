@@ -23,7 +23,6 @@ disk_type = {{ repr(parameter_dict["disk-type"]) }}
 network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
-default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
 
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
@@ -387,17 +386,13 @@ def handle_image(config, name):
 
 # Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
 #       Debian installation CDs, rendering it uninstallable
-if boot_image_url_select_json_config:
-  # Support boot-image-url-select
-  handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
+# Note: boot-image-url-list has precedence over boot-image-url-select
 if boot_image_url_list_json_config:
   # Support boot-image-url-list
   handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
-# Always add by default the default image
-kvm_argument_list.extend([
-    '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
-])
-
+if boot_image_url_select_json_config:
+  # Support boot-image-url-select
+  handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 os.execv(qemu_path, kvm_argument_list)
