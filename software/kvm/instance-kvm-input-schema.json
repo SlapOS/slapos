@@ -352,7 +352,14 @@
     "boot-image-url-select": {
       "title": "Boot image",
       "type": "array",
+      "default": "Debian Bullseye 11.3 netinst x86_64",
       "oneOf": [
+        {
+          "const": [
+            "https://shacache.nxdcdn.com/2810f894afab9ac2631ddd097599761c1481b85e629d6a3197fe1488713af048d37241eb85def681ba86e62b406dd9b891ee1ae7915416335b6bb000d57c1e53#e7a5a4fc5804ae65f7487e68422368ad"
+          ],
+          "title": "Debian Bullseye 11.3 netinst x86_64"
+        },
         {
           "const": [
             "https://shacache.nxdcdn.com/bc469019b9057073d36ff8f5402c95ff0a0363657358336dc9a05fc6af66276229aa727ec46cf17b84d308f44b825de7f24ea1a256062a14e0f605cd70bae02f#2dcf188877075d7b58ca46e27ca31bb9"
