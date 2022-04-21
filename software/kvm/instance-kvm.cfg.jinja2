@@ -583,10 +583,13 @@ command-line = ${kvm-controller:output}
 
 [kvm-vnc-promise]
 <= monitor-promise-base
+# This promise bangs on error
 promise = check_socket_listening
 name = vnc_promise.py
 config-host = ${kvm-parameter-dict:vnc-ip}
 config-port = ${kvm-parameter-dict:vnc-websocket-port}
+# It is required to be very sensitive for non working KVM process
+failure-amount = 1
 
 [kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
