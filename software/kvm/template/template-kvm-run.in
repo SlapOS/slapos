@@ -27,7 +27,6 @@ nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
               {{ parameter_dict.get("nbd-port") }}),
             ('{{ parameter_dict.get("nbd2-host") }}',
               {{ parameter_dict.get("nbd2-port") }}))
-default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
 
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
@@ -412,11 +411,6 @@ else:
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
     handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
-  # Always add by default the default image
-  kvm_argument_list.extend([
-      '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
-  ])
-
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 os.execv(qemu_path, kvm_argument_list)
