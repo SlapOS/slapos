@@ -258,9 +258,12 @@ context =
 {%   endif %}
 {%   if len(slave_error_list) == 0 %}
 {#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
+{#   XXX This needs extremely good testing!!!! It hits almost every upgrade!!! #}
 {%     set authorized_slave = slave.copy() %}
-{%     for key in SERVER_POLLUTED_KEY_LIST %}
-{%       do authorized_slave.pop(key, None) %}
+{%     for key in authorized_slave.keys() %}
+{%       if key.endswith('node-information-json') or key in SERVER_POLLUTED_KEY_LIST %}
+{%         do authorized_slave.pop(key, None) %}
+{%       endif %}
 {%     endfor %}
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
