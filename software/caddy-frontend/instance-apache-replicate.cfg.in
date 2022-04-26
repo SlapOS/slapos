@@ -304,13 +304,13 @@ software-url = {{ frontend_request['software-url'] }}
 {%   if state %}
 state = {{ state }}
 {%   endif %}
+{#   Do not send additional parameters for destroyed nodes #}
+{%   if state != 'destroyed' %}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-backend-client-caucase-url = {{ caucase_url }}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
-{#   Do not send additional parameters for destroyed nodes #}
-{%   if state != 'destroyed' %}
 {%     set node_configuration_dict = {} %}
 {%     do node_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
@@ -322,11 +322,14 @@ config-{{ config_key }} = {{ dumps(config_value) }}
 {%-     for config_key, config_value in base_node_configuration_dict.iteritems() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%     endfor -%}
-{%   endif %}
-{%   if frontend_request.get('sla') %}
-{%     for parameter, value in frontend_request.get('sla').iteritems() %}
+{%     if frontend_request.get('sla') %}
+{%       for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
-{%     endfor %}
+{%       endfor %}
+{%     endif %}
+{%   else %}
+{#   Ignore return for destroyed nodes #}
+return =
 {%   endif %}
 {% endfor %}
 
