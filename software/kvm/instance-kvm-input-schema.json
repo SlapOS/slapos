@@ -355,9 +355,9 @@
       "oneOf": [
         {
           "const": [
-            "https://shacache.nxdcdn.com/0a6aee1d9aafc1ed095105c052f9fdd65ed00ea9274188c9cd0072c8e6838ab40e246d45a1e6956d74ef1b04a1fc042151762f25412e9ff0cbf49418eef7992e#a3ebc76aec372808ad80000108a2593a"
+            "https://shacache.nxdcdn.com/bc469019b9057073d36ff8f5402c95ff0a0363657358336dc9a05fc6af66276229aa727ec46cf17b84d308f44b825de7f24ea1a256062a14e0f605cd70bae02f#2dcf188877075d7b58ca46e27ca31bb9"
           ],
-          "title": "Debian Buster 10.5 netinst x86_64"
+          "title": "Debian Buster 10.12 netinst x86_64"
         },
         {
           "const": [
