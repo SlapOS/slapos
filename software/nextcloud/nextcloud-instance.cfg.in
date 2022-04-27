@@ -45,10 +45,7 @@ nextcloud = ${:document-root}
 admin-user = admin
 admin-password = admin
 trusted-domain-list =
-  [${apache-php-configuration:ip}]:${apache-php-configuration:port}
-  ${slap-parameter:instance.trusted-domain-1}
-  ${slap-parameter:instance.trusted-domain-2}
-  ${slap-parameter:instance.trusted-domain-3}
+  [${apache-php-configuration:ip}]:${apache-php-configuration:port} ${slap-parameter:instance.trusted-domain-list}
 
 trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 cli-url = ${slap-parameter:instance.cli-url}
@@ -223,7 +220,5 @@ instance.turn-server =
 instance.turn-secret =
 
 instance.cli-url = ${apache-php-configuration:url}
-instance.trusted-domain-1 =
-instance.trusted-domain-2 =
-instance.trusted-domain-3 =
+instance.trusted-domain-list =
 instance.trusted-proxy-list =
