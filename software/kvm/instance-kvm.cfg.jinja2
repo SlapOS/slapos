@@ -99,10 +99,10 @@ config-url = ${monitor-base:base-url}/private/boot-image-url-select/${:filename}
 
 [boot-image-url-select-source-config]
 recipe = slapos.recipe.template:jinja2
-template = inline:
-{%- raw %}
-  {{ boot_image_url_select }}
-{% endraw -%}
+template = {{ boot_image_select_source_config }}
+#{%- raw %}
+#  {{ boot_image_url_select }}
+#{% endraw -%}
 boot-image-url-select = {{ dumps(slapparameter_dict['boot-image-url-select']) }}
 context =
   key boot_image_url_select :boot-image-url-select

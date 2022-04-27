@@ -84,6 +84,7 @@ extra-context =
   raw dcron_executable_location ${dcron:location}/sbin/crond
   raw whitelist_domains_default ${whitelist-domains-default:target}
   raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:target}
+  raw boot_image_select_source_config ${boot-image-select-source-config:target}
   raw image_download_controller ${image-download-controller:target}
   raw image_download_config_creator ${image-download-config-creator:target}
   raw logrotate_cfg ${template-logrotate-base:rendered}
