@@ -402,7 +402,7 @@ base-url = $${theia-service:base-url}
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/$${:_buildout_section_name_}
-inline
+inline =
   {% raw -%}
   #!{{ bash }}
   SHELL=$BASH
