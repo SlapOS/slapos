@@ -18,8 +18,8 @@ instance-caucased = {{ dumps(instance_caucased) }}
 
 [caucased]
 recipe = slapos.recipe.template:jinja2
-template = ${context:instance-caucased}
-rendered = ${buildout:parts-directory}/instance-caucased.cfg
+url = ${context:instance-caucased}
+output = ${buildout:parts-directory}/instance-caucased.cfg
 monitor = {{ template_monitor }}
 context =
   key ipv6_set slap-configuration:ipv6
@@ -31,6 +31,6 @@ import-list =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = caucased:rendered
+default = caucased:output
 # XXX: When will this name finally go away ?
 RootSoftwareInstance = ${:default}

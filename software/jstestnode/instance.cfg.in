@@ -32,8 +32,8 @@ fontconfig-cache = $${buildout:directory}/.fontconfig
 
 [fontconfig-conf]
 recipe = slapos.recipe.template:jinja2
-template = ${template-fonts-conf:output}
-rendered = $${directory:etc}/fonts.conf
+url = ${template-fonts-conf:output}
+output = $${directory:etc}/fonts.conf
 context =
   key cachedir directory:fontconfig-cache
   key fonts :fonts
@@ -52,12 +52,11 @@ recipe = slapos.recipe.template
 url = ${template-runTestSuite:output}
 output = $${directory:bin}/runTestSuite
 buildout-directory = $${buildout:directory}
-mode = 0700
 
 [runTestSuite-config-file]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}.json
-template = inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}.json
+inline =
   $${instance-parameter:configuration._}
 
 #################################
@@ -91,7 +90,6 @@ command-line = bash -c "[ -S $${xvfb-instance:lock-dir}/.X11-unix/X$${xvfb-insta
 recipe = slapos.recipe.template
 url = ${template-nginx-service:output}
 output = $${directory:services}/nginx
-mode = 0700
 virtual-depends =
   $${nginx-configuration:ip}
 
@@ -99,7 +97,6 @@ virtual-depends =
 recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
-mode = 0600
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
 ip = $${instance-parameter:ipv6-random}
