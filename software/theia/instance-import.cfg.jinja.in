@@ -137,7 +137,7 @@ config-command = $${import-promise-script:output}
 [initial-import-exitcode-file]
 recipe = slapos.recipe.template:jinja2
 output = $${theia-import-script:exitcode-file}
-inline =0
+inline = 0
 once = $${:output}
 
 [import-promise-script]

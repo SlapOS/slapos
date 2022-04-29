@@ -210,7 +210,7 @@ command-line = '${userhosts-bin:output}' ${:wrapped-command-line}
 [{{ section('neo-ssl-' + k[1:]) }}]
 < = jinja2-template-base
 output = ${directory:etc}/{{v}}
-inline ={{'{{'}}pem}}
+inline = {{'{{'}}pem}}
 context = key pem :pem
 pem = {{dumps(storage_dict.pop(k))}}
 
@@ -241,7 +241,7 @@ file-list = {{ parameter_dict['site-zcml'] }}
 [{{ section('zope-inituser') }}]
 < = jinja2-template-base
 output = ${directory:instance}/inituser
-inline ={{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
+inline = {{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
 once = ${:output}_done
 
 [zope-conf-parameter-base]

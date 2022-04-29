@@ -17,7 +17,7 @@ ssl = ${:etc}/ssl
 
 [file-base]
 recipe = slapos.recipe.template:jinja2
-inline ={{ '{{ content }}' }}
+inline = {{ '{{ content }}' }}
 
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}

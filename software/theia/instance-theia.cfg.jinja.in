@@ -402,7 +402,9 @@ base-url = $${theia-service:base-url}
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/$${:_buildout_section_name_}
-inline ={% raw %}#!{{ bash }}
+inline
+  {% raw -%}
+  #!{{ bash }}
   SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if [ $# = 0 ]; then
@@ -462,7 +464,7 @@ inline =
 [embedded-instance-parameters]
 recipe = slapos.recipe.template
 output = $${directory:project}/$${:_buildout_section_name_}.json
-inline ={{ embedded_instance_parameters | indent(2) }}
+inline = {{ embedded_instance_parameters | indent(2) }}
 {%-   endif %}
 {%- endif %}
 

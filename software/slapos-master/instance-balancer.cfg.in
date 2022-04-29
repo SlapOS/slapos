@@ -125,7 +125,7 @@ crl = ${directory:apache-conf}/crl.pem
 
 [simplefile]
 < = jinja2-template-base
-inline ={{ '{{ content }}' }}
+inline = {{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
 {%   set content_section_name = section_name ~ '-content' -%}

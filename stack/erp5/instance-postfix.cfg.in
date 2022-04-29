@@ -100,7 +100,7 @@ recipe = slapos.cookbook:userinfo
 < = jinja2-template-base
 output = ${directory:etc-postfix}/sasl_passwd
 {% if relay -%}
-inline ={{ "{{ host }} {{ sasl_credential }}" }}
+inline = {{ "{{ host }} {{ sasl_credential }}" }}
 {%- else -%}
 inline =
 {%- endif %}

@@ -75,7 +75,7 @@ config-command = $${export-promise-script:output}
 [initial-export-exitcode-file]
 recipe = slapos.recipe.template:jinja2
 output = $${theia-export-script:exitcode-file}
-inline =0
+inline = 0
 once = $${:output}
 
 [export-promise-script]

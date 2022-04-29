@@ -26,7 +26,7 @@ output = $${directory:run}/log-writer
 
 [exporter.exclude]
 recipe = slapos.recipe.template
-inline =$${directory:home}/exclude
+inline = $${directory:home}/exclude
 output = $${directory:srv}/exporter.exclude
 
 [runner-import-restore]

@@ -53,7 +53,8 @@ wrapper-path = ${directory:bin}/{{ name }}
 
 [supervisord-{{ name }}]
 recipe = slapos.recipe.template
-inline =[program:{{ parameter_dict['name'] }}]
+inline =
+  [program:{{ parameter_dict['name'] }}]
   directory = ${buildout:directory}
   command = {{ parameter_dict['command'] }}
   process_name = {{ parameter_dict['name'] }}
