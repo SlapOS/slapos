@@ -56,6 +56,7 @@ import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
+from __future__ import print_function
 
 
 try:
@@ -7120,5 +7121,5 @@ if __name__ == '__main__':
     url_template = 'http://%s:%s/'
 
   server = klass((ip, port), TestHandler)
-  print url_template % server.server_address[:2]
+  print(url_template % (server.server_address[:2],))
   server.serve_forever()
