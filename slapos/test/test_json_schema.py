@@ -126,6 +126,8 @@ def generateJSONSchemaTest():
 
 
 class TestJSONSchemaValidation(unittest.TestCase):
+  # Show full difference to understand problems
+  maxDiff = None
   pass
 
 generateSoftwareCfgTest()
