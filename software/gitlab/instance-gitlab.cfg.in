@@ -497,19 +497,20 @@ log     = ${directory:log}/redis
 [service-redis]
 recipe  = slapos.cookbook:redis.server
 wrapper = ${directory:service}/redis
-promise_wrapper = ${directory:bin}/redis-promise
+promise-wrapper = ${directory:bin}/redis-promise
 
-server_dir  = ${redis:srv}
-config_file = ${directory:etc}/redis.conf
-log_file    = ${redis:log}/redis.log
-pid_file    = ${directory:run}/redis.pid
-use_passwd  = false
+server-dir  = ${redis:srv}
+config-file = ${directory:etc}/redis.conf
+log-file    = ${redis:log}/redis.log
+pid-file    = ${directory:run}/redis.pid
+use-passwd  = false
 unixsocket  = ${:server_dir}/redis.socket
 # port = 0 means "don't listen on TCP at all" - listen only on unix socket
 ipv6    = ::1
 port    = 0
 
-server_bin  = {{ redis_binprefix }}/redis-server
+server-bin  = {{ redis_binprefix }}/redis-server
+cli-bin  = {{ redis_binprefix }}/redis-cli
 depend  =
     ${logrotate-entry-redis:recipe}
 
@@ -517,9 +518,7 @@ depend  =
 <= monitor-promise-base
 promise = check_command_execute
 name = promise-redis.py
-config-command = ${service-redis:promise_wrapper}
-
-# NOTE slapos.cookbook:redis.server setups promise automatically
+config-command = ${service-redis:promise-wrapper}
 
 [logrotate-entry-redis]
 <= logrotate-entry-base
