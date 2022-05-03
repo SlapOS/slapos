@@ -25,10 +25,11 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import glob
 import os
 import requests
-import httplib
+from six.moves import http_client as httplib
 from requests_toolbelt.adapters import source
 import json
 import multiprocessing
@@ -56,7 +57,6 @@ import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
-from __future__ import print_function
 
 
 try:

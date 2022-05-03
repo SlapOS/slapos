@@ -11,6 +11,7 @@ setup(
     'orderedmultidict',
     'caucase',
     'python2-secrets',
+    'six',
   ],
   entry_points={
     'zc.buildout': [
