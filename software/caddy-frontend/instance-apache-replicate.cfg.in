@@ -129,7 +129,7 @@ context =
 {%   set config_key = "-frontend-config-%s-" % i %}
 {%   set config_key_length = config_key | length %}
 {%   set config_dict = {} %}
-{%   for key in slapparameter_dict.keys() %}
+{%   for key in list(slapparameter_dict.keys()) %}
 {%     if key.startswith(sla_key) %}
 {%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
 # We check for specific configuration regarding the frontend
@@ -164,7 +164,7 @@ context =
 {% set critical_rejected_slave_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
-{% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
+{% for slave in sorted(instance_parameter_dict['slave-instance-list'], key=operator_module.itemgetter('slave_reference')) %}
 {%   set slave_error_list = [] %}
 {%   set slave_critical_error_list = [] %}
 {%   set slave_warning_list = [] %}
@@ -278,7 +278,7 @@ context =
 {%     if k in slave %}
 {%       set crt = slave.get(k, '') %}
 {%       set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
-{%       do check_popen.communicate(crt) %}
+{%       do check_popen.communicate(crt.encode()) %}
 {%       if check_popen.returncode != 0 %}
 {%         do slave_error_list.append('%s is invalid' % (k,)) %}
 {%       endif %}
@@ -296,8 +296,8 @@ context =
 {%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
 {%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
 {%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     set key_modulus = key_popen.communicate(slave['ssl_key'].encode())[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'].encode())[0] | trim %}
 {%     if not key_modulus or key_modulus != crt_modulus  %}
 {%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
 {%     endif %}
@@ -334,7 +334,7 @@ context =
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
 {%   endif %}
 {% endfor %}
-{% do authorized_slave_list.sort() %}
+{% do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
@@ -356,7 +356,7 @@ return = slave-instance-information-list monitor-base-url backend-client-csr-url
 {%-     do base_node_configuration_dict.__setitem__(key,  slapparameter_dict[key]) %}
 {%-   endif %}
 {%- endfor %}
-{% for section, frontend_request in request_dict.iteritems() %}
+{% for section, frontend_request in request_dict.items() %}
 {%   set state = frontend_request.get('state', '') %}
 [{{section}}]
 <= replicate
@@ -377,14 +377,14 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 {%     do node_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
 {%     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-{%-     for config_key, config_value in node_configuration_dict.iteritems() %}
+{%-     for config_key, config_value in node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%     endfor -%}
-{%-     for config_key, config_value in base_node_configuration_dict.iteritems() %}
+{%-     for config_key, config_value in base_node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%     endfor -%}
 {%     if frontend_request.get('sla') %}
-{%       for parameter, value in frontend_request.get('sla').iteritems() %}
+{%       for parameter, value in frontend_request.get('sla').items() %}
 sla-{{ parameter }} = {{ value }}
 {%       endfor %}
 {%     endif %}
@@ -489,7 +489,7 @@ config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
-{% if slapparameter_dict.has_key(software_url_key) %}
+{% if software_url_key in slapparameter_dict %}
 software-url = {{ slapparameter_dict.pop(software_url_key) }}
 {% else %}
 software-url = ${slap-connection:software-release-url}
@@ -499,7 +499,7 @@ name = kedifa
 return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url kedifa-csr-url csr-certificate  monitor-base-url
 {% set sla_kedifa_key = "-sla-kedifa-" %}
 {% set sla_kedifa_key_length = sla_kedifa_key | length %}
-{% for key in slapparameter_dict.keys() %}
+{% for key in list(slapparameter_dict.keys()) %}
 {%   if key.startswith(sla_kedifa_key) %}
 sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {%   endif %}
