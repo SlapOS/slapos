@@ -295,7 +295,7 @@ return = slave-instance-information-list monitor-base-url backend-client-csr-url
 {%-     do base_node_configuration_dict.__setitem__(key,  slapparameter_dict[key]) %}
 {%-   endif %}
 {%- endfor %}
-{% for section, frontend_request in request_dict.iteritems() %}
+{% for section, frontend_request in request_dict.items() %}
 {%   set state = frontend_request.get('state', '') %}
 [{{section}}]
 <= replicate
@@ -316,15 +316,15 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 {%     do node_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
 {%     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-{%-     for config_key, config_value in node_configuration_dict.iteritems() %}
+{%-     for config_key, config_value in node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%     endfor -%}
-{%-     for config_key, config_value in base_node_configuration_dict.iteritems() %}
+{%-     for config_key, config_value in base_node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%     endfor -%}
 {%   endif %}
 {%   if frontend_request.get('sla') %}
-{%     for parameter, value in frontend_request.get('sla').iteritems() %}
+{%     for parameter, value in frontend_request.get('sla').items() %}
 sla-{{ parameter }} = {{ value }}
 {%     endfor %}
 {%   endif %}

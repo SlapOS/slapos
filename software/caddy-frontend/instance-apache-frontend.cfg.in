@@ -1065,7 +1065,7 @@ config-command =
   ${logrotate:wrapper-path} -d
 
 [configuration]
-{%- for key, value in instance_parameter_dict.iteritems() -%}
+{%- for key, value in instance_parameter_dict.items() -%}
 {%-   if key.startswith('configuration.') %}
 {{ key.replace('configuration.', '') }} = {{ dumps(value) }}
 {%-   endif -%}
@@ -1075,13 +1075,13 @@ config-command =
 {#- There are dangerous keys like recipe, etc #}
 {#- XXX: Some other approach would be useful #}
 {%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
-{%- for key, value in instance_parameter_dict.iteritems() -%}
+{%- for key, value in instance_parameter_dict.items() -%}
 {%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
 {{ key }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor %}
 
 [software-parameter-section]
-{%- for key, value in software_parameter_dict.iteritems() %}
+{%- for key, value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
 {%- endfor %}
