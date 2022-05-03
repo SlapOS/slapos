@@ -425,7 +425,7 @@ config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
-{% if slapparameter_dict.has_key(software_url_key) %}
+{% if software_url_key in slapparameter_dict %}
 software-url = {{ slapparameter_dict.pop(software_url_key) }}
 {% else %}
 software-url = ${slap-connection:software-release-url}
