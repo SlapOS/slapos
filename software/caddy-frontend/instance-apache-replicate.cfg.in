@@ -273,7 +273,7 @@ context =
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
 {%   endif %}
 {% endfor %}
-{% do authorized_slave_list.sort() %}
+{% do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
