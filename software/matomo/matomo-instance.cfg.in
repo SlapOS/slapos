@@ -1,5 +1,10 @@
 # parameters required by the configuration instance
 [instance-parameter]
+matomo = ${:document-root}
+dir-backup = ${directory:backup}
+find-bin = {{ findutils_location }}
+diff-bin = {{ diffutils_location }}
+
 #php.ini parameters
 php.memory_limit = 512M
 php.date.timezone = Europe/Paris
@@ -11,12 +16,25 @@ php.max_input_time = 3600
 php.output_buffering = 'Off'
 php.max_file_uploads = 100
 
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
+
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
 template = {{ matomo_apache_httpd }}
 rendered = ${directory:apache.d}/matomo.conf
 context =
   section parameter_dict apache-php-configuration
+
+[matomo-backup.sh]
+recipe = slapos.recipe.template:jinja2
+url = {{ matomo_backup_sh }}
+output = ${directory:scripts}/matomo-backup
+context =
+  section parameter_dict instance-parameter
+  key php_bin php-bin:wrapper-path
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
