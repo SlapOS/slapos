@@ -71,7 +71,7 @@ context =
 {%   set config_key = "-frontend-config-%s-" % i %}
 {%   set config_key_length = config_key | length %}
 {%   set config_dict = {} %}
-{%   for key in slapparameter_dict.keys() %}
+{%   for key in list(slapparameter_dict.keys()) %}
 {%     if key.startswith(sla_key) %}
 {%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
 # We check for specific configuration regarding the frontend
