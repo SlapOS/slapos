@@ -44,7 +44,7 @@ def _get_exposed_csr(url, certificate):
   self_signed = ssl.create_default_context()
   self_signed.check_hostname = False
   self_signed.verify_mode = ssl.CERT_NONE
-  return urllib.request.urlopen(url, context=self_signed).read()
+  return urllib.request.urlopen(url, context=self_signed).read().decode()
 
 
 def _get_caucase_client(ca_url, ca_crt, user_key):
