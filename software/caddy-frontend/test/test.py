@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import glob
 import os
 import requests
@@ -56,7 +57,6 @@ import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
-from __future__ import print_function
 
 
 try:
