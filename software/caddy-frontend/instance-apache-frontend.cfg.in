@@ -99,7 +99,7 @@ hash-salt = ${frontend-node-private-salt:value}
 init =
   import hashlib
   import base64
-  options['value'] = base64.urlsafe_b64encode(hashlib.md5(''.join([options['software-release-url'].strip(), options['hash-salt']])).digest())
+  options['value'] = base64.urlsafe_b64encode(hashlib.md5(''.join([options['software-release-url'].strip(), options['hash-salt']]).encode()).digest())
 
 [frontend-node-information]
 recipe = slapos.recipe.build
