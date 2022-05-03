@@ -72,7 +72,7 @@ def _csr_match(*csr_list):
   number_list = set([])
   for csr in csr_list:
     number_list.add(
-      x509.load_pem_x509_csr(str(csr)).public_key().public_numbers())
+      x509.load_pem_x509_csr(csr.encode()).public_key().public_numbers())
   return len(number_list) == 1
 
 
