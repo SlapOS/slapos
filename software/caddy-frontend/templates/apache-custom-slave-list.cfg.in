@@ -614,6 +614,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = slapos.recipe.build
 certificate-file = ${expose-csr-certificate:certificate}
 init =
+  import os
   options['certificate'] = ''
   if os.path.exists(options['certificate-file']):
     with open(options['certificate-file'], 'r') as fh:
