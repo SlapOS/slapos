@@ -163,7 +163,7 @@ def createKey():
 def createSelfSignedCertificate(name_list):
   key, key_pem = createKey()
   subject_alternative_name_list = x509.SubjectAlternativeName(
-    [x509.DNSName(unicode(q)) for q in name_list]
+    [x509.DNSName(q) for q in name_list]
   )
   subject = issuer = x509.Name([
     x509.NameAttribute(NameOID.COMMON_NAME, u'Test Self Signed Certificate'),
@@ -193,10 +193,10 @@ def createCSR(common_name, ip=None):
   subject_alternative_name_list = []
   if ip is not None:
     subject_alternative_name_list.append(
-      x509.IPAddress(ipaddress.ip_address(unicode(ip)))
+      x509.IPAddress(ipaddress.ip_address(ip))
     )
   csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-     x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+     x509.NameAttribute(NameOID.COMMON_NAME, common_name),
   ]))
 
   if len(subject_alternative_name_list):
@@ -220,10 +220,10 @@ class CertificateAuthority(object):
     public_key = self.key.public_key()
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(x509.Name([
-      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+      x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ]))
     builder = builder.issuer_name(x509.Name([
-      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+      x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ]))
     builder = builder.not_valid_before(
       datetime.datetime.utcnow() - datetime.timedelta(days=2))
@@ -6554,8 +6554,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     expected_partition_parameter_dict_dict = {
       'caddy-frontend-1': {
         'X-software_release_url': base_software_url,
-        u'apache-certificate': unicode(self.certificate_pem),
-        u'apache-key': unicode(self.key_pem),
+        u'apache-certificate': self.certificate_pem,
+        u'apache-key': self.key_pem,
         u'authenticate-to-backend': u'True',
         u'backend-client-caucase-url': backend_client_caucase_url,
         u'backend-connect-retries': u'1',
@@ -6581,8 +6581,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
-        u'apache-certificate': unicode(self.certificate_pem),
-        u'apache-key': unicode(self.key_pem),
+        u'apache-certificate': self.certificate_pem,
+        u'apache-key': self.key_pem,
         u'authenticate-to-backend': u'True',
         u'backend-client-caucase-url': backend_client_caucase_url,
         u'backend-connect-retries': u'1',
@@ -6608,8 +6608,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
-        u'apache-certificate': unicode(self.certificate_pem),
-        u'apache-key': unicode(self.key_pem),
+        u'apache-certificate': self.certificate_pem,
+        u'apache-key': self.key_pem,
         u'authenticate-to-backend': u'True',
         u'backend-client-caucase-url': backend_client_caucase_url,
         u'backend-connect-retries': u'1',
@@ -6654,8 +6654,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         '-sla-2-computer_guid': 'local',
         '-sla-3-computer_guid': 'local',
         'X-software_release_url': base_software_url,
-        'apache-certificate': unicode(self.certificate_pem),
-        'apache-key': unicode(self.key_pem),
+        'apache-certificate': self.certificate_pem,
+        'apache-key': self.key_pem,
         'authenticate-to-backend': 'True',
         'automatic-internal-backend-client-caucase-csr': 'False',
         'automatic-internal-kedifa-caucase-csr': 'False',
