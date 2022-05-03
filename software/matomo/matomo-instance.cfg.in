@@ -1,0 +1,22 @@
+# parameters required by the configuration instance
+[instance-parameter]
+#php.ini parameters
+php.memory_limit = 512M
+php.date.timezone = Europe/Paris
+php.upload_max_filesize = 10240M
+php.post_max_size = 10240M
+php.session.cookie_secure = True
+php.max_execution_time = 1800
+php.max_input_time = 3600
+php.output_buffering = 'Off'
+php.max_file_uploads = 100
+
+[matomo-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+template = {{ matomo_apache_httpd }}
+rendered = ${directory:apache.d}/matomo.conf
+context =
+  section parameter_dict apache-php-configuration
+
+[slap-parameter]
+instance.cli-url = ${apache-php-configuration:url}
