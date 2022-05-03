@@ -34,7 +34,7 @@ replicate = dynamic-profile-caddy-replicate:output
 kedifa = dynamic-profile-kedifa:output
 
 [software-parameter-section]
-{% for key,value in software_parameter_dict.iteritems() %}
+{% for key,value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
