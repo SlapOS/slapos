@@ -52,13 +52,13 @@ context =
 {#-     * setup defaults to simplify other profiles #}
 {#-     * stabilise values for backend #}
 {%-   for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
-{%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
+{%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
 {%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment, 'query': parsed.query, 'netloc-list': slave_instance.get(key + '-netloc-list', '').split() } %}
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {%-   for key, prefix in [('health-check-failover-url', 'http_backend'), ('health-check-failover-https-url', 'https_backend')] %}
-{%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
+{%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     do info_dict.__setitem__('health-check-failover-scheme', parsed.scheme) %}
 {%-     do info_dict.__setitem__('health-check-failover-hostname', parsed.hostname) %}
@@ -189,7 +189,7 @@ context =
 {%-   do furled.set(password = '${'+ slave_password_section +':passwd}') %}
 {%-   do furled.set(path = slave_reference + '/') %}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
-{%-   set slave_log_access_url = urlparse_module.unquote(furled.tostr()) %}
+{%-   set slave_log_access_url = urllib_module.unquote(furled.tostr()) %}
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%-   do slave_publish_dict.__setitem__('backend-client-caucase-url', backend_client_caucase_url) %}
@@ -463,7 +463,7 @@ csr-certificate = ${expose-csr-certificate-get:certificate}
 {%-   do furled.set(password = backend_haproxy_configuration['statistic-password']) %}
 {%-   do furled.set(path = '/') %}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
-{%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
+{%-   set statistic_url = urllib_module.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 node-information-json = {{ json_module.dumps(node_information, sort_keys=True) }}
