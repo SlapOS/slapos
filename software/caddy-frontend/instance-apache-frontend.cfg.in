@@ -110,6 +110,7 @@ current-software-release-url = ${version-hash:software-release-url}
 init =
   import json
   changed = False
+  current_hash = options['current-hash'].decode()
   try:
     with open(options['file'], 'r') as fh:
       data = json.load(fh)
@@ -117,7 +118,7 @@ init =
     changed = True
     data = {
       'node-id': options['node-id'],
-      'version-hash-history': {options['current-hash']: options['current-software-release-url']}
+      'version-hash-history': {current_hash: options['current-software-release-url']}
     }
   if 'node-id' not in data:
     data['node-id'] = options['node-id']
@@ -125,8 +126,8 @@ init =
   if 'version-hash-history' not in data:
     data['version-hash-history'] = {}
     changed = True
-  if options['current-hash'] not in data['version-hash-history']:
-    data['version-hash-history'][options['current-hash']] = options['current-software-release-url']
+  if current_hash not in data['version-hash-history']:
+    data['version-hash-history'][current_hash] = options['current-software-release-url']
     changed = True
   if changed:
     with open(options['file'], 'w') as fh:
