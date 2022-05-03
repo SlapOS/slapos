@@ -76,7 +76,7 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
         # Sleep a bit as an attempt to workaround monitoring boostrap not being ready
         print("Wait before running slapos node instance one last time")
         time.sleep(120)
-      cls.callSlapos('node', 'instance', instance_type=instance_type)
+      cls.checkSlapos('node', 'instance', instance_type=instance_type)
 
   @classmethod
   def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):

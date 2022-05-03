@@ -66,6 +66,7 @@ class ERP5Mixin(object):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,
       stderr=subprocess.STDOUT,
+      text=True,
     )
     print(out)
     return json.loads(self._connexion_parameters_regex.search(out).group(0).replace("'", '"'))
@@ -150,7 +151,9 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     subprocess.check_call((wait_activities_script, 'erp5'), env={'MYSQL': mysql_bin})
 
     # Check that changes have been catalogued
-    output = subprocess.check_output((mysql_bin, 'erp5', '-e', 'SELECT title FROM catalog WHERE id="portal_types"'))
+    output = subprocess.check_output(
+      (mysql_bin, 'erp5', '-e', 'SELECT title FROM catalog WHERE id="portal_types"'),
+      universal_newlines=True)
     self.assertIn(new_title, output)
 
     # Compute backup date in the near future
@@ -185,7 +188,8 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Check that mariadb catalog backup contains expected changes
     with gzip.open(os.path.join(mariadb_backup, mariadb_backup_dump)) as f:
-      self.assertIn(new_title, f.read(), "Mariadb catalog backup %s is not up to date" % mariadb_backup_dump)
+      msg = "Mariadb catalog backup %s is not up to date" % mariadb_backup_dump
+      self.assertIn(new_title.encode(), f.read(), msg)
 
   def _checkTakeover(self):
     super(TestTheiaResilienceERP5, self)._checkTakeover()
@@ -205,7 +209,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     mysql_bin = os.path.join(mariadb_partition, 'bin', 'mysql')
     query = 'SELECT title FROM catalog WHERE id="portal_types"'
     try:
-      out = subprocess.check_output((mysql_bin, 'erp5', '-e', query))
+      out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
     except subprocess.CalledProcessError:
       out = ''
     self.assertNotIn(self._erp5_new_title, out)
@@ -226,5 +230,5 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
       self._processEmbeddedInstance(self.test_instance_max_retries)
 
     # Check that the mariadb catalog was properly restored
-    out = subprocess.check_output((mysql_bin, 'erp5', '-e', query))
+    out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
     self.assertIn(self._erp5_new_title, out, 'Mariadb catalog is not properly restored')
