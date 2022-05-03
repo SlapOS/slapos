@@ -171,9 +171,14 @@ wrapper-path = ${directory:service}/expose-csr
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [expose-csr-certificate-get]
-recipe = collective.recipe.shelloutput
-commands =
-  certificate = cat ${expose-csr-certificate:certificate}
+recipe = slapos.recipe.build
+certificate-file = ${expose-csr-certificate:certificate}
+init =
+  import os
+  options['certificate'] = ''
+  if os.path.exists(options['certificate-file']):
+    with open(options['certificate-file'], 'r') as fh:
+      options['certificate'] = fh.read()
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
