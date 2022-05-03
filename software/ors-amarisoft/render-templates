@@ -33,6 +33,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "1000",
 
             'min_frequency': 1880.0,
             'max_frequency': 1920,
@@ -52,6 +53,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "10000000",
 
             'min_frequency': 2570,
             'max_frequency': 2620,
@@ -71,6 +73,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "10000000",
 
             'min_frequency': 3400,
             'max_frequency': 3600,
@@ -90,6 +93,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "10000000",
 
             'min_frequency': 3600,
             'max_frequency': 3800,
