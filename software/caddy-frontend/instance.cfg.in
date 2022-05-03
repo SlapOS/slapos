@@ -45,6 +45,7 @@ filename = instance-caddy-frontend.cfg
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
+  import operator_module operator
 
 [dynamic-profile-caddy-replicate]
 < = jinja2-template-base
