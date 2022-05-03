@@ -171,9 +171,14 @@ wrapper-path = ${directory:service}/expose-csr
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [expose-csr-certificate-get]
-recipe = collective.recipe.shelloutput
-commands =
-  certificate = cat ${expose-csr-certificate:certificate}
+recipe = slapos.recipe.build
+certificate-file = ${expose-csr-certificate:certificate}
+init =
+  import os
+  options['certificate'] = ''
+  if os.path.exists(options['certificate-file']):
+    with open(options['certificate-file'], 'r') as fh:
+      options['certificate'] = fh.read()
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -259,10 +264,8 @@ command =
 update-command = ${:command}
 
 [{{ slave_reference }}-auth-random]
-recipe = collective.recipe.shelloutput
+<= auth-random
 file = {{ '${' + slave_reference }}-auth-random-generate:file}
-commands =
-  passwd = cat ${:file} 2>/dev/null || echo "NotReadyYet"
 
 {% endfor %}
 
@@ -273,11 +276,18 @@ command =
   [ ! -f ${:file} ] && {{ software_parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
 update-command = ${:command}
 
+[auth-random]
+recipe = slapos.recipe.build
+init =
+  import os
+  options['passwd'] = 'NotReadyYet'
+  if os.path.exists(options['file']):
+    with open(options['file'], 'r') as fh:
+      options['passwd'] = fh.read()
+
 [master-auth-random]
-recipe = collective.recipe.shelloutput
+<= auth-random
 file = ${master-auth-random-generate:file}
-commands =
-  passwd = cat ${:file} 2>/dev/null || echo "NotReadyYet"
 
 [slave-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
