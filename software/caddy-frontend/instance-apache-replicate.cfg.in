@@ -220,7 +220,7 @@ context =
 {%     if k in slave %}
 {%       set crt = slave.get(k, '') %}
 {%       set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
-{%       do check_popen.communicate(crt) %}
+{%       do check_popen.communicate(crt.encode()) %}
 {%       if check_popen.returncode != 0 %}
 {%         do slave_error_list.append('%s is invalid' % (k,)) %}
 {%       endif %}
@@ -238,8 +238,8 @@ context =
 {%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
 {%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
 {%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     set key_modulus = key_popen.communicate(slave['ssl_key'].encode())[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'].encode())[0] | trim %}
 {%     if not key_modulus or key_modulus != crt_modulus  %}
 {%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
 {%     endif %}
