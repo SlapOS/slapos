@@ -474,9 +474,14 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
-recipe = collective.recipe.shelloutput
-commands =
-  certificate = cat ${self-signed-fallback-access:certificate}
+recipe = slapos.recipe.build
+certificate-file = ${self-signed-fallback-access:certificate}
+init =
+  import os
+  options['certificate'] = ''
+  if os.path.exists(options['certificate-file']):
+    with open(options['certificate-file'], 'r') as fh:
+      options['certificate'] = fh.read()
 
 [apache-certificate]
 recipe = slapos.recipe.template:jinja2
