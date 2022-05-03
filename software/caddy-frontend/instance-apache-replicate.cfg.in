@@ -435,7 +435,7 @@ name = kedifa
 return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url kedifa-csr-url csr-certificate  monitor-base-url
 {% set sla_kedifa_key = "-sla-kedifa-" %}
 {% set sla_kedifa_key_length = sla_kedifa_key | length %}
-{% for key in slapparameter_dict.keys() %}
+{% for key in list(slapparameter_dict.keys()) %}
 {%   if key.startswith(sla_kedifa_key) %}
 sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {%   endif %}
