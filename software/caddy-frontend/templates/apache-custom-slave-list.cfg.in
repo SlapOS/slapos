@@ -503,7 +503,7 @@ output = ${:file}
 < = jinja2-template-base
 url = {{ template_backend_haproxy_configuration }}
 output = ${backend-haproxy-config:file}
-backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
+backend_slave_list = {{ dumps(sorted(backend_slave_list, key=operator_module.itemgetter('slave_reference'))) }}
 extra-context =
   key backend_slave_list :backend_slave_list
   section configuration backend-haproxy-config
