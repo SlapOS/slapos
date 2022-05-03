@@ -106,7 +106,7 @@ context =
 {% set critical_rejected_slave_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
-{% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
+{% for slave in sorted(instance_parameter_dict['slave-instance-list'], key=operator_module.itemgetter('slave_reference)) %}
 {%   set slave_error_list = [] %}
 {%   set slave_critical_error_list = [] %}
 {%   set slave_warning_list = [] %}
