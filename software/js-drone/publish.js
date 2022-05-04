@@ -11,7 +11,7 @@ var parent = Worker.parent;
 function handle_msg(e) {
   switch(e.data.action) {
     case "publish":
-      publish(IPV6, PORT);
+      publish(IPV6, PORT, {{ id }});
       parent.postMessage({ publishing: false});
       parent.onmessage = null;
       break;

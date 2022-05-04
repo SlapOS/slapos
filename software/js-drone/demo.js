@@ -1,5 +1,6 @@
 /*jslint indent2 */
 /*global console */
+{% set comma_separated_drone_id_list = ', '.join(drone_id_list.split()) -%}
 
 import {
   arm,
@@ -12,6 +13,8 @@ import {
   getLongitude,
   getTakeOffAltitude,
   getYaw,
+  initSubscription,
+  land,
   landed,
   loiter,
   start,
@@ -19,7 +22,9 @@ import {
   setTargetLatLong,
   stop,
   stopPublishing,
-  takeOffAndWait
+  stopSubscribing,
+  takeOffAndWait,
+  Drone
 } from "{{ qjs_wrapper }}"; //jslint-quiet
 import {sleep, SIGINT, SIGTERM, signal, Worker} from "os";
 import {exit} from "std";
@@ -29,13 +34,18 @@ const PORT  = "7909";
 const URL = "udp://" + IP + ":" + PORT;
 const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
 
+const droneIdList = [{{ comma_separated_drone_id_list }}];
+const droneDict = {};
+
 const EPSILON = 105;
 const EPSILON_YAW = 6;
 const EPSILON_ALTITUDE = 2;
 const TARGET_YAW = 0;
 
 var publishing = false;
-var worker;
+var subscribing = false;
+var publishWorker;
+var subscribeWorker;
 
 function connect() {
   exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
@@ -95,20 +105,42 @@ function land() {
 }
 
 function publish() {
-  worker = new Worker("{{ publish_script }}");
-  worker.onmessage = function(e) {
+  publishWorker = new Worker("{{ publish_script }}");
+  publishWorker.onmessage = function(e) {
     if(!e.data.publishing) {
-      worker.onmessage = null;
+      publishWorker.onmessage = null;
     }
   }
-  worker.postMessage({ action: "publish" });
+  publishWorker.postMessage({ action: "publish" });
   publishing = true;
+  return 0;
+}
+
+function subscribe() {
+  subscribeWorker = new Worker("{{ subscribe_script }}");
+  subscribeWorker.onmessage = function(e) {
+    if(!e.data.subscribing) {
+      subscribeWorker.onmessage = null;
+    }
+  }
+  initSubscription(droneIdList.length);
+  for (let i = 0; i < droneIdList.length; i++) {
+    let id = droneIdList[i]
+    droneDict[id] = new Drone(id);
+    droneDict[id].init(i);
+  }
+  subscribeWorker.postMessage({ action: "subscribe" });
+  subscribing = true;
+  return 0;
 }
 
 function quit() {
   stop();
   if(publishing) {
     stopPublishing();
+  }
+  if(subscribing) {
+    stopSubscribing();
   }
 }
 
@@ -192,6 +224,7 @@ function waitForAltitude(target_altitude) {
   signal(SIGINT, stopHandler);
   signal(SIGTERM, stopHandler);
   publish();
+  subscribe();
 
   console.log("Will connect to", URL);
 
