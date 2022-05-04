@@ -1,5 +1,4 @@
 /*jslint indent2 */
-
 import { subscribe } from "{{ qjs_wrapper }}"; //jslint-quiet
 import { Worker } from "os";
 
