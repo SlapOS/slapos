@@ -11,6 +11,14 @@
       "response": "instance-kvm-output-schema.json",
       "index": 0
     },
+    "default-xxx": {
+      "title": "Default XXX",
+      "serialisation": "xml",
+      "description": "Standalone KVM",
+      "request": "instance-kvm-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 5
+    },
     "kvm-resilient": {
       "title": "Resilient",
       "description": "Resilient KVM",
