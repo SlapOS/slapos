@@ -13,16 +13,16 @@
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:etc_run}/mariadb
 private-tmpfs = {{ private_tmpfs }} ${my-cnf-parameters:tmp-directory}
-command-line = ${mariadb-ns:rendered}
+command-line = ${mariadb-ns:output}
 [mariadb-ns]
-rendered = ${directory:bin}/mariadb-ns
+output = ${directory:bin}/mariadb-ns
 {% else -%}
-rendered = ${directory:etc_run}/mariadb
+output = ${directory:etc_run}/mariadb
 {% endif -%}
 recipe = slapos.recipe.template:jinja2
-template = {{ template_mysqld_wrapper }}
+url = {{ template_mysqld_wrapper }}
 context =
-  key defaults_file my-cnf:rendered
+  key defaults_file my-cnf:output
   key datadir my-cnf-parameters:data-directory
 
 [my-cnf-parameters]
@@ -37,19 +37,19 @@ pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
 extra-dict = {{ dumps(slapparameter_dict.get('mysql', {})) }}
-init-file = ${init-script:rendered}
+init-file = ${init-script:output}
 engine = {{ slapparameter_dict.get('engine', '') }}
 
 [my-cnf]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
-rendered = ${directory:etc}/mariadb.cnf
-template = {{ template_neo_my_cnf }}
+output = ${directory:etc}/mariadb.cnf
+url = {{ template_neo_my_cnf }}
 context = section parameter_dict my-cnf-parameters
 
 [binary-wrap-mysql]
 recipe = slapos.cookbook:wrapper
-command-line = '{{ mariadb_location }}/bin/${:command}' --defaults-file="${my-cnf:rendered}"
+command-line = '{{ mariadb_location }}/bin/${:command}' --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
 command = mysql
 
@@ -89,8 +89,9 @@ admin =
 
 [{{ section(name) }}]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:etc}/{{name}}
-template = inline:{{'{{'}}pem}}
+output = ${directory:etc}/{{name}}
+inline =
+  {{'{{'}}pem}}
 context = key pem :pem
 pem = {{dumps(pem)}}
 {%-   endif %}
@@ -152,10 +153,10 @@ srv = ${buildout:directory}/srv
 
 {% if mysql -%}
 [init-script]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 # XXX: is there a better location ?
-rendered = ${directory:etc}/mariadb_initial_setup.sql
-template = inline:
+output = ${directory:etc}/mariadb_initial_setup.sql
+inline =
   {{ init_list | join('\n\t') }}
 
 [{{ section('logrotate-mysql') }}]
@@ -171,14 +172,13 @@ post = ${binary-wrap-mysql:command-line} -e "FLUSH LOGS"
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
 private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
-command-line = ${runTestSuite-ns:rendered}
+command-line = ${runTestSuite-ns:output}
 
 [runTestSuite-ns]
 {%- endif %}
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/${:_buildout_section_name_}
-template = {{ runTestSuite_in }}
-mode = 0755
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ runTestSuite_in }}
 context =
     section directory         directory
     section my_cnf_parameters my-cnf-parameters

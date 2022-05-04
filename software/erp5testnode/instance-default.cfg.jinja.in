@@ -7,7 +7,7 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-extends = ${monitor2-template:rendered}
+extends = ${monitor2-template:output}
 
 parts =
   testnode-service
@@ -97,21 +97,20 @@ hash-files =
 shell = ${bash:location}/bin/bash
 
 [shellinabox]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 # We cannot use slapos.cookbook:wrapper here because this recipe escapes too much
 socket = $${directory:run}/siab.sock
-mode = 0700
-rendered = $${basedirectory:services}/shellinaboxd
-template = inline:
+output = $${basedirectory:services}/shellinaboxd
+inline =
   #!/bin/sh
   exec ${shellinabox:location}/bin/shellinaboxd \
     --unixdomain-only=$${:socket}:$(id -u):$(id -g):0600 \
     --service "/:$(id -u):$(id -g):HOME:$${shell-environment:shell} -l"
 
 [shellinabox-frontend-config]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}
-template = inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
   https://$${:hostname}:$${:port} {
     bind $${:ipv6}
     tls self_signed
@@ -131,15 +130,15 @@ username = testnode
 passwd = $${pwgen:passwd}
 cert-file = $${directory:shellinabox}/public.crt
 key-file = $${directory:shellinabox}/private.key
-url = https://$${:username}:$${:passwd}@$${:hostname}:$${:port}
+backend-url = https://$${:username}:$${:passwd}@$${:hostname}:$${:port}
 
 
 [shellinabox-frontend]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${rootdirectory:bin}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${shellinabox-frontend-config:rendered} -pidfile $${:pidfile}
-url =  $${shellinabox-frontend-config:url}
+  ${caddy:output} -conf $${shellinabox-frontend-config:output} -pidfile $${:pidfile}
+url =  $${shellinabox-frontend-config:backend-url}
 hostname = $${shellinabox-frontend-config:ipv6}
 port = $${shellinabox-frontend-config:port}
 pidfile = $${basedirectory:run}/$${:_buildout_section_name_}.pid
@@ -152,7 +151,7 @@ command-line =
   "kill -s USR1 $$(${coreutils:location}/bin/cat $${shellinabox-frontend:pidfile}) \
     && ${coreutils:location}/bin/sleep infinity"
 hash-files =
-  $${shellinabox-frontend-config:rendered}
+  $${shellinabox-frontend-config:output}
   $${shellinabox-frontend:wrapper-path}
 
 [certificate-authority]

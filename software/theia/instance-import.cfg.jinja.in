@@ -74,12 +74,11 @@ install =
   os.symlink("/bin/true", location)
 
 [importer]
-wrapper = $${theia-import-script:rendered}
+wrapper = $${theia-import-script:output}
 
 [theia-import-script]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/theia-import-script
-mode = 0700
+output = $${directory:bin}/theia-import-script
 exitcode-file = $${directory:srv}/import-exitcode-file
 error-file = $${directory:srv}/import-errormessage-file
 context =
@@ -101,10 +100,10 @@ context =
   key exitfile :exitcode-file
   key errorfile :error-file
 {%- raw %}
-template =
-  inline:#!{{ bash }}
-  . $${common-environment:rendered}
-  . $${slapos-standalone-activate:rendered}
+inline =
+  #!{{ bash }}
+  . $${common-environment:output}
+  . $${slapos-standalone-activate:output}
   {{ python }} {{ theia_import }} \
   --rsync {{ rsync }} \
   --sqlite3 {{ sqlite3 }} \
@@ -133,36 +132,36 @@ import-promises =
 <= monitor-promise-base
 promise = check_command_execute
 name = resiliency-import-promise.py
-config-command = $${import-promise-script:rendered}
+config-command = $${import-promise-script:output}
 
 [initial-import-exitcode-file]
 recipe = slapos.recipe.template:jinja2
-rendered = $${theia-import-script:exitcode-file}
-template = inline:0
-once = $${:rendered}
+output = $${theia-import-script:exitcode-file}
+inline = 0
+once = $${:output}
 
 [import-promise-script]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/import-promise-script
-exitcode-file = $${initial-import-exitcode-file:rendered}
+output = $${directory:bin}/import-promise-script
+exitcode-file = $${initial-import-exitcode-file:output}
 context =
   key exitcodefile :exitcode-file
   key errorfile theia-import-script:error-file
 {%- raw %}
-template =
-  inline:#!/bin/sh
+inline =
+  #!/bin/sh
   if [ -z $(find {{ repr(exitcodefile) }} -mtime -2) ]
   then
     echo "ERROR import script last ran on " $(date -r {{ repr(exitcodefile) }})
     exit 1
-  elif [ $( cat {{ repr(exitcodefile) }}) -ne 0 ]
+  elif [ "$(cat {{ repr(exitcodefile) }})" = 0 ]
   then
+    echo "OK import script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 0
+  else
     echo "ERROR import script failed on " $(date -r {{ repr(exitcodefile) }})
     cat {{ repr(errorfile) }}
     exit 1
-  else
-    echo "OK import script last ran on " $(date -r {{ repr(exitcodefile) }})
-    exit 0
   fi
 {%- endraw %}
 

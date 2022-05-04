@@ -24,12 +24,11 @@ namebase = {{ parameter_dict['namebase'] }}
 # to be pulled from the export instance.
 # All it expects is that a script be available in exporter:wrapper.
 [exporter]
-wrapper = $${theia-export-script:rendered}
+wrapper = $${theia-export-script:output}
 
 [theia-export-script]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/theia-export-script
-mode = 0700
+output = $${directory:bin}/theia-export-script
 exitcode-file = $${directory:srv}/export-exitcode-file
 error-file = $${directory:srv}/export-errormessage-file
 context =
@@ -46,8 +45,8 @@ context =
   key exitfile :exitcode-file
   key errorfile :error-file
 {%- raw %}
-template =
-  inline:#!{{ bash }}
+inline =
+  #!{{ bash }}
   {{ python }} {{ theia_export }} \
   --rsync {{ rsync }} \
   --sqlite3 {{ sqlite3 }} \
@@ -71,36 +70,36 @@ export-promises =
 <= monitor-promise-base
 promise = check_command_execute
 name = resiliency-export-promise.py
-config-command = $${export-promise-script:rendered}
+config-command = $${export-promise-script:output}
 
 [initial-export-exitcode-file]
 recipe = slapos.recipe.template:jinja2
-rendered = $${theia-export-script:exitcode-file}
-template = inline:0
-once = $${:rendered}
+output = $${theia-export-script:exitcode-file}
+inline = 0
+once = $${:output}
 
 [export-promise-script]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/export-promise-script
-exitcode-file = $${initial-export-exitcode-file:rendered}
+output = $${directory:bin}/export-promise-script
+exitcode-file = $${initial-export-exitcode-file:output}
 context =
   key exitcodefile :exitcode-file
   key errorfile theia-export-script:error-file
 {%- raw %}
-template =
-  inline:#!/bin/sh
+inline =
+  #!/bin/sh
   if [ -z $(find {{ repr(exitcodefile) }} -mtime -2) ]
   then
     echo "ERROR export script last ran on " $(date -r {{ repr(exitcodefile) }})
     exit 1
-  elif [ $( cat {{ repr(exitcodefile) }}) -ne 0 ]
+  elif [ "$(cat {{ repr(exitcodefile) }})" = 0 ]
   then
+    echo "OK export script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 0
+  else
     echo "ERROR export script failed on " $(date -r {{ repr(exitcodefile) }})
     cat {{ repr(errorfile) }}
     exit 1
-  else
-    echo "OK export script last ran on " $(date -r {{ repr(exitcodefile) }})
-    exit 0
   fi
 {%- endraw %}
 
