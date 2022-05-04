@@ -607,7 +607,6 @@ class TestHandler(BaseHTTPRequestHandler):
 
     if 'Via' not in drop_header_list:
       self.send_header('Via', 'http/1.1 backendvia')
-    response = response.encode()
     if compress:
       self.send_header('Content-Encoding', 'gzip')
       out = io.BytesIO()
@@ -620,6 +619,8 @@ class TestHandler(BaseHTTPRequestHandler):
     if 'Content-Length' not in drop_header_list:
       self.send_header('Content-Length', len(response))
     self.end_headers()
+    if getattr(response, 'encode', None) is not None:
+      response = response.encode()
     self.wfile.write(response)
 
 
@@ -3864,10 +3865,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     max_age = int(max_stale_age / 2.)
     # body_200 is big enough to trigger
     # https://github.com/apache/trafficserver/issues/7880
-    body_200 = b'Body 200' * 500
-    body_502 = b'Body 502'
-    body_502_new = b'Body 502 new'
-    body_200_new = b'Body 200 new'
+    body_200 = 'Body 200' * 500
+    body_502 = 'Body 502'
+    body_502_new = 'Body 502 new'
+    body_200_new = 'Body 200 new'
 
     self.addCleanup(self._unhack_ats)
     self._hack_ats(max_stale_age)
