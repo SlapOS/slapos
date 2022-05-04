@@ -1330,7 +1330,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.assertKedifaKeysWithPop(parameter_dict, '')
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
-      hostname = reference.translate(None, '_-').lower()
+      hostname = reference.replace('_', '').replace('-', '').lower()
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
       'replication_number': '1',
