@@ -58,7 +58,6 @@ import caucase.client
 import caucase.utils
 
 
-
 try:
     import lzma
 except ImportError:
@@ -1221,8 +1220,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def requestSlaves(cls):
-    for slave_reference, partition_parameter_kw in list(cls\
-            .getSlaveParameterDictDict().items()):
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
       software_url = cls.getSoftwareURL()
       software_type = cls.getInstanceSoftwareType()
       cls.logger.debug(
@@ -1268,8 +1267,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def getSlaveConnectionParameterDictList(cls):
     parameter_dict_list = []
 
-    for slave_reference, partition_parameter_kw in list(cls\
-            .getSlaveParameterDictDict().items()):
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
       parameter_dict_list.append(cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
@@ -1306,8 +1305,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def updateSlaveConnectionParameterDictDict(cls):
     cls.slave_connection_parameter_dict_dict = {}
     # run partition for slaves to be setup
-    for slave_reference, partition_parameter_kw in list(cls\
-            .getSlaveParameterDictDict().items()):
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
       slave_instance = cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
@@ -3878,7 +3877,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result = requests.put(backend_url + path, headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
-          'X-Reply-Body': base64.b64encode(body),
+          'X-Reply-Body': base64.b64encode(body.encode()),
           # drop Content-Length header to ensure
           # https://github.com/apache/trafficserver/issues/7880
           'X-Drop-Header': 'Content-Length',
