@@ -6559,8 +6559,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     expected_partition_parameter_dict_dict = {
       'caddy-frontend-1': {
         'X-software_release_url': base_software_url,
-        'apache-certificate': str(self.certificate_pem),
-        'apache-key': str(self.key_pem),
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
         'authenticate-to-backend': 'True',
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
@@ -6586,8 +6586,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
-        'apache-certificate': str(self.certificate_pem),
-        'apache-key': str(self.key_pem),
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
         'authenticate-to-backend': 'True',
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
@@ -6613,8 +6613,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
-        'apache-certificate': str(self.certificate_pem),
-        'apache-key': str(self.key_pem),
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
         'authenticate-to-backend': 'True',
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
@@ -6659,8 +6659,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         '-sla-2-computer_guid': 'local',
         '-sla-3-computer_guid': 'local',
         'X-software_release_url': base_software_url,
-        'apache-certificate': str(self.certificate_pem),
-        'apache-key': str(self.key_pem),
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
         'authenticate-to-backend': 'True',
         'automatic-internal-backend-client-caucase-csr': 'False',
         'automatic-internal-kedifa-caucase-csr': 'False',
