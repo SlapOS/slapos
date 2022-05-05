@@ -5543,8 +5543,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
-      expected = self.certificate_pem + '\n' + self.ca.certificate_pem + \
-        '\n' + self.key_pem
+      expected = self.certificate_pem.decode() + '\n' + \
+        self.ca.certificate_pem.decode() + '\n' + \
+        self.key_pem.decode()
       self.assertEqual(
         expected,
         out.read()
