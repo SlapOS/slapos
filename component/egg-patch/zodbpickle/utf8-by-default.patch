@@ -1,0 +1,25 @@
+--- a/src/zodbpickle/pickle_3.py	2022-05-04 17:14:14.001724804 +0000
++++ b/src/zodbpickle/pickle_3.py	2022-05-05 18:19:59.604856127 +0000
+@@ -788,7 +788,7 @@
+ class _Unpickler:
+ 
+     def __init__(self, file, *, fix_imports=True,
+-                 encoding="ASCII", errors="strict"):
++                 encoding="utf-8", errors="strict"):
+         """This takes a binary file for reading a pickle data stream.
+ 
+         The protocol version of the pickle is detected automatically, so no
+@@ -1479,9 +1479,10 @@
+                      encoding=encoding, errors=errors).load()
+ 
+ # Use the faster _pickle if possible
+-try:
+-    from zodbpickle._pickle import *
+-except ImportError:
++#try:
++#    from zodbpickle._pickle import *
++#except ImportError:
++if 1:
+     Pickler, Unpickler = _Pickler, _Unpickler
+     dump, dumps, load, loads = _dump, _dumps, _load, _loads
+ 
