@@ -1479,11 +1479,11 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
       backend_client_caucase_url, backend_client_ca_pem,
       backend_client_csr_pem)
     kedifa_key_file = os.path.join(cls.working_directory, 'kedifa-key.pem')
-    with open(kedifa_key_file, 'w') as fh:
+    with open(kedifa_key_file, 'wb') as fh:
       fh.write(kedifa_crt_pem + kedifa_key_pem)
     backend_client_key_file = os.path.join(
       cls.working_directory, 'backend-client-key.pem')
-    with open(backend_client_key_file, 'w') as fh:
+    with open(backend_client_key_file, 'wb') as fh:
       fh.write(backend_client_crt_pem + backend_client_key_pem)
 
     # Simulate human: create service keys
@@ -5445,8 +5445,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
-      expected = self.customdomain_ca_certificate_pem + '\n' + \
-        self.ca.certificate_pem + '\n' + self.customdomain_ca_key_pem
+      expected = \
+        self.customdomain_ca_certificate_pem.decode() + '\n' + \
+        self.ca.certificate_pem.decode() + '\n' + \
+        self.customdomain_ca_key_pem.decode()
       self.assertEqual(
         expected,
         out.read()
@@ -5489,8 +5491,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
-      expected = customdomain_ca_certificate_pem + '\n' + ca.certificate_pem \
-        + '\n' + customdomain_ca_key_pem
+      expected = customdomain_ca_certificate_pem.decode() + '\n' + \
+        ca.certificate_pem.decode() + '\n' + \
+        customdomain_ca_key_pem.decode()
       self.assertEqual(
         expected,
         out.read()
