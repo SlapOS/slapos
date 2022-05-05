@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh -ex
 #
 # This simple script to buildout slapos from source using 1.0 branch on
 # /opt/slapos folder, adapt this script as you please.
@@ -26,15 +26,25 @@ unset CONFIG_SITE
 #
 cat > buildout.cfg <<EOF
 [buildout]
-extends = https://lab.nexedi.com/nexedi/slapos/raw/1.0/component/slapos/buildout.cfg
+extensions =
 download-cache = download-cache
 parts =
   zc.buildout
+
+# Add location for modified non-official slapos.buildout
+find-links +=
+  http://www.nexedi.org/static/packages/source/
+  http://www.nexedi.org/static/packages/source/slapos.buildout/
 
 [zc.buildout]
 recipe = zc.recipe.egg
 eggs =
   zc.buildout
+
+[versions]
+setuptools = 44.1.1
+zc.buildout = 2.7.1+slapos019
+zc.recipe.egg = 2.0.3+slapos003
 EOF
 
 rm -f bootstrap.py
