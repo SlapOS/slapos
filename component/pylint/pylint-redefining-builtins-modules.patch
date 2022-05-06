@@ -1,0 +1,86 @@
+From 258eee33e9a059b704546772b42683699894b52e Mon Sep 17 00:00:00 2001
+From: Claudiu Popa <pcmanticore@gmail.com>
+Date: Fri, 25 Mar 2016 14:36:31 +0000
+Subject: [PATCH] Backport of new option, 'redefining-builtins-modules'.
+
+commit 5674ff98a6cd090578910c2c3bb02e1328f8e6d2
+Author: Claudiu Popa <pcmanticore@gmail.com>
+Date:   Wed Apr 4 20:56:59 2018 +0200
+    builtins is allowed to redefine builtins. Close #1966
+
+commit 5674ff98a6cd090578910c2c3bb02e1328f8e6d2
+Author: Claudiu Popa <pcmanticore@gmail.com>
+Date:   Wed Apr 4 20:56:59 2018 +0200
+    builtins is allowed to redefine builtins. Close #1966
+
+commit 44a2431745e61ff7d7ded7db5145da835b5877d1
+Author: Claudiu Popa <pcmanticore@gmail.com>
+Date:   Tue Dec 12 18:10:26 2017 +0100
+    past.builtins import don't trigger redefined-builtin. Close #1764
+
+commit ad7c2cd38f7213edd1ff37aaead86d5ae8390df4.
+Author: Claudiu Popa <pcmanticore@gmail.com>
+Date:   Fri Mar 25 14:36:31 2016 +0000
+    Add a new option, 'redefining-builtins-modules'.
+
+    The option can be used for controlling the modules
+    which can redefine builtins, such as six.moves and future.builtins.
+
+    Close #464.
+---
+ pylint/checkers/variables.py | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/pylint/checkers/variables.py b/pylint/checkers/variables.py
+index 8f6f9574..3223f8f0 100644
+--- a/pylint/checkers/variables.py
++++ b/pylint/checkers/variables.py
+@@ -309,7 +309,13 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+                  'help' : 'List of strings which can identify a callback '
+                           'function by name. A callback name must start or '
+                           'end with one of those strings.'}
+-               )
++               ),
++               ("redefining-builtins-modules",
++                {'default': ('six.moves', 'past.builtins', 'future.builtins', 'builtins', 'io'), 'type': 'csv',
++                 'metavar': '<comma separated list>',
++                 'help': 'List of qualified module names which can have objects '
++                         'that can redefine builtins.'}
++               ),
+               )
+     def __init__(self, linter=None):
+         BaseChecker.__init__(self, linter)
+@@ -323,7 +329,8 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+         self._to_consume = [(copy(node.locals), {}, 'module')]
+         for name, stmts in six.iteritems(node.locals):
+             if is_builtin(name) and not is_inside_except(stmts[0]):
+-                # do not print Redefining builtin for additional builtins
++                if self._should_ignore_redefined_builtin(stmts[0]):
++                    continue
+                 self.add_message('redefined-builtin', args=name, node=stmts[0])
+ 
+     @check_messages('unused-import', 'unused-wildcard-import',
+@@ -496,7 +503,7 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+                 dummy_rgx = self.config.dummy_variables_rgx
+                 if not dummy_rgx.match(name):
+                     self.add_message('redefined-outer-name', args=(name, line), node=stmt)
+-            elif is_builtin(name):
++            elif is_builtin(name) and not self._should_ignore_redefined_builtin(stmt):
+                 # do not print Redefining builtin for additional builtins
+                 self.add_message('redefined-builtin', args=name, node=stmt)
+ 
+@@ -688,6 +695,11 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+                    and not ass.statement() is node.statement():
+                 self.add_message('undefined-loop-variable', args=name, node=node)
+ 
++    def _should_ignore_redefined_builtin(self, stmt):
++        if not isinstance(stmt, astroid.From):
++            return False
++        return stmt.modname in self.config.redefining_builtins_modules
++
+     @check_messages('redefine-in-handler')
+     def visit_excepthandler(self, node):
+         for name in get_all_elements(node.name):
+-- 
+2.36.0
+
