@@ -10,21 +10,27 @@ Date:   Sun Jan 7 14:28:42 2018 -0700
  astroid/brain/pysix_moves.py | 38 ++++++++++++++++++++++++++++++++----
  1 file changed, 34 insertions(+), 4 deletions(-)
 
-diff --git a/astroid/brain/pysix_moves.py b/astroid/brain/pysix_moves.py
-index 548d9761..1db6566a 100644
---- a/astroid/brain/pysix_moves.py
-+++ b/astroid/brain/pysix_moves.py
-@@ -23,7 +23,8 @@
+---
+
+The original patch have been amended to support the names of astroid 1.4.0
+(because the patch was written for a more recent version of astroid) and
+to also support six.moves.cPickle which was missing for python 2.
+
+
+diff --git a/astroid/brain/brain_six.py b/astroid/brain/brain_six.py
+index 9596a6c8..0935beb2 100644
+--- a/astroid/brain/brain_six.py
++++ b/astroid/brain/brain_six.py
+@@ -23,7 +23,7 @@ from textwrap import dedent
  
  from astroid import MANAGER, register_module_extender
  from astroid.builder import AstroidBuilder
--from astroid.exceptions import AstroidBuildingException
-+from astroid.exceptions import AstroidBuildingException, NotFoundError
-+from astroid import nodes
+-from astroid.exceptions import AstroidBuildingException, InferenceError
++from astroid.exceptions import AstroidBuildingException, InferenceError, NotFoundError
+ from astroid import nodes
  
- def _indent(text, prefix, predicate=None):
-     """Adds 'prefix' to the beginning of selected lines in 'text'.
-@@ -48,6 +49,7 @@
+ 
+@@ -53,6 +53,7 @@ if sys.version_info[0] == 2:
      import CGIHTTPServer
      import SimpleHTTPServer
  
@@ -32,7 +38,7 @@ index 548d9761..1db6566a 100644
      from StringIO import StringIO
      from cStringIO import StringIO as cStringIO
      from UserDict import UserDict
-@@ -194,7 +196,7 @@
+@@ -199,7 +199,7 @@ else:
      import html.entities as html_entities
      import html.parser as html_parser
      import http.client as http_client
@@ -41,7 +47,7 @@ index 548d9761..1db6566a 100644
      BaseHTTPServer = CGIHTTPServer = SimpleHTTPServer = http.server
      import pickle as cPickle
      import queue
-@@ -225,7 +227,8 @@
+@@ -230,7 +230,8 @@ else:
      import tkinter.filedialog as tkinter_tkfiledialog
      import tkinter.font as tkinter_font
      import tkinter.messagebox as tkinter_messagebox
@@ -51,7 +57,7 @@ index 548d9761..1db6566a 100644
      import urllib.robotparser as urllib_robotparser
      import urllib.parse as urllib_parse
      import urllib.error as urllib_error
-@@ -248,10 +251,38 @@
+@@ -253,10 +254,38 @@ def six_moves_transform():
  
  
  def _six_fail_hook(modname):
@@ -90,4 +96,4 @@ index 548d9761..1db6566a 100644
 +    # This will cause an Uninferable result, which is okay
      return module
  
- 
+ def transform_six_add_metaclass(node):

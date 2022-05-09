@@ -3,10 +3,10 @@ From: Claudiu Popa <pcmanticore@gmail.com>
 Date: Fri, 25 Mar 2016 14:36:31 +0000
 Subject: [PATCH] Backport of new option, 'redefining-builtins-modules'.
 
-commit 5674ff98a6cd090578910c2c3bb02e1328f8e6d2
+commit bcad9bafedd9e8a46be784293c8dc57920a0ea1e
 Author: Claudiu Popa <pcmanticore@gmail.com>
-Date:   Wed Apr 4 20:56:59 2018 +0200
-    builtins is allowed to redefine builtins. Close #1966
+Date:   Thu Apr 12 15:14:38 2018 +0200
+    io can redefine builtins. Close #2014
 
 commit 5674ff98a6cd090578910c2c3bb02e1328f8e6d2
 Author: Claudiu Popa <pcmanticore@gmail.com>
@@ -32,10 +32,10 @@ Date:   Fri Mar 25 14:36:31 2016 +0000
  1 file changed, 15 insertions(+), 3 deletions(-)
 
 diff --git a/pylint/checkers/variables.py b/pylint/checkers/variables.py
-index 8f6f9574..3223f8f0 100644
+index 7629a7bb..acb9efa1 100644
 --- a/pylint/checkers/variables.py
 +++ b/pylint/checkers/variables.py
-@@ -309,7 +309,13 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+@@ -326,7 +326,13 @@ builtins. Remember that you should avoid to define new builtins when possible.'
                   'help' : 'List of strings which can identify a callback '
                            'function by name. A callback name must start or '
                            'end with one of those strings.'}
@@ -50,7 +50,7 @@ index 8f6f9574..3223f8f0 100644
                )
      def __init__(self, linter=None):
          BaseChecker.__init__(self, linter)
-@@ -323,7 +329,8 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+@@ -340,7 +346,8 @@ builtins. Remember that you should avoid to define new builtins when possible.'
          self._to_consume = [(copy(node.locals), {}, 'module')]
          for name, stmts in six.iteritems(node.locals):
              if is_builtin(name) and not is_inside_except(stmts[0]):
@@ -60,17 +60,17 @@ index 8f6f9574..3223f8f0 100644
                  self.add_message('redefined-builtin', args=name, node=stmts[0])
  
      @check_messages('unused-import', 'unused-wildcard-import',
-@@ -496,7 +503,7 @@ builtins. Remember that you should avoid to define new builtins when possible.'
-                 dummy_rgx = self.config.dummy_variables_rgx
+@@ -537,7 +544,7 @@ builtins. Remember that you should avoid to define new builtins when possible.'
                  if not dummy_rgx.match(name):
-                     self.add_message('redefined-outer-name', args=(name, line), node=stmt)
+                     self.add_message('redefined-outer-name',
+                                      args=(name, line), node=stmt)
 -            elif is_builtin(name):
 +            elif is_builtin(name) and not self._should_ignore_redefined_builtin(stmt):
                  # do not print Redefining builtin for additional builtins
                  self.add_message('redefined-builtin', args=name, node=stmt)
  
-@@ -688,6 +695,11 @@ builtins. Remember that you should avoid to define new builtins when possible.'
-                    and not ass.statement() is node.statement():
+@@ -732,6 +739,11 @@ builtins. Remember that you should avoid to define new builtins when possible.'
+                     and assign.statement() is not node.statement()):
                  self.add_message('undefined-loop-variable', args=name, node=node)
  
 +    def _should_ignore_redefined_builtin(self, stmt):
