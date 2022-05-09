@@ -41,7 +41,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class TestRepman(SlapOSInstanceTestCase):
   __partition_reference__ = 'R'
   # Repman need more deployments and a bit more time to be able to bootstrap correctly
-  instance_max_retry = 20
+  instance_max_retry = 10
 
   def setUp(self):
     self.url = self.computer_partition.getConnectionParameterDict()['url']
