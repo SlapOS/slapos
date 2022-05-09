@@ -272,7 +272,7 @@ class TestServices(NextCloudTestCase):
     news_config_file = os.path.join(self.partition_dir, 'srv/data/news/config/config.ini')
     with open(news_config_file) as f:
       config = f.read()
-    self.assertRegexpMatches(config, r"(useCronUpdates\s+=\s+false)")
+    self.assertRegex(config, r"(useCronUpdates\s+=\s+false)")
 
 
 class TestNextCloudParameters(NextCloudTestCase):
