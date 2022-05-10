@@ -11,7 +11,7 @@
 The test_type = "{{ test_type }}" is unsupported.
 {% endif -%}
 [buildout]
-
+extends = ${nxdtest-instance.cfg:rendered}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
@@ -69,3 +69,5 @@ tmp = ${:home}/tmp/
 log = ${:var}/log/
 services = ${:etc}/service/
 scripts = ${:etc}/run/
+test-working-dir = ${buildout:directory}/tmp
+nxdtest-working-dir = ${:var}/nxdtest
