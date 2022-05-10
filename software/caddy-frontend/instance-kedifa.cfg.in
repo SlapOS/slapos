@@ -108,7 +108,7 @@ stop-on-error = True
      ca_path='${kedifa-config:ca-certificate}',
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
-     on_renew='${kedifa-reloader:rendered}',
+     on_renew='${kedifa-reloader:output}',
      template_csr='${kedifa-csr:template-csr}'
 )}}
 
@@ -149,8 +149,8 @@ nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
 
 [expose-csr-template]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:expose-csr-etc}/nginx.conf
-template = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
+output = ${directory:expose-csr-etc}/nginx.conf
+url = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
 context =
   section configuration expose-csr-configuration
 
@@ -164,7 +164,7 @@ config-port = ${expose-csr-configuration:port}
 [expose-csr]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${expose-csr-template:rendered}
+  -c ${expose-csr-template:output}
 url = https://[${expose-csr-configuration:ip}]:${expose-csr-configuration:port}
 
 wrapper-path = ${directory:service}/expose-csr
@@ -177,7 +177,7 @@ commands =
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extra-context =
 slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
@@ -203,11 +203,10 @@ logfile = ${directory:log}/kedifa.log
 
 [kedifa-reloader]
 <= jinja2-template-base
-template = {{ software_parameter_dict['template_wrapper'] }}
-rendered = ${directory:etc-run}/kedifa-reloader
+url = {{ software_parameter_dict['template_wrapper'] }}
+output = ${directory:etc-run}/kedifa-reloader
 command =
   kill -HUP `cat ${kedifa-config:pidfile}`
-mode = 0700
 extra-context =
   key content :command
 

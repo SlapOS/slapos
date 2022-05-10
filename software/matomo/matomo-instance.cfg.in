@@ -19,32 +19,29 @@ php.max_file_uploads = 100
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
 
 [matomo-backup-cron]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = matomo-backup
 frequency = 0 0 * * *
-command = ${matomo-backup.sh:rendered}
+command = ${matomo-backup.sh:output}
 
 [matomo-apache-httpd]
 recipe = slapos.recipe.template:jinja2
-template = {{ matomo_apache_httpd }}
-rendered = ${directory:apache.d}/matomo.conf
+url = {{ matomo_apache_httpd }}
+output = ${directory:apache.d}/matomo.conf
 context =
   section parameter_dict apache-php-configuration
 
 [matomo-backup.sh]
 recipe = slapos.recipe.template:jinja2
-template = {{ matomo_backup_sh }}
-rendered = ${directory:scripts}/matomo-backup
+url = {{ matomo_backup_sh }}
+output = ${directory:scripts}/matomo-backup
 context =
   section parameter_dict instance-parameter
   key php_bin php-bin:wrapper-path
 
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
-
-
-

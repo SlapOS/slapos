@@ -34,8 +34,8 @@ logrotate-entries = ${logrotate-directory:logrotate-entries}
 
 [logrotate-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ logrotate_conf_template }}
-rendered = ${logrotate-directory:etc}/logrotate.conf
+url = {{ logrotate_conf_template }}
+output = ${logrotate-directory:etc}/logrotate.conf
 context =
   section parameter_dict logrotate-conf-parameter
 
@@ -48,8 +48,8 @@ context =
 # - "pre" with commands to execute before rotation
 # - "backup" with directory where to store logs
 recipe = slapos.recipe.template:jinja2
-template = {{ logrotate_entry_template }}
-rendered = ${logrotate-conf-parameter:logrotate-entries}/${:name}
+url = {{ logrotate_entry_template }}
+output = ${logrotate-conf-parameter:logrotate-entries}/${:name}
 context =
   key backup :backup
   key log :log
@@ -71,7 +71,7 @@ delaycompress = true
 
 [logrotate]
 recipe = slapos.cookbook:wrapper
-command-line = {{ logrotate_location }}/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:rendered}"
+command-line = {{ logrotate_location }}/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:output}"
 wrapper-path = ${logrotate-directory:bin}/logrotate
 
 [cron-entry-logrotate]

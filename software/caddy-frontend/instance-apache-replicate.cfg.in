@@ -1,7 +1,5 @@
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
-{#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
-{%- set SERVER_POLLUTED_KEY_LIST = ['connection-parameter-hash', 'timestamp', 'slave_title', 'slap_software_type'] -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {#- Allow to pass only some parameters to frontend nodes #}
@@ -22,6 +20,66 @@
         'authenticate-to-backend',
     ]
 %}
+{#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
+{#- Note: As a result, this feature is very hard to be tested with slapproxy, as it does not pollute the slave information, this kind of whitelist is implemented #}
+{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = [
+      'authenticate-to-backend',
+      'backend-connect-retries',
+      'backend-connect-timeout',
+      'ciphers',
+      'custom_domain',
+      'default-path',
+      'disable-no-cache-request',
+      'disable-via-header',
+      'disabled-cookie-list',
+      'enable-http2',
+      'enable_cache',
+      'health-check',
+      'health-check-authenticate-to-failover-backend',
+      'health-check-failover-https-url',
+      'health-check-failover-https-url-netloc-list',
+      'health-check-failover-ssl-proxy-ca-crt',
+      'health-check-failover-ssl-proxy-verify',
+      'health-check-failover-url',
+      'health-check-failover-url-netloc-list',
+      'health-check-fall',
+      'health-check-http-method',
+      'health-check-http-path',
+      'health-check-http-version',
+      'health-check-interval',
+      'health-check-rise',
+      'health-check-timeout',
+      'https-only',
+      'https-url',
+      'https-url-netloc-list',
+      'monitor-ipv4-test',
+      'monitor-ipv6-test',
+      'path',
+      'prefer-gzip-encoding-to-backend',
+      'request-timeout',
+      'server-alias',
+      'ssl-proxy-verify',
+      'ssl_ca_crt',
+      'ssl_crt',
+      'ssl_key',
+      'ssl_proxy_ca_crt',
+      'strict-transport-security',
+      'strict-transport-security-preload',
+      'strict-transport-security-sub-domains',
+      'type',
+      'url',
+      'url-netloc-list',
+      'virtualhostroot-http-port',
+      'virtualhostroot-https-port',
+      'websocket-path-list',
+      'websocket-transparent',
+    ]
+%}
+{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL = [
+      'slave_reference',
+    ]
+%}
+{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
@@ -33,7 +91,7 @@
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
@@ -258,9 +316,12 @@ context =
 {%   endif %}
 {%   if len(slave_error_list) == 0 %}
 {#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
-{%     set authorized_slave = slave.copy() %}
-{%     for key in SERVER_POLLUTED_KEY_LIST %}
-{%       do authorized_slave.pop(key, None) %}
+{#   Send only controlled information about the slave to node #}
+{%     set authorized_slave = {} %}
+{%     for key in FRONTEND_NODE_SLAVE_PASSED_KEY_LIST + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST %}
+{%       if key in slave %}
+{%         do authorized_slave.__setitem__(key, slave[key]) %}
+{%       endif %}
 {%     endfor %}
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
@@ -304,13 +365,13 @@ software-url = {{ frontend_request['software-url'] }}
 {%   if state %}
 state = {{ state }}
 {%   endif %}
+{#   Do not send additional parameters for destroyed nodes #}
+{%   if state != 'destroyed' %}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-backend-client-caucase-url = {{ caucase_url }}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
-{#   Do not send additional parameters for destroyed nodes #}
-{%   if state != 'destroyed' %}
 {%     set node_configuration_dict = {} %}
 {%     do node_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
@@ -322,11 +383,14 @@ config-{{ config_key }} = {{ dumps(config_value) }}
 {%-     for config_key, config_value in base_node_configuration_dict.iteritems() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%     endfor -%}
-{%   endif %}
-{%   if frontend_request.get('sla') %}
-{%     for parameter, value in frontend_request.get('sla').iteritems() %}
+{%     if frontend_request.get('sla') %}
+{%       for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
-{%     endfor %}
+{%       endfor %}
+{%     endif %}
+{%   else %}
+{#   Ignore return for destroyed nodes #}
+return =
 {%   endif %}
 {% endfor %}
 
@@ -403,11 +467,11 @@ config-url =
 #-- Publish slave information
 [publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-publish-slave-information:rendered
+default = dynamic-publish-slave-information:output
 RootSoftwareInstance = ${:default}
-replicate = dynamic-publish-slave-information:rendered
-custom-personal = dynamic-publish-slave-information:rendered
-custom-group = dynamic-publish-slave-information:rendered
+replicate = dynamic-publish-slave-information:output
+custom-personal = dynamic-publish-slave-information:output
+custom-group = dynamic-publish-slave-information:output
 
 [request-kedifa]
 <= slap-connection
@@ -470,7 +534,7 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
-template = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
+url = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
 filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -538,20 +602,17 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aikc-config:caucase-url
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+inline =
+  #!{{ software_parameter_dict['dash'] }}/bin/dash
   exec {{ software_parameter_dict['bin_directory'] }}/caucase \
-{# raw block to use context #}
-{% raw %}
-  --ca-url {{ caucase_url }} \
-{% endraw %}
+  --ca-url {{ '{{ caucase_url }}' }} \
   --ca-crt ${aikc-config:ca-certificate} \
   --user-ca-crt ${aikc-config:user-ca-certificate} \
   --user-crl ${aikc-config:user-crl} \
   --crl ${aikc-config:crl} \
   "$@"
 
-rendered = ${directory:bin}/aikc-caucase-wrapper
-mode = 0700
+output = ${directory:bin}/aikc-caucase-wrapper
 
 {% do part_list.append('aikc-create-user') %}
 [aikc-create-user]
@@ -562,11 +623,11 @@ update-command = ${:command}
 csr_id = ${directory:aikc}/csr_id
 command =
   if ! [ -f ${aikc-config:user-created} ] ; then
-    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${:csr_id} || exit 1
+    ${aikc-caucase-wrapper:output} --mode user --send-csr ${aikc-user-csr:csr} > ${:csr_id} || exit 1
     cut -d ' ' -f 1 ${:csr_id} || exit 1
     csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
-    ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
+    ${aikc-caucase-wrapper:output} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
     touch ${aikc-config:user-created}
   fi
 
@@ -662,21 +723,18 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aibcc-config:caucase-url
-template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+inline =
+  #!{{ software_parameter_dict['dash'] }}/bin/dash
 
   exec {{ software_parameter_dict['bin_directory'] }}/caucase \
-{# raw block to use context #}
-{% raw %}
-  --ca-url {{ caucase_url }} \
-{% endraw %}
+  --ca-url {{ '{{ caucase_url }}' }} \
   --ca-crt ${aibcc-config:ca-certificate} \
   --user-ca-crt ${aibcc-config:user-ca-certificate} \
   --user-crl ${aibcc-config:user-crl} \
   --crl ${aibcc-config:crl} \
   "$@"
 
-rendered = ${directory:bin}/aibcc-caucase-wrapper
-mode = 0700
+output = ${directory:bin}/aibcc-caucase-wrapper
 
 {% do part_list.append('aibcc-create-user') %}
 [aibcc-create-user]
@@ -689,11 +747,11 @@ update-command = ${:command}
 csr_id = ${directory:aibcc}/csr_id
 command =
   if ! [ -f ${aibcc-config:user-created} ] ; then
-    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${:csr_id} || exit 1
+    ${aibcc-caucase-wrapper:output} --mode user --send-csr ${aibcc-user-csr:csr} > ${:csr_id} || exit 1
     cut -d ' ' -f 1 ${:csr_id} || exit 1
     csr_id=`cut -d ' ' -f 1 ${:csr_id}`
     sleep 1
-    ${aibcc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
+    ${aibcc-caucase-wrapper:output} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
     touch ${aibcc-config:user-created}
   fi
 
@@ -754,8 +812,8 @@ update-command = ${:command}
 recipe = slapos.recipe.template:jinja2
 filename = rejected-slave.json
 directory = ${directory:promise-output}
-rendered = ${:directory}/${:filename}
-template = {{ software_parameter_dict['template_empty'] }}
+output = ${:directory}/${:filename}
+url = {{ software_parameter_dict['template_empty'] }}
 {% if critical_rejected_slave_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 content = {{ dumps(json_module.dumps(critical_rejected_slave_dict, indent=2, sort_keys=True)) }}
@@ -778,13 +836,13 @@ directory = ${rejected-slave-json:directory}
 url = https://${rejected-slave-password:user}:${rejected-slave-password:passwd}@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${rejected-slave-template:rendered}
+  -c ${rejected-slave-template:output}
 
 wrapper-path = ${directory:service}/rejected-slave-publish
 hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
 hash-files =
-  ${rejected-slave-template:rendered}
+  ${rejected-slave-template:output}
   ${rejected-slave-certificate:certificate}
 
 [rejected-slave-certificate]
@@ -822,7 +880,7 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slav
 recipe = slapos.recipe.template:jinja2
 var = ${directory:rejected-var}
 pid = ${directory:var}/nginx-rejected.pid
-template = inline:
+inline =
   daemon off;
   pid ${:pid};
   error_log stderr;
@@ -856,7 +914,7 @@ template = inline:
     }
   }
 
-rendered = ${directory:etc}/nginx-rejected-slave.conf
+output = ${directory:etc}/nginx-rejected-slave.conf
 
 [promise-rejected-slave-publish-ip-port]
 <= monitor-promise-base
@@ -870,7 +928,7 @@ config-port = ${rejected-slave-publish-configuration:port}
 promise = check_socket_listening
 promise = check_file_state
 name = rejected-slave.py
-config-filename = ${rejected-slave-json:rendered}
+config-filename = ${rejected-slave-json:output}
 config-state = empty
 config-url = ${rejected-slave-publish:url}
 
