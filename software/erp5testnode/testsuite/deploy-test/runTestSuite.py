@@ -165,6 +165,9 @@ def main():
       os.environ['TEST_SITE_STATUS_JSON'] = status_file.name
       return status_dict
 
+    def getTestList(self):
+      return list(self.egg_test_path_dict)
+
   suite = DeployTestSuite(
 
       1, test_suite=args.test_suite, node_quantity=args.node_quantity,
