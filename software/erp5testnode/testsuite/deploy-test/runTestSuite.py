@@ -152,8 +152,21 @@ def main():
 
   revision = args.revision
   test_suite_title = args.test_suite_title or args.test_suite
-  # TODO: rewrite this unsing nxdtest, EggTestSuite no longer exist in erp5.util
-  suite = testsuite.EggTestSuite(
+  # TODO: rewrite this unsing nxdtest, currently just make the test pass
+  class DeployTestSuite(testsuite.TestSuite):
+    def run(self, test):
+      # Create the site
+      status_dict = waitForSite(args.partition_path)
+
+      status_file = tempfile.NamedTemporaryFile()
+      status_file.write(json.dumps(status_dict))
+      status_file.flush()
+      os.fsync(status_file.fileno())
+      os.environ['TEST_SITE_STATUS_JSON'] = status_file.name
+      return status_dict
+
+  suite = DeployTestSuite(
+
       1, test_suite=args.test_suite, node_quantity=args.node_quantity,
       python_interpreter=args.python_interpreter,
       shared_part_list=os.environ.get('SLAPOS_TEST_SHARED_PART_LIST', ''),
@@ -178,21 +191,11 @@ def main():
   if test_result is None:
     return
 
-  # Create the site
-  status_dict = waitForSite(args.partition_path)
-
-  status_file = tempfile.NamedTemporaryFile()
-  status_file.write(json.dumps(status_dict))
-  status_file.flush()
-  os.fsync(status_file.fileno())
-  os.environ['TEST_SITE_STATUS_JSON'] = status_file.name
-
   assert revision == test_result.revision, (revision, test_result.revision)
   while suite.acquire():
     test = test_result.start(suite.running.keys())
     if test is not None:
-      suite.start(test.name, lambda status_dict,
-                  __test=test: __test.stop(**status_dict))
+      suite.start(test.name)
     elif not suite.running:
       break
   return
