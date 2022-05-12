@@ -62,8 +62,8 @@ output = $${rootdirectory:bin}/post-notification-run
 mode = 0700
 
 [backup-checksum-integrity-promise-bin]
-recipe = slapos.recipe.template:jinja2
-template = inline:
+recipe = slapos.recipe.template
+inline =
   #!/${bash:location}/bin/bash
   backup_diff_file=$${post-notification-run:diff-file}
   if [ -f "$backup_diff_file" ]; then
@@ -76,14 +76,13 @@ template = inline:
     # If file doesn't exist, promise shouldnt raise false positive
     exit 0;
   fi
-rendered = $${rootdirectory:bin}/backup-checksum-integrity
-mode = 700
+output = $${rootdirectory:bin}/backup-checksum-integrity
 
 [backup-checksum-integrity-promise]
 <= monitor-promise-base
 promise = check_command_execute
 name = backup-checksum-integrity.py
-config-command = $${backup-checksum-integrity-promise-bin:rendered}
+config-command = $${backup-checksum-integrity-promise-bin:output}
 
 
 ###########
@@ -133,7 +132,7 @@ input = inline:
   LoadModule mime_module modules/mod_mime.so
   LoadModule cgid_module modules/mod_cgid.so
   LoadModule dir_module modules/mod_dir.so
-  ScriptSock $${:cgid-pid-file}
+  ScriptSock $${:cgid-sock-file}
   <Directory $${:document-root}>
     # XXX: security????
     Options +ExecCGI
@@ -147,7 +146,7 @@ listening-ip = $${slap-network-information:global-ipv6}
 listening-port = 9263
 htdocs = $${directory:cgi-bin}
 pid-file = $${directory:run}/resilient-web-takeover-httpd.pid
-cgid-pid-file = $${directory:run}/resilient-web-takeover-httpd-cgid.pid
+cgid-sock-file = $${directory:run}/resilient-web-takeover-httpd-cgid.sock
 document-root = $${directory:cgi-bin}
 error-log = $${directory:log}/resilient-web-takeover-httpd-error-log
 

@@ -1,0 +1,63 @@
+#############################
+#
+# Deploy beremiz' runtime  instance
+#
+#############################
+[buildout]
+parts =
+  publish-connection-parameter
+  download-plc
+  beremiz-runtime
+#beremiz-runtime-promise
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+extends = {{ template_monitor }}
+
+[download-plc]
+recipe = slapos.recipe.build:download-unpacked
+offline = false
+url = ${instance-parameter:configuration.runtime_plc_url}
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.runtime_plc_url =
+configuration.runtime_plc_md5sum =
+configuration.autostart = 1
+configuration.interface = 0.0.0.0
+configuration.port = 61248
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run
+service = ${:etc}/service
+log = ${:var}/log
+
+[beremiz-runtime]
+logfile = ${directory:log}/beremiz-runtime.log
+recipe = slapos.cookbook:wrapper
+command-line =
+    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/parts/download-plc
+wrapper-path = ${directory:service}/beremiz-runtime
+
+[beremiz-runtime-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = beremiz-runtime.py
+config-hostname= ${instance-parameter:configuration.interface}
+config-port    = ${instance-parameter:configuration.port}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+port = ${instance-parameter:configuration.port}
+interface = ${instance-parameter:configuration.interface}

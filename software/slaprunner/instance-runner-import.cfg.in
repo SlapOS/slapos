@@ -79,11 +79,10 @@ recipe =
 
 [importer]
 recipe = slapos.recipe.template:jinja2
-template = {{ importer_script_path }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-importer
+url = {{ importer_script_path }}
+output = ${directory:bin}/${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
-wrapper = ${:rendered}
-mode = 700
+wrapper = ${:output}
 restore-exit-code-file = ${directory:srv}/${:restore-exit-code-file-basename}
 restore-exit-code-file-basename = importer-exit-code-file
 restore-error-message-file = ${directory:srv}/${:restore-error-message-file-basename}
@@ -167,7 +166,6 @@ recipe = slapos.recipe.template
 url = {{ software_release_information_template }}
 output = ${directory:cgi-bin}/resilient_software_release_information.py
 resilient-log-url = ${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
-mode = 0600
 
 [slap-parameter]
 auto-deploy-instance = false

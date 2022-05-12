@@ -99,14 +99,14 @@ config-url = ${monitor-base:base-url}/private/boot-image-url-select/${:filename}
 
 [boot-image-url-select-source-config]
 recipe = slapos.recipe.template:jinja2
-template = inline:
+inline =
 {%- raw %}
   {{ boot_image_url_select }}
 {% endraw -%}
 boot-image-url-select = {{ dumps(slapparameter_dict['boot-image-url-select']) }}
 context =
   key boot_image_url_select :boot-image-url-select
-rendered = ${directory:etc}/boot-image-url-select.json
+output = ${directory:etc}/boot-image-url-select.json
 
 [boot-image-url-select-processed-config]
 # compares if the current configuration has been used by
@@ -131,7 +131,7 @@ install =
       state_handler.write(str(e))
 
 update = ${:install}
-config-file = ${boot-image-url-select-source-config:rendered}
+config-file = ${boot-image-url-select-source-config:output}
 state-filename = boot-image-url-select-processed-config.state
 state-file = ${directory:boot-image-url-select-expose}/${:state-filename}
 processed-md5sum = ${directory:boot-image-url-select-var}/update-image-processed.md5sum
@@ -146,9 +146,9 @@ config-filename = ${boot-image-url-select-processed-config:state-file}
 [boot-image-url-select-json-config]
 # generates json configuration from user configuration
 recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-select-source-config:rendered} ${:rendered} ${directory:boot-image-url-select-repository} ${:error-state-file}
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-select-source-config:output} ${:output} ${directory:boot-image-url-select-repository} ${:error-state-file}
 update-command = ${:command}
-rendered = ${directory:boot-image-url-select-var}/boot-image-url-select.json
+output = ${directory:boot-image-url-select-var}/boot-image-url-select.json
 error-state-filename = boot-image-url-select-json-config-error.txt
 error-state-file = ${directory:boot-image-url-select-expose}/${:error-state-filename}
 
@@ -162,7 +162,8 @@ config-filename = ${boot-image-url-select-json-config:error-state-file}
 # wrapper to execute boot-image-url-select-download on each run
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/boot-image-url-select-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-select-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-select-processed-config:processed-md5sum}
+command-line = {{ python_executable }} {{ image_download_controller }} ${:config} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-select-processed-config:processed-md5sum}
+config = ${boot-image-url-select-json-config:output}
 md5sum-state-filename = boot-image-url-select-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:boot-image-url-select-expose}/${:md5sum-state-filename}
 error-state-filename = boot-image-url-select-download-controller-error.text
@@ -195,14 +196,14 @@ config-url = ${monitor-base:base-url}/private/boot-image-url-list/${:filename}
 
 [boot-image-url-list-source-config]
 recipe = slapos.recipe.template:jinja2
-template = inline:
+inline =
 {%- raw %}
   {{ boot_image_url_list }}
 {% endraw -%}
 boot-image-url-list = {{ dumps(slapparameter_dict['boot-image-url-list']) }}
 context =
   key boot_image_url_list :boot-image-url-list
-rendered = ${directory:etc}/boot-image-url-list.conf
+output = ${directory:etc}/boot-image-url-list.conf
 
 [boot-image-url-list-processed-config]
 # compares if the current configuration has been used by
@@ -227,7 +228,7 @@ install =
       state_handler.write(str(e))
 
 update = ${:install}
-config-file = ${boot-image-url-list-source-config:rendered}
+config-file = ${boot-image-url-list-source-config:output}
 state-filename = boot-image-url-list-processed-config.state
 state-file = ${directory:boot-image-url-list-expose}/${:state-filename}
 processed-md5sum = ${directory:boot-image-url-list-var}/update-image-processed.md5sum
@@ -242,9 +243,9 @@ config-filename = ${boot-image-url-list-processed-config:state-file}
 [boot-image-url-list-json-config]
 # generates json configuration from user configuration
 recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-list-source-config:rendered} ${:rendered} ${directory:boot-image-url-list-repository} ${:error-state-file}
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-list-source-config:output} ${:output} ${directory:boot-image-url-list-repository} ${:error-state-file}
 update-command = ${:command}
-rendered = ${directory:boot-image-url-list-var}/boot-image-url-list.json
+output = ${directory:boot-image-url-list-var}/boot-image-url-list.json
 error-state-filename = boot-image-url-list-json-config-error.txt
 error-state-file = ${directory:boot-image-url-list-expose}/${:error-state-filename}
 
@@ -258,7 +259,8 @@ config-filename = ${boot-image-url-list-json-config:error-state-file}
 # wrapper to execute boot-image-url-list-download on each run
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/boot-image-url-list-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-list-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-list-processed-config:processed-md5sum}
+command-line = {{ python_executable }} {{ image_download_controller }} ${:config} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-list-processed-config:processed-md5sum}
+config = ${boot-image-url-list-json-config:output}
 md5sum-state-filename = boot-image-url-list-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:boot-image-url-list-expose}/${:md5sum-state-filename}
 error-state-filename = boot-image-url-list-download-controller-error.text
@@ -291,7 +293,7 @@ config-url = ${monitor-base:base-url}/private/virtual-hard-drive-url/${:filename
 
 [virtual-hard-drive-url-source-config]
 recipe = slapos.recipe.template:jinja2
-template = inline:
+inline =
 {%- raw %}
   {{ virtual_hard_drive_url }}
 {% endraw -%}
@@ -299,7 +301,7 @@ template = inline:
 virtual-hard-drive-url = {{ slapparameter_dict['virtual-hard-drive-url'] }}#{{ slapparameter_dict['virtual-hard-drive-md5sum'] }}
 context =
   key virtual_hard_drive_url :virtual-hard-drive-url
-rendered = ${directory:etc}/virtual-hard-drive-url.conf
+output = ${directory:etc}/virtual-hard-drive-url.conf
 
 [virtual-hard-drive-url-processed-config]
 # compares if the current configuration has been used by
@@ -324,7 +326,7 @@ install =
       state_handler.write(str(e))
 
 update = ${:install}
-config-file = ${virtual-hard-drive-url-source-config:rendered}
+config-file = ${virtual-hard-drive-url-source-config:output}
 state-filename = virtual-hard-drive-url-processed-config.state
 state-file = ${directory:virtual-hard-drive-url-expose}/${:state-filename}
 processed-md5sum = ${directory:virtual-hard-drive-url-var}/update-image-processed.md5sum
@@ -339,9 +341,9 @@ config-filename = ${virtual-hard-drive-url-processed-config:state-file}
 [virtual-hard-drive-url-json-config]
 # generates json configuration from user configuration
 recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${virtual-hard-drive-url-source-config:rendered} ${:rendered} ${directory:virtual-hard-drive-url-repository} ${:error-state-file}
+command = {{ python_executable }} {{ image_download_config_creator }} ${virtual-hard-drive-url-source-config:output} ${:output} ${directory:virtual-hard-drive-url-repository} ${:error-state-file}
 update-command = ${:command}
-rendered = ${directory:virtual-hard-drive-url-var}/virtual-hard-drive-url.json
+output = ${directory:virtual-hard-drive-url-var}/virtual-hard-drive-url.json
 error-state-filename = virtual-hard-drive-url-json-config-error.txt
 error-state-file = ${directory:virtual-hard-drive-url-expose}/${:error-state-filename}
 
@@ -355,7 +357,8 @@ config-filename = ${virtual-hard-drive-url-json-config:error-state-file}
 # wrapper to execute virtual-hard-drive-url-download on each run
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/virtual-hard-drive-url-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${virtual-hard-drive-url-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${virtual-hard-drive-url-processed-config:processed-md5sum}
+command-line = {{ python_executable }} {{ image_download_controller }} ${:config} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${virtual-hard-drive-url-processed-config:processed-md5sum}
+config = ${virtual-hard-drive-url-json-config:output}
 md5sum-state-filename = virtual-hard-drive-url-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:virtual-hard-drive-url-expose}/${:md5sum-state-filename}
 error-state-filename = virtual-hard-drive-url-download-controller-error.text
@@ -398,17 +401,17 @@ vnc-port = 5901
 
 default-cdrom-iso = {{ debian_amd64_netinst_location }}
 {% if virtual_hard_drive_url_enabled %}
-virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:rendered}
+virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:output}
 {% else %}
 virtual-hard-drive-url-json-config =
 {% endif %}
 {% if boot_image_url_list_enabled %}
-boot-image-url-list-json-config = ${boot-image-url-list-json-config:rendered}
+boot-image-url-list-json-config = ${boot-image-url-list-json-config:output}
 {% else %}
 boot-image-url-list-json-config =
 {% endif %}
 {% if boot_image_url_select_enabled %}
-boot-image-url-select-json-config = ${boot-image-url-select-json-config:rendered}
+boot-image-url-select-json-config = ${boot-image-url-select-json-config:output}
 {% else %}
 boot-image-url-select-json-config =
 {% endif %}
@@ -496,17 +499,15 @@ log-file = ${directory:log}/qemu.log
 
 [kvm-run]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_kvm_run }}
-rendered = ${directory:bin}/kvm_raw
-mode = 700
+url = {{ template_kvm_run }}
+output = ${directory:bin}/kvm_raw
 context =
   section parameter_dict kvm-parameter-dict
 
 [kvm-controller]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_kvm_controller_run }}
-rendered = ${directory:bin}/kvm_controller_raw
-mode = 700
+url = {{ template_kvm_controller_run }}
+output = ${directory:bin}/kvm_controller_raw
 context =
   section parameter_dict kvm-controller-parameter-dict
 
@@ -536,7 +537,7 @@ ipv6-port = {{ external_port }}
 {% endif -%}
 
 {%- set depend_section_list = [] %}
-{%- set hash_file_list = ['${kvm-run:rendered}'] %}
+{%- set hash_file_list = ['${kvm-run:output}'] %}
 {%- macro generate_depend_section(section, key) %}
 {%-  do depend_section_list.append('${' + section + ':command}' ) %}
 {%-  do hash_file_list.append('${' + key + '}') %}
@@ -547,13 +548,13 @@ command = [ ! -f {{ '${' + key + '}' }} ] && touch {{ '${' +  key + '}' }}
 {%- endmacro %}
 {#- Create depending sections, as state files appear late, so it's better to have empty file which will impact the hash anyway #}
 {%- if boot_image_url_list_enabled %}
-{{    generate_depend_section('boot-image-url-list-depend', 'boot-image-url-list-download-wrapper:md5sum-state-file') }}
+{{    generate_depend_section('boot-image-url-list-depend', 'boot-image-url-list-download-wrapper:config') }}
 {%- endif %}
 {%- if boot_image_url_select_enabled %}
-{{    generate_depend_section('boot-image-url-select-depend', 'boot-image-url-select-download-wrapper:md5sum-state-file') }}
+{{    generate_depend_section('boot-image-url-select-depend', 'boot-image-url-select-download-wrapper:config') }}
 {%- endif %}
 {%- if virtual_hard_drive_url_enabled %}
-{{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:md5sum-state-file') }}
+{{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:config') }}
 {%- endif %}
 
 [kvm-instance]
@@ -564,7 +565,7 @@ depends =
 recipe = slapos.cookbook:wrapper
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
-command-line = ${kvm-run:rendered}
+command-line = ${kvm-run:output}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
@@ -575,7 +576,7 @@ hash-files =
 [kvm-controller-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/kvm_controller
-command-line = ${kvm-controller:rendered}
+command-line = ${kvm-controller:output}
 
 
 [kvm-vnc-promise]
@@ -627,9 +628,8 @@ command-line =
 
 [kvm-started-bin]
 recipe = slapos.recipe.template:jinja2
-template = {{ qemu_start_promise_tpl }}
-rendered = ${directory:bin}/qemu-virtual-machine-is-ready
-mode = 700
+url = {{ qemu_start_promise_tpl }}
+output = ${directory:bin}/qemu-virtual-machine-is-ready
 context =
   raw dash {{ dash_executable_location }}
   raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
@@ -639,7 +639,7 @@ context =
 <= monitor-promise-base
 promise = check_command_execute
 name = qemu-virtual-machine-is-ready.py
-config-command = ${kvm-started-bin:rendered}
+config-command = ${kvm-started-bin:output}
 
 [novnc-instance]
 recipe = slapos.cookbook:novnc
@@ -879,6 +879,7 @@ ipv6-network-info =
 
 
 {% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
+{%   do part_list.append('network-config-ipv4') %}
 [network-config-ipv4]
 recipe = plone.recipe.command
 filename = netconfig.sh
@@ -939,7 +940,7 @@ mode = {{ mode }}
 {% endmacro -%}
 
 # write vm-data into file public/data
-{{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', ''), '700') }}
+{{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', '')) }}
 
 {% if slapparameter_dict.get('authorized-key', '') -%}
 # write public key for vms to public/authorized_keys
@@ -987,9 +988,9 @@ update-command = ${:command}
 # To access documents of main instance (in case of kvm-cluster) through http
 [cluster-url-path]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_content }}
+url = {{ template_content }}
 filename = cluster.hash
-rendered = ${directory:public}/${:filename}
+output = ${directory:public}/${:filename}
 hash-url = https://10.0.2.101:443/{{ slapparameter_dict.get('document-path', '') }}
 context =
     key content_list :hash-url
@@ -1014,8 +1015,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ansible-vm-bin]
 recipe = slapos.recipe.template:jinja2
-template = {{ ansible_promise_tpl }}
-rendered = ${directory:bin}/ansible_{{ name }}
+url = {{ ansible_promise_tpl }}
+output = ${directory:bin}/ansible_{{ name }}
 extensions = jinja2.ext.do
 context =
   raw logs ${directory:public}/ansible
@@ -1025,7 +1026,7 @@ context =
 <= monitor-promise-base
 promise = check_command_execute
 name = ansible_{{ name }}.py
-config-command = ${ansible-vm-bin:rendered}
+config-command = ${ansible-vm-bin:output}
 
 {% if bootstrap_script_url -%}
 [download-bootstrap-script]
@@ -1148,7 +1149,7 @@ data-to-vm =
 {%   do part_list.append('disk-device-permission') -%}
 [disk-device-permission]
 recipe = slapos.recipe.template:jinja2
-template = inline:
+inline =
 {%- raw %}
   {%- set disk_list = [] %}
   {%- for disk in disk_device_path.split() %}
@@ -1156,7 +1157,7 @@ template = inline:
   {%- endfor -%}
   {{ json_module.dumps(disk_list) }}
 {% endraw -%}
-rendered = ${buildout:directory}/.slapos-disk-permission
+output = ${buildout:directory}/.slapos-disk-permission
 extensions = jinja2.ext.do
 context =
   import json_module json
@@ -1164,14 +1165,13 @@ context =
 
 {%   do part_list.append('wipe-disk-device-wrapper') -%}
 [wipe-disk-device-wrapper]
-recipe = slapos.recipe.template:jinja2
-template = inline:
+recipe = slapos.recipe.template
+inline =
   #!/bin/sh
 {%- for disk_device in disk_device_path.split() %}
   dd if=/dev/zero of={{ disk_device }} bs=4096 count=500k
 {%- endfor %}
-rendered = ${directory:prerm}/slapos_wipe_device_disk
-mode = 0700
+output = ${directory:prerm}/slapos_wipe_device_disk
 {% endif -%}
 
 {%   do part_list.append('whitelist-firewall') -%}
@@ -1186,7 +1186,7 @@ command-line =
   ${:source}
 
 source =
-  ${whitelist-domains-request:rendered}
+  ${whitelist-domains-request:output}
   {{ whitelist_domains_default }}
   ${whitelist-domains-resolv.conf:output}
   ${whitelist-domains-download:output}
@@ -1200,13 +1200,13 @@ update-command = ${:command}
 
 [whitelist-domains-request]
 recipe = slapos.recipe.template:jinja2
-template = inline:
+inline =
 {%- raw %}
   {%- for domain in whitelist_domains.split() %}
   {{ domain }}
   {%- endfor %}
 {% endraw -%}
-rendered = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
+output = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
 whitelist-domains = {{ dumps(whitelist_domains) }}
 extensions = jinja2.ext.do
 context =

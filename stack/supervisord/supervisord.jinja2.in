@@ -22,24 +22,24 @@ pid-file    = ${controller-directory:run}/supervisord-{{ name }}.pid
 
 [supervisord-controller-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ supervisord_conf }}
+url = {{ supervisord_conf }}
 context =
   section parameter_dict controller-parameters
-rendered = ${controller-directory:etc}/supervisord-{{ name }}.conf
+output = ${controller-directory:etc}/supervisord-{{ name }}.conf
 
 [supervisord-{{ name }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ buildout_bin_directory }}/supervisord -c ${supervisord-controller-conf:rendered} --nodaemon
+command-line = {{ buildout_bin_directory }}/supervisord -c ${supervisord-controller-conf:output} --nodaemon
 wrapper-path = ${directory:services}/supervisord-{{ name }}
 {% if use_service_hash -%}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {% endif -%}
-depends = 
+depends =
   {{ '${' ~ name ~ '-bin:recipe}' }}
 
 [{{ name }}-bin]
 recipe = slapos.cookbook:wrapper
-command-line = {{ buildout_bin_directory }}/supervisorctl -c ${supervisord-controller-conf:rendered}
+command-line = {{ buildout_bin_directory }}/supervisorctl -c ${supervisord-controller-conf:output}
 wrapper-path = ${directory:bin}/{{ name }}
 
 {%- endmacro %}
@@ -52,8 +52,9 @@ wrapper-path = ${directory:bin}/{{ name }}
 
 
 [supervisord-{{ name }}]
-recipe = slapos.recipe.template:jinja2
-template = inline:[program:{{ parameter_dict['name'] }}]
+recipe = slapos.recipe.template
+inline =
+  [program:{{ parameter_dict['name'] }}]
   directory = ${buildout:directory}
   command = {{ parameter_dict['command'] }}
   process_name = {{ parameter_dict['name'] }}
@@ -74,6 +75,6 @@ template = inline:[program:{{ parameter_dict['name'] }}]
   stderr_logfile_backups = 1
   environment = {{ parameter_dict['environment'] | join(',') }}
 
-rendered = ${controller-directory:supervisord}/{{ name }}.conf
+output = ${controller-directory:supervisord}/{{ name }}.conf
 
 {%- endmacro %}

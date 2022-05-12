@@ -63,11 +63,10 @@ def setUpModule():
 
 class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
   @classmethod
-  def _processEmbeddedInstance(cls, retries=0, software_type='export'):
-    slapos = cls._getSlapos(software_type)
+  def _processEmbeddedInstance(cls, retries=0, instance_type='export'):
     for _ in range(retries):
       try:
-        output = subprocess.check_output((slapos, 'node', 'instance'), stderr=subprocess.STDOUT)
+        output = cls.captureSlapos('node', 'instance', instance_type=instance_type, stderr=subprocess.STDOUT)
       except subprocess.CalledProcessError:
         continue
       print(output)
@@ -77,19 +76,18 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
         # Sleep a bit as an attempt to workaround monitoring boostrap not being ready
         print("Wait before running slapos node instance one last time")
         time.sleep(120)
-      subprocess.check_call((slapos, 'node', 'instance'))
+      cls.checkSlapos('node', 'instance', instance_type=instance_type)
 
   @classmethod
-  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, software_type='export'):
-    slapos = cls._getSlapos(software_type)
-    subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
+  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
+    cls.callSlapos('supply', software_url, 'slaprunner', instance_type=instance_type)
     try:
-      subprocess.check_output((slapos, 'node', 'software'), stderr=subprocess.STDOUT)
+      cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
       print(e.output)
       raise
-    subprocess.check_call((slapos, 'request', instance_name, software_url))
-    cls._processEmbeddedInstance(retries, software_type)
+    cls.callSlapos('request', instance_name, software_url, instance_type=instance_type)
+    cls._processEmbeddedInstance(retries, instance_type)
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -136,16 +134,16 @@ class ResilienceMixin(object):
 
 class ExportAndImportMixin(object):
   def getExportExitfile(self):
-    return self._getPartitionPath('export', 'srv', 'export-exitcode-file')
+    return self.getPartitionPath('export', 'srv', 'export-exitcode-file')
 
   def getExportErrorfile(self):
-    return self._getPartitionPath('export', 'srv', 'export-errormessage-file')
+    return self.getPartitionPath('export', 'srv', 'export-errormessage-file')
 
   def getImportExitfile(self):
-    return self._getPartitionPath('import', 'srv', 'import-exitcode-file')
+    return self.getPartitionPath('import', 'srv', 'import-exitcode-file')
 
   def getImportErrorfile(self):
-    return self._getPartitionPath('import', 'srv', 'import-errormessage-file')
+    return self.getPartitionPath('import', 'srv', 'import-errormessage-file')
 
   def makedirs(self, path):
     try:
@@ -185,7 +183,7 @@ class ExportAndImportMixin(object):
     initial_exitdate = os.path.getmtime(exitfile)
 
     # Call export script manually
-    theia_export_script = self._getPartitionPath('export', 'bin', 'theia-export-script')
+    theia_export_script = self.getPartitionPath('export', 'bin', 'theia-export-script')
     subprocess.check_call((theia_export_script,), stderr=subprocess.STDOUT)
 
     # Check that the export exitcode file was modified
@@ -198,8 +196,8 @@ class ExportAndImportMixin(object):
 
   def _doTransfer(self):
     # Copy <export>/srv/backup/theia to <import>/srv/backup/theia manually
-    export_backup_path = self._getPartitionPath('export', 'srv', 'backup', 'theia')
-    import_backup_path = self._getPartitionPath('import', 'srv', 'backup', 'theia')
+    export_backup_path = self.getPartitionPath('export', 'srv', 'backup', 'theia')
+    import_backup_path = self.getPartitionPath('import', 'srv', 'backup', 'theia')
     shutil.rmtree(import_backup_path)
     shutil.copytree(export_backup_path, import_backup_path)
 
@@ -209,7 +207,7 @@ class ExportAndImportMixin(object):
     initial_exitdate = os.path.getmtime(exitfile)
 
     # Call the import script manually
-    theia_import_script = self._getPartitionPath('import', 'bin', 'theia-import-script')
+    theia_import_script = self.getPartitionPath('import', 'bin', 'theia-import-script')
     subprocess.check_call((theia_import_script,), stderr=subprocess.STDOUT)
 
     # Check that the import exitcode file was updated
@@ -277,11 +275,11 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
         os.remove(path)
 
   def customSignatureScript(self, content=None):
-    custom_script = self._getPartitionPath('export', self.script_relpath)
+    custom_script = self.getPartitionPath('export', self.script_relpath)
     self.customScript(custom_script, content)
 
   def customRestoreScript(self, content=None):
-    restore_script = self._getPartitionPath('import', 'srv', 'runner-import-restore')
+    restore_script = self.getPartitionPath('import', 'srv', 'runner-import-restore')
     self.customScript(restore_script, content)
     return restore_script
 
@@ -294,7 +292,7 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
     self.customRestoreScript(content=None)
     self.cleanupExitfiles()
     try:
-      os.remove(self._getPartitionPath('import', self.signature_relpath))
+      os.remove(self.getPartitionPath('import', self.signature_relpath))
     except OSError:
       pass
 
@@ -309,13 +307,13 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
   def test_custom_hash_script(self):
     errmsg = 'Bye bye'
     self.customSignatureScript(content='>&2 echo "%s"\nexit 1' % errmsg)
-    custom_script = self._getPartitionPath('export', self.script_relpath)
+    custom_script = self.getPartitionPath('export', self.script_relpath)
     self.assertExportFailure('Compute partitions backup signatures\n ... ERROR !',
       'Custom signature script %s failed' % os.path.abspath(custom_script),
       'and stderr:\n%s' % errmsg)
 
   def test_signature_mismatch(self):
-    signature_file = self._getPartitionPath('import', self.signature_relpath)
+    signature_file = self.getPartitionPath('import', self.signature_relpath)
     self.writeFile(signature_file, 'Bogus Hash\n', mode='a')
     self.assertImportFailure('ERROR the backup signatures do not match')
 
@@ -344,7 +342,7 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
 
   def _prepareExport(self):
     # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
-    dummy_target_path = self._getPartitionPath('export', 'srv', 'project', 'dummy')
+    dummy_target_path = self.getPartitionPath('export', 'srv', 'project', 'dummy')
     shutil.copytree(os.path.dirname(dummy_software_url), dummy_target_path)
     self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
 
@@ -352,8 +350,8 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     self._deployEmbeddedSoftware(self._test_software_url, 'dummy_instance')
 
     relpath_dummy = os.path.join('srv', 'runner', 'instance', 'slappart0')
-    self.export_dummy_root = dummy_root = self._getPartitionPath('export', relpath_dummy)
-    self.import_dummy_root = self._getPartitionPath('import', relpath_dummy)
+    self.export_dummy_root = dummy_root = self.getPartitionPath('export', relpath_dummy)
+    self.import_dummy_root = self.getPartitionPath('import', relpath_dummy)
 
     # Check that dummy instance was properly deployed
     self.initial_log = self.checkLog(os.path.join(dummy_root, 'log.log'))
@@ -373,7 +371,7 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     self.assertTrue(os.path.exists(os.path.join(dummy_root, 'srv', '.backup_identity_script')))
 
     # Remember content of ~/etc in the import theia
-    self.etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
 
   def _doSync(self):
     self._doExport()
@@ -384,14 +382,13 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     dummy_root = self.import_dummy_root
 
     # Check that the software url is correct
-    adapted_test_url = self._getPartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg')
-    proxy_content = subprocess.check_output(
-      (self._getSlapos('import'), 'proxy', 'show'), universal_newlines=True)
+    adapted_test_url = self.getPartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg')
+    proxy_content = self.captureSlapos('proxy', 'show', instance_type='import', text=True)
     self.assertIn(adapted_test_url, proxy_content)
     self.assertNotIn(self._test_software_url, proxy_content)
 
     # Check that ~/etc still contains everything it did before
-    etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
     self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
     # Check that ~/srv/project was exported
@@ -401,7 +398,7 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     self.checkLog(os.path.join(dummy_root, 'log.log'), self.initial_log, newline=None)
 
     # Check that ~/srv/.backup_identity_script was detected and called
-    signature =  self._getPartitionPath(
+    signature =  self.getPartitionPath(
       'import', 'srv', 'backup', 'theia', 'slappart0.backup.signature.custom')
     self.assertTrue(os.path.exists(signature))
     with open(signature) as f:
@@ -418,7 +415,7 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
 
   def _doTakeover(self):
     # Start the dummy instance as a sort of fake takeover
-    subprocess.check_call((self._getSlapos('import'), 'node', 'instance'))
+    self.callSlapos('node', 'instance', instance_type='import')
 
   def _checkTakeover(self):
     # Check that dummy instance was properly re-deployed
@@ -493,7 +490,7 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
     # Check ~/etc in import theia again
-    self.etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
     self._doSync()
     self._checkSync()
 
@@ -502,18 +499,18 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     self._deployEmbeddedSoftware(self._test_software_url, 'test_instance', self.test_instance_max_retries)
 
     # Check that there is an export and import instance and get their partition IDs
-    self.export_id = self._getPartitionId('export')
-    self.import_id = self._getPartitionId('import')
+    self.export_id = self.getPartitionId('export')
+    self.import_id = self.getPartitionId('import')
 
     # Remember content of ~/etc in the import theia
-    self.etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
 
   def _doSync(self):
     start = time.time()
 
     # Call exporter script instead of waiting for cron job
     # XXX Accelerate cron frequency instead ?
-    exporter_script = self._getPartitionPath('export', 'bin', 'exporter')
+    exporter_script = self.getPartitionPath('export', 'bin', 'exporter')
     transaction_id = str(int(time.time()))
     subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
 
@@ -524,7 +521,7 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
 
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
-    etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
     self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
   def _doTakeover(self):
@@ -541,9 +538,9 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     # Check that there is an export, import and frozen instance and get their new partition IDs
     import_id = self.import_id
     export_id = self.export_id
-    new_export_id = self._getPartitionId('export')
-    new_import_id = self._getPartitionId('import')
-    new_frozen_id = self._getPartitionId('frozen')
+    new_export_id = self.getPartitionId('export')
+    new_import_id = self.getPartitionId('import')
+    new_frozen_id = self.getPartitionId('frozen')
 
     # Check that old export instance is now frozen
     self.assertEqual(export_id, new_frozen_id)

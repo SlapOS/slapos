@@ -8,7 +8,7 @@ import pytz
 
 def updateMysql(mysql_upgrade_binary, mysql_binary, mysql_script_file):
   sleep = 0
-  with open(mysql_script_file) as script_file:
+  with open(mysql_script_file, 'r') as script_file:
     mysql_script = script_file.read()
   mysql_list = mysql_binary, '-B'
   mysql_tzinfo_to_sql_list = (

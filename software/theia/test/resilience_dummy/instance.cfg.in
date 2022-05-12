@@ -18,30 +18,33 @@ run = $${:etc}/run
 command = mkdir -p $${:run} $${:srv}
 
 [log-writer]
-recipe = slapos.recipe.template:jinja2
-template = inline:#!/bin/sh
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
   echo "Hello : $(date)" >> $${directory:home}/log.log
-rendered = $${directory:run}/log-writer
+output = $${directory:run}/log-writer
 
 [exporter.exclude]
-recipe = slapos.recipe.template:jinja2
-template = inline:$${directory:home}/exclude
-rendered = $${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template
+inline = $${directory:home}/exclude
+output = $${directory:srv}/exporter.exclude
 
 [runner-import-restore]
-recipe = slapos.recipe.template:jinja2
-template = inline:#!/bin/sh
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
   echo "Hello : $(date)" >> $${directory:home}/runner-import-restore.log
   exit $TEST_RESTORE_STATUS
-rendered = $${directory:srv}/runner-import-restore
+output = $${directory:srv}/runner-import-restore
 
 [backup-identity-script]
-recipe = slapos.recipe.template:jinja2
-template = inline:#!/bin/sh
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
   echo "Custom script"
   for i in "$@"
   do
     echo $(sha256sum $i)
   done
   exit $TEST_BACKUP_STATUS
-rendered = $${directory:srv}/.backup_identity_script
+output = $${directory:srv}/.backup_identity_script
