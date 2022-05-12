@@ -8,8 +8,8 @@ offline = true
 
 [dynamic-template-selenium]
 recipe = slapos.recipe.template:jinja2
-template = ${template-selenium:output}
-rendered = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+url = ${template-selenium:output}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
 filename = instance-selenium.cfg
 context =
     key partition_ipv6 slap-configuration:ipv6-random
@@ -17,7 +17,7 @@ context =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = $${:default}
-default = dynamic-template-selenium:rendered
+default = dynamic-template-selenium:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration

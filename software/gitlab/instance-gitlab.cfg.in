@@ -198,29 +198,29 @@ context-extra =
 
 [gitlab-etc-template]
 <= etc-template
-rendered= ${gitlab:etc}/${:_buildout_section_name_}
+output= ${gitlab:etc}/${:_buildout_section_name_}
 
 [nginx-etc-template]
 <= etc-template
-rendered= ${nginx:etc}/${:_buildout_section_name_}
+output= ${nginx:etc}/${:_buildout_section_name_}
 
 
 [database.yml]
 <= gitlab-etc-template
-template= {{ database_yml_in }}
+url = {{ database_yml_in }}
 context-extra =
     section pgsql                   service-postgresql
 
 [gitconfig]
 <= etc-template
-template= {{ gitconfig_in }}
+url = {{ gitconfig_in }}
 # NOTE put directly into $HOME/ - this way git will pick it up
-rendered= ${directory:home}/.${:_buildout_section_name_}
+output= ${directory:home}/.${:_buildout_section_name_}
 
 [gitlab-shell-config.yml]
 <= etc-template
-template= {{ gitlab_shell_config_yml_in }}
-rendered= ${gitlab-shell:etc}/config.yml
+url = {{ gitlab_shell_config_yml_in }}
+output= ${gitlab-shell:etc}/config.yml
 context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
@@ -232,7 +232,7 @@ context-extra =
 
 [gitlab.yml]
 <= gitlab-etc-template
-template= {{ gitlab_yml_in }}
+url = {{ gitlab_yml_in }}
 context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
@@ -242,16 +242,16 @@ context-extra =
 
 [nginx.conf]
 <= nginx-etc-template
-template= {{ nginx_conf_in }}
+url = {{ nginx_conf_in }}
 context-extra =
     section directory               directory
     section gitlab_workhorse        gitlab-workhorse
     raw     nginx_mime_types        {{ nginx_mime_types }}
-    raw     nginx_gitlab_http_conf  ${nginx-gitlab-http.conf:rendered}
+    raw     nginx_gitlab_http_conf  ${nginx-gitlab-http.conf:output}
 
 [nginx-gitlab-http.conf]
 <= nginx-etc-template
-template= {{ nginx_gitlab_http_conf_in }}
+url = {{ nginx_gitlab_http_conf_in }}
 context-extra =
     section nginx                   nginx
     section gitlab_work             gitlab-work
@@ -259,8 +259,8 @@ context-extra =
 
 [gitaly-config.toml]
 <= etc-template
-template= {{ gitaly_config_toml_in }}
-rendered= ${directory:etc}/${:_buildout_section_name_}
+url = {{ gitaly_config_toml_in }}
+output= ${directory:etc}/${:_buildout_section_name_}
 context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
@@ -269,23 +269,23 @@ context-extra =
 
 [rack_attack.rb]
 <= gitlab-etc-template
-template = {{ rack_attack_rb_in }}
+url = {{ rack_attack_rb_in }}
 
 [resque.yml]
 <= gitlab-etc-template
-template= {{ resque_yml_in }}
+url = {{ resque_yml_in }}
 context-extra =
     section redis                   service-redis
 
 [smtp_settings.rb]
 <= gitlab-etc-template
-template= {{ smtp_settings_rb_in }}
+url = {{ smtp_settings_rb_in }}
 # contains smtp password
 mode    = 0600
 
 [unicorn.rb]
 <= gitlab-etc-template
-template = {{ unicorn_rb_in }}
+url = {{ unicorn_rb_in }}
 context-extra =
     section unicorn                 unicorn
     section directory               directory
@@ -320,8 +320,8 @@ prog    = {{ prog }}
 [gitlab-unicorn-startup]
 recipe  = slapos.recipe.template:jinja2
 mode    = 0755
-template= {{ gitlab_unicorn_startup_in }}
-rendered= ${directory:bin}/${:_buildout_section_name_}
+url = {{ gitlab_unicorn_startup_in }}
+output= ${directory:bin}/${:_buildout_section_name_}
 context =
     raw     bash_bin                {{ bash_bin }}
     raw     gitlab_rake             ${gitlab-rake:wrapper-path}
@@ -397,15 +397,15 @@ tune-command =
     ln -sf ${gitlab-workhorse:secret} .gitlab_workhorse_secret
 # config/
     cd config  &&
-    ln -sf ${unicorn.rb:rendered} unicorn.rb  &&
-    ln -sf ${gitlab.yml:rendered} gitlab.yml  &&
-    ln -sf ${database.yml:rendered} database.yml  &&
-    ln -sf ${resque.yml:rendered} resque.yml  &&
+    ln -sf ${unicorn.rb:output} unicorn.rb  &&
+    ln -sf ${gitlab.yml:output} gitlab.yml  &&
+    ln -sf ${database.yml:output} database.yml  &&
+    ln -sf ${resque.yml:output} resque.yml  &&
     ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
 # config/initializers/
     cd initializers  &&
-    ln -sf ${rack_attack.rb:rendered} rack_attack.rb  &&
-    ln -sf ${smtp_settings.rb:rendered} smtp_settings.rb  &&
+    ln -sf ${rack_attack.rb:output} rack_attack.rb  &&
+    ln -sf ${smtp_settings.rb:output} smtp_settings.rb  &&
 # public/
     cd ../../public  &&
     rm -rf uploads assets  &&
@@ -420,7 +420,7 @@ tune-command =
 software = {{ gitlab_shell_repository_location }}
 
 tune-command =
-    ln -sf ${gitlab-shell-config.yml:rendered}   config.yml  &&
+    ln -sf ${gitlab-shell-config.yml:output}   config.yml  &&
     true
 
 
@@ -497,19 +497,20 @@ log     = ${directory:log}/redis
 [service-redis]
 recipe  = slapos.cookbook:redis.server
 wrapper = ${directory:service}/redis
-promise_wrapper = ${directory:bin}/redis-promise
+promise-wrapper = ${directory:bin}/redis-promise
 
-server_dir  = ${redis:srv}
-config_file = ${directory:etc}/redis.conf
-log_file    = ${redis:log}/redis.log
-pid_file    = ${directory:run}/redis.pid
-use_passwd  = false
-unixsocket  = ${:server_dir}/redis.socket
+server-dir  = ${redis:srv}
+config-file = ${directory:etc}/redis.conf
+log-file    = ${redis:log}/redis.log
+pid-file    = ${directory:run}/redis.pid
+use-passwd  = false
+unixsocket  = ${:server-dir}/redis.socket
 # port = 0 means "don't listen on TCP at all" - listen only on unix socket
 ipv6    = ::1
 port    = 0
 
-server_bin  = {{ redis_binprefix }}/redis-server
+server-bin  = {{ redis_binprefix }}/redis-server
+cli-bin  = {{ redis_binprefix }}/redis-cli
 depend  =
     ${logrotate-entry-redis:recipe}
 
@@ -517,9 +518,7 @@ depend  =
 <= monitor-promise-base
 promise = check_command_execute
 name = promise-redis.py
-config-command = ${service-redis:promise_wrapper}
-
-# NOTE slapos.cookbook:redis.server setups promise automatically
+config-command = ${service-redis:promise-wrapper}
 
 [logrotate-entry-redis]
 <= logrotate-entry-base
@@ -597,7 +596,7 @@ wrapper-path    = ${directory:service}/unicorn
 # NOTE we perform db setup / migrations as part of unicorn startup.
 # Those operations require PG and Redis to be up and running already, that's
 # why we do it here. See gitlab-unicorn-startup for details.
-command-line    = ${gitlab-unicorn-startup:rendered}
+command-line    = ${gitlab-unicorn-startup:output}
 
 depend  =
     ${promise-unicorn:recipe}
@@ -757,7 +756,7 @@ symlink = ${nginx:log}  = ${nginx:srv}/logs
 [service-nginx]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/nginx
-command-line    = {{ nginx_bin }} -p ${nginx:srv} -c ${nginx.conf:rendered}
+command-line    = {{ nginx_bin }} -p ${nginx:srv} -c ${nginx.conf:output}
 depend  =
     ${nginx-symlinks:recipe}
     ${promise-nginx:recipe}
@@ -796,7 +795,7 @@ cron-entries = ${cron:cron-entries}
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitaly
 #command-line    = ${gitlab-work:location}/bin/daemon_with_pidfile ${gitaly:pid}
-command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:rendered}
+command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
 
 environment =
     PATH={{ bundler_1_17_3_dir }}:{{ ruby_location }}/bin:/bin:/usr/bin

@@ -329,6 +329,22 @@ if cpu_model:
   if rgx.match(cpu_model):
     kvm_argument_list.extend(['-cpu', cpu_model])
 
+def handle_image(config, name):
+  with open(config) as fh:
+    image_config = json.load(fh)
+  if image_config['error-amount'] == 0:
+    for image in sorted(image_config['image-list'], key=lambda k: k['image-number']):
+      destination = os.path.join(image_config['destination-directory'], image['destination'])
+      if os.path.exists(destination):
+        kvm_argument_list.extend([
+          '-drive',
+          'file=%s,media=cdrom' % (destination,)
+        ])
+      else:
+       raise ValueError('%s not ready yet' % (name,))
+  else:
+    raise ValueError('%s not ready yet' % (name,))
+
 # Try to connect to NBD server (and second nbd if defined).
 # If not available, don't even specify it in qemu command line parameters.
 # Reason: if qemu starts with unavailable NBD drive, it will just crash.
@@ -350,33 +366,10 @@ else:
   #       Debian installation CDs, rendering it uninstallable
   if boot_image_url_select_json_config:
     # Support boot-image-url-select
-    with open(boot_image_url_select_json_config) as fh:
-      image_config = json.load(fh)
-    if image_config['error-amount'] == 0:
-      for image in sorted(image_config['image-list'], key=lambda k: k['link']):
-        link = os.path.join(image_config['destination-directory'], image['link'])
-        if os.path.exists(link) and os.path.islink(link):
-          kvm_argument_list.extend([
-            '-drive',
-            'file=%s,media=cdrom' % (link,)
-          ])
-    else:
-      raise ValueError('boot-image-url-select not ready yet')
-
+    handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
-    with open(boot_image_url_list_json_config) as fh:
-      image_config = json.load(fh)
-    if image_config['error-amount'] == 0:
-      for image in sorted(image_config['image-list'], key=lambda k: k['link']):
-        link = os.path.join(image_config['destination-directory'], image['link'])
-        if os.path.exists(link) and os.path.islink(link):
-          kvm_argument_list.extend([
-            '-drive',
-            'file=%s,media=cdrom' % (link,)
-          ])
-    else:
-      raise ValueError('boot-image-url-list not ready yet')
+    handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
   # Always add by default the default image
   kvm_argument_list.extend([
       '-drive', 'file=%s,media=cdrom' % default_cdrom_iso

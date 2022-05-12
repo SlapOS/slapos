@@ -51,34 +51,35 @@ storage-path = $${directory:data}/.passwd
 username = admin
 
 [stat-password]
-recipe = slapos.recipe.template:jinja2
-template = inline:
+recipe = slapos.recipe.template
+inline =
   $${admin-password:username}:$${admin-password:passwd}
-rendered = $${directory:data}/passwd
+output = $${directory:data}/passwd
 
 [ice-servers.json]
-recipe = slapos.recipe.template:jinja2
-template = inline:
+recipe = slapos.recipe.template
+inline =
   $${slap-configuration:configuration.ice-servers.json}
-rendered = $${directory:data}/ice-servers.json
+output = $${directory:data}/ice-servers.json
 
 [groups-json]
-recipe = slapos.recipe.template:jinja2
-template = inline:{
+recipe = slapos.recipe.template
+inline =
+  {
     "public":true,
     "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
     "other": [],
     "presenter": [{"username": "", "password": "nexedi"}]
   }
-rendered = $${directory:groups}/public.json
+output = $${directory:groups}/public.json
 
 [galene-wrapper]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 port = 8443
 ip = $${slap-configuration:ipv6-random}
-template =
-  inline:#!/bin/sh
-  
+inline =
+  #!/bin/sh
+
   ulimit -n $(ulimit -Hn)
   exec ${gowork:bin}/galene \
     -static ${galene:location}/static \
@@ -87,7 +88,7 @@ template =
     -data $${directory:data} \
     -http [$${:ip}]:$${:port} \
     -turn ""
-rendered = $${directory:services}/galene
+output = $${directory:services}/galene
 depends =
   $${ice-servers.json:recipe}
   $${groups-json:recipe}

@@ -1,0 +1,22 @@
+[begin] (Fluxbox)
+[encoding] {UTF-8}
+      [exec] (Beremiz IDE) { {{ beremiz_bin }} }
+      [exec] (Terminal) { {{ xterm_bin }} }
+[submenu] (Fluxbox menu)
+      [config] (Configure)
+[submenu] (System Styles) {Choose a style...}
+      [stylesdir] ({{ fluxbox_location }}/share/fluxbox/styles)
+[end]
+[submenu] (User Styles) {Choose a style...}
+      [stylesdir] (~/.fluxbox/styles)
+[end]
+      [workspaces] (Workspace List)
+      [commanddialog] (Fluxbox Command)
+      [reconfig] (Reload config)
+      [restart] (Restart)
+      [exec] (About) {(fluxbox -v; fluxbox -info | sed 1d) | xmessage -file - -center}
+      [separator]
+      [exit] (Exit)
+[end]
+[endencoding]
+[end]

@@ -8,7 +8,7 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = $${:jupyter}
-jupyter = instance-jupyter:rendered
+jupyter = instance-jupyter:output
 RootSoftwareInstance = $${:default}
 
 [slap-configuration]
@@ -22,9 +22,8 @@ cert = $${slap-connection:cert-file}
 [instance-jupyter]
 recipe = slapos.recipe.template:jinja2
 filename = instance-jupyter.cfg.in
-template = ${instance-jupyter:location}/$${:filename}
-rendered = $${buildout:directory}/template.cfg
-mode = 0644
+url = ${instance-jupyter:location}/$${:filename}
+output = $${buildout:directory}/template.cfg
 context =
   key slapparameter_dict slap-configuration:configuration
   raw bin_directory ${buildout:bin-directory}

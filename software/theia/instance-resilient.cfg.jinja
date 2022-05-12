@@ -33,7 +33,7 @@ parts +=
 
 # Ask for the connection parameters of the main theia
 [request-theia]
-return += url username password backend-url
+return += url username password backend-url ipv6
 
 
 # Publish connection parameters of the main theia and resiliency parameters
@@ -43,6 +43,7 @@ url = ${request-theia:connection-url}
 username = ${request-theia:connection-username}
 password = ${request-theia:connection-password}
 backend-url = ${request-theia:connection-backend-url}
+ipv6 = ${request-theia:connection-ipv6}
 monitor-base-url = ${monitor-publish:monitor-base-url}
 monitor-setup-url = ${monitor-publish:monitor-setup-url}
 <= publish-connection-information

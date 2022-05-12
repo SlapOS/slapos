@@ -1,0 +1,49 @@
+#!/bin/sh
+
+set -e
+set -x
+
+#checkout if directory and matomo resources exist
+
+if [ ! -d {{ parameter_dict['document-root'] }}/matomo/config ]; then
+  exit 1;
+fi
+
+if [ ! -f {{ parameter_dict['document-root'] }}/matomo/config/config.ini.php ]; then
+  exit 0;
+fi
+
+trap 'rm -rf "$TMPFILE"' EXIT TERM INT
+
+#we reserve backup folder in a month
+{{ parameter_dict['find-bin'] }}/bin/find {{ parameter_dict['dir-backup'] }} -mtime +30 -type d |{{ parameter_dict['find-bin'] }}/bin/xargs rm -rf
+
+#backup
+
+TMPFILE=$(mktemp -d -p "{{ parameter_dict['dir-backup'] }}")
+
+{{ php_bin }} {{ parameter_dict['document-root'] }}/matomo/console plugin:list > $TMPFILE/plugins_list
+cp -rf {{ parameter_dict['document-root'] }}/matomo/config $TMPFILE/config
+cp -rf {{ parameter_dict['document-root'] }}/matomo/plugins $TMPFILE/plugins
+
+#check if copy-action finish well
+
+if test ! -z "$({{ parameter_dict['diff-bin'] }}/bin/diff -r $TMPFILE/config {{ parameter_dict['document-root'] }}/matomo/config)"; then
+  exit 1
+fi
+
+if test ! -z "$({{ parameter_dict['diff-bin'] }}/bin/diff -r $TMPFILE/plugins {{ parameter_dict['document-root'] }}/matomo/plugins)"; then
+  exit 1
+fi
+
+#check if the file plugins_list has been created
+if [ ! -f $TMPFILE/plugins_list ]; then
+  exit 1
+fi
+
+#if all things go well, change the name of folder with date now
+if [ -d $TMPFILE ]; then
+  mv -f $TMPFILE {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y-%T`
+fi
+
+exit 0

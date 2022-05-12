@@ -2,7 +2,7 @@
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json

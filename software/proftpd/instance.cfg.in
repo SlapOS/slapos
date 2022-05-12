@@ -14,8 +14,7 @@ cert = ${slap-connection:cert-file}
 [instance-template]
 recipe = slapos.recipe.template:jinja2
 filename = ${:_buildout_section_name_}.cfg
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
-mode = 0644
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extensions = jinja2.ext.do
 context =
   key slapparameter_dict slap-configuration:configuration
@@ -28,12 +27,12 @@ context =
 
 [instance-default]
 <= instance-template
-template = {{ instance_default }}
+url = {{ instance_default }}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 # XXX Jerome: what is this override for ?
 override = {{ dumps(override_switch_softwaretype |default) }}
-default = instance-default:rendered
+default = instance-default:output
 # BBB
 RootSoftwareInstance = ${:default}

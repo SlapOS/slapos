@@ -15,8 +15,8 @@ template_launcher = {{ template_launcher_target }}
 
 [instance-html5as]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_instance_html5as_target }}
-rendered = ${buildout:directory}/${:filename}
+url = {{ template_instance_html5as_target }}
+output = ${buildout:directory}/${:filename}
 filename = instance-html5as.cfg
 context =
   section buildout buildout
@@ -27,7 +27,7 @@ context =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
-default = instance-html5as:rendered
+default = instance-html5as:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration

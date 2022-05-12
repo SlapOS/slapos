@@ -95,8 +95,8 @@ bytes = 10
 
 [jupyter-notebook-config]
 recipe = slapos.recipe.template:jinja2
-template = {{ jupyter_config_location }}/{{ jupyter_config_filename }}
-rendered = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
+url = {{ jupyter_config_location }}/{{ jupyter_config_filename }}
+output = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
 context =
   key password jupyter-password:passwd
   raw gcc_location {{ gcc_location }}
@@ -188,8 +188,8 @@ target-directory = ${directory:erp5_kernel_dir}
 
 [kernel-json]
 recipe = slapos.recipe.template:jinja2
-template = {{ kernel_json_location }}/{{ kernel_json_filename }}
-rendered = ${directory:erp5_kernel_dir}/kernel.json
+url = {{ kernel_json_location }}/{{ kernel_json_filename }}
+output = ${directory:erp5_kernel_dir}/kernel.json
 # Use python2.7 executable bin file for kernel config
 context =
   raw python_executable {{ python_executable }}

@@ -21,7 +21,7 @@ Extend monitor template and a monitor-base to parts:
 
     [buildout]
     extends = 
-      ${monitor-template:rendered}
+      ${monitor-template:output}
     parts = 
       ...
       monitor-base
@@ -77,7 +77,7 @@ If you have sub-instances, you should collect the base monitor url from all inst
 
 Also, all monitors of the sub instances need to have same password as the password of the root instance monitor.
 
-NB: You should use double $ (ex: $${monitor-template:rendered}) instead of one $ in your instance template file if it's not a jinja template. See:
+NB: You should use double $ (ex: $${monitor-template:output}) instead of one $ in your instance template file if it's not a jinja template. See:
 - Jinja template file exemple, use one $: https://lab.nexedi.com/nexedi/slapos/blob/master/software/slaprunner/instance-resilient-test.cfg.jinja2
 - Non Jinja template file, use $$: https://lab.nexedi.com/nexedi/slapos/blob/master/software/slaprunner/instance.cfg
 

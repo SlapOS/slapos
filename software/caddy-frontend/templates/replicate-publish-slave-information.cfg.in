@@ -72,6 +72,9 @@ log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
 {%   endif %}
+{%   for frontend_key, frontend_value in frontend_information.iteritems() %}
+{{ frontend_key }} = {{ frontend_value }}
+{%   endfor %}
 {% endfor %}
 
 [buildout]

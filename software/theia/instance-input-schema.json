@@ -15,20 +15,14 @@
       ],
       "default": "running"
     },
-    "embedded-sr": {
-      "title": "Embedded Software URL",
-      "description": "Optional URL of a software to be embedded",
-      "type": "string"
-    },
-    "embedded-sr-type": {
-      "title": "Embedded Software Type",
-      "description": "Type of the optional embedded software",
-      "type": "string"
-    },
-    "embedded-instance-parameters": {
-      "title": "Embedded Instance Parameters",
-      "description": "Parameters for the embedded instance, as a JSON dict",
-      "type": "string"
+    "initial-embedded-instance": {
+      "title": "Initial Embedded Instance Configuration",
+      "description": "One-shot optional JSON preconfiguration for an embedded instance. Only applied once when Theia is instantiated. Changing this option afterward will have no effect.",
+      "type": "string",
+      "examples": [
+        "{\"software-url\": \"~/srv/project/slapos/software/html5as-base/software.cfg\"}",
+        "{\"software-url\": \"~/srv/project/slapos/software/html5as/software.cfg\", \"software-type\": \"replicate\", \"instance-parameters\": {\"replicate-quantity\": 3}}"
+      ]
     },
     "frontend-guid": {
       "title": "Frontend Instance ID",

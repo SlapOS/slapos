@@ -99,25 +99,24 @@ path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 # Render nginx conf
 [nginx_conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_nginx_conf'] }}
-rendered = ${html5as:path_nginx_conf}
-context = 
+url = {{ parameter_list['template_nginx_conf'] }}
+output = ${html5as:path_nginx_conf}
+context =
     section param_html5as html5as
     section param_tempdir tempdirectory
 
 # Render necessary mime types file for nginx
 [mime_types]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_mime_types'] }}
-rendered = ${html5as:path_mime_types}
+recipe = slapos.recipe.template
+url = {{ parameter_list['template_mime_types'] }}
+output = ${html5as:path_mime_types}
 
 # Render the script launching nginx
 [launcher]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_launcher'] }}
-rendered = ${html5as:bin_launcher}
-mode = 700
-context = 
+url = {{ parameter_list['template_launcher'] }}
+output = ${html5as:bin_launcher}
+context =
     section param_html5as html5as
 
 # Simple command to put content in the docroot

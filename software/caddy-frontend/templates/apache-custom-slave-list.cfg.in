@@ -290,8 +290,8 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {#-         Store certificates on fs #}
 [{{ cert_title }}]
 < = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ cert_file }}
+url = {{ empty_template }}
+output = {{ cert_file }}
 extra-context =
     key content {{ cert_title + '-config:value' }}
 {#-         BBB: SlapOS Master non-zero knowledge BEGIN #}
@@ -312,8 +312,8 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 
 [{{cert_title}}]
 < = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ cert_file }}
+url = {{ empty_template }}
+output = {{ cert_file }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
 extra-context =
     key content :cert-content
@@ -330,6 +330,8 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ configuration['port']) }}
 http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
+version-hash = {{ version_hash }}
+node-id = {{ node_id }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps(value) }}
@@ -338,9 +340,9 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 
 [{{ slave_section_title }}]
 < = jinja2-template-base
-rendered = {{ caddy_configuration_directory }}/${:filename}
+output = {{ caddy_configuration_directory }}/${:filename}
 
-template = {{ template_default_slave_configuration }}
+url = {{ template_default_slave_configuration }}
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
 
@@ -428,8 +430,8 @@ pid = {{ caddy_configuration['slave-introspection-pid-file'] }}
 
 [slave-introspection-config]
 <= jinja2-template-base
-template = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
-rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
+url = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
+output = {{ frontend_configuration['slave-introspection-configuration'] }}
 extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_htpasswd slave-htpasswd
@@ -438,7 +440,7 @@ extra-context =
 [slave-introspection]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${slave-introspection-config:rendered}
+  -c ${slave-introspection-config:output}
 
 wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -453,9 +455,9 @@ recipe = slapos.cookbook:publish.serialised
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
 {%- endif %}
 monitor-base-url = {{ monitor_base_url }}
-csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
-backend-client-csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/backend-haproxy-csr_id.txt
-csr_id-certificate = ${get-csr_id-certificate:certificate}
+kedifa-csr-url = ${expose-csr:url}/${expose-csr-link-csr-kedifa:filename}
+backend-client-csr-url = ${expose-csr:url}/${expose-csr-link-csr-backend-haproxy:filename}
+csr-certificate = ${expose-csr-certificate-get:certificate}
 {%-   set furled = furl_module.furl(backend_haproxy_configuration['statistic-frontend-secure_access']) %}
 {%-   do furled.set(username = backend_haproxy_configuration['statistic-username']) %}
 {%-   do furled.set(password = backend_haproxy_configuration['statistic-password']) %}
@@ -463,6 +465,8 @@ csr_id-certificate = ${get-csr_id-certificate:certificate}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
 {%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
+{#-   sort_keys are important in order to avoid shuffling parameters on each run #}
+node-information-json = {{ json_module.dumps(node_information, sort_keys=True) }}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
@@ -487,18 +491,18 @@ update-command = ${:command}
 [kedifa-updater-mapping]
 recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_configuration['kedifa-updater-mapping-file'] }}
-template = inline:
+inline =
 {%- for mapping in kedifa_updater_mapping %}
   {{ mapping[0] }} {{ mapping[1] }} {{ mapping[2] }}
 {%- endfor %}
 
-rendered = ${:file}
+output = ${:file}
 
 ##<Backend haproxy>
 [backend-haproxy-configuration]
 < = jinja2-template-base
-template = {{ template_backend_haproxy_configuration }}
-rendered = ${backend-haproxy-config:file}
+url = {{ template_backend_haproxy_configuration }}
+output = ${backend-haproxy-config:file}
 backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
 extra-context =
   key backend_slave_list :backend_slave_list
@@ -513,23 +517,26 @@ global-ipv6 = ${slap-configuration:ipv6-random}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
+version-hash = {{ version_hash }}
+node-id = {{ node_id }}
 
-[store-backend-haproxy-csr_id]
+[template-expose-csr-link-csr]
 recipe = plone.recipe.command
-
-csr_id_path = {{ directory['csr_id'] }}/backend-haproxy-csr_id.txt
-csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
-
 stop-on-error = False
 update-command = ${:command}
+csr_path = {{ directory['expose-csr'] }}/${:filename}
 command =
-  {{ software_parameter_dict['bin_directory'] }}/caucase \
-    --ca-url {{ backend_haproxy_configuration['caucase-url'] }} \
-    --ca-crt {{ backend_haproxy_configuration['cas-ca-certificate'] }} \
-    --crl {{ backend_haproxy_configuration['crl'] }} \
-    --mode service \
-    --send-csr {{ backend_haproxy_configuration['csr'] }} > ${:csr_work_path} && \
-  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
+  ln -sf ${:csr} ${:csr_path}
+
+[expose-csr-link-csr-backend-haproxy]
+<= template-expose-csr-link-csr
+filename = backend-haproxy-csr.pem
+csr = {{ backend_haproxy_configuration['csr'] }}
+
+[expose-csr-link-csr-kedifa]
+<= template-expose-csr-link-csr
+filename = kedifa-csr.pem
+csr = {{ kedifa_configuration['csr'] }}
 
 ##<Backend haproxy>
 
@@ -550,32 +557,14 @@ parts +=
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
-    expose-csr_id
-    promise-expose-csr_id-ip-port
+    promise-expose-csr-ip-port
 
 cache-access = {{ cache_access }}
 
-[store-csr_id]
+[expose-csr-certificate]
 recipe = plone.recipe.command
-
-csr_id_path = {{ directory['csr_id'] }}/csr_id.txt
-csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
-
-stop-on-error = False
-update-command = ${:command}
-command =
-  {{ software_parameter_dict['bin_directory'] }}/caucase \
-    --ca-url {{ kedifa_configuration['caucase-url'] }} \
-    --ca-crt {{ kedifa_configuration['cas-ca-certificate'] }} \
-    --crl {{ kedifa_configuration['crl'] }} \
-    --mode service \
-    --send-csr {{ kedifa_configuration['csr'] }} > ${:csr_work_path} && \
-  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
-
-[certificate-csr_id]
-recipe = plone.recipe.command
-certificate = {{ directory['certificate-csr_id'] }}/certificate.pem
-key = {{ directory['certificate-csr_id'] }}/key.pem
+certificate = {{ directory['expose-csr-etc'] }}/certificate.pem
+key = {{ directory['expose-csr-etc'] }}/key.pem
 
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
@@ -583,76 +572,48 @@ update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
     openssl req -new -newkey rsa:2048 -sha256 -subj \
-      "/O={{ expose_csr_id_organization }}/OU={{ expose_csr_id_organizational_unit }}/CN=${slap-configuration:ipv6-random}" \
+      "/O={{ expose_csr_organization }}/OU={{ expose_csr_organizational_unit }}/CN=${slap-configuration:ipv6-random}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
 
-[expose-csr_id-configuration]
+[expose-csr-configuration]
 ip = ${slap-configuration:ipv6-random}
 port = 17001
-key = ${certificate-csr_id:key}
-certificate = ${certificate-csr_id:certificate}
-error-log = {{ directory['log'] }}/expose-csr_id.log
+key = ${expose-csr-certificate:key}
+certificate = ${expose-csr-certificate:certificate}
+error-log = {{ directory['log'] }}/expose-csr.log
+var = {{ directory['expose-csr-var'] }}
+pid = {{ directory['var'] }}/nginx-expose-csr.pid
+root = {{ directory['expose-csr'] }}
+nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
 
-[expose-csr_id-template]
+[expose-csr-template]
 recipe = slapos.recipe.template:jinja2
-var = {{ directory['expose-csr_id-var'] }}
-pid = {{ directory['var'] }}/nginx-expose-csr_id.pid
-rendered = {{ directory['etc'] }}/nginx-expose-csr_id.conf
-template = inline:
-  daemon off;
-  pid ${:pid};
-  error_log ${expose-csr_id-configuration:error-log};
-  events {
-  }
-  http {
-    include {{ software_parameter_dict['nginx_mime'] }};
-    server {
-      server_name_in_redirect off;
-      port_in_redirect off;
-      error_log ${expose-csr_id-configuration:error-log};
-      access_log /dev/null;
-      listen [${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port} ssl;                                                          
-      ssl_certificate ${expose-csr_id-configuration:certificate};
-      ssl_certificate_key ${expose-csr_id-configuration:key};
-      default_type application/octet-stream;
-      client_body_temp_path ${:var} 1 2;
-      proxy_temp_path ${:var} 1 2;
-      fastcgi_temp_path ${:var} 1 2;
-      uwsgi_temp_path ${:var} 1 2;
-      scgi_temp_path ${:var} 1 2;
+output = {{ directory['expose-csr-etc'] }}/nginx.conf
+url = {{ template_expose_csr_nginx_conf }}
+context =
+  section configuration expose-csr-configuration
 
-      location / {
-        alias {{ directory['csr_id'] }}/;
-        autoindex off;
-        sendfile on;
-        sendfile_max_chunk 1m;
-      }
-    }
-  }
-
-[promise-expose-csr_id-ip-port]
+[promise-expose-csr-ip-port]
 <= monitor-promise-base
 promise = check_socket_listening
-name = expose-csr_id-ip-port-listening.py
-config-host = ${expose-csr_id-configuration:ip}
-config-port = ${expose-csr_id-configuration:port}
+name = expose-csr-ip-port-listening.py
+config-host = ${expose-csr-configuration:ip}
+config-port = ${expose-csr-configuration:port}
 
-[expose-csr_id]
-depends =
-  ${store-csr_id:command}
-  ${store-backend-haproxy-csr_id:command}
+[expose-csr]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${expose-csr_id-template:rendered}
+  -c ${expose-csr-template:output}
+url = https://[${expose-csr-configuration:ip}]:${expose-csr-configuration:port}
 
-wrapper-path = {{ directory['service'] }}/expose-csr_id
+wrapper-path = {{ directory['service'] }}/expose-csr
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-[get-csr_id-certificate]
+[expose-csr-certificate-get]
 recipe = collective.recipe.shelloutput
 commands =
-  certificate = cat ${certificate-csr_id:certificate}
+  certificate = cat ${expose-csr-certificate:certificate}
 
 [promise-logrotate-setup]
 <= monitor-promise-base

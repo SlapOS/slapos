@@ -76,9 +76,8 @@ relay-log = mariadb-relay-bin
 {{x}}innodb_doublewrite = 0
 {{x}}sync_frm = 0
 
-# Force utf8 usage
-character_set_server = utf8mb4
-collation_server = utf8mb4_general_ci
+character_set_server = {{ parameter_dict['character-set-server'] }}
+collation_server = {{ parameter_dict['collation-server'] }}
 skip_character_set_client_handshake
 
 {% if 'ssl-key' in parameter_dict -%}

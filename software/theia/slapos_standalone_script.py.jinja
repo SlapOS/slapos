@@ -1,0 +1,186 @@
+#!{{ python_for_standalone }}
+import contextlib
+import glob
+import json
+import logging
+import os
+import re
+import signal
+import socket
+import subprocess
+import sys
+import time
+
+import slapos.slap.standalone
+
+from slapos.util import unicode2str
+
+
+logging.basicConfig(format="[%(asctime)s] %(message)s", level=logging.DEBUG)
+
+
+REQUEST_SCRIPT_RAW_TEMPLATE = """{{ request_script_template }}"""
+
+{%  raw -%}
+REQUEST_SCRIPT_TEMPLATE = re.sub(
+  r"{{\s*(\w+)\s*}}",
+  r"{\1}",
+  REQUEST_SCRIPT_RAW_TEMPLATE,
+)
+{%- endraw %}
+
+REQUEST_SCRIPT_HEADER_TEXT = """
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# This script is generated once by your Theia's SlapOS Standalone service.  #
+#                                                                           #
+# It was used to pre-request an instance inside Theia's embedded SlapOS     #
+# according to the preconfiguration parameters given to your Theia.         #
+#                                                                           #
+# It will not be overwritten or recreated.                                  #
+# It will not be launched automatically.                                    #
+#                                                                           #
+# You can edit it and run it to modify your embedded instance.              #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+""".strip()
+
+
+def signal_handler(signum, frame):
+  logging.info("Signal %d received", signum)
+  sys.exit()
+
+
+@contextlib.contextmanager
+def setupStandalone():
+  partition_forward_configuration = (
+    slapos.slap.standalone.PartitionForwardAsPartitionConfiguration(
+      master_url={{ repr(slap_connection['server-url']) }},
+      computer={{ repr(slap_connection['computer-id']) }},
+      partition={{ repr(slap_connection['partition-id']) }},
+      cert={{ repr(slap_connection['cert-file']) }},
+      key={{ repr(slap_connection['key-file']) }},
+      software_release_list=(
+        'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg',
+      ),
+    ),
+  )
+  shared_parts = {{ repr(shared_part_list) }}
+  shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
+  standalone = slapos.slap.standalone.StandaloneSlapOS(
+    {{ repr(slapos_standalone_config['base-directory']) }},
+    {{ repr(slapos_standalone_config['ipv4']) }},
+    {{ slapos_standalone_config['port'] }},
+    computer_id={{ repr(slapos_standalone_config['computer-id']) }},
+    shared_part_list=shared_part_list,
+    software_root={{ repr(slapos_standalone_config['software-root']) }},
+    instance_root={{ repr(slapos_standalone_config['instance-root']) }},
+    partition_forward_configuration=partition_forward_configuration,
+    slapos_bin={{ repr(slapos_standalone_config['slapos-bin']) }},
+    local_software_release_root={{ repr(slapos_standalone_config['local-software-release-root']) }},
+  )
+  standalone.start()
+  try:
+    partition_count = 20
+    logging.info("Standalone SlapOS: Formatting %d partitions", partition_count)
+    standalone.format(partition_count, {{ repr(slapos_standalone_config['ipv4']) }}, {{ repr(slapos_standalone_config['ipv6']) }})
+    logging.info("Standalone SlapOS for computer `%s` started", {{ repr(slapos_standalone_config['computer-id']) }})
+    # Run instance at least once, to start the supervisor managing instances.
+    try:
+      standalone.waitForInstance(max_retry=0)
+    except slapos.slap.standalone.SlapOSNodeCommandError as e:
+      logging.info("Error instanciating: {}".format(e))
+
+    yield standalone
+
+  finally:
+    logging.info("Stopping standalone subsystem")
+    standalone.stop()
+    logging.info("Exiting")
+
+
+def parseEmbeddedInstanceConfig(config_json_file):
+  with open(config_json_file) as f:
+    try:
+      config = json.load(f)
+    except json.JSONDecodeError:
+      logging.error("%s is not valid JSON", config_json_file)
+      raise
+  assert(isinstance(config, dict))
+  if config:
+    software_url = unicode2str(config['software-url'])
+    software_type = config.get('software-type')
+    instance_parameters = config.get('instance-parameters')
+    assert(isinstance(software_url, str))
+    if software_type:
+      software_type = unicode2str(software_type)
+      assert(isinstance(software_type, str))
+    if instance_parameters:
+      assert(isinstance(instance_parameters, dict))
+    return software_url, software_type, instance_parameters
+
+
+def createRequestScript(software_url, software_type, instance_parameters):
+  # Generate request script
+  request_script_path = {{ repr(request_script_path) }}
+  parameters_file_path = {{ repr(parameters_file_path) }}
+
+  request_options = "embedded_instance " + software_url
+  if software_type:
+    request_options += ' --type ' + software_type
+  if instance_parameters:
+    with open(parameters_file_path, 'w') as f:
+      json.dump(instance_parameters, f)
+    request_options += ' --parameters-file ' + parameters_file_path
+
+  with open(request_script_path, 'w') as f:
+    f.write(REQUEST_SCRIPT_TEMPLATE.format(
+      header_text = REQUEST_SCRIPT_HEADER_TEXT,
+      software_url = software_url,
+      request_options = request_options,
+    ))
+    f.write("\n")
+    os.fchmod(f.fileno(), 0o755)
+
+  return request_script_path
+
+
+def main():
+  signal.signal(signal.SIGTERM, signal_handler)
+
+  with setupStandalone() as standalone:
+
+    config_json_file = {{ repr(embedded_instance_config) }}
+    done_file = config_json_file + '.done'
+
+    if not os.path.exists(done_file):
+      with open(done_file, 'w'): pass
+      try:
+        config = parseEmbeddedInstanceConfig(config_json_file)
+      except Exception:
+        logging.info("Failed to parse embedded instance config", exc_info=True)
+        config = None
+      if config:
+        try:
+          request_script_path = createRequestScript(*config)
+          logging.info("Calling %s", request_script_path)
+          exitcode = subprocess.call((request_script_path,), env={
+            'HOME': {{ repr(home_path) }},
+            'PATH': os.path.dirname(standalone._slapos_bin),
+            'SLAPOS_CONFIGURATION': standalone._slapos_config,
+            'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config,
+          })
+          with open({{ repr(embedded_request_exitcode_file) }}, 'w') as f:
+            f.write(str(exitcode))
+        except Exception:
+          logging.info("Failed to request embedded instance", exc_info=True)
+
+    s = socket.socket(socket.AF_UNIX)
+
+    s.bind({{ repr('\0' + slapos_standalone_config['abstract-socket-path']) }})
+    s.listen(5)
+    logging.info("Standalone SlapOS ready")
+
+    while True:
+      s.accept()[0].close()
+
+
+main()

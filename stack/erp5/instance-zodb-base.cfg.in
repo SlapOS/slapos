@@ -4,7 +4,7 @@
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 
 {% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
-{% for name, zodb in zodb_dict.iteritems() -%}
+{% for name, zodb in six.iteritems(zodb_dict) -%}
 {%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
 {%   if zodb['type'] == 'zeo' -%}
 {%     do storage_dict.update(zeo_dict.get(name, ())) -%}

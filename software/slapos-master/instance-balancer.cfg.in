@@ -17,7 +17,6 @@ per partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 {{ caucase.updater(
      prefix='caucase-updater',
@@ -104,16 +103,16 @@ ip = {{ ipv4 }}
 
 [haproxy-cfg]
 < = jinja2-template-base
-template = {{ parameter_dict['template-haproxy-cfg'] }}
-rendered = ${directory:etc}/haproxy.cfg
+url = {{ parameter_dict['template-haproxy-cfg'] }}
+output = ${directory:etc}/haproxy.cfg
 context = section parameter_dict haproxy-cfg-parameter-dict
 extensions = jinja2.ext.do
 
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
-command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
-hash-files = ${haproxy-cfg:rendered}
+command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:output}"
+hash-files = ${haproxy-cfg:output}
 
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt
@@ -126,7 +125,7 @@ crl = ${directory:apache-conf}/crl.pem
 
 [simplefile]
 < = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
+inline = {{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
 {%   set content_section_name = section_name ~ '-content' -%}
@@ -135,7 +134,7 @@ content = {{ dumps(content) }}
 
 [{{  section(section_name) }}]
 < = simplefile
-rendered = {{ file_path }}
+output = {{ file_path }}
 context = key content {{content_section_name}}:content
 mode = {{ mode }}
 {%- endmacro %}
@@ -143,8 +142,8 @@ mode = {{ mode }}
 
 [apache-ssl]
 {% if ssl_parameter_dict.get('key') -%}
-key = ${apache-ssl-key:rendered}
-cert = ${apache-ssl-cert:rendered}
+key = ${apache-ssl-key:output}
+cert = ${apache-ssl-cert:output}
 {{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
 {{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
 {% else %}
@@ -175,19 +174,19 @@ crl = ${apache-conf-ssl:crl}
 
 {% if shared_ca_path -%}
 shared-ca-cert = {{ shared_ca_path }}/cacert.pem
-shared-crl = {{ shared_ca_path }}/crl 
+shared-crl = {{ shared_ca_path }}/crl
 {%- endif %}
 
 [apache-conf]
 < = jinja2-template-base
-template = {{ parameter_dict['template-apache-conf'] }}
-rendered = ${directory:apache-conf}/apache.conf
+url = {{ parameter_dict['template-apache-conf'] }}
+output = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict
 
 [{{ section('apache') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/apache
-command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:output}" -DFOREGROUND
 wait-for-files =
   ${apache-conf-ssl:cert}
   ${apache-conf-ssl:key}
@@ -262,8 +261,8 @@ apachedex = ${monitor-directory:private}/apachedex
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 < = jinja2-template-base
-template = {{ 'inline:{{ "${directory:log}/**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+inline = {{ '{{ "${directory:log}/**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:cron.d
@@ -281,9 +280,9 @@ command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_di
 command = generate-apachedex-report
 
 [monitor-apachedex-report-config]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:etc}/${:_buildout_section_name_}
-template = inline:
+recipe = slapos.recipe.template
+output = ${directory:etc}/${:_buildout_section_name_}
+inline =
   {% for line in slapparameter_dict['apachedex-configuration'] %}
     {# apachedex config files use shlex.split, so we need to quote the arguments. #}
     {# BBB: in python 3 we can use shlex.quote instead. #}
@@ -292,7 +291,7 @@ template = inline:
 
 [apachedex-parameters]
 apache-log-list = ${apache-conf-parameter-dict:access-log}
-configuration = ${monitor-apachedex-report-config:rendered}
+configuration = ${monitor-apachedex-report-config:output}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]

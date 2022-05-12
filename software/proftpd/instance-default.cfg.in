@@ -38,9 +38,8 @@ ssh-authorized-keys-dir = ${:etc}/authorized_keys/
 
 [config-file]
 recipe = slapos.recipe.template:jinja2
-template = {{ software_parts_directory }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
-rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
-mode = 0644
+url = {{ software_parts_directory }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
+output = ${directory:etc}/${:_buildout_section_name_}.cfg
 extensions = jinja2.ext.do
 
 [proftpd-userinfo]
@@ -69,7 +68,7 @@ ban-log=${directory:log}/proftpd-ban.log
 ssh-host-rsa-key=${ssh-host-rsa-key:output}
 ssh-host-dsa-key=${ssh-host-dsa-key:output}
 ssh-host-ecdsa-key=${ssh-host-ecdsa-key:output}
-ssh-authorized-key = ${ssh-authorized-keys:rendered}
+ssh-authorized-key = ${ssh-authorized-keys:output}
 ban-table=${directory:srv}/proftpd-ban-table
 control-socket=${directory:var}/proftpd.sock
 auth-user-file=${auth-user-file:output}
@@ -77,14 +76,14 @@ authentication-url = {{ slapparameter_dict.get('authentication-url', '')}}
 
 recipe = slapos.cookbook:wrapper
 command-line =
-   {{ proftpd_bin }} --nodaemon --config ${proftpd-config-file:rendered}
+   {{ proftpd_bin }} --nodaemon --config ${proftpd-config-file:output}
 wrapper-path = ${directory:service}/proftpd
 
 [ssh-authorized-keys]
-rendered = ${directory:ssh-authorized-keys-dir}/authorized_keys
+output = ${directory:ssh-authorized-keys-dir}/authorized_keys
 {% if slapparameter_dict.get('ssh-key') %}
-recipe = slapos.recipe.template:jinja2
-template = inline:{{ slapparameter_dict['ssh-key'] | indent }}
+recipe = slapos.recipe.template
+inline ={{ slapparameter_dict['ssh-key'] | indent }}
 {% endif %}
 
 [proftpd-listen-promise]

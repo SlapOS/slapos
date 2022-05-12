@@ -25,7 +25,7 @@ recipe = slapos.cookbook:cron.d
 name = network-bench-test
 frequency = */10 * * * *
 # skip to not fill cron log file.
-# command = {{ buildout_bin }}/networkbench ${network-bench-configuration:rendered} ${monitor-directory:monitor-log}
+# command = {{ buildout_bin }}/networkbench ${network-bench-configuration:output} ${monitor-directory:monitor-log}
 command = true
 
 
@@ -41,9 +41,8 @@ autocreate = true
 
 [network-bench-configuration]
 recipe = slapos.recipe.template:jinja2
-template = {{ network_benck_cfg_output }}
-rendered = ${monitor-directory:etc}/network_bench.cfg
-mode = 0744
+url = {{ network_benck_cfg_output }}
+output = ${monitor-directory:etc}/network_bench.cfg
 context =
   key slapparameter_dict slap-configuration:configuration
 

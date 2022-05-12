@@ -19,11 +19,10 @@ parts +=
 # Create the exporter executable, which is a simple shell script
 [exporter]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_kvm_export }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
+url = {{ template_kvm_export }}
+output = ${directory:bin}/${slap-parameter:namebase}-exporter
 # Resilient stack wants a "wrapper" parameter
-wrapper = ${:rendered}
-mode = 0700
+wrapper = ${:output}
 {%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
 {%- if disk_type == "virtio" %}
 device = virtio0

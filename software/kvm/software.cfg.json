@@ -25,15 +25,6 @@
       "response": "instance-kvm-output-schema.json",
       "index": 2
     },
-    "kvm-cluster-simplified": {
-      "title": "Basic Cluster",
-      "description": "Simplified Schema for Cluster KVM",
-      "software-type": "kvm-cluster",
-      "serialisation": "json-in-xml",
-      "request": "instance-kvm-cluster-simplified-input-schema.json",
-      "response": "instance-kvm-output-schema.json",
-      "index": 3
-    },
     "nbd": {
       "title": "NBD Server",
       "description": "Simple NBD server where you can upload one image. This is a one-time server. Create another server if you want to change the image.",

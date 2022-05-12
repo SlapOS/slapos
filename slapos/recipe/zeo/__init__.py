@@ -57,7 +57,7 @@ class Recipe(GenericBaseRecipe):
     # Prepare all filestorages
     filestorage_snippet = ""
     storage = self.options['storage']
-    if isinstance(storage, basestring):
+    if isinstance(storage, str):
       for storage_definition in storage.splitlines():
         storage_definition = storage_definition.strip()
         if not storage_definition:

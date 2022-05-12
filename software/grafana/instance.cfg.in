@@ -67,9 +67,8 @@ common-name = ${:_buildout_section_name_}
 
 [config-file]
 recipe = slapos.recipe.template:jinja2
-template = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
-rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
-mode = 0644
+url = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
+output = ${directory:etc}/${:_buildout_section_name_}.cfg
 extensions = jinja2.ext.do
 
 [check-port-listening-promise]
@@ -100,7 +99,7 @@ database = telegraf
 
 recipe = slapos.cookbook:wrapper
 command-line =
-   nice -19 chrt --idle 0 ionice -c3 {{ influxd_bin }} -config ${influxdb-config-file:rendered}
+   nice -19 chrt --idle 0 ionice -c3 {{ influxd_bin }} -config ${influxdb-config-file:output}
 wrapper-path = ${directory:service}/influxdb
 
 [influxdb-config-file]
@@ -158,7 +157,7 @@ ssl-cert-file = ${grafana-certificate:cert-file}
 
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ grafana_bin }} -config ${grafana-config-file:rendered} -homepath {{ grafana_homepath }}
+    {{ grafana_bin }} -config ${grafana-config-file:output} -homepath {{ grafana_homepath }}
 wrapper-path = ${directory:service}/grafana
 
 [grafana-certificate]
@@ -178,11 +177,11 @@ context =
   section apache_frontend apache-frontend
   key slapparameter_dict slap-configuration:configuration
 depends =
-  ${grafana-provisioning-config-file:rendered}
+  ${grafana-provisioning-config-file:output}
 
 [grafana-provisioning-config-file]
 <= config-file
-rendered = ${grafana:provisioning-datasources-dir}/datasource.yaml
+output = ${grafana:provisioning-datasources-dir}/datasource.yaml
 context =
   section influxdb influxdb
   section loki loki
@@ -199,7 +198,7 @@ recipe = slapos.cookbook:wrapper
 extra-config-dir = ${directory:telegraf-extra-config-dir}
 # telegraf needs influxdb to be already listening before starting
 command-line =
-   bash -c '${influxdb-listen-promise:path} && nice -19 chrt --idle 0 ionice -c3 {{ telegraf_bin }} --config ${telegraf-config-file:rendered} --config-directory ${:extra-config-dir}'
+   bash -c '${influxdb-listen-promise:path} && nice -19 chrt --idle 0 ionice -c3 {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
 wrapper-path = ${directory:service}/telegraf
 
 [telegraf-config-file]
@@ -212,7 +211,7 @@ context =
 [loki]
 recipe = slapos.cookbook:wrapper
 command-line =
-   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ loki_bin }} -config.file=${loki-config-file:rendered}'
+   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ loki_bin }} -config.file=${loki-config-file:output}'
 wrapper-path = ${directory:service}/loki
 
 storage-boltdb-dir = ${directory:loki-storage-boltdb-dir}
@@ -235,7 +234,7 @@ url = ${loki:url}/ready
 [promtail]
 recipe = slapos.cookbook:wrapper
 command-line =
-   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ promtail_bin }} -config.file=${promtail-config-file:rendered}'
+   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ promtail_bin }} -config.file=${promtail-config-file:output}'
 wrapper-path = ${directory:service}/promtail
 
 dir = ${directory:promtail-dir}
