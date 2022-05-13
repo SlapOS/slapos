@@ -377,12 +377,10 @@ recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  {{ "{% raw %}" }}
-  {% raw %}
+  {% raw -%}
   export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
   export THEIA_MINI_BROWSER_HOST_PATTERN='{{hostname}}'
-  {% endraw %}
-  {{ "{% endraw %}" }}
+  {% endraw -%}
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
   export THEIA_SHELL=$${theia-shell:output}
