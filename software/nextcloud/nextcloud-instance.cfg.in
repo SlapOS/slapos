@@ -62,6 +62,7 @@ php.max_execution_time = 1800
 php.max_input_time = 3600
 php.output_buffering = 'Off'
 php.max_file_uploads = 100
+php.apc.enable_cli = 1
 
 #SMTP settings
 mail.from = ${slap-parameter:instance.mail-from}
@@ -81,10 +82,17 @@ turn-secret = ${slap-parameter:instance.turn-secret}
 [nextcloud-install.sh]
 recipe = slapos.recipe.template:jinja2
 url = {{ nextcloud_install_sh }}
-output = ${directory:scripts}/nextcloud-install
+output = ${directory:bin}/nextcloud-install
 context =
   section parameter_dict   instance-parameter
   section nextcloud_apps   nextcloud-apps
+
+[nextcloud-install]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/nextcloud-install
+command-line = ${nextcloud-install.sh:output}
+wait-for-files =
+  ${service-redis:unixsocket}
 depends =
   ${service-redis:recipe}
   ${redis-promise:recipe}
