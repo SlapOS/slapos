@@ -101,11 +101,11 @@ bootstrap_machine_param_dict = {
     "disk-size": 50,
     # Debian 10 image
     "virtual-hard-drive-url":
-    "http://shacache.org/shacache/9d3e6d017754fdd08e5ecf78093dec27fd792fb183d"
-    "f6146006adf003b6f4b98c0388d5a11566627101f7855d77f60e3dd4ba7ce66850f4a8f0"
-    "30573b904d5ab",
-    "virtual-hard-drive-md5sum": "b7928d7b0a2b5e2888f5ddf68f5fe422",
-    "virtual-hard-drive-gzipped": False,
+    "http://shacache.org/shacache/55a564c81334ddd42cd8ae064667d30e30a42491be8"
+    "db99cac894605dab36dad6cfeb5acb061a29f827734d5f9491a7afb66da8bed79c3d716f"
+    "76f6070fd81ac",
+    "virtual-hard-drive-md5sum": "aa236d4bf67980563b8c334e52b445ff",
+    "virtual-hard-drive-gzipped": True,
     "hard-drive-url-check-certificate": False,
     "use-tap": True,
     "use-nat": True,
