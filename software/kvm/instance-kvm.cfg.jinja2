@@ -819,7 +819,9 @@ blank-line =
 
 [publish-connection-information]
 <= monitor-publish
-recipe = slapos.cookbook:publish.serialised
+# even if serialisation is json-in-xml, still use xml for publish, as
+# SlapOS Master implementation does not support it
+recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
