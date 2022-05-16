@@ -99,13 +99,12 @@ bootstrap_machine_param_dict = {
     "ram-size": 4096,
     "cpu-count": 2,
     "disk-size": 50,
-    # Debian 10 image
     "virtual-hard-drive-url":
-    "http://shacache.org/shacache/9d3e6d017754fdd08e5ecf78093dec27fd792fb183d"
-    "f6146006adf003b6f4b98c0388d5a11566627101f7855d77f60e3dd4ba7ce66850f4a8f0"
-    "30573b904d5ab",
-    "virtual-hard-drive-md5sum": "b7928d7b0a2b5e2888f5ddf68f5fe422",
-    "virtual-hard-drive-gzipped": False,
+    "http://shacache.org/shacache/a869d906fcd0af5091d5104451a2b86736485ae38e5"
+    "c4388657bb957c25593b98378ed125f593683e7fda7e0dd485a376a0ce29dcbaa8d60766"
+    "e1f67a7ef7b96",
+    "virtual-hard-drive-md5sum": "9ffd690a5fcb4fa56702f2b99183e493",
+    "virtual-hard-drive-gzipped": True,
     "hard-drive-url-check-certificate": False,
     "use-tap": True,
     "use-nat": True,
@@ -424,8 +423,6 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
 class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'adb'
   expected_partition_with_monitor_base_url_count = 1
-  # as few gigabytes are being downloaded, wait a bit longer
-  instance_max_retry = 20
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -526,8 +523,6 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akcb'
   expected_partition_with_monitor_base_url_count = 3
-  # as few gigabytes are being downloaded, wait a bit longer
-  instance_max_retry = 20
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -539,12 +534,11 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
       "kvm-partition-dict": {
           "test-machine1": bootstrap_machine_param_dict,
           "test-machine2": dict(bootstrap_machine_param_dict, **{
-              # Debian 9 image
               "virtual-hard-drive-url":
-              "http://shacache.org/shacache/93aeb72a556fe88d9889ce16558dfead"
-              "57a3c8f0a80d0e04ebdcd4a5830dfa6403e3976cc896b8332e74f202fccbd"
-              "a508930046a78cffea6e0e29d03345333cc",
-              "virtual-hard-drive-md5sum": "cdca79619ba987c40b98a8e31d281e4a",
+              "http://shacache.org/5bdc95ea3f8ca40ff4fb8d086776e39387a68e91f"
+              "76b1a5f883dfc33fa13cf1ee71c7d218a4e9401f56519a352791272ada4a5"
+              "c334b3ca38a32c0bcacb6838e2",
+              "virtual-hard-drive-md5sum": "deaf751a31dd6aec320d67c75c88c2e1",
               "virtual-hard-drive-gzipped": True,
           })
       }
