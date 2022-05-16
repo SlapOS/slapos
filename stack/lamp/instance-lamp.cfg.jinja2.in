@@ -3,6 +3,8 @@
 {% set ipv6 = (ipv6 | list)[0] -%}
 {% set monitor_base_url_dict = {} -%}
 {% set mariadb_dict = {} -%}
+{% set db_list = [] -%}
+{% set db_info = {} -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -37,8 +39,12 @@ return =
 {% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
 {% do monitor_base_url_dict.__setitem__('apache', '${request-apache:connection-monitor-base-url}') -%}
 
+{% do db_info.__setitem__('name', app_name ) -%}
+{% do db_info.__setitem__('user', app_user ) -%}
+{% do db_info.__setitem__('password', app_passwd ) -%}
+{% do db_list.append(db_info) -%}
 
-{% do mariadb_dict.__setitem__('database-list', [{'name': 'nextcloud', 'user': 'nextcloud', 'password': 'insecure'}]) -%}
+{% do mariadb_dict.__setitem__('database-list', db_list) -%}
 {% do mariadb_dict.__setitem__('test-database-amount', 0) -%}
 {% do mariadb_dict.__setitem__('tcpv4-port', 2099) -%}
 {% do mariadb_dict.__setitem__('max-slowqueries-threshold', 1000) -%}
@@ -56,7 +62,7 @@ sla-computer_guid = {{ dumps(slapparameter_dict.get('mariadb-computer-guid', '')
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-return = 
+return =
   database-list
   monitor-base-url
 
@@ -92,7 +98,7 @@ recipe = slapos.cookbook:publish-early
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
 
@@ -120,7 +126,7 @@ parts =
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
- 
+
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
