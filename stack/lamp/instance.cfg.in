@@ -69,6 +69,9 @@ filename = template-apache-php.cfg
 extra-context =
   key custom_application_template application-parameters:custom-application-template
   section parameter_dict dynamic-template-apache-php-parameters
+  raw app_name {{ db_name }}
+  raw app_user {{ db_user }}
+  raw app_passwd {{ db_password }}
 
 [dynamic-template-mariadb-parameters]
 bash = {{ bash_location }}
