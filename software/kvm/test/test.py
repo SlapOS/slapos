@@ -120,7 +120,7 @@ bootstrap_machine_param_dict = {
 
 
 class KvmMixin(object):
-  def getConnectionParameterDict(self):
+  def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
 
@@ -184,7 +184,7 @@ class TestInstance(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'i'
 
   def test(self):
-    connection_parameter_dict = self.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     present_key_list = []
     assert_key_list = [
      'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
@@ -357,7 +357,7 @@ class MonitorAccessMixin(KvmMixin):
       db.close()
 
   def test_access_monitor(self):
-    connection_parameter_dict = self.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     monitor_setup_url = connection_parameter_dict['monitor-setup-url']
     monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
 
@@ -398,7 +398,7 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
   expected_partition_with_monitor_base_url_count = 1
 
   def test(self):
-    connection_parameter_dict = self.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -425,7 +425,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
     }
 
   def test(self):
-    connection_parameter_dict = self.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
 
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
@@ -462,7 +462,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
       bootstrap_common_param_dict, **bootstrap_machine_param_dict))}
 
   def test(self):
-    connection_parameter_dict = self.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
 
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
@@ -498,7 +498,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
     })}
 
   def test(self):
-    connection_parameter_dict = self.getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -531,8 +531,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     })}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -578,8 +577,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
     }))}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
     result = requests.get(
       connection_parameter_dict['test-machine1-url'], verify=False)
     self.assertEqual(
@@ -1311,8 +1309,7 @@ class TestNatRules(InstanceTestCase):
     }
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDictJson()
 
     self.assertIn('nat-rule-port-tcp-100', connection_parameter_dict)
     self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
