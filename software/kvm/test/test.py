@@ -531,8 +531,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     })}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDict()
     result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
@@ -578,8 +577,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
     }))}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDict()
     result = requests.get(
       connection_parameter_dict['test-machine1-url'], verify=False)
     self.assertEqual(
@@ -1311,8 +1309,7 @@ class TestNatRules(InstanceTestCase):
     }
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    connection_parameter_dict = self.getConnectionParameterDict()
 
     self.assertIn('nat-rule-port-tcp-100', connection_parameter_dict)
     self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
