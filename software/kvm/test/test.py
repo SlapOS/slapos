@@ -425,7 +425,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'adb'
   expected_partition_with_monitor_base_url_count = 1
   # as few gigabytes are being downloaded, wait a bit longer
-  instance_max_retry = 100
+  instance_max_retry = 20
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -527,7 +527,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akcb'
   expected_partition_with_monitor_base_url_count = 3
   # as few gigabytes are being downloaded, wait a bit longer
-  instance_max_retry = 100
+  instance_max_retry = 20
 
   @classmethod
   def getInstanceSoftwareType(cls):
