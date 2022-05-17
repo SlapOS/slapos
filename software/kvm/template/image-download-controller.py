@@ -68,13 +68,17 @@ if __name__ == "__main__":
     destination = os.path.join(
       config['destination-directory'], image['destination'])
     if os.path.exists(destination):
-      if md5Checksum(destination) == image['md5sum']:
-        print('INF: %s : already downloaded' % (image['url'],))
-        continue
-      else:
-        print('INF: %s : Removed, as expected checksum does not match %s' % (
-          image['url'], image['md5sum']))
-        os.remove(destination)
+      # Note: There is no need to recheck md5sum here
+      #       The image name is its md5sum, so if it exists, it means it has
+      #       correct md5sum
+      #       Calculating md5sum of big images takes more time than processing
+      #       of the partition and running promises and this leads to endless
+      #       loop of never ending promise failures
+      #       Of course, someone nasty can come to the partition and damage
+      #       this image, but it's another story, and shall not be fixed
+      #       during download phase.
+      print('INF: %s : already downloaded' % (image['url'],))
+      continue
     # key is str, as the dict is dumped to JSON which does not accept tuples
     md5sum_state_key = '%s#%s' % (image['url'], image['md5sum'])
     md5sum_state_amount = md5sum_state_dict.get(md5sum_state_key, 0)
