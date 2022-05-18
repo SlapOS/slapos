@@ -130,7 +130,6 @@ function cli() {
     gotoCoord(latitude, longitude)
     altitude(altitude)
     speed(speed)
-    startPubsub
     pubsubWrite(latitude, longitude, altitude)
     positions
     reboot
@@ -166,6 +165,7 @@ function cli() {
       std.printf("Timeout: ");
       timeout = parseInt(f.getline());
       cmd = checkNumber(timeout, start.bind(null, URL, LOG_FILE));
+      startPubsub();
       break;
 
     case "define":
@@ -261,10 +261,6 @@ function cli() {
       std.printf("Speed: ");
       speed = parseFloat(f.getline());
       cmd = checkNumber(speed, setAirspeed);
-      break;
-
-    case "startPubsub":
-      cmd = startPubsub;
       break;
 
     case "reboot":
