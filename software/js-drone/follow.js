@@ -6,12 +6,6 @@ import {
   arm,
   doParachute,
   getAltitude,
-  getInitialAltitude,
-  getInitialLatitude,
-  getInitialLongitude,
-  getLatitude,
-  getLongitude,
-  getTakeOffAltitude,
   getYaw,
   initPubsub,
   land,
@@ -19,7 +13,7 @@ import {
   loiter,
   start,
   setAltitude,
-  setTargetLatLong,
+  setTargetCoordinates,
   stop,
   stopPubsub,
   takeOffAndWait,
@@ -36,7 +30,9 @@ const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
 const droneIdList = [{{ comma_separated_drone_id_list }}];
 const droneDict = {};
 
-const EPSILON = 105;
+const idToFollow = {{ id_to_follow }}
+
+const ALTITUDE_DIFF = 50;
 const EPSILON_YAW = 6;
 const EPSILON_ALTITUDE = 2;
 const TARGET_YAW = 0;
@@ -48,20 +44,6 @@ function connect() {
   exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
 }
 
-function distance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // meters
-  const la1 = lat1 * Math.PI/180; // la, lo in radians
-  const la2 = lat2 * Math.PI/180;
-  const lo1 = lon1 * Math.PI/180;
-  const lo2 = lon2 * Math.PI/180;
-
-  //haversine formula
-  const sinLat = Math.sin((la2 - la1)/2);
-  const sinLon = Math.sin((lo2 - lo1)/2);
-  const h = sinLat*sinLat + Math.cos(la1)*Math.cos(la2)*sinLon*sinLon
-  return 2*R*Math.asin(Math.sqrt(h));
-}
-
 function exit_on_fail(ret, msg) {
   if(ret) {
     console.log(msg);
@@ -71,8 +53,6 @@ function exit_on_fail(ret, msg) {
 }
 
 function goToAltitude(target_altitude, wait, go) {
-  var altitude;
-
   if(go) {
     exit_on_fail(
       setAltitude(target_altitude),
@@ -126,44 +106,6 @@ function quit() {
     stopPubsub()
 }
 
-function setLatLong(latitude, longitude, target_altitude) {
-  var i;
-  var cur_latitude;
-  var cur_longitude;
-  var d;
-  var altitude;
-
-  if(target_altitude !== 0) {
-    setAltitude(target_altitude, false, true);
-  }
-
-  for(i = 0; i < 3; i+=1) {
-    console.log(`Going to (${latitude}, ${longitude}) from
-                 (${getLatitude()}, ${getLongitude()}`);
-    exit_on_fail(
-      setTargetLatLong(latitude, longitude),
-      `Failed to go to (${latitude}, ${longitude})`
-    );
-    sleep(500);
-  }
-  while(true) {
-    cur_latitude = getLatitude();
-    cur_longitude = getLongitude();
-    d = distance(cur_latitude, cur_longitude, latitude, longitude);
-    console.log(`Waiting for drone to get to destination (${d} m),
-    (${cur_latitude} , ${cur_longitude}), (${latitude}, ${longitude})`);
-    if(d < EPSILON) {
-      sleep(6000);
-      return;
-    }
-    sleep(1000);
-  }
-
-  if(target_altitude !== 0) {
-    goToAltitude(target_altitude, true, false);
-  }
-}
-
 function stopHandler(sign) {
   console.log("received ctrl-c");
   quit();
@@ -185,21 +127,11 @@ function waitForAltitude(target_altitude) {
   var altitude;
 
   var LANDING_ALTITUDE = 150;
-  var INITIAL_ALTITUDE = 210;
-  var HIGH_ALTITUDE = 230;
-  var LAT1 = 45.83055;
-  var LON1 = 13.95279;
-  var LAT2 = 45.82889;
-  var LON2 = 13.95086;
+  var INITIAL_ALTITUDE = 210 + ALTITUDE_DIFF;
 
   if(SIMULATION) {
     LANDING_ALTITUDE = 105;
-    INITIAL_ALTITUDE = 100;
-    HIGH_ALTITUDE = 170;
-    LAT1 = 45.91044;
-    LON1 = 13.59627;
-    LAT2 = 45.90733;
-    LON2 = 13.59704;
+    INITIAL_ALTITUDE = 100 + ALTITUDE_DIFF;
   }
   signal(SIGINT, stopHandler);
   signal(SIGTERM, stopHandler);
@@ -213,11 +145,6 @@ function waitForAltitude(target_altitude) {
     exit_on_fail(arm(), "Failed to arm");
     takeOffAndWait();
     goToAltitude(INITIAL_ALTITUDE + 1, true, true);
-
-    LAT1 = (getInitialLatitude() - 0.00166).toFixed(5);
-    LON1 = (getInitialLongitude() - 0.00193).toFixed(5);
-    LAT2 = (LAT1 - 0.00166).toFixed(5);
-    LON2 = (LON1 - 0.00193).toFixed(5);
   }
 
   do {
@@ -232,12 +159,17 @@ function waitForAltitude(target_altitude) {
   loiter();
   sleep(1000);
 
-  console.log("[DEMO] Going to first point...\n");
-  setLatLong(LAT1, LON1, HIGH_ALTITUDE);
+  console.log("[DEMO] Switching to following mode...\n");
+  while(droneDict[idToFollow].altitude > LANDING_ALTITUDE) {
+    setTargetCoordinates(
+      droneDict[idToFollow].latitude,
+      droneDict[idToFollow].longitude,
+      droneDict[idToFollow].altidute + ALTITUDE_DIFF,
+      0
+    );
+  }
 
-  sleep(30000);
-  console.log("[DEMO] Going to landing coords...\n");
-  setLatLong(LAT2, LON2, 0);
+  console.log("[DEMO] Stop following...\n");
   console.log("[DEMO] Setting altitude...\n");
   goToAltitude(LANDING_ALTITUDE, true, true);
 
