@@ -13,8 +13,7 @@ import {
   setTargetLatLong,
   start,
   stop,
-  stopPublishing,
-  stopSubscribing,
+  stopPubsub,
   reboot,
   takeOff,
   Drone,
@@ -33,8 +32,7 @@ const LOG_FILE = "{{ log_dir }}/mavsdk-log";
 const droneIdList = [{{ comma_separated_drone_id_list }}];
 const droneDict = {};
 
-var publishing = false;
-var subscribing = false;
+var pubsubRunning = false;
 var publishWorker;
 var subscribeWorker;
 
@@ -66,8 +64,8 @@ function publish() {
 }
 
 function quit() {
-  running = false;
-  return 0;
+  stop();
+  quitPubsub();
 }
 
 /*function stopHandler(sign) {
@@ -75,15 +73,11 @@ function quit() {
   quit();
 }*/
 
-function stopPubsub() {
+function quitPubsub() {
   let ret = 0;
-  if(publishing) {
-    ret |= stopPublishing();
-  }
-  if(subscribing) {
-    ret |= stopSubscribing();
-  }
-  return ret;
+  if(pubsubRunning)
+    ret |= stopPubsub();
+    return ret;
 }
 
 function subscribe() {
