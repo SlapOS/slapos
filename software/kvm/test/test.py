@@ -430,6 +430,32 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
       bootstrap_common_param_dict, **bootstrap_machine_param_dict))}
 
   def test(self):
+    # START: mock .slapos-resource with tap.ipv4_addr
+    # needed for netconfig.sh
+    test_partition_slapos_resource_file = os.path.join(
+      self.computer_partition_root_path, '.slapos-resource')
+    path = os.path.realpath(os.curdir)
+    while path != '/':
+      root_slapos_resource_file = os.path.join(path, '.slapos-resource')
+      if os.path.exists(root_slapos_resource_file):
+        break
+      path = os.path.realpath(os.path.join(path, '..'))
+    else:
+      raise ValueError('No .slapos-resource found to base the mock on')
+    with open(root_slapos_resource_file) as fh:
+      root_slapos_resource = json.load(fh)
+    if root_slapos_resource['tap']['ipv4_addr'] == '':
+      root_slapos_resource['tap'].update({
+        "ipv4_addr": "10.0.0.2",
+        "ipv4_gateway": "10.0.0.1",
+        "ipv4_netmask": "255.255.0.0",
+        "ipv4_network": "10.0.0.0"
+      })
+    with open(test_partition_slapos_resource_file, 'w') as fh:
+      json.dump(root_slapos_resource, fh, indent=4)
+    self.slap.waitForInstance(max_retry=10)
+    # END: mock .slapos-resource with tap.ipv4_addr
+
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
 
