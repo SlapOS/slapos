@@ -1,6 +1,6 @@
 /*jslint indent2 */
 
-import { publish } from "{{ qjs_wrapper }}"; //jslint-quiet
+import { runPubsub } from "{{ qjs_wrapper }}"; //jslint-quiet
 import { Worker } from "os";
 
 const PORT = "4840";
@@ -10,9 +10,9 @@ var parent = Worker.parent;
 
 function handle_msg(e) {
   switch(e.data.action) {
-    case "publish":
-      publish(IPV6, PORT, {{ id }});
-      parent.postMessage({ publishing: false});
+    case "run":
+      runPubsub(IPV6, PORT, {{ id }});
+      parent.postMessage({ running: false });
       parent.onmessage = null;
       break;
     default:

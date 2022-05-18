@@ -95,7 +95,7 @@ function land() {
 }
 
 function publish() {
-  worker = new Worker("{{ publish_script }}");
+  worker = new Worker("{{ pubsub_script }}");
   worker.onmessage = function(e) {
     if(!e.data.publishing) {
       worker.onmessage = null;
