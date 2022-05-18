@@ -13,7 +13,7 @@ import {
   getLongitude,
   getTakeOffAltitude,
   getYaw,
-  initSubscription,
+  initPubsub,
   land,
   landed,
   loiter,
@@ -21,8 +21,7 @@ import {
   setAltitude,
   setTargetLatLong,
   stop,
-  stopPublishing,
-  stopSubscribing,
+  stopPubsub,
   takeOffAndWait,
   Drone
 } from "{{ qjs_wrapper }}"; //jslint-quiet
@@ -42,10 +41,8 @@ const EPSILON_YAW = 6;
 const EPSILON_ALTITUDE = 2;
 const TARGET_YAW = 0;
 
-var publishing = false;
-var subscribing = false;
-var publishWorker;
-var subscribeWorker;
+var pubsubRunning = false;
+var pubsubWorker;
 
 function connect() {
   exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
@@ -104,44 +101,29 @@ function land() {
   exit_on_fail(doParachute(2), "Failed to deploy parachute");
 }
 
-function publish() {
-  publishWorker = new Worker("{{ publish_script }}");
-  publishWorker.onmessage = function(e) {
-    if(!e.data.publishing) {
-      publishWorker.onmessage = null;
-    }
+function startPubsub() {
+  pubsubWorker = new Worker("{{ pubsub_script }}");
+  pubsubWorker.onmessage = function(e) {
+    if (!e.data.publishing)
+      pubsubWorker.onmessage = null;
   }
-  publishWorker.postMessage({ action: "publish" });
-  publishing = true;
-  return 0;
-}
 
-function subscribe() {
-  subscribeWorker = new Worker("{{ subscribe_script }}");
-  subscribeWorker.onmessage = function(e) {
-    if(!e.data.subscribing) {
-      subscribeWorker.onmessage = null;
-    }
-  }
-  initSubscription(droneIdList.length);
+  initPubsub(droneIdList.length);
   for (let i = 0; i < droneIdList.length; i++) {
     let id = droneIdList[i]
     droneDict[id] = new Drone(id);
     droneDict[id].init(i);
   }
-  subscribeWorker.postMessage({ action: "subscribe" });
-  subscribing = true;
+
+  pubsubWorker.postMessage({ action: "run" });
+  pubsubRunning = true;
   return 0;
 }
 
 function quit() {
   stop();
-  if(publishing) {
-    stopPublishing();
-  }
-  if(subscribing) {
-    stopSubscribing();
-  }
+  if(pubsubRunning)
+    stopPubsub()
 }
 
 function setLatLong(latitude, longitude, target_altitude) {
@@ -223,8 +205,7 @@ function waitForAltitude(target_altitude) {
   }
   signal(SIGINT, stopHandler);
   signal(SIGTERM, stopHandler);
-  publish();
-  subscribe();
+  startPubsub();
 
   console.log("Will connect to", URL);
 

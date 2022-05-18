@@ -5,7 +5,7 @@
 import {
   arm,
   doParachute,
-  initSubscription,
+  initPubsub,
   land,
   loiter,
   setAirspeed,
@@ -13,8 +13,7 @@ import {
   setTargetLatLong,
   start,
   stop,
-  stopPublishing,
-  stopSubscribing,
+  stopPubsub,
   reboot,
   takeOff,
   Drone,
@@ -33,10 +32,8 @@ const LOG_FILE = "{{ log_dir }}/mavsdk-log";
 const droneIdList = [{{ comma_separated_drone_id_list }}];
 const droneDict = {};
 
-var publishing = false;
-var subscribing = false;
-var publishWorker;
-var subscribeWorker;
+var pubsubRunning = false;
+var pubsubWorker;
 
 var connected = false;
 var running = false;
@@ -53,15 +50,22 @@ function disconnect() {
   return ret;
 }
 
-function publish() {
-  publishWorker = new Worker("{{ publish_script }}");
-  publishWorker.onmessage = function(e) {
-    if(!e.data.publishing) {
-      publishWorker.onmessage = null;
-    }
+function startPubsub() {
+  pubsubWorker = new Worker("{{ pubsub_script }}");
+  pubsubWorker.onmessage = function(e) {
+    if (!e.data.publishing)
+      pubsubWorker.onmessage = null;
   }
-  publishWorker.postMessage({ action: "publish" });
-  publishing = true;
+
+  initPubsub(droneIdList.length);
+  for (let i = 0; i < droneIdList.length; i++) {
+    let id = droneIdList[i]
+    droneDict[id] = new Drone(id);
+    droneDict[id].init(i);
+  }
+
+  pubsubWorker.postMessage({ action: "run" });
+  pubsubRunning = true;
   return 0;
 }
 
@@ -75,38 +79,16 @@ function quit() {
   quit();
 }*/
 
-function stopPubsub() {
+function quitPubsub() {
   let ret = 0;
-  if(publishing) {
-    ret |= stopPublishing();
-  }
-  if(subscribing) {
-    ret |= stopSubscribing();
-  }
+  if(pubsubRunning)
+    ret |= stopPubsub();
   return ret;
 }
 
-function subscribe() {
-  subscribeWorker = new Worker("{{ subscribe_script }}");
-  subscribeWorker.onmessage = function(e) {
-    if(!e.data.subscribing) {
-      subscribeWorker.onmessage = null;
-    }
-  }
-  initSubscription(droneIdList.length);
-  for (let i = 0; i < droneIdList.length; i++) {
-    let id = droneIdList[i]
-    droneDict[id] = new Drone(id);
-    droneDict[id].init(i);
-  }
-  subscribeWorker.postMessage({ action: "subscribe" });
-  subscribing = true;
-  return 0;
-}
-
 function displayDronePositions() {
-  if(!subscribing)
-    console.log("You must subscribe to positions first !");
+  if(!pubsubRunning)
+    console.log("You must start pubsub first !");
   else {
     for (const [id, drone] of Object.entries(droneDict)) {
       console.log(id, drone.latitude, drone.longitude, drone.altitude);
@@ -148,9 +130,8 @@ function cli() {
     gotoCoord(latitude, longitude)
     altitude(altitude)
     speed(speed)
-    publish
+    startPubsub
     pubsubWrite(latitude, longitude, altitude)
-    subscribe
     positions
     reboot
     exit
@@ -247,13 +228,9 @@ function cli() {
       cmd = checkNumber(param, doParachute);
       break;
 
-    case "publish":
-      cmd = publish;
-      break;
-
     case "pubsubWrite":
-      if(!publishing)
-        cmd = displayMessage.bind(null, "    You must enable publishing first !");
+      if(!pubsubRunning)
+        cmd = displayMessage.bind(null, "    You must start pubsub first !");
       else {
         std.printf("Latitude: ");
         latitude = parseFloat(f.getline());
@@ -286,8 +263,8 @@ function cli() {
       cmd = checkNumber(speed, setAirspeed);
       break;
 
-    case "subscribe":
-      cmd = subscribe;
+    case "startPubsub":
+      cmd = startPubsub;
       break;
 
     case "reboot":
@@ -311,7 +288,7 @@ function cli() {
     }
   }
 
-  stopPubsub();
+  quitPubsub();
   if(connected)
     disconnect();
   f.close();
