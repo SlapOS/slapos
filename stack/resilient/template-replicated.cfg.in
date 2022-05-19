@@ -6,7 +6,7 @@
 {% set monitor_url_list = [] -%}
 # prepare sla-parameters
 {% if slapparameter_dict is defined -%}
-{%   for key in slapparameter_dict.keys() -%}
+{%   for key in list(slapparameter_dict.keys()) -%}
 {%     if key.startswith('-sla-') -%}
 {%       do sla_parameter_dict.__setitem__(key, slapparameter_dict.pop(key)) -%}
 {%     endif -%}
@@ -59,7 +59,7 @@ sla-mode = unique_by_network
 {%   for key in sla_parameter_dict.keys() -%}
 {%     if key.startswith(sla_key_main) -%}
 {%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
@@ -111,7 +111,7 @@ sla-mode = unique_by_network
 {%   for key in sla_parameter_dict.keys() -%}
 {%     if key.startswith(sla_key_main) -%}
 {%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
@@ -214,7 +214,7 @@ sla-mode = unique_by_network
 {%   for key in sla_parameter_dict.keys() -%}
 {%     if key.startswith(sla_key_main) -%}
 {%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
