@@ -1319,7 +1319,7 @@ class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
 
 
 @skipUnlessKvm
-class TestNatRules(InstanceTestCase):
+class TestNatRules(KvmMixin, InstanceTestCase):
   __partition_reference__ = 'nr'
 
   @classmethod
@@ -1837,12 +1837,6 @@ class TestParameterResilient(TestParameterDefault):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
-
-
-@skipUnlessKvm
-class TestParameterResilientJson(
-  KvmMixinJson, TestParameterResilient):
-  pass
 
 
 @skipUnlessKvm
