@@ -1,7 +1,5 @@
-/*jslint indent2 */
-
-import { runPubsub } from "{{ qjs_wrapper }}"; //jslint-quiet
-import { Worker } from "os";
+import {runPubsub} from "{{ qjs_wrapper }}";
+import {Worker} from "os";
 
 const PORT = "4840";
 const IPV6 = "{{ ipv6 }}";
@@ -12,7 +10,7 @@ function handle_msg(e) {
   switch(e.data.action) {
     case "run":
       runPubsub(IPV6, PORT, {{ id }});
-      parent.postMessage({ running: false });
+      parent.postMessage({running: false});
       parent.onmessage = null;
       break;
     default:

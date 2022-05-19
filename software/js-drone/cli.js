@@ -1,102 +1,28 @@
+
 /*jslint indent2 */
 /*global console, std */
-{% set comma_separated_drone_id_list = ', '.join(drone_id_list.split()) -%}
 
 import {
-  arm,
-  doParachute,
-  initPubsub,
-  land,
   loiter,
   setAirspeed,
   setAltitude,
   setTargetLatLong,
-  start,
-  stop,
-  stopPubsub,
   reboot,
-  takeOff,
-  Drone,
   pubsubWrite
 } from "{{ qjs_wrapper }}"; //jslint-quiet
-import {/*SIGINT, SIGTERM, signal, */Worker} from "os";
+import {
+  connect,
+  displayDronePositions,
+  land,
+  quit,
+  startPubsub,
+  takeOff
+} from "{{ common }}"; //jslint-quiet
 /*jslint-disable*/
 import * as std from "std";
 /*jslint-enable*/
 
-const IP = "{{ autopilot_ip }}";
-const PORT = "7909";
-const URL = "udp://" + IP + ":" + PORT;
-const LOG_FILE = "{{ log_dir }}/mavsdk-log";
-
-const droneIdList = [{{ comma_separated_drone_id_list }}];
-const droneDict = {};
-
-var pubsubRunning = false;
-var pubsubWorker;
-
-var connected = false;
 var running = false;
-
-function displayMessage(message) {
-  console.log(message);
-  return 0;
-}
-
-function disconnect() {
-  const ret = stop();
-  if(!ret)
-    connnected = false;
-  return ret;
-}
-
-function startPubsub() {
-  pubsubWorker = new Worker("{{ pubsub_script }}");
-  pubsubWorker.onmessage = function(e) {
-    if (!e.data.publishing)
-      pubsubWorker.onmessage = null;
-  }
-
-  initPubsub(droneIdList.length);
-  for (let i = 0; i < droneIdList.length; i++) {
-    let id = droneIdList[i]
-    droneDict[id] = new Drone(id);
-    droneDict[id].init(i);
-  }
-
-  pubsubWorker.postMessage({ action: "run" });
-  pubsubRunning = true;
-  return 0;
-}
-
-function quit() {
-  running = false;
-  return 0;
-}
-
-/*function stopHandler(sign) {
-  console.log("received ctrl-c");
-  quit();
-}*/
-
-function quitPubsub() {
-  let ret = 0;
-  if(pubsubRunning)
-    ret |= stopPubsub();
-  return ret;
-}
-
-function displayDronePositions() {
-  if(!pubsubRunning)
-    console.log("You must start pubsub first !");
-  else {
-    for (const [id, drone] of Object.entries(droneDict)) {
-      console.log(id, drone.latitude, drone.longitude, drone.altitude);
-    }
-  }
-  return 0;
-}
-
 const wrongParameters = displayMessage.bind(null, "Wrong parameters");
 
 function checkNumber(value, toExecute) {
@@ -107,25 +33,30 @@ function checkNumber(value, toExecute) {
   );
 }
 
-function cli() {
-  let s;
+function displayMessage(message) {
+  console.log(message);
+  return 0;
+}
+
+function exit() {
+  running = false;
+  quit();
+  return 0;
+}
+
+function getInput() {
   let undefined_cmd;
   let altitude;
   let cmd;
-  let timeout;
-  let name;
   let latitude;
   let longitude;
-  let param;
+  let s;
   let speed;
-
+  
   const help = `
-    connect(timeout)
-    disconnect
-    arm
+    connect
     takeoff
     land
-    parachute(action)
     goto(point)
     gotoCoord(latitude, longitude)
     altitude(altitude)
@@ -135,73 +66,31 @@ function cli() {
     reboot
     exit
     help
- `;
+  `;
 
   const f = std.fdopen(std.in, "r");
-  let dict = {};
-
-  console.log("Will connect to", URL);
-/*  signal(SIGINT, stopHandler);
-  signal(SIGTERM, stopHandler);*/
-
   running = true;
   while (running) {
     std.printf("> ");
     s = f.getline();
     undefined_cmd = false;
-
+  
     switch (s) {
     case "altitude":
       std.printf("Altitude: ");
       altitude = parseFloat(f.getline());
       cmd = checkNumber(altitude, setAltitude);
       break;
-
-    case "arm":
-      cmd = arm;
-      break;
-
+  
     case "connect":
-      std.printf("Timeout: ");
-      timeout = parseInt(f.getline());
-      cmd = checkNumber(timeout, start.bind(null, URL, LOG_FILE));
+      cmd = connect;
       startPubsub();
       break;
-
-    case "define":
-      std.printf("Name: ");
-      name = f.getline();
-      std.printf("Latitude: ");
-      latitude = parseFloat(f.getline());
-      std.printf("Longitude: ");
-      longitude = parseFloat(f.getline());
-      dict[name] = [latitude, longitude];
-      cmd = displayMessage.bind(
-        null,
-        `${name} defined as ${latitude} ${longitude}`
-      );
-      break;
-
-    case "disconnect":
-      cmd = stop;
-      break;
-
+  
     case "exit":
-      cmd = quit;
+      cmd = exit;
       break;
-
-    case "goto":
-      std.printf("Name: ");
-      name = f.getline();
-      if (dict.hasOwnProperty(name)) {
-        latitude = dict[name][0];
-        longitude = dict[name][1];
-        cmd = checkNumber(longitude, checkNumber(latitude, setTargetLatLong));
-      } else {
-        cmd = displayMessage.bind(`${name} is not defined yet`);
-      }
-      break;
-
+  
     case "gotoCoord":
       std.printf("Latitude: ");
       latitude = parseFloat(f.getline());
@@ -209,86 +98,62 @@ function cli() {
       longitude = parseFloat(f.getline());
       cmd = checkNumber(longitude, checkNumber(latitude, setTargetLatLong));
       break;
-
+  
     case "help":
       cmd = displayMessage.bind(null, help);
       break;
-
+  
     case "land":
       cmd = land;
       break;
-
+  
     case "loiter":
       cmd = loiter;
       break;
-
-    case "parachute":
-      std.printf("Action: ");
-      param = parseInt(f.getline());
-      cmd = checkNumber(param, doParachute);
-      break;
-
-    case "pubsubWrite":
-      if(!pubsubRunning)
-        cmd = displayMessage.bind(null, "    You must start pubsub first !");
-      else {
-        std.printf("Latitude: ");
-        latitude = parseFloat(f.getline());
-        std.printf("Longitude: ");
-        longitude = parseFloat(f.getline());
-        std.printf("Altitude: ");
-        altitude = parseFloat(f.getline());
-        cmd = checkNumber(altitude, (checkNumber(longitude, checkNumber(latitude, pubsubWrite))));
-      }
-      break;
-
+  
     case "positions":
       cmd = displayDronePositions;
       break;
-
-    case "print":
-      std.printf("Name: ");
-      name = f.getline();
-      displayMessage.bind(
-        null,
-        dict.hasOwnProperty(name)
-        ? `${dict[name][0]}\n${dict[name][1]}`
-        : `${name} undefined`
-      );
+  
+    case "pubsubWrite":
+      std.printf("Latitude: ");
+      latitude = parseFloat(f.getline());
+      std.printf("Longitude: ");
+      longitude = parseFloat(f.getline());
+      std.printf("Altitude: ");
+      altitude = parseFloat(f.getline());
+      cmd = checkNumber(altitude, checkNumber(longitude, checkNumber(latitude, pubsubWrite)));
       break;
-
+  
+    case "reboot":
+      cmd = reboot;
+      break;
+  
     case "speed":
       std.printf("Speed: ");
       speed = parseFloat(f.getline());
       cmd = checkNumber(speed, setAirspeed);
       break;
-
-    case "reboot":
-      cmd = reboot;
-      break;
-
+  
     case "takeoff":
-      cmd = takeOff;
+      cmd = takeOff.bind(null, 60);
       break;
-
+  
     default:
       undefined_cmd = true;
       cmd = displayMessage.bind(null, "    Undefined command");
     }
-
+  
     let ret = cmd();
     if (ret) {
       console.log("    [ERROR] function:\n", cmd, "\nreturn value:", ret);
-    } else if (s !== "help" && !undefined_cmd) {
+    }
+    else if (s !== "help" && !undefined_cmd) {
       console.log("    Command successful");
     }
-  }
+  };
 
-  quitPubsub();
-  if(connected)
-    disconnect();
   f.close();
-  return ;
 }
 
-cli();
+getInput();
