@@ -6,7 +6,7 @@
 {% set monitor_url_list = [] -%}
 # prepare sla-parameters
 {% if slapparameter_dict is defined -%}
-{%   for key in slapparameter_dict.keys() -%}
+{%   for key in list(slapparameter_dict.keys()) -%}
 {%     if key.startswith('-sla-') -%}
 {%       do sla_parameter_dict.__setitem__(key, slapparameter_dict.pop(key)) -%}
 {%     endif -%}
