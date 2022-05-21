@@ -1,0 +1,24 @@
+From 590125ae7c20994055c12be9ba03ae0b43b102ec Mon Sep 17 00:00:00 2001
+From: Michael Howitz <mh@gocept.com>
+Date: Mon, 23 Oct 2017 16:49:15 +0200
+Subject: [PATCH] Force recompilation of scripts.
+
+The compiled code is now stored on `__code__` instead of `func_code`.
+Without recompilation the scripts break because `__code__` is `None` which is not expected by ZPublisher/mapply.py
+
+See also zopefoundation/Zope#172.
+
+
+diff --git a/src/Products/PythonScripts/PythonScript.py b/src/Products/PythonScripts/PythonScript.py
+index 29d7db6..28fc2ea 100644
+--- a/src/Products/PythonScripts/PythonScript.py
++++ b/src/Products/PythonScripts/PythonScript.py
+@@ -58,7 +58,7 @@
+ del imp
+ 
+ # This should only be incremented to force recompilation.
+-Script_magic = 3
++Script_magic = 4
+ _log_complaint = (
+     'Some of your Scripts have stale code cached.  Since Zope cannot'
+     ' use this code, startup will be slightly slower until these Scripts'

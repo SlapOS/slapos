@@ -1,12 +1,49 @@
---- Zope2-2.13.30/src/Shared/DC/Scripts/Signature.py	2022-04-25 08:05:09.312966168 +0000
-+++ Zope2-2.13.30/src/Shared/DC/Scripts/Signature.py	2022-04-25 08:06:20.120743425 +0000
-@@ -35,7 +35,7 @@ def _setFuncSignature(self, defaults=None, varnames=(), argcount=-1):
+Make __code__ and __defaults__ already available on scripts
+
+diff --git a/src/App/special_dtml.py b/src/App/special_dtml.py
+index 3cefdc3f3..33fc790c2 100644
+--- a/src/App/special_dtml.py
++++ b/src/App/special_dtml.py
+@@ -87,8 +87,8 @@ from ComputedAttribute import ComputedAttribute
+ class DTMLFile(Bindings, Explicit, ClassicHTMLFile):
+     "HTMLFile with bindings and support for __render_with_namespace__"
+ 
+-    func_code = None
+-    func_defaults = None
++    func_code = __code__ = None
++    func_defaults = __defaults__ = None
+     _need__name__=1
+ 
+     _Bindings_ns_class = TemplateDict
+diff --git a/src/Shared/DC/Scripts/Script.py b/src/Shared/DC/Scripts/Script.py
+index 131f06830..28af81507 100644
+--- a/src/Shared/DC/Scripts/Script.py
++++ b/src/Shared/DC/Scripts/Script.py
+@@ -38,8 +38,8 @@ class Script(SimpleItem, BindingsUI):
+     security = ClassSecurityInfo()
+ 
+     index_html = None
+-    func_defaults=()
+-    func_code=None
++    __defaults__ = func_defaults = ()
++    __code__ = func_code = None
+ 
+     _Bindings_ns_class = TemplateDict
+ 
+diff --git a/src/Shared/DC/Scripts/Signature.py b/src/Shared/DC/Scripts/Signature.py
+index 4f404b9fe..604c4f2e9 100644
+--- a/src/Shared/DC/Scripts/Signature.py
++++ b/src/Shared/DC/Scripts/Signature.py
+@@ -34,8 +34,8 @@ def _setFuncSignature(self, defaults=None, varnames=(), argcount=-1):
+     if argcount < 0 and varnames:
          argcount = len(varnames)
      # Generate a change only if we have to.
-     if self.func_defaults != defaults:
+-    if self.func_defaults != defaults:
 -        self.func_defaults = defaults
++    if self.__defaults__ != defaults:
 +        self.func_defaults = self.__defaults__ = defaults
      code = FuncCode(varnames, argcount)
-     if self.func_code != code:
+-    if self.func_code != code:
 -        self.func_code = code
++    if self.__code__ != code:
 +        self.func_code = self.__code__ = code
