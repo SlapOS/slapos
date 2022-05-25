@@ -112,14 +112,14 @@ Technical notes
 Updating boot-image-url-select
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * download the new OS installation image
- * calculate it's sha512sum and store as <SHA512>
- * calculate it's md5sum and store as <MD5>
- * upload it to shacache
- * construct download url: ``https://shacache.nxdcdn.com/<SHA512>#<MD5>``
- * update the ``boot-image-url-select`` in:
-    * ``instance-kvm-input-schema.json``
-    * ``instance-kvm-cluster-input-schema.json``
+* download the new OS installation image
+* calculate it's sha512sum and store as <SHA512>
+* calculate it's md5sum and store as <MD5>
+* upload it to shacache
+* construct download url: ``https://shacache.nxdcdn.com/<SHA512>#<MD5>``
+* update the ``boot-image-url-select`` in:
+   * ``instance-kvm-input-schema.json``
+   * ``instance-kvm-cluster-input-schema.json``
 
 Migration to modern external-disk parameter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
