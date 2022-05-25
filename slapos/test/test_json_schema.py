@@ -115,6 +115,7 @@ def generateJSONSchemaTest():
 
 
 class TestJSONSchemaValidation(unittest.TestCase):
+  maxDiff = None
   pass
 
 generateSoftwareCfgTest()
