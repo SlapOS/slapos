@@ -17,7 +17,7 @@ class RunPromise(GenericPromise):
       Sets the configuration and the periodicity.
     """
     super(RunPromise, self).__init__(config)
-    self.setPeriodicity(minute=2)
+    self.setPeriodicity(minute=1)
 
 
   def sense(self):
@@ -53,4 +53,4 @@ class RunPromise(GenericPromise):
 
       In this case, fail if two out of the last three results are negative.
     """
-    return self._anomaly(result_count=3, failure_amount=2)
+    return self._anomaly(result_count=1, failure_amount=1)

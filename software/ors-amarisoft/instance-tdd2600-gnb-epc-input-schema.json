@@ -7,13 +7,13 @@
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number",
-      "default": 70
+      "default": 78
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number",
-      "default": 50
+      "default": 40
     },
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
