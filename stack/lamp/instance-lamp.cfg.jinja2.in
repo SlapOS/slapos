@@ -37,8 +37,7 @@ return =
 {% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
 {% do monitor_base_url_dict.__setitem__('apache', '${request-apache:connection-monitor-base-url}') -%}
 
-{% do mariadb_dict.__setitem__('database-list', [{'name': db_name, 'user': db_user, 'password': db_password}]) -%}
-
+{% do mariadb_dict.__setitem__('database-list', [{'name': db_name, 'user': db_user, 'password': db_password }]) -%}
 {% do mariadb_dict.__setitem__('test-database-amount', 0) -%}
 {% do mariadb_dict.__setitem__('tcpv4-port', 2099) -%}
 {% do mariadb_dict.__setitem__('max-slowqueries-threshold', 1000) -%}
