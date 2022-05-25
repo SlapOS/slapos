@@ -52,13 +52,15 @@ class Re6stnetTest(unittest.TestCase):
       return makeRecipe(
             re6stnet.Recipe,
             options=self.options,
-            slap_connection={
+            buildout={
+              'slap-connection': {
                    'computer-id': 'comp-test',
                    'partition-id': 'slappart0',
                    'server-url': 'http://server.com',
                    'software-release-url': 'http://software.com',
                    'key-file': '/path/to/key',
                    'cert-file': '/path/to/cert'
+              }
             },
             name='re6stnet')
 
