@@ -49,6 +49,9 @@ url = {{ template_lamp }}
 filename = template-lamp.cfg
 extra-context =
   section parameter_dict dynamic-template-lamp-parameters
+  raw db_name {{ db_name }}
+  raw db_user {{ db_user }}
+  raw db_password {{ db_password }}
 
 [dynamic-template-apache-php-parameters]
 application-location = {{ application_location }}

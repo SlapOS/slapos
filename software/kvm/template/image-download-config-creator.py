@@ -49,6 +49,10 @@ if __name__ == "__main__":
         image_list.append({
           'md5sum': md5sum,
           'url': url,
+          # Note: The destination here it's the waneted md5sum on purpose, as
+          #       it allows to assume, that correctly downloaded and hashed
+          #       image stored at this filename matches the md5sum, so it does
+          #       not have to be hashed on each download run.
           'destination': md5sum,
           'destination-tmp': md5sum + '_tmp',
           'image-number': '%03i' % (image_number,),

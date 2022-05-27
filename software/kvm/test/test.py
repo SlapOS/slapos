@@ -60,8 +60,7 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..',
-                   'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+      os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
@@ -99,13 +98,12 @@ bootstrap_machine_param_dict = {
     "ram-size": 4096,
     "cpu-count": 2,
     "disk-size": 50,
-    # Debian 10 image
     "virtual-hard-drive-url":
-    "http://shacache.org/shacache/9d3e6d017754fdd08e5ecf78093dec27fd792fb183d"
-    "f6146006adf003b6f4b98c0388d5a11566627101f7855d77f60e3dd4ba7ce66850f4a8f0"
-    "30573b904d5ab",
-    "virtual-hard-drive-md5sum": "b7928d7b0a2b5e2888f5ddf68f5fe422",
-    "virtual-hard-drive-gzipped": False,
+    "http://shacache.org/shacache/a869d906fcd0af5091d5104451a2b86736485ae38e5"
+    "c4388657bb957c25593b98378ed125f593683e7fda7e0dd485a376a0ce29dcbaa8d60766"
+    "e1f67a7ef7b96",
+    "virtual-hard-drive-md5sum": "9ffd690a5fcb4fa56702f2b99183e493",
+    "virtual-hard-drive-gzipped": True,
     "hard-drive-url-check-certificate": False,
     "use-tap": True,
     "use-nat": True,
@@ -424,8 +422,6 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
 class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'adb'
   expected_partition_with_monitor_base_url_count = 1
-  # as few gigabytes are being downloaded, wait a bit longer
-  instance_max_retry = 100
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -433,8 +429,34 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
       bootstrap_common_param_dict, **bootstrap_machine_param_dict))}
 
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    # START: mock .slapos-resource with tap.ipv4_addr
+    # needed for netconfig.sh
+    test_partition_slapos_resource_file = os.path.join(
+      self.computer_partition_root_path, '.slapos-resource')
+    path = os.path.realpath(os.curdir)
+    while path != '/':
+      root_slapos_resource_file = os.path.join(path, '.slapos-resource')
+      if os.path.exists(root_slapos_resource_file):
+        break
+      path = os.path.realpath(os.path.join(path, '..'))
+    else:
+      raise ValueError('No .slapos-resource found to base the mock on')
+    with open(root_slapos_resource_file) as fh:
+      root_slapos_resource = json.load(fh)
+    if root_slapos_resource['tap']['ipv4_addr'] == '':
+      root_slapos_resource['tap'].update({
+        "ipv4_addr": "10.0.0.2",
+        "ipv4_gateway": "10.0.0.1",
+        "ipv4_netmask": "255.255.0.0",
+        "ipv4_network": "10.0.0.0"
+      })
+    with open(test_partition_slapos_resource_file, 'w') as fh:
+      json.dump(root_slapos_resource, fh, indent=4)
+    self.slap.waitForInstance(max_retry=10)
+    # END: mock .slapos-resource with tap.ipv4_addr
+
+    cp = self.computer_partition
+    connection_parameter_dict = cp.getConnectionParameterDict()
 
     result = requests.get(connection_parameter_dict['url'], verify=False)
     self.assertEqual(
@@ -526,8 +548,6 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akcb'
   expected_partition_with_monitor_base_url_count = 3
-  # as few gigabytes are being downloaded, wait a bit longer
-  instance_max_retry = 100
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -539,12 +559,11 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
       "kvm-partition-dict": {
           "test-machine1": bootstrap_machine_param_dict,
           "test-machine2": dict(bootstrap_machine_param_dict, **{
-              # Debian 9 image
               "virtual-hard-drive-url":
-              "http://shacache.org/shacache/93aeb72a556fe88d9889ce16558dfead"
-              "57a3c8f0a80d0e04ebdcd4a5830dfa6403e3976cc896b8332e74f202fccbd"
-              "a508930046a78cffea6e0e29d03345333cc",
-              "virtual-hard-drive-md5sum": "cdca79619ba987c40b98a8e31d281e4a",
+              "http://shacache.org/shacache/5bdc95ea3f8ca40ff4fb8d086776e393"
+              "87a68e91f76b1a5f883dfc33fa13cf1ee71c7d218a4e9401f56519a352791"
+              "272ada4a5c334b3ca38a32c0bcacb6838e2",
+              "virtual-hard-drive-md5sum": "deaf751a31dd6aec320d67c75c88c2e1",
               "virtual-hard-drive-gzipped": True,
           })
       }
@@ -608,13 +627,20 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
       if k in connection_parameter_dict:
         present_key_list.append(k)
         connection_parameter_dict.pop(k)
+    self.assertIn('feed-url-kvm-1-pull', connection_parameter_dict)
+    feed_pull = connection_parameter_dict.pop('feed-url-kvm-1-pull')
+    self.assertRegexpMatches(
+      feed_pull,
+      'http://\\[%s\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull' % (
+        self._ipv6_address,))
+    feed_push = connection_parameter_dict.pop('feed-url-kvm-1-push')
+    self.assertRegexpMatches(
+      feed_push,
+      'http://\\[%s\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push' % (
+        self._ipv6_address,))
     self.assertEqual(
       connection_parameter_dict,
       {
-        'feed-url-kvm-1-pull': 'http://[%s]:8088/get/local-ir0-kvm-1-pull' % (
-          self._ipv6_address,),
-        'feed-url-kvm-1-push': 'http://[%s]:8088/get/local-ir0-kvm-1-push' % (
-          self._ipv6_address,),
         'ipv6': self._ipv6_address,
         'monitor-base-url': 'https://[%s]:8160' % (self._ipv6_address,),
         'monitor-user': 'admin',
@@ -851,11 +877,11 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
   @classmethod
   def setUpClass(cls):
     cls.startImageHttpServer()
-    super(InstanceTestCase, cls).setUpClass()
+    super(TestBootImageUrlList, cls).setUpClass()
 
   @classmethod
   def tearDownClass(cls):
-    super(InstanceTestCase, cls).tearDownClass()
+    super(TestBootImageUrlList, cls).tearDownClass()
     cls.stopImageHttpServer()
 
   def tearDown(self):
@@ -866,15 +892,16 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
-    super(InstanceTestCase, self).tearDown()
+    super(TestBootImageUrlList, self).tearDown()
 
-  def getRunningImageList(self, kvm_instance_partition,
+  def getRunningImageList(
+      self, kvm_instance_partition,
       _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
       _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
-      ):
+    ):
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                       if 'kvm-' in q['name'])['pid']
+                     if 'kvm-' in q['name'])['pid']
     sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
                             % re.escape(self.slap.shared_directory)).sub
     image_list = []
@@ -883,10 +910,12 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
       if m:
         path = m.group(1)
         image_list.append(
-          _sub_iso(r'\1-${ver}\3',
-          sub_shared(r'${shared}/',
-          path.replace(kvm_instance_partition, '${inst}')
-        )))
+          _sub_iso(
+            r'\1-${ver}\3',
+            sub_shared(
+              r'${shared}/',
+              path.replace(kvm_instance_partition, '${inst}')
+            )))
     return image_list
 
   def test(self):
@@ -1020,6 +1049,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 @skipUnlessKvm
 class TestBootImageUrlListResilient(TestBootImageUrlList):
   kvm_instance_partition_reference = 'biul2'
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
@@ -1130,6 +1160,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 @skipUnlessKvm
 class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
   kvm_instance_partition_reference = 'bius2'
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
@@ -1148,12 +1179,12 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
   config_file_name = 'boot-image-url-list.conf'
 
   def setUp(self):
-    super(InstanceTestCase, self).setUp()
+    super(TestBootImageUrlListKvmCluster, self).setUp()
     self.startImageHttpServer()
 
   def tearDown(self):
     self.stopImageHttpServer()
-    super(InstanceTestCase, self).tearDown()
+    super(TestBootImageUrlListKvmCluster, self).tearDown()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -1245,6 +1276,7 @@ class TestNatRulesKvmCluster(InstanceTestCase):
   __partition_reference__ = 'nrkc'
 
   nat_rules = ["100", "200", "300"]
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
@@ -1321,6 +1353,7 @@ class TestWhitelistFirewall(InstanceTestCase):
 @skipUnlessKvm
 class TestWhitelistFirewallRequest(TestWhitelistFirewall):
   whitelist_domains = '2.2.2.2 3.3.3.3\n4.4.4.4'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -1448,7 +1481,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
   def tearDown(self):
     self.stopImageHttpServer()
     shutil.rmtree(self.working_directory)
-    super(InstanceTestCase, self).tearDown()
+    super(TestImageDownloadController, self).tearDown()
 
   def callImageDownloadController(self, *args):
     call_list = [sys.executable, self.image_download_controller] + list(args)
@@ -1636,7 +1669,7 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
   def _test(self, parameter_dict, expected):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
     self.slap.waitForInstance(max_retry=10)
-    
+
     kvm_raw = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
     self.assertEqual(len(kvm_raw), 1)
@@ -1685,6 +1718,7 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
 @skipUnlessKvm
 class TestParameterResilient(TestParameterDefault):
   __partition_reference__ = 'pr'
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
@@ -1718,3 +1752,136 @@ class TestParameterCluster(TestParameterDefault):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
+
+
+@skipUnlessKvm
+class TestExternalDisk(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'ed'
+  kvm_instance_partition_reference = 'ed0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'external-disk-number': 2,
+      'external-disk-size': 1
+    }
+
+  @classmethod
+  def _prepareExternalStorageList(cls):
+    external_storage_path = os.path.join(cls.working_directory, 'STORAGE')
+    os.mkdir(external_storage_path)
+    # reuse .slapos-resource infomration of the containing partition
+    # it's similar to slapos/recipe/slapconfiguration.py
+    _resource_home = cls.slap.instance_directory
+    parent_slapos_resource = None
+    while not os.path.exists(os.path.join(_resource_home, '.slapos-resource')):
+      _resource_home = os.path.normpath(os.path.join(_resource_home, '..'))
+      if _resource_home == "/":
+        break
+    else:
+      with open(os.path.join(_resource_home, '.slapos-resource')) as fh:
+        parent_slapos_resource = json.load(fh)
+    assert parent_slapos_resource is not None
+
+    for partition in os.listdir(cls.slap.instance_directory):
+      if not partition.startswith(cls.__partition_reference__):
+        continue
+      partition_store_list = []
+      for number in range(10):
+        storage = os.path.join(external_storage_path, 'data%s' % (number,))
+        if not os.path.exists(storage):
+          os.mkdir(storage)
+        partition_store = os.path.join(storage, partition)
+        os.mkdir(partition_store)
+        partition_store_list.append(partition_store)
+      slapos_resource = parent_slapos_resource.copy()
+      slapos_resource['external_storage_list'] = partition_store_list
+      with open(
+        os.path.join(
+          cls.slap.instance_directory, partition, '.slapos-resource'),
+        'w') as fh:
+        json.dump(slapos_resource, fh, indent=2)
+    # above is not enough: the presence of parameter is required in slapos.cfg
+    slapos_config = []
+    with open(cls.slap._slapos_config) as fh:
+      for line in fh.readlines():
+        if line.strip() == '[slapos]':
+          slapos_config.append('[slapos]\n')
+          slapos_config.append(
+            'instance_storage_home = %s\n' % (external_storage_path,))
+        else:
+          slapos_config.append(line)
+    with open(cls.slap._slapos_config, 'w') as fh:
+      fh.write(''.join(slapos_config))
+
+  @classmethod
+  def _dropExternalStorageList(cls):
+    slapos_config = []
+    with open(cls.slap._slapos_config) as fh:
+      for line in fh.readlines():
+        if line.startswith("instance_storage_home ="):
+          continue
+        slapos_config.append(line)
+    with open(cls.slap._slapos_config, 'w') as fh:
+      fh.write(''.join(slapos_config))
+
+  @classmethod
+  def _setUpClass(cls):
+    super(TestExternalDisk, cls)._setUpClass()
+    cls.working_directory = tempfile.mkdtemp()
+    # setup the external_storage_list, to mimic part of slapformat
+    cls._prepareExternalStorageList()
+    # re-run the instance, as information has been updated
+    cls.waitForInstance()
+
+  @classmethod
+  def tearDownClass(cls):
+    cls._dropExternalStorageList()
+    super(TestExternalDisk, cls).tearDownClass()
+    shutil.rmtree(cls.working_directory)
+
+  def getRunningDriveList(self, kvm_instance_partition):
+    _match_drive = re.compile('file=(.+),if=virtio').match
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    dirve_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_drive(entry)
+      if m:
+        path = m.group(1)
+        dirve_list.append(
+          path.replace(kvm_instance_partition, '${partition}')
+        )
+    return dirve_list
+
+  def test(self):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    drive_list = self.getRunningDriveList(kvm_instance_partition)
+
+    # Note: Do to unknown set of drives it's impossible to directly check
+    #       drive paths, thus the count is important
+    self.assertEqual(
+      1 + 2,  # 1 the default drive, 2 additional ones
+      len(drive_list)
+    )
+
+    # restart the VM
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstance()
+    self.requestDefaultInstance(state='started')
+    self.waitForInstance()
+    restarted_drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(drive_list, restarted_drive_list)
+    # prove that even on resetting parameters, drives are still there
+    self.rerequestInstance({}, state='stopped')
+    self.waitForInstance()
+    self.rerequestInstance({})
+    self.waitForInstance()
+    dropped_drive_list = self.getRunningDriveList(kvm_instance_partition)
+    self.assertEqual(drive_list, dropped_drive_list)
