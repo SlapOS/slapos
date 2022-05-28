@@ -67,7 +67,7 @@ export function displayDronePositions() {
     console.log("You must start pubsub first !");
   else {
     for (const [id, drone] of Object.entries(droneDict)) {
-      console.log(id, drone.latitude, drone.longitude, drone.altitude);
+      console.log(id, drone.latitude, drone.longitude, drone.altitudeAbs, drone.altitudeRel);
     }
   }
   return 0;

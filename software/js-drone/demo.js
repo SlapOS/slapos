@@ -8,7 +8,7 @@ import {
   loiter,
   setTargetCoordinates
 } from "{{ qjs_wrapper }}"; //jslint-quiet
-import {sleep, SIGINT, SIGTERM, signal} from "os";
+import {sleep} from "os";
 import {
   connect,
   distance,
@@ -75,11 +75,6 @@ function followLeader(leaderId, initialAltitude, altitudeDiff, lat1, lon1, lat2,
   console.log("[DEMO] Stop following...\n");
 }
 
-function stopHandler(sign) {
-  console.log("received ctrl-c");
-  quit();
-}
-
 function waitForAltitude(altitude) {
   var curAltitude;
   do {
@@ -96,9 +91,6 @@ function waitForLanding() {
     sleep(1000);
   }
 }
-
-signal(SIGINT, stopHandler);
-signal(SIGTERM, stopHandler);
 
 const droneDict = startPubsub();
 

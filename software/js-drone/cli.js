@@ -7,8 +7,7 @@ import {
   setAirspeed,
   setAltitude,
   setTargetLatLong,
-  reboot,
-  pubsubWrite
+  reboot
 } from "{{ qjs_wrapper }}"; //jslint-quiet
 import {
   connect,
@@ -61,7 +60,6 @@ function getInput() {
     gotoCoord(latitude, longitude)
     altitude(altitude)
     speed(speed)
-    pubsubWrite(latitude, longitude, altitude)
     positions
     reboot
     exit
@@ -113,16 +111,6 @@ function getInput() {
   
     case "positions":
       cmd = displayDronePositions;
-      break;
-  
-    case "pubsubWrite":
-      std.printf("Latitude: ");
-      latitude = parseFloat(f.getline());
-      std.printf("Longitude: ");
-      longitude = parseFloat(f.getline());
-      std.printf("Altitude: ");
-      altitude = parseFloat(f.getline());
-      cmd = checkNumber(altitude, checkNumber(longitude, checkNumber(latitude, pubsubWrite)));
       break;
   
     case "reboot":
