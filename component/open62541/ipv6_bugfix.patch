@@ -1,0 +1,27 @@
+commit ccdde2eddfd2e0937ba0b452063c60c214f5f2f5 (HEAD -> master)
+Author: Thomas Gambier <thomas.gambier@nexedi.com>
+Date:   Sat May 28 19:18:02 2022 +0200
+
+    BUGFIX: UA_PubSubChannelUDPMC_regist supports different interface in IPv6
+
+diff --git a/plugins/ua_pubsub_udp.c b/plugins/ua_pubsub_udp.c
+index 2c6ea480..f66f5860 100644
+--- a/plugins/ua_pubsub_udp.c
++++ b/plugins/ua_pubsub_udp.c
+@@ -319,6 +319,7 @@ UA_PubSubChannelUDPMC_open(const UA_PubSubConnectionConfig *connectionConfig) {
+                              "Interface configuration preparation failed.");
+                 goto cleanup;
+             }
++            memcpy(&channelDataUDPMC->intf_addr, &group.ipv6.ipv6mr_interface, sizeof(group.ipv6.ipv6mr_interface));
+         }
+ #endif
+     }
+@@ -432,6 +433,7 @@ UA_PubSubChannelUDPMC_regist(UA_PubSubChannel *channel, UA_ExtensionObject *tran
+         memcpy(&groupV6.ipv6mr_multiaddr,
+                &((const struct sockaddr_in6 *) &connectionConfig->ai_addr)->sin6_addr,
+                sizeof(struct in6_addr));
++        memcpy(&groupV6.ipv6mr_interface, &connectionConfig->intf_addr, sizeof(int));
+ 
+         if(UA_setsockopt(channel->sockfd,
+             connectionConfig->ai_family == PF_INET6 ? IPPROTO_IPV6 : IPPROTO_IP,
+
