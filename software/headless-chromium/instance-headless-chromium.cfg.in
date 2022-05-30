@@ -62,7 +62,7 @@ inline =
   exec {{ parameter_list['chromium-wrapper'] }} \
     --remote-debugging-address=${headless-chromium:ipv4} \
     --remote-debugging-port=${headless-chromium:remote-debugging-port} \
-    ${headless-chromium:url}
+    "${headless-chromium:url}"
 output = ${directory:service}/chromium
 
 
