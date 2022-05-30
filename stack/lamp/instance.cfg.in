@@ -73,6 +73,7 @@ extra-context =
   key custom_application_template application-parameters:custom-application-template
   section parameter_dict dynamic-template-apache-php-parameters
   raw lamp_apache_httpd {{ lamp_apache_httpd }}
+  raw root_path {{ root_path }}
 
 [dynamic-template-mariadb-parameters]
 bash = {{ bash_location }}
