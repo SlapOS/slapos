@@ -140,6 +140,7 @@ url = {{ lamp_apache_httpd }}
 output = ${directory:apache.d}/lamp.conf
 context =
   section parameter_dict apache-php-configuration
+  raw root_path {{ root_path }}
 
 [apache-php-conf]
 recipe = slapos.recipe.template:jinja2
