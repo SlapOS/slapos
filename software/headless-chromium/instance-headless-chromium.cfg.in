@@ -54,17 +54,14 @@ nginx-mime-types = ${directory:etc}/mime-types
 # Create a launcher script in /etc/service for the headless shell
 # executable.
 [chromium-launcher]
-recipe = slapos.recipe.template
-inline =
-  #!/bin/sh
-
-  export FONTCONFIG_FILE=${font-config:output}
-  exec {{ parameter_list['chromium-wrapper'] }} \
-    --remote-debugging-address=${headless-chromium:ipv4} \
-    --remote-debugging-port=${headless-chromium:remote-debugging-port} \
-    "${headless-chromium:url}"
-output = ${directory:service}/chromium
-
+recipe = slapos.cookbook:wrapper
+command-line =
+  env FONTCONFIG_FILE=${font-config:output}
+  {{ parameter_list['chromium-wrapper'] }}
+  --remote-debugging-address=${headless-chromium:ipv4}
+  --remote-debugging-port=${headless-chromium:remote-debugging-port}
+  ${headless-chromium:url}
+wrapper-path = ${directory:service}/chromium
 
 # Configure and launch the proxy server.
 [nginx-config]
