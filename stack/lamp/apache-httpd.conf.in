@@ -18,7 +18,7 @@
       Dav off
 
   </Directory>
-  ErrorLog "{{ parameter_dict['log-dir'] }}/matomo-error.log"
-  CustomLog "{{ parameter_dict['log-dir'] }}/matomo-access.log" combined
+  ErrorLog "{{ parameter_dict['log-dir'] }}/lamp-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/lamp-access.log" combined
 
 </VirtualHost>
