@@ -40,7 +40,7 @@ class Recipe(GenericBaseRecipe):
     :param str pidfile: path to pidfile ensure exclusivity for the process
     :param lines private-tmpfs: list of "<size> <path>" private tmpfs, using user namespaces
     :param bool reserve-cpu: command will ask for an exclusive CPU core
-    :param lines environment: environmental variables for the shell
+    :param lines environment: environment variables for the shell
     """
 
     _existing = ()
