@@ -338,12 +338,12 @@ install =
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
       options['seed'].encode()
     ).hexdigest() + "?s=256&d=retro"
-    shutil.copy(self.download(gravatar_url), options['location'])
+    shutil.copy(self.download(gravatar_url), location)
   except Exception:
     # Because installation should work offline, if we can't download a favicon,
     # just ignore this step.
     self.logger.exception("Error while downloading favicon, using empty one")
-    open(options['location'], 'w').close()
+    open(location, 'w').close()
   finally:
     self.buildout['buildout']['offline'] = buildout_offline
 
