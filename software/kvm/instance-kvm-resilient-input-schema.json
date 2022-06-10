@@ -1,9 +1,9 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "http://json-schema.org/draft-06/schema",
   "allOf": [
     {
-      "$ref": "instance-kvm-input-schema.json#/"
+      "$ref": "./instance-kvm-input-schema.json#"
     },
     {
       "properties": {
