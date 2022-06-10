@@ -19,6 +19,7 @@
       "title": "Initial Embedded Instance Configuration",
       "description": "One-shot optional JSON preconfiguration for an embedded instance. Only applied once when Theia is instantiated. Changing this option afterward will have no effect.",
       "type": "string",
+      "textarea": true,
       "examples": [
         "{\"software-url\": \"~/srv/project/slapos/software/html5as-base/software.cfg\"}",
         "{\"software-url\": \"~/srv/project/slapos/software/html5as/software.cfg\", \"software-type\": \"replicate\", \"instance-parameters\": {\"replicate-quantity\": 3}}"
