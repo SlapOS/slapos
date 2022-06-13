@@ -170,6 +170,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
         'ssl': {
             'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
         },
+        'timeout-dict': {},
         'family-path-routing-dict': {},
         'path-routing-list': [],
       }
@@ -186,18 +187,50 @@ class BalancerTestCase(ERP5InstanceTestCase):
 
 
 class SlowHTTPServer(ManagedHTTPServer):
-  """An HTTP Server which reply after 2 seconds.
+  """An HTTP Server which reply after a timeout.
+
+  Timeout is 2 seconds by default, and can be specified in the path of the URL
   """
   class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
       # type: () -> None
       self.send_response(200)
       self.send_header("Content-Type", "text/plain")
-      time.sleep(2)
+      timeout = 2
+      try:
+        timeout = int(self.path[1:])
+      except ValueError:
+        pass
+      time.sleep(timeout)
       self.end_headers()
       self.wfile.write(b"OK\n")
+    log_message = logging.getLogger(__name__ + '.SlowHTTPServer').info
 
-    log_message = logging.getLogger(__name__ + '.SlowHandler').info
+
+class TestTimeout(BalancerTestCase, CrontabMixin):
+  __partition_reference__ = 't'
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> dict
+    parameter_dict = super(TestTimeout, cls)._getInstanceParameterDict()
+    # use a slow server instead
+    parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
+    # and set timeout of 1 second
+    parameter_dict['timeout-dict'] = {'default': 1}
+    return parameter_dict
+
+  def test_timeout(self):
+    # type: () -> None
+    self.assertEqual(
+      requests.get(
+          six.moves.urllib.parse.urljoin(self.default_balancer_url, '/1'),
+          verify=False).status_code,
+      requests.codes.ok)
+    self.assertEqual(
+      requests.get(
+          six.moves.urllib.parse.urljoin(self.default_balancer_url, '/5'),
+          verify=False).status_code,
+      requests.codes.gateway_timeout)
 
 
 class TestLog(BalancerTestCase, CrontabMixin):
