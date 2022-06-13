@@ -48,6 +48,7 @@
  #            ( 8000, # port int
  #              'https', # proto str
  #               True, # ssl_required bool
+ #               None,  # timeout (in seconds) int | None
  #               [  # backends
  #                  '10.0.0.10:8001', # netloc str
  #                   1, # max_connection_count int
@@ -59,6 +60,7 @@
  #            ( 8002, # port int
  #              'https', # proto str
  #               False, # ssl_required bool
+ #               None,  # timeout (in seconds) int | None
  #               [  # backends
  #                  '10.0.0.10:8003', # netloc str
  #                   1, # max_connection_count int
@@ -135,7 +137,6 @@ defaults
 
   timeout connect 10s
   timeout queue 60s
-  timeout server 305s
   timeout client 305s
 
   option http-server-close
@@ -150,7 +151,7 @@ defaults
 {% set family_path_routing_dict = parameter_dict['family-path-routing-dict'] %}
 {% set path_routing_list = parameter_dict['path-routing-list'] %}
 
-{% for name, (port, _, certificate_authentication, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
+{% for name, (port, _, certificate_authentication, timeout, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
 listen family_{{ name }}
 {%-  if parameter_dict.get('ca-cert') -%}
 {%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
@@ -161,6 +162,15 @@ listen family_{{ name }}
   bind {{ parameter_dict['ipv6'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
   cookie SERVERID rewrite
   http-request set-header X-Balancer-Current-Cookie SERVERID
+
+{% if timeout %}
+  {#
+    Apply a slightly longer timeout than the zope timeout so that clients can see the
+    TimeoutReachedError from zope, that is a bit more informative than the 504 error
+    page from haproxy.
+  #}
+  timeout server {{ timeout + 3 }}s
+{%-  endif %}
 
   # remove X-Forwarded-For unless client presented a verified certificate
   acl client_cert_verified ssl_c_used ssl_c_verify 0
