@@ -170,6 +170,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
         'ssl': {
             'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
         },
+        'timeout-dict': {},
         'family-path-routing-dict': {},
         'path-routing-list': [],
       }
