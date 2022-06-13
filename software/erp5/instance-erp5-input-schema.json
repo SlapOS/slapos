@@ -97,7 +97,7 @@
     },
     "publisher-timeout": {
       "description": "How long a publisher-initiated transaction may last, in seconds",
-      "default": null,
+      "default": 300,
       "type": [
         "number",
         "null"
