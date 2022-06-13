@@ -265,7 +265,7 @@ config-wcfs_enable = {{ dumps(wcfs_enable) }}
 config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
-{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}
+{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout', 300) -%}
 {% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
