@@ -498,18 +498,22 @@
     },
     "caucase": {
       "description": "Caucase certificate authority parameters",
-      "properties": {
-        "url": {
-          "title": "Caucase URL",
-          "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
-          "default": "",
-          "type": "string",
-          "format": "uri"
+      "allOf": [
+        {
+          "properties": {
+            "url": {
+              "title": "Caucase URL",
+              "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+              "default": "",
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        {
+          "$ref": "../caucase/instance-caucase-input-schema.json"
         }
-      },
-      "additionalProperties": {
-        "$ref": "../caucase/instance-caucase-input-schema.json"
-      },
+      ],
       "type": "object"
     },
     "test-runner": {
