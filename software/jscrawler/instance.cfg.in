@@ -1,4 +1,5 @@
 [buildout]
+develop = /srv/slapgrid/slappart78/srv/project/slapos.toolbox
 parts = switch-softwaretype
 
 # std stuff for slapos instance

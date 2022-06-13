@@ -1,3 +1,7 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set site_list = slapparameter_dict.get('urls', "").split("\n") -%}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -77,12 +81,15 @@ output = ${directory:bin}/jscrawler-build
 extensions = jinja2.ext.do
 list = {{ slapparameter_dict.get('urls', "").split("\n") | join('\n  ') }}
 period = {{ slapparameter_dict.get('crawl-periodicity', 0) }}
+depth = {{ slapparameter_dict.get('crawl-depth', 3) }}
+
 context =
   key public_folder directory:www
   key tmp_folder directory:tmp
   key jscrawler_wrapper jscrawler-wrapper:wrapper-path
   key period :period
   key url_list :list
+  key depth :depth
   raw shell_binary {{ bash_executable_location }}
   raw pid_file ${directory:run}/jscrawler.pid
 
@@ -93,6 +100,16 @@ name = jscrawler-build
 frequency = * * * * *
 command = ${jscrawler-build-wrapper:output}
 
+
+{% for site in site_list %}
+{%  set new_site = site.split('//')[1].strip() -%}
+[{{ section('check-http-header-for-' + new_site) }}]
+<= monitor-promise-base
+promise = check_site_state
+name = {{ 'check-site-state-for-' + new_site.replace('.', '-') + '.py'}}
+config-site-state-file = ${directory:www}/{{ new_site + '.xml'}}
+
+{% endfor %}
 
 [publish-connection-information]
 <= monitor-publish
@@ -110,6 +127,7 @@ parts =
   httpd-wrapper
   httpd-listen-promise
   jscrawler-frontend-promise
+  {{ part_list | join('\n  ') }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

@@ -5,6 +5,7 @@ URLS="{{ url_list }}"
 OUTPUT_DIR="{{ public_folder }}"
 TMP_DIR="{{ tmp_folder }}"
 PERIOD="{{ period }}"
+DEPTH="{{ depth }}"
 
 if [ -s "{{ pid_file}}" ]; then
   echo "Crawler process already running with pid `cat {{ pid_file}}`"
@@ -16,7 +17,7 @@ trap "rm -f -- '{{ pid_file}}'" EXIT
 echo $$ > "{{ pid_file}}"
 
 crawl() {
-  {{ jscrawler_wrapper }} -f $TMP_OUTPUT --link $1
+  {{ jscrawler_wrapper }} -f $TMP_OUTPUT --link $1 -d $4
   if [ -s "$2" ]; then
     mv $2 $3
   fi
@@ -35,7 +36,7 @@ check_crawl() {
   I=$((T+86400*PERIOD))
   diff=$((NOW-I))
   if [ "$diff" -gt 0 ]; then
-    crawl $url $tmp $sitemap
+    crawl $url $tmp $sitemap $4
   else
     echo "Already crawled $url... SKIPPED"
   fi
@@ -52,8 +53,8 @@ do
   TMP_OUTPUT="$TMP_DIR/$NAME.xml"
 
   if [ -s "$OUTPUT" ]; then
-    check_crawl $url $TMP_OUTPUT $OUTPUT
+    check_crawl $url $TMP_OUTPUT $OUTPUT $DEPTH
   else
-    crawl $url $TMP_OUTPUT $OUTPUT
+    crawl $url $TMP_OUTPUT $OUTPUT $DEPTH
   fi
 done
