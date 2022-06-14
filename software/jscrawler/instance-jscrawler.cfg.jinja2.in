@@ -82,10 +82,10 @@ extensions = jinja2.ext.do
 list = {{ slapparameter_dict.get('urls', "").split("\n") | join('\n  ') }}
 period = {{ slapparameter_dict.get('crawl-periodicity', 0) }}
 depth = {{ slapparameter_dict.get('crawl-depth', 3) }}
-include_html = {{ slapparameter_dict.get('include_html', True) }}
-include_js = {{ slapparameter_dict.get('include_js', False) }}
-include_css = {{ slapparameter_dict.get('include_css', False) }}
-include_header = {{ slapparameter_dict.get('include_header', False) }}
+include_html = {{ slapparameter_dict.get('include-html', True) }}
+include_js = {{ slapparameter_dict.get('include-js', False) }}
+include_css = {{ slapparameter_dict.get('include-css', False) }}
+include_header = {{ slapparameter_dict.get('include-header', False) }}
 
 context =
   key public_folder directory:www
