@@ -1,2 +1,17 @@
+# parameters required by the configuration instance
+[instance-parameter]
+matomo = ${:document-root}
+dir-backup = ${directory:backup}
+find-bin = {{ findutils_location }}
+diff-bin = {{ diffutils_location }}
+
+[matomo-backup.sh]
+recipe = slapos.recipe.template:jinja2
+url = {{ matomo_backup_sh }}
+output = ${directory:scripts}/matomo-backup
+context =
+  section parameter_dict instance-parameter
+  key php_bin php-bin:wrapper-path
+
 [slap-parameter]
 instance.cli-url = ${apache-php-configuration:url}
