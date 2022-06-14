@@ -82,6 +82,10 @@ extensions = jinja2.ext.do
 list = {{ slapparameter_dict.get('urls', "").split("\n") | join('\n  ') }}
 period = {{ slapparameter_dict.get('crawl-periodicity', 0) }}
 depth = {{ slapparameter_dict.get('crawl-depth', 3) }}
+include_html = {{ slapparameter_dict.get('include_html', True) }}
+include_js = {{ slapparameter_dict.get('include_js', False) }}
+include_css = {{ slapparameter_dict.get('include_css', False) }}
+include_header = {{ slapparameter_dict.get('include_header', False) }}
 
 context =
   key public_folder directory:www
@@ -90,6 +94,10 @@ context =
   key period :period
   key url_list :list
   key depth :depth
+  key include_html :include_html
+  key include_js :include_js
+  key include_css :include_css
+  key include_header :include_header
   raw shell_binary {{ bash_executable_location }}
   raw pid_file ${directory:run}/jscrawler.pid
 
