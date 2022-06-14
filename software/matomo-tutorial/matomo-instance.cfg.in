@@ -1,0 +1,2 @@
+[slap-parameter]
+instance.cli-url = ${apache-php-configuration:url}
