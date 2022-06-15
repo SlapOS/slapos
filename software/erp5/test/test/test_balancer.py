@@ -166,11 +166,11 @@ class BalancerTestCase(ERP5InstanceTestCase):
         'backend-path-dict': {
             'default': '',
         },
-        'ssl-authentication-dict': {},
+        'ssl-authentication-dict': {'default': False},
         'ssl': {
             'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
         },
-        'timeout-dict': {},
+        'timeout-dict': {'default': None},
         'family-path-routing-dict': {},
         'path-routing-list': [],
       }
@@ -787,6 +787,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         'default': False,
         'default-auth': True,
     }
+    parameter_dict['timeout-dict']['default-auth'] = None
     parameter_dict['ssl']['frontend-caucase-url-list'] = [frontend_caucase.url]
     return parameter_dict
 
@@ -960,6 +961,8 @@ class TestPathBasedRouting(BalancerTestCase):
     ] = parameter_dict['zope-family-dict'][
       'default'
     ]
+    parameter_dict['timeout-dict']['second'] = None
+    parameter_dict['ssl-authentication-dict']['second'] = False
     # Routing rules outermost slashes mean nothing. They are internally
     # stripped and rebuilt in order to correctly represent the request's URL.
     parameter_dict['family-path-routing-dict'] = {
