@@ -19,6 +19,3 @@ output = ${directory:scripts}/matomo-backup
 context =
   section parameter_dict instance-parameter
   key php_bin php-bin:wrapper-path
-
-[slap-parameter]
-instance.cli-url = ${apache-php-configuration:url}
