@@ -883,12 +883,18 @@ class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
                 },
             },
             "zope-partition-dict": {
+                # a family to process activities, so that our test
+                # does not hit a zope node processing activities
+                "activity": {
+                    "family": "activity",
+                },
                 "default": {
                     "family": "default",
+                    "port-base": 2210,
                 },
                 "no-timeout": {
                     "family": "no-timeout",
-                    "port-base": 2300,
+                    "port-base": 22220,
                 },
             },
         })
