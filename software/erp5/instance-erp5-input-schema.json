@@ -97,7 +97,7 @@
     },
     "publisher-timeout": {
       "description": "How long a publisher-initiated transaction may last, in seconds",
-      "default": null,
+      "default": 300,
       "type": [
         "number",
         "null"
@@ -339,6 +339,7 @@
     },
     "zodb-zeo": {
       "description": "Common settings ZEO servers",
+      "additionalProperties": false,
       "properties": {
         "tcpv4-port": {
           "allOf": [
@@ -464,6 +465,7 @@
     },
     "jupyter": {
       "description": "Jupyter subinstance parameters",
+      "additionalProperties": false,
       "properties": {
         "enable": {
           "description": "Whether to enable creation of associated Jupyter subinstance",
@@ -480,6 +482,7 @@
     },
     "wcfs": {
       "description": "Parameters for wendelin.core filesystem",
+      "additionalProperties": false,
       "properties": {
         "enable": {
           "description": "Whether to enable WCFS filesystem and use it to access ZBigArray/ZBigFile data. In WCFS mode wendelin.core clients (Zope/ERP5 processes) share in-RAM cache for in-ZODB data without duplicating it for every client. This cache sharing does not affect correctness as isolation property is continued to be provided to every client.",
@@ -495,22 +498,27 @@
     },
     "caucase": {
       "description": "Caucase certificate authority parameters",
-      "properties": {
-        "url": {
-          "title": "Caucase URL",
-          "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
-          "default": "",
-          "type": "string",
-          "format": "uri"
+      "allOf": [
+        {
+          "properties": {
+            "url": {
+              "title": "Caucase URL",
+              "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+              "default": "",
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        {
+          "$ref": "../caucase/instance-caucase-input-schema.json"
         }
-      },
-      "additionalProperties": {
-        "$ref": "../caucase/instance-caucase-input-schema.json"
-      },
+      ],
       "type": "object"
     },
     "test-runner": {
       "description": "Test runner parameters.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "description": "Generate helper scripts to run test suite.",
@@ -650,6 +658,7 @@
         },
         "ssl": {
           "description": "HTTPS certificate generation parameters",
+          "additionalProperties": false,
           "properties": {
             "frontend-caucase-url-list": {
               "title": "Frontend Caucase URL List",
