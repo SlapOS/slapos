@@ -5,6 +5,13 @@ dir-backup = ${directory:backup}
 find-bin = {{ findutils_location }}
 diff-bin = {{ diffutils_location }}
 
+[matomo-backup-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-backup
+frequency = 0 0 * * *
+command = ${matomo-backup.sh:output}
+
 [matomo-backup.sh]
 recipe = slapos.recipe.template:jinja2
 url = {{ matomo_backup_sh }}
