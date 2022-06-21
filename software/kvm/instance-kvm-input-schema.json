@@ -419,7 +419,7 @@
             },
             "index": {
               "title": "Index of a disk",
-              "description": "An index value used to order disks for the VM, if not specified, disk order will be random on each run.",
+              "description": "An index value used to order disks for the VM, required if more than one disk is used to have stable ordering.",
               "type": "integer",
               "default": 0
             }
