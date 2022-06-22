@@ -2024,22 +2024,22 @@ class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
 
   def getExternalDiskInstanceParameterDict(self, first, second, third):
     return {
-      "external-disk": {
-          "second disk": {
-              "path": second,
-              "index": 2,
-          },
-          "third disk": {
-              "path": third,
-              "index": 3,
-              "cache": "none"
-          },
-          "first disk": {
-              "path": first,
-              "index": 1,
-              "format": "qcow"
-          },
-      }
+      "external-disk": [
+        {
+            "path": first,
+            "index": 1,
+            "format": "qcow"
+        },
+        {
+            "path": second,
+            "index": 2,
+        },
+        {
+            "path": third,
+            "index": 3,
+            "cache": "none"
+        }
+      ]
     }
 
   def test(self):
