@@ -5,12 +5,12 @@ import os
 
 # Values: 6 (1.4 MHz), 15 (3MHz), 25 (5MHz), 50 (10MHz), 75 (15MHz), 100 (20MHz)
 LTE_N_RB_DL=100
-LTE_TX_GAIN=70
-LTE_RX_GAIN=30
+LTE_TX_GAIN=78
+LTE_RX_GAIN=40
 
 NR_BANDWIDTH=40
-NR_TX_GAIN=70
-NR_RX_GAIN=50
+NR_TX_GAIN=78
+NR_RX_GAIN=40
 
 global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."

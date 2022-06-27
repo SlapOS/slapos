@@ -61,6 +61,7 @@ etc = ${buildout:directory}/etc
 
 # Bubble down the parameters of the requested instance to the user
 [request-kvm]
+recipe = slapos.cookbook:request.serialised
 # Note: += doesn't work.
 return =
 # Resilient related parameters

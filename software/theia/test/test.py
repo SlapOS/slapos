@@ -238,6 +238,10 @@ class TestTheia(TheiaTestCase):
     self.assertIn(b'slaprunner', self.captureSlapos('computer', 'list'))
 
 
+class TestTheiaWithNonAsciiInstanceName(TestTheia):
+  default_partition_reference = '💥'
+
+
 class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
   def test_stopping_instance_stops_embedded_slapos(self):
     embedded_slapos_supervisord_socket = _getSupervisordSocketPath(
