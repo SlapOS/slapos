@@ -305,7 +305,8 @@
     "data-to-vm": {
       "title": "Text content to send to this virtual machine.",
       "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
-      "type": "string"
+      "type": "string",
+      "textarea": true
     },
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",
