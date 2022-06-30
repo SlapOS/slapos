@@ -1,0 +1,116 @@
+[
+  {
+    "apache-certificate": "-----BEGIN CERTIFICATE-----\nMIIDKjCCAhKgAwIBAgIUas8e9ev1jXeg6wWxE6St4Lj/8jEwDQYJKoZIhvcNAQEL\nBQAwJzElMCMGA1UEAwwcVGVzdCBTZWxmIFNpZ25lZCBDZXJ0aWZpY2F0ZTAeFw0y\nMjA3MDIxMTU0NThaFw0yMjA3MDkxMTU0NThaMCcxJTAjBgNVBAMMHFRlc3QgU2Vs\nZiBTaWduZWQgQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQDQ2LJm2FtxjS1BZFcwM1GAC26W+csBijOz8QWr8kHquctdKY+4L+e6GcPt\nQXACt8DJSY1ABs9qpFJguFzxhkW8LH4FcKiR1SEZfzNEh/KiJ6l5ywRmQUmmr3WW\nc1PV3j9QLNCZWloO6gEG4plzi1o3amU2siRaf23FRv/EIOjSQCOzbcv/Lcl9kDC+\nEgB8Wl0RbSCzkhoWD+ZtSCO3meH2aLPNu2x5uIOiIshdSSQBaZtm5/WVDqAlozbt\nkcOrNBVLVcRb2nXxh/k7pYe4vJ1vYZlmqF5Yb95FAjDeAOlO83wC0iL23IzOrTTA\nE7aa4hDAXyshTW5uKZ/W4k2y9h+nAgMBAAGjTjBMMEoGA1UdEQRDMEGCGiouY3Vz\ndG9tZG9tYWluLmV4YW1wbGUuY29tgg0qLmV4YW1wbGUuY29tghQqLmFsaWFzMS5l\neGFtcGxlLmNvbTANBgkqhkiG9w0BAQsFAAOCAQEAC9XTt5h5PqUiCetCu0UCv+l2\ncdCdSoV+cecCAQBr3wA8q8kxLRn/F2760ZMvR4otFm5LS3NYbXD3Hvx9BUy8uMCE\ni0+HFGiSVhRn0iZiHU7f/O2gzYajSumxWPvc6KToeJ+J2sKFwNIPgKtZwEcblpNp\n12UuZTgCMHMgSKyAmUBpU8FMNUAlhkPptTRAZeKiXrAXZyAxbYYL1sTHt7e3X4C6\nl5CrgifIAqQPAPEmhDeUOE18kz1UpVgPLoN5j1XKkd3WEDo7DDQx30uOcsORrvVU\nkrEVpTa1yXDGy7bUG6wEWJyZ9SvKOt7cIkJvIyHRUVVxXkqsc5P5SQDQDyqXNA==\n-----END CERTIFICATE-----\n",
+    "apache-key": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0NiyZthbcY0tQWRXMDNRgAtulvnLAYozs/EFq/JB6rnLXSmP\nuC/nuhnD7UFwArfAyUmNQAbPaqRSYLhc8YZFvCx+BXCokdUhGX8zRIfyoiepecsE\nZkFJpq91lnNT1d4/UCzQmVpaDuoBBuKZc4taN2plNrIkWn9txUb/xCDo0kAjs23L\n/y3JfZAwvhIAfFpdEW0gs5IaFg/mbUgjt5nh9mizzbtsebiDoiLIXUkkAWmbZuf1\nlQ6gJaM27ZHDqzQVS1XEW9p18Yf5O6WHuLydb2GZZqheWG/eRQIw3gDpTvN8AtIi\n9tyMzq00wBO2muIQwF8rIU1ubimf1uJNsvYfpwIDAQABAoIBAEcXjNsviSlFOoOJ\nCZjxzyt8OMAR9gXnKqR1Rk364G9roYtsC21SeVpDTQule+Cg9nJOpFOIPfD6UMR1\n3cWlxHVC2/80E13ZJDROtX/9mx2RzMIV1sCMNusTzT5SsdYamojLSJL7S67J/2F9\nn2jSpfo5MI0G5RMdT5uZCJWV8ksnRqOTzLbejMhJYBi70oAL4tDV0hnDuLG8qi8R\nZHnLIg0+cT46QKkav1j3mNbLy2cC9UhSp7yu8TrAF2LwaAIP33ZDHLwtYfGJQvci\nr8i8pW3ZHoC2zr5TWfa/FQpW7kodq7tgdLRmR2aUXBvIRhSu2iLccv5zoF8r7Y4M\nivGCC7kCgYEA8tbMhyHDmlkxCSsjLf+LDWzjWOPQow0aTQZI2CtDah2/brayapQx\nwYpUhAuDO6mikksP1sv1wLQNtS5XQlSSbEAsk6v2je6eBv/I+0xrdLguiTcnhuXc\nbs+S1b/9HjazKHb1Tx4kMUix0WAoA6AurbMPvhtTa/H/GfPIBQ4n/G0CgYEA3CpH\nDDc3ceI3Jc4289vgmCVrlBvuGSPF1DRLEi58lytVk2OUmrgUeLlR1QdNpTQqdAgG\n+/dG6YueFrTBCnwHznN/ioADsPFgnevKqN2A3AhhUNDUVG8NTG9xxKZUNEmJpKEl\nnRyPyJXPG+fUFbNq6WU0F/hq0walLzcchYHxl+MCgYBDqfBhctoC5vlP2bI6veqr\n+fw7J3daB2udrLOdcCifp9xQaB28rsBSck3sYRzXAgRniPzH2BsI7+Kl6lysAc6u\n1Q7WsuLHV4a24ozI4NlMM4nb9/9OijvqsHH0l0NbKNiw3Lyrp/VjuiK5+XYM1JRN\nGAi56vlKqapwO8ovBmvD3QKBgGmZdZ5sVZGwGRdvA3iPu/f96s2NX/R67gZMVr2P\nwn6XcGJTXxGevWLyMEfnSty0WrBwsTjlcAPQzbDCXdzzhKMHTuNVZ2/VNqxITloU\ndBwVgOfMYitlYJGK2pyh0r2JkBWAnZPwAR8Ki94sodMOzXbI7eWZZ1N0WoJ9Apce\nroxVAoGBAIIUtOMWLhSdd7M3nWPYPG3gR1e+nrsKWL7dti9+HjRhENTsg4ZaPmdf\n6gWdF76fB1Hs33Rp+/rGjAd4fHNnU5JnD43wxRSNml+Cf3LTCUJcnZ0YQaW7jd8D\n8t21dBpbau+W3S3HjVAWd9cSOJ+4167cSedkB3dD546iqdCVzBR5\n-----END RSA PRIVATE KEY-----\n",
+    "caucase_port": "15090",
+    "domain": "example.com",
+    "full_address_list": [],
+    "instance_title": "testing partition 0",
+    "ip_list": [
+      [
+        "T-0",
+        "@@_ipv4_address@@"
+      ],
+      [
+        "T-0",
+        "@@_ipv6_address@@"
+      ]
+    ],
+    "kedifa_port": "15080",
+    "mpm-graceful-shutdown-timeout": "2",
+    "plain_http_port": "11080",
+    "port": "11443",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-0",
+    "slap_software_release_url": "@@getSoftwareURL@@",
+    "slap_software_type": "RootSoftwareInstance",
+    "slave_instance_list": [
+      {
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_from_master_kedifa_overrides_master_certificate",
+        "slave_title": "_ssl_from_master_kedifa_overrides_master_certificate",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      }
+    ],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
+      "caucase_port": "15090",
+      "cluster-identification": "testing partition 0",
+      "kedifa_port": "15080",
+      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-httpd-port": "8402",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "enable_cache": true,
+          "slave_reference": "_ssl_from_master_kedifa_overrides_master_certificate",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "kedifa",
+    "ip_list": [
+      [
+        "T-1",
+        "@@_ipv4_address@@"
+      ],
+      [
+        "T-1",
+        "@@_ipv6_address@@"
+      ]
+    ],
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-1",
+    "slap_software_release_url": "@@getSoftwareURL@@",
+    "slap_software_type": "kedifa",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
+      "apache-certificate": "-----BEGIN CERTIFICATE-----\nMIIDKjCCAhKgAwIBAgIUas8e9ev1jXeg6wWxE6St4Lj/8jEwDQYJKoZIhvcNAQEL\nBQAwJzElMCMGA1UEAwwcVGVzdCBTZWxmIFNpZ25lZCBDZXJ0aWZpY2F0ZTAeFw0y\nMjA3MDIxMTU0NThaFw0yMjA3MDkxMTU0NThaMCcxJTAjBgNVBAMMHFRlc3QgU2Vs\nZiBTaWduZWQgQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQDQ2LJm2FtxjS1BZFcwM1GAC26W+csBijOz8QWr8kHquctdKY+4L+e6GcPt\nQXACt8DJSY1ABs9qpFJguFzxhkW8LH4FcKiR1SEZfzNEh/KiJ6l5ywRmQUmmr3WW\nc1PV3j9QLNCZWloO6gEG4plzi1o3amU2siRaf23FRv/EIOjSQCOzbcv/Lcl9kDC+\nEgB8Wl0RbSCzkhoWD+ZtSCO3meH2aLPNu2x5uIOiIshdSSQBaZtm5/WVDqAlozbt\nkcOrNBVLVcRb2nXxh/k7pYe4vJ1vYZlmqF5Yb95FAjDeAOlO83wC0iL23IzOrTTA\nE7aa4hDAXyshTW5uKZ/W4k2y9h+nAgMBAAGjTjBMMEoGA1UdEQRDMEGCGiouY3Vz\ndG9tZG9tYWluLmV4YW1wbGUuY29tgg0qLmV4YW1wbGUuY29tghQqLmFsaWFzMS5l\neGFtcGxlLmNvbTANBgkqhkiG9w0BAQsFAAOCAQEAC9XTt5h5PqUiCetCu0UCv+l2\ncdCdSoV+cecCAQBr3wA8q8kxLRn/F2760ZMvR4otFm5LS3NYbXD3Hvx9BUy8uMCE\ni0+HFGiSVhRn0iZiHU7f/O2gzYajSumxWPvc6KToeJ+J2sKFwNIPgKtZwEcblpNp\n12UuZTgCMHMgSKyAmUBpU8FMNUAlhkPptTRAZeKiXrAXZyAxbYYL1sTHt7e3X4C6\nl5CrgifIAqQPAPEmhDeUOE18kz1UpVgPLoN5j1XKkd3WEDo7DDQx30uOcsORrvVU\nkrEVpTa1yXDGy7bUG6wEWJyZ9SvKOt7cIkJvIyHRUVVxXkqsc5P5SQDQDyqXNA==\n-----END CERTIFICATE-----\n",
+      "apache-key": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0NiyZthbcY0tQWRXMDNRgAtulvnLAYozs/EFq/JB6rnLXSmP\nuC/nuhnD7UFwArfAyUmNQAbPaqRSYLhc8YZFvCx+BXCokdUhGX8zRIfyoiepecsE\nZkFJpq91lnNT1d4/UCzQmVpaDuoBBuKZc4taN2plNrIkWn9txUb/xCDo0kAjs23L\n/y3JfZAwvhIAfFpdEW0gs5IaFg/mbUgjt5nh9mizzbtsebiDoiLIXUkkAWmbZuf1\nlQ6gJaM27ZHDqzQVS1XEW9p18Yf5O6WHuLydb2GZZqheWG/eRQIw3gDpTvN8AtIi\n9tyMzq00wBO2muIQwF8rIU1ubimf1uJNsvYfpwIDAQABAoIBAEcXjNsviSlFOoOJ\nCZjxzyt8OMAR9gXnKqR1Rk364G9roYtsC21SeVpDTQule+Cg9nJOpFOIPfD6UMR1\n3cWlxHVC2/80E13ZJDROtX/9mx2RzMIV1sCMNusTzT5SsdYamojLSJL7S67J/2F9\nn2jSpfo5MI0G5RMdT5uZCJWV8ksnRqOTzLbejMhJYBi70oAL4tDV0hnDuLG8qi8R\nZHnLIg0+cT46QKkav1j3mNbLy2cC9UhSp7yu8TrAF2LwaAIP33ZDHLwtYfGJQvci\nr8i8pW3ZHoC2zr5TWfa/FQpW7kodq7tgdLRmR2aUXBvIRhSu2iLccv5zoF8r7Y4M\nivGCC7kCgYEA8tbMhyHDmlkxCSsjLf+LDWzjWOPQow0aTQZI2CtDah2/brayapQx\nwYpUhAuDO6mikksP1sv1wLQNtS5XQlSSbEAsk6v2je6eBv/I+0xrdLguiTcnhuXc\nbs+S1b/9HjazKHb1Tx4kMUix0WAoA6AurbMPvhtTa/H/GfPIBQ4n/G0CgYEA3CpH\nDDc3ceI3Jc4289vgmCVrlBvuGSPF1DRLEi58lytVk2OUmrgUeLlR1QdNpTQqdAgG\n+/dG6YueFrTBCnwHznN/ioADsPFgnevKqN2A3AhhUNDUVG8NTG9xxKZUNEmJpKEl\nnRyPyJXPG+fUFbNq6WU0F/hq0walLzcchYHxl+MCgYBDqfBhctoC5vlP2bI6veqr\n+fw7J3daB2udrLOdcCifp9xQaB28rsBSck3sYRzXAgRniPzH2BsI7+Kl6lysAc6u\n1Q7WsuLHV4a24ozI4NlMM4nb9/9OijvqsHH0l0NbKNiw3Lyrp/VjuiK5+XYM1JRN\nGAi56vlKqapwO8ovBmvD3QKBgGmZdZ5sVZGwGRdvA3iPu/f96s2NX/R67gZMVr2P\nwn6XcGJTXxGevWLyMEfnSty0WrBwsTjlcAPQzbDCXdzzhKMHTuNVZ2/VNqxITloU\ndBwVgOfMYitlYJGK2pyh0r2JkBWAnZPwAR8Ki94sodMOzXbI7eWZZ1N0WoJ9Apce\nroxVAoGBAIIUtOMWLhSdd7M3nWPYPG3gR1e+nrsKWL7dti9+HjRhENTsg4ZaPmdf\n6gWdF76fB1Hs33Rp+/rGjAd4fHNnU5JnD43wxRSNml+Cf3LTCUJcnZ0YQaW7jd8D\n8t21dBpbau+W3S3HjVAWd9cSOJ+4167cSedkB3dD546iqdCVzBR5\n-----END RSA PRIVATE KEY-----\n",
+      "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
+      "cluster-identification": "testing partition 0",
+      "domain": "example.com",
+      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_ssl_from_master_kedifa_overrides_master_certificate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
+      "frontend-name": "caddy-frontend-1",
+      "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
+      "master-key-download-url": "https://[@@_ipv6_address@@]:15080/@@master-key-download-url_endpoint@@",
+      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-httpd-port": 8411,
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "mpm-graceful-shutdown-timeout": "2",
+      "plain_http_port": "11080",
+      "port": "11443",
+      "slave-kedifa-information": "{\"_ssl_from_master_kedifa_overrides_master_certificate\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_kedifa_overrides_master_certificate_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_kedifa_overrides_master_certificate_key-generate-auth-url@@/@@ssl_from_master_kedifa_overrides_master_certificate_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_kedifa_overrides_master_certificate_key-generate-auth-url@@?auth=\"}}"
+    },
+    "full_address_list": [],
+    "instance_title": "caddy-frontend-1",
+    "ip_list": [
+      [
+        "T-2",
+        "@@_ipv4_address@@"
+      ],
+      [
+        "T-2",
+        "@@_ipv6_address@@"
+      ]
+    ],
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@getSoftwareURL@@",
+    "slap_software_type": "single-custom-personal",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  }
+]
