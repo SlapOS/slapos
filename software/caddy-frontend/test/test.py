@@ -293,9 +293,9 @@ class TestDataMixin(object):
       in self.callSupervisorMethod('getAllProcessInfo')
       if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
 
-  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
-    if hash_value_dict is None:
-      hash_value_dict = {}
+  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None):
+    if data_replacement_dict is None:
+      data_replacement_dict = {}
     filename = '%s-%s.txt' % (self.id().replace('zz_', ''), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -305,9 +305,8 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    for hash_type, hash_value in list(hash_value_dict.items()):
-      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
-        hash_type),)
+    for replacement, value in list(data_replacement_dict.items()):
+      runtime_data = runtime_data.replace(value, replacement)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -384,36 +383,34 @@ class TestDataMixin(object):
 
     hash_file_list = [os.path.join(
         self.computer_partition_root_path, 'software_release/buildout.cfg')]
-    hash_value_dict = {
-      'generic': generateHashFromFiles(hash_file_list),
+    data_replacement_dict = {
+      '{hash-generic}': generateHashFromFiles(hash_file_list)
     }
     for caddy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'caddy-wrapper')):
       partition_id = caddy_wrapper_path.split('/')[-3]
-      hash_value_dict[
-        'caddy-%s' % (partition_id)] = generateHashFromFiles(
-        [caddy_wrapper_path] + hash_file_list
-      )
+      data_replacement_dict['{hash-caddy-%s}' % (partition_id)] = \
+          generateHashFromFiles([caddy_wrapper_path] + hash_file_list)
     for backend_haproxy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
       partition_id = backend_haproxy_wrapper_path.split('/')[-3]
-      hash_value_dict[
-        'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
-        [backend_haproxy_wrapper_path] + hash_file_list
-      )
+      data_replacement_dict['{hash-backend-haproxy-%s}' % (partition_id)] =  \
+          generateHashFromFiles([
+            backend_haproxy_wrapper_path] + hash_file_list)
     for rejected_slave_publish_path in glob.glob(os.path.join(
       self.instance_path, '*', 'etc', 'nginx-rejected-slave.conf')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
       rejected_slave_pem_path = os.path.join(
         self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
-      hash_value_dict[
-        'rejected-slave-publish'
+      data_replacement_dict[
+        '{hash-rejected-slave-publish}'
       ] = generateHashFromFiles(
         [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
       )
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
+    self.assertTestData(
+      runtime_data, data_replacement_dict=data_replacement_dict)
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
