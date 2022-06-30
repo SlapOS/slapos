@@ -102,6 +102,10 @@ TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 DNS_CACHE = {}
 
 
+def unicode_escape(s):
+  return s.encode('unicode_escape').decode()
+
+
 def add_custom_dns(domain, port, ip):
   port = int(port)
   key = (domain, port)
@@ -411,6 +415,71 @@ class TestDataMixin(object):
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(
       runtime_data, data_replacement_dict=data_replacement_dict)
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    pass
+
+  def test00cluster_request_instance_parameter_dict(self):
+    # test00 name chosen to be run as first test
+    cluster_request_parameter_list = []
+    data_replacement_dict = {}
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      if '_' in parameter_dict:
+        # deserialize for pretty printing only, and keep in mind
+        # that slave-kedifa-information content is string, so exactly it's
+        # sent like this to the real master
+        parameter_dict['_'] = json.loads(parameter_dict['_'])
+      parameter_dict['timestamp'] = '@@TIMESTAMP@@'
+      cluster_request_parameter_list.append(parameter_dict)
+
+    # XXX: Dirty decode/encode/decode...?
+    data_replacement_dict = {
+      '@@_ipv4_address@@': self._ipv4_address,
+      '@@_ipv6_address@@': self._ipv6_address,
+      '@@_server_http_port@@': str(self._server_http_port),
+      '@@_server_https_auth_port@@': str(self._server_https_auth_port),
+      '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
+      '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
+      '@@another_server_ca.certificate_pem@@': unicode_escape(
+        self.another_server_ca.certificate_pem.decode()),
+      '@@another_server_ca.certificate_pem_double@@': unicode_escape(
+        unicode_escape(self.another_server_ca.certificate_pem.decode())),
+      '@@getSoftwareURL@@': self.getSoftwareURL(),
+      '@@test_server_ca.certificate_pem@@': unicode_escape(
+        self.test_server_ca.certificate_pem.decode()),
+      '@@test_server_ca.certificate_pem_double@@': unicode_escape(
+        unicode_escape(self.test_server_ca.certificate_pem.decode())),
+    }
+    for reference, value in self.getSlaveConnectionParameterDictDict().items():
+      data_replacement_dict[
+        '@@%s_key-generate-auth-url@@' % reference] = value[
+        'key-generate-auth-url'].split('/')[-2]
+      data_replacement_dict[
+        '@@%s_key-upload-url@@' % reference] = value[
+        'key-generate-auth-url'].split('/')[-1]
+
+    connection_parameter_dict = self.requestDefaultInstance(
+      ).getConnectionParameterDict()
+    data_replacement_dict[
+      '@@master-key-download-url_endpoint@@'] = connection_parameter_dict[
+      'master-key-generate-auth-url'].split('/')[-2]
+    data_replacement_dict['@@monitor-password@@'] = connection_parameter_dict[
+      'monitor-setup-url'].split('=')[-1]
+    json_data = json.dumps(
+      cluster_request_parameter_list, indent=2,
+      # keys are sorted, even after deserializing, in order to have
+      # stable information about the sent parameters between runs
+      sort_keys=True
+    )
+    # again some mangling -- allow subclasses to update on need
+    self._updateDataReplacementDict(data_replacement_dict)
+    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
@@ -1280,6 +1349,18 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         partition_parameter_kw=partition_parameter_kw,
       ).getConnectionParameterDict())
     return parameter_dict_list
+
+  @classmethod
+  def getSlaveConnectionParameterDictDict(cls):
+    parameter_dict_dict = {}
+
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
+      parameter_dict_dict[slave_reference] = cls.requestSlaveInstance(
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+      ).getConnectionParameterDict()
+    return parameter_dict_dict
 
   @classmethod
   def untilSlavePartitionReady(cls):
@@ -4896,6 +4977,17 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
 
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -4957,6 +5049,50 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
 class TestSlaveSlapOSMasterCertificateCompatibility(
   SlaveHttpFrontendTestCase, TestDataMixin):
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+      '@@ssl_from_slave_certificate_pem@@': unicode_escape(
+        self.ssl_from_slave_certificate_pem.decode()),
+      '@@ssl_from_slave_key_pem@@': unicode_escape(
+        self.ssl_from_slave_key_pem.decode()),
+      '@@customdomain_certificate_pem@@': unicode_escape(
+        self.customdomain_certificate_pem.decode()),
+      '@@customdomain_key_pem@@': unicode_escape(
+        self.customdomain_key_pem.decode()),
+      '@@ssl_from_slave_kedifa_overrides_key_pem@@': unicode_escape(
+        self.ssl_from_slave_kedifa_overrides_key_pem.decode()),
+      '@@ssl_from_slave_kedifa_overrides_certificate_pem@@': unicode_escape(
+        self.ssl_from_slave_kedifa_overrides_certificate_pem.decode()),
+      '@@customdomain_ca_certificate_pem@@': unicode_escape(
+        self.customdomain_ca_certificate_pem.decode()),
+      '@@customdomain_ca_key_pem@@': unicode_escape(
+        self.customdomain_ca_key_pem.decode()),
+      '@@ca.certificate_pem@@': unicode_escape(
+        self.ca.certificate_pem.decode()),
+      '@@sslcacrtgarbage_ca_certificate_pem@@': unicode_escape(
+        self.sslcacrtgarbage_ca_certificate_pem.decode()),
+      '@@sslcacrtgarbage_ca_key_pem@@': unicode_escape(
+        self.sslcacrtgarbage_ca_key_pem.decode()),
+      '@@type_notebook_ssl_from_slave_certificate_pem@@': unicode_escape(
+        self.type_notebook_ssl_from_slave_certificate_pem.decode()),
+      '@@type_notebook_ssl_from_slave_key_pem@@': unicode_escape(
+        self.type_notebook_ssl_from_slave_key_pem.decode()),
+      '@@type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem@@':
+      unicode_escape(
+        self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem
+        .decode()),
+      '@@type_notebook_ssl_from_slave_kedifa_overrides_key_pem@@':
+      unicode_escape(
+        self.type_notebook_ssl_from_slave_kedifa_overrides_key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
 
   @classmethod
   def setUpMaster(cls):
@@ -5569,6 +5705,17 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
 
   instance_parameter_dict = {
     'domain': 'example.com',
