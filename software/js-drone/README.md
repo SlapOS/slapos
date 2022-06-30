@@ -2,7 +2,7 @@
 
 ## Presentation ##
 
-* Deploy 3 different scripts (`cli.js`, `demo.js` and `manual-flight.js`) on a drone to fly it
+* Deploy 4 different scripts (`cli.js`, `demo.js`, `manual-flight.js` and `subscribe.js`) on a drone to fly it
 
 * Compile all required libraries to run flight scripts
 
@@ -17,6 +17,8 @@
 * leader-id: Id of the drone chosen to be the leader of the swarm
 
 * multicast-ipv6: IPv6 of the multicast group of the swarm
+
+* net-if: Network interface used for multicast traffic
 
 * drone-id-list: Comma seperated list of the drone IDs of the swarm (recommanded to add the current drone ID)
 
