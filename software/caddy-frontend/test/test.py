@@ -510,26 +510,34 @@ class TestHandler(BaseHTTPRequestHandler):
       self.wfile.write(json.dumps({self.path: config}, indent=2))
 
   def do_PUT(self):
-    config = {
-      'status_code': self.headers.get('x-reply-status-code', '200')
-    }
-    prefix = 'x-reply-header-'
-    length = len(prefix)
+    incoming_config = {}
     for key, value in list(self.headers.items()):
+      if key.startswith('X-'):
+        incoming_config[key] = value
+    config = {
+      'status_code': incoming_config.pop('X-Reply-Status-Code', '200')
+    }
+    prefix = 'X-Reply-Header-'
+    length = len(prefix)
+    for key in list(incoming_config.keys()):
       if key.startswith(prefix):
         header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-        config[header] = value.strip()
+        config[header] = incoming_config.pop(key)
 
-    if 'x-reply-body' in self.headers:
-      config['Body'] = base64.b64decode(self.headers['x-reply-body']).decode()
+    if 'X-Reply-Body' in incoming_config:
+      config['Body'] = base64.b64decode(
+        incoming_config.pop('X-Reply-Body')).decode()
 
-    config['X-Drop-Header'] = self.headers.get('x-drop-header')
+    config['X-Drop-Header'] = incoming_config.pop('X-Drop-Header', None)
     self.configuration[self.path] = config
 
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
     self.end_headers()
-    self.wfile.write(json.dumps({self.path: config}, indent=2).encode())
+    reply = {self.path: config}
+    if incoming_config:
+      reply['unknown_config'] = incoming_config
+    self.wfile.write(json.dumps(reply, indent=2).encode())
 
   def do_POST(self):
     return self.do_GET()
