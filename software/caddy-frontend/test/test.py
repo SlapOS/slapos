@@ -414,6 +414,53 @@ class TestDataMixin(object):
     self.assertTestData(
       runtime_data, data_replacement_dict=data_replacement_dict)
 
+  def test_cluster_request_instance_parameter_dict(self):
+    cluster_request_parameter_list = []
+    data_replacement_dict = {}
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      if '_' in parameter_dict:
+        # deserialize for pretty printing only, and keep in mind
+        # that slave-kedifa-information content is string, so exactly it's
+        # sent like this to the real master
+        parameter_dict['_'] = json.loads(parameter_dict['_'])
+      parameter_dict['timestamp'] = '@@TIMESTAMP@@'
+      cluster_request_parameter_list.append(parameter_dict)
+
+    # XXX: Dirty decode/encode/decode...?
+    data_replacement_dict = {
+      '@@_ipv4_address@@': self._ipv4_address,
+      '@@_ipv6_address@@': self._ipv6_address,
+      '@@_server_http_port@@': str(self._server_http_port),
+      '@@_server_https_auth_port@@': str(self._server_https_auth_port),
+      '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
+      '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
+      '@@another_server_ca.certificate_pem@@': self.another_server_ca.
+      certificate_pem.decode().encode('unicode_escape').decode(),
+      '@@another_server_ca.certificate_pem_double@@': self.another_server_ca.
+      certificate_pem.decode().encode('unicode_escape').decode().
+      encode('unicode_escape').decode(),
+      '@@getSoftwareURL@@': self.getSoftwareURL(),
+      '@@test_server_ca.certificate_pem@@': self.test_server_ca.
+      certificate_pem.decode().encode('unicode_escape').decode(),
+      '@@test_server_ca.certificate_pem_double@@': self.test_server_ca.
+      certificate_pem.decode().encode('unicode_escape').decode().
+      encode('unicode_escape').decode(),
+    }
+    self.assertTestData(
+      json.dumps(
+        cluster_request_parameter_list, indent=2,
+        # keys are sorted, even after deserializing, in order to have
+        # stable information about the sent parameters between runs
+        sort_keys=True
+      ),
+      data_replacement_dict=data_replacement_dict)
+
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
                     headers=None, cookies=None, source_ip=SOURCE_IP):
