@@ -162,7 +162,7 @@ export function startPubsub() {
     droneDict[id].init(i);
   }
 
-  pubsubWorker.postMessage({ action: "run" });
+  pubsubWorker.postMessage({ action: "run", publish: true });
   pubsubRunning = true;
   return droneDict;
 }
