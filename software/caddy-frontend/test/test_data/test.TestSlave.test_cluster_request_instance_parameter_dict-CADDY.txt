@@ -1,0 +1,798 @@
+[
+  {
+    "caucase_port": "15090",
+    "domain": "example.com",
+    "full_address_list": [],
+    "instance_title": "testing partition 0",
+    "ip_list": [
+      [
+        "T-0",
+        "192.168.12.34"
+      ],
+      [
+        "T-0",
+        "::2"
+      ]
+    ],
+    "kedifa_port": "15080",
+    "mpm-graceful-shutdown-timeout": "2",
+    "plain_http_port": "11080",
+    "port": "11443",
+    "request-timeout": "12",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-0",
+    "slap_software_release_url": "/home/luke/project/slapos/software/caddy-frontend/software.cfg",
+    "slap_software_type": "RootSoftwareInstance",
+    "slave_instance_list": [
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_empty",
+        "slave_title": "_empty"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_bad-backend",
+        "slave_title": "_bad-backend",
+        "url": "http://bad.backend/"
+      },
+      {
+        "authenticate-to-backend": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_Url",
+        "slave_title": "_Url",
+        "url": " http://192.168.12.34:53521//?a=b&c= "
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_url-netloc-list",
+        "slave_title": "_url-netloc-list",
+        "url": "http://192.168.12.34:53521/",
+        "url-netloc-list": "192.168.12.34:48351 192.168.12.34:46081"
+      },
+      {
+        "authenticate-to-backend": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_auth-to-backend",
+        "slave_title": "_auth-to-backend",
+        "url": "https://192.168.12.34:43439/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_auth-to-backend-not-configured",
+        "slave_title": "_auth-to-backend-not-configured",
+        "url": "https://192.168.12.34:43439/"
+      },
+      {
+        "authenticate-to-backend": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_auth-to-backend-backend-ignore",
+        "slave_title": "_auth-to-backend-backend-ignore",
+        "url": "https://192.168.12.34:54879/"
+      },
+      {
+        "backend-connect-retries": 5,
+        "backend-connect-timeout": 10,
+        "https-url": "http://192.168.12.34:53521/https",
+        "request-timeout": 15,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_url_https-url",
+        "slave_title": "_url_https-url",
+        "strict-transport-security": "200",
+        "strict-transport-security-preload": true,
+        "strict-transport-security-sub-domains": true,
+        "url": "http://192.168.12.34:53521/http"
+      },
+      {
+        "https-url": "http://192.168.12.34:53521/https",
+        "https-url-netloc-list": "192.168.12.34:48351 192.168.12.34:46081",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_https-url-netloc-list",
+        "slave_title": "_https-url-netloc-list",
+        "url": "http://192.168.12.34:53521/http"
+      },
+      {
+        "server-alias": "alias1.example.com alias2.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias",
+        "slave_title": "_server-alias",
+        "strict-transport-security": "200",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "server-alias": "",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias-empty",
+        "slave_title": "_server-alias-empty",
+        "strict-transport-security": "200",
+        "strict-transport-security-sub-domains": true,
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "server-alias": "*.alias1.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias-wildcard",
+        "slave_title": "_server-alias-wildcard",
+        "strict-transport-security": "200",
+        "strict-transport-security-preload": true,
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "server-alias": "alias3.example.com alias3.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias-duplicated",
+        "slave_title": "_server-alias-duplicated",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "alias4.example.com",
+        "server-alias": "alias4.example.com alias4.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias_custom_domain-duplicated",
+        "slave_title": "_server-alias_custom_domain-duplicated",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt",
+        "slave_title": "_ssl-proxy-verify_ssl_proxy_ca_crt",
+        "ssl-proxy-verify": true,
+        "ssl_proxy_ca_crt": "-----BEGIN CERTIFICATE-----\nMIIC3TCCAcWgAwIBAgIUdkqlPaagrq9HpZuH/LOEAadlA0UwDQYJKoZIhvcNAQEL\nBQAwHjEcMBoGA1UEAwwTVGVzdCBTZXJ2ZXIgUm9vdCBDQTAeFw0yMjA2MjgxMjMx\nNDJaFw0yMjA3MzAxMjMxNDJaMB4xHDAaBgNVBAMME1Rlc3QgU2VydmVyIFJvb3Qg\nQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDUZ1WI6OX2bpUKKTFy\nEXGKr6MN7SowVzCFi0Z94xynsdmhQx6g9xE1Uxhi/2xnP8IsT8M0RLWG7ODzfiNB\nth37r6hbRFjmfJnioVPL1VWNJIg1SCMYJQ9Pd3gpKuppe8aVGEffXPFVmDk4aZ2B\nS89aVTst9WM0TXIAXjcADUJpv9R/xlmaWsUwAwaLZAHL/5yYpntqcjOnFmxbvadT\nvd5C6CXWxS+UI1CSDnkjw1kCXIYlOB9SAtMWfH6z2dxGZ/aYf27OlraPIo7PNFxD\nL3sX7+SyGNXg5uh75TKCTbpUNVIJ/PiGQJzm/TTLPRBYuMSSe5uVFkZfzm5K7f5D\nk9UZAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEB\nALBhBPepGzdz43jDVZqzn7npv0wzSAuFZJDabUztLjCGTgIhB/d9TgB+AgcmrXMN\nowNcz0iB/NZlsuXIpa0djU/U3eC9dsUpH1fZbI9hWZdZJ8p4MDZjojfTqFnhtpzW\naPs+cAJDE9bnRjKFeaodtwyylraTSLzfjy6BZ3aiazBgOSlxHbZi7tjwTkfCs/FG\niMjV2XW3hnBV1hyd/dC9fOkInJradhtwUepAUh8j6B8rh4apXYiLR8wZJOADAHzU\na0CKziSnCu8qLsE+rJQ0fVdw/uW1N20MFllWFFQRcYbF2GlaW4ynOGOLAONMyRfH\nXvPiTHtUQLYtYDtOwt/9U7Q=\n-----END CERTIFICATE-----\n",
+        "url": "https://192.168.12.34:54879/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
+        "slave_title": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
+        "ssl-proxy-verify": true,
+        "ssl_proxy_ca_crt": "-----BEGIN CERTIFICATE-----\nMIIC4zCCAcugAwIBAgIUSLQZNXZafjuxCZt674eiETf5j9EwDQYJKoZIhvcNAQEL\nBQAwITEfMB0GA1UEAwwWQW5vdGhlciBTZXJ2ZXIgUm9vdCBDQTAeFw0yMjA2Mjgx\nMjMxNDJaFw0yMjA3MzAxMjMxNDJaMCExHzAdBgNVBAMMFkFub3RoZXIgU2VydmVy\nIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDFmnFVcUpE\n4ucCJBdR7aKWfjJfCw8l4WztJZaNxgiTc6jqwBmvcpLxzSdrNd+xgDSNh/8tBdm4\nRQ310d7XTIp9GEF64H532k5x8YtvygE3f6Ab2pf0HkAed4JhFWqFIiXyRPZ45o9c\ngXnMhaz2R4/Y0qvLwfvqb1KCLraEhPVJxMk++MRWKgRY2IDGM/WDZgDhjkDXyJSu\nTOfhwbqXxs+0AzLRuvEgzGqfidOuBZv7OLxxaOGZSTlugr7+MoKxMg23+LsbRZie\nmXjHFl+7phK8PZdcqa9QIEoh059aeUijihWl6A8qJCNeNd63Fe1Qgi6KixQG8OJW\n5het8S9AVagDAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL\nBQADggEBABEgeWae6ZoAjQ/YRDNyao9QXvgrm7HXbgDdKVuFGPP3CZKLorbn6Xvd\nvc63eX6O8xErMkt2sPv6lXyXxDFxj3JjBBRm7gVZZ27k9picsvb+h6XxRmHUlZnm\nB0zaMbMZhDSLgZ69+jkESzpd9fRCFKst7lZeMV8TG2xeJXXhtW9TQ5CudfKxXFlw\n4j1dMPin6BFZgj0GOqcCbBQmQaji3cGJddBNJZyNjgUaaQuMT+lyH3OIZoaK1e+M\nRR25betAdjXgINB9qS3Q7UsrDEhaSwb7bV7feo0BLld61OwM9xZqks1IJfVjWZo7\nfB6sJgX5GT/pH7TWmajKFuLcZ/GUcb4=\n-----END CERTIFICATE-----\n",
+        "url": "https://192.168.12.34:54879/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl-proxy-verify-unverified",
+        "slave_title": "_ssl-proxy-verify-unverified",
+        "ssl-proxy-verify": true,
+        "url": "https://192.168.12.34:54879/"
+      },
+      {
+        "https-only": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_https-only",
+        "slave_title": "_https-only",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "mycustomdomain.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain",
+        "slave_title": "_custom_domain",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "*.customdomain.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain_wildcard",
+        "slave_title": "_custom_domain_wildcard",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "mycustomdomainserveralias.example.com",
+        "server-alias": "mycustomdomainserveralias1.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain_server_alias",
+        "slave_title": "_custom_domain_server_alias",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "customdomainsslcrtsslkey.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain_ssl_crt_ssl_key",
+        "slave_title": "_custom_domain_ssl_crt_ssl_key",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+        "slave_title": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_ca_crt_only",
+        "slave_title": "_ssl_ca_crt_only",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_ca_crt_garbage",
+        "slave_title": "_ssl_ca_crt_garbage",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_ca_crt_does_not_match",
+        "slave_title": "_ssl_ca_crt_does_not_match",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope",
+        "slave_title": "_type-zope",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "prefer-gzip-encoding-to-backend": "true",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-prefer-gzip-encoding-to-backend",
+        "slave_title": "_type-zope-prefer-gzip-encoding-to-backend",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "https-only": "false",
+        "prefer-gzip-encoding-to-backend": "true",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-prefer-gzip-encoding-to-backend-https-only",
+        "slave_title": "_type-zope-prefer-gzip-encoding-to-backend-https-only",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "https-only": "false",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-virtualhostroot-http-port",
+        "slave_title": "_type-zope-virtualhostroot-http-port",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/",
+        "virtualhostroot-http-port": "12345"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-virtualhostroot-https-port",
+        "slave_title": "_type-zope-virtualhostroot-https-port",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/",
+        "virtualhostroot-https-port": "12345"
+      },
+      {
+        "path": "///path/to/some/resource///",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-path",
+        "slave_title": "_type-zope-path",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "default-path": "///default-path/to/some/resource///",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-default-path",
+        "slave_title": "_type-zope-default-path",
+        "type": "zope",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-notebook",
+        "slave_title": "_type-notebook",
+        "type": "notebook",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket",
+        "slave_title": "_type-websocket",
+        "type": "websocket",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-path-list",
+        "slave_title": "_type-websocket-websocket-path-list",
+        "type": "websocket",
+        "url": "http://192.168.12.34:53521/",
+        "websocket-path-list": "////ws//// /with%20space/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-transparent-false",
+        "slave_title": "_type-websocket-websocket-transparent-false",
+        "type": "websocket",
+        "url": "http://192.168.12.34:53521/",
+        "websocket-transparent": "false"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-path-list-websocket-transparent-false",
+        "slave_title": "_type-websocket-websocket-path-list-websocket-transparent-false",
+        "type": "websocket",
+        "url": "http://192.168.12.34:53521/",
+        "websocket-path-list": "////ws//// /with%20space/",
+        "websocket-transparent": "false"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-redirect",
+        "slave_title": "_type-redirect",
+        "type": "redirect",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "customdomaintyperedirect.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-redirect-custom_domain",
+        "slave_title": "_type-redirect-custom_domain",
+        "type": "redirect",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache",
+        "slave_title": "_enable_cache",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "custom_domain": "customdomainenablecache.example.com",
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache_custom_domain",
+        "slave_title": "_enable_cache_custom_domain",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "enable_cache": true,
+        "server-alias": "enablecacheserveralias1.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache_server_alias",
+        "slave_title": "_enable_cache_server_alias",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "disable-no-cache-request": true,
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache-disable-no-cache-request",
+        "slave_title": "_enable_cache-disable-no-cache-request",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "disable-via-header": true,
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache-disable-via-header",
+        "slave_title": "_enable_cache-disable-via-header",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "enable_cache": true,
+        "https-only": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache-https-only-false",
+        "slave_title": "_enable_cache-https-only-false",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "enable-http2": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http2-false",
+        "slave_title": "_enable-http2-false",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http2-default",
+        "slave_title": "_enable-http2-default",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "prefer-gzip-encoding-to-backend": "true",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_prefer-gzip-encoding-to-backend",
+        "slave_title": "_prefer-gzip-encoding-to-backend",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "https-only": "false",
+        "prefer-gzip-encoding-to-backend": "true",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_prefer-gzip-encoding-to-backend-https-only",
+        "slave_title": "_prefer-gzip-encoding-to-backend-https-only",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "disabled-cookie-list": "Chocolate Vanilia",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_disabled-cookie-list",
+        "slave_title": "_disabled-cookie-list",
+        "url": "http://192.168.12.34:53521/"
+      },
+      {
+        "monitor-ipv4-test": "monitor-ipv4-test",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_monitor-ipv4-test",
+        "slave_title": "_monitor-ipv4-test"
+      },
+      {
+        "monitor-ipv6-test": "monitor-ipv6-test",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_monitor-ipv6-test",
+        "slave_title": "_monitor-ipv6-test"
+      },
+      {
+        "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ciphers",
+        "slave_title": "_ciphers"
+      }
+    ],
+    "timestamp": "1656592386.6425972"
+  },
+  {
+    "_": {
+      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-username": "admin",
+      "monitor-password": "w5cJ7sOW2KUlIC7Z",
+      "monitor-httpd-port": "8402",
+      "kedifa_port": "15080",
+      "caucase_port": "15090",
+      "slave-list": [
+        {
+          "authenticate-to-backend": true,
+          "slave_reference": "_Url",
+          "url": " http://192.168.12.34:53521//?a=b&c= "
+        },
+        {
+          "authenticate-to-backend": true,
+          "slave_reference": "_auth-to-backend",
+          "url": "https://192.168.12.34:43439/"
+        },
+        {
+          "authenticate-to-backend": true,
+          "slave_reference": "_auth-to-backend-backend-ignore",
+          "url": "https://192.168.12.34:54879/"
+        },
+        {
+          "slave_reference": "_auth-to-backend-not-configured",
+          "url": "https://192.168.12.34:43439/"
+        },
+        {
+          "slave_reference": "_bad-backend",
+          "url": "http://bad.backend/"
+        },
+        {
+          "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
+          "slave_reference": "_ciphers"
+        },
+        {
+          "custom_domain": "mycustomdomain.example.com",
+          "slave_reference": "_custom_domain",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "mycustomdomainserveralias.example.com",
+          "server-alias": "mycustomdomainserveralias1.example.com",
+          "slave_reference": "_custom_domain_server_alias",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "customdomainsslcrtsslkey.example.com",
+          "slave_reference": "_custom_domain_ssl_crt_ssl_key",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
+          "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "*.customdomain.example.com",
+          "slave_reference": "_custom_domain_wildcard",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "disabled-cookie-list": "Chocolate Vanilia",
+          "slave_reference": "_disabled-cookie-list",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_empty"
+        },
+        {
+          "slave_reference": "_enable-http2-default",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "enable-http2": false,
+          "slave_reference": "_enable-http2-false",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "enable_cache": true,
+          "slave_reference": "_enable_cache",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "disable-no-cache-request": true,
+          "enable_cache": true,
+          "slave_reference": "_enable_cache-disable-no-cache-request",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "disable-via-header": true,
+          "enable_cache": true,
+          "slave_reference": "_enable_cache-disable-via-header",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "enable_cache": true,
+          "https-only": false,
+          "slave_reference": "_enable_cache-https-only-false",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "customdomainenablecache.example.com",
+          "enable_cache": true,
+          "slave_reference": "_enable_cache_custom_domain",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "enable_cache": true,
+          "server-alias": "enablecacheserveralias1.example.com",
+          "slave_reference": "_enable_cache_server_alias",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "https-only": false,
+          "slave_reference": "_https-only",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "https-url": "http://192.168.12.34:53521/https",
+          "https-url-netloc-list": "192.168.12.34:48351 192.168.12.34:46081",
+          "slave_reference": "_https-url-netloc-list",
+          "url": "http://192.168.12.34:53521/http"
+        },
+        {
+          "monitor-ipv4-test": "monitor-ipv4-test",
+          "slave_reference": "_monitor-ipv4-test"
+        },
+        {
+          "monitor-ipv6-test": "monitor-ipv6-test",
+          "slave_reference": "_monitor-ipv6-test"
+        },
+        {
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_prefer-gzip-encoding-to-backend",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "https-only": "false",
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_prefer-gzip-encoding-to-backend-https-only",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "server-alias": "alias1.example.com alias2.example.com",
+          "slave_reference": "_server-alias",
+          "strict-transport-security": "200",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "server-alias": "alias3.example.com",
+          "slave_reference": "_server-alias-duplicated",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "server-alias": "",
+          "slave_reference": "_server-alias-empty",
+          "strict-transport-security": "200",
+          "strict-transport-security-sub-domains": true,
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "server-alias": "*.alias1.example.com",
+          "slave_reference": "_server-alias-wildcard",
+          "strict-transport-security": "200",
+          "strict-transport-security-preload": true,
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "alias4.example.com",
+          "server-alias": "",
+          "slave_reference": "_server-alias_custom_domain-duplicated",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_ssl-proxy-verify-unverified",
+          "ssl-proxy-verify": true,
+          "url": "https://192.168.12.34:54879/"
+        },
+        {
+          "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt",
+          "ssl-proxy-verify": true,
+          "ssl_proxy_ca_crt": "-----BEGIN CERTIFICATE-----\nMIIC3TCCAcWgAwIBAgIUdkqlPaagrq9HpZuH/LOEAadlA0UwDQYJKoZIhvcNAQEL\nBQAwHjEcMBoGA1UEAwwTVGVzdCBTZXJ2ZXIgUm9vdCBDQTAeFw0yMjA2MjgxMjMx\nNDJaFw0yMjA3MzAxMjMxNDJaMB4xHDAaBgNVBAMME1Rlc3QgU2VydmVyIFJvb3Qg\nQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDUZ1WI6OX2bpUKKTFy\nEXGKr6MN7SowVzCFi0Z94xynsdmhQx6g9xE1Uxhi/2xnP8IsT8M0RLWG7ODzfiNB\nth37r6hbRFjmfJnioVPL1VWNJIg1SCMYJQ9Pd3gpKuppe8aVGEffXPFVmDk4aZ2B\nS89aVTst9WM0TXIAXjcADUJpv9R/xlmaWsUwAwaLZAHL/5yYpntqcjOnFmxbvadT\nvd5C6CXWxS+UI1CSDnkjw1kCXIYlOB9SAtMWfH6z2dxGZ/aYf27OlraPIo7PNFxD\nL3sX7+SyGNXg5uh75TKCTbpUNVIJ/PiGQJzm/TTLPRBYuMSSe5uVFkZfzm5K7f5D\nk9UZAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEB\nALBhBPepGzdz43jDVZqzn7npv0wzSAuFZJDabUztLjCGTgIhB/d9TgB+AgcmrXMN\nowNcz0iB/NZlsuXIpa0djU/U3eC9dsUpH1fZbI9hWZdZJ8p4MDZjojfTqFnhtpzW\naPs+cAJDE9bnRjKFeaodtwyylraTSLzfjy6BZ3aiazBgOSlxHbZi7tjwTkfCs/FG\niMjV2XW3hnBV1hyd/dC9fOkInJradhtwUepAUh8j6B8rh4apXYiLR8wZJOADAHzU\na0CKziSnCu8qLsE+rJQ0fVdw/uW1N20MFllWFFQRcYbF2GlaW4ynOGOLAONMyRfH\nXvPiTHtUQLYtYDtOwt/9U7Q=\n-----END CERTIFICATE-----\n",
+          "url": "https://192.168.12.34:54879/"
+        },
+        {
+          "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
+          "ssl-proxy-verify": true,
+          "ssl_proxy_ca_crt": "-----BEGIN CERTIFICATE-----\nMIIC4zCCAcugAwIBAgIUSLQZNXZafjuxCZt674eiETf5j9EwDQYJKoZIhvcNAQEL\nBQAwITEfMB0GA1UEAwwWQW5vdGhlciBTZXJ2ZXIgUm9vdCBDQTAeFw0yMjA2Mjgx\nMjMxNDJaFw0yMjA3MzAxMjMxNDJaMCExHzAdBgNVBAMMFkFub3RoZXIgU2VydmVy\nIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDFmnFVcUpE\n4ucCJBdR7aKWfjJfCw8l4WztJZaNxgiTc6jqwBmvcpLxzSdrNd+xgDSNh/8tBdm4\nRQ310d7XTIp9GEF64H532k5x8YtvygE3f6Ab2pf0HkAed4JhFWqFIiXyRPZ45o9c\ngXnMhaz2R4/Y0qvLwfvqb1KCLraEhPVJxMk++MRWKgRY2IDGM/WDZgDhjkDXyJSu\nTOfhwbqXxs+0AzLRuvEgzGqfidOuBZv7OLxxaOGZSTlugr7+MoKxMg23+LsbRZie\nmXjHFl+7phK8PZdcqa9QIEoh059aeUijihWl6A8qJCNeNd63Fe1Qgi6KixQG8OJW\n5het8S9AVagDAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL\nBQADggEBABEgeWae6ZoAjQ/YRDNyao9QXvgrm7HXbgDdKVuFGPP3CZKLorbn6Xvd\nvc63eX6O8xErMkt2sPv6lXyXxDFxj3JjBBRm7gVZZ27k9picsvb+h6XxRmHUlZnm\nB0zaMbMZhDSLgZ69+jkESzpd9fRCFKst7lZeMV8TG2xeJXXhtW9TQ5CudfKxXFlw\n4j1dMPin6BFZgj0GOqcCbBQmQaji3cGJddBNJZyNjgUaaQuMT+lyH3OIZoaK1e+M\nRR25betAdjXgINB9qS3Q7UsrDEhaSwb7bV7feo0BLld61OwM9xZqks1IJfVjWZo7\nfB6sJgX5GT/pH7TWmajKFuLcZ/GUcb4=\n-----END CERTIFICATE-----\n",
+          "url": "https://192.168.12.34:54879/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_does_not_match",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_garbage",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_only",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_type-notebook",
+          "type": "notebook",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_type-redirect",
+          "type": "redirect",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "custom_domain": "customdomaintyperedirect.example.com",
+          "slave_reference": "_type-redirect-custom_domain",
+          "type": "redirect",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_type-websocket",
+          "type": "websocket",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-path-list",
+          "type": "websocket",
+          "url": "http://192.168.12.34:53521/",
+          "websocket-path-list": "////ws//// /with%20space/"
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-path-list-websocket-transparent-false",
+          "type": "websocket",
+          "url": "http://192.168.12.34:53521/",
+          "websocket-path-list": "////ws//// /with%20space/",
+          "websocket-transparent": "false"
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-transparent-false",
+          "type": "websocket",
+          "url": "http://192.168.12.34:53521/",
+          "websocket-transparent": "false"
+        },
+        {
+          "slave_reference": "_type-zope",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "default-path": "///default-path/to/some/resource///",
+          "slave_reference": "_type-zope-default-path",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "path": "///path/to/some/resource///",
+          "slave_reference": "_type-zope-path",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_type-zope-prefer-gzip-encoding-to-backend",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "https-only": "false",
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_type-zope-prefer-gzip-encoding-to-backend-https-only",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/"
+        },
+        {
+          "https-only": "false",
+          "slave_reference": "_type-zope-virtualhostroot-http-port",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/",
+          "virtualhostroot-http-port": "12345"
+        },
+        {
+          "slave_reference": "_type-zope-virtualhostroot-https-port",
+          "type": "zope",
+          "url": "http://192.168.12.34:53521/",
+          "virtualhostroot-https-port": "12345"
+        },
+        {
+          "slave_reference": "_url-netloc-list",
+          "url": "http://192.168.12.34:53521/",
+          "url-netloc-list": "192.168.12.34:48351 192.168.12.34:46081"
+        },
+        {
+          "backend-connect-retries": 5,
+          "backend-connect-timeout": 10,
+          "https-url": "http://192.168.12.34:53521/https",
+          "request-timeout": 15,
+          "slave_reference": "_url_https-url",
+          "strict-transport-security": "200",
+          "strict-transport-security-preload": true,
+          "strict-transport-security-sub-domains": true,
+          "url": "http://192.168.12.34:53521/http"
+        }
+      ],
+      "cluster-identification": "testing partition 0"
+    },
+    "full_address_list": [],
+    "instance_title": "kedifa",
+    "ip_list": [
+      [
+        "T-1",
+        "192.168.12.34"
+      ],
+      [
+        "T-1",
+        "::2"
+      ]
+    ],
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-1",
+    "slap_software_release_url": "/home/luke/project/slapos/software/caddy-frontend/software.cfg",
+    "slap_software_type": "kedifa",
+    "slave_instance_list": [],
+    "timestamp": "1656592386.6425972"
+  },
+  {
+    "_": {
+      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-username": "admin",
+      "monitor-password": "w5cJ7sOW2KUlIC7Z",
+      "slave-kedifa-information": "{\"_Url\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/qai2b2e0ijwz11pd5t50lo78hvllpmvb\", \"key-generate-auth-url\": \"https://[::2]:15080/qai2b2e0ijwz11pd5t50lo78hvllpmvb/generateauth\", \"key-upload-url\": \"https://[::2]:15080/qai2b2e0ijwz11pd5t50lo78hvllpmvb?auth=\"}, \"_auth-to-backend\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/vlv9z24d0zi9jgfqttbrina84ak1sonb\", \"key-generate-auth-url\": \"https://[::2]:15080/vlv9z24d0zi9jgfqttbrina84ak1sonb/generateauth\", \"key-upload-url\": \"https://[::2]:15080/vlv9z24d0zi9jgfqttbrina84ak1sonb?auth=\"}, \"_auth-to-backend-backend-ignore\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/1k28y5d2pp75ygmia36wwvafpip8gmba\", \"key-generate-auth-url\": \"https://[::2]:15080/1k28y5d2pp75ygmia36wwvafpip8gmba/generateauth\", \"key-upload-url\": \"https://[::2]:15080/1k28y5d2pp75ygmia36wwvafpip8gmba?auth=\"}, \"_auth-to-backend-not-configured\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/1q7v5epu6ta60puzzmu6brcp6enovfe7\", \"key-generate-auth-url\": \"https://[::2]:15080/1q7v5epu6ta60puzzmu6brcp6enovfe7/generateauth\", \"key-upload-url\": \"https://[::2]:15080/1q7v5epu6ta60puzzmu6brcp6enovfe7?auth=\"}, \"_bad-backend\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/g3ris9vsavruv9xdvy5vfb5cwprsikgq\", \"key-generate-auth-url\": \"https://[::2]:15080/g3ris9vsavruv9xdvy5vfb5cwprsikgq/generateauth\", \"key-upload-url\": \"https://[::2]:15080/g3ris9vsavruv9xdvy5vfb5cwprsikgq?auth=\"}, \"_ciphers\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/mg08hlgc33925q1xeq1gy6dvhw204sm4\", \"key-generate-auth-url\": \"https://[::2]:15080/mg08hlgc33925q1xeq1gy6dvhw204sm4/generateauth\", \"key-upload-url\": \"https://[::2]:15080/mg08hlgc33925q1xeq1gy6dvhw204sm4?auth=\"}, \"_custom_domain\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/fp4uodbwsup6zq4vuwa351dyg831inb9\", \"key-generate-auth-url\": \"https://[::2]:15080/fp4uodbwsup6zq4vuwa351dyg831inb9/generateauth\", \"key-upload-url\": \"https://[::2]:15080/fp4uodbwsup6zq4vuwa351dyg831inb9?auth=\"}, \"_custom_domain_server_alias\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/z9lpglvo70ahp896gh3m3w4xavgk0id7\", \"key-generate-auth-url\": \"https://[::2]:15080/z9lpglvo70ahp896gh3m3w4xavgk0id7/generateauth\", \"key-upload-url\": \"https://[::2]:15080/z9lpglvo70ahp896gh3m3w4xavgk0id7?auth=\"}, \"_custom_domain_ssl_crt_ssl_key\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/2mwbde3bdxnhxvyeadbpr9ir8vtzn0rx\", \"key-generate-auth-url\": \"https://[::2]:15080/2mwbde3bdxnhxvyeadbpr9ir8vtzn0rx/generateauth\", \"key-upload-url\": \"https://[::2]:15080/2mwbde3bdxnhxvyeadbpr9ir8vtzn0rx?auth=\"}, \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/x2to9zpdbj0gex0kit4m0vl56cymoaic\", \"key-generate-auth-url\": \"https://[::2]:15080/x2to9zpdbj0gex0kit4m0vl56cymoaic/generateauth\", \"key-upload-url\": \"https://[::2]:15080/x2to9zpdbj0gex0kit4m0vl56cymoaic?auth=\"}, \"_custom_domain_wildcard\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/1ooctmq6jv5jfuvp3144iz9pz4d2rcoh\", \"key-generate-auth-url\": \"https://[::2]:15080/1ooctmq6jv5jfuvp3144iz9pz4d2rcoh/generateauth\", \"key-upload-url\": \"https://[::2]:15080/1ooctmq6jv5jfuvp3144iz9pz4d2rcoh?auth=\"}, \"_disabled-cookie-list\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/gw8vw1fd2at7u91lqta0w3dxbitz43vg\", \"key-generate-auth-url\": \"https://[::2]:15080/gw8vw1fd2at7u91lqta0w3dxbitz43vg/generateauth\", \"key-upload-url\": \"https://[::2]:15080/gw8vw1fd2at7u91lqta0w3dxbitz43vg?auth=\"}, \"_empty\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/sn7y84o4wvr2yu8awz50qfm0qvedugb2\", \"key-generate-auth-url\": \"https://[::2]:15080/sn7y84o4wvr2yu8awz50qfm0qvedugb2/generateauth\", \"key-upload-url\": \"https://[::2]:15080/sn7y84o4wvr2yu8awz50qfm0qvedugb2?auth=\"}, \"_enable-http2-default\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/663paqothy517hmdiut2dijibqwuayc3\", \"key-generate-auth-url\": \"https://[::2]:15080/663paqothy517hmdiut2dijibqwuayc3/generateauth\", \"key-upload-url\": \"https://[::2]:15080/663paqothy517hmdiut2dijibqwuayc3?auth=\"}, \"_enable-http2-false\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/mfjnayrdl7ljs4uvc9l5slo1g7qppoi9\", \"key-generate-auth-url\": \"https://[::2]:15080/mfjnayrdl7ljs4uvc9l5slo1g7qppoi9/generateauth\", \"key-upload-url\": \"https://[::2]:15080/mfjnayrdl7ljs4uvc9l5slo1g7qppoi9?auth=\"}, \"_enable_cache\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/ae9cop7o9tjulcgcvwiwqzkg7rxziywx\", \"key-generate-auth-url\": \"https://[::2]:15080/ae9cop7o9tjulcgcvwiwqzkg7rxziywx/generateauth\", \"key-upload-url\": \"https://[::2]:15080/ae9cop7o9tjulcgcvwiwqzkg7rxziywx?auth=\"}, \"_enable_cache-disable-no-cache-request\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/uw67rpsff9mygz57gth4jgi6hgdvo2fh\", \"key-generate-auth-url\": \"https://[::2]:15080/uw67rpsff9mygz57gth4jgi6hgdvo2fh/generateauth\", \"key-upload-url\": \"https://[::2]:15080/uw67rpsff9mygz57gth4jgi6hgdvo2fh?auth=\"}, \"_enable_cache-disable-via-header\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/raw3r0kkxcuyv6dlo3rewtnfa83sanb8\", \"key-generate-auth-url\": \"https://[::2]:15080/raw3r0kkxcuyv6dlo3rewtnfa83sanb8/generateauth\", \"key-upload-url\": \"https://[::2]:15080/raw3r0kkxcuyv6dlo3rewtnfa83sanb8?auth=\"}, \"_enable_cache-https-only-false\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/9ojglqnjfsf0vhz1o6euj8jnj85ct8dk\", \"key-generate-auth-url\": \"https://[::2]:15080/9ojglqnjfsf0vhz1o6euj8jnj85ct8dk/generateauth\", \"key-upload-url\": \"https://[::2]:15080/9ojglqnjfsf0vhz1o6euj8jnj85ct8dk?auth=\"}, \"_enable_cache_custom_domain\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/p0mwfpsihy0zs354qbs3mhv0gm7zsosh\", \"key-generate-auth-url\": \"https://[::2]:15080/p0mwfpsihy0zs354qbs3mhv0gm7zsosh/generateauth\", \"key-upload-url\": \"https://[::2]:15080/p0mwfpsihy0zs354qbs3mhv0gm7zsosh?auth=\"}, \"_enable_cache_server_alias\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/az9luvxli90nv66bh6hbp4x1lg75s9i2\", \"key-generate-auth-url\": \"https://[::2]:15080/az9luvxli90nv66bh6hbp4x1lg75s9i2/generateauth\", \"key-upload-url\": \"https://[::2]:15080/az9luvxli90nv66bh6hbp4x1lg75s9i2?auth=\"}, \"_https-only\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/ulqamnaxsptmng5bbgumg4kxcsz5bqao\", \"key-generate-auth-url\": \"https://[::2]:15080/ulqamnaxsptmng5bbgumg4kxcsz5bqao/generateauth\", \"key-upload-url\": \"https://[::2]:15080/ulqamnaxsptmng5bbgumg4kxcsz5bqao?auth=\"}, \"_https-url-netloc-list\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/3d6n2al9pmjhuys8x5qcgj35b2eas2vv\", \"key-generate-auth-url\": \"https://[::2]:15080/3d6n2al9pmjhuys8x5qcgj35b2eas2vv/generateauth\", \"key-upload-url\": \"https://[::2]:15080/3d6n2al9pmjhuys8x5qcgj35b2eas2vv?auth=\"}, \"_monitor-ipv4-test\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/13ofyrvctuxoziggi5v2cpe5d0rjvu64\", \"key-generate-auth-url\": \"https://[::2]:15080/13ofyrvctuxoziggi5v2cpe5d0rjvu64/generateauth\", \"key-upload-url\": \"https://[::2]:15080/13ofyrvctuxoziggi5v2cpe5d0rjvu64?auth=\"}, \"_monitor-ipv6-test\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/x3u2h28lz14jv1lp9is79a21wkj43ipr\", \"key-generate-auth-url\": \"https://[::2]:15080/x3u2h28lz14jv1lp9is79a21wkj43ipr/generateauth\", \"key-upload-url\": \"https://[::2]:15080/x3u2h28lz14jv1lp9is79a21wkj43ipr?auth=\"}, \"_prefer-gzip-encoding-to-backend\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/fe5k69gs2w30561c0j1nkpbsjwx8j9bg\", \"key-generate-auth-url\": \"https://[::2]:15080/fe5k69gs2w30561c0j1nkpbsjwx8j9bg/generateauth\", \"key-upload-url\": \"https://[::2]:15080/fe5k69gs2w30561c0j1nkpbsjwx8j9bg?auth=\"}, \"_prefer-gzip-encoding-to-backend-https-only\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/utp439ldoowehxb1pzgnn5q3czi6js49\", \"key-generate-auth-url\": \"https://[::2]:15080/utp439ldoowehxb1pzgnn5q3czi6js49/generateauth\", \"key-upload-url\": \"https://[::2]:15080/utp439ldoowehxb1pzgnn5q3czi6js49?auth=\"}, \"_server-alias\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/dkm4kz7drkn2wxq58qssdgu93vny4q6b\", \"key-generate-auth-url\": \"https://[::2]:15080/dkm4kz7drkn2wxq58qssdgu93vny4q6b/generateauth\", \"key-upload-url\": \"https://[::2]:15080/dkm4kz7drkn2wxq58qssdgu93vny4q6b?auth=\"}, \"_server-alias-duplicated\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/kbeo4xv1mqtn9c0h2n139oiwnfzhaseg\", \"key-generate-auth-url\": \"https://[::2]:15080/kbeo4xv1mqtn9c0h2n139oiwnfzhaseg/generateauth\", \"key-upload-url\": \"https://[::2]:15080/kbeo4xv1mqtn9c0h2n139oiwnfzhaseg?auth=\"}, \"_server-alias-empty\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/s6sar4wn78j0iof4kfevslxaxsc25kfz\", \"key-generate-auth-url\": \"https://[::2]:15080/s6sar4wn78j0iof4kfevslxaxsc25kfz/generateauth\", \"key-upload-url\": \"https://[::2]:15080/s6sar4wn78j0iof4kfevslxaxsc25kfz?auth=\"}, \"_server-alias-wildcard\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/0376ez6xwj21rq5q49mlbc7s6gtyyi9y\", \"key-generate-auth-url\": \"https://[::2]:15080/0376ez6xwj21rq5q49mlbc7s6gtyyi9y/generateauth\", \"key-upload-url\": \"https://[::2]:15080/0376ez6xwj21rq5q49mlbc7s6gtyyi9y?auth=\"}, \"_server-alias_custom_domain-duplicated\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/muifj6x6xq1ef2e3elh9dhqtisraqv47\", \"key-generate-auth-url\": \"https://[::2]:15080/muifj6x6xq1ef2e3elh9dhqtisraqv47/generateauth\", \"key-upload-url\": \"https://[::2]:15080/muifj6x6xq1ef2e3elh9dhqtisraqv47?auth=\"}, \"_ssl-proxy-verify-unverified\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/5yx3lklga4c519gli7llk48v1lq9r1qe\", \"key-generate-auth-url\": \"https://[::2]:15080/5yx3lklga4c519gli7llk48v1lq9r1qe/generateauth\", \"key-upload-url\": \"https://[::2]:15080/5yx3lklga4c519gli7llk48v1lq9r1qe?auth=\"}, \"_ssl-proxy-verify_ssl_proxy_ca_crt\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/igzzi5y2mzyrvm06e16l5erewnkyy0h7\", \"key-generate-auth-url\": \"https://[::2]:15080/igzzi5y2mzyrvm06e16l5erewnkyy0h7/generateauth\", \"key-upload-url\": \"https://[::2]:15080/igzzi5y2mzyrvm06e16l5erewnkyy0h7?auth=\"}, \"_ssl-proxy-verify_ssl_proxy_ca_crt-unverified\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/teaw8d9cz6pwwy4d4xa5jgzngts6rqvi\", \"key-generate-auth-url\": \"https://[::2]:15080/teaw8d9cz6pwwy4d4xa5jgzngts6rqvi/generateauth\", \"key-upload-url\": \"https://[::2]:15080/teaw8d9cz6pwwy4d4xa5jgzngts6rqvi?auth=\"}, \"_ssl_ca_crt_does_not_match\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/hccc2ky9n49vzt7jxicgasq5erngo2hy\", \"key-generate-auth-url\": \"https://[::2]:15080/hccc2ky9n49vzt7jxicgasq5erngo2hy/generateauth\", \"key-upload-url\": \"https://[::2]:15080/hccc2ky9n49vzt7jxicgasq5erngo2hy?auth=\"}, \"_ssl_ca_crt_garbage\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/2fw6ygqrotgvjtlr45uxqxxaymv6lj47\", \"key-generate-auth-url\": \"https://[::2]:15080/2fw6ygqrotgvjtlr45uxqxxaymv6lj47/generateauth\", \"key-upload-url\": \"https://[::2]:15080/2fw6ygqrotgvjtlr45uxqxxaymv6lj47?auth=\"}, \"_ssl_ca_crt_only\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/mfvq7b2108m4ru5c40rqm9vftpobclc4\", \"key-generate-auth-url\": \"https://[::2]:15080/mfvq7b2108m4ru5c40rqm9vftpobclc4/generateauth\", \"key-upload-url\": \"https://[::2]:15080/mfvq7b2108m4ru5c40rqm9vftpobclc4?auth=\"}, \"_type-notebook\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/g5taqzfkxdyzlfu5dxds8naxfblrz67q\", \"key-generate-auth-url\": \"https://[::2]:15080/g5taqzfkxdyzlfu5dxds8naxfblrz67q/generateauth\", \"key-upload-url\": \"https://[::2]:15080/g5taqzfkxdyzlfu5dxds8naxfblrz67q?auth=\"}, \"_type-redirect\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/tqywnkgz19qswx60z6i5l2qk0o0s8d21\", \"key-generate-auth-url\": \"https://[::2]:15080/tqywnkgz19qswx60z6i5l2qk0o0s8d21/generateauth\", \"key-upload-url\": \"https://[::2]:15080/tqywnkgz19qswx60z6i5l2qk0o0s8d21?auth=\"}, \"_type-redirect-custom_domain\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/opm43iblsppo6sbu2mxt3o2q8uhldpkk\", \"key-generate-auth-url\": \"https://[::2]:15080/opm43iblsppo6sbu2mxt3o2q8uhldpkk/generateauth\", \"key-upload-url\": \"https://[::2]:15080/opm43iblsppo6sbu2mxt3o2q8uhldpkk?auth=\"}, \"_type-websocket\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/vhs4hd1wl60k6xbgas9chb3hr0hgnnt9\", \"key-generate-auth-url\": \"https://[::2]:15080/vhs4hd1wl60k6xbgas9chb3hr0hgnnt9/generateauth\", \"key-upload-url\": \"https://[::2]:15080/vhs4hd1wl60k6xbgas9chb3hr0hgnnt9?auth=\"}, \"_type-websocket-websocket-path-list\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/t28ebwtt7l6c6em8a16526ctc6edt9lm\", \"key-generate-auth-url\": \"https://[::2]:15080/t28ebwtt7l6c6em8a16526ctc6edt9lm/generateauth\", \"key-upload-url\": \"https://[::2]:15080/t28ebwtt7l6c6em8a16526ctc6edt9lm?auth=\"}, \"_type-websocket-websocket-path-list-websocket-transparent-false\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/0urw6dynmjkuzchkjhurhcenq1mgm2ls\", \"key-generate-auth-url\": \"https://[::2]:15080/0urw6dynmjkuzchkjhurhcenq1mgm2ls/generateauth\", \"key-upload-url\": \"https://[::2]:15080/0urw6dynmjkuzchkjhurhcenq1mgm2ls?auth=\"}, \"_type-websocket-websocket-transparent-false\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/n4urc2ynqwblqd0nhdtfax8bsbv1wc86\", \"key-generate-auth-url\": \"https://[::2]:15080/n4urc2ynqwblqd0nhdtfax8bsbv1wc86/generateauth\", \"key-upload-url\": \"https://[::2]:15080/n4urc2ynqwblqd0nhdtfax8bsbv1wc86?auth=\"}, \"_type-zope\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/aok98yyi3mmeckoz4b6d0rc31y1inz8j\", \"key-generate-auth-url\": \"https://[::2]:15080/aok98yyi3mmeckoz4b6d0rc31y1inz8j/generateauth\", \"key-upload-url\": \"https://[::2]:15080/aok98yyi3mmeckoz4b6d0rc31y1inz8j?auth=\"}, \"_type-zope-default-path\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/ngtpj3zkhimm66u4dsy2m1l4bkzubaw8\", \"key-generate-auth-url\": \"https://[::2]:15080/ngtpj3zkhimm66u4dsy2m1l4bkzubaw8/generateauth\", \"key-upload-url\": \"https://[::2]:15080/ngtpj3zkhimm66u4dsy2m1l4bkzubaw8?auth=\"}, \"_type-zope-path\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/caalblko5i9c807xqc3n69oy08hkvt57\", \"key-generate-auth-url\": \"https://[::2]:15080/caalblko5i9c807xqc3n69oy08hkvt57/generateauth\", \"key-upload-url\": \"https://[::2]:15080/caalblko5i9c807xqc3n69oy08hkvt57?auth=\"}, \"_type-zope-prefer-gzip-encoding-to-backend\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/k2z7j22y8f8d8ev39vuku90d82ia684g\", \"key-generate-auth-url\": \"https://[::2]:15080/k2z7j22y8f8d8ev39vuku90d82ia684g/generateauth\", \"key-upload-url\": \"https://[::2]:15080/k2z7j22y8f8d8ev39vuku90d82ia684g?auth=\"}, \"_type-zope-prefer-gzip-encoding-to-backend-https-only\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/25wgvvn4x537g4q7vrn1hay5onopdj5l\", \"key-generate-auth-url\": \"https://[::2]:15080/25wgvvn4x537g4q7vrn1hay5onopdj5l/generateauth\", \"key-upload-url\": \"https://[::2]:15080/25wgvvn4x537g4q7vrn1hay5onopdj5l?auth=\"}, \"_type-zope-virtualhostroot-http-port\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/x27n1yk9pre1h04ie9nbbbewz1858ss2\", \"key-generate-auth-url\": \"https://[::2]:15080/x27n1yk9pre1h04ie9nbbbewz1858ss2/generateauth\", \"key-upload-url\": \"https://[::2]:15080/x27n1yk9pre1h04ie9nbbbewz1858ss2?auth=\"}, \"_type-zope-virtualhostroot-https-port\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/be24gn1at1vvmf6o24ckvsx5opdos2xy\", \"key-generate-auth-url\": \"https://[::2]:15080/be24gn1at1vvmf6o24ckvsx5opdos2xy/generateauth\", \"key-upload-url\": \"https://[::2]:15080/be24gn1at1vvmf6o24ckvsx5opdos2xy?auth=\"}, \"_url-netloc-list\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/bioqfxfpok33ijh7fgz6ausjead77la8\", \"key-generate-auth-url\": \"https://[::2]:15080/bioqfxfpok33ijh7fgz6ausjead77la8/generateauth\", \"key-upload-url\": \"https://[::2]:15080/bioqfxfpok33ijh7fgz6ausjead77la8?auth=\"}, \"_url_https-url\": {\"kedifa-caucase-url\": \"http://[::2]:15090\", \"key-download-url\": \"https://[::2]:15080/ilucoty462yrsyroa8xmb8vx7j3g3krp\", \"key-generate-auth-url\": \"https://[::2]:15080/ilucoty462yrsyroa8xmb8vx7j3g3krp/generateauth\", \"key-upload-url\": \"https://[::2]:15080/ilucoty462yrsyroa8xmb8vx7j3g3krp?auth=\"}}",
+      "kedifa-caucase-url": "http://[::2]:15090",
+      "backend-client-caucase-url": "http://[::2]:8990",
+      "master-key-download-url": "https://[::2]:15080/6tm3jpyh3g35k808xqxtj00kgs97w9ip",
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8411,
+      "extra_slave_instance_list": "[{\"authenticate-to-backend\": true, \"slave_reference\": \"_Url\", \"url\": \" http://192.168.12.34:53521//?a=b&c= \"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"_auth-to-backend\", \"url\": \"https://192.168.12.34:43439/\"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"_auth-to-backend-backend-ignore\", \"url\": \"https://192.168.12.34:54879/\"}, {\"slave_reference\": \"_auth-to-backend-not-configured\", \"url\": \"https://192.168.12.34:43439/\"}, {\"slave_reference\": \"_bad-backend\", \"url\": \"http://bad.backend/\"}, {\"ciphers\": \"RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA\", \"slave_reference\": \"_ciphers\"}, {\"custom_domain\": \"mycustomdomain.example.com\", \"slave_reference\": \"_custom_domain\", \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"mycustomdomainserveralias.example.com\", \"server-alias\": \"mycustomdomainserveralias1.example.com\", \"slave_reference\": \"_custom_domain_server_alias\", \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"customdomainsslcrtsslkey.example.com\", \"slave_reference\": \"_custom_domain_ssl_crt_ssl_key\", \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"customdomainsslcrtsslkeysslcacrt.example.com\", \"slave_reference\": \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\", \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"*.customdomain.example.com\", \"slave_reference\": \"_custom_domain_wildcard\", \"url\": \"http://192.168.12.34:53521/\"}, {\"disabled-cookie-list\": \"Chocolate Vanilia\", \"slave_reference\": \"_disabled-cookie-list\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_empty\"}, {\"slave_reference\": \"_enable-http2-default\", \"url\": \"http://192.168.12.34:53521/\"}, {\"enable-http2\": false, \"slave_reference\": \"_enable-http2-false\", \"url\": \"http://192.168.12.34:53521/\"}, {\"enable_cache\": true, \"slave_reference\": \"_enable_cache\", \"url\": \"http://192.168.12.34:53521/\"}, {\"disable-no-cache-request\": true, \"enable_cache\": true, \"slave_reference\": \"_enable_cache-disable-no-cache-request\", \"url\": \"http://192.168.12.34:53521/\"}, {\"disable-via-header\": true, \"enable_cache\": true, \"slave_reference\": \"_enable_cache-disable-via-header\", \"url\": \"http://192.168.12.34:53521/\"}, {\"enable_cache\": true, \"https-only\": false, \"slave_reference\": \"_enable_cache-https-only-false\", \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"customdomainenablecache.example.com\", \"enable_cache\": true, \"slave_reference\": \"_enable_cache_custom_domain\", \"url\": \"http://192.168.12.34:53521/\"}, {\"enable_cache\": true, \"server-alias\": \"enablecacheserveralias1.example.com\", \"slave_reference\": \"_enable_cache_server_alias\", \"url\": \"http://192.168.12.34:53521/\"}, {\"https-only\": false, \"slave_reference\": \"_https-only\", \"url\": \"http://192.168.12.34:53521/\"}, {\"https-url\": \"http://192.168.12.34:53521/https\", \"https-url-netloc-list\": \"192.168.12.34:48351 192.168.12.34:46081\", \"slave_reference\": \"_https-url-netloc-list\", \"url\": \"http://192.168.12.34:53521/http\"}, {\"monitor-ipv4-test\": \"monitor-ipv4-test\", \"slave_reference\": \"_monitor-ipv4-test\"}, {\"monitor-ipv6-test\": \"monitor-ipv6-test\", \"slave_reference\": \"_monitor-ipv6-test\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_prefer-gzip-encoding-to-backend\", \"url\": \"http://192.168.12.34:53521/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_prefer-gzip-encoding-to-backend-https-only\", \"url\": \"http://192.168.12.34:53521/\"}, {\"server-alias\": \"alias1.example.com alias2.example.com\", \"slave_reference\": \"_server-alias\", \"strict-transport-security\": \"200\", \"url\": \"http://192.168.12.34:53521/\"}, {\"server-alias\": \"alias3.example.com\", \"slave_reference\": \"_server-alias-duplicated\", \"url\": \"http://192.168.12.34:53521/\"}, {\"server-alias\": \"\", \"slave_reference\": \"_server-alias-empty\", \"strict-transport-security\": \"200\", \"strict-transport-security-sub-domains\": true, \"url\": \"http://192.168.12.34:53521/\"}, {\"server-alias\": \"*.alias1.example.com\", \"slave_reference\": \"_server-alias-wildcard\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"alias4.example.com\", \"server-alias\": \"\", \"slave_reference\": \"_server-alias_custom_domain-duplicated\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_ssl-proxy-verify-unverified\", \"ssl-proxy-verify\": true, \"url\": \"https://192.168.12.34:54879/\"}, {\"slave_reference\": \"_ssl-proxy-verify_ssl_proxy_ca_crt\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"-----BEGIN CERTIFICATE-----\\nMIIC3TCCAcWgAwIBAgIUdkqlPaagrq9HpZuH/LOEAadlA0UwDQYJKoZIhvcNAQEL\\nBQAwHjEcMBoGA1UEAwwTVGVzdCBTZXJ2ZXIgUm9vdCBDQTAeFw0yMjA2MjgxMjMx\\nNDJaFw0yMjA3MzAxMjMxNDJaMB4xHDAaBgNVBAMME1Rlc3QgU2VydmVyIFJvb3Qg\\nQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDUZ1WI6OX2bpUKKTFy\\nEXGKr6MN7SowVzCFi0Z94xynsdmhQx6g9xE1Uxhi/2xnP8IsT8M0RLWG7ODzfiNB\\nth37r6hbRFjmfJnioVPL1VWNJIg1SCMYJQ9Pd3gpKuppe8aVGEffXPFVmDk4aZ2B\\nS89aVTst9WM0TXIAXjcADUJpv9R/xlmaWsUwAwaLZAHL/5yYpntqcjOnFmxbvadT\\nvd5C6CXWxS+UI1CSDnkjw1kCXIYlOB9SAtMWfH6z2dxGZ/aYf27OlraPIo7PNFxD\\nL3sX7+SyGNXg5uh75TKCTbpUNVIJ/PiGQJzm/TTLPRBYuMSSe5uVFkZfzm5K7f5D\\nk9UZAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEB\\nALBhBPepGzdz43jDVZqzn7npv0wzSAuFZJDabUztLjCGTgIhB/d9TgB+AgcmrXMN\\nowNcz0iB/NZlsuXIpa0djU/U3eC9dsUpH1fZbI9hWZdZJ8p4MDZjojfTqFnhtpzW\\naPs+cAJDE9bnRjKFeaodtwyylraTSLzfjy6BZ3aiazBgOSlxHbZi7tjwTkfCs/FG\\niMjV2XW3hnBV1hyd/dC9fOkInJradhtwUepAUh8j6B8rh4apXYiLR8wZJOADAHzU\\na0CKziSnCu8qLsE+rJQ0fVdw/uW1N20MFllWFFQRcYbF2GlaW4ynOGOLAONMyRfH\\nXvPiTHtUQLYtYDtOwt/9U7Q=\\n-----END CERTIFICATE-----\\n\", \"url\": \"https://192.168.12.34:54879/\"}, {\"slave_reference\": \"_ssl-proxy-verify_ssl_proxy_ca_crt-unverified\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"-----BEGIN CERTIFICATE-----\\nMIIC4zCCAcugAwIBAgIUSLQZNXZafjuxCZt674eiETf5j9EwDQYJKoZIhvcNAQEL\\nBQAwITEfMB0GA1UEAwwWQW5vdGhlciBTZXJ2ZXIgUm9vdCBDQTAeFw0yMjA2Mjgx\\nMjMxNDJaFw0yMjA3MzAxMjMxNDJaMCExHzAdBgNVBAMMFkFub3RoZXIgU2VydmVy\\nIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDFmnFVcUpE\\n4ucCJBdR7aKWfjJfCw8l4WztJZaNxgiTc6jqwBmvcpLxzSdrNd+xgDSNh/8tBdm4\\nRQ310d7XTIp9GEF64H532k5x8YtvygE3f6Ab2pf0HkAed4JhFWqFIiXyRPZ45o9c\\ngXnMhaz2R4/Y0qvLwfvqb1KCLraEhPVJxMk++MRWKgRY2IDGM/WDZgDhjkDXyJSu\\nTOfhwbqXxs+0AzLRuvEgzGqfidOuBZv7OLxxaOGZSTlugr7+MoKxMg23+LsbRZie\\nmXjHFl+7phK8PZdcqa9QIEoh059aeUijihWl6A8qJCNeNd63Fe1Qgi6KixQG8OJW\\n5het8S9AVagDAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL\\nBQADggEBABEgeWae6ZoAjQ/YRDNyao9QXvgrm7HXbgDdKVuFGPP3CZKLorbn6Xvd\\nvc63eX6O8xErMkt2sPv6lXyXxDFxj3JjBBRm7gVZZ27k9picsvb+h6XxRmHUlZnm\\nB0zaMbMZhDSLgZ69+jkESzpd9fRCFKst7lZeMV8TG2xeJXXhtW9TQ5CudfKxXFlw\\n4j1dMPin6BFZgj0GOqcCbBQmQaji3cGJddBNJZyNjgUaaQuMT+lyH3OIZoaK1e+M\\nRR25betAdjXgINB9qS3Q7UsrDEhaSwb7bV7feo0BLld61OwM9xZqks1IJfVjWZo7\\nfB6sJgX5GT/pH7TWmajKFuLcZ/GUcb4=\\n-----END CERTIFICATE-----\\n\", \"url\": \"https://192.168.12.34:54879/\"}, {\"slave_reference\": \"_ssl_ca_crt_does_not_match\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_ssl_ca_crt_garbage\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_ssl_ca_crt_only\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_type-notebook\", \"type\": \"notebook\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_type-redirect\", \"type\": \"redirect\", \"url\": \"http://192.168.12.34:53521/\"}, {\"custom_domain\": \"customdomaintyperedirect.example.com\", \"slave_reference\": \"_type-redirect-custom_domain\", \"type\": \"redirect\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_type-websocket\", \"type\": \"websocket\", \"url\": \"http://192.168.12.34:53521/\"}, {\"slave_reference\": \"_type-websocket-websocket-path-list\", \"type\": \"websocket\", \"url\": \"http://192.168.12.34:53521/\", \"websocket-path-list\": \"////ws//// /with%20space/\"}, {\"slave_reference\": \"_type-websocket-websocket-path-list-websocket-transparent-false\", \"type\": \"websocket\", \"url\": \"http://192.168.12.34:53521/\", \"websocket-path-list\": \"////ws//// /with%20space/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"_type-websocket-websocket-transparent-false\", \"type\": \"websocket\", \"url\": \"http://192.168.12.34:53521/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"_type-zope\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\"}, {\"default-path\": \"///default-path/to/some/resource///\", \"slave_reference\": \"_type-zope-default-path\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\"}, {\"path\": \"///path/to/some/resource///\", \"slave_reference\": \"_type-zope-path\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_type-zope-prefer-gzip-encoding-to-backend\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_type-zope-prefer-gzip-encoding-to-backend-https-only\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\"}, {\"https-only\": \"false\", \"slave_reference\": \"_type-zope-virtualhostroot-http-port\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\", \"virtualhostroot-http-port\": \"12345\"}, {\"slave_reference\": \"_type-zope-virtualhostroot-https-port\", \"type\": \"zope\", \"url\": \"http://192.168.12.34:53521/\", \"virtualhostroot-https-port\": \"12345\"}, {\"slave_reference\": \"_url-netloc-list\", \"url\": \"http://192.168.12.34:53521/\", \"url-netloc-list\": \"192.168.12.34:48351 192.168.12.34:46081\"}, {\"backend-connect-retries\": 5, \"backend-connect-timeout\": 10, \"https-url\": \"http://192.168.12.34:53521/https\", \"request-timeout\": 15, \"slave_reference\": \"_url_https-url\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"strict-transport-security-sub-domains\": true, \"url\": \"http://192.168.12.34:53521/http\"}]",
+      "frontend-name": "caddy-frontend-1",
+      "plain_http_port": "11080",
+      "port": "11443",
+      "domain": "example.com",
+      "mpm-graceful-shutdown-timeout": "2",
+      "request-timeout": "12"
+    },
+    "full_address_list": [],
+    "instance_title": "caddy-frontend-1",
+    "ip_list": [
+      [
+        "T-2",
+        "192.168.12.34"
+      ],
+      [
+        "T-2",
+        "::2"
+      ]
+    ],
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "/home/luke/project/slapos/software/caddy-frontend/software.cfg",
+    "slap_software_type": "single-custom-personal",
+    "slave_instance_list": [],
+    "timestamp": "1656592575.3942478"
+  }
+]

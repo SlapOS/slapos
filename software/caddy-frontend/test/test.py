@@ -415,6 +415,21 @@ class TestDataMixin(object):
     self.assertTestData(
       runtime_data, data_replacement_dict=data_replacement_dict)
 
+  def test_cluster_request_instance_parameter_dict(self):
+    cluster_request_parameter_list = []
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      if '_' in parameter_dict:
+        # deserialize for pretty printing only
+        parameter_dict['_'] = json.loads(parameter_dict['_'])
+      cluster_request_parameter_list.append(parameter_dict)
+
+    self.assertTestData(json.dumps(cluster_request_parameter_list, indent=2))
+
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
                     headers=None, cookies=None, source_ip=SOURCE_IP):
