@@ -122,6 +122,6 @@ for rf_mode_context in rf_mode_context_list:
                     software_type),
                   'w+') as f:
             if software_type in ['enb', 'enb-epc']:
-                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context))
+                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type))
             else:
-                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context))
+                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type))

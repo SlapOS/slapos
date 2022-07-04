@@ -7,6 +7,7 @@
 parts =
   publish-connection-parameter
   download-plc
+  compile-plc
   beremiz-runtime
 #beremiz-runtime-promise
 
@@ -19,6 +20,13 @@ extends = {{ template_monitor }}
 recipe = slapos.recipe.build:download-unpacked
 offline = false
 url = ${instance-parameter:configuration.runtime_plc_url}
+
+[compile-plc]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_cli.py --project-home ${directory:home}/parts/download-plc/ build
+update-command = ${:command}
 
 [instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
@@ -47,7 +55,7 @@ log = ${:var}/log
 logfile = ${directory:log}/beremiz-runtime.log
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/parts/download-plc
+    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/parts/download-plc/build
 wrapper-path = ${directory:service}/beremiz-runtime
 
 [beremiz-runtime-promise]
