@@ -25,9 +25,13 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import io
 import os
-import requests
+import urllib.parse
 import glob
+
+import lxml.etree
+import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -63,5 +67,25 @@ class MatomoTestCase(SlapOSInstanceTestCase):
     resp = requests.get(self.connection_parameters['monitor-setup-url'], verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
 
+  def test_database_setup(self):
+    # Database setup page is prefilled with mariadb connection parameters
+    resp = requests.get(
+      urllib.parse.urljoin(
+        self.connection_parameters['backend-url'],
+        'index.php?module=CoreUpdater&action=databaseSetup'),
+      verify=False)
 
-
+    parser = lxml.etree.HTMLParser()
+    tree = lxml.etree.parse(io.StringIO(resp.text), parser)
+    self.assertEqual(
+      tree.xpath('//input[@name="username"]/@value'),
+      ['matomo'])
+    self.assertEqual(
+      tree.xpath('//input[@name="dbname"]/@value'),
+      ['matomo'])
+    self.assertTrue(
+      tree.xpath('//input[@name="password"]/@value')[0])
+    self.assertEqual(
+      tree.xpath('//input[@name="host"]/@value'),
+      [f'{self._ipv4_address}:2099']
+    )
