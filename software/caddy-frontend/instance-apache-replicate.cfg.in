@@ -943,6 +943,25 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       key_len=2048
 )}}
 
+# XXX-Luke: {{ authorized_slave_list }}
+[generate-exposed-node-json]
+recipe = slapos.recipe.template:jinja2
+slave_list = {{ dumps(authorized_slave_list) }}
+context =
+  import json_module json
+  key slave_list :slave_list
+
+inline =
+{%- raw %}
+  {{ json_module.dumps(slave_list, sort_keys=True, indent=2) }}
+{%- endraw %}
+
+output = ${directory:srv}/exposed-node.json
+
+[generate-kedifa-node-json]
+<= generate-exposed-node-json
+output = ${directory:srv}/kedifa-node.json
+
 [buildout]
 extends =
   {{ software_parameter_dict['profile_common'] }}
@@ -956,6 +975,8 @@ parts =
   promise-rejected-slave-publish-ip-port
   caucased-backend-client
   caucased-backend-client-promise
+  generate-exposed-node-json
+  generate-kedifa-node-json
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
