@@ -108,11 +108,16 @@ with open('instance-gnb-input-schema.jinja2.json', 'r') as f:
     instance_gnb_json_template = Template(f.read())
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
+with open('test/test.jinja2.py', 'r') as f:
+    test_template = Template(f.read())
 
 for rf_mode_context in rf_mode_context_list:
     with open('software-{}.cfg.json'.format(rf_mode_context['rf_mode']),
               'w+') as f:
         f.write(software_json_template.render(**rf_mode_context, **global_context) + '\n')
+    with open('test/test{}.py'.format(rf_mode_context['rf_mode'].upper()),
+              'w+') as f:
+        f.write(test_template.render(**rf_mode_context, **global_context) + '\n')
     with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
               'w+') as f:
         f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
