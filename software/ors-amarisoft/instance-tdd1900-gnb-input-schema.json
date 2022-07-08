@@ -36,7 +36,7 @@
     "amf_list": {
       "title": "AMF list",
       "description": "Optionnal. List of AMF to which the gNodeB is connected",
-			"patternProperties": {
+      "patternProperties": {
         ".*": {
           "properties": {
             "amf_addr": {
@@ -66,30 +66,30 @@
     "plmn_list": {
       "title": "PLMN list",
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
-			"patternProperties": {
+      "patternProperties": {
         ".*": {
           "properties": {
             "plmn": {
               "default": "00101",
-							"title": "Public Land Mobile Network",
-							"description": "Public Land Mobile Network",
+              "title": "Public Land Mobile Network",
+              "description": "Public Land Mobile Network",
               "type": "string"
             },
             "tac": {
               "default": 100,
-							"title": "Tracking Area Code",
-							"description": "Integer (range 0 to 16777215)",
+              "title": "Tracking Area Code",
+              "description": "Integer (range 0 to 16777215)",
               "type": "number"
             },
             "ranac": {
-							"title": "Optional integer (range 0 to 255)",
-							"description": "RAN Area Code",
+              "title": "Optional integer (range 0 to 255)",
+              "description": "RAN Area Code",
               "type": "number"
             },
             "reserved": {
               "default": false,
-							"title": "Reserved",
-							"description": "True if the cell is reserved for operator use.",
+              "title": "Reserved",
+              "description": "True if the cell is reserved for operator use.",
               "type": "boolean"
             }
           },
@@ -102,7 +102,7 @@
     "nssai": {
       "title": "AMF slices configuration",
       "description": "AMF slices configuration.",
-			"patternProperties": {
+      "patternProperties": {
         ".*": {
           "properties": {
             "sst": {
