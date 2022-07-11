@@ -196,7 +196,6 @@ software-type = pull-backup
 [request-pbs-{{namebase}}-{{id}}]
 <= request-pbs-common
 name = PBS ({{namebase}} / {{id}})
-config-ignore-known-hosts-file = ${slap-parameter:ignore-known-hosts-file}
 config-monitor-title = PBS ${slap-connection:computer-id}-{{namebase}}-{{id}}
 {% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
@@ -294,6 +293,5 @@ sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 {{namebase}}{{id}}-computer-guid =
 pbs-{{namebase}}{{id}}-computer-guid =
 {% endfor %}
-ignore-known-hosts-file = false
 
 {% endmacro %}
