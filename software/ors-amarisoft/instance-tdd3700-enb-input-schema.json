@@ -27,12 +27,6 @@
       "type": "number",
       "default": 100
     },
-    "mme_addr": {
-      "title": "MME Address",
-      "description": "IPv4 of the core network",
-      "type": "string",
-      "default": "127.0.0.100"
-    },
     "mme_list": {
       "title": "MME list",
       "description": "Optionnal. List of MME to which the gNodeB is connected",
