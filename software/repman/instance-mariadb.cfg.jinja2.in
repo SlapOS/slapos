@@ -166,9 +166,9 @@ url = {{ parameter_dict['template-init-root-wrapper'] }}
 [{{ section('mysql-slave-db-cleanup') }}]
 < = jinja2-template-script-base
 output = ${directory:scripts}/manage-slave-db
-db-name = {{ slapparameter_dict['database-name'] }}
+db-name = {{ dumps(slapparameter_dict['database-name']) }}
 extra-context =
-  key database_name      :db-name
+  key database_name_list      :db-name
 url = {{ parameter_dict['template-manage-db'] }}
 
 [mysqld]
@@ -380,9 +380,6 @@ stop-on-error = true
 config = ${directory:etc}/mysql/my.cnf
 command = ${mysql-get-config:output}
 update-command = ${:command}
-
-[dash]
-dash = {{ dumps(dash) }}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base

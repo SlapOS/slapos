@@ -1,12 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
   "properties": {
-    "db_user": {
-      "description": "Database User, default is 'user'. This parameter is set only if database is not created yet.",
-      "title": "Database User",
-      "type": "string",
-      "default": "user"
-    },
     "db_password": {
       "description": "Database password. If no password set, a password will be generated. This parameter is set only if database is not created yet.",
       "title": "Initial database password",
