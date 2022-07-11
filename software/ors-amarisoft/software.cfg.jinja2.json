@@ -43,14 +43,32 @@
       "response": "instance-epc-schema.json",
       "index": 4
     },
+    "gnb-epc-slave": {
+      "title": "Sim Card",
+      "description": "Sim Card Configuration",
+      "software-type": "gnb-epc",
+      "request": "instance-gnb-epc-slave-input-schema.json",
+      "response": "instance-gnb-epc-slave-schema.json",
+      "shared": true,
+      "index": 5
+    },
+    "enb-epc-slave": {
+      "title": "Sim Card",
+      "description": "Sim Card Configuration",
+      "software-type": "enb-epc",
+      "request": "instance-enb-epc-slave-input-schema.json",
+      "response": "instance-enb-epc-slave-schema.json",
+      "shared": true,
+      "index": 6
+    },
     "epc-slave": {
       "title": "Sim Card",
-      "description": "EPC Configuration",
+      "description": "Sim Card Configuration",
       "software-type": "epc",
       "request": "instance-epc-slave-input-schema.json",
       "response": "instance-epc-slave-schema.json",
       "shared": true,
-      "index": 5
+      "index": 7
     }
   }
 }
