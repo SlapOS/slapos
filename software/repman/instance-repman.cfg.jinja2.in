@@ -91,21 +91,21 @@ output = ${directory:bin}/update-proxysql-config
 {% for instance_dict in slave_instance_list -%}
 {% set slave_dict = {
   'name': 'db_%s' % instance_dict['slave_reference'].replace('-', '_').lower(),
-  'user': instance_dict.get('db_user', 'user'),
+  'user': instance_dict['slave_reference'].replace('_', '').replace('-', '').lower(),
   'password': instance_dict.get('db_password', '${' ~ instance_dict['slave_reference'] ~ '-password:passwd}'),
   'slave_reference': instance_dict['slave_reference'],
   'charset': instance_dict.get('db_charset', ''),
   'require_ssl': True
   } -%}
 {% do database_slave_list.append(slave_dict) -%}
-{% do db_name_list.append(slave_dict['name']) -%}
+{% do db_name_list.append([slave_dict['name'], slave_dict['user']]) -%}
 {{ password(instance_dict['slave_reference']) }}
 {% endfor %}
 [database-slave-information]
 {% for slave_dict in database_slave_list -%}
 {{ slave_dict['name'] }} = !py!{{ slave_dict }}
 {% endfor %}
-{% set db_list = db_name_list | join(' ') -%}
+{% set db_list = db_name_list -%}
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
