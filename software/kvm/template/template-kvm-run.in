@@ -273,7 +273,7 @@ ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
-  '-vnc', '%s:1,ipv4,password' % listen_ip,
+  '-vnc', '%s:1,ipv4=on,password=on' % listen_ip,
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
