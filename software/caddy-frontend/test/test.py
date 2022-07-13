@@ -1804,7 +1804,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
-        'disabled-cookie-list': 'Chocolate Vanilia',
+        # Note: Do not reorder the entires below, see comments in
+        #       test_disabled_cookie_list
+        'disabled-cookie-list': 'Coconut Chocolate Vanilia',
       },
       'monitor-ipv4-test': {
         'monitor-ipv4-test': 'monitor-ipv4-test',
@@ -4370,10 +4372,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
+      # Note: The cookies are always sorted in python2, but not in python3 so
+      #       the order here is important. OrderdedDict won't work, as
+      #       internal implementation of requests will deny it's usage.
+      #       Thus take ultra care with changing anything here or on the
+      #       disabled-cookie-list shared instance parameter ordering, as it
+      #       can easily result with passing of the tests.
+      #       One of the solutions would be to use curl to make this query.
       cookies=dict(
+          Coconut='absent',
+          Coffee='present',
           Chocolate='absent',
           Vanilia='absent',
-          Coffee='present'
         ))
 
     self.assertEqual(
