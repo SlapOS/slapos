@@ -62,7 +62,7 @@ cluster_doc_port = {{ parameter_dict.get("cluster-doc-port") }}
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
 
-# If a device (ie.: /dev/sdb) is provided, use it instead 
+# If a device (ie.: /dev/sdb) is provided, use it instead
 # the disk_path with disk_format
 disk_info_list = []
 for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split():
@@ -145,7 +145,7 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
 
   if id_list:
     if not map_f_exist:
-      # shuffle the list to not write disk in data1, data2, ... everytime 
+      # shuffle the list to not write disk in data1, data2, ... everytime
       shuffle(id_list)
     if external_disk_number < last_amount:
       # Drop created disk is not allowed
@@ -277,7 +277,7 @@ ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
-  '-vnc', '%s:1,ipv4=on,password=on' % listen_ip,
+  '-vnc', '%s:1,websocket=on' % listen_ip,
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
