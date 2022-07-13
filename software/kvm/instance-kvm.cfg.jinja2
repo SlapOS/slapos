@@ -643,31 +643,48 @@ promise = check_command_execute
 name = qemu-virtual-machine-is-ready.py
 config-command = ${kvm-started-bin:output}
 
-[novnc-instance]
-recipe = slapos.cookbook:novnc
-path = ${ca-novnc:executable}
+[nginx-tempdir]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${buildout:directory}/tmp
+client-body-temp-path = ${:tmp}/client_body_temp_path
+proxy-temp-path = ${:tmp}/proxy_temp_path
+fastcgi-temp-path = ${:tmp}/fastcgi_temp_path
+uwsgi-temp-path = ${:tmp}/uwsgi_temp_path
+scgi-temp-path = ${:tmp}/scgi_temp_path
+
+[nginx-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-novnc:executable} -c ${nginx-config:output}
+wrapper-path = ${directory:services}/nginx
+
+[nginx-config]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_nginx }}
+output = ${directory:etc}/nginx.conf
+context =
+    section params nginx-params
+    section ca ca-novnc
+    section tempdir nginx-tempdir
+    raw docroot {{ novnc_location }}
+    raw mime {{ nginx_mime }}
+
+[nginx-params]
+path-pid = ${directory:run}/nginx.pid
+path-error-log = ${directory:log}/nginx-error.log
+path-access-log = ${directory:log}/nginx-access.log
 ip = ${slap-network-information:global-ipv6}
 port = 6080
-vnc-ip = ${kvm-parameter-dict:vnc-ip}
-vnc-port = ${kvm-parameter-dict:vnc-port}
-novnc-location = {{ novnc_location }}
-websockify-path = {{ websockify_executable_location }}
-ssl-key-path = ${ca-novnc:key-file}
-ssl-cert-path = ${ca-novnc:cert-file}
+websocket-ip = ${kvm-parameter-dict:vnc-ip}
+websocket-port = ${kvm-parameter-dict:vnc-port}
+websocket-path = websockify
+nb-workers = 2
 
-[websockify-sighandler]
-recipe = slapos.cookbook:signalwrapper
-wrapper-path = ${directory:bin}/websockify-sighandler
-wrapped-path = ${novnc-instance:path}
-
-[websockify-sighandler-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${websockify-sighandler:wrapper-path}
-wrapper-path = ${directory:services}/websockify
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-wait-for-files =
-  ${ca-novnc:key-file}
-  ${ca-novnc:cert-file}
+[nginx-graceful]
+recipe = slapos.recipe.template
+output = ${directory:scripts}/nginx-graceful
+inline =
+  #!/bin/sh
+  exec kill -s SIGHUP $(cat ${nginx-params:path-pid})
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -699,15 +716,15 @@ crl = ${directory:ca-dir}/crl/
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${directory:novnc-conf}/novnc.key
 cert-file = ${directory:novnc-conf}/novnc.crt
-executable = ${directory:bin}/novnc
-wrapper = ${directory:bin}/websockify
+executable = {{ nginx_executable }}
+wrapper = ${directory:bin}/nginx-with-ca
 
 [novnc-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = novnc_promise.py
-config-host = ${novnc-instance:ip}
-config-port = ${novnc-instance:port}
+config-host = ${nginx-params:ip}
+config-port = ${nginx-params:port}
 
 
 #----------------
@@ -748,7 +765,8 @@ partition-id = ${slap-connection:partition-id}
 slave = true
 config-https-only = True
 config-type = websocket
-config-url = https://[${novnc-instance:ip}]:${novnc-instance:port}
+config-websocket-path-list = ${nginx-params:websocket-path}
+config-url = https://[${nginx-params:ip}]:${nginx-params:port}
 return = secure_access domain
 
 [request-slave-frontend]
@@ -823,10 +841,10 @@ blank-line =
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
@@ -1242,8 +1260,8 @@ parts =
   kvm-controller-wrapper
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
-  websockify-sighandler
-  websockify-sighandler-service
+  nginx-launcher
+  nginx-graceful
   novnc-promise
   kvm-started-promise
   cron
