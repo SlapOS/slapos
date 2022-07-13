@@ -2,9 +2,6 @@
 {% set part_list = [] -%}
 {% set monitor_base_url_dict = {} -%}
 {% set mariadb_dict = {} -%}
-{% set mariadb_server_list = [] -%}
-{% set receiver_port_list = [] -%}
-{% set mariadb_path_list = [] -%}
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set cluster_list = [] -%}
@@ -18,6 +15,9 @@
 {% set caucase_bind = '[' ~ ip ~ ']:8890' -%}
 {% set caucase_url = 'http://' ~ caucase_bind -%}
 {% set csrid_list = [] -%}
+{% set default_parameter_dict = {"cluster1": {"db-prefered-master": "",
+  "database-amount": 2, "proxysql-user": "external",
+  "logical-backup-cron": "0 21 * * *", "physical-backup-cron": "0 1 * * *"}} -%}
 
 {% macro password(name) -%}
 [{{ name }}-password]
@@ -46,8 +46,12 @@ ssl = ${:etc}/ssl
 
 [proxysql-directory]
 recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}/proxy
 config = ${directory:etc}/proxysql
-ssl = ${:config}/ssl
+ssl = ${:config}/default-ssl
+{% for cluster in slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).keys() -%}
+{{ cluster }} = ${:home}/{{ cluster }}
+{% endfor -%}
 
 {% import "supervisord_lib" as supervisord_lib with context %}
 {% set proxysql_controller = "proxysql-ctl" -%}
@@ -81,7 +85,10 @@ inline =
   if [ -z "$CONFIG" ]; then
     CONFIG="${proxysql-directory:config}/proxysql.cnf"
   fi
+  ETCDIR=`dirname $CONFIG`
   mkdir -p ${repman:config-tmp}/proxies
+  mkdir -p $ETCDIR/proxysql
+  ln -sf ${proxysql-directory:ssl} $ETCDIR/proxysql/ssl
   cd ${repman:config-tmp}/proxies
   {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
   tar -xzf proxies-$NAME.tar.gz
@@ -108,9 +115,6 @@ output = ${directory:bin}/update-proxysql-config
 {% set db_list = db_name_list -%}
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
-{% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
-  "database-amount": 2, "proxysql-user": "external",
-  "logical-backup-cron": "0 21 * * *", "physical-backup-cron": "0 1 * * *"}} -%}
 {% for name, parameter_dict in slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).items() -%}
 
 {% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
@@ -123,9 +127,12 @@ output = ${directory:bin}/update-proxysql-config
 {% endif -%}
 
 {% set count.value = count.value + db_amount %}
+{% set mariadb_path_list = [] -%}
+{% set mariadb_server_list = [] -%}
+{% set receiver_port_list = [] -%}
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
-{% set section = 'request-mariadb-' ~ i -%}
+{% set section = 'request-mariadb-' ~ i ~ '-' ~ name -%}
 {% set dbname = 'Mariadb-' ~ i %}
 
 
@@ -205,7 +212,7 @@ db-prefered-master = {{ mariadb_server_list[0] }}
 proxysql-servers = {{ ipv4 }}
 proxysql-servers-ipv6 = [{{ ip }}]
 password = ${repman-parameter:password}
-proxysql-partition = ${buildout:directory}
+proxysql-partition = {{ '${proxysql-directory:' ~ name ~ '}' }}
 receiver-port-list = {{ receiver_port_list | join(',') }}
 enabled-tags = {{ parameter_dict.get("tag-list", tag_list) | join(',') }}
 proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit", "ssl"]) | join(',') }}
@@ -248,7 +255,7 @@ context =
 recipe = plone.recipe.command
 # if Repman is not started, cannot download config from server
 stop-on-error = false
-config = ${proxysql-directory:config}/proxysql.cnf
+config = ${proxysql-directory:home}/{{ name }}/etc/proxysql.cnf
 data = ${repman:proxy-data}/{{ name }}
 command =
   mkdir -p ${:data} &&
@@ -313,7 +320,7 @@ RootSoftwareInstance = ${:default}
 
 [dynamic-{{ name}}-publish-slave-information]
 recipe = slapos.recipe.template:jinja2
-output = ${buildout:directory}/database-publish-slave-information.cfg
+output = ${buildout:directory}/database-{{ name}}-publish-slave-information.cfg
 extensions = jinja2.ext.do
 url = {{ template_publish_slave_information }}
 context =
