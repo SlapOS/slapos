@@ -212,7 +212,8 @@ i0:kvm-{kvm-hash-value}-on-watch RUNNING
 i0:kvm_controller EXITED
 i0:monitor-httpd-{hash}-on-watch RUNNING
 i0:monitor-httpd-graceful EXITED
-i0:websockify-{hash}-on-watch RUNNING
+i0:nginx-graceful EXITED
+i0:nginx-on-watch RUNNING
 i0:whitelist-domains-download-{hash} RUNNING
 i0:whitelist-firewall-{hash} RUNNING""",
       self.getProcessInfo()
@@ -702,11 +703,12 @@ ir2:kvm-{kvm-hash-value}-on-watch RUNNING
 ir2:kvm_controller EXITED
 ir2:monitor-httpd-{hash}-on-watch RUNNING
 ir2:monitor-httpd-graceful EXITED
+ir2:nginx-graceful EXITED
+ir2:nginx-on-watch RUNNING
 ir2:notifier-on-watch RUNNING
 ir2:resilient_sshkeys_authority-on-watch RUNNING
 ir2:sshd-graceful EXITED
 ir2:sshd-on-watch RUNNING
-ir2:websockify-{hash}-on-watch RUNNING
 ir2:whitelist-domains-download-{hash} RUNNING
 ir2:whitelist-firewall-{hash} RUNNING
 ir3:bootstrap-monitor EXITED
@@ -2295,7 +2297,8 @@ ihs0:kvm-{kvm-hash-value}-on-watch RUNNING
 ihs0:kvm_controller EXITED
 ihs0:monitor-httpd-{hash}-on-watch RUNNING
 ihs0:monitor-httpd-graceful EXITED
-ihs0:websockify-{hash}-on-watch RUNNING
+ihs0:nginx-graceful EXITED
+ihs0:nginx-on-watch RUNNING
 ihs0:whitelist-domains-download-{hash} RUNNING
 ihs0:whitelist-firewall-{hash} RUNNING""",
       self.getProcessInfo()
