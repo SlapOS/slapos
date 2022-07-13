@@ -59,14 +59,42 @@ activate_proxy () {
   fi
 }
 
+check_add () {
+  NAME=$1
+  STATUS=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ secure_url }}/api/clusters/$NAME)
+  if [ $STATUS != 200 ]; then
+    # if cluster doesn't exists we add it
+    curl -H "Authorization: Bearer ${TOKEN}" \
+      {{ secure_url }}/api/clusters/actions/add/$NAME
+  fi
+}
+
+reload_config () {
+  # check if etc/repman/cluster.d/config-clusterXX.toml has changed and call reload
+  NAME=$1
+  FILE="{{ parameter_dict['config-tmp'] }}/$NAME-config-cheksum.txt"
+  CHECKSUM=$(md5sum {{ parameter_dict['clusters'] }}/config-$NAME.toml)
+  if [ -s $FILE ]; then
+    OLDSUM=$(cat $FILE);
+  fi
+  echo "$CHECKSUM" > $FILE
+  if [ "$CHECKSUM" != "$OLDSUM" ]; then
+    echo "Reloading settings for $NAME to apply changes..."
+    curl -H "Authorization: Bearer ${TOKEN}" \
+      {{ secure_url }}/api/clusters/$NAME/settings/actions/reload
+  else
+    echo "$NAME config is up to date."
+  fi
+}
+
 TOKEN=$(get_token | {{ jq_bin }} -r '.token')
 
 # Always reload cluster configuration to apply recent changes
 {% for name in cluster_name_list -%}
-# reload {{ name }} settings
-echo "Reloading settings for {{ name }}..."
-curl -H "Authorization: Bearer ${TOKEN}" \
-  {{ secure_url }}/api/clusters/{{ name }}/settings/actions/reload
+
+check_add {{ name }}
+
+reload_config {{ name }}
 
 # Start Replication on {{ name }}
 if [ ! -f "{{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped" ]; then

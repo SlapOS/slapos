@@ -11,6 +11,7 @@ cert_file = ${slap-connection:cert-file}
 
 
 {% for _, database in slave_dict.items() -%}
+{% if database['cluster_id'] == cluster -%}
 {% set slave_reference = database['slave_reference'] -%}
 {% do part_list.append('publish-slave-' ~ slave_reference) -%}
 
@@ -24,6 +25,8 @@ url = {{ "mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[" ~ ipv
 url = {{ "mysql://" ~ ipv4 ~ ":" ~ proxy_port ~ database['name'] }}
 url_v6 = {{ "mysql://[" ~ ip ~ "]:" ~ proxy_port ~ database['name'] }}
 {%   endif -%}
+cluster = {{ database['cluster_id'] }}
+{% endif -%}
 {% endfor %}
 
 [buildout]
