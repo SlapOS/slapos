@@ -40,35 +40,36 @@ class TestInstance(ORS3700TestCase):
     self.logger.info('Start test_instance')
     # START: mock .slapos-resource with tap.ipv4_addr
     # needed for netconfig.sh
-    test_partition_slapos_resource_file = os.path.join(
-      self.computer_partition_root_path, '.slapos-resource')
-    path = os.path.realpath(os.curdir)
-    while path != '/':
-      root_slapos_resource_file = os.path.join(path, '.slapos-resource')
-      if os.path.exists(root_slapos_resource_file):
-        break
-      path = os.path.realpath(os.path.join(path, '..'))
-    else:
-      raise ValueError('No .slapos-resource found to base the mock on')
-    self.logger.info('root_slapos_resource_file: ' + str(root_slapos_resource_file))
-    with open(root_slapos_resource_file) as fh:
-      root_slapos_resource = json.load(fh)
-    if root_slapos_resource['tun']['tun_addr'] == '':
-      root_slapos_resource['tun'].update({
-        "ipv4_addr": "10.0.0.1", 
-        "ipv4_gateway": "", 
-        "ipv4_netmask": "255.255.128.0", 
-        "ipv4_network": "10.0.0.1/17", 
-        "ipv6_addr": "", 
-        "ipv6_gateway": "", 
-        "ipv6_netmask": "", 
-        "ipv6_network": "", 
-        "name": "slaptun0"
-      })
-    with open(test_partition_slapos_resource_file, 'w') as fh:
-      json.dump(root_slapos_resource, fh, indent=4)
-    self.slap.waitForInstance(max_retry=10)
-    # END: mock .slapos-resource with tap.ipv4_addr
+    #test_partition_slapos_resource_file = os.path.join(
+    #  self.computer_partition_root_path, '.slapos-resource')
+    #path = os.path.realpath(os.curdir)
+    #while path != '/':
+    #  root_slapos_resource_file = os.path.join(path, '.slapos-resource')
+    #  if os.path.exists(root_slapos_resource_file):
+    #    break
+    #  path = os.path.realpath(os.path.join(path, '..'))
+    #else:
+    #  raise ValueError('No .slapos-resource found to base the mock on')
+    #self.logger.info('root_slapos_resource_file: ' + str(root_slapos_resource_file))
+    #with open(root_slapos_resource_file) as fh:
+    #  root_slapos_resource = json.load(fh)
+    #if root_slapos_resource['tun']['tun_addr'] == '':
+    #  root_slapos_resource['tun'].update({
+    #    "ipv4_addr": "10.0.0.1", 
+    #    "ipv4_gateway": "", 
+    #    "ipv4_netmask": "255.255.128.0", 
+    #    "ipv4_network": "10.0.0.1/17", 
+    #    "ipv6_addr": "", 
+    #    "ipv6_gateway": "", 
+    #    "ipv6_netmask": "", 
+    #    "ipv6_network": "", 
+    #    "name": "slaptun0"
+    #  })
+    #with open(test_partition_slapos_resource_file, 'w') as fh:
+    #  json.dump(root_slapos_resource, fh, indent=4)
+    #self.slap.waitForInstance(max_retry=10)
+    ## END: mock .slapos-resource with tap.ipv4_addr
 
-    #connection_parameter_dict = self.getConnectionParameterDictJson()
+    ##connection_parameter_dict = self.getConnectionParameterDictJson()
     connection_parameters = self.computer_partition.getConnectionParameterDict()
+    self.logger.info(connection_parameters)
