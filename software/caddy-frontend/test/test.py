@@ -300,7 +300,7 @@ class TestDataMixin(object):
   def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None):
     if data_replacement_dict is None:
       data_replacement_dict = {}
-    filename = '%s-%s.txt' % (self.id().replace('zz_', ''), 'CADDY')
+    filename = '%s.txt' % (self.id().replace('zz_', ''))
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
