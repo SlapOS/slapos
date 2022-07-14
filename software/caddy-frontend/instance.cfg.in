@@ -34,7 +34,7 @@ replicate = dynamic-profile-caddy-replicate:output
 kedifa = dynamic-profile-kedifa:output
 
 [software-parameter-section]
-{% for key,value in software_parameter_dict.iteritems() %}
+{% for key,value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
@@ -54,6 +54,7 @@ filename = instance-caddy-replicate.cfg
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
+    import operator_module operator
     import validators validators
     import caddyprofiledummy caddyprofiledummy
 # Must match the key id in [switch-softwaretype] which uses this section.
