@@ -4384,14 +4384,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     replacement_dict = dict(
       domain=parameter_dict['domain'], ip=TEST_IP, port=HTTPS_PORT)
     curl_command = [
-        'curl', '-v', '-k', '-H',
-        '"Host:', '%(domain)s' % replacement_dict,
+        'curl', '-v', '-k',
+        '-H', 'Host: %(domain)s' % replacement_dict,
         '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
-        'https://%(domain)s:%(port)s/' % replacement_dict,
         '--cookie',
         # Note: Cookie order is extremely important here, do not change
         # or test will start to pass incorrectly
-        '"Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent"'
+        'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+        'https://%(domain)s:%(port)s/' % replacement_dict,
     ]
     prc = subprocess.Popen(
       curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -4403,8 +4403,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         curl_command, out, err))
     # self check - were the cookies sent in required order?
     self.assertIn(
-      '> cookie: "Coconut=absent; Chocolate=absent; Coffee=present; '
-      'Vanilia=absent"',
+      'ookie: Coconut=absent; Chocolate=absent; Coffee=present; '
+      'Vanilia=absent',
       err.decode())
     # real test - all configured cookies are dropped
     self.assertEqual(
