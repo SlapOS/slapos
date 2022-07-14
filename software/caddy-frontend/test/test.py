@@ -4370,32 +4370,34 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_disabled_cookie_list(self):
     parameter_dict = self.assertSlaveBase('disabled-cookie-list')
 
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path',
-      # Note: The cookies are always sorted in python2, but not in python3 so
-      #       the order here is important. OrderdedDict won't work, as
-      #       internal implementation of requests will deny it's usage.
-      #       Thus take ultra care with changing anything here or on the
-      #       disabled-cookie-list shared instance parameter ordering, as it
-      #       can easily result with passing of the tests.
-      #       One of the solutions would be to use curl to make this query.
-      cookies=dict(
-          Coconut='absent',
-          Coffee='present',
-          Chocolate='absent',
-          Vanilia='absent',
-        ))
-
+    replacement_dict = dict(
+      domain=parameter_dict['domain'], ip=TEST_IP, port=HTTPS_PORT)
+    curl_command = [
+        'curl', '-v', '-k', '-H',
+        '"Host:', '%(domain)s' % replacement_dict,
+        '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
+        'https://%(domain)s:%(port)s/' % replacement_dict,
+        '--cookie',
+        # Note: Cookie order is extremely important here, do not change
+        # or test will start to pass incorrectly
+        '"Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent"'
+    ]
+    prc = subprocess.Popen(
+      curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = prc.communicate()
     self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    self.assertBackendHeaders(
-      result.json()['Incoming Headers'], parameter_dict['domain'])
+      prc.returncode, 0,
+      "Problem running %r. Output:\n%s\nError:\n%s" % (
+        curl_command, out, err))
+    # self check - were the cookies sent in required order?
+    self.assertIn(
+      '> cookie: "Coconut=absent; Chocolate=absent; Coffee=present; '
+      'Vanilia=absent"',
+      err)
+    # real test - all configured cookies are dropped
     self.assertEqual(
-      'Coffee=present', result.json()['Incoming Headers']['cookie'])
+      'Coffee=present', json.loads(out)['Incoming Headers']['cookie'])
 
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
