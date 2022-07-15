@@ -37,7 +37,7 @@
       ],
       "default": ""
     },
-    "cluster-id": {
+    "cluster_id": {
       "title": "Replication Manager Cluster Name",
       "description": "When a cluster Name is given, Try to request the slave in the specified cluster name. If the cluster is not found, the slave is requested in the first cluster.",
       "type": "string",
