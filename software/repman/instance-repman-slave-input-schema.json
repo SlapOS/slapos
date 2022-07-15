@@ -36,6 +36,18 @@
         "ascii_bin"
       ],
       "default": ""
+    },
+    "instance-guid": {
+      "title": "Replication Manager Instance ID",
+      "description": "Unique identifier of an Replication Manager instance where the slave will be requested, like \"SOFTINST-11031\".",
+      "type": "string",
+      "default": ""
+    },
+    "cluster-id": {
+      "title": "Replication Manager Cluster Name",
+      "description": "When a cluster Name is given, Try to request the slave in the specified cluster name. If the cluster is not found, the slave is requested in the first cluster.",
+      "type": "string",
+      "default": ""
     }
   },
   "title": "Input Parameters",
