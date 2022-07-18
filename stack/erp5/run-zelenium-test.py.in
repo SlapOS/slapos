@@ -77,6 +77,23 @@ def main():
       traceback.print_exc()
     time.sleep(600)
 
+  # Unsubscribe activity
+  # Launch Zuite_waitForActivities with activity suscribed may create conflict
+
+  activity_unsubscribe_url = "%s/erp5/portal_activities/unsubscribe" \
+      "?__ac_name=%s" \
+      "&__ac_password=%s" % (parser_configuration['remote-access-url'],  {{ repr(user) }}, {{ repr(password) }})
+  print activity_unsubscribe_url
+  try:
+    response = urlopen(activity_unsubscribe_url)
+    try:
+      if response.code != 200:
+        sys.exit(-1)
+    finally:
+      response.close()
+  except Exception:
+    traceback.print_exc()
+
   tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
   browser = webdriver.Remote(parser_configuration['server-url'] , parser_configuration['desired-capabilities'] )
 
