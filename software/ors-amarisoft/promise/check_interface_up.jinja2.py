@@ -27,15 +27,18 @@ class RunPromise(GenericPromise):
 
       In this case, check whether the file exists.
     """
-    ifname = "{{ slap_configuration.get('tun-name', 'tun0') }}"
+    ifname = "{{ slap_configuration.get('tun-name', '') }}"
 
-#   f = open('/sys/class/net/%s/operstate' % ifname, 'r')
-#   if f.read() == 'up\n':
-#     self.logger.info("%s is up", ifname)
-#   else:
-#     self.logger.error("%s is down", ifname)
-#   f.close()
-    self.logger.info("OK")
+    if ifname:
+        f = open('/sys/class/net/%s/operstate' % ifname, 'r')
+        if f.read() == 'up\n':
+          self.logger.info("%s is up", ifname)
+        else:
+          self.logger.error("%s is down", ifname)
+        f.close()
+        self.logger.info("OK")
+    else:
+        self.logger.info("OK")
 
   def test(self):
     """
