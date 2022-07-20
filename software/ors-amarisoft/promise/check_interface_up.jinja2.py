@@ -28,8 +28,9 @@ class RunPromise(GenericPromise):
       In this case, check whether the file exists.
     """
     ifname = "{{ slap_configuration.get('tun-name', '') }}"
+    testing = self.getConfig('testing')
 
-    if ifname:
+    if not testing:
         f = open('/sys/class/net/%s/operstate' % ifname, 'r')
         if f.read() == 'up\n':
           self.logger.info("%s is up", ifname)
