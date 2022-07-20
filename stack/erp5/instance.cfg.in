@@ -114,6 +114,11 @@ extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 erp5-location = {{ erp5_location }}
 egg-interpreter = {{egg_interpreter}}
+erp5_kernel_location = {{ erp5_kernel_location }}
+erp5_kernel_filename = {{ erp5_kernel_filename }}
+kernel_json_location = {{ kernel_json_location }}
+kernel_json_filename = {{ kernel_json_filename }}
+python_executable_for_kernel = {{ python_executable_for_kernel }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
