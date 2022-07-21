@@ -82,9 +82,6 @@ else:
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-  # XXX Keep using slapos node instance --all, because of missing promises
-  SlapOSInstanceTestCase.slap._force_slapos_node_instance_all = True
-
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
@@ -2119,9 +2116,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     def writeNodeInformation(node_information, path):
       with open(path, 'w') as fh:
         json.dump(node_information, fh, sort_keys=True)
-      self.waitForInstance()
-      self.waitForInstance()
-      self.waitForInstance()
+      # full processing is needed as this is just simulation which does
+      # not bang the instance tree
+      slap_force_slapos_node_instance_all = \
+          self.slap._force_slapos_node_instance_all
+      self.slap._force_slapos_node_instance_all = True
+      try:
+        self.waitForInstance()
+        self.waitForInstance()
+        self.waitForInstance()
+      finally:
+        self.slap._force_slapos_node_instance_all = \
+          slap_force_slapos_node_instance_all
 
     self.addCleanup(
       writeNodeInformation, current_node_information,
@@ -5977,9 +5983,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     cls.fillSlaveParameterDictDict()
     cls.requestSlaves()
     try:
-      cls.slap.waitForInstance(
-        max_retry=2  # two runs shall be enough
-      )
+      cls.slap.waitForInstance()
     except Exception:
       # ignores exceptions, as problems are tested
       pass
