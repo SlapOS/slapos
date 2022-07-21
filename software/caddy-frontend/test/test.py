@@ -1901,6 +1901,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         #       test_disabled_cookie_list
         'disabled-cookie-list': 'Coconut Chocolate Vanilia',
       },
+      'disabled-cookie-list-simple': {
+        'url': cls.backend_url,
+        'disabled-cookie-list': 'Chocolate',
+      },
       'monitor-ipv4-test': {
         'monitor-ipv4-test': 'monitor-ipv4-test',
       },
@@ -4460,19 +4464,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location']
     )
 
-  def test_disabled_cookie_list(self):
-    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
-
+  def _curl(self, domain, ip, port, cookie):
     replacement_dict = dict(
-      domain=parameter_dict['domain'], ip=TEST_IP, port=HTTPS_PORT)
+      domain=domain, ip=TEST_IP, port=HTTPS_PORT)
     curl_command = [
         'curl', '-v', '-k',
         '-H', 'Host: %(domain)s' % replacement_dict,
         '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
-        '--cookie',
-        # Note: Cookie order is extremely important here, do not change
-        # or test will start to pass incorrectly
-        'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+        '--cookie', cookie,
         'https://%(domain)s:%(port)s/' % replacement_dict,
     ]
     prc = subprocess.Popen(
@@ -4483,6 +4482,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       prc.returncode, 0,
       "Problem running %r. Output:\n%s\nError:\n%s" % (
         curl_command, out, err))
+    return out, err
+
+  def test_disabled_cookie_list(self):
+    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
+    out, err = self._curl(
+      parameter_dict['domain'], TEST_IP, HTTPS_PORT,
+      # Note: Cookie order is extremely important here, do not change
+      # or test will start to pass incorrectly
+      'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+    )
     # self check - were the cookies sent in required order?
     self.assertIn(
       'ookie: Coconut=absent; Chocolate=absent; Coffee=present; '
@@ -4491,6 +4500,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # real test - all configured cookies are dropped
     self.assertEqual(
       'Coffee=present', json.loads(out)['Incoming Headers']['cookie'])
+
+  def test_disabled_cookie_list_simple(self):
+    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
+    out, err = self._curl(
+      parameter_dict['domain'], TEST_IP, HTTPS_PORT,
+      'WhiteChocolate=present; Chocolate=absent; Coffee=present',
+    )
+    # self check - were the cookies sent in required order?
+    self.assertIn(
+      'ookie: WhiteChocolate=present; Chocolate=absent; Coffee=present',
+      err.decode())
+    # real test - all configured cookies are dropped
+    self.assertEqual(
+      'WhiteChocolate=present ; Coffee=present', json.loads(out)['Incoming Headers']['cookie'])
 
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
