@@ -856,8 +856,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   @classmethod
   def setUpMaster(cls):
     # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     auth = requests.get(
@@ -919,16 +917,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       except Exception:
         cls.logger.exception("Error during until run")
       try_num += 1
-
-  @classmethod
-  def untilNotReadyYetNotInMasterKeyGenerateAuthUrl(cls):
-    parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    key = 'master-key-generate-auth-url'
-    if key not in parameter_dict:
-      return False
-    if 'NotReadyYet' in parameter_dict[key]:
-      return False
-    return True
 
   @classmethod
   def callSupervisorMethod(cls, method, *args, **kwargs):
@@ -5005,10 +4993,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
@@ -5132,10 +5116,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
@@ -5734,10 +5714,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
