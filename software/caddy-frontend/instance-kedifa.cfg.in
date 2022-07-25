@@ -19,6 +19,7 @@ parts =
   caucase-updater
   promise-expose-csr-ip-port
   promise-logrotate-setup
+  promise-kedifa-auth-ready
 
 [monitor-instance-parameter]
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
@@ -72,6 +73,9 @@ backup-caucased = ${:backup}/caucased
 
 # reservation
 reservation = ${:srv}/reservation
+
+# auth ready
+auth-ready = ${:var}/auth-ready
 
 # CSR publication
 expose-csr = ${:srv}/expose-csr
@@ -278,12 +282,18 @@ update-command = ${:command}
 
 [auth-random]
 recipe = slapos.recipe.build
+auth-ready = ${directory:auth-ready}/${:_buildout_section_name_}
 init =
   import os
   options['passwd'] = 'NotReadyYet'
   if os.path.exists(options['file']):
     with open(options['file'], 'r') as fh:
       options['passwd'] = fh.read()
+    if os.path.exists(options['auth-ready']):
+      os.unlink(options['auth-ready'])
+  else:
+    with open(options['auth-ready'], 'w') as fh:
+      fh.write('')
 
 [master-auth-random]
 <= auth-random
@@ -307,5 +317,18 @@ promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
+
+[kedifa-auth-ready]
+recipe = plone.recipe.command
+output = ${directory:var}/${:_buildout_section_name_}.txt
+update-command = ${:command}
+command = find ${directory:auth-ready} -type f > ${:output}
+
+[promise-kedifa-auth-ready]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${kedifa-auth-ready:output}
+config-state = empty
 
 {%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}
