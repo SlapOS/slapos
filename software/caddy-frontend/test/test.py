@@ -856,6 +856,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   @classmethod
   def setUpMaster(cls):
     # run partition until AIKC finishes
+    import ipdb ; ipdb.set_trace()
     cls.runComputerPartitionUntil(
       cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
