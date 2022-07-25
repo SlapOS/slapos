@@ -931,6 +931,44 @@ config-filename = ${rejected-slave-json:output}
 config-state = empty
 config-url = ${rejected-slave-publish:url}
 
+[master-key-upload-url-ready]
+recipe = slapos.recipe.build
+directory = ${directory:var}
+output = ${directory:var}/${:_buildout_section_name_}.txt
+key = ${request-kedifa:connection-master-key-upload-url}
+init =
+  import os
+  # protect against early init
+  if os.path.isdir(options['directory']):
+    with open(options['output'], 'w') as fh:
+      if 'NotReadyYet' in options['key']:
+        fh.write('NotReadyYet')
+      else:
+        fh.write('')
+
+[master-key-upload-url-ready-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${master-key-upload-url-ready:output}
+config-state = empty
+
+[master-key-generate-auth-url-ready]
+<= master-key-upload-url-ready
+key = ${request-kedifa:connection-master-key-generate-auth-url}
+
+[master-key-generate-auth-url-ready-promise]
+<= master-key-upload-url-ready-promise
+config-filename = ${master-key-generate-auth-url-ready:output}
+
+[master-key-download-url-ready]
+<= master-key-upload-url-ready
+key = ${request-kedifa:connection-master-key-download-url}
+
+[master-key-download-url-ready-promise]
+<= master-key-upload-url-ready-promise
+config-filename = ${master-key-download-url-ready:output}
+
 [caucased-backend-client]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {{  caucase.caucased(
@@ -959,6 +997,9 @@ parts =
   promise-rejected-slave-publish-ip-port
   caucased-backend-client
   caucased-backend-client-promise
+  master-key-upload-url-ready-promise
+  master-key-generate-auth-url-ready-promise
+  master-key-download-url-ready-promise
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
