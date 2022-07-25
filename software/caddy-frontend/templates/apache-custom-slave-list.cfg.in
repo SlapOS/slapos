@@ -551,6 +551,7 @@ parts +=
     kedifa-updater-run
     backend-haproxy-configuration
     promise-logrotate-setup
+    promise-key-download-url-ready
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
@@ -626,3 +627,29 @@ promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
+
+[key-download-url-ready]
+recipe = slapos.recipe.build
+output = {{ url_ready_file }}
+master-key-download-url = {{ master_key_download_url }}
+slave-kedifa-information = {{ dumps(slave_kedifa_information) }}
+init =
+  not_ready_count = 0
+  if not options['master-key-download-url'] or 'NotReadyYet' in options['master-key-download-url']:
+    not_ready_count += 1
+  for slave_kedifa_reference, slave_kedifa_information in options['slave-kedifa-information'].items():
+    key_download_url = slave_kedifa_information.get('key-download-url')
+    if not key_download_url or 'NotReadyYet' in key_download_url:
+      not_ready_count += 1
+  with open(options['output'], 'w') as fh:
+    if not_ready_count > 0:
+      fh.write('%s' % (not_ready_count,))
+    else:
+      fh.write('')
+
+[promise-key-download-url-ready]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${key-download-url-ready:output}
+config-state = empty
