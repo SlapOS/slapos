@@ -81,6 +81,12 @@
       },
       "type": "object",
       "default": {}
+    },
+    "use_ipv4": {
+      "default": false,
+      "title": "Use IPv4",
+      "description": "Set to true to use IPv4 for AMF / MME addresses",
+      "type": "boolean"
     }
   }
 }
