@@ -356,6 +356,7 @@ organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 partition_ipv6 =  ${slap-configuration:ipv6-random}
+url-ready-file = ${directory:var}/url-ready.txt
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
@@ -365,6 +366,7 @@ extra-context =
     key master_key_download_url :master_key_download_url
     key autocert caddy-directory:autocert
     key caddy_log_directory caddy-directory:slave-log
+    key url_ready_file :url-ready-file
     key expose_csr_organization :organization
     key expose_csr_organizational_unit :organizational-unit
     key global_ipv6 slap-configuration:ipv6-random
