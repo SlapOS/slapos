@@ -1246,7 +1246,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       # by SlapOSInstanceTestCase.setUpClass so we use another name for
       # snapshot, to make sure we don't store another snapshot in same
       # directory.
-      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
+      cls._cleanup("{}.HttpFrontendTestCase.{}.setUpClass".format(
         cls.__module__, cls.__name__))
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
