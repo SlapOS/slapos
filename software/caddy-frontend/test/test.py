@@ -4532,6 +4532,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Strict-Transport-Security'])
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'],
+      parameter_dict['domain'])
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
