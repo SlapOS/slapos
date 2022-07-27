@@ -925,7 +925,6 @@ config-port = ${rejected-slave-publish-configuration:port}
 
 [rejected-slave-promise]
 <= monitor-promise-base
-promise = check_socket_listening
 promise = check_file_state
 name = rejected-slave.py
 config-filename = ${rejected-slave-json:output}

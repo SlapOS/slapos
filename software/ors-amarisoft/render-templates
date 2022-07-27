@@ -112,16 +112,16 @@ with open('software.jinja2.cfg', 'r') as f:
 for rf_mode_context in rf_mode_context_list:
     with open('software-{}.cfg.json'.format(rf_mode_context['rf_mode']),
               'w+') as f:
-        f.write(software_json_template.render(**rf_mode_context, **global_context))
+        f.write(software_json_template.render(**rf_mode_context, **global_context) + '\n')
     with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
               'w+') as f:
-        f.write(software_template.render(**rf_mode_context, **global_context))
+        f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
     for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc']:
         with open('instance-{}-{}-input-schema.json'.format(
                     rf_mode_context['rf_mode'],
                     software_type),
                   'w+') as f:
             if software_type in ['enb', 'enb-epc']:
-                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type))
+                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
             else:
-                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type))
+                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')

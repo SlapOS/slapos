@@ -46,6 +46,7 @@ filename = instance-beremiz.cfg
 extra-context =
   raw autoconf_bin       {{ autoconf_location }}/bin
   raw automake_bin       {{ automake_location }}/bin
+  raw cmake_bin          {{ cmake_location }}/bin
   raw bash_bin           {{ bash_location }}/bin/bash
   raw beremiz_location   {{ beremiz_location }}
   raw bison_location     {{ bison_location }}

@@ -471,9 +471,6 @@ disk-storage-list =
 external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
-# new external-disk parameter
-external-disk = ${slap-parameter:external-disk}
-instance-root = ${buildout:directory}
 
 {% if enable_http -%}
 httpd-port = ${slap-parameter:httpd-port}
@@ -1094,7 +1091,6 @@ hard-drive-url-check-certificate = True
 external-disk-number = 0
 external-disk-size = 20
 external-disk-format = qcow2
-external-disk = {}
 
 # Help to get some configuration files into the vm from http
 enable-http-server = False
