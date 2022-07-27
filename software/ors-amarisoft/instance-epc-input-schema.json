@@ -14,6 +14,12 @@
       "title": "External eNB / gNB",
       "description": "Set to true if external eNB / gNB will need to connect to this core network.",
       "type": "boolean"
+    },
+    "use_ipv4": {
+      "default": false,
+      "title": "Use IPv4",
+      "description": "Set to true to use IPv4 for AMF / MME addresses",
+      "type": "boolean"
     }
   }
 }

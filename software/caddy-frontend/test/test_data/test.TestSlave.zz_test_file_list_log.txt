@@ -41,6 +41,9 @@ T-2/var/log/httpd/_custom_domain_ssl_crt_ssl_key_ssl_ca_crt_error_log
 T-2/var/log/httpd/_custom_domain_wildcard_access_log
 T-2/var/log/httpd/_custom_domain_wildcard_backend_log
 T-2/var/log/httpd/_custom_domain_wildcard_error_log
+T-2/var/log/httpd/_disabled-cookie-list-simple_access_log
+T-2/var/log/httpd/_disabled-cookie-list-simple_backend_log
+T-2/var/log/httpd/_disabled-cookie-list-simple_error_log
 T-2/var/log/httpd/_disabled-cookie-list_access_log
 T-2/var/log/httpd/_disabled-cookie-list_backend_log
 T-2/var/log/httpd/_disabled-cookie-list_error_log

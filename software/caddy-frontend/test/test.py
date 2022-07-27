@@ -75,7 +75,7 @@ from cryptography.x509.oid import NameOID
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
-if int(os.environ.get('SLAPOS_HACK_STANDALONE', '0')) == 1:
+if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
   setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -100,6 +100,10 @@ TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
 # "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
 DNS_CACHE = {}
+
+
+def unicode_escape(s):
+  return s.encode('unicode_escape').decode()
 
 
 def add_custom_dns(domain, port, ip):
@@ -293,10 +297,10 @@ class TestDataMixin(object):
       in self.callSupervisorMethod('getAllProcessInfo')
       if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
 
-  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
-    if hash_value_dict is None:
-      hash_value_dict = {}
-    filename = '%s-%s.txt' % (self.id().replace('zz_', ''), 'CADDY')
+  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None):
+    if data_replacement_dict is None:
+      data_replacement_dict = {}
+    filename = '%s.txt' % (self.id(),)
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
@@ -305,9 +309,8 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    for hash_type, hash_value in list(hash_value_dict.items()):
-      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
-        hash_type),)
+    for replacement, value in list(data_replacement_dict.items()):
+      runtime_data = runtime_data.replace(value, replacement)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -384,36 +387,103 @@ class TestDataMixin(object):
 
     hash_file_list = [os.path.join(
         self.computer_partition_root_path, 'software_release/buildout.cfg')]
-    hash_value_dict = {
-      'generic': generateHashFromFiles(hash_file_list),
+    data_replacement_dict = {
+      '{hash-generic}': generateHashFromFiles(hash_file_list)
     }
     for caddy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'caddy-wrapper')):
       partition_id = caddy_wrapper_path.split('/')[-3]
-      hash_value_dict[
-        'caddy-%s' % (partition_id)] = generateHashFromFiles(
-        [caddy_wrapper_path] + hash_file_list
-      )
+      data_replacement_dict['{hash-caddy-%s}' % (partition_id)] = \
+          generateHashFromFiles([caddy_wrapper_path] + hash_file_list)
     for backend_haproxy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
       partition_id = backend_haproxy_wrapper_path.split('/')[-3]
-      hash_value_dict[
-        'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
-        [backend_haproxy_wrapper_path] + hash_file_list
-      )
+      data_replacement_dict['{hash-backend-haproxy-%s}' % (partition_id)] =  \
+          generateHashFromFiles([
+            backend_haproxy_wrapper_path] + hash_file_list)
     for rejected_slave_publish_path in glob.glob(os.path.join(
       self.instance_path, '*', 'etc', 'nginx-rejected-slave.conf')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
       rejected_slave_pem_path = os.path.join(
         self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
-      hash_value_dict[
-        'rejected-slave-publish'
+      data_replacement_dict[
+        '{hash-rejected-slave-publish}'
       ] = generateHashFromFiles(
         [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
       )
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
+    self.assertTestData(
+      runtime_data, data_replacement_dict=data_replacement_dict)
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    pass
+
+  def test00cluster_request_instance_parameter_dict(self):
+    # test00 name chosen to be run as first test
+    cluster_request_parameter_list = []
+    data_replacement_dict = {}
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      if '_' in parameter_dict:
+        # deserialize for pretty printing only, and keep in mind
+        # that slave-kedifa-information content is string, so exactly it's
+        # sent like this to the real master
+        parameter_dict['_'] = json.loads(parameter_dict['_'])
+      parameter_dict['timestamp'] = '@@TIMESTAMP@@'
+      cluster_request_parameter_list.append(parameter_dict)
+
+    # XXX: Dirty decode/encode/decode...?
+    data_replacement_dict = {
+      '@@_ipv4_address@@': self._ipv4_address,
+      '@@_ipv6_address@@': self._ipv6_address,
+      '@@_server_http_port@@': str(self._server_http_port),
+      '@@_server_https_auth_port@@': str(self._server_https_auth_port),
+      '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
+      '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
+      '@@another_server_ca.certificate_pem@@': unicode_escape(
+        self.another_server_ca.certificate_pem.decode()),
+      '@@another_server_ca.certificate_pem_double@@': unicode_escape(
+        unicode_escape(self.another_server_ca.certificate_pem.decode())),
+      '@@getSoftwareURL@@': self.getSoftwareURL(),
+      '@@test_server_ca.certificate_pem@@': unicode_escape(
+        self.test_server_ca.certificate_pem.decode()),
+      '@@test_server_ca.certificate_pem_double@@': unicode_escape(
+        unicode_escape(self.test_server_ca.certificate_pem.decode())),
+    }
+
+    # support slave-less test cases
+    if getattr(self, 'getSlaveConnectionParameterDictDict', None) is not None:
+      for reference, value in self.getSlaveConnectionParameterDictDict(
+        ).items():
+        data_replacement_dict[
+          '@@%s_key-generate-auth-url@@' % reference] = value[
+          'key-generate-auth-url'].split('/')[-2]
+        data_replacement_dict[
+          '@@%s_key-upload-url@@' % reference] = value[
+          'key-generate-auth-url'].split('/')[-1]
+
+    connection_parameter_dict = self.requestDefaultInstance(
+      ).getConnectionParameterDict()
+    data_replacement_dict[
+      '@@master-key-download-url_endpoint@@'] = connection_parameter_dict[
+      'master-key-generate-auth-url'].split('/')[-2]
+    data_replacement_dict['@@monitor-password@@'] = connection_parameter_dict[
+      'monitor-setup-url'].split('=')[-1]
+    json_data = json.dumps(
+      cluster_request_parameter_list, indent=2,
+      # keys are sorted, even after deserializing, in order to have
+      # stable information about the sent parameters between runs
+      sort_keys=True
+    )
+    # again some mangling -- allow subclasses to update on need
+    self._updateDataReplacementDict(data_replacement_dict)
+    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
@@ -1191,7 +1261,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       # by SlapOSInstanceTestCase.setUpClass so we use another name for
       # snapshot, to make sure we don't store another snapshot in same
       # directory.
-      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
+      cls._cleanup("{}.HttpFrontendTestCase.{}.setUpClass".format(
         cls.__module__, cls.__name__))
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
@@ -1283,6 +1353,18 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         partition_parameter_kw=partition_parameter_kw,
       ).getConnectionParameterDict())
     return parameter_dict_list
+
+  @classmethod
+  def getSlaveConnectionParameterDictDict(cls):
+    parameter_dict_dict = {}
+
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
+      parameter_dict_dict[slave_reference] = cls.requestSlaveInstance(
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+      ).getConnectionParameterDict()
+    return parameter_dict_dict
 
   @classmethod
   def untilSlavePartitionReady(cls):
@@ -1819,6 +1901,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         #       test_disabled_cookie_list
         'disabled-cookie-list': 'Coconut Chocolate Vanilia',
       },
+      'disabled-cookie-list-simple': {
+        'url': cls.backend_url,
+        'disabled-cookie-list': 'Chocolate',
+      },
       'monitor-ipv4-test': {
         'monitor-ipv4-test': 'monitor-ipv4-test',
       },
@@ -1996,9 +2082,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '55',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '55',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -4378,19 +4464,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location']
     )
 
-  def test_disabled_cookie_list(self):
-    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
-
+  def _curl(self, domain, ip, port, cookie):
     replacement_dict = dict(
-      domain=parameter_dict['domain'], ip=TEST_IP, port=HTTPS_PORT)
+      domain=domain, ip=TEST_IP, port=HTTPS_PORT)
     curl_command = [
         'curl', '-v', '-k',
         '-H', 'Host: %(domain)s' % replacement_dict,
         '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
-        '--cookie',
-        # Note: Cookie order is extremely important here, do not change
-        # or test will start to pass incorrectly
-        'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+        '--cookie', cookie,
         'https://%(domain)s:%(port)s/' % replacement_dict,
     ]
     prc = subprocess.Popen(
@@ -4401,6 +4482,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       prc.returncode, 0,
       "Problem running %r. Output:\n%s\nError:\n%s" % (
         curl_command, out, err))
+    return out, err
+
+  def test_disabled_cookie_list(self):
+    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
+    out, err = self._curl(
+      parameter_dict['domain'], TEST_IP, HTTPS_PORT,
+      # Note: Cookie order is extremely important here, do not change
+      # or test will start to pass incorrectly
+      'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+    )
     # self check - were the cookies sent in required order?
     self.assertIn(
       'ookie: Coconut=absent; Chocolate=absent; Coffee=present; '
@@ -4409,6 +4500,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # real test - all configured cookies are dropped
     self.assertEqual(
       'Coffee=present', json.loads(out)['Incoming Headers']['cookie'])
+
+  def test_disabled_cookie_list_simple(self):
+    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
+    out, err = self._curl(
+      parameter_dict['domain'], TEST_IP, HTTPS_PORT,
+      'WhiteChocolate=present; Chocolate=absent; Coffee=present',
+    )
+    # self check - were the cookies sent in required order?
+    self.assertIn(
+      'ookie: WhiteChocolate=present; Chocolate=absent; Coffee=present',
+      err.decode())
+    # real test - all configured cookies are dropped
+    self.assertEqual(
+      'WhiteChocolate=present ; Coffee=present',
+      json.loads(out)['Incoming Headers']['cookie'])
 
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
@@ -4426,6 +4532,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Strict-Transport-Security'])
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'],
+      parameter_dict['domain'])
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
@@ -4911,6 +5020,17 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
 
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -4972,6 +5092,50 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
 class TestSlaveSlapOSMasterCertificateCompatibility(
   SlaveHttpFrontendTestCase, TestDataMixin):
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+      '@@ssl_from_slave_certificate_pem@@': unicode_escape(
+        self.ssl_from_slave_certificate_pem.decode()),
+      '@@ssl_from_slave_key_pem@@': unicode_escape(
+        self.ssl_from_slave_key_pem.decode()),
+      '@@customdomain_certificate_pem@@': unicode_escape(
+        self.customdomain_certificate_pem.decode()),
+      '@@customdomain_key_pem@@': unicode_escape(
+        self.customdomain_key_pem.decode()),
+      '@@ssl_from_slave_kedifa_overrides_key_pem@@': unicode_escape(
+        self.ssl_from_slave_kedifa_overrides_key_pem.decode()),
+      '@@ssl_from_slave_kedifa_overrides_certificate_pem@@': unicode_escape(
+        self.ssl_from_slave_kedifa_overrides_certificate_pem.decode()),
+      '@@customdomain_ca_certificate_pem@@': unicode_escape(
+        self.customdomain_ca_certificate_pem.decode()),
+      '@@customdomain_ca_key_pem@@': unicode_escape(
+        self.customdomain_ca_key_pem.decode()),
+      '@@ca.certificate_pem@@': unicode_escape(
+        self.ca.certificate_pem.decode()),
+      '@@sslcacrtgarbage_ca_certificate_pem@@': unicode_escape(
+        self.sslcacrtgarbage_ca_certificate_pem.decode()),
+      '@@sslcacrtgarbage_ca_key_pem@@': unicode_escape(
+        self.sslcacrtgarbage_ca_key_pem.decode()),
+      '@@type_notebook_ssl_from_slave_certificate_pem@@': unicode_escape(
+        self.type_notebook_ssl_from_slave_certificate_pem.decode()),
+      '@@type_notebook_ssl_from_slave_key_pem@@': unicode_escape(
+        self.type_notebook_ssl_from_slave_key_pem.decode()),
+      '@@type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem@@':
+      unicode_escape(
+        self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem
+        .decode()),
+      '@@type_notebook_ssl_from_slave_kedifa_overrides_key_pem@@':
+      unicode_escape(
+        self.type_notebook_ssl_from_slave_kedifa_overrides_key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
 
   @classmethod
   def setUpMaster(cls):
@@ -5584,6 +5748,17 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
 
   instance_parameter_dict = {
     'domain': 'example.com',
