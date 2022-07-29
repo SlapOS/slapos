@@ -113,12 +113,6 @@
       "patternProperties": {
         ".*": {
           "properties": {
-            "name": {
-              "title": "Name of the cluster",
-              "description": "Name of the cluster: Should not contains spaces or any special characters.",
-              "type": "string",
-              "default": ""
-            },
             "database-amount": {
               "title": "Amount of databases for cluster",
               "description": "Database amount to deploy with this cluster. Minimal amount is 2 required to enable replication.",

@@ -166,9 +166,9 @@ url = {{ parameter_dict['template-init-root-wrapper'] }}
 [{{ section('mysql-slave-db-cleanup') }}]
 < = jinja2-template-script-base
 output = ${directory:scripts}/manage-slave-db
-db-name = {{ slapparameter_dict['database-name'] }}
+db-name = {{ dumps(slapparameter_dict['database-name']) }}
 extra-context =
-  key database_name      :db-name
+  key database_name_list      :db-name
 url = {{ parameter_dict['template-manage-db'] }}
 
 [mysqld]
@@ -199,7 +199,7 @@ wait-for-files =
 {{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
 {% do part_list.append("supervisord-mariadb-ctl") -%}
 {% set maradb_program_dict = {"name": "mariadb", "command": "${mysqld-launcher:wrapper-path}",
-  "stopwaitsecs": 86400, "startretries": 10, "autorestart": True, "environment": [],
+  "stopwaitsecs": 86400, "startretries": 10, "autorestart": False, "environment": [],
   "stdout_logfile": "${directory:log}/mariadb_stdout.log",
   "stderr_logfile": "${directory:log}/mariadb_stdout.log" } %}
 
@@ -380,9 +380,6 @@ stop-on-error = true
 config = ${directory:etc}/mysql/my.cnf
 command = ${mysql-get-config:output}
 update-command = ${:command}
-
-[dash]
-dash = {{ dumps(dash) }}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
