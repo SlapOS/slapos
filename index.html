@@ -1,0 +1,49 @@
+<!doctype html><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=apple-mobile-web-app-capable content="yes"><meta name=apple-mobile-web-app-status-bar-style content="black"><title>Goproxy.cn</title><meta name=description content="The most trusted Go module proxy in China."><meta name=keywords content="Go Module Proxy,Go Modules,Go 代理,Go 依赖管理,Go 包管理,Go 模块,Go 模块代理,Go 版本控制,Gomod,Goproxy"><meta name=author content="Aofei Sheng"><link rel=canonical href=https://goproxy.cn><link rel="shortcut icon" href=/favicon.ico><link rel=apple-touch-icon href=/apple-touch-icon.png><link rel=stylesheet href=https://cdn.staticfile.org/font-awesome/5.12.1/css/all.css><link rel=stylesheet href=https://cdn.staticfile.org/highlight.js/9.18.1/styles/routeros.min.css><link rel=stylesheet href=/assets/css/bootstrap.css><link rel=stylesheet href=/assets/css/main.css><header><nav class="navbar navbar-expand-md navbar-dark fixed-top bg-primary"><a class=navbar-brand href=/>Goproxy.cn</a>
+<button class=navbar-toggler type=button data-toggle=collapse data-target=#navbarCollapse aria-controls=navbarCollapse aria-expanded=false aria-label="Toggle navigation">
+<span class=navbar-toggler-icon></span></button><div id=navbarCollapse class="collapse navbar-collapse"><div class=mr-auto></div><ul class="navbar-nav mt-md-0"><li class="nav-item active"><a class=nav-link href=/>Index<span class=sr-only>(current)</span></a><li class=nav-item><a class=nav-link href=/stats>Statistics</a><li class=nav-item><a class=nav-link href=/faq>FAQ</a><li class=nav-item><a class=nav-link href=https://status.goproxy.cn target=_blank>Status</a><li class=nav-item><a class=nav-link href=https://github.com/goproxy/goproxy.cn/issues/new/choose target=_blank>Contact</a></ul></div></nav></header><main><div class=jumbotron><div class="container text-center"><img class=logo src=/assets/images/logo.svg><h1 class="brand display-3">Goproxy.cn</h1><p>The most trusted Go module proxy in China.<p><span class="badge badge-success">11,743,867 module versions cached</span></p><a class=github-button href=https://github.com/goproxy/goproxy.cn data-size=large data-show-count=true aria-label="Star goproxy/goproxy.cn on GitHub">Star</a></div></div><div class=container><div class="row text-center"><div class=col-md-3><h3 class=text-info><i class="fas fa-rocket"></i>&nbsp;Blazing Fast</h3><p>We are using <a href=https://www.qiniu.com/en/products/qcdn target=_blank>Qiniu Cloud CDN</a> to accelerate our service globally without placing any bandwidth limits. With thousands of CDN nodes and <b>100Gbps+ single-node bandwidth</b>, you will be given the ability to download module versions at a blazing fast speed.</div><div class=col-md-3><h3 class=text-info><i class="fas fa-infinity"></i>&nbsp;No Limit</h3><p>We do not just place no bandwidth limits. Furthermore, we <b>have not placed any rate limits</b>. This means that you can use our service in any scenario, like CI/CD. You can even use our service as an upstream proxy, just like <a href=https://goproxy.baidu.com target=_blank>goproxy.baidu.com</a> does.</div><div class=col-md-3><h3 class=text-info><i class="fas fa-th-large"></i>&nbsp;Full Featured</h3><p>We are always using the latest Go version, even the unstable version. Because we provide <b>cutting-edge feature support</b>. In particular, we support <a href=https://golang.org/design/25530-sumdb#proxying-a-checksum-database target=_blank>proxying</a> the default checksum database <a href=https://sum.golang.org target=_blank>sum.golang.org</a>. You don't need to do anything extra, it just works.</div><div class=col-md-3><h3 class=text-info><i class="fas fa-eye"></i>&nbsp;Data Visualized</h3><p>For everyone to better understand the activity of all modules in our service, we have launched the very first <a href=/stats>Statistics API</a> of the Go module proxy world. With the decent RESTful API design, you will be able to easily query statistics for all module versions in our service.</div></div><hr><div class="row text-center"><div class=col-md><h3 id=usage><a class="font-weight-bold text-info" href=#usage>Usage</a></h3></div></div><div class=row><div class=col-md><p id=usage-go-113-and-above-recommended><a class="font-weight-bold text-info" href=#usage-go-113-and-above-recommended>Go 1.13 and above (RECOMMENDED)</a><p>Open your terminal and execute<pre><code class=language-bash>$ go env -w GO111MODULE=on
+$ go env -w GOPROXY=https://goproxy.cn,direct</code></pre><p>done.<p id=usage-macos-or-linux><a class="font-weight-bold text-info" href=#usage-macos-or-linux>macOS or Linux</a><p>Open your terminal and execute<pre><code class=language-bash>$ export GO111MODULE=on
+$ export GOPROXY=https://goproxy.cn</code></pre><p>or<pre><code class=language-bash>$ echo "export GO111MODULE=on" >> ~/.profile
+$ echo "export GOPROXY=https://goproxy.cn" >> ~/.profile
+$ source ~/.profile</code></pre><p>done.<p id=usage-windows><a class="font-weight-bold text-info" href=#usage-windows>Windows</a><p>Open your terminal and execute<pre><code class=language-bash>C:\> $env:GO111MODULE = "on"
+C:\> $env:GOPROXY = "https://goproxy.cn"</code></pre><p>or<pre><code class=language-md>1. Open the Start Search, type in "env"
+2. Choose the "Edit the system environment variables"
+3. Click the "Environment Variables…" button
+4. Under the "User variables for &lt;YOUR_USERNAME&gt;" section (the upper half)
+5. Click the "New..." button
+6. Choose the "Variable name" input bar, type in "GO111MODULE"
+7. Choose the "Variable value" input bar, type in "on"
+8. Click the "OK" button
+9. Click the "New..." button
+10. Choose the "Variable name" input bar, type in "GOPROXY"
+11. Choose the "Variable value" input bar, type in "https://goproxy.cn"
+12. Click the "OK" button</code></pre><p>done.</div></div><hr><div class="row text-center"><div class=col-md><h3 id=self-hosted-go-module-proxy><a class="font-weight-bold text-info" href=#self-hosted-go-module-proxy>Self-hosted Go module proxy</a></h3></div></div><div class=row><div class=col-md><p>Your code is always yours, so we provide you with the coolest self-hosted Go module proxy building solution in the world. By using <a href=https://github.com/goproxy/goproxy target=_blank>Goproxy</a>, a minimalist project, you can easily add Go module proxy support to any existing web service, you know that Goproxy.cn is built on it.<p>Create a file named <code>goproxy.go</code><pre><code class=language-go>package main
+
+import (
+	"net/http"
+	"os"
+
+	"github.com/goproxy/goproxy"
+)
+
+func main() {
+	http.ListenAndServe("localhost:8080", &goproxy.Goproxy{
+		GoBinEnv: append(
+			os.Environ(),
+			"GOPROXY=https://goproxy.cn,direct", // Use Goproxy.cn as the upstream proxy
+			"GOPRIVATE=git.example.com",         // Solve the problem of pulling private modules
+		),
+		ProxiedSUMDBs: []string{
+			"sum.golang.org https://goproxy.cn/sumdb/sum.golang.org", // Proxy the default checksum database
+		},
+	})
+}</code></pre><p>and run it<pre><code class=language-bash>$ go run goproxy.go</code></pre><p>then try it by setting <code>GOPROXY</code> to <code>http://localhost:8080</code>. In addition, we also recommend that you set <code>GO111MODULE</code> to <code>on</code>.<p>That's it, a fully functional Go module proxy is successfully built. In fact, you can use <a href=https://github.com/goproxy/goproxy target=_blank>Goproxy</a> with your favorite web frameworks, such as <a href=https://pkg.go.dev/github.com/gin-gonic/gin#WrapH target=_blank>Gin</a> and <a href=https://pkg.go.dev/github.com/labstack/echo/v4#WrapHandler target=_blank>Echo</a>, all you need to do is add one more route. For more advanced usage please check the <a href=https://pkg.go.dev/github.com/goproxy/goproxy target=_blank>documentation</a>.</div></div></div></main><hr><footer class=container><p>&copy; <a href=https://www.qiniu.com/en target=_blank>Qiniu Cloud</a>
+&#183;
+<a href=https://beian.miit.gov.cn target=_blank>沪ICP备11037377号-56</a>
+&#183;
+<a class="language-item language-item-selected" href=javascript:; tag=en-US>English</a>
+&#183;
+<a class=language-item href=javascript:; tag=zh-CN>简体中文</a></footer><script src=https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js></script>
+<script src=https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js></script>
+<script src=https://cdn.staticfile.org/highlight.js/9.15.10/highlight.min.js></script>
+<script src=https://buttons.github.io/buttons.js></script>
+<script src=/assets/js/main.js></script>
