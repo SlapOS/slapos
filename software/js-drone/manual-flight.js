@@ -55,7 +55,8 @@ function followLeader(leaderId, initialAltitude, altitudeDiff) {
       leaderLatitude,
       leaderLongitude,
       leaderAltitudeAbs + altitudeDiff,
-      0
+      0,
+      30.001
     );
     sleep(500);
   } while(leaderAltitudeRel > PARACHUTE_ALTITUDE);

@@ -11,7 +11,7 @@ import {
   getYaw,
   initPubsub,
   setAltitude,
-  setTargetLatLong,
+  setTargetCoordinates,
   start,
   stop,
   stopPubsub,
@@ -28,7 +28,6 @@ export const IS_LEADER = {{ is_leader }};
 export const LEADER_ID = {{ leader_id }};
 export const SIMULATION = {{ is_a_simulation }};
 
-export const EPSILON = 105;
 const EPSILON_YAW = 6;
 const EPSILON_ALTITUDE = 5;
 const TARGET_YAW = 0;
@@ -117,35 +116,25 @@ export function land() {
   exit_on_fail(doParachute(2), "Failed to deploy parachute");
 }
 
-export function setLatLong(latitude, longitude, target_altitude) {
+export function goTo(latitude, longitude, altitude, radius, sleep_time, epsilon) {
   var cur_latitude;
   var cur_longitude;
   var d;
 
-  if(target_altitude !== 0) {
-    setAltitude(target_altitude, false, true);
-  }
-
-  console.log(`Going to (${latitude}, ${longitude}) from
-                (${getLatitude()}, ${getLongitude()})`);
+  console.log(`Going to (${latitude}, ${longitude}) from (${getLatitude()}, ${getLongitude()})`);
   exit_on_fail(
-    setTargetLatLong(latitude, longitude),
+    setTargetCoordinates(latitude, longitude, altitude, radius),
     `Failed to go to (${latitude}, ${longitude})`
   );
-  sleep(500);
 
-  while(true) {
+  do {
+    sleep(sleep_time);
     cur_latitude = getLatitude();
     cur_longitude = getLongitude();
     d = distance(cur_latitude, cur_longitude, latitude, longitude);
     console.log(`Waiting for drone to get to destination (${d} m),
     (${cur_latitude} , ${cur_longitude}), (${latitude}, ${longitude})`);
-    if(d < EPSILON) {
-      sleep(6000);
-      return;
-    }
-    sleep(1000);
-  }
+  } while(d > epsilon);
 }
 
 export function startPubsub() {
