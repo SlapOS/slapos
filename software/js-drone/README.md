@@ -2,7 +2,7 @@
 
 ## Presentation ##
 
-* Deploy 4 different scripts (`cli.js`, `demo.js`, `manual-flight.js` and `subscribe.js`) on a drone to fly it
+* Deploy `main.js` script on a drone to fly it
 
 * Compile all required libraries to run flight scripts
 
@@ -22,6 +22,8 @@
 
 * drone-id-list: Comma seperated list of the drone IDs of the swarm (recommanded to add the current drone ID)
 
+* flight-script: User script to execute to fly drone swarm
+
 ## How it works ##
 
-Run `quickjs binary location` `desired script location`
+Run `quickjs binary location` `scripts location`/main.js
