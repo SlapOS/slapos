@@ -2,15 +2,16 @@
 /*global console, std */
 
 import {
+  getInitialAltitude,
   loiter,
   setAirspeed,
   setAltitude,
-  setTargetLatLong,
   reboot
 } from "{{ qjs_wrapper }}"; //jslint-quiet
 import {
   connect,
   displayDronePositions,
+  goTo,
   land,
   quit,
   startPubsub,
@@ -88,13 +89,13 @@ function getInput() {
       cmd = exit;
       break;
   
-    case "gotoCoord":
+/*    case "gotoCoord":
       std.printf("Latitude: ");
       latitude = parseFloat(f.getline());
       std.printf("Longitude: ");
       longitude = parseFloat(f.getline());
       cmd = checkNumber(longitude, checkNumber(latitude, setTargetLatLong));
-      break;
+      break;*/
   
     case "help":
       cmd = displayMessage.bind(null, help);
@@ -123,7 +124,7 @@ function getInput() {
       break;
   
     case "takeoff":
-      cmd = takeOff.bind(null, 60);
+      cmd = takeOff.bind(null, getInitialAltitude() + 60);
       break;
   
     default:
