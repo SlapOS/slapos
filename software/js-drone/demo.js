@@ -15,10 +15,10 @@ import {sleep} from "os";
 import {
   connect,
   distance,
+  goTo,
   goToAltitude,
   land,
   quit,
-  setLatLong,
   startPubsub,
   takeOff,
   ALTITUDE_DIFF,
@@ -116,7 +116,7 @@ function followLeader(leaderId, initialAltitude, altitudeDiff) {
       leaderLatitude,
       leaderLongitude,
       leaderAltitudeAbs + altitudeDiff,
-      0
+      30.001
     );
     sleep(500);
   } while(leaderAltitudeRel > PARACHUTE_ALTITUDE);
@@ -166,7 +166,14 @@ if(!IS_LEADER) {
 
 for (let i = nextCheckpoint; i < checkpointList.length; i++) {
   console.log(`[DEMO] Going to Checkpoint ${i}\n`);
-  setLatLong(checkpointList[i].latitude, checkpointList[i].longitude, checkpointList[i].altitude + FLIGH_ALTITUDE);
+  goTo(
+    checkpointList[i].latitude,
+    checkpointList[i].longitude,
+    checkpointList[i].altitude + FLIGH_ALTITUDE,
+    100,
+    1000,
+    105
+  )
   console.log(`[DEMO] Reached Checkpoint ${i}\n`);
   setCheckpoint(i);
   sleep(30000);
@@ -176,10 +183,13 @@ console.log("[DEMO] Setting altitude...\n");
 goToAltitude(getAltitude() - getAltitudeRel() + PARACHUTE_ALTITUDE, true, true);
 
 if(!IS_LEADER) {
-  setLatLong(
+  goTo(
     checkpointList[checkpointList.length - 1].latitude,
     checkpointList[checkpointList.length - 1].longitude,
-    0
+    getAltitude(),
+    100,
+    1000,
+    105
   );
 }
 
