@@ -182,8 +182,9 @@ And now it will be safe to use the paths in ``external-disk`` parameter::
     }
   }
 
-Of course ``external-disk-number`` and ``external-disk-size`` HAVE TO be removed
-from instance parameters before continuing.
+Of course ``external-disk-number``, ``external-disk-size`` and
+``external-disk-format`` HAVE TO be removed from instance parameters before
+continuing.
 
 For now such configuration will lead to no starting kvm process, so after
 parameters are updated in SlapOS Master **and** are processed on the Compute
