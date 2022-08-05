@@ -110,6 +110,9 @@ output = ${directory:bin}/update-proxysql-config
   'cluster_id': instance_dict.get('cluster_id', default_slave_cluster_id),
   'require_ssl': True
   } -%}
+{% if not slave_dict['cluster_id'] in cluster_name_list -%}
+{% do slave_dict.__setitem__('cluster_id', default_slave_cluster_id) -%}
+{% endif -%}
 {% do slave_information_list.append(slave_dict) -%}
 {% do database_slave_dict[slave_dict['cluster_id']].append(slave_dict) -%}
 {% do db_name_dict[slave_dict['cluster_id']].append([slave_dict['name'], slave_dict['user']]) -%}
