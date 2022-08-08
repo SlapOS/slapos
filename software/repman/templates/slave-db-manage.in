@@ -2,20 +2,9 @@
 
 set -e
 
-curl () {
-  {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
-}
-
-get_token () {
-  curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login
-}
-
 run_mysql () {
   {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" --protocol=socket "$@"
 }
-
-TOKEN=$(get_token | {{ jq_bin }} -r '.token')
-DATADIR=$(curl -H "Authorization: Bearer ${TOKEN}" \   {{ secure_url }}/api/clusters/{{ cluster_name }}/topology/master | {{ jq_bin }}  -r '.slaposDatadir')
 
 revoke_user () {
   DB=$1
@@ -23,6 +12,7 @@ revoke_user () {
   if [ ! -z "$UNAME" ]; then
     echo "Revoking all grants for user '$USER'";
     run_mysql -Be "
+    set sql_log_bin=0;
     REVOKE ALL PRIVILEGES, GRANT OPTION FROM '$UNAME';
     DROP USER IF EXISTS '$UNAME'@'%';
     DROP USER IF EXISTS '$UNAME'@'localhost';
@@ -32,10 +22,10 @@ revoke_user () {
   fi
 }
 
-# Only write or delete on master database else, we break replication.
-if [ "$DATADIR" = "{{ partition_dir }}" ]; then
+# Disable SQL_LOG_BIN, repman_slave_definition database doesn't need to be replicated
 
-  cat << EOF > {{ tmp_dir }}/.script.sql
+cat << EOF > {{ tmp_dir }}/.script.sql
+SET @@SESSION.SQL_LOG_BIN=0;
 use repman_slave_definition;
 
 CREATE TABLE IF NOT EXISTS \`slave\` (
@@ -54,34 +44,33 @@ REPLACE INTO \`slave\` VALUES ('{{ name }}', true, '{{ user }}');
 
 EOF
 
-  # Update requested slaves database
-  OUTPUT="{{ tmp_dir }}/removed_db.txt"
-  run_mysql < {{ tmp_dir }}/.script.sql
-  rm -f {{ tmp_dir }}/.script.sql
-  run_mysql -NBe "SELECT name, user FROM repman_slave_definition.slave WHERE state=false" > $OUTPUT
+# Update requested slaves database
+OUTPUT="{{ tmp_dir }}/removed_db.txt"
+run_mysql < {{ tmp_dir }}/.script.sql
+rm -f {{ tmp_dir }}/.script.sql
+run_mysql -NBe "set sql_log_bin=0;SELECT name, user FROM repman_slave_definition.slave WHERE state=false" > $OUTPUT
 
-  DBNAME=$(run_mysql --skip-column-names -Be "SELECT name FROM repman_slave_definition.slave WHERE state=false");
-  RET=$?
+DBNAME=$(run_mysql --skip-column-names -Be "set sql_log_bin=0;SELECT name FROM repman_slave_definition.slave WHERE state=false");
+RET=$?
 
-  if [ ! "$RET" = "0" ]; then
-    echo "Mysql command failed: $DBNAME"
-    exit $RET
-  fi
-
-  if [ -z "$DBNAME" ]; then
-    echo "No database for slave to remove.";
-  fi
-
-  for NAME in $DBNAME; do
-    if [ ! -z "$NAME" ]; then
-      USER=$(grep -oP "$NAME\s*\K\w+" $OUTPUT);
-      if [ ! -z "$USER" ]; then
-        revoke_user $NAME $USER;
-      fi
-      echo "Deleting database $NAME..."
-      run_mysql -e "DROP DATABASE IF EXISTS $NAME";
-      run_mysql -e "DELETE FROM repman_slave_definition.slave WHERE name='$NAME'";
-      echo "Done."
-    fi
-  done
+if [ ! "$RET" = "0" ]; then
+  echo "Mysql command failed: $DBNAME"
+  exit $RET
 fi
+
+if [ -z "$DBNAME" ]; then
+  echo "No database for slave to remove.";
+fi
+
+for NAME in $DBNAME; do
+  if [ ! -z "$NAME" ]; then
+    USER=$(grep -oP "$NAME\s*\K\w+" $OUTPUT);
+    if [ ! -z "$USER" ]; then
+      revoke_user $NAME $USER;
+    fi
+    echo "Deleting database $NAME..."
+    run_mysql -e "set sql_log_bin=0;DROP DATABASE IF EXISTS $NAME";
+    run_mysql -e "set sql_log_bin=0;DELETE FROM repman_slave_definition.slave WHERE name='$NAME'";
+    echo "Done."
+  fi
+done
