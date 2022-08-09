@@ -2,7 +2,7 @@
 
 ## Presentation ##
 
-* Deploy `main.js` script on a drone to fly it
+* Deploy `user.js` script on a drone to fly it
 
 * Compile all required libraries to run flight scripts
 
@@ -26,4 +26,4 @@
 
 ## How it works ##
 
-Run `quickjs binary location` `scripts location`/main.js
+Run `quickjs binary location` `scripts location`/main.js `scripts location`/user.js
