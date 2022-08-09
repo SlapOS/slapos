@@ -26,12 +26,6 @@
       ],
       "default": "false"
     },
-    "leader-id": {
-      "title": "Leader ID",
-      "description": "Unique identifier of the drone chosen to be the leader.",
-      "type": "string",
-      "default": "1"
-    },
     "multicast-ipv6": {
       "title": "IP of the multicast group",
       "description": "IP address used to communicate with the other drones.",
