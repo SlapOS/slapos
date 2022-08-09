@@ -1,126 +1,145 @@
-{% set comma_separated_drone_id_list = ', '.join(drone_id_list.split()) -%}
-
+/*global console*/
 import {
   arm,
-  doParachute,
-  getAltitude,
-  getAltitudeRel,
-  getInitialAltitude,
-  getLatitude,
-  getLongitude,
-  getYaw,
-  initPubsub,
-  landed,
-  loiter,
-  reboot,
-  setAirspeed,
-  setAltitude,
-  setCheckpoint,
-  setTargetCoordinates,
   start,
   stop,
   stopPubsub,
-  takeOffAndWait,
-  Drone
+  takeOffAndWait
 } from "{{ qjs_wrapper }}";
-import {sleep, Worker} from "os";
-import * as std from "std";
+import { setTimeout, Worker } from "os";
+import { exit } from "std";
 
-const IP = "{{ autopilot_ip }}";
-const URL = "udp://" + IP + ":7909";
-const LOG_FILE = "{{ log_dir }}/mavsdk-log";
+(function (console, setTimeout, Worker) {
+  "use strict";
 
-const IS_LEADER = {{ is_leader }};
-const LEADER_ID = {{ leader_id }};
-const IS_PUBLISHER = {{ is_publisher }}
-const SIMULATION = {{ is_a_simulation }};
+  const IP = "{{ autopilot_ip }}",
+    URL = "udp://" + IP + ":7909",
+    LOG_FILE = "{{ log_dir }}/mavsdk-log",
+    IS_PUBLISHER = {{ is_publisher }},
+    SIMULATION = {{ is_a_simulation }};
 
-const droneIdList = [{{ comma_separated_drone_id_list }}];
-const droneDict = {};
+  // Use a Worker to ensure the user script
+  // does not block the main script
+  // (preventing it to be stopped for example)
 
-const pubsubScript = "{{ pubsub_script }}";
-var pubsubWorker;
-var pubsubRunning = false;
+  // Create the update loop in the main script
+  // to prevent it to finish (and so, exit the quickjs process)
+  var pubsubWorker,
+    pubsubRunning = false,
+    worker = new Worker("{{ worker_script }}"),
+    user_script = scriptArgs[1],
+    // Use the same FPS than browser's requestAnimationFrame
+    FPS = 1000 / 60,
+    previous_timestamp,
+    can_update = false,
+    i = 0;
 
-const me = {
-  'id': "{{ id }}",
-  'getCurrentPosition': function() {
-    return {
-      'x': getLatitude(),
-      'y': getLongitude(),
-      'z': getAltitudeRel()
-    };
-  },
-  'onStart': function() {},
-  'onUpdate': function() {},
-  'setAirspeed': setAirspeed,
-  'setTargetCoordinates': setTargetCoordinates
-}
-
-function connect() {
-  console.log("Will connect to", URL);
-  exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
-}
-
-function exit_on_fail(ret, msg) {
-  if(ret) {
-    console.log(msg);
-    quit();
-    std.exit(-1);
+  function connect() {
+    console.log("Will connect to", URL);
+    exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
   }
-}
 
-function quit() {
-  stop();
-  if(pubsubRunning) {
-    stopPubsub();
+  function exit_on_fail(ret, msg) {
+    if (ret) {
+      console.log(msg);
+      quit(1);
+    }
   }
-}
 
-function takeOff() {
-  exit_on_fail(arm(), "Failed to arm");
-  takeOffAndWait();
-}
-
-function waitForLanding() {
-  while(!landed()) {
-    sleep(1000);
+  function quit(exit_code) {
+    stop();
+    if(pubsubRunning) {
+      stopPubsub();
+    }
+    exit(exit_code);
   }
-}
 
-if(IS_PUBLISHER) {
-  console.log("Connecting to aupilot\n");
-  connect();
-}
+  if (IS_PUBLISHER) {
+    console.log("Connecting to aupilot\n");
+    connect();
+  }
 
-pubsubWorker = new Worker(pubsubScript);
-pubsubWorker.onmessage = function(e) {
-  if (!e.data.publishing)
-    pubsubWorker.onmessage = null;
-}
+  pubsubWorker = new Worker("{{ pubsub_script }}");
+  pubsubWorker.onmessage = function(e) {
+    if (!e.data.publishing)
+      pubsubWorker.onmessage = null;
+  }
 
-initPubsub(droneIdList.length);
-for (let i = 0; i < droneIdList.length; i++) {
-  let id = droneIdList[i]
-  droneDict[id] = new Drone(id);
-  droneDict[id].init(i);
-}
+  worker.postMessage({type: "initPubsub"});
 
-pubsubWorker.postMessage({ action: "run", id: me.id, publish: IS_PUBLISHER });
-pubsubRunning = true;
+  function takeOff() {
+    exit_on_fail(arm(), "Failed to arm");
+    takeOffAndWait();
+  }
 
-{{ flight_script }}
+  function load() {
+    if(IS_PUBLISHER && SIMULATION) {
+      takeOff();
+    }
 
-if(IS_PUBLISHER && SIMULATION) {
-  takeOff();
-}
+    // First argument must provide the user script path
+    if (user_script === undefined) {
+      console.log('Please provide the user_script path.');
+      quit(1);
+    }
 
-me.onStart()
-me.onUpdate();
+    worker.postMessage({
+      type: "load",
+      path: user_script
+    });
+  }
 
-if(IS_PUBLISHER) {
-  waitForLanding();
-  quit();
-} else {
-  stopPubsub();
-};
+  function loop() {
+    var timestamp = Date.now(),
+      timeout;
+    if (can_update) {
+      if (FPS <= (timestamp - previous_timestamp)) {
+        // Expected timeout between every update
+        can_update = false;
+        worker.postMessage({
+          type: "update",
+          timestamp: timestamp
+        });
+        // Try to stick to the expected FPS
+        timeout = Math.min(FPS, FPS - (timestamp - previous_timestamp - FPS));
+        previous_timestamp = timestamp;
+      } else {
+        timeout = FPS - (timestamp - previous_timestamp);
+      }
+    } else {
+      // If timeout occurs, but update is not yet finished
+      // wait a bit
+      timeout = FPS / 4;
+    }
+    // Ensure loop is not done with timeout < 1
+    // Otherwise, it will goes crazy for 1 second
+    setTimeout(loop, Math.max(1, timeout));
+  }
+
+  worker.onmessage = function (e) {
+    var type = e.data.type;
+    if (type === 'initialized') {
+      pubsubWorker.postMessage({ action: "run", id: {{ id }}, publish: IS_PUBLISHER });
+      pubsubRunning = true;
+      load();
+    } else if (type === 'loaded') {
+      previous_timestamp = -FPS;
+      can_update = true;
+      // Start the update loop
+      loop();
+    } else if (type === 'updated') {
+      can_update = true;
+    } else if (type === 'exited') {
+      worker.onmessage = null;
+      if(IS_PUBLISHER) {
+        quit(e.data.exit);
+      } else {
+        stopPubsub();
+        exit(e.data.exit);
+      };
+    } else {
+      console.log('Unsupported message type', type);
+      quit(1);
+    }
+  };
+}(console, setTimeout, Worker));
