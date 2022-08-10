@@ -222,6 +222,12 @@ i0:whitelist-firewall-{hash} RUNNING""",
 
 
 @skipUnlessKvm
+class TestInstanceJson(
+  KvmMixinJson, TestInstance):
+  pass
+
+
+@skipUnlessKvm
 class TestMemoryManagement(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'i'
 
@@ -817,7 +823,7 @@ class TestInstanceNbdServerJson(
   pass
 
 
-class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class HttpHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
   def log_message(self, *args):
     if os.environ.get('SLAPOS_TEST_DEBUG'):
       return SimpleHTTPServer.SimpleHTTPRequestHandler.log_message(self, *args)
@@ -831,7 +837,7 @@ class FakeImageServerMixin(KvmMixin):
     cls.image_source_directory = tempfile.mkdtemp()
     server = SocketServer.TCPServer(
       (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
-      FakeImageHandler)
+      HttpHandler)
 
     # c89f17758be13adeb06886ef935d5ff1
     fake_image_content = b'fake_image_content'
@@ -2195,3 +2201,125 @@ class TestExternalDiskModernIndexRequired(InstanceTestCase, ExternalDiskMixin):
         self.getExternalDiskInstanceParameterDict(
           self.first_disk, second_disk, self.third_disk))})
     self.raising_waitForInstance(10)
+
+
+@skipUnlessKvm
+class TestInstanceHttpServer(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'ihs'
+
+  @classmethod
+  def startHttpServer(cls):
+    cls.http_directory = tempfile.mkdtemp()
+    server = SocketServer.TCPServer(
+      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
+      HttpHandler)
+
+    bootstrap_script = b'bootstrap_script'
+    cls.bootstrap_script_md5sum = hashlib.md5(bootstrap_script).hexdigest()
+    with open(os.path.join(
+      cls.http_directory, cls.bootstrap_script_md5sum), 'wb') as fh:
+      fh.write(bootstrap_script)
+
+    url = 'http://%s:%s' % server.server_address
+    cls.bootstrap_script_url = '/'.join([url, cls.bootstrap_script_md5sum])
+
+    old_dir = os.path.realpath(os.curdir)
+    os.chdir(cls.http_directory)
+    try:
+      cls.server_process = multiprocessing.Process(
+        target=server.serve_forever, name='HttpServer')
+      cls.server_process.start()
+    finally:
+      os.chdir(old_dir)
+
+  @classmethod
+  def stopHttpServer(cls):
+    cls.logger.debug('Stopping process %s' % (cls.server_process,))
+    cls.server_process.join(10)
+    cls.server_process.terminate()
+    time.sleep(0.1)
+    if cls.server_process.is_alive():
+      cls.logger.warning(
+        'Process %s still alive' % (cls.server_process, ))
+
+    shutil.rmtree(cls.http_directory)
+
+  @classmethod
+  def setUpClass(cls):
+    cls.startHttpServer()
+    super(TestInstanceHttpServer, cls).setUpClass()
+
+  @classmethod
+  def tearDownClass(cls):
+    super(TestInstanceHttpServer, cls).tearDownClass()
+    cls.stopHttpServer()
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'enable-http-server': True,
+      'bootstrap-script-url': '%s#%s' % (
+        cls.bootstrap_script_url, cls.bootstrap_script_md5sum),
+      'data-to-vm': """data
+to
+vm""",
+    }
+
+  def test(self):
+    connection_parameter_dict = self.getConnectionParameterDictJson()
+    present_key_list = []
+    assert_key_list = [
+     'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
+     'tap-ipv4', 'tap-ipv6']
+    for k in assert_key_list:
+      if k in connection_parameter_dict:
+        present_key_list.append(k)
+        connection_parameter_dict.pop(k)
+    self.assertEqual(
+      connection_parameter_dict,
+      {
+        'ipv6': self._ipv6_address,
+        'maximum-extra-disk-amount': '0',
+        'monitor-base-url': 'https://[%s]:8026' % (self._ipv6_address,),
+        'nat-rule-port-tcp-22': '%s : 10022' % (self._ipv6_address,),
+        'nat-rule-port-tcp-443': '%s : 10443' % (self._ipv6_address,),
+        'nat-rule-port-tcp-80': '%s : 10080' % (self._ipv6_address,),
+      }
+    )
+    self.assertEqual(set(present_key_list), set(assert_key_list))
+    self.assertEqual(
+      """ihs0:6tunnel-10022-{hash}-on-watch RUNNING
+ihs0:6tunnel-10080-{hash}-on-watch RUNNING
+ihs0:6tunnel-10443-{hash}-on-watch RUNNING
+ihs0:bootstrap-monitor EXITED
+ihs0:certificate_authority-{hash}-on-watch RUNNING
+ihs0:crond-{hash}-on-watch RUNNING
+ihs0:http-server-{hash}-on-watch RUNNING
+ihs0:kvm-{kvm-hash-value}-on-watch RUNNING
+ihs0:kvm_controller EXITED
+ihs0:monitor-httpd-{hash}-on-watch RUNNING
+ihs0:monitor-httpd-graceful EXITED
+ihs0:websockify-{hash}-on-watch RUNNING
+ihs0:whitelist-domains-download-{hash} RUNNING
+ihs0:whitelist-firewall-{hash} RUNNING""",
+      self.getProcessInfo()
+    )
+    public_dir = os.path.join(
+      self.computer_partition_root_path, 'srv', 'public')
+    self.assertEqual(
+      ['data', 'gateway', 'hostname', 'ipv4',
+       'ipv6_config.sh', 'netmask', 'network', 'vm-bootstrap'],
+      sorted(os.listdir(public_dir))
+    )
+    with open(os.path.join(public_dir, 'data'), 'r') as fh:
+      self.assertEqual("""data
+to
+vm""", fh.read())
+    with open(os.path.join(public_dir, 'vm-bootstrap'), 'r') as fh:
+      self.assertEqual('bootstrap_script', fh.read())
+
+
+@skipUnlessKvm
+class TestInstanceHttpServerJson(
+  KvmMixinJson, TestInstanceHttpServer):
+  pass
