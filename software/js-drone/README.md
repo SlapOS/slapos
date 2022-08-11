@@ -14,8 +14,6 @@
 
 * is-a-simulation: Must be set to 'true' to automatically take off during simulation
 
-* leader-id: Id of the drone chosen to be the leader of the swarm
-
 * multicast-ipv6: IPv6 of the multicast group of the swarm
 
 * net-if: Network interface used for multicast traffic
