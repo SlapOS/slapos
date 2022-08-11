@@ -1,4 +1,4 @@
-/*global console*/
+/* global console */
 import {
   arm,
   start,
@@ -29,15 +29,14 @@ import { exit } from "std";
     // Use the same FPS than browser's requestAnimationFrame
     FPS = 1000 / 60,
     previous_timestamp,
-    can_update = false,
-    i = 0;
+    can_update = false;
 
   function connect() {
     console.log("Will connect to", URL);
-    exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
+    exitOnFail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
   }
 
-  function exit_on_fail(ret, msg) {
+  function exitOnFail(ret, msg) {
     if (ret) {
       console.log(msg);
       quit(1);
@@ -59,14 +58,15 @@ import { exit } from "std";
 
   pubsubWorker = new Worker("{{ pubsub_script }}");
   pubsubWorker.onmessage = function(e) {
-    if (!e.data.publishing)
+    if (!e.data.publishing) {
       pubsubWorker.onmessage = null;
+    }
   }
 
   worker.postMessage({type: "initPubsub"});
 
   function takeOff() {
-    exit_on_fail(arm(), "Failed to arm");
+    exitOnFail(arm(), "Failed to arm");
     takeOffAndWait();
   }
 
@@ -88,7 +88,7 @@ import { exit } from "std";
   }
 
   function loop() {
-    var timestamp = Date.now(),
+    let timestamp = Date.now(),
       timeout;
     if (can_update) {
       if (FPS <= (timestamp - previous_timestamp)) {
@@ -115,11 +115,12 @@ import { exit } from "std";
   }
 
   worker.onmessage = function (e) {
-    var type = e.data.type;
+    let type = e.data.type;
     if (type === 'initialized') {
       pubsubWorker.postMessage({
         action: "run",
         id: {{ id }},
+        interval: FPS,
         publish: IS_A_DRONE
       });
       load();
