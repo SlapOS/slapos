@@ -1,0 +1,17 @@
+<?php
+
+$db_type = 'mysql';
+$db_host = '%(mysql_host)s';
+$db_name = '%(mysql_database)s';
+$db_username = '%(mysql_user)s';
+$db_password = '%(mysql_password)s';
+$db_prefix = 'fbb_';
+$p_connect = false;
+
+$cookie_name = 'pun_cookie_357edd';
+$cookie_domain = '';
+$cookie_path = '/';
+$cookie_secure = 0;
+$cookie_seed = 'aba88f605e01bfe2';
+
+define('PUN', 1);

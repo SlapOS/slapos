@@ -1,0 +1,107 @@
+[buildout]
+
+extends =
+  ${instance-stack:output}
+
+parts =
+  sh-environment
+  start-daemons
+  deploy-tar
+  gutenberg-data-download
+  gutenberg-mapper
+  gutenberg-reducer
+  gutenberg-run
+  gutenberg-put-files
+  wikipedia-data-download
+  wikipedia-mapper
+  wikipedia-reducer
+  wikipedia-run
+  wikipedia-put-files
+
+
+[directories]
+demo = $${buildout:directory}/demo
+gutenberg = $${:demo}/gutenberg
+wikipedia = $${:demo}/wikipedia
+
+
+[gutenberg-data-download]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg/data-download.sh
+#md5sum = 
+output = $${directories:gutenberg}/data-download.sh
+mode = 0755
+
+
+[gutenberg-mapper]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg/mapper.py
+#md5sum = 
+output = $${directories:gutenberg}/mapper.py
+mode = 0755
+
+
+[gutenberg-reducer]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg/reducer.py
+#md5sum = 
+output = $${directories:gutenberg}/reducer.py
+mode = 0755
+
+
+[gutenberg-run]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg/run.sh.in
+#md5sum = 
+output = $${directories:gutenberg}/run.sh
+mode = 0755
+
+
+[gutenberg-put-files]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg/put-files.sh.in
+#md5sum = 
+output = $${directories:gutenberg}/put-files.sh
+mode = 0755
+
+
+[wikipedia-data-download]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/wikipedia/data-download.sh
+#md5sum = 
+output = $${directories:wikipedia}/data-download.sh
+mode = 0755
+
+
+[wikipedia-mapper]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/wikipedia/mapper.py
+#md5sum = 
+output = $${directories:wikipedia}/mapper.py
+mode = 0755
+
+
+[wikipedia-reducer]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/wikipedia/reducer.py
+#md5sum = 
+output = $${directories:wikipedia}/reducer.py
+mode = 0755
+
+
+[wikipedia-run]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/wikipedia/run.sh.in
+#md5sum = 
+output = $${directories:wikipedia}/run.sh
+mode = 0755
+
+
+[wikipedia-put-files]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/wikipedia/put-files.sh.in
+#md5sum = 
+output = $${directories:wikipedia}/put-files.sh
+mode = 0755
+
+

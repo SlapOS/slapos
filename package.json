@@ -1,0 +1,18 @@
+{
+  "lint-staged": {
+    "*.json": [
+      "./format-json"
+    ],
+    "{component,software,stack}/**": [
+      "python -c 'import sys, os.path, subprocess; [subprocess.check_call((\"./update-hash\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'",
+      "python -c 'import sys, os.path, subprocess; [subprocess.check_call((\"git\", \"add\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^7.0.0",
+    "lint-staged": "^12.1.2"
+  },
+  "scripts": {
+    "prepare": "husky install && git config merge.tool update-hash-mergetool && git config mergetool.update-hash-mergetool.cmd './update-hash-mergetool \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"' && git config mergetool.update-hash-mergetool.trustExitCode true"
+  }
+}

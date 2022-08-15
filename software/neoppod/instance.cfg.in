@@ -1,0 +1,28 @@
+[buildout]
+extends = {{ instance_common_cfg }}
+
+[jinja2-template-base]
+output = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
+
+[neo-cluster]
+<= jinja2-template-base
+url = {{ cluster }}
+extra-context =
+    import re re
+    import urllib_parse six.moves.urllib.parse
+import-list =
+    rawfile root_common {{ root_common }}
+
+{% if mariadb_location is defined -%}
+[neo]
+extra-context +=
+    raw runTestSuite_in {{ runTestSuite_in }}
+
+{% endif -%}
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+override = {{ dumps(override_switch_softwaretype |default) }}
+default = neo-cluster:output
+# BBB
+RootSoftwareInstance = ${:default}
+neo = neo:output

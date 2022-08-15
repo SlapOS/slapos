@@ -1,0 +1,11 @@
+--- ImageMagick-7.0.2-10/configure.ac.orig      2016-08-30 11:33:39.160279386 +0200
++++ ImageMagick-7.0.2-10/configure.ac   2016-08-30 11:35:34.753290590 +0200
+@@ -3110,7 +3110,7 @@
+ AC_PATH_PROG(MrSIDDecodeDelegate, "$MrSIDDecodeDelegateDefault", "$MrSIDDecodeDelegateDefault")
+ AC_PATH_PROG(MVDelegate, "$MVDelegateDefault", "$MVDelegateDefault")
+ AC_PATH_PROG(PCLDelegate, "$PCLDelegateDefault", "$PCLDelegateDefault")
+-AC_PATH_PROGS(PSDelegate, gsx gsc "$PSDelegateDefault", "$PSDelegateDefault")
++AC_PATH_PROGS(PSDelegate, "$PSDelegateDefault", "$PSDelegateDefault")
+ AC_PATH_PROG(RMDelegate, "$RMDelegateDefault", "$RMDelegateDefault")
+ AC_PATH_PROG(RSVGDecodeDelegate, "$RSVGDecodeDelegateDefault", "$RSVGDecodeDelegateDefault")
+ AC_PATH_PROG(SVGDecodeDelegate, "$SVGDecodeDelegateDefault", "$SVGDecodeDelegateDefault")

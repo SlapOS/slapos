@@ -1,0 +1,36 @@
+[testnode]
+slapos_directory = %(slapos_directory)s
+working_directory = %(working_directory)s
+test_suite_directory = %(test_suite_directory)s
+shared_part_list = %(shared_part_list)s
+software_directory = %(software_directory)s
+log_directory = %(log_directory)s
+run_directory = %(run_directory)s
+srv_directory = %(srv_directory)s
+proxy_host = %(proxy_host)s
+proxy_port = %(proxy_port)s
+node_quantity = %(node_quantity)s
+test_node_title = %(test_node_title)s
+ipv4_address = %(ipv4_address)s
+ipv6_address = %(ipv6_address)s
+test_suite_master_url = %(test_suite_master_url)s
+httpd_ip = %(httpd_ip)s
+httpd_port = %(httpd_port)s
+httpd_software_access_port = %(httpd_software_access_port)s
+computer_id = %(computer_id)s
+server_url = %(server_url)s
+frontend_url = %(frontend_url)s
+log_frontend_url = %(log_frontend_url)s
+keep_log_days = %(keep_log_days)s
+
+# Binaries
+git_binary = %(git_binary)s
+slapos_binary = %(slapos_binary)s
+zip_binary = %(zip_binary)s
+
+[environment]
+PATH = %(PATH)s
+
+%(software_path_list)s
+
+%(instance_dict)s

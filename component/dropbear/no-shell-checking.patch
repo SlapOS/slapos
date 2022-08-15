@@ -1,0 +1,20 @@
+diff --git a/svr-auth.c b/svr-auth.c
+index 87e3c5e..8b93a22 100644
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -267,6 +267,7 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
+ 		usershell = "/bin/sh";
+ 	}
+ 
++#ifndef __DIRTY_NO_SHELL_CHECKING
+ 	/* check the shell is valid. If /etc/shells doesn't exist, getusershell()
+ 	 * should return some standard shells like "/bin/sh" and "/bin/csh" (this
+ 	 * is platform-specific) */
+@@ -288,6 +289,7 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
+ 	
+ goodshell:
+ 	endusershell();
++#endif
+ 	TRACE(("matching shell"))
+ 
+ 	TRACE(("uid = %d", ses.authstate.pw_uid))

@@ -1,0 +1,30 @@
+# parameters required by the configuration instance
+[instance-parameter]
+matomo = ${:document-root}
+dir-backup = ${directory:backup}
+find-bin = {{ findutils_location }}
+diff-bin = {{ diffutils_location }}
+
+[matomo-backup-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = matomo-backup
+frequency = 0 0 * * *
+command = ${matomo-backup.sh:output}
+
+[matomo-backup.sh]
+recipe = slapos.recipe.template:jinja2
+url = {{ matomo_backup_sh }}
+output = ${directory:scripts}/matomo-backup
+context =
+  section parameter_dict instance-parameter
+  key php_bin php-bin:wrapper-path
+
+[apache-php-service]
+environment=
+  MATOMO_DATABASE_HOST=${mariadb-urlparse:host}:${mariadb-urlparse:port}
+  MATOMO_DATABASE_ADAPTER=mysql
+  MATOMO_DATABASE_TABLES_PREFIX=matomo_
+  MATOMO_DATABASE_USERNAME=${mariadb-urlparse:username}
+  MATOMO_DATABASE_PASSWORD=${mariadb-urlparse:password}
+  MATOMO_DATABASE_DBNAME=${mariadb-urlparse:path}

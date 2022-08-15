@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Caucase instantiation",
+  "properties": {
+    "url": {
+      "description": "Caucase URL",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

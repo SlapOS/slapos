@@ -1,0 +1,33 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[dynamic-template-pullrdiffbackup]
+recipe = slapos.recipe.template:jinja2
+url = ${template-pullrdiffbackup:output}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+filename = instance-pullrdiffbackup.cfg
+extensions = jinja2.ext.do
+context =
+    key slave_instance_list slap-configuration:slave-instance-list
+# partition_ipv6 is the random ipv6 allocated to the local partition
+    key partition_ipv6 slap-configuration:ipv6-random
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = $${:pullrdiffbackup}
+pullrdiffbackup = dynamic-template-pullrdiffbackup:output
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}

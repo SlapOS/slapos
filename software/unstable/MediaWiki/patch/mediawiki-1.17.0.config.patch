@@ -1,0 +1,10 @@
+--- old/includes/installer/WebInstaller.php	2011-10-11 11:36:29.173220293 +0100
++++ new/includes/installer/WebInstaller.php	2011-10-11 11:34:32.000000000 +0100
+@@ -152,6 +152,7 @@
+ 				$ls->setGroupRights( $group, $rightsArr );
+ 			}
+ 			echo $ls->getText();
++			file_put_contents(realpath(".") . "/LocalSettings.php", $ls->getText());
+ 			return $this->session;
+ 		}
+ 

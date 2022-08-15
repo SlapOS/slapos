@@ -1,0 +1,13 @@
+diff --git a/node_modules/vfs-local/localfs.js b/node_modules/vfs-local/localfs.js
+index 7ce9981..1dd07b7 100644
+--- a/node_modules/vfs-local/localfs.js
++++ b/node_modules/vfs-local/localfs.js
+@@ -677,7 +677,7 @@ module.exports = function setup(fsOptions) {
+                     else {
+                         var err = new Error("File already exists.");
+                         err.code = "EEXIST";
+-                        callback(err);
++                        //callback(err);
+                     }
+                 });
+             });

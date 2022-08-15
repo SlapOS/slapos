@@ -1,0 +1,15 @@
+root = true
+
+[*.{cfg,in,md,json,py}]
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,py}]
+indent_style = space
+indent_size = 2
+
+# business templates metadata
+[**/bt/**]
+insert_final_newline = false

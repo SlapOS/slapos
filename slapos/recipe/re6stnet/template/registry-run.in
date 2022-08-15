@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo $$ > %(pid_file)s
+exec %(command)s \
+  %(parameter)s

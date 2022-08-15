@@ -1,0 +1,17 @@
+--- automake-1.15/doc/help2man	2014-12-30 14:49:41.000000000 +0100
++++ automake-1.15/doc/help2man	2017-04-12 10:40:16.965600755 +0200
+@@ -632,11 +632,13 @@
+ sub get_option_value
+ {
+     my ($prog, $opt) = @_;
++    $prog = `which $prog`;
++    chomp($prog);
+     my $stderr = $discard_stderr ? '/dev/null' : '&1';
+     my $value = join '',
+ 	map { s/ +$//; expand $_ }
+ 	map { dec $_ }
+-	`$prog $opt 2>$stderr`;
++	`perl $prog $opt 2>$stderr`;
+ 
+     unless ($value)
+     {

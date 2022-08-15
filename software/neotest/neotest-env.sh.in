@@ -1,0 +1,15 @@
+# env.sh for putting everything needed to run neotest on path
+
+. ${gowork:env.sh}
+
+PATH="${coreutils:location}/bin:$PATH"
+PATH="${util-linux:location}/bin:$PATH"
+PATH="${ethtool:location}/sbin:$PATH"
+PATH="${ioping:location}/bin:$PATH"
+PATH="${lmbench:location}/bin:$PATH"
+PATH="${mariadb:location}/bin:$PATH"
+PATH="${mariadb:location}/scripts:$PATH"
+PATH="${buildout:bin-directory}/:$PATH"  # for python with eggs
+
+export PATH
+export PS1="(neotest-`basename ${buildout:directory}`) $PS1"

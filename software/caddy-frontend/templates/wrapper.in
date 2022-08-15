@@ -1,0 +1,2 @@
+#!${dash-output:dash}
+{{ content }}

@@ -1,0 +1,18 @@
+<?php
+
+$db_type = 'mysqli';
+$db_host = '%(mysql_host)s';
+$db_name = '%(mysql_database)s';
+$db_username = '%(mysql_user)s';
+$db_password = '%(mysql_password)s';
+$db_prefix = 'pbb_';
+$p_connect = false;
+
+$base_url = 'http://webrunner:9080';
+
+$cookie_name = 'forum_cookie_173f50';
+$cookie_domain = '';
+$cookie_path = '/';
+$cookie_secure = 0;
+
+define('FORUM', 1);

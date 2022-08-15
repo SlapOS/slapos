@@ -1,0 +1,80 @@
+{% macro supervisord(
+  name,
+  buildout_bin_directory,
+  supervisord_conf,
+  use_service_hash=False
+) -%}
+
+[controller-directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+log = ${:var}/log
+run = ${:var}/run
+supervisord = ${:etc}/supervisord-{{ name }}.conf.d
+
+[controller-parameters]
+socket-path = ${controller-directory:run}/{{ name }}.socket
+include-dir = ${controller-directory:supervisord}
+log-file    = ${controller-directory:log}/supervisord-{{ name }}.log
+log-level   = info
+pid-file    = ${controller-directory:run}/supervisord-{{ name }}.pid
+
+[supervisord-controller-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ supervisord_conf }}
+context =
+  section parameter_dict controller-parameters
+output = ${controller-directory:etc}/supervisord-{{ name }}.conf
+
+[supervisord-{{ name }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ buildout_bin_directory }}/supervisord -c ${supervisord-controller-conf:output} --nodaemon
+wrapper-path = ${directory:services}/supervisord-{{ name }}
+{% if use_service_hash -%}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{% endif -%}
+depends =
+  {{ '${' ~ name ~ '-bin:recipe}' }}
+
+[{{ name }}-bin]
+recipe = slapos.cookbook:wrapper
+command-line = {{ buildout_bin_directory }}/supervisorctl -c ${supervisord-controller-conf:output}
+wrapper-path = ${directory:bin}/{{ name }}
+
+{%- endmacro %}
+
+
+{% macro supervisord_program(
+  name,
+  parameter_dict
+) -%}
+
+
+[supervisord-{{ name }}]
+recipe = slapos.recipe.template
+inline =
+  [program:{{ parameter_dict['name'] }}]
+  directory = ${buildout:directory}
+  command = {{ parameter_dict['command'] }}
+  process_name = {{ parameter_dict['name'] }}
+  autostart = {{ parameter_dict.get('autostart', True) }}
+  autorestart = {{ parameter_dict.get('autorestart', False) }}
+  startsecs = {{ parameter_dict.get('startsecs', 0) }}
+  startretries = {{ parameter_dict.get('startretries', 0) }}
+  exitcodes = {{ parameter_dict.get('exitcodes', 0) }}
+  stopsignal = {{ parameter_dict.get('stopsignal', 'TERM') }}
+  stopwaitsecs = {{ parameter_dict.get('stopwaitsecs', 60) }}
+  serverurl=AUTO
+  redirect_stderr=true
+  stdout_logfile = {{ parameter_dict.get('stdout_logfile', 'NONE') }}
+  stdout_logfile_maxbytes = 1000KB
+  stdout_logfile_backups = 1
+  stderr_logfile = {{ parameter_dict.get('stderr_logfile', 'NONE') }}
+  stderr_logfile_maxbytes = 1000KB
+  stderr_logfile_backups = 1
+  environment = {{ parameter_dict['environment'] | join(',') }}
+
+output = ${controller-directory:supervisord}/{{ name }}.conf
+
+{%- endmacro %}

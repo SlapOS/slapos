@@ -1,0 +1,18 @@
+[buildout]
+extends = ${instance-postgres:output}
+          ${pbsready-import:output}
+
+
+parts +=
+    postgres-instance
+
+# have to repeat the next one, as it's not inherited from pbsready-import
+    import-on-notification
+
+[importer]
+recipe = slapos.cookbook:postgres.import
+wrapper = $${rootdirectory:bin}/$${slap-parameter:namebase}-importer
+bin = $${postgres-instance:bin}
+pgdata-directory = $${postgres-instance:pgdata-directory}
+backup-directory = $${postgres-instance:backup-directory}
+dbname = $${postgres-instance:dbname}

@@ -1,0 +1,14 @@
+{
+  "name": "Pure-FTPd",
+  "description": "Pure-FTPd as a FTP server with virtual users and uploadscript",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Pure-FTPd, with a default user",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 0
+    }
+  }
+}

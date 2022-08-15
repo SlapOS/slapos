@@ -1,0 +1,196 @@
+Regenerate the dependencies for screen as they are broken in the screen-v4 branch.
+
+This patch should be removed when we start using screen v5.0.0 because dependencies are fixed in master branch.
+
+This patch has been generated with the following command:
+grep '\.o:' Makefile.in | grep -v '\.c\.o' | sed 's/\.o.*/.c/' | xargs -l gcc -E -MM >> Makefile.in
+
+diff --git a/src/Makefile.in b/src/Makefile.in
+index 08b44d3..80e7da4 100644
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -278,79 +278,107 @@ depend.in: $(CFILES) term.h
+ ###############################################################################
+ 
+ ### Dependencies:
+-screen.o: layout.h viewport.h canvas.h screen.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h braille.h \
+- patchlevel.h logfile.h extern.h
+-ansi.o: layout.h viewport.h canvas.h ansi.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h braille.h extern.h \
+- logfile.h
+-fileio.o: layout.h viewport.h canvas.h fileio.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-mark.o: layout.h viewport.h canvas.h mark.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h mark.h extern.h
+-misc.o: layout.h viewport.h canvas.h misc.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-resize.o: layout.h viewport.h canvas.h resize.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-socket.o: layout.h viewport.h canvas.h socket.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-search.o: layout.h viewport.h canvas.h search.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h mark.h extern.h
+-tty.o: layout.h viewport.h canvas.h tty.c config.h screen.h os.h osdef.h ansi.h acls.h comm.h \
+- layer.h term.h image.h display.h window.h extern.h
+-term.o: layout.h viewport.h canvas.h term.c term.h
+-window.o: layout.h viewport.h canvas.h window.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
+-utmp.o: layout.h viewport.h canvas.h utmp.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-loadav.o: layout.h viewport.h canvas.h loadav.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-putenv.o: layout.h viewport.h canvas.h putenv.c config.h
+-help.o: layout.h viewport.h canvas.h help.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h list_generic.h
+-termcap.o: layout.h viewport.h canvas.h termcap.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-input.o: layout.h viewport.h canvas.h input.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-attacher.o: layout.h viewport.h canvas.h attacher.c config.h screen.h os.h osdef.h ansi.h \
+- acls.h comm.h layer.h term.h image.h display.h window.h extern.h
+-pty.o: layout.h viewport.h canvas.h pty.c config.h screen.h os.h osdef.h ansi.h acls.h comm.h \
+- layer.h term.h image.h display.h window.h extern.h
+-process.o: layout.h viewport.h canvas.h process.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
+-display.o: layout.h viewport.h canvas.h display.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h braille.h
+-canvas.o: layout.h viewport.h canvas.h canvas.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h \
+- braille.h
+-comm.o: layout.h viewport.h canvas.h comm.c config.h acls.h comm.h
+-kmapdef.o: layout.h viewport.h canvas.h kmapdef.c config.h
+-acls.o: layout.h viewport.h canvas.h acls.c config.h screen.h os.h osdef.h ansi.h acls.h comm.h \
+- layer.h term.h image.h display.h window.h extern.h
+-braille.o: layout.h viewport.h canvas.h braille.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h braille.h
+-braille_tsi.o: layout.h viewport.h canvas.h braille_tsi.c config.h screen.h os.h osdef.h ansi.h \
+- acls.h comm.h layer.h term.h image.h display.h window.h extern.h \
+- braille.h
+-logfile.o: layout.h viewport.h canvas.h logfile.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
+-layer.o: layout.h viewport.h canvas.h layer.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-sched.o: layout.h viewport.h canvas.h sched.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h logfile.h
+-teln.o: layout.h viewport.h canvas.h teln.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-nethack.o: layout.h viewport.h canvas.h nethack.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-encoding.o: layout.h viewport.h canvas.h encoding.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h
+-layout.o: layout.h viewport.h canvas.h layout.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h \
+- braille.h
+-viewport.o: layout.h viewport.h canvas.h viewport.c config.h screen.h os.h osdef.h ansi.h acls.h \
+- comm.h layer.h term.h image.h display.h window.h extern.h \
+- braille.h
+-list_generic.o: list_generic.h list_generic.c layer.h screen.h osdef.h
+-list_display.o: list_generic.h list_display.c layer.h screen.h osdef.h
+-list_window.o: list_generic.h list_window.c window.h layer.h screen.h osdef.h comm.h
+-
++screen.o: screen.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h patchlevel.h logfile.h extern.h
++ansi.o: ansi.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h braille.h extern.h logfile.h
++fileio.o: fileio.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++mark.o: mark.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h mark.h extern.h
++misc.o: misc.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++resize.o: resize.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++socket.o: socket.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h list_generic.h
++search.o: search.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h mark.h extern.h
++tty.o: tty.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h comm.h \
++ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
++ extern.h
++term.o: term.c term.h
++window.o: window.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h logfile.h
++utmp.o: utmp.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++loadav.o: loadav.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++putenv.o: putenv.c config.h
++help.o: help.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h list_generic.h
++termcap.o: termcap.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++input.o: input.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++attacher.o: attacher.c config.h screen.h os.h osdef.h ansi.h sched.h \
++ acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h extern.h
++pty.o: pty.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h comm.h \
++ layer.h term.h image.h canvas.h display.h layout.h viewport.h window.h \
++ extern.h
++process.o: process.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h logfile.h list_generic.h
++display.o: display.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h braille.h
++canvas.o: canvas.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h list_generic.h
++comm.o: comm.c config.h os.h acls.h comm.h
++kmapdef.o: kmapdef.c config.h
++acls.o: acls.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++braille.o: braille.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h braille.h
++braille_tsi.o: braille_tsi.c config.h screen.h os.h osdef.h ansi.h \
++ sched.h acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h extern.h braille.h
++logfile.o: logfile.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h logfile.h
++layer.o: layer.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h mark.h extern.h braille.h
++sched.o: sched.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++teln.o: teln.c config.h
++nethack.o: nethack.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h
++encoding.o: encoding.c config.h screen.h os.h osdef.h ansi.h sched.h \
++ acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h extern.h
++layout.o: layout.c config.h screen.h os.h osdef.h ansi.h sched.h acls.h \
++ comm.h layer.h term.h image.h canvas.h display.h layout.h viewport.h \
++ window.h extern.h
++viewport.o: viewport.c config.h screen.h os.h osdef.h ansi.h sched.h \
++ acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h extern.h
++list_generic.o: list_generic.c config.h screen.h os.h osdef.h ansi.h \
++ sched.h acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h list_generic.h extern.h
++list_display.o: list_display.c config.h screen.h os.h osdef.h ansi.h \
++ sched.h acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h extern.h list_generic.h
++list_window.o: list_window.c config.h screen.h os.h osdef.h ansi.h \
++ sched.h acls.h comm.h layer.h term.h image.h canvas.h display.h layout.h \
++ viewport.h window.h extern.h list_generic.h
+

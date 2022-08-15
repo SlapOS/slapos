@@ -1,0 +1,20 @@
+[unix_http_server]
+file = {{ parameter_dict['socket-path'] }}
+chmod=0700
+
+[include]
+files = {{ parameter_dict['include-dir'] }}/*.conf
+
+[supervisorctl]
+serverurl = unix://{{ parameter_dict['socket-path'] }}
+
+[supervisord]
+loglevel = {{ parameter_dict['log-level'] }}
+logfile_maxbytes = 2MB
+nodaemon = false
+logfile-backups = 3
+logfile = {{ parameter_dict['log-file'] }}
+pidfile = {{ parameter_dict['pid-file'] }}
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface

@@ -1,0 +1,50 @@
+# -------------------------------------------------------------------------
+
+# Configure ip/port binding
+local-address={{ pdns.get('ipv4') }}, {{ pdns.get('ipv6') }}
+local-port={{ pdns.get('port') }}
+
+
+socket-dir={{ pdns.get('socket-directory') }}
+
+# Monitoring
+webserver=yes
+webserver-address={{ pdns.get('ipv4') }}
+webserver-port={{ pdns.get('webserver-port') }}
+
+# These totally disable query+packet caching for all zones.  This is necessary
+# because otherwise when the exact same question is asked twice in a short
+# period of time (by default, 10 seconds), the same response will be given
+# without any backends getting involved.
+#
+# This is bad for geobackend because obviously every question can potentially
+# require a new answer based only on the IP of the user's nameserver.  Now, it
+# should be noted that if you have other zones in PowerDNS then they will have
+# their query cache disabled as well.  That's not ideal, so you probably want
+# to run a separate instance of PowerDNS just for geobackend.  Maybe one day
+# there will be config options to set per-zone query caching time or something.
+query-cache-ttl=0
+cache-ttl=0
+
+# Log a lot of stuff.  Logging is slow.  We will disable this when we are happy
+# things are working. :)
+log-dns-details=yes
+log-dns-queries=yes
+# https://github.com/PowerDNS/pdns/commit/df9d980
+# log-failed-updates=yes
+loglevel=4
+
+# This disables wildcards which is more efficient.  geobackend doesn't use
+# them, so if none of your backends need them, set this, otherwise comment it
+# out.
+# wildcards=no
+
+# The geobackend
+launch=geoip
+
+edns-subnet-processing=yes
+
+geoip-database-files={{ geo['database'] }}
+geoip-zones-file={{ geo['zones-file'] }}
+
+# -------------------------------------------------------------------------

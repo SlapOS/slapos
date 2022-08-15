@@ -1,0 +1,10 @@
+%(file_list)s {
+  daily
+  dateext
+  rotate 30
+  compress
+  notifempty
+  sharedscripts
+  create
+  olddir %(olddir)s
+}

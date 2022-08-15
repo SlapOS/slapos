@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Standalone RPM to CPIO converter
+# Copyright (c) 2012 Rudá Moura
+# https://github.com/ruda/rpm2cpio
+#
+# Impove gzip header detection thanks to
+# http://afb.users.sourceforge.net/centos/rpm2cpio.py
+#
+# Copyright (C) 1997,1998,1999, Roger Espel Llima
+# Copyright (C) 2000, Sergey Babkin
+# Copyright (C) 2009, Alex Kozlov
+# Copyright (C) 2010, Anders F Bjorklund
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and any associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# SOFTWARE'S COPYRIGHT HOLDER(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE
+
+'''Extract cpio archive from RPM package.
+
+rpm2cpio converts the RPM on standard input or first parameter to a CPIO archive on standard output.
+
+Usage:
+rpm2cpio < adjtimex-1.20-2.1.i386.rpm  | cpio -it
+./sbin/adjtimex
+./usr/share/doc/adjtimex-1.20
+./usr/share/doc/adjtimex-1.20/COPYING
+./usr/share/doc/adjtimex-1.20/COPYRIGHT
+./usr/share/doc/adjtimex-1.20/README
+./usr/share/man/man8/adjtimex.8.gz
+133 blocks
+'''
+
+import sys
+import struct
+import StringIO
+import gzip
+
+RPM_MAGIC = '\xed\xab\xee\xdb'
+GZIP_MAGIC = '\x1f\x8b'
+
+def rpm2cpio(stream_in=sys.stdin, stream_out=sys.stdout):
+    lead = stream_in.read(96)
+    if lead[0:4] != RPM_MAGIC:
+        raise IOError, 'the input is not a RPM package'
+    lead = stream_in.read(16)
+    if not lead:
+        raise IOError, 'No header'
+
+    while True:
+        (magic, ignore, sections, bytes) = struct.unpack("!LLLL", lead)
+        (smagic, smagic2) = struct.unpack("!HL", lead[0:6])
+
+        if smagic == 0x1f8b:
+            break
+
+        # skip the headers
+        stream_in.seek(16 * sections + bytes, 1)
+        while True:
+            lead = stream_in.read(1)
+            if lead == "":
+                raise IOError, 'No header'
+            if (0,) == struct.unpack("B", lead):
+                continue
+            break
+        lead += stream_in.read(15)
+        if lead == "":
+            raise IOError, 'No header'
+
+    stream_in.seek(-len(lead), 1)
+    gzipper = gzip.GzipFile(fileobj=stream_in)
+    data = gzipper.read()
+    stream_out.write(data)
+
+if __name__ == '__main__':
+    if sys.argv[1:]:
+        try:
+            fin = open(sys.argv[1])
+            rpm2cpio(fin)
+            fin.close()
+        except IOError, e:
+            print 'Error:', sys.argv[1], e
+    else:
+        try:
+            rpm2cpio()
+        except IOError, e:
+            print 'Error:', e

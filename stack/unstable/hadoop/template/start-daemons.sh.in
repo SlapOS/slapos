@@ -1,0 +1,14 @@
+#!/bin/bash
+## Start HDFS daemons
+# Format the namenode directory (DO THIS ONLY ONCE, THE FIRST TIME)
+#$HADOOP_PREFIX/bin/hdfs namenode -format
+# Start the namenode daemon
+$HADOOP_PREFIX/sbin/hadoop-daemon.sh start namenode
+# Start the datanode daemon
+$HADOOP_PREFIX/sbin/hadoop-daemon.sh start datanode
+ 
+## Start YARN daemons
+# Start the resourcemanager daemon
+$HADOOP_PREFIX/sbin/yarn-daemon.sh start resourcemanager
+# Start the nodemanager daemon
+$HADOOP_PREFIX/sbin/yarn-daemon.sh start nodemanager

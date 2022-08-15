@@ -1,0 +1,21 @@
+'''
+  This script initializes Jupyter's configuration such as passwords and other
+  things. It is run by IPython hence why it can use functions like get_config().
+'''
+import configparser
+from notebook.auth import passwd
+import os
+
+c = get_config()
+
+c.NotebookApp.password = passwd("{{ password }}")
+
+try:
+  os.environ['PATH'] = "{{ gcc_location }}/bin" + os.pathsep + os.environ['PATH']
+except KeyError:
+  os.environ['PATH'] = "{{ gcc_location }}/bin"
+
+try:
+  os.environ['PYTHONPATH'] = "{{ cythonplus_repository }}" + os.pathsep + os.environ['PYTHONPATH']
+except KeyError:
+  os.environ['PYTHONPATH'] = "{{ cythonplus_repository }}"

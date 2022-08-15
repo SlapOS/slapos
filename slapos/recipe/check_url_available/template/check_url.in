@@ -1,0 +1,62 @@
+#!%(shell_path)s
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+URL="%(url)s"
+F_TIMEOUT="%(time_out)s"
+TIMEOUT=20
+CA_CERT="%(ca-cert-file)s"
+CERT="%(cert-file)s"
+KEY="%(key-file)s"
+
+if [ -z "$URL" ]; then
+  echo "No URL specified." >&2
+  exit 3
+fi
+
+if [ -s "$F_TIMEOUT" ]; then
+  TIMEOUT=$(cat $F_TIMEOUT)
+  result=$(echo $TIMEOUT | grep -E ^[0-9]+$)
+  if [ -z $result ]; then
+    # Not an integer
+    TIMEOUT=20
+  fi
+fi
+
+if [ -z "$CA_CERT" ] || [ -z "$CERT" ] || [ -z "$KEY" ]; then
+  CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time $TIMEOUT -o /dev/null)
+else
+  CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time $TIMEOUT -o /dev/null --cacert $CA_CERT --cert $CERT --key $KEY)
+fi
+
+if [ $? -eq 3 ]; then
+  echo "URL malformed: $URL." >&2
+  exit 1
+fi
+
+if [ $? -eq 7 ]; then
+  echo "Failed to connect to host: $URL." >&2
+  exit 1
+fi
+
+if [ ! $CODE ]; then
+  echo "$URL is not available (server not reachable)." >&2
+  exit 1
+fi
+
+if [ $CODE -eq 000 ]; then
+  echo "$URL is not available (server not reachable)." >&2
+  exit 1
+fi
+
+if [ %(check_secure)s -eq 1 ]; then
+  if [ $CODE -eq 401 ]; then
+    echo "$URL is protected (returned $CODE)." >&2
+    exit 0
+  fi
+fi
+
+if ! [ $CODE -eq %(http_code)s ]; then
+  echo "$URL is not available (returned $CODE, expected %(http_code)s)." >&2
+  exit 2
+fi

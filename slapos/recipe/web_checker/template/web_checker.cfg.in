@@ -1,0 +1,43 @@
+[web_checker]
+url = %(frontend_url)s
+working_directory = %(web_checker_working_directory)s
+varnishlog_binary_path = %(varnishlog_binary_path)s
+wget_binary_path = %(wget_binary_path)s
+email_address = %(web_checker_mail_address)s
+smtp_host = %(web_checker_smtp_host)s
+debug_level = debug
+file_log_path = %(web_checker_log)s
+
+[header_list]
+Expires = True
+Vary = Accept-Language, Cookie, Accept-Encoding
+  Accept-Language, Cookie
+  Accept-Language,Cookie,Accept-Encoding
+  Accept-Language,Cookie
+  Accept-Encoding
+Cache-Control = max-age=300
+  max-age=3600
+  public,max-age=300
+  public,max-age=3600
+
+[header url=(.*_form)]
+Vary = Accept-Encoding
+
+[header url=.*/favicon.ico]
+Last-Modified = True
+
+[header content-type=(text/css|.*/javascript)]
+Last-Modified = True
+Cache-Control = public,max-age=300
+  public,max-age=3600
+  public
+
+[no_header content-type=(image/.*|application/font)]
+Vary = None
+
+[erp5_extension_list]
+prohibited_folder_name_list = web_page_module
+  document_module
+prohibited_file_name_list = WebSection_viewAsWeb
+  Base_viewHistory
+  list

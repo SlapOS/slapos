@@ -1,0 +1,127 @@
+--- mod_antiloris.c.orig	2009-07-28 15:27:42.000000000 +0200
++++ mod_antiloris.c	2012-03-06 11:05:50.167576066 +0100
+@@ -1,5 +1,5 @@
+ /*
+-   mod_antiloris 0.2
++   mod_antiloris 0.5
+    Copyright (C) 2008 Monshouwer Internet Diensten
+ 
+    Author: Kees Monshouwer
+@@ -22,11 +22,16 @@
+ #include "http_connection.h"
+ #include "http_log.h"
+ #include "ap_mpm.h"
++#include "ap_release.h" 
+ #include "apr_strings.h"
+ #include "scoreboard.h"
+ 
+ #define MODULE_NAME "mod_antiloris"
+-#define MODULE_VERSION "0.4"
++#define MODULE_VERSION "0.5.1"
++
++#ifdef APLOG_USE_MODULE 
++APLOG_USE_MODULE(antiloris); 
++#endif 
+ 
+ module AP_MODULE_DECLARE_DATA antiloris_module;
+ 
+@@ -58,6 +63,8 @@
+ /* Parse the IPReadLimit directive */
+ static const char *ipreadlimit_config_cmd(cmd_parms *parms, void *mconfig, const char *arg)
+ {
++    signed long int limit;
++
+     antiloris_config *conf = ap_get_module_config(parms->server->module_config, &antiloris_module);
+     const char *err = ap_check_cmd_context (parms, GLOBAL_ONLY);
+     
+@@ -65,7 +72,7 @@
+ 	return err;
+     }
+     
+-    signed long int limit = strtol(arg, (char **) NULL, 10);
++    limit = strtol(arg, (char **) NULL, 10);
+ 
+     /* No reasonable person would want more than 2^16. Better would be
+        to use LONG_MAX but that causes portability problems on win32 */
+@@ -80,7 +87,7 @@
+ 
+ /* Array describing structure of configuration directives */
+ static command_rec antiloris_cmds[] = {
+-    AP_INIT_TAKE1("IPReadLimit", ipreadlimit_config_cmd, NULL, RSRC_CONF, "Maximum simultaneous connections in READ state per IP address"),
++    AP_INIT_TAKE1("IPReadLimit", ipreadlimit_config_cmd, NULL, RSRC_CONF, "Maximum simultaneous connections per IP address"),
+     {NULL}
+ };
+ 
+@@ -103,12 +110,15 @@
+     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, MODULE_NAME " " MODULE_VERSION " started");
+     ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &thread_limit);
+     ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &server_limit);
++    ap_add_version_component(p, MODULE_NAME "/" MODULE_VERSION); 
+     return OK;
+ }
+ 
+ 
+ static int pre_connection(conn_rec *c)
+ {
++    char *client_ip;
++
+     antiloris_config *conf = ap_get_module_config (c->base_server->module_config,  &antiloris_module);
+     sb_handle *sbh = c->sbh;
+     
+@@ -123,16 +133,26 @@
+     worker_score *ws_record;
+     
+     ws_record = &ap_scoreboard_image->servers[sbh->child_num][sbh->thread_num];
+-    apr_cpystrn(ws_record->client, c->remote_ip, sizeof(ws_record->client));
++    apr_cpystrn(ws_record->client, c->client_ip, sizeof(ws_record->client)); 
+     
+-    char *client_ip = ws_record->client;
++    client_ip = ws_record->client;
+     
+     /* Count up the number of connections we are handling right now from this IP address */
+     for (i = 0; i < server_limit; ++i) {
+ 	for (j = 0; j < thread_limit; ++j) {
+-    	    ws_record = ap_get_scoreboard_worker(i, j);
++#if AP_SERVER_MAJORVERSION_NUMBER == 2 && AP_SERVER_MINORVERSION_NUMBER > 2 
++    	    ws_record = ap_get_scoreboard_worker_from_indexes(i, j); 
++#else 
++    	    ws_record = ap_get_scoreboard_worker(i, j); 
++#endif 
+             switch (ws_record->status) {
+         	case SERVER_BUSY_READ:
++        	case SERVER_BUSY_WRITE:
++        	case SERVER_BUSY_KEEPALIVE:
++        	case SERVER_BUSY_DNS:
++        	case SERVER_BUSY_LOG:
++        	case SERVER_CLOSING:
++        	case SERVER_GRACEFUL:
+             	    if (strcmp(client_ip, ws_record->client) == 0)
+             		ip_count++;
+                     break;
+@@ -143,7 +163,7 @@
+     }
+     
+     if (ip_count > conf->limit) {
+-	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL, "Rejected, too many connections in READ state from %s", c->remote_ip);
++	ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL, "[client %s] Antiloris rejected, too many connections", c->client_ip); 
+ 	return OK;
+     } else {
+ 	return DECLINED;
+@@ -151,17 +171,10 @@
+ }
+ 
+ 
+-static void child_init (apr_pool_t *p, server_rec *s)
+-{
+-    ap_add_version_component(p, MODULE_NAME "/" MODULE_VERSION);
+-}
+-
+-
+ static void register_hooks(apr_pool_t *p)
+ {
+     ap_hook_post_config(post_config, NULL, NULL, APR_HOOK_MIDDLE);
+     ap_hook_process_connection(pre_connection, NULL, NULL, APR_HOOK_FIRST);
+-    ap_hook_child_init(child_init, NULL, NULL, APR_HOOK_MIDDLE);    
+ }
+ 
+ module AP_MODULE_DECLARE_DATA antiloris_module = {

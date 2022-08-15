@@ -1,0 +1,124 @@
+ServerRoot "%(server_root)s"
+
+Listen [%(ip)s]:%(port_webdav)s
+Listen [%(ip)s]:%(port_ajax)s
+
+NameVirtualHost [%(ip)s]:%(port_webdav)s
+NameVirtualHost [%(ip)s]:%(port_ajax)s
+
+# Needed modules
+LoadModule unixd_module "%(modules_dir)s/mod_unixd.so"
+LoadModule access_compat_module "%(modules_dir)s/mod_access_compat.so"
+LoadModule authn_core_module "%(modules_dir)s/mod_authn_core.so"
+LoadModule authz_core_module "%(modules_dir)s/mod_authz_core.so"
+LoadModule authn_file_module "%(modules_dir)s/mod_authn_file.so"
+LoadModule authz_host_module "%(modules_dir)s/mod_authz_host.so"
+LoadModule authz_user_module "%(modules_dir)s/mod_authz_user.so"
+LoadModule auth_basic_module "%(modules_dir)s/mod_auth_basic.so"
+# Comment auth_digest since we don't use it
+#LoadModule auth_digest_module "%(modules_dir)s/mod_auth_digest.so"
+LoadModule log_config_module "%(modules_dir)s/mod_log_config.so"
+LoadModule headers_module "%(modules_dir)s/mod_headers.so"
+LoadModule setenvif_module "%(modules_dir)s/mod_setenvif.so"
+LoadModule socache_shmcb_module "%(modules_dir)s/mod_socache_shmcb.so"
+LoadModule ssl_module "%(modules_dir)s/mod_ssl.so"
+LoadModule mime_module "%(modules_dir)s/mod_mime.so"
+LoadModule dav_module "%(modules_dir)s/mod_dav.so"
+LoadModule dav_fs_module "%(modules_dir)s/mod_dav_fs.so"
+LoadModule dir_module "%(modules_dir)s/mod_dir.so"
+LoadModule php5_module "%(modules_dir)s/libphp5.so"
+
+ServerAdmin %(email_address)s
+
+# Quiet Server header (if not, Apache give its life history)
+# It's safer
+ServerTokens ProductOnly
+PidFile "%(pid_file)s"
+PHPINIDir "%(php_ini_dir)s"
+
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+
+<VirtualHost [%(ip)s]:%(port_ajax)s>
+  #ServerName www.example.com
+  
+  # Directory protection
+  <Directory />
+      Options FollowSymLinks
+      AllowOverride None
+      Require all denied
+  </Directory>
+  
+  <Directory %(document_root)s>
+    Options FollowSymLinks
+    AllowOverride All
+    Require all granted
+  </Directory>
+ 
+  DocumentRoot "%(document_root)s"
+  DirectoryIndex index.html index.php
+
+SSLEngine on
+SSLCertificateFile "%(ssl_certificate)s"
+SSLCertificateKeyFile "%(ssl_key)s"
+
+</VirtualHost>
+
+<VirtualHost [%(ip)s]:%(port_webdav)s>
+DocumentRoot "%(document_root)s"
+DavLockDB "%(davlock_db)s"
+
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+
+<Directory %(document_root)s>
+    Options Indexes MultiViews
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+
+    Dav On
+    # Security Rules to avoid DDoS Attacks
+    DavDepthInfinity Off
+    LimitXMLRequestBody 0
+
+    # Cross-Origin Resources Sharing
+    Header always set Access-Control-Max-Age "0"
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "OPTIONS, GET, HEAD, POST, PUT, DELETE, PROPFIND"
+    Header always set Access-Control-Allow-Headers "Content-Type, X-Requested-With, X-HTTP-Method-Override, Accept, Authorization, Depth"
+    SetEnvIf Origin "(.+)" ORIGIN=$1
+    Header always set Access-Control-Allow-Origin %%{ORIGIN}e
+
+    AuthType Basic
+    AuthName "WebDAV Storage"
+    AuthUserFile "%(htpasswd_file)s"
+    <LimitExcept OPTIONS>
+        Require valid-user
+    </LimitExcept>
+
+</Directory>
+
+SSLEngine on
+SSLCertificateFile "%(ssl_certificate)s"
+SSLCertificateKeyFile "%(ssl_key)s"
+
+</VirtualHost>
+
+ErrorLog "%(error_log)s"
+LogLevel warn
+
+LogFormat "%%h %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%l %%u %%t \"%%r\" %%>s %%b" common
+CustomLog "%(access_log)s" common
+
+DefaultType text/plain
+TypesConfig "%(mime_types)s"
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+AddType application/x-httpd-php .php .phtml .php5 .php4
+AddType application/x-httpd-php-source .phps

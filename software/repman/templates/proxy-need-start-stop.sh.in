@@ -1,0 +1,44 @@
+#!{{ bash_bin }}
+
+curl () {
+  {{ curl_bin }} -k --silent "$@"
+}
+
+check_start_cluster () {
+  NAME=$1
+  HOST=$2
+  PORT=$3
+
+  CODE=$(curl -o /dev/null -w "%{http_code}" {{ repman_url }}/api/clusters/$NAME/servers/$HOST/$PORT/need-start)
+
+  if [ $CODE -eq 200 ]; then
+    echo "$CODE: Starting proxysql $HOST:$PORT..."
+    {{ proxysql_controller }} start proxysql-$NAME
+    sleep 1
+    # check again if the service is still up...
+    {{ proxysql_controller }} status proxysql-$NAME
+  fi
+}
+
+check_stop_cluster () {
+  NAME=$1
+  HOST=$2
+  PORT=$3
+
+  CODE=$(curl -o /dev/null -w "%{http_code}" {{ repman_url }}/api/clusters/$NAME/servers/$HOST/$PORT/need-stop)
+
+  if [ $CODE -eq 200 ]; then
+    echo "$CODE: updating proxysql config $HOST:$PORT..."
+    {{ get_proxy_config }} $NAME $HOST $PORT
+    echo "$CODE: Stoping proxysql $HOST:$PORT..."
+    {{ proxysql_controller }} stop proxysql-$NAME
+    sleep 1
+    # check again if the service is stopped...
+    {{ proxysql_controller }} status proxysql-$NAME
+  fi
+}
+
+{% for cluster_dict in cluster_list -%}
+check_start_cluster {{ cluster_dict['name'] }} {{ cluster_dict['host'] }} {{ cluster_dict['port'] }}
+check_stop_cluster {{ cluster_dict['name'] }} {{ cluster_dict['host'] }} {{ cluster_dict['port'] }}
+{% endfor -%}

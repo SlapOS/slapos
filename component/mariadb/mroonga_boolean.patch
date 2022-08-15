@@ -1,0 +1,11 @@
+--- mroonga-7.05/lib/mrn_query_parser.cpp~	2017-07-27 07:47:36.000000000 +0200
++++ mroonga-7.05/lib/mrn_query_parser.cpp	2017-08-14 11:19:25.339015061 +0200
+@@ -52,7 +52,7 @@
+ 
+     const char *raw_query = NULL;
+     size_t raw_query_length = 0;
+-    grn_operator default_operator = GRN_OP_OR;
++    grn_operator default_operator = GRN_OP_ADJUST;
+     grn_expr_flags expression_flags = 0;
+     parse_pragma(query,
+                  query_length,

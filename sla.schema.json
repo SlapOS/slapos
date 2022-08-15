@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Slapos Software Release instantiation descriptor",
+  "additionalProperties": false,
+  "properties": {
+    "instance_guid": {
+      "description": "XXX",
+      "type": "string"
+    },
+    "computer_guid": {
+      "description": "XXX",
+      "type": "string"
+    }
+  }
+}

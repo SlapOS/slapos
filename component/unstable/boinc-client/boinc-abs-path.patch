@@ -1,0 +1,27 @@
+--- a/client/scripts/Makefile.am  2012-08-24 12:11:10.400291229 +0200
++++ b/client/scripts/Makefile.am  2012-09-10 15:21:01.973773228 +0200
+@@ -2,16 +2,16 @@
+
+ install-exec-hook:
+ 	chmod +x boinc-client
+-	$(INSTALL) -d $(DESTDIR)/etc/init.d
+-	$(INSTALL) -b boinc-client $(DESTDIR)/etc/init.d/boinc-client
++	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/etc/init.d
++	$(INSTALL) -b boinc-client $(DESTDIR)$(exec_prefix)/etc/init.d/boinc-client
+ 	if [ -d /etc/sysconfig ] ; then \
+-	  $(INSTALL) -d $(DESTDIR)/etc/sysconfig ; \
+-	  $(INSTALL) boinc-client.conf $(DESTDIR)/etc/sysconfig/boinc-client ; \
++	  $(INSTALL) -d $(DESTDIR)$(exec_prefix)/etc/sysconfig ; \
++	  $(INSTALL) boinc-client.conf $(DESTDIR)$(exec_prefix)/etc/sysconfig/boinc-client ; \
+ 	elif [ -d /etc/default ] ; then \
+-	  $(INSTALL) -d $(DESTDIR)/etc/default ; \
+-	  $(INSTALL) boinc-client.conf $(DESTDIR)/etc/default/boinc-client ; \
++	  $(INSTALL) -d $(DESTDIR)$(exec_prefix)/etc/default ; \
++	  $(INSTALL) boinc-client.conf $(DESTDIR)$(exec_prefix)/etc/default/boinc-client ; \
+ 	else \
+-	  $(INSTALL) -d $(DESTDIR)/etc ; \
+-	  $(INSTALL) boinc-client.conf $(DESTDIR)/etc/boinc-client.conf ; \
++	  $(INSTALL) -d $(DESTDIR)$(exec_prefix)/etc ; \
++	  $(INSTALL) boinc-client.conf $(DESTDIR)$(exec_prefix)/etc/boinc-client.conf ; \
+ 	fi
+ 

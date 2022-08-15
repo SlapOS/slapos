@@ -1,0 +1,208 @@
+{% set bin_directory = parameter_dict['bin-directory'] -%}
+{% set python_bin = parameter_dict['python-executable'] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+log = ${:var}/log
+services = ${:etc}/service
+script = ${:etc}/run
+run = ${:var}/run
+
+[re6stnet-dirs]
+recipe = slapos.cookbook:mkdirectory
+data = ${directory:srv}/re6stnet
+log = ${directory:log}/re6stnet
+conf = ${directory:etc}/re6stnet
+ssl = ${:conf}/ssl
+token = ${:conf}/token
+run = ${directory:run}/re6stnet
+
+[apache-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-apache-conf'] }}
+output = ${directory:etc}/apache.conf
+ipv6 = {{ ipv6 }}
+port = 9026
+error-log = ${directory:log}/apache-error.log
+access-log = ${directory:log}/apache-access.log
+pid-file = ${directory:run}/apache.pid
+context =
+  key apache_port :port
+  key re6st_ipv4 re6st-registry:ipv4
+  key re6st_port re6st-registry:port
+  key access_log :access-log
+  key error_log :error-log
+  key pid_file :pid-file
+  raw ipv6 {{ ipv6 }}
+
+[apache-httpd]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/httpd
+command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:output}" -DFOREGROUND
+
+[apache-httpd-graceful]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:script}/httpd-graceful
+inline =
+  {{'{{content}}'}}
+context = key content :script
+script =
+  #!/bin/sh -e
+  {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:output}
+  {{ bin_directory }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
+
+[logrotate-apache]
+< = logrotate-entry-base
+name = apache
+log = ${apache-conf:error-log} ${apache-conf:access-log}
+post = test ! -s ${apache-conf:pid-file} || {{ bin_directory }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
+
+[re6st-registry-conf-dict]
+port = 9201
+ipv4 = {{ ipv4 }}
+db = ${re6stnet-dirs:data}/registry.db
+ca = ${re6stnet-dirs:ssl}/re6stnet.crt
+key = ${re6stnet-dirs:ssl}/re6stnet.key
+dh = ${re6stnet-dirs:ssl}/dh.pem
+verbose = 2
+mailhost = {{ slapparameter_dict.get('mailhost', '127.0.0.1') }}
+prefix-length = {{ slapparameter_dict.get('prefix-length', 16) }}
+anonymous-prefix-length = {{ slapparameter_dict.get('anonymous-prefix-length', 0) }}
+logfile = ${re6stnet-dirs:log}/registry.log
+run-dir = ${re6stnet-dirs:run}
+ipv4-net = {{ slapparameter_dict.get('ipv4-net', '') }}
+client-count = {{ slapparameter_dict.get('client-count', 10) }}
+tunnel-refresh = {{ slapparameter_dict.get('tunnel-refresh', 300) }}
+max-clients = {{ slapparameter_dict.get('max-clients', 0) }}
+hello = {{ slapparameter_dict.get('hello', 15) }}
+min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
+encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
+same-country = {{ slapparameter_dict.get('same-country', '') }}
+{%- set community = slapparameter_dict.get('community-conf') %}
+{%- if community %}
+community-path = ${re6st-community-conf:output}
+
+[re6st-community-conf]
+recipe = slapos.recipe.template
+inline =
+  {{ dumps(community) }}
+output = ${re6stnet-dirs:conf}/community.conf
+{%- endif %}
+
+[re6st-registry-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-re6st-registry-conf'] }}
+output = ${re6stnet-dirs:conf}/registry.conf
+context = section parameter_dict re6st-registry-conf-dict
+
+[re6st-registry-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/re6st-registry
+pidfile = ${directory:run}/registry.pid
+command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:output}
+
+[cron-entry-re6st-backup]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = re6stnet-backup
+time = hourly
+command = {{ parameter_dict['re6stnet-backup'] }} ${logrotate-directory:backup}/re6stnet ${re6st-registry-conf-dict:db} {{ slapparameter_dict.get('backup-repository', '') }}
+
+[re6st-registry]
+recipe = slapos.cookbook:re6stnet.registry
+manager-wrapper = ${directory:bin}/re6stManageToken
+openssl-bin = {{ openssl_bin }}/openssl
+python-bin = {{ python_bin }}
+ipv6-prefix = {{ slapparameter_dict.get('ipv6-prefix', '2001:db8:24::/48') }}
+key-size = {{ slapparameter_dict.get('key-size', 2048) }}
+conf-dir = ${re6stnet-dirs:conf}
+token-dir = ${re6stnet-dirs:token}
+
+#Re6st config
+config-file = ${re6st-registry-conf:output}
+port = ${re6st-registry-conf-dict:port}
+ipv4 = ${re6st-registry-conf-dict:ipv4}
+db-path = ${re6st-registry-conf-dict:db}
+key-file = ${re6st-registry-conf-dict:key}
+cert-file = ${re6st-registry-conf-dict:ca}
+dh-file = ${re6st-registry-conf-dict:dh}
+slave-instance-list = {{ dumps(slave_instance_list) }}
+
+environment =
+  PATH={{ openssl_bin }}
+
+[re6stnet-manage]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:script}/re6st-token-manager
+command-line = "{{ python_bin }}" ${re6st-registry:manager-wrapper}
+
+[cron-entry-re6st-manage]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = re6stnet-check-token
+time = *:0/5
+command = {{ python_bin }} ${re6st-registry:manager-wrapper}
+
+[logrotate-entry-re6stnet]
+< = logrotate-entry-base
+name = re6stnet
+log = ${re6st-registry-conf-dict:logfile}
+post = [ ! -s ${re6st-registry-wrapper:pidfile} ] || {{ bin_directory }}/slapos-kill --pidfile ${re6st-registry-wrapper:pidfile} -s USR1
+
+[port-redirection]
+recipe = slapos.recipe.template:jinja2
+inline =
+{%- raw %}
+  [{"srcPort": 9201, "destPort": 9201, "destAddress": "{{ parameter_dict['ipv4'] }}"}]
+{% endraw -%}
+output = ${buildout:directory}/.slapos-port-redirect
+context =
+  section parameter_dict re6st-registry-conf-dict
+
+[re6st-registry-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = re6st-registry.py
+config-host = ${re6st-registry:ipv4}
+config-port = ${re6st-registry:port}
+
+[apache-registry-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = apache-re6st-registry.py
+config-host = ${apache-conf:ipv6}
+config-port = ${apache-conf:port}
+
+[publish]
+recipe = slapos.cookbook:publish
+monitor-setup-url = https://monitor.app.officejs.com/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
+slave-amount = {{ len(slave_instance_list) }}
+re6stry-url = http://[${apache-conf:ipv6}]:${apache-conf:port}
+re6stry-local-url = http://${re6st-registry:ipv4}:${re6st-registry:port}
+
+[buildout]
+extends =
+  {{ monitor2_template_rendered }}
+  {{ logrotate_cfg }}
+
+parts =
+  logrotate-apache
+  logrotate-entry-re6stnet
+  re6stnet-manage
+  cron-entry-logrotate
+  cron-entry-re6st-manage
+  cron-entry-re6st-backup
+  apache-httpd
+  apache-httpd-graceful
+  publish
+  port-redirection
+
+  re6st-registry-promise
+  apache-registry-promise
+  monitor-base

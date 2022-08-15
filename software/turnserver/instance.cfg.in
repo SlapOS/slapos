@@ -1,0 +1,68 @@
+[buildout]
+parts = switch-softwaretype
+
+# std stuff for slapos instance
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = $${:default}
+default  = dynamic-template-turnserver:output
+insecure  = dynamic-template-insecure-turnserver:output
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+  key develop_eggs_directory buildout:develop-eggs-directory
+  key eggs_directory buildout:eggs-directory
+  key ipv4 slap-configuration:ipv4
+  key ipv6 slap-configuration:ipv6
+  key global_ipv4_prefix network-information:global-ipv4-network
+  key slapparameter_dict slap-configuration:configuration
+  key computer_id slap-configuration:computer
+  raw template_monitor ${monitor2-template:output}
+  raw logrotate_cfg ${template-logrotate-base:output}
+  $${:extra-context}
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "server-name" : "turn.example.com",
+    "ssl-key": "",
+    "ssl-crt": "",
+    "port": 3478,
+    "tls-port": 5349,
+    "external-ip": ""
+# listening-ip parameter is mandatory
+#"listening-ip": null,
+  }
+
+[dynamic-template-turnserver-parameters]
+openssl = ${openssl:location}
+turnserver-location = ${coturn:location}
+
+[dynamic-template-turnserver]
+<= jinja2-template-base
+url = ${template-turnserver:location}/${template-turnserver:filename}
+filename = instance-turnserver.cfg
+extra-context =
+  section parameter_dict dynamic-template-turnserver-parameters
+
+[dynamic-template-insecure-turnserver]
+<= jinja2-template-base
+url = ${template-insecure-turnserver:location}/${template-insecure-turnserver:filename}
+filename = instance-insecure-turnserver.cfg
+extra-context =
+  section parameter_dict dynamic-template-turnserver-parameters

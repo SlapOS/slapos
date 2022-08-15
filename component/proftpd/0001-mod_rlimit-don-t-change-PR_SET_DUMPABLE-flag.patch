@@ -1,0 +1,35 @@
+From ec7c3929df82855cc708f2074eb163590ecaeeaf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Wed, 23 May 2018 08:55:35 +0200
+Subject: [PATCH] mod_rlimit: don't change PR_SET_DUMPABLE flag
+
+In our case we don't really care if the process leaves a coredump and
+are interested in being able to inspect running processes for tests.
+---
+ modules/mod_rlimit.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/modules/mod_rlimit.c b/modules/mod_rlimit.c
+index 6788e4cee..2584260af 100644
+--- a/modules/mod_rlimit.c
++++ b/modules/mod_rlimit.c
+@@ -568,6 +568,8 @@ static int rlimit_set_core(int scope) {
+ #if !defined(PR_DEVEL_COREDUMP) && \
+     defined(HAVE_PRCTL) && \
+     defined(PR_SET_DUMPABLE)
++
++ #if 0 /* SlapOS patch: keep PR_SET_DUMPABLE for tests */
+   if (max == 0) {
+     /* Really, no core dumps please. On Linux, there are exceptions made
+      * even when setting RLIMIT_CORE = 0; see:
+@@ -582,6 +584,7 @@ static int rlimit_set_core(int scope) {
+         strerror(errno));
+     }
+   }
++#endif /* SlapOS patch */
+ #endif /* no --enable-devel=coredump and HAVE_PRCTL and PR_SET_DUMPABLE */
+ 
+   errno = xerrno;
+-- 
+2.11.0
+

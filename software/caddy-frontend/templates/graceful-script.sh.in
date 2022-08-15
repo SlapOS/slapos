@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if {{ caddy_configuration_state }} ; then
+  echo "Reloading.."
+  {{ graceful_reload_command }}
+else
+  echo "Nothing changed, so nothing to reload"
+  exit 0
+fi

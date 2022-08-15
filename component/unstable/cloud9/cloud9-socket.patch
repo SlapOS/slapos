@@ -1,0 +1,13 @@
+diff --git a/node_modules/smith.io/node_modules/engine.io/node_modules/engine.io-client/dist/engine.io-dev.js b/node_modules/smith.io/node_modules/engine.io/node_modules/engine.io-client/dist/engine.io-dev.js
+index fa7e54a..14b8e67 100644
+--- a/node_modules/smith.io/node_modules/engine.io/node_modules/engine.io-client/dist/engine.io-dev.js
++++ b/node_modules/smith.io/node_modules/engine.io/node_modules/engine.io-client/dist/engine.io-dev.js
+@@ -2126,7 +2126,7 @@ Polling.prototype.uri = function () {
+     query = '?' + query;
+   }
+ 
+-  return schema + '://' + this.host + port + this.path + query;
++  return this.path + query;
+ };
+ 
+ });require.register("transports/websocket.js", function(module, exports, require, global){

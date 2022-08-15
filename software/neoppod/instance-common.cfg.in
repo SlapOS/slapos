@@ -1,0 +1,53 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+filename = ${:_buildout_section_name_}.cfg
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extensions =
+    jinja2.ext.do
+    jinja2.ext.loopcontrols
+extra-context =
+context =
+    key ipv4_set slap-configuration:ipv4
+    key ipv6_set slap-configuration:ipv6
+    key slapparameter_dict slap-configuration:configuration
+    key computer slap-configuration:computer
+    raw logrotate_cfg {{ template_logrotate_base }}
+    raw template_monitor {{ template_monitor }}
+    raw bin_directory {{ bin_directory }}
+    ${:extra-context}
+
+[neo-admin]
+<= jinja2-template-base
+url = {{ neo_admin }}
+
+[neo-master]
+<= jinja2-template-base
+url = {{ neo_master }}
+
+[neo]
+<= jinja2-template-base
+url = {{ neo }}
+extra-context =
+    key master_cfg neo-master:output
+    key admin_cfg neo-admin:output
+{%- if mariadb_location is defined %}
+    raw mariadb_location {{ mariadb_location }}
+    raw template_mysqld_wrapper {{ template_mysqld_wrapper }}
+    raw template_neo_my_cnf {{ template_neo_my_cnf }}
+{%- endif %}
+{%- if pypy_location is defined %}
+    raw pypy_location {{ pypy_location }}
+{%- endif %}

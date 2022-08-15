@@ -1,0 +1,5 @@
+#!/bin/bash -e
+# neotest wraper so it could be run without any environment preset
+
+. ${buildout:directory}/neotest-env.sh
+exec ${gowork:src}/lab.nexedi.com/kirr/neo/go/neo/t/neotest "$@"

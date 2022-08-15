@@ -1,0 +1,58 @@
+[buildout]
+extends =
+  {{ kvm_template }}
+  {{ pbsready_export_template }}
+
+parts +=
+  cron-entry-backup
+  ${instance-kvm-parts:parts}
+
+[slap-parameter]
+{% for k, v in slapparameter_dict.items() -%}
+{%-  if k == 'namebase' %}
+{{ k }} = {{ v }}
+{%-  else %}
+{{ k }} = {{ dumps(v) }}
+{%-  endif %}
+{% endfor -%}
+
+# Create the exporter executable, which is a simple shell script
+[exporter]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_kvm_export }}
+output = ${directory:bin}/${slap-parameter:namebase}-exporter
+# Resilient stack wants a "wrapper" parameter
+wrapper = ${:output}
+{%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
+{%- if disk_type == "virtio" %}
+device = virtio0
+{%- elif disk_type == "ide" %}
+{#-   Manually found device name in case of disk-type == ide #}
+device = ide0-hd0
+{%- else %}
+# unsupported disk-type {{ disk_type }}
+{%- endif %}
+context =
+    section directory directory
+    section buildout buildout
+    key socket_path kvm-instance:socket-path
+    key device :device
+    raw gzip_binary {{ gzip_binary }}
+
+# Extends publish section with resilient parameters
+[publish-connection-information]
+<= resilient-publish-connection-parameter
+monitor-base-url = ${monitor-publish:monitor-base-url}
+monitor-setup-url = ${monitor-publish:monitor-setup-url}
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8026
+monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+

@@ -1,0 +1,75 @@
+{% macro setbool(value) -%}
+{% if value in ['true', 'True'] %} true {% else %} false {% endif -%}
+{% endmacro -%}
+[{{ parameter_dict['name'] }}]
+title = "{{ parameter_dict['name'] }}"
+monitoring-save-config = true
+db-servers-hosts = "{{ parameter_dict['db-list'] }}"
+db-servers-prefered-master = "{{ parameter_dict['db-prefered-master'] }}"
+db-servers-credential = "{{ parameter_dict['db-user'] }}:{{ parameter_dict['db-password'] }}"
+replication-credential = "{{ parameter_dict['db-user'] }}:{{ parameter_dict['db-password'] }}"
+monitoring-write-heartbeat-credential="{{ parameter_dict['heartbeat-user'] }}:{{ parameter_dict['heartbeat-password'] }}"
+db-servers-connect-timeout = 1
+slapos-db-partitions = "{{ parameter_dict['partition-list'] }}"
+slapos-proxysql-partitions = "{{ parameter_dict['proxysql-partition'] }}"
+autorejoin = {{ setbool(parameter_dict['autorejoin']) }}
+autoseed = {{ setbool(parameter_dict['autoseed']) }}
+{% if parameter_dict['autoseed'] in ['true', 'True'] -%}
+autorejoin-logical-backup = true
+{% endif -%}
+
+proxysql = true
+proxysql-port = {{ parameter_dict['proxy-port'] }}
+proxysql-servers = "{{ parameter_dict['proxysql-servers'] }}"
+proxysql-servers-ipv6 = "{{ parameter_dict['proxysql-servers-ipv6'] }}"
+proxysql-user = "{{ parameter_dict['proxysql-user'] }}"
+proxysql-bootstrap = true
+proxysql-admin-port = {{ parameter_dict['proxy-admin-port'] }}
+proxysql-password = "{{ parameter_dict['password'] }}"
+
+prov-db-tags = "{{ parameter_dict['enabled-tags'] }}"
+prov-proxy-tags = "{{ parameter_dict['proxy-tags'] }}"
+
+monitoring-scheduler = true
+scheduler-db-servers-logical-backup  = true
+scheduler-db-servers-logical-backup-cron = "0 {{ parameter_dict['logical-backup-cron'] }}"
+scheduler-db-servers-logs   =  true
+scheduler-db-servers-logs-cron = "0 0 23 * * *"
+scheduler-db-servers-logs-table-keep = 4
+scheduler-db-servers-logs-table-rotate  = true
+scheduler-db-servers-logs-table-rotate-cron = "0 0 23 * * *"
+scheduler-db-servers-optimize  = true
+scheduler-db-servers-optimize-cron = "0 0 3 1 * 5"
+scheduler-db-servers-physical-backup = true
+scheduler-db-servers-physical-backup-cron = "0 {{ parameter_dict['physical-backup-cron'] }}"
+backup-physical-type = "mariabackup"
+backup-logical-type = "mysqldump"
+scheduler-db-servers-receiver-ports= "{{ parameter_dict['receiver-port-list'] }}"
+#scheduler-db-servers-receiver-use-ssl   ## set to true when ssl enabled on socat
+
+prov-proxy-cpu-cores = {{ parameter_dict['proxy-cpu-cores'] }}
+prov-proxy-memory = {{ parameter_dict['proxy-memory'] }}
+prov-db-cpu-cores = {{ parameter_dict['db-cpu-cores'] }}
+prov-db-disk-iops = {{ parameter_dict['db-disk-iops'] }}
+prov-db-memory = {{ parameter_dict['db-memory'] }}
+prov-db-memory-shared-pct = "{{ parameter_dict['db-memory-shared-pct'] }}"
+prov-db-memory-threaded-pct = "{{ parameter_dict['db-memory-threaded-pct'] }}"
+
+replication-use-ssl = true
+test-inject-traffic = true
+# failover
+failover-mode = "{{ parameter_dict['failover-mode'] }}"
+failover-limit = {{ parameter_dict['failover-limit'] }}
+failover-falsepositive-heartbeat = {{ setbool(parameter_dict['failover-falsepositive-heartbeat']) }}
+failover-falsepositive-heartbeat-timeout = {{ parameter_dict['failover-falsepositive-heartbeat-timeout'] }}
+failover-falsepositive-ping-counter = {{ parameter_dict['failover-falsepositive-ping-counter'] }}
+failover-max-slave-delay = {{ parameter_dict['failover-max-slave-delay'] }}
+failover-readonly-state = {{ setbool(parameter_dict['failover-readonly-state']) }}
+failover-restart-unsafe = {{ setbool(parameter_dict['failover-restart-unsafe']) }}
+failover-time-limit = {{ parameter_dict['failover-time-limit'] }}
+#switchover
+switchover-at-equal-gtid = {{ setbool(parameter_dict['switchover-at-equal-gtid']) }}
+switchover-slave-wait-catch = {{ setbool(parameter_dict['switchover-slave-wait-catch']) }}
+switchover-wait-kill = {{ parameter_dict['switchover-wait-kill'] }}
+switchover-wait-trx = {{ parameter_dict['switchover-wait-trx'] }}
+switchover-wait-write-query = {{ parameter_dict['switchover-wait-write-query'] }}

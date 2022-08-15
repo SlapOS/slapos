@@ -1,0 +1,86 @@
+[buildout]
+extends = {{ pbsready_template_path }}
+
+parts +=
+  notifier-exporter-promise
+  cron-entry-backup
+
+[resilient-directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+var = ${:home}/var
+pid = ${:var}/pid
+
+# Define port of ssh server. It has to be different from import so that it
+# supports export/import using same IP (slaprunner, slapos-in-partition,
+# ipv4...)
+[sshd-port]
+recipe = slapos.cookbook:free_port
+minimum = 22200
+maximum = 22209
+ip = ${slap-network-information:global-ipv6}
+
+[notifier-port]
+recipe = slapos.cookbook:free_port
+minimum = 65526
+maximum = 65535
+ip = ${notifier:host}
+
+[resilient-publish-connection-parameter]
+notification-id = http://[${notifier:host}]:${notifier:port}/get/${notifier-exporter:name}
+-extends = publish-early
+
+[notifier-exporter]
+# notifier.notify launches an (exporter) executable, and when finished,
+# notifies the the pull-backup-servers.
+<= notifier
+recipe = slapos.cookbook:notifier.notify
+name = exporter
+title = Dumping ${slap-parameter:namebase}
+executable = ${exporter:wrapper}
+wrapper = ${rootdirectory:bin}/exporter
+notify = {{ slapparameter_dict.get('notify', '') }}
+pidfile = ${resilient-directory:pid}/${:name}.pid
+max-run = 3
+
+[logrotate-entry-notifier]
+output = ${rootdirectory:etc}/logrotate_notifier.conf
+
+[notifier-exporter-promise-bin]
+recipe = slapos.recipe.template
+inline =
+  #!{{ bash_executable_location }}
+  EXPORTER_FEED="${notifier-exporter:log-file}"
+  FAILURE_PATTERN="FAILURE"
+  if [ -s "$EXPORTER_FEED" ]; then
+    tail -n 1 $EXPORTER_FEED | grep -vq FAILURE_PATTERN
+  fi
+output = ${rootdirectory:bin}/exporter-status
+
+[notifier-exporter-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = exporter-status.py
+config-command = ${notifier-exporter-promise-bin:output}
+
+[cron-entry-backup]
+# Schedule the periodic database dump.
+# Through notifications, this triggers (one or more) incremental backups on PBS instances.
+<= cron
+recipe = slapos.cookbook:cron.d
+name = backup
+{% set resiliency_backup_periodicity = slapparameter_dict.get('resiliency-backup-periodicity') %}
+{% if  resiliency_backup_periodicity %}
+frequency = {{ resiliency_backup_periodicity }}
+{% else %}
+time = ${publish-early:resiliency-backup-periodicity}
+{% endif %}
+command = {{ logrotate_executable_location }} -s ${basedirectory:run}/logrotate.status ${logrotate-entry-notifier:output}; ${notifier-exporter:wrapper} --transaction-id `date +%s`
+
+[gen-resiliency-backup-periodicity]
+recipe = slapos.cookbook:random.time
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  resiliency-backup-periodicity gen-resiliency-backup-periodicity:time

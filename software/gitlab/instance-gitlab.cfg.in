@@ -1,0 +1,829 @@
+# GitLab instance
+# NOTE instance/software layout is inspired by gitlab omnibus
+# NOTE all services are interconnected via unix sockets - because of easier
+#      security and performance reasons (unix has 2x less latency and more
+#      throughput compared to tcp over loopback).
+[buildout]
+extends =
+  {{ monitor_template }}
+parts =
+    directory
+    publish-instance-info
+
+#   gitlab-<prog>
+# ? mailroom
+{% set gitlab_progv = 'rails rake unicorn sidekiq unicorn-startup' .split() %}
+{% for prog in gitlab_progv %}
+    gitlab-{{ prog }}
+{% endfor %}
+
+    gitconfig
+
+    gitlab-work
+    gitlab-shell-work
+
+    service-gitlab-workhorse
+    service-unicorn
+    service-sidekiq
+
+    service-nginx
+    service-postgresql
+    service-redis
+    promise-redis
+
+    service-gitaly
+    cron-service
+    cron-entry-logrotate
+    logrotate-entry-cron
+
+    on-reinstantiate
+
+# std stuff for slapos instance
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+##################################
+#   GitLab instance parameters   #
+##################################
+
+[instance-parameter]
+{#- There are dangerous keys like recipe, etc #}
+{#- XXX: Some other approach would be useful #}
+{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
+{%-   if key not in DROP_KEY_LIST %}
+{{ key }} = {{ value }}
+{%-   endif -%}
+{%- endfor %}
+
+
+
+# for convenience
+[external-url]
+recipe  = slapos.cookbook:urlparse
+url     = ${instance-parameter:configuration.external_url}
+
+[backend-info]
+host    = ${instance-parameter:ipv6-random}
+port    = 7777
+# whether to use http or https - determined by external url
+url     = ${external-url:scheme}://[${:host}]:${:port}
+
+# current slapuserX
+user    = {{ pwd.getpwuid(os.getuid())[0] }}
+
+
+[publish-instance-info]
+recipe  = slapos.cookbook:publish
+backend_url = ${backend-info:url}
+
+
+
+#############################
+#   GitLab instance setup   #
+#############################
+
+# 1. directories
+[directory]
+recipe  = slapos.cookbook:mkdirectory
+home    = ${buildout:directory}
+bin     = ${:home}/bin
+etc     = ${:home}/etc
+var     = ${:home}/var
+log     = ${:var}/log
+run     = ${:var}/run
+srv     = ${:home}/srv
+# slapos startup/service/promise scripts live here:
+startup = ${:etc}/run
+service = ${:etc}/service
+promise.slow = ${:etc}/promise.slow
+
+# gitlab: etc/ log/ ...
+[gitlab-dir]
+recipe  = slapos.cookbook:mkdirectory
+etc     = ${directory:etc}/gitlab
+log     = ${directory:log}/gitlab
+
+var     = ${directory:var}/gitlab
+tmp     = ${:var}/tmp
+uploads = ${:var}/uploads
+assets  = ${:var}/assets
+shared  = ${:var}/shared
+artifacts = ${:shared}/artifacts
+lfs-objects = ${:shared}/lfs-objects
+builds  = ${:var}/builds
+backup  = ${directory:var}/backup
+public  = ${:var}/public
+pages   = ${:shared}/pages
+
+[gitlab-repo-dir]
+recipe  = slapos.cookbook:mkdirectory
+repositories    = ${directory:var}/repositories
+# gitlab wants it to be drwxrws---
+# FIXME setting such mode with :mkdirectory is not possible, because mkdir(2)
+# does & 0777 and also there is umask. So we workaround:
+[gitlab-repo-xdir]
+recipe  = plone.recipe.command
+stop-on-error = yes
+repositories = ${gitlab-repo-dir:repositories}
+command = chmod 02770 ${:repositories}
+
+[gitlab]
+etc     = ${gitlab-dir:etc}
+log     = ${gitlab-dir:log}
+var     = ${gitlab-dir:var}
+tmp     = ${gitlab-dir:tmp}
+uploads = ${gitlab-dir:uploads}
+assets  = ${gitlab-dir:assets}
+shared  = ${gitlab-dir:shared}
+artifacts = ${gitlab-dir:artifacts}
+lfs-objects = ${gitlab-dir:lfs-objects}
+builds  = ${gitlab-dir:builds}
+backup  = ${gitlab-dir:backup}
+repositories = ${gitlab-repo-xdir:repositories}
+public  = ${gitlab-dir:public}
+pages   = ${gitlab-dir:shared}/pages
+
+
+# gitlab-shell: etc/ log/ gitlab_shell_secret ...
+[gitlab-shell-dir]
+recipe  = slapos.cookbook:mkdirectory
+etc     = ${directory:etc}/gitlab-shell
+log     = ${directory:log}/gitlab-shell
+
+[gitlab-shell]
+etc     = ${gitlab-shell-dir:etc}
+log     = ${gitlab-shell-dir:log}
+secret  = ${secrets:secrets}/gitlab_shell_secret
+hook    =
+
+
+# place to keep all secrets
+[secrets]
+recipe  = slapos.cookbook:mkdirectory
+secrets = ${directory:var}/secrets
+mode    = 0700
+
+[gitaly-dir]
+recipe  = slapos.cookbook:mkdirectory
+gitaly  = ${directory:var}/gitaly
+sockets = ${:gitaly}/sockets
+internal = ${:sockets}/internal
+log     = ${directory:log}/gitaly
+
+[gitaly]
+socket  = ${gitaly-dir:sockets}/gitaly.socket
+log     = ${gitaly-dir:log}
+location = {{ gitaly_location }}
+pid     = ${directory:run}/gitaly.pid
+internal_socket = ${gitaly-dir:internal}
+
+# 2. configuration files
+[etc-template]
+recipe  = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+mode    = 0640
+import-list =
+    rawfile macrolib.cfg.in     {{ macrolib_cfg_in }}
+context =
+    raw     autogenerated       # This file was autogenerated. (DO NOT EDIT - changes will be lost)
+    section instance_parameter  instance-parameter
+    section backend_info        backend-info
+    import  urlparse            urlparse
+    raw     git                 {{ git }}
+    ${:context-extra}
+context-extra =
+
+[gitlab-etc-template]
+<= etc-template
+output= ${gitlab:etc}/${:_buildout_section_name_}
+
+[nginx-etc-template]
+<= etc-template
+output= ${nginx:etc}/${:_buildout_section_name_}
+
+
+[database.yml]
+<= gitlab-etc-template
+url = {{ database_yml_in }}
+context-extra =
+    section pgsql                   service-postgresql
+
+[gitconfig]
+<= etc-template
+url = {{ gitconfig_in }}
+# NOTE put directly into $HOME/ - this way git will pick it up
+output= ${directory:home}/.${:_buildout_section_name_}
+
+[gitlab-shell-config.yml]
+<= etc-template
+url = {{ gitlab_shell_config_yml_in }}
+output= ${gitlab-shell:etc}/config.yml
+context-extra =
+    import  urllib                  urllib
+    section gitlab                  gitlab
+    section gitlab_shell            gitlab-shell
+    section gitlab_shell_work       gitlab-shell-work
+    section unicorn                 unicorn
+    section service_redis           service-redis
+    raw     redis_binprefix         {{ redis_binprefix }}
+
+[gitlab.yml]
+<= gitlab-etc-template
+url = {{ gitlab_yml_in }}
+context-extra =
+    import  urllib                  urllib
+    section gitlab                  gitlab
+    section gitlab_shell            gitlab-shell
+    section gitlab_shell_work       gitlab-shell-work
+    section gitaly                  gitaly
+
+[nginx.conf]
+<= nginx-etc-template
+url = {{ nginx_conf_in }}
+context-extra =
+    section directory               directory
+    section gitlab_workhorse        gitlab-workhorse
+    raw     nginx_mime_types        {{ nginx_mime_types }}
+    raw     nginx_gitlab_http_conf  ${nginx-gitlab-http.conf:output}
+
+[nginx-gitlab-http.conf]
+<= nginx-etc-template
+url = {{ nginx_gitlab_http_conf_in }}
+context-extra =
+    section nginx                   nginx
+    section gitlab_work             gitlab-work
+    section gitlab_workhorse        gitlab-workhorse
+
+[gitaly-config.toml]
+<= etc-template
+url = {{ gitaly_config_toml_in }}
+output= ${directory:etc}/${:_buildout_section_name_}
+context-extra =
+    import  urllib                  urllib
+    section gitlab                  gitlab
+    section gitlab_shell_work       gitlab-shell-work
+    section gitaly                  gitaly
+
+[rack_attack.rb]
+<= gitlab-etc-template
+url = {{ rack_attack_rb_in }}
+
+[resque.yml]
+<= gitlab-etc-template
+url = {{ resque_yml_in }}
+context-extra =
+    section redis                   service-redis
+
+[smtp_settings.rb]
+<= gitlab-etc-template
+url = {{ smtp_settings_rb_in }}
+# contains smtp password
+mode    = 0600
+
+[unicorn.rb]
+<= gitlab-etc-template
+url = {{ unicorn_rb_in }}
+context-extra =
+    section unicorn                 unicorn
+    section directory               directory
+    section gitlab_work             gitlab-work
+
+
+
+# 3. bin/
+#   gitlab-<prog>
+[gitlab-bin]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+# NOTE $HOME needed to pick gitconfig
+environment  =
+    PATH = {{ node_bin_location }}:{{ gopath_bin }}:{{ yarn_location }}/bin:/usr/local/bin:/usr/bin:/bin
+    BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
+    HOME = ${directory:home}
+    RAILS_ENV = production
+    SIDEKIQ_MEMORY_KILLER_MAX_RSS = ${instance-parameter:configuration.sidekiq_memory_killer_max_rss}
+
+command-line =
+    {{ bundler_4gitlab }} exec sh -c
+    'cd ${gitlab-work:location} && ${:prog} "$@"' ${:prog}
+
+{% for prog in gitlab_progv %}
+[gitlab-{{ prog }}]
+<= gitlab-bin
+prog    = {{ prog }}
+{% endfor %}
+
+
+[gitlab-unicorn-startup]
+recipe  = slapos.recipe.template:jinja2
+mode    = 0755
+url = {{ gitlab_unicorn_startup_in }}
+output= ${directory:bin}/${:_buildout_section_name_}
+context =
+    raw     bash_bin                {{ bash_bin }}
+    raw     gitlab_rake             ${gitlab-rake:wrapper-path}
+    raw     gitlab_unicorn          ${gitlab-unicorn:wrapper-path}
+    raw     psql_bin                {{ postgresql_location }}/bin/psql
+    section pgsql                   service-postgresql
+    raw     log_dir                 ${gitlab:log}
+    section unicorn_rb              unicorn.rb
+    section gitlab_work             gitlab-work
+
+
+# 4. gitlab- & gitlab-shell- work directories
+#
+# Gitlab/Rails operation is tightened that config/ lives inside code, which goes
+# against having ability to create several instances configured differently
+# from 1 SR.
+#
+# One possibility to overcome this could be to make another Gitlab root
+# symbolically linked to original SR _and_ several configuration files
+# symbolically linked to instance place. Unfortunately this does not work -
+# Ruby determines realpath on module import and Gitlab and Rails lookup config
+# files relative to imported modules.
+#
+# we clone cloned gitlab and add proper links to vendor/bundle and instance
+# config files.
+# XXX there is no need for full clone - we only need worktree checkout (a-la `git
+# worktree add`, but without creating files in original clone)
+#
+# This way Gitlab/Rails still think they work in 1 code / 1 instance way,
+# and we can reuse SR.
+# XXX better do such tricks with bind mounting, but that requires user namespaces
+
+[work-base]
+recipe  = plone.recipe.command
+stop-on-error = yes
+location = ${directory:home}/${:_buildout_section_name_}
+command =
+# make sure we start from well-defined empty state
+# (needed e.g. if previous install failed in the middle)
+    rm -rf ${:location}  &&
+# init work repository and add `software` remote pointing to main repo in SR software/...
+    {{ git }} init ${:location}  &&
+    cd ${:location}  &&
+    {{ git }} remote add software ${:software}  &&
+    ${:update-command}
+
+update-command =
+    cd ${:location}  &&
+    {{ git }} fetch software  &&
+    {{ git }} reset --hard `cd ${:software} && {{ git }} rev-parse HEAD`  &&
+    ${:tune-command}
+
+
+# NOTE there is no need to link/create .gitlab_shell_secret - we set path to it
+# in gitlab & gitlab-shell configs, and gitlab creates it on its first start
+[gitlab-work]
+<= work-base
+software = {{ gitlab_repository_location }}
+tune-command =
+# Initialise secrets
+    if [ ! -s "${secrets:secrets}/gitlab_secrets.yml" ]; then
+      cp config/secrets.yml.example ${secrets:secrets}/gitlab_secrets.yml;
+    fi
+# secret* tmp/ log/ shared/ builds/ node_modules/
+    rm -f .secret  &&
+    rm -rf log tmp shared builds node_modules  &&
+    ln -sf ${secrets:secrets}/gitlab_rails_secret .secret  &&
+    ln -sf ${gitlab:log} log  &&
+    ln -sf ${gitlab:tmp} tmp  &&
+    ln -sf ${gitlab:shared} shared  &&
+    ln -sf ${gitlab:builds} builds  &&
+    ln -sf {{ gitlab_repository_location }}/node_modules node_modules &&
+    ln -sf ${gitlab-workhorse:secret} .gitlab_workhorse_secret
+# config/
+    cd config  &&
+    ln -sf ${unicorn.rb:output} unicorn.rb  &&
+    ln -sf ${gitlab.yml:output} gitlab.yml  &&
+    ln -sf ${database.yml:output} database.yml  &&
+    ln -sf ${resque.yml:output} resque.yml  &&
+    ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
+# config/initializers/
+    cd initializers  &&
+    ln -sf ${rack_attack.rb:output} rack_attack.rb  &&
+    ln -sf ${smtp_settings.rb:output} smtp_settings.rb  &&
+# public/
+    cd ../../public  &&
+    rm -rf uploads assets  &&
+    ln -sf ${gitlab:uploads} uploads  &&
+    ln -sf ${gitlab:assets} assets  &&
+    true
+
+
+# ----//---- for gitlab-shell
+[gitlab-shell-work]
+<= work-base
+software = {{ gitlab_shell_repository_location }}
+
+tune-command =
+    ln -sf ${gitlab-shell-config.yml:output}   config.yml  &&
+    true
+
+
+
+# 5. services
+
+# [promise-<something>] to check <something> by url
+[promise-byurl]
+<= monitor-promise-base
+promise = check_command_execute
+name   = ${:_buildout_section_name_}.py
+config-http-code   = 200
+
+
+
+#####################
+#   Postgresql db   #
+#####################
+
+# XXX gitlab-omnibus also tunes:
+# - shared_buffers
+# - work_mem
+# - checkpoint_*
+# - effective_check_size
+# - lc_* en_US.UTF-8 -> C  (?)
+[service-postgresql]
+recipe  = slapos.cookbook:postgres
+bin     = {{ postgresql_location }}/bin
+services= ${directory:service}
+
+dbname  = gitlabhq_production
+# NOTE db name must match to what was used in KVM on lab.nexedi.com (restore script grants access to this user)
+superuser = gitlab-psql
+# no password - pgsql will listen only on unix sockets (see below) thus access
+# is protected with filesystem-level permissions.
+# ( besides, if we use slapos.cookbook:generate.password and do `password = ...`
+#   the password is stored in plain text in .installed and thus becomes insecure )
+password=
+
+pgdata-directory = ${directory:srv}/postgresql
+
+# empty addresses - listen only on unix socket
+ipv4    =
+ipv6    =
+port    =
+
+depend  =
+    ${promise-postgresql:recipe}
+
+[promise-postgresql]
+<= monitor-promise-base
+promise = check_command_execute
+name = promise-postgresql.py
+config-command =
+    {{ postgresql_location }}/bin/psql \
+        -h ${service-postgresql:pgdata-directory} \
+        -U ${service-postgresql:superuser} \
+        -d ${service-postgresql:dbname} \
+        -c '\q'
+
+# postgresql logs to stdout/stderr - logs are handled by slapos not us
+# [logrotate-entry-postgresql]
+
+
+#############
+#   Redis   #
+#############
+[redis]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/redis
+log     = ${directory:log}/redis
+
+
+[service-redis]
+recipe  = slapos.cookbook:redis.server
+wrapper = ${directory:service}/redis
+promise-wrapper = ${directory:bin}/redis-promise
+
+server-dir  = ${redis:srv}
+config-file = ${directory:etc}/redis.conf
+log-file    = ${redis:log}/redis.log
+pid-file    = ${directory:run}/redis.pid
+use-passwd  = false
+unixsocket  = ${:server-dir}/redis.socket
+# port = 0 means "don't listen on TCP at all" - listen only on unix socket
+ipv6    = ::1
+port    = 0
+
+server-bin  = {{ redis_binprefix }}/redis-server
+cli-bin  = {{ redis_binprefix }}/redis-cli
+depend  =
+    ${logrotate-entry-redis:recipe}
+
+[promise-redis]
+<= monitor-promise-base
+promise = check_command_execute
+name = promise-redis.py
+config-command = ${service-redis:promise-wrapper}
+
+[logrotate-entry-redis]
+<= logrotate-entry-base
+log     = ${redis:log}/*.log
+name = redis
+
+
+########################
+#   gitlab-workhorse   #
+########################
+[gitlab-workhorse-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/gitlab-workhorse
+log     = ${directory:log}/workhorse
+
+[gitlab-workhorse]
+srv     = ${gitlab-workhorse-dir:srv}
+socket  = ${gitlab-workhorse:srv}/gitlab-workhorse.socket
+log     = ${gitlab-workhorse-dir:log}/gitlab-workhorse.log
+secret  = ${secrets:secrets}/gitlab_workhorse_secret
+
+[service-gitlab-workhorse]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/gitlab-workhorse
+command-line    = {{ gitlab_workhorse }}
+    -listenNetwork unix
+    -listenAddr ${gitlab-workhorse:socket}
+    -authSocket ${unicorn:socket}
+    -documentRoot ${gitlab-work:location}/public
+    -secretPath ${gitlab-workhorse:secret}
+    -logFile ${gitlab-workhorse:log}
+# NOTE for profiling
+#   -pprofListenAddr ...
+
+# NOTE environment for:
+#   - git to be available on path
+#   - ruby to be available on path  (gitlab-workhorse -> gitlab-shell -> hooks  on push)
+#   - gitconfig be found from ~/.gitconfig
+environment =
+    PATH={{ git_location }}/bin:{{ ruby_location }}/bin:{{ gzip_location }}/bin:{{ bzip2_location}}/bin
+    HOME=${directory:home}
+
+depend  =
+    ${promise-gitlab-workhorse:recipe}
+    ${logrotate-entry-gitlab-workhorse:recipe}
+
+
+[promise-gitlab-workhorse]
+<= promise-byurl
+# http://localhost/users/statics.css will not redirect to /users/sign_in anymore because of this commit:
+#  https://lab.nexedi.com/nexedi/gitlab-workhorse/commit/c81f109a62fecf2a847fb17ceed012b380dab49f#c1215002e6d745f05eaaf9ee1dad7752e85d866f_318_331
+config-command     = {{ curl_bin }} --unix-socket ${gitlab-workhorse:socket}  http://localhost/users/sign_in
+
+
+# gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
+# [logrotate-entry-gitlab-workhorse]
+
+
+######################
+#   unicorn worker   #
+######################
+[unicorn-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/unicorn
+log     = ${directory:log}/unicorn
+
+[unicorn]
+srv     = ${unicorn-dir:srv}
+log     = ${unicorn-dir:log}
+socket  = ${:srv}/unicorn.socket
+
+[service-unicorn]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/unicorn
+# NOTE we perform db setup / migrations as part of unicorn startup.
+# Those operations require PG and Redis to be up and running already, that's
+# why we do it here. See gitlab-unicorn-startup for details.
+command-line    = ${gitlab-unicorn-startup:output}
+
+depend  =
+    ${promise-unicorn:recipe}
+    ${promise-gitlab-app:recipe}
+    ${promise-gitlab-shell:recipe}
+
+    ${logrotate-entry-unicorn:recipe}
+# gitlab is a service "run" under unicorn
+# gitlab-shell is called by gitlab
+# -> associate their logs rotation to here
+    ${logrotate-entry-gitlab:recipe}
+
+
+[promise-unicorn]
+<= promise-byurl
+config-command = {{ curl_bin }} --unix-socket ${unicorn:socket}  http://localhost/
+
+[promise-rakebase]
+recipe  = slapos.cookbook:wrapper
+# FIXME gitlab-rake is too slow to load and promise timeouts
+# that's why we instantiate to <promise>.slow/ (and this way promises are not run)
+wrapper-path    = !py!'${directory:promise.slow}/' + '${:_buildout_section_name_}'[8:]
+rake    = ${gitlab-rake:wrapper-path}
+
+
+[promise-gitlab-app]
+<= promise-rakebase
+command-line    = ${:rake} gitlab:app:check
+
+[promise-gitlab-shell]
+<= promise-rakebase
+command-line    = ${:rake} gitlab:gitlab_shell:check
+
+# very slow
+# rake gitlab:repo:check        (fsck all repos)
+
+
+[logrotate-entry-unicorn]
+<= logrotate-entry-base
+log     = ${unicorn:log}/*.log
+name    = unicorn 
+
+[logrotate-entry-gitlab]
+<= logrotate-entry-base
+log     = ${gitlab:log}/*.log
+name    = gitlab
+
+[logrotate-entry-gitlab-shell]
+<= logrotate-entry-base
+log     = ${gitlab-shell:log}/*.log
+name    = gitlab-shell
+
+[logrotate-entry-gitlab-workhorse]
+<= logrotate-entry-base
+log     = ${gitlab-workhorse-dir:log}//*.log
+name    = gitlab-shell
+
+#######################################
+#   sidekiq background jobs manager   #
+#######################################
+[sidekiq-dir]
+recipe  = slapos.cookbook:mkdirectory
+log     = ${directory:log}/sidekiq
+
+[sidekiq]
+log     = ${sidekiq-dir:log}
+
+# NOTE see queue list here:
+# https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
+# https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
+# (last updated for omnibus-gitlab 8.8.9+ce.0-g25376053)
+[service-sidekiq]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/sidekiq
+command-line    =
+# NOTE Sidekiq memory killer makes sidekiq processes to exit, or if exit request
+# not handled in time, to be SIGKILL terminated, and relies on managing service
+# to restart it. In slapos we don't have mechanism to set autorestart=true, nor
+# bang/watchdog currently work with slapproxy, so we do the monitoring ourselves.
+    {{ watcher }} 0,SIGKILL
+
+    ${gitlab-sidekiq:wrapper-path}
+# XXX -q runner ?  (present in gitlab-ce/Procfile  but not in omnibus)
+# XXX -q pages -q elasticsearch ?  (present in omnibus but not in gitlab-ce -- those features are gitlab-ee only)
+# XXX -P ?  (pidfile)
+    -e production
+    -r ${gitlab-work:location}
+    -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
+    -c ${instance-parameter:configuration.sidekiq_concurrency}
+    -L ${sidekiq:log}/sidekiq.log
+
+    -C ${gitlab-work:location}/config/sidekiq_queues.yml
+
+depend  =
+    ${promise-sidekiq:recipe}
+    ${logrotate-entry-sidekiq:recipe}
+
+[promise-sidekiq]
+<= promise-rakebase
+command-line    = ${:rake} gitlab:sidekiq:check
+
+[logrotate-entry-sidekiq]
+<= logrotate-entry-base
+log     = ${sidekiq:log}/*.log
+name    = sidekiq
+
+
+######################
+#   Nginx frontend   #
+######################
+
+# srv/nginx/ prefix  +  etc/ log/ ...
+[nginx-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/nginx
+etc     = ${directory:etc}/nginx
+log     = ${directory:log}/nginx
+
+[nginx-ssl-dir]
+recipe  = slapos.cookbook:mkdirectory
+ssl     = ${nginx-dir:etc}/ssl
+# contains https key
+mode    = 0700
+
+# self-signed certificate for https
+[nginx-generate-certificate]
+# NOTE there is slapos.cookbook:certificate_authority.request but it requires
+# to start whole service and has up to 60 seconds latency to generate
+# certificate. We only need to run 1 command to do it...
+recipe  = plone.recipe.command
+stop-on-error   = true
+cert_file   = ${nginx-ssl-dir:ssl}/gitlab_backend.crt
+key_file    = ${nginx-ssl-dir:ssl}/gitlab_backend.key
+
+command =
+    test -e ${:key_file} || \
+        {{ openssl_bin }} req -newkey rsa -batch -new -x509 -days 3650 -nodes   \
+        -keyout ${:key_file} -out ${:cert_file}
+update-command = ${:command}
+
+
+[nginx]
+srv     = ${nginx-dir:srv}
+etc     = ${nginx-dir:etc}
+log     = ${nginx-dir:log}
+ssl     = ${nginx-ssl-dir:ssl}
+
+cert_file   = ${nginx-generate-certificate:cert_file}
+key_file    = ${nginx-generate-certificate:key_file}
+
+
+[nginx-symlinks]
+# (nginx wants <prefix>/logs to be there from start - else it issues alarm to the log)
+recipe  = cns.recipe.symlink
+symlink = ${nginx:log}  = ${nginx:srv}/logs
+
+[service-nginx]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/nginx
+command-line    = {{ nginx_bin }} -p ${nginx:srv} -c ${nginx.conf:output}
+depend  =
+    ${nginx-symlinks:recipe}
+    ${promise-nginx:recipe}
+    ${logrotate-entry-nginx:recipe}
+
+
+[promise-nginx]
+<= promise-byurl
+# XXX this depends on gitlab-workhorse being up
+#     (nginx is configured to proxy all requests to gitlab-workhorse)
+config-url     = ${backend-info:url}/users/sign_in
+promise = check_url_available
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+log     = ${nginx:log}/*.log
+name    = nginx
+
+# base entry for clients who registers to cron
+[cron-entry]
+recipe  = slapos.cookbook:cron.d
+# name  = <section-name>.strip_prefix('cron-entry-')
+# XXX len() is not available in !py! - 11 hardcoded
+name    = !py!'${:_buildout_section_name_}' [11:]
+# NOTE _not_ ${service-cron:cron-entries}  - though the value is the same we do
+# not want service-cron to be instantiated just if a cron-entry is registered.
+cron-entries = ${cron:cron-entries}
+
+
+######################
+#   gitaly worker    #
+######################
+
+# https://docs.gitlab.com/ee/install/installation.html
+[service-gitaly]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/gitaly
+#command-line    = ${gitlab-work:location}/bin/daemon_with_pidfile ${gitaly:pid}
+command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
+
+environment =
+    PATH={{ bundler_1_17_3_dir }}:{{ ruby_location }}/bin:/bin:/usr/bin
+
+
+# 6. on-reinstantiate actions
+
+# NOTE here we only recompile assets. Other on-reinstantiate actions, which
+# require pg and redis running, are performed as part of unicorn service -
+# right before its startup (see gitlab-unicorn-startup).
+[on-reinstantiate]
+recipe  = plone.recipe.command
+stop-on-error   = true
+rake    = ${gitlab-rake:wrapper-path}
+# run command on every reinstantiation
+update-command = ${:command}
+
+# https://gitlab.com/gitlab-org/gitlab-foss/issues/38457
+# we need to manually install ajv@^4.0.0 with yarn to fix the bug 'yarn check failed!'
+command =
+    ${:rake} gitlab:assets:clean  &&
+    ${:rake} gettext:compile RAILS_ENV=production &&
+    cd ${gitlab-work:location} &&
+    PATH={{ node_bin_location }}:$PATH {{ yarn_location }}/bin/yarn add ajv@^4.11.2 &&
+    PATH={{ node_bin_location }}:$PATH {{ yarn_location }}/bin/yarn install --production --pure-lockfile &&
+    ${:rake} gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096" &&
+    true
+
+
+# Promise, gitlab can connect to gitaly:
+# sudo gitlab-rake gitlab:tcp_check[GITALY_SERVER_IP,GITALY_LISTEN_PORT]

@@ -1,0 +1,6 @@
+#!%(shell_path)s
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+# 32767 is the maximum number of connections allowed by the nbd server
+exec %(qemu_path)s -b %(ip)s %(image_path)s -r -t -p %(port)s -e 32767

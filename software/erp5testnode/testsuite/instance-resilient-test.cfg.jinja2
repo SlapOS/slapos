@@ -1,0 +1,69 @@
+[buildout]
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+parts =
+  request-resilient-instance
+  deploy-unit-test
+  deploy-scalability-test
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc/
+var = ${:home}/var/
+srv = ${:home}/srv/
+bin = ${:home}/bin/
+tmp = ${:home}/tmp/
+log = ${:var}/log/
+services = ${:etc}/service/
+scripts = ${:etc}/run/
+
+[deploy-scalability-test]
+recipe = slapos.cookbook:wrapper
+testnode-parameters = --test-result-path={{ slapparameter_dict.get('test-result-path') }} --revision={{ slapparameter_dict.get('test-suite-revision') }} --node-title={{ slapparameter_dict.get('scalability-launcher-title') }} --test-suite={{ slapparameter_dict.get('test-suite') }} --test-suite-master-url={{ slapparameter_dict.get('test-suite-master-url') }} --log-path=${directory:log}
+test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=runner root_instance_name='${request-resilient-instance:name}'
+command-line = {{ bin_directory }}/runResiliencyScalabilityTestNode ${:testnode-parameters} ${:test-parameters}
+wrapper-path = ${directory:scripts}/runResiliencyTestSuite
+
+[deploy-unit-test]
+recipe = collective.recipe.template
+test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=runner root_instance_name='${request-resilient-instance:name}'
+input = inline:
+  #!/bin/sh
+  exec {{ bin_directory }}/runResiliencyUnitTestTestNode $@ ${:test-parameters}
+output = ${directory:bin}/runTestSuite
+mode = 755
+
+[request-resilient-instance]
+<= slap-connection
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+software-type = resilient
+name = Resilient Instance (Root Instance)
+{% for key, value in slapparameter_dict.get('cluster', {}).items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+config-resiliency-backup-periodicity = */10 * * * *
+config-resilient-clone-number = 1
+config-ignore-known-hosts-file = false
+config-cpu-usage-ratio = 1
+# Use one external folder (same of erp5testnode for build the software
+# This is a way to preserve the latest software release build speeding up
+# the tests.)
+config-software-root = ${buildout:directory}/../../soft
+config-buildout-shared-folder = ${buildout:directory}/../../shared
+config-no-ipv4-frontend = true
+
+# Use same repository / branch for the software installed in slaprunner
+# than the tested slaprunner itself.
+config-slapos-repository = {{ slapos_repository_url }}
+config-slapos-reference = {{ slapos_repository_branch }}
+
+# XXX Hack to deploy Root Instance on the same computer as the type-test Instance
+sla-computer_guid = ${slap-connection:computer-id}
+return = backend-url
+
+[slap-parameter]

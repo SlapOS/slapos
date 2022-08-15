@@ -1,0 +1,86 @@
+{% set part_list = [] -%}
+{%- set parameter = dict(default_parameter_dict, **slapparameter_dict) %}
+{%- set server_name = parameter['server-name'] %}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+run = ${:var}/run
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+plugins = ${:etc}/plugin
+
+[turnserver-password]
+recipe = slapos.cookbook:generate.password
+bytes = 8
+
+{% set turn_port = parameter['port'] -%}
+{% set turn_tls_port = parameter['tls-port'] -%}
+# listening-ip parameter is mandatory
+{% set listening_ip = slapparameter_dict['listening-ip'] -%}
+
+[turnserver-config]
+recipe = collective.recipe.template
+user = nxdturn
+input = inline:
+  listening-port={{ turn_port }}
+  lt-cred-mech
+  realm={{ server_name }}
+{% if parameter['external-ip'] %}
+  external-ip={{ parameter['external-ip'] }}
+{% endif %}
+  fingerprint
+  listening-ip={{ listening_ip }}
+  server-name={{ server_name }}
+  no-stdout-log
+  simple-log
+  log-file=${directory:log}/turnserver.log
+  pidfile=${directory:run}/turnserver.pid
+  verbose
+  user=${:user}:${turnserver-password:passwd}
+output = ${directory:etc}/turnserver.conf
+mode = 644
+
+[turnserver-wrapper]
+recipe = slapos.cookbook:wrapper
+# XXX on first invocation of read-secret, the secret file is not yet generated
+# so on first buildout run turnserver-config has an empty secret.
+# We don't want to start the server when config file is not complete.
+command-line =
+  {{ parameter_dict['turnserver-location'] }}/bin/turnserver -c ${turnserver-config:output}
+wrapper-path = ${directory:services}/turnserver
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[promise-check-turnserver-port]
+<= monitor-promise-base
+promise = check_socket_listening
+name = turnserver-port-listening.py
+config-host = {{ listening_ip }}
+config-port = {{ turn_port }}
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+turn-url = {{ server_name ~ ':' ~ turn_port }}
+user = ${turnserver-config:user}
+password = ${turnserver-password:passwd}
+
+[buildout]
+
+extends = {{ template_monitor }}
+
+parts =
+  publish-connection-information
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+# turn server
+  turnserver-wrapper
+  promise-check-turnserver-port
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

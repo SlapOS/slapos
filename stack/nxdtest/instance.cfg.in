@@ -1,0 +1,33 @@
+# instance to test a software via nxdtest under Nexedi testing infrastructure.
+[buildout]
+parts = runTestSuite
+
+# std stuff for slapos instance
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+# software release we instantiate was supplied here
+[software]
+dir     = {{ buildout['directory'] }}
+bin     = {{ buildout['bin-directory'] }}
+
+# instance directories
+[directory]
+recipe  = slapos.cookbook:mkdirectory
+home    = ${buildout:directory}
+bin     = ${:home}/bin
+
+# script to run the testsuite via nxdtest
+# located @ <instance>/bin/runTestSuite so testnode can see this as run tests entrypoint.
+#
+# instance that uses stack/nxdtest.cfg must provide
+#
+#   [runTestSuite]
+#   env.sh  = ...
+#   workdir = ...
+[runTestSuite]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+command-line = /bin/bash -c '. ${:env.sh} && cd ${:workdir} && {{ nxdtest['exe'] }} "$@"' nxdtest
+# "$@" is implicitly added to argv

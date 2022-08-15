@@ -1,0 +1,24 @@
+#!{{ bash_bin }}
+
+curl () {
+  {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
+}
+
+# Checking if mariadb start is needed
+CODE=$(curl -o /dev/null -w "%{http_code}" {{ repman_url }}/api/clusters/{{ cluster }}/servers/{{ db_host }}/{{ db_port }}/need-start)
+
+if [ $CODE -eq 200 ]; then
+  sleep 5
+  echo "$CODE: Updating mysql configuration..."
+  # update mysql configuration
+  {{ update_config }}
+  echo "$CODE: Starting mariadb service..."
+  # print current status, can be useful for debug...
+  {{ mariadb_controller }} status mariadb
+  {{ mariadb_controller }} start mariadb
+  sleep 5
+  # check again if the service is still up...
+  {{ mariadb_controller }} status mariadb
+else
+  echo "CODE: $CODE. No need start!"
+fi

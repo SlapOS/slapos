@@ -1,0 +1,125 @@
+#!{{ bash_bin }}
+
+set -e
+
+curl () {
+  {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
+}
+
+get_token () {
+  curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login
+}
+
+wait_database () {
+  NAME=$1
+  for retry in {1..50}; do
+    echo ">> Wait until $NAME databases are ready...";
+    CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ secure_url }}/api/clusters/$NAME/actions/waitdatabases);
+    if [ $CODE -eq 504 ]; then
+      # We have a timeout try again
+      echo ">> [$retry] Timeout on {{ secure_url }}/api/clusters/$NAME/actions/waitdatabases, trying again...";
+    else
+      if [ $CODE -eq 200 ]; then
+        break;
+      else
+        if [ $CODE -eq 401 ]; then
+          # try again with new token
+          TOKEN=$(get_token | {{ jq_bin }} -r '.token')
+        fi
+      fi
+      echo ">> [$retry] waitdatabases returned code $CODE...";
+    fi
+    sleep 30
+  done
+}
+
+check_cluster () {
+  # Check if cluster is boostrapped
+  NAME=$1
+  TOKEN=$(get_token | {{ jq_bin }} -r '.token')
+  ERRORS=$(curl -H "Authorization: Bearer ${TOKEN}" {{ secure_url }}/api/clusters/$NAME/topology/alerts | {{ jq_bin }} -r '.errors')
+  if [ "$ERRORS" != "null" ] && [ ! -z "$ERRORS" ]; then
+    echo "ERROR: Bootstrap replication of cluster $NAME failed!";
+    echo $ERRORS;
+    return 1;
+  fi
+  return 0
+}
+
+activate_proxy () {
+  NAME=$1
+  URL="{{ secure_url }}/api/clusters/$NAME/settings/actions/switch/database-hearbeat"
+  echo ">> Calling $URL...";
+  CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" $URL)
+  if [ $CODE -eq 200 ]; then
+    return 0;
+  else
+    echo ">> ERROR: failed to activate proxy: $URL returned code $CODE"
+    return 1;
+  fi
+}
+
+check_add () {
+  NAME=$1
+  STATUS=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ secure_url }}/api/clusters/$NAME)
+  if [ $STATUS != 200 ]; then
+    # if cluster doesn't exists we add it
+    curl -H "Authorization: Bearer ${TOKEN}" \
+      {{ secure_url }}/api/clusters/actions/add/$NAME
+  fi
+}
+
+reload_config () {
+  # check if etc/repman/cluster.d/config-clusterXX.toml has changed and call reload
+  NAME=$1
+  FILE="{{ parameter_dict['config-tmp'] }}/$NAME-config-cheksum.txt"
+  CHECKSUM=$(md5sum {{ parameter_dict['clusters'] }}/config-$NAME.toml)
+  if [ -s $FILE ]; then
+    OLDSUM=$(cat $FILE);
+  fi
+  echo "$CHECKSUM" > $FILE
+  if [ "$CHECKSUM" != "$OLDSUM" ]; then
+    echo "Reloading settings for $NAME to apply changes..."
+    curl -H "Authorization: Bearer ${TOKEN}" \
+      {{ secure_url }}/api/clusters/$NAME/settings/actions/reload
+  else
+    echo "$NAME config is up to date."
+  fi
+}
+
+TOKEN=$(get_token | {{ jq_bin }} -r '.token')
+
+# Always reload cluster configuration to apply recent changes
+{% for name in cluster_name_list -%}
+
+check_add {{ name }}
+
+reload_config {{ name }}
+
+# Start Replication on {{ name }}
+if [ ! -f "{{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped" ]; then
+
+  wait_database {{ name }}
+
+  echo "Bootstrap replication on {{ name }}..."
+  TOKEN=$(get_token | {{ jq_bin }} -r '.token')
+
+  curl -H "Authorization: Bearer ${TOKEN}" \
+    {{ secure_url }}/api/clusters/{{ name }}/actions/replication/cleanup
+  CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ secure_url }}/api/clusters/{{ name }}/actions/replication/bootstrap/master-slave)
+  if [ $CODE -eq 200 ]; then
+    activate_proxy {{ name }}
+    if [ $? -eq 0 ]; then
+      # Mark boostrap done!
+      echo "Cluster {{ name }} replication bootstrapped"
+      echo "DO NOT REMOVE THIS FILE" > {{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped
+    fi
+  else
+    echo "ERROR: Failed to bootstrap cluster {{ name }}... http_code $CODE"
+  fi
+else
+  # Check cluster health
+  check_cluster {{ name }}
+fi
+
+{% endfor %}

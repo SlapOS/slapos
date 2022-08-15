@@ -1,0 +1,282 @@
+{%- set slapparameter_dict = dict(default_parameter_dict, **slapparameter_dict) -%}
+
+
+[buildout]
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+extends = ${monitor2-template:output}
+
+parts =
+  testnode-service
+  certificate-authority
+  ca-shellinabox
+  ca-httpd-testnode
+  monitor-base
+  monitor-publish
+  testnode-frontend
+  resiliency-exclude-file
+  shellinabox-frontend-reload
+  promises
+  testnode-compatibility
+
+[monitor-publish]
+recipe = slapos.cookbook:publish
+url = $${shellinabox-frontend:url}
+frontend-url = $${testnode-frontend:connection-secure_access}
+log-frontend-url = $${testnode-log-frontend:connection-secure_access}
+
+[pwgen]
+recipe = slapos.cookbook:generate.password
+storage-path = $${buildout:directory}/.password
+
+[testnode]
+recipe = slapos.cookbook:erp5testnode
+slapos-directory = $${directory:slapos}
+working-directory = $${directory:testnode}
+test-suite-directory = $${directory:test-suite}
+shared-part-list = $${directory:shared}
+proxy-host = {{ partition_ipv4 }}
+proxy-port = 5000
+log-directory = $${directory:log}
+srv-directory = $${rootdirectory:srv}
+software-directory = $${directory:software}
+run-directory = $${directory:run}
+test-node-title = {{ slapparameter_dict['test-node-title'] }}
+node-quantity = {{ slapparameter_dict['node-quantity'] }}
+ipv4-address = {{ partition_ipv4 }}
+ipv6-address = {{ partition_ipv6 }}
+test-suite-master-url = {{ slapparameter_dict['test-suite-master-url'] }}
+instance-dict = {{ slapparameter_dict['instance-dict'] }}
+{%- if isinstance(slapparameter_dict['software-path-list'], str) %}
+software-path-list = {{ slapparameter_dict['software-path-list'] }}
+{%- else %}
+software-path-list = {{ json.dumps(slapparameter_dict['software-path-list']) }}
+{%- endif %}
+keep-log-days = {{ slapparameter_dict['keep-log-days'] }}
+git-binary = ${git:location}/bin/git
+slapos-binary = ${buildout:bin-directory}/slapos
+testnode = ${buildout:bin-directory}/testnode
+zip-binary = ${zip:location}/bin/zip
+httpd-pid-file = $${basedirectory:run}/httpd.pid
+httpd-lock-file = $${basedirectory:run}/httpd.lock
+httpd-conf-file = $${rootdirectory:etc}/httpd.conf
+httpd-wrapper = $${rootdirectory:bin}/httpd
+httpd-port = 9080
+httpd-software-access-port = 9081
+httpd-ip = {{ partition_ipv6 }}
+httpd-log-directory = $${basedirectory:log}
+httpd-software-directory = $${directory:software}
+httpd-cert-file = $${rootdirectory:etc}/httpd-public.crt
+httpd-key-file = $${rootdirectory:etc}/httpd-private.key
+frontend-url = $${testnode-frontend:connection-secure_access}
+log-frontend-url = $${testnode-log-frontend:connection-secure_access}
+
+configuration-file = $${rootdirectory:etc}/erp5testnode.cfg
+log-file = $${basedirectory:log}/erp5testnode.log
+wrapper = $${buildout:bin-directory}/erp5testnode-service
+
+# Binaries
+apache-binary = ${apache:location}/bin/httpd
+apache-modules-dir = ${apache:location}/modules
+apache-mime-file = ${apache:location}/conf/mime.types
+apache-htpasswd = ${apache:location}/bin/htpasswd
+
+[testnode-service]
+# wrapper over erp5testnode which restarts the service when configuration changed
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${basedirectory:services}/erp5testnode
+command-line = $${testnode:wrapper}
+hash-files =
+  $${testnode:wrapper}
+  $${testnode:configuration-file}
+
+[shell-environment]
+shell = ${bash:location}/bin/bash
+
+[shellinabox]
+recipe = slapos.recipe.template
+# We cannot use slapos.cookbook:wrapper here because this recipe escapes too much
+socket = $${directory:run}/siab.sock
+output = $${basedirectory:services}/shellinaboxd
+inline =
+  #!/bin/sh
+  exec ${shellinabox:location}/bin/shellinaboxd \
+    --unixdomain-only=$${:socket}:$(id -u):$(id -g):0600 \
+    --service "/:$(id -u):$(id -g):HOME:$${shell-environment:shell} -l"
+
+[shellinabox-frontend-config]
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
+  https://$${:hostname}:$${:port} {
+    bind $${:ipv6}
+    tls self_signed
+    gzip
+    log stdout
+    errors stderr
+    proxy / unix:$${shellinabox:socket}
+    basicauth $${:username} $${:passwd} {
+      realm "Test Node $${testnode:test-node-title}"
+      /
+    }
+  }
+ipv6 = {{ partition_ipv6 }}
+hostname = [$${:ipv6}]
+port = 8080
+username = testnode
+passwd = $${pwgen:passwd}
+cert-file = $${directory:shellinabox}/public.crt
+key-file = $${directory:shellinabox}/private.key
+backend-url = https://$${:username}:$${:passwd}@$${:hostname}:$${:port}
+
+
+[shellinabox-frontend]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${rootdirectory:bin}/$${:_buildout_section_name_}
+command-line =
+  ${caddy:output} -conf $${shellinabox-frontend-config:output} -pidfile $${:pidfile}
+url =  $${shellinabox-frontend-config:backend-url}
+hostname = $${shellinabox-frontend-config:ipv6}
+port = $${shellinabox-frontend-config:port}
+pidfile = $${basedirectory:run}/$${:_buildout_section_name_}.pid
+
+[shellinabox-frontend-reload]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${basedirectory:services}/$${:_buildout_section_name_}
+command-line =
+  ${bash:location}/bin/bash -c
+  "kill -s USR1 $$(${coreutils:location}/bin/cat $${shellinabox-frontend:pidfile}) \
+    && ${coreutils:location}/bin/sleep infinity"
+hash-files =
+  $${shellinabox-frontend-config:output}
+  $${shellinabox-frontend:wrapper-path}
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${cadirectory:requests}
+wrapper = $${basedirectory:services}/ca
+ca-private = $${cadirectory:private}
+ca-certs = $${cadirectory:certs}
+ca-newcerts = $${cadirectory:newcerts}
+ca-crl = $${cadirectory:crl}
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:ca-dir}/requests/
+private = $${directory:ca-dir}/private/
+certs = $${directory:ca-dir}/certs/
+newcerts = $${directory:ca-dir}/newcerts/
+crl = $${directory:ca-dir}/crl/
+
+[ca-shellinabox]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+executable = $${shellinabox-frontend:wrapper-path}
+wrapper = $${basedirectory:services}/shellinabox-frontend
+key-file = $${shellinabox-frontend-config:key-file}
+cert-file = $${shellinabox-frontend-config:cert-file}
+
+[ca-httpd-testnode]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+executable = $${testnode:httpd-wrapper}
+wrapper = $${basedirectory:services}/httpd
+key-file = $${testnode:httpd-key-file}
+cert-file = $${testnode:httpd-cert-file}
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+run = $${rootdirectory:var}/run
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+slapos = $${rootdirectory:srv}/slapos
+testnode = $${buildout:directory}/t
+shared = $${rootdirectory:srv}/shared
+test-suite = $${rootdirectory:srv}/test_suite
+log = $${basedirectory:log}/testnode
+run = $${basedirectory:run}/testnode
+software = $${rootdirectory:srv}/software
+shellinabox = $${rootdirectory:srv}/shellinabox
+ca-dir = $${rootdirectory:srv}/ca
+
+[testnode-compatibility]
+# Remove old ~/srv/testnode
+recipe = slapos.recipe.build
+update =
+  import os
+  from zc.buildout.rmtree import rmtree
+  old_testnode_path = self.buildout['rootdirectory']['srv'] + '/testnode'
+  if os.path.exists(old_testnode_path):
+    rmtree(old_testnode_path)
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: **
+output = $${directory:srv}/exporter.exclude
+
+[request-shared-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-https-only = true
+return = domain secure_access
+
+[testnode-frontend]
+<= request-shared-frontend
+name = Test Node Frontend $${testnode:test-node-title}
+config-url = https://[$${testnode:httpd-ip}]:$${testnode:httpd-software-access-port}
+
+[testnode-log-frontend]
+<= request-shared-frontend
+name = Test Node Logs Frontend $${testnode:test-node-title}
+config-url = https://[$${testnode:httpd-ip}]:$${testnode:httpd-port}
+
+
+[promises]
+recipe =
+instance-promises =
+  $${shellinabox-frontend-listen-promise:name}
+# $${shellinabox-frontend-available-promise:name}
+  $${testnode-log-frontend-promise:name}
+
+[shellinabox-frontend-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = $${:_buildout_section_name_}.py
+config-host = $${shellinabox-frontend:hostname}
+config-port = $${shellinabox-frontend:port}
+
+## This promise fails in a test suite
+## due to ports conflict with the testnode of the test suite
+# [shellinabox-frontend-available-promise]
+# <= monitor-promise-base
+# module = check_url_available
+# name = $${:_buildout_section_name_}.py
+# config-url = https://$${shellinabox-frontend-config:hostname}:$${shellinabox-frontend-config:port}
+# config-username = $${shellinabox-frontend-config:username}
+# config-password = $${shellinabox-frontend-config:passwd}
+
+[testnode-log-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = $${testnode-log-frontend:connection-secure_access}

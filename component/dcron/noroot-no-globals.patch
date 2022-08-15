@@ -1,0 +1,129 @@
+--- dcron-4.5/chuser.c
++++ dcron-4.5/chuser.c
+@@ -14,6 +14,7 @@
+ int
+ ChangeUser(const char *user, char *dochdir)
+ {
++#if 0
+ 	struct passwd *pas;
+ 
+ 	/*
+@@ -57,5 +58,8 @@
+ 		}
+ 	}
+ 	return(pas->pw_uid);
++#else
++	return getpwnam(user);
++#endif
+ }
+ 
+--- dcron-4.5/crontab.c
++++ dcron-4.5/crontab.c
+@@ -88,7 +88,7 @@
+ 				break;
+ 			case 'c':
+ 				/* getopt guarantees optarg != 0 here */
+-				if (*optarg != 0 && getuid() == geteuid()) {
++				if (*optarg != 0) {
+ 					CDir = optarg;
+ 				} else {
+ 					printlogf(0, "-c option: superuser only");
+@@ -316,9 +316,6 @@
+ 
+ 	close(filedes[0]);
+ 
+-	if (ChangeUser(user, NULL) < 0)
+-		exit(0);
+-
+ 	fd = open(file, O_RDONLY);
+ 	if (fd < 0) {
+ 		printlogf(0, "unable to open %s: %s", file, strerror(errno));
+@@ -344,8 +341,6 @@
+ 		const char *ptr;
+ 		char visual[SMALL_BUFFER];
+ 
+-		if (ChangeUser(user, TMPDIR) < 0)
+-			exit(0);
+ 		if ((ptr = getenv("EDITOR")) == NULL || strlen(ptr) >= sizeof(visual))
+ 			if ((ptr = getenv("VISUAL")) == NULL || strlen(ptr) >= sizeof(visual))
+ 				ptr = PATH_VI;
+--- dcron-4.5/job.c
++++ dcron-4.5/job.c
+@@ -62,14 +62,6 @@
+ 		 * Change running state to the user in question
+ 		 */
+ 
+-		if (ChangeUser(file->cf_UserName, TempDir) < 0) {
+-			printlogf(LOG_ERR, "unable to ChangeUser (user %s %s)\n",
+-					file->cf_UserName,
+-					line->cl_Description
+-					);
+-			exit(0);
+-		}
+-
+ 		/* from this point we are unpriviledged */
+ 
+ 		if (DebugOpt)
+@@ -295,14 +287,6 @@
+ 		 * by the mailing and we already verified the mail file.
+ 		 */
+ 
+-		if (ChangeUser(file->cf_UserName, TempDir) < 0) {
+-			printlogf(LOG_ERR, "unable to ChangeUser to send mail (user %s %s)\n",
+-					file->cf_UserName,
+-					line->cl_Description
+-					);
+-			exit(0);
+-		}
+-
+ 		/* from this point we are unpriviledged */
+ 
+ 		/*
+--- dcron-4.5/Makefile
++++ dcron-4.5/Makefile
+@@ -3,7 +3,6 @@
+ 
+ # these variables can be configured by e.g. `make SCRONTABS=/different/path`
+ PREFIX = /usr/local
+-CRONTAB_GROUP = wheel
+ SCRONTABS = /etc/cron.d
+ CRONTABS = /var/spool/cron/crontabs
+ CRONSTAMPS = /var/spool/cron/cronstamps
+@@ -20,10 +19,10 @@
+ 
+ 
+ SHELL = /bin/sh
+-INSTALL = install -o root
++INSTALL = install
+ INSTALL_PROGRAM = $(INSTALL) -D
+-INSTALL_DATA = $(INSTALL) -D -m0644 -g root
+-INSTALL_DIR = $(INSTALL) -d -m0755 -g root
++INSTALL_DATA = $(INSTALL) -D -m0644
++INSTALL_DIR = $(INSTALL) -d -m0755
+ CFLAGS ?= -O2
+ CFLAGS += -Wall -Wstrict-prototypes -Wno-missing-field-initializers
+ SRCS = main.c subs.c database.c job.c concat.c chuser.c
+@@ -45,7 +44,6 @@
+ 	echo "SBINDIR = $(SBINDIR)" >> config
+ 	echo "BINDIR = $(BINDIR)" >> config
+ 	echo "MANDIR = $(MANDIR)" >> config
+-	echo "CRONTAB_GROUP = $(CRONTAB_GROUP)" >> config
+ 	echo "SCRONTABS = $(SCRONTABS)" >> config
+ 	echo "CRONTABS = $(CRONTABS)" >> config
+ 	echo "CRONSTAMPS = $(CRONSTAMPS)" >> config
+@@ -63,13 +61,10 @@
+ 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEFS) $< -o $@
+ 
+ install:
+-	$(INSTALL_PROGRAM) -m0700 -g root crond $(DESTDIR)$(SBINDIR)/crond
+-	$(INSTALL_PROGRAM) -m4750 -g $(CRONTAB_GROUP) crontab $(DESTDIR)$(BINDIR)/crontab
++	$(INSTALL_PROGRAM) -m0755 crond $(DESTDIR)$(SBINDIR)/crond
++	$(INSTALL_PROGRAM) -m4750 crontab $(DESTDIR)$(BINDIR)/crontab
+ 	$(INSTALL_DATA) crontab.1 $(DESTDIR)$(MANDIR)/man1/crontab.1
+ 	$(INSTALL_DATA) crond.8 $(DESTDIR)$(MANDIR)/man8/crond.8
+-	$(INSTALL_DIR) $(DESTDIR)$(SCRONTABS)
+-	$(INSTALL_DIR) $(DESTDIR)$(CRONTABS)
+-	$(INSTALL_DIR) $(DESTDIR)$(CRONSTAMPS)
+ 
+ clean: force
+ 	rm -f *.o $(PROTOS)

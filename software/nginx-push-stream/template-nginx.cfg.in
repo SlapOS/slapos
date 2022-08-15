@@ -1,0 +1,122 @@
+daemon off; # run in the foreground so supervisord can look after it
+
+worker_processes 4;
+pid $${nginx-configuration:pid-file};
+
+events {
+  worker_connections 768;
+  # multi_accept on;
+}
+
+error_log $${nginx-configuration:error-log};
+
+http {
+
+  ##
+  # Basic Settings
+  ##
+
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
+  keepalive_timeout 65;
+  types_hash_max_size 2048;
+  server_tokens off;
+
+  # server_names_hash_bucket_size 64;
+  # server_name_in_redirect off;
+
+  default_type application/octet-stream;
+  include ${nginx-push-stream-output:mime};
+
+  ##
+  # Logging Settings
+  ##
+
+  access_log $${nginx-configuration:access-log};
+  error_log $${nginx-configuration:error-log};
+
+  ##
+  # Gzip Settings
+  ##
+
+  gzip on;
+  gzip_disable "msie6";
+
+  gzip_vary on;
+  gzip_proxied any;
+  gzip_comp_level 6;
+  gzip_buffers 16 8k;
+  gzip_http_version 1.1;
+  gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  ##
+  # Push stream Settings
+  ##
+  push_stream_shared_memory_size                32m;
+
+
+server {
+  listen [$${nginx-configuration:ip}]:$${nginx-configuration:port} ssl http2;
+  listen $${nginx-configuration:local-ip}:$${nginx-configuration:port} ssl http2;
+
+  # generated 2021-08-02, Mozilla Guideline v5.6, nginx 1.19.2, OpenSSL 1.1.1k, modern configuration, no HSTS, no OCSP
+  # https://ssl-config.mozilla.org/#server=nginx&version=1.19.2&config=modern&openssl=1.1.1k&hsts=false&ocsp=false&guideline=5.6
+  ssl_certificate $${nginx-certificate:cert-file};
+  ssl_certificate_key $${nginx-certificate:key-file};
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:MozSSL:10m;
+  ssl_session_tickets off;
+  ssl_protocols TLSv1.3;
+  ssl_prefer_server_ciphers off;
+
+
+  fastcgi_temp_path  $${directory:varnginx} 1 2;
+  uwsgi_temp_path  $${directory:varnginx} 1 2;
+  scgi_temp_path  $${directory:varnginx} 1 2;
+
+  client_body_temp_path $${directory:varnginx} 1 2;
+  proxy_temp_path $${directory:varnginx} 1 2;
+
+  ## Serve an error 204 (No Content) for favicon.ico
+  location = /favicon.ico {
+    return 204;
+  }
+
+  location = /status {
+    default_type "text/plain";
+    return 200 'OK';
+  }
+
+  location /pub {
+    push_stream_publisher;
+
+    push_stream_channels_path               $arg_id;
+    # store messages in memory
+    push_stream_store_messages              off;
+
+    # Message size limit
+    client_max_body_size                    16k;
+    client_body_buffer_size                 16k;
+    
+  }
+
+  location ~ /sub/(.*) {
+    # activate subscriber mode for this location
+    add_header "Access-Control-Allow-Origin" '*';
+    add_header 'Access-Control-Allow-Credentials' 'false';
+    add_header 'Access-Control-Allow-Methods' 'GET, HEAD, OPTIONS';
+    add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since';
+
+    push_stream_subscriber eventsource;
+    # positional channel path
+    push_stream_channels_path                   $1;
+
+    # content-type
+    default_type                                "text/event-stream; charset=utf-8";
+  }
+
+  location / {
+      root $${directory:www};
+  }
+}
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by NEO instantiation",
+  "properties": {
+    "masters": {
+      "description": "Connection parameters of all the master nodes",
+      "type": "string"
+    },
+    "admins": {
+      "description": "Connection parameters of all the admin nodes",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

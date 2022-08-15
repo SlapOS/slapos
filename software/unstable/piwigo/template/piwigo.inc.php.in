@@ -1,0 +1,15 @@
+<?php
+$conf['dblayer'] = 'mysql';
+$conf['db_base'] = '%(mysql_database)s';
+$conf['db_user'] = '%(mysql_user)s';
+$conf['db_password'] = '%(mysql_password)s';
+$conf['db_host'] = '%(mysql_host)s';
+
+$prefixeTable = 'piwigo_';
+
+define('PHPWG_INSTALLED', true);
+define('PWG_CHARSET', 'utf-8');
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
+
+?>

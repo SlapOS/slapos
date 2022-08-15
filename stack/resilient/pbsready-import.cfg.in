@@ -1,0 +1,170 @@
+[buildout]
+extends = {{ pbsready_template_path }}
+
+parts +=
+  resiliency-takeover-script
+  resilient-web-takeover-cgi-script
+  resilient-web-takeover-httpd-wrapper
+  resilient-web-takeover-httpd-promise
+
+  notify-callback
+  backup-checksum-integrity-promise
+  resilient-publish-connection-parameter
+
+  backup-signature-link
+
+
+[resilient-publish-connection-parameter]
+notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
+takeover-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
+takeover-password = $${resilient-web-takeover-password:passwd}
+
+# Define port of ssh server. It has to be different from import so that it
+# supports export/import using same IP (slaprunner, slapos-in-partition,
+# ipv4...)
+[sshd-port]
+recipe = slapos.cookbook:free_port
+minimum = 22210
+maximum = 22219
+ip = $${slap-network-information:global-ipv6}
+
+# Define port of notifier (same reason)
+[notifier-port]
+recipe = slapos.cookbook:free_port
+minimum = 65516
+maximum = 65525
+ip = $${notifier:host}
+
+[notify-callback]
+# notifier.callback runs a script when a notification (sent by a parent PBS)
+# is received
+recipe = slapos.cookbook:notifier.callback
+callbacks-directory = $${notifier:callbacks-directory}
+on-notification-id = {{ slapparameter_dict.get('on-notification', '') }}
+callback-list =
+# warning the order of the 2 callbacks is important for now
+# it should be fixed later
+# check backup integrity on notification
+  $${post-notification-run:output}
+# import on notification
+  $${importer:wrapper}
+
+[post-notification-run]
+recipe = collective.recipe.template
+diff-file = $${basedirectory:backup}/backup.diff
+proof-signature-file = $${basedirectory:backup}/proof.signature
+input = inline:
+  #!/${bash:location}/bin/bash
+  cd $${directory:backup}
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > $${:proof-signature-file}
+  diff -ruw backup.signature $${:proof-signature-file} > $${:diff-file}
+output = $${rootdirectory:bin}/post-notification-run
+mode = 0700
+
+[backup-checksum-integrity-promise-bin]
+recipe = slapos.recipe.template
+inline =
+  #!/${bash:location}/bin/bash
+  backup_diff_file=$${post-notification-run:diff-file}
+  if [ -f "$backup_diff_file" ]; then
+    if [ $(wc -l "$backup_diff_file" | cut -d \  -f1) -eq 0 ]; then
+      exit 0;
+    else
+      exit 1;
+    fi
+  else
+    # If file doesn't exist, promise shouldnt raise false positive
+    exit 0;
+  fi
+output = $${rootdirectory:bin}/backup-checksum-integrity
+
+[backup-checksum-integrity-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = backup-checksum-integrity.py
+config-command = $${backup-checksum-integrity-promise-bin:output}
+
+
+###########
+# Generate the takeover script
+###########
+[resiliency-takeover-script]
+recipe = slapos.cookbook:addresiliency
+wrapper-takeover = $${rootdirectory:bin}/takeover
+takeover-triggered-file-path = $${rootdirectory:srv}/takeover_triggered
+
+# Add path of file created by takeover script when takeover is triggered
+# Takeover script will create this file
+# equeue process will watch for file existence.
+[equeue]
+takeover-triggered-file-path = $${resiliency-takeover-script:takeover-triggered-file-path}
+
+###########
+# Deploy a webserver allowing to do takeover from a web browser.
+###########
+[resilient-web-takeover-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/passwd
+bytes = 8
+
+[resilient-web-takeover-cgi-script]
+recipe = collective.recipe.template
+input = ${resilient-web-takeover-cgi-script-download:target}
+output = $${directory:cgi-bin}/web-takeover.cgi
+password = $${resilient-web-takeover-password:passwd}
+mode = 700
+proof-signature-url = $${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
+
+# XXX could it be something lighter?
+# XXX Add SSL
+[resilient-web-takeover-httpd-configuration-file]
+recipe = collective.recipe.template
+input = inline:
+  PidFile "$${:pid-file}"
+  Listen [$${:listening-ip}]:$${:listening-port}
+  ServerAdmin someone@email
+  DocumentRoot "$${:document-root}"
+  ErrorLog "$${:error-log}"
+  LoadModule unixd_module modules/mod_unixd.so
+  LoadModule access_compat_module modules/mod_access_compat.so
+  LoadModule authz_core_module modules/mod_authz_core.so
+  LoadModule authz_host_module modules/mod_authz_host.so
+  LoadModule mime_module modules/mod_mime.so
+  LoadModule cgid_module modules/mod_cgid.so
+  LoadModule dir_module modules/mod_dir.so
+  ScriptSock $${:cgid-sock-file}
+  <Directory $${:document-root}>
+    # XXX: security????
+    Options +ExecCGI
+    AddHandler cgi-script .cgi
+    DirectoryIndex web-takeover.cgi
+  </Directory>
+output = $${directory:etc}/resilient-web-takeover-httpd.conf
+# md5sum =
+listening-ip = $${slap-network-information:global-ipv6}
+# XXX: randomize-me
+listening-port = 9263
+htdocs = $${directory:cgi-bin}
+pid-file = $${directory:run}/resilient-web-takeover-httpd.pid
+cgid-sock-file = $${directory:run}/resilient-web-takeover-httpd-cgid.sock
+document-root = $${directory:cgi-bin}
+error-log = $${directory:log}/resilient-web-takeover-httpd-error-log
+
+[resilient-web-takeover-httpd-wrapper]
+recipe = slapos.cookbook:wrapper
+apache-executable = ${apache:location}/bin/httpd
+command-line = $${:apache-executable} -f $${resilient-web-takeover-httpd-configuration-file:output} -DFOREGROUND
+wrapper-path = $${basedirectory:services}/resilient-web-takeover-httpd
+
+[resilient-web-takeover-httpd-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = resilient-web-takeover-httpd.py
+config-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
+
+###########
+# Symlinks
+###########
+[backup-signature-link]
+recipe = cns.recipe.symlink
+symlink = $${post-notification-run:proof-signature-file} = $${directory:monitor-resilient}/backup.signature

@@ -1,0 +1,15 @@
+#! {{ bash_path }}
+
+COMMAND=()
+
+# add wrapper_cros_sdk before cros_sdk command
+pos=0
+for option in "$@"; do
+    if [[ "$option" == *"cros_sdk"* ]]; then
+        COMMAND=("${@:1:$pos}" "{{ fake_cros_sdk_path }}" "${@:(($pos+1))}")
+        break;
+    fi
+    ((pos++))
+done
+
+exec {{ host_sudo_path }} "${COMMAND[@]}"

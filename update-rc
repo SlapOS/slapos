@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -e
+
+# Go to master
+git checkout master
+
+# Update from origin
+git fetch origin
+
+# Clean up 1.0
+git branch -D 1.0 || echo
+
+# Checkout 1.0
+git checkout origin/1.0 -b 1.0
+
+# Reset and Clean
+git reset --hard origin/1.0 
+git clean -f
+
+# Merge master
+git merge origin/master -m "Update Release Candidate"
+
+# Revert changes from master
+git diff HEAD..origin/master | git apply 
+
+# Download patch to update revisions based on tests
+wget -O update-release.sh https://nexedi.erp5.net/portal_skins/custom/TestResultModule_getReleaseCandidateRevision 
+
+
+# Suggestion
+echo "Review and run
+
+  bash update-release.sh
+
+  git commit -m 'Update git revisions' -a  
+
+  git push origin 1.0
+
+  DONT USE THIS SCRIPT TO RELEASE SLAPOS COOKBOOK
+"

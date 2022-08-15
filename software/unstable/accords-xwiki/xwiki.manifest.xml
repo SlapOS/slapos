@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF8"?>
+<manifest name="test2" xmlns="http://www.compatibleone.fr/schemes/cords.xsd">
+
+	<description>test 1 : open stack small compute</description>
+
+	<node name="test2" type="simple" access="public" scope="normal" provider="openstack" >
+		<infrastructure name="test2">
+			<compute name="test2" architecture="x86" cores="1" memory="1G" speed="1G"/>
+			<storage name="test2" size="10G"/>
+			<network name="test2" label="ethernet" vlan="100M"/>
+		</infrastructure>
+		<image name="test2">
+			<system name="debian_with_cosacs"/>
+			<package
+				name="test2"
+				installation="mkdir /home/cosacs/vifib"
+				configuration="cp /home/cosacs/cosacs.xml /home/cosacs/vifib"
+				/>
+		</image>
+	</node>
+	<configuration name="test2">
+		<action name="test2_1" expression="test2.x='1';"/>
+		<action name="test2_2" expression="test2.y='2';"/>
+		<action name="test2_3" expression="test2.z='3';"/>
+	</configuration>
+	<interface name="test2"/>
+	<account name="slaposrecipe"/>
+	<security name="test2"/>
+</manifest>

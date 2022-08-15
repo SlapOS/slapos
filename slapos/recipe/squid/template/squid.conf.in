@@ -1,0 +1,34 @@
+refresh_pattern .   0 20%% 4320 max-stale=604800
+
+# Dissallow cachemgr access
+http_access deny manager
+
+# Squid service configuration
+http_port %(ip)s:%(port)s accel defaultsite=%(ip)s
+
+cache_peer %(backend_ip)s parent %(backend_port)s 0 no-query originserver name=backend
+
+acl our_sites port %(open_port)s
+http_access allow our_sites
+cache_peer_access backend allow our_sites
+cache_peer_access backend deny all
+
+# Drop squid headers
+# via off
+# reply_header_access X-Cache-Lookup deny all
+# reply_header_access X-Squid-Error deny all
+# reply_header_access X-Cache deny all
+
+header_replace X-Forwarded-For
+follow_x_forwarded_for allow all
+forwarded_for on
+
+# Use 1Go of RAM
+cache_mem 1024 MB
+# But do not keep big object in RAM
+maximum_object_size_in_memory 2048 KB
+
+# Log
+access_log %(access_log_path)s
+cache_log %(cache_log_path)s
+pid_filename %(pid_filename_path)s

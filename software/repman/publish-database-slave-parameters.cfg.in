@@ -1,0 +1,40 @@
+{% set part_list = [] -%}
+
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+
+{% for _, database in slave_dict.items() -%}
+{% if database['cluster_id'] == cluster -%}
+{% set slave_reference = database['slave_reference'] -%}
+{% do part_list.append('publish-slave-' ~ slave_reference) -%}
+
+[publish-slave-{{ slave_reference }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ slave_reference }}
+{%   if database.get('user') -%}
+url_v4 = {{ "mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ipv4 ~ ":" ~ proxy_port ~ '/' ~ database['name'] }}
+url = {{ "mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[" ~ ipv6 ~ "]:" ~ proxy_port ~ '/' ~ database['name'] }}
+{%   else -%}
+url = {{ "mysql://" ~ ipv4 ~ ":" ~ proxy_port ~ database['name'] }}
+url_v6 = {{ "mysql://[" ~ ip ~ "]:" ~ proxy_port ~ database['name'] }}
+{%   endif -%}
+cluster = {{ database['cluster_id'] }}
+{% endif -%}
+{% endfor %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+parts =
+{% for part in part_list -%}
+{{ '  %s' % part }}
+{% endfor -%}

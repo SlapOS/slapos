@@ -1,0 +1,42 @@
+worker_processes {{ param_hugo['nb-workers'] }};
+
+pid {{ param_hugo['path-pid'] }};
+error_log {{ param_hugo['path-error-log'] }};
+
+daemon off;
+
+events {
+	worker_connections 1024;
+	accept_mutex off;
+}
+
+http {
+	include {{ param_hugo['path-mime-types'] }};
+	default_type application/octet-stream;
+	types_hash_bucket_size 64;
+    access_log {{ param_hugo['path-access-log'] }} combined;
+	index index.html;
+
+    server {
+        listen [{{ param_hugo['ip'] }}]:{{ param_hugo['nginx-port'] }} ssl http2;
+        server_name _;
+
+        ssl_certificate {{ param_nginxcert['cert-file'] }};
+        ssl_certificate_key {{ param_nginxcert['key-file'] }};
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:MozSSL:10m;
+        ssl_session_tickets off;
+        ssl_protocols TLSv1.3;
+        ssl_prefer_server_ciphers off;
+
+        keepalive_timeout 5;
+        client_body_temp_path {{ param_tempdir['client-body-temp-path'] }};
+        proxy_temp_path {{ param_tempdir['proxy-temp-path'] }};
+        fastcgi_temp_path {{ param_tempdir['fastcgi-temp-path'] }};
+        uwsgi_temp_path {{ param_tempdir['uwsgi-temp-path'] }};
+        scgi_temp_path {{ param_tempdir['scgi-temp-path'] }};
+
+        # path for static files
+        root {{ param_hugo['docroot'] }};
+    }
+}

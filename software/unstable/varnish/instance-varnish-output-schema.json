@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Varnish instanciation",
+  "properties": {
+    "url": {
+      "description": "Varnish HTTP service access information",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

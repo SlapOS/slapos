@@ -1,0 +1,20 @@
+diff --git a/plugins-server/cloud9.ide.watcher/file_watcher.js b/plugins-server/cloud9.ide.watcher/file_watcher.
+index b7ed7da..36dcd05 100644
+--- a/plugins-server/cloud9.ide.watcher/file_watcher.js
++++ b/plugins-server/cloud9.ide.watcher/file_watcher.js
+@@ -69,11 +69,11 @@ util.inherits(FileWatcher, EventEmitter);
+ 
+     this.close = function() {
+         if (this.watcher) {
+-            this.watcher.removeAllListeners();
++            //this.watcher.removeAllListeners();
+             this.watcher.close();
+             this.emit("close");
+         }
+         this.watcher = null;
+     };
+ 
+-}).call(FileWatcher.prototype);
+\ No newline at end of file
++}).call(FileWatcher.prototype);
+

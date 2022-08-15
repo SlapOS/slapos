@@ -1,0 +1,32 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[dynamic-template-validator]
+recipe = slapos.recipe.template:jinja2
+url = ${template-validator:output}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+filename = instance-validator.cfg
+context =
+# partition_ipv6 is the random ipv6 allocated to the local partition
+    key partition_ipv6 slap-configuration:ipv6-random
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = $${:validator}
+default = $${:validator}
+validator = dynamic-template-validator:output
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}

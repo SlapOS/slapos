@@ -1,0 +1,14 @@
+[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = {{ timeout }}
+SQLITE = {{ db }}
+{%- if len(nameserver_list) > 0 %}
+NAMESERVER =
+{%-   for nameserver_entry in sorted(nameserver_list) %}
+  {{ nameserver_entry }}
+{%-   endfor %}
+{% endif %}
+URL =
+{%- for url in sorted(url_list) %}
+  {{ url -}}
+{% endfor %}

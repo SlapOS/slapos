@@ -1,0 +1,297 @@
+[buildout]
+
+parts +=
+  logrotate-entry-cron
+  logrotate-entry-equeue
+  logrotate-entry-notifier
+  logrotate-entry-resilient
+  cron
+  cron-entry-notifier-status-feed
+  notifier-feed-status-promise
+  notifier-stalled-promise
+  resilient-sshkeys-authority
+  sshd-raw-server
+  sshd-graceful
+  sshkeys-sshd
+  sshd-promise
+  resilient-sshkeys-sshd-promise
+  sshd-pbs-authorized-key
+  notifier
+
+
+extends =
+  ${monitor2-template:output}
+
+[slap-network-information]
+local-ipv4 = $${slap-configuration:ipv4-random}
+global-ipv6 = $${slap-configuration:ipv6-random}
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+run = $${rootdirectory:var}/run
+scripts = $${rootdirectory:etc}/run
+backup = $${rootdirectory:srv}/backup
+services = $${rootdirectory:etc}/service
+cache = $${rootdirectory:var}/cache
+notifier = $${rootdirectory:etc}/notifier
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+backup = $${basedirectory:backup}/$${slap-parameter:namebase}
+ssh = $${rootdirectory:etc}/ssh/
+sshkeys = $${rootdirectory:srv}/sshkeys
+notifier-feeds = $${basedirectory:notifier}/feeds
+notifier-callbacks = $${basedirectory:notifier}/callbacks
+notifier-status-items = $${basedirectory:notifier}/status-items
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+cronstamps = $${rootdirectory:etc}/cronstamps
+cgi-bin = $${rootdirectory:srv}/cgi-bin
+monitor-resilient = $${monitor-directory:private}/resilient
+
+
+#----------------
+#--
+#-- Deploy cron.
+# cron and cron-simplelogger are deployed by logrotate.
+
+#----------------
+#--
+#-- Deploy logrotate.
+
+[logrotate-entry-equeue]
+<= logrotate-entry-base
+name = equeue
+log = $${equeue:log} $${sshd-server:log}
+frequency = daily
+rotate-num = 30
+
+[logrotate-entry-notifier]
+<= logrotate-entry-base
+name = notifier
+log = $${notifier:feeds}/*
+rotate-num = 5
+frequency = weekly
+nocompress = 1
+
+[logrotate-entry-resilient]
+<= logrotate-entry-base
+name = resilient_log
+log = $${basedirectory:log}/resilient.log
+frequency = weekly
+rotate-num = 7
+
+#----------------
+#--
+#-- Sets up an rdiff-backup server (with a openssh server for ssh)
+
+[rdiff-backup-server]
+recipe = slapos.cookbook:pbs
+client = false
+path = $${directory:backup}
+wrapper = $${rootdirectory:bin}/rdiffbackup-server
+rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
+
+
+#----------------
+#--
+#-- Set up the equeue and notifier.
+
+[equeue]
+recipe = slapos.cookbook:equeue
+socket = $${basedirectory:run}/equeue.sock
+lockfile = $${basedirectory:run}/equeue.lock
+log = $${basedirectory:log}/equeue.log
+database = $${rootdirectory:srv}/equeue.db
+wrapper = $${basedirectory:services}/equeue
+equeue-binary = ${buildout:bin-directory}/equeue
+
+# notifier.notify adds the [exporter, notifier] to the execution queue
+# notifier.notify.callback sets up a callback
+[notifier]
+recipe = slapos.recipe.template:jinja2
+url = ${template-wrapper:output}
+output = $${:wrapper}
+wrapper = $${basedirectory:services}/notifier
+feeds = $${directory:notifier-feeds}
+callbacks-directory = $${directory:notifier-callbacks}
+command = ${buildout:bin-directory}/pubsubserver --callbacks $${:callbacks-directory} --feeds $${:feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
+notifier-binary = ${buildout:bin-directory}/pubsubnotifier
+host = $${slap-network-information:global-ipv6}
+port = $${notifier-port:port}
+instance-root-name = $${monitor-instance-parameter:root-instance-title}
+log-url = $${monitor-publish-parameters:monitor-base-url}/resilient/notifier-status-rss
+status-item-directory = $${directory:notifier-status-items}
+context =
+  key content notifier:command
+
+[notifier-resilient-status-feed]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:bin-directory}/generatefeed --output $${:feed-path} --status-item-path $${notifier:status-item-directory} --title "Status feed for $${notifier:instance-root-name}" --link $${notifier:log-url}
+feed-path = $${directory:monitor-resilient}/notifier-status-rss
+wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
+
+[notifier-status-feed-first-run]
+recipe = plone.recipe.command
+command = $${notifier-resilient-status-feed:wrapper-path}
+stop-on-error = true
+
+[cron-entry-notifier-status-feed]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = resilient-notifier-status-feed
+frequency = */5 * * * *
+command = $${notifier-status-feed-first-run:command}
+
+[notifier-stalled-promise-bin]
+recipe = slapos.cookbook:wrapper
+# time-buffer is 24h (+1h of latitude)
+command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${notifier-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
+wrapper-path = $${rootdirectory:bin}/stalled-notifier-callbacks
+
+[notifier-stalled-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = stalled-notifier-callbacks.py
+config-command = $${notifier-stalled-promise-bin:wrapper-path}
+
+#----------------
+#--
+#-- OpenSSH.
+[resilient-sshd-config]
+# XXX: Add timeout support
+recipe = slapos.recipe.template
+output = $${directory:etc}/resilient-sshd.conf
+path_pid = $${directory:run}/resilient-sshd.pid
+inline =
+ PidFile $${:path_pid}
+ Port $${sshd-port:port}
+ ListenAddress $${slap-network-information:global-ipv6}
+ Protocol 2
+ HostKey $${directory:ssh}/server_key.rsa
+ AuthorizedKeysFile $${directory:ssh}/.ssh/authorized_keys
+ PasswordAuthentication no
+ PubkeyAuthentication yes
+ ForceCommand $${rdiff-backup-server:wrapper}
+
+[sshd-raw-server]
+recipe = slapos.cookbook:wrapper
+host = $${slap-network-information:global-ipv6}
+rsa-keyfile = $${directory:ssh}/server_key.rsa
+home = $${directory:ssh}
+command-line = ${openssh:location}/sbin/sshd -D -e -f $${resilient-sshd-config:output}
+wrapper-path = $${rootdirectory:bin}/raw_sshd
+
+[sshd-pbs-authorized-key]
+<= sshd-raw-server
+recipe = slapos.cookbook:dropbear.add_authorized_key
+key = {{ slapparameter_dict.get('authorized-key', '') }}
+
+[sshd-server]
+recipe = collective.recipe.template
+log = $${basedirectory:log}/sshd.log
+input = inline:#!/bin/sh
+    exec $${sshd-raw-server:wrapper-path} >> $${:log} 2>&1
+
+output = $${rootdirectory:bin}/raw_sshd_log
+mode = 700
+
+[sshd-graceful]
+recipe = slapos.cookbook:wrapper
+command-line = $${rootdirectory:bin}/killpidfromfile $${resilient-sshd-config:path_pid} SIGHUP
+wrapper-path = $${basedirectory:scripts}/sshd-graceful
+
+[sshd-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = sshd.py
+config-host = $${slap-network-information:global-ipv6}
+config-port = $${sshd-port:port}
+
+#----------------
+#--
+#-- sshkeys
+
+[sshkeys-directory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:sshkeys}/resilient-requests
+keys = $${directory:sshkeys}/resilient-keys
+
+[resilient-sshkeys-authority]
+recipe = slapos.cookbook:sshkeys_authority
+request-directory = $${sshkeys-directory:requests}
+keys-directory = $${sshkeys-directory:keys}
+wrapper = $${basedirectory:services}/resilient_sshkeys_authority
+keygen-binary = ${openssh:location}/bin/ssh-keygen
+
+[sshkeys-sshd]
+<= resilient-sshkeys-authority
+recipe = slapos.cookbook:sshkeys_authority.request
+name = sshd
+type = rsa
+executable = $${sshd-server:output}
+public-key = $${sshd-raw-server:rsa-keyfile}.pub
+private-key = $${sshd-raw-server:rsa-keyfile}
+wrapper = $${basedirectory:services}/sshd
+
+[resilient-sshkeys-sshd-promise-bin]
+# Check that public key file exists and is not empty
+recipe = collective.recipe.template
+input = inline:#!${bash:location}/bin/bash
+  PUBLIC_KEY_CONTENT="$${sshkeys-sshd:public-key-value}"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = $${rootdirectory:bin}/public-key-existence
+mode = 700
+
+[resilient-sshkeys-sshd-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = public-key-existence.py
+config-command = $${resilient-sshkeys-sshd-promise-bin:output}
+
+#----------------
+#--
+#-- Promises
+
+[notifier-feed-status-promise-bin]
+recipe = slapos.recipe.template:jinja2
+url = ${notifier-feed-promise-template:target}
+output = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
+context =
+  key notifier_feed_directory directory:notifier-feeds
+  raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
+  raw python_executable ${buildout:executable}
+
+[notifier-feed-status-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = notifier-feed-check-malformed-or-failure.py
+config-command = $${notifier-feed-status-promise-bin:output}
+#----------------
+#--
+#-- Connection informations to re-use.
+
+[user-info]
+recipe = slapos.cookbook:userinfo
+
+# XXX-Cedric: when "aggregation" system is done in libslap, directly publish.
+[resilient-publish-connection-parameter]
+recipe = slapos.cookbook:publish
+ssh-public-key = $${sshkeys-sshd:public-key-value}
+resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
+ip = $${slap-network-information:global-ipv6}

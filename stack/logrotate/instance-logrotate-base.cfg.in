@@ -1,0 +1,99 @@
+[buildout]
+parts =
+  cron-service
+  cron-entry-logrotate
+  logrotate-entry-cron
+
+[cron]
+recipe = slapos.cookbook:cron
+cron-entries = ${logrotate-directory:cron-entries}
+dcrond-binary = {{ dcron_location }}/sbin/crond
+crontabs = ${logrotate-directory:crontabs}
+cronstamps = ${logrotate-directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${logrotate-directory:bin}/crond
+# This is here so to keep backward compatibility where the cron
+# section should create the service too and keep variables here
+service = ${cron-service:wrapper-path}
+
+[cron-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${cron:binary}
+wrapper-path = ${logrotate-directory:services}/crond
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${logrotate-directory:bin}/cron_simplelogger
+log = ${logrotate-directory:log}/cron.log
+
+[logrotate-conf-parameter]
+compress-binary = {{ xz_location }}/bin/xz
+uncompress-binary = {{ xz_location }}/bin/unxz
+logrotate-entries = ${logrotate-directory:logrotate-entries}
+
+[logrotate-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ logrotate_conf_template }}
+output = ${logrotate-directory:etc}/logrotate.conf
+context =
+  section parameter_dict logrotate-conf-parameter
+
+[logrotate-entry-base]
+# User must define keys:
+# - "name" to generate configuration path (must be unique in partition)
+# - "log" space-separated list of file paths to be rotated
+# User may override keys:
+# - "post" with commands to execute after rotation
+# - "pre" with commands to execute before rotation
+# - "backup" with directory where to store logs
+recipe = slapos.recipe.template:jinja2
+url = {{ logrotate_entry_template }}
+output = ${logrotate-conf-parameter:logrotate-entries}/${:name}
+context =
+  key backup :backup
+  key log :log
+  key post :post
+  key pre :pre
+  key frequency :frequency
+  key rotate_num :rotate-num
+  key nocompress :nocompress
+  key delaycompress :delaycompress
+post =
+pre =
+frequency = daily
+rotate-num = 3650
+backup = ${logrotate-directory:logrotate-backup}
+nocompress =
+delaycompress = true
+
+[logrotate]
+recipe = slapos.cookbook:wrapper
+command-line = {{ logrotate_location }}/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:output}"
+wrapper-path = ${logrotate-directory:bin}/logrotate
+
+[cron-entry-logrotate]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = logrotate
+frequency = 0 0 * * *
+command = ${logrotate:wrapper-path}
+
+[logrotate-entry-cron]
+<= logrotate-entry-base
+name = crond
+log = ${cron-simplelogger:log}
+
+[logrotate-directory]
+recipe = slapos.cookbook:mkdirectory
+cron-entries = ${:etc}/cron.d
+cronstamps = ${:etc}/cronstamps
+crontabs = ${:etc}/crontabs
+logrotate-backup = ${:backup}/logrotate
+logrotate-entries = ${:etc}/logrotate.d
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+backup = ${:srv}/backup
+etc = ${buildout:directory}/etc
+services = ${:etc}/service
+log = ${buildout:directory}/var/log

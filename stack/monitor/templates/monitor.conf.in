@@ -1,0 +1,19 @@
+[monitor]
+{% set monitor_url_list = parameter_dict.pop("monitor-url-list", "").strip() -%}
+{% for key, value in parameter_dict.items() -%}
+{{ key }} = {{ value.strip().replace("\n", "\n  ") }}
+{% endfor -%}
+
+monitor-url-list =
+{% if monitor_url_list -%}
+{{ '  ' ~ monitor_url_list.replace("\n", "\n  ") }}
+{% else -%}
+{% for key, value in monitor_base_urls.items() -%}
+{{ '  ' ~ value }}
+{% endfor -%}
+{% endif %}
+
+[promises]
+{% for key, value in promise_parameter_dict.items() -%}
+{{ key }} = {{ value.strip().replace("\n", "\n  ") }}
+{% endfor -%}

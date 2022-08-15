@@ -1,0 +1,211 @@
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set part_list = [] -%}
+{% set init_list = [] -%}
+
+{% set private_tmpfs = slapparameter_dict.get('private-tmpfs') -%}
+{% set storage_type = slapparameter_dict.get('storage-type') or (
+     'MySQL' if mariadb_location is defined else 'SQLite') -%}
+{% set mysql = storage_type == 'MySQL' -%}
+{% if mysql -%}
+
+[{{ section('mysqld') }}]
+{% if private_tmpfs -%}
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:etc_run}/mariadb
+private-tmpfs = {{ private_tmpfs }} ${my-cnf-parameters:tmp-directory}
+command-line = ${mariadb-ns:output}
+[mariadb-ns]
+output = ${directory:bin}/mariadb-ns
+{% else -%}
+output = ${directory:etc_run}/mariadb
+{% endif -%}
+recipe = slapos.recipe.template:jinja2
+url = {{ template_mysqld_wrapper }}
+context =
+  key defaults_file my-cnf:output
+  key datadir my-cnf-parameters:data-directory
+
+[my-cnf-parameters]
+socket = ${directory:var_run}/mariadb.sock
+{% if private_tmpfs -%}
+data-directory = ${:tmp-directory}/mariadb
+{% else -%}
+data-directory = ${directory:srv}/mariadb
+{% endif -%}
+tmp-directory = ${directory:tmp}
+pid-file = ${directory:var_run}/mariadb.pid
+error-log = ${directory:log}/mariadb_error.log
+slow-query-log = ${directory:log}/mariadb_slowquery.log
+extra-dict = {{ dumps(slapparameter_dict.get('mysql', {})) }}
+init-file = ${init-script:output}
+engine = {{ slapparameter_dict.get('engine', '') }}
+
+[my-cnf]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+output = ${directory:etc}/mariadb.cnf
+url = {{ template_neo_my_cnf }}
+context = section parameter_dict my-cnf-parameters
+
+[binary-wrap-mysql]
+recipe = slapos.cookbook:wrapper
+command-line = '{{ mariadb_location }}/bin/${:command}' --defaults-file="${my-cnf:output}"
+wrapper-path = ${directory:bin}/${:command}
+command = mysql
+
+{% endif -%}
+
+[{{ section('binary-neolog') }}]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = {{ bin_directory }}/neolog
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+# TODO: make port a partition parameter
+ip = {{ "[%s]" % list(ipv6_set)[0] if ipv6_set else list(ipv4_set)[0] }}
+{% set admin = slapparameter_dict.get('admin', 2050) -%}
+{% set master = slapparameter_dict.get('master', 2051) -%}
+{% if master -%}
+port-master = {{ master }}
+master = ${:ip}:${:port-master}
+{% else -%}
+master =
+{% endif -%}
+{% if admin -%}
+port-admin = {{ admin }}
+admin = ${:ip}:${:port-admin}
+{%-   if 'monitor-passwd' in slapparameter_dict %}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+{%-   endif %}
+{%- else %}
+admin =
+{%- endif %}
+
+{#- Hack to deploy SSL certs via instance parameters #}
+{%- for name, pem in zip(('ca.crt', 'neo.crt', 'neo.key'),
+                        slapparameter_dict['ssl']) %}
+{%-   if pem %}
+
+[{{ section(name) }}]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/{{name}}
+inline =
+  {{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(pem)}}
+{%-   endif %}
+{%- endfor %}
+{#- endhack #}
+
+[neo-storage]
+recipe = slapos.cookbook:neoppod.storage
+binary = {{ bin_directory }}/neostorage
+ip = ${publish:ip}
+ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
+cluster = {{ dumps(slapparameter_dict['cluster']) }}
+masters = {{ dumps(slapparameter_dict['masters']) }}
+database-adapter = {{ storage_type }}
+wait-database = -1
+{%- if mysql %}
+engine = ${my-cnf-parameters:engine}
+{%- endif %}
+dedup = {{ dumps(bool(slapparameter_dict.get('data-deduplication'))) }}
+disable-drop-partitions = {{ dumps(bool(slapparameter_dict.get('disable-drop-partitions'))) }}
+
+{% for i in range(slapparameter_dict.get('storage-count', 1)) -%}
+{%   set storage_id = 'neo-storage-' ~ i -%}
+[{{ section(storage_id) }}]
+< = neo-storage
+wrapper = ${directory:etc_run}/{{ 'neostorage-' ~ i }}
+logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
+{%- if mysql %}
+{%-   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') %}
+database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
+{%- elif private_tmpfs %}
+private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
+database-parameters = ${directory:tmp}/db.sqlite
+{%- else %}
+database-parameters = ${directory:db-{{i}}}/db.sqlite
+
+[directory]
+db-{{i}} = ${:srv}/{{ storage_id }}
+{%- endif %}
+
+[{{ section('logrotate-storage-' ~ i) }}]
+< = logrotate-entry-base
+name = {{ storage_id }}
+log = {{ '${' +  storage_id + ':logfile}' }}
+post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostorage -l ${:log}
+
+{% endfor -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+etc_run =  ${:etc}/run
+var_run =  ${:var}/run
+log = ${buildout:directory}/var/log
+tmp = ${buildout:directory}/tmp
+srv = ${buildout:directory}/srv
+
+{% if mysql -%}
+[init-script]
+recipe = slapos.recipe.template
+# XXX: is there a better location ?
+output = ${directory:etc}/mariadb_initial_setup.sql
+inline =
+  {{ init_list | join('\n\t') }}
+
+[{{ section('logrotate-mysql') }}]
+< = logrotate-entry-base
+name = mariadb
+log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
+post = ${binary-wrap-mysql:command-line} -e "FLUSH LOGS"
+
+{% if runTestSuite_in is defined -%}
+# bin/runTestSuite to run NEO tests
+[{{ section('runTestSuite') }}]
+{%- if private_tmpfs %}
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
+command-line = ${runTestSuite-ns:output}
+
+[runTestSuite-ns]
+{%- endif %}
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ runTestSuite_in }}
+context =
+    section directory         directory
+    section my_cnf_parameters my-cnf-parameters
+    raw     bin_directory     {{ bin_directory }}
+    raw     prepend_path      {{ mariadb_location }}/bin
+{%- if pypy_location is defined %}
+    raw     pypy_location     {{ pypy_location }}/bin/pypy
+{%- endif %}
+{%- if private_tmpfs %}
+    key     datadir           my-cnf-parameters:data-directory
+    key     results_directory directory:results
+
+[directory]
+results = ${directory:srv}/tests
+{%- endif %}
+{%- endif %}
+
+{%- endif %}
+
+[buildout]
+extends =
+  {{ logrotate_cfg }}
+{%- if admin %}
+  {{ admin_cfg }}
+{%- endif %}
+{%- if master %}
+  {{ master_cfg }}
+{%- endif %}
+parts +=
+  {{ '\n  '.join(part_list) }}

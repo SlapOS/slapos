@@ -1,0 +1,12 @@
+--- Python-3.5.3/Programs/python.c.orig	2017-01-17 08:57:53.000000000 +0100
++++ Python-3.5.3/Programs/python.c	2017-06-08 19:30:42.927077437 +0200
+@@ -24,6 +24,9 @@
+     int i, res;
+     char *oldloc;
+ 
++    if (!getenv("LC_CTYPE") && !getenv("LC_ALL"))
++        setenv("LANG", "C.UTF-8", 0);
++
+     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
+     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
+     if (!argv_copy || !argv_copy2) {

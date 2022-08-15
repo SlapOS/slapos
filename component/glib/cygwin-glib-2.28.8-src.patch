@@ -1,0 +1,11 @@
+--- glib/gstrfuncs.c~	2012-12-30 14:51:30.000000000 +0800
++++ glib/gstrfuncs.c	2012-12-30 14:51:50.203125000 +0800
+@@ -1423,7 +1423,7 @@
+ #ifdef HAVE_STRSIGNAL
+   const char *msg_locale;
+ 
+-#if defined(G_OS_BEOS) || defined(G_WITH_CYGWIN)
++#if defined(G_OS_BEOS) 
+ extern const char *strsignal(int);
+ #else
+   /* this is declared differently (const) in string.h on BeOS */

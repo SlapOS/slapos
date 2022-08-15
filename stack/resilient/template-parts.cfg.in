@@ -1,0 +1,22 @@
+## Parts Needed for the resiliency
+
+  {% macro replicate(namebase, nbbackup) %}
+
+  request-{{namebase}}
+  resilient-request-{{namebase}}-public-key-promise
+  
+  {% for id in range(1,nbbackup|int) %}
+  request-{{namebase}}-pseudo-replicating-{{id}}
+  resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise
+  {% endfor %}
+  
+  {% for id in range(1,nbbackup|int) %}
+  request-pbs-{{namebase}}-{{id}}
+  resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise
+  request-pull-backup-server-{{namebase}}-{{id}}
+  request-pull-backup-server-{{namebase}}-backup-{{id}}
+  {% endfor %}
+
+
+
+  {% endmacro %}

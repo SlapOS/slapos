@@ -1,0 +1,50 @@
+[buildout]
+parts =
+  log-writer
+  exporter.exclude
+  runner-import-restore
+  backup-identity-script
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = plone.recipe.command
+home = $${buildout:directory}
+srv = $${:home}/srv
+etc = $${:home}/etc
+run = $${:etc}/run
+command = mkdir -p $${:run} $${:srv}
+
+[log-writer]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  echo "Hello : $(date)" >> $${directory:home}/log.log
+output = $${directory:run}/log-writer
+
+[exporter.exclude]
+recipe = slapos.recipe.template
+inline = $${directory:home}/exclude
+output = $${directory:srv}/exporter.exclude
+
+[runner-import-restore]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  echo "Hello : $(date)" >> $${directory:home}/runner-import-restore.log
+  exit $TEST_RESTORE_STATUS
+output = $${directory:srv}/runner-import-restore
+
+[backup-identity-script]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  echo "Custom script"
+  for i in "$@"
+  do
+    echo $(sha256sum $i)
+  done
+  exit $TEST_BACKUP_STATUS
+output = $${directory:srv}/.backup_identity_script

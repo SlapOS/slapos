@@ -1,0 +1,2 @@
+# $${:_buildout_section_name_}
+$${:frequency} $${:script}

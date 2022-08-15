@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Slapos Software Release instantiation descriptor",
+  "additionalProperties": false,
+  "required": [
+    "software-type"
+  ],
+  "properties": {
+    "name": {
+      "description": "A short human-friendly name for the sofware release",
+      "default": "",
+      "type": "string"
+    },
+    "description": {
+      "description": "A short description of the sofware release",
+      "default": "",
+      "type": "string"
+    },
+    "serialisation": {
+      "description": "How the parameters and results are serialised",
+      "enum": [
+        "xml",
+        "json-in-xml"
+      ],
+      "type": "string"
+    },
+    "software-type": {
+      "description": "Existing software types",
+      "patternProperties": {
+        ".*": {
+          "description": "Software type declaration",
+          "additionalProperties": false,
+          "required": [
+            "request",
+            "response"
+          ],
+          "properties": {
+            "title": {
+              "description": "A human-friendly title of the software type",
+              "default": "",
+              "type": "string"
+            },
+            "description": {
+              "description": "A human-friendly description of the software type",
+              "default": "",
+              "type": "string"
+            },
+            "serialisation": {
+              "description": "How the parameters and results are serialised, if different from global setting, required if global setting is not provided",
+              "enum": [
+                "xml",
+                "json-in-xml"
+              ],
+              "type": "string"
+            },
+            "request": {
+              "description": "URL, relative to Software Release base path, of a json schema for values expected by instance of current software type",
+              "type": "string"
+            },
+            "response": {
+              "description": "URL, relative to Software Release base path, of a json schema for values published by instance of current software type",
+              "type": "string"
+            },
+            "software-type": {
+              "description": "Value to be used as software type instead of the software type id (in order to use multiple diferent forms for the same software type).",
+              "type": "string"
+            },
+            "shared": {
+              "description": "Define if the request will request a Slave or Software Instance.",
+              "default": "false",
+              "type": "boolean"
+            },
+            "index": {
+              "description": "Value to use instead of software type id to sort them (in order to display most relevant software types earlier in a list, for example)",
+              "default": 0,
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "type": "object"
+}

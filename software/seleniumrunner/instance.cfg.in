@@ -1,0 +1,8 @@
+[buildout]
+parts =
+# this sofware has no instance, it's only intended to make programs
+# available for erp5testnode from its software.
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true

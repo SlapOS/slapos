@@ -1,0 +1,20 @@
+[buildout]
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+extends = ${pbsready-import:output}
+
+[directory]
+srv = $${buildout:directory}/srv
+www = $${:srv}/www/
+
+# Nothing to do for the import. Just dummy part that does nothing.
+# For httpd instance, PBS will directly push data to srv/www.
+# XXX-Cedric: write a real backup system.
+[importer]
+wrapper = /bin/true
+
+# State that we want to push to srv/www directory, not srv/backup.
+[rdiff-backup-server]
+path = $${directory:www}

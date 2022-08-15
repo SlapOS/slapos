@@ -1,0 +1,38 @@
+#!/bin/bash
+
+run_mysql () {
+  {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
+  --protocol=socket -hlocalhost "$@"
+}
+
+if [ ! -f "{{ init_password_done }}" ]; then
+  for i in {30..0}; do
+    if echo 'SELECT 1' | run_mysql  &> /dev/null; then
+      break
+    fi
+    echo 'MySQL init process in progress...'
+    sleep 1
+  done
+  if [ "$i" = 0 ]; then
+    echo >&2 'MySQL init process failed.'
+    exit 1
+  fi
+  echo "Setting mariabdb root password...";
+  run_mysql  < {{ init_root_sql }} && touch {{ init_password_done }} || exit 1;
+  echo "remove unwanted users...";
+  run_mysql -e "DROP USER IF EXISTS 'root'@'$HOSTNAME';"
+  run_mysql -e "DROP USER IF EXISTS ''@'$HOSTNAME';"
+  echo "done"
+fi
+
+# Run mariadb_upgrade when replication is bootstrapped will break replication topology.
+# skip when already upgraded until we have a good solution.
+if [ ! -f "{{ upgrade_done }}" ]; then
+  {{ mysql_update }}
+  if [ $? -eq 0 ]; then
+    touch {{ upgrade_done }};
+  fi
+else
+  # only create databases now
+  run_mysql  < {{ init_database_sql }} || exit 1;
+fi

@@ -1,0 +1,106 @@
+{% set url = slave_parameter.get('url') -%}
+{% set https_url = slave_parameter.get('https-url', url) -%}
+{% if url.startswith("http://") or url.startswith("https://") -%}
+{%   set upstream = url.split("/")[2] -%}
+{%   set https_upstream = https_url.split("/")[2] -%}
+{%   set protocol = url.split("/")[0] -%}
+{%   set https_protocol = https_url.split("/")[0] -%}
+{%   set proxy_pass = '%s//%s' % (protocol, slave_parameter.get('slave_reference')) -%}
+{%   set https_proxy_pass = '%s//https_%s' % (protocol, slave_parameter.get('slave_reference')) -%}
+{%- set ssl_configuration_list = [('ssl_certificate', 'path_to_ssl_crt'),
+                                 ('ssl_certificate_key', 'path_to_ssl_key')] -%}
+
+
+upstream {{ slave_parameter.get('slave_reference') }} {
+  server {{ upstream }};
+}
+
+upstream https_{{ slave_parameter.get('slave_reference') }} {
+  server {{ https_upstream }};
+}
+
+
+server {
+  listen [{{ global_ipv6 }}]:{{ nginx_http_port }};
+  listen {{ local_ipv4 }}:{{ nginx_http_port }};
+
+  server_name {{ slave_parameter.get('custom_domain') }};
+
+  error_log {{ slave_parameter.get('error_log') }} error; 
+  access_log {{ slave_parameter.get('access_log') }} custom;
+
+  location / {
+        proxy_pass            {{ proxy_pass }};
+        proxy_set_header      Host $host;
+  }
+
+  location ~ /api/kernels/ {
+        proxy_pass            {{ proxy_pass }};
+        proxy_set_header      Host $host;
+        # websocket support
+        proxy_http_version    1.1;
+        proxy_set_header      Upgrade "websocket";
+        proxy_set_header      Connection "Upgrade";
+        proxy_read_timeout    86400;
+   }
+
+  location ~ /terminals/ {
+        proxy_pass            {{ proxy_pass }};
+        proxy_set_header      Host $host;
+        # websocket support
+        proxy_http_version    1.1;
+        proxy_set_header      Upgrade "websocket";
+        proxy_set_header      Connection "Upgrade";
+        proxy_read_timeout    86400;
+  }
+}
+
+server {
+  listen [{{ global_ipv6 }}]:{{ nginx_https_port }} ssl;
+  listen {{ local_ipv4 }}:{{ nginx_https_port }} ssl;
+
+  server_name {{ slave_parameter.get('custom_domain') }};
+
+  error_log {{ slave_parameter.get('error_log') }} error;
+  access_log {{ slave_parameter.get('access_log') }} custom;
+
+  ssl on;
+  
+  ssl_session_timeout 5m;
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  ssl_ciphers 'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5';
+  ssl_prefer_server_ciphers on;
+  ssl_session_cache shared:SSL:10m;
+
+{% for key, value in ssl_configuration_list -%}
+{%   if value in slave_parameter -%}
+{{ '  %s' % key }} {{ slave_parameter.get(value) }};
+{% endif -%}
+{% endfor %}
+
+  location / {
+        proxy_pass            {{ https_proxy_pass }};
+        proxy_set_header      Host $host;
+  }
+
+  location ~ /api/kernels/ {
+        proxy_pass            {{ https_proxy_pass }};
+        proxy_set_header      Host $host;
+        # websocket support
+        proxy_http_version    1.1;
+        proxy_set_header      Upgrade "websocket";
+        proxy_set_header      Connection "Upgrade";
+        proxy_read_timeout    86400;
+   }
+
+  location ~ /terminals/ {
+        proxy_pass            {{ https_proxy_pass }};
+        proxy_set_header      Host $host;
+        # websocket support
+        proxy_http_version    1.1;
+        proxy_set_header      Upgrade "websocket";
+        proxy_set_header      Connection "Upgrade";
+        proxy_read_timeout    86400;
+  }
+}
+{% endif -%}

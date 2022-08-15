@@ -1,0 +1,6 @@
+#! {{ param_html5as['path_shell'] }}
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+# Run graceful
+exec kill -s SIGHUP $(cat {{ param_html5as['path_pid'] }})

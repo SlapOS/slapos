@@ -1,0 +1,6 @@
+include CHANGES.rst
+recursive-include slapos/recipe *.in
+recursive-include slapos/recipe *.bin
+recursive-include slapos/recipe README.*.rst
+recursive-include slapos/recipe *.js
+recursive-include slapos/recipe *.zcml

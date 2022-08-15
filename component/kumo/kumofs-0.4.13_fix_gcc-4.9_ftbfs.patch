@@ -1,0 +1,31 @@
+--- kumofs-0.4.13/src/logic/gateway/mod_store.cc	2010-12-14 12:42:27.000000000 +0900
++++ kumofs-0.4.13/src/logic/gateway/mod_store.cc	2014-07-24 09:56:52.445251606 +0900
+@@ -262,19 +262,19 @@
+ #define GATEWAY_CATCH(NAME, response_type) \
+ catch (msgpack::type_error& e) { \
+ 	LOG_ERROR(#NAME " FAILED: type error"); \
+-	response_type res; \
+-	res.error = 1; \
+-	try { (*callback)(user, res, z); } catch (...) { } \
++	response_type r; \
++	r.error = 1; \
++	try { (*callback)(user, r, z); } catch (...) { } \
+ } catch (std::exception& e) { \
+ 	LOG_WARN(#NAME " FAILED: ",e.what()); \
+-	response_type res; \
+-	res.error = 1; \
+-	try { (*callback)(user, res, z); } catch (...) { } \
++	response_type r; \
++	r.error = 1; \
++	try { (*callback)(user, r, z); } catch (...) { } \
+ } catch (...) { \
+ 	LOG_WARN(#NAME " FAILED: unknown error"); \
+-	response_type res; \
+-	res.error = 1; \
+-	try { (*callback)(user, res, z); } catch (...) { } \
++	response_type r; \
++	r.error = 1; \
++	try { (*callback)(user, r, z); } catch (...) { } \
+ }
+ 
+ 

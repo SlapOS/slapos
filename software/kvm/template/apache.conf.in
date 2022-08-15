@@ -1,0 +1,63 @@
+ServerLimit 16
+StartServers 1
+MaxClients 7
+
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule autoindex_module modules/mod_autoindex.so
+
+Listen {{ ip }}:{{ port }}
+
+PidFile "{{ pid_file }}"
+ServerAdmin admin@
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+
+SSLEngine on  
+
+SSLCertificateFile {{ cert }}
+SSLCertificateKeyFile {{ key }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLProtocol all -SSLv2 -SSLv3
+SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+SSLHonorCipherOrder on
+SSLProxyEngine On
+
+DocumentRoot {{ document_root }}
+
+ErrorLog "{{ error_log }}"
+# Default apache log format with request time in microsecond at the end
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+CustomLog "{{ access_log }}" combined
+SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+
+# Directory protection
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Require all denied
+</Directory>
+
+<Directory {{ index_folder }}>
+  Options Indexes FollowSymLinks
+  # Require ip {{ ip }}
+  # Require env forwarded '{{ ip }}'
+  # Require all denied
+  AllowOverride None
+  Require all granted
+</Directory>

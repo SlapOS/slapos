@@ -1,0 +1,29 @@
+--- Makefile.orig	2014-12-29 15:39:57.433970435 +0100
++++ Makefile	2014-12-29 15:54:42.115248445 +0100
+@@ -1,9 +1,19 @@
+ include mkinc.mak
+-CFLAGS=-Iinclude
+-all: libstemmer.o stemwords
+-libstemmer.o: $(snowball_sources:.c=.o)
+-	$(AR) -cru $@ $^
+-stemwords: examples/stemwords.o libstemmer.o
+-	$(CC) -o $@ $^
++CFLAGS+=-Iinclude -fPIC
++DESTDIR=/usr/local
++all: libstemmer.so libstemmer.a stemwords
++libstemmer.so: $(snowball_sources:.c=.o)
++	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname,$@.0d -o $@.0d.0.0 $^
++	ln -s $@.0d.0.0 $@.0d
++	ln -s $@.0d.0.0 $@
++libstemmer.a: $(snowball_sources:.c=.o)
++	$(AR) -crs $@ $^
++stemwords: examples/stemwords.o libstemmer.so
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+ clean:
+-	rm -f stemwords *.o src_c/*.o runtime/*.o libstemmer/*.o
++	rm -f stemwords libstemmer.so* libstemmer.a *.o src_c/*.o runtime/*.o libstemmer/*.o
++install: all
++	mkdir -p $(DESTDIR)/include
++	mkdir -p $(DESTDIR)/lib
++	cp -a include/*.h $(DESTDIR)/include/
++	cp -a libstemmer.* $(DESTDIR)/lib/

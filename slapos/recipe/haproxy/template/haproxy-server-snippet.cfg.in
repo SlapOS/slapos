@@ -1,0 +1,1 @@
+  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxqueue 5 maxconn %(cluster_zope_thread_amount)s

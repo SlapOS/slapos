@@ -1,0 +1,226 @@
+
+{# This file configures haproxy to redirect requests from ports to specific urls.
+ # It provides TLS support for server and optionnaly for client.
+ #
+ # All parameters are given through the `parameter_dict` variable, see the
+ # list entries :
+ #
+ #     parameter_dict = {
+ #       #  Path of the PID file. HAProxy will write its own PID to this file
+ #       #  Sending USR2 signal to this pid will cause haproxy to reload
+ #       #  its configuration.
+ #       "pidfile": "<file_path>",
+ #
+ #       #  AF_UNIX socket for logs. Syslog must be listening on this socket.
+ #       "log-socket": "<file_path>",
+ #
+ #       #  AF_UNIX socket for statistics and control.
+ #       #  Haproxy will listen on this socket.
+ #       "stats-socket": "<file_path>",
+ #
+ #       #  IPv4 to listen on
+ #       #  All backends from `backend-dict` will listen on this IP.
+ #       "ipv4": "0.0.0.0",
+ #
+ #       #  IPv6 to listen on
+ #       #  All backends from `backend-dict` will listen on this IP.
+ #       "ipv6": "::1",
+ #
+ #       #  Certificate and key in PEM format. All ports will serve TLS using
+ #       #  this certificate.
+ #       "cert": "<file_path>",
+ #
+ #       #  CA to verify client certificates in PEM format.
+ #       #  If set, client certificates will be verified with these CAs.
+ #       #  If not set, client certificates are not verified.
+ #       "ca-cert": "<file_path>",
+ #
+ #       #  An optional CRL in PEM format (the file can contain multiple CRL)
+ #       #  This is required if ca-cert is passed.
+ #       "crl": "<file_path>",
+ #
+ #       #  Path to use for HTTP health check on backends from `backend-dict`.
+ #       "server-check-path": "/",
+ #
+ #       #  The mapping of backends, keyed by family name
+ #       "backend-dict": {
+ #          "family-secure": {
+ #            ( 8000, # port int
+ #              'https', # proto str
+ #               True, # ssl_required bool
+ #               None,  # timeout (in seconds) int | None
+ #               [  # backends
+ #                  '10.0.0.10:8001', # netloc str
+ #                   1, # max_connection_count int
+ #                   False, # is_web_dav bool
+ #               ],
+ #            ),
+ #          },
+ #          "family-default": {
+ #            ( 8002, # port int
+ #              'https', # proto str
+ #               False, # ssl_required bool
+ #               None,  # timeout (in seconds) int | None
+ #               [  # backends
+ #                  '10.0.0.10:8003', # netloc str
+ #                   1, # max_connection_count int
+ #                   False, # is_web_dav bool
+ #               ],
+ #            ),
+ #          },
+ #
+ #       # The mapping of zope paths.
+ #       # This is a Zope specific feature.
+ #       # `enable_authentication` has same meaning as for `backend-list`.
+ #       "zope-virtualhost-monster-backend-dict": {
+ #          # {(ip, port): ( enable_authentication, {frontend_path: ( internal_url ) }, ) }
+ #          ('[::1]', 8004): (
+ #            True, {
+ #              'zope-1': 'http://10.0.0.10:8001',
+ #              'zope-2': 'http://10.0.0.10:8002',
+ #            },
+ #          ),
+ #        },
+ #     }
+ #
+ #  This sample of `parameter_dict` will make haproxy listening to :
+ #  From to `backend-list`:
+ #  For "family-secure":
+ #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
+ #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
+ #  only accepting requests from clients providing a verified TLS certificate
+ #  emitted by a CA from `ca-cert` and not revoked in `crl`.
+ #  For "family-default":
+ #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
+ #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
+ #  accepting requests from any client.
+ #
+ #  For both families, X-Forwarded-For header will be stripped unless
+ #  client presents a certificate that can be verified with `ca-cert` and `crl`.
+ #
+ # From zope-virtualhost-monster-backend-dict`:
+ #   - [::1]:8004 with some path based rewrite-rules redirecting to:
+ #     * http://10.0.0.10/8001 when path matches /zope-1(.*)
+ #     * http://10.0.0.10/8002 when path matches /zope-2(.*)
+ #   with some VirtualHostMonster rewrite rules so zope writes URLs with
+ #  [::1]:8004 as server name.
+ #  For more details, refer to
+ #  https://docs.zope.org/zope2/zope2book/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
+-#}
+
+{% set server_check_path = parameter_dict['server-check-path'] -%}
+global
+  maxconn 4096
+  master-worker
+  pidfile {{ parameter_dict['pidfile'] }}
+
+  # SSL configuration was generated with mozilla SSL Configuration Generator
+  # generated 2020-10-28, Mozilla Guideline v5.6, HAProxy 2.1, OpenSSL 1.1.1g, modern configuration
+  # https://ssl-config.mozilla.org/#server=haproxy&version=2.1&config=modern&openssl=1.1.1g&guideline=5.6
+  ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+  ssl-default-bind-options prefer-client-ciphers no-sslv3 no-tlsv10 no-tlsv11 no-tlsv12 no-tls-tickets
+  ssl-default-server-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+  ssl-default-server-options no-sslv3 no-tlsv10 no-tlsv11 no-tlsv12 no-tls-tickets
+
+  stats socket {{ parameter_dict['stats-socket'] }} level admin
+
+
+defaults
+  mode http
+  retries 1
+  option redispatch
+  maxconn 2000
+  balance roundrobin
+
+  stats uri /haproxy
+  stats realm Global\ statistics
+
+  timeout connect 10s
+  timeout queue 60s
+  timeout client 305s
+
+  option http-server-close
+
+  # compress some content types
+  compression algo gzip
+  compression type application/font-woff application/font-woff2 application/hal+json application/javascript application/json application/rss+xml application/wasm application/x-font-opentype application/x-font-ttf application/x-javascript application/xml image/svg+xml text/cache-manifest text/css text/html text/javascript text/plain text/xml
+
+  log {{ parameter_dict['log-socket'] }} local0 info
+
+{% set bind_ssl_crt = 'ssl crt ' ~ parameter_dict['cert'] ~  ' alpn h2,http/1.1' %}
+{% set family_path_routing_dict = parameter_dict['family-path-routing-dict'] %}
+{% set path_routing_list = parameter_dict['path-routing-list'] %}
+
+{% for name, (port, _, certificate_authentication, timeout, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
+listen family_{{ name }}
+{%-  if parameter_dict.get('ca-cert') -%}
+{%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
+{%-  else %}
+{%-    set ssl_auth = '' %}
+{%-  endif %}
+  bind {{ parameter_dict['ipv4'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
+  bind {{ parameter_dict['ipv6'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
+  cookie SERVERID rewrite
+  http-request set-header X-Balancer-Current-Cookie SERVERID
+
+{% if timeout %}
+  {#
+    Apply a slightly longer timeout than the zope timeout so that clients can see the
+    TimeoutReachedError from zope, that is a bit more informative than the 504 error
+    page from haproxy.
+  #}
+  timeout server {{ timeout + 3 }}s
+{%-  endif %}
+
+  # remove X-Forwarded-For unless client presented a verified certificate
+  acl client_cert_verified ssl_c_used ssl_c_verify 0
+  http-request del-header X-Forwarded-For unless client_cert_verified
+  # set Remote-User if client presented a verified certificate
+  http-request del-header Remote-User
+  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if client_cert_verified
+
+  # logs
+  capture request header Referer len 512
+  capture request header User-Agent len 512
+  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta"
+
+{%   for outer_prefix, inner_prefix in family_path_routing_dict.get(name, []) + path_routing_list %}
+  {%   set outer_prefix = outer_prefix.strip('/') -%}
+  http-request replace-path ^(/+VirtualHostBase/+[^/]+/+[^/]+)/+VirtualHostRoot/+{% if outer_prefix %}{{ outer_prefix }}($|/.*){% else %}(.*){% endif %} \1/{{ inner_prefix.strip('/') }}/VirtualHostRoot/{% if outer_prefix %}_vh_{{ outer_prefix.replace('/', '/_vh_') }}{% endif %}\2
+{%  endfor %}
+
+{%   set has_webdav = [] -%}
+{%   for address, connection_count, webdav in backend_list -%}
+{%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
+{%     set server_name = name ~ '-' ~ loop.index0 %}
+  server {{ server_name }} {{ address }} cookie {{ server_name }} check inter 3s rise 1 fall 2 maxqueue 5 maxconn {{ connection_count }}
+{%-  endfor -%}
+{%-  if not has_webdav and server_check_path %}
+  option httpchk GET {{ server_check_path }}
+{%-   endif %}
+
+{% endfor %}
+
+
+{% for (ip, port), (_, backend_dict) in sorted(six.iteritems(parameter_dict['zope-virtualhost-monster-backend-dict'])) -%}
+{%   set group_name = 'testrunner_' ~ loop.index0 %}
+frontend frontend_{{ group_name }}
+  bind {{ ip }}:{{ port }} {{ bind_ssl_crt }}
+  timeout client 8h
+
+  # logs
+  capture request header Referer len 512
+  capture request header User-Agent len 512
+  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Tt"
+
+{%   for name in sorted(backend_dict.keys()) %}
+  use_backend backend_{{ group_name }}_{{ name }} if { path -m beg /{{ name }} }
+{%-   endfor %}
+
+{%   for name, url in sorted(backend_dict.items()) %}
+backend backend_{{ group_name }}_{{ name }}
+  http-request replace-path ^/{{ name }}(.*) /VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ name }}\1
+  timeout server 8h
+  server {{ name }} {{ urllib_parse.urlparse(url).netloc }}
+{%-  endfor %}
+{% endfor %}

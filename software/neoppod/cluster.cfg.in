@@ -1,0 +1,15 @@
+{% import "root_common" as common_macro with context %}
+
+{{ common_macro.request_neo(slapparameter_dict, 'neo', 'node-') }}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  neo-admins node-cluster:admins
+  neo-masters node-cluster:masters
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+-extends = publish-early
+
+{{ common_macro.common_section() }}

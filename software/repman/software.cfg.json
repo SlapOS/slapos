@@ -1,0 +1,24 @@
+{
+  "name": "Replication Manager",
+  "description": "Replication Manager",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "serialisation": "json-in-xml",
+      "description": "Replication Manager",
+      "request": "instance-repman-input-schema.json",
+      "response": "instance-repman-output-schema.json",
+      "index": 0
+    },
+    "default-slave": {
+      "title": "Replication Manager Database",
+      "description": "Replication Manager Database",
+      "software-type": "default",
+      "request": "instance-repman-slave-input-schema.json",
+      "response": "instance-repman-output-schema.json",
+      "shared": true,
+      "index": 1
+    }
+  }
+}

@@ -1,0 +1,21 @@
+[buildout]
+
+# Run a SQL script to populate DB at first run
+[tt-rss-init]
+recipe = slapos.cookbook:apachephpconfigure
+table_name = db.ttrss_users
+#constraint = `pn_id`>0
+lampconfigure = ${buildout:bin-directory}/lampconfigure
+htdocs = $${apache-php:htdocs}
+mysql-username = $${apache-php:mysql-username}
+mysql-password = $${apache-php:mysql-password}
+mysql-database = $${apache-php:mysql-database}
+mysql-host = $${apache-php:mysql-host}
+mysql-port = $${apache-php:mysql-port}
+configureinstall-location = $${basedirectory:scripts}/configureInstall
+sql-script = ${sql-script:location}/${sql-script:filename}
+
+# Give the correct information to apache recipe to put the hostname in the
+# tt-rss config file
+[apache-php]
+application-url = $${request-frontend:connection-site_url}

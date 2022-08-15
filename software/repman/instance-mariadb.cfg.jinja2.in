@@ -1,0 +1,406 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', True) -%}
+{% set port = slapparameter_dict['tcp-port'] %}
+{% set host = (ipv4_set | list)[0] -%}
+{% if use_ipv6 -%}
+{%   set ip = (ipv6_set | list)[0] -%}
+{%   set host = '[' ~ ip ~ ']' -%}
+{% else -%}
+{%   set ip = (ipv4_set | list)[0] -%}
+{% endif -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
+{% set database_list = slapparameter_dict['database-list'] -%}
+
+# XXX- TODO: add cron with check db need restart then restart
+# API check restard needed: http://repman/api/clusters/{clusterName}/servers/{serverName}/{serverPort}/need-restart
+
+[{{ section('publish') }}]
+recipe = slapos.cookbook:publish.serialised
+database-host = {{ host }}:{{ port }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+partition-path = ${buildout:directory}
+receiver-port = ${dbjob-parameter:socat-port}
+csr-id = ${caucase-csr-id:csr-id}
+
+[jinja2-template-script-base]
+recipe = slapos.recipe.template:jinja2
+context =
+  key tmp_dir            directory:tmp
+  key partition_dir      buildout:directory
+  raw username           {{ slapparameter_dict['repman-user'] }}
+  raw password           {{ slapparameter_dict['repman-passwd'] }}
+  raw cluster_name       {{ slapparameter_dict['cluster'] }}
+  raw secure_url         {{ slapparameter_dict['repman-secure-url'] }}
+  raw mysql_conf         ${directory:etc}/mysql/my.cnf
+  raw dash_bin           {{ dash }}
+  raw jq_bin             {{ jq_bin }}
+  raw curl_bin           {{ curl_bin }}
+  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+  ${:extra-context}
+
+[simplefile]
+recipe = slapos.recipe.template:jinja2
+inline =
+  {{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+output = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+{% import "caucase" as caucase with context %}
+{{ caucase.updater(
+     prefix='caucase-updater',
+     buildout_bin_directory=buildout_bin_directory,
+     updater_path='${directory:services}/caucase-updater',
+     url=slapparameter_dict['caucase-url'],
+     data_dir='${mysql-directory:ssl}',
+     crt_path='${mysql-directory:ssl}/server-cert.pem',
+     ca_path='${mysql-directory:ssl}/ca-cert.pem',
+     crl_path='${mysql-directory:ssl}/crl.pem',
+     key_path='${mysql-directory:ssl}/server-key.pem',
+     on_renew=None,
+     max_sleep=None,
+     template_csr_pem=None,
+     openssl=openssl_bin,
+)}}
+{% do part_list.append('caucase-updater') -%}
+{% do part_list.append('caucase-updater-promise') -%}
+
+[get-csr-id]
+recipe = plone.recipe.command
+output = ${directory:tmp}/csr_id
+command =
+  if [ -s "${mysql-directory:ssl}/server-cert.pem" ]; then
+    RESULT="None";
+  else
+    if [ -f "${caucase-updater-csr:csr}" ]; then
+      RESULT=$({{ caucase_bin_client }} --ca-url {{ slapparameter_dict['caucase-url'] }} --send-csr ${caucase-updater-csr:csr} | cut -d ' ' -f1)
+      if [ ! $? -eq 0 ]; then
+        RESULT="None";
+      fi
+    fi
+  fi
+  cat <<EOF > ${:output}
+  [caucase]
+  csr-id = $(echo $RESULT)
+  EOF
+update-command = ${:command}
+
+[caucase-csr-id]
+recipe = slapos.cookbook:zero-knowledge.read
+file-path = ${get-csr-id:output}
+csr-id =
+
+[my-cnf-parameters]
+socket = ${directory:run}/mariadb.sock
+ip = {{ ip }}
+data-directory = ${mysql-directory:data}
+pid-file = ${directory:run}/mariadb.pid
+plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
+groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
+innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
+innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
+innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
+innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 0)) }}
+innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
+relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
+
+[my-cnf]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/mariadb.cnf
+url = {{ parameter_dict['template-my-cnf'] }}
+context = section parameter_dict my-cnf-parameters
+
+[init-root-sql]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/.init-root.sql
+url = {{ parameter_dict['template-mariadb-init-root'] }}
+context = section parameter_dict init-script-parameters
+
+[init-script-parameters]
+password = {{ slapparameter_dict['root-password'] }}
+database-list = {{ dumps(database_list) }}
+mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
+root-user = repman
+heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
+require-ssl = {{ dumps(slapparameter_dict['require-ssl']) }}
+
+[init-script]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+# XXX: is there a better location ?
+output = ${directory:etc}/mariadb_initial_setup.sql
+url = {{ parameter_dict['template-mariadb-initial-setup'] }}
+context = section parameter_dict init-script-parameters
+
+[update-mysql]
+recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
+output = ${directory:bin}/mariadb_update
+binary = ${binary-wrap-mysql_upgrade:wrapper-path}
+mysql = ${binary-wrap-mysql:wrapper-path}
+init-script = ${init-script:output}
+mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
+
+[{{ section('update-mysql-script') }}]
+< = jinja2-template-script-base
+output = ${directory:scripts}/mariadb_update
+init-password = ${directory:etc}/.init-passwd.done
+upgrade-done = ${directory:lib}/mariadb-update-done
+extra-context =
+  key init_password_done :init-password
+  key upgrade_done       :upgrade-done
+  key init_root_sql      init-root-sql:output
+  key mysql_update       update-mysql:output
+  key init_database_sql  init-script:output
+url = {{ parameter_dict['template-init-root-wrapper'] }}
+
+[{{ section('mysql-slave-db-cleanup') }}]
+< = jinja2-template-script-base
+output = ${directory:scripts}/manage-slave-db
+db-name = {{ dumps(slapparameter_dict['database-name']) }}
+extra-context =
+  key database_name_list      :db-name
+url = {{ parameter_dict['template-manage-db'] }}
+
+[mysqld]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/mysqld
+url = {{ parameter_dict['template-mysqld-wrapper'] }}
+context =
+  key defaults_file install-mysql-config:config
+  key datadir my-cnf-parameters:data-directory
+  key environ :environ
+environ =
+  GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
+  ODBCSYSINI='${directory:etc}'
+  LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
+  {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
+  {{ variable }}
+  {%- endfor %}
+
+[mysqld-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = ${mysqld:output}
+wrapper-path = ${directory:controller}/mariadb
+wait-for-files =
+  ${mysql-directory:mysql}/my.cnf
+  ${mysql-directory:ssl}/server-cert.pem
+
+{% import "supervisord_lib" as supervisord_lib with context %}
+{{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+{% do part_list.append("supervisord-mariadb-ctl") -%}
+{% set maradb_program_dict = {"name": "mariadb", "command": "${mysqld-launcher:wrapper-path}",
+  "stopwaitsecs": 86400, "startretries": 10, "autorestart": False, "environment": [],
+  "stdout_logfile": "${directory:log}/mariadb_stdout.log",
+  "stderr_logfile": "${directory:log}/mariadb_stdout.log" } %}
+
+{{ supervisord_lib.supervisord_program("mariadb", maradb_program_dict) }}
+{% do part_list.append("supervisord-mariadb") %}
+
+[{{ section('odbc-ini') }}]
+recipe = slapos.recipe.template
+output = ${directory:etc}/odbc.ini
+inline = {{ dumps(slapparameter_dict.get('odbc-ini', '')) }}
+
+[{{ section('logrotate-entry-mariadb') }}]
+< = logrotate-entry-base
+name = mariadb
+log = ${dbjob-parameter:log-dir}/errors.log ${dbjob-parameter:log-dir}/sql-errors
+post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
+
+[{{ section('binary-link') }}]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = {{ dumps(parameter_dict['link-binary']) }}
+
+[binary-wrap-base]
+# Note: --defaults-file must be the first argument, otherwise wrapped binary
+# will reject it.
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:command}
+inline =
+  #!/bin/sh
+  exec {{ parameter_dict['mariadb-location'] }}/bin/${:command} \
+  --defaults-file="${directory:etc}/mysql/my.cnf" \
+    --protocol=socket \
+  ${:extra-args} "$@"
+wrapper-path = ${:output}
+extra-args =
+
+[binary-wrap-mysql]
+<= binary-wrap-base
+command = mysql
+
+[binary-wrap-mysqldump]
+<= binary-wrap-base
+command = mysqldump
+
+[binary-wrap-mysql_upgrade]
+<= binary-wrap-base
+command = mysql_upgrade
+extra-args = --skip-write-binlog
+
+[binary-wrap-mysqladmin]
+<= binary-wrap-base
+command = mysqladmin
+
+[binary-wrap-mysql_tzinfo_to_sql]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --skip-write-binlog
+command = mysql_tzinfo_to_sql
+inline =
+  #!/bin/sh
+  exec {{ parameter_dict['mariadb-location'] }}/bin/${:command} \
+  --defaults-file="${directory:etc}/mysql/my.cnf" \
+  --skip-write-binlog "$@"
+
+[binary-wrap-pt-digest]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
+command = pt-query-digest
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+scripts = ${:etc}/run
+services = ${:etc}/service
+controller = ${:etc}/controller
+plugin = ${:etc}/plugin
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+backup = ${:srv}/backup
+var = ${buildout:directory}/var
+lib = ${:var}/lib
+log = ${:var}/log
+run = ${:var}/run
+config-tmp = ${:tmp}/config
+
+[mysql-directory]
+recipe = slapos.cookbook:mkdirectory
+mysql = ${directory:etc}/mysql
+ssl = ${:mysql}/ssl
+data = ${directory:lib}/mysql
+custom = ${:mysql}/custom.d
+
+[dbjob-parameter]
+bash-bin = {{ bash_bin }}
+db-user = ${init-script-parameters:root-user}
+db-password = ${init-script-parameters:password}
+mysql-dir = ${mysql-directory:data}
+dbjob-cnf = ${mysql-directory:mysql}/dbjob.cnf
+log-dir = ${mysql-directory:data}/.system/logs
+tmp-dir = ${directory:tmp}
+mysqld-socket  = ${my-cnf-parameters:socket}
+mysql-client = ${binary-wrap-mysql:wrapper-path}
+socat-port = {{ int(port) + 9 }}
+restart-script = ${mysqld-restart-script:output}
+socat-location = {{ parameter_dict['socat-location'] }}
+mysql-location = {{ parameter_dict['mariadb-location'] }}
+gzip-location = {{ parameter_dict['gzip-location'] }}
+ip = {{ ip }}
+host = {{ host }}
+port = {{ port }}
+use-ipv6 = {{ dumps(use_ipv6) }}
+
+[dbjobs-executable]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/dbjobs
+context =
+  section parameter_dict dbjob-parameter
+url = {{ parameter_dict['dbjobs-template'] }}
+
+[{{ section('dbjobs-cron-entry') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = dbjobs
+frequency = * * * * *
+command = ${dbjobs-executable:output}
+
+[mysqld-restart-script]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/mysqld_restart
+inline =
+  #!/bin/sh
+  # This script is disabled on SlapOS
+  echo "RESTART FROM dbjbos WAS DISABLED"
+
+[{{ section('mariadb-need-start') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariadb-need-start
+frequency = * * * * *
+command = ${template-mysqld-need-start:output}
+
+[template-mysqld-need-start]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/mysqld_need_start
+url = {{ parameter_dict['template-mysqld-need-start'] }}
+context =
+  key mariadb_controller mariadb-ctl-bin:wrapper-path
+  key update_config      mysql-get-config:output
+  raw username           {{ slapparameter_dict['repman-user'] }}
+  raw repman_url         {{ slapparameter_dict['repman-url'] }}
+  raw jq_bin             {{ jq_bin }}
+  raw cluster            {{ slapparameter_dict['cluster'] }}
+  raw db_host            {{ host }}
+  raw db_port            {{ port }}
+  raw bash_bin           {{ bash_bin }}
+  raw curl_bin           {{ curl_bin }}
+
+# Donwnload mariadb configuration from repman
+[mysql-get-config]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/mysqld-update-config
+cluster = {{ slapparameter_dict['cluster'] }}
+inline =
+  #!{{ bash_bin }}
+  cd ${directory:config-tmp} &&
+  {{ curl_bin }} -o config.tar.gz {{ slapparameter_dict['repman-url'] }}/api/clusters/${:cluster}/servers/{{ host }}/{{ port }}/config
+  tar -xzf config.tar.gz
+  rm -r etc/mysql/ssl  # we don't need generated ssl files
+  cp -r data/.system ${mysql-directory:data}
+  cp -r etc/mysql/* ${mysql-directory:mysql}
+  ln -sf ${mysql-directory:data}/.system ${directory:var}/system
+  ln -sf ${my-cnf:output} ${mysql-directory:custom}/01_mariadb.cnf
+
+[{{ section('install-mysql-config') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+config = ${directory:etc}/mysql/my.cnf
+command = ${mysql-get-config:output}
+update-command = ${:command}
+
+[{{ section('promise-check-computer-memory') }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = check-computer-memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+
+[{{ section('promise') }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = mariadb.py
+config-command = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "{{ ip }}" "{{ port }}"
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ port + 1 }}
+monitor-title = {{ slapparameter_dict['name'] }}
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
+[buildout]
+extends =
+  {{ template_monitor }}
+parts +=
+  {{ part_list | join('\n  ') }}

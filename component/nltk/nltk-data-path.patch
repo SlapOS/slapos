@@ -1,0 +1,13 @@
+diff -ur nltk-3.2.orig/nltk/data.py nltk-3.2/nltk/data.py
+--- nltk-3.2.orig/nltk/data.py	2016-03-02 22:56:32.000000000 +0100
++++ nltk-3.2/nltk/data.py	2016-03-13 18:00:32.192142493 +0100
+@@ -77,6 +77,9 @@
+ if 'APPENGINE_RUNTIME' not in os.environ and os.path.expanduser('~/') != '~/':
+     path.append(os.path.expanduser(str('~/nltk_data')))
+ 
++path += [os.path.join(os.path.dirname(os.path.abspath(__file__)),
++                      '..', '..', '..', 'parts', 'nltk-data')]
++
+ if sys.platform.startswith('win'):
+     # Common locations on Windows:
+     path += [

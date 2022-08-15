@@ -1,0 +1,130 @@
+#############################
+#
+# Deploy html5as instance
+#
+#############################
+[buildout]
+parts =
+    nginx_conf
+    downloader
+    mime_types
+    launcher
+    publish-connection-information
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+# Always the same.
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+# partition tree
+# /
+# |- etc/
+# |    |- nginx.conf
+# |    |- run/
+# |         |- html5as (binary)
+# |- var/
+# |    |- run/
+# |    |    |- nginx.pid
+# |    |- log/
+# |    |    |- nginx.log
+# |    |    |- nginx.access.log
+# |- srv/
+# |    |- html5as/ (doc root)
+# |    |        |- index.html
+# |    |- backup/
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+# Executables put here will be started but not monitored (for startup scripts)
+script = ${directory:etc}/run
+# Executables put here will be started and monitored (for daemons)
+service = ${directory:etc}/service
+log = ${directory:var}/log
+run = ${directory:var}/run
+backup = ${directory:srv}/backup
+data = ${directory:srv}/html5as
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${directory:home}/tmp
+client_body_temp_path = ${:tmp}/client_body_temp_path
+proxy_temp_path = ${:tmp}/proxy_temp_path
+fastcgi_temp_path = ${:tmp}/fastcgi_temp_path
+uwsgi_temp_path = ${:tmp}/uwsgi_temp_path
+scgi_temp_path = ${:tmp}/scgi_temp_path
+
+# List of options for html5as configuration
+# It will run a simple nginx serving the content of srv/html5as
+[html5as]
+# Options
+nb_workers = 2
+
+# Network
+ip = {{ partition_ipv6 }}
+port = 8081
+access_url = http://[${:ip}]:${:port}
+
+# Paths
+# Log
+path_pid = ${basedirectory:run}/nginx.pid
+path_log = ${basedirectory:log}/nginx.log
+path_access_log = ${basedirectory:log}/nginx.access.log
+path_error_log = ${basedirectory:log}/nginx.error.log
+path_tmp = ${tempdirectory:tmp}
+# Docroot
+docroot = ${basedirectory:data}
+default_index = ${basedirectory:data}/index.html
+# Config files
+path_nginx_conf = ${directory:etc}/nginx.conf
+path_mime_types = ${directory:etc}/mime_types
+# Binaries
+path_shell = {{ parameter_list['dash_location'] }}/bin/dash
+
+# Executables
+bin_launcher = ${basedirectory:script}/launcher
+
+# Utils
+path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
+
+# Render nginx conf
+[nginx_conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['template_nginx_conf'] }}
+output = ${html5as:path_nginx_conf}
+context =
+    section param_html5as html5as
+    section param_tempdir tempdirectory
+
+# Render necessary mime types file for nginx
+[mime_types]
+recipe = slapos.recipe.template
+url = {{ parameter_list['template_mime_types'] }}
+output = ${html5as:path_mime_types}
+
+# Render the script launching nginx
+[launcher]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['template_launcher'] }}
+output = ${html5as:bin_launcher}
+context =
+    section param_html5as html5as
+
+# Simple command to put content in the docroot
+[downloader]
+recipe = plone.recipe.command
+command = rm -r ${html5as:docroot}/*; echo "Hello World!" >  ${html5as:docroot}/index.html
+
+# Publish nginx address
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+server_url = ${html5as:access_url}

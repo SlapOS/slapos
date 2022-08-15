@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "extends": "./schema-definitions.json#",
+  "title": "Input Parameters",
+  "properties": {
+    "base-port": {
+      "title": "Base TCP port",
+      "description": "If 80, caucase will also listen on 443. Otherwise, caucase will listen on port and port + 1.",
+      "type": "integer",
+      "default": 8009
+    },
+    "external-url": {
+      "$comment": "(deprecated)"
+    },
+    "service-auto-approve-amount": {
+      "title": "Number of service certificate requests to automatically approve",
+      "description": "Once that number has been reached, a user must validate further requests. Renewals do not count toward this number. Cannot be changed once set.",
+      "type": "integer",
+      "default": 0
+    },
+    "user-auto-approve-amount": {
+      "title": "Number of user certificate requests to automatically approve",
+      "description": "Once that number has been reached, a user must validate further requests. Renewals do not count toward this number. Cannot be changed once set.",
+      "type": "integer",
+      "default": 1
+    },
+    "key-length": {
+      "title": "Key length",
+      "description": "Size, in bits, of the SSL key generated to authenticate users.",
+      "default": 2048,
+      "type": "integer"
+    }
+  }
+}

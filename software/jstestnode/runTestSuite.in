@@ -1,0 +1,214 @@
+#!${buildout:directory}/bin/${eggs:interpreter}
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+"""
+  Script to run jIO/renderJS test suite using Nexedi's test node framework.
+"""
+import argparse, os, re, shutil, subprocess, sys, traceback
+from erp5.util import taskdistribution
+from time import gmtime, strftime
+from lxml import etree
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.remote.remote_connection import RemoteConnection
+from subprocess import check_output
+import urllib3
+import certifi
+import json
+
+os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
+os.environ['DISPLAY'] = '$${xvfb-instance:display}'
+os.environ['FONTCONFIG_FILE'] = '$${fontconfig-conf:output}'
+
+BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
+ETC_DIRECTORY = '$${directory:etc}'
+
+def main():
+  parsed_parameters = json.load(
+      open('$${runTestSuite-config-file:output}', 'rb'))
+  test_runner = parsed_parameters.get('test-runner', {})
+
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name',
+                      default=parsed_parameters.get('test-suite', ''),
+                      required=not parsed_parameters.has_key('test-suite'))
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', help='ignored', type=int)
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+  parser.add_argument('--frontend_url',
+                      help='The url of frontend of the test suite')
+
+  args = parser.parse_args()
+
+  is_browser_running = False
+  try:
+    test_suite_title = args.test_suite_title or args.test_suite
+    test_suite = args.test_suite
+    revision = args.revision
+
+    test_line_dict = {}
+
+    if ('jio' in test_suite):
+      url = BASE_URL + 'jio/test/tests.html'
+    else:
+      url = BASE_URL + 'renderjs/test/'
+
+    date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
+
+
+    ##########################
+    # Run all tests
+    ##########################
+    target = test_runner.get('target', 'firefox')
+    if target == 'node':
+      # Execute NodeJS tests
+      result_string = check_output(['${nodejs:location}/bin/node', '${jio-repository.git:location}/test/node.js'],
+                                   cwd='${jio-repository.git:location}',
+                                   env={'CI': 'true'})
+      result_dict = json.loads(result_string)
+      for result in result_dict['tests']:
+        test_line_dict['%s: %s' % (result['module'], result['name'])] = {
+          'test_count': int(result['total']),
+          'error_count': 0,
+          'failure_count': int(result['failed']),
+          'skip_count': 0,
+          'duration': int(result['duration']),
+          'command': '',
+          'stdout': result['source'],
+          'stderr': '',
+          'html_test_result': json.dumps(result['assertions'])
+        }
+
+    else:
+      # Execute WebBrowser tests
+      if target == 'firefox':
+        firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
+        firefox_capabilities['marionette'] = True
+        browser = webdriver.Firefox(
+            capabilities=firefox_capabilities,
+            firefox_binary='${firefox-wrapper-68:location}',
+            executable_path='${geckodriver:location}')
+      else:
+        assert target == 'selenium-server', "Unsupported target {}".format(test_runner['target'])
+        # use a remote connection which optionally verifies TLS certificate
+        # and optionally against a user provided CA.
+        executor = RemoteConnection(test_runner['server-url'], keep_alive=True)
+        cert_reqs = 'CERT_REQUIRED'
+        ca_certs = certifi.where()
+        if not test_runner.get('verify-server-certificate', True):
+          cert_reqs = 'CERT_NONE'
+          ca_certs = None
+        if test_runner.get('server-ca-certificate'):
+          ca_certs = os.path.join(ETC_DIRECTORY, "cacerts.pem")
+          with open(ca_certs, 'w') as f:
+            f.write(test_runner.get('server-ca-certificate'))
+        executor._conn = urllib3.PoolManager(cert_reqs=cert_reqs, ca_certs=ca_certs)
+
+        browser = webdriver.Remote(
+            command_executor=executor,
+            desired_capabilities=test_runner['desired-capabilities'],
+        )
+
+      # adjust path for remote test url
+      remote_access_url = parsed_parameters.get('remote-access-url')
+      if remote_access_url:
+        if ('jio' in test_suite):
+          url = '{}/jio/test/tests.html'.format(remote_access_url)
+        else:
+          url = '{}/renderjs/test/'.format(remote_access_url)
+
+      is_browser_running = True
+      agent = browser.execute_script("return navigator.userAgent")
+      print agent
+      print url
+
+      browser.get(url)
+      WebDriverWait(browser, 300).until(EC.presence_of_element_located((
+        By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
+      ))
+
+      html_parser = etree.HTMLParser(recover=True)
+      body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
+
+      print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
+
+      for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
+        if (len(elt.xpath('.//span[@class="module-name"]'))):
+          test_name = '%s: %s' % (
+            elt.xpath('.//span[@class="module-name"]')[0].text,
+            elt.xpath('.//span[@class="test-name"]')[0].text
+          )
+        #global failure, like Uncaught ReferenceError: RSVP is not defined
+        else:
+          test_name = elt.xpath('.//span[@class="test-name"]')[0].text
+
+        print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
+        # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+
+        failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
+        success = int(elt.xpath('.//b[@class="passed"]')[0].text)
+        test_line_dict[test_name] = {
+          'test_count': success + failure,
+          'error_count': 0,
+          'failure_count': failure,
+          'skip_count': 0,
+          'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
+          'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
+          'stdout': agent,
+          'stderr': '',
+          'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
+        }
+
+      # do quit browser asap as we have results. this is required in case of timeout of
+      # remote appium service which will close test session of no command received within
+      # usually 90s and thus fail this script. And it costs processing time as well
+      # to keep test session needlessly opened.
+      browser.quit()
+      is_browser_running = False
+
+    # Send results
+    tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
+    test_result = tool.createTestResult(revision = revision,
+                                        test_name_list = test_line_dict.keys(),
+                                        node_title = args.test_node_title,
+                                        test_title = test_suite_title,
+                                        project_title = args.project_title)
+    if test_result is None or not hasattr(args, 'master_url'):
+      return
+    # report test results
+    while 1:
+      test_result_line = test_result.start()
+      if not test_result_line:
+        print 'No test result anymore.'
+        break
+
+      print 'Submitting: "%s"' % test_result_line.name
+      # report status back to Nexedi ERP5
+      test_result_line.stop(**test_line_dict[test_result_line.name])
+
+  except:
+    # Catch any exception here, to warn user instead of being silent,
+    # by generating fake error result
+    print traceback.format_exc()
+    result = dict(status_code=-1,
+                  command=url,
+                  stderr=traceback.format_exc(),
+                  stdout='')
+    # XXX: inform test node master of error
+    raise EnvironmentError(result)
+
+  finally:
+    if is_browser_running:
+      # if by any chance browser is still running due to
+      # traceback raised make sure we cleanup
+      browser.quit()
+
+if __name__ == "__main__":
+    main()

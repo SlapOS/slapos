@@ -1,0 +1,19 @@
+{{ log }} {
+  {{ frequency }}
+  dateext
+  rotate {{ rotate_num }}
+  {% if nocompress %}nocompress
+  {% else %}compress
+  {% if delaycompress %}delaycompress{% endif %}{% endif %}
+  notifempty
+  sharedscripts
+  create
+  olddir {{ backup }}
+  missingok
+  {% if pre %}prerotate
+    {{ pre }}
+  endscript{% endif %}
+  {% if post %}postrotate
+    {{ post }}
+  endscript{% endif %}
+}

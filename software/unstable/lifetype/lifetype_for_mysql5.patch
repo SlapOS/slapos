@@ -1,0 +1,227 @@
+*** lifetype/install/dbschemas.properties.php	2006-12-25 14:30:00.000000000 +0000
+--- lifetype_formysql5/install/dbschemas.properties.php	2012-04-04 16:36:54.000000000 +0000
+***************
+*** 2,9 ****
+  
+  $Tables["articles"]["schema"] = "
+    id I(10) UNSIGNED NOTNULL AUTOINCREMENT PRIMARY,
+!   date T(14) NOTNULL,
+!   modification_date T(14) NOTNULL,
+    user_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+    status I(5) NOTNULL DEFAULT 1,
+--- 2,9 ----
+  
+  $Tables["articles"]["schema"] = "
+    id I(10) UNSIGNED NOTNULL AUTOINCREMENT PRIMARY,
+!   date T(6) NOTNULL,
+!   modification_date T(6) NOTNULL,
+    user_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+    status I(5) NOTNULL DEFAULT 1,
+***************
+*** 30,36 ****
+    name C(255) NOTNULL DEFAULT '',
+    url C(255) NOTNULL DEFAULT '',
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+!   last_modification T(14) NOTNULL,
+    in_main_page I1(1) NOTNULL DEFAULT '1',
+    parent_id I(10) NOTNULL DEFAULT '0',
+    description TEXT NOTNULL DEFAULT '',
+--- 30,36 ----
+    name C(255) NOTNULL DEFAULT '',
+    url C(255) NOTNULL DEFAULT '',
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+!   last_modification T(6) NOTNULL,
+    in_main_page I1(1) NOTNULL DEFAULT '1',
+    parent_id I(10) NOTNULL DEFAULT '0',
+    description TEXT NOTNULL DEFAULT '',
+***************
+*** 51,57 ****
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT 0,
+    topic TEXT NOTNULL,
+    text X,
+!   date T(14) NOTNULL,
+    user_id I(10) DEFAULT '0',
+    user_email C(255) DEFAULT '',
+    user_url C(255) DEFAULT '',
+--- 51,57 ----
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT 0,
+    topic TEXT NOTNULL,
+    text X,
+!   date T(6) NOTNULL,
+    user_id I(10) DEFAULT '0',
+    user_email C(255) DEFAULT '',
+    user_url C(255) DEFAULT '',
+***************
+*** 96,103 ****
+    mangled_blog varchar(50) NOTNULL DEFAULT '',
+    status I(4) NOTNULL DEFAULT '1',
+    show_in_summary I(4) NOTNULL DEFAULT '1',
+!   create_date T(14) NOTNULL,
+!   last_update_date T(14) NOTNULL,
+    num_posts I(10) NOTNULL DEFAULT '0',
+    num_comments I(10) NOTNULL DEFAULT '0',
+    num_trackbacks I(10) NOTNULL DEFAULT '0',
+--- 96,103 ----
+    mangled_blog varchar(50) NOTNULL DEFAULT '',
+    status I(4) NOTNULL DEFAULT '1',
+    show_in_summary I(4) NOTNULL DEFAULT '1',
+!   create_date T(6) NOTNULL,
+!   last_update_date T(6) NOTNULL,
+    num_posts I(10) NOTNULL DEFAULT '0',
+    num_comments I(10) NOTNULL DEFAULT '0',
+    num_trackbacks I(10) NOTNULL DEFAULT '0',
+***************
+*** 118,124 ****
+    description TEXT NOTNULL,
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+    rss_feed C(255) NOTNULL DEFAULT '',
+!   date T(14) NOTNULL,
+    properties TEXT NOTNULL DEFAULT '',
+    INDEX blog_id (blog_id),
+    INDEX category_id (category_id)
+--- 118,124 ----
+    description TEXT NOTNULL,
+    blog_id I(10) UNSIGNED NOTNULL DEFAULT '0',
+    rss_feed C(255) NOTNULL DEFAULT '',
+!   date T(6) NOTNULL,
+    properties TEXT NOTNULL DEFAULT '',
+    INDEX blog_id (blog_id),
+    INDEX category_id (category_id)
+***************
+*** 129,135 ****
+    id I(10) NOTNULL AUTOINCREMENT PRIMARY,
+    name varchar(100) NOTNULL DEFAULT '',
+    blog_id I(10) NOTNULL DEFAULT '0',
+!   last_modification T(14) NOTNULL,
+    properties TEXT NOTNULL DEFAULT '',
+    num_links I(10) NOTNULL DEFAULT '0',
+    INDEX blog_id (blog_id)
+--- 129,135 ----
+    id I(10) NOTNULL AUTOINCREMENT PRIMARY,
+    name varchar(100) NOTNULL DEFAULT '',
+    blog_id I(10) NOTNULL DEFAULT '0',
+!   last_modification T(6) NOTNULL,
+    properties TEXT NOTNULL DEFAULT '',
+    num_links I(10) NOTNULL DEFAULT '0',
+    INDEX blog_id (blog_id)
+***************
+*** 151,157 ****
+    article_id I(10) NOTNULL DEFAULT '0',
+    blog_id I(10) NOTNULL DEFAULT '0',
+    hits I(10) DEFAULT '1',
+!   last_date T(14),
+    INDEX article_id (article_id),
+    INDEX blog_id_article_id (blog_id, article_id)
+  ";
+--- 151,157 ----
+    article_id I(10) NOTNULL DEFAULT '0',
+    blog_id I(10) NOTNULL DEFAULT '0',
+    hits I(10) DEFAULT '1',
+!   last_date T(6),
+    INDEX article_id (article_id),
+    INDEX blog_id_article_id (blog_id, article_id)
+  ";
+***************
+*** 168,174 ****
+    status I(4) NOTNULL DEFAULT 1,
+    resource_picture_id I(10) NOTNULL DEFAULT 0,
+    site_admin I(10) NOTNULL DEFAULT '0',
+!   last_login T(14),
+    UNIQUE user (user)
+  ";
+  $Tables["users"]["options"] = "TYPE=MyISAM";
+--- 168,174 ----
+    status I(4) NOTNULL DEFAULT 1,
+    resource_picture_id I(10) NOTNULL DEFAULT 0,
+    site_admin I(10) NOTNULL DEFAULT '0',
+!   last_login T(6),
+    UNIQUE user (user)
+  ";
+  $Tables["users"]["options"] = "TYPE=MyISAM";
+***************
+*** 208,214 ****
+     reg_exp X,
+     blog_id I(10) NOTNULL DEFAULT '0',
+     reason X,
+!    date T(14) NOTNULL,
+     INDEX blog_id (blog_id)
+  ";
+  $Tables["filtered_content"]["options"] = "TYPE=MyISAM";
+--- 208,214 ----
+     reg_exp X,
+     blog_id I(10) NOTNULL DEFAULT '0',
+     reason X,
+!    date T(6) NOTNULL,
+     INDEX blog_id (blog_id)
+  ";
+  $Tables["filtered_content"]["options"] = "TYPE=MyISAM";
+***************
+*** 216,222 ****
+  $Tables["host_blocking_rules"]["schema"] = "
+     id I(10) NOTNULL AUTOINCREMENT PRIMARY,
+     reason X,
+!    date T(14) NOTNULL,
+     blog_id I(10) NOTNULL DEFAULT '0',
+     block_type I(1) DEFAULT '1',
+     list_type I(1) DEFAULT '1',
+--- 216,222 ----
+  $Tables["host_blocking_rules"]["schema"] = "
+     id I(10) NOTNULL AUTOINCREMENT PRIMARY,
+     reason X,
+!    date T(6) NOTNULL,
+     blog_id I(10) NOTNULL DEFAULT '0',
+     block_type I(1) DEFAULT '1',
+     list_type I(1) DEFAULT '1',
+***************
+*** 232,238 ****
+     owner_id I(10) NOTNULL DEFAULT '0',
+     album_id I(10) NOTNULL DEFAULT '0',
+     description X,
+!    date T(14) NOTNULL,
+     flags I(10) DEFAULT '0',
+     resource_type I(3) DEFAULT NULL,
+     file_path C(255) DEFAULT '',
+--- 232,238 ----
+     owner_id I(10) NOTNULL DEFAULT '0',
+     album_id I(10) NOTNULL DEFAULT '0',
+     description X,
+!    date T(6) NOTNULL,
+     flags I(10) DEFAULT '0',
+     resource_type I(3) DEFAULT NULL,
+     file_path C(255) DEFAULT '',
+***************
+*** 257,263 ****
+     name C(255) NOTNULL DEFAULT '',
+     flags I(10) NOTNULL DEFAULT '0',
+     parent_id I(10) NOTNULL DEFAULT '0',
+!    date T(14) NOTNULL,
+     properties TEXT NOTNULL DEFAULT '',
+     show_album I1(1) DEFAULT 1,
+     normalized_description TEXT NOTNULL DEFAULT '',
+--- 257,263 ----
+     name C(255) NOTNULL DEFAULT '',
+     flags I(10) NOTNULL DEFAULT '0',
+     parent_id I(10) NOTNULL DEFAULT '0',
+!    date T(6) NOTNULL,
+     properties TEXT NOTNULL DEFAULT '',
+     show_album I1(1) DEFAULT 1,
+     normalized_description TEXT NOTNULL DEFAULT '',
+***************
+*** 308,314 ****
+     field_type I(2) NOTNULL DEFAULT '1',
+     field_values TEXT NOTNULL DEFAULT '',
+     blog_id I(10) NOTNULL DEFAULT '0',
+!    date T(14),
+     searchable I1(1) DEFAULT 1,
+     hidden I1(1) DEFAULT 1,
+     INDEX blog_id (blog_id)
+--- 308,314 ----
+     field_type I(2) NOTNULL DEFAULT '1',
+     field_values TEXT NOTNULL DEFAULT '',
+     blog_id I(10) NOTNULL DEFAULT '0',
+!    date T(6),
+     searchable I1(1) DEFAULT 1,
+     hidden I1(1) DEFAULT 1,
+     INDEX blog_id (blog_id)

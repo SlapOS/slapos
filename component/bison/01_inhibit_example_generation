@@ -1,0 +1,45 @@
+From: Chuan-kai Lin <cklin@debian.org>
+Date: Sun, 18 Nov 2018 16:03:20 -0800
+Subject: Inhibit example code extraction
+
+The Debian bison package cannot extract example code from info documentation
+because said documentation is moved into the bison-doc package due to DFSG
+non-compliance.  Leaving example code extraction in the build process breaks
+parallel builds, so this patch is necessary to make parallel builds work.
+
+Bug-Debian: http://bugs.debian.org/732034
+Forwarded: not-needed
+Last-Update: 2013-12-16
+---
+ Makefile.in       | 3 +--
+ examples/local.mk | 3 +--
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile.in b/Makefile.in
+index 02444e8..6a64845 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -6645,8 +6645,7 @@ examples/extracted.stamp: $(doc) doc/version.texi $(extexi)
+ 	$(AM_V_at)mv $@.tmp $@
+ 
+ $(extracted): examples/extracted.stamp
+-	@test -f $@ || rm -f examples/extracted.stamp
+-	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) examples/extracted.stamp
++	touch $@
+ 
+ # Suppress the #lines from the examples when rolling the tarball, so
+ # that regular users have readable examples even before installing
+diff --git a/examples/local.mk b/examples/local.mk
+index a35c082..8af27e6 100644
+--- a/examples/local.mk
++++ b/examples/local.mk
+@@ -41,8 +41,7 @@ MAINTAINERCLEANFILES += $(extracted) %D%/extracted.stamp
+ 	$(AM_V_at)mv $@.tmp $@
+ 
+ $(extracted): %D%/extracted.stamp
+-	@test -f $@ || rm -f %D%/extracted.stamp
+-	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) %D%/extracted.stamp
++	touch $@
+ 
+ 
+ ## ------ ##
