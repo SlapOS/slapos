@@ -62,7 +62,6 @@ target-directory = ${directory:erp5_kernel_dir}
 <= jinja2-template-base
 template = {{ parameter_dict['kernel_json_location'] }}/{{ parameter_dict['kernel_json_filename'] }}
 rendered = ${directory:erp5_kernel_dir}/kernel.json
-# Use python2.7 executable bin file for kernel config
 context =
   raw erp5_url {{ ipv4 }}
   raw python_executable {{ parameter_dict['python_executable_for_kernel'] }}
