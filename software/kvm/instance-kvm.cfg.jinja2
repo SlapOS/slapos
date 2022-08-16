@@ -939,7 +939,9 @@ recipe = collective.recipe.template
 input = inline:
   {{ data_list | join('\n  ') }}
 output = {{ file_path }}
+{%   if mode %}
 mode = {{ mode }}
+{%   endif %}
 {% endmacro -%}
 
 # write vm-data into file public/data
@@ -1110,7 +1112,7 @@ data-to-vm =
 {% set key_list =  v.split('\n') -%}
 {{ k }} =
   {{ key_list | join('\n  ') }}
-{% elif k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains'] %}
+{% elif k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'data-to-vm'] %}
 {# needs to decorate possibly multiline or maybe unsafe value #}
 {{ k }} = {{ dumps(v) }}
 {% else -%}

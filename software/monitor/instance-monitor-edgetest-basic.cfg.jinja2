@@ -14,7 +14,7 @@
 {%-   endif %}
 {%- endfor %}
 {%- set CHECK_DICT = {} %}
-{%- for check_name, check_definition in slapparameter_dict['check-dict'].items() %}
+{%- for check_name, check_definition in slapparameter_dict.get('check-dict', {}).items() %}
 {%-   if 'url-list' in check_definition %}
 {%-     set check = DEFAULT_DICT.copy()  %}
 {%-     set url_list = [] %}
