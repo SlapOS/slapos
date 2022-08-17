@@ -55,17 +55,17 @@ recipe = slapos.recipe.template:jinja2
 
 [erp5-kernel]
 recipe = slapos.cookbook:symbolic.link
-link-binary = {{ parameter_dict['erp5_kernel_location'] }}/{{ parameter_dict['erp5_kernel_filename'] }}
-target-directory = ${directory:erp5_kernel_dir}
+link-binary = {{ parameter_dict['erp5-kernel-location'] }}/{{ parameter_dict['erp5-kernel-filename'] }}
+target-directory = ${directory:erp5-kernel-dir}
 
 [kernel-json-dir]
 <= jinja2-template-base
-template = {{ parameter_dict['kernel_json_location'] }}/{{ parameter_dict['kernel_json_filename'] }}
-rendered = ${directory:erp5_kernel_dir}/kernel.json
+template = {{ parameter_dict['kernel-json-location'] }}/{{ parameter_dict['kernel-json-filename'] }}
+rendered = ${directory:erp5-kernel-dir}/kernel.json
 context =
   raw erp5_url {{ ipv4 }}
-  raw python_executable {{ parameter_dict['python_executable_for_kernel'] }}
-  raw kernel_dir ${erp5-kernel:target-directory}/{{ parameter_dict['erp5_kernel_filename'] }}
+  raw python_executable {{ parameter_dict['python-executable-for-kernel'] }}
+  raw kernel_dir ${erp5-kernel:target-directory}/{{ parameter_dict['erp5-kernel-filename'] }}
   raw display_name ERP5
   raw language_name python
 
@@ -82,9 +82,9 @@ environment +=
   INSTANCE_HOME=${:instance-home}
   CAUCASE={{ slapparameter_dict['caucase-url'] }}
   FONTCONFIG_FILE=${fontconfig-conf:output}
-  JUPYTER_PATH = ${directory:jupyter_dir}
-  JUPYTER_CONFIG_DIR=${directory:jupyter_config_dir}
-  JUPYTER_RUNTIME_DIR=${directory:jupyter_runtime_dir}
+  JUPYTER_PATH=${directory:jupyter-dir}
+  JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
+  JUPYTER_RUNTIME_DIR=${directory:jupyter-runtime-dir}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
@@ -122,11 +122,11 @@ var = ${buildout:directory}/var
 plugin = ${:etc}/plugin
 unit-test-path = ${:srv}/test-instance/unit_test
 fontconfig-cache = ${buildout:directory}/.fontconfig
-jupyter_dir = ${buildout:directory}/jupyter
-jupyter_config_dir = ${:jupyter_dir}/etc
-jupyter_runtime_dir = ${:jupyter_dir}/runtime
-jupyter_kernel_dir = ${:jupyter_dir}/kernels
-erp5_kernel_dir = ${:jupyter_kernel_dir}/ERP5
+jupyter-dir = ${buildout:directory}/jupyter
+jupyter-config-dir = ${:jupyter-dir}/etc
+jupyter-runtime-dir = ${:jupyter-dir}/runtime
+jupyter-kernel-dir = ${:jupyter-dir}/kernels
+erp5-kernel-dir = ${:jupyter-kernel-dir}/ERP5
 
 [fontconfig-conf]
 recipe = slapos.recipe.template:jinja2
