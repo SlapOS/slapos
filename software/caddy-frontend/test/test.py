@@ -82,9 +82,6 @@ else:
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-  # XXX Keep using slapos node instance --all, because of missing promises
-  SlapOSInstanceTestCase.slap._force_slapos_node_instance_all = True
-
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
@@ -858,9 +855,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     auth = requests.get(
@@ -907,31 +901,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         '*.example.com',
         '*.alias1.example.com',
       ])
-
-  @classmethod
-  def runComputerPartitionUntil(cls, until):
-    max_try = 10
-    try_num = 1
-    while True:
-      if until():
-        break
-      if try_num > max_try:
-        raise ValueError('Failed to run computer partition with %r' % (until,))
-      try:
-        cls.slap.waitForInstance()
-      except Exception:
-        cls.logger.exception("Error during until run")
-      try_num += 1
-
-  @classmethod
-  def untilNotReadyYetNotInMasterKeyGenerateAuthUrl(cls):
-    parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    key = 'master-key-generate-auth-url'
-    if key not in parameter_dict:
-      return False
-    if 'NotReadyYet' in parameter_dict[key]:
-      return False
-    return True
 
   @classmethod
   def callSupervisorMethod(cls, method, *args, **kwargs):
@@ -1367,29 +1336,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return parameter_dict_dict
 
   @classmethod
-  def untilSlavePartitionReady(cls):
-    # all on-watch services shall not be exited
-    for process in cls.callSupervisorMethod('getAllProcessInfo'):
-      if process['name'].endswith('-on-watch') and \
-        process['statename'] == 'EXITED':
-        if process['name'].startswith('monitor-http'):
-          continue
-        return False
-
-    for parameter_dict in cls.getSlaveConnectionParameterDictList():
-      log_access_ready = 'log-access-url' in parameter_dict
-      key = 'key-generate-auth-url'
-      key_generate_auth_ready = key in parameter_dict \
-          and 'NotReadyYet' not in parameter_dict[key]
-      if not(log_access_ready and key_generate_auth_ready):
-        return False
-
-    return True
-
-  @classmethod
   def setUpSlaves(cls):
-    cls.runComputerPartitionUntil(
-      cls.untilSlavePartitionReady)
     cls.updateSlaveConnectionParameterDictDict()
 
   @classmethod
@@ -2119,9 +2066,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     def writeNodeInformation(node_information, path):
       with open(path, 'w') as fh:
         json.dump(node_information, fh, sort_keys=True)
-      self.waitForInstance()
-      self.waitForInstance()
-      self.waitForInstance()
+      # full processing is needed as this is just simulation which does
+      # not bang the instance tree
+      slap_force_slapos_node_instance_all = \
+          self.slap._force_slapos_node_instance_all
+      self.slap._force_slapos_node_instance_all = True
+      try:
+        self.waitForInstance()
+        self.waitForInstance()
+        self.waitForInstance()
+      finally:
+        self.slap._force_slapos_node_instance_all = \
+          slap_force_slapos_node_instance_all
 
     self.addCleanup(
       writeNodeInformation, current_node_information,
@@ -5012,10 +4968,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
@@ -5139,10 +5091,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
@@ -5741,10 +5689,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
@@ -5977,9 +5921,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     cls.fillSlaveParameterDictDict()
     cls.requestSlaves()
     try:
-      cls.slap.waitForInstance(
-        max_retry=2  # two runs shall be enough
-      )
+      cls.slap.waitForInstance(max_retry=10)
     except Exception:
       # ignores exceptions, as problems are tested
       pass
