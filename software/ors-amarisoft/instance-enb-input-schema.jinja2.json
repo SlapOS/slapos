@@ -65,6 +65,12 @@
       "type": "string",
       "default": "0x1A2D0"
     },
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "number",
+      "default": 1
+    },
     "plmn_list": {
       "title": "PLMN list",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
