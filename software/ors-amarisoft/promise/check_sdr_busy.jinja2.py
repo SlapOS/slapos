@@ -27,7 +27,13 @@ class RunPromise(GenericPromise):
 
       In this case, check whether the file exists.
     """
+    testing = {{ slapparameter_dict.get('testing', False) }}
     sdr_dev = '/dev/sdr0'
+
+    if testing:
+        self.logger.info("skipping promise")
+        return
+
     try:
       open(sdr_dev, 'w').close()
       self.logger.error("eNB is not using %s", sdr_dev)

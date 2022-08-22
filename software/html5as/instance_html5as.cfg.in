@@ -204,7 +204,7 @@ post = kill -USR1 $(cat ${html5as:path_pid})
 
 # Publish nginx address
 [publish-connection-information]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 # By extending monitor publish, all the section deploying monitoring will
 # be deployed. The parameters needed for accessing monitoring will be published
 <= monitor-publish
