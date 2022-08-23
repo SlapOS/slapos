@@ -25,12 +25,12 @@ import-list =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-profile-caddy-replicate:output
+default = dynamic-profile-master:output
 RootSoftwareInstance = ${:default}
-custom-personal = dynamic-profile-caddy-replicate:output
-single-default = dynamic-profile-caddy-frontend:output
-single-custom-personal = dynamic-profile-caddy-frontend:output
-replicate = dynamic-profile-caddy-replicate:output
+custom-personal = dynamic-profile-master:output
+single-default = dynamic-profile-frontend:output
+single-custom-personal = dynamic-profile-frontend:output
+replicate = dynamic-profile-master:output
 kedifa = dynamic-profile-kedifa:output
 
 [software-parameter-section]
@@ -38,19 +38,19 @@ kedifa = dynamic-profile-kedifa:output
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
-[dynamic-profile-caddy-frontend]
+[dynamic-profile-frontend]
 < = jinja2-template-base
-url = {{ software_parameter_dict['profile_caddy_frontend'] }}
-filename = instance-caddy-frontend.cfg
+url = {{ software_parameter_dict['profile_frontend'] }}
+filename = instance-frontend.cfg
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
 
-[dynamic-profile-caddy-replicate]
+[dynamic-profile-master]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
-url = {{ software_parameter_dict['profile_caddy_replicate'] }}
-filename = instance-caddy-replicate.cfg
+url = {{ software_parameter_dict['profile_master'] }}
+filename = instance-master.cfg
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
