@@ -534,7 +534,7 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
-url = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
+url = {{ software_parameter_dict['profile_master_publish_slave_information'] }}
 filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
