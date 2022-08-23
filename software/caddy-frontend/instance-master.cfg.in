@@ -467,11 +467,11 @@ config-url =
 #-- Publish slave information
 [publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-publish-slave-information:output
+default = instance-publish-slave-information:output
 RootSoftwareInstance = ${:default}
-replicate = dynamic-publish-slave-information:output
-custom-personal = dynamic-publish-slave-information:output
-custom-group = dynamic-publish-slave-information:output
+replicate = instance-publish-slave-information:output
+custom-personal = instance-publish-slave-information:output
+custom-group = instance-publish-slave-information:output
 
 [request-kedifa]
 <= slap-connection
@@ -532,10 +532,10 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 {{ frontend }}-node-information-json = {{ section_part }}:connection-node-information-json}
 {% endfor %}
 
-[dynamic-publish-slave-information]
+[instance-publish-slave-information]
 < = jinja2-template-base
-url = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
-filename = dynamic-publish-slave-information.cfg
+url = {{ software_parameter_dict['profile_master_publish_slave_information'] }}
+filename = instance-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
