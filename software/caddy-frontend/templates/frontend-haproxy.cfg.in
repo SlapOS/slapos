@@ -47,8 +47,6 @@ defaults
   http-request normalize-uri path-merge-slashes
   http-request normalize-uri path-strip-dot
   http-request normalize-uri path-strip-dotdot
-  # setup X-Forwarded-*
-  option forwardfor
   # Combined Log Format
   capture request header REMOTE_USER len 255
   capture request header Referer len 255
@@ -56,6 +54,8 @@ defaults
   log-format "%{+E}o %b %ci - %[capture.req.hdr(0)] [%trl] \"%HM %HU %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
   # setup Via
   http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  # setup X-Forwarded-For
+  http-request set-header X-Forwarded-For "%ci"
 {%- endmacro %}
 frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
