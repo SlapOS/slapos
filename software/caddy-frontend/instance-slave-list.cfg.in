@@ -346,8 +346,6 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ configuration['port']) }}
 http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
-version-hash = {{ version_hash }}
-node-id = {{ node_id }}
 {%-   for key, value in slave_instance.items() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps(value) }}
@@ -555,8 +553,6 @@ global-ipv6 = ${slap-configuration:ipv6-random}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
-version-hash = {{ version_hash }}
-node-id = {{ node_id }}
 
 [template-expose-csr-link-csr]
 recipe = plone.recipe.command
