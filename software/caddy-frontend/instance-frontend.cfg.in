@@ -473,6 +473,8 @@ slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
 slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
 slave-introspection-graceful-command = ${slave-introspection-validate:output} && kill -HUP $(cat ${:slave-introspection-pid-file})
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
+version-hash = ${version-hash:value}
+node-id = ${frontend-node-id:value}
 
 [not-found-html]
 recipe = plone.recipe.command
@@ -539,8 +541,6 @@ disk-cache-size = ${configuration:disk-cache-size}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
-version-hash = ${version-hash:value}
-node-id = ${frontend-node-id:value}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
@@ -808,6 +808,8 @@ statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
 statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
+version-hash = ${version-hash:value}
+node-id = ${frontend-node-id:value}
 
 [frontend-haproxy]
 recipe = slapos.cookbook:wrapper
