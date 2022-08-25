@@ -1387,10 +1387,16 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.instance_path, '*', 'var', 'log', 'httpd', log_name
       ))[0]
 
-    with open(log_file) as fh:
-      self.assertRegex(
-        fh.readlines()[-1],
-        log_regexp)
+    # sometimes logs appear with a bit of delay, so give it a chance
+    for _ in range(5):
+      with open(log_file, 'r') as fh:
+        line = fh.readlines()[-1]
+      if re.match(log_regexp, line):
+        break
+      time.sleep(0.5)
+    self.assertRegex(
+      line,
+      log_regexp)
 
 
 class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
