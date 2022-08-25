@@ -3661,12 +3661,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     configuration_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
+        self.instance_path, '*', 'etc', 'frontend-haproxy-crt-list.txt'
       ))[0]
     self.assertTrue(
-      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
+      '_ciphers.pem ciphers.example.com ciphersuites '
+      'RSA-3DES-EDE-CBC-SHA:RSA-AES128-CBC-SHA'
       in open(configuration_file).read()
     )
+    self.fail('Are ciphers are really correctly handled?')
 
   def test_enable_cache_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
