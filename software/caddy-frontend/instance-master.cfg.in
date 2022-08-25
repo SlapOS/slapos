@@ -5,7 +5,27 @@
 {%- set NAME_BASE = 'caddy-frontend' %}
 {#- DANGER! DANGER! #}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
+{%- set GOOD_CIPHER_LIST = [
+  'ECDHE-ECDSA-AES256-GCM-SHA384',
+  'ECDHE-RSA-AES256-GCM-SHA384',
+  'ECDHE-ECDSA-AES128-GCM-SHA256',
+  'ECDHE-RSA-AES128-GCM-SHA256',
+] %}
+{%- set CIPHER_TRANSLATION_DICT = {
+  'ECDHE-ECDSA-WITH-CHACHA20-POLY1305': 'ECDHE-ECDSA-CHACHA20-POLY1305',
+  'ECDHE-RSA-WITH-CHACHA20-POLY1305': 'ECDHE-RSA-CHACHA20-POLY1305',
+  'ECDHE-RSA-AES256-CBC-SHA': 'ECDHE-RSA-AES256-SHA',
+  'ECDHE-RSA-AES128-CBC-SHA': 'ECDHE-RSA-AES128-SHA',
+  'ECDHE-ECDSA-AES256-CBC-SHA': 'ECDHE-ECDSA-AES256-SHA',
+  'ECDHE-ECDSA-AES128-CBC-SHA': 'ECDHE-ECDSA-AES128-SHA',
+  'RSA-AES256-CBC-SHA': 'AES256-SHA',
+  'RSA-AES128-CBC-SHA': 'AES128-SHA',
+  'ECDHE-RSA-3DES-EDE-CBC-SHA': 'ECDHE-RSA-DES-CBC3-SHA',
+  'RSA-3DES-EDE-CBC-SHA': 'DES-CBC3-SHA'
+} %}
+{%- for key, value in CIPHER_TRANSLATION_DICT.items() %}
+{%-   do GOOD_CIPHER_LIST.append(value) %}
+{%- endfor %}
 {#- Allow to pass only some parameters to frontend nodes #}
 {%- set FRONTEND_NODE_PASSED_KEY_LIST = [
         'plain_http_port',
@@ -209,8 +229,13 @@ context =
 {%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
 {%   if slave_cipher_list %}
 {%     for cipher in slave_cipher_list %}
-{%       if cipher not in GOOD_CIPHER_LIST  %}
-{%         do slave_error_list.append('Cipher %r is not supported.' % (cipher,)) %}
+{%       if cipher not in GOOD_CIPHER_LIST %}
+{%         if cipher in CIPHER_TRANSLATION_DICT %}
+{#           Real translation happens in instance-slave-list.cfg.in #}
+{%           do slave_warning_list.append('Cipher %r translated to %r' % (cipher, CIPHER_TRANSLATION_DICT[cipher])) %}
+{%         else %}
+{%           do slave_error_list.append('Cipher %r is not supported.' % (cipher,)) %}
+{%         endif %}
 {%       endif %}
 {%     endfor %}
 {%   endif %}
