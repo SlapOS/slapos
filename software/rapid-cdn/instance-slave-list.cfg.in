@@ -40,6 +40,18 @@ context =
 [slave-htpasswd]
 
 {#- Prepare configuration parameters #}
+{%- set CIPHER_TRANSLATION_DICT = {
+  'ECDHE-ECDSA-WITH-CHACHA20-POLY1305': 'ECDHE-ECDSA-CHACHA20-POLY1305',   
+  'ECDHE-RSA-WITH-CHACHA20-POLY1305': 'ECDHE-RSA-CHACHA20-POLY1305',
+  'ECDHE-RSA-AES256-CBC-SHA': 'ECDHE-RSA-AES256-SHA',
+  'ECDHE-RSA-AES128-CBC-SHA': 'ECDHE-RSA-AES128-SHA',
+  'ECDHE-ECDSA-AES256-CBC-SHA': 'ECDHE-ECDSA-AES256-SHA',
+  'ECDHE-ECDSA-AES128-CBC-SHA': 'ECDHE-ECDSA-AES128-SHA',
+  'RSA-AES256-CBC-SHA': 'AES256-SHA',
+  'RSA-AES128-CBC-SHA': 'AES128-SHA',
+  'ECDHE-RSA-3DES-EDE-CBC-SHA': 'ECDHE-RSA-DES-CBC3-SHA',
+  'RSA-3DES-EDE-CBC-SHA': 'DES-CBC3-SHA'
+} %}
 {%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
 {%- for key in ['enable-http2-by-default'] %}
 {%-   do configuration.__setitem__(key, ('' ~ configuration[key]).lower() in TRUE_VALUES) %}
@@ -86,11 +98,14 @@ context =
 {%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
 {%-   do slave_instance.__setitem__('path', slave_instance.get('path', '').strip('/')) %}
 {#-   Manage ciphers #}
-{%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
+{%-   set slave_ciphers = [] %}
+{%-   for cipher in slave_instance.get('ciphers', '').strip().split() %}
+{%-     do slave_ciphers.append(CIPHER_TRANSLATION_DICT.get(cipher, cipher)) %}
+{%-   endfor %}
 {%-   if slave_ciphers %}
-{%-     set slave_cipher_list = ' '.join(slave_ciphers) %}
+{%-     set slave_cipher_list = ':'.join(slave_ciphers) %}
 {%-   else %}
-{%-     set slave_cipher_list = configuration['ciphers'].strip() %}
+{%-     set slave_cipher_list = ':'.join(configuration['ciphers'].strip().split()) %}
 {%-   endif %}
 {%-   do slave_instance.__setitem__('ciphers', slave_cipher_list) %}
 {#-   Manage common instance parameters #}
