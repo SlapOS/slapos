@@ -14,7 +14,7 @@
       "description": "Custom Personal",
       "index": 1,
       "request": "instance-slave-input-schema.json",
-      "response": "instance-output-schema.json",
+      "response": "instance-slave-output-schema.json",
       "shared": true,
       "software-type": "custom-personal",
       "title": "Custom Personal (Slave)"
@@ -31,7 +31,7 @@
       "description": "Default",
       "index": 4,
       "request": "instance-slave-input-schema.json",
-      "response": "instance-output-schema.json",
+      "response": "instance-slave-output-schema.json",
       "shared": true,
       "software-type": "default",
       "title": "Default (slave)"
