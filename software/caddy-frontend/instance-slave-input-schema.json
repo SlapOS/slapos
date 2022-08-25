@@ -189,9 +189,9 @@
       "type": "integer"
     },
     "ciphers": {
-      "description": "List of ciphers. Empty defaults to cluster list of ciphers, which by default are Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
-      "type": "string"
+      "type": "string",
+      "default": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA"
     },
     "authenticate-to-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
