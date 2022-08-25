@@ -1387,8 +1387,15 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.instance_path, '*', 'var', 'log', 'httpd', log_name
       ))[0]
 
+    # sometimes logs appear with a bit of delay, so give it a chance
+    for _ in range(5):
+      with open(log_file, 'r') as fh:
+        line = fh.readlines()[-1]
+      if re.match(log_regexp, line):
+        break
+      time.sleep(0.5)
     self.assertRegex(
-      open(log_file, 'r').readlines()[-1],
+      line,
       log_regexp)
 
 
