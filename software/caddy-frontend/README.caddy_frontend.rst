@@ -176,7 +176,7 @@ Instance Parameters
 Master Instance Parameters
 --------------------------
 
-The parameters for instances are described at `instance-caddy-input-schema.json <instance-caddy-input-schema.json>`_.
+The parameters for instances are described at `instance-input-schema.json <instance-input-schema.json>`_.
 
 Here some additional informations about the parameters listed, below:
 
@@ -202,7 +202,7 @@ Optional parameter, defaults to 8080.
 Slave Instance Parameters
 -------------------------
 
-The parameters for instances are described at `instance-slave-caddy-input-schema.json <instance-slave-caddy-input-schema.json>`_.
+The parameters for instances are described at `instance-slave-input-schema.json <instance-slave-input-schema.json>`_.
 
 Here some additional informations about the parameters listed, below:
 
