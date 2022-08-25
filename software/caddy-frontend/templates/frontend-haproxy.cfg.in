@@ -59,6 +59,20 @@ defaults
   # setup X-Forwarded-For
   http-request set-header X-Forwarded-For "%ci"
 {%- endmacro %}
+{%- macro hsts_header(slave_instance, scheme) %}
+{%-   if scheme == 'https' %}
+{%-     if slave_instance['strict-transport-security'] > 0 %}
+{%-       set strict_transport_security = ['max-age=%i' % (slave_instance['strict-transport-security'],)] %}
+{%-       if slave_instance['strict-transport-security-sub-domains'] %}
+{%-         do strict_transport_security.append('; includeSubDomains') %}
+{%-       endif %}
+{%-       if slave_instance['strict-transport-security-preload'] %}
+{%-         do strict_transport_security.append('; preload') %}
+{%-       endif %}
+    http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+{%-     endif %}
+{%-   endif %}
+{%- endmacro %} {# hsts_header #}
 frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
 {{ frontend_common() }}
@@ -93,6 +107,8 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     if not slave_instance['disable-via-header'] %}
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-     endif %}
+
+{{ hsts_header(slave_instance, scheme) }}
 
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
