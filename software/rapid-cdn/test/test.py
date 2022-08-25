@@ -2544,10 +2544,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       }
     )
 
-    self.assertEqual(
-      'text/xml; charset=utf-8',
-      result.headers['Content-Type']
-    )
+    self.assertNotIn('Content-Type', result.headers)
 
   def test_type_zope_path(self):
     parameter_dict = self.assertSlaveBase('type-zope-path')
