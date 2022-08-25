@@ -703,7 +703,8 @@ class TestHandler(BaseHTTPRequestHandler):
         response = base64.b64decode(self.headers['x-reply-body'])
 
     time.sleep(timeout)
-    self.send_response(status_code)
+    self.send_response_only(status_code)
+    self.send_header('Server', self.server_version)
 
     for key, value in list(header_dict.items()):
       self.send_header(key, value)
@@ -4505,6 +4506,30 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   timeout server 15s
   timeout connect 10s
   retries 5""" in content)
+
+  def test_header_date(self):
+    # Precisely check out Date header behaviour
+    frontend = 'url_https-url'
+    parameter_dict = self.assertSlaveBase(frontend)
+    backend_url = self.getSlaveParameterDictDict()[
+      frontend]['https-url'].strip()
+    normal_path = 'normal'
+    with_date_path = 'with_date'
+    specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
+    result_configure = requests.put(
+      backend_url + '/' + with_date_path, headers={
+        'X-Reply-Header-Date': specific_date
+      })
+    self.assertEqual(result_configure.status_code, http.client.CREATED)
+
+    result_normal = fakeHTTPSResult(parameter_dict['domain'], normal_path)
+    result_with_date = fakeHTTPSResult(
+      parameter_dict['domain'], with_date_path)
+
+    # Prove that Date header with value specific_date send by backend is NOT
+    # modified by the CDN, but some Date header is added, if backend sends non
+    self.assertEqual(result_with_date.headers['Date'], specific_date)
+    self.assertNotEqual(result_normal.headers['Date'], specific_date)
 
   def test_https_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('https-url-netloc-list')
