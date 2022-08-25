@@ -18,6 +18,7 @@ T-2/var/log/httpd/_auth-to-backend_access_log
 T-2/var/log/httpd/_auth-to-backend_backend_log
 T-2/var/log/httpd/_bad-backend_access_log
 T-2/var/log/httpd/_bad-backend_backend_log
+T-2/var/log/httpd/_ciphers-translation-all_access_log
 T-2/var/log/httpd/_ciphers_access_log
 T-2/var/log/httpd/_custom_domain_access_log
 T-2/var/log/httpd/_custom_domain_backend_log
