@@ -91,9 +91,9 @@ context =
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
-{%-     set slave_cipher_list = ' '.join(slave_ciphers) %}
+{%-     set slave_cipher_list = ':'.join(slave_ciphers) %}
 {%-   else %}
-{%-     set slave_cipher_list = configuration['ciphers'].strip() %}
+{%-     set slave_cipher_list = ':'.join(configuration['ciphers'].strip().split()) %}
 {%-   endif %}
 {%-   do slave_instance.__setitem__('ciphers', slave_cipher_list) %}
 {#-   Manage common instance parameters #}
