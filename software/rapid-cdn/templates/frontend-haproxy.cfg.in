@@ -56,6 +56,8 @@ defaults
   log-format "%{+E}o %b %ci - %[capture.req.hdr(0)] [%trl] \"%HM %HU %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
   # setup Via
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  # setup Date
+  http-after-response set-header Date %[date(),http_date]
   # setup X-Forwarded-For
   http-request set-header X-Forwarded-For "%ci"
 {%- endmacro %}
