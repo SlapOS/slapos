@@ -99,6 +99,18 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         else %}
   http-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-         endif %}
+{%-         if scheme == 'https' %}
+{%-           if slave_instance['strict-transport-security'] > 0 %}
+{%-             set strict_transport_security = ['max-age=%i' % (slave_instance['strict-transport-security'],)] %}
+{%-             if slave_instance['strict-transport-security-sub-domains'] %}
+{%-               do strict_transport_security.append('; includeSubDomains') %}
+{%-             endif %}
+{%-             if slave_instance['strict-transport-security-preload'] %}
+{%-               do strict_transport_security.append('; preload') %}
+{%-             endif %}
+  http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+{%-           endif %}
+{%-         endif %}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-         endif %} {# if info_dict['path'] #}
