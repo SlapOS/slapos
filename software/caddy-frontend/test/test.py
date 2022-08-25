@@ -1862,7 +1862,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'ciphers': {
         'ciphers': 'RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
-      }
+      },
+      'ciphers-all': {
+        'ciphers':
+        'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 '
+        'ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 '
+        'ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-WITH-CHACHA20-POLY1305 '
+        'ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA '
+        'ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA '
+        'ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA '
+        'ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA',
+      },
     }
 
   monitor_setup_url_key = 'monitor-setup-url'
@@ -3661,12 +3671,51 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     configuration_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
+        self.instance_path, '*', 'etc', 'frontend-haproxy-crt-list.txt'
       ))[0]
     self.assertTrue(
-      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
+      '_ciphers.pem ciphers.example.com ciphersuites '
+      'RSA-3DES-EDE-CBC-SHA:RSA-AES128-CBC-SHA'
       in open(configuration_file).read()
     )
+    self.fail('Check translation information')
+
+  def test_ciphers_all(self):
+    parameter_dict = self.assertSlaveBase('ciphers-all')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://ciphers.example.com:%s/test-path' % (HTTP_PORT,),
+      result_http.headers['Location']
+    )
+
+    configuration_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'frontend-haproxy-crt-list.txt'
+      ))[0]
+    self.assertTrue(
+      '_ciphers_all.pem ciphersall.example.com ciphersuites '
+      'RSA-3DES-EDE-CBC-SHA:RSA-AES128-CBC-SHA'
+      in open(configuration_file).read()
+    )
+    self.fail('Finish!')
+    self.fail('Check translation information')
 
   def test_enable_cache_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
