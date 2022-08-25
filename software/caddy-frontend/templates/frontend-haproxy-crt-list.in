@@ -1,7 +1,12 @@
 {%- for slave in frontend_slave_list %}
 {%-   set entry_list = [] %}
+{%-   set sslbindconf = [] %}
 {#-   <crtfile> #}
 {%-   do entry_list.append(slave['certificate']) %}
+{%-   if slave['ciphers'] %}
+{%-     do sslbindconf.append('ciphers %s' % (slave['ciphers']),) %}
+{%-   endif %}
+{%-   do entry_list.append('[' + ' '.join(sslbindconf) + ']') %}
 {#-   <snifilter> #}
 {%-   do entry_list.extend(slave['host_list']) %}
 {{-    ' '.join(entry_list) }}
