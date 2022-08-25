@@ -34,9 +34,6 @@
   bind {{ slave_parameter['local_ipv4'] }}
 {%- if tls %}
   tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
-{%- if slave_parameter['ciphers'] %}
-    ciphers {{ slave_parameter['ciphers'] }}
-{%- endif %}
 {%- if slave_parameter['enable_h2'] %}
     # Allow http2
     alpn h2 http/1.1
