@@ -2538,10 +2538,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       }
     )
 
-    self.assertEqual(
-      'text/xml; charset=utf-8',
-      result.headers['Content-Type']
-    )
+    self.assertNotIn('Content-Type', result.headers)
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
