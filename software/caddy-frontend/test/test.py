@@ -1590,7 +1590,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
 
@@ -2103,13 +2102,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       json.loads(parameter_dict['caddy-frontend-1-node-information-json']),
       expected_node_information
-    )
-
-  def test_slave_partition_state(self):
-    partition_path = self.getSlavePartitionPath()
-    self.assertTrue(
-      '-grace 2s' in
-      open(os.path.join(partition_path, 'bin', 'caddy-wrapper'), 'r').read()
     )
 
   def test_monitor_conf(self):
@@ -4988,7 +4980,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
     }
 
   @classmethod
@@ -5147,7 +5138,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
     }
 
   @classmethod
@@ -5705,7 +5695,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     'plain_http_port': HTTP_PORT,
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
-    'mpm-graceful-shutdown-timeout': 2,
   }
 
   @classmethod
@@ -5800,7 +5789,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
     }
 
@@ -6507,7 +6495,6 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
 
@@ -6611,7 +6598,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'domain': 'example.com',
       'enable-http2-by-default': True,
       'global-disable-http2': True,
-      'mpm-graceful-shutdown-timeout': 2,
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
       'backend-connect-retries': 1,
@@ -6709,7 +6695,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
         'monitor-username': 'admin',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         'ram-cache-size': '512K',
@@ -6736,7 +6721,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
         'monitor-username': 'admin',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         'ram-cache-size': '256K',
@@ -6763,7 +6747,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
         'monitor-username': 'admin',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         're6st-verification-url': 're6st-verification-url',
@@ -6807,7 +6790,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'global-disable-http2': 'True',
         'instance_title': 'testing partition 0',
         'kedifa_port': '15080',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         're6st-verification-url': 're6st-verification-url',
@@ -6835,7 +6817,6 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
 
