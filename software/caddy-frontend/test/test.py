@@ -1862,7 +1862,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'ciphers': {
         'ciphers': 'RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
-      }
+      },
+      'ciphers-translation-all': {
+        'ciphers':
+        'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 '
+        'ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 '
+        'ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-WITH-CHACHA20-POLY1305 '
+        'ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA '
+        'ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA '
+        'ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA '
+        'ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA',
+      },
     }
 
   monitor_setup_url_key = 'monitor-setup-url'
@@ -3661,10 +3671,73 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     configuration_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
+        self.instance_path, '*', 'etc', 'frontend-haproxy-crt-list.txt'
       ))[0]
     self.assertTrue(
-      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
+      '/_ciphers.pem [ciphers DES-CBC3-SHA:AES128-SHA'
+      in open(configuration_file).read()
+    )
+    self.fail(
+      'Assert ciphers with openssl s_client, you can follow '
+      'https://tinyurl.com/cphrsxyz, also consider properly grouping them '
+      'per TLS version.')
+
+  def test_ciphers_translation_all(self):
+    parameter_dict = self.assertSlaveBase(
+     'ciphers-translation-all', expected_parameter_dict={
+       'warning-list': [
+         "Cipher 'ECDHE-ECDSA-AES128-CBC-SHA' translated to "
+         "'ECDHE-ECDSA-AES128-SHA'",
+         "Cipher 'ECDHE-ECDSA-AES256-CBC-SHA' translated to "
+         "'ECDHE-ECDSA-AES256-SHA'",
+         "Cipher 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305' translated to "
+         "'ECDHE-ECDSA-CHACHA20-POLY1305'",
+         "Cipher 'ECDHE-RSA-3DES-EDE-CBC-SHA' translated to "
+         "'ECDHE-RSA-DES-CBC3-SHA'",
+         "Cipher 'ECDHE-RSA-AES128-CBC-SHA' translated to "
+         "'ECDHE-RSA-AES128-SHA'",
+         "Cipher 'ECDHE-RSA-AES256-CBC-SHA' translated to "
+         "'ECDHE-RSA-AES256-SHA'",
+         "Cipher 'ECDHE-RSA-WITH-CHACHA20-POLY1305' translated to "
+         "'ECDHE-RSA-CHACHA20-POLY1305'",
+         "Cipher 'RSA-3DES-EDE-CBC-SHA' translated to 'DES-CBC3-SHA'",
+         "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'",
+         "Cipher 'RSA-AES256-CBC-SHA' translated to 'AES256-SHA'"]})
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://cipherstranslationall.example.com:%s/test-path' % (HTTP_PORT,),
+      result_http.headers['Location']
+    )
+
+    configuration_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'frontend-haproxy-crt-list.txt'
+      ))[0]
+    self.assertTrue(
+      '/_ciphers.translation.all.pem [ciphers ECDHE-ECDSA-AES256-GCM-SHA384:'
+      'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:'
+      'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA:'
+      'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-WITH-CHACHA20-POLY1305:'
+      'ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA:'
+      'ECDHE-ECDSA-AES128-SHA:AES256-SHA:AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:'
+      'DES-CBC3-SHA'
       in open(configuration_file).read()
     )
 
