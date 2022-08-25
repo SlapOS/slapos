@@ -6,14 +6,14 @@
     "custom-personal": {
       "description": "",
       "index": 2,
-      "request": "instance-caddy-input-schema.json",
+      "request": "instance-input-schema.json",
       "response": "instance-output-schema.json",
       "title": "Custom Personal"
     },
     "custom-personal-slave": {
       "description": "Custom Personal",
       "index": 1,
-      "request": "instance-slave-caddy-input-schema.json",
+      "request": "instance-slave-input-schema.json",
       "response": "instance-output-schema.json",
       "shared": true,
       "software-type": "custom-personal",
@@ -22,7 +22,7 @@
     "default": {
       "description": "Default",
       "index": 3,
-      "request": "instance-caddy-input-schema.json",
+      "request": "instance-input-schema.json",
       "response": "instance-output-schema.json",
       "software-type": "default",
       "title": "Default"
@@ -30,20 +30,11 @@
     "default-slave": {
       "description": "Default",
       "index": 4,
-      "request": "instance-slave-caddy-input-schema.json",
+      "request": "instance-slave-input-schema.json",
       "response": "instance-output-schema.json",
       "shared": true,
       "software-type": "default",
       "title": "Default (slave)"
-    },
-    "default-simplified-slave": {
-      "description": "Default",
-      "index": 5,
-      "request": "instance-slave-caddy-simplified-input-schema.json",
-      "response": "instance-output-schema.json",
-      "shared": true,
-      "software-type": "default",
-      "title": "Default Basic (slave)"
     }
   }
 }
