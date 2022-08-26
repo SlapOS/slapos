@@ -360,7 +360,7 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
   export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
@@ -660,7 +660,8 @@ inline =
       "$${directory:project}/runner/**":true
     },
     "git.terminalAuthentication": false,
-    "security.workspace.trust.startupPrompt": "once"
+    "security.workspace.trust.startupPrompt": "once",
+    "zc-buildout.python.executable": "${python-for-buildout-languageserver:executable}"
   }
 
 [runner-link]
