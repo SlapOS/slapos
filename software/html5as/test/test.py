@@ -25,11 +25,13 @@
 #
 ##############################################################################
 
+import json
 import os
 import requests
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -43,8 +45,8 @@ class HTML5ASTestCase(SlapOSInstanceTestCase):
     * Install the software release.
     * Checks it compile without issue.
     * Deploy the instance
-    * Check deployement works and promise pass
-  For testing the deployement a different testing class will need to be set up
+    * Check deployment works and promise pass
+  For testing the deployment a different testing class will need to be set up
   per each variation of parameters the instance needs to be given.
   """
 
@@ -63,11 +65,12 @@ class TestEmptyDeploy(HTML5ASTestCase):
   """
 
   def test_deploy_with_no_paramater(self):
-    url = self.requestDefaultInstance().getConnectionParameterDict()['server_url']
+    url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['server_url']
     response = self.checkUrlAndGetResponse(url)
     result = response.text
-    self.assertFalse("<h1>" in result)
-    self.assertTrue("<p>Hello World</p>" in result)
+    self.assertNotIn("<h1>", result)
+    self.assertIn("<p>Hello World</p>", result)
+
 
 class TestDeployWithTitle(HTML5ASTestCase):
   """
@@ -77,17 +80,21 @@ class TestDeployWithTitle(HTML5ASTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'title': 'Test1',
+      '_': json.dumps(
+        {
+          'title': 'Test1',
+        }
+      )
     }
 
   def test_deploy_with_title_parameter(self):
-    connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
+    connection_parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
     self.assertEqual(connection_parameter_dict["title"], "Title Test1!")
     url = connection_parameter_dict['server_url']
     response = self.checkUrlAndGetResponse(url)
     result = response.text
-    self.assertTrue("<h1>Test1</h1>" in result)
-    self.assertTrue("<p>Hello World</p>" in result)
+    self.assertIn("<h1>Test1</h1>", result)
+    self.assertIn("<p>Hello World</p>", result)
 
 class TestGracefulWithPortChange(HTML5ASTestCase):
   """
@@ -95,7 +102,9 @@ class TestGracefulWithPortChange(HTML5ASTestCase):
   """
 
   instance_parameter_dict = {
-    'port': 8087
+    '_': json.dumps({
+      'port': 8087
+    })
   }
 
   @classmethod
@@ -107,23 +116,23 @@ class TestGracefulWithPortChange(HTML5ASTestCase):
     This test test port change and its application with graceful restart
     """
     # Check initial connection parameter match expected port
-    url = self.computer_partition.getConnectionParameterDict()['server_url']
+    url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['server_url']
     self.assertEqual(urlparse(url).port, 8087)
     # Check port is listening even thought it is duplicated with the promise:
     # "port-listening-promise"
     self.checkUrlAndGetResponse(url)
 
     # Update port parameter
-    self.instance_parameter_dict.update({
-      'port': 8086,
-
+    self.instance_parameter_dict['_'] = json.dumps({
+      'port': 8086
     })
+
     # Request instance with the new port parameter
     self.requestDefaultInstance()
     # Reprocess the instance to apply new port and run promises
     self.slap.waitForInstance(self.instance_max_retry)
-    # Rerequest instance to get update connection parameter
-    url = self.requestDefaultInstance().getConnectionParameterDict()['server_url']
+    # Re-request instance to get update connection parameter
+    url = json.loads(self.requestDefaultInstance().getConnectionParameterDict()['_'])['server_url']
     # Make sure the new port is the one being used
     self.assertEqual(urlparse(url).port, 8086)
 
@@ -138,8 +147,10 @@ class TestReplicateHTML5AS(HTML5ASTestCase):
   """
 
   instance_parameter_dict = {
-    "port-1": 8088,
-    "title-1": "Title 1",
+    '_': json.dumps({
+      "port-1": 8088,
+      "title-1": "Title 1",
+    })
   }
 
   @classmethod
@@ -151,32 +162,37 @@ class TestReplicateHTML5AS(HTML5ASTestCase):
     return cls.instance_parameter_dict
 
   def test_replicate_instance(self):
-   # Check First instance is deployed with proper parameters
-    connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
+    # Check First instance is deployed with proper parameters
+    connection_parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
     url = connection_parameter_dict['instance-1-server_url']
     self.assertEqual(urlparse(url).port, 8088)
     response = self.checkUrlAndGetResponse(url)
     result = response.text
-    self.assertTrue("<h1>Title 1</h1>" in result)
+    self.assertIn("<h1>Title 1</h1>", result)
 
     # Check only one instance is deployed by default
-    self.assertTrue("instance-2-server_url" not in connection_parameter_dict)
+    self.assertNotIn("instance-2-server_url", connection_parameter_dict)
 
     # Update replicate quantity parameter
-    self.instance_parameter_dict.update({
-      'replicate-quantity': 2,
-      'port-2': 8089,
-      'sla-2-computer_guid': self.slap._computer_id,
-      "title-2": "Title 314",
-    })
+    self.instance_parameter_dict['_'] = json.dumps(
+      dict(
+        json.loads(self.instance_parameter_dict['_']),
+        **{
+          'replicate-quantity': 2,
+          'port-2': 8089,
+          'sla-2-computer_guid': self.slap._computer_id,
+          "title-2": "Title 314",
+        }
+      )
+    )
     # Request instance with the one more replicate
     self.requestDefaultInstance()
     self.slap.waitForInstance(self.instance_max_retry)
 
     # Check the second replicate
-    connection_parameter_dict = self.requestDefaultInstance().getConnectionParameterDict()
+    connection_parameter_dict = json.loads(self.requestDefaultInstance().getConnectionParameterDict()['_'])
     url = connection_parameter_dict['instance-2-server_url']
     self.assertEqual(urlparse(url).port, 8089)
     response = self.checkUrlAndGetResponse(url)
     result = response.text
-    self.assertTrue("<h1>Title 314</h1>" in result)
+    self.assertIn("<h1>Title 314</h1>", result)
