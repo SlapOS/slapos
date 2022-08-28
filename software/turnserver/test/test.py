@@ -29,7 +29,7 @@ import os
 import subprocess
 import json
 import glob
-import ConfigParser
+import configparser
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -96,7 +96,7 @@ class TestServices(TurnServerTestCase):
     secret_file = os.path.join(self.partition_path, 'etc/.turnsecret')
     self.assertTrue(os.path.exists(self.partition_path))
     self.assertTrue(os.path.exists(secret_file))
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     with open(secret_file) as f:
       config.readfp(f)
     secret = config.get('turnserver', 'secret')
@@ -151,7 +151,7 @@ class TestParameters(TurnServerTestCase):
     secret_file = os.path.join(self.partition_path, 'etc/.turnsecret')
     self.assertTrue(os.path.exists(self.partition_path))
     self.assertTrue(os.path.exists(secret_file))
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     with open(secret_file) as f:
       config.readfp(f)
     secret = config.get('turnserver', 'secret')
