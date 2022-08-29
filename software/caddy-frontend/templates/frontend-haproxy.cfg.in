@@ -104,6 +104,9 @@ frontend https-frontend
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%- for disabled_cookie in slave_instance['disabled-cookie-list'] %}
+  http-request replace-header Cookie (.*)(^{{ disabled_cookie }}=[^;]*;\ |;\ {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*) \1\3
+{%- endfor %}
 {%-   if not slave_instance['disable-via-header'] %}
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-   endif %}
