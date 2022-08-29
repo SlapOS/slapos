@@ -26,8 +26,11 @@
 ##############################################################################
 
 
+import glob
 import json
 import os
+import subprocess
+
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -85,3 +88,15 @@ class TestJSTestNode(InstanceTestCase):
       [requests.codes.forbidden, False],
       [result.status_code, result.is_redirect]
     )
+
+  def test_runTestSuite(self):
+    runTestSuite_output = subprocess.check_output(
+      [
+        os.path.join(
+          self.computer_partition_root_path,
+          'bin',
+          'runTestSuite',
+        ),
+       '--help',
+      ])
+    self.assertTrue(runTestSuite_output)
