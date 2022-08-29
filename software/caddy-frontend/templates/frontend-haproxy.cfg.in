@@ -73,6 +73,7 @@ frontend http-frontend
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'http', True) }}
 {%- endfor %}
+  default_backend BACKEND_NOT_FOUND
 
 frontend https-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
@@ -87,6 +88,7 @@ frontend https-frontend
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', True) }}
 {%- endfor %}
+  default_backend BACKEND_NOT_FOUND
 
 # Backends
 {%- for slave_instance in frontend_slave_list %}
@@ -129,3 +131,10 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {#- #  {{ k }} => {{ v }} #}
 {%-   endfor %}
 {% endfor %}
+
+backend BACKEND_NOT_FOUND
+  {#- a bit hacky but working way to provide default CDN's 404 #}
+  {#- inspired by https://sleeplessbeastie.eu/2020/05/11/how-to-serve-single-file-using-haproxy/ #}
+  http-request set-log-level silent
+  errorfile 503 {{ configuration['not-found-file'] }}
+{# END OF FILE #}
