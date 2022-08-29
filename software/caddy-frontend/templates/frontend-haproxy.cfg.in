@@ -105,8 +105,13 @@ frontend https-frontend
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%- for disabled_cookie in slave_instance['disabled-cookie-list'] %}
-    # Remove cookie {{ disabled_cookie }} from client Cookies
-  http-request replace-header Cookie (.*){{ disabled_cookie }}=[^;]*;?(.*) \1\2
+  {#- It's much easier to debug and less prone to errors if done step by step, thus many regexes #}
+  # Remove cookie {{ disabled_cookie }} from client Cookies - if in the beginning
+  http-request replace-header Cookie ^{{ disabled_cookie }}=[^;]*;\ *(.*) \1
+  # Remove cookie {{ disabled_cookie }} from client Cookies - if in the middle
+  http-request replace-header Cookie (.*){{ disabled_cookie }}=[^;]*;?\ *(.*) \1\3
+  # Remove cookie {{ disabled_cookie }} from client Cookies - if in the end
+  http-request replace-header Cookie (.*);\ *{{ disabled_cookie }}=[^;]*;?\ * \1
 {%- endfor %}
 {%-   if not slave_instance['disable-via-header'] %}
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
