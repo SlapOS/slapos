@@ -26,9 +26,11 @@
 ##############################################################################
 
 
-import httplib
+import glob
 import json
 import os
+import subprocess
+
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -59,7 +61,7 @@ class TestJSTestNode(InstanceTestCase):
     result = requests.get(
       '%sjio/test/tests.html' % (connection_dict['nginx'], ), allow_redirects=False)
     self.assertEqual(
-      [httplib.OK, False],
+      [requests.codes.ok, False],
       [result.status_code, result.is_redirect]
     )
 
@@ -67,7 +69,7 @@ class TestJSTestNode(InstanceTestCase):
     result = requests.get(
       '%srenderjs/test/' % (connection_dict['nginx'], ), allow_redirects=False)
     self.assertEqual(
-      [httplib.OK, False],
+      [requests.codes.ok, False],
       [result.status_code, result.is_redirect]
     )
 
@@ -75,7 +77,7 @@ class TestJSTestNode(InstanceTestCase):
     result = requests.get(
       '%srsvp/test/index.html' % (connection_dict['nginx'], ), allow_redirects=False)
     self.assertEqual(
-      [httplib.OK, False],
+      [requests.codes.ok, False],
       [result.status_code, result.is_redirect]
     )
 
@@ -83,6 +85,18 @@ class TestJSTestNode(InstanceTestCase):
     result = requests.get(
       'http://[%s]:9443' % (self._ipv6_address, ), allow_redirects=False)
     self.assertEqual(
-      [httplib.FORBIDDEN, False],
+      [requests.codes.forbidden, False],
       [result.status_code, result.is_redirect]
     )
+
+  def test_runTestSuite(self):
+    runTestSuite_output = subprocess.check_output(
+      [
+        os.path.join(
+          self.computer_partition_root_path,
+          'bin',
+          'runTestSuite',
+        ),
+       '--help',
+      ])
+    self.assertTrue(runTestSuite_output)
