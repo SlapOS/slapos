@@ -425,7 +425,6 @@ extra-context =
     key global_ipv6 slap-configuration:ipv6-random
     key local_ipv4 :local_ipv4
     key error_log frontend-haproxy-configuration:error-log
-    key not_found_file frontend-haproxy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
 # BBB: SlapOS Master non-zero knowledge BEGIN
@@ -460,7 +459,7 @@ access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
-not-found-file = ${frontend-directory:document-root}/${not-found-html:filename}
+not-found-file = {{ software_parameter_dict['template_not_found_html'] }}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
 self-signed-fallback-certificate = ${self-signed-fallback-access:certificate}
 http-port = ${configuration:plain_http_port}
@@ -501,15 +500,8 @@ context =
 output = ${directory:bbb-ssl-dir}/frontend.crt
 # BBB: SlapOS Master non-zero knowledge END
 
-[not-found-html]
-recipe = plone.recipe.command
-update-command = ${:command}
-filename = notfound.html
-command = ln -sf  {{ software_parameter_dict['template_not_found_html'] }} ${frontend-directory:document-root}/${:filename}
-
 [frontend-directory]
 recipe = slapos.cookbook:mkdirectory
-document-root = ${directory:srv}/htdocs
 slave-configuration = ${directory:etc}/frontend-haproxy.d/
 slave-log = ${directory:log}/httpd
 autocert = ${directory:srv}/autocert
