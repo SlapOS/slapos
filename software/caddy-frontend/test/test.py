@@ -2052,9 +2052,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '55',
+      'accepted-slave-amount': '56',
       'rejected-slave-amount': '0',
-      'slave-amount': '55',
+      'slave-amount': '56',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -4529,30 +4529,32 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], TEST_IP, HTTPS_PORT,
       # Note: Cookie order is extremely important here, do not change
       # or test will start to pass incorrectly
-      'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+      'Tea=present; Coconut=absent; DarkChocolate=present; Chocolate=absent; '
+      'Coffee=present; Vanilia=absent; Water=present',
     )
     # self check - were the cookies sent in required order?
     self.assertIn(
-      'ookie: Coconut=absent; Chocolate=absent; Coffee=present; '
-      'Vanilia=absent',
+      'ookie: Tea=present; Coconut=absent; DarkChocolate=present; '
+      'Chocolate=absent; Coffee=present; Vanilia=absent; Water=present',
       err.decode())
     # real test - all configured cookies are dropped
     self.assertEqual(
-      'Coffee=present', json.loads(out)['Incoming Headers']['cookie'])
+      'Tea=present; DarkChocolate=present; Coffee=present; Water=present',
+      json.loads(out)['Incoming Headers']['cookie'])
 
   def test_disabled_cookie_list_simple(self):
-    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
+    parameter_dict = self.assertSlaveBase('disabled-cookie-list-simple')
     out, err = self._curl(
       parameter_dict['domain'], TEST_IP, HTTPS_PORT,
-      'WhiteChocolate=present; Chocolate=absent; Coffee=present',
+      'Chocolate=absent; Coffee=present',
     )
     # self check - were the cookies sent in required order?
     self.assertIn(
-      'ookie: WhiteChocolate=present; Chocolate=absent; Coffee=present',
+      'ookie: Chocolate=absent; Coffee=present',
       err.decode())
     # real test - all configured cookies are dropped
     self.assertEqual(
-      'WhiteChocolate=present ; Coffee=present',
+      'Coffee=present',
       json.loads(out)['Incoming Headers']['cookie'])
 
   def test_https_url(self):
