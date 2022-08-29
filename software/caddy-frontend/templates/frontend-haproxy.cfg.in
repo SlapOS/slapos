@@ -106,7 +106,7 @@ frontend https-frontend
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%- for disabled_cookie in slave_instance['disabled-cookie-list'] %}
     # Remove cookie {{ disabled_cookie }} from client Cookies
-  http-request replace-header Cookie (.*){{ disabled_cookie }}=[^;]*;?(.*) \1\2
+  http-request replace-header Cookie (.*);?{{ disabled_cookie }}=[^;]*;?(.*) \1\2
 {%- endfor %}
 {%-   if not slave_instance['disable-via-header'] %}
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
