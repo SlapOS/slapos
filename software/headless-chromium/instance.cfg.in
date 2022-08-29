@@ -32,8 +32,11 @@ context =
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
-    "remote-debugging-port": 8081,
-    "nginx-proxy-port": 8082,
+    "remote-debugging-port": 9222,
+    "nginx-proxy-port": 9224,
+    "incognito": true,
+    "window-size": "800,600",
+    "block-new-web-contents": false,
     "target-url": "https://www.example.com",
     "monitor-httpd-port": 8083
   }
