@@ -1,25 +1,45 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
+  "required": [
+    "target-url"
+  ],
   "title": "Input Parameters",
   "properties": {
     "target-url": {
-      "description": "URL for Chromium to load on startup.",
-      "title": "Target URL",
-      "type": "string",
-      "default": "https://www.example.com"
+      "description": "Web site URL to load on headless chromium.",
+      "title": "Application target URL",
+      "type": "string"
     },
     "remote-debugging-port": {
       "description": "Port for Chromium to listen on.",
       "title": "Remote Debugging Port",
       "type": "integer",
-      "default": 8081
+      "default": 9222
     },
     "nginx-proxy-port": {
       "description": "Port for Nginx proxy to listen on.",
       "title": "Nginx Proxy Port",
       "type": "integer",
-      "default": 8082
+      "default": 9224
+    },
+    "incognito": {
+      "description": "Force Incognito mode",
+      "title": "Force Incognito mode",
+      "type": "boolean",
+      "default": true
+    },
+    "window-size": {
+      "description": "Set the initial window size. Provided as string in the format \"800,600\".",
+      "title": "Initial windo size",
+      "type": "string",
+      "default": "800,600"
+    },
+    "block-new-web-contents": {
+      "description": "If true, then all pop-ups and calls to window.open will fail.",
+      "title": "Block new web contents",
+      "type": "boolean",
+      "default": false
     },
     "monitor-httpd-port": {
       "description": "Port for monitor frontend.",
