@@ -87,10 +87,6 @@
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-{%- for disabled_cookie in slave_parameter['disabled-cookie-list'] %}
-    # Remove cookie {{ disabled_cookie }} from client Cookies
-    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
-{%- endfor %} {#- for disabled_cookie in slave_parameter['disabled-cookie-list'] #}
 
 {%-   if slave_parameter['disable-no-cache-request'] %}
     header_upstream -Cache-Control
