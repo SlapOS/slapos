@@ -163,6 +163,8 @@ context =
     key key smtpd-ssl:key
     key dh_512 smtpd-ssl:dh-512
     key dh_2048 smtpd-ssl:dh-2048
+    key postfix_location postfix-main-cf-parameter:postfix-location
+    key etc_postfix directory:etc-postfix
 
 [{{ section('postfix-master-cf') }}]
 < = jinja2-template-base
