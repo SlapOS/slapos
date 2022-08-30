@@ -364,16 +364,18 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       zodb["mount-point"] = "/"
       zodb["pool-size"] = 4
       zodb["pool-timeout"] = "10m"
+      zodb["%import"] = "ZEO"
       storage["storage"] = "root"
       storage["server"] = zeo_addr
+      storage["server-sync"] = "true"
       with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
         conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
-        if line == '<zeoclient>':
+        if line == '<clientstorage>':
           for line in conf:
-            if line == '</zeoclient>':
+            if line == '</clientstorage>':
               break
             checkParameter(line, storage)
           for k, v in six.iteritems(storage):
