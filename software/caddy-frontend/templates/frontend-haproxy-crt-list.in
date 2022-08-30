@@ -6,6 +6,11 @@
 {%-   if slave['ciphers'] %}
 {%-     do sslbindconf.append('ciphers %s' % (slave['ciphers']),) %}
 {%-   endif %}
+{%-   if slave['enable_h2'] %}
+{%-     do sslbindconf.append('alpn h2,http/1.1,http/1.0') %}
+{%-   else %}
+{%-     do sslbindconf.append('alpn http/1.1,http/1.0') %}
+{%-   endif %}
 {%-   do entry_list.append('[' + ' '.join(sslbindconf) + ']') %}
 {#-   <snifilter> #}
 {%-   do entry_list.extend(slave['host_list']) %}
