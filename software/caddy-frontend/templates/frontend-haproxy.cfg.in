@@ -112,6 +112,10 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     if not slave_instance['disable-via-header'] %}
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-     endif %}
+{%-     if slave_parameter['disable-no-cache-request'] %}
+  http-request del-header Cache-Control
+  http-request del-header Pragma
+{%-     endif %}
 
 {{ hsts_header(slave_instance, scheme) }}
 
