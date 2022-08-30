@@ -29,7 +29,7 @@ from __future__ import unicode_literals
 import json
 import os
 import requests
-import httplib
+
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -51,7 +51,7 @@ class TestCaucase(SlapOSInstanceTestCase):
     )
     result = requests.get(connection_parameter_dict['url'])
 
-    self.assertEqual(result.status_code, httplib.OK)
+    self.assertEqual(result.status_code, requests.codes.ok)
     self.assertEqual(
       result.json(),
       {

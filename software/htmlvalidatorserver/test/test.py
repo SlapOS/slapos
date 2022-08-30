@@ -26,7 +26,6 @@
 ##############################################################################
 
 
-import httplib
 import json
 import os
 import requests
@@ -53,7 +52,7 @@ class TestHtmlValidatorServer(InstanceTestCase):
       parameter_dict['vnu-url'], verify=False, allow_redirects=False)
 
     self.assertEqual(
-      [httplib.OK, False, 'Apache-Coyote/1.1'],
+      [requests.codes.ok, False, 'Apache-Coyote/1.1'],
       [result.status_code, result.is_redirect, result.headers['Server']]
     )
 
@@ -64,7 +63,7 @@ class TestHtmlValidatorServer(InstanceTestCase):
     result = requests.get(
       parameter_dict['monitor-base-url'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [httplib.UNAUTHORIZED, False],
+      [requests.codes.unauthorized, False],
       [result.status_code, result.is_redirect]
     )
 
