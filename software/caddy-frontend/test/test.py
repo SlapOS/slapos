@@ -3645,7 +3645,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_ciphers(self):
-    parameter_dict = self.assertSlaveBase('ciphers')
+    parameter_dict = self.assertSlaveBase(
+     'ciphers', expected_parameter_dict={
+       'warning-list': [
+         "Cipher 'RSA-3DES-EDE-CBC-SHA' translated to 'DES-CBC3-SHA'",
+         "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'"]})
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
