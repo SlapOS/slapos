@@ -28,11 +28,11 @@
 import os
 import json
 import glob
-import urlparse
+import urllib.parse
 import socket
 import time
 import re
-import BaseHTTPServer
+import http.server
 import multiprocessing
 import subprocess
 
@@ -52,7 +52,7 @@ class TestPublishedURLIsReachableMixin(object):
     # We access ERP5 trough a "virtual host", which should make
     # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
     # as base.
-    virtual_host_url = urlparse.urljoin(
+    virtual_host_url = urllib.parse.urljoin(
         base_url,
         '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
         .format(site_id))
@@ -80,7 +80,7 @@ class TestPublishedURLIsReachableMixin(object):
 
     # login page can be rendered and contain the text "ERP5"
     r = session.get(
-        urlparse.urljoin(base_url, '{}/login_form'.format(site_id)),
+        urllib.parse.urljoin(base_url, '{}/login_form'.format(site_id)),
         verify=verify,
         allow_redirects=False,
     )
@@ -172,7 +172,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     }
 
   def checkValidHTTPSURL(self, url):
-    parsed = urlparse.urlparse(url)
+    parsed = urllib.parse.urlparse(url)
     self.assertEqual(parsed.scheme, 'https')
     self.assertTrue(parsed.hostname)
     self.assertTrue(parsed.port)
@@ -291,7 +291,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       storage["storage"] = "root"
       storage["server"] = zeo_addr
       with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
-        conf = map(str.strip, f.readlines())
+        conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
@@ -300,23 +300,23 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
             if line == '</zeoclient>':
               break
             checkParameter(line, storage)
-          for k, v in storage.iteritems():
+          for k, v in storage.items():
             self.assertIsNone(v, k)
           del storage
         else:
           checkParameter(line, zodb)
-      for k, v in zodb.iteritems():
+      for k, v in zodb.items():
         self.assertIsNone(v, k)
 
     partition = self.getComputerPartitionPath('zope-a')
-    for zope in xrange(3):
+    for zope in range(3):
       checkConf({
           "cache-size-bytes": "20MB",
         }, {
           "cache-size": "50MB",
         })
     partition = self.getComputerPartitionPath('zope-bb')
-    for zope in xrange(5):
+    for zope in range(5):
       checkConf({
           "cache-size-bytes": "500MB" if zope else 1<<20,
         }, {
@@ -336,7 +336,7 @@ def popenCommunicate(command_list, input_=None, **kwargs):
   return result
 
 
-class TestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class TestHandler(http.server.BaseHTTPRequestHandler):
   def do_GET(self):
     self.send_response(200)
 
@@ -464,7 +464,7 @@ class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
     ip, port = re.search(
       r'.*http:\/\/(.*):(\d*)\/.*', portal_slap_line).groups()
     port = int(port)
-    server = BaseHTTPServer.HTTPServer((ip, port), TestHandler)
+    server = http.server.HTTPServer((ip, port), TestHandler)
     server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
     server_process.start()

@@ -8,9 +8,9 @@ import shutil
 import subprocess
 import tempfile
 import time
-import urllib
-import urlparse
-from BaseHTTPServer import BaseHTTPRequestHandler
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
+from http.server import BaseHTTPRequestHandler
 from typing import Dict
 
 import mock
@@ -214,7 +214,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
   def test_access_log_format(self):
     # type: () -> None
     requests.get(
-        urlparse.urljoin(self.default_balancer_url, '/url_path'),
+        urllib.parse.urljoin(self.default_balancer_url, '/url_path'),
         verify=False,
     )
     time.sleep(.5) # wait a bit more until access is logged
@@ -373,7 +373,7 @@ class TestBalancer(BalancerTestCase):
     # if backend provides a "SERVERID" cookie, balancer will overwrite it with the
     # backend selected by balancing algorithm
     self.assertIn(
-        requests.get(urlparse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
+        requests.get(urllib.parse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
         ('default-0', 'default-1'),
     )
 
@@ -427,18 +427,18 @@ class TestTestRunnerEntryPoints(BalancerTestCase):
     )['default-test-runner-url-list']
     url_0, url_1, url_2 = test_runner_url_list
     self.assertEqual(
-        urlparse.urlparse(url_0).netloc,
-        urlparse.urlparse(url_1).netloc)
+        urllib.parse.urlparse(url_0).netloc,
+        urllib.parse.urlparse(url_1).netloc)
     self.assertEqual(
-        urlparse.urlparse(url_0).netloc,
-        urlparse.urlparse(url_2).netloc)
+        urllib.parse.urlparse(url_0).netloc,
+        urllib.parse.urlparse(url_2).netloc)
 
     path_0 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_0/something'.format(
-        netloc=urlparse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
     path_1 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_1/something'.format(
-        netloc=urlparse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
     path_2 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_2/something'.format(
-        netloc=urlparse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
 
     self.assertEqual(
         {
@@ -516,7 +516,7 @@ class TestHTTP(BalancerTestCase):
       session.get(self.default_balancer_url).raise_for_status()
     new_conn.assert_not_called()
 
-    parsed_url = urlparse.urlparse(self.default_balancer_url)
+    parsed_url = urllib.parse.urlparse(self.default_balancer_url)
     # check that we have an open file for the ip connection
     self.assertTrue([
         c for c in psutil.Process(os.getpid()).connections()
@@ -588,7 +588,7 @@ class TestContentEncoding(BalancerTestCase):
         'application/x-font-opentype',
         'application/wasm',):
       resp = requests.get(
-        urlparse.urljoin(self.default_balancer_url, content_type),
+        urllib.parse.urljoin(self.default_balancer_url, content_type),
         verify=False,
         headers={"Accept-Encoding": "gzip, deflate",})
       self.assertEqual(resp.headers['Content-Type'], content_type)
@@ -600,7 +600,7 @@ class TestContentEncoding(BalancerTestCase):
 
   def test_no_gzip_encoding(self):
     # type: () -> None
-    resp = requests.get(urlparse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
+    resp = requests.get(urllib.parse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
     self.assertNotIn('Content-Encoding', resp.headers)
     self.assertEqual(resp.text, 'OK')
 

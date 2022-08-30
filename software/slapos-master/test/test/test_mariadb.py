@@ -29,7 +29,7 @@
 import os
 import json
 import glob
-import urlparse
+import urllib.parse
 import socket
 import sys
 import time
@@ -80,7 +80,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getDatabaseConnection(self):
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
-    db_url = urlparse.urlparse(connection_parameter_dict['database-list'][0])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
