@@ -8,12 +8,11 @@ import shutil
 import subprocess
 import tempfile
 import time
-import urllib
-import urlparse
-from BaseHTTPServer import BaseHTTPRequestHandler
+import urllib.parse
+from http.server import BaseHTTPRequestHandler
 from typing import Dict
 
-import mock
+from unittest import mock
 import OpenSSL.SSL
 import pexpect
 import psutil
@@ -44,10 +43,10 @@ class EchoHTTPServer(ManagedHTTPServer):
       response = json.dumps(
           {
               'Path': self.path,
-              'Incoming Headers': self.headers.dict
+              'Incoming Headers': dict(self.headers.items()),
           },
           indent=2,
-      )
+      ).encode('utf-8')
       self.end_headers()
       self.wfile.write(response)
 
@@ -67,11 +66,11 @@ class EchoHTTP11Server(ManagedHTTPServer):
       response = json.dumps(
           {
               'Path': self.path,
-              'Incoming Headers': self.headers.dict
+              'Incoming Headers': dict(self.headers.items()),
           },
           indent=2,
-      )
-      self.send_header("Content-Length", len(response))
+      ).encode('utf-8')
+      self.send_header("Content-Length", str(len(response)))
       self.end_headers()
       self.wfile.write(response)
 
@@ -100,7 +99,7 @@ class CaucaseService(ManagedResource):
     os.mkdir(os.path.join(caucased_dir, 'user'))
     os.mkdir(os.path.join(caucased_dir, 'service'))
 
-    backend_caucased_netloc = '%s:%s' % (self._cls._ipv4_address, findFreeTCPPort(self._cls._ipv4_address))
+    backend_caucased_netloc = f'{self._cls._ipv4_address}:{findFreeTCPPort(self._cls._ipv4_address)}'
     self.url = 'http://' + backend_caucased_netloc
     self._caucased_process = subprocess.Popen(
         [
@@ -110,6 +109,7 @@ class CaucaseService(ManagedResource):
             '--netloc', backend_caucased_netloc,
             '--service-auto-approve-count', '1',
         ],
+        # capture subprocess output not to pollute test's own stdout
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
@@ -127,6 +127,7 @@ class CaucaseService(ManagedResource):
     # type: () -> None
     self._caucased_process.terminate()
     self._caucased_process.wait()
+    self._caucased_process.stdout.close()
     shutil.rmtree(self.directory)
 
 
@@ -166,10 +167,11 @@ class BalancerTestCase(ERP5InstanceTestCase):
         'backend-path-dict': {
             'default': '',
         },
-        'ssl-authentication-dict': {},
+        'ssl-authentication-dict': {'default': False},
         'ssl': {
             'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
         },
+        'timeout-dict': {'default': None},
         'family-path-routing-dict': {},
         'path-routing-list': [],
       }
@@ -185,18 +187,27 @@ class BalancerTestCase(ERP5InstanceTestCase):
 
 
 class SlowHTTPServer(ManagedHTTPServer):
-  """An HTTP Server which reply after 2 seconds.
+  """An HTTP Server which reply after a timeout.
+
+  Timeout is 2 seconds by default, and can be specified in the path of the URL
   """
   class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
       # type: () -> None
       self.send_response(200)
       self.send_header("Content-Type", "text/plain")
-      time.sleep(2)
+      timeout = 2
+      try:
+        timeout = int(self.path[1:])
+      except ValueError:
+        pass
+      time.sleep(timeout)
       self.end_headers()
-      self.wfile.write("OK\n")
+      self.wfile.write(b"OK\n")
 
-    log_message = logging.getLogger(__name__ + '.SlowHandler').info
+    log_message = logging.getLogger(__name__ + '.SlowHTTPServer').info
+
+
 
 
 class TestLog(BalancerTestCase, CrontabMixin):
@@ -206,7 +217,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestLog, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a slow server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     return parameter_dict
@@ -214,7 +225,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
   def test_access_log_format(self):
     # type: () -> None
     requests.get(
-        urlparse.urljoin(self.default_balancer_url, '/url_path'),
+        urllib.parse.urljoin(self.default_balancer_url, '/url_path'),
         verify=False,
     )
     time.sleep(.5) # wait a bit more until access is logged
@@ -254,7 +265,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
             'apachedex',
             'ApacheDex-*.html',
         ))
-    with open(apachedex_report, 'r') as f:
+    with open(apachedex_report) as f:
       report_text = f.read()
     self.assertIn('APacheDEX', report_text)
     # having this table means that apachedex could parse some lines.
@@ -301,7 +312,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
       error_line = error_log_file.read().splitlines()[-1]
     self.assertIn('apache.conf -D FOREGROUND', error_line)
     # this log also include a timestamp
-    # This regex is for haproxy mostly, so keep it commented for now, until we can 
+    # This regex is for haproxy mostly, so keep it commented for now, until we can
     # Merge the slapos-master setup and erp5.
     # self.assertRegexpMatches(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
@@ -331,7 +342,7 @@ class BalancerCookieHTTPServer(ManagedHTTPServer):
           # The name of this cookie is SERVERID
           assert self.headers['X-Balancer-Current-Cookie'] == 'SERVERID'
         self.end_headers()
-        self.wfile.write(server._name)
+        self.wfile.write(server._name.encode('utf-8'))
       log_message = logging.getLogger(__name__ + '.BalancerCookieHTTPServer').info
 
     return RequestHandler
@@ -344,7 +355,7 @@ class TestBalancer(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestBalancer, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
 
     # use two backend servers
     parameter_dict['dummy_http_server'] = [
@@ -373,7 +384,7 @@ class TestBalancer(BalancerTestCase):
     # if backend provides a "SERVERID" cookie, balancer will overwrite it with the
     # backend selected by balancing algorithm
     self.assertIn(
-        requests.get(urlparse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
+        requests.get(urllib.parse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
         ('default-0', 'default-1'),
     )
 
@@ -400,10 +411,7 @@ class TestTestRunnerEntryPoints(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(
-        TestTestRunnerEntryPoints,
-        cls,
-    )._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
 
     parameter_dict['dummy_http_server-test-runner-address-list'] = [
         [
@@ -427,18 +435,18 @@ class TestTestRunnerEntryPoints(BalancerTestCase):
     )['default-test-runner-url-list']
     url_0, url_1, url_2 = test_runner_url_list
     self.assertEqual(
-        urlparse.urlparse(url_0).netloc,
-        urlparse.urlparse(url_1).netloc)
+        urllib.parse.urlparse(url_0).netloc,
+        urllib.parse.urlparse(url_1).netloc)
     self.assertEqual(
-        urlparse.urlparse(url_0).netloc,
-        urlparse.urlparse(url_2).netloc)
+        urllib.parse.urlparse(url_0).netloc,
+        urllib.parse.urlparse(url_2).netloc)
 
     path_0 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_0/something'.format(
-        netloc=urlparse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
     path_1 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_1/something'.format(
-        netloc=urlparse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
     path_2 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_2/something'.format(
-        netloc=urlparse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
 
     self.assertEqual(
         {
@@ -476,7 +484,7 @@ class TestHTTP(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestHTTP, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a HTTP/1.1 server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("HTTP/1.1 Server", EchoHTTP11Server).netloc, 1, False]]
     return parameter_dict
@@ -497,32 +505,33 @@ class TestHTTP(BalancerTestCase):
             '%{http_version}',
             self.default_balancer_url,
         ]),
-        '1.1',
+        b'1.1',
     )
 
   def test_keep_alive(self):
     # type: () -> None
     # when doing two requests, connection is established only once
-    session = requests.Session()
-    session.verify = False
+    with requests.Session() as session:
+      session.verify = False
 
-    # do a first request, which establish a first connection
-    session.get(self.default_balancer_url).raise_for_status()
-
-    # "break" new connection method and check we can make another request
-    with mock.patch(
-        "requests.packages.urllib3.connectionpool.HTTPSConnectionPool._new_conn",
-    ) as new_conn:
+      # do a first request, which establish a first connection
       session.get(self.default_balancer_url).raise_for_status()
-    new_conn.assert_not_called()
 
-    parsed_url = urlparse.urlparse(self.default_balancer_url)
-    # check that we have an open file for the ip connection
-    self.assertTrue([
-        c for c in psutil.Process(os.getpid()).connections()
-        if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
-        and c.raddr.port == parsed_url.port
-    ])
+      # "break" new connection method and check we can make another request
+      with mock.patch(
+          "requests.packages.urllib3.connectionpool.HTTPSConnectionPool._new_conn",
+      ) as new_conn:
+        session.get(self.default_balancer_url).raise_for_status()
+      new_conn.assert_not_called()
+
+      parsed_url = urllib.parse.urlparse(self.default_balancer_url)
+
+      # check that we have an open file for the ip connection
+      self.assertTrue([
+          c for c in psutil.Process(os.getpid()).connections()
+          if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
+          and c.raddr.port == parsed_url.port
+      ])
 
 
 class ContentTypeHTTPServer(ManagedHTTPServer):
@@ -539,12 +548,12 @@ class ContentTypeHTTPServer(ManagedHTTPServer):
       # type: () -> None
       self.send_response(200)
       if self.path == '/':
-        self.send_header("Content-Length", 0)
+        self.send_header("Content-Length", '0')
         return self.end_headers()
       content_type = self.path[1:]
-      body = "OK"
+      body = b"OK"
       self.send_header("Content-Type", content_type)
-      self.send_header("Content-Length", len(body))
+      self.send_header("Content-Length", str(len(body)))
       self.end_headers()
       self.wfile.write(body)
 
@@ -558,7 +567,7 @@ class TestContentEncoding(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestContentEncoding, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     parameter_dict['dummy_http_server'] = [
         [cls.getManagedResource("content_type_server", ContentTypeHTTPServer).netloc, 1, False],
     ]
@@ -588,19 +597,19 @@ class TestContentEncoding(BalancerTestCase):
         'application/x-font-opentype',
         'application/wasm',):
       resp = requests.get(
-        urlparse.urljoin(self.default_balancer_url, content_type),
+        urllib.parse.urljoin(self.default_balancer_url, content_type),
         verify=False,
         headers={"Accept-Encoding": "gzip, deflate",})
       self.assertEqual(resp.headers['Content-Type'], content_type)
       self.assertEqual(
           resp.headers.get('Content-Encoding'),
           'gzip',
-          '%s uses wrong encoding: %s' % (content_type, resp.headers.get('Content-Encoding')))
+          '{} uses wrong encoding: {}'.format(content_type, resp.headers.get('Content-Encoding')))
       self.assertEqual(resp.text, 'OK')
 
   def test_no_gzip_encoding(self):
     # type: () -> None
-    resp = requests.get(urlparse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
+    resp = requests.get(urllib.parse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
     self.assertNotIn('Content-Encoding', resp.headers)
     self.assertEqual(resp.text, 'OK')
 
@@ -683,7 +692,7 @@ class CaucaseCertificate(ManagedResource):
       cas_args + [
           '--send-csr', self.csr_file,
       ],
-    ).split()[0]
+    ).split()[0].decode()
     assert csr_id
 
     for _ in range(30):
@@ -699,8 +708,8 @@ class CaucaseCertificate(ManagedResource):
         time.sleep(1)
     else:
       raise RuntimeError('getting service certificate failed.')
-    with open(self.cert_file) as f:
-      assert 'BEGIN CERTIFICATE' in f.read()
+    with open(self.cert_file) as cert_file:
+      assert 'BEGIN CERTIFICATE' in cert_file.read()
 
   def revoke(self, caucase):
     # type: (str, CaucaseService) -> None
@@ -724,8 +733,8 @@ class TestServerTLSProvidedCertificate(BalancerTestCase):
     # type: () -> Dict
     server_caucase = cls.getManagedResource('server_caucase', CaucaseService)
     server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
-    server_certificate.request(cls._ipv4_address.decode(), server_caucase)
-    parameter_dict = super(TestServerTLSProvidedCertificate, cls)._getInstanceParameterDict()
+    server_certificate.request(cls._ipv4_address, server_caucase)
+    parameter_dict = super()._getInstanceParameterDict()
     with open(server_certificate.cert_file) as f:
       parameter_dict['ssl']['cert'] = f.read()
     with open(server_certificate.key_file) as f:

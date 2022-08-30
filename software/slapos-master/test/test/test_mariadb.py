@@ -1,5 +1,4 @@
 ##############################################################################
-# coding: utf-8
 #
 # Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
 #
@@ -29,7 +28,7 @@
 import os
 import json
 import glob
-import urlparse
+import urllib.parse
 import socket
 import sys
 import time
@@ -38,7 +37,7 @@ import datetime
 import subprocess
 import gzip
 
-from backports import lzma
+import lzma
 import MySQLdb
 
 from slapos.testing.utils import CrontabMixin
@@ -80,7 +79,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getDatabaseConnection(self):
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
-    db_url = urlparse.urlparse(connection_parameter_dict['database-list'][0])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
@@ -148,7 +147,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
         'slowquery_digest',
         'slowquery_digest.txt-2050-01-01.xz',
     )
-    with lzma.open(slow_query_report, 'r') as f:
+    with lzma.open(slow_query_report, 'rt') as f:
       # this is the hash for our "select sleep(n)" slow query
       self.assertIn("ID 0xF9A57DD5A41825CA", f.read())
 
