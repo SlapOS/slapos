@@ -124,16 +124,6 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   __test_matrix__ = matrix((default,))
 
 
-class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 Medusa server
-  """
-  __partition_reference__ = 'medusa'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'wsgi': False})}
-
-
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 Jupyter notebook
   """
@@ -527,8 +517,6 @@ class ZopeSkinsMixin:
 class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
   """Mixin class for zope features.
   """
-  wsgi = NotImplemented # type: bool
-
   __partition_reference__ = 'z'
 
   @classmethod
@@ -547,8 +535,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
                     "port-base":  2210,
                 },
             },
-            "wsgi": cls.wsgi,
-        })
+        }),
     }
 
   @classmethod
@@ -886,12 +873,8 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         'zope-2-event.log',
       ])
 
-class TestZopeMedusa(ZopeTestMixin, ERP5InstanceTestCase):
-  wsgi = False
-
 
 class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
-  wsgi = True
 
   @unittest.expectedFailure
   def test_basic_authentication_user_in_access_log(self):
