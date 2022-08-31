@@ -13,6 +13,7 @@ defaults
 {#-  timeout server XXX TODO #}
 {#-  timeout client XXX TODO #}
 {#-  timeout connect XXX TODO #}
+{#-  timeout tunnel XXX TODO #}
 {#-  retries XXX TODO #}
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
