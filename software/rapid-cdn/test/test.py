@@ -361,7 +361,7 @@ class TestDataMixin(object):
     # test00 name chosen to be run just after setup
     self._test_file_list(['var', 'run'], [
       # can't be sure regarding its presence
-      'caddy_configuration_last_state',
+      'frontend_haproxy_configuration_last_state',
       'validate_configuration_state_signature',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
@@ -385,11 +385,6 @@ class TestDataMixin(object):
     data_replacement_dict = {
       '{hash-generic}': generateHashFromFiles(hash_file_list)
     }
-    for caddy_wrapper_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'bin', 'caddy-wrapper')):
-      partition_id = caddy_wrapper_path.split('/')[-3]
-      data_replacement_dict['{hash-caddy-%s}' % (partition_id)] = \
-          generateHashFromFiles([caddy_wrapper_path] + hash_file_list)
     for backend_haproxy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
       partition_id = backend_haproxy_wrapper_path.split('/')[-3]
@@ -896,8 +891,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         time.sleep(2)
       # assert that in the worst case last run was correct
       assert return_code == 0, output
-      # give caddy a moment to refresh its config, as sending signal does not
-      # block until caddy is refreshed
+      # give haproxy a moment to refresh its config, as sending signal does not
+      # block until haproxy is refreshed
       time.sleep(2)
 
   @classmethod
@@ -994,23 +989,19 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(
       sorted([q['name'] for q in result.json()]),
-      ['access.log', 'backend.log', 'error.log'])
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'access.log', verify=False).status_code
-    )
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'error.log', verify=False).status_code
-    )
-    # assert only for few tests, as backend log is not available for many of
-    # them, as it's created on the fly
+      ['access.log', 'backend.log'])
+    # assert only for few tests, as logs are available for sure only
+    # for few of them
     for test_name in [
       'test_url', 'test_auth_to_backend', 'test_compressed_result']:
       if self.id().endswith(test_name):
         self.assertEqual(
           http.client.OK,
           requests.get(url + 'backend.log', verify=False).status_code
+        )
+        self.assertEqual(
+          http.client.OK,
+          requests.get(url + 'access.log', verify=False).status_code
         )
 
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
@@ -1177,13 +1168,13 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         break
 
   @classmethod
-  def waitForCaddy(cls):
+  def waitForFrontend(cls):
     def method():
       fakeHTTPSResult(
         cls._ipv4_address,
         '/',
       )
-    cls.waitForMethod('waitForCaddy', method)
+    cls.waitForMethod('waitForFrontend', method)
 
   @classmethod
   def _cleanup(cls, snapshot_name):
@@ -1230,7 +1221,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.software_path = os.path.realpath(os.path.join(
           cls.computer_partition_root_path, 'software_release'))
       cls.setUpMaster()
-      cls.waitForCaddy()
+      cls.waitForFrontend()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
       # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used
@@ -1591,7 +1582,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
 
@@ -2107,11 +2097,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       expected_node_information
     )
 
-  def test_slave_partition_state(self):
-    partition_path = self.getSlavePartitionPath()
-    with open(os.path.join(partition_path, 'bin', 'caddy-wrapper')) as fh:
-      self.assertIn('-grace 2s', fh.read())
-
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
       os.path.join(
@@ -2237,15 +2222,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         backend_header_dict['via']
       )
 
-  def test_telemetry_disabled(self):
-    # here we trust that telemetry not present in error log means it was
-    # really disabled
-    error_log_file = glob.glob(
-      os.path.join(
-       self.instance_path, '*', 'var', 'log', 'frontend-error.log'))[0]
-    with open(error_log_file) as fh:
-      self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
-
   def test_url(self):
     parameter_dict = self.assertSlaveBase(
       'Url',
@@ -2339,6 +2315,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that no needless entries are generated
     self.assertIn("backend _Url-http\n", content)
     self.assertNotIn("backend _Url-https\n", content)
+
+    # check out access via IPv6
+    out_ipv6, err_ipv6 = self._curl(
+      parameter_dict['domain'], self._ipv6_address, HTTPS_PORT)
+
+    try:
+      j = json.loads(out_ipv6.decode())
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (out_ipv6.decode(),))
+    self.assertEqual(
+       self._ipv6_address,
+       j['Incoming Headers']['x-forwarded-for']
+    )
 
   def test_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('url-netloc-list')
@@ -2555,36 +2544,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'text/xml; charset=utf-8',
       result.headers['Content-Type']
     )
-
-  @skip('Feature postponed')
-  def test_url_ipv6_access(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'url.example.com',
-        'replication_number': '1',
-        'url': 'http://url.example.com',
-        'site_url': 'http://url.example.com',
-        'secure_access': 'https://url.example.com',
-      },
-      parameter_dict
-    )
-
-    result_ipv6 = fakeHTTPSResult(
-      parameter_dict['domain'], self._ipv6_address, 'test-path',
-      source_ip=self._ipv6_address)
-
-    self.assertEqual(
-       self._ipv6_address,
-       result_ipv6.json()['Incoming Headers']['x-forwarded-for']
-    )
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result_ipv6.peercert))
-
-    self.assertEqualResultJson(result_ipv6, 'Path', '/test-path')
 
   def test_type_zope_path(self):
     parameter_dict = self.assertSlaveBase('type-zope-path')
@@ -4440,16 +4399,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location']
     )
 
-  def _curl(self, domain, ip, port, cookie):
+  def _curl(self, domain, ip, port, cookie=None):
     replacement_dict = dict(
-      domain=domain, ip=TEST_IP, port=HTTPS_PORT)
+      domain=domain, ip=ip, port=port)
     curl_command = [
         'curl', '-v', '-k',
         '-H', 'Host: %(domain)s' % replacement_dict,
         '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
-        '--cookie', cookie,
-        'https://%(domain)s:%(port)s/' % replacement_dict,
     ]
+    if cookie is not None:
+      curl_command.extend(['--cookie', cookie])
+    curl_command.extend([
+      'https://%(domain)s:%(port)s/' % replacement_dict])
     prc = subprocess.Popen(
       curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
@@ -4645,17 +4606,21 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], 'test-path')
     self.assertEqual(http.client.FOUND, result_http.status_code)
 
-    # prove 2nd frontend by inspection of the instance
-    slave_configuration_name = '_replicate.conf'
-    slave_configuration_file_list = [
-      '/'.join([f[0], slave_configuration_name]) for f in [
-        q for q in os.walk(self.instance_path)
-        if slave_configuration_name in q[2]
-      ]
-    ]
-
+    # prove replication by asserting that slave ended up in both nodes
+    frontend_haproxy_cfg_list = glob.glob(
+      os.path.join(self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))
+    self.assertEqual(2, len(frontend_haproxy_cfg_list))
+    for frontend_haproxy_cfg in frontend_haproxy_cfg_list:
+      with open(frontend_haproxy_cfg) as fh:
+        self.assertIn('backend _replicate-http', fh.read())
     self.assertEqual(
-      2, len(slave_configuration_file_list), slave_configuration_file_list)
+      2,
+      len(
+        glob.glob(
+          os.path.join(
+            self.instance_path, '*', 'etc', 'frontend-haproxy.d',
+            '._replicate.htpasswd')))
+    )
 
 
 class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
@@ -5753,7 +5718,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
     }
 
@@ -6460,7 +6424,6 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
 
@@ -6563,7 +6526,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'apache-key': self.key_pem,
       'domain': 'example.com',
       'enable-http2-by-default': True,
-      'mpm-graceful-shutdown-timeout': 2,
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
       'backend-connect-retries': 1,
@@ -6660,7 +6622,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
         'monitor-username': 'admin',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         'ram-cache-size': '512K',
@@ -6686,7 +6647,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
         'monitor-username': 'admin',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         'ram-cache-size': '256K',
@@ -6712,7 +6672,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
         'monitor-username': 'admin',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         're6st-verification-url': 're6st-verification-url',
@@ -6755,7 +6714,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'full_address_list': [],
         'instance_title': 'testing partition 0',
         'kedifa_port': '15080',
-        'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
         're6st-verification-url': 're6st-verification-url',
@@ -6783,7 +6741,6 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
 
