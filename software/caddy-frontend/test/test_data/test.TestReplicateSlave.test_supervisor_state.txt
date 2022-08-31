@@ -17,8 +17,6 @@ T-1:kedifa-{hash-generic}-on-watch RUNNING
 T-1:kedifa-reloader EXITED
 T-1:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-1:monitor-httpd-graceful EXITED
-T-2:6tunnel-11080-{hash-generic}-on-watch RUNNING
-T-2:6tunnel-11443-{hash-generic}-on-watch RUNNING
 T-2:backend-client-login-certificate-caucase-updater-on-watch RUNNING
 T-2:backend-haproxy-{hash-generic}-on-watch RUNNING
 T-2:backend-haproxy-rsyslogd-{hash-generic}-on-watch RUNNING
@@ -37,8 +35,6 @@ T-2:slave-instrospection-nginx-{hash-generic}-on-watch RUNNING
 T-2:slave-introspection-safe-graceful EXITED
 T-2:trafficserver-{hash-generic}-on-watch RUNNING
 T-2:trafficserver-reload EXITED
-T-3:6tunnel-11080-{hash-generic}-on-watch STOPPED
-T-3:6tunnel-11443-{hash-generic}-on-watch STOPPED
 T-3:backend-client-login-certificate-caucase-updater-on-watch STOPPED
 T-3:backend-haproxy-{hash-generic}-on-watch STOPPED
 T-3:backend-haproxy-rsyslogd-{hash-generic}-on-watch STOPPED
