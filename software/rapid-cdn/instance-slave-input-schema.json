@@ -34,7 +34,7 @@
     },
     "enable_cache": {
       "default": "false",
-      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend Caddy and backend",
+      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend and backend",
       "enum": [
         "false",
         "true"
