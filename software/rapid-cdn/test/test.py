@@ -2261,11 +2261,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.assertFalse('timestamp' in line)
 
   def assertBackendHeaders(
-    self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
-    proto='https', ignore_header_list=None, cached=False):
-    if ignore_header_list is None:
-      ignore_header_list = []
-    if 'Host' not in ignore_header_list:
+    self, backend_header_dict, domain=None, source_ip=SOURCE_IP,
+    port=HTTPS_PORT, proto='https', cached=False):
+    if domain is not None:
       self.assertEqual(
         backend_header_dict['host'],
         '%s:%s' % (domain, port))
@@ -3333,10 +3331,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    parsed = urllib.parse.urlparse(self.backend_url)
     self.assertBackendHeaders(
-      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
-      ignore_header_list=['Host'])
+      j['Incoming Headers'], port='17', proto='irc')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3369,7 +3365,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
@@ -3439,10 +3435,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    parsed = urllib.parse.urlparse(self.backend_url)
-    self.assertBackendHeaders(
-      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
-      ignore_header_list=['Host'])
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3461,8 +3454,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertBackendHeaders(
-      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
-      ignore_header_list=['Host'])
+      j['Incoming Headers'], port='17', proto='irc')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3485,8 +3477,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertBackendHeaders(
-      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
-      ignore_header_list=['Host'])
+      j['Incoming Headers'], port='17', proto='irc')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
