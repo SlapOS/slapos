@@ -65,8 +65,6 @@ frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
   bind {{ configuration['global-ipv6'] }}:{{ configuration['http-port'] }}
 {{ frontend_common() }}
-  http-request set-header X-Forwarded-Proto http
-  http-request set-header X-Forwarded-Port {{ configuration['http-port'] }}
 # Here use Host header
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'http', False) }}
@@ -80,8 +78,6 @@ frontend https-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
   bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
 {{ frontend_common() }}
-  http-request set-header X-Forwarded-Proto https
-  http-request set-header X-Forwarded-Port {{ configuration['https-port'] }}
 # Here use ssl_fc_sni and fallback to Host header
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', False) }}
@@ -133,6 +129,30 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         endif %}
 {%-         if slave_instance['prefer-gzip-encoding-to-backend'] %}
   http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
+{%-         endif %}
+{%-         if slave_instance['type'] == 'websocket' %}
+{%-           if slave_instance['websocket-path-list'] %}
+{%-             set acl_entry = ['acl is_websocket '] %}
+{%-             for path in slave_instance['websocket-path-list'] %}
+{%-               do acl_entry.append('path -i -m beg /%s || ' % (path.replace('%', '%%'),)) %}
+{%-             endfor %}
+{%-             do acl_entry.append('always_false') %}
+  {{ ''.join(acl_entry) }}
+{%-           else %}
+  acl is_websocket always_true
+{%-           endif %}
+  http-request set-header X-Forwarded-Proto {{ scheme }} if !is_websocket
+  http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }} if !is_websocket
+{%-           if slave_instance['websocket-transparent'] %}
+  http-request set-header X-Real-Ip "%ci" if is_websocket
+  http-request set-header X-Forwarded-Proto {{ scheme }} if is_websocket
+  http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }} if is_websocket
+{%-           else %}
+{#-             Pass-thourgh: X-Forwarded-Proto, X-Forwarded-Port #}
+{%-           endif %}
+{%-         else %}
+  http-request set-header X-Forwarded-Proto {{ scheme }}
+  http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }}
 {%-         endif %}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
