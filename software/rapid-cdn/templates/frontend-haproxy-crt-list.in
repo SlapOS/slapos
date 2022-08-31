@@ -1,0 +1,11 @@
+{%- for slave in frontend_slave_list %}
+{%-   set entry_list = [] %}
+{#-   <crtfile> #}
+{%-   do entry_list.append(slave['certificate']) %}
+{#-   <snifilter> #}
+{%-   do entry_list.extend(slave['host_list']) %}
+{{-    ' '.join(entry_list) }}
+{% endfor -%}
+# Fallback to default certificate
+{{ configuration['master-certificate'] }}
+# END OF FILE
