@@ -140,36 +140,6 @@
     websocket
     without /proxy/
   }
-{%- elif slave_parameter['type'] == 'websocket' %}
-{%-   if slave_parameter['websocket-path-list'] %}
-  proxy / {{ backend_url }} {
-{{ proxy_header() }}
-{{ hsts_header(tls) }}
-{%-     if slave_parameter['websocket-transparent'] %}
-    transparent
-{%-     else %}
-    header_upstream Host {host}
-{%-     endif %}
-  }
-{%-     for websocket_path in slave_parameter['websocket-path-list'] %}
-  proxy "/{{ websocket_path }}" {{ backend_url }} {
-{{ proxy_header() }}
-{{ hsts_header(tls) }}
-    websocket
-{%-       if slave_parameter['websocket-transparent'] %}
-    transparent
-{%-       else %}
-    header_upstream Host {host}
-{%-       endif %}
-  }
-{%-     endfor %}
-{%-   else %}
-  proxy / {{ backend_url }} {
-{{ proxy_header() }}
-{{ hsts_header(tls) }}
-    websocket
-{%-   if slave_parameter['websocket-transparent'] %}
-    transparent
 {%-   else %}
     header_upstream Host {host}
 {%-   endif %}
