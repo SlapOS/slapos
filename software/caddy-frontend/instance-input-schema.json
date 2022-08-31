@@ -44,12 +44,6 @@
       "title": "Globally disable HTTP2",
       "type": "string"
     },
-    "mpm-graceful-shutdown-timeout": {
-      "default": 5,
-      "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
-      "title": "Duration of the graceful shutdown period. Warning: Changing the parameter will result in restarting Caddy process.",
-      "type": "integer"
-    },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
