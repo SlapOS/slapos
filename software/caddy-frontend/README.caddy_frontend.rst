@@ -418,8 +418,7 @@ Solution 2 (network capability)
 
 It is also possible to directly allow the service to listen on 80 and 443 ports using the following command::
 
-  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$CADDY_FRONTEND_SOFTWARE_RELEASE_MD5/go.work/bin/caddy
-  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$CADDY_FRONTEND_SOFTWARE_RELEASE_MD5/parts/6tunnel/bin/6tunnel
+  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$CADDY_FRONTEND_SOFTWARE_RELEASE_MD5/parts/haproxy/sbin/haproxy
 
 Then specify in the master instance parameters:
 
@@ -464,7 +463,7 @@ It means sites are served in ``caddy-frontend-N`` partition, and this partition 
  * Caddy serving the browser [client-facing-caddy]
  * (optional) Apache Traffic Server for caching [ats]
  * Haproxy as a way to communicate to the backend [backend-facing-haproxy]
- * some other additional tools (6tunnel, monitor, etc)
+ * some other additional tools (monitor, etc)
 
 In case of slaves without cache (``enable_cache = False``) the request will travel as follows::
 
@@ -490,7 +489,7 @@ If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there
 Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------
 
-X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In case of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
+X-Forwarded-For and X-Real-Ip are transmitted to the backend.
 
 Automatic Internal Caucase CSR
 ------------------------------
