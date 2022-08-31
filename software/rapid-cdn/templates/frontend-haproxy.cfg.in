@@ -124,6 +124,30 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           if slave_instance['prefer-gzip-encoding-to-backend'] %}
   http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
 {%-           endif %}
+{%-           if slave_instance['type'] == 'websocket' %}
+{%-             if slave_instance['websocket-path-list'] %}
+{%-               set acl_entry = ['acl is_websocket '] %}
+{%-               for path in slave_instance['websocket-path-list'] %}
+{%-                 do acl_entry.append('path -i -m beg /%s || ' % (path.replace('%', '%%'),)) %}
+{%-               endfor %}
+{%-               do acl_entry.append('always_false') %}
+  {{ ''.join(acl_entry) }}
+{%-             else %}
+  acl is_websocket always_true
+{%-             endif %}
+  http-request set-header X-Forwarded-Proto {{ scheme }} if !is_websocket
+  http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }} if !is_websocket
+{%-             if slave_instance['websocket-transparent'] %}
+  http-request set-header X-Real-Ip "%ci" if is_websocket
+  http-request set-header X-Forwarded-Proto {{ scheme }} if is_websocket
+  http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }} if is_websocket
+{%-             else %}
+{#-               Pass-thourgh: X-Forwarded-Proto, X-Forwarded-Port #}
+{%-             endif %}
+{%-           else %}
+  http-request set-header X-Forwarded-Proto {{ scheme }}
+  http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }}
+{%-           endif %}
 {%-           if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-           endif %} {# if info_dict['path'] #}
