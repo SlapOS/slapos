@@ -88,7 +88,6 @@
       "monitor-httpd-port": 8411,
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
-      "mpm-graceful-shutdown-timeout": "2",
       "plain_http_port": "11080",
       "port": "11443",
       "slave-kedifa-information": "{\"_ssl_from_master\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@/@@ssl_from_master_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@?auth=\"}}"
