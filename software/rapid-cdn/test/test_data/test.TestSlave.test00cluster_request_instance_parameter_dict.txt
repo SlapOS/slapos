@@ -15,7 +15,6 @@
       ]
     ],
     "kedifa_port": "15080",
-    "mpm-graceful-shutdown-timeout": "2",
     "plain_http_port": "11080",
     "port": "11443",
     "request-timeout": "12",
@@ -785,7 +784,6 @@
       "monitor-httpd-port": 8411,
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
-      "mpm-graceful-shutdown-timeout": "2",
       "plain_http_port": "11080",
       "port": "11443",
       "request-timeout": "12",
