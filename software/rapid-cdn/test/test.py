@@ -2391,6 +2391,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     headers = self.assertResponseHeaders(
       result_http, via=False, backend_reached=False)
+
     self.assertEqual(
       'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       headers['Location']
@@ -3530,6 +3531,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.headers['Location']
     )
 
+    headers = self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
     result = fakeHTTPResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper')
@@ -3543,6 +3547,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '%stest-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
+
+    headers = self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
 
   def test_type_redirect_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
@@ -3565,6 +3572,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '%stest-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
+
+    headers = self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
     parameter_dict = self.assertSlaveBase(
