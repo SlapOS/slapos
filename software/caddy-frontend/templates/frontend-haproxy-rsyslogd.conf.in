@@ -1,0 +1,33 @@
+module(
+  load="imuxsock"
+  SysSock.Name="{{ configuration['log-socket'] }}")
+
+# Just simply output the raw line without any additional information, as
+# haproxy emits enough information by itself
+# Also cut out first empty space in msg, which is related to rsyslogd
+# internal and end up cutting on 8k, as it's default of $MaxMessageSize
+template(name="rawoutput" type="string" string="%msg:2:8192%\n")
+$ActionFileDefaultTemplate rawoutput
+
+$FileCreateMode 0600
+$DirCreateMode 0700
+$Umask 0022
+
+$WorkDirectory {{ configuration['spool-directory'] }}
+
+# Setup logging per slave, by extracting the slave name from the log stream
+{%- set regex = "^\\\\s*(\\\\S.*)-https{0,1} (.*)" %}
+# Extract file name part from 1st match
+template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
+set $!slave_name = exec_template("extract_slave_name");
+template(name="slave_output" type="string" string="{{ configuration['slave-log-directory'] }}/%$!slave_name%_access_log")
+# Output only 2nd match, add the newline in the ned
+template(name="haproxy_slave_line" type="string" string="%msg:R,ERE,2,FIELD:{{ regex }}--end%\n")
+# React on match
+if (re_match($msg, '{{ regex }}')) then {
+ action(type="omfile" dynaFile="slave_output" template="haproxy_slave_line")
+ stop
+}
+
+{#- emit all not catched messages to full log file #}
+*.* {{ configuration['log-file'] }}
