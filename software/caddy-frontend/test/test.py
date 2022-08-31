@@ -302,7 +302,8 @@ class TestDataMixin(object):
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
     try:
-      test_data = open(test_data_file).read().strip()
+      with open(test_data_file) as f:
+        test_data = f.read().strip()
     except IOError:
       test_data = ''
 
