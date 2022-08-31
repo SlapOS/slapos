@@ -93,6 +93,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   redirect scheme https code 302
 {%-     else %}
 {%-       if 'hostname' in info_dict and 'port' in info_dict %}
+{%-         if slave_instance['type'] == 'redirect' %}
+  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}:{{ info_dict['port'] }} code 302
+{%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
 {%-         if slave_instance['disable-via-header'] %}
   http-response del-header Via
@@ -124,6 +127,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-         endif %} {# if info_dict['path'] #}
+{%-         endif %} {# if slave_instance['type'] == 'redirect' #}
 {%-       endif %} {# if 'hostname' in info_dict and 'port' in info_dict #}
 {%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
 {%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
