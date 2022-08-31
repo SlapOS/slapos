@@ -993,23 +993,19 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(
       sorted([q['name'] for q in result.json()]),
-      ['access.log', 'backend.log', 'error.log'])
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'access.log', verify=False).status_code
-    )
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'error.log', verify=False).status_code
-    )
-    # assert only for few tests, as backend log is not available for many of
-    # them, as it's created on the fly
+      ['access.log', 'backend.log'])
+    # assert only for few tests, as logs are available for sure only
+    # for few of them
     for test_name in [
       'test_url', 'test_auth_to_backend', 'test_compressed_result']:
       if self.id().endswith(test_name):
         self.assertEqual(
           http.client.OK,
           requests.get(url + 'backend.log', verify=False).status_code
+        )
+        self.assertEqual(
+          http.client.OK,
+          requests.get(url + 'access.log', verify=False).status_code
         )
 
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
@@ -2234,15 +2230,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         backend_header_dict['via']
       )
 
-  def test_telemetry_disabled(self):
-    # here we trust that telemetry not present in error log means it was
-    # really disabled
-    error_log_file = glob.glob(
-      os.path.join(
-       self.instance_path, '*', 'var', 'log', 'frontend-error.log'))[0]
-    with open(error_log_file) as fh:
-      self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
-
   def test_url(self):
     parameter_dict = self.assertSlaveBase(
       'Url',
@@ -2336,6 +2323,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that no needless entries are generated
     self.assertIn("backend _Url-http\n", content)
     self.assertNotIn("backend _Url-https\n", content)
+
+    # check out access via IPv6
+    out_ipv6, err_ipv6 = self._curl(
+      parameter_dict['domain'], self._ipv6_address, HTTPS_PORT)
+
+    try:
+      j = json.loads(out_ipv6.decode())
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (out_ipv6.decode(),))
+    self.assertEqual(
+       self._ipv6_address,
+       j['Incoming Headers']['x-forwarded-for']
+    )
 
   def test_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('url-netloc-list')
@@ -2552,36 +2552,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'text/xml; charset=utf-8',
       result.headers['Content-Type']
     )
-
-  @skip('Feature postponed')
-  def test_url_ipv6_access(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'url.example.com',
-        'replication_number': '1',
-        'url': 'http://url.example.com',
-        'site_url': 'http://url.example.com',
-        'secure_access': 'https://url.example.com',
-      },
-      parameter_dict
-    )
-
-    result_ipv6 = fakeHTTPSResult(
-      parameter_dict['domain'], self._ipv6_address, 'test-path',
-      source_ip=self._ipv6_address)
-
-    self.assertEqual(
-       self._ipv6_address,
-       result_ipv6.json()['Incoming Headers']['x-forwarded-for']
-    )
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result_ipv6.peercert))
-
-    self.assertEqualResultJson(result_ipv6, 'Path', '/test-path')
 
   def test_type_zope_path(self):
     parameter_dict = self.assertSlaveBase('type-zope-path')
@@ -4428,16 +4398,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location']
     )
 
-  def _curl(self, domain, ip, port, cookie):
+  def _curl(self, domain, ip, port, cookie=None):
     replacement_dict = dict(
-      domain=domain, ip=TEST_IP, port=HTTPS_PORT)
+      domain=domain, ip=ip, port=port)
     curl_command = [
         'curl', '-v', '-k',
         '-H', 'Host: %(domain)s' % replacement_dict,
         '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
-        '--cookie', cookie,
-        'https://%(domain)s:%(port)s/' % replacement_dict,
     ]
+    if cookie is not None:
+      curl_command.extend(['--cookie', cookie])
+    curl_command.extend([
+      'https://%(domain)s:%(port)s/' % replacement_dict])
     prc = subprocess.Popen(
       curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
