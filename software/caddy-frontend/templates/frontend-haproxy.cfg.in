@@ -133,6 +133,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         if slave_instance['prefer-gzip-encoding-to-backend'] %}
   http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
 {%-         endif %}
+{%-         if slave_instance['websocket-transparent'] %}
+  http-request set-header X-Real-Ip "%ci"
+{%-         endif %}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-         endif %} {# if info_dict['path'] #}

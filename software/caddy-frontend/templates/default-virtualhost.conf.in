@@ -145,11 +145,6 @@
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
 {{ hsts_header(tls) }}
-{%-     if slave_parameter['websocket-transparent'] %}
-    transparent
-{%-     else %}
-    header_upstream Host {host}
-{%-     endif %}
   }
 {%-     for websocket_path in slave_parameter['websocket-path-list'] %}
   proxy "/{{ websocket_path }}" {{ backend_url }} {
