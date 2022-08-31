@@ -15,7 +15,7 @@
     },
     "type": {
       "default": "",
-      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster.",
+      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster. All frontends support websocket by default and under the hood, but switch to type:websocket allow to configure websocket-path-list and websocket-transparent options.",
       "enum": [
         "",
         "zope",
