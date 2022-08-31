@@ -302,7 +302,8 @@ class TestDataMixin(object):
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
     try:
-      test_data = open(test_data_file).read().strip()
+      with open(test_data_file) as fh:
+        test_data = fh.read().strip()
     except IOError:
       test_data = ''
 
@@ -840,8 +841,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     assert ca_certificate.status_code == http.client.OK
     cls.kedifa_caucase_ca_certificate_file = os.path.join(
       cls.working_directory, 'kedifa-caucase.ca.crt.pem')
-    open(cls.kedifa_caucase_ca_certificate_file, 'w').write(
-        ca_certificate.text)
+    with open(cls.kedifa_caucase_ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
 
   @classmethod
   def _fetchBackendClientCaCertificateFile(cls, parameter_dict):
@@ -850,8 +851,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     assert ca_certificate.status_code == http.client.OK
     cls.backend_client_caucase_ca_certificate_file = os.path.join(
       cls.working_directory, 'backend-client-caucase.ca.crt.pem')
-    open(cls.backend_client_caucase_ca_certificate_file, 'w').write(
-      ca_certificate.text)
+    with open(cls.backend_client_caucase_ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
 
   @classmethod
   def setUpMaster(cls):
@@ -1391,9 +1392,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.instance_path, '*', 'var', 'log', 'httpd', log_name
       ))[0]
 
-    self.assertRegex(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
+    with open(log_file) as fh:
+      self.assertRegex(
+        fh.readlines()[-1],
+        log_regexp)
 
 
 class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
@@ -2050,10 +2052,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that monitor cors domains are correctly setup by file presence, as
     # we trust monitor stack being tested in proper place and it is too hard
     # to have working monitor with local proxy
-    self.assertTestData(
-      open(
-        os.path.join(
-          partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
+    with open(os.path.join(
+          partition_path, 'etc', 'httpd-cors.cfg')) as fh:
+      self.assertTestData(fh.read().strip())
 
   def test_node_information_json(self):
     node_information_file_path = glob.glob(os.path.join(
@@ -2100,10 +2101,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
-    self.assertTrue(
-      '-grace 2s' in
-      open(os.path.join(partition_path, 'bin', 'caddy-wrapper'), 'r').read()
-    )
+    with open(os.path.join(partition_path, 'bin', 'caddy-wrapper')) as fh:
+      self.assertIn('-grace 2s', fh.read())
 
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
@@ -2112,8 +2111,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       ))
     self.assertEqual(3, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
-    got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
-    # check that no monitor.conf in generated configuratio has magic !py!
+    got = []
+    for q in monitor_conf_list:
+      with open(q) as fh:
+        got.append(('!py!' in fh.read(), q))
+    # check that no monitor.conf in generated configuration has magic !py!
     self.assertEqual(
       expected,
       got
@@ -2173,14 +2175,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
-    for line in [
-      q for q in open(buildout_file).readlines()
-      if q.startswith('config-slave-list') or q.startswith(
-          'config-extra_slave_instance_list')]:
-      self.assertFalse('slave_title' in line)
-      self.assertFalse('slap_software_type' in line)
-      self.assertFalse('connection-parameter-hash' in line)
-      self.assertFalse('timestamp' in line)
+    with open(buildout_file) as fh:
+      for line in [
+        q for q in fh.readlines()
+        if q.startswith('config-slave-list') or q.startswith(
+            'config-extra_slave_instance_list')]:
+        self.assertFalse('slave_title' in line)
+        self.assertFalse('slap_software_type' in line)
+        self.assertFalse('connection-parameter-hash' in line)
+        self.assertFalse('timestamp' in line)
 
   def assertBackendHeaders(
     self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
@@ -3680,10 +3683,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       os.path.join(
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
+        fh.read())
 
   def test_enable_cache_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
@@ -5867,10 +5870,10 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
         '_default_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384',
+        fh.read())
 
   def test_own_ciphers(self):
     parameter_dict = self.assertSlaveBase('own_ciphers')
@@ -5893,10 +5896,10 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
         '_own_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
+        fh.read())
 
 
 class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
