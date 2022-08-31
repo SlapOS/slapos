@@ -16,15 +16,9 @@
 
 {%- macro proxy_header() %}
     timeout {{ slave_parameter['request-timeout'] }}s
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
     # workaround for lost connection to haproxy by reconnecting
     try_duration 3s
     try_interval 250ms
-    header_upstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-id'] }}-{{ slave_parameter['version-hash'] }}"
-{%-   if not slave_parameter['disable-via-header'] %}
-    header_downstream +Via "{proto} rapid-cdn-frontend-{{ slave_parameter['node-id'] }}-{{ slave_parameter['version-hash'] }}"
-{%-   endif %}
 {%- endmacro %} {# proxy_header #}
 
 {%- macro hsts_header(tls) %}
@@ -115,10 +109,6 @@
     # Remove cookie {{ disabled_cookie }} from client Cookies
     header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
 {%- endfor %} {#- for disabled_cookie in slave_parameter['disabled-cookie-list'] #}
-
-{%-   if slave_parameter['disable-via-header'] %}
-    header_downstream -Via
-{%-   endif %} {#-   if slave_parameter['disable-via-header'] #}
 
 {%-   if slave_parameter['disable-no-cache-request'] %}
     header_upstream -Cache-Control
