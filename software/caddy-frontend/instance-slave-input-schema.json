@@ -15,7 +15,7 @@
     },
     "type": {
       "default": "",
-      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster.",
+      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster. All frontends support websocket by default and under the hood, but switch to type:websocket allow to configure websocket-path-list and websocket-transparent options.",
       "enum": [
         "",
         "zope",
@@ -120,7 +120,7 @@
     },
     "websocket-transparent": {
       "default": "true",
-      "description": "If set to false, websocket slave will be without Caddy's transparent proxy mode. Depending on the application the setting shall be false or true. Defaults to true for transparent proxying.",
+      "description": "If set to false, websocket slave will be without passing X-Real-Ip, X-Forwarded-Proto and X-Forwarded-Port. Depending on the application the setting shall be false or true. Defaults to true for transparent proxying.",
       "enum": [
         "false",
         "true"
