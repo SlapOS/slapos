@@ -120,6 +120,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request del-header Cache-Control
   http-request del-header Pragma
 {%-         endif %}
+{%-         if slave_instance['prefer-gzip-encoding-to-backend'] %}
+  http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
+{%-         endif %}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-         endif %} {# if info_dict['path'] #}
