@@ -90,10 +90,18 @@ frontend https-frontend
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
+  # setup Date
+  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
   redirect scheme https code 302
 {%-     else %}
 {%-       if 'hostname' in info_dict and 'port' in info_dict %}
+{%-         if slave_instance['type'] == 'redirect' %}
+  # setup Date
+  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}:{{ info_dict['port'] }} code 302
+{%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
+{%-         endif %}
 {%-         if slave_instance['disable-via-header'] %}
   http-response del-header Via
 {%-         else %}
