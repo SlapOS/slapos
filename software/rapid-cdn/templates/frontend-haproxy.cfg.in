@@ -93,37 +93,41 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   redirect scheme https code 302
 {%-     else %}
 {%-       if 'hostname' in info_dict and 'port' in info_dict %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
-{%-         if slave_instance['disable-via-header'] %}
-  http-response del-header Via
+{%-         if slave_instance['type'] == 'redirect' %}
+  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}:{{ info_dict['port'] }} code 302
 {%-         else %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
+{%-           if slave_instance['disable-via-header'] %}
+  http-response del-header Via
+{%-           else %}
   http-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-{%-         endif %}
-{%-         if scheme == 'https' %}
-{%-           if slave_instance['strict-transport-security'] > 0 %}
-{%-             set strict_transport_security = ['max-age=%i' % (slave_instance['strict-transport-security'],)] %}
-{%-             if slave_instance['strict-transport-security-sub-domains'] %}
-{%-               do strict_transport_security.append('; includeSubDomains') %}
-{%-             endif %}
-{%-             if slave_instance['strict-transport-security-preload'] %}
-{%-               do strict_transport_security.append('; preload') %}
-{%-             endif %}
-  http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
 {%-           endif %}
-{%-         endif %}
-{%-         for disabled_cookie in slave_instance['disabled-cookie-list'] %}
+{%-           if scheme == 'https' %}
+{%-             if slave_instance['strict-transport-security'] > 0 %}
+{%-               set strict_transport_security = ['max-age=%i' % (slave_instance['strict-transport-security'],)] %}
+{%-               if slave_instance['strict-transport-security-sub-domains'] %}
+{%-                 do strict_transport_security.append('; includeSubDomains') %}
+{%-               endif %}
+{%-               if slave_instance['strict-transport-security-preload'] %}
+{%-                 do strict_transport_security.append('; preload') %}
+{%-               endif %}
+  http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+{%-             endif %}
+{%-           endif %}
+{%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}
   http-request replace-header Cookie (.*)(^{{ disabled_cookie | replace('%', '%%') }}=[^;]*;\ |;\ {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*) \1\3
-{%-         endfor %}
-{%-         if slave_instance['disable-no-cache-request'] %}
+{%-           endfor %}
+{%-           if slave_instance['disable-no-cache-request'] %}
   http-request del-header Cache-Control
   http-request del-header Pragma
-{%-         endif %}
-{%-         if slave_instance['prefer-gzip-encoding-to-backend'] %}
+{%-           endif %}
+{%-           if slave_instance['prefer-gzip-encoding-to-backend'] %}
   http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
-{%-         endif %}
-{%-         if info_dict['path'] %}
+{%-           endif %}
+{%-           if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
-{%-         endif %} {# if info_dict['path'] #}
+{%-           endif %} {# if info_dict['path'] #}
+{%-         endif %} {# if slave_instance['type'] == 'redirect' #}
 {%-       endif %} {# if 'hostname' in info_dict and 'port' in info_dict #}
 {%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
 {%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
