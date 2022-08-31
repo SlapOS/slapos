@@ -123,13 +123,6 @@
 {%- endif %}
   } {# rewrite #}
 {%- endif %} {#- if slave_parameter['prefer-gzip-encoding-to-backend'] #}
-{%- elif slave_parameter['type'] == 'redirect' %}
-{%-   if backend_url %}
-  # Redirect configuration
-  redir 302 {
-    /  {{ backend_url }}{rewrite_uri}
-  }
-{%-   endif %}
 {%- elif slave_parameter['type'] == 'notebook' %}
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
