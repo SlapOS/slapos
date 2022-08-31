@@ -14,7 +14,6 @@
         'apache-key',
         'domain',
         'enable-http2-by-default',
-        'mpm-graceful-shutdown-timeout',
         're6st-verification-url',
         'backend-connect-timeout',
         'backend-connect-retries',

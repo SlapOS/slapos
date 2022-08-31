@@ -1,0 +1,111 @@
+global
+  pidfile {{ configuration['pid-file'] }}
+  # master-worker is compatible with foreground with process management
+  master-worker
+  expose-experimental-directives
+  log {{ configuration['log-socket'] }} local0
+
+defaults
+  mode http
+  log global
+  option httplog
+{#-  timeout queue XXX TODO #}
+{#-  timeout server XXX TODO #}
+{#-  timeout client XXX TODO #}
+{#-  timeout connect XXX TODO #}
+{#-  timeout tunnel XXX TODO #}
+{#-  retries XXX TODO #}
+
+{%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
+{%- macro frontend_entry(slave_instance, scheme, wildcard) %}
+{#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
+{#-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] #}
+{%-     set host_list = (slave_instance.get('server-alias') or  '').split() %}
+{%-     if slave_instance.get('custom_domain') not in host_list %}
+{%-       do host_list.append(slave_instance.get('custom_domain')) %}
+{%-     endif %}
+{%-     set matched = {'count': 0} %}
+{%-     for host in host_list %}
+{#-       Match up to the end or optional port (starting with ':') #}
+{#-       Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
+{%-       if wildcard and host.startswith('*.') %}
+{%-         do matched.__setitem__('count', matched['count'] + 1) %}
+# match wildcard {{ host }}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
+{%-       elif not wildcard and not host.startswith('*.') %}
+{%-         do matched.__setitem__('count', matched['count'] + 1) %}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i ^{{ host }}($|:.*)
+{%-       endif %}
+{%-     endfor %}
+{%-     if matched['count'] > 0 %}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+{%-     endif %}
+{#-   endif #}
+{%- endmacro %}
+
+{%- macro frontend_common() %}
+  # normalize URIs as it's expected by the backends
+  http-request normalize-uri path-merge-slashes
+  http-request normalize-uri path-strip-dot
+  http-request normalize-uri path-strip-dotdot
+  # Combined Log Format
+  capture request header REMOTE_USER len 255
+  capture request header Referer len 255
+  capture request header User-Agent len 255
+  log-format "%{+E}o %b %ci - %[capture.req.hdr(0)] [%trl] \"%HM %HU %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
+  # setup Via
+  http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  # setup X-Forwarded-For
+  http-request set-header X-Forwarded-For "%ci"
+{%- endmacro %}
+frontend http-frontend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+  bind {{ configuration['global-ipv6'] }}:{{ configuration['http-port'] }}
+{{ frontend_common() }}
+  http-request set-header X-Forwarded-Proto http
+  http-request set-header X-Forwarded-Port {{ configuration['http-port'] }}
+# Here use Host header
+{%- for slave_instance in frontend_slave_list -%}
+{{ frontend_entry(slave_instance, 'http', False) }}
+{%- endfor %}
+{%- for slave_instance in frontend_slave_list -%}
+{{ frontend_entry(slave_instance, 'http', True) }}
+{%- endfor %}
+
+frontend https-frontend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
+  bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
+{{ frontend_common() }}
+  http-request set-header X-Forwarded-Proto https
+  http-request set-header X-Forwarded-Port {{ configuration['https-port'] }}
+# Here use ssl_fc_sni and fallback to Host header
+{%- for slave_instance in frontend_slave_list -%}
+{{ frontend_entry(slave_instance, 'https', False) }}
+{%- endfor %}
+{%- for slave_instance in frontend_slave_list -%}
+{{ frontend_entry(slave_instance, 'https', True) }}
+{%- endfor %}
+
+# Backends
+{%- for slave_instance in frontend_slave_list %}
+{%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
+{%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-     if scheme == 'http' and slave_instance['https-only'] %}
+{#-     Support https-only if connected via http #}
+  redirect scheme https code 302
+{%-     else %}
+{%-       if 'hostname' in info_dict and 'port' in info_dict %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
+{%-         if slave_instance['disable-via-header'] %}
+  http-response del-header Via
+{%-         else %}
+  http-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+{%-         endif %}
+{%-         if info_dict['path'] %}
+  http-request set-path {{ info_dict['path'] }}%[path]
+{%-         endif %} {# if info_dict['path'] #}
+{%-       endif %} {# if 'hostname' in info_dict and 'port' in info_dict #}
+{%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
+{%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
+{% endfor %}
