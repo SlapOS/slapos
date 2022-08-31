@@ -99,7 +99,6 @@ configuration.enable-http2-by-default = true
 configuration.global-disable-http2 = false
 configuration.ciphers =
 configuration.request-timeout = 600
-configuration.mpm-graceful-shutdown-timeout = 5
 configuration.frontend-name =
 configuration.backend-connect-timeout = 5
 configuration.backend-connect-retries = 3
