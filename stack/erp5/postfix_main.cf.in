@@ -71,3 +71,7 @@ smtp_sasl_auth_enable = yes
 smtp_sasl_password_maps = {{ sasl_passwd }}
 smtp_sasl_tls_security_options = noanonymous
 {%- endif %}
+
+maillog_file = {{ log_directory }}/postfix.log
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ log_directory }}
