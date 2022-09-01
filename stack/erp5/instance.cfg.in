@@ -15,6 +15,7 @@ postfix-location = {{ postfix_location }}
 template-postfix-aliases = {{ template_postfix_aliases }}
 template-postfix-main-cf = {{ template_postfix_main_cf }}
 template-postfix-master-cf = {{ template_postfix_master_cf }}
+xz-utils-location =  {{ xz_utils_location }}
 
 [dynamic-template-postfix]
 < = jinja2-template-base
