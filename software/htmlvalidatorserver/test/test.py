@@ -41,7 +41,6 @@ class TestHtmlValidatorServer(InstanceTestCase):
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
 
-    # Check that there is a RSS feed
     self.assertTrue('vnu-url' in parameter_dict)
     self.assertEqual(
       'https://[%s]:8899/' % (self._ipv6_address, ),
