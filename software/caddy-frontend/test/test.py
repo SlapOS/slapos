@@ -743,12 +743,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
     server_process.start()
+    # from now on, socket is used by server subprocess, we can close it
+    server.socket.close()
     cls.logger.debug('Started process %s' % (server_process,))
 
     cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
     server_https_process = multiprocessing.Process(
       target=server_https.serve_forever, name='HTTPSServer')
     server_https_process.start()
+    server_https.socket.close()
     cls.logger.debug('Started process %s' % (server_https_process,))
 
     class NetlocHandler(TestHandler):
@@ -760,12 +763,14 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_a_http_process = multiprocessing.Process(
       target=netloc_a_http.serve_forever, name='netloc-a-http')
     netloc_a_http_process.start()
+    netloc_a_http.socket.close()
 
     netloc_b_http = ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_b_http_port),
       NetlocHandler)
     netloc_b_http_process = multiprocessing.Process(
       target=netloc_b_http.serve_forever, name='netloc-b-http')
+    netloc_b_http.socket.close()
     netloc_b_http_process.start()
 
     cls.server_process_list = [
