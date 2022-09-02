@@ -302,7 +302,8 @@ class TestDataMixin(object):
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
     try:
-      test_data = open(test_data_file).read().strip()
+      with open(test_data_file) as fh:
+        test_data = fh.read().strip()
     except IOError:
       test_data = ''
 
@@ -498,31 +499,32 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   headers.setdefault('Via', 'http/1.1 clientvia')
 
   session = requests.Session()
-  if source_ip is not None:
-    new_source = source.SourceAddressAdapter(source_ip)
-    session.mount('http://', new_source)
-    session.mount('https://', new_source)
-  socket_getaddrinfo = socket.getaddrinfo
-  try:
-    add_custom_dns(domain, port, TEST_IP)
-    socket.getaddrinfo = new_getaddrinfo
-    # Use a prepared request, to disable path normalization.
-    # We need this because some test checks requests with paths like
-    # /test-path/deep/.././deeper but we don't want the client to send
-    # /test-path/deeper
-    # See also https://github.com/psf/requests/issues/5289
-    url = 'https://%s:%s/%s' % (domain, port, path)
-    req = requests.Request(
-        method='GET',
-        url=url,
-        headers=headers,
-        cookies=cookies,
-    )
-    prepped = req.prepare()
-    prepped.url = url
-    return session.send(prepped, verify=False, allow_redirects=False)
-  finally:
-    socket.getaddrinfo = socket_getaddrinfo
+  with session:
+    if source_ip is not None:
+      new_source = source.SourceAddressAdapter(source_ip)
+      session.mount('http://', new_source)
+      session.mount('https://', new_source)
+    socket_getaddrinfo = socket.getaddrinfo
+    try:
+      add_custom_dns(domain, port, TEST_IP)
+      socket.getaddrinfo = new_getaddrinfo
+      # Use a prepared request, to disable path normalization.
+      # We need this because some test checks requests with paths like
+      # /test-path/deep/.././deeper but we don't want the client to send
+      # /test-path/deeper
+      # See also https://github.com/psf/requests/issues/5289
+      url = 'https://%s:%s/%s' % (domain, port, path)
+      req = requests.Request(
+          method='GET',
+          url=url,
+          headers=headers,
+          cookies=cookies,
+      )
+      prepped = req.prepare()
+      prepped.url = url
+      return session.send(prepped, verify=False, allow_redirects=False)
+    finally:
+      socket.getaddrinfo = socket_getaddrinfo
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
@@ -540,17 +542,18 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   headers.setdefault('Via', 'http/1.1 clientvia')
   headers['Host'] = '%s:%s' % (domain, port)
   session = requests.Session()
-  if source_ip is not None:
-    new_source = source.SourceAddressAdapter(source_ip)
-    session.mount('http://', new_source)
-    session.mount('https://', new_source)
+  with session:
+    if source_ip is not None:
+      new_source = source.SourceAddressAdapter(source_ip)
+      session.mount('http://', new_source)
+      session.mount('https://', new_source)
 
-  # Use a prepared request, to disable path normalization.
-  url = 'http://%s:%s/%s' % (TEST_IP, port, path)
-  req = requests.Request(method='GET', url=url, headers=headers)
-  prepped = req.prepare()
-  prepped.url = url
-  return session.send(prepped, allow_redirects=False)
+    # Use a prepared request, to disable path normalization.
+    url = 'http://%s:%s/%s' % (TEST_IP, port, path)
+    req = requests.Request(method='GET', url=url, headers=headers)
+    prepped = req.prepare()
+    prepped.url = url
+    return session.send(prepped, allow_redirects=False)
 
 
 class TestHandler(BaseHTTPRequestHandler):
@@ -742,12 +745,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
     server_process.start()
+    # from now on, socket is used by server subprocess, we can close it
+    server.socket.close()
     cls.logger.debug('Started process %s' % (server_process,))
 
     cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
     server_https_process = multiprocessing.Process(
       target=server_https.serve_forever, name='HTTPSServer')
     server_https_process.start()
+    server_https.socket.close()
     cls.logger.debug('Started process %s' % (server_https_process,))
 
     class NetlocHandler(TestHandler):
@@ -759,6 +765,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_a_http_process = multiprocessing.Process(
       target=netloc_a_http.serve_forever, name='netloc-a-http')
     netloc_a_http_process.start()
+    netloc_a_http.socket.close()
 
     netloc_b_http = ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_b_http_port),
@@ -766,6 +773,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_b_http_process = multiprocessing.Process(
       target=netloc_b_http.serve_forever, name='netloc-b-http')
     netloc_b_http_process.start()
+    netloc_b_http.socket.close()
 
     cls.server_process_list = [
       server_process,
@@ -821,6 +829,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.server_https_auth_process = multiprocessing.Process(
       target=server_https_auth.serve_forever, name='HTTPSServerAuth')
     self.server_https_auth_process.start()
+    server_https_auth.socket.close()
     self.logger.debug('Started process %s' % (self.server_https_auth_process,))
 
   def stopAuthenticatedServerProcess(self):
@@ -840,8 +849,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     assert ca_certificate.status_code == http.client.OK
     cls.kedifa_caucase_ca_certificate_file = os.path.join(
       cls.working_directory, 'kedifa-caucase.ca.crt.pem')
-    open(cls.kedifa_caucase_ca_certificate_file, 'w').write(
-        ca_certificate.text)
+    with open(cls.kedifa_caucase_ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
 
   @classmethod
   def _fetchBackendClientCaCertificateFile(cls, parameter_dict):
@@ -850,8 +859,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     assert ca_certificate.status_code == http.client.OK
     cls.backend_client_caucase_ca_certificate_file = os.path.join(
       cls.working_directory, 'backend-client-caucase.ca.crt.pem')
-    open(cls.backend_client_caucase_ca_certificate_file, 'w').write(
-      ca_certificate.text)
+    with open(cls.backend_client_caucase_ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
 
   @classmethod
   def setUpMaster(cls):
@@ -1391,9 +1400,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.instance_path, '*', 'var', 'log', 'httpd', log_name
       ))[0]
 
-    self.assertRegex(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
+    with open(log_file) as fh:
+      self.assertRegex(
+        fh.readlines()[-1],
+        log_regexp)
 
 
 class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
@@ -2050,10 +2060,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that monitor cors domains are correctly setup by file presence, as
     # we trust monitor stack being tested in proper place and it is too hard
     # to have working monitor with local proxy
-    self.assertTestData(
-      open(
-        os.path.join(
-          partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
+    with open(os.path.join(
+          partition_path, 'etc', 'httpd-cors.cfg')) as fh:
+      self.assertTestData(fh.read().strip())
 
   def test_node_information_json(self):
     node_information_file_path = glob.glob(os.path.join(
@@ -2100,10 +2109,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
-    self.assertTrue(
-      '-grace 2s' in
-      open(os.path.join(partition_path, 'bin', 'caddy-wrapper'), 'r').read()
-    )
+    with open(os.path.join(partition_path, 'bin', 'caddy-wrapper')) as fh:
+      self.assertIn('-grace 2s', fh.read())
 
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
@@ -2112,8 +2119,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       ))
     self.assertEqual(3, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
-    got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
-    # check that no monitor.conf in generated configuratio has magic !py!
+    got = []
+    for q in monitor_conf_list:
+      with open(q) as fh:
+        got.append(('!py!' in fh.read(), q))
+    # check that no monitor.conf in generated configuration has magic !py!
     self.assertEqual(
       expected,
       got
@@ -2173,14 +2183,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
-    for line in [
-      q for q in open(buildout_file).readlines()
-      if q.startswith('config-slave-list') or q.startswith(
-          'config-extra_slave_instance_list')]:
-      self.assertFalse('slave_title' in line)
-      self.assertFalse('slap_software_type' in line)
-      self.assertFalse('connection-parameter-hash' in line)
-      self.assertFalse('timestamp' in line)
+    with open(buildout_file) as fh:
+      for line in [
+        q for q in fh.readlines()
+        if q.startswith('config-slave-list') or q.startswith(
+            'config-extra_slave_instance_list')]:
+        self.assertFalse('slave_title' in line)
+        self.assertFalse('slap_software_type' in line)
+        self.assertFalse('connection-parameter-hash' in line)
+        self.assertFalse('timestamp' in line)
 
   def assertBackendHeaders(
     self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
@@ -3680,10 +3691,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       os.path.join(
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
+        fh.read())
 
   def test_enable_cache_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
@@ -5867,10 +5878,10 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
         '_default_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384',
+        fh.read())
 
   def test_own_ciphers(self):
     parameter_dict = self.assertSlaveBase('own_ciphers')
@@ -5893,10 +5904,10 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
         '_own_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
+        fh.read())
 
 
 class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
