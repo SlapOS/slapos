@@ -24,7 +24,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import absolute_import
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
@@ -49,7 +48,6 @@ setup(name=name,
         'psutil',
         'requests',
         'mysqlclient',
-        'backports.lzma',
         'cryptography',
         'pexpect',
         'pyOpenSSL',
