@@ -37,8 +37,8 @@ import time
 import six
 import sys
 
-from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.socketserver import StreamRequestHandler, TCPServer
+from http.server import SimpleHTTPRequestHandler
+from socketserver import StreamRequestHandler, TCPServer
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
@@ -135,11 +135,11 @@ class WendelinTutorialTestCase(FluentdTestCase):
     return subprocess.check_output(
       [self._fluentd_bin, '-c', conf_path, '--dry-run'],
       env={'GEM_PATH': self._gem_path},
-      universal_newlines=True,
+      text=True,
     )
 
   def _test_configuration(self, expected_str):
-    self.assertRegexpMatches(
+    self.assertRegex(
       self.read_fluentd_conf(self._conf),
       expected_str,
     )
