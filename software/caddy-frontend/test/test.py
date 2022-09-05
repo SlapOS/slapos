@@ -2061,7 +2061,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # we trust monitor stack being tested in proper place and it is too hard
     # to have working monitor with local proxy
     with open(os.path.join(
-          partition_path, 'etc', 'httpd-cors.cfg')) as fh:
+      partition_path, 'etc', 'httpd-cors.cfg')) as fh:
       self.assertTestData(fh.read().strip())
 
   def test_node_information_json(self):
