@@ -35,10 +35,10 @@ import subprocess
 import json
 import time
 
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.parse import quote
-from six.moves.urllib.parse import urljoin
-from six.moves.configparser import ConfigParser
+from urllib.parse import urlparse
+from urllib.parse import quote
+from urllib.parse import urljoin
+from configparser import ConfigParser
 import requests
 import six
 
@@ -191,7 +191,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
     takeover_password = parameter_dict["takeover-%s-password" % scope]
     
     resp = requests.get(
-      "%s?password=%s" % (takeover_url, takeover_password),
+      f"{takeover_url}?password={takeover_password}",
       verify=True)
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertNotIn("Error", resp.text,
@@ -363,7 +363,7 @@ class TestSSH(SlaprunnerTestCase):
     self.assertTrue(fingerprint_from_url.startswith('ssh-rsa-'), fingerprint_from_url)
     fingerprint_from_url = fingerprint_from_url[len('ssh-rsa-'):]
 
-    class KeyPolicy(object):
+    class KeyPolicy:
       """Accept server key and keep it in self.key for inspection
       """
       def missing_host_key(self, client, hostname, key):
@@ -507,7 +507,7 @@ class TestResilientInstance(SlaprunnerTestCase):
     # just check that keys returned on requested partition are for resilient
     self.assertSetEqual(
       set(self.computer_partition.getConnectionParameterDict().keys()),
-      set([
+      {
         'backend-url',
         'feed-url-runner-1-pull',
         'feed-url-runner-1-push',
@@ -520,7 +520,7 @@ class TestResilientInstance(SlaprunnerTestCase):
         'takeover-runner-1-password',
         'takeover-runner-1-url',
         'url',
-        'webdav-url']))
+        'webdav-url'})
 
 class TestResilientCustomFrontend(TestCustomFrontend):
   instance_max_retry = 20
@@ -601,5 +601,5 @@ class TestResilientDummyInstance(SlaprunnerTestCase):
     self.assertTrue(result_after.startswith("Hello"), result_after)
 
     self.assertIn(result, result_after,
-            "%s not in %s" % (result, result_after))
+            f"{result} not in {result_after}")
 
