@@ -1,5 +1,4 @@
 ##############################################################################
-# coding: utf-8
 #
 # Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
 #
@@ -26,11 +25,10 @@
 #
 ##############################################################################
 
-from __future__ import absolute_import
 import os
 import json
 import glob
-import six.moves.urllib.parse
+import urllib.parse
 import socket
 import sys
 import time
@@ -39,7 +37,7 @@ import datetime
 import subprocess
 import gzip
 
-from backports import lzma
+import lzma
 import MySQLdb
 
 from slapos.testing.utils import CrontabMixin
@@ -84,7 +82,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     # type: () -> MySQLdb.connections.Connection
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
-    db_url = six.moves.urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
@@ -208,7 +206,7 @@ class TestMariaDB(MariaDBTestCase):
           """
           select * from test_utf8_collation where col1 = "a"
           """)
-      self.assertEqual(((u'à',),), cnx.store_result().fetch_row(maxrows=2))
+      self.assertEqual((('à',),), cnx.store_result().fetch_row(maxrows=2))
 
 
 class TestMroonga(MariaDBTestCase):
@@ -232,7 +230,7 @@ class TestMroonga(MariaDBTestCase):
           SELECT mroonga_normalize("ABCDあぃうぇ㍑")
           """)
       # XXX this is returned as bytes by mroonga/mariadb (this might be a bug)
-      self.assertEqual(((u'abcdあぃうぇリットル'.encode('utf-8'),),),
+      self.assertEqual((('abcdあぃうぇリットル'.encode(),),),
                        cnx.store_result().fetch_row(maxrows=2))
 
       if 0:
@@ -245,7 +243,7 @@ class TestMroonga(MariaDBTestCase):
             """
             SELECT mroonga_normalize("aBｃＤあぃウェ㍑", "NormalizerMySQLUnicodeCIExceptKanaCIKanaWithVoicedSoundMark")
             """)
-        self.assertEqual(((u'ABCDあぃうぇ㍑'.encode('utf-8'),),),
+        self.assertEqual((('ABCDあぃうぇ㍑'.encode(),),),
                          cnx.store_result().fetch_row(maxrows=2))
 
   def test_mroonga_full_text_normalizer(self):
@@ -282,7 +280,7 @@ class TestMroonga(MariaDBTestCase):
            WHERE MATCH (content) AGAINST ("+ﾌﾞﾗｯｸ" IN BOOLEAN MODE)
           """)
       self.assertEqual(
-          ((datetime.date(2013, 4, 23), u'ブラックコーヒーを飲んだ。'),),
+          ((datetime.date(2013, 4, 23), 'ブラックコーヒーを飲んだ。'),),
           cnx.store_result().fetch_row(maxrows=2),
       )
 
