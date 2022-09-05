@@ -13,7 +13,7 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler
 from typing import Dict
 
-import mock
+from unittest import mock
 import OpenSSL.SSL
 import pexpect
 import psutil
@@ -100,7 +100,7 @@ class CaucaseService(ManagedResource):
     os.mkdir(os.path.join(caucased_dir, 'user'))
     os.mkdir(os.path.join(caucased_dir, 'service'))
 
-    backend_caucased_netloc = '%s:%s' % (self._cls._ipv4_address, findFreeTCPPort(self._cls._ipv4_address))
+    backend_caucased_netloc = f'{self._cls._ipv4_address}:{findFreeTCPPort(self._cls._ipv4_address)}'
     self.url = 'http://' + backend_caucased_netloc
     self._caucased_process = subprocess.Popen(
         [
@@ -206,7 +206,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestLog, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a slow server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     return parameter_dict
@@ -254,7 +254,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
             'apachedex',
             'ApacheDex-*.html',
         ))
-    with open(apachedex_report, 'r') as f:
+    with open(apachedex_report) as f:
       report_text = f.read()
     self.assertIn('APacheDEX', report_text)
     # having this table means that apachedex could parse some lines.
@@ -344,7 +344,7 @@ class TestBalancer(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestBalancer, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
 
     # use two backend servers
     parameter_dict['dummy_http_server'] = [
@@ -400,10 +400,7 @@ class TestTestRunnerEntryPoints(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(
-        TestTestRunnerEntryPoints,
-        cls,
-    )._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
 
     parameter_dict['dummy_http_server-test-runner-address-list'] = [
         [
@@ -476,7 +473,7 @@ class TestHTTP(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestHTTP, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a HTTP/1.1 server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("HTTP/1.1 Server", EchoHTTP11Server).netloc, 1, False]]
     return parameter_dict
@@ -558,7 +555,7 @@ class TestContentEncoding(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestContentEncoding, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     parameter_dict['dummy_http_server'] = [
         [cls.getManagedResource("content_type_server", ContentTypeHTTPServer).netloc, 1, False],
     ]
@@ -595,7 +592,7 @@ class TestContentEncoding(BalancerTestCase):
       self.assertEqual(
           resp.headers.get('Content-Encoding'),
           'gzip',
-          '%s uses wrong encoding: %s' % (content_type, resp.headers.get('Content-Encoding')))
+          '{} uses wrong encoding: {}'.format(content_type, resp.headers.get('Content-Encoding')))
       self.assertEqual(resp.text, 'OK')
 
   def test_no_gzip_encoding(self):
@@ -725,7 +722,7 @@ class TestServerTLSProvidedCertificate(BalancerTestCase):
     server_caucase = cls.getManagedResource('server_caucase', CaucaseService)
     server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
     server_certificate.request(cls._ipv4_address.decode(), server_caucase)
-    parameter_dict = super(TestServerTLSProvidedCertificate, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     with open(server_certificate.cert_file) as f:
       parameter_dict['ssl']['cert'] = f.read()
     with open(server_certificate.key_file) as f:

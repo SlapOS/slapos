@@ -44,7 +44,7 @@ from . import setUpModule
 setUpModule # pyflakes
 
 
-class TestPublishedURLIsReachableMixin(object):
+class TestPublishedURLIsReachableMixin:
   """Mixin that checks that default page of ERP5 is reachable.
   """
 
@@ -80,7 +80,7 @@ class TestPublishedURLIsReachableMixin(object):
 
     # login page can be rendered and contain the text "ERP5"
     r = session.get(
-        urllib.parse.urljoin(base_url, '{}/login_form'.format(site_id)),
+        urllib.parse.urljoin(base_url, f'{site_id}/login_form'),
         verify=verify,
         allow_redirects=False,
     )
@@ -182,16 +182,16 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       self.checkValidHTTPSURL(
-          param_dict['family-{family_name}'.format(family_name=family_name)])
+          param_dict[f'family-{family_name}'])
       self.checkValidHTTPSURL(
-          param_dict['family-{family_name}-v6'.format(family_name=family_name)])
+          param_dict[f'family-{family_name}-v6'])
 
   def test_published_test_runner_url(self):
     # each family's also a list of test test runner URLs, by default 3 per family
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       family_test_runner_url_list = param_dict[
-          '{family_name}-test-runner-url-list'.format(family_name=family_name)]
+          f'{family_name}-test-runner-url-list']
       self.assertEqual(3, len(family_test_runner_url_list))
       for url in family_test_runner_url_list:
         self.checkValidHTTPSURL(url)
@@ -209,23 +209,23 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     # normal access on ipv4 and ipv6 and test runner access on ipv4 only
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [p for p in all_process_info if p['name'] == 'apache']
+    process_info, = (p for p in all_process_info if p['name'] == 'apache')
     apache_process = psutil.Process(process_info['pid'])
     self.assertEqual(
         sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
-        sorted([
+        sorted(
             c.family
             for c in apache_process.connections()
             if c.status == 'LISTEN'
-        ]))
+        ))
 
   def test_haproxy_listen(self):
     # There is one haproxy per family
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [
+    process_info, = (
         p for p in all_process_info if p['name'].startswith('haproxy-')
-    ]
+    )
     haproxy_process = psutil.Process(process_info['pid'])
     self.assertEqual([socket.AF_INET, socket.AF_INET], [
         c.family for c in haproxy_process.connections() if c.status == 'LISTEN'
@@ -290,7 +290,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       zodb["pool-timeout"] = "10m"
       storage["storage"] = "root"
       storage["server"] = zeo_addr
-      with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
+      with open(f'{partition}/etc/zope-{zope}.conf') as f:
         conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
@@ -332,7 +332,7 @@ def popenCommunicate(command_list, input_=None, **kwargs):
     popen.kill()
   if popen.returncode != 0:
     raise ValueError(
-      'Issue during calling %r, result was:\n%s' % (command_list, result))
+      f'Issue during calling {command_list!r}, result was:\n{result}')
   return result
 
 
@@ -452,7 +452,7 @@ class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
     common_name = 'TEST-SSL-AUTH'
     popenCommunicate([
       'openssl', 'req', '-utf8', '-nodes', '-config', openssl_config, '-new',
-      '-keyout', key, '-out', csr, '-days', '3650'], '%s\n' % (common_name,),
+      '-keyout', key, '-out', csr, '-days', '3650'], f'{common_name}\n',
       stdin=subprocess.PIPE)
     popenCommunicate([
       'openssl', 'ca', '-utf8', '-days', '3650', '-batch', '-config',
