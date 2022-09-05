@@ -34,11 +34,10 @@ import struct
 import subprocess
 import tempfile
 import time
-import six
 import sys
 
-from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.socketserver import StreamRequestHandler, TCPServer
+from http.server import SimpleHTTPRequestHandler
+from socketserver import StreamRequestHandler, TCPServer
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
@@ -49,8 +48,8 @@ FLUSH_INTERVAL = 1
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..',
-                     'software%s.cfg' % ("-py2" if six.PY2 else ""))))
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
 
 class FluentdTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'fluentd'
@@ -135,11 +134,11 @@ class WendelinTutorialTestCase(FluentdTestCase):
     return subprocess.check_output(
       [self._fluentd_bin, '-c', conf_path, '--dry-run'],
       env={'GEM_PATH': self._gem_path},
-      universal_newlines=True,
+      text=True,
     )
 
   def _test_configuration(self, expected_str):
-    self.assertRegexpMatches(
+    self.assertRegex(
       self.read_fluentd_conf(self._conf),
       expected_str,
     )
@@ -168,12 +167,12 @@ class SensorConfTestCase(WendelinTutorialTestCase):
 
   @classmethod
   def sensor_conf(cls, script_path):
-    return '''\
+    return f'''\
 <source>
   @type exec
   tag tag.name
-  command %s %s
-  run_interval %ss
+  command {sys.executable} {script_path}
+  run_interval {FLUSH_INTERVAL}s
   <parse>
     keys pressure, humidity, temperature
   </parse>
@@ -182,12 +181,12 @@ class SensorConfTestCase(WendelinTutorialTestCase):
   @type forward
   <server>
     name myserver1
-    host %s
+    host {cls._ipv6_address}
   </server>
   <buffer>
     flush_mode immediate
   </buffer>
-</match>''' % (sys.executable, script_path, FLUSH_INTERVAL, cls._ipv6_address)
+</match>'''
 
   @classmethod
   def sensor_script(cls, measurementList):
@@ -199,8 +198,7 @@ print("%s")''' % "\t".join(measurementList)
 
   def test_configuration(self):
     self._test_configuration(
-      r'adding forwarding server \'myserver1\' host="%s" port=%s weight=60'
-      % (self._ipv6_address, FLUENTD_PORT)
+      fr'adding forwarding server \'myserver1\' host="{self._ipv6_address}" port={FLUENTD_PORT} weight=60'
     )
 
   def test_send_data(self):
@@ -229,25 +227,24 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
 
   @classmethod
   def gateway_conf(cls, fluentd_port, wendelin_port):
-    return '''\
+    return f'''\
 <source>
   @type forward
-  port %s
-  bind %s
+  port {fluentd_port}
+  bind {cls._ipv6_address}
 </source>
 <match tag.name>
   @type wendelin
-  streamtool_uri http://[%s]:%s/erp5/portal_ingestion_policies/default
+  streamtool_uri http://[{cls._ipv6_address}]:{wendelin_port}/erp5/portal_ingestion_policies/default
   user      foo
   password  bar
   <buffer>
     flush_mode interval
     @type file
     path fluentd-buffer-file/
-    flush_interval %ss
+    flush_interval {FLUSH_INTERVAL}s
   </buffer>
-</match>''' % (fluentd_port, cls._ipv6_address, cls._ipv6_address,
-               wendelin_port, FLUSH_INTERVAL)
+</match>'''
 
   @classmethod
   def get_configuration(cls):
