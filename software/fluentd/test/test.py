@@ -190,11 +190,12 @@ class SensorConfTestCase(WendelinTutorialTestCase):
 
   @classmethod
   def sensor_script(cls, measurementList):
-    return '''\
-#!/usr/bin/python
+    measurement_text = "\t".join(measurementList)
+    return f'''\
+#!{sys.executable}
 # -*- coding: utf-8 -*-
 
-print("%s")''' % "\t".join(measurementList)
+print("{measurement_text}")'''
 
   def test_configuration(self):
     self._test_configuration(
