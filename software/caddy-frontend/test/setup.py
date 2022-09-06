@@ -51,7 +51,6 @@ setup(name=name,
         # caucase needed to connect to the KeDiFa caucase
         'caucase',
         'cryptography',
-        'backports.lzma',
       ],
       zip_safe=True,
       test_suite='test',
