@@ -1,0 +1,34 @@
+{
+	"description": "Parameters to instantiate Fluent-bit",
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		 "configuration": {
+        		"service": {
+	    			"flush": 5,
+    				"daemon": "off",
+				"log_level": "debug"
+			},
+        		"pipeline": {
+            			"inputs": [
+					{
+            					"mqtt": {
+                					"tag": ""
+						}
+					}
+            			],
+	            		"outputs": [
+					{
+            					"wendelin_out": {
+        						"match": "",
+							"user": "",
+							"password": "",
+							"uri": "",
+							"reference": "",
+            					}
+        				}
+    				]
+			}
+		}
+	}
+}
