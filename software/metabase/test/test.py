@@ -1,5 +1,4 @@
 ##############################################################################
-# coding: utf-8
 #
 # Copyright (c) 2020 Nexedi SA and Contributors. All Rights Reserved.
 #
@@ -28,7 +27,7 @@
 
 import os
 import json
-from six.moves.urllib import parse
+from urllib import parse
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
