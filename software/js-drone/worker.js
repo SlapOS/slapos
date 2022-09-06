@@ -3,7 +3,7 @@
 /*global console*/
 import {
   Drone,
-  doParachute,
+  triggerParachute,
   getAltitude,
   getAltitudeRel,
   getInitialAltitude,
@@ -11,11 +11,13 @@ import {
   getLongitude,
   getYaw,
   initPubsub,
+  isInManualMode,
   landed,
   loiter,
   setAirspeed,
   setAltitude,
   setCheckpoint,
+  setManualControlInput,
   setTargetCoordinates
 } from "{{ qjs_wrapper }}";
 import { Worker } from "os"
@@ -25,7 +27,8 @@ import * as std from "std";
   // Every script is evaluated per drone
   "use strict";
   const drone_dict = {},
-    drone_id_list = [{{ comma_separated_drone_id_list }}];
+    drone_id_list = [{{ comma_separated_drone_id_list }}],
+    IS_PUBLISHER = {{ is_publisher }};
 
   var parent = Worker.parent,
     user_me = {
@@ -35,7 +38,7 @@ import * as std from "std";
       //to move into user script
       setCheckpoint: setCheckpoint,
       //required to fly
-      doParachute: doParachute,
+      triggerParachute: triggerParachute,
       drone_dict: {},
       exit: function(exit_code) {
         parent.postMessage({type: "exited", exit: exit_code});
@@ -100,7 +103,10 @@ import * as std from "std";
       parent.postMessage({type: "loaded"});
     } else if (type === 'update') {
       // Call the drone onStart function
-      if (user_me.hasOwnProperty('onUpdate')) {
+      if (user_me.hasOwnProperty("onUpdate")) {
+        if (IS_PUBLISHER && isInManualMode()) {
+          setManualControlInput();
+        }
         user_me.onUpdate(evt.data.timestamp);
       }
       parent.postMessage({type: "updated"});
