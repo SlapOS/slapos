@@ -51,17 +51,12 @@ import urllib.parse
 import socket
 import sys
 import logging
+import lzma
 import random
 import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
-
-
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 
 import datetime
 
