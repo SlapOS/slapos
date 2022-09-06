@@ -45,7 +45,6 @@ setup(name=name,
         'slapos.cookbook',
         'slapos.libnetworkcache',
         'supervisor',
-        'six',
         'requests'
         ],
       zip_safe=True,
