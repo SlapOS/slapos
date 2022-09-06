@@ -25,7 +25,8 @@
 #
 ##############################################################################
 
-import six.moves.http_client as httplib
+import http.client as httplib
+import http.server
 import json
 import os
 import glob
@@ -33,15 +34,13 @@ import hashlib
 import psutil
 import re
 import requests
-import six
 import slapos.util
 import sqlite3
-from six.moves.urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse
 import unittest
 import subprocess
 import tempfile
-import six.moves.socketserver as SocketServer
-from six.moves import SimpleHTTPServer
+import socketserver as SocketServer
 import multiprocessing
 import time
 import shutil
@@ -117,7 +116,7 @@ bootstrap_machine_param_dict = {
 }
 
 
-class KvmMixin(object):
+class KvmMixin:
   def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
@@ -142,10 +141,10 @@ class KvmMixin(object):
       for hash_file in hash_file_list
     ])
     with self.slap.instance_supervisor_rpc as supervisor:
-      running_process_info = '\n'.join(sorted([
+      running_process_info = '\n'.join(sorted(
         '%(group)s:%(name)s %(statename)s' % q for q
         in supervisor.getAllProcessInfo()
-        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog'))
     return running_process_info.replace(
       hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
@@ -164,14 +163,14 @@ class KvmMixin(object):
         state=state)
 
 
-class KvmMixinJson(object):
+class KvmMixinJson:
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      '_': json.dumps(super(KvmMixinJson, cls).getInstanceParameterDict())}
+      '_': json.dumps(super().getInstanceParameterDict())}
 
   def rerequestInstance(self, parameter_dict, *args, **kwargs):
-    return super(KvmMixinJson, self).rerequestInstance(
+    return super().rerequestInstance(
       parameter_dict={'_': json.dumps(parameter_dict)},
       *args, **kwargs
     )
@@ -196,10 +195,10 @@ class TestInstance(InstanceTestCase, KvmMixin):
       {
         'ipv6': self._ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': 'https://[%s]:8026' % (self._ipv6_address,),
-        'nat-rule-port-tcp-22': '%s : 10022' % (self._ipv6_address,),
-        'nat-rule-port-tcp-443': '%s : 10443' % (self._ipv6_address,),
-        'nat-rule-port-tcp-80': '%s : 10080' % (self._ipv6_address,),
+        'monitor-base-url': f'https://[{self._ipv6_address}]:8026',
+        'nat-rule-port-tcp-22': f'{self._ipv6_address} : 10022',
+        'nat-rule-port-tcp-443': f'{self._ipv6_address} : 10443',
+        'nat-rule-port-tcp-80': f'{self._ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -275,8 +274,8 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
       qemu_wrapper = QemuQMPWrapper(os.path.join(
         self.computer_partition_root_path, 'var', 'qmp_socket'))
       ram_mb = sum(
-        [q['size']
-         for q in qemu_wrapper.getMemoryInfo()['hotplugged']]) / 1024 / 1024
+        q['size']
+         for q in qemu_wrapper.getMemoryInfo()['hotplugged']) / 1024 / 1024
       cpu_count = len(
         [q['CPU'] for q in qemu_wrapper.getCPUInfo()['hotplugged']])
       return {'cpu_count': cpu_count, 'ram_mb': ram_mb}
@@ -374,8 +373,7 @@ class MonitorAccessMixin(KvmMixin):
       connection_xml = partition_information.get('connection_xml')
       if not connection_xml:
         continue
-      connection_dict = json.loads(slapos.util.xml2dict(
-        connection_xml if six.PY3 else connection_xml.encode('utf-8'))['_'])
+      connection_dict = json.loads(slapos.util.xml2dict(connection_xml)['_'])
       monitor_base_url = connection_dict.get('monitor-base-url')
       if not monitor_base_url:
         continue
@@ -660,22 +658,22 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
         connection_parameter_dict.pop(k)
     self.assertIn('feed-url-kvm-1-pull', connection_parameter_dict)
     feed_pull = connection_parameter_dict.pop('feed-url-kvm-1-pull')
-    self.assertRegexpMatches(
+    self.assertRegex(
       feed_pull,
-      'http://\\[%s\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull' % (
-        self._ipv6_address,))
+      'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull'.format(
+        self._ipv6_address))
     feed_push = connection_parameter_dict.pop('feed-url-kvm-1-push')
-    self.assertRegexpMatches(
+    self.assertRegex(
       feed_push,
-      'http://\\[%s\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push' % (
-        self._ipv6_address,))
+      'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push'.format(
+        self._ipv6_address))
     self.assertEqual(
       connection_parameter_dict,
       {
         'ipv6': self._ipv6_address,
-        'monitor-base-url': 'https://[%s]:8160' % (self._ipv6_address,),
+        'monitor-base-url': f'https://[{self._ipv6_address}]:8160',
         'monitor-user': 'admin',
-        'takeover-kvm-1-url': 'http://[%s]:9263/' % (self._ipv6_address,),
+        'takeover-kvm-1-url': f'http://[{self._ipv6_address}]:9263/',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -823,10 +821,10 @@ class TestInstanceNbdServerJson(
   pass
 
 
-class HttpHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class HttpHandler(http.server.SimpleHTTPRequestHandler):
   def log_message(self, *args):
     if os.environ.get('SLAPOS_TEST_DEBUG'):
-      return SimpleHTTPServer.SimpleHTTPRequestHandler.log_message(self, *args)
+      return http.server.SimpleHTTPRequestHandler.log_message(self, *args)
     else:
       return
 
@@ -873,18 +871,19 @@ class FakeImageServerMixin(KvmMixin):
       cls.server_process = multiprocessing.Process(
         target=server.serve_forever, name='FakeImageHttpServer')
       cls.server_process.start()
+      server.socket.close()
     finally:
       os.chdir(old_dir)
 
   @classmethod
   def stopImageHttpServer(cls):
-    cls.logger.debug('Stopping process %s' % (cls.server_process,))
+    cls.logger.debug('Stopping process %s', cls.server_process)
     cls.server_process.join(10)
     cls.server_process.terminate()
     time.sleep(0.1)
     if cls.server_process.is_alive():
       cls.logger.warning(
-        'Process %s still alive' % (cls.server_process, ))
+        'Process %s still alive', cls.server_process)
 
     shutil.rmtree(cls.image_source_directory)
 
@@ -932,11 +931,11 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
   @classmethod
   def setUpClass(cls):
     cls.startImageHttpServer()
-    super(TestBootImageUrlList, cls).setUpClass()
+    super().setUpClass()
 
   @classmethod
   def tearDownClass(cls):
-    super(TestBootImageUrlList, cls).tearDownClass()
+    super().tearDownClass()
     cls.stopImageHttpServer()
 
   def tearDown(self):
@@ -947,7 +946,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
-    super(TestBootImageUrlList, self).tearDown()
+    super().tearDown()
 
   def getRunningImageList(
       self, kvm_instance_partition,
@@ -993,8 +992,8 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     self.assertEqual(
       [
-        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image_md5sum),
-        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image2_md5sum),
+        f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
+        f'${{inst}}/srv/{self.image_directory}/{self.fake_image2_md5sum}',
         '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
@@ -1014,8 +1013,8 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     self.assertEqual(
       [
-        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image3_md5sum),
-        '${inst}/srv/%s/%s' % (self.image_directory, self.fake_image2_md5sum),
+        f'${{inst}}/srv/{self.image_directory}/{self.fake_image3_md5sum}',
+        f'${{inst}}/srv/{self.image_directory}/{self.fake_image2_md5sum}',
         '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
@@ -1159,9 +1158,9 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
   def test_together(self):
     partition_parameter_kw = {
-      'boot-image-url-list': "%s#%s" % (
+      'boot-image-url-list': "{}#{}".format(
         self.fake_image, self.fake_image_md5sum),
-      'boot-image-url-select': '["%s#%s"]' % (
+      'boot-image-url-select': '["{}#{}"]'.format(
         self.fake_image, self.fake_image_md5sum)
     }
     self.rerequestInstance(partition_parameter_kw)
@@ -1183,10 +1182,10 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     self.assertEqual(
       [
-        '${inst}/srv/boot-image-url-select-repository/%s' % (
-          self.fake_image_md5sum,),
-        '${inst}/srv/boot-image-url-list-repository/%s' % (
-          self.fake_image_md5sum,),
+        '${{inst}}/srv/boot-image-url-select-repository/{}'.format(
+          self.fake_image_md5sum),
+        '${{inst}}/srv/boot-image-url-list-repository/{}'.format(
+          self.fake_image_md5sum),
         '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
@@ -1258,12 +1257,12 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
   config_file_name = 'boot-image-url-list.conf'
 
   def setUp(self):
-    super(TestBootImageUrlListKvmCluster, self).setUp()
+    super().setUp()
     self.startImageHttpServer()
 
   def tearDown(self):
     self.stopImageHttpServer()
-    super(TestBootImageUrlListKvmCluster, self).tearDown()
+    super().tearDown()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -1302,12 +1301,12 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
     KVM1_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '2', 'etc',
       self.config_file_name)
-    with open(KVM0_config, 'r') as fh:
+    with open(KVM0_config) as fh:
       self.assertEqual(
         self.input_value % (self.fake_image, self.fake_image_md5sum),
         fh.read().strip()
       )
-    with open(KVM1_config, 'r') as fh:
+    with open(KVM1_config) as fh:
       self.assertEqual(
         self.input_value % (self.fake_image2, self.fake_image2_md5sum),
         fh.read().strip()
@@ -1340,11 +1339,11 @@ class TestNatRules(KvmMixin, InstanceTestCase):
     self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
 
     self.assertEqual(
-      '%s : 10100' % (self._ipv6_address,),
+      f'{self._ipv6_address} : 10100',
       connection_parameter_dict['nat-rule-port-tcp-100']
     )
     self.assertEqual(
-      '%s : 10200' % (self._ipv6_address,),
+      f'{self._ipv6_address} : 10200',
       connection_parameter_dict['nat-rule-port-tcp-200']
     )
 
@@ -1388,13 +1387,13 @@ class TestNatRulesKvmCluster(InstanceTestCase):
   def test(self):
     host_fwd_entry = self.getRunningHostFwd()
     self.assertIn(
-      'hostfwd=tcp:%s:10100-:100' % (self._ipv4_address,),
+      f'hostfwd=tcp:{self._ipv4_address}:10100-:100',
       host_fwd_entry)
     self.assertIn(
-      'hostfwd=tcp:%s:10200-:200' % (self._ipv4_address,),
+      f'hostfwd=tcp:{self._ipv4_address}:10200-:200',
       host_fwd_entry)
     self.assertIn(
-      'hostfwd=tcp:%s:10300-:300' % (self._ipv4_address,),
+      f'hostfwd=tcp:{self._ipv4_address}:10300-:300',
       host_fwd_entry)
 
 
@@ -1419,10 +1418,10 @@ class TestWhitelistFirewall(InstanceTestCase):
     try:
       self.content_json = json.loads(content)
     except ValueError:
-      self.fail('Failed to parse json of %r' % (content,))
+      self.fail(f'Failed to parse json of {content!r}')
     self.assertTrue(isinstance(self.content_json, list))
     # check /etc/resolv.conf
-    with open('/etc/resolv.conf', 'r') as f:
+    with open('/etc/resolv.conf') as f:
       resolv_conf_ip_list = []
       for line in f.readlines():
         if line.startswith('nameserver'):
@@ -1451,7 +1450,7 @@ class TestWhitelistFirewallRequest(TestWhitelistFirewall):
     }
 
   def test(self):
-    super(TestWhitelistFirewallRequest, self).test()
+    super().test()
     self.assertIn('2.2.2.2', self.content_json)
     self.assertIn('3.3.3.3', self.content_json)
     self.assertIn('4.4.4.4', self.content_json)
@@ -1573,7 +1572,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
   maxDiff = None
 
   def setUp(self):
-    super(TestImageDownloadController, self).setUp()
+    super().setUp()
     self.working_directory = tempfile.mkdtemp()
     self.destination_directory = os.path.join(
       self.working_directory, 'destination')
@@ -1595,7 +1594,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
   def tearDown(self):
     self.stopImageHttpServer()
     shutil.rmtree(self.working_directory)
-    super(TestImageDownloadController, self).tearDown()
+    super().tearDown()
 
   def callImageDownloadController(self, *args):
     call_list = [sys.executable, self.image_download_controller] + list(args)
@@ -1618,7 +1617,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
 
   def assertFileContent(self, path, content):
     self.assertTrue(os.path.exists, path)
-    with open(path, 'r') as fh:
+    with open(path) as fh:
       self.assertEqual(
         fh.read(),
         content)
@@ -1788,7 +1787,7 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
       self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
     self.assertEqual(len(kvm_raw), 1)
     kvm_raw = kvm_raw[0]
-    with open(kvm_raw, 'r') as fh:
+    with open(kvm_raw) as fh:
       kvm_raw = fh.read()
     self.assertIn(expected, kvm_raw)
 
@@ -1929,7 +1928,7 @@ class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
         continue
       partition_store_list = []
       for number in range(10):
-        storage = os.path.join(external_storage_path, 'data%s' % (number,))
+        storage = os.path.join(external_storage_path, f'data{number}')
         if not os.path.exists(storage):
           os.mkdir(storage)
         partition_store = os.path.join(storage, partition)
@@ -1949,7 +1948,7 @@ class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
         if line.strip() == '[slapos]':
           slapos_config.append('[slapos]\n')
           slapos_config.append(
-            'instance_storage_home = %s\n' % (external_storage_path,))
+            f'instance_storage_home = {external_storage_path}\n')
         else:
           slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
@@ -1968,7 +1967,7 @@ class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
 
   @classmethod
   def _setUpClass(cls):
-    super(TestExternalDisk, cls)._setUpClass()
+    super()._setUpClass()
     cls.working_directory = tempfile.mkdtemp()
     # setup the external_storage_list, to mimic part of slapformat
     cls._prepareExternalStorageList()
@@ -1978,7 +1977,7 @@ class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
   @classmethod
   def tearDownClass(cls):
     cls._dropExternalStorageList()
-    super(TestExternalDisk, cls).tearDownClass()
+    super().tearDownClass()
     shutil.rmtree(cls.working_directory)
 
   def test(self):
@@ -2026,7 +2025,7 @@ class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
 
   @classmethod
   def setUpClass(cls):
-    super(TestExternalDiskModern, cls).setUpClass()
+    super().setUpClass()
 
   def getExternalDiskInstanceParameterDict(
     self, first, second, third, update_dict=None):
@@ -2090,11 +2089,11 @@ class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
       [
         'file=${partition}/srv/virtual.qcow2,if=virtio,discard=on,'
         'format=qcow2',
-        'file=%s/first_disk,if=virtio,cache=writeback,format=qcow' % (
-          self.working_directory,),
+        'file={}/first_disk,if=virtio,cache=writeback,format=qcow'.format(
+          self.working_directory),
         'file=${partition}/second_disk,if=virtio,cache=writeback',
-        'file=%s/third_disk,if=virtio,cache=none' % (
-          self.working_directory,)
+        'file={}/third_disk,if=virtio,cache=none'.format(
+          self.working_directory)
       ]
     )
     update_dict = {
@@ -2128,9 +2127,7 @@ class TestExternalDiskModernCluster(TestExternalDiskModern):
     return 'kvm-cluster'
 
   def getExternalDiskInstanceParameterDict(self, *args, **kwargs):
-    partition_dict = super(
-      TestExternalDiskModernCluster, self
-    ).getExternalDiskInstanceParameterDict(*args, **kwargs)
+    partition_dict = super().getExternalDiskInstanceParameterDict(*args, **kwargs)
     partition_dict.update({"disable-ansible-promise": True})
     return {
       "kvm-partition-dict": {
@@ -2150,7 +2147,7 @@ class TestExternalDiskModernIndexRequired(InstanceTestCase, ExternalDiskMixin):
 
   @classmethod
   def setUpClass(cls):
-    super(TestExternalDiskModernIndexRequired, cls).setUpClass()
+    super().setUpClass()
 
   def getExternalDiskInstanceParameterDict(self, first, second, third):
     return {
@@ -2234,31 +2231,31 @@ class TestInstanceHttpServer(InstanceTestCase, KvmMixin):
 
   @classmethod
   def stopHttpServer(cls):
-    cls.logger.debug('Stopping process %s' % (cls.server_process,))
+    cls.logger.debug(f'Stopping process {cls.server_process}')
     cls.server_process.join(10)
     cls.server_process.terminate()
     time.sleep(0.1)
     if cls.server_process.is_alive():
       cls.logger.warning(
-        'Process %s still alive' % (cls.server_process, ))
+        f'Process {cls.server_process} still alive')
 
     shutil.rmtree(cls.http_directory)
 
   @classmethod
   def setUpClass(cls):
     cls.startHttpServer()
-    super(TestInstanceHttpServer, cls).setUpClass()
+    super().setUpClass()
 
   @classmethod
   def tearDownClass(cls):
-    super(TestInstanceHttpServer, cls).tearDownClass()
+    super().tearDownClass()
     cls.stopHttpServer()
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'enable-http-server': True,
-      'bootstrap-script-url': '%s#%s' % (
+      'bootstrap-script-url': '{}#{}'.format(
         cls.bootstrap_script_url, cls.bootstrap_script_md5sum),
       'data-to-vm': """data
 to
@@ -2280,10 +2277,10 @@ vm""",
       {
         'ipv6': self._ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': 'https://[%s]:8026' % (self._ipv6_address,),
-        'nat-rule-port-tcp-22': '%s : 10022' % (self._ipv6_address,),
-        'nat-rule-port-tcp-443': '%s : 10443' % (self._ipv6_address,),
-        'nat-rule-port-tcp-80': '%s : 10080' % (self._ipv6_address,),
+        'monitor-base-url': f'https://[{self._ipv6_address}]:8026',
+        'nat-rule-port-tcp-22': f'{self._ipv6_address} : 10022',
+        'nat-rule-port-tcp-443': f'{self._ipv6_address} : 10443',
+        'nat-rule-port-tcp-80': f'{self._ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -2311,11 +2308,11 @@ ihs0:whitelist-firewall-{hash} RUNNING""",
        'ipv6_config.sh', 'netmask', 'network', 'vm-bootstrap'],
       sorted(os.listdir(public_dir))
     )
-    with open(os.path.join(public_dir, 'data'), 'r') as fh:
+    with open(os.path.join(public_dir, 'data')) as fh:
       self.assertEqual("""data
 to
 vm""", fh.read())
-    with open(os.path.join(public_dir, 'vm-bootstrap'), 'r') as fh:
+    with open(os.path.join(public_dir, 'vm-bootstrap')) as fh:
       self.assertEqual('bootstrap_script', fh.read())
 
 
