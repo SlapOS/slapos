@@ -1026,6 +1026,7 @@ extensions = jinja2.ext.do
 context =
   raw logs ${directory:public}/ansible
   raw name {{ name }}
+  raw python_executable ${buildout:executable}
 
 [ansible-vm-promise]
 <= monitor-promise-base
