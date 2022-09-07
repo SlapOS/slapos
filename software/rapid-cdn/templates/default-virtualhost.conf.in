@@ -2,11 +2,6 @@
 {%- if slave_parameter['prefer-gzip-encoding-to-backend'] %}
 {%- do proxy_append_list.append(('prefer-gzip', 'Proxy which always overrides Accept-Encoding to gzip if such is found')) %}
 {%- endif %} {#- if slave_parameter['prefer-gzip-encoding-to-backend'] #}
-{%- if slave_parameter['path'].strip().strip('/') %}
-{%-   set zope_path = slave_parameter['path'].strip().strip('/') ~ '/' %}
-{%- else %}
-{%-   set zope_path = '' %}
-{%- endif %}
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
 {%- for host in slave_parameter['host_list'] %}
@@ -69,60 +64,10 @@
   redir 302 {
     / https://{host}{rewrite_uri}
   }
-{%- elif slave_parameter['type'] ==  'zope' and backend_url %}
-  # Zope configuration
-{%-   for (proxy_name, proxy_comment) in proxy_append_list %}
-  # {{ proxy_comment }}
-  proxy "/{{ proxy_name }}" {{ backend_url }} {
-{{ proxy_header() }}
-{{ hsts_header(tls) }}
-{%-     if proxy_name == 'prefer-gzip' %}
-    without /prefer-gzip
-    header_upstream Accept-Encoding gzip
-{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-
-{%-   if slave_parameter['disable-no-cache-request'] %}
-    header_upstream -Cache-Control
-    header_upstream -Pragma
-{%-   endif %} {#-   if slave_parameter['disable-no-cache-request'] #}
-    transparent
-  } {# proxy #}
-{%-   endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
-  {%- if slave_parameter['default-path'] %}
-  redir 301 {
-    if {path} is /
-    / {scheme}://{host}/{{ slave_parameter['default-path'] }}
-  } {# redir #}
-  {%- endif %} {#- if slave_parameter['default-path'] #}
-{%- if slave_parameter['prefer-gzip-encoding-to-backend'] and not (not tls and slave_parameter['https-only']) %}
-  rewrite {
-    regexp (.*)
-    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
-{%- if tls %}
-    to /prefer-gzip/VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
-{%- else %}
-    to /prefer-gzip/VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
-{%- endif %}
   }
   rewrite {
     regexp (.*)
     if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
-{%- if tls %}
-    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
-{%- else %}
-    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
-{%- endif %}
-  }
-{%- else %}
-  rewrite {
-    regexp (.*)
-{%- if tls %}
-    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
-{%- else %}
-    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
-{%- endif %}
-  } {# rewrite #}
-{%- endif %} {#- if slave_parameter['prefer-gzip-encoding-to-backend'] #}
 {%- elif slave_parameter['type'] == 'notebook' %}
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
@@ -147,12 +92,6 @@
 {%-   endif %}
 {%- else %} {#- if slave_parameter['type'] ==  'zope' and backend_url #}
   # Default configuration
-{%-   if slave_parameter['default-path'] %}
-  redir 301 {
-    if {path} is /
-    / {scheme}://{host}/{{ slave_parameter['default-path'] }}
-  }  {# redir #}
-{%-   endif %} {#-   if slave_parameter['default-path'] #}
 {%-   if backend_url %}
 
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
