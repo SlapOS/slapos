@@ -124,6 +124,12 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         if slave_instance['prefer-gzip-encoding-to-backend'] %}
   http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
 {%-         endif %}
+{%-         if slave_instance['type'] == 'notebook' %}
+{#-           In haproxy world type:notebook is simple type:websocket with default parameters #}
+{%-           do slave_instance.__setitem__('type', 'websocket') %}
+{%-           do slave_instance.__setitem__('websocket-path-list', None) %}
+{%-           do slave_instance.__setitem__('websocket-transparent', True) %}
+{%-         endif %}
 {%-         if slave_instance['type'] == 'websocket' %}
 {%-           if slave_instance['websocket-path-list'] %}
 {%-             set acl_entry = ['acl is_websocket '] %}
