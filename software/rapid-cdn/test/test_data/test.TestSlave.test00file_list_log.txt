@@ -94,7 +94,6 @@ T-2/var/log/httpd/_type-websocket-websocket-transparent-false_backend_log
 T-2/var/log/httpd/_type-websocket_access_log
 T-2/var/log/httpd/_type-websocket_backend_log
 T-2/var/log/httpd/_type-zope-default-path_access_log
-T-2/var/log/httpd/_type-zope-default-path_backend_log
 T-2/var/log/httpd/_type-zope-path_access_log
 T-2/var/log/httpd/_type-zope-path_backend_log
 T-2/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend-https-only_access_log
