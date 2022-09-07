@@ -159,6 +159,14 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request set-header X-Forwarded-Proto {{ scheme }}
   http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }}
 {%-         endif %}
+{%-         if slave_instance['type'] == 'zope' %}
+{%-           if slave_instance['path'].strip().strip('/') %}
+{%-             set zope_path = slave_instance['path'].strip().strip('/') ~ '/' %}
+{%-           else %}
+{%-             set zope_path = '' %}
+{%-           endif %}
+  http-request set-path /VirtualHostBase/{{ scheme }}/%[req.hdr(Host),field(1,:)]:{{ slave_instance['virtualhostroot-%s-port' % (scheme,)] }}/{{ zope_path }}VirtualHostRoot%[path]
+{%-         endif %}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-         endif %} {# if info_dict['path'] #}
