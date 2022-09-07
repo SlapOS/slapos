@@ -3256,29 +3256,35 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
   def test_type_notebook(self):
+    # type:notebook in haproxy world is simply like type:websocket on default
+    # parameters, so test has been adapted
+    # generally, websocket is possible to be served on any path, which is
+    # haproxy default
     parameter_dict = self.assertSlaveBase('type-notebook')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test-path',
-      HTTPS_PORT)
+      parameter_dict['domain'], 'test-path',
+      headers={'Connection': 'Upgrade'})
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test/terminals/websocket/test',
-      HTTPS_PORT)
-
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/terminals/websocket')
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
     self.assertFalse(
       isHTTP2(parameter_dict['domain']))
 
