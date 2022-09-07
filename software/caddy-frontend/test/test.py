@@ -3012,7 +3012,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     self.assertEqual(
-      'https://typezope.example.com:%s/test-path/deep/.././deeper' % (
+      'https://typezope.example.com:%s/test-path/deeper' % (
         HTTP_PORT,),
       result.headers['Location']
     )
@@ -3131,7 +3131,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     self.assertEqual(
-      'https://%s:%s/test-path/deep/.././deeper' % (
+      'https://%s:%s/test-path/deeper' % (
         parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
@@ -3172,7 +3172,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     self.assertEqual(
-      'https://%s:%s/test-path/deep/.././deeper' % (
+      'https://%s:%s/test-path/deeper' % (
         parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
