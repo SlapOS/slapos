@@ -160,6 +160,20 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request set-header X-Forwarded-Proto {{ scheme }}
   http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }}
 {%-         endif %}
+{%-         if slave_instance['type'] == 'zope' %}
+{%-           if slave_instance['default-path'] %}
+  http-request redirect location {{ scheme}}://%[hdr(host)]/{{ slave_instance['default-path'] | replace('%', '%%') }} code 301 if { path / }
+{%-             set not_path_acl = 'if ! { path / }' %}
+{%-           else %}
+{%-             set not_path_acl = '' %}
+{%-           endif %}
+{%-           if slave_instance['path'].strip().strip('/') %}
+{%-             set zope_path = slave_instance['path'].strip().strip('/').replace('%', '%%') ~ '/' %}
+{%-           else %}
+{%-             set zope_path = '' %}
+{%-           endif %}
+  http-request set-path /VirtualHostBase/{{ scheme }}/%[req.hdr(Host),field(1,:)]:{{ slave_instance['virtualhostroot-%s-port' % (scheme,)] }}/{{ zope_path }}VirtualHostRoot%[path] {{ not_path_acl }}
+{%-         endif %}
 {%-         if info_dict['path'] %}
   http-request set-path {{ info_dict['path'] }}%[path]
 {%-         endif %} {# if info_dict['path'] #}
