@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import glob
 import hashlib
 import json
@@ -9,10 +8,10 @@ import shutil
 import subprocess
 import tempfile
 import time
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
+import urllib.parse
+from http.server import BaseHTTPRequestHandler
 
-import mock
+from unittest import mock
 import OpenSSL.SSL
 import pexpect
 import psutil
@@ -27,7 +26,6 @@ from slapos.testing.utils import (CrontabMixin, ManagedHTTPServer,
                                   findFreeTCPPort)
 
 from . import ERP5InstanceTestCase, setUpModule
-from six.moves import range
 
 setUpModule  # pyflakes
 
@@ -100,7 +98,7 @@ class CaucaseService(ManagedResource):
     os.mkdir(os.path.join(caucased_dir, 'user'))
     os.mkdir(os.path.join(caucased_dir, 'service'))
 
-    backend_caucased_netloc = '%s:%s' % (self._cls._ipv4_address, findFreeTCPPort(self._cls._ipv4_address))
+    backend_caucased_netloc = f'{self._cls._ipv4_address}:{findFreeTCPPort(self._cls._ipv4_address)}'
     self.url = 'http://' + backend_caucased_netloc
     self._caucased_process = subprocess.Popen(
         [
@@ -213,7 +211,7 @@ class TestTimeout(BalancerTestCase, CrontabMixin):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(TestTimeout, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a slow server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     # and set timeout of 1 second
@@ -224,12 +222,12 @@ class TestTimeout(BalancerTestCase, CrontabMixin):
     # type: () -> None
     self.assertEqual(
       requests.get(
-          six.moves.urllib.parse.urljoin(self.default_balancer_url, '/1'),
+          urllib.parse.urljoin(self.default_balancer_url, '/1'),
           verify=False).status_code,
       requests.codes.ok)
     self.assertEqual(
       requests.get(
-          six.moves.urllib.parse.urljoin(self.default_balancer_url, '/5'),
+          urllib.parse.urljoin(self.default_balancer_url, '/5'),
           verify=False).status_code,
       requests.codes.gateway_timeout)
 
@@ -241,7 +239,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(TestLog, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a slow server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     return parameter_dict
@@ -249,7 +247,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
   def test_access_log_format(self):
     # type: () -> None
     requests.get(
-        six.moves.urllib.parse.urljoin(self.default_balancer_url, '/url_path'),
+        urllib.parse.urljoin(self.default_balancer_url, '/url_path'),
         verify=False,
     )
     time.sleep(.5) # wait a bit more until access is logged
@@ -288,7 +286,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
             'apachedex',
             'ApacheDex-*.html',
         ))
-    with open(apachedex_report, 'r') as f:
+    with open(apachedex_report) as f:
       report_text = f.read()
     self.assertIn('APacheDEX', report_text)
     # having this table means that apachedex could parse some lines.
@@ -336,7 +334,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
       error_line = error_log_file.read().splitlines()[-1]
     self.assertIn('proxy family_default has no server available!', error_line)
     # this log also include a timestamp
-    self.assertRegexpMatches(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
+    self.assertRegex(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 
 class BalancerCookieHTTPServer(ManagedHTTPServer):
@@ -377,7 +375,7 @@ class TestBalancer(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(TestBalancer, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
 
     # use two backend servers
     parameter_dict['dummy_http_server'] = [
@@ -409,7 +407,7 @@ class TestBalancer(BalancerTestCase):
     # if backend provides a "SERVERID" cookie, balancer will overwrite it with the
     # backend selected by balancing algorithm
     self.assertIn(
-        requests.get(six.moves.urllib.parse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
+        requests.get(urllib.parse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
         ('default-0', 'default-1'),
     )
 
@@ -457,10 +455,7 @@ class TestTestRunnerEntryPoints(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(
-        TestTestRunnerEntryPoints,
-        cls,
-    )._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
 
     parameter_dict['dummy_http_server-test-runner-address-list'] = [
         [
@@ -485,18 +480,18 @@ class TestTestRunnerEntryPoints(BalancerTestCase):
     )['default-test-runner-url-list']
     url_0, url_1, url_2 = test_runner_url_list
     self.assertEqual(
-        six.moves.urllib.parse.urlparse(url_0).netloc,
-        six.moves.urllib.parse.urlparse(url_1).netloc)
+        urllib.parse.urlparse(url_0).netloc,
+        urllib.parse.urlparse(url_1).netloc)
     self.assertEqual(
-        six.moves.urllib.parse.urlparse(url_0).netloc,
-        six.moves.urllib.parse.urlparse(url_2).netloc)
+        urllib.parse.urlparse(url_0).netloc,
+        urllib.parse.urlparse(url_2).netloc)
 
     path_0 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_0/something'.format(
-        netloc=six.moves.urllib.parse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
     path_1 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_1/something'.format(
-        netloc=six.moves.urllib.parse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
     path_2 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_2/something'.format(
-        netloc=six.moves.urllib.parse.urlparse(url_0).netloc)
+        netloc=urllib.parse.urlparse(url_0).netloc)
 
     self.assertEqual(
         {
@@ -534,7 +529,7 @@ class TestHTTP(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(TestHTTP, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # use a HTTP/1.1 server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("HTTP/1.1 Server", EchoHTTP11Server).netloc, 1, False]]
     return parameter_dict
@@ -574,7 +569,7 @@ class TestHTTP(BalancerTestCase):
         session.get(self.default_balancer_url).raise_for_status()
       new_conn.assert_not_called()
 
-      parsed_url = six.moves.urllib.parse.urlparse(self.default_balancer_url)
+      parsed_url = urllib.parse.urlparse(self.default_balancer_url)
 
       # check that we have an open file for the ip connection
       self.assertTrue([
@@ -617,7 +612,7 @@ class TestContentEncoding(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(TestContentEncoding, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     parameter_dict['dummy_http_server'] = [
         [cls.getManagedResource("content_type_server", ContentTypeHTTPServer).netloc, 1, False],
     ]
@@ -644,17 +639,17 @@ class TestContentEncoding(BalancerTestCase):
         'application/font-woff2',
         'application/x-font-opentype',
         'application/wasm',):
-      resp = requests.get(six.moves.urllib.parse.urljoin(self.default_balancer_url, content_type), verify=False)
+      resp = requests.get(urllib.parse.urljoin(self.default_balancer_url, content_type), verify=False)
       self.assertEqual(resp.headers['Content-Type'], content_type)
       self.assertEqual(
           resp.headers.get('Content-Encoding'),
           'gzip',
-          '%s uses wrong encoding: %s' % (content_type, resp.headers.get('Content-Encoding')))
+          '{} uses wrong encoding: {}'.format(content_type, resp.headers.get('Content-Encoding')))
       self.assertEqual(resp.text, 'OK')
 
   def test_no_gzip_encoding(self):
     # type: () -> None
-    resp = requests.get(six.moves.urllib.parse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
+    resp = requests.get(urllib.parse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
     self.assertNotIn('Content-Encoding', resp.headers)
     self.assertEqual(resp.text, 'OK')
 
@@ -777,9 +772,9 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     # type: () -> dict
     frontend_caucase = cls.getManagedResource('frontend_caucase', CaucaseService)
     certificate = cls.getManagedResource('client_certificate', CaucaseCertificate)
-    certificate.request(u'shared frontend', frontend_caucase)
+    certificate.request('shared frontend', frontend_caucase)
 
-    parameter_dict = super(TestFrontendXForwardedFor, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     # add another "-auth" backend, that will have ssl-authentication enabled
     parameter_dict['zope-family-dict']['default-auth'] = ['dummy_http_server']
     parameter_dict['backend-path-dict']['default-auth'] = '/'
@@ -815,7 +810,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     ).json()
     self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
-    with self.assertRaisesRegexp(Exception, "certificate required"):
+    with self.assertRaisesRegex(Exception, "certificate required"):
       requests.get(
         balancer_url,
         headers={'X-Forwarded-For': '1.2.3.4'},
@@ -833,8 +828,8 @@ class TestServerTLSProvidedCertificate(BalancerTestCase):
     # type: () -> dict
     server_caucase = cls.getManagedResource('server_caucase', CaucaseService)
     server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
-    server_certificate.request(six.ensure_text(cls._ipv4_address), server_caucase)
-    parameter_dict = super(TestServerTLSProvidedCertificate, cls)._getInstanceParameterDict()
+    server_certificate.request(cls._ipv4_address, server_caucase)
+    parameter_dict = super()._getInstanceParameterDict()
     with open(server_certificate.cert_file) as f:
       parameter_dict['ssl']['cert'] = f.read()
     with open(server_certificate.key_file) as f:
@@ -855,13 +850,13 @@ class TestClientTLS(BalancerTestCase):
     # type: () -> dict
     frontend_caucase1 = cls.getManagedResource('frontend_caucase1', CaucaseService)
     certificate1 = cls.getManagedResource('client_certificate1', CaucaseCertificate)
-    certificate1.request(u'client_certificate1', frontend_caucase1)
+    certificate1.request('client_certificate1', frontend_caucase1)
 
     frontend_caucase2 = cls.getManagedResource('frontend_caucase2', CaucaseService)
     certificate2 = cls.getManagedResource('client_certificate2', CaucaseCertificate)
-    certificate2.request(u'client_certificate2', frontend_caucase2)
+    certificate2.request('client_certificate2', frontend_caucase2)
 
-    parameter_dict = super(TestClientTLS, cls)._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     parameter_dict['ssl-authentication-dict'] = {
         'default': True,
     }
@@ -936,11 +931,11 @@ class TestClientTLS(BalancerTestCase):
       process = pexpect.spawnu("faketime +1day %s" % caucase_updater)
 
       process.logfile = DebugLogFile()
-      process.expect(u"Got new CRL.*Next wake-up at.*")
+      process.expect("Got new CRL.*Next wake-up at.*")
       process.terminate()
       process.wait()
 
-      with self.assertRaisesRegexp(Exception, 'certificate revoked'):
+      with self.assertRaisesRegex(Exception, 'certificate revoked'):
         _make_request()
 
 
@@ -952,10 +947,7 @@ class TestPathBasedRouting(BalancerTestCase):
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> dict
-    parameter_dict = super(
-      TestPathBasedRouting,
-      cls,
-    )._getInstanceParameterDict()
+    parameter_dict = super()._getInstanceParameterDict()
     parameter_dict['zope-family-dict'][
       'second'
     ] = parameter_dict['zope-family-dict'][
@@ -985,7 +977,7 @@ class TestPathBasedRouting(BalancerTestCase):
     published_dict = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
     scheme = 'scheme'
     netloc = 'example.com:8080'
-    prefix = '/VirtualHostBase/' + scheme + '//' + six.moves.urllib.parse.quote(
+    prefix = '/VirtualHostBase/' + scheme + '//' + urllib.parse.quote(
       netloc,
       safe='',
     )
@@ -1009,7 +1001,7 @@ class TestPathBasedRouting(BalancerTestCase):
       # test will need to be updated accordingly.
       self.assertEqual(
         requests.get(
-          six.moves.urllib.parse.urljoin(published_dict[family], prefix + vhr + path),
+          urllib.parse.urljoin(published_dict[family], prefix + vhr + path),
           verify=False,
         ).json()['Path'],
         expected_path,

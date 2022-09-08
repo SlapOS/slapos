@@ -25,7 +25,6 @@
 #
 ##############################################################################
 
-from __future__ import absolute_import
 
 import contextlib
 import glob
@@ -42,9 +41,8 @@ import unittest
 
 import psutil
 import requests
-import six
-import six.moves.urllib.parse
-import six.moves.xmlrpc_client
+import urllib.parse
+import xmlrpc.client
 import urllib3
 from slapos.testing.utils import CrontabMixin
 
@@ -53,7 +51,7 @@ from . import ERP5InstanceTestCase, setUpModule
 setUpModule # pyflakes
 
 
-class TestPublishedURLIsReachableMixin(object):
+class TestPublishedURLIsReachableMixin:
   """Mixin that checks that default page of ERP5 is reachable.
   """
 
@@ -61,7 +59,7 @@ class TestPublishedURLIsReachableMixin(object):
     # We access ERP5 trough a "virtual host", which should make
     # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
     # as base.
-    virtual_host_url = six.moves.urllib.parse.urljoin(
+    virtual_host_url = urllib.parse.urljoin(
         base_url,
         '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
         .format(site_id))
@@ -89,7 +87,7 @@ class TestPublishedURLIsReachableMixin(object):
 
       # login page can be rendered and contain the text "ERP5"
       r = session.get(
-          six.moves.urllib.parse.urljoin(base_url, '{}/login_form'.format(site_id)),
+          urllib.parse.urljoin(base_url, f'{site_id}/login_form'),
           verify=verify,
           allow_redirects=False,
       )
@@ -174,7 +172,7 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     }
 
   def checkValidHTTPSURL(self, url):
-    parsed = six.moves.urllib.parse.urlparse(url)
+    parsed = urllib.parse.urlparse(url)
     self.assertEqual(parsed.scheme, 'https')
     self.assertTrue(parsed.hostname)
     self.assertTrue(parsed.port)
@@ -184,16 +182,16 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       self.checkValidHTTPSURL(
-          param_dict['family-{family_name}'.format(family_name=family_name)])
+          param_dict[f'family-{family_name}'])
       self.checkValidHTTPSURL(
-          param_dict['family-{family_name}-v6'.format(family_name=family_name)])
+          param_dict[f'family-{family_name}-v6'])
 
   def test_published_test_runner_url(self):
     # each family's also a list of test test runner URLs, by default 3 per family
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       family_test_runner_url_list = param_dict[
-          '{family_name}-test-runner-url-list'.format(family_name=family_name)]
+          f'{family_name}-test-runner-url-list']
       self.assertEqual(3, len(family_test_runner_url_list))
       for url in family_test_runner_url_list:
         self.checkValidHTTPSURL(url)
@@ -211,16 +209,16 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     # normal access on ipv4 and ipv6 and test runner access on ipv4 only
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [p for p in all_process_info if p['name'].startswith('haproxy-')]
+    process_info, = (p for p in all_process_info if p['name'].startswith('haproxy-'))
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
         sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
-        sorted([
+        sorted(
             c.family
             for c in haproxy_worker_process.connections()
             if c.status == 'LISTEN'
-        ]))
+        ))
 
 
 class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -286,7 +284,7 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     # Haproxy only listen on two ports, there is no haproxy ports allocated for test runner
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [p for p in all_process_info if p['name'].startswith('haproxy')]
+    process_info, = (p for p in all_process_info if p['name'].startswith('haproxy'))
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
@@ -358,7 +356,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       storage["storage"] = "root"
       storage["server"] = zeo_addr
       storage["server-sync"] = "true"
-      with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
+      with open(f'{partition}/etc/zope-{zope}.conf') as f:
         conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
@@ -368,12 +366,12 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
             if line == '</clientstorage>':
               break
             checkParameter(line, storage)
-          for k, v in six.iteritems(storage):
+          for k, v in storage.items():
             self.assertIsNone(v, k)
           del storage
         else:
           checkParameter(line, zodb)
-      for k, v in six.iteritems(zodb):
+      for k, v in zodb.items():
         self.assertIsNone(v, k)
 
     partition = self.getComputerPartitionPath('zope-a')
@@ -428,19 +426,19 @@ class TestWatchActivities(ERP5InstanceTestCase):
           env=dict(os.environ,
                    PATH=os.pathsep.join([tmpdir, os.environ['PATH']])),
           stderr=subprocess.STDOUT,
-          universal_newlines=True,
+          text=True,
       )
     except subprocess.CalledProcessError as e:
       self.fail(e.output)
     self.assertIn(' dict ', output)
 
 
-class ZopeSkinsMixin(object):
+class ZopeSkinsMixin:
   """Mixins with utility methods to test zope behaviors.
   """
   @classmethod
   def _setUpClass(cls):
-    super(ZopeSkinsMixin, cls)._setUpClass()
+    super()._setUpClass()
     param_dict = cls.getRootPartitionConnectionParameterDict()
     with cls.getXMLRPCClient() as erp5_xmlrpc_client:
       # wait for ERP5 to be ready (TODO: this should probably be a promise)
@@ -448,8 +446,8 @@ class ZopeSkinsMixin(object):
         time.sleep(1)
         try:
           erp5_xmlrpc_client.getTitle()
-        except (six.moves.xmlrpc_client.ProtocolError,
-                six.moves.xmlrpc_client.Fault):
+        except (xmlrpc.client.ProtocolError,
+                xmlrpc.client.Fault):
           pass
         else:
           break
@@ -462,7 +460,7 @@ class ZopeSkinsMixin(object):
     path is joined with urllib.parse.urljoin to the URL of the portal.
     """
     param_dict = cls.getRootPartitionConnectionParameterDict()
-    parsed = six.moves.urllib.parse.urlparse(param_dict['family-' + family_name])
+    parsed = urllib.parse.urlparse(param_dict['family-' + family_name])
     base_url = parsed._replace(
         netloc='{}:{}@{}:{}'.format(
             param_dict['inituser-login'],
@@ -472,7 +470,7 @@ class ZopeSkinsMixin(object):
         ),
         path=param_dict['site-id'] + '/',
     ).geturl()
-    return six.moves.urllib_parse.urljoin(base_url, path)
+    return urllib.parse.urljoin(base_url, path)
 
   @classmethod
   @contextlib.contextmanager
@@ -481,16 +479,12 @@ class ZopeSkinsMixin(object):
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
-    erp5_xmlrpc_client = six.moves.xmlrpc_client.ServerProxy(
+    erp5_xmlrpc_client = xmlrpc.client.ServerProxy(
         cls._getAuthenticatedZopeUrl(''),
         context=ssl_context,
     )
-    # BBB use as a context manager only on python3
-    if sys.version_info < (3, ):
+    with erp5_xmlrpc_client:
       yield erp5_xmlrpc_client
-    else:
-      with erp5_xmlrpc_client:
-        yield erp5_xmlrpc_client
 
   @classmethod
   def _addPythonScript(cls, script_id, params, body):
@@ -499,7 +493,7 @@ class ZopeSkinsMixin(object):
       try:
         custom.manage_addProduct.PythonScripts.manage_addPythonScript(
             script_id)
-      except six.moves.xmlrpc_client.ProtocolError as e:
+      except xmlrpc.client.ProtocolError as e:
         if e.errcode != 302:
           raise
       getattr(custom, script_id).ZPythonScriptHTML_editAction(
@@ -531,7 +525,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
 
   @classmethod
   def _setUpClass(cls):
-    super(ZopeTestMixin, cls)._setUpClass()
+    super()._setUpClass()
     cls.zope_base_url = cls._getAuthenticatedZopeUrl('')
     param_dict = cls.getRootPartitionConnectionParameterDict()
     cls.zope_deadlock_debugger_url = cls._getAuthenticatedZopeUrl(
@@ -554,7 +548,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
           raise ValueError("Unknown mode: %s" % mode)
         ''',
     )
-    cls.zope_verify_activity_processing_url = six.moves.urllib_parse.urljoin(
+    cls.zope_verify_activity_processing_url = urllib.parse.urljoin(
         cls.zope_base_url,
         'ERP5Site_verifyActivityProcessing',
     )
@@ -567,7 +561,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
             return log("hello %s" % name)
         ''',
     )
-    cls.zope_log_message_url = six.moves.urllib_parse.urljoin(
+    cls.zope_log_message_url = urllib.parse.urljoin(
         cls.zope_base_url,
         'ERP5Site_logMessage',
     )
@@ -582,18 +576,18 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
           return "done"
         ''',
     )
-    cls.zope_long_request_url = six.moves.urllib_parse.urljoin(
+    cls.zope_long_request_url = urllib.parse.urljoin(
         cls.zope_base_url,
         'ERP5Site_executeLongRequest',
     )
 
   def setUp(self):
-    super(ZopeTestMixin, self).setUp()
+    super().setUp()
     # run logrotate a first time so that it create state files
     self._executeCrontabAtDate('logrotate', '2000-01-01')
 
   def tearDown(self):
-    super(ZopeTestMixin, self).tearDown()
+    super().tearDown()
     # reset logrotate status
     logrotate_status = os.path.join(
         self.getComputerPartitionPath('zope-default'),
@@ -844,11 +838,11 @@ class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
 
   @unittest.expectedFailure
   def test_long_request_log_rotation(self):
-    super(TestZopeWSGI, self).test_long_request_log_rotation(self)
+    super().test_long_request_log_rotation()
 
   @unittest.expectedFailure
   def test_basic_authentication_user_in_access_log(self):
-    super(TestZopeWSGI, self).test_basic_authentication_user_in_access_log(self)
+    super().test_basic_authentication_user_in_access_log()
 
 
 class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
@@ -887,7 +881,7 @@ class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
 
   @classmethod
   def _setUpClass(cls):
-    super(TestZopePublisherTimeout, cls)._setUpClass()
+    super()._setUpClass()
     cls._addPythonScript(
       'ERP5Site_doSlowRequest',
       '',

@@ -35,8 +35,8 @@ import tempfile
 import time
 
 import requests
-import six.moves.urllib as urllib
-import six.moves.xmlrpc_client
+import urllib.parse
+import xmlrpc.client
 import urllib3
 
 from slapos.grid.utils import md5digest
@@ -83,8 +83,8 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def setUpClass(cls):
-    # request and instanciate with old software url
-    super(ERP5UpgradeTestCase, cls).setUpClass()
+    # request and instantiate with old software url
+    super().setUpClass()
 
     cls.setUpOldInstance()
 
@@ -155,7 +155,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
 
     # wait for old site creation
     cls.session.get(
-      '{zope_base_url}/person_module'.format(zope_base_url=cls.zope_base_url),
+      f'{cls.zope_base_url}/person_module',
       auth=requests.auth.HTTPBasicAuth(
         username=param_dict['inituser-login'],
         password=param_dict['inituser-password'],
@@ -171,16 +171,12 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
       ssl_context = ssl.create_default_context()
       ssl_context.check_hostname = False
       ssl_context.verify_mode = ssl.CERT_NONE
-      erp5_xmlrpc_client = six.moves.xmlrpc_client.ServerProxy(
+      erp5_xmlrpc_client = xmlrpc.client.ServerProxy(
         cls.authenticated_zope_base_url,
         context=ssl_context,
       )
-      # BBB use as a context manager only on python3
-      if sys.version_info < (3, ):
+      with erp5_xmlrpc_client:
         yield erp5_xmlrpc_client
-      else:
-        with erp5_xmlrpc_client:
-          yield erp5_xmlrpc_client
 
     def addPythonScript(script_id, params, body):
       with getXMLRPCClient() as erp5_xmlrpc_client:
@@ -188,7 +184,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
         try:
           custom.manage_addProduct.PythonScripts.manage_addPythonScript(
             script_id)
-        except six.moves.xmlrpc_client.ProtocolError as e:
+        except xmlrpc.client.ProtocolError as e:
           if e.errcode != 302:
             raise
         getattr(custom, script_id).ZPythonScriptHTML_editAction(
