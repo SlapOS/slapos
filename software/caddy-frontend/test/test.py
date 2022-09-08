@@ -33,7 +33,7 @@ from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skip
+from unittest import skip, expectedFailure
 import ssl
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
@@ -4446,6 +4446,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         curl_command, out, err))
     return out, err
 
+  @expectedFailure
   def test_disabled_cookie_list(self):
     parameter_dict = self.assertSlaveBase('disabled-cookie-list')
     out, err = self._curl(
