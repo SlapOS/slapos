@@ -302,7 +302,8 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    for replacement, value in list(data_replacement_dict.items()):
+    for replacement in sorted(data_replacement_dict.keys()):
+      value = data_replacement_dict[replacement]
       runtime_data = runtime_data.replace(value, replacement)
 
     maxDiff = self.maxDiff
