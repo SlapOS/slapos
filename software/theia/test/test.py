@@ -391,52 +391,49 @@ class TestTheiaEnv(TheiaTestCase):
     # Start a theia shell that inherits the environment of the theia process
     # This simulates the environment of a shell launched from the browser application
     theia_shell_process = pexpect.spawnu('{}/bin/theia-shell'.format(self.getPath()), env=theia_env)
-    try:
-      theia_shell_process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
+    self.addCleanup(theia_shell_process.wait)
+    self.addCleanup(theia_shell_process.terminate)
 
-      # Launch slapos node software from theia shell
-      theia_shell_process.sendline('slapos node software')
-      theia_shell_process.expect('Installing software release %s' % self.dummy_software_path)
-      theia_shell_process.expect('Finished software releases.')
+    theia_shell_process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
 
-      # Get the theia shell environment
-      with open(env_json_path) as f:
-        theia_shell_env = json.load(f)
+    # Launch slapos node software from theia shell
+    theia_shell_process.sendline('slapos node software')
+    theia_shell_process.expect('Installing software release %s' % self.dummy_software_path)
+    theia_shell_process.expect('Finished software releases.')
 
-      # Remove the env.json file to later be sure that a new one has been generated
-      os.remove(env_json_path)
+    # Get the theia shell environment
+    with open(env_json_path) as f:
+      theia_shell_env = json.load(f)
 
-      # Launch slapos node software service from the embedded supervisord.
-      # Note that we have two services, slapos-node-software and slapos-node-software-all
-      # The later uses --all which is what we want to use here, because the software
-      # is already installed and we want to install it again, this time from supervisor
-      embedded_run_path = self.getPath('srv', 'runner', 'var', 'run')
-      embedded_supervisord_socket_path = _getSupervisordSocketPath(embedded_run_path, self.logger)
-      with getSupervisorRPC(embedded_supervisord_socket_path) as embedded_supervisor:
-        previous_stop_time = embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop']
-        embedded_supervisor.startProcess('slapos-node-software-all')
-        for _retries in range(20):
-          time.sleep(1)
-          if embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop'] != previous_stop_time:
-            break
-        else:
-          self.fail("the supervisord service 'slapos-node-software-all' takes too long to finish")
+    # Remove the env.json file to later be sure that a new one has been generated
+    os.remove(env_json_path)
 
-      # Get the supervisord environment
-      with open(env_json_path) as f:
-        supervisord_env = json.load(f)
+    # Launch slapos node software service from the embedded supervisord.
+    # Note that we have two services, slapos-node-software and slapos-node-software-all
+    # The later uses --all which is what we want to use here, because the software
+    # is already installed and we want to install it again, this time from supervisor
+    embedded_run_path = self.getPath('srv', 'runner', 'var', 'run')
+    embedded_supervisord_socket_path = _getSupervisordSocketPath(embedded_run_path, self.logger)
+    with getSupervisorRPC(embedded_supervisord_socket_path) as embedded_supervisor:
+      previous_stop_time = embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop']
+      embedded_supervisor.startProcess('slapos-node-software-all')
+      for _retries in range(20):
+        time.sleep(1)
+        if embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop'] != previous_stop_time:
+          break
+      else:
+        self.fail("the supervisord service 'slapos-node-software-all' takes too long to finish")
 
-      # Compare relevant variables from both environments
-      self.maxDiff = None
-      self.assertEqual(theia_shell_env['PATH'].split(':'), supervisord_env['PATH'].split(':'))
-      self.assertEqual(theia_shell_env['SLAPOS_CONFIGURATION'], supervisord_env['SLAPOS_CONFIGURATION'])
-      self.assertEqual(theia_shell_env['SLAPOS_CLIENT_CONFIGURATION'], supervisord_env['SLAPOS_CLIENT_CONFIGURATION'])
-      self.assertEqual(theia_shell_env['HOME'], supervisord_env['HOME'])
+    # Get the supervisord environment
+    with open(env_json_path) as f:
+      supervisord_env = json.load(f)
 
-    finally:
-      # Cleanup the theia shell process
-      theia_shell_process.terminate()
-      theia_shell_process.wait()
+    # Compare relevant variables from both environments
+    self.maxDiff = None
+    self.assertEqual(theia_shell_env['PATH'].split(':'), supervisord_env['PATH'].split(':'))
+    self.assertEqual(theia_shell_env['SLAPOS_CONFIGURATION'], supervisord_env['SLAPOS_CONFIGURATION'])
+    self.assertEqual(theia_shell_env['SLAPOS_CLIENT_CONFIGURATION'], supervisord_env['SLAPOS_CLIENT_CONFIGURATION'])
+    self.assertEqual(theia_shell_env['HOME'], supervisord_env['HOME'])
 
 
 class ResilientTheiaMixin(object):

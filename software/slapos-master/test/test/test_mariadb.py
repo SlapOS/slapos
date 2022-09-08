@@ -1,5 +1,4 @@
 ##############################################################################
-# coding: utf-8
 #
 # Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
 #
@@ -29,7 +28,7 @@
 import os
 import json
 import glob
-import urlparse
+import urllib.parse
 import socket
 import sys
 import time
@@ -38,7 +37,7 @@ import datetime
 import subprocess
 import gzip
 
-from backports import lzma
+import lzma
 import MySQLdb
 
 from slapos.testing.utils import CrontabMixin
@@ -80,7 +79,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getDatabaseConnection(self):
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
-    db_url = urlparse.urlparse(connection_parameter_dict['database-list'][0])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
@@ -91,6 +90,8 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         host=db_url.hostname,
         port=db_url.port,
         db=database_name,
+        use_unicode=True,
+        charset='utf8mb4'
     )
 
 
@@ -106,7 +107,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
             'mariadb-full',
             '20500101000000.sql.gz',
         ),
-        'r') as dump:
+        'rt') as dump:
       self.assertIn('CREATE TABLE', dump.read())
 
   def test_logrotate_and_slow_query_digest(self):
@@ -148,7 +149,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
         'slowquery_digest',
         'slowquery_digest.txt-2050-01-01.xz',
     )
-    with lzma.open(slow_query_report, 'r') as f:
+    with lzma.open(slow_query_report, 'rt') as f:
       # this is the hash for our "select sleep(n)" slow query
       self.assertIn("ID 0xF9A57DD5A41825CA", f.read())
 
@@ -170,7 +171,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       subprocess.check_output('faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'], shell=True)
     self.assertEqual(
         error_context.exception.output,
-"""\
+b"""\
 Threshold is lower than expected: 
 Expected total queries : 1.0 and current is: 2
 Expected slowest query : 0.1 and current is: 3
@@ -220,7 +221,7 @@ class TestMroonga(MariaDBTestCase):
           """
           SELECT mroonga_normalize("ABCDあぃうぇ㍑")
           """)
-      self.assertEqual((('abcdあぃうぇリットル',),),
+      self.assertEqual((('abcdあぃうぇリットル'.encode(),),),
                        cnx.store_result().fetch_row(maxrows=2))
 
       if 0:
@@ -233,7 +234,7 @@ class TestMroonga(MariaDBTestCase):
             """
             SELECT mroonga_normalize("aBｃＤあぃウェ㍑", "NormalizerMySQLUnicodeCIExceptKanaCIKanaWithVoicedSoundMark")
             """)
-        self.assertEqual((('ABCDあぃうぇ㍑',),),
+        self.assertEqual((('ABCDあぃうぇ㍑'.encode(),),),
                          cnx.store_result().fetch_row(maxrows=2))
 
   def test_mroonga_full_text_normalizer(self):
@@ -321,7 +322,7 @@ class TestMroonga(MariaDBTestCase):
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query("SELECT mroonga_command('register token_filters/stem')")
-      self.assertEqual((('true',),), cnx.store_result().fetch_row(maxrows=2))
+      self.assertEqual(((b'true',),), cnx.store_result().fetch_row(maxrows=2))
       cnx.query(
           """
           CREATE TABLE memos (
