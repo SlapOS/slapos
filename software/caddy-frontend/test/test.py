@@ -444,7 +444,8 @@ class TestDataMixin(object):
         self.another_server_ca.certificate_pem.decode()),
       '@@another_server_ca.certificate_pem_double@@': unicode_escape(
         unicode_escape(self.another_server_ca.certificate_pem.decode())),
-      '@@getSoftwareURL@@': self.getSoftwareURL(),
+      # self.getSoftwareURL can contain other replacements so do it first
+      '@@00getSoftwareURL@@': self.getSoftwareURL(),
       '@@test_server_ca.certificate_pem@@': unicode_escape(
         self.test_server_ca.certificate_pem.decode()),
       '@@test_server_ca.certificate_pem_double@@': unicode_escape(

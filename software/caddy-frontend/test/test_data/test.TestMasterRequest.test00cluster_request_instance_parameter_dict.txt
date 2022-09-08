@@ -19,7 +19,7 @@
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-0",
-    "slap_software_release_url": "@@getSoftwareURL@@",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "RootSoftwareInstance",
     "slave_instance_list": [],
     "timestamp": "@@TIMESTAMP@@"
@@ -50,7 +50,7 @@
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-1",
-    "slap_software_release_url": "@@getSoftwareURL@@",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "kedifa",
     "slave_instance_list": [],
     "timestamp": "@@TIMESTAMP@@"
@@ -86,7 +86,7 @@
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-2",
-    "slap_software_release_url": "@@getSoftwareURL@@",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],
     "timestamp": "@@TIMESTAMP@@"
