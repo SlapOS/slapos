@@ -5,7 +5,7 @@ This software release is used to run unit test of slapos eggs.
 The approach is to use nxdtest test runner, which will run tests for each
 projects, as described in `.nxdtest` file.
 
-The results of this test suite running on Nexedi ERP5 are published as 
+The results of this test suite running on Nexedi ERP5 are published as
 `SlapOS.Eggs.UnitTest-Master.Python3` and `SlapOS.Eggs.UnitTest-Master.Python2`.
 
 
@@ -36,14 +36,14 @@ source ( environment script from step above )
 cd ~/srv/runner/instance/slappartXXX/parts/slapos.core/
 
 # make some changes to the code
-vim slapos/tests/client.py
+$EDITOR slapos/tests/client.py
 
 # run slapos.core tests
 runTestSuite --run slapos.core
 # ... or run all eggs tests
 runTestSuite
 
-# when satified, commit changes
+# when satisfied, commit changes
 git add -p && git commit
 
 # add developer's fork remote (this is only needed the first time)
