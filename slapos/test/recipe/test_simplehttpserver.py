@@ -71,22 +71,43 @@ class SimpleHTTPServerTest(unittest.TestCase):
           'server did not start.\nout: %s error: %s' % self.process.communicate())
     self.assertIn('Directory listing for /', resp.text)
 
+    # post with multipart/form-data encoding
     resp = requests.post(
         server_base_url,
         files={
-            'path': 'hello.txt',
-            'content': b'hello',
+            'path': 'hello-form-data.txt',
+            'content': 'hello-form-data',
+        },
+    )
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    self.assertEqual(resp.text, 'Content written to hello-form-data.txt')
+    with open(
+        os.path.join(self.base_path, self.recipe.options['path'],
+                     'hello-form-data.txt')) as f:
+      self.assertEqual(f.read(), 'hello-form-data')
+
+    self.assertIn('hello-form-data.txt', requests.get(server_base_url).text)
+    self.assertEqual(
+        requests.get(server_base_url + '/hello-form-data.txt').text, 'hello-form-data')
+
+    # post as application/x-www-form-urlencoded
+    resp = requests.post(
+        server_base_url,
+        data={
+            'path': 'hello-form-urlencoded.txt',
+            'content': 'hello-form-urlencoded',
         },
     )
     self.assertEqual(resp.status_code, requests.codes.ok)
     with open(
         os.path.join(self.base_path, self.recipe.options['path'],
-                     'hello.txt')) as f:
-      self.assertEqual(f.read(), 'hello')
+                     'hello-form-urlencoded.txt')) as f:
+      self.assertEqual(f.read(), 'hello-form-urlencoded')
 
-    self.assertIn('hello.txt', requests.get(server_base_url).text)
+    self.assertIn('hello-form-urlencoded.txt', requests.get(server_base_url).text)
+    self.assertEqual(resp.text, 'Content written to hello-form-urlencoded.txt')
     self.assertEqual(
-        requests.get(server_base_url + '/hello.txt').text, 'hello')
+        requests.get(server_base_url + '/hello-form-urlencoded.txt').text, 'hello-form-urlencoded')
 
     # incorrect paths are refused
     for path in '/hello.txt', '../hello.txt':
