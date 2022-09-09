@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Parameters to instantiate Fluent-bit",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "tag": {
+        "description": "Tag for MQTT",
+        "type": "string"
+      },
+      "match": {
+        "description": "Match for Wendelin",
+        "type": "string"
+      },
+      "user": {
+        "description": "User credentials for Wendelin",
+        "type": "string"
+      },
+      "password": {
+        "description": "Password credentials for Wendelin",
+        "type": "string"
+      },
+      "uri": {
+        "description": "Uri for Wendelin",
+        "type": "string"
+      },
+      "reference": {
+        "description": "Reference for Wendelin",
+        "type": "string"
+      }
+    }
+}
