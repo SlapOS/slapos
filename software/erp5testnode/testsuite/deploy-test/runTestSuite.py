@@ -181,8 +181,8 @@ def main():
   # Create the site
   status_dict = waitForSite(args.partition_path)
 
-  status_file = tempfile.NamedTemporaryFile()
-  status_file.write(json.dumps(status_dict))
+  status_file = tempfile.NamedTemporaryFile(mode='w')
+  json.dump(status_dict, status_file)
   status_file.flush()
   os.fsync(status_file.fileno())
   os.environ['TEST_SITE_STATUS_JSON'] = status_file.name
