@@ -7,10 +7,14 @@ import os
 LTE_N_RB_DL=100
 LTE_TX_GAIN=78
 LTE_RX_GAIN=40
+LTE_IMSI="001010123456789"
+LTE_K="00112233445566778899aabbccddeeff"
 
 NR_BANDWIDTH=40
 NR_TX_GAIN=78
 NR_RX_GAIN=40
+NR_IMSI="001010123456789"
+NR_K="00112233445566778899aabbccddeeff"
 
 global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
@@ -26,6 +30,8 @@ rf_mode_context_list = [
             'default_lte_n_rb_dl': LTE_N_RB_DL,
             'default_lte_tx_gain': LTE_TX_GAIN,
             'default_lte_rx_gain': LTE_RX_GAIN,
+            'default_lte_imsi': LTE_IMSI,
+            'default_lte_k': LTE_K,
 
             'default_dl_nr_arfcn': 378000,
             'default_nr_band': 39,
@@ -34,6 +40,9 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "1000",
+            'default-ssb-nr-arfcn': 377790,
+            'default_nr_imsi': NR_IMSI,
+            'default_nr_k': NR_K,
 
             'min_frequency': 1880.0,
             'max_frequency': 1920,
@@ -46,6 +55,8 @@ rf_mode_context_list = [
             'default_lte_n_rb_dl': LTE_N_RB_DL,
             'default_lte_tx_gain': LTE_TX_GAIN,
             'default_lte_rx_gain': LTE_RX_GAIN,
+            'default_lte_imsi': LTE_IMSI,
+            'default_lte_k': LTE_K,
 
             'default_dl_nr_arfcn': 520000,
             'default_nr_band': 38,
@@ -54,6 +65,9 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "10000000",
+            'default-ssb-nr-arfcn': 517930,
+            'default_nr_imsi': NR_IMSI,
+            'default_nr_k': NR_K,
 
             'min_frequency': 2570,
             'max_frequency': 2620,
@@ -66,6 +80,8 @@ rf_mode_context_list = [
             'default_lte_n_rb_dl': LTE_N_RB_DL,
             'default_lte_tx_gain': LTE_TX_GAIN,
             'default_lte_rx_gain': LTE_RX_GAIN,
+            'default_lte_imsi': LTE_IMSI,
+            'default_lte_k': LTE_K,
 
             'default_dl_nr_arfcn': 632628,
             'default_nr_band': 78,
@@ -74,6 +90,9 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "10000000",
+            'default-ssb-nr-arfcn': 632544,
+            'default_nr_imsi': NR_IMSI,
+            'default_nr_k': NR_K,
 
             'min_frequency': 3400,
             'max_frequency': 3600,
@@ -86,6 +105,8 @@ rf_mode_context_list = [
             'default_lte_n_rb_dl': LTE_N_RB_DL,
             'default_lte_tx_gain': LTE_TX_GAIN,
             'default_lte_rx_gain': LTE_RX_GAIN,
+            'default_lte_imsi': LTE_IMSI,
+            'default_lte_k': LTE_K,
 
             'default_dl_nr_arfcn': 646666,
             'default_nr_band': 78,
@@ -94,6 +115,9 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "10000000",
+            'default-ssb-nr-arfcn': 646656,
+            'default_nr_imsi': NR_IMSI,
+            'default_nr_k': NR_K,
 
             'min_frequency': 3600,
             'max_frequency': 3800,
@@ -121,7 +145,7 @@ for rf_mode_context in rf_mode_context_list:
     with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
               'w+') as f:
         f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
-    for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc']:
+    for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc', 'ue-lte', 'ue-nr']:
         with open('instance-{}-{}-input-schema.json'.format(
                     rf_mode_context['rf_mode'],
                     software_type),
