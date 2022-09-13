@@ -19,6 +19,6 @@ bin = ${:home}/bin
 
 [fluentbit-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ fluentbit_source_location }}/build/bin/fluent-bit -i cpu -o stdout
+command-line = {{ fluent_bit_location }}/build/bin/fluent-bit -i cpu -o stdout
 wrapper-path = ${directory:service}/fluentbit-service
 output = $${:wrapper-path}
