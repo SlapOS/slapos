@@ -1,7 +1,7 @@
 [buildout]
 parts =
   fluentbit-service
-
+  
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
@@ -19,6 +19,6 @@ bin = ${:home}/bin
 
 [fluentbit-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ fluent_bit_source_location }}/build/bin/fluent-bit -i cpu -o stdout
+command-line = {{ fluent_bit_location }}/build/bin/fluent-bit -i cpu -o stdout
 wrapper-path = ${directory:service}/fluentbit-service
 output = $${:wrapper-path}
