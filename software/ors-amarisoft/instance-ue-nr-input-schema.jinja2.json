@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number",
+      "default": {{ default_nr_tx_gain }}
+    },
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number",
+      "default": {{ default_nr_rx_gain }}
+    },
+    "dl_nr_arfcn": {
+      "title": "DL NR ARFCN",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
+      "type": "number",
+      "default": {{ default_dl_nr_arfcn }}
+    },
+    "nr_band": {
+      "title": "NR band",
+      "description": "NR band number",
+      "type": "number",
+      "default": {{ default_nr_band }}
+    },
+    "nr_bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number",
+      "default": {{ default_nr_bandwidth }}
+    },
+    "ssb-nr-arfcn": {
+      "title": "SSB NR ARFCN",
+      "description": "SSB NR ARFCN",
+      "type": "number",
+      "default": {{ default-ssb-nr-arfcn }}
+    },
+    "imsi": {
+      "title": "IMSI",
+      "description": "IMSI",
+      "type": "string",
+      "default": {{ default_nr_imsi }}
+    },
+    "k": {
+      "title": "K",
+      "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
+      "type": "string",
+      "default": {{ default_nr_k }}
+    },
+    "use_ipv4": {
+      "default": false,
+      "title": "Use IPv4",
+      "description": "Set to true to use IPv4 for AMF / MME addresses",
+      "type": "boolean"
+    }
+  }
+}
