@@ -1,0 +1,13 @@
+[buildout]
+parts =
+  directory
+
+  [directory]
+recipe = slapos.cookbook:mkdirectory
+srv = $${buildout:directory}/srv
+var = $${:srv}/var
+www = $${:var}/www
+peertube_directory = ${:www}/peertube
+config = $${:peertube_directory}/config
+storage = $${:peertube_directory}/storage
+versions = $${:peertube_directory}/versions
