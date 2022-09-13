@@ -162,18 +162,19 @@ class EdgeMixin(object):
     )
     for instance_reference in self.surykatka_dict:
       for info_dict in self.surykatka_dict[instance_reference].values():
-        self.assertEqual(
-          info_dict['expected_ini'].strip() % info_dict,
-          open(info_dict['ini-file']).read().strip()
-        )
+        with open(info_dict['ini-file']) as fh:
+          self.assertEqual(
+            info_dict['expected_ini'].strip() % info_dict,
+            fh.read().strip()
+          )
 
   def assertPromiseContent(self, instance_reference, name, content):
-    promise = open(
+    with open(
       os.path.join(
         self.slap.instance_directory, instance_reference, 'etc', 'plugin', name
-      )).read().strip()
-
-    self.assertTrue(content in promise)
+      )) as fh:
+      promise = fh.read().strip()
+    self.assertIn(content, promise)
 
   def assertSurykatkaBotPromise(self):
     for instance_reference in self.surykatka_dict:
@@ -190,10 +191,11 @@ class EdgeMixin(object):
   def assertSurykatkaCron(self):
     for instance_reference in self.surykatka_dict:
       for info_dict in self.surykatka_dict[instance_reference].values():
-        self.assertEqual(
-          '*/2 * * * * %s' % (info_dict['status-json'],),
-          open(info_dict['status-cron']).read().strip()
-        )
+        with open(info_dict['status-cron']) as fh:
+          self.assertEqual(
+            '*/2 * * * * %s' % (info_dict['status-json'],),
+          fh.read().strip()
+          )
 
   def initiateSurykatkaRun(self):
     try:
