@@ -251,15 +251,17 @@ wrapper-path = ${directory:service}/kedifa
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 # Publish KeDiFa configuration for upload and download for each slave
+{%- set active_slave_list = json_module.loads(slapparameter_dict['active-slave-instance-list']) %}
 {%- set slave_kedifa_information = {} -%}
 {%- for slave in slapparameter_dict['slave-list'] -%}
 {%-   set slave_reference = slave['slave_reference'] -%}
-{%-   set slave_dict = {} -%}
-{%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
-{%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
+{%-   if slave_reference in active_slave_list %}
+{%-     set slave_dict = {} -%}
+{%-     do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
+{%-     do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
 [{{ slave_reference }}-auth-random-generate]
 recipe = plone.recipe.command
 file = ${directory:reservation}/${:_buildout_section_name_}
@@ -271,6 +273,7 @@ update-command = ${:command}
 <= auth-random
 file = {{ '${' + slave_reference }}-auth-random-generate:file}
 
+{%   endif %}
 {% endfor %}
 
 [master-auth-random-generate]
