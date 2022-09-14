@@ -120,6 +120,11 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
 
 class TestERP5Upgrade(ERP5UpgradeTestCase):
   @classmethod
+  def tearDownClass(cls):
+    cls.session.close()
+    super().tearDownClass()
+
+  @classmethod
   def setUpOldInstance(cls):
     cls._default_instance_old_parameter_dict = param_dict = json.loads(
       cls.computer_partition.getConnectionParameterDict()['_'])
