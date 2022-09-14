@@ -473,6 +473,16 @@ replicate = dynamic-publish-slave-information:output
 custom-personal = dynamic-publish-slave-information:output
 custom-group = dynamic-publish-slave-information:output
 
+[active-slave-instance]
+{% set active_slave_instance_list = [] %}
+{% for slave_instance in instance_parameter_dict['slave-instance-list'] %}
+{# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
+{# Note: This functionality is not yet covered by tests, please modify with care #}
+{%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
+{% endfor %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
+
 [request-kedifa]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
@@ -485,7 +495,14 @@ config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
 config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 {%-   endif %}
 {%- endfor %}
-config-slave-list = {{ dumps(authorized_slave_list) }}
+{%- set kedifa_slave_list = [] %}
+{%- for authorized_slave in authorized_slave_list %}
+{%-   if authorized_slave['slave_reference'] in active_slave_instance_list %}
+{%-     do kedifa_slave_list.append(authorized_slave) %}
+{%-   endif %}
+{%- endfor %}
+{%- do kedifa_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
+config-slave-list = {{ dumps(kedifa_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
@@ -515,16 +532,6 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 {% for frontend_section in frontend_section_list %}
 {{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
 {% endfor %}
-
-[active-slave-instance]
-{% set active_slave_instance_list = [] %}
-{% for slave_instance in instance_parameter_dict['slave-instance-list'] %}
-{# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
-{# Note: This functionality is not yet covered by tests, please modify with care #}
-{%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
-{% endfor %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
-active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [frontend-information]
 {% for frontend in frontend_list %}
