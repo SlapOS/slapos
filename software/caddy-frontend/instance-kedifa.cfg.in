@@ -13,6 +13,7 @@ parts =
   kedifa
   logrotate-entry-kedifa
   promise-kedifa-http-reply
+  cleanup-auth-ready
   slave-kedifa-information
   caucased
   caucased-promise
@@ -279,6 +280,14 @@ file = ${directory:reservation}/${:_buildout_section_name_}
 command =
   [ ! -f ${:file} ] && {{ software_parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
 update-command = ${:command}
+
+[cleanup-auth-ready]
+# Cleans auth-ready as some slaves can appear and be configured, but then
+# become removed before auth-random kicks in
+recipe = plone.recipe.command
+update-command = ${:command}
+command =
+  find ${directory:auth-ready} -type f -name *-auth-random -size 0
 
 [auth-random]
 recipe = slapos.recipe.build
