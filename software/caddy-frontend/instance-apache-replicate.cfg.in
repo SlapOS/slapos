@@ -486,6 +486,7 @@ config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 {%-   endif %}
 {%- endfor %}
 config-slave-list = {{ dumps(authorized_slave_list) }}
+config-active-slave-instance-list = ${active-slave-instance:active-slave-instance-list}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
