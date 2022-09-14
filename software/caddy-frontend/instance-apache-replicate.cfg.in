@@ -485,7 +485,14 @@ config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
 config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 {%-   endif %}
 {%- endfor %}
-config-slave-list = {{ dumps(authorized_slave_list) }}
+{%- set kedifa_slave_list = [] %}
+{%- for authorized_slave in authorized_slave_list %}
+{%-   if authorized_slave['slave_reference'] in active_slave_instance_list %}
+{%-     do kedifa_slave_list.append(authorized_slave) %}
+{%-   endif %}
+{%- endfor %}
+{%- do kedifa_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
+config-slave-list = {{ dumps(kedifa_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
