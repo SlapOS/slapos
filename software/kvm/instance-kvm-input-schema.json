@@ -193,34 +193,6 @@
       "type": "boolean",
       "default": true
     },
-    "external-disk-number": {
-      "title": "Number of additional disk to create for virtual machine",
-      "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
-      "type": "integer",
-      "minimum": 0,
-      "default": 0
-    },
-    "external-disk-size": {
-      "title": "Size of additional disk to create for virtual machine, in Gigabytes",
-      "description": "Specify the size of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
-      "type": "integer",
-      "minimum": 10,
-      "default": 20
-    },
-    "external-disk-format": {
-      "title": "Type of external disk drive to create by QEMU.",
-      "description": "Type of QEMU disk drive, to create.",
-      "type": "string",
-      "default": "qcow2",
-      "enum": [
-        "qcow2",
-        "raw",
-        "vdi",
-        "vmdk",
-        "cloop",
-        "qed"
-      ]
-    },
     "wipe-disk-ondestroy": {
       "title": "Wipe disks when destroy the VM",
       "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
@@ -305,7 +277,8 @@
     "data-to-vm": {
       "title": "Text content to send to this virtual machine.",
       "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
-      "type": "string"
+      "type": "string",
+      "textarea": true
     },
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",
@@ -402,6 +375,58 @@
       "description": "List of whitelisted domain names to be accessed from the VM. They will be resolved to IPs depending on where the VM end up. IPs can be used too.",
       "type": "string",
       "textarea": true
+    },
+    "external-disk": {
+      "title": "External disks",
+      "description": "Allows to set paths and types of manually provided external disks. Use index to order disks. Changing this parameter leads to kvm process restart.",
+      "type": "object",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "path": {
+              "title": "Path of the provided image",
+              "description": "Absolute or relative path (to the partition root path) of the provided image. Image has to be provided, with read and write permissions of the partition user. Please note, that if the name starts with 'rbd:' it's considered special and won't be used as relative path.",
+              "type": "string"
+            },
+            "format": {
+              "title": "Format of a disk image",
+              "description": "Format of a disk image. Note: rbd type is experimental.",
+              "type": "string",
+              "default": "autodetect",
+              "enum": [
+                "autodetect",
+                "qcow2",
+                "rbd",
+                "raw",
+                "vdi",
+                "vmdk",
+                "cloop",
+                "qed"
+              ]
+            },
+            "cache": {
+              "title": "Cache value for the disk",
+              "description": "Cache value directly passed to the kvm -drive invocation as cache=value.",
+              "type": "string",
+              "default": "writeback",
+              "enum": [
+                "writeback",
+                "none",
+                "unsafe",
+                "directsync",
+                "writethrough"
+              ]
+            },
+            "index": {
+              "title": "Index of a disk",
+              "description": "An index value used to order disks for the VM, required if more than one disk is used to have stable ordering.",
+              "type": "integer",
+              "default": 0
+            }
+          }
+        }
+      }
     }
   }
 }

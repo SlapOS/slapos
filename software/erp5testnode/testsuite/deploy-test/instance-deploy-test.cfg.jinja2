@@ -22,7 +22,7 @@ parts =
 [request-kvm]
 <= slap-connection
 
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
 software-type = kvm
 name = test-kvm
@@ -55,8 +55,8 @@ return =
   url
   backend-url
   ipv6
-  nat-rule-port-443
-  nat-rule-port-80
+  nat-rule-port-tcp-443
+  nat-rule-port-tcp-80
 
 [directory]
 recipe = slapos.cookbook:mkdirectory

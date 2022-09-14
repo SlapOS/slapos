@@ -129,6 +129,11 @@
       "title": "Third authorized domain on nextcloud",
       "description": "Trusted domain used to connect to Nextcloud instance.",
       "type": "string"
+    },
+    "instance.trusted-proxy-list": {
+      "title": "Trusted proxies",
+      "description": "IP adresses of trusted proxies, space separated.",
+      "type": "string"
     }
   }
 }

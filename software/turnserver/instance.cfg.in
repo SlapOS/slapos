@@ -9,8 +9,8 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = $${:default}
-default  = dynamic-template-turnserver:rendered
-insecure  = dynamic-template-insecure-turnserver:rendered
+default  = dynamic-template-turnserver:output
+insecure  = dynamic-template-insecure-turnserver:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -22,9 +22,8 @@ cert = $${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = $${buildout:directory}/$${:filename}
+output = $${buildout:directory}/$${:filename}
 extensions = jinja2.ext.do
-mode = 0644
 extra-context =
 context =
   key develop_eggs_directory buildout:develop-eggs-directory
@@ -34,8 +33,8 @@ context =
   key global_ipv4_prefix network-information:global-ipv4-network
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
-  raw template_monitor ${monitor2-template:rendered}
-  raw logrotate_cfg ${template-logrotate-base:rendered}
+  raw template_monitor ${monitor2-template:output}
+  raw logrotate_cfg ${template-logrotate-base:output}
   $${:extra-context}
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
@@ -56,14 +55,14 @@ turnserver-location = ${coturn:location}
 
 [dynamic-template-turnserver]
 <= jinja2-template-base
-template = ${template-turnserver:location}/${template-turnserver:filename}
+url = ${template-turnserver:location}/${template-turnserver:filename}
 filename = instance-turnserver.cfg
 extra-context =
   section parameter_dict dynamic-template-turnserver-parameters
 
 [dynamic-template-insecure-turnserver]
 <= jinja2-template-base
-template = ${template-insecure-turnserver:location}/${template-insecure-turnserver:filename}
+url = ${template-insecure-turnserver:location}/${template-insecure-turnserver:filename}
 filename = instance-insecure-turnserver.cfg
 extra-context =
   section parameter_dict dynamic-template-turnserver-parameters

@@ -5,12 +5,12 @@ import os
 
 # Values: 6 (1.4 MHz), 15 (3MHz), 25 (5MHz), 50 (10MHz), 75 (15MHz), 100 (20MHz)
 LTE_N_RB_DL=100
-LTE_TX_GAIN=70
-LTE_RX_GAIN=30
+LTE_TX_GAIN=78
+LTE_RX_GAIN=40
 
 NR_BANDWIDTH=40
-NR_TX_GAIN=70
-NR_RX_GAIN=50
+NR_TX_GAIN=78
+NR_RX_GAIN=40
 
 global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
@@ -33,6 +33,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "1000",
 
             'min_frequency': 1880.0,
             'max_frequency': 1920,
@@ -52,6 +53,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "10000000",
 
             'min_frequency': 2570,
             'max_frequency': 2620,
@@ -71,6 +73,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "10000000",
 
             'min_frequency': 3400,
             'max_frequency': 3600,
@@ -90,6 +93,7 @@ rf_mode_context_list = [
             'default_nr_bandwidth': NR_BANDWIDTH,
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
+            'default_nr_ssb_pos_bitmap': "10000000",
 
             'min_frequency': 3600,
             'max_frequency': 3800,
@@ -104,20 +108,25 @@ with open('instance-gnb-input-schema.jinja2.json', 'r') as f:
     instance_gnb_json_template = Template(f.read())
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
+with open('test/test.jinja2.py', 'r') as f:
+    test_template = Template(f.read())
 
 for rf_mode_context in rf_mode_context_list:
     with open('software-{}.cfg.json'.format(rf_mode_context['rf_mode']),
               'w+') as f:
-        f.write(software_json_template.render(**rf_mode_context, **global_context))
+        f.write(software_json_template.render(**rf_mode_context, **global_context) + '\n')
+    with open('test/test{}.py'.format(rf_mode_context['rf_mode'].upper()),
+              'w+') as f:
+        f.write(test_template.render(**rf_mode_context, **global_context) + '\n')
     with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
               'w+') as f:
-        f.write(software_template.render(**rf_mode_context, **global_context))
+        f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
     for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc']:
         with open('instance-{}-{}-input-schema.json'.format(
                     rf_mode_context['rf_mode'],
                     software_type),
                   'w+') as f:
             if software_type in ['enb', 'enb-epc']:
-                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context))
+                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
             else:
-                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context))
+                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')

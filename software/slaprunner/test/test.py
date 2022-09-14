@@ -35,23 +35,19 @@ import subprocess
 import json
 import time
 
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.parse import quote
-from six.moves.urllib.parse import urljoin
-from six.moves.configparser import ConfigParser
+from urllib.parse import urlparse
+from urllib.parse import quote
+from urllib.parse import urljoin
+from configparser import ConfigParser
 import requests
-import six
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.util import bytes2str
 
-skipIfPython3 = unittest.skipIf(six.PY3, 'rdiff-backup is not compatible with Python 3 yet')
-
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..',
-                     'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 class SlaprunnerTestCase(SlapOSInstanceTestCase):
   # Slaprunner uses unix sockets, so it needs short paths.
@@ -64,7 +60,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
     data = {
       "path": "workspace/slapos/software/%s" % software_release,
     }
-    resp = self._postToSlaprunner(url, data) 
+    resp = self._postToSlaprunner(url, data)
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertNotEqual(json.loads(resp.text)['code'], 0,
        'Unexpecting result in call to setCurrentProject: %s' % resp.text)
@@ -72,7 +68,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
   def _buildSoftwareRelease(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     url = "%s/runSoftwareProfile" % parameter_dict['url']
-    resp = self._postToSlaprunner(url, {}) 
+    resp = self._postToSlaprunner(url, {})
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertEqual(json.loads(resp.text)['result'], True,
        'Unexpecting result in call to runSoftwareProfile: %s' % resp.text)
@@ -80,7 +76,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
   def _deployInstance(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     url = "%s/runInstanceProfile" % parameter_dict['url']
-    resp = self._postToSlaprunner(url, {}) 
+    resp = self._postToSlaprunner(url, {})
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertEqual(json.loads(resp.text)['result'], True,
        'Unexpecting result in call to runSoftwareProfile: %s' % resp.text)
@@ -103,7 +99,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
   def _isSoftwareReleaseReady(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     url = "%s/isSRReady" % parameter_dict['url']
-    resp = self._getFromSlaprunner(url) 
+    resp = self._getFromSlaprunner(url)
     if requests.codes.ok != resp.status_code:
       return -1
     return resp.text
@@ -128,7 +124,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
       }
     while True:
       time.sleep(25)
-      resp = self._postToSlaprunner(url, data) 
+      resp = self._postToSlaprunner(url, data)
       if requests.codes.ok != resp.status_code:
         continue
       if json.loads(resp.text)["instance"]["state"] is False:
@@ -156,9 +152,9 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
     url = "%s/getFileContent" % parameter_dict['url']
 
     data = {
-      "file": relative_path 
+      "file": relative_path
     }
-    resp = self._postToSlaprunner(url, data) 
+    resp = self._postToSlaprunner(url, data)
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertNotEqual(json.loads(resp.text)['code'], 0,
        'Unexpecting result in call to getFileContent: %s' % resp.text)
@@ -192,9 +188,9 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     takeover_url = parameter_dict["takeover-%s-url" % scope]
     takeover_password = parameter_dict["takeover-%s-password" % scope]
-    
+
     resp = requests.get(
-      "%s?password=%s" % (takeover_url, takeover_password),
+      f"{takeover_url}?password={takeover_password}",
       verify=True)
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertNotIn("Error", resp.text,
@@ -239,7 +235,7 @@ class TestWebRunnerAutorun(SlaprunnerTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-        # Auto deploy is required for the isSRReady works. 
+        # Auto deploy is required for the isSRReady works.
         'auto-deploy': 'true',
         'autorun': 'true',
         'software-root': os.path.join(cls.slap._instance_root, "..", "soft"),
@@ -366,7 +362,7 @@ class TestSSH(SlaprunnerTestCase):
     self.assertTrue(fingerprint_from_url.startswith('ssh-rsa-'), fingerprint_from_url)
     fingerprint_from_url = fingerprint_from_url[len('ssh-rsa-'):]
 
-    class KeyPolicy(object):
+    class KeyPolicy:
       """Accept server key and keep it in self.key for inspection
       """
       def missing_host_key(self, client, hostname, key):
@@ -499,7 +495,6 @@ class TestCustomFrontend(SlaprunnerTestCase):
       parameter_dict['custom-frontend-url'],
       'https://www.erp5.com')
 
-@skipIfPython3
 class TestResilientInstance(SlaprunnerTestCase):
   instance_max_retry = 20
 
@@ -511,7 +506,7 @@ class TestResilientInstance(SlaprunnerTestCase):
     # just check that keys returned on requested partition are for resilient
     self.assertSetEqual(
       set(self.computer_partition.getConnectionParameterDict().keys()),
-      set([
+      {
         'backend-url',
         'feed-url-runner-1-pull',
         'feed-url-runner-1-push',
@@ -524,16 +519,14 @@ class TestResilientInstance(SlaprunnerTestCase):
         'takeover-runner-1-password',
         'takeover-runner-1-url',
         'url',
-        'webdav-url']))
+        'webdav-url'})
 
-@skipIfPython3
 class TestResilientCustomFrontend(TestCustomFrontend):
   instance_max_retry = 20
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'resilient'
 
-@skipIfPython3
 class TestResilientWebInstance(TestWeb):
   instance_max_retry = 20
   @classmethod
@@ -544,7 +537,6 @@ class TestResilientWebInstance(TestWeb):
     pass # Disable until we can write on runner0 rather them
          # on root partition
 
-@skipIfPython3
 class TestResilientWebrunnerBasicUsage(TestWebRunnerBasicUsage):
   instance_max_retry = 20
   @classmethod
@@ -552,14 +544,12 @@ class TestResilientWebrunnerBasicUsage(TestWebRunnerBasicUsage):
     return 'resilient'
 
 
-@skipIfPython3
 class TestResilientWebrunnerAutorun(TestWebRunnerAutorun):
   instance_max_retry = 20
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'resilient'
 
-@skipIfPython3
 class TestResilientDummyInstance(SlaprunnerTestCase):
   instance_max_retry = 20
   @classmethod
@@ -598,7 +588,7 @@ class TestResilientDummyInstance(SlaprunnerTestCase):
 
     self._waitForCloneToBeReadyForTakeover()
     self._doTakeover()
-    self.slap.waitForInstance(20) 
+    self.slap.waitForInstance(20)
 
     previous_computer_partition = self.computer_partition
     self.computer_partition = self.requestDefaultInstance()
@@ -610,5 +600,5 @@ class TestResilientDummyInstance(SlaprunnerTestCase):
     self.assertTrue(result_after.startswith("Hello"), result_after)
 
     self.assertIn(result, result_after,
-            "%s not in %s" % (result, result_after))
+            f"{result} not in {result_after}")
 

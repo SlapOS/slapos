@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.238'
+version = '1.0.272'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -79,7 +79,6 @@ setup(name=name,
           'addresiliency = slapos.recipe.addresiliency:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
-          'apachephpconfigure = slapos.recipe.apachephpconfigure:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
@@ -108,15 +107,12 @@ setup(name=name,
           'generic.memcached = slapos.recipe.generic_memcached:Recipe',
           'generic.mysql.wrap_update_mysql = slapos.recipe.generic_mysql:WrapUpdateMySQL',
           'gitinit = slapos.recipe.gitinit:Recipe',
-          'haproxy = slapos.recipe.haproxy:Recipe',
           'ipv4toipv6 = slapos.recipe.6tunnel:FourToSix',
           'ipv6toipv4 = slapos.recipe.6tunnel:SixToFour',
           'jsondump = slapos.recipe.jsondump:Recipe',
-          'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
           'logrotate = slapos.recipe.logrotate:Recipe',
           'logrotate.d = slapos.recipe.logrotate:Part',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
-          'mioga.instantiate = slapos.recipe.mioga.instantiate:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'neoppod.cluster = slapos.recipe.neoppod:Cluster',
           'neoppod.admin = slapos.recipe.neoppod:Admin',
@@ -147,7 +143,6 @@ setup(name=name,
           'requestoptional.serialised = '
           'slapos.recipe.request:RequestOptionalJSONEncoded',
           're6stnet.registry = slapos.recipe.re6stnet:Recipe',
-          'reverseproxy.nginx = slapos.recipe.reverse_proxy_nginx:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'shell = slapos.recipe.shell:Recipe',
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
@@ -169,7 +164,6 @@ setup(name=name,
           'webchecker = slapos.recipe.web_checker:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
-          'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
           'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
           'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'

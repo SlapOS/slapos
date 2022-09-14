@@ -16,7 +16,7 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
     key ipv6_set slap-configuration:ipv6
@@ -33,7 +33,7 @@ instance-parameter-dict = {{ dumps(cloudooo_parameter_dict) }}
 
 [cloudooo-dynamic-template]
 < = jinja2-template-base
-template = {{ template_cloudooo_instance }}
+url = {{ template_cloudooo_instance }}
 filename = instance-cloudooo.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -43,5 +43,5 @@ extra-context =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = cloudooo-dynamic-template:rendered
+default = cloudooo-dynamic-template:output
 RootSoftwareInstance = ${:default}

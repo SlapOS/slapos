@@ -110,9 +110,8 @@ command = ${tidstorage:repozo-wrapper}
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template:jinja2
-mode = 644
-template = {{ 'inline:{{ "${directory:zodb}/**\\n${directory:log}/**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+inline = {{ '{{ "${directory:zodb}/**\\n${directory:log}/**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
 # Generate identity script used by webrunner to check data integrity

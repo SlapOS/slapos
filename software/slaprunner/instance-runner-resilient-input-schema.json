@@ -58,13 +58,6 @@
           "type": "string",
           "default": "2W",
           "optional": true
-        },
-        "ignore-known-hosts-file": {
-          "title": "Ignore known_hosts file",
-          "description": "Set either to fill known_hosts file for ssh or not. Useful if main instance and PBS are using the same IP (slapos proxy, webrunner).",
-          "type": "boolean",
-          "default": false,
-          "optional": true
         }
       }
     }

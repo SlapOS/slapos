@@ -12,17 +12,18 @@ backup   = ${directory:backup}/nextcloud
 [service-redis]
 recipe  = slapos.cookbook:redis.server
 wrapper = ${directory:services}/redis
-promise_wrapper = ${directory:bin}/redis-promise
-server_dir  = ${nc-directory:redis}
-config_file = ${directory:etc}/redis.conf
-log_file    = ${nc-directory:redis-log}/redis.log
-pid_file    = ${directory:run}/redis.pid
-use_passwd  = false
-unixsocket  = ${:server_dir}/redis.socket
+promise-wrapper = ${directory:bin}/redis-promise
+server-dir  = ${nc-directory:redis}
+config-file = ${directory:etc}/redis.conf
+log-file    = ${nc-directory:redis-log}/redis.log
+pid-file    = ${directory:run}/redis.pid
+use-passwd  = false
+unixsocket  = ${:server-dir}/redis.socket
 # port = 0 means "don't listen on TCP at all" - listen only on unix socket
 ipv6    = ::1
 port    = 0
-server_bin  = {{ redis_bin }}
+server-bin  = {{ redis_bin }}
+cli-bin  = {{ redis_cli }}
 depend  =
     ${logrotate-entry-redis:recipe}
 
@@ -30,7 +31,7 @@ depend  =
 <= monitor-promise-base
 promise = check_command_execute
 name = redis.py
-config-command = ${service-redis:promise_wrapper}
+config-command = ${service-redis:promise-wrapper}
 
 [logrotate-entry-redis]
 <= logrotate-entry-base
@@ -43,7 +44,7 @@ rotate-num = 30
 nextcloud = ${:document-root}
 admin-user = admin
 admin-password = admin
-trusted-domain-list = 
+trusted-domain-list =
   [${apache-php-configuration:ip}]:${apache-php-configuration:port}
   ${slap-parameter:instance.trusted-domain-1}
   ${slap-parameter:instance.trusted-domain-2}
@@ -53,17 +54,6 @@ trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 cli-url = ${slap-parameter:instance.cli-url}
 data-dir = ${nc-directory:data}
 redis-socket = ${service-redis:unixsocket}
-
-#php.ini parameters
-php.memory_limit = 512M
-php.date.timezone = Europe/Paris
-php.upload_max_filesize = 10240M
-php.post_max_size = 10240M
-php.session.cookie_secure = True
-php.max_execution_time = 1800
-php.max_input_time = 3600
-php.output_buffering = 'Off'
-php.max_file_uploads = 100
 
 #SMTP settings
 mail.from = ${slap-parameter:instance.mail-from}
@@ -82,18 +72,16 @@ turn-secret = ${slap-parameter:instance.turn-secret}
 
 [nextcloud-install.sh]
 recipe = slapos.recipe.template:jinja2
-template = {{ nextcloud_install_sh }}
-rendered = ${directory:scripts}/nextcloud-install
+url = {{ nextcloud_install_sh }}
+output = ${directory:scripts}/nextcloud-install
 context =
   section parameter_dict   instance-parameter
   section nextcloud_apps   nextcloud-apps
-mode = 744
 depends =
   ${service-redis:recipe}
   ${redis-promise:recipe}
   ${nextcloud-cron:recipe}
   ${nextcloud-optimize:recipe}
-  ${nextcloud-apache-httpd:recipe}
   ${nextcloud-backup-cron:recipe}
   ${nextcloud-news-updater:recipe}
   ${nextcloud-config-update:recipe}
@@ -118,14 +106,6 @@ input = inline:#!/bin/bash
     exit 1;
   fi
 output = ${directory:bin}/check-nc-install
-mode = 744
-
-[nextcloud-apache-httpd]
-recipe = slapos.recipe.template:jinja2
-template = {{ nextcloud_apache_httpd }}
-rendered = ${directory:apache.d}/nextcloud.conf
-context =
-  section parameter_dict apache-php-configuration
 mode = 744
 
 [nextcloud-cron]
@@ -176,19 +156,18 @@ recipe = collective.recipe.template
 input = inline:#!/bin/sh
   cd {{ news_updater_location }}
   export PATH={{ php_location }}/bin:$PATH
-  {{ python3_location}}/bin/python3 -m nextcloud_news_updater --phpini ${php.ini-conf:rendered} \
+  {{ python3_location}}/bin/python3 -m nextcloud_news_updater --phpini ${php.ini-conf:output} \
     --interval 300 --mode endless --loglevel info ${instance-parameter:nextcloud}
 output = ${directory:scripts}/nextcloud-news-updater
 mode = 744
 
 [nextcloud-config.json]
 recipe = slapos.recipe.template:jinja2
-template = {{ nextcloud_parameter_json }}
-rendered = ${directory:etc}/nextcloud-config.json
+url = {{ nextcloud_parameter_json }}
+output = ${directory:etc}/nextcloud-config.json
 extensions = jinja2.ext.do
 context =
   section parameter_dict   instance-parameter
-mode = 600
 
 [nextcloud-config-update]
 output = ${directory:scripts}/nextcloud-update
@@ -198,13 +177,8 @@ input = inline:#!/bin/sh
     # do not run this script if nextcloud is not installed yet.
     exit 1;
   fi
-  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ config:import ${nextcloud-config.json:rendered}
+  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ config:import ${nextcloud-config.json:output}
 mode = 744
-
-[php-bin]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
 
 [publish-connection-information]
 admin-user = ${instance-parameter:admin-user}

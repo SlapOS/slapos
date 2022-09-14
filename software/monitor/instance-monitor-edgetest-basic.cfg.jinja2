@@ -14,7 +14,7 @@
 {%-   endif %}
 {%- endfor %}
 {%- set CHECK_DICT = {} %}
-{%- for check_name, check_definition in slapparameter_dict['check-dict'].items() %}
+{%- for check_name, check_definition in slapparameter_dict.get('check-dict', {}).items() %}
 {%-   if 'url-list' in check_definition %}
 {%-     set check = DEFAULT_DICT.copy()  %}
 {%-     set url_list = [] %}
@@ -83,8 +83,8 @@ config-json-file = ${surykatka-config-{{ class }}:json}
 [surykatka-config-{{ class }}]
 recipe = slapos.recipe.template:jinja2
 db = ${directory:srv}/surykatka-{{ class }}.db
-rendered = ${directory:etc}/surykatka-{{ class }}.ini
-template = {{ template_surykatka_ini }}
+output = ${directory:etc}/surykatka-{{ class }}.ini
+url = {{ template_surykatka_ini }}
 url_list = {{ dumps(CLASS_URL_LIST) }}
 nameserver_list = {{ dumps(DEFAULT_DICT['nameserver-list']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
@@ -101,7 +101,7 @@ context =
 {%-     do PART_LIST.append('surykatka-%i'% (class,)) %}
 [surykatka-{{ class }}]
 recipe = slapos.cookbook:wrapper
-config = ${surykatka-config-{{ class }}:rendered}
+config = ${surykatka-config-{{ class }}:output}
 command-line =
   {{ surykatka_binary }} --run crawl --reload --configuration ${:config}
 wrapper-path = ${monitor-directory:service}/${:_buildout_section_name_}
@@ -118,12 +118,12 @@ config-state = not-empty
 config-url =
 
 [surykatka-status-json-{{ class }}]
-recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.template
 json = ${surykatka-config-{{ class }}:json}
-template = inline:#!/bin/sh
+inline =
+  #!/bin/sh
   {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json --stdout ${:json}
-rendered = ${monitor-directory:bin}/${:_buildout_section_name_}
-mode = 0755
+output = ${monitor-directory:bin}/${:_buildout_section_name_}
 
 {%-     do PART_LIST.append('cron-entry-surykatka-status-%i' % (class,)) %}
 [cron-entry-surykatka-status-{{ class }}]
@@ -131,7 +131,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${directory:etc}/cron.d
 name = surykatka-status-{{ class }}
 frequency = */2 * * * *
-command = ${surykatka-status-json-{{ class }}:rendered}
+command = ${surykatka-status-json-{{ class }}:output}
 {%- endfor %} {#- for class, class_check_list in CHECK_DICT.items() #}
 
 [buildout]

@@ -1,43 +1,42 @@
 [template-pbsready]
 recipe = slapos.recipe.template:jinja2
-template = ${pbsready:output}
-rendered = $${buildout:directory}/pbsready.cfg
+url = ${pbsready:output}
+output = $${buildout:directory}/pbsready.cfg
 extensions = jinja2.ext.do
 context =
   key slapparameter_dict slap-configuration:configuration
 
 [template-pbsready-export]
 recipe = slapos.recipe.template:jinja2
-template = ${pbsready-export:target}
-rendered = $${buildout:directory}/pbsready-exporter.cfg
-mode = 640
+url = ${pbsready-export:target}
+output = $${buildout:directory}/pbsready-exporter.cfg
 context =
   key slapparameter_dict slap-configuration:configuration
-  raw pbsready_template_path $${template-pbsready:rendered}
+  raw pbsready_template_path $${template-pbsready:output}
   raw bash_executable_location ${bash:location}/bin/bash
   raw logrotate_executable_location ${logrotate:location}/usr/sbin/logrotate
 
 [template-pbsready-import]
 recipe = slapos.recipe.template:jinja2
-template = ${pbsready-import:output}
-rendered = $${buildout:directory}/pbsready-importer.cfg
+url = ${pbsready-import:output}
+output = $${buildout:directory}/pbsready-importer.cfg
 extensions = jinja2.ext.do
 context =
   key slapparameter_dict slap-configuration:configuration
-  raw pbsready_template_path $${template-pbsready:rendered}
+  raw pbsready_template_path $${template-pbsready:output}
 
 [instance-frozen]
 recipe = slapos.recipe.template:jinja2
-template = ${instance-frozen:output}
-rendered = $${buildout:directory}/template-frozen.cfg
+url = ${instance-frozen:output}
+output = $${buildout:directory}/template-frozen.cfg
 extensions = jinja2.ext.do
 context =
   key slapparameter_dict slap-configuration:configuration
 
 [template-pull-backup]
 recipe = slapos.recipe.template:jinja2
-template = ${template-pull-backup:output}
-rendered = $${buildout:directory}/template-pull-backup.cfg
+url = ${template-pull-backup:output}
+output = $${buildout:directory}/template-pull-backup.cfg
 extensions = jinja2.ext.do
 context =
   key slave_instance_list slap-configuration:slave-instance-list

@@ -14,7 +14,7 @@ cert = ${slap-connection:cert-file}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 filename = ${:_buildout_section_name_}.cfg
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extensions =
     jinja2.ext.do
     jinja2.ext.loopcontrols
@@ -31,18 +31,18 @@ context =
 
 [neo-admin]
 <= jinja2-template-base
-template = {{ neo_admin }}
+url = {{ neo_admin }}
 
 [neo-master]
 <= jinja2-template-base
-template = {{ neo_master }}
+url = {{ neo_master }}
 
 [neo]
 <= jinja2-template-base
-template = {{ neo }}
+url = {{ neo }}
 extra-context =
-    key master_cfg neo-master:rendered
-    key admin_cfg neo-admin:rendered
+    key master_cfg neo-master:output
+    key admin_cfg neo-admin:output
 {%- if mariadb_location is defined %}
     raw mariadb_location {{ mariadb_location }}
     raw template_mysqld_wrapper {{ template_mysqld_wrapper }}

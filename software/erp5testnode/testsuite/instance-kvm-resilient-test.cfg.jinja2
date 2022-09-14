@@ -44,7 +44,7 @@ recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
 software-type = kvm-resilient
 name = Resilient Instance (Root Instance)
-{% for key, value in slapparameter_dict.get('cluster', {}).iteritems() -%}
+{% for key, value in slapparameter_dict.get('cluster', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
@@ -52,7 +52,6 @@ config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 config-virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
 config-resiliency-backup-periodicity = */5 * * * *
 config-resilient-clone-number = 1
-config-ignore-known-hosts-file = false
 return = ipv6
 # XXX What to do?
 sla-computer_guid = ${slap-connection:computer-id}

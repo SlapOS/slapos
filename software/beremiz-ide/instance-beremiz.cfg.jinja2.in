@@ -95,7 +95,6 @@ inline =
     {{ x11vnc_bin }} -storepasswd ${random-password:passwd} ${:passfile};
   fi
 output = ${directory:bin}/x11vnc_passwd
-mode = 700
 
 [generate-vnc-password]
 recipe = plone.recipe.command
@@ -180,7 +179,7 @@ wrapper-path = ${directory:services}/fluxbox
 recipe = slapos.recipe.template
 inline =
   export LD_LIBRARY_PATH={{ mesa_location }}/lib
-  export PATH=${directory:bin}:{{ git_bin_dir }}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
+  export PATH=${directory:bin}:{{ git_bin_dir }}:{{ cmake_bin }}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
   export XDG_DATA_DIR={{ gtk3_location }}/share
   export GSETTINGS_SCHEMA_DIR={{ gtk3_location }}/share/glib-2.0/schemas
   export FONTCONFIG_FILE=${font-config:output}

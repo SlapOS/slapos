@@ -75,19 +75,19 @@ content = {{ template_csr }}
 {%     endif %}
 [{{ prefix }}-provided-csr]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 {%     if template_csr_pem %}
-template = inline:{{ '{{ content }}' }}
-rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
+inline =
+  {{ '{{ content }}' }}
+output = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
 context = key content {{ prefix }}-provided-csr-content:content
 {%     elif template_csr %}
-template = {{ '${' + prefix }}-provided-csr-content:content}
-rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
+url = {{ '${' + prefix }}-provided-csr-content:content}
+output = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
 {%     endif %}
 {{   rerequest(
        prefix=prefix ~ '-csr',
        buildout_bin_directory=buildout_bin_directory,
-       template='${' ~ prefix ~  '-provided-csr:rendered}',
+       template='${' ~ prefix ~  '-provided-csr:output}',
        csr='${:csr}',
        key=key_path,
 )}}

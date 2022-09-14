@@ -162,14 +162,12 @@ recipe = slapos.recipe.template
 url = ${:_profile_base_location_}/mariadb/instance-mariadb-import.cfg.in
 output = ${buildout:directory}/instance-mariadb-import.cfg
 md5sum = ...
-mode = 0644
 
 [instance-mariadb-export]
 recipe = slapos.recipe.template
 url = ${:_profile_base_location_}/mariadb/instance-mariadb-export.cfg.in
 output = ${buildout:directory}/instance-mariadb-export.cfg
 md5sum = ...
-mode = 0644
 
 
 

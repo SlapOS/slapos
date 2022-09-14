@@ -18,8 +18,8 @@ template_monitor = {{ template_monitor }}
 
 [instance-html5as]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_instance_html5as_target }}
-rendered = ${buildout:directory}/${:filename}
+url = {{ template_instance_html5as_target }}
+output = ${buildout:directory}/${:filename}
 filename = instance-html5as.cfg
 context =
   section buildout buildout
@@ -40,8 +40,8 @@ default-parameters =
 [instance-replicate]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
-template = {{ template_instance_replicate }}
-rendered = ${buildout:directory}/${:filename}
+url = {{ template_instance_replicate }}
+output = ${buildout:directory}/${:filename}
 filename = instance-replicate-html5as.cfg
 context =
   section buildout buildout
@@ -57,11 +57,11 @@ default-parameters =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
-default = instance-html5as:rendered
-replicate = instance-replicate:rendered
+default = instance-html5as:output
+replicate = instance-replicate:output
 
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}

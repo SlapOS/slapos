@@ -30,7 +30,11 @@ recipe = slapos.recipe.template
 inline =
   #!/bin/sh -e
   cd {{ beremiz_location }}/tests
-  make test_dir=${directory:tests} xserver_command='echo "Using ${xserver:display} on Slapos X Server !";' "$@"
+  testdir=$SLAPOS_TEST_LOG_DIRECTORY
+  if [ -z "$testdir" ]; then
+    testdir=${directory:tests}
+  fi
+  make test_dir=$testdir xserver_command='echo "Using ${xserver:display} on Slapos X Server !";' "$@"
 output = ${directory:bin}/beremiztest
 
 [sikulix]

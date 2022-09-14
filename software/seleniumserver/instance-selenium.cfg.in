@@ -4,15 +4,15 @@ parts =
   promises
   publish-connection-parameter
 
-extends = ${monitor-template:rendered}
+extends = ${monitor-template:output}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 [fontconfig-conf]
 recipe = slapos.recipe.template:jinja2
-template = ${template-fonts-conf:output}
-rendered = $${directory:etc}/fonts.conf
+url = ${template-fonts-conf:output}
+output = $${directory:etc}/fonts.conf
 context =
     key cachedir directory:fontconfig-cache
     key fonts :fonts
@@ -93,7 +93,7 @@ environment =
   PATH=${buildout:bin-directory}
   XORG_LOCK_DIR=$${directory:tmp}
   DISPLAY=$${xvfb-instance:display}
-  FONTCONFIG_FILE=$${fontconfig-conf:rendered}
+  FONTCONFIG_FILE=$${fontconfig-conf:output}
 hostname = $${slap-configuration:ipv4-random}
 
 
@@ -146,9 +146,9 @@ bytes = 12
 
 
 [selenium-server-frontend-config]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}
-template = inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
   https://[$${:ip}]:$${:port} {
     bind $${:ip}
     tls self_signed # TODO
@@ -175,7 +175,7 @@ path-hub = /wd/hub
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${selenium-server-frontend-config:rendered}
+  ${caddy:output} -conf $${selenium-server-frontend-config:output}
 
 ip = $${selenium-server-frontend-config:ip}
 hostname = $${selenium-server-frontend-config:hostname}
@@ -229,10 +229,10 @@ command = echo "$${:fingerprint}" | ( grep ^Error || exit 0 && exit 1 )
 fingerprint = $${ssh-key-fingerprint-shelloutput:fingerprint}
 
 [sshd-config]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/sshd.conf
+recipe = slapos.recipe.template
+output = $${directory:etc}/sshd.conf
 path_pid = $${directory:run}/sshd.pid
-template = inline:
+inline =
   PidFile $${:path_pid}
   Port $${sshd-address:port}
   ListenAddress $${sshd-address:ip}
@@ -250,7 +250,7 @@ template = inline:
 
 [sshd-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${openssh:location}/sbin/sshd -D -e -f $${sshd-config:rendered}
+command-line = ${openssh:location}/sbin/sshd -D -e -f $${sshd-config:output}
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 username = $${userinfo:pw-name}
 ip = $${sshd-address:ip}
@@ -307,21 +307,19 @@ config-port = $${selenium-server-hub-instance:port}
 promise = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
-  $${selenium-server-check-nodes-registered:rendered} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
+  $${selenium-server-check-nodes-registered:output} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
 # We have 6 nodes with 3 slots each
 expected-node-count = 18
 
 [selenium-server-check-nodes-registered]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0755
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
   #!${buildout:executable}
-  import json, urllib, sys
+  import json, urllib.request, sys
   api_url = sys.argv[1]
   expected_node_count = int(sys.argv[2])
-  actual_node_count = json.load(urllib.urlopen(api_url))['slotCounts']['total']
+  actual_node_count = json.load(urllib.request.urlopen(api_url))['slotCounts']['total']
   sys.exit(0 if expected_node_count == actual_node_count else 1)
 
 

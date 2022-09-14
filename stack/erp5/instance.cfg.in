@@ -2,9 +2,6 @@
 extends =
   {{ instance_common_cfg }}
 
-[jinja2-template-base]
-mode = 644
-
 [default-dynamic-template-parameters]
 bin-directory = {{ bin_directory }}
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -18,10 +15,11 @@ postfix-location = {{ postfix_location }}
 template-postfix-aliases = {{ template_postfix_aliases }}
 template-postfix-main-cf = {{ template_postfix_main_cf }}
 template-postfix-master-cf = {{ template_postfix_master_cf }}
+xz-utils-location =  {{ xz_utils_location }}
 
 [dynamic-template-postfix]
 < = jinja2-template-base
-template = {{ template_postfix }}
+url = {{ template_postfix }}
 filename = instance-postfix.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -41,7 +39,7 @@ template-zodb-base = {{ template_zodb_base }}
 
 [dynamic-template-erp5]
 <= jinja2-template-base
-template = {{ template_erp5 }}
+url = {{ template_erp5 }}
 filename = instance-erp5.cfg
 extra-context =
     key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
@@ -74,7 +72,7 @@ template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-balancer]
 <= jinja2-template-base
-template = {{ template_balancer }}
+url = {{ template_balancer }}
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
@@ -89,7 +87,7 @@ import-list =
 
 [dynamic-template-zeo]
 <= jinja2-template-base
-template = {{ template_zeo }}
+url = {{ template_zeo }}
 filename = instance-zeo.cfg
 extra-context =
     key buildout_directory buildout:directory
@@ -117,10 +115,15 @@ extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 erp5-location = {{ erp5_location }}
 egg-interpreter = {{egg_interpreter}}
+erp5-kernel-location = {{ erp5_kernel_location }}
+erp5-kernel-filename = {{ erp5_kernel_filename }}
+kernel-json-location = {{ kernel_json_location }}
+kernel-json-filename = {{ kernel_json_filename }}
+python-executable-for-kernel = {{ python_executable_for_kernel }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
-template = {{ template_zope }}
+url = {{ template_zope }}
 filename = instance-zope.cfg
 extra-context =
     key buildout_directory buildout:directory
@@ -144,7 +147,7 @@ logrotate-location = {{ logrotate_location }}
 
 [dynamic-template-kumofs]
 <= jinja2-template-base
-template = {{ template_kumofs }}
+url = {{ template_kumofs }}
 filename = instance-kumofs.cfg
 extra-context =
     section parameter_dict dynamic-template-kumofs-parameters
@@ -174,7 +177,7 @@ groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plug
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
-template = {{ template_mariadb }}
+url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
@@ -196,11 +199,11 @@ mode = 644
 # we need this value to be present in a section,
 # for slapos.cookbook:switch-softwaretype to work
 [dynamic-template-jupyter]
-rendered = {{ template_jupyter_cfg }}
+output = {{ template_jupyter_cfg }}
 
 [dynamic-template-wcfs]
 <= jinja2-template-base
-template = {{ instance_wcfs_cfg_in }}
+url = {{ instance_wcfs_cfg_in }}
 filename = instance_wcfs.cfg
 extra-context =
     section parameter_dict dynamic-template-zope-parameters
@@ -212,20 +215,20 @@ recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
 
 # Public software types
-default = dynamic-template-erp5:rendered
+default = dynamic-template-erp5:output
 # BBB
 RootSoftwareInstance = ${:default}
 # Internal software types
-kumofs = dynamic-template-kumofs:rendered
-caucase = dynamic-template-caucase:rendered
-mariadb = dynamic-template-mariadb:rendered
-balancer = dynamic-template-balancer:rendered
-postfix = dynamic-template-postfix:rendered
-zodb-zeo = dynamic-template-zeo:rendered
-zodb-neo = neo:rendered
-zope = dynamic-template-zope:rendered
-jupyter = dynamic-template-jupyter:rendered
-wcfs = dynamic-template-wcfs:rendered
+kumofs = dynamic-template-kumofs:output
+caucase = dynamic-template-caucase:output
+mariadb = dynamic-template-mariadb:output
+balancer = dynamic-template-balancer:output
+postfix = dynamic-template-postfix:output
+zodb-zeo = dynamic-template-zeo:output
+zodb-neo = neo:output
+zope = dynamic-template-zope:output
+jupyter = dynamic-template-jupyter:output
+wcfs = dynamic-template-wcfs:output
 
 # Keep cloudooo backward compatibility
 cloudooo = dynamic-template-legacy:output

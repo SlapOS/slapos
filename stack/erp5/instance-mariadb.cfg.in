@@ -50,17 +50,9 @@ recipe = slapos.cookbook:random.integer
 minimum = {{ dumps(1) }}
 maximum = {{ dumps(2**32 - 1) }}
 
-[jinja2-template-base]
-recipe = slapos.recipe.template:jinja2
-mode = 644
-
-[jinja2-template-executable]
-< = jinja2-template-base
-mode = 755
-
 [simplefile]
-< = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
+recipe = slapos.recipe.template:jinja2
+inline = {{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
 {%   set content_section_name = section_name ~ '-content' -%}
@@ -69,7 +61,7 @@ content = {{ dumps(content) }}
 
 [{{  section(section_name) }}]
 < = simplefile
-rendered = {{ file_path }}
+output = {{ file_path }}
 context = key content {{content_section_name}}:content
 mode = {{ mode }}
 {%- endmacro %}
@@ -157,9 +149,9 @@ ssl-{{ key }} = {{ value }}
 {% endfor %}
 
 [my-cnf]
-< = jinja2-template-base
-rendered = ${directory:etc}/mariadb.cnf
-template = {{ parameter_dict['template-my-cnf'] }}
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/mariadb.cnf
+url = {{ parameter_dict['template-my-cnf'] }}
 context = section parameter_dict my-cnf-parameters
 
 [init-script-parameters]
@@ -167,10 +159,10 @@ database-list = {{ dumps(database_list + test_database_list) }}
 mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 
 [init-script]
-< = jinja2-template-executable
+recipe = slapos.recipe.template:jinja2
 # XXX: is there a better location ?
-rendered = ${directory:etc}/mariadb_initial_setup.sql
-template = {{ parameter_dict['template-mariadb-initial-setup'] }}
+output = ${directory:etc}/mariadb_initial_setup.sql
+url = {{ parameter_dict['template-mariadb-initial-setup'] }}
 context = section parameter_dict init-script-parameters
 
 [{{ section('update-mysql') }}]
@@ -178,15 +170,15 @@ recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
 output = ${directory:services}/mariadb_update
 binary = ${binary-wrap-mysql_upgrade:wrapper-path}
 mysql = ${binary-wrap-mysql:wrapper-path}
-init-script = ${init-script:rendered}
+init-script = ${init-script:output}
 mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 
 [{{ section('mysqld') }}]
-< = jinja2-template-executable
-rendered = ${directory:services}/mariadb
-template = {{ parameter_dict['template-mysqld-wrapper'] }}
+recipe = slapos.recipe.template:jinja2
+output = ${directory:services}/mariadb
+url = {{ parameter_dict['template-mysqld-wrapper'] }}
 context =
-  key defaults_file my-cnf:rendered
+  key defaults_file my-cnf:output
   key datadir my-cnf-parameters:data-directory
   key environ :environ
 environ =
@@ -218,7 +210,7 @@ link-binary = {{ dumps(parameter_dict['link-binary']) }}
 recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
 # will reject it.
-command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --defaults-file="${my-cnf:rendered}"
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
 
 [binary-wrap-mysql]
@@ -263,9 +255,9 @@ slowquery = ${monitor-directory:private}/slowquery_digest
 
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
-< = jinja2-template-base
-template = {{ 'inline:{{ "${my-cnf-parameters:data-directory}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+inline = {{ '{{ "${my-cnf-parameters:data-directory}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
 # Generate identity script used by webrunner to check data integrity
@@ -278,23 +270,23 @@ mode = 770
 dash = {{ dumps(dash) }}
 
 [{{ section('start-clone-from-backup') }}]
-< = jinja2-template-executable
-template = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
-rendered = ${directory:bin}/start-clone-from-backup
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
+output = ${directory:bin}/start-clone-from-backup
 context =
   key dash dash:dash
   key client binary-wrap-mysql:wrapper-path
   key data_directory my-cnf-parameters:data-directory
   key pid_file my-cnf-parameters:pid-file
-  key server mysqld:rendered
+  key server mysqld:output
   key update update-mysql:output
   key socket my-cnf-parameters:socket
 
 [{{ section('resiliency-after-import-script') }}]
 # Generate after import script used by importer instance of webrunner
-< = jinja2-template-executable
-template = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
-rendered = ${directory:bin}/restore-from-backup
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
+output = ${directory:bin}/restore-from-backup
 context =
   key dash dash:dash
   key mysql_executable binary-wrap-mysql:wrapper-path
@@ -302,7 +294,7 @@ context =
   key mariadb_backup_directory directory:mariadb-backup-full
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
-  key server_executable mysqld:rendered
+  key server_executable mysqld:output
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d
@@ -311,14 +303,13 @@ name = generate-mariadb-slow-query-report
 # The goal is to be executed before logrotate log rotation.
 # Here, logrotate-entry-base:frequency = daily, so we run at 23 o'clock every day.
 frequency = 0 23 * * *
-command = ${monitor-generate-mariadb-slow-query-report-wrapper:rendered}
+command = ${monitor-generate-mariadb-slow-query-report-wrapper:output}
 
 [monitor-generate-mariadb-slow-query-report-wrapper]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['mariadb-slow-query-report-script'] }}
-rendered = ${directory:bin}/${:filename}
+url = {{ parameter_dict['mariadb-slow-query-report-script'] }}
+output = ${directory:bin}/${:filename}
 filename = generate-mariadb-slow-query-report
-mode = 755
 context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}

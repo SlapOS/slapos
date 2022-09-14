@@ -7,12 +7,12 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-extends = ${monitor2-template:rendered}
+extends = ${monitor2-template:output}
 
 [fontconfig-conf]
 recipe = slapos.recipe.template:jinja2
-template = ${template-fonts-conf:output}
-rendered = $${directory:etc}/fonts.conf
+url = ${template-fonts-conf:output}
+output = $${directory:etc}/fonts.conf
 context =
     key cachedir directory:fontconfig-cache
     key fonts :fonts
@@ -37,32 +37,33 @@ scheme = https
 
 [tomcat-web-xml]
 recipe = plone.recipe.command
-command = [ -f $${:location} ] || cp ${tomcat9:location}/conf/web.xml $${:location}
+command = [ -f $${:location} ] || cp ${tomcat:location}/conf/web.xml $${:location}
 location = $${directory:catalina_conf}/web.xml
 
 [tomcat-keystore]
 recipe = plone.recipe.command
 command =
-  ${java-re-8-output:keytool} \
+  ${java:location}/bin/keytool \
     -genkeypair \
     -alias "tomcat" \
     -keyalg RSA \
     -keypass "$${:pass}" \
-    -dname "CN=Web Server,OU=Unit,O=Organization,L=City,S=State,C=Country" \
+    -dname "CN=$${:common-name},OU=Unit,O=Organization,L=City,S=State,C=Country" \
     -keystore "$${:file}" \
     -storepass "$${:pass}"
 file = $${directory:catalina_base}/.keystore
 pass = insecure
+common-name = $${tomcat-server-xml:ip}
 
 [tomcat-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = ${tomcat9:location}/bin/catalina.sh run
+command-line = ${tomcat:location}/bin/catalina.sh run
 environment =
-  JRE_HOME=${java-re-8:location}
+  JRE_HOME=${java:location}
   CATALINA_BASE=$${directory:catalina_base}
   GRAPHVIZ_DOT=${graphviz:location}/bin/dot
-  FONTCONFIG_FILE=$${fontconfig-conf:rendered}
+  FONTCONFIG_FILE=$${fontconfig-conf:output}
   LD_LIBRARY_PATH=${fontconfig:location}/lib:${freetype:location}/lib
 # XXX java is still loading system fonts ... ( even with $JAVA_FONTS or -Djava.awt.fonts )
 # related links:

@@ -10,16 +10,16 @@ extends = ${template-resilient-templates:output}
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = $${:kvm}
-kvm-cluster = dynamic-template-kvm-cluster:rendered
-kvm = dynamic-template-kvm:rendered
-nbd = dynamic-template-nbd:rendered
+kvm-cluster = dynamic-template-kvm-cluster:output
+kvm = dynamic-template-kvm:output
+nbd = dynamic-template-nbd:output
 
-kvm-resilient = dynamic-template-kvm-resilient:rendered
-kvm-import = dynamic-template-kvm-import:rendered
-kvm-export = dynamic-template-kvm-export:rendered
+kvm-resilient = dynamic-template-kvm-resilient:output
+kvm-import = dynamic-template-kvm-import:output
+kvm-export = dynamic-template-kvm-export:output
 
-frozen = instance-frozen:rendered
-pull-backup = template-pull-backup:rendered
+frozen = instance-frozen:output
+pull-backup = template-pull-backup:output
 
 # BBB
 RootSoftwareInstance = $${:default}
@@ -42,9 +42,8 @@ storage-home = $${storage-configuration:storage-home}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = $${buildout:directory}/$${:filename}
+output = $${buildout:directory}/$${:filename}
 extensions = jinja2.ext.do
-mode = 0644
 extra-context =
 context =
   key develop_eggs_directory buildout:develop-eggs-directory
@@ -62,18 +61,18 @@ context =
 
 [dynamic-template-kvm-cluster]
 <= jinja2-template-base
-template = ${template-kvm-cluster:location}/instance-kvm-cluster.cfg.jinja2.in
+url = ${template-kvm-cluster:location}/instance-kvm-cluster.cfg.jinja2.in
 filename = template-kvm-cluster.cfg
 extra-context =
   section parameter_dict dynamic-template-kvm-cluster-parameters
-  raw logrotate_cfg ${template-logrotate-base:rendered}
+  raw logrotate_cfg ${template-logrotate-base:output}
   raw template_content ${template-content:target}
-  raw template_httpd_cfg ${template-httpd:rendered}
-  raw template_monitor ${monitor2-template:rendered}
+  raw template_httpd_cfg ${template-httpd:output}
+  raw template_monitor ${monitor2-template:output}
 
 [dynamic-template-kvm]
 <= jinja2-template-base
-template = ${template-kvm:location}/instance-kvm.cfg.jinja2
+url = ${template-kvm:location}/instance-kvm.cfg.jinja2
 filename = template-kvm.cfg
 extra-context =
   section slap_configuration slap-configuration
@@ -84,10 +83,10 @@ extra-context =
   raw dcron_executable_location ${dcron:location}/sbin/crond
   raw debian_amd64_netinst_location ${debian-amd64-bullseye-netinst.iso:target}
   raw whitelist_domains_default ${whitelist-domains-default:target}
-  raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:target}
-  raw image_download_controller ${image-download-controller:target}
-  raw image_download_config_creator ${image-download-config-creator:target}
-  raw logrotate_cfg ${template-logrotate-base:rendered}
+  raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:output}
+  raw image_download_controller ${image-download-controller:output}
+  raw image_download_config_creator ${image-download-config-creator:output}
+  raw logrotate_cfg ${template-logrotate-base:output}
   raw novnc_location ${noVNC:location}
   raw netcat_bin ${netcat:location}/bin/netcat
   raw python_executable ${buildout:executable}
@@ -96,11 +95,11 @@ extra-context =
   raw qemu_img_executable_location ${qemu:location}/bin/qemu-img
   raw qemu_start_promise_tpl ${template-qemu-ready:target}
   raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
-  raw template_httpd_cfg ${template-httpd:rendered}
+  raw template_httpd_cfg ${template-httpd:output}
   raw template_content ${template-content:target}
   raw template_kvm_controller_run ${template-kvm-controller:target}
   raw template_kvm_run ${template-kvm-run:target}
-  raw template_monitor ${monitor2-template:rendered}
+  raw template_monitor ${monitor2-template:output}
   raw websockify_executable_location ${buildout:directory}/bin/websockify
   raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
 template-parts-destination = ${template-parts:target}
@@ -110,55 +109,52 @@ import-list = file parts :template-parts-destination
 
 [dynamic-template-kvm-resilient]
 recipe = slapos.recipe.template:jinja2
-template = ${template-kvm-resilient:location}/instance-kvm-resilient.cfg.jinja2
-rendered = $${buildout:directory}/template-kvm-resilient.cfg
+url = ${template-kvm-resilient:location}/instance-kvm-resilient.cfg.jinja2
+output = $${buildout:directory}/template-kvm-resilient.cfg
 extensions = jinja2.ext.do
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw curl_executable_location ${curl:location}/bin/curl
-    raw template_monitor ${monitor2-template:rendered}
+    raw template_monitor ${monitor2-template:output}
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
               file replicated :template-replicated-destination
-mode = 0644
 
 [dynamic-template-kvm-export]
 recipe = slapos.recipe.template:jinja2
-template = ${template-kvm-export:location}/instance-kvm-export.cfg.jinja2
-rendered = $${buildout:directory}/template-kvm-export.cfg
+url = ${template-kvm-export:location}/instance-kvm-export.cfg.jinja2
+output = $${buildout:directory}/template-kvm-export.cfg
 extensions = jinja2.ext.do
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
-    raw kvm_template $${dynamic-template-kvm:rendered}
+    raw kvm_template $${dynamic-template-kvm:output}
     raw template_kvm_export ${template-kvm-export-script:target}
-    key pbsready_export_template template-pbsready-export:rendered
+    key pbsready_export_template template-pbsready-export:output
     raw gzip_binary ${gzip:location}/bin/gzip
     key slapparameter_dict slap-configuration:configuration
-mode = 0644
 
 [dynamic-template-kvm-import]
 recipe = slapos.recipe.template:jinja2
-template = ${template-kvm-import:location}/instance-kvm-import.cfg.jinja2.in
-rendered = $${buildout:directory}/template-kvm-import.cfg
+url = ${template-kvm-import:location}/instance-kvm-import.cfg.jinja2.in
+output = $${buildout:directory}/template-kvm-import.cfg
 extensions = jinja2.ext.do
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     raw qemu_location ${qemu:location}
     raw template_kvm_import ${template-kvm-import-script:target}
-    key pbsready_import_template template-pbsready-import:rendered
+    key pbsready_import_template template-pbsready-import:output
     key slapparameter_dict slap-configuration:configuration
     raw zcat_binary ${gzip:location}/bin/zcat
     raw gzip_binary ${gzip:location}/bin/gzip
-mode = 0644
 
 [dynamic-template-nbd]
 <= jinja2-template-base
-template = ${template-nbd:location}/instance-nbd.cfg.jinja2
+url = ${template-nbd:location}/instance-nbd.cfg.jinja2
 filename = template-nbd.cfg
 context =
   section slap_configuration slap-configuration
@@ -168,4 +164,4 @@ context =
   raw qemu_nbd_executable_location ${qemu:location}/bin/qemu-nbd
   raw dash_executable_location ${dash:location}/bin/dash
   raw onetimeupload_executable_location ${buildout:bin-directory}/onetimeupload
-  raw template_monitor ${monitor2-template:rendered}
+  raw template_monitor ${monitor2-template:output}

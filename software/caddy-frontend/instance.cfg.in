@@ -10,7 +10,7 @@ recipe = caddyprofiledeps
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
 context =
@@ -25,22 +25,22 @@ import-list =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-profile-caddy-replicate:rendered
+default = dynamic-profile-caddy-replicate:output
 RootSoftwareInstance = ${:default}
-custom-personal = dynamic-profile-caddy-replicate:rendered
-single-default = dynamic-profile-caddy-frontend:rendered
-single-custom-personal = dynamic-profile-caddy-frontend:rendered
-replicate = dynamic-profile-caddy-replicate:rendered
-kedifa = dynamic-profile-kedifa:rendered
+custom-personal = dynamic-profile-caddy-replicate:output
+single-default = dynamic-profile-caddy-frontend:output
+single-custom-personal = dynamic-profile-caddy-frontend:output
+replicate = dynamic-profile-caddy-replicate:output
+kedifa = dynamic-profile-kedifa:output
 
 [software-parameter-section]
-{% for key,value in software_parameter_dict.iteritems() %}
+{% for key,value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
 [dynamic-profile-caddy-frontend]
 < = jinja2-template-base
-template = {{ software_parameter_dict['profile_caddy_frontend'] }}
+url = {{ software_parameter_dict['profile_caddy_frontend'] }}
 filename = instance-caddy-frontend.cfg
 extra-context =
   import furl_module furl
@@ -49,11 +49,12 @@ extra-context =
 [dynamic-profile-caddy-replicate]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
-template = {{ software_parameter_dict['profile_caddy_replicate'] }}
+url = {{ software_parameter_dict['profile_caddy_replicate'] }}
 filename = instance-caddy-replicate.cfg
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
+    import operator_module operator
     import validators validators
     import caddyprofiledummy caddyprofiledummy
 # Must match the key id in [switch-softwaretype] which uses this section.
@@ -61,7 +62,7 @@ extra-context =
 
 [dynamic-profile-kedifa]
 < = jinja2-template-base
-template = {{ software_parameter_dict['profile_kedifa'] }}
+url = {{ software_parameter_dict['profile_kedifa'] }}
 filename = instance-kedifa.cfg
 extra-context =
   raw software_type kedifa

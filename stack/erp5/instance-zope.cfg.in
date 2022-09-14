@@ -52,7 +52,22 @@ partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
+
+[erp5-kernel]
+recipe = slapos.cookbook:symbolic.link
+link-binary = {{ parameter_dict['erp5-kernel-location'] }}/{{ parameter_dict['erp5-kernel-filename'] }}
+target-directory = ${directory:erp5-kernel-dir}
+
+[kernel-json-dir]
+<= jinja2-template-base
+template = {{ parameter_dict['kernel-json-location'] }}/{{ parameter_dict['kernel-json-filename'] }}
+rendered = ${directory:erp5-kernel-dir}/kernel.json
+context =
+  raw erp5_url {{ ipv4 }}
+  raw python_executable {{ parameter_dict['python-executable-for-kernel'] }}
+  raw kernel_dir ${erp5-kernel:target-directory}/{{ parameter_dict['erp5-kernel-filename'] }}
+  raw display_name ERP5
+  raw language_name python
 
 [run-common]
 <= userhosts-wrapper-base
@@ -67,7 +82,10 @@ environment +=
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
   INSTANCE_HOME=${:instance-home}
   CAUCASE={{ slapparameter_dict['caucase-url'] }}
-  FONTCONFIG_FILE=${fontconfig-conf:rendered}
+  FONTCONFIG_FILE=${fontconfig-conf:output}
+  JUPYTER_PATH=${directory:jupyter-dir}
+  JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
+  JUPYTER_RUNTIME_DIR=${directory:jupyter-runtime-dir}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
@@ -105,11 +123,16 @@ var = ${buildout:directory}/var
 plugin = ${:etc}/plugin
 unit-test-path = ${:srv}/test-instance/unit_test
 fontconfig-cache = ${buildout:directory}/.fontconfig
+jupyter-dir = ${buildout:directory}/jupyter
+jupyter-config-dir = ${:jupyter-dir}/etc
+jupyter-runtime-dir = ${:jupyter-dir}/runtime
+jupyter-kernel-dir = ${:jupyter-dir}/kernels
+erp5-kernel-dir = ${:jupyter-kernel-dir}/ERP5
 
 [fontconfig-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-fonts-conf'] }}
-rendered = ${directory:etc}/fonts.conf
+url = {{ parameter_dict['template-fonts-conf'] }}
+output = ${directory:etc}/fonts.conf
 context =
     key cachedir directory:fontconfig-cache
     key fonts :fonts
@@ -128,9 +151,8 @@ includes =
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template:jinja2
-mode = 644
-template = {{ 'inline:{{ "${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+inline = {{ '{{ "${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
 # Generate identity script used by webrunner to check data integrity
@@ -169,38 +191,38 @@ hostalias-dict = {{ dumps(slapparameter_dict['hostalias-dict']) }}
 
 [hostaliases]
 < = jinja2-template-base
-template = inline: {{ '
+inline = {{ '
   {% for alias, aliased in host_dict.items() -%}
   {{ alias }} {{ aliased }}
   {% endfor %}
 ' }}
-rendered = ${directory:etc}/hostaliases
+output = ${directory:etc}/hostaliases
 context = key host_dict hosts-parameter:hostalias-dict
 
 [hosts]
 < = jinja2-template-base
-template = inline: {{ '
+inline = {{ '
   {% for alias, aliased in host_dict.items() -%}
   {{ aliased }} {{ alias }}
   {% endfor %}
 ' }}
-rendered = ${directory:etc}/hosts
+output = ${directory:etc}/hosts
 context = key host_dict hosts-parameter:host-dict
 
 [userhosts-bin]
 recipe = slapos.recipe.template:jinja2
-mode = 755
-template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
-  export HOSTS_FILE=${hosts:rendered}
+inline =
+  #!{{ parameter_dict['dash'] }}/bin/dash
+  export HOSTS_FILE=${hosts:output}
   export LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
   exec "$@"
-rendered = ${directory:bin}/userhosts
+output = ${directory:bin}/userhosts
 
 [userhosts-wrapper-base]
 recipe = slapos.cookbook:wrapper
 environment =
-  HOSTALIASES=${hostaliases:rendered}
-command-line = '${userhosts-bin:rendered}' ${:wrapped-command-line}
+  HOSTALIASES=${hostaliases:output}
+command-line = '${userhosts-bin:output}' ${:wrapped-command-line}
 
 {# Hack to deploy SSL certs via instance parameters -#}
 {% for zodb in six.itervalues(zodb_dict) -%}
@@ -212,8 +234,8 @@ command-line = '${userhosts-bin:rendered}' ${:wrapped-command-line}
 {%       if k in storage_dict -%}
 [{{ section('neo-ssl-' + k[1:]) }}]
 < = jinja2-template-base
-rendered = ${directory:etc}/{{v}}
-template = inline:{{'{{'}}pem}}
+output = ${directory:etc}/{{v}}
+inline = {{'{{'}}pem}}
 context = key pem :pem
 pem = {{dumps(storage_dict.pop(k))}}
 
@@ -230,10 +252,9 @@ file-list = {{ parameter_dict['site-zcml'] }}
 
 [{{ section('zope-inituser') }}]
 < = jinja2-template-base
-rendered = ${directory:instance}/inituser
-template = inline:{{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
-mode = 600
-once = ${:rendered}_done
+output = ${directory:instance}/inituser
+inline = {{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
+once = ${:output}_done
 
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
@@ -277,7 +298,7 @@ timerserver-interval = {{ dumps(timerserver_interval) }}
 
 [zope-conf-base]
 < = jinja2-template-base
-template = {{ parameter_dict['zope-conf-template'] }}
+url = {{ parameter_dict['zope-conf-template'] }}
 extensions =
     jinja2.ext.do
     jinja2.ext.loopcontrols
@@ -327,7 +348,7 @@ longrequest-logger-file =
 
 [{{ conf_name }}]
 < = zope-conf-base
-rendered = ${directory:etc}/{{ name }}.conf
+output = ${directory:etc}/{{ name }}.conf
 context =
   section parameter_dict {{ conf_parameter_name }}
   import os os
@@ -349,7 +370,7 @@ private-tmpfs = {{ private_dev_shm }} /dev/shm
 [{{ section(name) }}]
 < = runzope-base
 wrapper-path = ${directory:service-on-watch}/{{ name }}
-configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
+configuration-file = {{ '${' ~ conf_name ~ ':output}' }}
 {%- if wsgi %}
 port = {{ port }}
 {%- endif %}
@@ -439,9 +460,8 @@ bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
 
 [{{ section('test-zelenium-runner') }}]
 <= jinja2-template-base
-template = {{ parameter_dict['run-zelenium-template'] }}
-rendered = ${directory:bin}/runTestSuite
-mode = 755
+url = {{ parameter_dict['run-zelenium-template'] }}
+output = ${directory:bin}/runTestSuite
 context =
     import json_module json
     key configuration test-zelenium-runner-parameter:configuration
@@ -479,7 +499,7 @@ environment-extra =
   RUN_UNIT_TEST=${directory:bin}/runUnitTest
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
-  ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:rendered}
+  ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:output}
 {%- if wsgi %}
   erp5_wsgi=1
 {%- endif %}
@@ -500,8 +520,8 @@ command-line =
 
 [test-runner-configuration]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:etc}/${:_buildout_section_name_}.json
-template = inline:
+output = ${directory:etc}/${:_buildout_section_name_}.json
+inline =
   {{ json.dumps(slapparameter_dict['test-runner-configuration']) }}
 
 [{{ section('runUnitTest') }}]
@@ -581,3 +601,5 @@ extends =
 parts +=
   {{ '\n  '.join(part_list) }}
   publish
+  erp5-kernel
+  kernel-json-dir

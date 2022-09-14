@@ -6,7 +6,7 @@
 {% set monitor_url_list = [] -%}
 # prepare sla-parameters
 {% if slapparameter_dict is defined -%}
-{%   for key in slapparameter_dict.keys() -%}
+{%   for key in list(slapparameter_dict.keys()) -%}
 {%     if key.startswith('-sla-') -%}
 {%       do sla_parameter_dict.__setitem__(key, slapparameter_dict.pop(key)) -%}
 {%     endif -%}
@@ -59,7 +59,7 @@ sla-mode = unique_by_network
 {%   for key in sla_parameter_dict.keys() -%}
 {%     if key.startswith(sla_key_main) -%}
 {%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
@@ -111,7 +111,7 @@ sla-mode = unique_by_network
 {%   for key in sla_parameter_dict.keys() -%}
 {%     if key.startswith(sla_key_main) -%}
 {%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
@@ -196,7 +196,6 @@ software-type = pull-backup
 [request-pbs-{{namebase}}-{{id}}]
 <= request-pbs-common
 name = PBS ({{namebase}} / {{id}})
-config-ignore-known-hosts-file = ${slap-parameter:ignore-known-hosts-file}
 config-monitor-title = PBS ${slap-connection:computer-id}-{{namebase}}-{{id}}
 {% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
@@ -214,7 +213,7 @@ sla-mode = unique_by_network
 {%   for key in sla_parameter_dict.keys() -%}
 {%     if key.startswith(sla_key_main) -%}
 {%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
@@ -294,6 +293,5 @@ sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 {{namebase}}{{id}}-computer-guid =
 pbs-{{namebase}}{{id}}-computer-guid =
 {% endfor %}
-ignore-known-hosts-file = false
 
 {% endmacro %}

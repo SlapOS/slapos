@@ -1,12 +1,12 @@
-from __future__ import print_function
+
 
 import caucase.client
 import caucase.utils
 import os
 import ssl
 import sys
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -24,7 +24,7 @@ class Recipe(object):
 def validate_netloc(netloc):
   # a bit crazy way to validate that the passed parameter is haproxy
   # compatible server netloc
-  parsed = urlparse.urlparse('scheme://'+netloc)
+  parsed = urllib.parse.urlparse('scheme://'+netloc)
   if ':' in parsed.hostname:
     hostname = '[%s]' % parsed.hostname
   else:
@@ -33,7 +33,7 @@ def validate_netloc(netloc):
 
 
 def _check_certificate(url, certificate):
-  parsed = urlparse.urlparse(url)
+  parsed = urllib.parse.urlparse(url)
   got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
   if certificate.strip() != got_certificate.strip():
     raise ValueError('Certificate for %s does not match expected one' % (url,))
@@ -44,7 +44,7 @@ def _get_exposed_csr(url, certificate):
   self_signed = ssl.create_default_context()
   self_signed.check_hostname = False
   self_signed.verify_mode = ssl.CERT_NONE
-  return urllib.urlopen(url, context=self_signed).read()
+  return urllib.request.urlopen(url, context=self_signed).read().decode()
 
 
 def _get_caucase_client(ca_url, ca_crt, user_key):
@@ -72,7 +72,7 @@ def _csr_match(*csr_list):
   number_list = set([])
   for csr in csr_list:
     number_list.add(
-      x509.load_pem_x509_csr(str(csr)).public_key().public_numbers())
+      x509.load_pem_x509_csr(csr.encode()).public_key().public_numbers())
   return len(number_list) == 1
 
 

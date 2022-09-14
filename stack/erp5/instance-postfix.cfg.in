@@ -16,7 +16,6 @@
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 [smtpd-password]
 recipe = slapos.cookbook:generate.password
@@ -37,6 +36,7 @@ bin = ${buildout:directory}/bin
 usr = ${buildout:directory}/usr
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
+var-log = ${:var}/log
 var-lib = ${:var}/lib
 var-lib-postfix = ${:var-lib}/postfix
 var-spool = ${:var}/spool
@@ -61,10 +61,9 @@ var-spool-postfix-trace = ${:var-spool-postfix}/trace
 # webrunner resiliency with erp5 inside.
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
-recipe = slapos.recipe.template:jinja2
-mode = 644
-template = {{ 'inline:{{ "**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template
+inline = {{ '{{ "**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 {% if divert -%}
 {%   set milter_port = tcpv4_port + 1 -%}
@@ -94,27 +93,27 @@ relayhost = {{ dumps(relay.get('host')) }}
 relay-sasl-credential = {{ dumps(relay.get('sasl-credential')) }}
 cyrus-sasldb = ${directory:etc-cyrus}/postfix.gdbm
 milter-list = {{ dumps(milter_list) }}
+xz-utils-location = {{ dumps(parameter_dict['xz-utils-location']) }}
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
 [smtp-sasl-passwd]
 < = jinja2-template-base
-rendered = ${directory:etc-postfix}/sasl_passwd
+output = ${directory:etc-postfix}/sasl_passwd
 {% if relay -%}
-template = inline:{{ "{{ host }} {{ sasl_credential }}" }}
+inline = {{ "{{ host }} {{ sasl_credential }}" }}
 {%- else -%}
-template = inline:
+inline =
 {%- endif %}
 context =
     key host configuration:relayhost
     key sasl_credential configuration:relay-sasl-credential
-mode = 600
 
 [{{ section('cyrus-smtpd-conf') }}]
 < = jinja2-template-base
-rendered = ${directory:etc-cyrus}/smtpd.conf
-template = inline:
+output = ${directory:etc-cyrus}/smtpd.conf
+inline =
     pwcheck_method: auxprop
     mech_list: PLAIN LOGIN
     sasldb_path: {{ '{{ sasldb }}' }}
@@ -144,10 +143,20 @@ command =
 update =
   ${:openssl} req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout '${:key}' -out '${:cert}'
 
+[{{ section('postfix-logrotate') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = postfix-logrotate
+frequency = 0 0 * * *
+command = ${directory:bin}/postfix logrotate
+
+[postfix-main-cf-parameter]
+postfix-location = {{ parameter_dict['postfix-location'] }}
+
 [{{ section('postfix-main-cf') }}]
 < = jinja2-template-base
-rendered = ${directory:etc-postfix}/main.cf
-template = {{ parameter_dict['template-postfix-main-cf'] }}
+output = ${directory:etc-postfix}/main.cf
+url = {{ parameter_dict['template-postfix-main-cf'] }}
 context =
     key bin_directory directory:bin
     key usr_directory directory:usr
@@ -166,24 +175,28 @@ context =
     key key smtpd-ssl:key
     key dh_512 smtpd-ssl:dh-512
     key dh_2048 smtpd-ssl:dh-2048
+    key log_directory directory:var-log
+    key xz_utils_location configuration:xz-utils-location
+    key postfix_location postfix-main-cf-parameter:postfix-location
+    key etc_postfix directory:etc-postfix
 
 [{{ section('postfix-master-cf') }}]
 < = jinja2-template-base
-rendered = ${directory:etc-postfix}/master.cf
-template = {{ parameter_dict['template-postfix-master-cf'] }}
+output = ${directory:etc-postfix}/master.cf
+url = {{ parameter_dict['template-postfix-master-cf'] }}
 context = key smtp configuration:smtp
 
 [aliases]
 < = jinja2-template-base
-template = {{ parameter_dict['template-postfix-aliases'] }}
-rendered = ${directory:etc-postfix}/aliases
+url = {{ parameter_dict['template-postfix-aliases'] }}
+output = ${directory:etc-postfix}/aliases
 context =
     key alias_dict configuration:alias-dict
 
 [typed-paths]
 # Postfix-friendly rendering of file paths, prefixed with database type.
-aliases = hash:${aliases:rendered}
-smtp-sasl-passwd = hash:${smtp-sasl-passwd:rendered}
+aliases = hash:${aliases:output}
+smtp-sasl-passwd = hash:${smtp-sasl-passwd:output}
 
 [{{ section('postalias-db') }}]
 recipe = plone.recipe.command

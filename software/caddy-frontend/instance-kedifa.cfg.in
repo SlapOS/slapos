@@ -19,6 +19,7 @@ parts =
   caucase-updater
   promise-expose-csr-ip-port
   promise-logrotate-setup
+  promise-kedifa-auth-ready
 
 [monitor-instance-parameter]
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
@@ -73,6 +74,9 @@ backup-caucased = ${:backup}/caucased
 # reservation
 reservation = ${:srv}/reservation
 
+# auth ready
+auth-ready = ${:var}/auth-ready
+
 # CSR publication
 expose-csr = ${:srv}/expose-csr
 expose-csr-etc = ${:etc}/expose-csr
@@ -108,7 +112,7 @@ stop-on-error = True
      ca_path='${kedifa-config:ca-certificate}',
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
-     on_renew='${kedifa-reloader:rendered}',
+     on_renew='${kedifa-reloader:output}',
      template_csr='${kedifa-csr:template-csr}'
 )}}
 
@@ -149,8 +153,8 @@ nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
 
 [expose-csr-template]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:expose-csr-etc}/nginx.conf
-template = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
+output = ${directory:expose-csr-etc}/nginx.conf
+url = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
 context =
   section configuration expose-csr-configuration
 
@@ -164,20 +168,25 @@ config-port = ${expose-csr-configuration:port}
 [expose-csr]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${expose-csr-template:rendered}
+  -c ${expose-csr-template:output}
 url = https://[${expose-csr-configuration:ip}]:${expose-csr-configuration:port}
 
 wrapper-path = ${directory:service}/expose-csr
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [expose-csr-certificate-get]
-recipe = collective.recipe.shelloutput
-commands =
-  certificate = cat ${expose-csr-certificate:certificate}
+recipe = slapos.recipe.build
+certificate-file = ${expose-csr-certificate:certificate}
+init =
+  import os
+  options['certificate'] = ''
+  if os.path.exists(options['certificate-file']):
+    with open(options['certificate-file'], 'r') as fh:
+      options['certificate'] = fh.read()
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extra-context =
 slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
@@ -203,11 +212,10 @@ logfile = ${directory:log}/kedifa.log
 
 [kedifa-reloader]
 <= jinja2-template-base
-template = {{ software_parameter_dict['template_wrapper'] }}
-rendered = ${directory:etc-run}/kedifa-reloader
+url = {{ software_parameter_dict['template_wrapper'] }}
+output = ${directory:etc-run}/kedifa-reloader
 command =
   kill -HUP `cat ${kedifa-config:pidfile}`
-mode = 0700
 extra-context =
   key content :command
 
@@ -260,10 +268,8 @@ command =
 update-command = ${:command}
 
 [{{ slave_reference }}-auth-random]
-recipe = collective.recipe.shelloutput
+<= auth-random
 file = {{ '${' + slave_reference }}-auth-random-generate:file}
-commands =
-  passwd = cat ${:file} 2>/dev/null || echo "NotReadyYet"
 
 {% endfor %}
 
@@ -274,11 +280,27 @@ command =
   [ ! -f ${:file} ] && {{ software_parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
 update-command = ${:command}
 
+[auth-random]
+recipe = slapos.recipe.build
+directory = ${directory:auth-ready}
+auth-ready = ${directory:auth-ready}/${:_buildout_section_name_}
+init =
+  import os
+  options['passwd'] = 'NotReadyYet'
+  if os.path.exists(options['file']):
+    with open(options['file'], 'r') as fh:
+      options['passwd'] = fh.read()
+    if os.path.exists(options['auth-ready']):
+      os.unlink(options['auth-ready'])
+  else:
+    # protect against too early init run - wait for directory to be created
+    if os.path.isdir(options['directory']):
+      with open(options['auth-ready'], 'w') as fh:
+        fh.write('')
+
 [master-auth-random]
-recipe = collective.recipe.shelloutput
+<= auth-random
 file = ${master-auth-random-generate:file}
-commands =
-  passwd = cat ${:file} 2>/dev/null || echo "NotReadyYet"
 
 [slave-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
@@ -298,5 +320,18 @@ promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
+
+[kedifa-auth-ready]
+recipe = plone.recipe.command
+output = ${directory:var}/${:_buildout_section_name_}.txt
+update-command = ${:command}
+command = find ${directory:auth-ready} -type f > ${:output}
+
+[promise-kedifa-auth-ready]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${kedifa-auth-ready:output}
+config-state = empty
 
 {%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}

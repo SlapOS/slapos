@@ -23,7 +23,7 @@ offline = true
 # Macro section sharing request parameters
 [instance-request-base]
 <= slap-connection
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:request.serialised
 # It is the same software as the current one
 software-url = ${slap-connection:software-release-url}
 # We want the default behaviour
@@ -51,7 +51,7 @@ sla-computer_guid = {{ parameter_dict["sla-%s-computer-guid" % i] }}
 
 # Publish information to connect to the two instances
 [publish-connection-information]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 {% for i in range(1, replicate_quantity + 1) %}
 instance-{{ i }}-server_url = ${instance-{{ i }}:connection-server_url}
 instance-{{ i }}-server-cdn-url = ${instance-{{ i }}:connection-server-cdn-url}

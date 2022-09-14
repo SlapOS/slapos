@@ -14,7 +14,6 @@ per partition. No more (undefined result), no less (IndexError).
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 644
 
 {{ caucase.updater(
      prefix='caucase-updater',
@@ -124,7 +123,7 @@ update-command = ${:command}
 {% for family_name, parameter_id_list in sorted(
   six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
 {%   set zope_family_address_list = [] -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
+{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name] -%}
 {%   set has_webdav = [] -%}
 {%   for parameter_id in parameter_id_list -%}
 {%     set zope_address_list = slapparameter_dict[parameter_id] -%}
@@ -178,7 +177,7 @@ update-command = ${:command}
 {%   else %}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'].get(family_name, False), zope_family_address_list)) -%}
+{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'][family_name], slapparameter_dict['timeout-dict'][family_name], zope_family_address_list)) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -201,8 +200,8 @@ zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backen
 
 [haproxy-cfg]
 < = jinja2-template-base
-template = {{ parameter_dict['template-haproxy-cfg'] }}
-rendered = ${directory:etc}/haproxy.cfg
+url = {{ parameter_dict['template-haproxy-cfg'] }}
+output = ${directory:etc}/haproxy.cfg
 context =
   section parameter_dict haproxy-cfg-parameter-dict
   import urllib_parse six.moves.urllib.parse
@@ -220,8 +219,8 @@ input =
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services-on-watch}/haproxy
-command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
-hash-files = ${haproxy-cfg:rendered}
+command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:output}"
+hash-files = ${haproxy-cfg:output}
 
 [apache-conf-ssl]
 # XXX caucase is/was buggy and this certificate does not match key for instances
@@ -231,7 +230,7 @@ caucase-key = ${directory:apache-conf}/apache-caucase.pem
 
 [simplefile]
 < = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
+inline = {{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
 {%   set content_section_name = section_name ~ '-content' -%}
@@ -240,7 +239,7 @@ content = {{ dumps(content) }}
 
 [{{  section(section_name) }}]
 < = simplefile
-rendered = {{ file_path }}
+output = {{ file_path }}
 context = key content {{content_section_name}}:content
 mode = {{ mode }}
 {%- endmacro %}
@@ -259,16 +258,16 @@ spool-directory = ${directory:rsyslogd-spool}
 
 [rsyslogd-cfg]
 <= jinja2-template-base
-template = {{ parameter_dict['template-rsyslogd-cfg'] }}
-rendered = ${directory:etc}/rsyslogd.conf
+url = {{ parameter_dict['template-rsyslogd-cfg'] }}
+output = ${directory:etc}/rsyslogd.conf
 context = section parameter_dict rsyslogd-cfg-parameter-dict
 
 [{{ section ('rsyslogd') }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['rsyslogd'] }}/sbin/rsyslogd -i ${rsyslogd-cfg-parameter-dict:pid-file} -n -f ${rsyslogd-cfg:rendered}
+command-line = {{ parameter_dict['rsyslogd'] }}/sbin/rsyslogd -i ${rsyslogd-cfg-parameter-dict:pid-file} -n -f ${rsyslogd-cfg:output}
 wrapper-path = ${directory:services-on-watch}/rsyslogd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-hash-files = ${rsyslogd-cfg:rendered}
+hash-files = ${rsyslogd-cfg:output}
 
 [{{ section ('rsyslogd-listen-promise') }}]
 <= monitor-promise-base
@@ -289,7 +288,7 @@ depends = ${caucase-updater-housekeeper-run:recipe}
 
 [build-certificate-and-key]
 {% if ssl_parameter_dict.get('key') -%}
-certificate-and-key = ${tls-certificate-and-key-from-parameters:rendered}
+certificate-and-key = ${tls-certificate-and-key-from-parameters:output}
 {{ simplefile(
     'tls-certificate-and-key-from-parameters',
     '${directory:etc}/certificate-and-key-from-parameters.pem',
@@ -310,7 +309,7 @@ config-port = {{ next(six.itervalues(haproxy_dict))[0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (port, scheme, _, _) in haproxy_dict.items() -%}
+{% for family_name, (port, scheme, _, _, _) in haproxy_dict.items() -%}
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ port }}
 {% endfor -%}
@@ -347,8 +346,8 @@ client-cert-ca = ${:srv}/client-cert-ca
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 < = jinja2-template-base
-template = {{ 'inline:{{ "${directory:log}/**\\n" }}' }}
-rendered = ${directory:srv}/exporter.exclude
+inline = {{ '{{ "${directory:log}/**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
 
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:cron.d
@@ -366,9 +365,9 @@ command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_di
 command = generate-apachedex-report
 
 [monitor-apachedex-report-config]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:etc}/${:_buildout_section_name_}
-template = inline:
+recipe = slapos.recipe.template
+output = ${directory:etc}/${:_buildout_section_name_}
+inline =
   {% for line in slapparameter_dict['apachedex-configuration'] %}
     {# apachedex config files use shlex.split, so we need to quote the arguments. #}
     {# BBB: in python 3 we can use shlex.quote instead. #}
@@ -377,7 +376,7 @@ template = inline:
 
 [apachedex-parameters]
 apache-log-list = ${rsyslogd-cfg-parameter-dict:access-log-file}
-configuration = ${monitor-apachedex-report-config:rendered}
+configuration = ${monitor-apachedex-report-config:output}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]

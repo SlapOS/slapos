@@ -25,8 +25,8 @@ run = ${directory:run}/re6stnet
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-apache-conf'] }}
-rendered = ${directory:etc}/apache.conf
+url = {{ parameter_dict['template-apache-conf'] }}
+output = ${directory:etc}/apache.conf
 ipv6 = {{ ipv6 }}
 port = 9026
 error-log = ${directory:log}/apache-error.log
@@ -44,16 +44,17 @@ context =
 [apache-httpd]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/httpd
-command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:output}" -DFOREGROUND
 
 [apache-httpd-graceful]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:script}/httpd-graceful
-template = inline:{{'{{content}}'}}
+output = ${directory:script}/httpd-graceful
+inline =
+  {{'{{content}}'}}
 context = key content :script
 script =
   #!/bin/sh -e
-  {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:rendered}
+  {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:output}
   {{ bin_directory }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
 
 [logrotate-apache]
@@ -89,21 +90,22 @@ community-path = ${re6st-community-conf:output}
 
 [re6st-community-conf]
 recipe = slapos.recipe.template
-inline = {{ dumps(community) }}
+inline =
+  {{ dumps(community) }}
 output = ${re6stnet-dirs:conf}/community.conf
 {%- endif %}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-re6st-registry-conf'] }}
-rendered = ${re6stnet-dirs:conf}/registry.conf
+url = {{ parameter_dict['template-re6st-registry-conf'] }}
+output = ${re6stnet-dirs:conf}/registry.conf
 context = section parameter_dict re6st-registry-conf-dict
 
 [re6st-registry-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/re6st-registry
 pidfile = ${directory:run}/registry.pid
-command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:rendered}
+command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:output}
 
 [cron-entry-re6st-backup]
 recipe = slapos.cookbook:cron.d
@@ -123,7 +125,7 @@ conf-dir = ${re6stnet-dirs:conf}
 token-dir = ${re6stnet-dirs:token}
 
 #Re6st config
-config-file = ${re6st-registry-conf:rendered}
+config-file = ${re6st-registry-conf:output}
 port = ${re6st-registry-conf-dict:port}
 ipv4 = ${re6st-registry-conf-dict:ipv4}
 db-path = ${re6st-registry-conf-dict:db}
@@ -155,11 +157,11 @@ post = [ ! -s ${re6st-registry-wrapper:pidfile} ] || {{ bin_directory }}/slapos-
 
 [port-redirection]
 recipe = slapos.recipe.template:jinja2
-template = inline:
+inline =
 {%- raw %}
   [{"srcPort": 9201, "destPort": 9201, "destAddress": "{{ parameter_dict['ipv4'] }}"}]
 {% endraw -%}
-rendered = ${buildout:directory}/.slapos-port-redirect
+output = ${buildout:directory}/.slapos-port-redirect
 context =
   section parameter_dict re6st-registry-conf-dict
 

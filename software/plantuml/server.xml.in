@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Server port="-1" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
   <Service name="Catalina">
     <Connector
       protocol="org.apache.coyote.http11.Http11Nio2Protocol"
@@ -11,10 +17,16 @@
       secure="true"
       clientAuth="false"
       SSLEnabled="true"
-      keystorePass="$${tomcat-keystore:pass}"
-      keystoreFile="$${tomcat-keystore:file}"
-    />
-
+    >
+      <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+      <SSLHostConfig>
+        <Certificate
+          certificateKeystoreFile="$${tomcat-keystore:file}"
+          certificateKeystorePassword="$${tomcat-keystore:pass}"
+          type="RSA"
+          />
+      </SSLHostConfig>
+    </Connector>
     <Engine name="Catalina" defaultHost="localhost">
       <Valve className="org.apache.catalina.valves.AccessLogValve"
              directory="logs" prefix="localhost_access_log." suffix=".log"

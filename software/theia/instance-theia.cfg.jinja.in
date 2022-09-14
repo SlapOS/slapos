@@ -1,16 +1,16 @@
-{% set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
-{% set additional_frontend = parameter_dict['additional-frontend-guid'] %}
+{%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
+{%- set additional_frontend = parameter_dict['additional-frontend-guid'] %}
+{%- set embedded_instance_config = parameter_dict['initial-embedded-instance'] %}
 
 [buildout]
 extends =
-  ${monitor-template:rendered}
+  ${monitor-template:output}
 
 theia-environment-parts =
   tasks.json
   slapos-repository
   runner-link
   settings.json
-  request-script-template
 
 theia-parts =
   frontend-reload
@@ -98,6 +98,9 @@ instance-promises =
   $${slapos-standalone-listen-promise:name}
   $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
+  {% if embedded_instance_config %}
+  $${embedded-instance-requested-promise:name}
+  {% endif %}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -160,6 +163,14 @@ name = autorun-state-promise.py
 config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
 config-run-directory = $${directory:runner}/var/run
+
+{% if embedded_instance_config %}
+[embedded-instance-requested-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = embedded-instance-requested-promise.py
+config-command = $${embedded-instance-requested-promise-script:output}
+{% endif %}
 
 
 # Remote Caddy Frontend
@@ -229,10 +240,9 @@ location =
   $${:cert-file}
 
 [frontend-instance-config]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
   :$${:port} {
     bind $${:ip}
     tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
@@ -268,7 +278,7 @@ port = $${frontend-instance-port:port}
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${frontend-instance-config:rendered} -pidfile $${:pidfile}
+  ${caddy:output} -conf $${frontend-instance-config:output} -pidfile $${:pidfile}
 
 ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
@@ -298,8 +308,8 @@ stop-on-error = true
 
 [frontend-instance-slapos.css]
 recipe = slapos.recipe.template:jinja2
-template = ${slapos.css.in:output}
-rendered = $${directory:frontend-static}/$${:folder-name}/slapos.css
+url = ${slapos.css.in:output}
+output = $${directory:frontend-static}/$${:folder-name}/slapos.css
 folder-name = css
 context =
   key logo_image frontend-instance-logo:filename
@@ -312,7 +322,7 @@ command-line =
   "kill -s USR1 $$(${coreutils:location}/bin/cat $${frontend-instance:pidfile}) \
     && ${coreutils:location}/bin/sleep infinity"
 hash-files =
-  $${frontend-instance-config:rendered}
+  $${frontend-instance-config:output}
   $${frontend-instance:wrapper-path}
 wait-for-files = $${frontend-instance:pidfile}
 
@@ -326,14 +336,14 @@ install =
   self.buildout['buildout']['offline'] = 'false'
   try:
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-      b'''$${:seed}'''
+      options['seed'].encode()
     ).hexdigest() + "?s=256&d=retro"
-    shutil.copy(self.download(gravatar_url), '''$${:location}''')
+    shutil.copy(self.download(gravatar_url), location)
   except Exception:
     # Because installation should work offline, if we can't download a favicon,
     # just ignore this step.
     self.logger.exception("Error while downloading favicon, using empty one")
-    open('''$${:location}''', 'w').close()
+    open(location, 'w').close()
   finally:
     self.buildout['buildout']['offline'] = buildout_offline
 
@@ -345,14 +355,12 @@ filename = $${:_buildout_section_name_}
 # ------------------
 
 [common-environment]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
   export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
@@ -365,28 +373,25 @@ maximum = 3600
 ip = {{ ipv4_random }}
 
 [theia-service]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  inline:#!/bin/sh
-  {{ "{% raw %}" }}
-  {% raw %}
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  {% raw -%}
   export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
   export THEIA_MINI_BROWSER_HOST_PATTERN='{{hostname}}'
-  {% endraw %}
-  {{ "{% endraw %}" }}
+  {% endraw -%}
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
-  export THEIA_SHELL=$${theia-shell:rendered}
+  export THEIA_SHELL=$${theia-shell:output}
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
   export TERMINFO=${ncurses:location}/lib/terminfo/
-  export EDITOR="${theia-open:rendered} --wait"
+  export EDITOR="${theia-open:output} --wait"
   export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
-  . $${common-environment:rendered}
-  exec ${theia-wrapper:rendered} "$@"
+  . $${common-environment:output}
+  exec ${theia-wrapper:output} "$@"
 ip =  $${theia-service-port:ip}
 port = $${theia-service-port:port}
 base-url = http://$${:ip}:$${:port}/
@@ -394,10 +399,10 @@ base-url = http://$${:ip}:$${:port}/
 [theia-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
+command-line = $${theia-service:output}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
 hash-existing-files =
   ${yarn.lock:target}
-  ${theia-wrapper:rendered}
+  ${theia-wrapper:output}
 ip =  {{ ipv4_random }}
 hostname = $${:ip}
 port = $${theia-service:port}
@@ -405,11 +410,10 @@ base-url = $${theia-service:base-url}
 
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  {% raw %}
-  inline:#!{{ bash }}
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
+  {% raw -%}
+  #!{{ bash }}
   SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if [ $# = 0 ]; then
@@ -421,14 +425,13 @@ template =
   {% endraw %}
 context =
   raw bash ${bash:location}/bin/bash
-  key activate slapos-standalone-activate:rendered
-  key bashrc theia-bashrc:rendered
+  key activate slapos-standalone-activate:output
+  key bashrc theia-bashrc:output
 
 [theia-bashrc]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+inline =
   # enable bash completion
   . ${bash-completion:location}/etc/profile.d/bash_completion.sh
   # source user's .bashrc
@@ -447,37 +450,40 @@ command =
 # Embedded Instance
 # -----------------
 
-{%- set embedded_sr = parameter_dict['embedded-sr'] %}
-{%- set embedded_sr_type = parameter_dict['embedded-sr-type'] %}
-{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
-{%- if embedded_sr %}
-{%-   if embedded_sr.startswith('~/') %}
-{%-     set embedded_sr = os_module.path.join(partition_root_path, embedded_sr[2:]) %}
-{%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
-{%-   endif %}
-[request-embedded-instance-script]
+[embedded-instance-config]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:project}/request_embedded.sh
-mode = 0700
-template =
-  inline:#!/bin/sh
+output = $${directory:etc}/$${:_buildout_section_name_}.json
+once = $${:output}
+config = {{ dumps(embedded_instance_config) }}
+context =
+  key config :config
+inline =
+{%-     raw %}
+  {{ config or "{}"}}
+{%-     endraw %}
 
-  slapos supply {{ embedded_sr }} slaprunner
-
-  slapos request "embedded_instance" {{ embedded_sr }}
-{%-   if embedded_sr_type %} --type {{ embedded_sr_type }} {%- endif %}
-{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:rendered}
-
-[embedded-instance-parameters]
+[embedded-instance-requested-promise-script]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:project}/$${:_buildout_section_name_}.json
-template =
-  inline:{{ embedded_instance_parameters | indent(2) }}
-{%-   endif %}
-{%- endif %}
-
-{%- set embedded_digest = str(embedded_sr) + str(embedded_sr_type) + str(embedded_instance_parameters) %}
-{%- set embedded_digest_hash = hashlib_module.md5(embedded_digest.encode()).hexdigest() %}
+output = $${directory:bin}/$${:_buildout_section_name_}
+exitcode-file = $${slapos-standalone-script:embedded-request-exitcode-file}
+context =
+  key exitcodefile :exitcode-file
+{%- raw %}
+inline =
+  #!/bin/sh
+  if ! [ -f {{ repr(exitcodefile) }} ]
+  then
+    echo "ERROR embedded_instance has not been requested"
+    exit 1
+  elif [ "$(cat {{ repr(exitcodefile) }})" = 0 ]
+  then
+    echo "OK embedded_instance has been sucessfully requested"
+    exit 0
+  else
+    echo "ERROR request of embedded_instance failed"
+    exit 1
+  fi
+{%- endraw %}
 
 
 # SlapOS Standalone
@@ -493,16 +499,19 @@ ip = {{ ipv4_random }}
 ipv4 = {{ ipv4_random }}
 ipv6 = {{ ipv6_random }}
 port = $${slapos-standalone-port:port}
+base-directory = $${directory:runner}
+software-root = $${directory:runner}/software
+instance-root = $${directory:runner}/instance
 local-software-release-root = $${directory:home}
+slapos-bin = ${buildout:bin-directory}/slapos
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
-abstract-socket-path = $${directory:home}/standalone-{{ embedded_digest_hash[:16] }}
+abstract-socket-path = $${directory:home}/standalone-ready
 
 [slapos-standalone-activate]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
   export PATH=${buildout:bin-directory}:$PATH
   export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
@@ -510,117 +519,41 @@ template =
 
 [slapos-standalone-script]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-template =
-  inline:#!${python-for-standalone:executable}
-  import glob
-  import json
-  import os
-  import signal
-  import socket
-  import subprocess
-  import sys
-  import time
-  import traceback
-
-  import slapos.slap.standalone
-
-  # Include this hash, so that if it changes the standalone service will be restarted
-  # {{ embedded_digest_hash }}
-
-  shared_parts = """{{ '''${buildout:shared-part-list}''' | indent(2) }}"""
-  shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
-  partition_forward_configuration = (
-    slapos.slap.standalone.PartitionForwardAsPartitionConfiguration(
-      master_url="$${slap-connection:server-url}",
-      computer="$${slap-connection:computer-id}",
-      partition="$${slap-connection:partition-id}",
-      cert="$${slap-connection:cert-file}",
-      key="$${slap-connection:key-file}",
-      software_release_list=(
-        'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg',
-      ),
-    ),
-  )
-  standalone = slapos.slap.standalone.StandaloneSlapOS(
-    "$${directory:runner}",
-    "$${slapos-standalone-config:ipv4}",
-    $${slapos-standalone-config:port},
-    computer_id="$${slapos-standalone-config:computer-id}",
-    shared_part_list=shared_part_list,
-    software_root="$${directory:runner}/software",
-    instance_root="$${directory:runner}/instance",
-    partition_forward_configuration=partition_forward_configuration,
-    slapos_bin="${buildout:bin-directory}/slapos",
-    local_software_release_root="$${slapos-standalone-config:local-software-release-root}",
-  )
-
-  def signal_handler(signum, frame):
-    print("Signal {signum} received".format(signum=signum))
-    sys.exit()
-  signal.signal(signal.SIGTERM, signal_handler)
-
-  standalone.start()
-  try:
-    partition_count = 20
-    print("Standalone SlapOS: Formatting %d partitions" % partition_count)
-    standalone.format(partition_count, '$${slapos-standalone-config:ipv4}', '$${slapos-standalone-config:ipv6}')
-    print("Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` started")
-    # Run instance at least once, to start the supervisor managing instances.
-    try:
-      standalone.waitForInstance(max_retry=0)
-    except slapos.slap.standalone.SlapOSNodeCommandError as e:
-      print("Error instanciating: {}".format(e))
-{%- if embedded_sr %}
-    # Compatibility layer
-    try:
-      for cp in standalone.computer.getComputerPartitionList():
-        if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
-          print("Renaming 'Embedded Instance' into 'embedded_instance'")
-          cp.rename(new_name="embedded_instance")
-          break
-    except Exception:
-      print("Exception in compatibility layer, printing and moving on")
-      traceback.print_exc()
-    # Run request script
-    print("Running SlapOS script $${request-embedded-instance-script:rendered}")
-    slapos_env = {
-      'PATH': os.path.dirname(standalone._slapos_bin),
-      'SLAPOS_CONFIGURATION': standalone._slapos_config,
-      'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config
-    }
-    subprocess.call(("$${request-embedded-instance-script:rendered}",), env=slapos_env)
-{%- endif %}
-    s = socket.socket(socket.AF_UNIX)
-    s.bind("\0$${slapos-standalone-config:abstract-socket-path}")
-    s.listen(5)
-    print("Standalone SlapOS ready")
-    while True:
-      s.accept()[0].close()
-  finally:
-    print("Stopping standalone subsystem")
-    standalone.stop()
-    print("Exiting")
+output = $${directory:bin}/$${:_buildout_section_name_}
+embedded-request-exitcode-file = $${directory:etc}/embedded-request-exitcode
+shared-part-list =
+  {{ """${buildout:shared-part-list}""" | indent(2) }}
+context =
+  raw python_for_standalone ${python-for-standalone:executable}
+  raw request_script_path $${directory:project}/request-embedded-instance.sh
+  raw parameters_file_path $${directory:project}/embedded-instance-parameters.json
+  key request_script_template request-script-example:inline
+  key shared_part_list :shared-part-list
+  key embedded_request_exitcode_file :embedded-request-exitcode-file
+  key embedded_instance_config embedded-instance-config:output
+  key home_path directory:home
+  section slap_connection slap-connection
+  section slapos_standalone_config slapos-standalone-config
+url = ${slapos-standalone-script:output}
 
 [slapos-standalone]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
-template =
-  inline:#!/bin/sh
-  . $${common-environment:rendered}
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  . $${common-environment:output}
   #XXX find out where the extra nodejs in theia's PATH comes from
   export PATH=${nodejs:location}/bin/:$PATH
-  . $${slapos-standalone-activate:rendered}
-  exec $${slapos-standalone-script:rendered}
+  . $${slapos-standalone-activate:output}
+  exec $${slapos-standalone-script:output}
 
 [slapos-standalone-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${slapos-standalone:rendered}
+command-line = $${slapos-standalone:output}
 hash-files =
-  $${slapos-standalone:rendered}
-  $${slapos-standalone-script:rendered}
+  $${slapos-standalone:output}
+  $${slapos-standalone-script:output}
 hostname = $${slapos-standalone-config:ipv4}
 port = $${slapos-standalone-config:port}
 
@@ -645,10 +578,9 @@ autorun = {{ parameter_dict['autorun'] }}
 # -----------------------------
 
 [tasks.json]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:dot-theia}/tasks.json
-template =
-  inline:
+recipe = slapos.recipe.template
+output = $${directory:dot-theia}/tasks.json
+inline =
   {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
@@ -715,10 +647,9 @@ git-executable = ${git:location}/bin/git
 
 [settings.json]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:dot-theia}$${:_buildout_section_name_}
-once = $${:rendered}
-template =
-  inline:
+output = $${directory:dot-theia}$${:_buildout_section_name_}
+once = $${:output}
+inline =
   {
     "files.watcherExclude": {
       "**/.eggs/**": true,
@@ -729,7 +660,8 @@ template =
       "$${directory:project}/runner/**":true
     },
     "git.terminalAuthentication": false,
-    "security.workspace.trust.startupPrompt": "once"
+    "security.workspace.trust.startupPrompt": "once",
+    "zc-buildout.python.executable": "${python-for-buildout-languageserver:executable}"
   }
 
 [runner-link]
@@ -737,19 +669,48 @@ recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
 
-[request-script-template]
+[request-script-example]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:project}/$${:_buildout_section_name_}.sh
-mode = 0700
-template =
-  inline:#!/bin/sh
-  # This template is generated automatically, copy it in order to supply and request.
-  # Any manual change to this file may be lost.
-  software_name=html5as-base #replace the software name writen in ~/srv/project/slapos/software/
-  software_release_uri=~/srv/project/slapos/software/$software_name/software.cfg
-  # slapos supply is used to add the software to the software list to be supplied to a node.
-  slapos supply $software_release_uri slaprunner
-  # slapos request the allocation of an instance to the master.
-  # slapos request also gets status and parameters of the instance if it has any
-  # (slapos request is meant to be run multiple time until you get the status).
-  slapos request $software_name'_1' $software_release_uri
+output = $${directory:project}/$${:_buildout_section_name_}.sh
+software_url = ~/srv/project/slapos/software/html5as-base/software.cfg
+request_options = html5as-1 $${:software_url}
+header_text =
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+  # This template is generated automatically by buildout. #
+  # Any changes to this file may be overwritten.          #
+  # Copy and adapt it to create your own request script.  #
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+context =
+  key software_url :software_url
+  key request_options :request_options
+  key header_text :header_text
+inline =
+{%- raw %}
+  #!/bin/sh -e
+
+  {{ header_text }}
+
+  # slapos supply <url> <node> registers a software for installation on a node.
+  #
+  # A software is uniquely identified by its URL (the URL may be a local path).
+  # You may choose from softwares available in ~/srv/project/slapos/software.
+  #
+  # The one and only SlapOS Node embedded inside Theia is called 'slaprunner'.
+  #
+  # For more information, run:
+  #     slapos help supply
+  #
+  slapos supply {{ software_url }} slaprunner
+
+  # slapos request <name> <url> registers an instance for allocation on a node.
+  #
+  # An instance is uniquely identified by its name (and its requester).
+  #
+  # It will be allocated on a node where the software URL is already supplied.
+  # Inside Theia that node can only be 'slaprunner'.
+  #
+  # For more information, run:
+  #     slapos help request
+  #
+  slapos request {{ request_options }}
+{%  endraw %}

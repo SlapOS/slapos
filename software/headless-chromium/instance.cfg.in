@@ -20,8 +20,8 @@ template-mime-types = {{ template_mime_types_target }}
 
 [instance-headless-chromium]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_instance_headless_chromium_target }}
-rendered = ${buildout:directory}/${:filename}
+url = {{ template_instance_headless_chromium_target }}
+output = ${buildout:directory}/${:filename}
 filename = instance-headless-chromium.cfg
 context =
   section buildout buildout
@@ -32,8 +32,11 @@ context =
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
-    "remote-debugging-port": 8081,
-    "nginx-proxy-port": 8082,
+    "remote-debugging-port": 9222,
+    "nginx-proxy-port": 9224,
+    "incognito": true,
+    "window-size": "800,600",
+    "block-new-web-contents": false,
     "target-url": "https://www.example.com",
     "monitor-httpd-port": 8083
   }
@@ -41,7 +44,7 @@ default-parameters =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
-default = instance-headless-chromium:rendered
+default = instance-headless-chromium:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration

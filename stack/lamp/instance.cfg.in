@@ -9,10 +9,10 @@ offline = true
 
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-template-lamp:rendered
+default = dynamic-template-lamp:output
 RootSoftwareInstance = ${:default}
-mariadb = dynamic-template-mariadb:rendered
-apache = dynamic-template-apache-php:rendered
+mariadb = dynamic-template-mariadb:output
+apache = dynamic-template-apache-php:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -24,9 +24,8 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
-mode = 0644
 extra-context =
 context =
   key develop_eggs_directory buildout:develop-eggs-directory
@@ -46,13 +45,20 @@ context =
 
 [dynamic-template-lamp]
 <= jinja2-template-base
-template = {{ template_lamp }}
+url = {{ template_lamp }}
 filename = template-lamp.cfg
 extra-context =
   section parameter_dict dynamic-template-lamp-parameters
+  raw db_name {{ db_name }}
+  raw db_user {{ db_user }}
+  raw db_password {{ db_password }}
 
 [dynamic-template-apache-php-parameters]
+{% if application_archive_root %}
+application-location = {{ application_location }}/{{ application_archive_root }}
+{% else %}
 application-location = {{ application_location }}
+{% endif %}
 application-part-list = {{ application_deployment_part_list }}
 template-apache-conf = {{ template_apache_conf }}
 apache-location = {{ apache_location }}
@@ -65,11 +71,12 @@ custom-application-template = {{ custom_application_template }}
 
 [dynamic-template-apache-php]
 <= jinja2-template-base
-template = {{ template_apache_php }}
+url = {{ template_apache_php }}
 filename = template-apache-php.cfg
 extra-context =
   key custom_application_template application-parameters:custom-application-template
   section parameter_dict dynamic-template-apache-php-parameters
+  raw lamp_apache_httpd {{ lamp_apache_httpd }}
 
 [dynamic-template-mariadb-parameters]
 bash = {{ bash_location }}
@@ -97,7 +104,7 @@ bin-directory = {{ bin_directory }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
-template = {{ template_mariadb }}
+url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     key ipv4_set slap-configuration:ipv4

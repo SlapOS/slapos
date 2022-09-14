@@ -132,9 +132,9 @@ trusted-proxy 0.0.0.0
 {% set type_dict = {'neo': 'NEOStorage', 'zeo': 'clientstorage'} %}
 {% for name, zodb_dict in six.iteritems(parameter_dict['zodb-dict']) %}
 <zodb_db {{ name }}>
-{% if zodb_dict['type'] == 'zeo' %}
+{%- if zodb_dict['type'] == 'zeo' %}
   %import ZEO
-{% endif %}
+{%- endif %}
 {%- set storage_type = type_dict[zodb_dict.pop('type')] %}
 {%- set storage_dict = zodb_dict.pop('storage-dict') %}
 {%- do root_common.apply_overrides(zodb_dict, node_id) %}

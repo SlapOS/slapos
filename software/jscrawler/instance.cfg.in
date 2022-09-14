@@ -9,7 +9,7 @@ offline = true
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default  = dynamic-template-jscrawler:rendered
+default  = dynamic-template-jscrawler:output
 RootSoftwareInstance = ${:default}
 
 [slap-configuration]
@@ -22,9 +22,8 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/${:filename}
+output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
-mode = 0644
 extra-context =
 context =
   key develop_eggs_directory buildout:develop-eggs-directory
@@ -49,7 +48,7 @@ template-jscrawler = {{ template_jscrawler_builder }}
 
 [dynamic-template-jscrawler]
 <= jinja2-template-base
-template = {{ template_jscrawler }}
+url = {{ template_jscrawler }}
 filename = instance-jscrawler.cfg
 extra-context =
   section parameter_dict dynamic-template-jscrawler-parameters

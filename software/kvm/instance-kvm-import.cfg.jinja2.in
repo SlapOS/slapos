@@ -4,12 +4,12 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-parts += 
+parts +=
   kvm-disk-image-corruption-promise
 
 # Here, we don't need KVM to run to import data, so we don't
 # even extend the kvm instance profile.
-extends = 
+extends =
   {{ pbsready_import_template }}
 
 [slap-parameter]
@@ -59,11 +59,10 @@ cronstamps = ${:etc}/cronstamps
 
 [importer]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_kvm_import }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-importer
-mode = 0700
+url = {{ template_kvm_import }}
+output = ${directory:bin}/${slap-parameter:namebase}-importer
 # Resilient stack wants a "wrapper" parameter
-wrapper = ${:rendered}
+wrapper = ${:output}
 context =
     section directory directory
     raw zcat_binary {{ zcat_binary }}

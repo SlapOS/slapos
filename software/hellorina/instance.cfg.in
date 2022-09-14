@@ -14,7 +14,7 @@ cert = ${slap-connection:cert-file}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 filename = ${:_buildout_section_name_}.cfg
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
 context =
@@ -24,7 +24,7 @@ context =
 
 [root]
 <= jinja2-template-base
-template = {{ instance_root }}
+url = {{ instance_root }}
 extra-context =
     import urlparse urlparse
     key ipv6 slap-configuration:ipv6-random
@@ -32,14 +32,14 @@ extra-context =
 
 [server]
 <= jinja2-template-base
-template = {{ instance_server }}
+url = {{ instance_server }}
 extra-context =
     key instance_guid slap-configuration:instance-guid
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
-default = root:rendered
+default = root:output
 # BBB
 RootSoftwareInstance = ${:default}
-server = server:rendered
+server = server:output

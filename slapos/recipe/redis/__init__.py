@@ -33,22 +33,23 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
 
-    if not self.optionIsTrue('use_passwd', False):
+    if not self.optionIsTrue('use-passwd', False):
       master_passwd = "# masterauth <master-password>"
     else:
       master_passwd = "masterauth %s" % self.options['passwd']
-    config_file = self.options['config_file'].strip()
-    configuration = dict(pid_file=self.options['pid_file'],
-                        port=self.options['port'],
-                        ipv6=self.options['ipv6'],
-                        server_dir=self.options['server_dir'],
-                        log_file=self.options['log_file'],
-                        master_passwd=master_passwd
+    config_file = self.options['config-file'].strip()
+    configuration = dict(
+      pid_file=self.options['pid-file'],
+      port=self.options['port'],
+      ipv6=self.options['ipv6'],
+      server_dir=self.options['server-dir'],
+      log_file=self.options['log-file'],
+      master_passwd=master_passwd
     )
     if self.options.get('unixsocket'):
-        unixsocket = "unixsocket %s\nunixsocketperm 700" % self.options['unixsocket']
+      unixsocket = "unixsocket %s\nunixsocketperm 700" % self.options['unixsocket']
     else:
-        unixsocket = ""
+      unixsocket = ""
     configuration['unixsocket'] = unixsocket
 
     config = self.createFile(config_file,
@@ -58,28 +59,31 @@ class Recipe(GenericBaseRecipe):
 
     redis = self.createWrapper(
       self.options['wrapper'],
-      (self.options['server_bin'], config_file),
+      (self.options['server-bin'], config_file),
     )
     path_list.append(redis)
 
-    promise_script = self.options.get('promise_wrapper', '').strip()
+    promise_script = self.options.get('promise-wrapper', '').strip()
     if promise_script:
-      promise = self.createPythonScript(
+      args = [
+        self.options['cli-bin'],
+        '-h',
+        self.options['ipv6'],
+        '-p',
+        self.options['port'],
+      ]
+      if self.options.get('unixsocket'):
+        args.extend(('-s', self.options['unixsocket']))
+      args.extend((
+        'publish',
+        'Promise-Service',
+        'SlapOS Promise',
+      ))
+      promise = self.createWrapper(
         promise_script,
-        __name__ + '.promise',
-        (self.options['ipv6'], int(self.options['port']),
-         self.options.get('unixsocket'))
+        args,
       )
       path_list.append(promise)
 
     return path_list
 
-
-def promise(host, port, unixsocket):
-  from .MyRedis2410 import Redis
-  try:
-    r = Redis(host=host, port=port, unix_socket_path=unixsocket, db=0)
-    r.publish("Promise-Service","SlapOS Promise")
-    r.connection_pool.disconnect()
-  except Exception as e:
-    sys.exit(e)

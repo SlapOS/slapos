@@ -52,13 +52,13 @@ context =
 {#-     * setup defaults to simplify other profiles #}
 {#-     * stabilise values for backend #}
 {%-   for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
-{%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
+{%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
 {%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment, 'query': parsed.query, 'netloc-list': slave_instance.get(key + '-netloc-list', '').split() } %}
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {%-   for key, prefix in [('health-check-failover-url', 'http_backend'), ('health-check-failover-https-url', 'https_backend')] %}
-{%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
+{%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     do info_dict.__setitem__('health-check-failover-scheme', parsed.scheme) %}
 {%-     do info_dict.__setitem__('health-check-failover-hostname', parsed.hostname) %}
@@ -189,7 +189,7 @@ context =
 {%-   do furled.set(password = '${'+ slave_password_section +':passwd}') %}
 {%-   do furled.set(path = slave_reference + '/') %}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
-{%-   set slave_log_access_url = urlparse_module.unquote(furled.tostr()) %}
+{%-   set slave_log_access_url = urllib_module.parse.unquote(furled.tostr()) %}
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%-   do slave_publish_dict.__setitem__('backend-client-caucase-url', backend_client_caucase_url) %}
@@ -212,7 +212,7 @@ context =
 {%-   for websocket_path in slave_instance.get('websocket-path-list', '').split() %}
 {%-     set websocket_path = websocket_path.strip('/') %}
 {#-   Unquote the path, so %20 and similar can be represented correctly #}
-{%-     set websocket_path = urllib_module.unquote(websocket_path.strip()) %}
+{%-     set websocket_path = urllib_module.parse.unquote(websocket_path.strip()) %}
 {%-     if websocket_path %}
 {%-       do websocket_path_list.append(websocket_path) %}
 {%-     endif %}
@@ -290,8 +290,8 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {#-         Store certificates on fs #}
 [{{ cert_title }}]
 < = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ cert_file }}
+url = {{ empty_template }}
+output = {{ cert_file }}
 extra-context =
     key content {{ cert_title + '-config:value' }}
 {#-         BBB: SlapOS Master non-zero knowledge BEGIN #}
@@ -312,8 +312,8 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 
 [{{cert_title}}]
 < = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ cert_file }}
+url = {{ empty_template }}
+output = {{ cert_file }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
 extra-context =
     key content :cert-content
@@ -332,7 +332,7 @@ http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 version-hash = {{ version_hash }}
 node-id = {{ node_id }}
-{%-   for key, value in slave_instance.iteritems() %}
+{%-   for key, value in slave_instance.items() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps(value) }}
 {%-     endif %}
@@ -340,9 +340,9 @@ node-id = {{ node_id }}
 
 [{{ slave_section_title }}]
 < = jinja2-template-base
-rendered = {{ caddy_configuration_directory }}/${:filename}
+output = {{ caddy_configuration_directory }}/${:filename}
 
-template = {{ template_default_slave_configuration }}
+url = {{ template_default_slave_configuration }}
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
 
@@ -383,7 +383,7 @@ config-frequency = 720
 {%-     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
-{%-     for key, value in slave_publish_dict.iteritems() %}
+{%-     for key, value in slave_publish_dict.items() %}
 {{ key }} = {{ value }}
 {%-     endfor %}
 {%-   else %}
@@ -430,8 +430,8 @@ pid = {{ caddy_configuration['slave-introspection-pid-file'] }}
 
 [slave-introspection-config]
 <= jinja2-template-base
-template = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
-rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
+url = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
+output = {{ frontend_configuration['slave-introspection-configuration'] }}
 extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_htpasswd slave-htpasswd
@@ -440,7 +440,7 @@ extra-context =
 [slave-introspection]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${slave-introspection-config:rendered}
+  -c ${slave-introspection-config:output}
 
 wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -463,7 +463,7 @@ csr-certificate = ${expose-csr-certificate-get:certificate}
 {%-   do furled.set(password = backend_haproxy_configuration['statistic-password']) %}
 {%-   do furled.set(path = '/') %}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
-{%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
+{%-   set statistic_url = urllib_module.parse.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 node-information-json = {{ json_module.dumps(node_information, sort_keys=True) }}
@@ -491,19 +491,19 @@ update-command = ${:command}
 [kedifa-updater-mapping]
 recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_configuration['kedifa-updater-mapping-file'] }}
-template = inline:
+inline =
 {%- for mapping in kedifa_updater_mapping %}
   {{ mapping[0] }} {{ mapping[1] }} {{ mapping[2] }}
 {%- endfor %}
 
-rendered = ${:file}
+output = ${:file}
 
 ##<Backend haproxy>
 [backend-haproxy-configuration]
 < = jinja2-template-base
-template = {{ template_backend_haproxy_configuration }}
-rendered = ${backend-haproxy-config:file}
-backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
+url = {{ template_backend_haproxy_configuration }}
+output = ${backend-haproxy-config:file}
+backend_slave_list = {{ dumps(sorted(backend_slave_list, key=operator_module.itemgetter('slave_reference'))) }}
 extra-context =
   key backend_slave_list :backend_slave_list
   section configuration backend-haproxy-config
@@ -551,6 +551,7 @@ parts +=
     kedifa-updater-run
     backend-haproxy-configuration
     promise-logrotate-setup
+    promise-key-download-url-ready
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
@@ -589,8 +590,8 @@ nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
 
 [expose-csr-template]
 recipe = slapos.recipe.template:jinja2
-rendered = {{ directory['expose-csr-etc'] }}/nginx.conf
-template = {{ template_expose_csr_nginx_conf }}
+output = {{ directory['expose-csr-etc'] }}/nginx.conf
+url = {{ template_expose_csr_nginx_conf }}
 context =
   section configuration expose-csr-configuration
 
@@ -604,16 +605,21 @@ config-port = ${expose-csr-configuration:port}
 [expose-csr]
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${expose-csr-template:rendered}
+  -c ${expose-csr-template:output}
 url = https://[${expose-csr-configuration:ip}]:${expose-csr-configuration:port}
 
 wrapper-path = {{ directory['service'] }}/expose-csr
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [expose-csr-certificate-get]
-recipe = collective.recipe.shelloutput
-commands =
-  certificate = cat ${expose-csr-certificate:certificate}
+recipe = slapos.recipe.build
+certificate-file = ${expose-csr-certificate:certificate}
+init =
+  import os
+  options['certificate'] = ''
+  if os.path.exists(options['certificate-file']):
+    with open(options['certificate-file'], 'r') as fh:
+      options['certificate'] = fh.read()
 
 [promise-logrotate-setup]
 <= monitor-promise-base
@@ -621,3 +627,29 @@ promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
+
+[key-download-url-ready]
+recipe = slapos.recipe.build
+output = {{ url_ready_file }}
+master-key-download-url = {{ master_key_download_url }}
+slave-kedifa-information = {{ dumps(slave_kedifa_information) }}
+init =
+  not_ready_count = 0
+  if not options['master-key-download-url'] or 'NotReadyYet' in options['master-key-download-url']:
+    not_ready_count += 1
+  for slave_kedifa_reference, slave_kedifa_information in options['slave-kedifa-information'].items():
+    key_download_url = slave_kedifa_information.get('key-download-url')
+    if not key_download_url or 'NotReadyYet' in key_download_url:
+      not_ready_count += 1
+  with open(options['output'], 'w') as fh:
+    if not_ready_count > 0:
+      fh.write('%s' % (not_ready_count,))
+    else:
+      fh.write('')
+
+[promise-key-download-url-ready]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${key-download-url-ready:output}
+config-state = empty

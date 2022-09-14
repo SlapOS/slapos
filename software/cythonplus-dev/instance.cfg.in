@@ -10,7 +10,7 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 [publish-env-path]
 recipe = slapos.cookbook:publish
 readme = Source the script to set up the environment.
-script = ${cythonplus_env.sh:rendered}
+script = ${cythonplus_env.sh:output}
 repository = ${cythonplus-repository:repository}
 
 [slap-configuration]
@@ -34,12 +34,11 @@ shared = true
 
 [runTestSuite]
 recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-template = ${runTestSuite.in:target}
-mode = 0755
+output = $${directory:bin}/$${:_buildout_section_name_}
+url = ${runTestSuite.in:target}
 context =
   key tmpdir directory:tmp
   key slapparameter_dict slap-configuration:configuration
   key cythonplus_repository cythonplus-repository:location
   raw runTestSuite_interpreter ${runTestSuite_interpreter:bin-directory}/${runTestSuite_interpreter:interpreter}
-  raw cythonplus_env_sh ${cythonplus_env.sh:rendered}
+  raw cythonplus_env_sh ${cythonplus_env.sh:output}

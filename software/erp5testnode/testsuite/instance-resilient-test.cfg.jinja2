@@ -43,7 +43,7 @@ recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
 software-type = resilient
 name = Resilient Instance (Root Instance)
-{% for key, value in slapparameter_dict.get('cluster', {}).iteritems() -%}
+{% for key, value in slapparameter_dict.get('cluster', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-resiliency-backup-periodicity = */10 * * * *

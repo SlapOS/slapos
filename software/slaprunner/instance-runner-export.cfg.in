@@ -86,9 +86,8 @@ private-path-list +=
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
-template = {{ monitor_check_resilient_feed_template_path }}
-rendered = ${monitor-directory:bin}/check-create-resilient-feed-files
-mode = 700
+url = {{ monitor_check_resilient_feed_template_path }}
+output = ${monitor-directory:bin}/check-create-resilient-feed-files
 context =
   key input_feed_directory directory:notifier-feeds
   key monitor_feed_directory monitor-directory:public

@@ -35,17 +35,18 @@ shell-path = {{ dash_executable_location }}
 path = ${basedirectory:services}/nbdserver
 
 [nbd-checker-bin]
-recipe = slapos.recipe.template:jinja2
-template = inline:#!/bin/sh
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
   [ ! -f ${onetimeupload-instance:image-path} ] ||
     ${buildout:executable} -c 'import socket ; socket.create_connection(("${nbd-instance:ip}","${nbd-instance:port}")).close()'
-rendered = ${rootdirectory:bin}/check-nbd-running.sh
+output = ${rootdirectory:bin}/check-nbd-running.sh
 
 [nbd-promise]
 <= monitor-promise-base
 promise = check_command_execute
 name = nbd_promise.py
-config-command = ${nbd-checker-bin:rendered}
+config-command = ${nbd-checker-bin:output}
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password

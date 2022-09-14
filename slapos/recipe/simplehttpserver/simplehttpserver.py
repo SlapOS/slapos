@@ -36,6 +36,15 @@ class ServerHandler(SimpleHTTPRequestHandler):
     SimpleHTTPRequestHandler.do_GET(self)
 
   def do_POST(self):
+    """Write to a file on the server.
+
+    request keys:
+      path: the path of the file
+      content: content of the file
+      clear: (0|1 default 1) overwrite the file if 1
+
+    request can be encoded as application/x-www-form-urlencoded or multipart/form-data
+    """
     logging.info('%s - POST: %s \n%s' % (self.client_address[0], self.path, self.headers))
     if self.restrictedRootAccess():
       return
@@ -46,14 +55,20 @@ class ServerHandler(SimpleHTTPRequestHandler):
       environ={'REQUEST_METHOD': 'POST',
                'CONTENT_TYPE': self.headers['Content-Type']}
     )
-    name = form['path'].value.decode('utf-8')
-    content = form['content'].value
-    method = 'ab'
-    if 'clear' in form and form['clear'].value == '1':
-      method = 'wb'
-    self.writeFile(name, content, method)
+
+    file_content = form['content'].value
+    file_path = form['path'].value
+    if form['content'].file:
+      # post data as multipart/form-data , values are bytes
+      file_path = file_path.decode('utf-8')
+    else:
+      # application/x-www-form-urlencoded , values are str
+      file_content = file_content.encode('utf-8')
+    file_open_mode = 'wb' if ('clear' in form and form['clear'].value in ('1', b'1')) else 'ab'
+
+    self.writeFile(file_path, file_content, file_open_mode)
     self.respond(200, type=self.headers['Content-Type'])
-    self.wfile.write(b"Content written to %s" % str2bytes(name))
+    self.wfile.write(b"Content written to %s" % str2bytes(file_path))
 
   def writeFile(self, filename, content, method='ab'):
     file_path = os.path.abspath(os.path.join(self.document_path, filename))

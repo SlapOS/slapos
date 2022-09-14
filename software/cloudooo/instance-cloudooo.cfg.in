@@ -43,9 +43,6 @@
 {% set section_list = [] -%}
 {% set cloudooo_section_list = [] -%}
 {% macro cloudooo(name) %}{% do cloudooo_section_list.append(name) %}{{ name }}{% endmacro -%}
-[simplefile]
-recipe = slapos.recipe.template:jinja2
-template = inline:{{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
 {%   set content_section_name = section_name ~ '-content' -%}
@@ -53,10 +50,9 @@ template = inline:{{ '{{ content }}' }}
 content = {{ dumps(content) }}
 
 [{{  section_name }}]
-< = simplefile
-rendered = {{ file_path }}
-context = key content {{ content_section_name }}:content
-mode = {{ mode }}
+recipe = slapos.recipe.template
+output = {{ file_path }}
+inline = {{ '${' + content_section_name + ':content}' }}
 {%- endmacro %}
 
 
@@ -80,12 +76,12 @@ parts =
 [apache]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/apache
-command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:output}" -DFOREGROUND
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-apache-conf'] }}
-rendered = ${directory:apache-conf}/apache.conf
+url = {{ parameter_dict['template-apache-conf'] }}
+output = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict
 
 [apache-conf-parameter-dict]
@@ -139,8 +135,8 @@ recipe = slapos.cookbook:publish.serialised
 
 [fontconfig-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-fonts-conf'] }}
-rendered = ${directory:etc}/fonts.conf
+url = {{ parameter_dict['template-fonts-conf'] }}
+output = ${directory:etc}/fonts.conf
 context =
     key cachedir directory:fontconfig-cache
     key fonts :fonts
@@ -160,7 +156,7 @@ recipe = slapos.cookbook:generic.cloudooo
 ip = {{ ipv4 }}
 environment =
   LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
-  FONTCONFIG_FILE = ${fontconfig-conf:rendered}
+  FONTCONFIG_FILE = ${fontconfig-conf:output}
   PATH = ${binary-link:target-directory}
   LANG = C.UTF-8
 mimetype_entry_addition =

@@ -2,7 +2,7 @@
 {% set slave_information_dict = {} %}
 
 # regroup slave information from all frontends
-{% for frontend, slave_list_raw in slave_information.iteritems() %}
+{% for frontend, slave_list_raw in slave_information.items() %}
 {%   if slave_list_raw %}
 {%     set slave_list = json_module.loads(slave_list_raw) %}
 {%   else %}
@@ -27,21 +27,21 @@
 {%   endfor %}
 {% endfor %}
 
-{% for slave_reference, rejected_info_list in rejected_slave_information['rejected-slave-dict'].iteritems() %}
+{% for slave_reference, rejected_info_list in rejected_slave_information['rejected-slave-dict'].items() %}
 {%   if slave_reference not in slave_information_dict %}
 {%     do slave_information_dict.__setitem__(slave_reference, {}) %}
 {%   endif %}
 {%   do slave_information_dict[slave_reference].__setitem__('request-error-list', json_module.dumps(rejected_info_list)) %}
 {% endfor %}
 
-{% for slave_reference, warning_info_list in warning_slave_information['warning-slave-dict'].iteritems() %}
+{% for slave_reference, warning_info_list in warning_slave_information['warning-slave-dict'].items() %}
 {%   if slave_reference not in slave_information_dict %}
 {%     do slave_information_dict.__setitem__(slave_reference, {}) %}
 {%   endif %}
 {%   do slave_information_dict[slave_reference].__setitem__('warning-list', json_module.dumps(warning_info_list)) %}
 {% endfor %}
 
-{% for slave_reference, kedifa_dict in json_module.loads(slave_kedifa_information).iteritems() %}
+{% for slave_reference, kedifa_dict in json_module.loads(slave_kedifa_information).items() %}
 {%   if slave_reference not in rejected_slave_information['rejected-slave-dict'] %}
 {%     if slave_reference not in slave_information_dict %}
 {%       do slave_information_dict.__setitem__(slave_reference, {}) %}
@@ -54,7 +54,7 @@
 
 # Publish information for each slave
 {% set active_slave_instance_list = json_module.loads(active_slave_instance_dict['active-slave-instance-list']) %}
-{% for slave_reference, slave_information in slave_information_dict.iteritems() %}
+{% for slave_reference, slave_information in slave_information_dict.items() %}
 {#   Filter out destroyed, so not existing anymore, slaves #}
 {#   Note: This functionality is not yet covered by tests, please modify with care #}
 {%   if slave_reference in active_slave_instance_list %}
@@ -68,11 +68,11 @@ recipe = slapos.cookbook:publish
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {%     endif %}
-{%     for key, value in slave_information.iteritems() %}
+{%     for key, value in slave_information.items() %}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
 {%   endif %}
-{%   for frontend_key, frontend_value in frontend_information.iteritems() %}
+{%   for frontend_key, frontend_value in frontend_information.items() %}
 {{ frontend_key }} = {{ frontend_value }}
 {%   endfor %}
 {% endfor %}

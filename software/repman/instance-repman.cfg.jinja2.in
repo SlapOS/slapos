@@ -2,9 +2,6 @@
 {% set part_list = [] -%}
 {% set monitor_base_url_dict = {} -%}
 {% set mariadb_dict = {} -%}
-{% set mariadb_server_list = [] -%}
-{% set receiver_port_list = [] -%}
-{% set mariadb_path_list = [] -%}
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set cluster_list = [] -%}
@@ -12,12 +9,17 @@
   "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci",
   "mroonga", "utctime", "readcommitted", "nohandshake", "ssl"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
-{% set database_slave_list = [] -%}
-{% set db_name_list = [] -%}
 {% set count = namespace(value=2) %}
 {% set caucase_bind = '[' ~ ip ~ ']:8890' -%}
 {% set caucase_url = 'http://' ~ caucase_bind -%}
 {% set csrid_list = [] -%}
+{% set default_parameter_dict = {"cluster1": {"db-prefered-master": "",
+  "database-amount": 2, "proxysql-user": "external",
+  "logical-backup-cron": "0 21 * * *", "physical-backup-cron": "0 1 * * *"}} -%}
+{% set cluster_name_list = slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).keys() -%}
+{% set database_slave_dict = {} -%}
+{% set db_name_dict = {} -%}
+{% set default_slave_cluster_id = list(cluster_name_list)[0] -%}
 
 {% macro password(name) -%}
 [{{ name }}-password]
@@ -46,8 +48,14 @@ ssl = ${:etc}/ssl
 
 [proxysql-directory]
 recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}/proxy
 config = ${directory:etc}/proxysql
-ssl = ${:config}/ssl
+ssl = ${:config}/default-ssl
+{% for cluster in cluster_name_list -%}
+{{ cluster }} = ${:home}/{{ cluster }}
+{% do database_slave_dict.__setitem__(cluster, []) -%}
+{% do db_name_dict.__setitem__(cluster, []) -%}
+{% endfor -%}
 
 {% import "supervisord_lib" as supervisord_lib with context %}
 {% set proxysql_controller = "proxysql-ctl" -%}
@@ -72,7 +80,8 @@ config-caucase-url = {{ caucase_url }}
 
 [download-proxy-config]
 recipe = slapos.recipe.template:jinja2
-template = inline:#!{{ bash_bin }}
+inline =
+  #!{{ bash_bin }}
   NAME=$1
   HOST=$2
   PORT=$3
@@ -80,41 +89,47 @@ template = inline:#!{{ bash_bin }}
   if [ -z "$CONFIG" ]; then
     CONFIG="${proxysql-directory:config}/proxysql.cnf"
   fi
+  ETCDIR=`dirname $CONFIG`
   mkdir -p ${repman:config-tmp}/proxies
+  mkdir -p $ETCDIR/proxysql
+  ln -sf ${proxysql-directory:ssl} $ETCDIR/proxysql/ssl
   cd ${repman:config-tmp}/proxies
   {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
   tar -xzf proxies-$NAME.tar.gz
   cp etc/proxysql/proxysql.cnf $CONFIG
-rendered = ${directory:bin}/update-proxysql-config
-mode = 755
+output = ${directory:bin}/update-proxysql-config
 
+{% set slave_information_list = [] -%}
 {% for instance_dict in slave_instance_list -%}
 {% set slave_dict = {
   'name': 'db_%s' % instance_dict['slave_reference'].replace('-', '_').lower(),
-  'user': instance_dict.get('db_user', 'user'),
+  'user': instance_dict['slave_reference'].replace('_', '').replace('-', '').lower(),
   'password': instance_dict.get('db_password', '${' ~ instance_dict['slave_reference'] ~ '-password:passwd}'),
   'slave_reference': instance_dict['slave_reference'],
   'charset': instance_dict.get('db_charset', ''),
+  'cluster_id': instance_dict.get('cluster_id', default_slave_cluster_id),
   'require_ssl': True
   } -%}
-{% do database_slave_list.append(slave_dict) -%}
-{% do db_name_list.append(slave_dict['name']) -%}
+{% if not slave_dict['cluster_id'] in cluster_name_list -%}
+{% do slave_dict.__setitem__('cluster_id', default_slave_cluster_id) -%}
+{% endif -%}
+{% do slave_information_list.append(slave_dict) -%}
+{% do database_slave_dict[slave_dict['cluster_id']].append(slave_dict) -%}
+{% do db_name_dict[slave_dict['cluster_id']].append([slave_dict['name'], slave_dict['user']]) -%}
 {{ password(instance_dict['slave_reference']) }}
 {% endfor %}
+# set each database dict which will be used to publish slave information
 [database-slave-information]
-{% for slave_dict in database_slave_list -%}
-{{ slave_dict['name'] }} = !py!{{ slave_dict }}
+{% for slave_dict in slave_information_list -%}
+{{   slave_dict['name'] }} = !py!{{ slave_dict }}
 {% endfor %}
-{% set db_list = db_name_list | join(' ') -%}
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
-{% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
-  "database-amount": 2, "proxysql-user": "external",
-  "logical-backup-cron": "0 21 * * *", "physical-backup-cron": "0 1 * * *"}} -%}
 {% for name, parameter_dict in slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).items() -%}
 
 {% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
 {% do mariadb_dict.__setitem__('use-ipv6', parameter_dict.get('use-ipv6', True)) -%}
+{% set db_list = db_name_dict[name] -%}
 
 # Request mariadb instances
 {% set db_amount = parameter_dict.get('database-amount', 2) -%}
@@ -123,16 +138,19 @@ mode = 755
 {% endif -%}
 
 {% set count.value = count.value + db_amount %}
+{% set mariadb_path_list = [] -%}
+{% set mariadb_server_list = [] -%}
+{% set receiver_port_list = [] -%}
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
-{% set section = 'request-mariadb-' ~ i -%}
+{% set section = 'request-mariadb-' ~ i ~ '-' ~ name -%}
 {% set dbname = 'Mariadb-' ~ i %}
-
+{% set instance_name = dbname ~ '-' ~ name-%}
 
 [{{ section }}]
 <= request-common
 software-type = mariadb
-name = {{ dbname ~ '-' ~ name}}
+name = {{ instance_name }}
 sla-computer_guid = {{ dumps(parameter_dict.get('-sla-' ~ i ~'-computer_guid', '')) }}
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
@@ -145,8 +163,8 @@ config-repman-passwd =  ${repman-parameter:password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
-config-name = {{ dbname }}
-config-database-list = !py!{{ database_slave_list }}
+config-name = {{ instance_name }}
+config-database-list = !py!{{ database_slave_dict[name] }}
 config-database-name = {{ dumps(db_list) }}
 config-require-ssl = {{ dumps(slapparameter_dict.get('require-ssl', False)) }}
 return =
@@ -160,7 +178,7 @@ return =
 {% do mariadb_server_list.append('${' ~ section ~ ':connection-database-host}') -%}
 {% do receiver_port_list.append('${' ~ section ~ ':connection-receiver-port}') -%}
 {% do mariadb_path_list.append('${' ~ section ~ ':connection-partition-path}') -%}
-{% do monitor_base_url_dict.__setitem__('mariadb' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do csrid_list.append('${' ~ section ~ ':connection-csr-id}') -%}
 
 {% endfor -%}
@@ -205,7 +223,7 @@ db-prefered-master = {{ mariadb_server_list[0] }}
 proxysql-servers = {{ ipv4 }}
 proxysql-servers-ipv6 = [{{ ip }}]
 password = ${repman-parameter:password}
-proxysql-partition = ${buildout:directory}
+proxysql-partition = {{ '${proxysql-directory:' ~ name ~ '}' }}
 receiver-port-list = {{ receiver_port_list | join(',') }}
 enabled-tags = {{ parameter_dict.get("tag-list", tag_list) | join(',') }}
 proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit", "ssl"]) | join(',') }}
@@ -237,8 +255,8 @@ switchover-wait-write-query = {{ parameter_dict.get('switchover-wait-write-query
 
 [{{ 'config-' ~ name }}]
 recipe = slapos.recipe.template:jinja2
-template = {{ config_cluster_toml_in }}
-rendered = ${repman:clusters}/config-{{ name }}.toml
+url = {{ config_cluster_toml_in }}
+output = ${repman:clusters}/config-{{ name }}.toml
 extra-context =
 context =
   section parameter_dict {{ name ~ '-cluster-parameter' }}
@@ -248,11 +266,11 @@ context =
 recipe = plone.recipe.command
 # if Repman is not started, cannot download config from server
 stop-on-error = false
-config = ${proxysql-directory:config}/proxysql.cnf
+config = ${proxysql-directory:home}/{{ name }}/etc/proxysql.cnf
 data = ${repman:proxy-data}/{{ name }}
 command =
   mkdir -p ${:data} &&
-  ${download-proxy-config:rendered} {{ name }} {{ ipv4 }} {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }} ${:config}
+  ${download-proxy-config:output} {{ name }} {{ ipv4 }} {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }} ${:config}
 update-command = ${:command}
 
 [proxysql-{{ name }}-wrapper]
@@ -295,7 +313,7 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
 {% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
-  "stopwaitsecs": 60, "startretries": 10, "autorestart": True, "environment": [],
+  "stopwaitsecs": 60, "startretries": 10, "autorestart": False, "environment": [],
   "stdout_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log",
   "stderr_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log" } %}
 
@@ -308,19 +326,20 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 [{{ name}}-publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = {{ 'dynamic-' ~name ~ '-publish-slave-information:rendered' }}
+default = {{ 'dynamic-' ~name ~ '-publish-slave-information:output' }}
 RootSoftwareInstance = ${:default}
 
 [dynamic-{{ name}}-publish-slave-information]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:directory}/database-publish-slave-information.cfg
+output = ${buildout:directory}/database-{{ name}}-publish-slave-information.cfg
 extensions = jinja2.ext.do
-template = {{ template_publish_slave_information }}
+url = {{ template_publish_slave_information }}
 context =
     import json_module          json
     key proxy_port              {{ name }}-cluster-parameter:proxy-port
     raw eggs_directory          {{ eggs_directory }}
     raw develop_eggs_directory  {{ develop_eggs_directory }}
+    raw cluster                 {{ name }}
     raw ipv6                    {{ ip }}
     raw ipv4                    {{ ipv4 }}
     section slave_dict          database-slave-information
@@ -404,10 +423,9 @@ context =
 
 [caucase-sign-csr]
 recipe = slapos.recipe.template:jinja2
-mode = 755
-rendered = ${directory:bin}/caucase-sign
-template =
-  inline:#!/bin/sh
+output = ${directory:bin}/caucase-sign
+inline =
+  #!/bin/sh
   cp ${directory:ssl}/caucase.user.key ${directory:ssl}/caucase-full.key
   cat ${directory:ssl}/caucase.user.crt >> ${directory:ssl}/caucase-full.key
   for csr_id in {{ csrid_list | join(' ') }}; do
@@ -422,7 +440,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = caucase-sign-csr
 frequency = * * * * *
-command = ${caucase-sign-csr:rendered}
+command = ${caucase-sign-csr:output}
 {% do part_list.append('cron-caucase-sign-csr') -%}
 
 [slap-configuration]
@@ -520,7 +538,7 @@ update-command = ${:command}
 
 [replication-manager-reload]
 recipe = slapos.recipe.template:jinja2
-template = {{ template_repman_manager_sh }}
+url = {{ template_repman_manager_sh }}
 cluster-list = {{ dumps( list(slapparameter_dict.get('repman-cluster-dict', default_parameter_dict)) ) }}
 context =
   section parameter_dict repman
@@ -531,8 +549,7 @@ context =
   raw jq_bin {{ jq_bin }}
   raw curl_bin {{ curl_bin }}
   raw bash_bin {{ bash_bin }}
-rendered = ${directory:scripts}/repman-reload
-mode = 755
+output = ${directory:scripts}/repman-reload
 
 [replication-manager]
 recipe = slapos.cookbook:wrapper
@@ -542,7 +559,7 @@ command-line =
    --monitoring-sharedir=${repman-parameter:share-dir}
    --http-root=${repman-parameter:http-root}
    --monitoring-datadir=${repman:data-dir}
-   --config=${repman-config.toml:rendered}
+   --config=${repman-config.toml:output}
    --log-file=${repman-parameter:log}
    --memprofile=${directory:tmp}/repmgr.mprof
    monitor
@@ -560,8 +577,8 @@ wait-for-files =
 
 [repman-config.toml]
 recipe = slapos.recipe.template:jinja2
-template = {{ config_toml_in }}
-rendered = ${repman:etc}/config.toml
+url = {{ config_toml_in }}
+output = ${repman:etc}/config.toml
 extra-context =
 context =
   section parameter_dict repman-parameter
@@ -582,8 +599,8 @@ config-port = ${repman-parameter:secure-port}
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ nginx_conf_in }}
-rendered = ${nginx-parameter:config-file}
+url = {{ nginx_conf_in }}
+output = ${nginx-parameter:config-file}
 context =
     section parameter_dict nginx-parameter
 
@@ -592,7 +609,7 @@ recipe = slapos.cookbook:wrapper
 command-line =
   {{ nginx_bin }}
   -p ${directory:nginx-prefix}
-  -c ${nginx-conf:rendered}
+  -c ${nginx-conf:output}
 wrapper-path = ${directory:services}/nginx
 wait-for-files =
   ${directory:ssl}/repman-cert.crt
@@ -601,12 +618,11 @@ wait-for-files =
 
 
 [nginx-graceful-wrapper]
-recipe = slapos.recipe.template:jinja2
-template = inline:#!{{ bash_bin }}
+recipe = slapos.recipe.template
+inline =
+  #!{{ bash_bin }}
   kill -USR1 "$(cat ${nginx-parameter:pid-file})"
-rendered = ${directory:scripts}/nginx-graceful
-context =
-mode = 755
+output = ${directory:scripts}/nginx-graceful
 
 [logrotate-entry-nginx]
 <= logrotate-entry-base
@@ -620,7 +636,7 @@ recipe = slapos.cookbook:publish-early
   monitor-password monitor-htpasswd:passwd
   db-root-password gen-root-password:passwd
   repman-password repman-password:passwd
-database-list = {{ db_list }}
+database-dict = {{ db_name_dict }}
 
 [publish-connection-parameter]
 <= monitor-publish
@@ -629,7 +645,7 @@ recipe = slapos.cookbook:publish
 backend-url = ${nginx-parameter:backend-ssl-url}
 url = ${repman-frontend:connection-secure_access}
 username = ${repman-parameter:username}
-database-list = {{ db_list }}
+database-dict = {{ db_name_dict }}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
@@ -637,7 +653,7 @@ database-list = {{ db_list }}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
 
@@ -674,14 +690,13 @@ config-url = ${nginx-parameter:backend-ssl-url}
 
 [template-proxysql-need-stop-start]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/proxysql_check_stop_start
-template = {{ template_proxy_need_stopstart }}
-mode = 755
+output = ${directory:bin}/proxysql_check_stop_start
+url = {{ template_proxy_need_stopstart }}
 cluster-list = !py![{{ cluster_list | join(', ') }}]
 context =
   key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
   key repman_url          nginx-parameter:backend-url
-  key get_proxy_config    download-proxy-config:rendered
+  key get_proxy_config    download-proxy-config:output
   key cluster_list        :cluster-list
   raw jq_bin              {{ jq_bin }}
   raw bash_bin           {{ bash_bin }}
@@ -692,7 +707,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = proxysql-need-stop-start
 frequency = * * * * *
-command = ${template-proxysql-need-stop-start:rendered}
+command = ${template-proxysql-need-stop-start:output}
 
 #############################
 #

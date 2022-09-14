@@ -8,8 +8,8 @@ offline = true
 
 [dynamic-template-pullrdiffbackup]
 recipe = slapos.recipe.template:jinja2
-template = ${template-pullrdiffbackup:output}
-rendered = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+url = ${template-pullrdiffbackup:output}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
 filename = instance-pullrdiffbackup.cfg
 extensions = jinja2.ext.do
 context =
@@ -20,7 +20,7 @@ context =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = $${:pullrdiffbackup}
-pullrdiffbackup = dynamic-template-pullrdiffbackup:rendered
+pullrdiffbackup = dynamic-template-pullrdiffbackup:output
 
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.

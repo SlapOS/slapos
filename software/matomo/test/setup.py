@@ -46,6 +46,7 @@ setup(
         'slapos.libnetworkcache',
         'erp5.util',
         'requests',
+        'lxml',
     ],
     zip_safe=True,
     test_suite='test',
