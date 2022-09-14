@@ -532,8 +532,10 @@ context =
   key embedded_request_exitcode_file :embedded-request-exitcode-file
   key embedded_instance_config embedded-instance-config:output
   key home_path directory:home
+  key forward_frontend_requests :forward-frontend-requests
   section slap_connection slap-connection
   section slapos_standalone_config slapos-standalone-config
+forward-frontend-requests = enabled
 url = ${slapos-standalone-script:output}
 
 [slapos-standalone]
