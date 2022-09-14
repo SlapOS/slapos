@@ -280,9 +280,19 @@ command =
   [ ! -f ${:file} ] && {{ software_parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
 update-command = ${:command}
 
-[auth-random]
+[cleanup-auth-ready]
+# Cleans auth-ready as some slaves can appear and be configured, but then
+# become removed before auth-random kicks in
 recipe = slapos.recipe.build
 directory = ${directory:auth-ready}
+init =
+  import os
+  if os.path.isdir(options['directory']):
+    os.system("find %s -type f -name *-auth-random -size 0 -delete" % (options['directory'],))
+
+[auth-random]
+recipe = slapos.recipe.build
+directory = ${cleanup-auth-ready:directory}
 auth-ready = ${directory:auth-ready}/${:_buildout_section_name_}
 init =
   import os
