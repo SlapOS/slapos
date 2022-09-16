@@ -59,7 +59,6 @@ httpd_port = {{ parameter_dict.get("httpd-port") }}
 netcat_bin = '{{ parameter_dict.get("netcat-binary") }}'.strip()
 cluster_doc_host = '{{ parameter_dict.get("cluster-doc-host") }}'
 cluster_doc_port = {{ parameter_dict.get("cluster-doc-port") }}
-url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate", "true") }}'.lower()
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
 

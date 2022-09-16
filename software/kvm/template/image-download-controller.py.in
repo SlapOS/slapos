@@ -95,7 +95,6 @@ if __name__ == "__main__":
     try:
       subprocess.check_output([
         curl,
-        '--insecure',  # allow any download
         '--location',  # follow redirects
         '--no-progress-meter',  # do not tell too much
         '--max-time', '14400',  # maximum time for download is 4 hours
