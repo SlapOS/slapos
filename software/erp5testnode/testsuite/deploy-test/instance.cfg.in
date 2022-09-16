@@ -50,3 +50,10 @@ context =
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
     raw waittime ${deploy-script-controller-script:waittime}
     raw tries ${deploy-script-controller-script:tries}
+    section test_image_repository test-image-repository
+
+[test-image-repository]
+${download-image-debian-9:md5sum} = ${download-image-debian-9:target}
+${download-image-debian-10:md5sum} = ${download-image-debian-10:target}
+${download-image-debian-11:md5sum} = ${download-image-debian-11:target}
+
