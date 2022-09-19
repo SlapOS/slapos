@@ -30,10 +30,13 @@ import errno
 import os
 import re
 import shutil
+import sqlite3
 import subprocess
 import time
 
 import requests
+
+from slapos.proxy.db_version import DB_VERSION
 
 from slapos.testing.testcase import SlapOSNodeCommandError, installSoftwareUrlList
 
@@ -413,6 +416,9 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     # Check that ~/srv/runner-import-restore was called
     self.checkLog(os.path.join(dummy_root, 'runner-import-restore.log'))
 
+    # Check frontend forwarding
+    self._checkFrontendForwarding()
+
   def _doTakeover(self):
     # Start the dummy instance as a sort of fake takeover
     self.callSlapos('node', 'instance', instance_type='import')
@@ -505,7 +511,10 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     # Remember content of ~/etc in the import theia
     self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
 
-  def _doSync(self):
+  def _doSync(self, max_tries=None, wait_interval=None):
+    max_tries = max_tries or self.backup_max_tries
+    wait_interval = wait_interval or self.backup_wait_interval
+
     start = time.time()
 
     # Call exporter script instead of waiting for cron job
@@ -517,7 +526,7 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     takeover_url, _ = self._getTakeoverUrlAndPassword()
 
     # Wait for takoever to be ready
-    self._waitTakeoverReady(takeover_url, start, self.backup_max_tries, self.backup_wait_interval)
+    self._waitTakeoverReady(takeover_url, start, max_tries, wait_interval)
 
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
@@ -554,3 +563,24 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
     self._processEmbeddedInstance(self.test_instance_max_retries)
+
+  def test_frontend_forwarding(self):
+    # Deploy a nested theia (hopefully fast thanks to shared parts)
+    self._deployEmbeddedSoftware(theia_software_release_url, 'nested_theia', 1)
+
+    # Update the clone
+    self._doSync(max_tries=100, wait_interval=20)
+
+    proxy_relpath = os.path.join('srv', 'runner', 'var', 'proxy.db')
+    query = "SELECT rowid, partition_reference FROM forwarded_partition_request%s" % DB_VERSION
+
+    # Check that theia0 forwards frontend requests
+    with sqlite3.connect(self.getPartitionPath('export', proxy_relpath)) as db:
+      rows = db.execute(query).fetchall()
+      self.assertIn("slappart0_Theia Frontend", (row[1] for row in rows))
+
+    # Check that theia1 does not forward frontend requests
+    # i.e that there were no new insertions in the database since it was cloned
+    # by ensuring the rowids are still the same
+    with sqlite3.connect(self.getPartitionPath('import', proxy_relpath)) as db:
+      self.assertEqual(db.execute(query).fetchall(), rows)
