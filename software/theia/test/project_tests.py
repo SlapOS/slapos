@@ -125,6 +125,10 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     # do nothing
     pass
 
+  def test_frontend_forwarding(self):
+    # do nothing
+    pass
+
   def _prepareExport(self):
     super(TestTheiaResilienceERP5, self)._prepareExport()
 
