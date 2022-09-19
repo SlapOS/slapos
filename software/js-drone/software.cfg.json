@@ -1,14 +1,21 @@
 {
   "name": "JS Drone",
   "description": "JS Drone",
-  "serialisation": "xml",
+  "serialisation": "json-in-xml",
   "software-type": {
     "default": {
       "title": "Default",
       "software-type": "default",
-      "description": "Default",
+      "description": "Drone Swarm",
       "request": "instance-input-schema.json",
       "index": 0
+    },
+    "drone": {
+      "title": "Drone",
+      "software-type": "drone",
+      "description": "Drone Instance",
+      "request": "instance-drone-input-schema.json",
+      "index": 1
     }
   }
 }

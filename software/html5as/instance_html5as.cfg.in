@@ -129,7 +129,7 @@ context =
 
 # Command to put content in the docroot
 [downloader]
-recipe = slapos.recipe.build
+recipe = slapos.recipe.build:download-unpacked
 # Path where the recipe stores any produced file,
 # it will be automatically removed at the beginning of "install".
 location = ${directory:srv}/html5as
