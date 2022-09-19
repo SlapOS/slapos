@@ -5,17 +5,20 @@ import {
   stop,
   stopPubsub,
   takeOffAndWait
-} from "{{ qjs_wrapper }}";
+} from {{ json_module.dumps(qjs_wrapper) }};
 import { setTimeout, Worker } from "os";
-import { exit } from "std";
+import { open, exit } from "std";
 
 (function (console, setTimeout, Worker) {
   "use strict";
-  const IP = "{{ autopilot_ip }}",
-    URL = "udp://" + IP + ":7909",
-    LOG_FILE = "{{ log_dir }}/mavsdk-log",
-    IS_A_DRONE = {{ 'true' if is_a_drone else 'false' }},
-    SIMULATION = {{ 'true' if is_a_simulation else 'false' }};
+  const CONF_PATH = {{ json_module.dumps(configuration) }};
+
+  var conf_file = open(CONF_PATH, "r");
+  const configuration = JSON.parse(conf_file.readAsString());
+  conf_file.close();
+
+  const  URL = "udp://" + configuration.autopilotIp + ":7909",
+    LOG_FILE = "{{ log_dir }}/mavsdk-log";
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -51,7 +54,7 @@ import { exit } from "std";
     exit(exit_code);
   }
 
-  if (IS_A_DRONE) {
+  if (configuration.isADrone) {
     console.log("Connecting to aupilot\n");
     connect();
   }
@@ -71,7 +74,7 @@ import { exit } from "std";
   }
 
   function load() {
-    if (IS_A_DRONE && SIMULATION) {
+    if (configuration.isADrone && configuration.isASimulation) {
       takeOff();
     }
 
@@ -119,9 +122,9 @@ import { exit } from "std";
     if (type === 'initialized') {
       pubsubWorker.postMessage({
         action: "run",
-        id: {{ id }},
+        id: configuration.id,
         interval: FPS,
-        publish: IS_A_DRONE
+        publish: configuration.isADrone
       });
       load();
     } else if (type === 'loaded') {
@@ -133,10 +136,10 @@ import { exit } from "std";
       can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
-      quit(IS_A_DRONE, e.data.exit);
+      quit(configuration.isADrone, e.data.exit);
     } else {
       console.log('Unsupported message type', type);
-      quit(IS_A_DRONE, 1);
+      quit(configuration.isADrone, 1);
     }
   };
 }(console, setTimeout, Worker));
