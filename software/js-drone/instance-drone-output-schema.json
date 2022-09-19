@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by drone instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "instance-path": {
+      "description": "Path where can be found quickjs binary and the flight script",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
