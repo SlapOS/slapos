@@ -25,8 +25,8 @@ import { Worker } from "os";
   // Every script is evaluated per drone
   "use strict";
   const drone_dict = {},
-    drone_id_list = {{ drone_id_list }},
-    IS_PUBLISHER = {{ 'true' if is_publisher else 'false' }};
+    drone_id_list = {{ json_module.dumps(slapparameter_dict['drone-id-list']) }},
+    IS_PUBLISHER = {{ 'true' if json_module.dumps(slapparameter_dict['is-publisher']) else 'false' }};
 
   let parent = Worker.parent,
     user_me = {
@@ -50,7 +50,7 @@ import { Worker } from "os";
       },
       getInitialAltitude: getInitialAltitude,
       getYaw: getYaw,
-      id: {{ id }},
+      id: {{ json_module.dumps(slapparameter_dict['id']) }},
       landed: landed,
       loiter: loiter,
       sendMsg: function(msg, id = -1) {
