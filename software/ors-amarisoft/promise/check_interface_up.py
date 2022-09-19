@@ -27,8 +27,8 @@ class RunPromise(GenericPromise):
 
       In this case, check whether the file exists.
     """
-    ifname = "{{ slapparameter_dict.get('tun-name', '') }}"
-    testing = {{ slapparameter_dict.get('testing', False) }}
+    ifname = self.getConfig('ifname')
+    testing = self.getConfig('testing')
 
     if testing:
         self.logger.info("skipping promise")
