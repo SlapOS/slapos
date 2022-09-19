@@ -5,10 +5,19 @@
   "software-type": {
     "default": {
       "title": "Default",
+      "serialisation": "json-in-xml",
       "software-type": "default",
-      "description": "Default",
+      "description": "Drone Swarm",
       "request": "instance-input-schema.json",
       "index": 0
+    },
+    "drone": {
+      "title": "Drone",
+      "serialisation": "json-in-xml",
+      "software-type": "drone",
+      "description": "Drone Instance",
+      "request": "instance-drone-input-schema.json",
+      "index": 1
     }
   }
 }
