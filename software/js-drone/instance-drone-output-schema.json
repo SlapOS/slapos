@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by drone instantiation",
+  "additionalProperties": false,
+  "properties": {},
+  "type": "object"
+}
