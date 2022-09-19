@@ -6088,7 +6088,7 @@ backend _health-check-custom-http
   retries 3
   server _health-check-custom-backend-http %s   check inter 15s"""
       """ rise 3 fall 7
-  option httpchk POST /POST-path%%20to%%20be%%20encoded HTTP/1.0
+  option httpchk POST /POST-path%%%%20to%%%%20be%%%%20encoded HTTP/1.0
   timeout check 7s""" % (backend,),
       'health-check-default': """\
 backend _health-check-default-http
