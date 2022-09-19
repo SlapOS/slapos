@@ -11,11 +11,11 @@ import { exit } from "std";
 
 (function (console, setTimeout, Worker) {
   "use strict";
-  const IP = "{{ autopilot_ip }}",
+  const IP = "{{ json_module.dumps(slapparameter_dict['autopilot-ip']) }}",
     URL = "udp://" + IP + ":7909",
     LOG_FILE = "{{ log_dir }}/mavsdk-log",
-    IS_PUBLISHER = {{ 'true' if is_publisher else 'false' }},
-    SIMULATION = {{ 'true' if is_a_simulation else 'false' }};
+    IS_PUBLISHER = {{ 'true' if json_module.dumps(slapparameter_dict['is-publisher']) else 'false' }},
+    SIMULATION = {{ 'true' if json_module.dumps(slapparameter_dict['is-a-simulation']) else 'false' }};
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -120,7 +120,7 @@ import { exit } from "std";
     if (type === 'initialized') {
       pubsubWorker.postMessage({
         action: "run",
-        id: {{ id }},
+        id: {{ json_module.dumps(slapparameter_dict['id']) }},
         interval: FPS,
         publish: IS_PUBLISHER
       });
