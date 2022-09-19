@@ -17,16 +17,19 @@ import {
   setManualControlInput,
   setMessage,
   setTargetCoordinates
-} from "{{ qjs_wrapper }}";
+} from {{ json_module.dumps(qjs_wrapper) }};
 import * as std from "std";
 import { Worker } from "os";
 
 (function (console, Worker) {
   // Every script is evaluated per drone
   "use strict";
-  const drone_dict = {},
-    drone_id_list = {{ drone_id_list }},
-    IS_PUBLISHER = {{ 'true' if is_publisher else 'false' }};
+  const CONF_PATH = {{ json_module.dumps(configuration) }},
+    drone_dict = {};
+
+  var conf_file = std.open(CONF_PATH, "r");
+  const configuration = JSON.parse(conf_file.readAsString());
+  conf_file.close();
 
   let parent = Worker.parent,
     user_me = {
@@ -50,7 +53,7 @@ import { Worker } from "os";
       },
       getInitialAltitude: getInitialAltitude,
       getYaw: getYaw,
-      id: {{ id }},
+      id: configuration.id,
       landed: landed,
       loiter: loiter,
       sendMsg: function(msg, id = -1) {
@@ -91,9 +94,9 @@ import { Worker } from "os";
       drone_id;
 
     if (type === "initPubsub") {
-      initPubsub(drone_id_list.length);
-      for (let i = 0; i < drone_id_list.length; i++) {
-        drone_id = drone_id_list[i];
+      initPubsub(configuration.droneIdList.length);
+      for (let i = 0; i < configuration.droneIdList.length; i++) {
+        drone_id = configuration.droneIdList[i];
         user_me.drone_dict[drone_id] = new Drone(drone_id);
         user_me.drone_dict[drone_id].init(i);
       }
@@ -117,7 +120,7 @@ import { Worker } from "os";
       }
       // Call the drone onStart function
       if (user_me.hasOwnProperty("onUpdate")) {
-        if (IS_PUBLISHER && isInManualMode()) {
+        if (configuration.isPublisher && isInManualMode()) {
           setManualControlInput();
         }
         user_me.onUpdate(evt.data.timestamp);
