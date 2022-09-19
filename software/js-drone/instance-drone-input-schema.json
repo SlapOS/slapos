@@ -7,44 +7,42 @@
     "autopilotIp": {
       "title": "IP address of the drone's autopilot",
       "description": "IP used to create a connection with the autopilot.",
-      "type": "string",
-      "default": "192.168.27.1"
+      "type": "string"
     },
-    "droneGuidList": {
-      "title": "List of drones computer ID",
-      "description": "List of computer ID of drones in the swarm",
-      "type": "array",
-      "default": []
+    "numberOfPeers": {
+      "title": "Number of Peers",
+      "description": "Number of drones and subscribers in the swarm",
+      "type": "integer"
+    },
+    "id": {
+      "title": "drone ID",
+      "description": "Drone unique identifier",
+      "type": "integer"
+    },
+    "isADrone": {
+      "title": "Set the requested instance as a drone",
+      "description": "The option used to determine if the instance is a drone. This affects the context of the user script (e.g. if it should be linked to an autopilot or publish its GPS coordinates)",
+      "type": "boolean"
     },
     "isASimulation": {
       "title": "Set the flight as a simulation",
       "description": "The option used to determine if the flight is real or if it is a simulation. This affects the context of the flight (e.g. if the take off is manual or automatic).",
-      "type": "boolean",
-      "default": false
+      "type": "boolean"
     },
-    "multicastIpv6": {
+    "multicastIp": {
       "title": "IP of the multicast group",
       "description": "IP address used to communicate with the other drones.",
-      "type": "string",
-      "default": "ff15::1111"
+      "type": "string"
     },
     "netIf": {
       "title": "Network interface",
       "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
+      "type": "string"
     },
     "flightScript": {
       "title": "Script's URL of the flight",
-      "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that the drone can fetch the script.",
-      "type": "string",
-      "default": "https://lab.nexedi.com/nexedi/flight-scripts/raw/master/default.js"
-    },
-    "subscriberGuidList": {
-      "title": "List of subscribers computer ID",
-      "description": "List of computer ID of swarms subscribers",
-      "type": "array",
-      "default": []
+      "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that all drones can fetch the script.",
+      "type": "string"
     }
   }
 }
