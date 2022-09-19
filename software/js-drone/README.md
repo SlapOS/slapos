@@ -2,25 +2,25 @@
 
 ## Presentation ##
 
-* Deploy `user.js` script on a drone to fly it
+* Deploy `user.js` flight script on a drone swarm
 
-* Compile all required libraries to run flight scripts
+* Compile all required libraries to run the flight script
 
 ## Parameters ##
 
 * autopilot-ip: IPv4 address to identify the autpilot from the companion board
 
-* id: User chosen ID for the drone (must be unique in a swarm, will be used as an identifier in multicast communications)
+* drone-guid-list: List of computer id on which flight script must be deployed
 
 * is-a-simulation: Must be set to 'true' to automatically take off during simulation
 
-* multicast-ipv6: IPv6 of the multicast group of the swarm
+* multicast-ip: IPv6 of the multicast group of the swarm
 
 * net-if: Network interface used for multicast traffic
 
-* drone-id-list: List of the drone IDs of the swarm (recommanded to add the current drone ID)
-
 * flight-script: User script to execute to fly drone swarm
+
+* subscriber-guid-list: List of computer id on which subscription script must be deployed
 
 ## How it works ##
 

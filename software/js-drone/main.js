@@ -7,15 +7,13 @@ import {
   takeOffAndWait
 } from "{{ qjs_wrapper }}";
 import { setTimeout, Worker } from "os";
-import { exit } from "std";
+import { readAsString, exit } from "std";
 
 (function (console, setTimeout, Worker) {
   "use strict";
-  const IP = "{{ autopilot_ip }}",
-    URL = "udp://" + IP + ":7909",
-    LOG_FILE = "{{ log_dir }}/mavsdk-log",
-    IS_PUBLISHER = {{ 'true' if is_publisher else 'false' }},
-    SIMULATION = {{ 'true' if is_a_simulation else 'false' }};
+  const configuration = JSON.parse(std.readAsString({{ configuration }}),
+    URL = "udp://" + configuration.autopilot-ip + ":7909",
+    LOG_FILE = "{{ log_dir }}/mavsdk-log";
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -52,7 +50,7 @@ import { exit } from "std";
     exit(exit_code);
   }
 
-  if (IS_PUBLISHER) {
+  if (configuration.is-publisher) {
     console.log("Connecting to aupilot\n");
     connect();
   }
@@ -72,7 +70,7 @@ import { exit } from "std";
   }
 
   function load() {
-    if (IS_PUBLISHER && SIMULATION) {
+    if (configuration.is-publisher && configuration.is-a-simulation) {
       takeOff();
     }
 
@@ -120,9 +118,9 @@ import { exit } from "std";
     if (type === 'initialized') {
       pubsubWorker.postMessage({
         action: "run",
-        id: {{ id }},
+        id: configuration.id,
         interval: FPS,
-        publish: IS_PUBLISHER
+        publish: configuration.is-publisher
       });
       pubsubRunning = true;
       load();
@@ -135,7 +133,7 @@ import { exit } from "std";
       can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
-      if (IS_PUBLISHER) {
+      if (configuration.is-publisher) {
         quit(e.data.exit);
       } else {
         stopPubsub();
