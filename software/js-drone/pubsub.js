@@ -2,14 +2,14 @@ import {runPubsub} from "{{ qjs_wrapper }}";
 import {Worker} from "os";
 
 const PORT = "4840";
-const IPV6 = "{{ ipv6 }}";
+const IPV6 = {{ json_module.dumps(slapparameter_dict['multicast-ip']) }};
 
 let parent = Worker.parent;
 
 function handle_msg(e) {
   switch(e.data.action) {
     case "run":
-      runPubsub(IPV6, PORT, "{{ net_if }}", e.data.id, e.data.interval, e.data.publish);
+      runPubsub(IPV6, PORT, {{ json_module.dumps(slapparameter_dict['net-if']) }}, e.data.id, e.data.interval, e.data.publish);
       parent.postMessage({running: false});
       parent.onmessage = null;
       break;
