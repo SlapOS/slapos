@@ -689,7 +689,7 @@ output = ${directory:etc-run}/frontend-caddy-safe-graceful
 
 extra-context =
     key graceful_reload_command caddy-configuration:frontend-graceful-command
-    key caddy_configuration_state frontend-caddy-configuration-state-graceful:output
+    key configuration_state frontend-caddy-configuration-state-graceful:output
 
 [frontend-caddy-validate]
 < = jinja2-template-base
@@ -852,7 +852,7 @@ output = ${directory:etc-run}/backend-haproxy-safe-graceful
 
 extra-context =
     key graceful_reload_command backend-haproxy-configuration:graceful-command
-    key caddy_configuration_state backend-haproxy-configuration-state-graceful:output
+    key configuration_state backend-haproxy-configuration-state-graceful:output
 
 [backend-haproxy-validate]
 <= jinja2-template-base
@@ -1021,7 +1021,7 @@ output = ${directory:etc-run}/slave-introspection-safe-graceful
 
 extra-context =
     key graceful_reload_command caddy-configuration:slave-introspection-graceful-command
-    key caddy_configuration_state slave-introspection-configuration-state-graceful:output
+    key configuration_state slave-introspection-configuration-state-graceful:output
 
 [slave-introspection-validate]
 <= jinja2-template-base
