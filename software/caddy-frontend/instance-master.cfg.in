@@ -1,5 +1,9 @@
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
+{#- DANGER! DANGER! #}
+{#- Avoid touching the NAME_BASE, as it will result with backward incompatible cluster setup #}
+{%- set NAME_BASE = 'caddy-frontend' %}
+{#- DANGER! DANGER! #}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {#- Allow to pass only some parameters to frontend nodes #}
@@ -107,7 +111,6 @@ context =
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
-{% set namebase = 'caddy-frontend' %}
 # XXX Dirty hack, not possible to define default value before
 {% set sla_computer_caddy_1_key = '-sla-1-computer_guid' %}
 {% if not sla_computer_caddy_1_key in slapparameter_dict %}
@@ -121,7 +124,7 @@ context =
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
 {% for i in range(1, frontend_quantity + 1) %}
-{%   set frontend_name = "%s-%s" % (namebase, i) %}
+{%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
 {%   set request_section_title = 'request-%s' % frontend_name %}
 {%   set sla_key = "-sla-%s-" % i %}
 {%   set sla_key_length = sla_key | length %}
