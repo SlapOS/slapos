@@ -103,7 +103,6 @@ bootstrap_machine_param_dict = {
     "e1f67a7ef7b96",
     "virtual-hard-drive-md5sum": "9ffd690a5fcb4fa56702f2b99183e493",
     "virtual-hard-drive-gzipped": True,
-    "hard-drive-url-check-certificate": False,
     "use-tap": True,
     "use-nat": True,
     "nat-restrict-mode": True,

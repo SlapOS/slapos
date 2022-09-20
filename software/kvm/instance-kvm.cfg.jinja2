@@ -457,7 +457,6 @@ enable-vhost = ${slap-parameter:enable-vhost}
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
-hard-drive-url-check-certificate = ${slap-parameter:hard-drive-url-check-certificate}
 
 shell-path = {{ dash_executable_location }}
 qemu-path =  {{ qemu_executable_location }}
@@ -1091,8 +1090,6 @@ enable-vhost = False
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
 virtual-hard-drive-gzipped = False
-# if virtual-hard-drive-url use https, then specify if https certificate should be checked or not
-hard-drive-url-check-certificate = True
 
 external-disk-number = 0
 external-disk-size = 20
