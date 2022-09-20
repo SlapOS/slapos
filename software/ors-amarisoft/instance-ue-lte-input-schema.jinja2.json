@@ -38,12 +38,6 @@
       "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
       "type": "string",
       "default": {{ default_lte_k }}
-    },
-    "use_ipv4": {
-      "default": false,
-      "title": "Use IPv4",
-      "description": "Set to true to use IPv4 for AMF / MME addresses",
-      "type": "boolean"
     }
   }
 }
