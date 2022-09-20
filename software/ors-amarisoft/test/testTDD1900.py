@@ -140,6 +140,20 @@ epc_param_dict = {
     'epc_plmn': '00102',
 }
 
+ue_param_dict = {
+    'testing': True,
+    'tx_gain': 17,
+    'rx_gain': 17,
+    'dl_earfcn': 325320,
+    'n_rb_dl': 50,
+    'dl_nr_arfcn': 325320,
+    'nr_band': 99,
+    'nr_bandwidth': 50,
+    'ssb-nr-arfcn': 377790,
+    'imsi': "001010123456789",
+    'k': "00112233445566778899aabbccddeeff",
+}
+
 def test_enb_conf(self):
 
     conf_file = glob.glob(os.path.join(
@@ -309,3 +323,33 @@ class TestGNBEPCSimCard(ORSTestCase):
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_ue_db(self)
+
+class TestUELTESimCard(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(epc_param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-lte"
+    def test_ue_lte_conf(self):
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'ue-lte.cfg'))[0]
+
+        with open(conf_file, 'r') as f:
+          conf = yaml.load(f)
+        self.assertEqual(conf['dl_earfcn'], ue_param_dict['dl_earfcn'])
+
+class TestUENRSimCard(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(epc_param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-nr"
+    def test_ue_lte_conf(self):
+      conf_file = glob.glob(os.path.join(
+        self.slap.instance_directory, '*', 'etc', 'ue-nr.cfg'))[0]
+
+      with open(conf_file, 'r') as f:
+        conf = yaml.load(f)
+      self.assertEqual(conf['ssb-nr-arfcn'], ue_param_dict['ssb-nr-arfcn'])

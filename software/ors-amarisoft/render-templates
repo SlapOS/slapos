@@ -130,6 +130,10 @@ with open('instance-enb-input-schema.jinja2.json', 'r') as f:
     instance_enb_json_template = Template(f.read())
 with open('instance-gnb-input-schema.jinja2.json', 'r') as f:
     instance_gnb_json_template = Template(f.read())
+with open('instance-ue-lte-input-schema.jinja2.json', 'r') as f:
+    instance_ue_lte_json_template = Template(f.read())
+with open('instance-ue-nr-input-schema.jinja2.json', 'r') as f:
+    instance_ue_nr_json_template = Template(f.read())
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
 with open('test/test.jinja2.py', 'r') as f:
@@ -152,5 +156,10 @@ for rf_mode_context in rf_mode_context_list:
                   'w+') as f:
             if software_type in ['enb', 'enb-epc']:
                 f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
-            else:
+            elif software_type in ['gnb', 'gnb-epc']: 
                 f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
+            elif software_type in ['ue-lte']:
+                f.write(instance_ue_lte_json_template.render(**rf_mode_context, **global_context) + '\n')
+            else: 
+                f.write(instance_ue_nr_json_template.render(**rf_mode_context, **global_context) + '\n')
+  
