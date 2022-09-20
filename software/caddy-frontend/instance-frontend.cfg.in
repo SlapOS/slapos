@@ -704,7 +704,7 @@ extra-context =
 
 [frontend-caddy-lazy-graceful]
 < = jinja2-template-base
-url = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
+url = {{ software_parameter_dict['template_lazy_script_call'] }}
 output = ${directory:bin}/frontend-caddy-lazy-graceful
 pid-file = ${directory:run}/lazy-graceful.pid
 wait_time = 60
@@ -802,7 +802,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [backend-haproxy-rsyslogd-lazy-graceful]
 < = jinja2-template-base
-url = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
+url = {{ software_parameter_dict['template_lazy_script_call'] }}
 output = ${directory:bin}/backend-haproxy-rsyslogd-lazy-graceful
 pid-file = ${directory:run}/backend-haproxy-rsyslogd-lazy-graceful.pid
 wait_time = 60
