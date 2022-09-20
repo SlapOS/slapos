@@ -887,7 +887,7 @@ log-file = ${directory:log}/backend-haproxy.log
 pid-file = ${directory:run}/backend-haproxy-rsyslogd.pid
 spool-directory = ${directory:backend-haproxy-rsyslogd-spool}
 graceful-command = kill -HUP $(cat ${:pid-file})
-caddy-log-directory = ${caddy-directory:slave-log}
+log-directory = ${caddy-directory:slave-log}
 
 [backend-haproxy-rsyslogd-configuration]
 <= jinja2-template-base
