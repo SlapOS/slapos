@@ -37,7 +37,7 @@
       "title": "SSB NR ARFCN",
       "description": "SSB NR ARFCN",
       "type": "number",
-      "default": 
+      "default": 377790
     },
     "imsi": {
       "title": "IMSI",
