@@ -112,9 +112,9 @@ context =
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
 # XXX Dirty hack, not possible to define default value before
-{% set sla_computer_caddy_1_key = '-sla-1-computer_guid' %}
-{% if not sla_computer_caddy_1_key in slapparameter_dict %}
-{%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') %}
+{% set sla_computer_1_key = '-sla-1-computer_guid' %}
+{% if not sla_computer_1_key in slapparameter_dict %}
+{%   do slapparameter_dict.__setitem__(sla_computer_1_key, '${slap-connection:computer-id}') %}
 {% endif %}
 {% set sla_computer_kedifa_key = '-sla-kedifa-computer_guid' %}
 {% if not sla_computer_kedifa_key in slapparameter_dict %}
