@@ -2759,11 +2759,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-  @skip('Feature postponed')
-  def test_check_error_log(self):
-    # Caddy: Need to implement similar thing like check-error-on-apache-log
-    raise NotImplementedError(self.id())
-
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
