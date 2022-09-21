@@ -4900,79 +4900,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     )
 
 
-class TestSlaveGlobalDisableHttp2(TestSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestSlaveGlobalDisableHttp2, cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = self.assertResponseHeaders(result)
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-      },
-      headers
-    )
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
-class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
-  TestEnableHttp2ByDefaultFalseSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2,
-      cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
-class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
-  TestEnableHttp2ByDefaultDefaultSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2,
-      cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
 class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -6624,7 +6551,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'apache-key': self.key_pem,
       'domain': 'example.com',
       'enable-http2-by-default': True,
-      'global-disable-http2': True,
       'mpm-graceful-shutdown-timeout': 2,
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
@@ -6718,7 +6644,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'enable-http2-by-default': 'True',
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
-        'global-disable-http2': 'True',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6745,7 +6670,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'enable-http2-by-default': 'True',
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
-        'global-disable-http2': 'True',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6772,7 +6696,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'enable-http2-by-default': 'True',
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
-        'global-disable-http2': 'True',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -6818,7 +6741,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
         'full_address_list': [],
-        'global-disable-http2': 'True',
         'instance_title': 'testing partition 0',
         'kedifa_port': '15080',
         'mpm-graceful-shutdown-timeout': '2',
