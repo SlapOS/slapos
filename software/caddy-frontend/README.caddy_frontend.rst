@@ -457,9 +457,9 @@ Instantiating caddy-frontend results with a cluster in various partitions:
 
  * master (the controlling one)
  * kedifa (contains kedifa server)
- * caddy-frontend-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
+ * frontend-node-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
 
-It means sites are served in ``caddy-frontend-N`` partition, and this partition is structured as:
+It means sites are served in ``frontend-node-N`` partition, and this partition is structured as:
 
  * Caddy serving the browser [client-facing-caddy]
  * (optional) Apache Traffic Server for caching [ats]
@@ -481,11 +481,11 @@ Kedifa implementation
 
 `Kedifa <https://lab.nexedi.com/nexedi/kedifa>`_ server runs on kedifa partition.
 
-Each `caddy-frontend-N` partition downloads certificates from the kedifa server.
+Each `frontend-node-N` partition downloads certificates from the kedifa server.
 
 Caucase (exposed by ``kedifa-caucase-url`` in master partition parameters) is used to handle certificates for authentication to kedifa server.
 
-If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each caddy-frontend-N node.
+If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each frontend-node-N node.
 
 Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------
