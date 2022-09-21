@@ -2,11 +2,11 @@
 extends = {{ software_parameter_dict['profile_common'] }}
 
 parts =
-  caddyprofiledeps
+  software
   switch-softwaretype
 
-[caddyprofiledeps]
-recipe = caddyprofiledeps
+[software]
+recipe = software
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -48,7 +48,7 @@ extra-context =
 
 [dynamic-profile-master]
 < = jinja2-template-base
-depends = ${caddyprofiledeps:recipe}
+depends = ${software:recipe}
 url = {{ software_parameter_dict['profile_master'] }}
 filename = instance-master.cfg
 extra-context =
@@ -56,7 +56,7 @@ extra-context =
     import functools_module functools
     import operator_module operator
     import validators validators
-    import caddyprofiledummy caddyprofiledummy
+    import software software
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
