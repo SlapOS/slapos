@@ -149,7 +149,7 @@ ue_param_dict = {
     'dl_nr_arfcn': 325320,
     'nr_band': 99,
     'nr_bandwidth': 50,
-    'ssb-nr-arfcn': 377790,
+    'ssb_nr_arfcn': 377790,
     'imsi': "001010123456789",
     'k': "00112233445566778899aabbccddeeff",
 }
@@ -327,7 +327,7 @@ class TestGNBEPCSimCard(ORSTestCase):
 class TestUELTEParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps(epc_param_dict)}
+        return {'_': json.dumps(ue_param_dict)}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "ue-lte"
@@ -337,31 +337,31 @@ class TestUELTEParameters(ORSTestCase):
 
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
-        self.assertEqual(conf['dl_earfcn'], ue_param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], ue_param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['n_rb_dl'])
+        self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
         self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], ue_param_dict['rx_gain'])
-        self.assertEqual(conf['lte_n_rb_dl'],ue_param_dict['lte_n_rb_dl'])
-        self.assertEqual(conf['lte_imsi'], ue_param_dict['lte_imsi'])
-        self.assertEqual(conf['lte_k'], ue_param_dict['lte_k'])
 
 class TestUENRParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps(epc_param_dict)}
+        return {'_': json.dumps(ue_param_dict)}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "ue-nr"
-    def test_ue_lte_conf(self):
-      conf_file = glob.glob(os.path.join(
-        self.slap.instance_directory, '*', 'etc', 'ue-nr.cfg'))[0]
+    def test_ue_nr_conf(self):
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'ue-nr.cfg'))[0]
 
-      with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
-      self.assertEqual(conf['ssb-nr-arfcn'], ue_param_dict['ssb-nr-arfcn'])
-      self.assertEqual(conf['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
-      self.assertEqual(conf['nr_bandwidth'], ue_param_dict['nr_bandwidth'])
-      self.assertEqual(conf['nr_band'], ue_param_dict['nr_band'])
-      self.assertEqual(conf['nr_tx_gain'], ue_param_dict['nr_tx_gain'])
-      self.assertEqual(conf['nr_rx_gain'],ue_param_dict['nr_rx_gain'])
-      self.assertEqual(conf['nr_imsi'], ue_param_dict['nr_imsi'])
-      self.assertEqual(conf['nr_k'], ue_param_dict['nr_k'])
+        with open(conf_file, 'r') as f:
+          conf = yaml.load(f)
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], ue_param_dict['ssb_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['nr_bandwidth'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], ue_param_dict['nr_band'])
+        self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
+        self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'],ue_param_dict['rx_gain'])

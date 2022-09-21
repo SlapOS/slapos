@@ -37,19 +37,19 @@
       "title": "SSB NR ARFCN",
       "description": "SSB NR ARFCN",
       "type": "number",
-      "default": 
+      "default": 646656
     },
     "imsi": {
       "title": "IMSI",
       "description": "IMSI",
       "type": "string",
-      "default": 001010123456789
+      "default": "001010123456789"
     },
     "k": {
       "title": "K",
       "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
       "type": "string",
-      "default": 00112233445566778899aabbccddeeff
+      "default": "00112233445566778899aabbccddeeff"
     }
   }
 }

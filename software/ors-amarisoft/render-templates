@@ -65,7 +65,7 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "10000000",
-            'default-ssb-nr-arfcn': 517930,
+            'default_ssb_nr_arfcn': 517930,
             'default_nr_imsi': NR_IMSI,
             'default_nr_k': NR_K,
 
@@ -90,7 +90,7 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "10000000",
-            'default-ssb-nr-arfcn': 632544,
+            'default_ssb_nr_arfcn': 632544,
             'default_nr_imsi': NR_IMSI,
             'default_nr_k': NR_K,
 
@@ -115,7 +115,7 @@ rf_mode_context_list = [
             'default_nr_tx_gain': NR_TX_GAIN,
             'default_nr_rx_gain': NR_RX_GAIN,
             'default_nr_ssb_pos_bitmap': "10000000",
-            'default-ssb-nr-arfcn': 646656,
+            'default_ssb_nr_arfcn': 646656,
             'default_nr_imsi': NR_IMSI,
             'default_nr_k': NR_K,
 
