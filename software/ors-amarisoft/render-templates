@@ -124,15 +124,15 @@ rf_mode_context_list = [
         }
 ]
 
-with open('software.cfg.jinja2.json', 'r') as f:
+with open('software.cfg.json.jinja2', 'r') as f:
     software_json_template = Template(f.read())
-with open('instance-enb-input-schema.jinja2.json', 'r') as f:
+with open('instance-enb-input-schema.json.jinja2', 'r') as f:
     instance_enb_json_template = Template(f.read())
-with open('instance-gnb-input-schema.jinja2.json', 'r') as f:
+with open('instance-gnb-input-schema.json.jinja2', 'r') as f:
     instance_gnb_json_template = Template(f.read())
-with open('instance-ue-lte-input-schema.jinja2.json', 'r') as f:
+with open('instance-ue-lte-input-schema.json.jinja2', 'r') as f:
     instance_ue_lte_json_template = Template(f.read())
-with open('instance-ue-nr-input-schema.jinja2.json', 'r') as f:
+with open('instance-ue-nr-input-schema.json.jinja2', 'r') as f:
     instance_ue_nr_json_template = Template(f.read())
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
