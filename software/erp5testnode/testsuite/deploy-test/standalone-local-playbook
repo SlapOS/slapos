@@ -1950,10 +1950,10 @@ function download_playbook {
     if [ ! -f /etc/opt/slapcache.cfg ]; then
       slapcache-conf
     fi
-    DFILE="/tmp/tmpplaybook$(basename $0).$$/"
+    DFILE=$(mktemp -d -t "$(basename "$0")"-XXXXXXXXXXXX)
     TFILE="archive.tar.gz"
     mkdir -p $DFILE
-    cd $DFILE
+    cd "$DFILE" || exit 1
     slapcache-download --destination=$TFILE
     tar -xzvf $TFILE
     rm $TFILE
@@ -2198,10 +2198,11 @@ if [ ! -f /etc/opt/slapcache.cfg ]; then
 fi
 sed -i "s/key = slapos-global-key/key = slapos-global-official-vifib-key/g" /etc/opt/slapcache.cfg 
 
-DFILE="/tmp/tmpplaybook_unstable$(basename $0).$$/"
+
+DFILE=$(mktemp -d -t "$(basename "$0")"-XXXXXXXXXXXX)
 TFILE="archive.tar.gz"
 mkdir -p $DFILE
-cd $DFILE
+cd "$DFILE" || exit 1
 wget -O $TFILE http://10.0.2.100/playbook.tar.gz
 tar -xzvf $TFILE
 rm $TFILE
