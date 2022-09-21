@@ -1037,10 +1037,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return generate_auth_url, upload_url
 
   def assertNodeInformationWithPop(self, parameter_dict):
-    key = 'caddy-frontend-1-node-information-json'
+    key = 'frontend-node-1-node-information-json'
     node_information_json_dict = {}
     for k in list(parameter_dict.keys()):
-      if k.startswith('caddy-frontend') and k.endswith(
+      if k.startswith('frontend-node') and k.endswith(
         'node-information-json'):
         node_information_json_dict[k] = parameter_dict.pop(k)
     self.assertEqual(
@@ -1054,10 +1054,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.node_information_dict = node_information_dict
 
   def assertBackendHaproxyStatisticUrl(self, parameter_dict):
-    url_key = 'caddy-frontend-1-backend-haproxy-statistic-url'
+    url_key = 'frontend-node-1-backend-haproxy-statistic-url'
     backend_haproxy_statistic_url_dict = {}
     for key in list(parameter_dict.keys()):
-      if key.startswith('caddy-frontend') and key.endswith(
+      if key.startswith('frontend-node') and key.endswith(
         'backend-haproxy-statistic-url'):
         backend_haproxy_statistic_url_dict[key] = parameter_dict.pop(key)
     self.assertEqual(
@@ -1562,11 +1562,11 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
-    self.assertKeyWithPop('caddy-frontend-1-kedifa-csr-url', parameter_dict)
+    self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop(
-      'caddy-frontend-1-backend-client-csr-url', parameter_dict)
+      'frontend-node-1-backend-client-csr-url', parameter_dict)
     self.assertKeyWithPop(
-      'caddy-frontend-1-csr-certificate', parameter_dict)
+      'frontend-node-1-csr-certificate', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2102,7 +2102,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     }
     expected_node_information['version-hash-history']['testhash'] = 'testurl'
     self.assertEqual(
-      json.loads(parameter_dict['caddy-frontend-1-node-information-json']),
+      json.loads(parameter_dict['frontend-node-1-node-information-json']),
       expected_node_information
     )
 
@@ -4607,12 +4607,12 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     key_list = [
-      'caddy-frontend-1-node-information-json',
-      'caddy-frontend-2-node-information-json'
+      'frontend-node-1-node-information-json',
+      'frontend-node-2-node-information-json'
     ]
     node_information_json_dict = {}
     for k in list(parameter_dict.keys()):
-      if k.startswith('caddy-frontend') and k.endswith(
+      if k.startswith('frontend-node') and k.endswith(
         'node-information-json'):
         node_information_json_dict[k] = parameter_dict.pop(k)
     self.assertEqual(
