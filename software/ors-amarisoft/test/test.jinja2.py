@@ -324,7 +324,7 @@ class TestGNBEPCSimCard(ORSTestCase):
         self.slap.waitForInstance() # Wait until publish is done
         test_ue_db(self)
 
-class TestUELTESimCard(ORSTestCase):
+class TestUELTEParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps(epc_param_dict)}
@@ -338,8 +338,13 @@ class TestUELTESimCard(ORSTestCase):
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
         self.assertEqual(conf['dl_earfcn'], ue_param_dict['dl_earfcn'])
+        self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'], ue_param_dict['rx_gain'])
+        self.assertEqual(conf['lte_n_rb_dl'],ue_param_dict['lte_n_rb_dl'])
+        self.assertEqual(conf['lte_imsi'], ue_param_dict['lte_imsi'])
+        self.assertEqual(conf['lte_k'], ue_param_dict['lte_k'])
 
-class TestUENRSimCard(ORSTestCase):
+class TestUENRParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps(epc_param_dict)}
@@ -353,3 +358,10 @@ class TestUENRSimCard(ORSTestCase):
       with open(conf_file, 'r') as f:
         conf = yaml.load(f)
       self.assertEqual(conf['ssb-nr-arfcn'], ue_param_dict['ssb-nr-arfcn'])
+      self.assertEqual(conf['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
+      self.assertEqual(conf['nr_bandwidth'], ue_param_dict['nr_bandwidth'])
+      self.assertEqual(conf['nr_band'], ue_param_dict['nr_band'])
+      self.assertEqual(conf['nr_tx_gain'], ue_param_dict['nr_tx_gain'])
+      self.assertEqual(conf['nr_rx_gain'],ue_param_dict['nr_rx_gain'])
+      self.assertEqual(conf['nr_imsi'], ue_param_dict['nr_imsi'])
+      self.assertEqual(conf['nr_k'], ue_param_dict['nr_k'])
