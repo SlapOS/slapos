@@ -5,7 +5,7 @@ T-0/etc/plugin/aikc-sign-promise.py
 T-0/etc/plugin/aikc-user-caucase-updater.py
 T-0/etc/plugin/buildout-T-0-status.py
 T-0/etc/plugin/caucased-backend-client.py
-T-0/etc/plugin/check-backend-haproxy-statistic-url-caddy-frontend-1.py
+T-0/etc/plugin/check-backend-haproxy-statistic-url-frontend-node-1.py
 T-0/etc/plugin/check-free-disk-space.py
 T-0/etc/plugin/master-key-download-url-ready-promise.py
 T-0/etc/plugin/master-key-generate-auth-url-ready-promise.py
