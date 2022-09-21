@@ -337,14 +337,12 @@ class TestUELTEParameters(ORSTestCase):
 
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
-        self.assertEqual('ok', 'ok')
-        print(conf['cell_groups']['cells'][0]['dl_earfcn'])
-        #self.assertEqual(int(conf['cell_groups']['cells']['dl_earfcn']), int(ue_param_dict['dl_earfcn']))
-        #self.assertEqual(conf['cell_groups']['cells']['n_rb_dl'], ue_param_dict['n_rb_dl'])
-        #self.assertEqual(conf['ue_list']['imsi'], ue_param_dict['imsi'])
-        #self.assertEqual(conf['ue_list']['k'], ue_param_dict['k'])
-        #self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
-        #self.assertEqual(conf['rx_gain'], ue_param_dict['rx_gain'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], ue_param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['n_rb_dl'])
+        self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
+        self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'], ue_param_dict['rx_gain'])
 
 class TestUENRParameters(ORSTestCase):
     @classmethod
@@ -359,12 +357,11 @@ class TestUENRParameters(ORSTestCase):
 
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
-        self.assertEqual('ok', 'ok')
-      #self.assertEqual(confconf['cell_groups']['cells']['ssb_nr_arfcn'], ue_param_dict['ssb_nr_arfcn'])
-      #self.assertEqual(confconf['cell_groups']['cells']['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
-      #self.assertEqual(confconf['cell_groups']['cells']['nr_bandwidth'], ue_param_dict['nr_bandwidth'])
-      #self.assertEqual(confconf['cell_groups']['cells']['nr_band'], ue_param_dict['nr_band'])
-      #self.assertEqual(conf['ue_list']['imsi'], ue_param_dict['imsi'])
-      #self.assertEqual(conf['ue_list']['k'], ue_param_dict['k'])
-      #self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
-      #self.assertEqual(conf['rx_gain'],ue_param_dict['rx_gain'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], ue_param_dict['ssb_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['nr_bandwidth'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], ue_param_dict['nr_band'])
+        self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
+        self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'],ue_param_dict['rx_gain'])
