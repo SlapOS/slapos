@@ -1,15 +1,14 @@
-
-
 import caucase.client
 import caucase.utils
 import os
 import ssl
 import sys
-import urllib.request, urllib.parse, urllib.error
+import urllib.error
 import urllib.parse
-
+import urllib.request
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
+
 
 class Recipe(object):
   def __init__(self, *args, **kwargs):
@@ -21,10 +20,11 @@ class Recipe(object):
   def update(self):
     return self.install()
 
+
 def validate_netloc(netloc):
   # a bit crazy way to validate that the passed parameter is haproxy
   # compatible server netloc
-  parsed = urllib.parse.urlparse('scheme://'+netloc)
+  parsed = urllib.parse.urlparse('scheme://' + netloc)
   if ':' in parsed.hostname:
     hostname = '[%s]' % parsed.hostname
   else:
