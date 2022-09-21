@@ -1,16 +1,9 @@
-# Main caddy configuration file
-
 import {{ slave_configuration_directory }}/*.conf
 
 :{{ https_port }} {
   tls {{ master_certificate }} {{ master_certificate }} {
-{%- if global_disable_http2 %}
-    # Disallow HTTP2
-    alpn http/1.1
-{%- else %}
     # Allow http2
     alpn h2 http/1.1
-{%- endif %}
 
   }
   bind {{ local_ipv4 }}
@@ -39,13 +32,8 @@ import {{ slave_configuration_directory }}/*.conf
 # Access to server-status Caddy-style
 https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv4 }}:{{ https_port }}/server-status {
   tls {{ frontend_configuration['ip-access-certificate'] }} {{ frontend_configuration['ip-access-certificate'] }} {
-{%- if global_disable_http2 %}
-    # Disallow HTTP2
-    alpn http/1.1
-{%- else %}
     # Allow http2
     alpn h2 http/1.1
-{%- endif %}
   }
   bind {{ local_ipv4 }}
   basicauth "{{ username }}" {{ password | trim }} {
