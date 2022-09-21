@@ -58,15 +58,15 @@
       "description": "Url to caucase used by KeDiFa.",
       "type": "string"
     },
-    "caddy-frontend-N-kedifa-csr-url": {
+    "frontend-node-N-kedifa-csr-url": {
       "description": "URL on which frontend node number N publishes its Kedifa CSR sent to caucase.",
       "type": "string"
     },
-    "caddy-frontend-N-backend-client-csr-url": {
+    "frontend-node-N-backend-client-csr-url": {
       "description": "URL on which frontend node number N publishes its Backend Client CSR sent to caucase.",
       "type": "string"
     },
-    "caddy-frontend-N-csr-certificate": {
+    "frontend-node-N-csr-certificate": {
       "description": "Certificate used to serve data on CSRs.",
       "type": "string"
     },
