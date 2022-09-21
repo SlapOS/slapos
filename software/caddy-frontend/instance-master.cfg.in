@@ -426,40 +426,40 @@ warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
 {% endif %}
 {% if not aikc_enabled or not aibcc_enabled %}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
+frontend-node-{{ index + 1 }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
 {% endfor %}
 {% endif %}
 {% if not aikc_enabled %}
 kedifa-csr-url = ${request-kedifa:connection-kedifa-csr-url}
 kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
+frontend-node-{{ index + 1 }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
 {% endfor %}
 {% endif %}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
-{{ frontend }}-node-information-json = ${frontend-information:{{ frontend }}-node-information-json}
+frontend-node-{{ index + 1 }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
+frontend-node-{{ index + 1 }}-node-information-json = ${frontend-information:frontend-node-{{ index + 1 }}-node-information-json}
 {% endfor %}
 {% if not aibcc_enabled %}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
+frontend-node-{{ index + 1 }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
 {% endfor %}
 {% endif %}
 
 # Generate promises for requested nodes
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
 {%   set part_name = 'promise-backend-haproxy-statistic-url-' + frontend %}
 {%   do part_list.append(part_name) %}
 {%   set section_part = '${request-' + frontend %}
 [{{ part_name }}]
 <= monitor-promise-base
 promise = check_url_available
-name = check-backend-haproxy-statistic-url-{{ frontend }}.py
+name = check-backend-haproxy-statistic-url-frontend-node-{{ index + 1 }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
 {% endfor %}
@@ -529,9 +529,9 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [frontend-information]
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-node-information-json = {{ section_part }}:connection-node-information-json}
+frontend-node-{{ index + 1 }}-node-information-json = {{ section_part }}:connection-node-information-json}
 {% endfor %}
 
 [dynamic-publish-slave-information]
