@@ -415,7 +415,6 @@ extra-context =
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
-    key global_disable_http2 configuration:global-disable-http2
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:output
 # BBB: SlapOS Master non-zero knowledge END
@@ -430,7 +429,7 @@ inline =
   -conf ${dynamic-caddy-frontend-template:output} \
   -log ${caddy-configuration:error-log} \
   -log-roll-mb 0 \
-  {% if instance_parameter_dict['configuration.global-disable-http2'].lower() in TRUE_VALUES %}-http2=false \{% else %}-http2=true \{% endif %}
+  -http2=true \
   -grace {{ instance_parameter_dict['configuration.mpm-graceful-shutdown-timeout'] }}s \
   -disable-http-challenge \
   -disable-tls-alpn-challenge \

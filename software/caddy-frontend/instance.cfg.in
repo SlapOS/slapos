@@ -96,7 +96,6 @@ configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
 configuration.re6st-verification-url = http://[2001:67c:1254:4::1]/index.html
 configuration.enable-http2-by-default = true
-configuration.global-disable-http2 = false
 configuration.ciphers =
 configuration.request-timeout = 600
 configuration.mpm-graceful-shutdown-timeout = 5
