@@ -139,8 +139,6 @@ This replaces old request parameters:
  * ``apache-key``
  * ``apache-ca-certificate``
 
-(*Note*: They are still supported for backward compatibility, but any value send to the ``master-key-upload-url`` will supersede information from SlapOS Master.)
-
 Slave partition
 ---------------
 
@@ -166,8 +164,6 @@ This replaces old request parameters:
  * ``ssl_crt``
  * ``ssl_key``
  * ``ssl_ca_crt``
-
-(*Note*: They are still supported for backward compatibility, but any value send to the ``key-upload-url`` will supersede information from SlapOS Master.)
 
 
 Instance Parameters
@@ -330,42 +326,6 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 	"domain": "www.example.org",
 	"enable_cache": "True",
-
-Advanced example - XXX - to be written
---------------------------------------
-
-Request slave frontend instance using custom apache configuration, willing to use cache and ssl certificates.
-Listening to a custom domain and redirecting to /erp5/ so that
-https://[1:2:3:4:5:6:7:8]:1234/erp5/ will be redirected and accessible from
-the proxy::
-
-  instance = request(
-    software_release=caddy_frontend,
-    software_type="RootSoftwareInstance",
-    partition_reference='my frontend',
-    shared=True,
-    software_type="custom-personal",
-    partition_parameter_kw={
-        "url":"https://[1:2:3:4:5:6:7:8]:1234",
-        "enable_cache":"true",
-        "type":"zope",
-        "path":"/erp5",
-        "domain":"example.org",
-
-    "ssl_key":"-----BEGIN RSA PRIVATE KEY-----
-  XXXXXXX..........XXXXXXXXXXXXXXX
-  -----END RSA PRIVATE KEY-----",
-      "ssl_crt":'-----BEGIN CERTIFICATE-----
-  XXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX
-  -----END CERTIFICATE-----',
-      "ssl_ca_crt":'-----BEGIN CERTIFICATE-----
-  XXXXXXXXX...........XXXXXXXXXXXXXXXXX
-  -----END CERTIFICATE-----',
-      "ssl_csr":'-----BEGIN CERTIFICATE REQUEST-----
-  XXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXX
-  -----END CERTIFICATE REQUEST-----',
-    }
-  )
 
 Promises
 ========
