@@ -6,18 +6,6 @@
       "title": "Frontend Replication Quantity",
       "type": "integer"
     },
-    "apache-certificate": {
-      "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string"
-    },
-    "apache-key": {
-      "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Key",
-      "type": "string"
-    },
     "domain": {
       "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
