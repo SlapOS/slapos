@@ -152,9 +152,6 @@ etc-run = ${:etc}/run
 
 ca-dir = ${:srv}/ssl
 backend-client-dir = ${:srv}/backend-client
-# BBB: SlapOS Master non-zero knowledge BEGIN
-bbb-ssl-dir = ${:srv}/bbb-ssl
-# BBB: SlapOS Master non-zero knowledge END
 
 frontend_cluster = ${:var}/frontend_cluster
 
@@ -381,9 +378,6 @@ extra-context =
     key software_release_url version-hash:software-release-url
     key node_information frontend-node-information:value
     key custom_ssl_directory caddy-directory:custom-ssl-directory
-# BBB: SlapOS Master non-zero knowledge BEGIN
-    key apache_certificate apache-certificate:output
-# BBB: SlapOS Master non-zero knowledge END
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 ## Configuration passed by section
@@ -404,6 +398,7 @@ local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
 extra-context =
     key instance_home buildout:directory
     key master_certificate caddy-configuration:master-certificate
+    key self_signed_fallback_certificate self-signed-fallback-access:certificate
     key access_log caddy-configuration:access-log
     key slave_configuration_directory caddy-directory:slave-configuration
     section frontend_configuration frontend-configuration
@@ -415,9 +410,6 @@ extra-context =
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
-# BBB: SlapOS Master non-zero knowledge BEGIN
-    key apache_certificate apache-certificate:output
-# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
 recipe = slapos.recipe.template:jinja2
@@ -466,6 +458,7 @@ pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-caddy-validate:output} && kill -USR1 $(cat ${:pid-file})
 not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
+self-signed-fallback-certificate = ${self-signed-fallback-access:certificate}
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
 # slave instrspection
@@ -473,31 +466,6 @@ slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
 slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
 slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
 slave-introspection-graceful-command = ${slave-introspection-validate:output} && kill -HUP $(cat ${:slave-introspection-pid-file})
-
-# BBB: SlapOS Master non-zero knowledge BEGIN
-[get-self-signed-fallback-access]
-recipe = slapos.recipe.build
-certificate-file = ${self-signed-fallback-access:certificate}
-init =
-  import os
-  options['certificate'] = ''
-  if os.path.exists(options['certificate-file']):
-    with open(options['certificate-file'], 'r') as fh:
-      options['certificate'] = fh.read()
-
-[apache-certificate]
-recipe = slapos.recipe.template:jinja2
-inline =
-{% raw %}
-  {{ certificate or fallback_certificate }}
-  {{ key or '' }}
-{% endraw %}
-context =
-  key certificate configuration:apache-certificate
-  key key configuration:apache-key
-  key fallback_certificate get-self-signed-fallback-access:certificate
-output = ${directory:bbb-ssl-dir}/frontend.crt
-# BBB: SlapOS Master non-zero knowledge END
 
 [logrotate-entry-caddy]
 <= logrotate-entry-base
@@ -665,7 +633,7 @@ command = ${trafficserver-rotate-script:output}
 url = {{ software_parameter_dict['template_configuration_state_script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 
-path_list = ${caddy-configuration:frontend-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${caddy-configuration:frontend-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =

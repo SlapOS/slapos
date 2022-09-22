@@ -89,8 +89,6 @@ configuration.kedifa_port = 7879
 # Warning: Caucase takes also cacuase_port+1
 configuration.caucase_port = 8890
 configuration.caucase_backend_client_port = 8990
-configuration.apache-key =
-configuration.apache-certificate =
 configuration.open-port = 80 443
 configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
