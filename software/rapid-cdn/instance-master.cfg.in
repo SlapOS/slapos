@@ -30,8 +30,6 @@
 {%- set FRONTEND_NODE_PASSED_KEY_LIST = [
         'plain_http_port',
         'port',
-        'apache-certificate',
-        'apache-key',
         'domain',
         'enable-http2-by-default',
         're6st-verification-url',
@@ -81,9 +79,6 @@
       'request-timeout',
       'server-alias',
       'ssl-proxy-verify',
-      'ssl_ca_crt',
-      'ssl_crt',
-      'ssl_key',
       'ssl_proxy_ca_crt',
       'strict-transport-security',
       'strict-transport-security-preload',
@@ -316,25 +311,11 @@ context =
 {%       endif %}
 {%     endif %}
 {%   endfor %}
-{# BBB: SlapOS Master non-zero knowledge BEGIN #}
 {%   for key in ['ssl_key', 'ssl_crt', 'ssl_ca_crt'] %}
 {%     if key in slave %}
-{%       do slave_warning_list.append('%s is obsolete, please use key-upload-url' % (key,)) %}
+{%       do slave_warning_list.append('%s is discontinued, key-upload-url must be used instead' % (key,)) %}
 {%     endif %}
 {%   endfor %}
-{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
-{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
-{%   endif %}
-{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
-{%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
-{%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'].encode())[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'].encode())[0] | trim %}
-{%     if not key_modulus or key_modulus != crt_modulus  %}
-{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
-{%     endif %}
-{%   endif %}
-{# BBB: SlapOS Master non-zero knowledge END #}
 {%   if slave.get('custom_domain') %}
 {%     set slave_custom_domain = '' ~ slave['custom_domain'] %}
 {%     if slave_custom_domain.startswith('*.') %}
@@ -429,7 +410,7 @@ return =
 {%  set warning_list = [] %}
 {%  for key in ['apache-certificate', 'apache-key'] %}
 {%    if key in slapparameter_dict %}
-{%      do warning_list.append('%s is obsolete, please use master-key-upload-url' % (key, )) %}
+{%      do warning_list.append('%s is discontinued, master-key-upload-url must be used instead' % (key, )) %}
 {%    endif %}
 {%  endfor %}
 
