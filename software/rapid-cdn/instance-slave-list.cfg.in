@@ -17,9 +17,9 @@
 {%-   do slave_instance_list.extend(json_module.loads(configuration['extra_slave_instance_list'])) %}
 {%- endif %}
 {%- if master_key_download_url %}
-{%-   do kedifa_updater_mapping.append((master_key_download_url, frontend_haproxy_configuration['master-certificate'], apache_certificate)) %}
+{%-   do kedifa_updater_mapping.append((master_key_download_url, frontend_haproxy_configuration['master-certificate'], frontend_haproxy_configuration['self-signed-fallback-certificate'])) %}
 {%- else %}
-{%-   do kedifa_updater_mapping.append(('notreadyyet', frontend_haproxy_configuration['master-certificate'], apache_certificate)) %}
+{%-   do kedifa_updater_mapping.append(('notreadyyet', frontend_haproxy_configuration['master-certificate'], frontend_haproxy_configuration['self-signed-fallback-certificate'])) %}
 {%- endif %}
 {%- if kedifa_configuration['slave_kedifa_information'] %}
 {%-   set slave_kedifa_information = json_module.loads(kedifa_configuration['slave_kedifa_information']) %}
@@ -321,7 +321,6 @@ url = {{ empty_template }}
 output = {{ cert_file }}
 extra-context =
     key content {{ cert_title + '-config:value' }}
-{#-         BBB: SlapOS Master non-zero knowledge BEGIN #}
 {#-         Store certificate in config #}
 [{{ cert_title + '-config' }}]
 value = {{ dumps(slave_instance.get(cert_name)) }}
@@ -330,24 +329,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%-       endif %} {#- if cert_name in slave_instance #}
 {%-     endfor %}
 {#-   Set Up Certs #}
-{%-   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
-{%-     set cert_title = '%s-crt' % (slave_reference) %}
-{%-     set cert_file = '/'.join([directory['bbb-ssl-dir'], cert_title.replace('-','.')]) %}
-{%-     do kedifa_updater_mapping.append((key_download_url, certificate, cert_file)) %}
-{%-     do part_list.append(cert_title) %}
-{%-     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
-
-[{{cert_title}}]
-< = jinja2-template-base
-url = {{ empty_template }}
-output = {{ cert_file }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
-extra-context =
-    key content :cert-content
-{%-   else %}
-{%-     do kedifa_updater_mapping.append((key_download_url, certificate, frontend_haproxy_configuration['master-certificate'])) %}
-{%-   endif %}
-{#-   BBB: SlapOS Master non-zero knowledge END #}
+{%-   do kedifa_updater_mapping.append((key_download_url, certificate, caddy_configuration['master-certificate'])) %}
 
 {#-   ########################################## #}
 {#-   Set Slave Configuration                    #}
