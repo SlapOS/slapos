@@ -123,8 +123,6 @@ This replaces old request parameters:
  * ``apache-key``
  * ``apache-ca-certificate``
 
-(*Note*: They are still supported for backward compatibility, but any value send to the ``master-key-upload-url`` will supersede information from SlapOS Master.)
-
 Slave partition
 ---------------
 
@@ -150,8 +148,6 @@ This replaces old request parameters:
  * ``ssl_crt``
  * ``ssl_key``
  * ``ssl_ca_crt``
-
-(*Note*: They are still supported for backward compatibility, but any value send to the ``key-upload-url`` will supersede information from SlapOS Master.)
 
 
 Instance Parameters
