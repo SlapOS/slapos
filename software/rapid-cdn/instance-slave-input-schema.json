@@ -154,27 +154,6 @@
       "title": "Verify Backend Certificates",
       "type": "string"
     },
-    "ssl_crt": {
-      "default": "",
-      "description": "Content of the SSL Certificate file. Deprecated, please use key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Certificate",
-      "type": "string"
-    },
-    "ssl_key": {
-      "default": "",
-      "description": "Content of the SSL Key file. Deprecated, please use key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Key",
-      "type": "string"
-    },
-    "ssl_ca_crt": {
-      "default": "",
-      "description": "Content of the CA certificate file. Deprecated, please use key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Certificate Authority's Certificate",
-      "type": "string"
-    },
     "ssl_proxy_ca_crt": {
       "default": "",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
