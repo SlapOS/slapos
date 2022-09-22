@@ -69,8 +69,6 @@ KVM instance parameters:
     MD5Sum of image disk to download
 - virtual-hard-drive-gzipped (default: False)
     Compress image to reduce size with gzip (.gz)
-- hard-drive-url-check-certificate (default: True)
-    if virtual-hard-drive-url use self-signed https, then specify if https certificate should be verified or not
 
 - enable-http-server (default: False)
     Configure server that will help to get some files into the vm from http
