@@ -155,9 +155,6 @@ etc-run = ${:etc}/run
 
 ca-dir = ${:srv}/ssl
 backend-client-dir = ${:srv}/backend-client
-# BBB: SlapOS Master non-zero knowledge BEGIN
-bbb-ssl-dir = ${:srv}/bbb-ssl
-# BBB: SlapOS Master non-zero knowledge END
 
 frontend_cluster = ${:var}/frontend_cluster
 
@@ -379,13 +376,7 @@ extra-context =
     key version_hash version-hash:value
     key software_release_url version-hash:software-release-url
     key node_information frontend-node-information:value
-# BBB: SlapOS Master non-zero knowledge BEGIN
-    key apache_certificate apache-certificate:output
-# BBB: SlapOS Master non-zero knowledge END
     key custom_ssl_directory frontend-directory:custom-ssl-directory
-## frontend haproxy
-    key template_frontend_haproxy_configuration software-release-path:template-frontend-haproxy-configuration
-    key template_frontend_haproxy_crt_list software-release-path:template-frontend-haproxy-crt-list
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 ## Configuration passed by section
@@ -426,9 +417,6 @@ extra-context =
     key error_log frontend-haproxy-configuration:error-log
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
-# BBB: SlapOS Master non-zero knowledge BEGIN
-    key apache_certificate apache-certificate:output
-# BBB: SlapOS Master non-zero knowledge END
     section configuration frontend-haproxy-rsyslogd-config
 
 [frontend-haproxy-rsyslogd]
@@ -473,31 +461,6 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
-
-# BBB: SlapOS Master non-zero knowledge BEGIN
-[get-self-signed-fallback-access]
-recipe = slapos.recipe.build
-certificate-file = ${self-signed-fallback-access:certificate}
-init =
-  import os
-  options['certificate'] = ''
-  if os.path.exists(options['certificate-file']):
-    with open(options['certificate-file'], 'r') as fh:
-      options['certificate'] = fh.read()
-
-[apache-certificate]
-recipe = slapos.recipe.template:jinja2
-inline =
-{% raw %}
-  {{ certificate or fallback_certificate }}
-  {{ key or '' }}
-{% endraw %}
-context =
-  key certificate configuration:apache-certificate
-  key key configuration:apache-key
-  key fallback_certificate get-self-signed-fallback-access:certificate
-output = ${directory:bbb-ssl-dir}/frontend.crt
-# BBB: SlapOS Master non-zero knowledge END
 
 [frontend-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -660,7 +623,7 @@ command = ${trafficserver-rotate-script:output}
 url = {{ software_parameter_dict['template_configuration_state_script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 
-path_list = ${frontend-haproxy-configuration:file} ${frontend-haproxy-configuration:crt-list} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${frontend-haproxy-configuration:file} ${frontend-haproxy-configuration:crt-list} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
