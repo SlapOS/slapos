@@ -1,0 +1,241 @@
+#############################
+#
+# Deploy html5as instance
+#
+#############################
+# parameter_dict: a dictionary with the default parameters from instance.cfg.in
+# replaces the values with the parameters of the instance request if there are any
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
+[buildout]
+parts =
+    nginx_conf
+    mime_types
+    launcher
+    nginx-graceful
+    port-listening-promise
+    logrotate-entry-nginx
+    publish-connection-information
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+# Always the same.
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+# Instance profile extends monitoring stack
+extends = {{ parameter_list['template_monitor'] }}
+
+# partition tree
+# /
+# |- etc/
+# |    |- nginx.conf
+# |    |- run/
+# |         |- html5as (binary)
+# |- var/
+# |    |- run/
+# |    |    |- nginx.pid
+# |    |- log/
+# |    |    |- nginx.log
+# |    |    |- nginx.access.log
+# |- srv/
+# |    |- html5as/ (doc root)
+# |    |        |- index.html
+# |    |- backup/
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+# Executables put here will be started but not monitored (for startup scripts)
+script = ${directory:etc}/run
+# Executables put here will be started and monitored (for daemons)
+service = ${directory:etc}/service
+log = ${directory:var}/log
+run = ${directory:var}/run
+backup = ${directory:srv}/backup
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${directory:home}/tmp
+client_body_temp_path = ${:tmp}/client_body_temp_path
+proxy_temp_path = ${:tmp}/proxy_temp_path
+fastcgi_temp_path = ${:tmp}/fastcgi_temp_path
+uwsgi_temp_path = ${:tmp}/uwsgi_temp_path
+scgi_temp_path = ${:tmp}/scgi_temp_path
+
+# List of options for html5as configuration
+# It will run a simple nginx serving the content of srv/html5as
+[html5as]
+# Options
+nb_workers = 2
+
+# Network
+ip = {{ partition_ipv6 }}
+port = {{ parameter_dict['port'] }}
+access_url = http://[${:ip}]:${:port}
+
+# Paths
+# Log
+path_pid = ${basedirectory:run}/nginx.pid
+path_log = ${basedirectory:log}/nginx.log
+path_access_log = ${basedirectory:log}/nginx.access.log
+path_error_log = ${basedirectory:log}/nginx.error.log
+path_tmp = ${tempdirectory:tmp}
+# Docroot
+docroot = ${downloader:location}
+default_index = ${:docroot}/index.html
+# Config files
+path_nginx_conf = ${directory:etc}/nginx.conf
+path_mime_types = ${directory:etc}/mime_types
+# Binaries
+path_shell = {{ parameter_list['dash_location'] }}/bin/dash
+
+# Executables
+bin_launcher = ${basedirectory:service}/launcher
+
+# Utils
+path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
+
+# Render nginx conf
+[nginx_conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_nginx_conf'] }}
+rendered = ${html5as:path_nginx_conf}
+context = 
+    section param_html5as html5as
+    section param_tempdir tempdirectory
+
+# Render necessary mime types file for nginx
+[mime_types]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_mime_types'] }}
+rendered = ${html5as:path_mime_types}
+
+# Render the script launching nginx
+[launcher]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_launcher'] }}
+rendered = ${html5as:bin_launcher}
+mode = 700
+context = 
+    section param_html5as html5as
+
+# Command to put content in the docroot
+[downloader]
+recipe = slapos.recipe.build
+# Path where the recipe stores any produced file,
+# it will be automatically removed at the beginning of "install".
+location = ${directory:srv}/html5as
+# All the keys in this section will be available as a dict called "self.options"
+# We add: or '', otherwise jinja2 will render a 'None' string
+url = {{ parameter_dict['download_url'] or '' }}
+default_index_html = ${default_index_html:rendered}
+# If a tarball is passed as a parameter in download url
+# it's content will be served by the instance.
+# If the parameter is not provided it fallback to the default template
+install =
+  import os, shutil
+  buildout_offline = self.buildout['buildout']['offline']
+  try:
+    # Allow to do self.download() which can only be used in "online" mode
+    self.buildout['buildout']['offline'] = 'false'
+    if self.options['url']:
+      # Use fonctions from the slapos.recipe.build repository
+      # Download a file from a URL to a temporary path
+      file = self.download(self.options['url'])
+      # Create a directory and extract the file that are compressed inside
+      extract_dir = self.extract(file)
+      # Return the right directory path
+      workdir = guessworkdir(extract_dir)
+      # Recursively copy directory
+      self.copyTree(workdir, location)
+    else:
+      # Create directory and copy the default template inside
+      os.makedirs(location)
+      shutil.copy(self.options['default_index_html'], location)
+  finally:
+    # reset the parameter
+    self.buildout['buildout']['offline'] = buildout_offline
+
+[default_index_html]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${directory:srv}/index.html
+title = {{ parameter_dict['title'] }}
+context =
+  key title :title
+
+### Nginx Graceful
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+context =
+    section param_html5as html5as
+
+# Port Listening checking promise
+[port-listening-promise]
+<= monitor-promise-base
+module = check_socket_listening
+name = nginx-port-listening.py
+config-host = ${html5as:ip}
+config-port = ${html5as:port}
+
+# Use a port different from the default one in order to be able to
+# use it in a SlapOS webrunner or a Theia SlapOS Runner
+[monitor-instance-parameter]
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
+
+# Monitor Stack also provides logrotate stack. We only need to extend
+# the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
+# More parameters can be added following the logrotate-entry-base section
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${html5as:path_access_log} ${html5as:path_error_log}
+post = kill -USR1 $(cat ${html5as:path_pid})
+
+# Publish nginx address
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+# By extending monitor publish, all the section deploying monitoring will
+# be deployed. The parameters needed for accessing monitoring will be published
+<= monitor-publish
+server_url = ${html5as:access_url}
+title = Title {{ parameter_dict['title'] }}!
+# Add dependency to the promise so that frontend sections are processed
+# and there is no need to declare the new part in buildout:parts
+server-cdn-url = ${html5as-frontend-promise:url}
+
+# Request a CDN entry to master
+[html5as-frontend]
+# Extend slap-connnection to get the credentials for the request
+<= slap-connection
+# Recipe used to make requests
+recipe = slapos.cookbook:requestoptional
+name = HTML5AS frontend
+# Specify the software url of the frontend software release
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+# It is not a dedicated instance but an instance allocated on a shared instance
+slave = true
+config-url = ${html5as:access_url}
+config-https-only = true
+# The parameter expected to be received from the request are listed here.
+return = domain secure_access
+
+# Add a promise to make sure the cdn is properly configured
+[html5as-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = html5as-http-frontend.py
+url = ${html5as-frontend:connection-secure_access}
+config-url = ${:url}
