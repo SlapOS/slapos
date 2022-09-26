@@ -5,23 +5,18 @@ parts =
 [peertube-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/$${:_buildout_section_name_}
-command-line = sh -c "cd $${directory:versions}; cp -r ${peertube-download:location} ./;
-# peertube yarn install --production --pure-lockfile"
-# cp peertube-latest/config/default.yaml config/default.yaml
-# cp peertube-latest/config/production.yaml.example config/production.yaml
-# cp /var/www/peertube/peertube-latest/support/nginx/peertube /etc/nginx/sites-available/peertube
-# sed -i 's/${WEBSERVER_HOST}/[peertube-domain]/g' /etc/nginx/sites-available/peertube
-# sed -i 's/${PEERTUBE_HOST}/127.0.0.1:9000/g' /etc/nginx/sites-available/peertube
+command-line = cd $${directory:versions}; cp -r ${peertube-download:location} ./
+  echo $${directory:versions}
+environment =
+  PATH=%(PATH)s
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
 srv = $${buildout:directory}/srv
-var = $${:srv}/var
-www = $${:var}/www
-peertube_directory = ${:www}/peertube
-config = $${:peertube_directory}/config
-storage = $${:peertube_directory}/storage
-versions = $${:peertube_directory}/versions
+peertube_directory = $${:srv}/var/www/peertube
+config = $${:srv}/var/www/peertube/config
+storage = $${:srv}/var/www/peertube/storage
+versions = $${:srv}/var/www/peertube/versions
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
