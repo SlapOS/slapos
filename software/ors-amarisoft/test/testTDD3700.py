@@ -333,7 +333,7 @@ class TestUELTEParameters(ORSTestCase):
         return "ue-lte"
     def test_ue_lte_conf(self):
         conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'ue-lte.cfg'))[0]
+          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
 
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
@@ -353,7 +353,7 @@ class TestUENRParameters(ORSTestCase):
         return "ue-nr"
     def test_ue_nr_conf(self):
         conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'ue-nr.cfg'))[0]
+          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
 
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
