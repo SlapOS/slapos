@@ -33,9 +33,9 @@
       "type": "number",
       "default": 40
     },
-    "ssb-nr-arfcn": {
+    "ssb_nr_arfcn": {
       "title": "SSB NR ARFCN",
-      "description": "SSB NR ARFCN",
+      "description": "SSB NR ARFCN, you can retrieve from ENB/GNB side",
       "type": "number",
       "default": 646656
     },
