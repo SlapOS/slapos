@@ -6,6 +6,14 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -17,8 +25,19 @@ promise = ${:etc}/promise/
 log = ${:var}/log
 bin = ${:home}/bin
 
+[config-file]
+recipe = slapos.recipe.template:jinja2
+template = ${directory:etc}/${:_buildout_section_name_}.cfg.json
+rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
+extensions = jinja2.ext.do
+
+[fluent-bit-config-file]
+<= config-file
+context = 
+  key slapparameter_dict slap-configuration:configuration
+
 [fluent-bit-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ fluent_bit_location }}/bin/fluent-bit -i cpu -o stdout
-wrapper-path = ${directory:service}/fluentbit-service
+command-line = {{ fluent_bit_location }}/bin/fluent-bit -c ${directory:etc}/${:_buildout_section_name_}.cfg
+wrapper-path = ${directory:service}/fluent-bit-service
 output = $${:wrapper-path}
