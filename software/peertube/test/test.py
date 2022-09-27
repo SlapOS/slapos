@@ -56,6 +56,6 @@ class HTTPRequestTestMixin(object):
 
 
 
-class TestPython(HelloWorldTestCase, HTTPRequestTestMixin):
+class TestPython(PeertubeTestCase, HTTPRequestTestMixin):
   name = "Python"
   kind = "python"
