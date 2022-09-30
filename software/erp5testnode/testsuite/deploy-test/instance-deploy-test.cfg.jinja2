@@ -2,8 +2,7 @@
 {% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
 {# Choose parameters according to test type -#}
 {% if test_type == 'script-from-url' -%}
-{% set script_url = slapparameter_dict.get('script-to-test-url') -%}
-{% set test_yml_path = '/not/required' -%}
+{% set data_to_vm = slapparameter_dict.get('data-to-vm') -%}
 {% elif test_type == 'cloned-playbook' -%}
 {% set script_url = 'http://10.0.2.100/standalone-local-playbook' -%}
 {% set test_yml_path = slapparameter_dict.get('yml-path-to-test') -%}
@@ -38,10 +37,7 @@ config-bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }
 
 # Script configuration
 config-data-to-vm =
-  URL={{ script_url }}
-  WAITTIME={{ waittime }}
-  TRIES={{ tries }}
-  TEST_YML_PATH={{ test_yml_path }}
+  {{ data_to_vm }}
 
 # require HTTP server
 config-enable-http-server = true
