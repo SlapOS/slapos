@@ -13,10 +13,13 @@
 # Format of data-to-vm is shell script:
 #  URL=<url>\nWAITTIME=<seconds>\nTRIES=<amount>
 #
-# Expected values in configuration:
+# MANDATORY values in configuration:
 #  * URL - the url of the script to download and test
+# OPTIONAL values in configuration:
 #  * WAITTIME - waiting time, before next try
 #  * TRIES - amount of tries
+#  * any other exported variables can be used by the deployment script
+# note: you need to export the varaiables for them to be used in the deployment script
 
 # Possible TODOs:
 #  * post results on each try
@@ -34,7 +37,7 @@ if [ -z "$LOG_FILE" ] ; then
 fi
 
 if [ -z "$URL" ] ; then
-  echo "URL is missing" >> "$LOG_FILE" 2>&1
+  echo "URL is missing. Do not forget to export variables you pass." >> "$LOG_FILE" 2>&1
   exit 1
 fi
 
