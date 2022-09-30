@@ -38,15 +38,10 @@ if [ -z "$URL" ] ; then
   exit 1
 fi
 
-if [ -z "$WAITTIME" ] ; then
-  echo "WAITTIME missing" >> $LOG_FILE 2>&1
-  exit 1
-fi
-
-if [ -z "$TRIES" ] ; then
-  echo "TRIES missing" >> $LOG_FILE 2>&1
-  exit 1
-fi
+export WAITTIME=${WAITTIME:-360}
+echo "Set WAITTIME to default: 360" >> "$LOG_FILE" 2>&1
+export TRIES=${TRIES:-80}
+echo "Set TRIES to default: 80" >> "$LOG_FILE" 2>&1
 
 DEPLOYMENT_SCRIPT=/tmp/test-script-deployment.bash."$$"
 wget -O "$DEPLOYMENT_SCRIPT" -q "$URL"
@@ -89,7 +84,6 @@ function upload ()
 try=1
 while true; do
   echo "$0: Try $try. Running '/bin/bash $DEPLOYMENT_SCRIPT'" >> "$LOG_FILE" 2>&1
-  export TEST_YML_PATH
   /bin/bash "$DEPLOYMENT_SCRIPT" >> "$LOG_FILE" 2>&1
   result="$?"
   if [ "$result" == 0 ] ; then
