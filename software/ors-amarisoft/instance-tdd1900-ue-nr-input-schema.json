@@ -8,7 +8,7 @@
       "description": " Address of remote UE server. Default port is 2152.",
       "type": "string",
       "default": "",
-      "required": true,
+      "required": true
     },
     "tx_gain": {
       "title": "Tx gain",
