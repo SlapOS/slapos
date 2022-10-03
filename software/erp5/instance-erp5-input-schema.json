@@ -525,6 +525,46 @@
           "default": true,
           "type": "boolean"
         },
+        "coverage": {
+          "type": "object",
+          "title": "Coverage",
+          "description": "Coverage configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Collect python coverage data during test run.",
+              "default": false,
+              "type": "boolean"
+            },
+            "include": {
+              "description": "File name patterns to include in coverage data, relative to software buildout's directory. Default to all repositories defined in software by ${erp5_repository_list:repository_id_list}.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "examples": [
+                [
+                  "parts/erp5/*",
+                  "parts/custom-repository/*",
+                  "develop-eggs/custom-egg/*"
+                ]
+              ]
+            },
+            "branch": {
+              "description": "Enable branch coverage",
+              "type": "boolean",
+              "default": false
+            },
+            "upload-url": {
+              "description": "URL to upload coverage data. This is interpreted as a RFC 6570 URI Template, with the following parameters: test_name, test_result_id and test_result_revision. The request will be a PUT request with the coverage file content as body, suitable for WebDav servers. If the URL contains user and password, they will be used to attempt authentication using Digest and Basic authentication schemes.",
+              "type": "string",
+              "format": "uri",
+              "examples": [
+                "https://user:password@example.com/{test_result_id}/{test_name}.coverage.sqlite3"
+              ]
+            }
+          }
+        },
         "node-count": {
           "description": "Number of tests this instance can execute in parallel. This must be at least equal to the number of nodes configured on testnode running the test",
           "default": 3,
