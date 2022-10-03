@@ -223,7 +223,6 @@ context =
 {#    websocket style needs http 1.1 max #}
 {%-     do slave_instance.__setitem__('enable_h2', False) %}
 {%-   endif %}
-{%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
 
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}

@@ -386,12 +386,6 @@
               "type": "boolean",
               "default": false
             },
-            "hard-drive-url-check-certificate": {
-              "title": "Check certificate when downloading virtual hard drive from https.",
-              "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
-              "type": "boolean",
-              "default": true
-            },
             "wipe-disk-ondestroy": {
               "title": "Wipe disks when destroy the VM",
               "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",

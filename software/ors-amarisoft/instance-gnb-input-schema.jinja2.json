@@ -16,6 +16,12 @@
       "description": "Set to true if external eNB / gNB will need to connect to this core network.",
       "type": "boolean"
     },
+    "iperf3": {
+      "default": false,
+      "title": "iperf3 UDP server",
+      "description": "Activate iperf3 UDP server",
+      "type": "boolean"
+    },
 {%- endif %}
     "tx_gain": {
       "title": "Tx gain",
