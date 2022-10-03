@@ -3,6 +3,13 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
+    "rue_addr": {
+      "title": "Remote UE address",
+      "description": " Address of remote UE server. Default port is 2152.",
+      "type": "string",
+      "default": "",
+      "required": true,
+    },
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
