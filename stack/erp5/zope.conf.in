@@ -55,11 +55,16 @@ trusted-proxy 0.0.0.0
 </product-config>
 
 {% if 'longrequest-logger-interval' in parameter_dict -%}
-<product-config LongRequestLogger>
-  logfile {{ parameter_dict['longrequest-logger-file'] }}
-  timeout {{ parameter_dict['longrequest-logger-timeout'] }}
-  interval {{ parameter_dict['longrequest-logger-interval'] }}
-</product-config>
+%import haufe.requestmonitoring
+<requestmonitor requestmonitor>
+  period {{ parameter_dict['longrequest-logger-timeout'] }}s
+  verbosity 0
+  <monitorhandler dumper>
+    factory Products.ERP5Type.patches.LongRequestLogger_dumper.factory
+    repeat -1
+    time {{ parameter_dict['longrequest-logger-interval'] }}s
+  </monitorhandler>
+</requestmonitor>
 
 {% endif -%}
 
