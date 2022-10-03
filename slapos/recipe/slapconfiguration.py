@@ -30,11 +30,13 @@ import logging
 import os
 
 import slapos.slap
+from slapos.slap.slap import json_loads_byteified
 from slapos.recipe.librecipe import unwrap
 import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
-from slapos.util import mkdir_p, dumps
+from slapos.util import mkdir_p, dumps, calculate_dict_hash
+
 from slapos import format as slapformat
 
 
@@ -151,17 +153,17 @@ class Recipe(object):
             "compute_partition_id": options["partition"],
           })
         options["instance-state"] = software_instance.get("state")
-        options["slap_software_type"] = software_instance.get("software_type")
-        options["slap_computer_partition_id"] = software_instance.get("compute_partition_id")
-        options["slap_computer_id"] = software_instance.get("compute_node_id")
-        options["slap_software_release_url"] = software_instance.get("software_release_uri")
+        options["slap-software-type"] = software_instance.get("software_type")
+        options["slap-computer-partition-id"] = software_instance.get("compute_partition_id")
+        options["slap-computer-id"] = software_instance.get("compute_node_id")
+        options["slap-software-release-url"] = software_instance.get("software_release_uri")
         options["timestamp"] = software_instance.get("processing_timestamp")
         options["instance-title"] = software_instance.get("title")
         options["root-instance-title"] = software_instance.get("root_instance_title")
         options["instance-guid"] = software_instance.get("reference")
         ip_list = software_instance.get("ip_list", [])
         full_ip_list = software_instance.get("full_ip_list", [])
-        parameter_dict = json.loads(software_instance.get("parameters"))
+        parameter_dict = json_loads_byteified(software_instance.get("parameters"))
 
         # Get Share instance list
         result_shared_instance_list = slap.jio_api_connector.allDocs({
@@ -175,19 +177,22 @@ class Recipe(object):
             "portal_type": "Software Instance",
             "reference": shared_instance_brain.get("reference"),
           })
-          shared_instance_parameter = json.loads(shared_instance.get("parameters"))
-          shared_instance_connection = json.loads(shared_instance.get("connection_parameters"))
+          shared_instance_parameter = json_loads_byteified(shared_instance.get("parameters"))
+          shared_instance_connection = shared_instance.get("connection_parameters")
           shared_instance_list.append({
             'slave_title': shared_instance.get("title"),
             'slap_software_type': \
-                shared_instance.get("type"),
+                shared_instance.get("software_type"),
             'slave_reference': shared_instance.get("reference"),
-            'timestamp': shared_instance.get("timestamp"),
+            'timestamp': shared_instance.get("processing_timestamp"),
             'xml': dumps(shared_instance_parameter),
-            'parameters': shared_instance.get("parameters"),
+            'parameters': shared_instance_parameter,
             'connection_xml': dumps(shared_instance_connection),
-            'connection_parameters': shared_instance.get("connection_parameters"),
+            'connection_parameters': shared_instance_connection,
+            'connection-parameter-hash': calculate_dict_hash(shared_instance_connection),
           })
+          options["slave-instance-list"] = shared_instance_list
+          options["shared-instance-list"] = shared_instance_list
       else:
         computer_partition = slap.registerComputerPartition(
             options['computer'],
