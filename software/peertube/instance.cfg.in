@@ -1,6 +1,8 @@
 [buildout]
 parts =
   publish-connection-parameter
+  nginx-service
+  nginx-listen-promise
 
 [peertube-instance]
 recipe = slapos.cookbook:wrapper
@@ -8,15 +10,25 @@ wrapper-path = $${directory:service}/$${:_buildout_section_name_}
 command-line = cd $${directory:versions}; cp -r ${peertube-download:location} ./
   echo $${directory:versions}
 environment =
-  PATH=%(PATH)s
+  PATH=${unzip:location}/bin:${vim:location}/bin:${nodejs:location}/bin:${yarn:location}/bin:${python3:location}/bin:${nginx:location}/sbin:${postgresql:location}/sbin:${gcc-10.2:location}/bin:${redis:location}/bin:{git:location}/bin:{wget:location}/bin:%(PATH)s
+  CPPFLAGS=-I${openssl:location}/include
+  LDFLAGS=-L${curl:location}/lib -Wl,-rpath -Wl,${openssl:location}/lib -Wl,-rpath -Wl
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
 srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+log = $${:var}/log
+run = $${:var}/run
+www = $${:srv}/www
+varnginx = $${:var}/nginx
+services = $${:etc}/service
 peertube_directory = $${:srv}/var/www/peertube
 config = $${:srv}/var/www/peertube/config
 storage = $${:srv}/var/www/peertube/storage
 versions = $${:srv}/var/www/peertube/versions
+ssl = $${:etc}/ssl
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
@@ -42,6 +54,35 @@ wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
 command-line =
     $${postgresql:bin}/psql -c "CREATE EXTENSION pg_trgm;" $${postgresql:dbname}
     $${postgresql:bin}/psql -c "CREATE EXTENSION unaccent;" $${postgresql:dbname}
+
+#################################
+# Nginx service
+#################################
+[nginx-service]
+recipe = slapos.recipe.template
+url = ${template-nginx-service:output}
+output = $${directory:services}/nginx
+virtual-depends =
+  $${nginx-configuration:ip}
+
+[nginx-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = nginx_listen.py
+config-host = $${nginx-configuration:ip}
+config-port = $${nginx-configuration:port}
+
+[nginx-configuration]
+recipe = slapos.recipe.template
+url = ${template-nginx-configuration:output}
+output = $${directory:etc}/nginx.cfg
+access_log = $${directory:log}/nginx-access.log
+error_log = $${directory:log}/nginx-error.log
+ip = {{ partition_ipv6 }}
+port = 9443
+ssl_key = $${directory:ssl}/nginx.key
+ssl_csr = $${directory:ssl}/nginx.csr
+ssl_crt = $${directory:ssl}/nginx.crt
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
