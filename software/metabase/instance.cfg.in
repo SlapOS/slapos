@@ -127,7 +127,6 @@ alias = metabase
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
-bytes = 24
 
 [postgresql]
 recipe = slapos.cookbook:postgres
