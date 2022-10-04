@@ -140,6 +140,23 @@ epc_param_dict = {
     'epc_plmn': '00102',
 }
 
+ue_param_dict = {
+    'testing': True,
+    'tx_gain': 17,
+    'rx_gain': 17,
+    'dl_earfcn': 325320,
+    'n_rb_dl': 50,
+    'dl_nr_arfcn': 325320,
+    'nr_band': 99,
+    'nr_bandwidth': 50,
+    'ssb_nr_arfcn': 377790,
+    'imsi': "001010123456789",
+    'k': "00112233445566778899aabbccddeeff",
+    'rue_addr': "192.168.99.88",
+    'n_antenna_dl': 2,
+    'n_antenna_ul': 2,
+}
+
 def test_enb_conf(self):
 
     conf_file = glob.glob(os.path.join(
@@ -309,3 +326,52 @@ class TestGNBEPCSimCard(ORSTestCase):
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_ue_db(self)
+
+class TestUELTEParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(ue_param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-lte"
+    def test_ue_lte_conf(self):
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
+
+        with open(conf_file, 'r') as f:
+          conf = yaml.load(f)
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], ue_param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['n_rb_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], ue_param_dict['n_antenna_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], ue_param_dict['n_antenna_ul'])
+        self.assertEqual(conf['ue_list'][0]['rue_addr'],ue_param_dict['rue_addr'])     
+        self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
+        self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'], ue_param_dict['rx_gain'])
+
+class TestUENRParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(ue_param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-nr"
+    def test_ue_nr_conf(self):
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
+
+        with open(conf_file, 'r') as f:
+          conf = yaml.load(f)
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], ue_param_dict['ssb_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['nr_bandwidth'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], ue_param_dict['nr_band'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], ue_param_dict['n_antenna_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], ue_param_dict['n_antenna_ul'])
+        self.assertEqual(conf['ue_list'][0]['rue_addr'],ue_param_dict['rue_addr'])     
+        self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
+        self.assertEqual(conf['tx_gain'], ue_param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'],ue_param_dict['rx_gain'])
+
