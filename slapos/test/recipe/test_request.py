@@ -2,6 +2,7 @@ import mock
 import unittest
 from collections import defaultdict
 from slapos.recipe import request
+from test_slaposconfiguration import APIRequestHandler
 from testfixtures import LogCapture
 
 
@@ -25,6 +26,7 @@ class RecipeTestMixin(object):
     self.request_instance.return_value = requested_instance
     register_instance.request = self.request_instance
     slap_instance.registerComputerPartition.return_value = register_instance
+    slap_instance.jio_api_connector = None
     slap.return_value = slap_instance
     self.instance_getConnectionParameter = \
         requested_instance.getConnectionParameter
@@ -149,3 +151,6 @@ class RequestOptionalJSONEncodedTest(RecipeTestMixin, unittest.TestCase):
   return_value = '{"anything": "done"}'
   raises = False
   called_partition_parameter_kw = {'_': '{}'}
+
+class RecipejIOTestMixin:
+  pass

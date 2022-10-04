@@ -30,6 +30,7 @@ from slapos.recipe.librecipe import wrap, JSON_SERIALISED_MAGIC_KEY
 import json
 from slapos import slap as slapmodule
 from slapos.slap import SoftwareProductCollection
+from slapos.slap.slap import json_loads_byteified
 import slapos.recipe.librecipe.generic as librecipe
 import traceback
 
@@ -137,10 +138,11 @@ class Recipe(object):
       options.get('key-file'),
       options.get('cert-file'),
     )
-    request = slap.registerComputerPartition(
-      options['computer-id'],
-      options['partition-id'],
-    ).request
+    if not slap.jio_api_connector:
+      request = slap.registerComputerPartition(
+        options['computer-id'],
+        options['partition-id'],
+      ).request
 
     if software_url is not None and \
       software_url.startswith(SOFTWARE_PRODUCT_NAMESPACE):
@@ -158,44 +160,94 @@ class Recipe(object):
     self._raise_request_exception_formatted = None
     self.instance = None
 
-    # Try to do the request and fetch parameter dict...
-    try:
-      self.instance = request(software_url, software_type,
-          name, partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw, shared=shared, state=requested_state)
-      return_parameter_dict = self._getReturnParameterDict(self.instance,
-          return_parameters)
-      # Fetch the instance-guid and the instance-state
-      # Note: SlapOS Master does not support it for shared instances
-      if not shared:
-        try:
-          options['instance-guid'] = self.instance.getInstanceGuid() \
-              .encode('UTF-8')
+    if slap.jio_api_connector:
+      request_dict = {
+        "title": name,
+        "software_type": software_type,
+        "software_release_uri": software_url,
+        "portal_type": "Software Instance",
+      }
+      if partition_parameter_kw:
+        request_dict["parameters"] = json.dumps(partition_parameter_kw)
+      if filter_kw:
+        request_dict["sla_parameters"] = filter_kw
+      if slave:
+        request_dict["shared"] = True
+      if requested_state:
+        request_dict["state"] = requested_state
+
+      partition_dict = slap.jio_api_connector.post(request_dict)
+      if "$schema" in partition_dict and "error-response-schema.json" in partition_dict["$schema"]:
+        self.logger.warning(
+          'Request for %(request_name)r with software release '
+          '%(software_release)r and software type %(software_type)r failed '
+          'with partition_parameter_kw=%(partition_parameter_kw)r, '
+          'filter_kw=%(filter_kw)r, shared=%(shared)r, state=%(state)r.', dict(
+            software_release=software_url,
+            software_type=software_type,
+            request_name=name,
+            partition_parameter_kw=partition_parameter_kw,
+            filter_kw=filter_kw,
+            shared=slave,
+            state=requested_state
+          )
+        )
+        self._raise_request_exception = slapmodule.NotFoundError
+        self._raise_request_exception_formatted = str(partition_dict["message"])
+        return_parameter_dict = {}
+      else:
+        return_parameter_dict =  self._getFilteredParameterDict(
+          partition_dict,
+          return_parameters
+        )
+        # Fetch the instance-guid and the instance-state
+        # Note: SlapOS Master does not support it for slave instances
+        if not slave:
+          options['instance-guid'] =  partition_dict["reference"]
           # XXX: deprecated, to be removed
           options['instance_guid'] = options['instance-guid']
-          options['instance-state'] = self.instance.getState()
-          options['instance-status'] = self.instance.getStatus()
-        except (slapmodule.ResourceNotReady, AttributeError):
-          # Backward compatibility. Old SlapOS master and core don't know this.
-          self.logger.warning("Impossible to fetch instance GUID nor state.")
-    except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
-      self.logger.warning(
-        'Request for %(request_name)r with software release '
-        '%(software_release)r and software type %(software_type)r failed '
-        'with partition_parameter_kw=%(partition_parameter_kw)r, '
-        'filter_kw=%(filter_kw)r, shared=%(shared)r, state=%(state)r.', dict(
-          software_release=software_url,
-          software_type=software_type,
-          request_name=name,
-          partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw,
-          shared=shared,
-          state=requested_state
+          options['instance-state'] = options['state']
+          options['instance-status'] = options.get('access_status_message')
+
+    else:
+      # Try to do the request and fetch parameter dict...
+      try:
+        self.instance = request(software_url, software_type,
+            name, partition_parameter_kw=partition_parameter_kw,
+            filter_kw=filter_kw, shared=slave, state=requested_state)
+        return_parameter_dict = self._getReturnParameterDict(self.instance,
+            return_parameters)
+        # Fetch the instance-guid and the instance-state
+        # Note: SlapOS Master does not support it for slave instances
+        if not slave:
+          try:
+            options['instance-guid'] = self.instance.getInstanceGuid() \
+                .encode('UTF-8')
+            # XXX: deprecated, to be removed
+            options['instance_guid'] = options['instance-guid']
+            options['instance-state'] = self.instance.getState()
+            options['instance-status'] = self.instance.getStatus()
+          except (slapmodule.ResourceNotReady, AttributeError):
+            # Backward compatibility. Old SlapOS master and core don't know this.
+            self.logger.warning("Impossible to fetch instance GUID nor state.")
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+        self.logger.warning(
+          'Request for %(request_name)r with software release '
+          '%(software_release)r and software type %(software_type)r failed '
+          'with partition_parameter_kw=%(partition_parameter_kw)r, '
+          'filter_kw=%(filter_kw)r, shared=%(shared)r, state=%(state)r.', dict(
+            software_release=software_url,
+            software_type=software_type,
+            request_name=name,
+            partition_parameter_kw=partition_parameter_kw,
+            filter_kw=filter_kw,
+            shared=slave,
+            state=requested_state
+          )
         )
-      )
-      self._raise_request_exception = exc
-      self._raise_request_exception_formatted = traceback.format_exc()
-      return_parameter_dict = {}
+        self._raise_request_exception = exc
+        self._raise_request_exception_formatted = traceback.format_exc()
+        return_parameter_dict = {}
 
     # Then try to get all the parameters. In case of problem, put empty string.
     for param in return_parameters:
@@ -219,6 +271,14 @@ class Recipe(object):
         result[param] = str(instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
         pass
+    return result
+
+  def _getFilteredParameterDict(self, partition_dict, return_parameter_list):
+    result = {}
+    parameters = json_loads_byteified(partition.get("parameters", "{}"))
+    for key in return_parameter_list:
+      if key in parameters:
+        result[key] = parameters["key"]
     return result
 
   def install(self):
@@ -285,6 +345,12 @@ class JSONCodec(object):
       return json.loads(instance.getConnectionParameter(JSON_SERIALISED_MAGIC_KEY))
     except slapmodule.NotFoundError:
       return {}
+
+  def _getFilteredParameterDict(self, partition_dict, return_parameter_list):
+    parameters = json_loads_byteified(partition.get("parameters", "{}"))
+    if JSON_SERIALISED_MAGIC_KEY in parameters:
+      return json.loads(parameters[JSON_SERIALISED_MAGIC_KEY])
+    return {}
 
 class RequestJSONEncoded(JSONCodec, Recipe):
   """
