@@ -1,6 +1,5 @@
 [buildout]
 extends =
-  monitor-base
   ${monitor-template:output}
 
 parts =
@@ -31,8 +30,9 @@ ssl = $${:etc}/ssl
 [peertube-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = cd $${directory:versions}; cp -r ${peertube-download:location} ./
-  echo $${directory:versions}
+command-line = cd $${directory:versions} && cp -r ${peertube-download:location} ./
+#  echo "Hello!"
+#  ehco $${directory:versions}
 environment =
   PATH=${unzip:location}/bin:${vim:location}/bin:${nodejs:location}/bin:${yarn:location}/bin:${python3:location}/bin:${nginx:location}/sbin:${postgresql:location}/sbin:${gcc-10.2:location}/bin:${redis:location}/bin:{git:location}/bin:{wget:location}/bin:%(PATH)s
   CPPFLAGS=-I${openssl:location}/include
