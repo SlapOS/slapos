@@ -16,6 +16,9 @@ NR_RX_GAIN=40
 NR_IMSI="001010123456789"
 NR_K="00112233445566778899aabbccddeeff"
 
+N_ANTENNA_DL=2
+N_ANTENNA_UL=2
+
 global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
 }
@@ -46,6 +49,8 @@ rf_mode_context_list = [
 
             'min_frequency': 1880.0,
             'max_frequency': 1920,
+            'default_n_antenna_dl': N_ANTENNA_DL,
+            'default_n_antenna_ul': N_ANTENNA_UL,
         }, {
             'rf_mode': 'tdd2600',
 
@@ -71,6 +76,8 @@ rf_mode_context_list = [
 
             'min_frequency': 2570,
             'max_frequency': 2620,
+            'default_n_antenna_dl': N_ANTENNA_DL,
+            'default_n_antenna_ul': N_ANTENNA_UL,
         }, {
             'rf_mode': 'tdd3500',
 
@@ -96,6 +103,8 @@ rf_mode_context_list = [
 
             'min_frequency': 3400,
             'max_frequency': 3600,
+            'default_n_antenna_dl': N_ANTENNA_DL,
+            'default_n_antenna_ul': N_ANTENNA_UL,
         }, {
             'rf_mode': 'tdd3700',
 
@@ -121,6 +130,8 @@ rf_mode_context_list = [
 
             'min_frequency': 3600,
             'max_frequency': 3800,
+            'default_n_antenna_dl': N_ANTENNA_DL,
+            'default_n_antenna_ul': N_ANTENNA_UL,
         }
 ]
 

@@ -153,6 +153,8 @@ ue_param_dict = {
     'imsi': "001010123456789",
     'k': "00112233445566778899aabbccddeeff",
     'rue_addr': "192.168.99.88",
+    'n_antenna_dl': 2,
+    'n_antenna_ul': 2,
 }
 
 def test_enb_conf(self):
@@ -340,6 +342,8 @@ class TestUELTEParameters(ORSTestCase):
           conf = yaml.load(f)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], ue_param_dict['dl_earfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['n_rb_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], ue_param_dict['n_antenna_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], ue_param_dict['n_antenna_ul'])
         self.assertEqual(conf['ue_list'][0]['rue_addr'],ue_param_dict['rue_addr'])     
         self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
         self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])
@@ -363,6 +367,8 @@ class TestUENRParameters(ORSTestCase):
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], ue_param_dict['dl_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], ue_param_dict['nr_bandwidth'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], ue_param_dict['nr_band'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], ue_param_dict['n_antenna_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], ue_param_dict['n_antenna_ul'])
         self.assertEqual(conf['ue_list'][0]['rue_addr'],ue_param_dict['rue_addr'])     
         self.assertEqual(conf['ue_list'][0]['imsi'], ue_param_dict['imsi'])
         self.assertEqual(conf['ue_list'][0]['K'], ue_param_dict['k'])

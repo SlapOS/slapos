@@ -7,8 +7,7 @@
       "title": "[Required] Remote UE address",
       "description": "[Required] Address of remote UE server. Default port is 2152.",
       "type": "string",
-      "default": "",
-      "required": true
+      "default": ""
     },
     "tx_gain": {
       "title": "Tx gain",
@@ -33,6 +32,18 @@
       "description": "number of DL resource blocks",
       "type": "number",
       "default": 100
+    },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 2
     },
     "imsi": {
       "title": "IMSI",
