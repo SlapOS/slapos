@@ -3,7 +3,8 @@ extends =
   ${monitor-template:output}
 
 parts =
-  peertube-instance
+  postgresql
+  postgresql-extension
   nginx-service
   nginx-listen-promise
 
@@ -30,8 +31,8 @@ ssl = $${:etc}/ssl
 [peertube-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = cd $${directory:versions} && cp -r ${peertube-download:location} ./
-#  echo "Hello!"
+command-line = echo "Hello!"
+# Change config/production.yaml
 #  ehco $${directory:versions}
 environment =
   PATH=${unzip:location}/bin:${vim:location}/bin:${nodejs:location}/bin:${yarn:location}/bin:${python3:location}/bin:${nginx:location}/sbin:${postgresql:location}/sbin:${gcc-10.2:location}/bin:${redis:location}/bin:{git:location}/bin:{wget:location}/bin:%(PATH)s
@@ -40,7 +41,6 @@ environment =
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
-bytes = 24
 
 [postgresql]
 recipe = slapos.cookbook:postgres
@@ -63,6 +63,11 @@ command-line =
     $${postgresql:bin}/psql -c "CREATE EXTENSION pg_trgm;" $${postgresql:dbname}
     $${postgresql:bin}/psql -c "CREATE EXTENSION unaccent;" $${postgresql:dbname}
 
+[service-postgresql]
+recipe  = slapos.cookbook:postgres
+bin     = {{ postgresql_location }}/bin
+services= ${directory:service}
+
 #################################
 # Nginx service
 #################################
@@ -75,10 +80,11 @@ virtual-depends =
 
 [nginx-listen-promise]
 <= monitor-promise-base
-promise = check_socket_listening
+promise = check_url_available
 name = nginx_listen.py
-config-host = $${nginx-configuration:ip}
+config-host = [$${nginx-configuration:ip}]
 config-port = $${nginx-configuration:port}
+config-url = https://$${:config-host}/$${:config-port}
 
 [nginx-configuration]
 recipe = slapos.recipe.template
@@ -86,12 +92,24 @@ url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
-ip = {{ partition_ipv6 }}
+ip = $${instance-parameter:ipv6-random}
 port = 9443
 ssl_key = $${directory:ssl}/nginx.key
 ssl_csr = $${directory:ssl}/nginx.csr
 ssl_crt = $${directory:ssl}/nginx.crt
 
+#################################
+# SlapOS service
+#################################
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+configuration._ = {}
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-url = $${peertube-instance:url}
+# url = $${peertube-instance:url}
