@@ -1,3 +1,5 @@
+import httmock
+import json
 import mock
 import unittest
 from collections import defaultdict
@@ -153,4 +155,80 @@ class RequestOptionalJSONEncodedTest(RecipeTestMixin, unittest.TestCase):
   called_partition_parameter_kw = {'_': '{}'}
 
 class RecipejIOTestMixin:
-  pass
+
+  def setUp(self):
+    self.buildout = {
+      "buildout": {
+      },
+      "slap-connection": {
+      }
+    }
+    self.parameter_dict = {"foo": "bar", "hello": "bye"}
+    self.instance_data = {
+      "reference": "SOFTINST-12",
+      "state": "started",
+      "software_type": "Couscous",
+      "compute_partition_id": "slappartx12",
+      "compute_node_id": "COMP-321",
+      "software_release_uri": "foo.cfg",
+      "processing_timestamp": 1223231231,
+      "title": "MyInstance",
+      "root_instance_title": "MyInstanceRoot",
+      "ip_list": [
+        [
+          "slaptap9",
+          "fe80::1ff:fe23:4567:890a"
+        ],
+        [
+          "slaptap9",
+          "10.0.246.114"
+        ]
+      ],
+      "parameters": json.dumps(self.parameter_dict),
+      "connection_parameters": self.connection_parameter_dict,
+    }
+    self.options = {
+      "server-url": "http://127.0.0.1:80",
+      "name": self.instance_data["title"],
+      "software-instance-reference": "SOFTINST-12",
+      "computer-id": self.instance_data["compute_node_id"],
+      "partition-id": self.instance_data["compute_partition_id"],
+      "software-url": self.instance_data["software_release_uri"],
+    }
+
+  def test_no_return_in_options_logs(self):
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    with httmock.HTTMock(api_handler.request_handler):
+      with LogCapture() as log:
+      #import pdb; pdb.set_trace()
+        self.recipe(self.buildout, "request", self.options)
+        log.check(
+          ('request', 'DEBUG',
+          'No parameter to return to main instance.Be careful about that...'),
+        )
+    self.assertEqual(
+      api_handler.request_payload_list[0], json.dumps({
+        "software_release_uri": "foo.cfg",
+        "title": "MyInstance",
+        "portal_type": "Software Instance",
+        "compute_partition_id": "slappartx12",
+        "state": "started",
+        "compute_node_id": "COMP-321",
+        "software_type": "RootSoftwareInstance"
+      }))
+
+  def test_return_in_options_logs(self):
+    pass
+
+  def test_return_not_ready(self):
+    pass
+
+  def test_return_ready(self):
+    pass
+
+class RequestjIOTest(RecipejIOTestMixin, unittest.TestCase):
+  recipe = request.Recipe
+  connection_parameter_dict_empty = {}
+  connection_parameter_dict = {"foo": "bar"}
