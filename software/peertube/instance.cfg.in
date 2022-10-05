@@ -45,7 +45,7 @@ recipe = slapos.cookbook:generate.password
 [postgresql]
 recipe = slapos.cookbook:postgres
 bin = ${postgresql10:location}/bin/
-services = $${directory:service}
+services = $${directory:services}
 dbname  = peertube_prod
 superuser = peertube
 password = $${postgresql-password:passwd}
@@ -66,7 +66,7 @@ command-line =
 [service-postgresql]
 recipe  = slapos.cookbook:postgres
 bin     = {{ postgresql_location }}/bin
-services= ${directory:service}
+services= $${directory:service}
 
 #################################
 # Nginx service
