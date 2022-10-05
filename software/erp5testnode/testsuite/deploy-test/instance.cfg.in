@@ -48,8 +48,6 @@ context =
     raw bin_directory ${buildout:bin-directory}
     raw in_vm_test_script ${deploy-script-controller-script:location}
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
-    raw waittime ${deploy-script-controller-script:waittime}
-    raw tries ${deploy-script-controller-script:tries}
     section test_image_repository test-image-repository
 
 [test-image-repository]
