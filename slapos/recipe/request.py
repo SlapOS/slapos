@@ -166,6 +166,8 @@ class Recipe(object):
         "software_type": software_type,
         "software_release_uri": software_url,
         "portal_type": "Software Instance",
+        "compute_node_id": options['computer-id'],
+        "compute_partition_id": options['partition-id'],
       }
       if partition_parameter_kw:
         request_dict["parameters"] = json.dumps(partition_parameter_kw)
@@ -206,8 +208,8 @@ class Recipe(object):
           options['instance-guid'] =  partition_dict["reference"]
           # XXX: deprecated, to be removed
           options['instance_guid'] = options['instance-guid']
-          options['instance-state'] = options['state']
-          options['instance-status'] = options.get('access_status_message')
+          options['instance-state'] = partition_dict['state']
+          options['instance-status'] = partition_dict.get('access_status_message')
 
     else:
       # Try to do the request and fetch parameter dict...
@@ -275,7 +277,7 @@ class Recipe(object):
 
   def _getFilteredParameterDict(self, partition_dict, return_parameter_list):
     result = {}
-    parameters = json_loads_byteified(partition.get("parameters", "{}"))
+    parameters = json_loads_byteified(partition_dict.get("parameters", "{}"))
     for key in return_parameter_list:
       if key in parameters:
         result[key] = parameters["key"]

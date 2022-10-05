@@ -15,8 +15,10 @@ class APIRequestHandler(object):
   def __init__(self, response_list):
     self.response_list = response_list
     self.request_payload_list = []
+    self.sequence_list = []
 
   def request_handler(self, url, req):
+    self.sequence_list.append(url.path)
     if url.path == "/getHateoasUrl":
       return ""
     elif url.path == "/getJIOAPIUrl":
@@ -25,6 +27,7 @@ class APIRequestHandler(object):
     if not self.response_list and self.response_list[0][0] != url.path:
       raise ValueError("Unexcpected call: %s %s" % (url.path, req.body))
 
+    self.request_payload_list.append(req.body)
     return self.response_list.pop(0)[1]
 
 
