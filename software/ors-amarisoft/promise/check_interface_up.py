@@ -28,7 +28,7 @@ class RunPromise(GenericPromise):
       In this case, check whether the file exists.
     """
     ifname = self.getConfig('ifname')
-    testing = self.getConfig('testing')
+    testing = self.getConfig('testing') == "True"
 
     if testing:
         self.logger.info("skipping promise")

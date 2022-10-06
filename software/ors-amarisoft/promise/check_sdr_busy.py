@@ -28,6 +28,7 @@ class RunPromise(GenericPromise):
       In this case, check whether the file exists.
     """
     testing = {{ slapparameter_dict.get('testing', False) }}
+    testing = self.getConfig('testing') == "True"
     sdr_dev = '/dev/sdr0'
 
     if testing:
