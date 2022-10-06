@@ -277,10 +277,10 @@ class Recipe(object):
 
   def _getFilteredParameterDict(self, partition_dict, return_parameter_list):
     result = {}
-    parameters = json_loads_byteified(partition_dict.get("parameters", "{}"))
+    parameters = partition_dict.get("connection_parameters", "{}")
     for key in return_parameter_list:
       if key in parameters:
-        result[key] = parameters["key"]
+        result[key] = parameters[key]
     return result
 
   def install(self):
@@ -349,7 +349,7 @@ class JSONCodec(object):
       return {}
 
   def _getFilteredParameterDict(self, partition_dict, return_parameter_list):
-    parameters = json_loads_byteified(partition.get("parameters", "{}"))
+    parameters = partition_dict.get("connection_parameters", "{}")
     if JSON_SERIALISED_MAGIC_KEY in parameters:
       return json.loads(parameters[JSON_SERIALISED_MAGIC_KEY])
     return {}
