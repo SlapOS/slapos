@@ -202,33 +202,77 @@ class RecipejIOTestMixin:
     ])
     with httmock.HTTMock(api_handler.request_handler):
       with LogCapture() as log:
-      #import pdb; pdb.set_trace()
         self.recipe(self.buildout, "request", self.options)
         log.check(
           ('request', 'DEBUG',
           'No parameter to return to main instance.Be careful about that...'),
         )
+    expected_request_body = {
+      "software_release_uri": "foo.cfg",
+      "title": "MyInstance",
+      "portal_type": "Software Instance",
+      "compute_partition_id": "slappartx12",
+      "state": "started",
+      "compute_node_id": "COMP-321",
+      "software_type": "RootSoftwareInstance"
+    }
+    if self.called_partition_parameter_kw:
+      expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps({
-        "software_release_uri": "foo.cfg",
-        "title": "MyInstance",
-        "portal_type": "Software Instance",
-        "compute_partition_id": "slappartx12",
-        "state": "started",
-        "compute_node_id": "COMP-321",
-        "software_type": "RootSoftwareInstance"
-      }))
+      api_handler.request_payload_list[0], json.dumps(expected_request_body))
 
   def test_return_in_options_logs(self):
-    pass
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    with httmock.HTTMock(api_handler.request_handler):
+      with LogCapture() as log:
+        self.recipe(self.buildout, "request", self.options)
+        log.check()
+    expected_request_body = {
+      "software_release_uri": "foo.cfg",
+      "title": "MyInstance",
+      "portal_type": "Software Instance",
+      "compute_partition_id": "slappartx12",
+      "state": "started",
+      "compute_node_id": "COMP-321",
+      "software_type": "RootSoftwareInstance"
+    }
+    if self.called_partition_parameter_kw:
+      expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
+    self.assertEqual(
+      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+    self.assertEqual(self.options["connection-anything"], "done")
 
-  def test_return_not_ready(self):
+"""  def test_return_not_ready(self):
     pass
 
   def test_return_ready(self):
     pass
-
+"""
 class RequestjIOTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.Recipe
   connection_parameter_dict_empty = {}
-  connection_parameter_dict = {"foo": "bar"}
+  connection_parameter_dict = {"anything": "done"}
+  called_partition_parameter_kw = None
+
+class RequestjIOAPIOptionalTest(RecipejIOTestMixin, unittest.TestCase):
+  recipe = request.RequestOptional
+  connection_parameter_dict_empty = {}
+  connection_parameter_dict = {"anything": "done"}
+  called_partition_parameter_kw = None
+
+
+class RequestjIOAPIJSONEncodedTest(RecipejIOTestMixin, unittest.TestCase):
+  recipe = request.RequestJSONEncoded
+  connection_parameter_dict_empty = {}
+  connection_parameter_dict = {"_": '{"anything": "done"}'}
+  called_partition_parameter_kw = {"_": "{}"}
+
+
+class RequestjIOAPIOptionalJSONEncodedTest(RecipejIOTestMixin, unittest.TestCase):
+  recipe = request.RequestOptionalJSONEncoded
+  connection_parameter_dict_empty = {}
+  connection_parameter_dict = {"_": '{"anything": "done"}'}
+  called_partition_parameter_kw = {"_": "{}"}
