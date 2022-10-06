@@ -245,34 +245,83 @@ class RecipejIOTestMixin:
       api_handler.request_payload_list[0], json.dumps(expected_request_body))
     self.assertEqual(self.options["connection-anything"], "done")
 
-"""  def test_return_not_ready(self):
-    pass
+  def test_return_not_ready(self):
+    self.instance_data["connection_parameters"] = self.connection_parameter_dict_empty
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    with httmock.HTTMock(api_handler.request_handler):
+      with LogCapture() as log:
+        recipe = self.recipe(self.buildout, "request", self.options)
+        log.check()
+
+    if self.raises:
+      self.assertRaises(KeyError, recipe.install)
+    expected_request_body = {
+      "software_release_uri": "foo.cfg",
+      "title": "MyInstance",
+      "portal_type": "Software Instance",
+      "compute_partition_id": "slappartx12",
+      "state": "started",
+      "compute_node_id": "COMP-321",
+      "software_type": "RootSoftwareInstance"
+    }
+    if self.called_partition_parameter_kw:
+      expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
+    self.assertEqual(
+      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+    self.assertEqual(self.options["connection-anything"], "")
 
   def test_return_ready(self):
-    pass
-"""
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    with httmock.HTTMock(api_handler.request_handler):
+      recipe = self.recipe(self.buildout, "request", self.options)
+    result = recipe.install()
+    self.assertEqual([], result)
+    expected_request_body = {
+      "software_release_uri": "foo.cfg",
+      "title": "MyInstance",
+      "portal_type": "Software Instance",
+      "compute_partition_id": "slappartx12",
+      "state": "started",
+      "compute_node_id": "COMP-321",
+      "software_type": "RootSoftwareInstance"
+    }
+    if self.called_partition_parameter_kw:
+      expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
+    self.assertEqual(
+      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+    self.assertEqual(self.options["connection-anything"], "done")
+    self.assertIsInstance(self.options['connection-anything'], str)
+
 class RequestjIOTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.Recipe
   connection_parameter_dict_empty = {}
   connection_parameter_dict = {"anything": "done"}
   called_partition_parameter_kw = None
+  raises = True
 
 class RequestjIOAPIOptionalTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.RequestOptional
   connection_parameter_dict_empty = {}
   connection_parameter_dict = {"anything": "done"}
   called_partition_parameter_kw = None
-
+  raises = False
 
 class RequestjIOAPIJSONEncodedTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.RequestJSONEncoded
   connection_parameter_dict_empty = {}
   connection_parameter_dict = {"_": '{"anything": "done"}'}
   called_partition_parameter_kw = {"_": "{}"}
-
+  raises = True
 
 class RequestjIOAPIOptionalJSONEncodedTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.RequestOptionalJSONEncoded
   connection_parameter_dict_empty = {}
   connection_parameter_dict = {"_": '{"anything": "done"}'}
   called_partition_parameter_kw = {"_": "{}"}
+  raises = False
