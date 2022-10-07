@@ -29,8 +29,8 @@ import { open, exit } from "std";
   var pubsubWorker,
     worker = new Worker("{{ worker_script }}"),
     user_script = scriptArgs[1],
-    // Use the same FPS than browser's requestAnimationFrame
-    FPS = 1000 / 60,
+    // Minimum sampling interval for open62541 monitored items
+    FPS = 50,
     previous_timestamp,
     can_update = false;
 
