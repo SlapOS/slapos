@@ -48,10 +48,10 @@ import { open, exit } from "std";
   }
 
   function quit(exit_code) {
-    stop();
     if(pubsubRunning) {
       stopPubsub();
     }
+    stop();
     exit(exit_code);
   }
 
