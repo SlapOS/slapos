@@ -47,10 +47,10 @@ import { open, exit } from "std";
   }
 
   function quit(is_a_drone, exit_code) {
+    stopPubsub();
     if (is_a_drone) {
       stop();
     }
-    stopPubsub();
     exit(exit_code);
   }
 
