@@ -64,6 +64,7 @@ param_dict = {
     'rue_addr': "192.168.99.88",
     'n_antenna_dl': 2,
     'n_antenna_ul': 2,
+    'inactivity_timer': 17,
     'gnb_id': "0x17",
     'ssb_pos_bitmap': "10",
     'amf_list': {
@@ -110,6 +111,7 @@ class TestGNBParameters1(ORSTestCase):
             conf = yaml.load(f)
         self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
         self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
+        self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
@@ -155,6 +157,7 @@ def test_enb_conf(self):
         conf = yaml.load(f)
     self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
     self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
+    self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
