@@ -3,8 +3,11 @@ extends =
   ${monitor-template:output}
 
 parts =
+  service-redis
+  promise-redis
   postgresql
   postgresql-extension
+  peertube-configuration-1
   nginx-service
   nginx-listen-promise
 
@@ -23,17 +26,34 @@ www = $${:srv}/www
 varnginx = $${:var}/nginx
 services = $${:etc}/service
 peertube_directory = $${:srv}/var/www/peertube
-config = $${:srv}/var/www/peertube/config
-storage = $${:srv}/var/www/peertube/storage
-versions = $${:srv}/var/www/peertube/versions
+config = $${:var}/www/peertube/config
+storage = $${:var}/www/peertube/storage
+versions = $${:var}/www/peertube/versions
 ssl = $${:etc}/ssl
 
-[peertube-instance]
+[peertube-configuration-1]
+recipe = slapos.recipe.build
+production_config_template = ${peertube:location}/config/production.yaml.example
+production_config_prod = $${directory:config}/production.yaml
+install =
+  import shutil
+  shutil.copyfile(options['production_config_template'],  options['production_config_prod'])
+  with open(options['production_config_prod'], encoding='UTF-8') as f:
+    content = f.read()
+    print(content)
+    f.close()
+# content = content.replace(old_content, new_content)
+
+
+[peertube-configuration]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line = echo "Hello!"
+  cd ${peertube:location}
+  cp ${peertube:location}/config/production.yaml.example ${peertube:location}/config/production.yaml
+
 # Change config/production.yaml
-#  ehco $${directory:versions}
+
 environment =
   PATH=${unzip:location}/bin:${vim:location}/bin:${nodejs:location}/bin:${yarn:location}/bin:${python3:location}/bin:${nginx:location}/sbin:${postgresql:location}/sbin:${gcc-10.2:location}/bin:${redis:location}/bin:{git:location}/bin:{wget:location}/bin:%(PATH)s
   CPPFLAGS=-I${openssl:location}/include
@@ -97,6 +117,46 @@ port = 9443
 ssl_key = $${directory:ssl}/nginx.key
 ssl_csr = $${directory:ssl}/nginx.csr
 ssl_crt = $${directory:ssl}/nginx.crt
+
+#############
+#   Redis   #
+#############
+[redis]
+recipe  = slapos.cookbook:mkdirectory
+srv     = $${directory:srv}/redis
+log     = $${directory:log}/redis
+
+
+[service-redis]
+recipe  = slapos.cookbook:redis.server
+wrapper = $${directory:services}/redis
+promise-wrapper = $${directory:bin}/redis-promise
+
+server-dir  = $${redis:srv}
+config-file = $${directory:etc}/redis.conf
+log-file    = $${redis:log}/redis.log
+pid-file    = $${directory:run}/redis.pid
+use-passwd  = false
+unixsocket  = $${:server-dir}/redis.socket
+# port = 0 means "don't listen on TCP at all" - listen only on unix socket
+ipv6    = ::1
+port    = 0
+
+server-bin  = {{ redis_binprefix }}/redis-server
+cli-bin  = {{ redis_binprefix }}/redis-cli
+depend  =
+    $${logrotate-entry-redis:recipe}
+
+[promise-redis]
+<= monitor-promise-base
+promise = check_command_execute
+name = promise-redis.py
+config-command = $${service-redis:promise-wrapper}
+
+[logrotate-entry-redis]
+<= logrotate-entry-base
+log     = $${redis:log}/*.log
+name = redis
 
 #################################
 # SlapOS service
