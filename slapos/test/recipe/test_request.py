@@ -1,9 +1,12 @@
 import httmock
 import json
 import mock
+import os
 import unittest
+import tempfile
 from collections import defaultdict
 from slapos.recipe import request
+from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
 from test_slaposconfiguration import APIRequestHandler
 from testfixtures import LogCapture
 
@@ -195,6 +198,13 @@ class RecipejIOTestMixin:
       "partition-id": self.instance_data["compute_partition_id"],
       "software-url": self.instance_data["software_release_uri"],
     }
+    instance_root = tempfile.mkdtemp()
+    partition_root = os.path.join(instance_root, self.instance_data["compute_partition_id"])
+    os.mkdir(partition_root)
+    os.environ['SLAPGRID_INSTANCE_ROOT'] = instance_root
+    transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % self.instance_data["compute_partition_id"]
+    self.transaction_file_path = os.path.join(partition_root,
+                                             transaction_file_name)
 
   def test_no_return_in_options_logs(self):
     api_handler = APIRequestHandler([
@@ -220,6 +230,11 @@ class RecipejIOTestMixin:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
       api_handler.request_payload_list[0], json.dumps(expected_request_body))
+    self.assertEqual(api_handler.sequence_list, ["/api/post/"])
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance'])
 
   def test_return_in_options_logs(self):
     api_handler = APIRequestHandler([
@@ -244,6 +259,12 @@ class RecipejIOTestMixin:
     self.assertEqual(
       api_handler.request_payload_list[0], json.dumps(expected_request_body))
     self.assertEqual(self.options["connection-anything"], "done")
+    self.assertEqual(api_handler.sequence_list, ["/api/post/"])
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance'])
+
 
   def test_return_not_ready(self):
     self.instance_data["connection_parameters"] = self.connection_parameter_dict_empty
@@ -272,6 +293,11 @@ class RecipejIOTestMixin:
     self.assertEqual(
       api_handler.request_payload_list[0], json.dumps(expected_request_body))
     self.assertEqual(self.options["connection-anything"], "")
+    self.assertEqual(api_handler.sequence_list, ["/api/post/"])
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance'])
 
   def test_return_ready(self):
     api_handler = APIRequestHandler([
@@ -297,6 +323,35 @@ class RecipejIOTestMixin:
       api_handler.request_payload_list[0], json.dumps(expected_request_body))
     self.assertEqual(self.options["connection-anything"], "done")
     self.assertIsInstance(self.options['connection-anything'], str)
+    self.assertEqual(api_handler.sequence_list, ["/api/post/"])
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance'])
+
+  def test_two_requests_return_ready(self):
+    # Request first instance
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    with httmock.HTTMock(api_handler.request_handler):
+      recipe = self.recipe(self.buildout, "request", self.options)
+    result = recipe.install()
+    # Request Second Instance
+    self.options["name"] = self.instance_data["title"] = 'MyInstance2'
+    self.instance_data["reference"] = "SOFTINST-13"
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    with httmock.HTTMock(api_handler.request_handler):
+      recipe = self.recipe(self.buildout, "request", self.options)
+    result = recipe.install()
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance', 'MyInstance2'])
 
 class RequestjIOTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.Recipe
