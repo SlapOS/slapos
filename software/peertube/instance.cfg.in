@@ -7,9 +7,9 @@ parts =
   promise-redis
   postgresql
   postgresql-extension
-  peertube-configuration-1
   nginx-service
   nginx-listen-promise
+  peertube-configuration-1
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -35,13 +35,25 @@ ssl = $${:etc}/ssl
 recipe = slapos.recipe.build
 production_config_template = ${peertube:location}/config/production.yaml.example
 production_config_prod = $${directory:config}/production.yaml
+default_yaml = ${peertube:location}/config/default.yaml
+default_yaml_prod = $${directory:config}/default.yaml
+nginx_config = ${peertube:location}/support/nginx/peertube
+nginx_config_prod = ${peertube:location}/support/nginx/peertube
 install =
   import shutil
-  shutil.copyfile(options['production_config_template'],  options['production_config_prod'])
-  with open(options['production_config_prod'], encoding='UTF-8') as f:
-    content = f.read()
-    print(content)
-    f.close()
+  shutil.copyfile(options['default_yaml'],  options['default_yaml_prod'])
+  shutil.copyfile(options['default_yaml'],  options['default_yaml_prod'])
+  with open(options['production_config_template'], "r", encoding='utf-8') as exmaple_file:
+    with open(options['production_config_prod'], "w", encoding='utf-8') as prod_file:
+      for line in exmaple_file:
+          if "hostname: 'example.com'" in line:
+            line = line.replace("example.com", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
+          if "password: 'peertube'" in line:
+            line = line.replace("peertube", "$${postgresql:password}")
+          print("Fuck!!!")
+          print(line)
+          prod_file.write(line)
+
 # content = content.replace(old_content, new_content)
 
 
@@ -142,8 +154,9 @@ unixsocket  = $${:server-dir}/redis.socket
 ipv6    = ::1
 port    = 0
 
-server-bin  = {{ redis_binprefix }}/redis-server
-cli-bin  = {{ redis_binprefix }}/redis-cli
+# server-bin  = ${buildout:parts-directory}/redis/bin/redis-server
+server-bin = ${redis28:location}/bin/redis-server
+cli-bin  = ${redis28:location}/bin/redis-cli
 depend  =
     $${logrotate-entry-redis:recipe}
 
