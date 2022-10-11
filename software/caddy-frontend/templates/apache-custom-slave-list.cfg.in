@@ -102,7 +102,7 @@ context =
 {%-   if slave_type == 'redirect' %}
 {%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url', '').rstrip('/')) %}
 {%-     if slave_instance.get('https-url') %}
-{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get['https-url'].rstrip('/')) %}
+{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get('https-url', '').rstrip('/')) %}
 {%-     endif %}
 {%-   elif enable_cache %}
 {%-     if 'domain' in slave_instance %}
