@@ -353,6 +353,68 @@ class RecipejIOTestMixin:
       content_list = f.read().splitlines()
       self.assertEqual(sorted(content_list), ['MyInstance', 'MyInstance2'])
 
+  def test_requester_stopped_state_propagated(self):
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    self.buildout['slap-connection']['requested'] = 'stopped'
+    with httmock.HTTMock(api_handler.request_handler):
+      recipe = self.recipe(self.buildout, "request", self.options)
+    result = recipe.install()
+    self.assertEqual([], result)
+    expected_request_body = {
+      "software_release_uri": "foo.cfg",
+      "title": "MyInstance",
+      "portal_type": "Software Instance",
+      "compute_partition_id": "slappartx12",
+      "state": "stopped",
+      "compute_node_id": "COMP-321",
+      "software_type": "RootSoftwareInstance"
+    }
+    if self.called_partition_parameter_kw:
+      expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
+    self.assertEqual(
+      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+    self.assertEqual(self.options["connection-anything"], "done")
+    self.assertIsInstance(self.options['connection-anything'], str)
+    self.assertEqual(api_handler.sequence_list, ["/api/post/"])
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance'])
+
+  def test_requester_destroyed_state_not_propagated(self):
+    api_handler = APIRequestHandler([
+      ("/api/get", json.dumps(self.instance_data)),
+    ])
+    self.options['return'] = 'anything'
+    self.buildout['slap-connection']['requested'] = 'destroyed'
+    with httmock.HTTMock(api_handler.request_handler):
+      recipe = self.recipe(self.buildout, "request", self.options)
+    result = recipe.install()
+    self.assertEqual([], result)
+    expected_request_body = {
+      "software_release_uri": "foo.cfg",
+      "title": "MyInstance",
+      "portal_type": "Software Instance",
+      "compute_partition_id": "slappartx12",
+      "state": "started",
+      "compute_node_id": "COMP-321",
+      "software_type": "RootSoftwareInstance"
+    }
+    if self.called_partition_parameter_kw:
+      expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
+    self.assertEqual(
+      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+    self.assertEqual(self.options["connection-anything"], "done")
+    self.assertIsInstance(self.options['connection-anything'], str)
+    self.assertEqual(api_handler.sequence_list, ["/api/post/"])
+    self.assertTrue(os.path.exists(self.transaction_file_path))
+    with open(self.transaction_file_path, 'r') as f:
+      content_list = f.read().splitlines()
+      self.assertEqual(sorted(content_list), ['MyInstance'])
+
 class RequestjIOTest(RecipejIOTestMixin, unittest.TestCase):
   recipe = request.Recipe
   connection_parameter_dict_empty = {}
