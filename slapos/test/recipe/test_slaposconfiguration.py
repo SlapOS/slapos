@@ -18,11 +18,12 @@ class APIRequestHandler(object):
     self.sequence_list = []
 
   def request_handler(self, url, req):
-    self.sequence_list.append(url.path)
     if url.path == "/getHateoasUrl":
       return ""
     elif url.path == "/getJIOAPIUrl":
       return "https://127.0.0.1/api/"
+
+    self.sequence_list.append(url.path)
 
     if not self.response_list and self.response_list[0][0] != url.path:
       raise ValueError("Unexcpected call: %s %s" % (url.path, req.body))
