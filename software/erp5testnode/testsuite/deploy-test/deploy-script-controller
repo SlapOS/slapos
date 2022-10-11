@@ -56,7 +56,7 @@ fi
 function add_log ()
 {
   LOG_FILE="$1"
-  for f in /opt/slapos/log/slapos-node-{software,instance}.log ; do
+  for f in /opt/slapos/log/slapos-node-{software,instance}.log /srv/slapgrid/*/var/log/*log /srv/slapgrid/*/.*log  ; do
     echo "Tail of '$f':" >> "$LOG_FILE"
     tail -n 500 "$f" >> "$LOG_FILE"
   done
