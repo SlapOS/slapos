@@ -1797,7 +1797,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'type-redirect': {
         'url': cls.backend_url,
+        'https-url': cls.backend_https_url,
         'type': 'redirect',
+        'https-only': False,
       },
       'type-redirect-custom_domain': {
         'url': cls.backend_url,
@@ -3467,6 +3469,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%stest-path/deeper' % (self.backend_https_url,),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       http.client.FOUND,
