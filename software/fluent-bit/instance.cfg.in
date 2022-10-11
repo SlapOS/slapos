@@ -1,10 +1,20 @@
 [buildout]
 parts =
+  directory
+  fluent-bit-config-file
   fluent-bit-service
-  
+ 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -25,19 +35,30 @@ promise = ${:etc}/promise/
 log = ${:var}/log
 bin = ${:home}/bin
 
-[config-file]
-recipe = slapos.recipe.template:jinja2
-template = ${directory:etc}/${:_buildout_section_name_}.cfg.json
-rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
-extensions = jinja2.ext.do
-
 [fluent-bit-config-file]
-<= config-file
-context = 
-  key slapparameter_dict slap-configuration:configuration
+recipe = slapos.recipe.build
+config_json = ${directory:etc}/${:_buildout_section_name_}.json
+config_cfg = ${directory:etc}/${:_buildout_section_name_}.cfg
+install = 
+{% raw %}
+
+  import json
+ 
+  config_json = json.load(open(self.options["config_json"]))
+  config_cfg = open(self.options["config_cfg"], "w")
+
+  for section in config_json:
+    config_cfg.write(f"[{str(section).upper()}]\n")
+  
+    for key in dict(config_json[section]):
+      config_cfg.write(f"    {str(key).capitalize()} {config_json[section][key]}\n")
+
+    config_cfg.write("\n")
+
+{% endraw %}
 
 [fluent-bit-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ fluent_bit_location }}/bin/fluent-bit -c ${directory:etc}/${:_buildout_section_name_}.cfg
-wrapper-path = ${directory:service}/fluent-bit-service
+command-line = {{ fluent_bit_location }}/bin/fluent-bit -c ${fluent-bit-config-file:config_cfg}
+wrapper-path = ${directory:service}/fluentbit-service
 output = $${:wrapper-path}
