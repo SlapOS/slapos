@@ -104,7 +104,6 @@ coreutils = {{ coreutils_location }}
 sqlbench_path = {{ mariadb_location }}/sql-bench
 perl_dbd_mariadb_path = {{ perl_dbd_mariadb_path }}
 dash = {{ dash_location }}
-jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 fonts = {{ dumps(zope_fonts) }}
 fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
