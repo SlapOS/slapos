@@ -69,6 +69,11 @@ function add_checks ()
   lsof -Pni >> "$LOG_FILE" 2>&1
   echo 'iptables-save' >> "$LOG_FILE" 2>&1
   iptables-save >> "$LOG_FILE" 2>&1
+  echo 'iptables ?' >> $LOG_FILE 2>&1
+  iptables -L >> "$LOG_FILE" 2>&1
+  echo 'slapos cache ?' >> $LOG_FILE 2>&1
+  slapos cachelookup binary-sr https://lab.nexedi.com/nexedi/slapos/raw/1.0.248/software/erp5/software.cfg >> $LOG_FILE 2>&1
+
   for f in /tmp/playbook-* ; do echo "$f" ; cat "$f"; echo; done >> "$LOG_FILE" 2>&1
   echo 'slapos node status' >> "$LOG_FILE" 2>&1
   slapos node status >> "$LOG_FILE" 2>&1
