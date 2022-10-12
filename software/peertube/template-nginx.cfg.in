@@ -16,6 +16,9 @@ http {
   # Basic Settings
   ##
 
+  include $${nginx-configuration:nginx_sites-available};
+  include $${nginx-configuration:nginx_sites-enabled};
+
   sendfile on;
   tcp_nopush on;
   tcp_nodelay on;
