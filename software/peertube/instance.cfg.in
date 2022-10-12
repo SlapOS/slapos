@@ -9,7 +9,9 @@ parts =
   postgresql-extension
   nginx-service
   nginx-listen-promise
-  peertube-configuration-1
+  peertube-service
+  peertube-configuration
+
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -23,6 +25,9 @@ var = $${buildout:directory}/var
 log = $${:var}/log
 run = $${:var}/run
 www = $${:srv}/www
+nginx = $${:etc}/nginx
+nginx_sites-available = $${:nginx}/sites-available
+nginx_sites-enabled = $${:nginx}/sites-enabled
 varnginx = $${:var}/nginx
 services = $${:etc}/service
 peertube_directory = $${:srv}/var/www/peertube
@@ -31,45 +36,55 @@ storage = $${:var}/www/peertube/storage
 versions = $${:var}/www/peertube/versions
 ssl = $${:etc}/ssl
 
-[peertube-configuration-1]
+[peertube-configuration]
 recipe = slapos.recipe.build
 production_config_template = ${peertube:location}/config/production.yaml.example
+peertube_directory = $${directory:peertube_directory}
 production_config_prod = $${directory:config}/production.yaml
 default_yaml = ${peertube:location}/config/default.yaml
 default_yaml_prod = $${directory:config}/default.yaml
-nginx_config = ${peertube:location}/support/nginx/peertube
-nginx_config_prod = ${peertube:location}/support/nginx/peertube
+nginx_sites-available = ${peertube:location}/support/nginx/peertube
+nginx_sites-available_prod = $${directory:nginx_sites-available}/peertube
+nginx_sites-enabled_prod = $${directory:nginx_sites-enabled}/peertube
+peertube_service = ${peertube:location}/support/systemd/peertube.service
+peertube_service_prod = $${directory:services}/peertube.service
+peertube_config = $${directory:config}
+peertube_code_dir = ${peertube:location}
 install =
-  import shutil
+  import shutil, os
   shutil.copyfile(options['default_yaml'],  options['default_yaml_prod'])
-  shutil.copyfile(options['default_yaml'],  options['default_yaml_prod'])
-  with open(options['production_config_template'], "r", encoding='utf-8') as exmaple_file:
+
+  with open(options['nginx_sites-available'], "r", encoding='utf-8') as example_file:
+    with open(options['nginx_sites-available_prod'], "w", encoding='utf-8') as prod_file:
+      for line in example_file:
+          if "WEBSERVER_HOST" in line:
+            line = line.replace('$', '')
+            line = line.replace("{WEBSERVER_HOST}", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
+          if "{PEERTUBE_HOST}" in line:
+            line = line.replace('$', '')
+            line = line.replace("{PEERTUBE_HOST}", "127.0.0.1:9000")
+          if "ssl_certificate" in line:
+            line = ''
+          prod_file.write(line)
+
+  if not os.path.exists(options['nginx_sites-enabled_prod']):
+    os.symlink(options['nginx_sites-available_prod'], options['nginx_sites-enabled_prod'])
+
+  with open(options['production_config_template'], "r", encoding='utf-8') as example_file:
     with open(options['production_config_prod'], "w", encoding='utf-8') as prod_file:
-      for line in exmaple_file:
+      for line in example_file:
           if "hostname: 'example.com'" in line:
             line = line.replace("example.com", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
           if "password: 'peertube'" in line:
             line = line.replace("peertube", "$${postgresql:password}")
-          print("Fuck!!!")
-          print(line)
+          if "/var/www/peertube" in line:
+            line = line.replace("/var/www/peertube", options['peertube_directory'])
           prod_file.write(line)
 
-# content = content.replace(old_content, new_content)
-
-
-[peertube-configuration]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = echo "Hello!"
-  cd ${peertube:location}
-  cp ${peertube:location}/config/production.yaml.example ${peertube:location}/config/production.yaml
-
-# Change config/production.yaml
-
-environment =
-  PATH=${unzip:location}/bin:${vim:location}/bin:${nodejs:location}/bin:${yarn:location}/bin:${python3:location}/bin:${nginx:location}/sbin:${postgresql:location}/sbin:${gcc-10.2:location}/bin:${redis:location}/bin:{git:location}/bin:{wget:location}/bin:%(PATH)s
-  CPPFLAGS=-I${openssl:location}/include
-  LDFLAGS=-L${curl:location}/lib -Wl,-rpath -Wl,${openssl:location}/lib -Wl,-rpath -Wl
+[peertube-service]
+recipe = slapos.recipe.template
+url = ${template-peertube-service:output}
+output = $${directory:services}/peertube
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
@@ -124,6 +139,8 @@ url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
+nginx_sites-available = $${directory:nginx_sites-available}/peertube
+nginx_sites-enabled = $${directory:nginx_sites-enabled}/peertube
 ip = $${instance-parameter:ipv6-random}
 port = 9443
 ssl_key = $${directory:ssl}/nginx.key
