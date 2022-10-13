@@ -10,7 +10,7 @@ parts =
   directory
   logrotate-entry-caddy
   caddy-frontend
-  caddyprofiledeps
+  software-py
   switch-frontend-softwaretype
   caucase-updater
   caucase-updater-promise
@@ -60,8 +60,8 @@ parts =
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
 
-[caddyprofiledeps]
-recipe = caddyprofiledeps
+[software-py]
+recipe = software
 
 [frontend-node-id]
 # Store id file in top of hierarchy, so it does not depend on directory creation
@@ -347,7 +347,7 @@ stop-on-error = True
 
 [dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
-depends = ${caddyprofiledeps:recipe}
+depends = ${software-py:recipe}
 url = {{ software_parameter_dict['profile_slave_list'] }}
 filename = instance-slave-list.cfg
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
