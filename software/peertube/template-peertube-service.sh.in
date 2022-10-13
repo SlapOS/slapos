@@ -1,4 +1,4 @@
-exec cd ${peertube:location} && \
-  ${nodejs:location}/bin/node \
-  env NODE_ENV=production NODE_CONFIG_DIR=$${peertube-configuration:peertube_config}\
-  ${peertube:location}/dist/server
+cd ${peertube:location} &&
+
+exec env NODE_ENV=production NODE_CONFIG_DIR=$${peertube-setup:peertube_config} \
+  ${nodejs:location}/bin/node ${peertube:location}/dist/server

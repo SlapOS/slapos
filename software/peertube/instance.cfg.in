@@ -10,7 +10,7 @@ parts =
   nginx-service
   nginx-listen-promise
   peertube-service
-  peertube-configuration
+  peertube-setup
 
 
 eggs-directory = ${buildout:eggs-directory}
@@ -36,21 +36,17 @@ storage = $${:var}/www/peertube/storage
 versions = $${:var}/www/peertube/versions
 ssl = $${:etc}/ssl
 
-[peertube-configuration]
+[peertube-setup]
 recipe = slapos.recipe.build
+peertube_config = $${directory:config}
 production_config_template = ${peertube:location}/config/production.yaml.example
-peertube_directory = $${directory:peertube_directory}
 production_config_prod = $${directory:config}/production.yaml
 default_yaml = ${peertube:location}/config/default.yaml
 default_yaml_prod = $${directory:config}/default.yaml
 nginx_sites-available = ${peertube:location}/support/nginx/peertube
 nginx_sites-available_prod = $${directory:nginx_sites-available}/peertube
 nginx_sites-enabled_prod = $${directory:nginx_sites-enabled}/peertube
-peertube_service = ${peertube:location}/support/systemd/peertube.service
-peertube_service_prod = $${directory:services}/peertube.service
-peertube_config = $${directory:config}
-peertube_code_dir = ${peertube:location}
-install =
+init =
   import shutil, os
   shutil.copyfile(options['default_yaml'],  options['default_yaml_prod'])
 
@@ -70,16 +66,19 @@ install =
   if not os.path.exists(options['nginx_sites-enabled_prod']):
     os.symlink(options['nginx_sites-available_prod'], options['nginx_sites-enabled_prod'])
 
-  with open(options['production_config_template'], "r", encoding='utf-8') as example_file:
-    with open(options['production_config_prod'], "w", encoding='utf-8') as prod_file:
-      for line in example_file:
+  with open(options['production_config_template'], "r", encoding='utf-8') as config_template_file:
+    with open(options['production_config_prod'], "w", encoding='utf-8') as config_prod_file:
+      print('Fuck!!!')
+      print(options['production_config_template'])
+      print(options['production_config_prod'])
+      for line in config_template_file:
           if "hostname: 'example.com'" in line:
             line = line.replace("example.com", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
           if "password: 'peertube'" in line:
             line = line.replace("peertube", "$${postgresql:password}")
           if "/var/www/peertube" in line:
-            line = line.replace("/var/www/peertube", options['peertube_directory'])
-          prod_file.write(line)
+            line = line.replace("/var/www/peertube", "$${directory:peertube_directory}")
+          config_prod_file.write(line)
 
 [peertube-service]
 recipe = slapos.recipe.template
