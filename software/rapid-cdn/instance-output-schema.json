@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by Caddy Frontend instanciation",
+  "description": "Values returned by Rapid.CDN instanciation",
   "properties": {
     "accepted-slave-amount": {
       "description": "Amount of Slaves allocated to the Instance which are deployed",
