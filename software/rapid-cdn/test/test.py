@@ -1198,7 +1198,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
           os.environ.get(
               'SLAPOS_TEST_WORKING_DIR',
               os.path.join(os.getcwd(), '.slapos'))),
-          'caddy-frontend-test')
+          'rapid-cdn-test')
       if not os.path.isdir(cls.working_directory):
         os.mkdir(cls.working_directory)
 
