@@ -1,6 +1,6 @@
 {
-  "description": "Caddy Frontend",
-  "name": "Caddy Frontend",
+  "description": "Rapid.CDN",
+  "name": "Rapid.CDN",
   "serialisation": "xml",
   "software-type": {
     "custom-personal": {
