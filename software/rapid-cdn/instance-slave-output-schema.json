@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by Caddy Frontend instanciation",
+  "description": "Values returned by Rapid.CDN slave instanciation",
   "properties": {
     "domain": {
       "description": "Base domain used by the instance",
