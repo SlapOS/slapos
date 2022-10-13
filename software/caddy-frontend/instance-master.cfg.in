@@ -271,7 +271,7 @@ context =
 {%   for url_key in ['url-netloc-list', 'https-url-netloc-list', 'health-check-failover-url-netloc-list'] %}
 {%     if url_key in slave %}
 {%       for netloc in slave[url_key].split() %}
-{%         if not caddyprofiledummy.validate_netloc(netloc) %}
+{%         if not software.validate_netloc(netloc) %}
 {%           do slave_error_list.append('slave %s %r invalid' % (url_key, netloc)) %}
 {%         endif %}
 {%       endfor %}
