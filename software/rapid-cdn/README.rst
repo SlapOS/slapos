@@ -1,22 +1,15 @@
-==============
-Caddy Frontend
-==============
+=========
+Rapid.CDN
+=========
 
-Frontend system using Caddy, based on apache-frontend software release, allowing to rewrite and proxy URLs like myinstance.myfrontenddomainname.com to real IP/URL of myinstance.
+Software release which provides CDN - Content Delivery Network. It has a lot of features like:
 
-Caddy Frontend works using the master instance / slave instance design. It means that a single main instance of Caddy will be used to act as frontend for many slaves.
+ * provides cluster of exposed nodes in various regions
+ * handles zero knowledge for SSL certificates
+ * by using concept of SlapOS Master slaves allows user to request frontends with specific configuration
+ * provides various frontend types
 
-This documentation covers only specific scenarios. Most of the parameters are described in `software.cfg.json <software.cfg.json>`_.
-
-Software type
-=============
-
-Caddy frontend is available in 4 software types:
-  * ``default`` : The standard way to use the Caddy frontend configuring everything with a few given parameters
-  * ``custom-personal`` : This software type allow each slave to edit its Caddy configuration file
-  * ``default-slave`` : XXX
-  * ``custom-personal-slave`` : XXX
-
+This documentation is fully minimalistict, as `software.cfg.json <software.cfg.json>`_ contains most of explanations.
 
 About frontend replication
 ==========================
@@ -40,21 +33,19 @@ For example::
   <parameter id="-frontend-type">custom-personal</parameter>
   <parameter id="-frontend-2-state">stopped</parameter>
   <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
-  <parameter id="-frontend-3-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg</parameter>
+  <parameter id="-frontend-3-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/rapid-cdn/software.cfg</parameter>
 
 
-will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped.
+will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/nexedi/slapos/raw/someid/software/rapid-cdn/software.cfg. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped.
 
 *Note*: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
-
-**Important NOTE**: The way you ask for slave to a replicate frontend is the same as the one you would use for the software given in "-frontend-quantity". Do not forget to use "replicate" for software type. XXXXX So far it is not possible to do a simple request on a replicate frontend if you do not know the software_guid or other sla-parameter of the master instance. In fact we do not know yet the software type of the "requested" frontends. TO BE IMPLEMENTED
 
 How to deploy a frontend server
 ===============================
 
 This is to deploy an entire frontend server with a public IPv4.  If you want to use an already deployed frontend to make your service available via ipv4, switch to the "Example" parts.
 
-First, you will need to request a "master" instance of Caddy Frontend with:
+First, you will need to request a "master" instance of Rapid.CDN with:
 
   * A ``domain`` parameter where the frontend will be available
 
@@ -65,10 +56,10 @@ like::
    <parameter id="domain">moulefrite.org</parameter>
   </instance>
 
-Then, it is possible to request many slave instances (currently only from slapconsole, UI doesn't work yet) of Caddy Frontend, like::
+Then, it is possible to request many slave instances (currently only from slapconsole, UI doesn't work yet) of Rapid.CDN , like::
 
   instance = request(
-    software_release=caddy_frontend,
+    software_release=rapid_cdn,
     partition_reference='frontend2',
     shared=True,
     partition_parameter_kw={"url":"https://[1:2:3:4]:1234/someresource"}
@@ -81,11 +72,9 @@ Finally, the slave instance will be accessible from: https://someidentifier.moul
 About SSL and SlapOS Master Zero Knowledge
 ==========================================
 
-**IMPORTANT**: One Caddy can not serve more than one specific SSL site and be compatible with obsolete browser (i.e.: IE8). See http://wiki.apache.org/httpd/NameBasedSSLVHostsWithSNI
+**IMPORTANT**: Old browsers, like Internet Explorer 8, which do not supporting `SNI <http://wiki.apache.org/httpd/NameBasedSSLVHostsWithSNI>`_ might not be able to use SSL based endpoints (https).
 
-SSL keys and certificates are directly send to the frontend cluster in order to follow zero knowledge principle of SlapOS Master.
-
-*Note*: Until master partition or slave specific certificate is uploaded each slave is served with fallback certificate.  This fallback certificate is self signed, does not match served hostname and results with lack of response on HTTPs.
+*Note*: Until master partition or slave specific certificate is uploaded each slave is served with fallback certificate. This fallback certificate is self signed, does not match served hostname and results with lack of response on HTTPs.
 
 Obtaining CA for KeDiFa
 -----------------------
@@ -186,11 +175,11 @@ Using the IP given by the Master Instance.  "domain" is a mandatory Parameter.
 
 port
 ~~~~
-Port used by Caddy. Optional parameter, defaults to 4443.
+Port used by Rapid.CDN. Optional parameter, defaults to 4443.
 
 plain_http_port
 ~~~~~~~~~~~~~~~
-Port used by Caddy to serve plain http (only used to redirect to https).
+Port used by Rapid.CDN to serve plain http (only used to redirect to https).
 Optional parameter, defaults to 8080.
 
 
@@ -245,7 +234,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
 redirected and accessible from the proxy::
 
   instance = request(
-    software_release=caddy_frontend,
+    software_release=rapid_cdn,
     software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
@@ -263,7 +252,7 @@ https://[1:2:3:4:5:6:7:8]:1234 will be redirected and accessible from the
 proxy::
 
   instance = request(
-    software_release=caddy_frontend,
+    software_release=rapid_cdn,
     software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
@@ -283,7 +272,7 @@ https://[1:2:3:4:5:6:7:8]:1234/erp5/ will be redirected and accessible from
 the proxy::
 
   instance = request(
-    software_release=caddy_frontend,
+    software_release=rapid_cdn,
     software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
@@ -302,29 +291,13 @@ Simple Example
 Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
 
   instance = request(
-    software_release=caddy_frontend,
+    software_release=rapid_cdn,
     software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
     software_type="custom-personal",
     partition_parameter_kw={
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
-
-Simple Cache Example - XXX - to be written
-------------------------------------------
-
-Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
-
-  instance = request(
-    software_release=caddy_frontend,
-    software_type="RootSoftwareInstance",
-    partition_reference='my frontend',
-    shared=True,
-    software_type="custom-personal",
-    partition_parameter_kw={
-        "url":"https://[1:2:3:4:5:6:7:8]:1234",
-	"domain": "www.example.org",
-	"enable_cache": "True",
 
 Advanced example - XXX - to be written
 --------------------------------------
@@ -413,8 +386,7 @@ Solution 2 (network capability)
 
 It is also possible to directly allow the service to listen on 80 and 443 ports using the following command::
 
-  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$CADDY_FRONTEND_SOFTWARE_RELEASE_MD5/go.work/bin/caddy
-  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$CADDY_FRONTEND_SOFTWARE_RELEASE_MD5/parts/6tunnel/bin/6tunnel
+  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$RAPID_CDN_SOFTWARE_RELEASE_MD5/parts/haproxy/sbin/haproxy
 
 Then specify in the master instance parameters:
 
@@ -448,7 +420,7 @@ Keep the naming in instance profiles:
 Instantiated cluster structure
 ------------------------------
 
-Instantiating caddy-frontend results with a cluster in various partitions:
+Instantiating Rapid.CDN results with a cluster in various partitions:
 
  * master (the controlling one)
  * kedifa (contains kedifa server)
@@ -456,20 +428,20 @@ Instantiating caddy-frontend results with a cluster in various partitions:
 
 It means sites are served in ``frontend-node-N`` partition, and this partition is structured as:
 
- * Caddy serving the browser [client-facing-caddy]
+ * Haproxy serving the browser [client-facing-haproxy]
  * (optional) Apache Traffic Server for caching [ats]
  * Haproxy as a way to communicate to the backend [backend-facing-haproxy]
- * some other additional tools (6tunnel, monitor, etc)
+ * some other additional tools (monitor, etc)
 
 In case of slaves without cache (``enable_cache = False``) the request will travel as follows::
 
-  client-facing-caddy --> backend-facing-haproxy --> backend
+  client-facing-haproxy --> backend-facing-haproxy --> backend
 
 In case of slaves using cache (``enable_cache = True``) the request will travel as follows::
 
-  client-facing-caddy --> ats --> backend-facing-haproxy --> backend
+  client-facing-haproxy --> ats --> backend-facing-haproxy --> backend
 
-Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from Caddy and allows future developments like client SSL certificates to the backend or even health checks.
+Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from frontend Haproxy and allows future developments like client SSL certificates to the backend or even health checks.
 
 Kedifa implementation
 ---------------------
@@ -485,7 +457,7 @@ If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there
 Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------
 
-X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In case of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
+X-Forwarded-For and X-Real-Ip are transmitted to the backend.
 
 Automatic Internal Caucase CSR
 ------------------------------
