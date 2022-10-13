@@ -27,11 +27,11 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.caddy-frontend'
+name = 'slapos.test.rapid-cdn'
 
 setup(name=name,
       version=version,
-      description="Test for SlapOS' Caddy Frontend",
+      description="Test for SlapOS' Rapid.CDN",
       maintainer="Nexedi",
       maintainer_email="info@nexedi.com",
       url="https://lab.nexedi.com/nexedi/slapos",
