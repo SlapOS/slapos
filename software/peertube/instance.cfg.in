@@ -6,7 +6,6 @@ parts =
   service-redis
   promise-redis
   postgresql
-  postgresql-extension
   nginx-service
   nginx-listen-promise
   peertube-service
@@ -68,15 +67,21 @@ init =
 
   with open(options['production_config_template'], "r", encoding='utf-8') as config_template_file:
     with open(options['production_config_prod'], "w", encoding='utf-8') as config_prod_file:
-      print('Fuck!!!')
-      print(options['production_config_template'])
-      print(options['production_config_prod'])
+      local_host_counter = 0
       for line in config_template_file:
           if "hostname: 'example.com'" in line:
             line = line.replace("example.com", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
-          if "password: 'peertube'" in line:
+          elif "password: 'peertube'" in line:
             line = line.replace("peertube", "$${postgresql:password}")
-          if "/var/www/peertube" in line:
+          elif "hostname: 'localhost'" in line:
+            local_host_counter += 1
+            if local_host_counter == 2:
+              line = line.replace("localhost", "$${postgresql:ipv4}")
+            if local_host_counter == 3:
+              line = '' # set 'hostname' and 'port' to null, use redis.socket
+          elif "6379" in line:
+            line = line.replace("port: 6379", "unixsocket: $${service-redis:unixsocket}") # set 'hostname' and 'port' to null, use redis.socket
+          elif "/var/www/peertube" in line:
             line = line.replace("/var/www/peertube", "$${directory:peertube_directory}")
           config_prod_file.write(line)
 
@@ -101,13 +106,6 @@ ipv4 = $${instance-parameter:ipv4-random}
 # disable listening on ipv6
 ipv6 =
 port = 5432
-
-[postgresql-extension]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
-command-line =
-    $${postgresql:bin}/psql -c "CREATE EXTENSION pg_trgm;" $${postgresql:dbname}
-    $${postgresql:bin}/psql -c "CREATE EXTENSION unaccent;" $${postgresql:dbname}
 
 [service-postgresql]
 recipe  = slapos.cookbook:postgres

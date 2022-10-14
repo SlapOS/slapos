@@ -1,4 +1,38 @@
 cd ${peertube:location} &&
 
-exec env NODE_ENV=production NODE_CONFIG_DIR=$${peertube-setup:peertube_config} \
+# setup db
+
+die() {
+    echo "$*" 1>&2
+    exit 1
+}
+
+# run psql on gitlab db
+psql() {
+    $${postgresql:bin}/psql \
+        -h $${postgresql:pgdata-directory}  \
+        -U $${postgresql:superuser}         \
+        -d $${postgresql:dbname}            \
+        "$@"
+}
+
+# initial db setup
+# ( first quering PG several times waiting a bit till postgresql is started and ready )
+tpgwait=5
+while true; do
+    pgtables="$(psql -c '\d' 2>&1)" && break
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pg query problem"
+    echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+echo "I: PostgreSQL ready." 1>&2
+
+# make sure pg_trgm extension is enabled for peertube db
+# $${postgresql:bin}/psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'  $${postgresql:dbname} || die "pg_trgm setup failed"
+
+# make sure unaccent extension is enabled for peertube db
+# $${postgresql:bin}/psql -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'  $${postgresql:dbname} || die "unaccent setup failed"
+
+exec env NODE_ENV=production NODE_CONFIG_DIR=$${peertube-setup:peertube_config} PATH=${ffmpeg:location}/bin:$PATH\
   ${nodejs:location}/bin/node ${peertube:location}/dist/server
