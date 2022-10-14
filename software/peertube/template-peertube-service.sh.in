@@ -34,5 +34,5 @@ echo "I: PostgreSQL ready." 1>&2
 # make sure unaccent extension is enabled for peertube db
 # $${postgresql:bin}/psql -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'  $${postgresql:dbname} || die "unaccent setup failed"
 
-exec env NODE_ENV=production NODE_CONFIG_DIR=$${peertube-setup:peertube_config} PATH=${ffmpeg:location}/bin:$PATH\
+exec env NODE_ENV=production NODE_CONFIG_DIR=$${directory:config} PATH=${ffmpeg:location}/bin:$PATH\
   ${nodejs:location}/bin/node ${peertube:location}/dist/server

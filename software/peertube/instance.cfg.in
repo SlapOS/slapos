@@ -8,9 +8,11 @@ parts =
   postgresql
   nginx-service
   nginx-listen-promise
+  peertube-nginx-available
+  peertube-nginx-enabled
+  peertube-default-yaml
+  peertube-production-yaml
   peertube-service
-  peertube-setup
-
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -23,67 +25,39 @@ srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
 log = $${:var}/log
 run = $${:var}/run
-www = $${:srv}/www
+www = $${:var}/www
 nginx = $${:etc}/nginx
 nginx_sites-available = $${:nginx}/sites-available
 nginx_sites-enabled = $${:nginx}/sites-enabled
 varnginx = $${:var}/nginx
 services = $${:etc}/service
-peertube_directory = $${:srv}/var/www/peertube
-config = $${:var}/www/peertube/config
-storage = $${:var}/www/peertube/storage
-versions = $${:var}/www/peertube/versions
+xoxox = $${buildout:directory}/xoxox
+wwwx = $${:var}/wwwx
+peertube_directory = $${:www}/peertube
+config = $${:peertube_directory}/config
+storage = $${:peertube_directory}/storage
+versions = $${:peertube_directory}/versions
 ssl = $${:etc}/ssl
 
-[peertube-setup]
-recipe = slapos.recipe.build
-peertube_config = $${directory:config}
-production_config_template = ${peertube:location}/config/production.yaml.example
-production_config_prod = $${directory:config}/production.yaml
-default_yaml = ${peertube:location}/config/default.yaml
-default_yaml_prod = $${directory:config}/default.yaml
-nginx_sites-available = ${peertube:location}/support/nginx/peertube
-nginx_sites-available_prod = $${directory:nginx_sites-available}/peertube
-nginx_sites-enabled_prod = $${directory:nginx_sites-enabled}/peertube
-init =
-  import shutil, os
-  shutil.copyfile(options['default_yaml'],  options['default_yaml_prod'])
+[peertube-nginx-available]
+recipe = slapos.recipe.template
+url = ${template-peertube-nginx-available:output}
+output = $${directory:nginx_sites-available}/peertube
 
-  with open(options['nginx_sites-available'], "r", encoding='utf-8') as example_file:
-    with open(options['nginx_sites-available_prod'], "w", encoding='utf-8') as prod_file:
-      for line in example_file:
-          if "WEBSERVER_HOST" in line:
-            line = line.replace('$', '')
-            line = line.replace("{WEBSERVER_HOST}", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
-          if "{PEERTUBE_HOST}" in line:
-            line = line.replace('$', '')
-            line = line.replace("{PEERTUBE_HOST}", "127.0.0.1:9000")
-          if "ssl_certificate" in line:
-            line = ''
-          prod_file.write(line)
+[peertube-nginx-enabled]
+recipe = slapos.recipe.template
+url = ${template-peertube-nginx-available:output}
+output = $${directory:nginx_sites-enabled}/peertube
 
-  if not os.path.exists(options['nginx_sites-enabled_prod']):
-    os.symlink(options['nginx_sites-available_prod'], options['nginx_sites-enabled_prod'])
+[peertube-default-yaml]
+recipe = slapos.recipe.template
+url = ${template-peertube-default:output}
+output = $${directory:config}/default.yaml
 
-  with open(options['production_config_template'], "r", encoding='utf-8') as config_template_file:
-    with open(options['production_config_prod'], "w", encoding='utf-8') as config_prod_file:
-      local_host_counter = 0
-      for line in config_template_file:
-          if "hostname: 'example.com'" in line:
-            line = line.replace("example.com", "https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}")
-          elif "password: 'peertube'" in line:
-            line = line.replace("peertube", "$${postgresql:password}")
-          elif "hostname: 'localhost'" in line:
-            local_host_counter += 1
-            if local_host_counter == 2:
-              line = line.replace("localhost", "$${postgresql:ipv4}")
-            if local_host_counter == 3:
-              line = '' # set 'hostname' and 'port' to null, use redis.socket
-          elif "6379" in line:
-            line = line.replace("port: 6379", "unixsocket: $${service-redis:unixsocket}") # set 'hostname' and 'port' to null, use redis.socket
-          elif "/var/www/peertube" in line:
-            line = line.replace("/var/www/peertube", "$${directory:peertube_directory}")
-          config_prod_file.write(line)
+[peertube-production-yaml]
+recipe = slapos.recipe.template
+url = ${template-peertube-production:output}
+output = $${directory:config}/production.yaml
 
 [peertube-service]
 recipe = slapos.recipe.template
