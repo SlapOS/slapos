@@ -179,7 +179,7 @@ config-command = $${embedded-instance-requested-promise-script:output}
 [remote-frontend-base]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-slave = true
+shared = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket

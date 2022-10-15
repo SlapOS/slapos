@@ -344,7 +344,7 @@ recipe = slapos.cookbook:requestoptional
 name = Monitor Frontend ${monitor-instance-parameter:monitor-title}
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+shared = true
 config-url = ${monitor-httpd-conf-parameter:url}
 config-https-only = true
 #software-type = custom-personal

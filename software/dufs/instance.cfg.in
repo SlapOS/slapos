@@ -165,7 +165,7 @@ recipe = slapos.cookbook:requestoptional
 name = dufs Server Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+shared = true
 config-url = ${dufs-server:url}
 return = domain secure_access
 

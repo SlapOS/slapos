@@ -434,7 +434,7 @@ recipe = slapos.cookbook:request
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
 {{ root_common.sla('frontend', True) }}
-slave = true
+shared = true
 {% set config_dict = {
   'type': 'zope',
 } -%}
