@@ -1,10 +1,9 @@
-# The caddyprofiledeps egg allows to set dependecies of the Caddy profiles
-# which are enabled during the instance run, thanks to using caddyprofiledeps
-# recipe
+#  * sets additional dependencies for the instance processing
+#  * provides instance's importable specific code
 
 from setuptools import setup
 setup(
-  name='caddyprofiledeps',
+  name='software',
   install_requires=[
     'validators',
     'furl',
@@ -14,11 +13,11 @@ setup(
   ],
   entry_points={
     'zc.buildout': [
-      'default = caddyprofiledummy:Recipe',
+      'default = software:Recipe',
     ],
     'console_scripts': [
-      'smart-caucase-signer = caddyprofiledummy:smart_sign',
-      'caucase-csr-sign-check = caddyprofiledummy:caucase_csr_sign_check'
+      'smart-caucase-signer = software:smart_sign',
+      'caucase-csr-sign-check = software:caucase_csr_sign_check'
     ]
   }
 )

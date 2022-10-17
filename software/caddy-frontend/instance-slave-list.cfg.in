@@ -41,7 +41,7 @@ context =
 
 {#- Prepare configuration parameters #}
 {%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
-{%- for key in ['enable-http2-by-default', 'global-disable-http2'] %}
+{%- for key in ['enable-http2-by-default'] %}
 {%-   do configuration.__setitem__(key, ('' ~ configuration[key]).lower() in TRUE_VALUES) %}
 {%- endfor %}
 {#- Loop thought slave list to set up slaves #}
@@ -102,7 +102,7 @@ context =
 {%-   if slave_type == 'redirect' %}
 {%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url', '').rstrip('/')) %}
 {%-     if slave_instance.get('https-url') %}
-{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get['https-url'].rstrip('/')) %}
+{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get('https-url', '').rstrip('/')) %}
 {%-     endif %}
 {%-   elif enable_cache %}
 {%-     if 'domain' in slave_instance %}
@@ -218,7 +218,7 @@ context =
 {%-     endif %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('websocket-path-list', websocket_path_list) %}
-{%-   do slave_instance.__setitem__('enable_h2', not configuration['global-disable-http2'] and slave_instance['enable-http2']) %}
+{%-   do slave_instance.__setitem__('enable_h2', slave_instance['enable-http2']) %}
 {%-   if slave_instance['type'] in ['notebook', 'websocket'] %}
 {#    websocket style needs http 1.1 max #}
 {%-     do slave_instance.__setitem__('enable_h2', False) %}

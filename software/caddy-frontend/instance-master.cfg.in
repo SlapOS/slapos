@@ -1,5 +1,9 @@
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
+{#- DANGER! DANGER! #}
+{#- Avoid touching the NAME_BASE, as it will result with backward incompatible cluster setup #}
+{%- set NAME_BASE = 'caddy-frontend' %}
+{#- DANGER! DANGER! #}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {#- Allow to pass only some parameters to frontend nodes #}
@@ -10,7 +14,6 @@
         'apache-key',
         'domain',
         'enable-http2-by-default',
-        'global-disable-http2',
         'mpm-graceful-shutdown-timeout',
         're6st-verification-url',
         'backend-connect-timeout',
@@ -107,11 +110,10 @@ context =
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
-{% set namebase = 'caddy-frontend' %}
 # XXX Dirty hack, not possible to define default value before
-{% set sla_computer_caddy_1_key = '-sla-1-computer_guid' %}
-{% if not sla_computer_caddy_1_key in slapparameter_dict %}
-{%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') %}
+{% set sla_computer_1_key = '-sla-1-computer_guid' %}
+{% if not sla_computer_1_key in slapparameter_dict %}
+{%   do slapparameter_dict.__setitem__(sla_computer_1_key, '${slap-connection:computer-id}') %}
 {% endif %}
 {% set sla_computer_kedifa_key = '-sla-kedifa-computer_guid' %}
 {% if not sla_computer_kedifa_key in slapparameter_dict %}
@@ -121,7 +123,7 @@ context =
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
 {% for i in range(1, frontend_quantity + 1) %}
-{%   set frontend_name = "%s-%s" % (namebase, i) %}
+{%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
 {%   set request_section_title = 'request-%s' % frontend_name %}
 {%   set sla_key = "-sla-%s-" % i %}
 {%   set sla_key_length = sla_key | length %}
@@ -268,7 +270,7 @@ context =
 {%   for url_key in ['url-netloc-list', 'https-url-netloc-list', 'health-check-failover-url-netloc-list'] %}
 {%     if url_key in slave %}
 {%       for netloc in slave[url_key].split() %}
-{%         if not caddyprofiledummy.validate_netloc(netloc) %}
+{%         if not software.validate_netloc(netloc) %}
 {%           do slave_error_list.append('slave %s %r invalid' % (url_key, netloc)) %}
 {%         endif %}
 {%       endfor %}
@@ -424,40 +426,40 @@ warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
 {% endif %}
 {% if not aikc_enabled or not aibcc_enabled %}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
+frontend-node-{{ index + 1 }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
 {% endfor %}
 {% endif %}
 {% if not aikc_enabled %}
 kedifa-csr-url = ${request-kedifa:connection-kedifa-csr-url}
 kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
+frontend-node-{{ index + 1 }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
 {% endfor %}
 {% endif %}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
-{{ frontend }}-node-information-json = ${frontend-information:{{ frontend }}-node-information-json}
+frontend-node-{{ index + 1 }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
+frontend-node-{{ index + 1 }}-node-information-json = ${frontend-information:frontend-node-{{ index + 1 }}-node-information-json}
 {% endfor %}
 {% if not aibcc_enabled %}
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
+frontend-node-{{ index + 1 }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
 {% endfor %}
 {% endif %}
 
 # Generate promises for requested nodes
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
 {%   set part_name = 'promise-backend-haproxy-statistic-url-' + frontend %}
 {%   do part_list.append(part_name) %}
 {%   set section_part = '${request-' + frontend %}
 [{{ part_name }}]
 <= monitor-promise-base
 promise = check_url_available
-name = check-backend-haproxy-statistic-url-{{ frontend }}.py
+name = check-backend-haproxy-statistic-url-frontend-node-{{ index + 1 }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
 {% endfor %}
@@ -467,11 +469,11 @@ config-url =
 #-- Publish slave information
 [publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-publish-slave-information:output
+default = instance-publish-slave-information:output
 RootSoftwareInstance = ${:default}
-replicate = dynamic-publish-slave-information:output
-custom-personal = dynamic-publish-slave-information:output
-custom-group = dynamic-publish-slave-information:output
+replicate = instance-publish-slave-information:output
+custom-personal = instance-publish-slave-information:output
+custom-group = instance-publish-slave-information:output
 
 [request-kedifa]
 <= slap-connection
@@ -527,15 +529,15 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [frontend-information]
-{% for frontend in frontend_list %}
+{% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
-{{ frontend }}-node-information-json = {{ section_part }}:connection-node-information-json}
+frontend-node-{{ index + 1 }}-node-information-json = {{ section_part }}:connection-node-information-json}
 {% endfor %}
 
-[dynamic-publish-slave-information]
+[instance-publish-slave-information]
 < = jinja2-template-base
-url = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
-filename = dynamic-publish-slave-information.cfg
+url = {{ software_parameter_dict['profile_master_publish_slave_information'] }}
+filename = instance-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
