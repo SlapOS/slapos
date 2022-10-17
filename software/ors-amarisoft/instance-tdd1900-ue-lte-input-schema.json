@@ -85,10 +85,10 @@
       "title": "impu",
       "description": "Array of string or object. Each string represent an IMPU and can be a sip URI or a telephone number.",
       "type": "string",
-      "default": "000000000000"
+      "default": ""
     },
-    "impu": {
-      "title": "impu",
+    "impi": {
+      "title": "impi",
       "description": "String. Defines user IMPI. Must be fully filled with hostname if necessary.",
       "type": "string",
       "default": ""
