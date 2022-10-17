@@ -341,7 +341,7 @@ class TestDataMixin(object):
 
   # convince test to be run last; it's a hack, but log files shall be checked
   # after all other tests had chance to execute
-  def zz_test_file_list_log(self):
+  def test_zz_file_list_log(self):
     self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
