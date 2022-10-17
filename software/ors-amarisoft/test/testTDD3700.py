@@ -36,19 +36,103 @@ setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software-tdd3700.cfg')))
 
-class TestGNBParameters(ORSTestCase):
+param_dict = {
+    'testing': True,
+    "sim_algo": "milenage",
+    "imsi": "001010000000331",
+    "opc": "000102030405060708090A0B0C0D0E0F",
+    "amf": "0x9001",
+    "sqn": "000000000000",
+    "k": "00112233445566778899AABBCCDDEEFF",
+    "impu": "impu331",
+    "impi": "impi331@amarisoft.com",
+    'tx_gain': 17,
+    'rx_gain': 17,
+    'dl_earfcn': 325320,
+    'n_rb_dl': 50,
+    'enb_id': "0x17",
+    'pci': 250,
+    'mme_list': {
+        '10.0.0.1': {'mme_addr': '10.0.0.1'},
+        '2001:db8::1': {'mme_addr': '2001:db8::1'},
+    },
+    'epc_plmn': '00102',
+    'dl_nr_arfcn': 325320,
+    'nr_band': 99,
+    'nr_bandwidth': 50,
+    'ssb_nr_arfcn': 377790,
+    'rue_addr': "192.168.99.88",
+    'n_antenna_dl': 2,
+    'n_antenna_ul': 2,
+    'inactivity_timer': 17,
+    'gnb_id': "0x17",
+    'ssb_pos_bitmap': "10",
+    'amf_list': {
+        '10.0.0.1': {'amf_addr': '10.0.0.1'},
+        '2001:db8::1': {'amf_addr': '2001:db8::1'},
+    },
+}
+enb_param_dict = {
+    'plmn_list': {
+        '00101': {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
+        '00102': {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
+    },
+}
+gnb_param_dict1 = {
+    'plmn_list': {
+        '00101': {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
+        '00102': {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
+    },
+}
+gnb_param_dict2 = {
+    'nssai': {
+        '1': {'sd': 1, 'sst': 10},
+        '2': {'sd': 2, 'sst': 20},
+    },
+}
+enb_param_dict.update(param_dict)
+gnb_param_dict1.update(param_dict)
+gnb_param_dict2.update(param_dict)
 
-    param_dict = {
-        'testing': True,
-        'nssai': {
-            '1': {'sd': '1', 'sst': '10'},
-            '2': {'sd': '2', 'sst': '20'},
-        },
-    }
+class TestGNBParameters1(ORSTestCase):
 
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps(cls.param_dict)}
+        return {'_': json.dumps(gnb_param_dict1)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "gnb"
+    def test_gnb_conf(self):
+
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
+
+        with open(conf_file, 'r') as f:
+            conf = yaml.load(f)
+        self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
+        self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
+        self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
+        self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
+        self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
+        self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
+        self.assertEqual(conf['nr_cell_default']['n_id_cell'], gnb_param_dict1['pci'])
+        self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
+        for p in conf['nr_cell_default']['plmn_list']:
+          for n in "plmn ranac reserved tac".split():
+              self.assertEqual(p[n], gnb_param_dict1['plmn_list'][p['plmn']][n])
+        for p in conf['amf_list']:
+          self.assertEqual(p['amf_addr'], gnb_param_dict1['amf_list'][p['amf_addr']]['amf_addr'])
+
+        with open(conf_file, 'r') as f:
+            for l in f:
+                if l.startswith('#define NR_BANDWIDTH'):
+                    self.assertIn(str(gnb_param_dict1['nr_bandwidth']), l)
+
+class TestGNBParameters2(ORSTestCase):
+
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(gnb_param_dict2)}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "gnb"
@@ -62,83 +146,7 @@ class TestGNBParameters(ORSTestCase):
 
         for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
           for n in "sd sst".split():
-              self.assertEqual(p[n], self.param_dict['nssai'][p['sd']][n])
-
-class TestGNBParameters(ORSTestCase):
-
-    param_dict = {
-        'testing': True,
-        'tx_gain': 17,
-        'rx_gain': 17,
-        'dl_nr_arfcn': 325320,
-        'nr_band': 99,
-        'nr_bandwidth': 50,
-        'gnb_id': "0x17",
-        'ssb_pos_bitmap': "10",
-        'pci': 250,
-        'plmn_list': {
-            '00101': {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
-            '00102': {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
-        },
-        'amf_list': {
-            '10.0.0.1': {'amf_addr': '10.0.0.1'},
-            '2001:db8::1': {'amf_addr': '2001:db8::1'},
-        },
-    }
-
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(cls.param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb"
-    def test_gnb_conf(self):
-
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
-
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
-        self.assertEqual(conf['tx_gain'], self.param_dict['tx_gain'])
-        self.assertEqual(conf['rx_gain'], self.param_dict['rx_gain'])
-        self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], self.param_dict['dl_nr_arfcn'])
-        self.assertEqual(conf['nr_cell_list'][0]['band'], self.param_dict['nr_band'])
-        self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], self.param_dict['ssb_pos_bitmap'])
-        self.assertEqual(conf['nr_cell_default']['n_id_cell'], self.param_dict['pci'])
-        self.assertEqual(conf['gnb_id'], int(self.param_dict['gnb_id'], 16))
-        for p in conf['nr_cell_default']['plmn_list']:
-          for n in "plmn ranac reserved tac".split():
-              self.assertEqual(p[n], self.param_dict['plmn_list'][p['plmn']][n])
-        for p in conf['amf_list']:
-          self.assertEqual(p['amf_addr'], self.param_dict['amf_list'][p['amf_addr']]['amf_addr'])
-
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define NR_BANDWIDTH'):
-                    self.assertIn(str(self.param_dict['nr_bandwidth']), l)
-
-
-enb_param_dict = {
-    'testing': True,
-    'tx_gain': 17,
-    'rx_gain': 17,
-    'dl_earfcn': 325320,
-    'n_rb_dl': 50,
-    'enb_id': "0x17",
-    'pci': 250,
-    'plmn_list': {
-        '00101': {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
-        '00102': {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
-    },
-    'mme_list': {
-        '10.0.0.1': {'mme_addr': '10.0.0.1'},
-        '2001:db8::1': {'mme_addr': '2001:db8::1'},
-    },
-}
-epc_param_dict = {
-    'testing': True,
-    'epc_plmn': '00102',
-}
+              self.assertEqual(p[n], gnb_param_dict2['nssai'][str(p['sd'])][n])
 
 def test_enb_conf(self):
 
@@ -149,6 +157,7 @@ def test_enb_conf(self):
         conf = yaml.load(f)
     self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
     self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
+    self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
@@ -169,7 +178,7 @@ def test_mme_conf(self):
 
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)
-    self.assertEqual(conf['plmn'], epc_param_dict['epc_plmn'])
+    self.assertEqual(conf['plmn'], param_dict['epc_plmn'])
 
 class TestENBParameters(ORSTestCase):
 
@@ -186,7 +195,7 @@ class TestEPCParameters(ORSTestCase):
 
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps(epc_param_dict)}
+        return {'_': json.dumps(param_dict)}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "epc"
@@ -198,7 +207,7 @@ class TestENBEPCParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {
-            '_': json.dumps(dict(enb_param_dict, **epc_param_dict)),
+            '_': json.dumps(enb_param_dict),
         }
     @classmethod
     def getInstanceSoftwareType(cls):
@@ -208,17 +217,6 @@ class TestENBEPCParameters(ORSTestCase):
     def test_mme_conf(self):
         test_mme_conf(self)
 
-sim_card_param_dict = {
-    "sim_algo": "milenage",
-    "imsi": "001010000000331",
-    "opc": "000102030405060708090A0B0C0D0E0F",
-    "amf": "0x9001",
-    "sqn": "000000000000",
-    "k": "00112233445566778899AABBCCDDEEFF",
-    "impu": "impu331",
-    "impi": "impi331@amarisoft.com",
-}
-
 def test_ue_db(self):
 
     conf_file = glob.glob(os.path.join(
@@ -227,16 +225,16 @@ def test_ue_db(self):
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)
     for n in "sim_algo imsi opc sqn impu impi".split():
-        self.assertEqual(conf['ue_db'][0][n], sim_card_param_dict[n])
-    self.assertEqual(conf['ue_db'][0]['K'], sim_card_param_dict['k'])
-    self.assertEqual(conf['ue_db'][0]['amf'], int(sim_card_param_dict['amf'], 16))
+        self.assertEqual(conf['ue_db'][0][n], param_dict[n])
+    self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
+    self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
 
 def requestSlaveInstance(cls, software_type):
     software_url = cls.getSoftwareURL()
     return cls.slap.request(
         software_release=software_url,
         partition_reference="SIM-CARD-EPC",
-        partition_parameter_kw={'_': json.dumps(sim_card_param_dict)},
+        partition_parameter_kw={'_': json.dumps(param_dict)},
         shared=True,
         software_type=software_type,
     )
@@ -309,3 +307,64 @@ class TestGNBEPCSimCard(ORSTestCase):
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_ue_db(self)
+
+class TestUELTEParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-lte"
+    def test_ue_lte_conf(self):
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
+
+        with open(conf_file, 'r') as f:
+          conf = yaml.load(f)
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], param_dict['n_rb_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
+        self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
+        self.assertEqual(conf['ue_list'][0]['imsi'], param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], param_dict['k'])
+        self.assertEqual(conf['ue_list'][0]['sim_algo'], param_dict['sim_algo'])
+        self.assertEqual(conf['ue_list'][0]['opc'], param_dict['opc'])
+        self.assertEqual(conf['ue_list'][0]['amf'], int(param_dict['amf'], 16))
+        self.assertEqual(conf['ue_list'][0]['sqn'], param_dict['sqn'])
+        self.assertEqual(conf['ue_list'][0]['impu'], param_dict['impu'])
+        self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
+        self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
+
+class TestUENRParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-nr"
+    def test_ue_nr_conf(self):
+        conf_file = glob.glob(os.path.join(
+          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
+
+        with open(conf_file, 'r') as f:
+          conf = yaml.load(f)
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], param_dict['nr_bandwidth'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], param_dict['nr_band'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
+        self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
+        self.assertEqual(conf['ue_list'][0]['imsi'], param_dict['imsi'])
+        self.assertEqual(conf['ue_list'][0]['K'], param_dict['k'])
+        self.assertEqual(conf['ue_list'][0]['sim_algo'], param_dict['sim_algo'])
+        self.assertEqual(conf['ue_list'][0]['opc'], param_dict['opc'])
+        self.assertEqual(conf['ue_list'][0]['amf'], int(param_dict['amf'], 16))
+        self.assertEqual(conf['ue_list'][0]['sqn'], param_dict['sqn'])
+        self.assertEqual(conf['ue_list'][0]['impu'], param_dict['impu'])
+        self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
+        self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
+        self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
+

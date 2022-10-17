@@ -835,14 +835,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
 
 
 class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
-
-  @unittest.expectedFailure
-  def test_long_request_log_rotation(self):
-    super().test_long_request_log_rotation()
-
-  @unittest.expectedFailure
-  def test_basic_authentication_user_in_access_log(self):
-    super().test_basic_authentication_user_in_access_log()
+  pass
 
 
 class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):

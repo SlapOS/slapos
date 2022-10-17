@@ -150,6 +150,12 @@
       "type": "object",
       "default": {}
     },
+    "inactivity_timer": {
+      "title": "Inactivity Timer",
+      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
+      "type": "number",
+      "default": {{ default_nr_inactivity_timer }}
+    },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
