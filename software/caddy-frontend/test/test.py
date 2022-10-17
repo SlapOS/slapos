@@ -339,9 +339,8 @@ class TestDataMixin(object):
     runtime_data = '\n'.join(sorted(runtime_data))
     self.assertTestData(runtime_data)
 
-  # convince test to be run last; it's a hack, but log files shall be checked
-  # after all other tests had chance to execute
-  def zz_test_file_list_log(self):
+  def test00file_list_log(self):
+    # test00 name chosen to be run as first test
     self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
