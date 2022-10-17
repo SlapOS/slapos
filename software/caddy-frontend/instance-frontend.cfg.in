@@ -10,8 +10,8 @@ parts =
   directory
   logrotate-entry-caddy
   caddy-frontend
-  caddyprofiledeps
-  switch-caddy-softwaretype
+  software-py
+  switch-frontend-softwaretype
   caucase-updater
   caucase-updater-promise
   backend-client-caucase-updater
@@ -60,8 +60,8 @@ parts =
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
 
-[caddyprofiledeps]
-recipe = caddyprofiledeps
+[software-py]
+recipe = software
 
 [frontend-node-id]
 # Store id file in top of hierarchy, so it does not depend on directory creation
@@ -166,7 +166,7 @@ expose-csr-var = ${:var}/expose-csr
 # slave introspection
 slave-introspection-var = ${:var}/slave-introspection
 
-[switch-caddy-softwaretype]
+[switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:output
 RootSoftwareInstance = ${:default}
@@ -347,9 +347,9 @@ stop-on-error = True
 
 [dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
-depends = ${caddyprofiledeps:recipe}
+depends = ${software-py:recipe}
 url = {{ software_parameter_dict['profile_slave_list'] }}
-filename = custom-personal-instance-slave-list.cfg
+filename = instance-slave-list.cfg
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
 software_type = single-custom-personal
 organization = {{ slapparameter_dict['cluster-identification'] }}
@@ -415,7 +415,6 @@ extra-context =
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
-    key global_disable_http2 configuration:global-disable-http2
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:output
 # BBB: SlapOS Master non-zero knowledge END
@@ -430,7 +429,7 @@ inline =
   -conf ${dynamic-caddy-frontend-template:output} \
   -log ${caddy-configuration:error-log} \
   -log-roll-mb 0 \
-  {% if instance_parameter_dict['configuration.global-disable-http2'].lower() in TRUE_VALUES %}-http2=false \{% else %}-http2=true \{% endif %}
+  -http2=true \
   -grace {{ instance_parameter_dict['configuration.mpm-graceful-shutdown-timeout'] }}s \
   -disable-http-challenge \
   -disable-tls-alpn-challenge \
@@ -689,7 +688,7 @@ output = ${directory:etc-run}/frontend-caddy-safe-graceful
 
 extra-context =
     key graceful_reload_command caddy-configuration:frontend-graceful-command
-    key caddy_configuration_state frontend-caddy-configuration-state-graceful:output
+    key configuration_state frontend-caddy-configuration-state-graceful:output
 
 [frontend-caddy-validate]
 < = jinja2-template-base
@@ -704,7 +703,7 @@ extra-context =
 
 [frontend-caddy-lazy-graceful]
 < = jinja2-template-base
-url = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
+url = {{ software_parameter_dict['template_lazy_script_call'] }}
 output = ${directory:bin}/frontend-caddy-lazy-graceful
 pid-file = ${directory:run}/lazy-graceful.pid
 wait_time = 60
@@ -802,7 +801,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [backend-haproxy-rsyslogd-lazy-graceful]
 < = jinja2-template-base
-url = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
+url = {{ software_parameter_dict['template_lazy_script_call'] }}
 output = ${directory:bin}/backend-haproxy-rsyslogd-lazy-graceful
 pid-file = ${directory:run}/backend-haproxy-rsyslogd-lazy-graceful.pid
 wait_time = 60
@@ -852,7 +851,7 @@ output = ${directory:etc-run}/backend-haproxy-safe-graceful
 
 extra-context =
     key graceful_reload_command backend-haproxy-configuration:graceful-command
-    key caddy_configuration_state backend-haproxy-configuration-state-graceful:output
+    key configuration_state backend-haproxy-configuration-state-graceful:output
 
 [backend-haproxy-validate]
 <= jinja2-template-base
@@ -887,7 +886,7 @@ log-file = ${directory:log}/backend-haproxy.log
 pid-file = ${directory:run}/backend-haproxy-rsyslogd.pid
 spool-directory = ${directory:backend-haproxy-rsyslogd-spool}
 graceful-command = kill -HUP $(cat ${:pid-file})
-caddy-log-directory = ${caddy-directory:slave-log}
+log-directory = ${caddy-directory:slave-log}
 
 [backend-haproxy-rsyslogd-configuration]
 <= jinja2-template-base
@@ -1021,7 +1020,7 @@ output = ${directory:etc-run}/slave-introspection-safe-graceful
 
 extra-context =
     key graceful_reload_command caddy-configuration:slave-introspection-graceful-command
-    key caddy_configuration_state slave-introspection-configuration-state-graceful:output
+    key configuration_state slave-introspection-configuration-state-graceful:output
 
 [slave-introspection-validate]
 <= jinja2-template-base

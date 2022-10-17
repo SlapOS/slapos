@@ -358,7 +358,15 @@ context =
 <= run-common
 instance-home = ${directory:instance}
 {% if wsgi -%}
-wrapped-command-line = '{{ bin_directory }}/runwsgi' --event-log-file={{ '${' ~ conf_parameter_name ~ ':event-log}' }} --access-log-file={{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {% if webdav %}-w{% endif %} {{ ipv4 }}:${:port} {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %} '${:configuration-file}'
+wrapped-command-line =
+  '{{ bin_directory }}/runwsgi'
+    --event-log-file={{ '${' ~ conf_parameter_name ~ ':event-log}' }}
+    --access-log-file={{ '${' ~ conf_parameter_name ~ ':z2-log}' }}
+    {% if longrequest_logger_interval > 0 %} --long-request-log-file={{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {% endif %}
+    {% if webdav %}-w{% endif %}
+    {{ ipv4 }}:${:port}
+    {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %}
+    '${:configuration-file}'
 {% else -%}
 wrapped-command-line = '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 {%- endif %}

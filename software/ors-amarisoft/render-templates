@@ -3,109 +3,90 @@
 from jinja2 import Template
 import os
 
-# Values: 6 (1.4 MHz), 15 (3MHz), 25 (5MHz), 50 (10MHz), 75 (15MHz), 100 (20MHz)
-LTE_N_RB_DL=100
-LTE_TX_GAIN=78
-LTE_RX_GAIN=40
-
-NR_BANDWIDTH=40
-NR_TX_GAIN=78
-NR_RX_GAIN=40
-
 global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
 }
 
 rf_mode_context_list = [
         {
-            'rf_mode': 'tdd1900',
-
-            'default_dl_earfcn': 38350,
-            'default_lte_dl_freq': 1890.0,
-            'default_lte_band': 39,
-            'default_lte_n_rb_dl': LTE_N_RB_DL,
-            'default_lte_tx_gain': LTE_TX_GAIN,
-            'default_lte_rx_gain': LTE_RX_GAIN,
-
-            'default_dl_nr_arfcn': 378000,
-            'default_nr_band': 39,
-            'default_nr_dl_freq': 1890.0,
-            'default_nr_bandwidth': NR_BANDWIDTH,
-            'default_nr_tx_gain': NR_TX_GAIN,
-            'default_nr_rx_gain': NR_RX_GAIN,
-            'default_nr_ssb_pos_bitmap': "1000",
-
-            'min_frequency': 1880.0,
-            'max_frequency': 1920,
+            'rf_mode'                      : 'tdd1900',
+            'default_dl_earfcn'            : 38350,
+            'default_lte_dl_freq'          : 1890.0,
+            'default_lte_band'             : 39,
+            'default_dl_nr_arfcn'          : 378000,
+            'default_nr_band'              : 39,
+            'default_nr_dl_freq'           : 1890.0,
+            'default_nr_ssb_pos_bitmap'    : "1000",
+            'default_ssb_nr_arfcn'         : 377790,
+            'min_frequency'                : 1880.0,
+            'max_frequency'                : 1920,
         }, {
-            'rf_mode': 'tdd2600',
-
-            'default_dl_earfcn': 38050,
-            'default_lte_dl_freq': 2600.0,
-            'default_lte_band': 38,
-            'default_lte_n_rb_dl': LTE_N_RB_DL,
-            'default_lte_tx_gain': LTE_TX_GAIN,
-            'default_lte_rx_gain': LTE_RX_GAIN,
-
-            'default_dl_nr_arfcn': 520000,
-            'default_nr_band': 38,
-            'default_nr_dl_freq': 2600.0,
-            'default_nr_bandwidth': NR_BANDWIDTH,
-            'default_nr_tx_gain': NR_TX_GAIN,
-            'default_nr_rx_gain': NR_RX_GAIN,
-            'default_nr_ssb_pos_bitmap': "10000000",
-
-            'min_frequency': 2570,
-            'max_frequency': 2620,
+            'rf_mode'                      : 'tdd2600',
+            'default_dl_earfcn'            : 38050,
+            'default_lte_dl_freq'          : 2600.0,
+            'default_lte_band'             : 38,
+            'default_dl_nr_arfcn'          : 520000,
+            'default_nr_band'              : 38,
+            'default_nr_dl_freq'           : 2600.0,
+            'default_nr_ssb_pos_bitmap'    : "10000000",
+            'default_ssb_nr_arfcn'         : 517930,
+            'min_frequency'                : 2570,
+            'max_frequency'                : 2620,
         }, {
-            'rf_mode': 'tdd3500',
-
-            'default_dl_earfcn': 42590,
-            'default_lte_dl_freq': 3500.0,
-            'default_lte_band': 42,
-            'default_lte_n_rb_dl': LTE_N_RB_DL,
-            'default_lte_tx_gain': LTE_TX_GAIN,
-            'default_lte_rx_gain': LTE_RX_GAIN,
-
-            'default_dl_nr_arfcn': 632628,
-            'default_nr_band': 78,
-            'default_nr_dl_freq': 3489.42,
-            'default_nr_bandwidth': NR_BANDWIDTH,
-            'default_nr_tx_gain': NR_TX_GAIN,
-            'default_nr_rx_gain': NR_RX_GAIN,
-            'default_nr_ssb_pos_bitmap': "10000000",
-
-            'min_frequency': 3400,
-            'max_frequency': 3600,
+            'rf_mode'                      : 'tdd3500',
+            'default_dl_earfcn'            : 42590,
+            'default_lte_dl_freq'          : 3500.0,
+            'default_lte_band'             : 42,
+            'default_dl_nr_arfcn'          : 632628,
+            'default_nr_band'              : 78,
+            'default_nr_dl_freq'           : 3489.42,
+            'default_nr_ssb_pos_bitmap'    : "10000000",
+            'default_ssb_nr_arfcn'         : 632544,
+            'min_frequency'                : 3400,
+            'max_frequency'                : 3600,
         }, {
-            'rf_mode': 'tdd3700',
-
-            'default_dl_earfcn': 44590,
-            'default_lte_dl_freq': 3700.0,
-            'default_lte_band': 43,
-            'default_lte_n_rb_dl': LTE_N_RB_DL,
-            'default_lte_tx_gain': LTE_TX_GAIN,
-            'default_lte_rx_gain': LTE_RX_GAIN,
-
-            'default_dl_nr_arfcn': 646666,
-            'default_nr_band': 78,
-            'default_nr_dl_freq': 3699.99,
-            'default_nr_bandwidth': NR_BANDWIDTH,
-            'default_nr_tx_gain': NR_TX_GAIN,
-            'default_nr_rx_gain': NR_RX_GAIN,
-            'default_nr_ssb_pos_bitmap': "10000000",
-
-            'min_frequency': 3600,
-            'max_frequency': 3800,
+            'rf_mode'                      : 'tdd3700',
+            'default_dl_earfcn'            : 44590,
+            'default_lte_dl_freq'          : 3700.0,
+            'default_lte_band'             : 43,
+            'default_dl_nr_arfcn'          : 646666,
+            'default_nr_band'              : 78,
+            'default_nr_dl_freq'           : 3699.99,
+            'default_nr_ssb_pos_bitmap'    : "10000000",
+            'default_ssb_nr_arfcn'         : 646656,
+            'min_frequency'                : 3600,
+            'max_frequency'                : 3800,
         }
 ]
 
-with open('software.cfg.jinja2.json', 'r') as f:
+for i in range (4):
+    rf_mode_context_list[i].update({
+            'default_lte_n_rb_dl'          : 100,
+            'default_lte_tx_gain'          : 78,
+            'default_lte_rx_gain'          : 40,
+            'default_lte_imsi'             : "001010123456789",
+            'default_lte_k'                : "00112233445566778899aabbccddeeff",
+            'default_lte_inactivity_timer' : 10000,
+            'default_nr_bandwidth'         : 40,
+            'default_nr_tx_gain'           : 78,
+            'default_nr_rx_gain'           : 40,
+            'default_nr_imsi'              : "001010123456789",
+            'default_nr_k'                 : "00112233445566778899aabbccddeeff",
+            'default_n_antenna_dl'         : 2,
+            'default_n_antenna_ul'         : 2,
+            'default_nr_inactivity_timer' : 10000,
+    })
+
+with open('software.cfg.json.jinja2', 'r') as f:
     software_json_template = Template(f.read())
-with open('instance-enb-input-schema.jinja2.json', 'r') as f:
+with open('instance-enb-input-schema.json.jinja2', 'r') as f:
     instance_enb_json_template = Template(f.read())
-with open('instance-gnb-input-schema.jinja2.json', 'r') as f:
+with open('instance-gnb-input-schema.json.jinja2', 'r') as f:
     instance_gnb_json_template = Template(f.read())
+with open('instance-ue-lte-input-schema.json.jinja2', 'r') as f:
+    instance_ue_lte_json_template = Template(f.read())
+with open('instance-ue-nr-input-schema.json.jinja2', 'r') as f:
+    instance_ue_nr_json_template = Template(f.read())
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
 with open('test/test.jinja2.py', 'r') as f:
@@ -121,12 +102,17 @@ for rf_mode_context in rf_mode_context_list:
     with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
               'w+') as f:
         f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
-    for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc']:
+    for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc', 'ue-lte', 'ue-nr']:
         with open('instance-{}-{}-input-schema.json'.format(
                     rf_mode_context['rf_mode'],
                     software_type),
                   'w+') as f:
             if software_type in ['enb', 'enb-epc']:
                 f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
-            else:
+            elif software_type in ['gnb', 'gnb-epc']: 
                 f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
+            elif software_type in ['ue-lte']:
+                f.write(instance_ue_lte_json_template.render(**rf_mode_context, **global_context) + '\n')
+            else: 
+                f.write(instance_ue_nr_json_template.render(**rf_mode_context, **global_context) + '\n')
+  

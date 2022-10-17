@@ -69,6 +69,22 @@
       "response": "instance-epc-slave-schema.json",
       "shared": true,
       "index": 7
+    },
+    "ue-lte": {
+      "title": "UE-LTE",
+      "description": "UE LTE Configuration",
+      "software-type": "ue-lte",
+      "request": "instance-tdd3700-ue-lte-input-schema.json",
+      "response": "instance-tdd3700-ue-lte-schema.json",
+      "index": 8
+    },
+    "ue-nr": {
+      "title": "UE-NR",
+      "description": "UE NR Configuration",
+      "software-type": "ue-nr",
+      "request": "instance-tdd3700-ue-nr-input-schema.json",
+      "response": "instance-tdd3700-ue-nr-schema.json",
+      "index": 9
     }
   }
 }

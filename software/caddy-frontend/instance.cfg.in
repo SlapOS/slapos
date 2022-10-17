@@ -2,11 +2,11 @@
 extends = {{ software_parameter_dict['profile_common'] }}
 
 parts =
-  caddyprofiledeps
+  software-py
   switch-softwaretype
 
-[caddyprofiledeps]
-recipe = caddyprofiledeps
+[software-py]
+recipe = software
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -25,12 +25,12 @@ import-list =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-profile-caddy-replicate:output
+default = dynamic-profile-master:output
 RootSoftwareInstance = ${:default}
-custom-personal = dynamic-profile-caddy-replicate:output
-single-default = dynamic-profile-caddy-frontend:output
-single-custom-personal = dynamic-profile-caddy-frontend:output
-replicate = dynamic-profile-caddy-replicate:output
+custom-personal = dynamic-profile-master:output
+single-default = dynamic-profile-frontend:output
+single-custom-personal = dynamic-profile-frontend:output
+replicate = dynamic-profile-master:output
 kedifa = dynamic-profile-kedifa:output
 
 [software-parameter-section]
@@ -38,25 +38,25 @@ kedifa = dynamic-profile-kedifa:output
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
-[dynamic-profile-caddy-frontend]
+[dynamic-profile-frontend]
 < = jinja2-template-base
-url = {{ software_parameter_dict['profile_caddy_frontend'] }}
-filename = instance-caddy-frontend.cfg
+url = {{ software_parameter_dict['profile_frontend'] }}
+filename = instance-frontend.cfg
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
 
-[dynamic-profile-caddy-replicate]
+[dynamic-profile-master]
 < = jinja2-template-base
-depends = ${caddyprofiledeps:recipe}
-url = {{ software_parameter_dict['profile_caddy_replicate'] }}
-filename = instance-caddy-replicate.cfg
+depends = ${software-py:recipe}
+url = {{ software_parameter_dict['profile_master'] }}
+filename = instance-master.cfg
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
     import operator_module operator
     import validators validators
-    import caddyprofiledummy caddyprofiledummy
+    import software software
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
@@ -96,7 +96,6 @@ configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
 configuration.re6st-verification-url = http://[2001:67c:1254:4::1]/index.html
 configuration.enable-http2-by-default = true
-configuration.global-disable-http2 = false
 configuration.ciphers =
 configuration.request-timeout = 600
 configuration.mpm-graceful-shutdown-timeout = 5

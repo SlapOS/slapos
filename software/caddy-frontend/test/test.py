@@ -1037,10 +1037,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return generate_auth_url, upload_url
 
   def assertNodeInformationWithPop(self, parameter_dict):
-    key = 'caddy-frontend-1-node-information-json'
+    key = 'frontend-node-1-node-information-json'
     node_information_json_dict = {}
     for k in list(parameter_dict.keys()):
-      if k.startswith('caddy-frontend') and k.endswith(
+      if k.startswith('frontend-node') and k.endswith(
         'node-information-json'):
         node_information_json_dict[k] = parameter_dict.pop(k)
     self.assertEqual(
@@ -1054,10 +1054,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.node_information_dict = node_information_dict
 
   def assertBackendHaproxyStatisticUrl(self, parameter_dict):
-    url_key = 'caddy-frontend-1-backend-haproxy-statistic-url'
+    url_key = 'frontend-node-1-backend-haproxy-statistic-url'
     backend_haproxy_statistic_url_dict = {}
     for key in list(parameter_dict.keys()):
-      if key.startswith('caddy-frontend') and key.endswith(
+      if key.startswith('frontend-node') and key.endswith(
         'backend-haproxy-statistic-url'):
         backend_haproxy_statistic_url_dict[key] = parameter_dict.pop(key)
     self.assertEqual(
@@ -1562,11 +1562,11 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
-    self.assertKeyWithPop('caddy-frontend-1-kedifa-csr-url', parameter_dict)
+    self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop(
-      'caddy-frontend-1-backend-client-csr-url', parameter_dict)
+      'frontend-node-1-backend-client-csr-url', parameter_dict)
     self.assertKeyWithPop(
-      'caddy-frontend-1-csr-certificate', parameter_dict)
+      'frontend-node-1-csr-certificate', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1797,7 +1797,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'type-redirect': {
         'url': cls.backend_url,
+        'https-url': cls.backend_https_url,
         'type': 'redirect',
+        'https-only': False,
       },
       'type-redirect-custom_domain': {
         'url': cls.backend_url,
@@ -2100,7 +2102,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     }
     expected_node_information['version-hash-history']['testhash'] = 'testurl'
     self.assertEqual(
-      json.loads(parameter_dict['caddy-frontend-1-node-information-json']),
+      json.loads(parameter_dict['frontend-node-1-node-information-json']),
       expected_node_information
     )
 
@@ -2179,7 +2181,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
+      self.getMasterPartitionPath(), 'instance-master.cfg')
     with open(buildout_file) as fh:
       for line in [
         q for q in fh.readlines()
@@ -2756,11 +2758,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
-
-  @skip('Feature postponed')
-  def test_check_error_log(self):
-    # Caddy: Need to implement similar thing like check-error-on-apache-log
-    raise NotImplementedError(self.id())
 
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
@@ -3467,6 +3464,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%stest-path/deeper' % (self.backend_https_url,),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       http.client.FOUND,
@@ -4591,12 +4602,12 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     key_list = [
-      'caddy-frontend-1-node-information-json',
-      'caddy-frontend-2-node-information-json'
+      'frontend-node-1-node-information-json',
+      'frontend-node-2-node-information-json'
     ]
     node_information_json_dict = {}
     for k in list(parameter_dict.keys()):
-      if k.startswith('caddy-frontend') and k.endswith(
+      if k.startswith('frontend-node') and k.endswith(
         'node-information-json'):
         node_information_json_dict[k] = parameter_dict.pop(k)
     self.assertEqual(
@@ -4692,7 +4703,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
     self.slap.waitForInstance(self.instance_max_retry)
 
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
+      self.getMasterPartitionPath(), 'instance-master.cfg')
     with open(buildout_file) as fh:
       buildout_file_content = fh.read()
       node_1_present = re.search(
@@ -4898,79 +4909,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'some-re6st-verification-url',
       }
     )
-
-
-class TestSlaveGlobalDisableHttp2(TestSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestSlaveGlobalDisableHttp2, cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = self.assertResponseHeaders(result)
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-      },
-      headers
-    )
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
-class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
-  TestEnableHttp2ByDefaultFalseSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2,
-      cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
-class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
-  TestEnableHttp2ByDefaultDefaultSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2,
-      cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
 
 
 class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
@@ -6624,7 +6562,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'apache-key': self.key_pem,
       'domain': 'example.com',
       'enable-http2-by-default': True,
-      'global-disable-http2': True,
       'mpm-graceful-shutdown-timeout': 2,
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
@@ -6718,7 +6655,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'enable-http2-by-default': 'True',
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
-        'global-disable-http2': 'True',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6745,7 +6681,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'enable-http2-by-default': 'True',
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
-        'global-disable-http2': 'True',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6772,7 +6707,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'enable-http2-by-default': 'True',
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
-        'global-disable-http2': 'True',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -6818,7 +6752,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
         'full_address_list': [],
-        'global-disable-http2': 'True',
         'instance_title': 'testing partition 0',
         'kedifa_port': '15080',
         'mpm-graceful-shutdown-timeout': '2',
