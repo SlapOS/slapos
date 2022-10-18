@@ -8,6 +8,7 @@ import tempfile
 from collections import defaultdict
 from slapos.recipe import slapconfiguration
 from slapos import format as slapformat
+from slapos.grid.SlapObject import SOFTWARE_INSTANCE_JSON_FILENAME
 from slapos.util import dumps, calculate_dict_hash
 
 
@@ -32,7 +33,7 @@ class APIRequestHandler(object):
     return self.response_list.pop(0)[1]
 
 
-class SlapConfigurationTest(unittest.TestCase):
+class SlapConfigurationTestMixin(object):
 
   def setUp(self):
     """Prepare files on filesystem."""
@@ -49,6 +50,10 @@ class SlapConfigurationTest(unittest.TestCase):
     }
     with open(self.resource_file, "wt") as fo:
       json.dump(self.resource, fo)
+    self.instance_json_location = os.path.join(
+      self.instance_root,
+      SOFTWARE_INSTANCE_JSON_FILENAME
+    )
     # do your tests inside try block and clean up in finally
     self.buildout = {
       "buildout": {
@@ -58,9 +63,11 @@ class SlapConfigurationTest(unittest.TestCase):
 
   def tearDown(self):
     os.unlink(self.resource_file)
+    if os.path.exists(self.instance_json_location):
+      os.unlink(self.instance_json_location)
     os.rmdir(self.instance_root)
 
-  def test_new_api(self):
+  def test_no_shared_instance(self):
     """Test proper call with new api"""
 
     options = {
@@ -91,10 +98,17 @@ class SlapConfigurationTest(unittest.TestCase):
       "parameters": json.dumps(parameter_dict),
       "connection_parameters": {"1": 2, "3": "YourURL"},
     }
-    api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(instance_data)),
-      ("/api/allDocs", json.dumps({"result_list": []}))
-    ])
+    if self.use_api:
+      api_handler = APIRequestHandler([
+        ("/api/get", json.dumps(instance_data)),
+        ("/api/allDocs", json.dumps({"result_list": []}))
+      ])
+    else:
+      with open(self.instance_json_location, 'w') as f:
+        json.dump(instance_data, f, indent=2)
+      api_handler = APIRequestHandler([
+        ("/api/allDocs", json.dumps({"result_list": []}))
+      ])
     with httmock.HTTMock(api_handler.request_handler):
       slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
 
@@ -119,7 +133,7 @@ class SlapConfigurationTest(unittest.TestCase):
     self.assertEqual(options['address-list'], [10, 20],
       "All underscores should be replaced with -")
 
-  def test_new_api_with_shared_instance(self):
+  def test_with_shared_instance(self):
     """Test proper call with new api"""
 
     options = {
@@ -174,14 +188,25 @@ class SlapConfigurationTest(unittest.TestCase):
       "parameters": json.dumps(shared_instance_parameter_dict),
       "connection_parameters": {"4": 6, "8": "YourURL2"},
     }
-    api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(instance_data)),
-      ("/api/allDocs", json.dumps({"result_list": [{
-        "portal_type": "Shared Instance",
-        "reference": shared_instance_data["reference"]
-        }]})),
-      ("/api/get", json.dumps(shared_instance_data)),
-    ])
+    if self.use_api:
+      api_handler = APIRequestHandler([
+        ("/api/get", json.dumps(instance_data)),
+        ("/api/allDocs", json.dumps({"result_list": [{
+          "portal_type": "Shared Instance",
+          "reference": shared_instance_data["reference"]
+          }]})),
+        ("/api/get", json.dumps(shared_instance_data)),
+      ])
+    else:
+      with open(self.instance_json_location, 'w') as f:
+        json.dump(instance_data, f, indent=2)
+      api_handler = APIRequestHandler([
+        ("/api/allDocs", json.dumps({"result_list": [{
+          "portal_type": "Shared Instance",
+          "reference": shared_instance_data["reference"]
+          }]})),
+        ("/api/get", json.dumps(shared_instance_data)),
+      ])
     with httmock.HTTMock(api_handler.request_handler):
       slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
 
@@ -214,3 +239,14 @@ class SlapConfigurationTest(unittest.TestCase):
         'connection-parameter-hash': calculate_dict_hash(shared_instance_data.get("connection_parameters")),
       }
     ])
+
+    if not self.use_api:
+      with open(self.instance_json_location, "r") as f:
+        dumped_data = json.load(f)
+      self.assertEqual(dumped_data["slave_instance_list"], options["shared-instance-list"])
+
+class SlapConfigurationWithLocalInstanceFile(SlapConfigurationTestMixin, unittest.TestCase):
+  use_api = True
+
+class SlapConfigurationWithApi(SlapConfigurationTestMixin, unittest.TestCase):
+  use_api = False
