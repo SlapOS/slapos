@@ -36,6 +36,7 @@ import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 from slapos.util import mkdir_p, dumps, calculate_dict_hash
+from slapos.grid.SlapObject import SOFTWARE_INSTANCE_JSON_FILENAME
 
 from slapos import format as slapformat
 
@@ -134,24 +135,35 @@ class Recipe(object):
       1. SlapOS Master - for external computer/partition information
       2. format.Partition.resource_file - for partition specific details
       """
+      software_instance = None
+
+      instance_json_path = os.path.join(instance_root, SOFTWARE_INSTANCE_JSON_FILENAME)
+      if os.path.exists(instance_json_path):
+        with open(instance_json_path, "r") as f:
+          software_instance = json.load(f)
+
       slap = slapos.slap.slap()
       slap.initializeConnection(
           options['url'],
           options.get('key'),
           options.get('cert'),
       )
-      if slap.jio_api_connector:
-        if options.get("software-instance-reference"):
-          software_instance = slap.jio_api_connector.get({
-            "portal_type": "Software Instance",
-            "reference": options.get("software-instance-reference"),
-          })
-        else:
-          software_instance = slap.jio_api_connector.get({
-            "portal_type": "Software Instance",
-            "compute_node_id": options["computer"],
-            "compute_partition_id": options["partition"],
-          })
+
+      # Fallback to requesting to SlapOS Master
+      if not software_instance:
+        if slap.jio_api_connector:
+          if options.get("software-instance-reference"):
+            software_instance = slap.jio_api_connector.get({
+              "portal_type": "Software Instance",
+              "reference": options.get("software-instance-reference"),
+            })
+          else:
+            software_instance = slap.jio_api_connector.get({
+              "portal_type": "Software Instance",
+              "compute_node_id": options["computer"],
+              "compute_partition_id": options["partition"],
+            })
+      if software_instance:
         options["instance-state"] = software_instance.get("state")
         options["slap-software-type"] = software_instance.get("software_type")
         options["slap-computer-partition-id"] = software_instance.get("compute_partition_id")
@@ -166,33 +178,43 @@ class Recipe(object):
         parameter_dict = json_loads_byteified(software_instance.get("parameters"))
 
         # Get Share instance list
-        result_shared_instance_list = slap.jio_api_connector.allDocs({
-          "portal_type": "Shared Instance",
-          "host_instance_reference": software_instance.get("reference"),
-          "state": "started",
-        }).get("result_list", [])
-        shared_instance_list = []
-        for shared_instance_brain in result_shared_instance_list:
-          shared_instance = slap.jio_api_connector.get({
-            "portal_type": "Software Instance",
-            "reference": shared_instance_brain.get("reference"),
-          })
-          shared_instance_parameter = json_loads_byteified(shared_instance.get("parameters"))
-          shared_instance_connection = shared_instance.get("connection_parameters")
-          shared_instance_list.append({
-            'slave_title': shared_instance.get("title"),
-            'slap_software_type': \
-                shared_instance.get("software_type"),
-            'slave_reference': shared_instance.get("reference"),
-            'timestamp': shared_instance.get("processing_timestamp"),
-            'xml': dumps(shared_instance_parameter),
-            'parameters': shared_instance_parameter,
-            'connection_xml': dumps(shared_instance_connection),
-            'connection_parameters': shared_instance_connection,
-            'connection-parameter-hash': calculate_dict_hash(shared_instance_connection),
-          })
-          options["slave-instance-list"] = shared_instance_list
-          options["shared-instance-list"] = shared_instance_list
+        if not "slave_instance_list" in software_instance:
+          result_shared_instance_list = slap.jio_api_connector.allDocs({
+            "portal_type": "Shared Instance",
+            "host_instance_reference": software_instance.get("reference"),
+            "state": "started",
+          }).get("result_list", [])
+          shared_instance_list = []
+          for shared_instance_brain in result_shared_instance_list:
+            shared_instance = slap.jio_api_connector.get({
+              "portal_type": "Software Instance",
+              "reference": shared_instance_brain.get("reference"),
+            })
+            shared_instance_parameter = json_loads_byteified(shared_instance.get("parameters"))
+            shared_instance_connection = shared_instance.get("connection_parameters")
+            shared_instance_list.append({
+              'slave_title': shared_instance.get("title"),
+              'slap_software_type': \
+                  shared_instance.get("software_type"),
+              'slave_reference': shared_instance.get("reference"),
+              'timestamp': shared_instance.get("processing_timestamp"),
+              'xml': dumps(shared_instance_parameter),
+              'parameters': shared_instance_parameter,
+              'connection_xml': dumps(shared_instance_connection),
+              'connection_parameters': shared_instance_connection,
+              'connection-parameter-hash': calculate_dict_hash(shared_instance_connection),
+            })
+          # XXX CLN Should we update the content of software instance json with shared instance list
+        else:
+          shared_instance_list = software_instance["slave_instance_list"]
+
+        options["slave-instance-list"] = shared_instance_list
+        options["shared-instance-list"] = shared_instance_list
+
+        if not "slave_instance_list" in software_instance:
+          software_instance["slave_instance_list"] = shared_instance_list
+          with open(instance_json_path, "w") as f:
+            software_instance = json.dump(software_instance, f, indent=2)
       else:
         computer_partition = slap.registerComputerPartition(
             options['computer'],
@@ -274,7 +296,7 @@ class Recipe(object):
       if storage_home and os.path.exists(storage_home) and \
                                   os.path.isdir(storage_home):
         for filename in os.listdir(storage_home):
-          storage_path = os.path.join(storage_home, filename, 
+          storage_path = os.path.join(storage_home, filename,
                                     options['slap-computer-partition-id'])
           if os.path.exists(storage_path) and os.path.isdir(storage_path):
             storage_link = os.path.join(instance_root, 'DATA', filename)
