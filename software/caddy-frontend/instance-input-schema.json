@@ -97,6 +97,18 @@
       ],
       "title": "Authenticate to backend",
       "type": "string"
+    },
+    "ram-cache-size": {
+      "default": "1G",
+      "title": "Default size of RAM cache on each node (bytes)",
+      "description": "The value can be provided with suffix 'K', 'M', 'G'",
+      "type": "string"
+    },
+    "disk-cache-size": {
+      "default": "8G",
+      "title": "Default size of disk cache on each node (bytes)",
+      "description": "The value can be provided with suffix 'K', 'M', 'G'",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
