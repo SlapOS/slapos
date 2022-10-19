@@ -339,9 +339,8 @@ class TestDataMixin(object):
     runtime_data = '\n'.join(sorted(runtime_data))
     self.assertTestData(runtime_data)
 
-  # convince test to be run last; it's a hack, but log files shall be checked
-  # after all other tests had chance to execute
-  def zz_test_file_list_log(self):
+  def test00file_list_log(self):
+    # test00 name chosen to be run just after setup
     self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
@@ -358,7 +357,8 @@ class TestDataMixin(object):
       'trafficserver/traffic.out',
     ])
 
-  def test_file_list_run(self):
+  def test00file_list_run(self):
+    # test00 name chosen to be run just after setup
     self._test_file_list(['var', 'run'], [
       # can't be sure regarding its presence
       'caddy_configuration_last_state',
@@ -375,7 +375,8 @@ class TestDataMixin(object):
   def test_file_list_plugin(self):
     self._test_file_list(['etc', 'plugin'], ['.pyc'])
 
-  def test_supervisor_state(self):
+  def test00supervisor_state(self):
+    # test00 name chosen to be run just after setup
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
@@ -414,7 +415,7 @@ class TestDataMixin(object):
     pass
 
   def test00cluster_request_instance_parameter_dict(self):
-    # test00 name chosen to be run as first test
+    # test00 name chosen to be run just after setup
     cluster_request_parameter_list = []
     data_replacement_dict = {}
     computer = self.slap._slap.registerComputer('local')
