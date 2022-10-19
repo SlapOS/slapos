@@ -1,5 +1,6 @@
 import os
 import errno
+import subprocess
 
 from zope.interface import implementer
 from slapos.grid.promise import interface
@@ -28,18 +29,22 @@ class RunPromise(GenericPromise):
       In this case, check whether the file exists.
     """
     testing = self.getConfig('testing') == "True"
-    sdr_dev = '/dev/sdr0'
+    sdr = self.getConfig('sdr')
 
     if testing:
         self.logger.info("skipping promise")
         return
-
     try:
-      open(sdr_dev, 'w').close()
-      self.logger.error("eNB is not using %s", sdr_dev)
-    except IOError as e:
-      if e.errno == errno.EBUSY:
-        self.logger.info("eNB is using %s", sdr_dev)
+      out = subprocess.check_output([
+        sdr + '/sdr_util', '-c', '0', 'version'], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      if e.returncode == 1 and \
+        ("DMA channel is already opened" in e.output.decode() or \
+         "Device or resource busy" in e.output.decode()):
+        self.logger.info("eNB is using /dev/sdr0")
+        return
+    self.logger.error("eNB is not using /dev/sdr0")
+
 
   def test(self):
     """
