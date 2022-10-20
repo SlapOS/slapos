@@ -3,29 +3,27 @@
 # STANDARD HTTP MODULES: Core, Proxy, Rewrite, Access, Gzip, Headers, HTTP/2, Log, Real IP, SSL, Thread Pool, Upstream, AIO Multithreading.
 # THIRD PARTY MODULES:   None.
 
-server {
-  listen 80;
-  listen [::]:80;
-  server_name $https://[$${nginx-configuration:ip}]/$${nginx-configuration:port};
+# server {
+#   listen 80;
+#   listen [::]:80;
+#   server_name [$${nginx-configuration:ip}];
 
-  location /.well-known/acme-challenge/ {
-    default_type "text/plain";
-    root /var/www/certbot;
-  }
-  location / { return 301 https://$host$request_uri; }
-}
+#   location /.well-known/acme-challenge/ {
+#     default_type "text/plain";
+#     root /var/www/certbot;
+#   }
+#   location / { return 301 https://$host$request_uri; }
+# }
 
 upstream backend {
   server 127.0.0.1:9000;
 }
 
 server {
-  listen 443 ssl http2;
-  listen [::]:443 ssl http2;
-  server_name https://[$${nginx-configuration:ip}]/$${nginx-configuration:port};
+  listen [$${nginx-configuration:ip}]:$${nginx-configuration:port};
 
-  access_log /var/log/nginx/peertube.access.log; # reduce I/0 with buffer=10m flush=5m
-  error_log  /var/log/nginx/peertube.error.log;
+  access_log $${directory:peertube_nginx_log}/peertube.access.log; # reduce I/0 with buffer=10m flush=5m
+  error_log  $${directory:peertube_nginx_log}/peertube.error.log;
 
   ##
   # Certificates
@@ -37,21 +35,21 @@ server {
     root /var/www/certbot;
   }
 
-  ##
-  # Security hardening (as of Nov 15, 2020)
-  # based on Mozilla Guideline v5.6
-  ##
+  # ##
+  # # Security hardening (as of Nov 15, 2020)
+  # # based on Mozilla Guideline v5.6
+  # ##
 
-  ssl_protocols             TLSv1.2 TLSv1.3;
-  ssl_prefer_server_ciphers on;
-  ssl_ciphers               ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256; # add ECDHE-RSA-AES256-SHA if you want compatibility with Android 4
-  ssl_session_timeout       1d; # defaults to 5m
-  ssl_session_cache         shared:SSL:10m; # estimated to 40k sessions
-  ssl_session_tickets       off;
-  ssl_stapling              on;
-  ssl_stapling_verify       on;
-  # HSTS (https://hstspreload.org), requires to be copied in 'location' sections that have add_header directives
-  #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains";
+  # ssl_protocols             TLSv1.2 TLSv1.3;
+  # ssl_prefer_server_ciphers on;
+  # ssl_ciphers               ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256; # add ECDHE-RSA-AES256-SHA if you want compatibility with Android 4
+  # ssl_session_timeout       1d; # defaults to 5m
+  # ssl_session_cache         shared:SSL:10m; # estimated to 40k sessions
+  # ssl_session_tickets       off;
+  # ssl_stapling              on;
+  # ssl_stapling_verify       on;
+  # # HSTS (https://hstspreload.org), requires to be copied in 'location' sections that have add_header directives
+  # #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains";
 
   ##
   # Application
@@ -135,7 +133,7 @@ server {
   # For extra performance please refer to https://github.com/denji/nginx-tuning
   ##
 
-  root /var/www/peertube/storage;
+  root $${directory:storage};
 
   # Enable compression for JS/CSS/HTML, for improved client load times.
   # It might be nice to compress JSON/XML as returned by the API, but
@@ -166,24 +164,24 @@ server {
 
   # If you have a small /var/lib partition, it could be interesting to store temp nginx uploads in a different place
   # See https://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_temp_path
-  #client_body_temp_path /var/www/peertube/storage/nginx/;
+  #client_body_temp_path $${directory:storage}/nginx/;
 
   # Bypass PeerTube for performance reasons. Optional.
   # Should be consistent with client-overrides assets list in /server/controllers/client.ts
   location ~ ^/client/(assets/images/(icons/icon-36x36\.png|icons/icon-48x48\.png|icons/icon-72x72\.png|icons/icon-96x96\.png|icons/icon-144x144\.png|icons/icon-192x192\.png|icons/icon-512x512\.png|logo\.svg|favicon\.png|default-playlist\.jpg|default-avatar-account\.png|default-avatar-account-48x48\.png|default-avatar-video-channel\.png|default-avatar-video-channel-48x48\.png))$ {
     add_header Cache-Control "public, max-age=31536000, immutable"; # Cache 1 year
 
-    root /var/www/peertube;
+    root $${directory:peertube_directory}/;
 
     try_files /storage/client-overrides/$1 /peertube-latest/client/dist/$1 @api;
   }
 
   # Bypass PeerTube for performance reasons. Optional.
-  location ~ ^/client/(.*\.(js|css|png|svg|woff2|otf|ttf|woff|eot))$ {
-    add_header Cache-Control "public, max-age=31536000, immutable"; # Cache 1 year
+  # location ~ ^/client/(.*\.(js|css|png|svg|woff2|otf|ttf|woff|eot))$ {
+  #   add_header Cache-Control "public, max-age=31536000, immutable"; # Cache 1 year
 
-    alias /var/www/peertube/peertube-latest/client/dist/$1;
-  }
+  #   alias $${directory:var}/www/peertube/peertube-latest/client/dist/$1;
+  # }
 
   # Bypass PeerTube for performance reasons. Optional.
   location ~ ^/static/(thumbnails|avatars)/ {

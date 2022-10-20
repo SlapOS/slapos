@@ -5,8 +5,8 @@ listen:
 # Correspond to your reverse proxy server_name/listen configuration (i.e., your public PeerTube instance URL)
 webserver:
   https: true
-  hostname: 'https://[$${nginx-configuration:ip}]/$${nginx-configuration:port}'
-  port: 443
+  hostname: '[$${nginx-configuration:ip}]'
+  port: $${nginx-configuration:port}
 
 # Secrets you need to generate the first time you run PeerTube
 secrets:
@@ -56,7 +56,7 @@ database:
 # You can also specify a 'socket' path to a unix socket but first need to
 # set 'hostname' and 'port' to null
 redis:
-  unixsocket: $${service-redis:unixsocket}
+  socket: $${service-redis:unixsocket}
   auth: null
   db: 0
 
