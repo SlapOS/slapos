@@ -8,8 +8,6 @@ parts =
   postgresql
   nginx-service
   nginx-listen-promise
-  peertube-nginx-available
-  peertube-nginx-enabled
   peertube-default-yaml
   peertube-production-yaml
   peertube-service
@@ -27,27 +25,14 @@ log = $${:var}/log
 run = $${:var}/run
 www = $${:var}/www
 nginx = $${:etc}/nginx
-nginx_sites-available = $${:nginx}/sites-available
-nginx_sites-enabled = $${:nginx}/sites-enabled
+peertube_nginx_log = $${:log}/nginx
 varnginx = $${:var}/nginx
 services = $${:etc}/service
-xoxox = $${buildout:directory}/xoxox
-wwwx = $${:var}/wwwx
 peertube_directory = $${:www}/peertube
 config = $${:peertube_directory}/config
 storage = $${:peertube_directory}/storage
 versions = $${:peertube_directory}/versions
 ssl = $${:etc}/ssl
-
-[peertube-nginx-available]
-recipe = slapos.recipe.template
-url = ${template-peertube-nginx-available:output}
-output = $${directory:nginx_sites-available}/peertube
-
-[peertube-nginx-enabled]
-recipe = slapos.recipe.template
-url = ${template-peertube-nginx-available:output}
-output = $${directory:nginx_sites-enabled}/peertube
 
 [peertube-default-yaml]
 recipe = slapos.recipe.template
@@ -83,7 +68,7 @@ port = 5432
 
 [service-postgresql]
 recipe  = slapos.cookbook:postgres
-bin     = {{ postgresql_location }}/bin
+bin     = ${postgresql10:location}/bin
 services= $${directory:service}
 
 #################################
@@ -102,7 +87,7 @@ promise = check_url_available
 name = nginx_listen.py
 config-host = [$${nginx-configuration:ip}]
 config-port = $${nginx-configuration:port}
-config-url = https://$${:config-host}/$${:config-port}
+config-url = https://$${:config-host}:$${:config-port}
 
 [nginx-configuration]
 recipe = slapos.recipe.template
@@ -110,8 +95,6 @@ url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
-nginx_sites-available = $${directory:nginx_sites-available}/peertube
-nginx_sites-enabled = $${directory:nginx_sites-enabled}/peertube
 ip = $${instance-parameter:ipv6-random}
 port = 9443
 ssl_key = $${directory:ssl}/nginx.key
