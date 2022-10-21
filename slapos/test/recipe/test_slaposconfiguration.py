@@ -1,11 +1,9 @@
 # coding: utf-8
-import mock
 import json
 import httmock
 import os
 import unittest
 import tempfile
-from collections import defaultdict
 from slapos.recipe import slapconfiguration
 from slapos import format as slapformat
 from slapos.grid.SlapObject import SOFTWARE_INSTANCE_JSON_FILENAME
@@ -100,14 +98,14 @@ class SlapConfigurationTestMixin(object):
     }
     if self.use_api:
       api_handler = APIRequestHandler([
-        ("/api/get", json.dumps(instance_data)),
-        ("/api/allDocs", json.dumps({"result_list": []}))
+        ("/api/get/", json.dumps(instance_data)),
+        ("/api/allDocs/", json.dumps({"result_list": []}))
       ])
     else:
       with open(self.instance_json_location, 'w') as f:
         json.dump(instance_data, f, indent=2)
       api_handler = APIRequestHandler([
-        ("/api/allDocs", json.dumps({"result_list": []}))
+        ("/api/allDocs/", json.dumps({"result_list": []}))
       ])
     with httmock.HTTMock(api_handler.request_handler):
       slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
@@ -190,22 +188,22 @@ class SlapConfigurationTestMixin(object):
     }
     if self.use_api:
       api_handler = APIRequestHandler([
-        ("/api/get", json.dumps(instance_data)),
-        ("/api/allDocs", json.dumps({"result_list": [{
+        ("/api/get/", json.dumps(instance_data)),
+        ("/api/allDocs/", json.dumps({"result_list": [{
           "portal_type": "Shared Instance",
           "reference": shared_instance_data["reference"]
           }]})),
-        ("/api/get", json.dumps(shared_instance_data)),
+        ("/api/get/", json.dumps(shared_instance_data)),
       ])
     else:
       with open(self.instance_json_location, 'w') as f:
         json.dump(instance_data, f, indent=2)
       api_handler = APIRequestHandler([
-        ("/api/allDocs", json.dumps({"result_list": [{
+        ("/api/allDocs/", json.dumps({"result_list": [{
           "portal_type": "Shared Instance",
           "reference": shared_instance_data["reference"]
           }]})),
-        ("/api/get", json.dumps(shared_instance_data)),
+        ("/api/get/", json.dumps(shared_instance_data)),
       ])
     with httmock.HTTMock(api_handler.request_handler):
       slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
@@ -246,7 +244,7 @@ class SlapConfigurationTestMixin(object):
       self.assertEqual(dumped_data["slave_instance_list"], options["shared-instance-list"])
 
 class SlapConfigurationWithLocalInstanceFile(SlapConfigurationTestMixin, unittest.TestCase):
-  use_api = True
+  use_api = False
 
 class SlapConfigurationWithApi(SlapConfigurationTestMixin, unittest.TestCase):
-  use_api = False
+  use_api = True

@@ -208,7 +208,7 @@ class RecipejIOTestMixin:
 
   def test_no_return_in_options_logs(self):
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     with httmock.HTTMock(api_handler.request_handler):
       with LogCapture() as log:
@@ -229,7 +229,7 @@ class RecipejIOTestMixin:
     if self.called_partition_parameter_kw:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+      api_handler.request_payload_list[0], expected_request_body)
     self.assertEqual(api_handler.sequence_list, ["/api/post/"])
     self.assertTrue(os.path.exists(self.transaction_file_path))
     with open(self.transaction_file_path, 'r') as f:
@@ -238,7 +238,7 @@ class RecipejIOTestMixin:
 
   def test_return_in_options_logs(self):
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     with httmock.HTTMock(api_handler.request_handler):
@@ -257,7 +257,7 @@ class RecipejIOTestMixin:
     if self.called_partition_parameter_kw:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+      api_handler.request_payload_list[0], expected_request_body)
     self.assertEqual(self.options["connection-anything"], "done")
     self.assertEqual(api_handler.sequence_list, ["/api/post/"])
     self.assertTrue(os.path.exists(self.transaction_file_path))
@@ -269,7 +269,7 @@ class RecipejIOTestMixin:
   def test_return_not_ready(self):
     self.instance_data["connection_parameters"] = self.connection_parameter_dict_empty
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     with httmock.HTTMock(api_handler.request_handler):
@@ -291,7 +291,7 @@ class RecipejIOTestMixin:
     if self.called_partition_parameter_kw:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+      api_handler.request_payload_list[0], expected_request_body)
     self.assertEqual(self.options["connection-anything"], "")
     self.assertEqual(api_handler.sequence_list, ["/api/post/"])
     self.assertTrue(os.path.exists(self.transaction_file_path))
@@ -301,7 +301,7 @@ class RecipejIOTestMixin:
 
   def test_return_ready(self):
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     with httmock.HTTMock(api_handler.request_handler):
@@ -320,7 +320,7 @@ class RecipejIOTestMixin:
     if self.called_partition_parameter_kw:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+      api_handler.request_payload_list[0], expected_request_body)
     self.assertEqual(self.options["connection-anything"], "done")
     self.assertIsInstance(self.options['connection-anything'], str)
     self.assertEqual(api_handler.sequence_list, ["/api/post/"])
@@ -332,7 +332,7 @@ class RecipejIOTestMixin:
   def test_two_requests_return_ready(self):
     # Request first instance
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     with httmock.HTTMock(api_handler.request_handler):
@@ -342,7 +342,7 @@ class RecipejIOTestMixin:
     self.options["name"] = self.instance_data["title"] = 'MyInstance2'
     self.instance_data["reference"] = "SOFTINST-13"
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     with httmock.HTTMock(api_handler.request_handler):
@@ -355,7 +355,7 @@ class RecipejIOTestMixin:
 
   def test_requester_stopped_state_propagated(self):
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     self.buildout['slap-connection']['requested'] = 'stopped'
@@ -375,7 +375,7 @@ class RecipejIOTestMixin:
     if self.called_partition_parameter_kw:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+      api_handler.request_payload_list[0], expected_request_body)
     self.assertEqual(self.options["connection-anything"], "done")
     self.assertIsInstance(self.options['connection-anything'], str)
     self.assertEqual(api_handler.sequence_list, ["/api/post/"])
@@ -386,7 +386,7 @@ class RecipejIOTestMixin:
 
   def test_requester_destroyed_state_not_propagated(self):
     api_handler = APIRequestHandler([
-      ("/api/get", json.dumps(self.instance_data)),
+      ("/api/post/", json.dumps(self.instance_data)),
     ])
     self.options['return'] = 'anything'
     self.buildout['slap-connection']['requested'] = 'destroyed'
@@ -406,7 +406,7 @@ class RecipejIOTestMixin:
     if self.called_partition_parameter_kw:
       expected_request_body["parameters"] = json.dumps(self.called_partition_parameter_kw)
     self.assertEqual(
-      api_handler.request_payload_list[0], json.dumps(expected_request_body))
+      api_handler.request_payload_list[0], expected_request_body)
     self.assertEqual(self.options["connection-anything"], "done")
     self.assertIsInstance(self.options['connection-anything'], str)
     self.assertEqual(api_handler.sequence_list, ["/api/post/"])
