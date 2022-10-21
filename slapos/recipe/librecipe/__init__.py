@@ -26,6 +26,7 @@
 ##############################################################################
 import logging
 from slapos import slap
+from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
 import os
 import zc.buildout
 import zc.recipe.egg
@@ -56,6 +57,31 @@ def unwrap(value):
   else:
     value = json.loads(value)
   return value
+
+def updateTransactionFile(partition_id, name):
+  """
+  Store reference to all Instances requested by this Computer Parition
+  """
+  # Environ variable set by Slapgrid while processing this partition
+  instance_root = os.environ.get('SLAPGRID_INSTANCE_ROOT', '')
+  if not instance_root or not partition_id:
+    return
+
+  transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % partition_id
+  transaction_file_path = os.path.join(instance_root, partition_id,
+                                      transaction_file_name)
+
+  try:
+    if os.access(os.path.join(instance_root, partition_id), os.W_OK):
+      if not os.path.exists(transaction_file_path):
+        transac_file = open(transaction_file_path, 'w')
+        transac_file.close()
+    with open(transaction_file_path, 'a') as transac_file:
+      transac_file.write('%s\n' % name)
+  except OSError:
+    return
+
+from .genericjioapi import GenericjIOAPIRecipe
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
