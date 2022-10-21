@@ -10,6 +10,7 @@ from slapos.recipe import slapconfiguration
 from slapos import format as slapformat
 from slapos.grid.SlapObject import SOFTWARE_INSTANCE_JSON_FILENAME
 from slapos.util import dumps, calculate_dict_hash
+from slapos.slap.slap import json_loads_byteified
 
 
 class APIRequestHandler(object):
@@ -26,10 +27,9 @@ class APIRequestHandler(object):
 
     self.sequence_list.append(url.path)
 
-    if not self.response_list and self.response_list[0][0] != url.path:
+    if not self.response_list or self.response_list[0][0] != url.path:
       raise ValueError("Unexcpected call: %s %s" % (url.path, req.body))
-
-    self.request_payload_list.append(req.body)
+    self.request_payload_list.append(json_loads_byteified(req.body))
     return self.response_list.pop(0)[1]
 
 
