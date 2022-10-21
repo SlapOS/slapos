@@ -26,12 +26,12 @@
 ##############################################################################
 import logging
 from zc.buildout import UserError
-from slapos.recipe.librecipe import wrap, JSON_SERIALISED_MAGIC_KEY
+from slapos.recipe.librecipe import wrap, JSON_SERIALISED_MAGIC_KEY, updateTransactionFile
 import json
 import os
 from slapos import slap as slapmodule
 from slapos.slap import SoftwareProductCollection
-from slapos.slap.slap import json_loads_byteified, COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
+from slapos.slap.slap import json_loads_byteified
 import slapos.recipe.librecipe.generic as librecipe
 import traceback
 
@@ -147,15 +147,15 @@ class Recipe(object):
 
     if software_url is not None and \
       software_url.startswith(SOFTWARE_PRODUCT_NAMESPACE):
-    
+
       product = SoftwareProductCollection(self.logger, slap)
-      
+
       try:
         software_url = product.__getattr__(
           software_url[len(SOFTWARE_PRODUCT_NAMESPACE):])
       except AttributeError as e:
         self.logger.warning('Error on get software release : %s ' % e.message)
-        
+
 
     self._raise_request_exception = None
     self._raise_request_exception_formatted = None
@@ -179,7 +179,7 @@ class Recipe(object):
       if requested_state:
         request_dict["state"] = requested_state
 
-      self._updateTransactionFile(options['partition-id'], name)
+      updateTransactionFile(options['partition-id'], name)
       partition_dict = slap.jio_api_connector.post(request_dict)
       if "$schema" in partition_dict and "error-response-schema.json" in partition_dict["$schema"]:
         self.logger.warning(
@@ -308,30 +308,6 @@ class Recipe(object):
     return []
 
   update = install
-
-  def _updateTransactionFile(self, partition_id, name):
-    """
-    Store reference to all Instances requested by this Computer Parition
-    """
-    # Environ variable set by Slapgrid while processing this partition
-    instance_root = os.environ.get('SLAPGRID_INSTANCE_ROOT', '')
-    if not instance_root or not partition_id:
-      return
-
-    transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % partition_id
-    transaction_file_path = os.path.join(instance_root, partition_id,
-                                        transaction_file_name)
-
-    try:
-      if os.access(os.path.join(instance_root, partition_id), os.W_OK):
-        if not os.path.exists(transaction_file_path):
-          transac_file = open(transaction_file_path, 'w')
-          transac_file.close()
-      with open(transaction_file_path, 'a') as transac_file:
-        transac_file.write('%s\n' % name)
-    except OSError:
-      return
-
 
 class RequestOptional(Recipe):
   """
