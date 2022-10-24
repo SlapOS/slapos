@@ -94,15 +94,31 @@ enb_param_dict.update(param_dict)
 gnb_param_dict1.update(param_dict)
 gnb_param_dict2.update(param_dict)
 
-class TestGNBParameters1(ORSTestCase):
+def test_enb_conf(self):
 
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb"
-    def test_gnb_conf(self):
+    conf_file = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
+
+    with open(conf_file, 'r') as f:
+        conf = yaml.load(f)
+    self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
+    self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
+    self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
+    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
+    self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
+    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
+    for p in conf['cell_list'][0]['plmn_list']:
+      for n in "plmn attach_without_pdn reserved".split():
+          self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
+    for p in conf['mme_list']:
+      self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
+
+    with open(conf_file, 'r') as f:
+        for l in f:
+            if l.startswith('#define N_RB_DL'):
+                self.assertIn(str(enb_param_dict['n_rb_dl']), l)
+
+def test_gnb_conf1(self):
 
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
@@ -128,15 +144,7 @@ class TestGNBParameters1(ORSTestCase):
                 if l.startswith('#define NR_BANDWIDTH'):
                     self.assertIn(str(gnb_param_dict1['nr_bandwidth']), l)
 
-class TestGNBParameters2(ORSTestCase):
-
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict2)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb"
-    def test_gnb_conf(self):
+def test_gnb_conf2(self):
 
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
@@ -148,29 +156,6 @@ class TestGNBParameters2(ORSTestCase):
           for n in "sd sst".split():
               self.assertEqual(p[n], gnb_param_dict2['nssai'][str(p['sd'])][n])
 
-def test_enb_conf(self):
-
-    conf_file = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
-
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
-    self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
-    self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
-    self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
-    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
-    self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
-    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
-    for p in conf['cell_list'][0]['plmn_list']:
-      for n in "plmn attach_without_pdn reserved".split():
-          self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
-    for p in conf['mme_list']:
-      self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
-
-    with open(conf_file, 'r') as f:
-        for l in f:
-            if l.startswith('#define N_RB_DL'):
-                self.assertIn(str(enb_param_dict['n_rb_dl']), l)
 def test_mme_conf(self):
 
     conf_file = glob.glob(os.path.join(
@@ -180,44 +165,7 @@ def test_mme_conf(self):
         conf = yaml.load(f)
     self.assertEqual(conf['plmn'], param_dict['epc_plmn'])
 
-class TestENBParameters(ORSTestCase):
-
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb"
-    def test_enb_conf(self):
-        test_enb_conf(self)
-
-class TestEPCParameters(ORSTestCase):
-
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "epc"
-    def test_mme_conf(self):
-        test_mme_conf(self)
-
-class TestENBEPCParameters(ORSTestCase):
-
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {
-            '_': json.dumps(enb_param_dict),
-        }
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-    def test_enb_conf(self):
-        test_enb_conf(self)
-    def test_mme_conf(self):
-        test_mme_conf(self)
-
-def test_ue_db(self):
+def test_sim_card(self):
 
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'ue_db.cfg'))[0]
@@ -228,6 +176,75 @@ def test_ue_db(self):
         self.assertEqual(conf['ue_db'][0][n], param_dict[n])
     self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
     self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
+
+    self.slap.waitForInstance() # Wait until publish is done
+    p = self.requestSlaveInstance().getConnectionParameterDict()
+    p = p['_'] if '_' in p else p                  
+    self.assertIn('info', p)  
+
+class TestENBParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(enb_param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "enb"
+    def test_enb_conf(self):
+        test_enb_conf(self)
+
+class TestGNBParameters1(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(gnb_param_dict1)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "gnb"
+    def test_gnb_conf(self):
+        test_gnb_conf1(self)
+
+class TestGNBParameters2(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(gnb_param_dict2)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "gnb"
+    def test_gnb_conf(self):
+        test_gnb_conf2(self)
+
+class TestEPCParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "epc"
+    def test_mme_conf(self):
+        test_mme_conf(self)
+
+class TestENBEPCParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(enb_param_dict)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "enb-epc"
+    def test_enb_conf(self):
+        test_enb_conf(self)
+    def test_mme_conf(self):
+        test_mme_conf(self)
+
+class TestGNBEPCParameters(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(gnb_param_dict1)}
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "gnb-epc"
+    def test_gnb_conf(self):
+        test_gnb_conf1(self)
+    def test_mme_conf(self):
+        test_mme_conf(self)
 
 def requestSlaveInstance(cls, software_type):
     software_url = cls.getSoftwareURL()
@@ -248,19 +265,16 @@ class TestEPCSimCard(ORSTestCase):
         return default_instance
     @classmethod
     def requestSlaveInstance(cls):
-        requestSlaveInstance(cls, 'epc')
+        return requestSlaveInstance(cls, 'epc')
     @classmethod
     def getInstanceParameterDict(cls):
-        return {
-            '_': json.dumps({'testing': True})
-        }
+        return {'_': json.dumps({'testing': True})}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "epc"
-
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
-        test_ue_db(self)
+        test_sim_card(self)
 
 class TestENBEPCSimCard(ORSTestCase):
     @classmethod
@@ -271,19 +285,16 @@ class TestENBEPCSimCard(ORSTestCase):
         return default_instance
     @classmethod
     def requestSlaveInstance(cls):
-        requestSlaveInstance(cls, 'enb-epc')
+        return requestSlaveInstance(cls, 'enb-epc')
     @classmethod
     def getInstanceParameterDict(cls):
-        return {
-            '_': json.dumps({'testing': True})
-        }
+        return {'_': json.dumps({'testing': True})}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb-epc"
-
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
-        test_ue_db(self)
+        test_sim_card(self)
 
 class TestGNBEPCSimCard(ORSTestCase):
     @classmethod
@@ -294,19 +305,16 @@ class TestGNBEPCSimCard(ORSTestCase):
         return default_instance
     @classmethod
     def requestSlaveInstance(cls):
-        requestSlaveInstance(cls, 'gnb-epc')
+        return requestSlaveInstance(cls, 'gnb-epc')
     @classmethod
     def getInstanceParameterDict(cls):
-        return {
-            '_': json.dumps({'testing': True})
-        }
+        return {'_': json.dumps({'testing': True})}
     @classmethod
     def getInstanceSoftwareType(cls):
         return "gnb-epc"
-
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
-        test_ue_db(self)
+        test_sim_card(self)
 
 class TestUELTEParameters(ORSTestCase):
     @classmethod
