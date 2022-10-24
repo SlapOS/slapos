@@ -174,7 +174,7 @@ object_storage:
     base_url: ''
 
 log:
-  level: 'info' # 'debug' | 'info' | 'warn' | 'error'
+  level: 'debug' # 'debug' | 'info' | 'warn' | 'error'
 
   rotation:
     enabled : true # Enabled by default, if disabled make sure that 'storage.logs' is pointing to a folder handled by logrotate
