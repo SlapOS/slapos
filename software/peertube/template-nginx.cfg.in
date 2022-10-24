@@ -70,10 +70,10 @@ server {
     root /var/www/certbot;
   }
 
-  # ##
-  # # Security hardening (as of Nov 15, 2020)
-  # # based on Mozilla Guideline v5.6
-  # ##
+  ##
+  # Security hardening (as of Nov 15, 2020)
+  # based on Mozilla Guideline v5.6
+  ##
 
   # ssl_protocols             TLSv1.2 TLSv1.3;
   # ssl_prefer_server_ciphers on;
@@ -83,8 +83,8 @@ server {
   # ssl_session_tickets       off;
   # ssl_stapling              on;
   # ssl_stapling_verify       on;
-  # # HSTS (https://hstspreload.org), requires to be copied in 'location' sections that have add_header directives
-  # #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains";
+  # HSTS (https://hstspreload.org), requires to be copied in 'location' sections that have add_header directives
+  #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains";
 
   ##
   # Application
