@@ -9,8 +9,8 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
-default = instance-html5as:rendered
-replicate = instance-replicate:rendered
+default = instance-basic:output
+replicate = instance-replicate:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -19,3 +19,37 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
+
+[instance-basic]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_basic }}
+output = ${buildout:directory}/${:filename}
+filename = instance-basic.cfg
+context =
+  section buildout buildout
+# partition_ipv6 is the random ipv6 allocated to the local partition
+  key partition_ipv4 slap-configuration:ipv4-random
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "title": ""
+  }
+
+[instance-replicate]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_instance_replicate }}
+output = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+filename = instance-replicate.cfg
+context =
+  section buildout buildout
+# partition_ipv6 is the random ipv6 allocated to the local partition
+  key partition_ipv4 slap-configuration:ipv4-random
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "title": "",
+    "replicate-quantity": 1
+  }
