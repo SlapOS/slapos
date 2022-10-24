@@ -8,7 +8,6 @@ parts =
   postgresql
   nginx-service
   nginx-listen-promise
-  peertube-default-yaml
   peertube-production-yaml
   peertube-service
 
@@ -34,15 +33,10 @@ storage = $${:peertube_directory}/storage
 versions = $${:peertube_directory}/versions
 ssl = $${:etc}/ssl
 
-[peertube-default-yaml]
-recipe = slapos.recipe.template
-url = ${template-peertube-default:output}
-output = $${directory:config}/default.yaml
-
 [peertube-production-yaml]
 recipe = slapos.recipe.template
 url = ${template-peertube-production:output}
-output = $${directory:config}/production.yaml
+output = $${directory:config}/peertube.yaml
 
 [peertube-service]
 recipe = slapos.recipe.template
