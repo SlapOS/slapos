@@ -45,17 +45,14 @@ class PeertubeTestCase(SlapOSInstanceTestCase):
     return {"name": cls.name}
 
 
-class HTTPRequestTestMixin(object):
+class TestPeerTube(PeertubeTestCase):
+  def setUp(self):
+    self.connection_parameters = self.computer_partition.getConnectionParameterDict()
+
   """Test that the service url.${kind} responds Hello ${name}
   """
   def test_get(self):
-    #url = self.computer_partition.getConnectionParameterDict()['url.{}'.format(
-    #    self.kind)]
-    #response = requests.get(url)
-    self.assertEqual("Hello", "World")
-
-
-
-class TestPython(PeertubeTestCase, HTTPRequestTestMixin):
-  name = "Python"
-  kind = "python"
+    backend_url = self.connection_parameters['frontend-url']
+    response = requests.get(url)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    self.assertIn('PeerTube', response.text)
