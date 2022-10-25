@@ -8,8 +8,9 @@ parts =
   postgresql
   nginx-service
   nginx-listen-promise
-  peertube-production-yaml
+  peertube-yaml
   peertube-service
+  publish-connection-parameter
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -33,9 +34,9 @@ storage = $${:peertube_directory}/storage
 versions = $${:peertube_directory}/versions
 ssl = $${:etc}/ssl
 
-[peertube-production-yaml]
+[peertube-yaml]
 recipe = slapos.recipe.template
-url = ${template-peertube-production:output}
+url = ${template-peertube:output}
 output = $${directory:config}/peertube.yaml
 
 [peertube-service]
@@ -103,7 +104,6 @@ recipe  = slapos.cookbook:mkdirectory
 srv     = $${directory:srv}/redis
 log     = $${directory:log}/redis
 
-
 [service-redis]
 recipe  = slapos.cookbook:redis.server
 wrapper = $${directory:services}/redis
@@ -148,6 +148,16 @@ key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 configuration._ = {}
 
+[frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = PeerTube Server Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = $${nginx-listen-promise:config-url}
+return = domain secure_access
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-# url = $${peertube-instance:url}
+frontend-url = $${frontend:connection-domain}
