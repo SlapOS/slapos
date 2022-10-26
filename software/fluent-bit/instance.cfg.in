@@ -1,10 +1,20 @@
 [buildout]
 parts =
+  directory
+  fluent-bit-config-file
   fluent-bit-service
-  
-eggs-directory = {{ buildout['eggs-directory'] }}
-develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+eggs-directory = {{ buildout["eggs-directory"] }}
+develop-eggs-directory = {{ buildout["develop-eggs-directory"] }}
 offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -17,8 +27,32 @@ promise = ${:etc}/promise/
 log = ${:var}/log
 bin = ${:home}/bin
 
+[fluent-bit-config-file]
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.cfg
+install =
+{% raw %}
+
+  config = open(self.options["location"], "w")
+  inputs = ${instance-parameter:configuration.inputs}
+  outputs = ${instance-parameter:configuration.outputs}
+
+  config.write(f"[INPUTS]\n")
+
+  for key in inputs:
+    config.write(f"    {str(key).capitalize()} {inputs[key]}\n")
+ 
+  config.write("\n")
+
+  config.write(f"[OUTPUTS]\n")
+
+  for key in outputs:
+    config.write(f"    {str(key).capitalize()} {outputs[key]}\n")
+
+{% endraw %}
+
 [fluent-bit-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ fluent_bit_location }}/bin/fluent-bit -i cpu -o stdout
+command-line = {{ fluent_bit_location }}/bin/fluent-bit -c ${fluent-bit-config-file:location}
 wrapper-path = ${directory:service}/fluentbit-service
 output = $${:wrapper-path}
