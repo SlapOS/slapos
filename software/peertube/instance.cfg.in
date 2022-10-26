@@ -6,11 +6,11 @@ parts =
   service-redis
   promise-redis
   postgresql
-  nginx-service
-  nginx-listen-promise
   peertube-yaml
+  nginx-service
   peertube-service
   publish-connection-parameter
+  nginx-listen-promise
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}

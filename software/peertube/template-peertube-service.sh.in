@@ -28,5 +28,7 @@ while true; do
 done
 echo "I: PostgreSQL ready." 1>&2
 
-exec env NODE_ENV=production NODE_CONFIG_DIR=$${directory:config} PATH=${ffmpeg:location}/bin:$PATH\
+cd ${peertube:location}
+
+exec env NODE_ENV=peertube NODE_CONFIG_DIR=$${directory:config} PATH=${ffmpeg:location}/bin:$PATH\
   ${nodejs:location}/bin/node ${peertube:location}/dist/server
