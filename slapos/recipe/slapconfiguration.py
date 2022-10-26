@@ -30,7 +30,6 @@ import logging
 import os
 
 import slapos.slap
-from slapos.slap.slap import json_loads_byteified
 from slapos.recipe.librecipe import unwrap
 import six
 from six.moves.configparser import RawConfigParser
@@ -43,6 +42,7 @@ from slapos import format as slapformat
 
 logger = logging.getLogger("slapos")
 
+import time
 
 class Recipe(object):
   """
@@ -135,6 +135,9 @@ class Recipe(object):
       1. SlapOS Master - for external computer/partition information
       2. format.Partition.resource_file - for partition specific details
       """
+      start = time.time()
+      shared_instance_list = []
+
       software_instance = None
 
       instance_json_path = os.path.join(instance_root, SOFTWARE_INSTANCE_JSON_FILENAME)
@@ -175,7 +178,7 @@ class Recipe(object):
         options["instance-guid"] = software_instance.get("reference")
         ip_list = software_instance.get("ip_list", [])
         full_ip_list = software_instance.get("full_ip_list", [])
-        parameter_dict = json_loads_byteified(software_instance.get("parameters"))
+        parameter_dict = software_instance.get("parameters")
 
         # Get Share instance list
         if not "slave_instance_list" in software_instance:
@@ -190,7 +193,7 @@ class Recipe(object):
               "portal_type": "Software Instance",
               "reference": shared_instance_brain.get("reference"),
             })
-            shared_instance_parameter = json_loads_byteified(shared_instance.get("parameters"))
+            shared_instance_parameter = shared_instance.get("parameters")
             shared_instance_connection = shared_instance.get("connection_parameters")
             shared_instance_list.append({
               'slave_title': shared_instance.get("title"),
@@ -198,9 +201,7 @@ class Recipe(object):
                   shared_instance.get("software_type"),
               'slave_reference': shared_instance.get("reference"),
               'timestamp': shared_instance.get("processing_timestamp"),
-              'xml': dumps(shared_instance_parameter),
               'parameters': shared_instance_parameter,
-              'connection_xml': dumps(shared_instance_connection),
               'connection_parameters': shared_instance_connection,
               'connection-parameter-hash': calculate_dict_hash(shared_instance_connection),
             })
@@ -328,6 +329,14 @@ class Recipe(object):
               options[key] = value
       # print out augmented options to see what we are passing
       logger.debug(str(options))
+
+      end = time.time()
+      elapsed = end - start
+      logger.warning("----------------------------------------------------------------------------------------------------------------")
+      logger.warning("Number of hosted instances: %s" % len(shared_instance_list))
+      logger.warning("Elapsed time: %s" % elapsed)
+      logger.warning("----------------------------------------------------------------------------------------------------------------")
+
       return self._expandParameterDict(options, parameter_dict)
 
   def _expandParameterDict(self, options, parameter_dict):
