@@ -1,14 +1,3 @@
-Martin Manchev <mmanchev23@gmail.com>
-	
-2:57 PM (15 minutes ago)
-	
-to Jérome
-Hi Jerome,
-
-I apologize for the late response. I've been trying to come up with a solution,
-so far I've managed to do the following:
-
-=================================================================
 [buildout]
 parts =
   directory
