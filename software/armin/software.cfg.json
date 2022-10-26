@@ -1,0 +1,15 @@
+{
+  "name": "Armin",
+  "description": "Armin",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "armin": {
+      "title": "Armin",
+      "software-type": "armin",
+      "description": "Armin",
+      "request": "instance-armin-input-schema.json",
+      "response": "instance-armin-schema.json",
+      "index": 4
+    },
+  }
+}
