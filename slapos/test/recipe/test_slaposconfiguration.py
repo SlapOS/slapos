@@ -93,7 +93,7 @@ class SlapConfigurationTestMixin(object):
           "10.0.246.114"
         ]
       ],
-      "parameters": json.dumps(parameter_dict),
+      "parameters": parameter_dict,
       "connection_parameters": {"1": 2, "3": "YourURL"},
     }
     if self.use_api:
@@ -159,7 +159,7 @@ class SlapConfigurationTestMixin(object):
           "10.0.246.114"
         ]
       ],
-      "parameters": json.dumps(parameter_dict),
+      "parameters": parameter_dict,
       "connection_parameters": {"1": 2, "3": "YourURL"},
     }
     shared_instance_parameter_dict = {"zooo": "heee", "bye": "hello"}
@@ -183,7 +183,7 @@ class SlapConfigurationTestMixin(object):
           "10.0.246.114"
         ]
       ],
-      "parameters": json.dumps(shared_instance_parameter_dict),
+      "parameters": shared_instance_parameter_dict,
       "connection_parameters": {"4": 6, "8": "YourURL2"},
     }
     if self.use_api:
