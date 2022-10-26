@@ -35,17 +35,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class PeertubeTestCase(SlapOSInstanceTestCase):
-  # to be defined by subclasses
-  name = None
-  kind = None
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {"name": cls.name}
-
-
-class TestPeerTube(PeertubeTestCase):
+class TestPeerTube(SlapOSInstanceTestCase):
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
