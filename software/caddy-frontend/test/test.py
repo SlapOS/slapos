@@ -6816,6 +6816,7 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'health-check-failover-url': {
         'https-only': False,  # http and https access to check
+        'enable_cache': True,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
         'url': cls.backend_url + 'url',
@@ -6965,6 +6966,7 @@ backend _health-check-default-http
     self._test('health-check-custom')
 
   def test_health_check_failover_url(self):
+    self.fail('Prove that even if the backend is down, the cached version older than max age - simulating if-error by ATS - works')
     parameter_dict = self.assertSlaveBase('health-check-failover-url')
     slave_parameter_dict = self.getSlaveParameterDictDict()[
       'health-check-failover-url']
