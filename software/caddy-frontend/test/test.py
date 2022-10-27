@@ -109,13 +109,6 @@ def new_getaddrinfo(*args):
   return DNS_CACHE[args[:2]]
 
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
-
-
 def der2pem(der):
   certificate = x509.load_der_x509_certificate(der, default_backend())
   return certificate.public_bytes(serialization.Encoding.PEM)
@@ -561,11 +554,7 @@ class TestHandler(BaseHTTPRequestHandler):
   server_version = "TestBackend"
   sys_version = ""
 
-  def log_message(self, *args):
-    if os.environ.get('SLAPOS_TEST_DEBUG'):
-      return BaseHTTPRequestHandler.log_message(self, *args)
-    else:
-      return
+  log_message = logging.getLogger(__name__ + '.TestHandler').info
 
   def do_DELETE(self):
     config = self.configuration.pop(self.path, None)
