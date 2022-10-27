@@ -110,7 +110,7 @@ def new_getaddrinfo(*args):
 
 
 # for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
+if os.environ.get('SLAPOS_TEST_DEBUG', '0') == '1':
   logging.basicConfig(level=logging.DEBUG)
   import unittest
   unittest.installHandler()
@@ -562,7 +562,7 @@ class TestHandler(BaseHTTPRequestHandler):
   sys_version = ""
 
   def log_message(self, *args):
-    if os.environ.get('SLAPOS_TEST_DEBUG'):
+    if os.environ.get('SLAPOS_TEST_DEBUG', '0') == '1':
       return BaseHTTPRequestHandler.log_message(self, *args)
     else:
       return
