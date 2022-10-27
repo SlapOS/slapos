@@ -5,7 +5,8 @@ listen:
 # Correspond to your reverse proxy server_name/listen configuration (i.e., your public PeerTube instance URL)
 webserver:
   https: true
-  hostname: '$${frontend:connection-domain}'
+  hostname: '$${publish-connection-parameter:frontend-url}'
+  # hostname: '$${frontend:connection-domain}'
   port: $${nginx-configuration:port}
 
 # Secrets you need to generate the first time you run PeerTube
