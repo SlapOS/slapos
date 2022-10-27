@@ -82,7 +82,7 @@ promise = check_url_available
 name = nginx_listen.py
 config-host = [$${nginx-configuration:ip}]
 config-port = $${nginx-configuration:port}
-config-url = https://$${:config-host}:$${:config-port}
+config-url = https://$${frontend:connection-domain}
 
 [nginx-configuration]
 recipe = slapos.recipe.template
@@ -155,7 +155,7 @@ name = PeerTube Server Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = $${nginx-listen-promise:config-url}
+config-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 return = domain secure_access
 
 [publish-connection-parameter]
