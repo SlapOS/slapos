@@ -42,7 +42,8 @@ class TestPeerTube(SlapOSInstanceTestCase):
   """Test that the service url.${kind} responds Hello ${name}
   """
   def test_get(self):
-    backend_url = self.connection_parameters['frontend-url']
+    url = self.connection_parameters['frontend-url']
+    self.assertEqual(url, "fuck")
     response = requests.get(url)
     self.assertEqual(requests.codes['OK'], response.status_code)
     self.assertIn('PeerTube', response.text)
