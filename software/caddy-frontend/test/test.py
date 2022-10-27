@@ -282,6 +282,58 @@ def isHTTP2(domain):
   return 'Using HTTP2, server supports'.encode() in err
 
 
+class AtsMixin(object):
+  def _hack_ats(self, max_stale_age):
+    records_config = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'trafficserver', 'records.config'
+      ))
+    self.assertEqual(1, len(records_config))
+    self._hack_ats_records_config_path = records_config[0]
+    original_max_stale_age = \
+        'CONFIG proxy.config.http.cache.max_stale_age INT 604800\n'
+    new_max_stale_age = \
+        'CONFIG proxy.config.http.cache.max_stale_age INT %s\n' % (
+          max_stale_age,)
+    with open(self._hack_ats_records_config_path) as fh:
+      self._hack_ats_original_records_config = fh.readlines()
+    # sanity check - are we really do it?
+    self.assertIn(
+      original_max_stale_age,
+      self._hack_ats_original_records_config)
+    new_records_config = []
+    max_stale_age_changed = False
+    for line in self._hack_ats_original_records_config:
+      if line == original_max_stale_age:
+        line = new_max_stale_age
+        max_stale_age_changed = True
+      new_records_config.append(line)
+    self.assertTrue(max_stale_age_changed)
+    with open(self._hack_ats_records_config_path, 'w') as fh:
+      fh.write(''.join(new_records_config))
+    self._hack_ats_restart()
+
+  def _unhack_ats(self):
+    with open(self._hack_ats_records_config_path, 'w') as fh:
+      fh.write(''.join(self._hack_ats_original_records_config))
+    self._hack_ats_restart()
+
+  def _hack_ats_restart(self):
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if process_info['name'].startswith(
+        'trafficserver') and process_info['name'].endswith('-on-watch'):
+        self.callSupervisorMethod(
+          'stopProcess', '%(group)s:%(name)s' % process_info)
+        self.callSupervisorMethod(
+          'startProcess', '%(group)s:%(name)s' % process_info)
+    # give short time for the ATS to start back
+    time.sleep(5)
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if process_info['name'].startswith(
+        'trafficserver') and process_info['name'].endswith('-on-watch'):
+        self.assertEqual(process_info['statename'], 'RUNNING')
+
+
 class TestDataMixin(object):
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
@@ -697,7 +749,10 @@ class TestHandler(BaseHTTPRequestHandler):
     self.end_headers()
     if getattr(response, 'encode', None) is not None:
       response = response.encode()
-    self.wfile.write(response)
+    try:  # XXX XXX XXX
+      self.wfile.write(response)
+    except Exception:
+      pass
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
@@ -3876,56 +3931,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
 
-  def _hack_ats(self, max_stale_age):
-    records_config = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'trafficserver', 'records.config'
-      ))
-    self.assertEqual(1, len(records_config))
-    self._hack_ats_records_config_path = records_config[0]
-    original_max_stale_age = \
-        'CONFIG proxy.config.http.cache.max_stale_age INT 604800\n'
-    new_max_stale_age = \
-        'CONFIG proxy.config.http.cache.max_stale_age INT %s\n' % (
-          max_stale_age,)
-    with open(self._hack_ats_records_config_path) as fh:
-      self._hack_ats_original_records_config = fh.readlines()
-    # sanity check - are we really do it?
-    self.assertIn(
-      original_max_stale_age,
-      self._hack_ats_original_records_config)
-    new_records_config = []
-    max_stale_age_changed = False
-    for line in self._hack_ats_original_records_config:
-      if line == original_max_stale_age:
-        line = new_max_stale_age
-        max_stale_age_changed = True
-      new_records_config.append(line)
-    self.assertTrue(max_stale_age_changed)
-    with open(self._hack_ats_records_config_path, 'w') as fh:
-      fh.write(''.join(new_records_config))
-    self._hack_ats_restart()
-
-  def _unhack_ats(self):
-    with open(self._hack_ats_records_config_path, 'w') as fh:
-      fh.write(''.join(self._hack_ats_original_records_config))
-    self._hack_ats_restart()
-
-  def _hack_ats_restart(self):
-    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
-      if process_info['name'].startswith(
-        'trafficserver') and process_info['name'].endswith('-on-watch'):
-        self.callSupervisorMethod(
-          'stopProcess', '%(group)s:%(name)s' % process_info)
-        self.callSupervisorMethod(
-          'startProcess', '%(group)s:%(name)s' % process_info)
-    # give short time for the ATS to start back
-    time.sleep(5)
-    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
-      if process_info['name'].startswith(
-        'trafficserver') and process_info['name'].endswith('-on-watch'):
-        self.assertEqual(process_info['statename'], 'RUNNING')
-
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
@@ -4553,7 +4558,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotIn('X-Backend-Identification', result.headers)
 
 
-class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   instance_parameter_dict = {
       'domain': 'example.com',
       'port': HTTPS_PORT,
@@ -6774,7 +6779,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     )
 
 
-class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -6816,6 +6821,7 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'health-check-failover-url': {
         'https-only': False,  # http and https access to check
+        'enable_cache': True,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
         'url': cls.backend_url + 'url',
@@ -6969,12 +6975,63 @@ backend _health-check-default-http
     slave_parameter_dict = self.getSlaveParameterDictDict()[
       'health-check-failover-url']
 
-    # check normal access
+    source_ip = '127.0.0.1'
+    max_stale_age = 30
+    max_age = int(max_stale_age / 2.)
+    body_200 = 'Body 200' * 500
+    body_failover = 'Failover response'
+    cached_path = self.id()
+    self.addCleanup(self._unhack_ats)
+    self._hack_ats(max_stale_age)
+
+    # Prerequisite for cache: setup failover backend with proper code
+    # for normal access (not cached, typical scenario) and cached access
+    # in order to check ATS behaviour
+    for path in ['/failoverpath', '/' + cached_path]:
+      for url in [
+        'failover-url?a=b&c=',
+        'failover-https-url?a=b&c='
+      ]:
+        result = requests.put(
+          self.backend_url + url + path,
+          headers={
+            'X-Reply-Status-Code': '503',
+            'X-Reply-Body': base64.b64encode(body_failover.encode()),
+          })
+        self.assertEqual(result.status_code, http.client.CREATED)
+
+    def configureResult(status_code, body):
+      backend_url = self.getSlaveParameterDictDict()[
+        'health-check-failover-url']['https-url']
+      result = requests.put(
+        '/'.join([backend_url, cached_path]),
+        headers={
+          'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
+          'X-Reply-Status-Code': status_code,
+          'X-Reply-Body': base64.b64encode(body.encode()),
+          # drop Content-Length header to ensure
+          # https://github.com/apache/trafficserver/issues/7880
+          'X-Drop-Header': 'Content-Length',
+        })
+      self.assertEqual(result.status_code, http.client.CREATED)
+
+    def checkResult(status_code, body):
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], cached_path,
+        source_ip=source_ip
+      )
+      self.assertEqual(result.status_code, status_code)
+      self.assertEqual(result.text, body)
+
+    # check normal access...
     result = fakeHTTPResult(parameter_dict['domain'], '/path')
     self.assertEqualResultJson(result, 'Path', '/url/path')
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
     self.assertEqual(self.certificate_pem, der2pem(result.peercert))
     self.assertEqualResultJson(result, 'Path', '/https-url/path')
+    # ...and cached result, also in order to store it in the cache
+    configureResult('200', body_200)
+    checkResult(http.client.OK, body_200)
 
     # start replying with bad status code
     result = requests.put(
@@ -6993,10 +7050,11 @@ backend _health-check-default-http
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
+    # check simple failover
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
     self.assertEqual(self.certificate_pem, der2pem(result.peercert))
-    self.assertEqualResultJson(
-      result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
+    self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
+    self.assertEqual(result.text, body_failover)
 
     self.assertLastLogLineRegexp(
       '_health-check-failover-url_backend_log',
@@ -7005,14 +7063,14 @@ backend _health-check-default-http
       r'https-backend _health-check-failover-url-https-failover'
       r'\/_health-check-failover-url-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
-      r'200 \d+ - - ---- '
+      r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
       r'"GET /failoverpath HTTP/1.1"'
     )
 
     result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
-    self.assertEqualResultJson(
-      result, 'Path', '/failover-url?a=b&c=/failoverpath')
+    self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
+    self.assertEqual(result.text, body_failover)
     self.assertLastLogLineRegexp(
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
@@ -7020,10 +7078,22 @@ backend _health-check-default-http
       r'http-backend _health-check-failover-url-http-failover'
       r'\/_health-check-failover-url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
-      r'200 \d+ - - ---- '
+      r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
       r'"GET /failoverpath HTTP/1.1"'
     )
+
+    # It's time to check that ATS gives cached result, even if failover
+    # backend is used
+    checkResult(http.client.OK, body_200)
+    # interesting moment, time is between max_age and max_stale_age, triggers
+    # https://github.com/apache/trafficserver/issues/7880
+    # which is stale-if-error simulated by ATS while using failover backend
+    time.sleep(max_age + 1 - 3)
+    checkResult(http.client.OK, body_200)
+    # max_stale_age passed, time to return 502 with failover url
+    time.sleep(max_stale_age + 2 - 3)
+    checkResult(http.client.SERVICE_UNAVAILABLE, body_failover)
 
   def test_health_check_failover_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase(
