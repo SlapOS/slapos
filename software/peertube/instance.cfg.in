@@ -160,4 +160,4 @@ return = domain secure_access
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-frontend-url = $${frontend:connection-domain}
+frontend-url = $${frontend:connection-secure_access}

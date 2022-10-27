@@ -6,7 +6,6 @@ listen:
 webserver:
   https: true
   hostname: '$${publish-connection-parameter:frontend-url}'
-  # hostname: '$${frontend:connection-domain}'
   port: $${nginx-configuration:port}
 
 # Secrets you need to generate the first time you run PeerTube
