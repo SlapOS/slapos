@@ -34,20 +34,20 @@ install =
 {% raw %}
 
   config = open(self.options["location"], "w")
-  inputs = ${instance-parameter:configuration.inputs}
-  outputs = ${instance-parameter:configuration.outputs}
+  input = ${instance-parameter:configuration.input}
+  output = ${instance-parameter:configuration.output}
 
-  config.write(f"[INPUTS]\n")
+  config.write(f"[INPUT]\n")
 
-  for key in inputs:
-    config.write(f"    {str(key).capitalize()} {inputs[key]}\n")
+  for key in input:
+    config.write(f"    {str(key).capitalize()} {input[key]}\n")
  
   config.write("\n")
 
-  config.write(f"[OUTPUTS]\n")
+  config.write(f"[OUTPUT]\n")
 
-  for key in outputs:
-    config.write(f"    {str(key).capitalize()} {outputs[key]}\n")
+  for key in output:
+    config.write(f"    {str(key).capitalize()} {output[key]}\n")
 
 {% endraw %}
 
