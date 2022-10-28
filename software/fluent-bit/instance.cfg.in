@@ -30,26 +30,25 @@ bin = ${:home}/bin
 [fluent-bit-config-file]
 recipe = slapos.recipe.build
 location = ${directory:etc}/${:_buildout_section_name_}.cfg
+ip = ${instance-parameter:ipv4-random}
 install =
-{% raw %}
-
   config = open(self.options["location"], "w")
+  ip = self.options["ip"]
   input = ${instance-parameter:configuration.input}
   output = ${instance-parameter:configuration.output}
-
   config.write(f"[INPUT]\n")
 
   for key in input:
-    config.write(f"    {str(key).capitalize()} {input[key]}\n")
- 
-  config.write("\n")
+    if key == "listen":
+      config.write(f"    {str(key).capitalize()} {ip}\n")
+    else:
+      config.write(f"    {str(key).capitalize()} {input[key]}\n")
 
+  config.write("\n")
   config.write(f"[OUTPUT]\n")
 
   for key in output:
     config.write(f"    {str(key).capitalize()} {output[key]}\n")
-
-{% endraw %}
 
 [fluent-bit-service]
 recipe  = slapos.cookbook:wrapper
