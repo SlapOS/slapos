@@ -1,12 +1,12 @@
 listen:
   hostname: '$${instance-parameter:ipv4-random}'
-  port: 9000
+  port: $${publish-connection-parameter:frontend-port}
 
 # Correspond to your reverse proxy server_name/listen configuration (i.e., your public PeerTube instance URL)
 webserver:
   https: true
-  hostname: '[$${nginx-configuration:ip}]'
-  port: $${nginx-configuration:port}
+  hostname: '$${publish-connection-parameter:frontend-hostname}'
+  port: 443
 
 # Secrets you need to generate the first time you run PeerTube
 secrets:
@@ -44,10 +44,10 @@ trust_proxy:
 # Your database name will be database.name OR 'peertube'+database.suffix
 database:
   hostname: '$${postgresql:ipv4}'
-  port: 5432
+  port: '$${postgresql:port}'
   ssl: false
   suffix: '_prod'
-  username: 'peertube'
+  username: '$${postgresql:superuser}'
   password: '$${postgresql:password}'
   pool:
     max: 5
@@ -191,22 +191,6 @@ log:
   # Accept warn/error logs coming from the client
   accept_client_log: true
 
-# Highly experimental support of Open Telemetry
-open_telemetry:
-  metrics:
-    enabled: false
-
-    # Create a prometheus exporter server on this port so prometheus server can scrape PeerTube metrics
-    prometheus_exporter:
-      port: 9091
-
-  tracing:
-    enabled: false
-
-    # Send traces to a Jaeger compatible endpoint
-    jaeger_exporter:
-      endpoint: ''
-
 trending:
   videos:
     interval_days: 7 # Compute trending videos for the last x days
@@ -302,7 +286,7 @@ plugins:
   # The website PeerTube will ask for available PeerTube plugins and themes
   # This is an unmoderated plugin index, so only install plugins/themes you trust
   index:
-    enabled: true
+    enabled: false
     check_latest_versions_interval: '12 hours' # How often you want to check new plugins/themes versions
     url: 'https://packages.joinpeertube.org'
 
@@ -363,7 +347,7 @@ admin:
   email: 'admin@example.com'
 
 contact_form:
-  enabled: true
+  enabled: false
 
 signup:
   enabled: false
