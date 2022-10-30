@@ -393,14 +393,14 @@ transcoding:
 
   resolutions: # Only created if the original video has a higher resolution, uses more storage!
     0p: false # audio-only (creates mp4 without video stream, always created when enabled)
-    144p: false
-    240p: false
-    360p: false
-    480p: false
-    720p: false
-    1080p: false
-    1440p: false
-    2160p: false
+    144p: true
+    240p: true
+    360p: true
+    480p: true
+    720p: true
+    1080p: true
+    1440p: true
+    2160p: true
 
   # Transcode and keep original resolution, even if it's above your maximum enabled resolution
   always_transcode_original_resolution: true
@@ -688,7 +688,7 @@ search:
   # If enabled, the associated group will be able to "escape" from the instance follows
   # That means they will be able to follow channels, watch videos, list videos of non followed instances
   remote_uri:
-    users: true
+    users: false
     anonymous: false
 
   # Use a third party index instead of your local index, only for search results
