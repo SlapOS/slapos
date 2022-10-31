@@ -1,6 +1,6 @@
 # Fluent-bit
 
-## When instantiating Fluent-bit you can use the following config:
+## When instantiating Fluent-bit you can use the following example config:
 ```
 release="https://lab.nexedi.com/nexedi/slapos/raw/master/software/fluent-bit/software.cfg"
 supply(release, "COMP-****")
@@ -13,7 +13,6 @@ partition_parameter_kw = {
     "input": {
         "name": "mqtt",
         "tag": "data",
-        "listen": "0.0.0.0",
         "port": 1883
     },
     "output": {
