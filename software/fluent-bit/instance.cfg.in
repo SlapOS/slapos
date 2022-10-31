@@ -39,11 +39,9 @@ install =
   config.write(f"[INPUT]\n")
 
   for key in input:
-    if key == "listen":
-      config.write(f"    {str(key).capitalize()} {ip}\n")
-    else:
-      config.write(f"    {str(key).capitalize()} {input[key]}\n")
+    config.write(f"    {str(key).capitalize()} {input[key]}\n")
 
+  config.write(f"    Listen {ip}\n")
   config.write("\n")
   config.write(f"[OUTPUT]\n")
 
