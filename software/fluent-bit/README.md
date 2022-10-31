@@ -5,18 +5,18 @@
 release="https://lab.nexedi.com/nexedi/slapos/raw/master/software/fluent-bit/software.cfg"
 supply(release, "COMP-****")
 partition_parameter_kw = {
- "service": {
+    "service": {
         "flush": 5,
         "daemon": "off",
         "log_level": "debug"
     },
-    "inputs": {
+    "input": {
         "name": "mqtt",
         "tag": "data",
         "listen": "0.0.0.0",
         "port": 1883
     },
-    "outputs": {
+    "output": {
         "name": "forward",
         "match": "*",
         "host": "127.0.0.1",
