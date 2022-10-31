@@ -2,7 +2,7 @@
 
 ## When instantiating Fluent-bit you can use the following config:
 ```
-release="/opt/slapos.git/software/fluent-bit/software.cfg"
+release="https://lab.nexedi.com/nexedi/slapos/raw/master/software/fluent-bit/software.cfg"
 supply(release, "COMP-****")
 partition_parameter_kw = {
  "service": {
