@@ -16,8 +16,7 @@
  
  all:
 -	python3 certdata2pem.py
-+	for x in '' 2 3; do type python$$x && break; done >/dev/null \
-+	&& python$$x certdata2pem.py
++	$(PYTHON) certdata2pem.py
  
  clean:
  	-rm -f *.crt
