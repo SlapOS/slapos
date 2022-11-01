@@ -98,15 +98,12 @@ class SlapConfigurationTestMixin(object):
     }
     if self.use_api:
       api_handler = APIRequestHandler([
-        ("/api/get/", json.dumps(instance_data)),
-        ("/api/allDocs/", json.dumps({"result_list": []}))
+        ("/api/get/", json.dumps(instance_data))
       ])
     else:
       with open(self.instance_json_location, 'w') as f:
         json.dump(instance_data, f, indent=2)
-      api_handler = APIRequestHandler([
-        ("/api/allDocs/", json.dumps({"result_list": []}))
-      ])
+      api_handler = APIRequestHandler([])
     with httmock.HTTMock(api_handler.request_handler):
       slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
 
@@ -130,118 +127,6 @@ class SlapConfigurationTestMixin(object):
 
     self.assertEqual(options['address-list'], [10, 20],
       "All underscores should be replaced with -")
-
-  def test_with_shared_instance(self):
-    """Test proper call with new api"""
-
-    options = {
-      "url": "http://127.0.0.1:80",
-      "software-instance-reference": "SOFTINST-12",
-    }
-    parameter_dict = {"foo": "bar", "hello": "bye"}
-    instance_data = {
-      "reference": options["software-instance-reference"],
-      "state": "started",
-      "software_type": "Couscous",
-      "compute_partition_id": "slappartx12",
-      "compute_node_id": "COMP-321",
-      "software_release_uri": "foo.cfg",
-      "processing_timestamp": 1223231231,
-      "title": "MyInstance",
-      "root_instance_title": "MyInstanceRoot",
-      "ip_list": [
-        [
-          "slaptap9",
-          "fe80::1ff:fe23:4567:890a"
-        ],
-        [
-          "slaptap9",
-          "10.0.246.114"
-        ]
-      ],
-      "parameters": parameter_dict,
-      "connection_parameters": {"1": 2, "3": "YourURL"},
-    }
-    shared_instance_parameter_dict = {"zooo": "heee", "bye": "hello"}
-    shared_instance_data = {
-      "reference": "SHARED-124",
-      "state": "started",
-      "software_type": "Couscous",
-      "compute_partition_id": "slappartx12",
-      "compute_node_id": "COMP-321",
-      "software_release_uri": "foo.cfg",
-      "processing_timestamp": 14444332,
-      "title": "MySharedInstance",
-      "root_instance_title": "MySharedInstance",
-      "ip_list": [
-        [
-          "slaptap9",
-          "fe80::1ff:fe23:4567:890a"
-        ],
-        [
-          "slaptap9",
-          "10.0.246.114"
-        ]
-      ],
-      "parameters": shared_instance_parameter_dict,
-      "connection_parameters": {"4": 6, "8": "YourURL2"},
-    }
-    if self.use_api:
-      api_handler = APIRequestHandler([
-        ("/api/get/", json.dumps(instance_data)),
-        ("/api/allDocs/", json.dumps({"result_list": [{
-          "portal_type": "Shared Instance",
-          "reference": shared_instance_data["reference"]
-          }]})),
-        ("/api/get/", json.dumps(shared_instance_data)),
-      ])
-    else:
-      with open(self.instance_json_location, 'w') as f:
-        json.dump(instance_data, f, indent=2)
-      api_handler = APIRequestHandler([
-        ("/api/allDocs/", json.dumps({"result_list": [{
-          "portal_type": "Shared Instance",
-          "reference": shared_instance_data["reference"]
-          }]})),
-        ("/api/get/", json.dumps(shared_instance_data)),
-      ])
-    with httmock.HTTMock(api_handler.request_handler):
-      slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
-
-    self.assertEqual(options["instance-state"], instance_data.get("state"))
-    self.assertEqual(options["slap-software-type"], instance_data.get("software_type"))
-    self.assertEqual(options["slap-computer-partition-id"], instance_data.get("compute_partition_id"))
-    self.assertEqual(options["slap-computer-id"], instance_data.get("compute_node_id"))
-    self.assertEqual(options["slap-software-release-url"], instance_data.get("software_release_uri"))
-    self.assertEqual(options["timestamp"], instance_data.get("processing_timestamp"))
-    self.assertEqual(options["instance-title"], instance_data.get("title"))
-    self.assertEqual(options["root-instance-title"], instance_data.get("root_instance_title"))
-    self.assertEqual(options["instance-guid"], instance_data.get("reference"))
-    self.assertEqual(options["ipv4"], set([instance_data.get("ip_list")[1][1]]))
-    self.assertEqual(options["ipv6"], set([instance_data.get("ip_list")[0][1]]))
-    for key, value in parameter_dict.items():
-      options['configuration.' + key] = value
-
-    self.assertEqual(options["slave-instance-list"], options["shared-instance-list"])
-    self.assertEqual(options["shared-instance-list"],[
-      {
-        'slave_title': shared_instance_data.get("title"),
-        'slap_software_type': \
-            shared_instance_data.get("software_type"),
-        'slave_reference': shared_instance_data.get("reference"),
-        'timestamp': shared_instance_data.get("processing_timestamp"),
-        'xml': dumps(shared_instance_parameter_dict),
-        'parameters': shared_instance_parameter_dict,
-        'connection_xml': dumps(shared_instance_data.get("connection_parameters")),
-        'connection_parameters': shared_instance_data.get("connection_parameters"),
-        'connection-parameter-hash': calculate_dict_hash(shared_instance_data.get("connection_parameters")),
-      }
-    ])
-
-    if not self.use_api:
-      with open(self.instance_json_location, "r") as f:
-        dumped_data = json.load(f)
-      self.assertEqual(dumped_data["slave_instance_list"], options["shared-instance-list"])
 
 class SlapConfigurationWithLocalInstanceFile(SlapConfigurationTestMixin, unittest.TestCase):
   use_api = False
