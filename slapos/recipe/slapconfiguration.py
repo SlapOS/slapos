@@ -42,8 +42,6 @@ from slapos import format as slapformat
 
 logger = logging.getLogger("slapos")
 
-import time
-
 class Recipe(object):
   """
   Retrieve slap partition parameters and make them available in buildout section.
@@ -135,9 +133,6 @@ class Recipe(object):
       1. SlapOS Master - for external computer/partition information
       2. format.Partition.resource_file - for partition specific details
       """
-      start = time.time()
-      shared_instance_list = []
-
       software_instance = None
 
       instance_json_path = os.path.join(instance_root, SOFTWARE_INSTANCE_JSON_FILENAME)
@@ -180,42 +175,6 @@ class Recipe(object):
         full_ip_list = software_instance.get("full_ip_list", [])
         parameter_dict = software_instance.get("parameters")
 
-        # Get Share instance list
-        if not "slave_instance_list" in software_instance:
-          result_shared_instance_list = slap.jio_api_connector.allDocs({
-            "portal_type": "Shared Instance",
-            "host_instance_reference": software_instance.get("reference"),
-            "state": "started",
-          }).get("result_list", [])
-          shared_instance_list = []
-          for shared_instance_brain in result_shared_instance_list:
-            shared_instance = slap.jio_api_connector.get({
-              "portal_type": "Software Instance",
-              "reference": shared_instance_brain.get("reference"),
-            })
-            shared_instance_parameter = shared_instance.get("parameters")
-            shared_instance_connection = shared_instance.get("connection_parameters")
-            shared_instance_list.append({
-              'slave_title': shared_instance.get("title"),
-              'slap_software_type': \
-                  shared_instance.get("software_type"),
-              'slave_reference': shared_instance.get("reference"),
-              'timestamp': shared_instance.get("processing_timestamp"),
-              'parameters': shared_instance_parameter,
-              'connection_parameters': shared_instance_connection,
-              'connection-parameter-hash': calculate_dict_hash(shared_instance_connection),
-            })
-          # XXX CLN Should we update the content of software instance json with shared instance list
-        else:
-          shared_instance_list = software_instance["slave_instance_list"]
-
-        options["slave-instance-list"] = shared_instance_list
-        options["shared-instance-list"] = shared_instance_list
-
-        if not "slave_instance_list" in software_instance:
-          software_instance["slave_instance_list"] = shared_instance_list
-          with open(instance_json_path, "w") as f:
-            software_instance = json.dump(software_instance, f, indent=2)
       else:
         computer_partition = slap.registerComputerPartition(
             options['computer'],
@@ -329,13 +288,6 @@ class Recipe(object):
               options[key] = value
       # print out augmented options to see what we are passing
       logger.debug(str(options))
-
-      end = time.time()
-      elapsed = end - start
-      logger.warning("----------------------------------------------------------------------------------------------------------------")
-      logger.warning("Number of hosted instances: %s" % len(shared_instance_list))
-      logger.warning("Elapsed time: %s" % elapsed)
-      logger.warning("----------------------------------------------------------------------------------------------------------------")
 
       return self._expandParameterDict(options, parameter_dict)
 
