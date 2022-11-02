@@ -976,11 +976,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self, result, cached=False, via=True, backend_reached=True):
     headers = result.headers.copy()
     self.assertKeyWithPop('Date', headers)
-    # drop vary-keys
-    headers.pop('Connection', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Keep-Alive', None)
-    headers.pop('Transfer-Encoding', None)
 
     if backend_reached:
       self.assertEqual('TestBackend', headers.pop('Server', ''))
@@ -2263,23 +2258,23 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         self.assertFalse('connection-parameter-hash' in line)
         self.assertFalse('timestamp' in line)
 
-  def assertBackendHeaders(
-    self, backend_header_dict, domain=None, source_ip=SOURCE_IP,
+  def assertRequestHeaders(
+    self, header_dict, domain=None, source_ip=SOURCE_IP,
     port=HTTPS_PORT, proto='https', cached=False):
     if domain is not None:
       self.assertEqual(
-        backend_header_dict['host'],
+        header_dict['host'],
         '%s:%s' % (domain, port))
     self.assertEqual(
-      backend_header_dict['x-forwarded-for'],
+      header_dict['x-forwarded-for'],
       source_ip
     )
     self.assertEqual(
-      backend_header_dict['x-forwarded-port'],
+      header_dict['x-forwarded-port'],
       port
     )
     self.assertEqual(
-      backend_header_dict['x-forwarded-proto'],
+      header_dict['x-forwarded-proto'],
       proto
     )
     via_id = '%s-%s' % (
@@ -2293,7 +2288,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
           'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(via_id=via_id),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
-        backend_header_dict['via']
+        header_dict['via']
       )
     else:
       self.assertEqual(
@@ -2302,7 +2297,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
           'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
-        backend_header_dict['via']
+        header_dict['via']
       )
 
   def test_url(self):
@@ -2339,7 +2334,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in headers)
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2459,7 +2454,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(j['Incoming Headers']['timeout'], '10')
       self.assertFalse('Content-Encoding' in result.headers)
-      self.assertBackendHeaders(
+      self.assertRequestHeaders(
          j['Incoming Headers'], parameter_dict['domain'])
 
       self.assertEqual(
@@ -2534,7 +2529,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2732,7 +2727,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -3040,7 +3035,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3080,7 +3075,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3115,7 +3110,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3158,7 +3153,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3196,7 +3191,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3280,7 +3275,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3310,7 +3305,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3340,7 +3335,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       j['Incoming Headers'], port='17', proto='irc')
     self.assertEqual(
       'Upgrade',
@@ -3373,7 +3368,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3391,7 +3386,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3413,7 +3408,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3444,7 +3439,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3462,7 +3457,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       j['Incoming Headers'], port='17', proto='irc')
     self.assertEqual(
       'Upgrade',
@@ -3485,7 +3480,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       j['Incoming Headers'], port='17', proto='irc')
     self.assertEqual(
       'Upgrade',
@@ -3596,7 +3591,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertFalse('Content-Encoding' in result.headers)
 
@@ -3835,7 +3830,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
   def test_enable_cache_server_alias(self):
@@ -3863,7 +3858,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
     result = fakeHTTPResult(
@@ -3934,6 +3929,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
+    self.assertKeyWithPop('Content-Length', headers)
 
     self.assertEqual(
       {
@@ -3946,7 +3942,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
     # BEGIN: Check that squid.log is correctly filled in
@@ -4085,7 +4081,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
     # check stale-if-error support is really respected if not present in the
@@ -4215,7 +4211,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
     try:
@@ -4249,7 +4245,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
   def test_enable_http2_false(self):
@@ -4316,7 +4312,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
@@ -4328,7 +4324,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
@@ -4356,7 +4352,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'],
       port=HTTP_PORT, proto='http')
     self.assertEqual(
@@ -4369,7 +4365,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'],
       port=HTTP_PORT, proto='http')
     self.assertEqual(
@@ -4402,7 +4398,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
@@ -4414,7 +4410,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
@@ -4565,7 +4561,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Strict-Transport-Security'])
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
-    self.assertBackendHeaders(
+    self.assertRequestHeaders(
       result.json()['Incoming Headers'],
       parameter_dict['domain'])
 
