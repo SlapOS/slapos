@@ -158,6 +158,33 @@ slave = true
 config-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 return = domain secure_access
 
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
+short_description = 'PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.'
+description = 'Welcome to this PeerTube instance!'
+terms = 'No terms for now.'
+
+[peertube-text-content]
+recipe = slapos.recipe.build
+slapparameter-dict = $${slap-configuration:configuration}
+init =
+  options['name'] = options['slapparameter-dict'].get('name') or 'Peertube in Slapos'
+  options['short_description'] = options['slapparameter-dict'].get('short_description') or ''
+  options['description'] = options['slapparameter-dict'].get('description') or ''
+  options['terms'] = options['slapparameter-dict'].get('terms') or ''
+  options['code_of_conduct'] = options['slapparameter-dict'].get('code_of_conduct') or ''
+  options['moderation_information'] = options['slapparameter-dict'].get('moderation_information') or ''
+  options['creation_reason'] = options['slapparameter-dict'].get('creation_reason') or ''
+  options['administrator'] = options['slapparameter-dict'].get('administrator') or ''
+  options['maintenance_lifetime'] = options['slapparameter-dict'].get('maintenance_lifetime') or ''
+  options['business_model'] = options['slapparameter-dict'].get('business_model') or ''
+  options['hardware_information'] = options['slapparameter-dict'].get('hardware_information') or ''
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 frontend-url = $${frontend:connection-secure_access}

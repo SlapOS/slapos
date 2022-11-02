@@ -1,0 +1,14 @@
+{
+  "name": "Peertube",
+  "description": "Peertube Website Text",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-peertube-input-schema.json",
+      "index": 1
+    }
+  }
+}

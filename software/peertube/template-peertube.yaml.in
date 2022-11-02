@@ -286,7 +286,7 @@ plugins:
   # The website PeerTube will ask for available PeerTube plugins and themes
   # This is an unmoderated plugin index, so only install plugins/themes you trust
   index:
-    enabled: false
+    enabled: true
     check_latest_versions_interval: '12 hours' # How often you want to check new plugins/themes versions
     url: 'https://packages.joinpeertube.org'
 
@@ -564,30 +564,30 @@ auto_blacklist:
 
 # Instance settings
 instance:
-  name: 'PeerTube'
-  short_description: 'PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.'
-  description: 'Welcome to this PeerTube instance!' # Support markdown
-  terms: 'No terms for now.' # Support markdown
-  code_of_conduct: '' # Supports markdown
+  name: '$${peertube-text-content:name}' #'Peertube'
+  short_description: '$${peertube-text-content:short_description}'
+  description: '$${peertube-text-content:description}'
+  terms: '$${peertube-text-content:terms}'
+  code_of_conduct: '$${peertube-text-content:code_of_conduct}'
 
   # Who moderates the instance? What is the policy regarding NSFW videos? Political videos? etc
-  moderation_information: '' # Supports markdown
+  moderation_information: '$${peertube-text-content:moderation_information}'
 
   # Why did you create this instance?
-  creation_reason: '' # Supports Markdown
+  creation_reason: '$${peertube-text-content:creation_reason}'
 
   # Who is behind the instance? A single person? A non profit?
-  administrator: '' # Supports Markdown
+  administrator: '$${peertube-text-content:administrator}'
 
   # How long do you plan to maintain this instance?
-  maintenance_lifetime: '' # Supports Markdown
+  maintenance_lifetime: '$${peertube-text-content:maintenance_lifetime}'
 
   # How will you pay the PeerTube instance server? With your own funds? With users donations? Advertising?
-  business_model: '' # Supports Markdown
+  business_model: '$${peertube-text-content:business_model}'
 
   # If you want to explain on what type of hardware your PeerTube instance runs
   # Example: '2 vCore, 2GB RAM...'
-  hardware_information: '' # Supports Markdown
+  hardware_information: '$${peertube-text-content:hardware_information}'
 
   # What are the main languages of your instance? To interact with your users for example
   # Uncomment or add the languages you want
