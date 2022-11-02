@@ -34,6 +34,7 @@ context =
   key computer_id              slap-configuration:computer
   raw bin_directory            {{ bin_directory }}
   raw template_monitor         {{ template_monitor_cfg }}
+  raw template_nginx           {{ template_nginx }}
   raw template_logrotate       {{ logrotate_cfg }}
   raw logrotate_cfg            {{ logrotate_cfg }}
   raw python_bin               {{ python_bin }}
@@ -62,9 +63,10 @@ extra-context =
   raw gtk3_location      {{ gtk3_location }}
   raw matiec_location    {{ matiec_location }}
   raw mesa_location      {{ mesa_location }}
+  raw nginx_executable   {{ nginx_executable }}
+  raw nginx_mime         {{ nginx_mime }}
   raw novnc_location     {{ novnc_location }}
   raw openssl_bin        {{ openssl_location }}/bin/openssl
-  raw websockify_bin     {{ bin_directory }}/websockify
   raw x11vnc_bin         {{ x11vnc_location }}/bin/x11vnc
   raw xvfb_bin           {{ xserver_location }}/bin/Xvfb
   raw xterm_bin          {{ xterm_location }}/bin/xterm
