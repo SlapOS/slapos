@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Parameters to instantiate Peertube",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "description": "Instance Title",
+      "default": "Peertube in Slapos",
+      "type": "string"
+    },
+    "short_description": {
+      "description": "PeerTube short description",
+      "default": "PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.",
+      "type": "string"
+    },
+    "description": {
+      "description": "Peertube instance description",
+      "default": "Welcome to this PeerTube instance!",
+      "type": "string"
+    },
+    "terms": {
+      "description": "",
+      "default": "No terms for now.",
+      "type": "string"
+    },
+    "code_of_conduct": {
+      "description": "",
+      "default": "",
+      "type": "string"
+    },
+    "moderation_information": {
+      "description": "Who moderates the instance? What is the policy regarding NSFW videos? Political videos? etc",
+      "default": "",
+      "type": "string"
+    },
+    "creation_reason": {
+      "description": "Why did you create this instance?",
+      "default": "",
+      "type": "string"
+    },
+    "administrator": {
+      "description": "Who is behind the instance? A single person? A non profit?",
+      "default": "",
+      "type": "string"
+    },
+    "maintenance_lifetime": {
+      "description": "How long do you plan to maintain this instance?",
+      "default": "",
+      "type": "string"
+    },
+    "business_model": {
+      "description": "How will you pay the PeerTube instance server? With your own funds? With users donations? Advertising?",
+      "default": "",
+      "type": "string"
+    },
+    "hardware_information": {
+      "description": "",
+      "default": "",
+      "type": "string"
+    }
+  }
+}
