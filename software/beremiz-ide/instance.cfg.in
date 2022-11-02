@@ -62,9 +62,9 @@ extra-context =
   raw gtk3_location      {{ gtk3_location }}
   raw matiec_location    {{ matiec_location }}
   raw mesa_location      {{ mesa_location }}
+  raw nginx_location     {{ nginx_location }}
   raw novnc_location     {{ novnc_location }}
   raw openssl_bin        {{ openssl_location }}/bin/openssl
-  raw websockify_bin     {{ bin_directory }}/websockify
   raw x11vnc_bin         {{ x11vnc_location }}/bin/x11vnc
   raw xvfb_bin           {{ xserver_location }}/bin/Xvfb
   raw xterm_bin          {{ xterm_location }}/bin/xterm
