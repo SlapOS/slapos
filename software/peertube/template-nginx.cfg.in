@@ -61,16 +61,6 @@ server {
   error_log  $${directory:peertube_nginx_log}/peertube.error.log;
 
   ##
-  # Certificates
-  # you need a certificate to run in production. see https://letsencrypt.org/
-  ##
-
-  location ^~ '/.well-known/acme-challenge' {
-    default_type "text/plain";
-    root /var/www/certbot;
-  }
-
-  ##
   # Security hardening (as of Nov 15, 2020)
   # based on Mozilla Guideline v5.6
   ##

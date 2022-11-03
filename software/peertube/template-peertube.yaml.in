@@ -11,7 +11,7 @@ webserver:
 # Secrets you need to generate the first time you run PeerTube
 secrets:
   # Generate one using `openssl rand -hex 32`
-  peertube: ''
+  peertube: '35b4c762c8eb9e3ccb5bd7ad482ba4ecba0f99571db51ece24976e0f666fea48'
 
 rates_limit:
   api:
@@ -174,7 +174,7 @@ object_storage:
     base_url: ''
 
 log:
-  level: 'debug' # 'debug' | 'info' | 'warn' | 'error'
+  level: 'info' # 'debug' | 'info' | 'warn' | 'error'
 
   rotation:
     enabled : true # Enabled by default, if disabled make sure that 'storage.logs' is pointing to a folder handled by logrotate

@@ -11,6 +11,7 @@ parts =
   peertube-service
   publish-connection-parameter
   nginx-listen-promise
+  peertube-listen-promise
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -38,6 +39,12 @@ ssl = $${:etc}/ssl
 recipe = slapos.recipe.template
 url = ${template-peertube:output}
 output = $${directory:config}/peertube.yaml
+
+[peertube-listen-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = peertube_listen.py
+config-url = https://$${frontend:connection-domain}
 
 [peertube-service]
 recipe = slapos.recipe.template
@@ -80,7 +87,8 @@ virtual-depends =
 <= monitor-promise-base
 promise = check_url_available
 name = nginx_listen.py
-config-url = https://$${frontend:connection-domain}
+config-verify = 0
+config-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 
 [nginx-configuration]
 recipe = slapos.recipe.template
