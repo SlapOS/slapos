@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "type": "object",
+  "properties": {
+    "max_temp": {
+      "default": "80",
+      "title": "Max Temp",
+      "description": "Max Temp",
+      "type": "string"
+    }
+  }
+}
