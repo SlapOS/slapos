@@ -44,6 +44,7 @@ output = $${directory:config}/peertube.yaml
 <= monitor-promise-base
 promise = check_url_available
 name = peertube_listen.py
+config-verify = 0
 config-url = https://$${frontend:connection-domain}
 
 [peertube-service]
