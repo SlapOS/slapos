@@ -122,7 +122,7 @@ def main():
         if ('jio' in test_suite):
           url = f'{remote_access_url}/jio/test/tests.html'
         else:
-          url = f'{remote_access_url}/renderjs/test'
+          url = f'{remote_access_url}/renderjs/test/'
 
       is_browser_running = True
       agent = browser.execute_script("return navigator.userAgent")
