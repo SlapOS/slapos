@@ -51,7 +51,7 @@ http {
   gzip_types text/plain text/css application/json application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
 
 upstream backend {
-  server $${instance-parameter:ipv4-random}:$${publish-connection-parameter:frontend-port};
+  server $${instance-parameter:ipv4-random}:$${publish-connection-parameter:ipv4-port};
 }
 
 server {

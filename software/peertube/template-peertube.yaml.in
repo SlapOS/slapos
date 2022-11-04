@@ -1,12 +1,12 @@
 listen:
   hostname: '$${instance-parameter:ipv4-random}'
-  port: $${publish-connection-parameter:frontend-port}
+  port: $${publish-connection-parameter:ipv4-port}
 
 # Correspond to your reverse proxy server_name/listen configuration (i.e., your public PeerTube instance URL)
 webserver:
   https: true
-  hostname: '$${publish-connection-parameter:frontend-hostname}'
-  port: 443
+  hostname: '$${peertube-urlparse:host}'
+  port: $${peertube-urlparse:port}
 
 # Secrets you need to generate the first time you run PeerTube
 secrets:
