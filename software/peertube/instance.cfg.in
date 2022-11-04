@@ -10,6 +10,7 @@ parts =
   nginx-service
   peertube-service
   publish-connection-parameter
+  peertube-urlparse
   nginx-listen-promise
   peertube-listen-promise
 
@@ -163,7 +164,7 @@ name = PeerTube Server Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config-type = websocket
-config-websocket-path-list = /socket.io /tracker
+config-websocket-path-list = /socket.io /socket /tracker/socket
 config-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 return = domain secure_access
 
@@ -194,8 +195,24 @@ init =
   options['business_model'] = options['slapparameter-dict'].get('business_model') or ''
   options['hardware_information'] = options['slapparameter-dict'].get('hardware_information') or ''
 
+[peertube-urlparse]
+recipe = slapos.recipe.build
+slapparameter-dict = $${slap-configuration:configuration}
+url = $${publish-connection-parameter:frontend-url}
+init =
+  from six.moves.urllib.parse import urlparse
+  url = urlparse(options.get('url'))
+  if url.port:
+    options['host'] = '\'[' + url.hostname + '\']'
+    options['port'] = url.port
+  else:
+    options['host'] = url.hostname
+    options['port'] = 443
+
+
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 frontend-url = $${frontend:connection-secure_access}
 frontend-hostname = $${frontend:connection-domain}
-frontend-port = 9000
+ipv4-port = 9000
