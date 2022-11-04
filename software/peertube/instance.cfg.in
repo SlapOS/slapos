@@ -163,7 +163,7 @@ name = PeerTube Server Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config-type = websocket
-config-websocket-path-list = /socket.io
+config-websocket-path-list = /socket.io /tracker
 config-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 return = domain secure_access
 
