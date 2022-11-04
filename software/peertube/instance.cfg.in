@@ -203,7 +203,7 @@ init =
   from six.moves.urllib.parse import urlparse
   url = urlparse(options.get('url'))
   if url.port:
-    options['host'] = '\'[' + url.hostname + '\']'
+    options['host'] = '[' + url.hostname + ']'
     options['port'] = url.port
   else:
     options['host'] = url.hostname
