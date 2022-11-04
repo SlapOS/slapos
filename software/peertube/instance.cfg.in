@@ -204,12 +204,10 @@ init =
   url = urlparse(options.get('url'))
   if url.port:
     options['host'] = '[' + url.hostname + ']'
-    options['port'] = url.port
+    options['port'] = str(url.port)
   else:
     options['host'] = url.hostname
-    options['port'] = 443
-
-
+    options['port'] = str(443)
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
