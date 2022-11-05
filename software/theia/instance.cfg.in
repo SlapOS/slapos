@@ -45,6 +45,7 @@ default-parameters =
   {
     "autorun": "running",
     "initial-embedded-instance": null,
+    "forward-slapos-frontend-requests": "enabled",
     "frontend-name": "Theia Frontend",
     "frontend-sr": "$${:frontend-sr}",
     "frontend-sr-type": "RootSoftwareInstance",
