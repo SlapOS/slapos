@@ -31,6 +31,7 @@ import logging
 import os
 import re
 import subprocess
+import sqlite3
 import time
 
 import pexpect
@@ -42,6 +43,7 @@ from six.moves.urllib.parse import urlparse, urljoin
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
+from slapos.proxy.db_version import DB_VERSION
 
 
 theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
@@ -354,6 +356,60 @@ class TestTheiaFrontend(TheiaTestCase):
     for key in ('url', 'additional-url'):
       resp = requests.get(self.connection_parameters[key], verify=False)
       self.assertEqual(requests.codes.unauthorized, resp.status_code)
+
+
+class TestTheiaForwardFrontendRequestsEnabled(TheiaTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {"autorun": "user-controlled"} # we interact with slapos in this test
+
+  def _getRequestedInstanceList(self, query):
+    with sqlite3.connect(os.path.join(
+        self.computer_partition_root_path,
+        'srv/runner/var/proxy.db',
+    )) as db:
+      return [row[0] for row in db.execute(query).fetchall()]
+
+  def getRequestedInstanceList(self):
+    return self._getRequestedInstanceList(
+      f"SELECT partition_reference FROM partition{DB_VERSION} where slap_state='busy'"
+    )
+
+  def getForwardedInstanceList(self):
+    return self._getRequestedInstanceList(
+      f"SELECT partition_reference FROM forwarded_partition_request{DB_VERSION}"
+    )
+
+  def requestEmbeddedFrontendInstance(self, state='available'):
+    self.checkSlapos(
+      'request',
+      '--state',
+      state,
+      'frontend',
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg',
+    )
+
+  def test(self):
+    self.requestEmbeddedFrontendInstance()
+    # partition requested directly by user are forwarded with user_ prefix
+    self.assertEqual(self.getForwardedInstanceList(), ['user_frontend'])
+    self.assertEqual(self.getRequestedInstanceList(), [])
+    self.requestEmbeddedFrontendInstance(state='destroyed')
+
+    self.requestInstance({'forward-slapos-frontend-requests': 'disabled'})
+    self.waitForInstance()
+    self.requestEmbeddedFrontendInstance()
+    self.assertEqual(self.getForwardedInstanceList(), [])
+    self.assertEqual(self.getRequestedInstanceList(), ['frontend'])
+    self.requestEmbeddedFrontendInstance(state='destroyed')
+    self.checkSlapos('node', 'report')
+
+    self.requestInstance({'forward-slapos-frontend-requests': 'enabled'})
+    self.waitForInstance()
+    self.requestEmbeddedFrontendInstance()
+    self.assertEqual(self.getForwardedInstanceList(), ['user_frontend'])
+    self.assertEqual(self.getRequestedInstanceList(), [])
 
 
 class TestTheiaEnv(TheiaTestCase):
