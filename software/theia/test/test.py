@@ -31,6 +31,7 @@ import logging
 import os
 import re
 import subprocess
+import sqlite3
 import time
 
 import pexpect
@@ -42,6 +43,7 @@ from six.moves.urllib.parse import urlparse, urljoin
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
+from slapos.proxy.db_version import DB_VERSION
 
 
 theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
@@ -354,6 +356,67 @@ class TestTheiaFrontend(TheiaTestCase):
     for key in ('url', 'additional-url'):
       resp = requests.get(self.connection_parameters[key], verify=False)
       self.assertEqual(requests.codes.unauthorized, resp.status_code)
+
+
+class TheiaForwardFrontendRequestsTestCase(TheiaTestCase):
+  forward_slapos_frontend_request = None
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'forward-slapos-frontend-requests': cls.forward_slapos_frontend_request
+    }
+
+  def setUp(self):
+    self.captureSlapos(
+      'request',
+      self.id(),
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg',
+    )
+
+  def tearDown(self):
+    self.captureSlapos(
+      'request',
+      '--state',
+      'destroyed',
+      self.id(),
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg', )
+
+  def getRequestedInstanceList(self):
+    with sqlite3.connect(os.path.join(
+        self.computer_partition_root_path,
+        'srv/runner/var/proxy.db',
+    )) as db:
+      query = "SELECT partition_reference FROM partition%s where slap_state='busy'" % DB_VERSION
+      return db.execute(query).fetchall()
+
+  def getForwardedInstanceList(self):
+    with sqlite3.connect(os.path.join(
+        self.computer_partition_root_path,
+        'srv/runner/var/proxy.db',
+    )) as db:
+      query = "SELECT partition_reference FROM forwarded_partition_request%s" % DB_VERSION
+      return db.execute(query).fetchall()
+
+
+class TestTheiaForwardFrontendRequestsEnabled(
+    TheiaForwardFrontendRequestsTestCase):
+  forward_slapos_frontend_request = 'enabled'
+
+  def test(self):
+    self.assertEqual(
+      self.getForwardedInstanceList(),
+      # partition requested directly by user are forwarded with user_ prefix
+      [('user_' + self.id(), )])
+    self.assertEqual(self.getRequestedInstanceList(), [])
+
+
+class TestTheiaForwardFrontendRequestsDisabled(
+    TheiaForwardFrontendRequestsTestCase):
+  forward_slapos_frontend_request = 'disabled'
+
+  def test(self):
+    self.assertEqual(self.getForwardedInstanceList(), [])
+    self.assertEqual(self.getRequestedInstanceList(), [(self.id(), )])
 
 
 class TestTheiaEnv(TheiaTestCase):

@@ -535,7 +535,7 @@ context =
   key forward_frontend_requests :forward-frontend-requests
   section slap_connection slap-connection
   section slapos_standalone_config slapos-standalone-config
-forward-frontend-requests = enabled
+forward-frontend-requests = {{ parameter_dict['forward-slapos-frontend-requests'] }}
 url = ${slapos-standalone-script:output}
 
 [slapos-standalone]
