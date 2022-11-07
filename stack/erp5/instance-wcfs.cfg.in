@@ -12,7 +12,21 @@
 {% if zodb['type'] == 'zeo' -%}
 {%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
 {% elif zodb['type'] == 'neo' -%}
-{%   set zurl = ('neo://%s@%s' % (z.pop('name'), z.pop('master_nodes'))) -%}
+{#   See https://lab.nexedi.com/kirr/neo/blob/87199da2b163c09ed3946b7ab9bb00a5b987d377/go/neo/client.go#L417 #}
+{#   for correct URL format. #}
+{%   if z.pop("ssl") %}
+{#     See https://lab.nexedi.com/kirr/neo/blob/87199da2b163c09ed3946b7ab9bb00a5b987d377/go/neo/client.go#L428 #}
+{#     for definition of credentials format. #}
+{#     Slapos/software/NEOpy instance input schema doesn't allow specifying paths #}
+{#     for the encription files. It will always search for ~/etc/*. It is only possible #}
+{#     to provide the encription data as strings via the _ca, _cert and _key parameters. #}
+{#     We can neither provide the ~/etc paths, because we can't have '/' in an URL because #}
+{#     it will look like a path. Therefore we only have the option to use direct paths. #}
+{%     set zurl = 'neos://ca=ca.crt;cert=neo.crt;key=neo.key@' -%}
+{%   else -%}
+{%     set zurl = 'neo://' -%}
+{%   endif -%}
+{%   set zurl = ('%s%s/%s' % (zurl, z.pop('master_nodes'), z.pop('name'))) -%}
 {%   set argv = [] -%}
 {%   set i = 0 -%}
 {%   for k,v in z|dictsort -%}
