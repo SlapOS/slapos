@@ -12,15 +12,19 @@
 {% if zodb['type'] == 'zeo' -%}
 {%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
 {% elif zodb['type'] == 'neo' -%}
-{%   set zurl = ('neo://%s@%s' % (z.pop('name'), z.pop('master_nodes'))) -%}
-{%   set argv = [] -%}
-{%   set i = 0 -%}
-{%   for k,v in z|dictsort -%}
-{%     do argv.append('%s=%s' % (k,v)) -%}
-{%   endfor -%}
-{%   if len(argv) > 0 -%}
-{%     set zurl = zurl + '&' + '?'.join(argv) -%}
+{#   See https://lab.nexedi.com/kirr/neo/blob/87199da2b163c09ed3946b7ab9bb00a5b987d377/go/neo/client.go#L417 #}
+{#   for correct URL format. #}
+{%   if "ssl" in z and z.pop("ssl") -%}
+{#     See https://lab.nexedi.com/kirr/neo/blob/87199da2b163c09ed3946b7ab9bb00a5b987d377/go/neo/client.go#L428 #}
+{%     for encryption_file_path_key in ("ca", "cert", "key") -%}
+{%       set z[encryption_file_path_key] = z[encryption_file_path_key] | urlencode | replace("/", "%2F") -%}
+{%     endfor -%}
+{%     set zurl = 'neos://ca=%s;cert=%s;key=%s@' % (z.pop("ca"), z.pop("cert"), z.pop("key")) -%}
+{%   else -%}
+{%     set zurl = 'neo://' -%}
 {%   endif -%}
+{%   set zurl = ('%s%s/%s' % (zurl, z.pop('master_nodes'), z.pop('name'))) -%}
+{%   set zurl = zurl + '?' + (z | urlencode) -%}
 {% else -%}
 {%   do assert(False, ("unsupported ZODB type", zodb)) -%}
 {% endif -%}
