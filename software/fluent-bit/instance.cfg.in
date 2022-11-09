@@ -50,6 +50,6 @@ install =
 
 [fluent-bit-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ fluent_bit_location }}/bin/fluent-bit -c ${fluent-bit-config-file:location}
+command-line = {{ fluent_bit_location }}/bin/fluent-bit -e {{ buildout["parts-directory"] }}/fluentbit-plugin-wendelin/lib/libfluentbit_wendelin.so -c ${fluent-bit-config-file:location}
 wrapper-path = ${directory:service}/fluentbit-service
 output = $${:wrapper-path}
