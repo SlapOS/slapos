@@ -1,0 +1,4 @@
+echo "Hello Peertube"
+
+# Dump the databse
+$${postgresql:bin}/pg_dump -Fc peertube_prod > $${directory:peertube_directory}/peertube_prod-dump.db

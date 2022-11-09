@@ -11,6 +11,11 @@ parts =
   peertube-service
   publish-connection-parameter
   peertube-urlparse
+  dcron-service
+  activate-crontab-file
+  peertube-backup-cron
+  peertube-database-resiliency-after-import-script
+  peertube-database-resiliency-exclude-file
   nginx-listen-promise
   peertube-listen-promise
 
@@ -26,6 +31,10 @@ var = $${buildout:directory}/var
 log = $${:var}/log
 run = $${:var}/run
 www = $${:var}/www
+crontabs = $${:etc}/crontabs
+cron-entries = $${:etc}/cron.d
+cronstamps = $${:etc}/cronstamps
+cron-lines = $${:etc}/cron.lines
 nginx = $${:etc}/nginx
 peertube_nginx_log = $${:log}/nginx
 varnginx = $${:var}/nginx
@@ -143,6 +152,45 @@ config-command = $${service-redis:promise-wrapper}
 <= logrotate-entry-base
 log     = $${redis:log}/*.log
 name = redis
+
+#################################
+# Cron service
+#################################
+[dcron-service]
+recipe = slapos.recipe.template
+url = ${template-dcron-service:output}
+output = $${directory:services}/crond
+logfile = $${directory:log}/crond.log
+
+[peertube-backup-script]
+recipe = slapos.recipe.template
+url = ${template-peertube-backup-script:output}
+output = $${directory:etc}/$${:_buildout_section_name_}
+
+[peertube-backup-cron]
+recipe = slapos.recipe.template
+url = ${template-crontab-line:output}
+output = $${directory:cron-lines}/$${:_buildout_section_name_}
+script = $${peertube-backup-script:output}
+frequency = daily
+
+[activate-crontab-file]
+# XXX File is never removed
+recipe = plone.recipe.command
+stop-on-error = true
+command = ${coreutils-output:cat} ${template-crontab:output} $${peertube-backup-cron:output} | ${dcron-output:crontab} -c $${directory:crontabs} -
+
+[peertube-database-resiliency-exclude-file]
+recipe = slapos.recipe.template:jinja2
+inline = {{ "$${postgresql:pgdata-directory}/**" }}
+output = $${directory:srv}/exporter.exclude
+
+[peertube-database-resiliency-after-import-script]
+recipe = collective.recipe.template
+input = inline: #!/bin/sh
+  $${postgresql:bin}/pg_restore -c -C -d postgres $${directory:peertube_directory}//peertube_prod-dump.db
+output = $${directory:srv}/runner-import-restore
+mode = 755
 
 #################################
 # SlapOS service
