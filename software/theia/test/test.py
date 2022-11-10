@@ -275,9 +275,9 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
 
 
 class TestTheiaWithEmbeddedInstance(TheiaTestCase):
-  sr_url = '~/bogus/sr/url.cfg'
-  sr_type = 'bogus-type'
-  sr_config = {"bogus": "yes"}
+  sr_url = os.path.abspath('dummy/software.cfg')
+  sr_type = 'dummy-type'
+  sr_config = {"dummy": "yes"}
   regexpr = re.compile(r"([\w/\-\.]+)\s+slaprunner\s+available")
 
   @classmethod
@@ -326,9 +326,9 @@ class TestTheiaWithEmbeddedInstance(TheiaTestCase):
     self.assertEmbedded(initial_sr_url, self.sr_type, self.sr_config)
 
     # Change parameters for embedded instance
-    sr_url = '/bogus/sr/url-2.cfg'
-    sr_type = 'bogus-type-2'
-    sr_config = {"bogus-2": "true"}
+    sr_url = os.path.abspath('bogus/software.cfg')
+    sr_type = 'bogus-type'
+    sr_config = {"bogus": "true"}
     self.requestInstance(
       self.getInstanceParameterDict(sr_url, sr_type, sr_config))
     self.waitForInstance()

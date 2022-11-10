@@ -233,6 +233,8 @@ Please be aware that the `health-check-timeout` is really short by default, so i
 
 Thanks to using health-check it's possible to configure failover system. By providing `health-check-failover-url` or `health-check-failover-https-url` some special backend can be used to reply in case if original backend replies with error (codes like `5xx`). As a note one can setup this failover URL like `https://failover.example.com/?p=` so that the path from the incoming request will be passed as parameter. Additionally authentication to failover URL is supported with `health-check-authenticate-to-failover-backend` and SSL Proxy verification with `health-check-failover-ssl-proxy-verify` and `health-check-failover-ssl-proxy-ca-crt`.
 
+**Note**: It's important to correctly configure failover URL response, especially in case if it's expected to use `stale-if-error` simulation available while `enable_cache` is used. In order to serve pages from cache the failover URL have to return error HTTP code (like 503 SERVICE_UNAVAILABLE), so that in such case cached page will have precedence over the reply from failover URL.
+
 Examples
 ========
 

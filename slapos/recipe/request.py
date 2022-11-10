@@ -65,8 +65,8 @@ class Recipe(object):
       Software type of requested instance, among those provided by the
       definition from software-url.
 
-    slave (optional, defaults to false)
-      Set to "true" when requesting a slave instance, ie just setting a set of
+    shared (optional, defaults to false)
+      Set to "true" when requesting a shared instance, ie just setting a set of
       parameters in an existing instance.
 
     sla (optional)
@@ -119,7 +119,7 @@ class Recipe(object):
     partition_parameter_kw = self._filterForStorage({k[7:]: v
       for k, v in six.iteritems(options)
       if k.startswith('config-')})
-    slave = options.get('slave', 'false').lower() in \
+    shared = options.get('shared', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
 
     # By default, propagate the state of the parent instance
@@ -162,12 +162,12 @@ class Recipe(object):
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw, shared=slave, state=requested_state)
+          filter_kw=filter_kw, shared=shared, state=requested_state)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
       # Fetch the instance-guid and the instance-state
-      # Note: SlapOS Master does not support it for slave instances
-      if not slave:
+      # Note: SlapOS Master does not support it for shared instances
+      if not shared:
         try:
           options['instance-guid'] = self.instance.getInstanceGuid() \
               .encode('UTF-8')
@@ -189,7 +189,7 @@ class Recipe(object):
           request_name=name,
           partition_parameter_kw=partition_parameter_kw,
           filter_kw=filter_kw,
-          shared=slave,
+          shared=shared,
           state=requested_state
         )
       )

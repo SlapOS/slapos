@@ -173,15 +173,16 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
             'check-slow-query-pt-digest-result.py',
         ))
     with self.assertRaises(subprocess.CalledProcessError) as error_context:
-      subprocess.check_output('faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'], shell=True)
+      subprocess.check_output(
+        'faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'],
+        text=True,
+        shell=True)
     self.assertEqual(
-        error_context.exception.output,
-b"""\
-Threshold is lower than expected: 
-Expected total queries : 1.0 and current is: 2
-Expected slowest query : 0.1 and current is: 3
-""")
-
+      error_context.exception.output,
+      "Threshold is lower than expected: \n"
+      "Expected total queries : 1.0 and current is: 2\n"
+      "Expected slowest query : 0.1 and current is: 3\n",
+    )
 
 class TestMariaDB(MariaDBTestCase):
   def test_utf8_collation(self):
