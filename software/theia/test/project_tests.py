@@ -48,6 +48,9 @@ from test import SlapOSInstanceTestCase, theia_software_release_url
 erp5_software_release_url = os.path.abspath(
   os.path.join(
     os.path.dirname(__file__), '..', '..', 'erp5', 'software.cfg'))
+peertube_software_release_url = os.path.abspath(
+  os.path.join(
+    os.path.dirname(__file__), '..', '..', 'peertube', 'software.cfg'))
 
 
 def setUpModule():
@@ -232,3 +235,109 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     # Check that the mariadb catalog was properly restored
     out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
     self.assertIn(self._erp5_new_title, out, 'Mariadb catalog is not properly restored')
+
+class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
+  test_instance_max_retries = 12
+  backup_max_tries = 480
+  backup_wait_interval = 60
+
+  _test_software_url = peertube_software_release_url
+
+  def test_twice(self):
+    # do nothing
+    pass
+
+  def _prepareExport(self):
+    super(TestTheiaResiliencePeertube, self)._prepareExport()
+
+    postgresql_partition = self._getERP5PartitionPath('export', 'postgresql')
+    postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
+    postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
+
+    # Change the email address of the user 'peertube'
+    output = subprocess.check_output(
+      (postgresql_bin, '-c', 'UPDATE "user" SET "email"=\'aaa\' WHERE "username"=\'root\''),
+      universal_newlines=True)
+    self.assertIn("UPDATE", output)
+
+    # Checked the modification has been updated in the database
+    output = subprocess.check_output(
+      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      universal_newlines=True)
+    self.assertIn("aaa", output)
+
+    # Change the email address of the user 'peertube'
+    output = subprocess.check_output(
+      (postgresql_bin, '-c', 'UPDATE "user" SET "email"=\'bbb\' WHERE "username"=\'root\''),
+      universal_newlines=True)
+    self.assertIn("UPDATE", output)
+
+    # Checked the modification has been updated in the database
+    output = subprocess.check_output(
+      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      universal_newlines=True)
+    self.assertIn("bbb", output)
+
+    # Do a fake periodically update???
+
+    # Compute backup date in the near future
+    # date = (datetime.now() + timedelta(days=1)).replace(second=0)
+
+    # Process twice to propagate parameter changes
+    # for _ in range(2):
+    #   self.checkSlapos('node', 'instance')
+
+    # Do a fake periodically update???
+    # ---------------------------
+
+    # self.callSlapos('node', 'restart', 'all')
+
+    # Wait until after the programmed backup date, and a bit more
+    # t = (soon - datetime.now()).total_seconds()
+    # self.assertLess(0, t)
+    # time.sleep(t + 120)
+    # -------------------------------------
+
+    # Check that postgresql backup has started
+    # which contains this file: ./peertube_prod-dump.db
+    postgresql_backup = os.path.join(postgresql_partition, 'var', 'www', 'peertube')
+    self.assertIn('peertube_prod-dump.sql', os.listdir(postgresql_backup))
+
+    # Check the backup contains the changes
+    with open(os.path.join(psql_backup, 'peertube_prod-dump.sql')) as f:
+      msg = "Postgres backup peertube_prod-dump.sql is not up to date"
+      self.assertIn("bbb", f.read(), msg)
+
+  def _checkTakeover(self):
+    super(TestTheiaResiliencePeertube, self)._checkTakeover()
+
+    postgresql_partition = self._getERP5PartitionPath('export', 'postgresql')
+    postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
+    postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
+
+    # Check that the mariadb catalog is not yet restored
+    output = subprocess.check_output(
+      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      universal_newlines=True)
+    self.assertNotIn("bbb", output)
+
+    # Stop all services
+    print("Stop all services")
+    self.callSlapos('node', 'stop', 'all')
+
+    # Manually restore postgresql from backup
+    postgresql_restore_script = os.path.join(mariadb_partition, 'bin', 'restore-from-backup')
+    print("Restore mariadb from backup")
+    subprocess.check_call(postgresql_restore_script)
+
+    # Check that the test instance is properly redeployed after restoring postgresql
+    # This restarts the services and checks the promises of the test instance
+    # Process twice to propagate state change
+    for _ in range(2):
+      self._processEmbeddedInstance(self.test_instance_max_retries)
+
+    # Check that the postgresql catalog was properly restored
+    output = subprocess.check_output(
+      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      universal_newlines=True)
+    self.assertIn("bbb", output)
