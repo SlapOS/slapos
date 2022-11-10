@@ -221,7 +221,7 @@ name = HTML5AS frontend
 # Specify the software url of the frontend software release
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 # It is not a dedicated instance but an instance allocated on a shared instance
-slave = true
+shared = true
 config-url = ${html5as:access_url}
 config-https-only = true
 # The parameter expected to be received from the request are listed here.

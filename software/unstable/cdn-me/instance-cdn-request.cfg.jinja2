@@ -26,7 +26,7 @@ recipe = slapos.cookbook:requestoptional
 name = WebSite Frontend
 software-url = product.frontend
 software-type = custom-personal
-slave = true
+shared = true
 
 {% if slapparameter_dict.get('port', '80') != '443' %}
 config-url = http://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}
@@ -108,7 +108,7 @@ recipe = slapos.cookbook:requestoptional
 name = Re6st token Frontend
 # XXX We have hardcoded SR URL here.
 software-url = product.re6st
-slave = true
+shared = true
 return = token info_1 ipv6 ipv4
 
 [request-monitor-test-distributor-slave]
@@ -118,7 +118,7 @@ name = Monitor Test
 # XXX We have hardcoded SR URL here.
 software-url = product.monitor
 software-type = distributor
-slave = true
+shared = true
 config-ping6_ip_list = $${request-re6stnet-token-slave:connection-ipv6}
 config-ping_ip_list = $${request-re6stnet-token-slave:connection-ipv4}
 
@@ -131,7 +131,7 @@ name = Monitor Frontend
 # XXX We have hardcoded SR URL here.
 software-url = product.frontend
 software-type = custom-personal
-slave = true
+shared = true
 config-url = $${request-monitor-test-distributor-slave:connection-site_url}
 return = site_url domain
 

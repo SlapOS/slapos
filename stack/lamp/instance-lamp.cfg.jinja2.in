@@ -69,7 +69,7 @@ recipe = slapos.cookbook:requestoptional
 name = Instance Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+shared = true
 config-url = ${request-apache:connection-backend-url}
 config-https-only = true
 return = domain secure_access
