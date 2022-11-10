@@ -278,25 +278,27 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
       universal_newlines=True)
     self.assertIn("bbb", output)
 
-    # Do a fake periodically update???
+    # Do a fake periodically update
 
     # Compute backup date in the near future
-    # date = (datetime.now() + timedelta(days=1)).replace(second=0)
+    soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
+    frequency = '%d * * * *' % soon.minute
+    params = '_={"peertube-backup-cron": {"frequency": "%s"}, }' % frequency
+
+    # Update Peertube parameters
+    print('Requesting Peertube with parameters %s' % params)
+    self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
 
     # Process twice to propagate parameter changes
-    # for _ in range(2):
-    #   self.checkSlapos('node', 'instance')
+    for _ in range(2):
+      self.checkSlapos('node', 'instance')
 
-    # Do a fake periodically update???
-    # ---------------------------
-
-    # self.callSlapos('node', 'restart', 'all')
+    self.callSlapos('node', 'restart', 'all')
 
     # Wait until after the programmed backup date, and a bit more
-    # t = (soon - datetime.now()).total_seconds()
-    # self.assertLess(0, t)
-    # time.sleep(t + 120)
-    # -------------------------------------
+    t = (soon - datetime.now()).total_seconds()
+    self.assertLess(0, t)
+    time.sleep(t + 120)
 
     # Check that postgresql backup has started
     # which contains this file: ./peertube_prod-dump.db
