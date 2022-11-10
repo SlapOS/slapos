@@ -1,4 +1,6 @@
 echo "Hello Peertube"
 
 # Dump the databse
-$${postgresql:bin}/pg_dump -Fc peertube_prod > $${directory:peertube_directory}/peertube_prod-dump.db
+$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} -Fc peertube_prod > $${directory:peertube_directory}/peertube_prod-dump.db
+
+$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} --column-inserts --data-only --table=user peertube_prod > $${directory:peertube_directory}/peertube_prod-dump.sql
