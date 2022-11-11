@@ -671,7 +671,7 @@ software-url = {{ frontend_parameter_dict.get('frontend-software-url', 'http://g
 {% if frontend_parameter_dict.get('frontend-software-type', '') -%}
 software-type ={{ frontend_parameter_dict['frontend-software-type'] }}
 {% endif -%}
-slave = true
+shared = true
 config-url = ${nginx-parameter:backend-ssl-url}
 config-domain = {{ frontend_parameter_dict.get('slave-domain', '') }}
 return = domain secure_access

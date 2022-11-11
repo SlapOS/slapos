@@ -219,7 +219,7 @@ recipe = slapos.cookbook:request
 software-url = {{ slave_frontend_sr }}
 name = Frontend {{ name }}
 software-type = {{ slave_frontend_stype }}
-slave = true
+shared = true
 config-url = {{ url }}
 {{ setconfig('custom_domain', kvm_parameter_dict.get('domain', '')) }}
 config-enable_cache = {{ dumps(frontend_parameter_dict.get('enable-cache', False)) }}

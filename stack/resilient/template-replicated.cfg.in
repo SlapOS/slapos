@@ -178,7 +178,7 @@ config-command = ${resilient-request-{{namebase}}-pseudo-replicating-{{id}}-publ
 
 
 
-## The PBS and their push / pull slaves
+## The PBS and their push / pull shared instances
 ## Adding a PBS provides resiliency
 ## Adding a backup server provides availability
 
@@ -201,7 +201,7 @@ config-monitor-title = PBS ${slap-connection:computer-id}-{{namebase}}-{{id}}
 config-{{ key }} = {{ value }}
 {% endfor -%}
 return = ssh-key notification-url feeds-url  {{ monitor_return }}
-slave = false
+shared = false
 {% if sla_parameter_dict == {} -%}
 sla-mode = unique_by_network
 {% else %}
@@ -253,7 +253,7 @@ config-notification-id = ${slap-connection:computer-id}-${slap-connection:partit
 config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
 config-title = Pulling from {{namebase}}
 config-remove-backup-older-than = {{ slapparameter_dict.get('remove-backup-older-than', '2W') }}
-slave = true
+shared = true
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 
 [publish-connection-information]
@@ -282,7 +282,7 @@ config-notify = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-noti
 config-notification-id = ${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
 config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
 config-title = Pushing to {{namebase}} backup {{id}}
-slave = true
+shared = true
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 {% endfor %}
 

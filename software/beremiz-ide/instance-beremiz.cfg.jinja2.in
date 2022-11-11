@@ -213,7 +213,7 @@ output = ${directory:bin}/xterm
 [request-vnc-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-slave = true
+shared = true
 config-https-only = True
 config-type = websocket
 config-url = https://[${novnc-instance:ip}]:${novnc-instance:port}
