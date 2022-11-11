@@ -17,6 +17,7 @@ for plugin_and_version in '''\
     vscode/docker/latest
     vscode/emmet/latest
     vscode/fsharp/latest
+    vscode/git-base/latest
     vscode/git/latest
     vscode/go/latest
     vscode/groovy/latest
