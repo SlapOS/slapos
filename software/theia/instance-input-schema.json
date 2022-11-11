@@ -25,6 +25,16 @@
         "{\"software-url\": \"~/srv/project/slapos/software/html5as/software.cfg\", \"software-type\": \"replicate\", \"instance-parameters\": {\"replicate-quantity\": 3}}"
       ]
     },
+    "forward-slapos-frontend-requests": {
+      "title": "Forward Frontend Requests in the Embedded SlapOS",
+      "description": "Embedded SlapOS instance by default forwards frontend requests as shared instances attached to the Theia instance, so that HTTP frontends can be allocated for services. This behavior can be disabled, in that case frontends will not be allocated.",
+      "type": "string",
+      "enum": [
+        "enabled",
+        "disabled"
+      ],
+      "default": "enabled"
+    },
     "frontend-guid": {
       "title": "Frontend Instance ID",
       "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
