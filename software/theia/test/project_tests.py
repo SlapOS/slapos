@@ -313,7 +313,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _checkTakeover(self):
     super(TestTheiaResiliencePeertube, self)._checkTakeover()
 
-    postgresql_partition = self._getERP5PartitionPath('export', 'postgresql')
+    postgresql_partition = self._getPeertubePartitionPath('export', 'postgresql')
     postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
     postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
 
@@ -343,3 +343,23 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
       (postgresql_bin, '-c', 'SELECT * FROM "user"'),
       universal_newlines=True)
     self.assertIn("bbb", output)
+
+  def _getPeertubePartition(self, servicename):
+    p = subprocess.Popen(
+      (self._getSlapos(), 'node', 'status'),
+      stdout=subprocess.PIPE, universal_newlines=True)
+    out, _ = p.communicate()
+    found = set()
+    for line in out.splitlines():
+      if servicename in line:
+        found.add(line.split(':')[0])
+    if not found:
+      raise Exception("Peertube %s partition not found" % servicename)
+    elif len(found) > 1:
+      raise Exception("Found several partitions for Peertube %s" % servicename)
+    return found.pop()
+
+  def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
+    partition = self._getERP5Partition(servicename)
+    return self.getPartitionPath(
+      instance_type, 'srv', 'runner', 'instance', partition, *paths)
