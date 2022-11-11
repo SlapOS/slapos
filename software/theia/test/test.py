@@ -311,10 +311,12 @@ class TestTheiaWithEmbeddedInstance(TheiaTestCase):
     self.assertSupplied(sr_url, info=proxy_info)
     name = 'embedded_instance'
     self.assertIn(name, self.captureSlapos('service', 'list', text=True))
-    info = self.captureSlapos('service', 'info', name, text=True)
-    self.assertIn(sr_url, info)
+    info = json.loads(self.captureSlapos('service', 'info', name, text=True))
+    self.assertEqual(info['software-url'], sr_url)
+    # XXX: slapos service info does not show the software type, so we check in
+    # slapos proxy show output
     self.assertIn(sr_type, proxy_info)
-    self.assertIn(repr(config).replace("u'", "'"), info)
+    self.assertEqual(info['instance-parameters'], config)
 
   def assertNotEmbedded(self, sr_url, sr_type, config):
     sr_url = self.expandUrl(sr_url)
