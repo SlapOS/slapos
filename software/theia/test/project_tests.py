@@ -360,6 +360,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     return found.pop()
 
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
-    partition = self._getERP5Partition(servicename)
+    partition = self._getPeertubePartition(servicename)
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
