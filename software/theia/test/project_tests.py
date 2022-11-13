@@ -250,7 +250,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _prepareExport(self):
     super(TestTheiaResiliencePeertube, self)._prepareExport()
 
-    postgresql_partition = self._getPeertubePartitionPath('export', 'postgresql')
+    postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
     postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
 
@@ -313,9 +313,9 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _checkTakeover(self):
     super(TestTheiaResiliencePeertube, self)._checkTakeover()
 
-    postgresql_partition = self._getPeertubePartitionPath('export', 'postgresql')
-    postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
-    postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
+    postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
+    postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
+    postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
 
     # Check that the mariadb catalog is not yet restored
     output = subprocess.check_output(
