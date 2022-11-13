@@ -250,7 +250,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _prepareExport(self):
     super(TestTheiaResiliencePeertube, self)._prepareExport()
 
-    postgresql_partition = self._getERP5PartitionPath('export', 'postgresql')
+    postgresql_partition = self._getPeertubePartitionPath('export', 'postgresql')
     postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
     postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
 
