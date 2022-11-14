@@ -220,6 +220,7 @@ class TestEPCParameters(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "epc"
     def test_mme_conf(self):
+        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
 class TestENBEPCParameters(ORSTestCase):
@@ -230,8 +231,10 @@ class TestENBEPCParameters(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "enb-epc"
     def test_enb_conf(self):
+        self.slap.waitForInstance() # Wait until publish is done
         test_enb_conf(self)
     def test_mme_conf(self):
+        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
 class TestGNBEPCParameters(ORSTestCase):
@@ -242,8 +245,10 @@ class TestGNBEPCParameters(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "gnb-epc"
     def test_gnb_conf(self):
+        self.slap.waitForInstance() # Wait until publish is done
         test_gnb_conf1(self)
     def test_mme_conf(self):
+        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
 def requestSlaveInstance(cls, software_type):
