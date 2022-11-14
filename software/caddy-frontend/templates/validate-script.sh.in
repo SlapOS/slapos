@@ -7,7 +7,7 @@ LAST_STATE_FILE={{ last_state_file }}
 # force validation each 2 hours
 old_found=1
 if [ -f $LAST_STATE_FILE ] ; then
-  old_found=$(find $LAST_STATE_FILE -mmin +120 | wc -l)
+  old_found=$({{ find_executable }} $LAST_STATE_FILE -mmin +120 | wc -l)
 fi
 
 if [ "$old_found" -eq 1 ] || {{ configuration_state_command }} ; then

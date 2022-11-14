@@ -644,6 +644,7 @@ pattern = *.old
 keep_days = 365
 
 extra-context =
+  raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
   key log_dir trafficserver-directory:log
   key rotate_dir trafficserver-directory:logrotate-backup
   key xz_binary :xz_binary
@@ -670,7 +671,7 @@ sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
     import os_module os
-    raw find_executable {{ software_parameter_dict['find'] }}
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key path_list :path_list
     key sha256sum :sha256sum
     key signature_file :signature_file
@@ -699,6 +700,7 @@ output = ${directory:bin}/frontend-caddy-validate
 last_state_file = ${directory:run}/caddy_configuration_last_state
 validate_command = ${caddy-wrapper:output} -validate
 extra-context =
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key validate_command :validate_command
     key configuration_state_command frontend-caddy-configuration-state-validate:output
     key last_state_file :last_state_file
@@ -835,7 +837,7 @@ sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
     import os_module os
-    raw find_executable {{ software_parameter_dict['find'] }}
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key path_list :path_list
     key sha256sum :sha256sum
     key signature_file :signature_file
@@ -864,6 +866,7 @@ output = ${directory:bin}/backend-haproxy-validate
 last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
 validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
 extra-context =
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key validate_command :validate_command
     key configuration_state_command backend-haproxy-configuration-state-validate:output
     key last_state_file :last_state_file
@@ -1006,7 +1009,7 @@ sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
     import os_module os
-    raw find_executable {{ software_parameter_dict['find'] }}
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key path_list :path_list
     key sha256sum :sha256sum
     key signature_file :signature_file
@@ -1035,6 +1038,7 @@ output = ${directory:bin}/slave-introspection-validate
 last_state_file = ${directory:run}/slave_introspection_configuration_last_state
 validate_command = {{ software_parameter_dict['nginx'] }} -c ${frontend-configuration:slave-introspection-configuration} -t
 extra-context =
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key validate_command :validate_command
     key configuration_state_command slave-introspection-configuration-state-validate:output
     key last_state_file :last_state_file
