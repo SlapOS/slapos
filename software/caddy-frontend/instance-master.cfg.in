@@ -856,7 +856,7 @@ key = ${:certificate}
 stop-on-error = True
 update-command = ${:command}
 command =
-  [ -f ${:certificate} ] && find ${:certificate} -type f -mtime +3 -delete
+  [ -f ${:certificate} ] && {{ software_parameter_dict['findutils'] }}/bin/find ${:certificate} -type f -mtime +3 -delete
   if ! [ -f ${:certificate} ] ; then
     openssl req -new -newkey rsa:2048 -sha256 -subj \
       "/CN=${rejected-slave-publish-configuration:ip}" \
