@@ -669,6 +669,8 @@ path_list = ${caddy-configuration:frontend-configuration} ${caddy-directory:slav
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
+    import os_module os
+    raw find_executable {{ software_parameter_dict['find'] }}
     key path_list :path_list
     key sha256sum :sha256sum
     key signature_file :signature_file
@@ -832,6 +834,8 @@ path_list = ${backend-haproxy-configuration:file} ${backend-client-login-config:
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
+    import os_module os
+    raw find_executable {{ software_parameter_dict['find'] }}
     key path_list :path_list
     key sha256sum :sha256sum
     key signature_file :signature_file
@@ -1001,6 +1005,8 @@ path_list = ${frontend-configuration:slave-introspection-configuration} ${fronte
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
+    import os_module os
+    raw find_executable {{ software_parameter_dict['find'] }}
     key path_list :path_list
     key sha256sum :sha256sum
     key signature_file :signature_file
