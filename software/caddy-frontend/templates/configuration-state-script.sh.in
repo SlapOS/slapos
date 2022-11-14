@@ -5,7 +5,16 @@ SIGNATURE_FILE={{ signature_file }}
 NSIGNATURE_FILE={{ signature_file }}.tmp
 
 touch $SIGNATURE_FILE
-{{ sha256sum }} {{ path_list }} 2> /dev/null | sort -k 66 > $NSIGNATURE_FILE
+rm -f $NSIGNATURE_FILE $NSIGNATURE_FILE.wrk
+set +e
+{%- for path in path_list.split() %}
+{%-   set directory = os_module.path.dirname(path) %}
+{%-   set name = os_module.path.basename(path) %}
+{{ find_executable }} {{ directory }} -type f -name '{{ name }}' -exec {{ sha256sum }} {} \; >> $NSIGNATURE_FILE.wrk
+{%- endfor %}
+set -e
+sort -k 66 $NSIGNATURE_FILE.wrk > $NSIGNATURE_FILE
+rm -f $NSIGNATURE_FILE.wrk
 
 if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE" > /dev/null ; then
   # No changes since last run just propagate information
