@@ -4,6 +4,12 @@
   "description": "Parameters to instantiate Peertube",
   "additionalProperties": false,
   "properties": {
+    "fronted-url": {
+      "title": "Frontend URL",
+      "description": "Frontend URL",
+      "default": "",
+      "type": "string"
+    },
     "name": {
       "title": "Instance Title",
       "description": "The name of your peertube instance.",

@@ -1,12 +1,12 @@
 listen:
   hostname: '$${instance-parameter:ipv4-random}'
-  port: $${publish-connection-parameter:ipv4-port}
+  port: $${peertube-parameters:ipv4-port}
 
 # Correspond to your reverse proxy server_name/listen configuration (i.e., your public PeerTube instance URL)
 webserver:
   https: true
-  hostname: '$${peertube-urlparse:host}'
-  port: $${peertube-urlparse:port}
+  hostname: '$${peertube-parameters:host}'
+  port: $${peertube-parameters:port}
 
 # Secrets you need to generate the first time you run PeerTube
 secrets:
@@ -564,30 +564,30 @@ auto_blacklist:
 
 # Instance settings
 instance:
-  name: '$${peertube-text-content:name}' #'Peertube'
-  short_description: '$${peertube-text-content:short_description}'
-  description: '$${peertube-text-content:description}'
-  terms: '$${peertube-text-content:terms}'
-  code_of_conduct: '$${peertube-text-content:code_of_conduct}'
+  name: '$${peertube-parameters:name}' #'Peertube'
+  short_description: '$${peertube-parameters:short_description}'
+  description: '$${peertube-parameters:description}'
+  terms: '$${peertube-parameters:terms}'
+  code_of_conduct: '$${peertube-parameters:code_of_conduct}'
 
   # Who moderates the instance? What is the policy regarding NSFW videos? Political videos? etc
-  moderation_information: '$${peertube-text-content:moderation_information}'
+  moderation_information: '$${peertube-parameters:moderation_information}'
 
   # Why did you create this instance?
-  creation_reason: '$${peertube-text-content:creation_reason}'
+  creation_reason: '$${peertube-parameters:creation_reason}'
 
   # Who is behind the instance? A single person? A non profit?
-  administrator: '$${peertube-text-content:administrator}'
+  administrator: '$${peertube-parameters:administrator}'
 
   # How long do you plan to maintain this instance?
-  maintenance_lifetime: '$${peertube-text-content:maintenance_lifetime}'
+  maintenance_lifetime: '$${peertube-parameters:maintenance_lifetime}'
 
   # How will you pay the PeerTube instance server? With your own funds? With users donations? Advertising?
-  business_model: '$${peertube-text-content:business_model}'
+  business_model: '$${peertube-parameters:business_model}'
 
   # If you want to explain on what type of hardware your PeerTube instance runs
   # Example: '2 vCore, 2GB RAM...'
-  hardware_information: '$${peertube-text-content:hardware_information}'
+  hardware_information: '$${peertube-parameters:hardware_information}'
 
   # What are the main languages of your instance? To interact with your users for example
   # Uncomment or add the languages you want

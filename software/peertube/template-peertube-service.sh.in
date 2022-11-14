@@ -30,5 +30,6 @@ echo "I: PostgreSQL ready." 1>&2
 
 cd ${peertube:location}
 
-exec env NODE_ENV=peertube NODE_CONFIG_DIR=$${directory:config} PATH=${ffmpeg:location}/bin:$PATH\
+exec env PT_INITIAL_ROOT_PASSWORD=$${peertube-passwd:passwd} NODE_ENV=peertube\
+  NODE_CONFIG_DIR=$${directory:config} PATH=${ffmpeg:location}/bin:$PATH\
   ${nodejs:location}/bin/node ${peertube:location}/dist/server

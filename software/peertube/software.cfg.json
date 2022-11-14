@@ -8,6 +8,7 @@
       "software-type": "default",
       "description": "Default",
       "request": "instance-peertube-input-schema.json",
+      "response": "instance-peertube-output-schema.json",
       "index": 1
     }
   }

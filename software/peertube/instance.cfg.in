@@ -10,7 +10,7 @@ parts =
   nginx-service
   peertube-service
   publish-connection-parameter
-  peertube-urlparse
+  peertube-parameters
   dcron-service
   activate-crontab-file
   peertube-backup-cron
@@ -45,6 +45,12 @@ storage = $${:peertube_directory}/storage
 versions = $${:peertube_directory}/versions
 ssl = $${:etc}/ssl
 
+[peertube-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:etc}/.peertube_user
+bytes = 8
+username = root
+
 [peertube-yaml]
 recipe = slapos.recipe.template
 url = ${template-peertube:output}
@@ -78,11 +84,6 @@ ipv4 = $${instance-parameter:ipv4-random}
 # disable listening on ipv6
 ipv6 =
 port = 5432
-
-[service-postgresql]
-recipe  = slapos.cookbook:postgres
-bin     = ${postgresql10:location}/bin
-services= $${directory:service}
 
 #################################
 # Nginx service
@@ -211,6 +212,7 @@ name = PeerTube Server Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
+state = stopped
 config-type = websocket
 config-websocket-path-list = /socket.io /socket /tracker/socket
 config-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
@@ -223,33 +225,51 @@ partition = $${slap_connection:partition_id}
 url = $${slap_connection:server_url}
 key = $${slap_connection:key_file}
 cert = $${slap_connection:cert_file}
-short_description = 'PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.'
-description = 'Welcome to this PeerTube instance!'
-terms = 'No terms for now.'
 
-[peertube-text-content]
+[peertube-parameters]
 recipe = slapos.recipe.build
 slapparameter-dict = $${slap-configuration:configuration}
-init =
-  options['name'] = options['slapparameter-dict'].get('name') or 'Peertube in Slapos'
-  options['short_description'] = options['slapparameter-dict'].get('short_description') or ''
-  options['description'] = options['slapparameter-dict'].get('description') or ''
-  options['terms'] = options['slapparameter-dict'].get('terms') or ''
-  options['code_of_conduct'] = options['slapparameter-dict'].get('code_of_conduct') or ''
-  options['moderation_information'] = options['slapparameter-dict'].get('moderation_information') or ''
-  options['creation_reason'] = options['slapparameter-dict'].get('creation_reason') or ''
-  options['administrator'] = options['slapparameter-dict'].get('administrator') or ''
-  options['maintenance_lifetime'] = options['slapparameter-dict'].get('maintenance_lifetime') or ''
-  options['business_model'] = options['slapparameter-dict'].get('business_model') or ''
-  options['hardware_information'] = options['slapparameter-dict'].get('hardware_information') or ''
-
-[peertube-urlparse]
-recipe = slapos.recipe.build
-slapparameter-dict = $${slap-configuration:configuration}
-url = $${publish-connection-parameter:frontend-url}
+default-frontend-url = $${frontend:config-url}
+working-dir = ${peertube:location}
+node-config-dir=$${directory:config}
+ipv4-port=9000
+node-env=production
+npm-bin=${nodejs:location}/bin/npm
+default-parameters =
+  {
+    "name" : "Peertube in Slapos",
+    "frontend-url" : "",
+    "short_description" : "PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.",
+    "description" : "Welcome to this PeerTube instance!",
+    "terms" : "No terms for now.",
+    "code_of_conduct" : "",
+    "moderation_information" : "",
+    "creation_reason" : "",
+    "administrator" : "",
+    "maintenance_lifetime" : "",
+    "business_model" : "",
+    "hardware_information" : ""
+  }
 init =
   from six.moves.urllib.parse import urlparse
-  url = urlparse(options.get('url'))
+  import json
+  default_parameters = json.loads(options.get('default-parameters').strip())
+  default_parameters['frontend-url'] = options['default-frontend-url']
+  parameters = dict(default_parameters, **options['slapparameter-dict'])
+  # options is not a dict...
+  options['name'] = parameters['name']
+  options['frontend-url'] = parameters['frontend-url']
+  options['short_description'] = parameters['short_description']
+  options['description'] = parameters['description']
+  options['terms'] = parameters['terms']
+  options['code_of_conduct'] = parameters['code_of_conduct']
+  options['moderation_information'] = parameters['moderation_information']
+  options['creation_reason'] = parameters['creation_reason']
+  options['administrator'] = parameters['administrator']
+  options['maintenance_lifetime'] = parameters['maintenance_lifetime']
+  options['business_model'] = parameters['business_model']
+  options['hardware_information'] = parameters['hardware_information']
+  url = urlparse(options.get('frontend-url'))
   if url.port:
     options['host'] = '[' + url.hostname + ']'
     options['port'] = str(url.port)
@@ -259,6 +279,9 @@ init =
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-frontend-url = $${frontend:connection-secure_access}
 frontend-hostname = $${frontend:connection-domain}
-ipv4-port = 9000
+frontend-url = $${peertube-parameters:frontend-url}
+backend-url = $${frontend:config-url}
+password = $${peertube-passwd:passwd}
+username = root
+
