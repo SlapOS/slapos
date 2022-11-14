@@ -9,10 +9,10 @@ COMPRESS={{ xz_binary }}
 KEEP_DAYS={{ keep_days }}
 
 # Move out ${PATTERN} files
-find ${LOG_DIR} -maxdepth 1 -type f -name ${PATTERN} -exec mv {} ${LOGROTATE_DIR}/ \;
+{{ find_executable }} ${LOG_DIR} -maxdepth 1 -type f -name ${PATTERN} -exec mv {} ${LOGROTATE_DIR}/ \;
 
 # Compress 
-find ${LOGROTATE_DIR} -maxdepth 1 -type f -name ${PATTERN} -exec ${COMPRESS} -9 {} \;
+{{ find_executable }} ${LOGROTATE_DIR} -maxdepth 1 -type f -name ${PATTERN} -exec ${COMPRESS} -9 {} \;
 
 # Retent old files
-find ${LOGROTATE_DIR} -maxdepth 1 -type f -mtime +${KEEP_DAYS} -delete
+{{ find_executable }} ${LOGROTATE_DIR} -maxdepth 1 -type f -mtime +${KEEP_DAYS} -delete
