@@ -13,7 +13,7 @@ set +e
 {{ find_executable }} {{ directory }} -type f -name '{{ name }}' -exec {{ sha256sum }} {} \; >> $NSIGNATURE_FILE.wrk
 {%- endfor %}
 set -e
-sort -k 66 $NSIGNATURE_FILE.wrk > $NSIGNATURE_FILE
+sort -k 2,2 $NSIGNATURE_FILE.wrk > $NSIGNATURE_FILE
 rm -f $NSIGNATURE_FILE.wrk
 
 if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE" > /dev/null ; then
