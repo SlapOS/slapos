@@ -1,4 +1,6 @@
-/* global console */
+/*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
+/*global arm, console, exit, open, scriptArgs, setTimeout, start, stop,
+  stopPubsub, takeOffAndWait, Worker*/
 import {
   arm,
   start,
@@ -9,16 +11,23 @@ import {
 import { setTimeout, Worker } from "os";
 import { open, exit } from "std";
 
-(function (console, setTimeout, Worker) {
+(function (arm, console, exit, open, scriptArgs, setTimeout, start, stop,
+           stopPubsub, takeOffAndWait, Worker) {
   "use strict";
-  const CONF_PATH = {{ json_module.dumps(configuration) }};
 
-  var conf_file = open(CONF_PATH, "r");
-  const configuration = JSON.parse(conf_file.readAsString());
+  var CONF_PATH = {{ json_module.dumps(configuration) }},
+    conf_file = open(CONF_PATH, "r"),
+    configuration = JSON.parse(conf_file.readAsString()),
+    URL = "udp://" + configuration.autopilotIp + ":7909",
+    LOG_FILE = "{{ log_dir }}/mavsdk-log",
+    pubsubWorker,
+    worker,
+    user_script = scriptArgs[1],
+    FPS = 50, // Minimum sampling interval for open62541 monitored items
+    previous_timestamp,
+    can_update = false;
+
   conf_file.close();
-
-  const  URL = "udp://" + configuration.autopilotIp + ":7909",
-    LOG_FILE = "{{ log_dir }}/mavsdk-log";
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -26,25 +35,7 @@ import { open, exit } from "std";
 
   // Create the update loop in the main script
   // to prevent it to finish (and so, exit the quickjs process)
-  var pubsubWorker,
-    worker = new Worker("{{ worker_script }}"),
-    user_script = scriptArgs[1],
-    // Minimum sampling interval for open62541 monitored items
-    FPS = 50,
-    previous_timestamp,
-    can_update = false;
-
-  function connect() {
-    console.log("Will connect to", URL);
-    exitOnFail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
-  }
-
-  function exitOnFail(ret, msg) {
-    if (ret) {
-      console.log(msg);
-      quit(1);
-    }
-  }
+  worker = new Worker("{{ worker_script }}");
 
   function quit(is_a_drone, exit_code) {
     stopPubsub();
@@ -54,17 +45,29 @@ import { open, exit } from "std";
     exit(exit_code);
   }
 
+  function exitOnFail(ret, msg) {
+    if (ret) {
+      console.log(msg);
+      quit(1);
+    }
+  }
+
+  function connect() {
+    console.log("Will connect to", URL);
+    exitOnFail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
+  }
+
   if (configuration.isADrone) {
     console.log("Connecting to aupilot\n");
     connect();
   }
 
   pubsubWorker = new Worker("{{ pubsub_script }}");
-  pubsubWorker.onmessage = function(e) {
+  pubsubWorker.onmessage = function (e) {
     if (!e.data.publishing) {
       pubsubWorker.onmessage = null;
     }
-  }
+  };
 
   worker.postMessage({type: "initPubsub"});
 
@@ -91,7 +94,7 @@ import { open, exit } from "std";
   }
 
   function loop() {
-    let timestamp = Date.now(),
+    var timestamp = Date.now(),
       timeout;
     if (can_update) {
       if (FPS <= (timestamp - previous_timestamp)) {
@@ -118,7 +121,7 @@ import { open, exit } from "std";
   }
 
   worker.onmessage = function (e) {
-    let type = e.data.type;
+    var type = e.data.type;
     if (type === 'initialized') {
       pubsubWorker.postMessage({
         action: "run",
@@ -142,4 +145,5 @@ import { open, exit } from "std";
       quit(configuration.isADrone, 1);
     }
   };
-}(console, setTimeout, Worker));
+}(arm, console, exit, open, scriptArgs, setTimeout, start, stop, stopPubsub, 
+  takeOffAndWait, Worker));
