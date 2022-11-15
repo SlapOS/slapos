@@ -250,7 +250,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _prepareExport(self):
     super(TestTheiaResiliencePeertube, self)._prepareExport()
 
-    postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
+    postgresql_partition = self._getPostgresPartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
 
@@ -313,7 +313,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _checkTakeover(self):
     super(TestTheiaResiliencePeertube, self)._checkTakeover()
 
-    postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
+    postgresql_partition = self._getPostgresPartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
 
@@ -344,22 +344,27 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
       universal_newlines=True)
     self.assertIn("bbb", output)
 
-  def _getPeertubePartition(self, servicename):
+  def _getPostgresqlPartition(self):
     p = subprocess.Popen(
-      (self._getSlapos(), 'node', 'status'),
+      (self._getSlapos(), 'node', 'software', '--all'),
       stdout=subprocess.PIPE, universal_newlines=True)
     out, _ = p.communicate()
     found = set()
     for line in out.splitlines():
-      if servicename in line:
-        found.add(line.split(':')[0])
+      if 'postgresql10: shared at' in line:
+        found =line[line.index('/'):]
     if not found:
       raise Exception("Peertube %s partition not found" % servicename)
     elif len(found) > 1:
       raise Exception("Found several partitions for Peertube %s" % servicename)
     return found.pop()
 
-  def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
-    partition = self._getPeertubePartition(servicename)
+  def _getPostgresPartitionPath(self, instance_type, servicename, *paths):
+    # postgres_shared_path = self.getPartitionPath(
+    #   instance_type, 'srv', 'runner', 'shared', 'postgresql10')
+    # first_dir = os.os.listdir(postgres_shared_path)[0]
+    # postgres_bin_path = os.path.join(postgres_shared_path, first_dir, 'bin')
+    postgres_shared_path = self._getPostgresqlPath()
+    postgres_bin_path = os.path.join(postgres_shared_path, 'bin')
     return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+      instance_type, 'srv', 'runner', 'shared', 'postgresql10', postgres_bin_path, *paths)
