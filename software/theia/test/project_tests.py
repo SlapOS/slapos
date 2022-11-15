@@ -251,8 +251,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     super(TestTheiaResiliencePeertube, self)._prepareExport()
 
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
-    postgresql_bin = os.path.join(mariadb_partition, 'bin', 'psql')
-    postgres_bin = os.path.join(mariadb_partition, 'bin', 'postgres')
+    postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
+    postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
 
     # Change the email address of the user 'peertube'
     output = subprocess.check_output(
