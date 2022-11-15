@@ -1,4 +1,8 @@
-/* global console, std */
+/*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
+/*global console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
+  getLongitude, getYaw, execUserScript, initPubsub, isInManualMode, landed,
+  loiter, setAirspeed, setAltitude, setManualControlInput, setMessage,
+  setTargetCoordinates, std, triggerParachute, Drone, Worker*/
 import {
   Drone,
   triggerParachute,
@@ -21,17 +25,18 @@ import {
 import * as std from "std";
 import { Worker } from "os";
 
-(function (console, Worker) {
+(function (console, getAltitude, getAltitudeRel, getInitialAltitude,
+           getLatitude, getLongitude, getYaw, initPubsub, isInManualMode,
+           landed, loiter, setAirspeed, setAltitude, setManualControlInput,
+           setMessage, setTargetCoordinates, std, triggerParachute, Drone,
+           Worker) {
   // Every script is evaluated per drone
   "use strict";
-  const CONF_PATH = {{ json_module.dumps(configuration) }},
-    drone_dict = {};
 
-  var conf_file = std.open(CONF_PATH, "r");
-  const configuration = JSON.parse(conf_file.readAsString());
-  conf_file.close();
-
-  let parent = Worker.parent,
+  var CONF_PATH = {{ json_module.dumps(configuration) }},
+    conf_file = std.open(CONF_PATH, "r"),
+    configuration = JSON.parse(conf_file.readAsString()),
+    parent = Worker.parent,
     user_me = {
       //for debugging purpose
       fdopen: std.fdopen,
@@ -39,12 +44,12 @@ import { Worker } from "os";
       //required to fly
       triggerParachute: triggerParachute,
       drone_dict: {},
-      exit: function(exit_code) {
+      exit: function (exit_code) {
         parent.postMessage({type: "exited", exit: exit_code});
         parent.onmessage = null;
       },
       getAltitudeAbs: getAltitude,
-      getCurrentPosition: function() {
+      getCurrentPosition: function () {
         return {
           x: getLatitude(),
           y: getLongitude(),
@@ -56,25 +61,25 @@ import { Worker } from "os";
       id: configuration.id,
       landed: landed,
       loiter: loiter,
-      sendMsg: function(msg, id = -1) {
+      sendMsg: function (msg, id) {
+        if (id === undefined) { id = -1; }
         setMessage(JSON.stringify({ content: msg, dest_id: id }));
       },
       setAirspeed: setAirspeed,
       setAltitude: setAltitude,
       setTargetCoordinates: setTargetCoordinates
     };
+  conf_file.close();
 
   function loadUserScript(path) {
-    let script_content = std.loadFile(path);
+    var script_content = std.loadFile(path);
     if (script_content === null) {
       console.log("Failed to load user script " + path);
       std.exit(1);
     }
     try {
       std.evalScript(
-        "function execUserScript(from, me) {" +
-          script_content +
-        "};"
+        "function execUserScript(from, me) {" + script_content + "};"
       );
     } catch (e) {
       console.log("Failed to evaluate user script", e);
@@ -89,35 +94,31 @@ import { Worker } from "os";
   }
 
   function handleMainMessage(evt) {
-    let type = evt.data.type,
-      message,
-      drone_id;
+    var type = evt.data.type,
+      message;
 
     if (type === "initPubsub") {
       initPubsub(configuration.droneIdList.length);
-      for (let i = 0; i < configuration.droneIdList.length; i++) {
-        drone_id = configuration.droneIdList[i];
+      configuration.droneIdList.forEach(function (drone_id, index) {
+        drone_id = configuration.droneIdList[index];
         user_me.drone_dict[drone_id] = new Drone(drone_id);
-        user_me.drone_dict[drone_id].init(i);
-      }
+        user_me.drone_dict[drone_id].init(index);
+      });
       parent.postMessage({type: "initialized"});
     } else if (type === "load") {
       loadUserScript(evt.data.path);
       parent.postMessage({type: "loaded"});
     } else if (type === "update") {
-      for (const [id, drone] of Object.entries(user_me.drone_dict)) {
-        message = drone.message
-        if (message.length > 0) {
+      Object.entries(user_me.drone_dict).forEach(function ([id, drone]) {
+        message = drone.message;
+        if (user_me.id === Number(id) && message.length > 0) {
           message = JSON.parse(message);
-          if (user_me.id === id) {
-            continue;
-          }
           if (user_me.hasOwnProperty("onGetMsg") &&
               [-1, user_me.id].includes(message.dest_id)) {
             user_me.onGetMsg(message.content);
           }
         }
-      }
+      });
       // Call the drone onStart function
       if (user_me.hasOwnProperty("onUpdate")) {
         if (configuration.isADrone && isInManualMode()) {
@@ -141,4 +142,7 @@ import { Worker } from "os";
       std.exit(1);
     }
   };
-}(console, Worker));
+}(console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
+  getLongitude, getYaw, initPubsub, isInManualMode, landed, loiter, setAirspeed,
+  setAltitude, setManualControlInput, setMessage, setTargetCoordinates, std,
+  triggerParachute, Drone, Worker));
