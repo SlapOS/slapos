@@ -51,7 +51,7 @@ http {
   gzip_types text/plain text/css application/json application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
 
 upstream backend {
-  server $${instance-parameter:ipv4-random}:$${peertube-parameters:ipv4-port};
+  server $${instance-parameter:ipv4-random}:$${peertube:ipv4_port};
 }
 
 server {
