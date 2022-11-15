@@ -6,6 +6,7 @@ parts =
   service-redis
   promise-redis
   postgresql
+  postgresql-binary-link
   peertube-yaml
   nginx-service
   peertube-service
@@ -84,6 +85,11 @@ ipv4 = $${instance-parameter:ipv4-random}
 # disable listening on ipv6
 ipv6 =
 port = 5432
+
+[postgresql-binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = $${directory:bin}
+link-binary = $${postgresql:bin}/postgres $${postgresql:bin}/psql
 
 #################################
 # Nginx service
