@@ -45,6 +45,9 @@ from slapos.testing.utils import getPromisePluginParameterDict
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
+from . import matrix
+from . import default
+
 setUpModule  # pyflakes
 
 
@@ -52,6 +55,10 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   """Base test case for mariadb tests.
   """
   __partition_reference__ = 'm'
+  # We don't use getRootPartitionConnectionParameterDict here,
+  # but getDatabaseConnection -> no test requests ZODB, so we don't
+  # need to run these tests with both NEO and ZEO.
+  __test_matrix__ = matrix((default,))
 
   @classmethod
   def getInstanceSoftwareType(cls):
