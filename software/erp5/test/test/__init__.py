@@ -27,6 +27,7 @@
 
 import json
 import os
+import sys
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -45,9 +46,94 @@ def setUpModule():
   setup_module_executed = True
 
 
-class ERP5InstanceTestCase(SlapOSInstanceTestCase):
+class ERP5InstanceTestMeta(type):
+  """ERP5InstanceTestMeta adjusts instances of ERP5InstanceTestCase to
+     be run in several flavours: with ZEO and with NEO. Adjustment
+     of individual classes can be deactivated by setting the class
+     attribute '__parameterize__' to 'False'.
+  """
+
+  def __new__(cls, name, bases, attrs):
+    base_class = super().__new__(cls, name, bases, attrs)
+    if base_class._isParameterized():
+      cls._parameterize(base_class)
+    return base_class
+
+  # Create two test classes from single definition: e.g. TestX -> TestX_ZEO and TestX_NEO.
+  @classmethod
+  def _parameterize(cls, base_class):
+    test_class_module = sys.modules[base_class.__module__].__dict__
+    for flavour in ("zeo", "neo"):
+      # Override metaclass to avoid infinite loop due to parameterized
+      # class which infinitely creates a parameterized class of itself.
+      class patched(base_class, metaclass=_deactivate):
+        zodb_storage = flavour
+
+      # Switch
+      #   - .getInstanceParameterDict       to ._test_getInstanceParameterDict, and
+      #   - ._base_getInstanceParameterDict to .getInstanceParameterDict
+      # so that we could inject base implementation to be called above user-defined getInstanceParameterDict.
+      # see ERP5InstanceTestCase._base_getInstanceParameterDict for details.
+      patched._test_getInstanceParameterDict = patched.getInstanceParameterDict
+      patched.getInstanceParameterDict       = patched._base_getInstanceParameterDict
+
+      name = "%s_%s" % (base_class.__name__, flavour.upper())
+      test_class_module[name] = type(name, (patched,), dict(patched.__dict__))
+
+  # Hide tests in patched class.
+  # We can't simply call 'delattr', because this wouldn't remove
+  # inherited tests. Overriding dir is sufficient, because this is
+  # the way how unittest discovers tests:
+  #   https://github.com/python/cpython/blob/3.11/Lib/unittest/loader.py#L237
+  def __dir__(self):
+    if self._isParameterized():
+      return [attr for attr in super().__dir__() if not attr.startswith('test')]
+    return super().__dir__()
+
+  def _isParameterized(self):
+    return getattr(self, '__parameterize__', True)
+
+
+class _deactivate(ERP5InstanceTestMeta):
+  """_deactivate behaves exactly the same like plain type.
+
+  It allows the syntax
+
+    >>> class A(metaclass=ERP5InstanceTestMeta): ...
+    >>> class B(A, metaclass=_ERP5InstanceTestMeta): ...
+
+  to deactivate ERP5InstanceTestMeta in a subclass of A.
+  """
+  def __new__(cls, name, bases, attrs):
+    return type.__new__(cls, name, bases, attrs)
+
+  def __dir__(self):
+    return type.__dir__(self)
+
+
+class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMeta):
   """ERP5 base test case
   """
+
+  # 20 aren't enough for NEO
+  # https://lab.nexedi.com/nexedi/slapos.core/blob/1.8.4/slapos/testing/testcase.py#L273-274
+  # https://lab.nexedi.com/nexedi/slapos.core/blob/1.8.4/slapos/testing/testcase.py#L379
+  #
+  # instance_max_retry = 100
+
+  # ERP5InstanceTestMeta switches:
+  #   - _base_getInstanceParameterDict to be real getInstanceParameterDict, while
+  #   - test-defined getInstanceParameterDict is switched to _test_getInstanceParameterDict
+  # here we invoke user-defined getInstanceParameterDict and adjust it according to "zodb_storage" parameter.
+  @classmethod
+  def _base_getInstanceParameterDict(cls):
+      try:
+        parameter_dict = json.loads(cls._test_getInstanceParameterDict()["_"])
+      except KeyError:
+        parameter_dict = {}
+      parameter_dict["zodb"] = [{"type": cls.zodb_storage, "server": {}}]
+      return {"_": json.dumps(parameter_dict)}
+
   @classmethod
   def getRootPartitionConnectionParameterDict(cls):
     """Return the output paramters from the root partition"""
