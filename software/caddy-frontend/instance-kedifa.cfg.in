@@ -288,7 +288,7 @@ directory = ${directory:auth-ready}
 init =
   import os
   if os.path.isdir(options['directory']):
-    os.system("find %s -type f -name *-auth-random -size 0 -delete" % (options['directory'],))
+    os.system("{{ software_parameter_dict['findutils'] }}/bin/find %s -type f -name *-auth-random -size 0 -delete" % (options['directory'],))
 
 [auth-random]
 recipe = slapos.recipe.build
@@ -335,7 +335,7 @@ config-command =
 recipe = plone.recipe.command
 output = ${directory:var}/${:_buildout_section_name_}.txt
 update-command = ${:command}
-command = find ${directory:auth-ready} -type f > ${:output}
+command = {{ software_parameter_dict['findutils'] }}/bin/find ${directory:auth-ready} -type f > ${:output}
 
 [promise-kedifa-auth-ready]
 <= monitor-promise-base
