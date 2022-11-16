@@ -253,28 +253,33 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
+    postgresql_srv = self.getPartitionPath(postgresql_partition, 'postgresql')
 
     # Change the email address of the user 'peertube'
     output = subprocess.check_output(
-      (postgresql_bin, '-c', 'UPDATE "user" SET "email"=\'aaa\' WHERE "username"=\'root\''),
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+      '-c', 'UPDATE "user" SET "email"=\'aaa\' WHERE "username"=\'root\''),
       universal_newlines=True)
     self.assertIn("UPDATE", output)
 
     # Checked the modification has been updated in the database
     output = subprocess.check_output(
-      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+      '-c', 'SELECT * FROM "user"'),
       universal_newlines=True)
     self.assertIn("aaa", output)
 
     # Change the email address of the user 'peertube'
     output = subprocess.check_output(
-      (postgresql_bin, '-c', 'UPDATE "user" SET "email"=\'bbb\' WHERE "username"=\'root\''),
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+       '-c', 'UPDATE "user" SET "email"=\'bbb\' WHERE "username"=\'root\''),
       universal_newlines=True)
     self.assertIn("UPDATE", output)
 
     # Checked the modification has been updated in the database
     output = subprocess.check_output(
-      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+      '-c', 'SELECT * FROM "user"'),
       universal_newlines=True)
     self.assertIn("bbb", output)
 
@@ -316,10 +321,12 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
+    postgresql_srv = self.getPartitionPath(postgresql_partition, 'postgresql')
 
     # Check that the mariadb catalog is not yet restored
     output = subprocess.check_output(
-      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+      '-c', 'SELECT * FROM "user"'),
       universal_newlines=True)
     self.assertNotIn("bbb", output)
 
@@ -340,7 +347,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
     # Check that the postgresql catalog was properly restored
     output = subprocess.check_output(
-      (postgresql_bin, '-c', 'SELECT * FROM "user"'),
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+      '-c', 'SELECT * FROM "user"'),
       universal_newlines=True)
     self.assertIn("bbb", output)
 
@@ -360,6 +368,11 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     return found.pop()
 
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
+    partition = self._getPeertubePartition(servicename)
+    return self.getPartitionPath(
+      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+
+  def _getPostgresSrvPartitionPath(self, instance_type, servicename, *paths):
     partition = self._getPeertubePartition(servicename)
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
