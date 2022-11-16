@@ -119,6 +119,7 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   """Test ERP5 can be instantiated with no parameters
   """
   __partition_reference__ = 'defp'
+  __parameterize__ = False
 
 
 class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -310,6 +311,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
   """Test override zope node parameters
   """
   __partition_reference__ = 'override'
+  __parameterize__ = False
 
   @classmethod
   def getInstanceParameterDict(cls):
