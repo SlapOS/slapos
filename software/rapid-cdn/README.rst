@@ -453,3 +453,15 @@ Having in mind such structure:
 In ``caucase-instance`` CAUCASE user is created by automatically signing one user certificate, which allows to sign service certificates.
 
 The ``csr-instance`` creates CSR, extracts the ID of the CSR, exposes it via HTTP and ask caucase on ``caucase-instance`` to sign it. The ``caucase-instance`` checks that exposed CSR id matches the one send to caucase and by using created user to signs it.
+
+Experimental QuicTLS
+~~~~~~~~~~~~~~~~~~~~
+
+`QuicTLS <https://github.com/quictls/openssl>`_ can be used instead of classic OpenSSL on given node by using parameter ``-frontend-i-experimental-haproxy-flavour`` and setting it to ``quic``. This allows to test out if there are any issues with QuicTLS are with normal usage.
+
+Experimental QUIC
+~~~~~~~~~~~~~~~~~
+
+QUIC with HTTP3 is available as experimental feature. It has to be enabled on each node separately by using ``-frontend-i-experimental-haproxy-quic``. Then given node will reply with proper headers on HTTPS to advertise QUIC. Please note that ``-frontend-i-experimental-haproxy-flavour`` has to be set to ``quic`` on this node too.
+
+Note that then all frontends will be served with QUIC advertised on such node, so it's important to run such experiments very carefully, for example on same zone/region with DNS.
