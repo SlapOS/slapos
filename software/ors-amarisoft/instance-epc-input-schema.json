@@ -26,6 +26,12 @@
       "title": "Use IPv4",
       "description": "Set to true to use IPv4 for AMF / MME addresses",
       "type": "boolean"
+    },
+    "promise_cpu_temperature_threshold": {
+      "title": "CPU temperature promise threshold",
+      "description": "Temperature threshold above which CPU temperature promise will fail",
+      "type": "number",
+      "default": 80
     }
   }
 }

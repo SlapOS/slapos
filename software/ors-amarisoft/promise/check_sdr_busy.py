@@ -6,28 +6,17 @@ from zope.interface import implementer
 from slapos.grid.promise import interface
 from slapos.grid.promise.generic import GenericPromise
 
-
-
-
 @implementer(interface.IPromise)
 class RunPromise(GenericPromise):
 
   def __init__(self, config):
-    """
-      Called when initialising the promise before testing.
-      Sets the configuration and the periodicity.
-    """
+
     super(RunPromise, self).__init__(config)
     self.setPeriodicity(minute=1)
 
 
   def sense(self):
-    """
-      Called every time the promise is tested.
-      Signals a positive or negative result.
 
-      In this case, check whether the file exists.
-    """
     testing = self.getConfig('testing') == "True"
     sdr = self.getConfig('sdr')
 
