@@ -4,12 +4,12 @@ import {Worker} from "os";
 const PORT = "4840";
 const IPV6 = "{{ ipv6 }}";
 
-var parent = Worker.parent;
+let parent = Worker.parent;
 
 function handle_msg(e) {
   switch(e.data.action) {
     case "run":
-      runPubsub(IPV6, PORT, "eth0", {{ id }});
+      runPubsub(IPV6, PORT, "{{ net_if }}", e.data.id, e.data.interval, e.data.publish);
       parent.postMessage({running: false});
       parent.onmessage = null;
       break;
