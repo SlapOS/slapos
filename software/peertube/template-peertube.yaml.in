@@ -1,10 +1,12 @@
 listen:
-  hostname: '$${instance-parameter:ipv4-random}'
+  hostname: '$${slap-configuration:ipv4-random}'
   port: $${peertube-parameters:ipv4-port}
 
 # Correspond to your reverse proxy server_name/listen configuration (i.e., your public PeerTube instance URL)
 webserver:
   https: true
+  # hostname: 'softinst176929.host.vifib.net'
+  # port: 443
   hostname: '$${peertube-parameters:host}'
   port: $${peertube-parameters:port}
 

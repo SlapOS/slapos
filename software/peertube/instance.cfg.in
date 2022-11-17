@@ -1,208 +1,47 @@
 [buildout]
-extends =
-  {{ monitor_template_output }}
-
 parts =
-  service-redis
-  promise-redis
-  postgresql
-  postgresql-binary-link
-  nginx-service
-  dcron-service
-  activate-crontab-file
-  peertube-backup-cron
-  peertube-database-resiliency-after-import-script
-  peertube-database-resiliency-exclude-file
-  nginx-listen-promise
+  switch-softwaretype
 
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
-
-[directory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
-srv = ${buildout:directory}/srv
-var = ${buildout:directory}/var
-log = ${:var}/log
-run = ${:var}/run
-www = ${:var}/www
-crontabs = ${:etc}/crontabs
-cron-entries = ${:etc}/cron.d
-cronstamps = ${:etc}/cronstamps
-cron-lines = ${:etc}/cron.lines
-nginx = ${:etc}/nginx
-peertube_nginx_log = ${:log}/nginx
-varnginx = ${:var}/nginx
-services = ${:etc}/service
-peertube_directory = ${:www}/peertube
-config = ${:peertube_directory}/config
-storage = ${:peertube_directory}/storage
-versions = ${:peertube_directory}/versions
-ssl = ${:etc}/ssl
 
 [peertube]
 recipe = slapos.recipe.template:jinja2
-url = {{ instance_peertube }}
-output = ${buildout:directory}/instance-peertube.cfg
-extensions = jinja2.ext.do
+url = ${instance-peertube:target}
+output = $${buildout:directory}/instance-peertube.cfg
 context =
-  key develop_eggs_directory      buildout:develop-eggs-directory
   key eggs_directory              buildout:eggs-directory
+  key develop_eggs_directory      buildout:develop-eggs-directory
+  raw monitor_template            ${monitor2-template:output}
   key slapparameter_dict          slap-configuration:configuration
-  key nginx_ip                    nginx-configuration:ip
-  key nginx_port                  nginx-configuration:port
-  raw directory_etc               ${directory:etc}
-  raw directory_config            ${directory:config}
-  raw directory_services          ${directory:services}
-ipv4_port = 9000
+  raw ipv6_random                 $${slap-configuration:ipv6-random}
+  raw ipv4_random                 $${slap-configuration:ipv4-random}
+  raw template_peertube_yaml      ${template-peertube-yaml:output}
+  raw template_nginx_configration ${template-nginx-configuration:output}
+  raw tempalte_peertube_service   ${template-peertube-service:output}
+  raw postgresql10_location       ${postgresql10:location}
+  raw tempalte_nginx_service      ${template-nginx-service:output}
+  raw redis_binprefix             ${redis28:location}/bin
+  raw template_dcron_service      ${template-dcron-service:output}
+  raw tempalte_peertube_backup    ${template-peertube-backup-script:output}
+  raw template_crontab_line       ${template-crontab-line:output}
+  raw coreutils_cat               ${coreutils-output:cat}
+  raw template_crontab            ${template-crontab:output}
+  raw dcron_output                ${dcron-output:crontab}
+  raw peertube_location           ${peertube:location}
+  raw nodejs_location             ${nodejs:location}
 
-[postgresql-password]
-recipe = slapos.cookbook:generate.password
-
-[postgresql]
-recipe = slapos.cookbook:postgres
-bin = {{ postgresql10_location }}/bin/
-services = ${directory:services}
-dbname  = peertube_prod
-superuser = peertube
-password = ${postgresql-password:passwd}
-pgdata-directory = ${directory:srv}/postgresql
-
-ipv4 = ${instance-parameter:ipv4-random}
-# disable listening on ipv6
-ipv6 =
-port = 5432
-
-[postgresql-binary-link]
-recipe = slapos.cookbook:symbolic.link
-target-directory = ${directory:bin}
-link-binary = ${postgresql:bin}/postgres ${postgresql:bin}/psql
-
-#################################
-# Nginx service
-#################################
-[nginx-service]
-recipe = slapos.recipe.template
-url = {{ tempalte_nginx_service }}
-output = ${directory:services}/nginx
-virtual-depends =
-  ${nginx-configuration:ip}
-
-[nginx-listen-promise]
-<= monitor-promise-base
-promise = check_url_available
-name = nginx_listen.py
-config-verify = 0
-config-url = https://[${nginx-configuration:ip}]:${nginx-configuration:port}
-
-[nginx-configuration]
-recipe = slapos.recipe.template
-url = {{ template_nginx_configration }}
-output = ${directory:etc}/nginx.cfg
-access_log = ${directory:log}/nginx-access.log
-error_log = ${directory:log}/nginx-error.log
-ip = ${instance-parameter:ipv6-random}
-port = 9443
-ssl_key = ${directory:ssl}/nginx.key
-ssl_csr = ${directory:ssl}/nginx.csr
-ssl_crt = ${directory:ssl}/nginx.crt
-
-#############
-#   Redis   #
-#############
-[redis]
-recipe  = slapos.cookbook:mkdirectory
-srv     = ${directory:srv}/redis
-log     = ${directory:log}/redis
-
-[service-redis]
-recipe  = slapos.cookbook:redis.server
-wrapper = ${directory:services}/redis
-promise-wrapper = ${directory:bin}/redis-promise
-
-server-dir  = ${redis:srv}
-config-file = ${directory:etc}/redis.conf
-log-file    = ${redis:log}/redis.log
-pid-file    = ${directory:run}/redis.pid
-use-passwd  = false
-unixsocket  = ${:server-dir}/redis.socket
-# port = 0 means "don't listen on TCP at all" - listen only on unix socket
-ipv6    = ::1
-port    = 0
-
-# server-bin  = ${buildout:parts-directory}/redis/bin/redis-server
-server-bin = {{ redis_binprefix }}/redis-server
-cli-bin  = {{ redis_binprefix }}/redis-cli
-depend  =
-    ${logrotate-entry-redis:recipe}
-
-[promise-redis]
-<= monitor-promise-base
-promise = check_command_execute
-name = promise-redis.py
-config-command = ${service-redis:promise-wrapper}
-
-[logrotate-entry-redis]
-<= logrotate-entry-base
-log     = ${redis:log}/*.log
-name = redis
-
-#################################
-# Cron service
-#################################
-[dcron-service]
-recipe = slapos.recipe.template
-url = {{ template_dcron_service }}
-output = ${directory:services}/crond
-logfile = ${directory:log}/crond.log
-
-[peertube-backup-script]
-recipe = slapos.recipe.template
-url = {{ tempalte_peertube_backup }}
-output = ${directory:etc}/${:_buildout_section_name_}
-
-[peertube-backup-cron]
-recipe = slapos.recipe.template
-url = {{ template_crontab_line }}
-output = ${directory:cron-lines}/${:_buildout_section_name_}
-script = ${peertube-backup-script:output}
-frequency = daily
-
-[activate-crontab-file]
-# XXX File is never removed
-recipe = plone.recipe.command
-stop-on-error = true
-command = {{ coreutils_cat }} {{ template_crontab }} ${peertube-backup-cron:output} | {{ dcron_output }} -c ${directory:crontabs} -
-
-[peertube-database-resiliency-exclude-file]
-recipe = slapos.recipe.template:jinja2
-inline = {{ "${postgresql:pgdata-directory}/**" }}
-output = ${directory:srv}/exporter.exclude
-
-[peertube-database-resiliency-after-import-script]
-recipe = collective.recipe.template
-input = inline: #!/bin/sh
-  ${postgresql:bin}/pg_restore -h ${postgresql:pgdata-directory} -c -U peertube -d peertube_prod ${directory:peertube_directory}/peertube_prod-dump.db
-output = ${directory:srv}/runner-import-restore
-mode = 755
-
-#################################
-# SlapOS service
-#################################
-[instance-parameter]
-recipe = slapos.cookbook:slapconfiguration
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
-configuration._ = {}
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = $${:default}
+default = peertube:output
 
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration
-computer = ${slap_connection:computer_id}
-partition = ${slap_connection:partition_id}
-url = ${slap_connection:server_url}
-key = ${slap_connection:key_file}
-cert = ${slap_connection:cert_file}
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer= $${slap-connection:computer-id}
+partition=$${slap-connection:partition-id}
+url     = $${slap-connection:server-url}
+key     = $${slap-connection:key-file}
+cert    = $${slap-connection:cert-file}
+
