@@ -1,3 +1,9 @@
+{% if configuration['quic'] %}
+# True
+{% else %}
+# False
+{% endif %}
+# {{ configuration['quic-port'] }}
 global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
@@ -74,6 +80,8 @@ frontend http-frontend
   default_backend BACKEND_NOT_FOUND
 
 frontend https-frontend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
+  bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
   bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
 {{ frontend_common() }}
