@@ -253,7 +253,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
-    postgresql_srv = self.getPartitionPath(postgresql_partition, 'postgresql')
+    postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
     # Change the email address of the user 'peertube'
     output = subprocess.check_output(
@@ -321,7 +321,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
-    postgresql_srv = self.getPartitionPath(postgresql_partition, 'postgresql')
+    postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
     # Check that the mariadb catalog is not yet restored
     output = subprocess.check_output(
