@@ -1,5 +1,17 @@
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{%- if instance_parameter_dict.get('configuration.frontend-haproxy-flavour', 'basic') == 'quic' %}
+{%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
+{%-   if instance_parameter_dict.get('configuration.frontend-haproxy-quic', 'false').lower() in TRUE_VALUES %}
+{%-     set FRONTEND_HAPROXY_QUIC = True %}
+{%-   else %}
+{%-     set FRONTEND_HAPROXY_QUIC = False %}
+{%-   endif %}
+{%- else %}
+{%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
+{%-   set FRONTEND_HAPROXY_QUIC = False %}
+{%- endif %}
+{%- set BACKEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
 [buildout]
 extends =
   {{ software_parameter_dict['profile_common'] }}
@@ -473,6 +485,7 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
+quic = {{ FRONTEND_HAPROXY_QUIC }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -694,7 +707,7 @@ url = {{ software_parameter_dict['template_validate_script'] }}
 output = ${directory:bin}/frontend-haproxy-validate
 mode = 0700
 last_state_file = ${directory:run}/frontend_haproxy_configuration_last_state
-validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:file} -c
+validate_command = {{ FRONTEND_HAPROXY_EXECUTABLE }} -f ${frontend-haproxy-configuration:file} -c
 extra-context =
     raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key validate_command :validate_command
@@ -707,7 +720,7 @@ url = {{ software_parameter_dict['template_validate_script'] }}
 output = ${directory:bin}/backend-haproxy-validate
 mode = 0700
 last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
-validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
+validate_command = {{ BACKEND_HAPROXY_EXECUTABLE }} -f ${backend-haproxy-configuration:file} -c
 extra-context =
     raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key validate_command :validate_command
@@ -811,7 +824,7 @@ node-id = ${frontend-node-id:value}
 
 [frontend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:file}
+command-line = {{ FRONTEND_HAPROXY_EXECUTABLE }} -f ${frontend-haproxy-configuration:file}
 wrapper-path = ${directory:service}/frontend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
@@ -829,7 +842,7 @@ extra-context =
 
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file}
+command-line = {{ BACKEND_HAPROXY_EXECUTABLE }} -f ${backend-haproxy-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
@@ -894,7 +907,7 @@ extra-context =
 url = {{ software_parameter_dict['template_validate_script'] }}
 output = ${directory:bin}/backend-haproxy-validate
 last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
-validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
+validate_command = {{ BACKEND_HAPROXY_EXECUTABLE }} -f ${backend-haproxy-configuration:file} -c
 extra-context =
     raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
     key validate_command :validate_command
