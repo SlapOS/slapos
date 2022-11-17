@@ -1,3 +1,4 @@
+# {{ configuration['quic'] }}
 global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
