@@ -253,6 +253,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
+    raise NotImplementedError(os.listdir(postgresql_partition), os.listdir(os.path.join(postgresql_partition, 'srv')))
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
     # Change the email address of the user 'peertube'

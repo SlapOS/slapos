@@ -162,7 +162,7 @@ output = ${directory:config}/peertube.yaml
 promise = check_url_available
 name = peertube_listen.py
 config-verify = 0
-config-url = https://${frontend:connection-domain}
+config-url = ${peertube-parameters:frontend-url}
 
 [peertube-service]
 recipe = slapos.recipe.template
@@ -226,7 +226,7 @@ return = domain secure_access
 [peertube-parameters]
 recipe = slapos.recipe.build
 slapparameter-dict = {{ dumps(slapparameter_dict) }}
-default-frontend-url = ${frontend:config-url}
+default-frontend-url = ${frontend:connection-secure_access}
 working-dir = {{ peertube_location }}
 ipv4-port=9000
 node-config-dir=${directory:config}
