@@ -28,6 +28,6 @@ bin = ${:home}/bin
 
 [mosquitto-service]
 recipe  = slapos.cookbook:wrapper
-command-line = ${instance-parameter:configuration.type} -h ${instance-parameter:configuration.host} -t ${instance-parameter:configuration.tag} -m ${instance-parameter:configuration.message}
+command-line = -h
 wrapper-path = ${directory:service}/mosquitto-service
 output = $${:wrapper-path}
