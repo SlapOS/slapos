@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "Parameters to instantiate Fluent-bit",
+  "type": "object",
+  "configuration": {
+    "input": {
+      "description": "The desired fluent-bit input, which defines in fluent-bit's configuration the inputs.",
+      "type": "object",
+      "default": ""
+    },
+    "output": {
+      "description": "The desired fluent-bit output, which defines in fluent-bit's configuration the outputs.",
+      "type": "object",
+      "default": ""
+    }
+  }
+}
