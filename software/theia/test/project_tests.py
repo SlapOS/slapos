@@ -119,7 +119,7 @@ class ERP5Mixin(object):
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
 
-class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
+class TestERP5ResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
@@ -243,6 +243,15 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
   _test_software_url = peertube_software_release_url
 
+  def _getPeertubeConnexionParameters(self, instance_type='export'):
+    out = self.captureSlapos(
+      'request', 'test_instance', self._test_software_url,
+      stderr=subprocess.STDOUT,
+      text=True,
+    )
+    print(out)
+    return json.loads(self._connexion_parameters_regex.search(out).group(0).replace("'", '"'))
+
   def test_twice(self):
     # do nothing
     pass
@@ -253,7 +262,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
-    raise NotImplementedError(os.listdir(postgresql_partition), os.listdir(os.path.join(postgresql_partition, 'srv')))
+    # raise NotImplementedError(os.listdir(postgresql_partition), os.listdir(os.path.join(postgresql_partition, 'srv')))
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
     # Change the email address of the user 'peertube'
