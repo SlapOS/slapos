@@ -299,6 +299,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
     frequency = '%d * * * *' % soon.minute
     params = '_={"peertube-backup-cron": {"frequency": "%s"}, }' % frequency
+    params = '_={"frequency": "%s"}' % frequency
 
     # Update Peertube parameters
     print('Requesting Peertube with parameters %s' % params)

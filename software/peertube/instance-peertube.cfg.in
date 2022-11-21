@@ -61,7 +61,6 @@ superuser = peertube
 password = ${postgresql-password:passwd}
 pgdata-directory = ${directory:srv}/postgresql
 
-ipv44 = {{ slapparameter_dict.get('ipv4-random') }}
 ipv4 = {{ ipv4_random }}
 # disable listening on ipv6
 ipv6 =
@@ -96,7 +95,6 @@ url = {{ template_nginx_configration }}
 output = ${directory:etc}/nginx.cfg
 access_log = ${directory:log}/nginx-access.log
 error_log = ${directory:log}/nginx-error.log
-ipv6 = {{ slapparameter_dict.get('ipv6-random') }}
 ip = {{ ipv6_random }}
 port = 9443
 ssl_key = ${directory:ssl}/nginx.key
@@ -200,7 +198,7 @@ recipe = slapos.recipe.template
 url = {{ template_crontab_line }}
 output = ${directory:cron-lines}/${:_buildout_section_name_}
 script = ${peertube-backup-script:output}
-frequency = daily
+frequency = {{ slapparameter_dict.get('frequency') }}
 
 [activate-crontab-file]
 # XXX File is never removed
