@@ -264,7 +264,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
-    peertube_conenction_info = _getPeertubeConnexionParameters()
+    peertube_conenction_info = self._getPeertubeConnexionParameters()
     raise NotImplementedError(peertube_conenction_info)
     # Change the email address of the user 'peertube'
     output = subprocess.check_output(
