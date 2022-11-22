@@ -240,7 +240,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
-
+  _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = peertube_software_release_url
 
   def _getPeertubeConnexionParameters(self, instance_type='export'):
@@ -262,9 +262,10 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
-    # raise NotImplementedError(os.listdir(postgresql_partition), os.listdir(os.path.join(postgresql_partition, 'srv')))
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
+    peertube_conenction_info = _getPeertubeConnexionParameters()
+    raise NotImplementedError(peertube_conenction_info)
     # Change the email address of the user 'peertube'
     output = subprocess.check_output(
       (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
