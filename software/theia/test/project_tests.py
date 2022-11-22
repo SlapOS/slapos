@@ -298,7 +298,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # Compute backup date in the near future
     soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
     frequency = '%d * * * *' % soon.minute
-    params = '_={"peertube-backup-cron": {"frequency": "%s"}, }' % frequency
     params = '_={"frequency": "%s"}' % frequency
 
     # Update Peertube parameters
@@ -315,6 +314,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     t = (soon - datetime.now()).total_seconds()
     self.assertLess(0, t)
     time.sleep(t + 120)
+    self.callSlapos('node', 'status')
 
     # Check that postgresql backup has started
     # which contains this file: ./peertube_prod-dump.db
