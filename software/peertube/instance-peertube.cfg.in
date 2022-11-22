@@ -173,9 +173,8 @@ inline = {{ "${postgresql:pgdata-directory}/**" }}
 output = ${directory:srv}/exporter.exclude
 
 [peertube-database-resiliency-after-import-script]
-recipe = collective.recipe.template
-input = inline: #!/bin/sh
-  ${postgresql:bin}/pg_restore -h ${postgresql:pgdata-directory} -c -U peertube -d peertube_prod ${directory:srv}/backup/peertube_prod-dump.db
+recipe = slapos.recipe.template
+url = {{ tempalte_peertube_restore }}
 output = ${directory:srv}/runner-import-restore
 mode = 755
 

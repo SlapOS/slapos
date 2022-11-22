@@ -20,6 +20,7 @@ context =
   raw template_peertube_yaml      ${template-peertube-yaml:output}
   raw template_nginx_configration ${template-nginx-configuration:output}
   raw tempalte_peertube_service   ${template-peertube-service:output}
+  raw tempalte_peertube_restore   ${template-peertube-restore-script:output}
   raw postgresql10_location       ${postgresql10:location}
   raw tempalte_nginx_service      ${template-nginx-service:output}
   raw redis_binprefix             ${redis28:location}/bin
