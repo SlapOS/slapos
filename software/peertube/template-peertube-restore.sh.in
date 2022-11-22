@@ -1,0 +1,45 @@
+#!${dash-output:dash}
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# OR POSTGRESQL DATA WILL BE ERASED.
+
+# This script will import the dump of the postgresql database to the real
+# database. It is launched by the clone (importer) instance of theia
+# in the end of the import script.
+
+# Depending on the output, it will create a file containing
+# the status of the restoration (success or failure)
+
+
+# 1. Check the postgresql is running
+# > While the server is running, its PID is stored in the file postmaster.pid in the data directory.
+# https://www.postgresql.org/docs/current/server-start.html
+# which means if the postmaster.pid exist, then the postgresql is running.
+
+pid_file=$${postgresql:pgdata-directory}/postmaster.pid
+
+if [ -e "$pid_file" ]; then
+  echo "Postgresql pidfile postmaster.pid exits, assuming running. Aborting."
+  exit 1
+fi
+
+# 2.
+echo "Deleting existing database..."
+find "$${postgresql:pgdata-directory}" -mindepth 1 -delete
+
+# 3.
+echo "Starting postgresql..."
+$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}
+sleep 30
+# If mysql has stopped, abort
+if ! [ -d "$${postgresql:pgdata-directory}" ]; then
+  echo "postgresql exited, aborting."
+  exit 1
+fi
+
+# 4.
+echo "Importing data..."
+$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -c -U peertube -d peertube_prod $${directory:srv}/backup/peertube_prod-dump.db
+# Check if it failed?
+
+echo 'Backup restoration successfully completed.'
