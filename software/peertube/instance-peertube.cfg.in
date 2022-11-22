@@ -176,7 +176,6 @@ output = ${directory:srv}/exporter.exclude
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
   ${postgresql:bin}/pg_restore -h ${postgresql:pgdata-directory} -c -U peertube -d peertube_prod ${directory:peertube_directory}/peertube_prod-dump.db
-  cp -r $${directory:peertube_directory}/postgresql_back $${directory:srv}/postgresql
 output = ${directory:srv}/runner-import-restore
 mode = 755
 
