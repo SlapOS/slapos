@@ -193,13 +193,14 @@ logfile = ${directory:log}/crond.log
 recipe = slapos.recipe.template
 url = {{ tempalte_peertube_backup }}
 output = ${directory:etc}/${:_buildout_section_name_}
+mode = 0744
 
 [peertube-backup-cron]
 recipe = slapos.recipe.template
 url = {{ template_crontab_line }}
 output = ${directory:cron-lines}/${:_buildout_section_name_}
 script = ${peertube-backup-script:output}
-frequency = {{ slapparameter_dict.get('frequency', 'daily') }}
+frequency = {{ slapparameter_dict.get('frequency', '@daily') }}
 
 [activate-crontab-file]
 # XXX File is never removed

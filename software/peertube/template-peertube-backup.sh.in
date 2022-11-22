@@ -1,9 +1,4 @@
-echo "Hello Peertube"
+#!${dash-output:dash}
 
 # Dump the databse
-$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} -Fc peertube_prod > $${directory:peertube_directory}/peertube_prod-dump.db
-
-# For test the database contains expected content
-$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} --column-inserts --data-only --table=user peertube_prod > $${directory:peertube_directory}/peertube_prod-dump.sql
-
-cp -r $${directory:srv}/postgresql $${directory:peertube_directory}/postgresql_back
+$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} -Fc peertube_prod > $${directory:srv}/backup/peertube_prod-dump.db

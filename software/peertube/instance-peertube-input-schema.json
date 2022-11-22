@@ -4,6 +4,12 @@
   "description": "Parameters to instantiate Peertube",
   "additionalProperties": false,
   "properties": {
+    "frequency": {
+      "title": "Backup Frequency",
+      "description": "Backup Frequency",
+      "default": "",
+      "type": "string"
+    },
     "fronted-url": {
       "title": "Frontend URL",
       "description": "Frontend URL",
