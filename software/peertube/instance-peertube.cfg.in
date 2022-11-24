@@ -146,8 +146,6 @@ name = redis
 
 [peertube-passwd]
 recipe = slapos.cookbook:generate.password
-storage-path = ${directory:etc}/.peertube_user
-bytes = 8
 username = root
 
 [peertube-yaml]
@@ -169,7 +167,7 @@ output = ${directory:services}/peertube
 
 [peertube-database-resiliency-exclude-file]
 recipe = slapos.recipe.template:jinja2
-inline = {{ "${postgresql:pgdata-directory}/**" }}
+inline = {{ "${postgresql:pgdata-directory}/" }}
 output = ${directory:srv}/exporter.exclude
 
 [peertube-database-resiliency-after-import-script]
