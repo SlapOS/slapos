@@ -11,32 +11,30 @@
 # the status of the restoration (success or failure)
 
 
-# 1. Check the postgresql is running
-# > While the server is running, its PID is stored in the file postmaster.pid in the data directory.
-# https://www.postgresql.org/docs/current/server-start.html
-# which means if the postmaster.pid exist, then the postgresql is running.
-
-pid_file=$${postgresql:pgdata-directory}/postmaster.pid
-
-if [ -e "$pid_file" ]; then
-  echo "Postgresql pidfile postmaster.pid exits, assuming running. Aborting."
-  exit 1
-fi
-
-# 2. Restore database
-$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} --exit-on-error -c -d peertube_prod -U peertube $${directory:srv}/backup/peertube_prod-dump.db
-
-# 3.
-echo "Starting postgresql..."
-
-$${postgresql:bin}/psql -D $${postgresql:pgdata-directory}
-
 die() {
     echo "$*" 1>&2
     exit 1
 }
 
-# run psql on gitlab db
+pg_version=$${postgresql:pgdata-directory}/PG_VERSION
+
+tpgwait=60
+while ! [ -e "$pg_version" ]; do
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "PGdata directory not ready"
+    echo "I: PGdata directory is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+
+# # 2.
+echo "Starting postgresql..."
+
+$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
+
+postgres_pid=$!
+echo $postgres_pid
+
+# run psql
 psql() {
     $${postgresql:bin}/psql \
         -h $${postgresql:pgdata-directory}  \
@@ -57,12 +55,26 @@ while true; do
 done
 echo "I: PostgreSQL ready." 1>&2
 
-$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}
-sleep 30
-# If postgresql has stopped, abort
-if ! [ -d "$${postgresql:pgdata-directory}" ]; then
+sleep 5
+
+
+# Check the postgresql is running, if postgresql has stopped, abort
+# > While the server is running, its PID is stored in the file postmaster.pid in the data directory.
+# https://www.postgresql.org/docs/current/server-start.html
+# which means if the postmaster.pid exist, then the postgresql is running.
+pid_file=$${postgresql:pgdata-directory}/postmaster.pid
+if ! [ -e "$pid_file" ]; then
   echo "postgresql exited, aborting."
   exit 1
 fi
 
+$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${directory:srv}/backup/peertube_prod-dump.db
+
+pg_restore_pid=$!
+echo $pg_restore_pid
+wait $PID
+
 echo 'Backup restoration successfully completed.'
+
+# Allow slapos node instance to start the postgresql service
+kill $postgres_pid
