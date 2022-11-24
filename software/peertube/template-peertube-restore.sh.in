@@ -28,6 +28,9 @@ $${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} --exit-on-error
 
 # 3.
 echo "Starting postgresql..."
+
+$${postgresql:bin}/psql -D $${postgresql:pgdata-directory}
+
 die() {
     echo "$*" 1>&2
     exit 1

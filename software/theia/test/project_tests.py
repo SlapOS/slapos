@@ -265,37 +265,75 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
     peertube_conenction_info = self._getPeertubeConnexionParameters()
-    raise NotImplementedError(peertube_conenction_info)
-    # Change the email address of the user 'peertube'
-    output = subprocess.check_output(
-      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-      '-c', 'UPDATE "user" SET "email"=\'aaa\' WHERE "username"=\'root\''),
-      universal_newlines=True)
-    self.assertIn("UPDATE", output)
+    frontend_url = peertube_conenction_info['frontend-url']
+
+    frontend_url = self.connection_parameters['frontend-url']
+    # frontend_url: https://[2001:67c:1254:fd::9ee2]:9443
+    # self.connection_parameters
+    # {'backend-url': 'https://[2001:67c:1254:fd::9ee2]:9443', 'frontend-hostname': '[2001:67c:1254:fd::9ee2]:9443', 'frontend-url': 'https://[2001:67c:1254:fd::9ee2]:9443', 'password': '8ydTfRpv', 'username': 'root'}
+    response = requests.get(frontend_url + '/api/v1/oauth-clients/local', verify=False)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    try:
+      data = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube API is incorrect.")
+
+    client_id = data['client_id']
+    client_secret = data['client_secret']
+    username = self.connection_parameters['username']
+    password = self.connection_parameters['password']
+    auth_data = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'grant_type': 'password',
+        'response_type': 'code',
+        'username': username,
+        'password': password
+    }
+
+    auth_result = requests.post(frontend_url + '/api/v1/users/token', data=auth_data, verify=False)
+    try:
+      auth_result_json = auth_result.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube API is incorrect.")
+
+    token_type = auth_result_json['token_type']
+    access_token = auth_result_json['access_token']
+    headers = {
+        'Authorization': token_type + ' ' + access_token
+    }
+    video_name = "Small test video"
+    file_path = "../../peertube/small.mp4"
+    file_mime_type = guess_type(file_path)[0]
+
+    with open(file_path, 'rb') as f:
+        video_data = {
+            'channelId': 1,
+            'name': video_name,
+            'commentEnabled': False,
+        }
+        upload_response = requests.post(
+            frontend_url + '/api/v1/videos/upload',
+            headers=headers,
+            data=video_data,
+            files={'videofile': (os.path.basename(file_path), f, file_mime_type)},
+            verify=False
+        )
+    try:
+      video_ids = upload_response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube API is incorrect.")
+    # e.g: {'video': {'id': 7, 'shortUUID': 'nrnKJNCsRP7NkwRr51TK3e', 'uuid': 'ad9ae99d-07db-4e4c-adc3-73566d59a4c5'}}
+    self.assertIn('video', video_ids)
 
     # Checked the modification has been updated in the database
     output = subprocess.check_output(
       (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-      '-c', 'SELECT * FROM "user"'),
+      '-c', 'SELECT * FROM "video"'),
       universal_newlines=True)
-    self.assertIn("aaa", output)
-
-    # Change the email address of the user 'peertube'
-    output = subprocess.check_output(
-      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-       '-c', 'UPDATE "user" SET "email"=\'bbb\' WHERE "username"=\'root\''),
-      universal_newlines=True)
-    self.assertIn("UPDATE", output)
-
-    # Checked the modification has been updated in the database
-    output = subprocess.check_output(
-      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-      '-c', 'SELECT * FROM "user"'),
-      universal_newlines=True)
-    self.assertIn("bbb", output)
+    self.assertIn("Small test video", output)
 
     # Do a fake periodically update
-
     # Compute backup date in the near future
     soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
     frequency = '%d * * * *' % soon.minute
@@ -318,14 +356,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     self.callSlapos('node', 'status')
 
     # Check that postgresql backup has started
-    # which contains this file: ./peertube_prod-dump.db
-    postgresql_backup = os.path.join(postgresql_partition, 'var', 'www', 'peertube')
-    self.assertIn('peertube_prod-dump.sql', os.listdir(postgresql_backup))
-
-    # Check the backup contains the changes
-    with open(os.path.join(psql_backup, 'peertube_prod-dump.sql')) as f:
-      msg = "Postgres backup peertube_prod-dump.sql is not up to date"
-      self.assertIn("bbb", f.read(), msg)
+    postgresql_backup = os.path.join(postgresql_partition, 'srv', 'backup')
+    self.assertIn('peertube_prod-dump.db', os.listdir(postgresql_backup))
 
   def _checkTakeover(self):
     super(TestTheiaResiliencePeertube, self)._checkTakeover()
@@ -334,22 +366,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
-
-    # Check that the mariadb catalog is not yet restored
-    output = subprocess.check_output(
-      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-      '-c', 'SELECT * FROM "user"'),
-      universal_newlines=True)
-    self.assertNotIn("bbb", output)
-
-    # Stop all services
-    print("Stop all services")
-    self.callSlapos('node', 'stop', 'all')
-
-    # Manually restore postgresql from backup
-    postgresql_restore_script = os.path.join(mariadb_partition, 'bin', 'restore-from-backup')
-    print("Restore mariadb from backup")
-    subprocess.check_call(postgresql_restore_script)
 
     # Check that the test instance is properly redeployed after restoring postgresql
     # This restarts the services and checks the promises of the test instance
@@ -360,9 +376,9 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # Check that the postgresql catalog was properly restored
     output = subprocess.check_output(
       (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-      '-c', 'SELECT * FROM "user"'),
+      '-c', 'SELECT * FROM "video"'),
       universal_newlines=True)
-    self.assertIn("bbb", output)
+    self.assertIn("Small test video", output)
 
   def _getPeertubePartition(self, servicename):
     p = subprocess.Popen(
