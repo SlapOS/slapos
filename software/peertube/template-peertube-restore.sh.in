@@ -78,3 +78,8 @@ echo 'Backup restoration successfully completed.'
 
 # Allow slapos node instance to start the postgresql service
 kill $postgres_pid
+
+if [ -e "$pid_file" ]; then
+  echo "postgresql exited, aborting."
+  rm $pid_file
+fi
