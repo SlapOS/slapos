@@ -24,7 +24,7 @@ if [ -e "$pid_file" ]; then
 fi
 
 # 2. Restore database
-$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -C -c -U peertube $${directory:srv}/backup/peertube_prod-dump.db
+$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} --exit-on-error -c -d peertube_prod -U peertube $${directory:srv}/backup/peertube_prod-dump.db
 
 # 3.
 echo "Starting postgresql..."
