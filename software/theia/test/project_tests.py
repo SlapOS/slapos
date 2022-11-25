@@ -276,8 +276,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
     client_id = data['client_id']
     client_secret = data['client_secret']
-    username = self.peertube_conenction_info['username']
-    password = self.peertube_conenction_info['password']
+    username = peertube_conenction_info['username']
+    password = peertube_conenction_info['password']
     auth_data = {
         'client_id': client_id,
         'client_secret': client_secret,
