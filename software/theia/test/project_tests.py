@@ -276,8 +276,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
     client_id = data['client_id']
     client_secret = data['client_secret']
-    username = self.connection_parameters['username']
-    password = self.connection_parameters['password']
+    username = self.peertube_conenction_info['username']
+    password = self.peertube_conenction_info['password']
     auth_data = {
         'client_id': client_id,
         'client_secret': client_secret,
@@ -368,6 +368,37 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # Process twice to propagate state change
     for _ in range(2):
       self._processEmbeddedInstance(self.test_instance_max_retries)
+
+    peertube_conenction_info = self._getPeertubeConnexionParameters()
+    frontend_url = peertube_conenction_info['frontend-url']
+    postgresql_srv = os.path.join(postgresql_partition, 'var', 'www', 'peertube', 'storage')
+
+    # Get the video path, the part of this path will be used in the video URL
+    # e.g: var/www/peertube/storage/streaming-playlists/hls/XXXX/YYYY.mp4
+
+    # path before hls dir
+    hls_path = os.path.join(storage_path, 'streaming-playlists', 'hls')
+
+    #Choose only one video path
+    video_path = None
+    for root, dirs, files in os.walk(hls_path):
+      for a_file in files:
+        if a_file.endswith('.mp4'):
+          video_path = os.path.join(root, a_file)
+          break
+      else:
+        continue
+      break
+
+    # path like "streaming-playlists/hls/XXXX/YYYY.mp4"
+    self.assertIn('streaming-playlists', video_path)
+    streaming-playlists_path = video_path[video_path.index('streaming-playlists'):]
+
+    video_url = frontend_url + 'static/' + streaming_video_list
+    response = requests.get(video_url, verify=False)
+
+    # The video mp4 file is accesible through the URL
+    self.assertEqual(requests.codes['OK'], response.status_code)
 
     # Check that the postgresql catalog was properly restored
     output = subprocess.check_output(
