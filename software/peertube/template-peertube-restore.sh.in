@@ -26,13 +26,20 @@ while ! [ -e "$pg_version" ]; do
     sleep 1
 done
 
-# # 2.
-echo "Starting postgresql..."
-
-$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
-
-postgres_pid=$!
-echo $postgres_pid
+# 2. Make sure the postgresql process is not running.
+# Quote from the postgresql doc:
+# > While the server is running, its PID is stored in the file postmaster.pid in the data directory.
+# https://www.postgresql.org/docs/current/server-start.html
+# which means if the postmaster.pid exist, then the postgresql is running.
+pid_file=$${postgresql:pgdata-directory}/postmaster.pid
+if [ -e "$pid_file" ]; then
+  echo "postgresql is running, continue."
+else
+  echo "Starting postgresql..."
+  $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
+  postgres_pid=$!
+  echo $postgres_pid
+fi
 
 # run psql
 psql() {
@@ -57,17 +64,14 @@ echo "I: PostgreSQL ready." 1>&2
 
 sleep 5
 
-
 # Check the postgresql is running, if postgresql has stopped, abort
-# > While the server is running, its PID is stored in the file postmaster.pid in the data directory.
-# https://www.postgresql.org/docs/current/server-start.html
-# which means if the postmaster.pid exist, then the postgresql is running.
 pid_file=$${postgresql:pgdata-directory}/postmaster.pid
 if ! [ -e "$pid_file" ]; then
   echo "postgresql exited, aborting."
   exit 1
 fi
 
+# Restore the database
 $${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${directory:srv}/backup/peertube_prod-dump.db
 
 pg_restore_pid=$!
@@ -76,10 +80,9 @@ wait $PID
 
 echo 'Backup restoration successfully completed.'
 
-# Allow slapos node instance to start the postgresql service
-kill $postgres_pid
-
+# The database process should be stopped to allow
+#"slapos node instance" to starts the real postgresql service
 if [ -e "$pid_file" ]; then
-  echo "postgresql exited, aborting."
-  rm $pid_file
+  echo "Stoping postgresql..."
+  pkill -9 -f "$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}"
 fi
