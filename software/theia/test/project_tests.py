@@ -267,7 +267,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     peertube_conenction_info = self._getPeertubeConnexionParameters()
     frontend_url = peertube_conenction_info['frontend-url']
 
-    frontend_url = self.connection_parameters['frontend-url']
     # frontend_url: https://[2001:67c:1254:fd::9ee2]:9443
     # self.connection_parameters
     # {'backend-url': 'https://[2001:67c:1254:fd::9ee2]:9443', 'frontend-hostname': '[2001:67c:1254:fd::9ee2]:9443', 'frontend-url': 'https://[2001:67c:1254:fd::9ee2]:9443', 'password': '8ydTfRpv', 'username': 'root'}
