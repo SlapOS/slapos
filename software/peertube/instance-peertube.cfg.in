@@ -77,7 +77,7 @@ link-binary = ${postgresql:bin}/postgres ${postgresql:bin}/psql
 
 [nginx-service]
 recipe = slapos.recipe.template
-url = {{ tempalte_nginx_service }}
+url = {{ template_nginx_service }}
 output = ${directory:services}/nginx
 virtual-depends =
   ${nginx-configuration:ip}
@@ -162,7 +162,7 @@ config-url = ${peertube-parameters:frontend-url}
 
 [peertube-service]
 recipe = slapos.recipe.template
-url = {{ tempalte_peertube_service }}
+url = {{ template_peertube_service }}
 output = ${directory:services}/peertube
 
 [peertube-database-resiliency-exclude-file]
@@ -172,7 +172,7 @@ output = ${directory:srv}/exporter.exclude
 
 [peertube-database-resiliency-after-import-script]
 recipe = slapos.recipe.template
-url = {{ tempalte_peertube_restore }}
+url = {{ template_peertube_restore }}
 output = ${directory:srv}/runner-import-restore
 mode = 755
 
@@ -187,7 +187,7 @@ logfile = ${directory:log}/crond.log
 
 [peertube-backup-script]
 recipe = slapos.recipe.template
-url = {{ tempalte_peertube_backup }}
+url = {{ template_peertube_backup }}
 output = ${directory:etc}/${:_buildout_section_name_}
 mode = 0744
 
@@ -272,8 +272,7 @@ init =
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-frontend-hostname = ${frontend:connection-domain}
 backend-url = ${frontend:config-url}
 frontend-url = ${peertube-parameters:frontend-url}
 password = ${peertube-passwd:passwd}
-username = root
+username = ${peertube-passwd:username}

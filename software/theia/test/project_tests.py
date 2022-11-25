@@ -119,7 +119,7 @@ class ERP5Mixin(object):
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
 
-class TestERP5ResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
+class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
@@ -267,9 +267,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     peertube_conenction_info = self._getPeertubeConnexionParameters()
     frontend_url = peertube_conenction_info['frontend-url']
 
-    # frontend_url: https://[2001:67c:1254:fd::9ee2]:9443
-    # self.connection_parameters
-    # {'backend-url': 'https://[2001:67c:1254:fd::9ee2]:9443', 'frontend-hostname': '[2001:67c:1254:fd::9ee2]:9443', 'frontend-url': 'https://[2001:67c:1254:fd::9ee2]:9443', 'password': '8ydTfRpv', 'username': 'root'}
     response = requests.get(frontend_url + '/api/v1/oauth-clients/local', verify=False)
     self.assertEqual(requests.codes['OK'], response.status_code)
     try:

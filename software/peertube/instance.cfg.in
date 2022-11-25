@@ -19,13 +19,13 @@ context =
   raw ipv4_random                 $${slap-configuration:ipv4-random}
   raw template_peertube_yaml      ${template-peertube-yaml:output}
   raw template_nginx_configration ${template-nginx-configuration:output}
-  raw tempalte_peertube_service   ${template-peertube-service:output}
-  raw tempalte_peertube_restore   ${template-peertube-restore-script:output}
+  raw template_peertube_service   ${template-peertube-service:output}
+  raw template_peertube_restore   ${template-peertube-restore-script:output}
   raw postgresql10_location       ${postgresql10:location}
-  raw tempalte_nginx_service      ${template-nginx-service:output}
+  raw template_nginx_service      ${template-nginx-service:output}
   raw redis_binprefix             ${redis28:location}/bin
   raw template_dcron_service      ${template-dcron-service:output}
-  raw tempalte_peertube_backup    ${template-peertube-backup-script:output}
+  raw template_peertube_backup    ${template-peertube-backup-script:output}
   raw template_crontab_line       ${template-crontab-line:output}
   raw coreutils_cat               ${coreutils-output:cat}
   raw template_crontab            ${template-crontab:output}
