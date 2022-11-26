@@ -301,7 +301,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
         'Authorization': token_type + ' ' + access_token
     }
     video_name = "Small test video"
-    file_path = "../../peertube/small.mp4"
+    file_path = "../../peertube/test/small.mp4"
+    print(file_path = os.path.realpath(__file__))
     file_mime_type = guess_type(file_path)[0]
 
     with open(file_path, 'rb') as f:
