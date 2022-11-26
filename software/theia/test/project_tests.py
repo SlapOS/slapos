@@ -38,6 +38,8 @@ import requests
 
 from datetime import datetime, timedelta
 from six.moves.urllib.parse import urljoin
+from mimetypes import guess_type
+from json.decoder import JSONDecodeError
 
 from slapos.testing.testcase import installSoftwareUrlList
 
