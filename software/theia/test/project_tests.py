@@ -302,7 +302,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     }
     video_name = "Small test video"
     file_path = "../../peertube/test/small.mp4"
-    print(file_path = os.path.realpath(__file__))
+    pwd_file_path = os.path.realpath(__file__)
+    print(pwd_file_path)
     file_mime_type = guess_type(file_path)[0]
 
     with open(file_path, 'rb') as f:
