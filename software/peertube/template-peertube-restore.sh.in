@@ -46,9 +46,20 @@ else
   $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
   postgres_pid=$!
   echo $postgres_pid
+  echo "Anyway, the postgresql is running..."
 fi
 
-echo "Anyway, the postgresql is running..."
+if ! [ -e "$pid_file" ]; then
+  echo "postgresql exited..."
+fi
+
+tpgwait=60
+while ! [ -e "$pid_file" ]; do
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pid_file not exist"
+    echo "pid_file not exist; will retry $tpgwait times..." 1>&2
+    sleep 1
+done
 
 # run psql
 psql() {
@@ -75,8 +86,9 @@ echo "Ready to check postgresql is running..."
 
 # sleep 5
 
+echo "Check postgresql is running again"
+
 # Check the postgresql is running, if postgresql has stopped, abort
-pid_file=$${postgresql:pgdata-directory}/postmaster.pid
 if ! [ -e "$pid_file" ]; then
   echo "postgresql exited, aborting."
   exit 1
