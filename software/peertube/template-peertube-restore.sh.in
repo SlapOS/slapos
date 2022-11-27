@@ -43,9 +43,8 @@ if [ -e "$pid_file" ]; then
   echo "postgresql is running, continue."
 else
   echo "Starting postgresql..."
-  output=$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
-  echo $output
-# $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
+  echo ls $${postgresql:pgdata-directory}
+  $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
 # postgres_pid=$!
 #  echo $postgres_pid
 #  wait $postgres_pid
