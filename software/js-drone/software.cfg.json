@@ -8,6 +8,7 @@
       "software-type": "default",
       "description": "Default",
       "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
       "index": 0
     }
   }
