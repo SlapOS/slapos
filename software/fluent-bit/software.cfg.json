@@ -7,6 +7,7 @@
       "title": "Default",
       "description": "Fluent-bit",
       "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
       "index": 0
     }
   }
