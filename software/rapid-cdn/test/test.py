@@ -977,7 +977,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     if backend_reached:
       self.assertEqual('TestBackend', headers.pop('Server', ''))
-      self.assertKeyWithPop('Date', headers)
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
@@ -4623,7 +4622,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # Prove that Date header with value specific_date send by backend is NOT
     # modified by the CDN, but some Date header is added, if backend sends non
     self.assertEqual(result_with_date.headers['Date'], specific_date)
-    self.assertNotEqual(result_normal.headers['Date'], specific_date)
+    self.assertNotIn('Date', result_normal.headers)
 
   def test_https_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('https-url-netloc-list')
