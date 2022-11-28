@@ -10,12 +10,6 @@
 # Depending on the output, it will create a file containing
 # the status of the restoration (success or failure)
 
-slapos node stop all
-
-slapos_node_status_pid=$!
-echo $slapos_node_status_pid
-wait $slapos_node_status_pid
-
 die() {
     echo "$*" 1>&2
     exit 1
@@ -40,11 +34,8 @@ echo "Postgresql data directory is ready"
 # which means if the postmaster.pid exist, then the postgresql is running.
 pid_file=$${postgresql:pgdata-directory}/postmaster.pid
 if [ -e "$pid_file" ]; then
-  echo "Postgresql is running, continue."
+  echo "Postgresql is running, this should not happened, aborting."
 else
-  echo "Stop postgresql service"
-  $${postgresql:bin}/pg_ctl -D $${postgresql:pgdata-directory} stop
-  wait
   echo "Starting postgresql..."
   $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}
   wait
