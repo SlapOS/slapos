@@ -60,8 +60,6 @@ frontend http-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
-  # setup Date
-  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
 {%- for slave_instance in backend_slave_list -%}
 {{ frontend_entry(slave_instance, 'http', False) }}
 {%- endfor %}
@@ -73,8 +71,6 @@ frontend https-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
-  # setup Date
-  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
 {%- for slave_instance in backend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', False) }}
 {%- endfor %}
