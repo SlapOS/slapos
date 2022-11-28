@@ -337,7 +337,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # Compute backup date in the near future
     soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
     frequency = '%d * * * *' % soon.minute
-    params = '_={"frequency": "%s"}' % frequency
+    params = '"frequency"="%s"' % frequency
 
     # Update Peertube parameters
     print('Requesting Peertube with parameters %s' % params)
@@ -366,6 +366,10 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
+
+    # Stop all services
+    print("Stop all services")
+    self.callSlapos('node', 'stop', 'all')
 
     # Check that the test instance is properly redeployed after restoring postgresql
     # This restarts the services and checks the promises of the test instance

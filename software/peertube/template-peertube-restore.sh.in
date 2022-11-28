@@ -40,25 +40,20 @@ echo "Postgresql data directory is ready"
 # which means if the postmaster.pid exist, then the postgresql is running.
 pid_file=$${postgresql:pgdata-directory}/postmaster.pid
 if [ -e "$pid_file" ]; then
-  echo "postgresql is running, continue."
+  echo "Postgresql is running, continue."
 else
+  echo "Stop postgresql service"
+  $${postgresql:bin}/pg_ctl -D $${postgresql:pgdata-directory} stop
+  wait
   echo "Starting postgresql..."
-  echo ls $${postgresql:pgdata-directory}
-  $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
-# postgres_pid=$!
-#  echo $postgres_pid
-#  wait $postgres_pid
-  echo "Anyway, the postgresql is running..."
-fi
-
-if ! [ -e "$pid_file" ]; then
-  echo "postgresql exited..."
+  $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}
+  wait
 fi
 
 tpgwait=60
 while ! [ -e "$pid_file" ]; do
     tpgwait=$(( $tpgwait - 1 ))
-    test $tpgwait = 0 && die "pid_file not exist"
+    test $tpgwait = 0 && die "Can not create pid_file"
     echo "pid_file not exist; will retry $tpgwait times..." 1>&2
     sleep 1
 done
@@ -76,15 +71,15 @@ echo "Ready to check postgresql is running..."
 
 # initial db setup
 # ( first quering PG several times waiting a bit till postgresql is started and ready )
-# tpgwait=5
-# while true; do
-#     pgtables="$(psql -c '\d' 2>&1)" && break
-#     tpgwait=$(( $tpgwait - 1 ))
-#     test $tpgwait = 0 && die "pg query problem"
-#     echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
-#     sleep 1
-# done
-# echo "I: PostgreSQL ready." 1>&2
+tpgwait=10
+while true; do
+    pgtables="$(psql -c '\d' 2>&1)" && break
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pg query problem"
+    echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+echo "I: PostgreSQL ready." 1>&2
 
 # sleep 5
 
@@ -114,5 +109,13 @@ if [ -e "$pid_file" ]; then
   echo "Stoping postgresql..."
   pkill -9 -f "$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}"
 fi
+
+tpgwait=60
+while [ -e "$pid_file" ]; do
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "Pid file always exist"
+    echo "I: Pid file still exist; will retry $tpgwait times..." 1>&2
+    sleep 1
+done
 
 echo "Postgresql process killed"
