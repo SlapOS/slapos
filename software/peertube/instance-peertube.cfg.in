@@ -52,6 +52,12 @@ ssl = ${:etc}/ssl
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
 
+[postgresql-address]
+recipe = slapos.cookbook:free_port
+minimum = 5432
+maximum = 5452
+ip = {{ ipv4_random }}
+
 [postgresql]
 recipe = slapos.cookbook:postgres
 bin = {{ postgresql10_location }}/bin/
@@ -61,10 +67,10 @@ superuser = peertube
 password = ${postgresql-password:passwd}
 pgdata-directory = ${directory:srv}/postgresql
 
-ipv4 = {{ ipv4_random }}
+ipv4 = ${postgresql-address:ip}
 # disable listening on ipv6
 ipv6 =
-port = 5432
+port = ${postgresql-address:port}
 
 [postgresql-binary-link]
 recipe = slapos.cookbook:symbolic.link
