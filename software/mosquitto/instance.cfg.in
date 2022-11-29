@@ -1,7 +1,5 @@
 [buildout]
 parts =
-  directory
-  mosquitto-config-file
   mosquitto-service
 
 eggs-directory = {{ buildout["eggs-directory"] }}
@@ -39,6 +37,6 @@ install =
 
 [mosquitto-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ buildout["parts-directory"] }}/mosquitto/sbin/mosquitto -c ${mosquitto-config-file:location}
+command-line = {{ mosquitto_location }}/sbin/mosquitto -c ${mosquitto-config-file:location}
 wrapper-path = ${directory:service}/mosquitto-service
 output = $${:wrapper-path}
