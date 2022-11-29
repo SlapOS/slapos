@@ -1,2 +1,2 @@
 # $${:_buildout_section_name_}
-$${:frequency} $${:script}
+$${:frequency} ID=$${:name} $${:script}

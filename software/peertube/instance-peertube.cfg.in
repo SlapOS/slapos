@@ -203,13 +203,14 @@ recipe = slapos.recipe.template
 url = {{ template_crontab_line }}
 output = ${directory:bin}/${:_buildout_section_name_}
 script = ${peertube-backup-script:output}
+name = ${:_buildout_section_name_}
 frequency = {{ slapparameter_dict.get('frequency', '@daily') }}
 
 [activate-crontab-file]
 # XXX File is never removed
 recipe = plone.recipe.command
 stop-on-error = true
-command = {{ coreutils_cat }} ${peertube-backup-cron:output} | {{ dcron_output }} -c 2>/dev/null ${directory:crontabs} -
+command = {{ coreutils_cat }} {{ template_crontab }} ${peertube-backup-cron:output} | {{ dcron_output }} -c ${directory:crontabs} -
 
 [frontend]
 <= slap-connection
