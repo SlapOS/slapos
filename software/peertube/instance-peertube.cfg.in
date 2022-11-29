@@ -209,7 +209,7 @@ frequency = {{ slapparameter_dict.get('frequency', '@daily') }}
 # XXX File is never removed
 recipe = plone.recipe.command
 stop-on-error = true
-command = {{ coreutils_cat }} ${peertube-backup-cron:output} | {{ dcron_output }} -c ${directory:crontabs} -
+command = {{ coreutils_cat }} ${peertube-backup-cron:output} | {{ dcron_output }} -c 2>/dev/null ${directory:crontabs} -
 
 [frontend]
 <= slap-connection
