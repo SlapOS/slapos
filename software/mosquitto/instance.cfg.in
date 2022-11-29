@@ -1,6 +1,7 @@
 [buildout]
 parts =
   directory
+  mosquitto-config-file
   mosquitto-service
 
 eggs-directory = {{ buildout["eggs-directory"] }}
