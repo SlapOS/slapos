@@ -336,8 +336,8 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # Do a fake periodically update
     # Compute backup date in the near future
     soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
-    frequency = '%d * * * *' % soon.minute
-    params = '"frequency"="%s"' % frequency
+    frequency = "%d * * * *" % soon.minute
+    params = 'frequency=%s' % frequency
 
     # Update Peertube parameters
     print('Requesting Peertube with parameters %s' % params)

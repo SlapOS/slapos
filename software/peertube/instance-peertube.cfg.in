@@ -35,7 +35,6 @@ crontabs = ${:etc}/crontabs
 cron-entries = ${:etc}/cron.d
 cronstamps = ${:etc}/cronstamps
 cron-lines = ${:etc}/cron.lines
-nginx = ${:etc}/nginx
 peertube_nginx_log = ${:log}/nginx
 varnginx = ${:var}/nginx
 services = ${:etc}/service
@@ -202,7 +201,7 @@ mode = 0744
 [peertube-backup-cron]
 recipe = slapos.recipe.template
 url = {{ template_crontab_line }}
-output = ${directory:cron-lines}/${:_buildout_section_name_}
+output = ${directory:bin}/${:_buildout_section_name_}
 script = ${peertube-backup-script:output}
 frequency = {{ slapparameter_dict.get('frequency', '@daily') }}
 
@@ -210,7 +209,7 @@ frequency = {{ slapparameter_dict.get('frequency', '@daily') }}
 # XXX File is never removed
 recipe = plone.recipe.command
 stop-on-error = true
-command = {{ coreutils_cat }} {{ template_crontab }} ${peertube-backup-cron:output} | {{ dcron_output }} -c ${directory:crontabs} -
+command = {{ coreutils_cat }} ${peertube-backup-cron:output} | {{ dcron_output }} -c ${directory:crontabs} -
 
 [frontend]
 <= slap-connection
