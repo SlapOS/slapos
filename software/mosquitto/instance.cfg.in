@@ -26,8 +26,18 @@ promise = ${:etc}/promise/
 log = ${:var}/log
 bin = ${:home}/bin
 
+[mosquitto-config-file]
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.cfg
+ip = ${instance-parameter:ipv4-random}
+install =
+  config = open(self.options["location"], "w")
+  ip = self.options["ip"]
+  port = ${instance-parameter:configuration.port}
+  config.write(f"listener {port} {ip}\nprotocol mqtt")
+
 [mosquitto-service]
 recipe  = slapos.cookbook:wrapper
-command-line = {{ buildout["parts-directory"] }}/mosquitto/sbin/mosquitto
+command-line = {{ buildout["parts-directory"] }}/mosquitto/sbin/mosquitto -c ${mosquitto-config-file:location}
 wrapper-path = ${directory:service}/mosquitto-service
 output = $${:wrapper-path}
