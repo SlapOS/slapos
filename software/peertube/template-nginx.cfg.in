@@ -56,7 +56,6 @@ upstream backend {
 
 server {
   listen [$${nginx-configuration:ip}]:$${nginx-configuration:port};
-  listen $${slap-configuration:ipv4-random}:$${peertube-parameters:ipv4-port};
 
   access_log $${directory:peertube_nginx_log}/peertube.access.log; # reduce I/0 with buffer=10m flush=5m
   error_log  $${directory:peertube_nginx_log}/peertube.error.log;

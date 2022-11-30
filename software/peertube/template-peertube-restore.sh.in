@@ -38,7 +38,6 @@ if [ -e "$pid_file" ]; then
 else
   echo "Starting postgresql..."
   $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}
-  wait
 fi
 
 tpgwait=60
