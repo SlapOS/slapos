@@ -54,3 +54,7 @@ recipe  = slapos.cookbook:wrapper
 command-line = {{ mosquitto_location }}/sbin/mosquitto -c ${mosquitto-config-file:location}
 wrapper-path = ${directory:service}/mosquitto-service
 output = $${:wrapper-path}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = mqtt://${mosquitto-listen-promise:hostname}:${mosquitto-listen-promise:port}
