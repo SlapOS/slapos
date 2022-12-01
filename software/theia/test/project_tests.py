@@ -240,7 +240,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
 class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 12
-  backup_max_tries = 200
+  backup_max_tries = 480
   backup_wait_interval = 60
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = peertube_software_release_url
