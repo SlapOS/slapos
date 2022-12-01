@@ -13,6 +13,12 @@ environment =
   XORG_LOCK_DIR=${xserver:lock-dir}
   DISPLAY=${xserver:display}
 
+[enable-matieria-theme]
+inline =
+  [Settings]
+  gtk-font-name=FreeSans,12
+  gtk-theme-name=Materia
+
 [xdotool]
 recipe = slapos.cookbook:wrapper
 command-line = {{ xdotool_bin }}

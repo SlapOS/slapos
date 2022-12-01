@@ -61,6 +61,7 @@ extra-context =
   raw gcc_location       {{ gcc_location }}
   raw git_bin_dir        {{ git_location }}
   raw gtk3_location      {{ gtk3_location }}
+  raw gtk_materia_theme  {{ gtk_materia_theme}}
   raw matiec_location    {{ matiec_location }}
   raw mesa_location      {{ mesa_location }}
   raw nginx_executable   {{ nginx_executable }}
