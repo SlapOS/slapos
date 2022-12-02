@@ -245,28 +245,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = peertube_software_release_url
 
-  def _waitTakeoverReady(self, takeover_url, start, maxtries, interval):
-    export_exitfile = self.getExportExitfile()
-    export_errorfile =  self.getExportErrorfile()
-    tries = self._waitScriptDone(
-      'Export', start, export_exitfile, export_errorfile, maxtries, interval)
-    import_exitfile = self.getImportExitfile()
-    import_errorfile =  self.getImportErrorfile()
-    tries = self._waitScriptDone(
-      'Import', start, import_exitfile, import_errorfile, tries, interval)
-    print('tries after Import is: ' + str(tries))
-    for _ in range(40):
-      info = self._getTakeoverPage(takeover_url)
-      if "No backup downloaded yet, takeover should not happen now." in info:
-        print('Takeover page still reports export script in progress')
-      elif "<b>Importer script(s) of backup in progress:</b> True" in info:
-        print('Takeover page still reports import script in progress')
-      else:
-        return
-      time.sleep(interval)
-    return
-    self.fail('Takeover page failed to report readiness')
-
   def _getPeertubeConnexionParameters(self, instance_type='export'):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,

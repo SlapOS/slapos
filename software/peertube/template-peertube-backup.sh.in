@@ -1,4 +1,4 @@
 #!${dash-output:dash}
 
 # Dump the databse
-$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} -Fc peertube_prod > $${directory:srv}/backup/peertube_prod-dump.db
+$${postgresql:bin}/pg_dump -h $${postgresql:pgdata-directory} -U $${postgresql:superuser} -Fc peertube_prod > $${peertube-backup-script:backup-file}

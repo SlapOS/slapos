@@ -93,7 +93,7 @@ fi
 echo "Postgresql is running, ready to restore"
 
 # Restore the database
-$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${directory:srv}/backup/peertube_prod-dump.db || {
+$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${peertube-backup-script:backup-file} || {
   RESTORE_EXIT_CODE=$?
   echo 'Backup restoration failed.'
   exit $RESTORE_EXIT_CODE

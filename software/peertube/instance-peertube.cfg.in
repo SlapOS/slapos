@@ -195,7 +195,8 @@ logfile = ${directory:log}/crond.log
 [peertube-backup-script]
 recipe = slapos.recipe.template
 url = {{ template_peertube_backup }}
-output = ${directory:etc}/${:_buildout_section_name_}
+backup-file = ${directory:srv}/backup/peertube_prod-dump.db
+output = ${directory:bin}/${:_buildout_section_name_}
 mode = 0744
 
 [peertube-backup-cron]
