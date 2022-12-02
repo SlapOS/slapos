@@ -70,7 +70,7 @@ echo "Ready to check postgresql is running..."
 
 # initial db setup
 # ( first quering PG several times waiting a bit till postgresql is started and ready )
-tpgwait=10
+tpgwait=60
 while true; do
     pgtables="$(psql -c '\d' 2>&1)" && break
     tpgwait=$(( $tpgwait - 1 ))
