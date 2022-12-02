@@ -35,9 +35,18 @@ echo "Postgresql data directory is ready"
 pid_file=$${postgresql:pgdata-directory}/postmaster.pid
 if [ -e "$pid_file" ]; then
   echo "Postgresql is running, this should not happened, aborting."
-else
-  echo "Starting postgresql..."
-  $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}
+  exit 1
+fi
+
+echo "Starting postgresql..."
+$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
+postgresql_pid=$!
+trap "kill $postgresql_pid" EXIT TERM INT
+sleep 30
+# If postgres has stopped, abort
+if ! [ -d /proc/$postgresql_pid ]; then
+  echo "postgresql exited, aborting."
+  exit 1
 fi
 
 tpgwait=60
@@ -84,28 +93,11 @@ fi
 echo "Postgresql is running, ready to restore"
 
 # Restore the database
-$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${directory:srv}/backup/peertube_prod-dump.db
+$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${directory:srv}/backup/peertube_prod-dump.db || {
+  RESTORE_EXIT_CODE=$?
+  echo 'Backup restoration failed.'
+  exit $RESTORE_EXIT_CODE
+}
 
 echo "Postgresql restore finished"
-pg_restore_pid=$!
-echo $pg_restore_pid
-wait $pg_restore_pid
 
-echo "Backup restoration successfully completed."
-
-# The database process should be stopped to allow
-#"slapos node instance" to starts the real postgresql service
-if [ -e "$pid_file" ]; then
-  echo "Stoping postgresql..."
-  pkill -9 -f "$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory}"
-fi
-
-tpgwait=60
-while [ -e "$pid_file" ]; do
-    tpgwait=$(( $tpgwait - 1 ))
-    test $tpgwait = 0 && die "Pid file always exist"
-    echo "I: Pid file still exist; will retry $tpgwait times..." 1>&2
-    sleep 1
-done
-
-echo "Postgresql process killed"
