@@ -1,0 +1,11 @@
+#!${dash-output:dash}
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# OR POSTGRESQL DATA WILL BE ERASED.
+
+# This script will import the dump of the postgresql database to the real
+# database. It is launched by the clone (importer) instance of theia
+# in the end of the import script.
+
+# Depending on the output, it will create a file containing
+# the status of the restoration (success or failure)
