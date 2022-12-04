@@ -1,0 +1,6 @@
+[buildout]
+extends =
+  {{ template_erp5 }}
+
+[publish-early]
+erp5-wcfs-test-bin = {{ erp5_wcfs_test_bin }}
