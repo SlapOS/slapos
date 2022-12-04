@@ -42,12 +42,7 @@ echo "Starting postgresql..."
 $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
 postgresql_pid=$!
 trap "kill $postgresql_pid" EXIT TERM INT
-sleep 30
-# If postgres has stopped, abort
-if ! [ -d /proc/$postgresql_pid ]; then
-  echo "postgresql exited, aborting."
-  exit 1
-fi
+
 
 tpgwait=60
 while ! [ -e "$pid_file" ]; do
@@ -56,6 +51,12 @@ while ! [ -e "$pid_file" ]; do
     echo "pid_file not exist; will retry $tpgwait times..." 1>&2
     sleep 1
 done
+
+# If postgres has stopped, abort
+if ! [ -d /proc/$postgresql_pid ]; then
+  echo "postgresql exited, aborting."
+  exit 1
+fi
 
 # run psql
 psql() {
@@ -74,6 +75,7 @@ tpgwait=60
 while true; do
     pgtables="$(psql -c '\d' 2>&1)"
     ls $${postgresql:pgdata-directory}
+    echo $${postgresql:pgdata-directory}
     echo $pgtables
     pgtables="$(psql -c '\d' 2>&1)" && break
     tpgwait=$(( $tpgwait - 1 ))
