@@ -33,7 +33,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', '..', 'test.cfg')))
 
 
 setup_module_executed = False
