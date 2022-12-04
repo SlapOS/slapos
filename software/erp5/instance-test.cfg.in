@@ -1,0 +1,18 @@
+[buildout]
+extends =
+  {{ template }}
+
+[dynamic-template-erp5-test-parameters]
+bin = {{ erp5_wcfs_test_bin }}
+
+[dynamic-template-erp5-test]
+<= jinja2-template-base
+url = {{ template_erp5_test }}
+filename = instance-erp5-test.cfg
+extra-context =
+  key template_erp5 dynamic-template-erp5:output
+  key erp5_wcfs_test_bin dynamic-template-erp5-test-parameters:bin
+
+[switch-softwaretype]
+default = dynamic-template-erp5-test:output
+
