@@ -18,6 +18,7 @@
 
 import json
 import os.path
+import subprocess
 import unittest
 
 from slapos.grid.utils import md5digest
@@ -47,19 +48,27 @@ class TestWCFS(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({'wcfs': {'enable': True}})}
 
+  def getZUrl(self):
+    return json.loads(
+      self.getComputerPartition('wcfs').getConnectionParameter('_')
+    )['serving-zurl']
+
   def test_wcfs_accessible(self):
     """Verify that wcfs filesystem is basically accessible.
 
        - we can read .wcfs/zurl
        - its content is equal to published `serving-zurl`
     """
-    zurl = json.loads(
-             self.getComputerPartition('wcfs').getConnectionParameter('_')
-           )['serving-zurl']
-
+    zurl = self.getZUrl()
     mntpt = lookupMount(zurl)
     zurl_ = readfile("%s/.wcfs/zurl" % mntpt)
     self.assertEqual(zurl_, zurl)
+
+  def test_workload(self):
+    """Verify simple workload (reading/writing operation) on WCFS is successful"""
+    wcfs_test_bin = self.getRootPartitionConnectionParameterDict()['erp5_wcfs_test_bin']
+    # If exit code = 0, all subtests were successful
+    self.assertEqual(0, subprocess.call([wcfs_test_bin, self.getZUrl()]))
 
 
 # lookupMount returns /proc/mount entry for wcfs mounted to serve zurl.

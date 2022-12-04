@@ -1,0 +1,10 @@
+[buildout]
+extends =
+  {{ template_monitor }}
+parts +=
+  publish
+
+[publish]
+<= monitor-publish
+recipe = slapos.cookbook:publish.serialised
+erp5_wcfs_test_bin = {{ erp5_wcfs_test_bin }}
