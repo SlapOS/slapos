@@ -75,7 +75,7 @@ tpgwait=60
 while true; do
     pgtables="$(psql -c '\d' 2>&1)"
     ls $${postgresql:pgdata-directory}
-    echo $${postgresql:pgdata-directory}
+    echo $(cat $${postgresql:pgdata-directory}/pg_hba.conf)
     echo $pgtables
     pgtables="$(psql -c '\d' 2>&1)" && break
     tpgwait=$(( $tpgwait - 1 ))
