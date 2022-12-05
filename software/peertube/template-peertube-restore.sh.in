@@ -43,25 +43,32 @@ $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
 postgresql_pid=$!
 trap "kill $postgresql_pid" EXIT TERM INT
 
-
-tpgwait=60
-while ! [ -e "$pid_file" ]; do
-    tpgwait=$(( $tpgwait - 1 ))
-    test $tpgwait = 0 && die "Can not create pid_file"
-    echo "pid_file not exist; will retry $tpgwait times..." 1>&2
-    sleep 1
-done
-
 # If postgres has stopped, abort
 if ! [ -d /proc/$postgresql_pid ]; then
   echo "postgresql exited, aborting."
   exit 1
 fi
 
+echo "Parsing postgresql conf..."
+postgresql_conf_file=$${postgresql:pgdata-directory}/postgresql.conf
+
+tpgwait=60
+while ! [ -e "$postgresql_conf_file" ]; do
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "Postgresql conf file does not exist."
+    echo "Postgresql conf file does not exist; will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+
+echo "Get the postgresql port number..."
+port=$(awk '/^port/{print $3}' $postgresql_conf_file)
+echo $port
+
 # run psql
 psql() {
     $${postgresql:bin}/psql \
         -h $${postgresql:pgdata-directory}  \
+        -p $port                            \
         -U $${postgresql:superuser}         \
         -d $${postgresql:dbname}            \
         "$@"
@@ -98,7 +105,7 @@ fi
 echo "Postgresql is running, ready to restore"
 
 # Restore the database
-$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -e -c -C -d postgres $${peertube-backup-script:backup-file} || {
+$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -p $port -e -c -C -d postgres $${peertube-backup-script:backup-file} || {
   RESTORE_EXIT_CODE=$?
   echo 'Backup restoration failed.'
   exit $RESTORE_EXIT_CODE
