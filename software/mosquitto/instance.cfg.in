@@ -2,6 +2,7 @@
 parts =
   promises
   mosquitto-service
+  publish-connection-parameter
 
 eggs-directory = {{ buildout["eggs-directory"] }}
 develop-eggs-directory = {{ buildout["develop-eggs-directory"] }}
