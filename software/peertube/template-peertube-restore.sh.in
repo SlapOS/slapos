@@ -74,7 +74,7 @@ echo "Ready to check postgresql is running..."
 tpgwait=60
 while true; do
     pgtables="$(psql -c '\d' 2>&1)"
-    ls $${postgresql:pgdata-directory}
+    ls -al $${postgresql:pgdata-directory}
     echo $(cat $${postgresql:pgdata-directory}/pg_hba.conf)
     echo $pgtables
     pgtables="$(psql -c '\d' 2>&1)" && break
