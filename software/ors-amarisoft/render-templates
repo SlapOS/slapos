@@ -62,14 +62,14 @@ rf_mode_context_list = [
 for i in range (4):
     rf_mode_context_list[i].update({
             'default_lte_n_rb_dl'          : 100,
-            'default_lte_tx_gain'          : 78,
-            'default_lte_rx_gain'          : 40,
+            'default_lte_tx_gain'          : 60,
+            'default_lte_rx_gain'          : 45,
             'default_lte_imsi'             : "001010123456789",
             'default_lte_k'                : "00112233445566778899aabbccddeeff",
             'default_lte_inactivity_timer' : 10000,
             'default_nr_bandwidth'         : 40,
-            'default_nr_tx_gain'           : 78,
-            'default_nr_rx_gain'           : 40,
+            'default_nr_tx_gain'           : 60,
+            'default_nr_rx_gain'           : 45,
             'default_nr_imsi'              : "001010123456789",
             'default_nr_k'                 : "00112233445566778899aabbccddeeff",
             'default_n_antenna_dl'         : 2,

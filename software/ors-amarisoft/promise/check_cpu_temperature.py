@@ -5,9 +5,44 @@ import json
 import os
 import psutil
 
+from dateutil import parser
+
 from zope.interface import implementer
 from slapos.grid.promise import interface
 from slapos.grid.promise.generic import GenericPromise
+
+# Get all data in the last "interval" seconds from JSON log
+def get_data_interval(log, interval):
+
+    log_number = 0
+    latest_timestamp = 0
+    data_list = []
+
+    while True:
+        try:
+            f = open("{}.{}".format(log, log_number) if log_number else log, "rb")
+        except OSError:
+            return data_list
+        try:
+            f.seek(0, os.SEEK_END)
+            while True:
+                try:
+                    while f.seek(-2, os.SEEK_CUR) and f.read(1) != b'\n':
+                        pass
+                except OSError:
+                    break
+                pos = f.tell()
+                l = json.loads(f.readline().decode().replace("'", '"'))
+                timestamp = parser.parse(l['time'])
+                data_list.append(l['data'])
+                if not latest_timestamp:
+                    latest_timestamp = timestamp
+                if (latest_timestamp - timestamp).total_seconds() > interval:
+                    return data_list
+                f.seek(pos, os.SEEK_SET)
+        finally:
+            f.close()
+        log_number += 1
 
 @implementer(interface.IPromise)
 class RunPromise(GenericPromise):
@@ -32,7 +67,9 @@ class RunPromise(GenericPromise):
 
   def sense(self):
 
-    max_temp = int(self.getConfig('max-temp', 80))
+    max_temp = float(self.getConfig('max-temp', 90))
+    max_avg_temp = float(self.getConfig('max-avg-temp', 80))
+    max_avg_temp_duration = int(self.getConfig('max-avg-temp-duration', 300))
     testing = self.getConfig('testing') == "True"
 
     if testing:
@@ -42,13 +79,21 @@ class RunPromise(GenericPromise):
       data = psutil.sensors_temperatures()
       cpu_temp = data['coretemp'][0][1]
 
-    data = json.dumps({'cpu_temperature': cpu_temp})
+    l = get_data_interval(self.__log_file, max_avg_temp_duration)
+    avg_temp = sum(map(lambda x: x['cpu_temperature'], l)) / len(l)
+
+    data = json.dumps({'cpu_temperature': cpu_temp, 'avg_cpu_temperature': avg_temp})
+    self.json_logger.info("Temperature data", extra={'data': data})
+    
+    promise_success = True
     if cpu_temp > max_temp:
-      self.logger.error("Temperature too high (%s > %s)" % (cpu_temp, max_temp))
-      self.json_logger.info("Temperature too high (%s > %s)"  % (cpu_temp, max_temp), extra={'data': data})
-    else:
+      self.logger.error("Temperature reached critical threshold: %s degrees celsius (threshold is %s degrees celsius)" % (cpu_temp, max_temp))
+      promise_success = False
+    if avg_temp > max_avg_temp:
+      self.logger.error("Average temperature over the last %s seconds reached threshold: %s degrees celsius (threshold is %s degrees celsius)" % (max_avg_temp_duration, avg_temp, max_avg_temp))
+      promise_success = False
+    if promise_success:
       self.logger.info("Temperature OK")
-      self.json_logger.info("Temperature OK", extra={'data': data})
 
   def test(self):
     """

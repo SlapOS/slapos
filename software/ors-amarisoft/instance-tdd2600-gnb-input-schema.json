@@ -17,13 +17,13 @@
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number",
-      "default": 78
+      "default": 60
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number",
-      "default": 40
+      "default": 45
     },
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
@@ -169,6 +169,18 @@
       "description": "Temperature threshold above which CPU temperature promise will fail",
       "type": "number",
       "default": 80
+    },
+    "promise_cpu_avg_temperature_threshold": {
+      "title": "Average CPU temperature promise threshold",
+      "description": "If average temperature over specified duration reaches this threshold, promise will fail",
+      "type": "number",
+      "default": 80
+    },
+    "promise_cpu_avg_temperature_threshold_duration": {
+      "title": "Average CPU temperature promise threshold duration",
+      "description": "Duration during which average temperature should not exceed specified threshold",
+      "type": "number",
+      "default": 600
     }
   }
 }
