@@ -245,6 +245,15 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = peertube_software_release_url
 
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResiliencePeertube, cls).setUpClass()
+    cls.computer_partition_root_path = cls.getPartitionPath('import')
+    cls._save_instance_file_pattern_list += (
+      '*/srv/postgresql/*',
+      '*/srv/backup/peertube_prod-dump.db',
+    )
+
   def _getPeertubeConnexionParameters(self, instance_type='export'):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,
