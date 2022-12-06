@@ -402,10 +402,9 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     self.assertIn('streaming-playlists', video_path)
     streaming_video_path = video_path[video_path.index('streaming-playlists'):]
 
-    video_url = frontend_url + '/static/' + streaming_video_path
-    response = requests.get(video_url, verify=False)
+    response = requests.get(frontend_url, verify=False)
 
-    # The video mp4 file is accesible through the URL
+    # The frontend url is accesible
     self.assertEqual(requests.codes['OK'], response.status_code)
 
     video_feeds_url = frontend_url + '/feeds/video.json'
@@ -423,6 +422,11 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     video_title = video_data['items'][0]['title']
     self.assertIn("Small test video" in video_title)
 
+    video_url = frontend_url + '/static/' + streaming_video_path
+    response = requests.get(video_url, verify=False)
+    # The video mp4 file is accesible through the URL
+    self.assertEqual(requests.codes['OK'], response.status_code)
+
   def _getPeertubePartition(self, servicename):
     p = subprocess.Popen(
       (self._getSlapos(), 'node', 'status'),
@@ -439,11 +443,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     return found.pop()
 
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
-    partition = self._getPeertubePartition(servicename)
-    return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
-
-  def _getPostgresSrvPartitionPath(self, instance_type, servicename, *paths):
     partition = self._getPeertubePartition(servicename)
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
