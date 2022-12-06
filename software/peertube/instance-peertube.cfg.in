@@ -124,9 +124,7 @@ config-file = ${directory:etc}/redis.conf
 log-file    = ${redis:log}/redis.log
 pid-file    = ${directory:run}/redis.pid
 use-passwd  = false
-# If we want to run the peertube test locally, the length of the socket path
-# should not too long
-unixsocket  = ${directory:var}/r.socket
+unixsocket  = ${:server-dir}/redis.socket
 # port = 0 means "don't listen on TCP at all" - listen only on unix socket
 ipv6    = ::1
 port    = 0

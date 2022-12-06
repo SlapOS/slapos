@@ -15,17 +15,6 @@ die() {
     exit 1
 }
 
-pg_version=$${postgresql:pgdata-directory}/PG_VERSION
-echo "Check postgresql data directory is ready"
-
-tpgwait=60
-while ! [ -e "$pg_version" ]; do
-    tpgwait=$(( $tpgwait - 1 ))
-    test $tpgwait = 0 && die "PGdata directory not ready"
-    echo "I: PGdata directory is not ready (yet ?); will retry $tpgwait times..." 1>&2
-    sleep 1
-done
-
 echo "Postgresql data directory is ready"
 # 2. Make sure the postgresql process is not running.
 # Quote from the postgresql doc:
@@ -39,17 +28,10 @@ if [ -e "$pid_file" ]; then
 fi
 
 echo "Starting postgresql..."
-$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} -h $${postgresql:ipv4} -p $${postgresql:port} &
+# $${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} -h $${postgresql:ipv4} -p $${postgresql:port} &
+$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
 postgresql_pid=$!
 trap "kill $postgresql_pid" EXIT TERM INT
-
-pgwait=60
-while ! [ -e "$pid_file" ]; do
-    tpgwait=$(( $tpgwait - 1 ))
-    test $tpgwait = 0 && die "Can not create pid_file"
-    echo "pid_file not exist; will retry $tpgwait times..." 1>&2
-    sleep 1
-done
 
 # If postgres has stopped, abort
 if ! [ -d /proc/$postgresql_pid ]; then
@@ -80,16 +62,6 @@ while true; do
     sleep 1
 done
 echo "I: PostgreSQL ready." 1>&2
-
-# sleep 5
-
-echo "Check postgresql is running again"
-
-# Check the postgresql is running, if postgresql has stopped, abort
-if ! [ -e "$pid_file" ]; then
-  echo "postgresql exited, aborting."
-  exit 1
-fi
 
 echo "Postgresql is running, ready to restore"
 
