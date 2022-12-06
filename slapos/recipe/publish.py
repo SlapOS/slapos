@@ -29,6 +29,7 @@ import zc.buildout
 from slapos.recipe.librecipe import wrap
 from slapos.recipe.librecipe import GenericSlapRecipe
 import six
+import os
 
 CONNECTION_PARAMETER_STRING = 'connection-'
 
@@ -62,8 +63,31 @@ class Recipe(GenericSlapRecipe):
 
 class Serialised(Recipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
-    return super(Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
+    return super(
+      Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
 
+
+class Failsafe(object):
+  def _setConnectionDict(self, publish_dict, slave_reference):
+    error_status_file = self.options.get('-error-status-file')
+    try:
+      super(Failsafe, self)._setConnectionDict(publish_dict, slave_reference)
+    except Exception:
+      if error_status_file is not None:
+        with open(error_status_file, 'w') as fh:
+          fh.write('')
+    else:
+      if error_status_file is not None:
+        if os.path.exists(error_status_file):
+          os.unlink(error_status_file)
+
+
+class RecipeFailsafe(Failsafe, Recipe):
+  pass
+
+
+class SerialisedFailsafe(Failsafe, Serialised):
+  pass
 
 
 class PublishSection(GenericSlapRecipe):
