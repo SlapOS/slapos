@@ -10,7 +10,8 @@ die() {
 # run psql on gitlab db
 psql() {
     $${postgresql:bin}/psql \
-        -h $${postgresql:pgdata-directory}  \
+        -h $${postgresql:ipv4}              \
+        -p $${postgresql:port}              \
         -U $${postgresql:superuser}         \
         -d $${postgresql:dbname}            \
         "$@"

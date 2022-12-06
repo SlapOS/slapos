@@ -277,7 +277,6 @@ server {
 
   #   try_files $uri @api;
   # }
-  ssl                 on;
   ssl_certificate $${nginx-configuration:ssl_crt};
   ssl_certificate_key $${nginx-configuration:ssl_key};
 

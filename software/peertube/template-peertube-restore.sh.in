@@ -39,9 +39,17 @@ if [ -e "$pid_file" ]; then
 fi
 
 echo "Starting postgresql..."
-$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
+$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} -h $${postgresql:ipv4} -p $${postgresql:port} &
 postgresql_pid=$!
 trap "kill $postgresql_pid" EXIT TERM INT
+
+pgwait=60
+while ! [ -e "$pid_file" ]; do
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "Can not create pid_file"
+    echo "pid_file not exist; will retry $tpgwait times..." 1>&2
+    sleep 1
+done
 
 # If postgres has stopped, abort
 if ! [ -d /proc/$postgresql_pid ]; then
@@ -49,26 +57,11 @@ if ! [ -d /proc/$postgresql_pid ]; then
   exit 1
 fi
 
-echo "Parsing postgresql conf..."
-postgresql_conf_file=$${postgresql:pgdata-directory}/postgresql.conf
-
-tpgwait=60
-while ! [ -e "$postgresql_conf_file" ]; do
-    tpgwait=$(( $tpgwait - 1 ))
-    test $tpgwait = 0 && die "Postgresql conf file does not exist."
-    echo "Postgresql conf file does not exist; will retry $tpgwait times..." 1>&2
-    sleep 1
-done
-
-echo "Get the postgresql port number..."
-port=$(awk '/^port/{print $3}' $postgresql_conf_file)
-echo $port
-
 # run psql
 psql() {
-    $${postgresql:bin}/psql \
-        -h $${postgresql:pgdata-directory}  \
-        -p $port                            \
+    PGPASSWORD=$${postgresql:password} $${postgresql:bin}/psql \
+        -h $${postgresql:ipv4}              \
+        -p $${postgresql:port}              \
         -U $${postgresql:superuser}         \
         -d $${postgresql:dbname}            \
         "$@"
@@ -80,10 +73,6 @@ echo "Ready to check postgresql is running..."
 # ( first quering PG several times waiting a bit till postgresql is started and ready )
 tpgwait=60
 while true; do
-    pgtables="$(psql -c '\d' 2>&1)"
-    ls -al $${postgresql:pgdata-directory}
-    echo $(cat $${postgresql:pgdata-directory}/pg_hba.conf)
-    echo $pgtables
     pgtables="$(psql -c '\d' 2>&1)" && break
     tpgwait=$(( $tpgwait - 1 ))
     test $tpgwait = 0 && die "pg query problem"
@@ -105,7 +94,8 @@ fi
 echo "Postgresql is running, ready to restore"
 
 # Restore the database
-$${postgresql:bin}/pg_restore -h $${postgresql:pgdata-directory} -U peertube -p $port -e -c -C -d postgres $${peertube-backup-script:backup-file} || {
+# Use -d to connect to the default 'postgres' database to allow us to restore the $${postgresql:dbname}
+PGPASSWORD=$${postgresql:password} $${postgresql:bin}/pg_restore -h $${postgresql:ipv4} -p $${postgresql:port} -U $${postgresql:superuser} -e -c -C -d postgres $${peertube-backup-script:backup-file} || {
   RESTORE_EXIT_CODE=$?
   echo 'Backup restoration failed.'
   exit $RESTORE_EXIT_CODE
