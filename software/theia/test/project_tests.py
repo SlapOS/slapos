@@ -381,6 +381,20 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     frontend_url = peertube_conenction_info['frontend-url']
     storage_path = os.path.join(postgresql_partition, 'var', 'www', 'peertube', 'storage')
 
+    # Wait for connect Peertube
+    for _ in range(5):
+      try:
+        response = requests.get(frontend_url, verify=False, allow_redirects=False)
+      except Exception:
+        time.sleep(20)
+        continue
+      if response.status_code != 200:
+        time.sleep(20)
+        continue
+      break
+    else:
+      self.fail('Failed to connect to Peertube')
+
     # Get the video path, the part of this path will be used in the video URL
     # e.g: var/www/peertube/storage/streaming-playlists/hls/XXXX/YYYY.mp4
 
@@ -400,15 +414,14 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
     # path like "streaming-playlists/hls/XXXX/YYYY.mp4"
     self.assertIn('streaming-playlists', video_path)
+
     streaming_video_path = video_path[video_path.index('streaming-playlists'):]
-
-    response = requests.get(frontend_url, verify=False)
-
-    # The frontend url is accesible
+    video_url = frontend_url + '/static/' + streaming_video_path
+    response = requests.get(video_url, verify=False)
+    # The video mp4 file is accesible through the URL
     self.assertEqual(requests.codes['OK'], response.status_code)
 
     video_feeds_url = frontend_url + '/feeds/video.json'
-
     response = requests.get(video_feeds_url, verify=False)
 
     # The video feeds returns the correct status code
@@ -421,11 +434,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # Check the first video title is in the response content
     video_title = video_data['items'][0]['title']
     self.assertIn("Small test video" in video_title)
-
-    video_url = frontend_url + '/static/' + streaming_video_path
-    response = requests.get(video_url, verify=False)
-    # The video mp4 file is accesible through the URL
-    self.assertEqual(requests.codes['OK'], response.status_code)
 
   def _getPeertubePartition(self, servicename):
     p = subprocess.Popen(
