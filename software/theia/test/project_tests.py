@@ -408,12 +408,20 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # The video mp4 file is accesible through the URL
     self.assertEqual(requests.codes['OK'], response.status_code)
 
-    # Check that the postgresql catalog was properly restored
-    output = subprocess.check_output(
-      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
-      '-c', 'SELECT * FROM "video"'),
-      universal_newlines=True)
-    self.assertIn("Small test video", output)
+    video_feeds_url = frontend_url + '/feeds/video.json'
+
+    response = requests.get(video_feeds_url, verify=False)
+
+    # The video feeds returns the correct status code
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    try:
+      video_data= response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube feeds URL is incorrect.")
+
+    # Check the first video title is in the response content
+    video_title = video_data['items'][0]['title']
+    self.assertIn("Small test video" in video_title)
 
   def _getPeertubePartition(self, servicename):
     p = subprocess.Popen(
