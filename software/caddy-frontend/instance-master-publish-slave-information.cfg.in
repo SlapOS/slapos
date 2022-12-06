@@ -61,7 +61,7 @@
 {%     set publish_section_title = 'publish-%s' % slave_reference %}
 {%     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish_failsafe
 -slave-reference = {{ slave_reference }}
 {%     set log_access_url = slave_information.pop('log-access-urls', None) %}
 {%     if log_access_url %}
