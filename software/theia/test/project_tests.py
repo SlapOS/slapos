@@ -379,7 +379,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
     peertube_conenction_info = self._getPeertubeConnexionParameters()
     frontend_url = peertube_conenction_info['frontend-url']
-    postgresql_srv = os.path.join(postgresql_partition, 'var', 'www', 'peertube', 'storage')
+    storage_path = os.path.join(postgresql_partition, 'var', 'www', 'peertube', 'storage')
 
     # Get the video path, the part of this path will be used in the video URL
     # e.g: var/www/peertube/storage/streaming-playlists/hls/XXXX/YYYY.mp4
