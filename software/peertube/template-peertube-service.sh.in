@@ -9,7 +9,7 @@ die() {
 
 # run psql on gitlab db
 psql() {
-    $${postgresql:bin}/psql \
+    PGPASSWORD=$${postgresql:password} $${postgresql:bin}/psql \
         -h $${postgresql:ipv4}              \
         -p $${postgresql:port}              \
         -U $${postgresql:superuser}         \
