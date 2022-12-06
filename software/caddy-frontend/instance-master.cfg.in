@@ -546,6 +546,7 @@ extra-context =
     section active_slave_instance_dict active-slave-instance
     section warning_slave_information warning-slave-information
     key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
+    key publish_failsafe_error directory:publish-failsafe-error-var
 
 [monitor-base-url-dict]
 kedifa = ${request-kedifa:connection-monitor-base-url}
@@ -564,6 +565,8 @@ caucased = ${:srv}/caucased
 backup-caucased = ${:backup}/caucased
 # NGINX
 rejected-var = ${:var}/rejected-nginx
+# slaves
+publish-failsafe-error-var = ${:var}/publish-failsafe-error
 
 {% if aikc_enabled %}
 [directory]
@@ -986,13 +989,34 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       key_len=2048
 )}}
 
+[cleanup-publish-failsafe-error]
+recipe = plone.recipe.command
+command = software_parameter_dict['findutils'] }}/bin/find ${directory:publish-failsafe-error-var} -type f -delete
+update-command = ${:command}
+
+[check-publish-failsafe-error]
+recipe = plone.recipe.command
+file = ${directory:var}/publish-failsafe-error.check
+command = software_parameter_dict['findutils'] }}/bin/find ${directory:publish-failsafe-error-var} -type f > ${:file}
+update-command = ${:command}
+
+[publish-failsafe-error-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = publish-failsafe-error.py
+config-filename = ${check-publish-failsafe-error:file}
+config-state = empty
+
 [buildout]
 extends =
   {{ software_parameter_dict['profile_common'] }}
   {{ software_parameter_dict['profile_monitor2'] }}
 parts =
   monitor-base
+  cleanup-publish-failsafe-error
   publish-slave-information
+  check-publish-failsafe-error
+  publish-failsafe-error-promise
   publish-information
   request-kedifa
   rejected-slave-promise
