@@ -29,10 +29,12 @@ import zc.buildout
 from slapos.recipe.librecipe import wrap
 from slapos.recipe.librecipe import GenericSlapRecipe
 import six
+import os
 
 CONNECTION_PARAMETER_STRING = 'connection-'
 
 class Recipe(GenericSlapRecipe):
+  return_list = []
   def __init__(self, buildout, name, options):
     super(Recipe, self).__init__(buildout, name, options)
     # Tell buildout about the sections we will access during install.
@@ -55,15 +57,42 @@ class Recipe(GenericSlapRecipe):
       for k in publish:
         publish_dict[k] = section[k]
     self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
-    return []
+    return self.return_list
 
   def _setConnectionDict(self, publish_dict, slave_reference=None):
     return self.setConnectionDict(publish_dict, slave_reference)
 
 class Serialised(Recipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
-    return super(Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
+    return super(
+      Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
 
+
+class Failsafe(object):
+  def _setConnectionDict(self, publish_dict, slave_reference):
+    error_status_file = self.options.get('-error-status-file')
+    if error_status_file:
+      self.return_list = [error_status_file]
+    else:
+      self.return_list = []
+    try:
+      super(Failsafe, self)._setConnectionDict(publish_dict, slave_reference)
+    except Exception:
+      if error_status_file is not None:
+        with open(error_status_file, 'w') as fh:
+          fh.write('')
+    else:
+      if error_status_file is not None:
+        if os.path.exists(error_status_file):
+          os.unlink(error_status_file)
+
+
+class RecipeFailsafe(Failsafe, Recipe):
+  pass
+
+
+class SerialisedFailsafe(Failsafe, Serialised):
+  pass
 
 
 class PublishSection(GenericSlapRecipe):
