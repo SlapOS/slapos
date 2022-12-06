@@ -402,7 +402,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     self.assertIn('streaming-playlists', video_path)
     streaming_video_path = video_path[video_path.index('streaming-playlists'):]
 
-    video_url = frontend_url + 'static/' + streaming_video_path
+    video_url = frontend_url + '/static/' + streaming_video_path
     response = requests.get(video_url, verify=False)
 
     # The video mp4 file is accesible through the URL
