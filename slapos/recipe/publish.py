@@ -66,22 +66,20 @@ class Serialised(Recipe):
       Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
 
 
-class Failsafe(Recipe):
-  def _install(self):
+class Failsafe(object):
+  def _setConnectionDict(self, publish_dict, slave_reference):
     try:
-      result = super(Failsafe)._install()
+      super(Failsafe, self)._setConnectionDict(publish_dict, slave_reference)
     except Exception:
-      result = []
-    return result
+      pass
 
 
-class SerialisedFailsafe(Serialised):
-  def _install(self):
-    try:
-      result = super(SerialisedFailsafe)._install()
-    except Exception:
-      result = []
-    return result
+class RecipeFailsafe(Failsafe, Recipe):
+  pass
+
+
+class SerialisedFailsafe(Failsafe, Serialised):
+  pass
 
 
 class PublishSection(GenericSlapRecipe):
