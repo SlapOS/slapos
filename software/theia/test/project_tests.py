@@ -367,16 +367,6 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
     postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
 
-    # Stop all services
-    print("Stop all services")
-    self.callSlapos('node', 'stop', 'all')
-
-    # Check that the test instance is properly redeployed after restoring postgresql
-    # This restarts the services and checks the promises of the test instance
-    # Process twice to propagate state change
-    for _ in range(2):
-      self._processEmbeddedInstance(self.test_instance_max_retries)
-
     peertube_conenction_info = self._getPeertubeConnexionParameters()
     frontend_url = peertube_conenction_info['frontend-url']
     storage_path = os.path.join(postgresql_partition, 'var', 'www', 'peertube', 'storage')
