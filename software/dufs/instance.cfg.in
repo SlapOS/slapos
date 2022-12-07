@@ -74,6 +74,7 @@ caucase.updater(
     crl_path='${dufs-certificate:crl-file}',
     key_path='${dufs-certificate:key-file}',
     template_csr='${dufs-certificate-prepare-csr:csr}',
+    on_renew='${dufs-server-restart:wrapper-path}',
     openssl=openssl_bin,
 )}}
 
@@ -134,25 +135,43 @@ caucase.caucased(
 recipe = slapos.cookbook:generate.password
 user = admin
 
+[dufs-zdaemon-cfg]
+recipe = slapos.recipe.template
+inline =
+  <runner>
+    program ${dufs-server-bin:wrapper-path}
+    socket-name ${directory:var}/zds
+    daemon off
+  </runner>
+output = ${directory:etc}/${:_buildout_section_name_}
 
 [dufs-server]
+recipe = slapos.cookbook:wrapper
+command-line = {{ zdaemon_bin }} -C ${dufs-zdaemon-cfg:output} start
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+port = 19080
+ip = ${instance-parameter:ipv6-random}
+url = https://[${:ip}]:${:port}
+
+[dufs-server-restart]
+recipe = slapos.cookbook:wrapper
+command-line = {{ zdaemon_bin }} -C ${dufs-zdaemon-cfg:output} restart
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+
+[dufs-server-bin]
 recipe = slapos.cookbook:wrapper
 command-line =
   {{ dufs_bin }}
     --enable-cors
-    --bind ${:ip}
-    --port ${:port}
+    --bind ${dufs-server:ip}
+    --port ${dufs-server:port}
     --allow-all
     --auth /@${admin-password:user}:${admin-password:passwd}
     --auth /pub@${admin-password:user}:${admin-password:passwd}@*
     --tls-cert ${dufs-certificate:cert-file}
     --tls-key ${dufs-certificate:key-file}
     ${directory:dufs-data-dir}
-wrapper-path = ${directory:service}/${:_buildout_section_name_}
-
-port = 19080
-ip = ${instance-parameter:ipv6-random}
-url = https://[${:ip}]:${:port}
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
 
 [dufs-listen-promise]
 <= check-port-listening-promise
