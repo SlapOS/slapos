@@ -25,8 +25,11 @@
 #
 ##############################################################################
 
+import contextlib
 import io
 import os
+import pathlib
+import subprocess
 import tempfile
 import urllib.parse
 
@@ -115,3 +118,38 @@ class TestFileServer(SlapOSInstanceTestCase):
     )
     self.assertEqual(resp.text, 'hello')
     self.assertEqual(resp.status_code, requests.codes.ok)
+
+  def test_renew_certificate(self):
+    def _getpeercert():
+      # XXX low level way to get get the server certificate
+      with requests.Session() as session:
+        pool = session.get(
+          self.connection_parameters['public-url'],
+          verify=self.ca_cert,
+        ).raw._pool.pool
+        with contextlib.closing(pool.get()) as cnx:
+          return cnx.sock._sslobj.getpeercert()
+
+    cert_before = _getpeercert()
+    # execute certificate updater two month later, when it's time to renew certificate.
+    # use a timeout, because this service runs forever
+    subprocess.run(
+      (
+        'timeout',
+        '5',
+        'faketime',
+        '+2 months',
+        os.path.join(
+          self.computer_partition_root_path,
+          'etc/service/dufs-certificate-updater'),
+      ),
+      capture_output=not self._debug,
+    )
+
+    # reprocess instance to get the new certificate, after removing the timestamp
+    # to force execution
+    (pathlib.Path(self.computer_partition_root_path) / '.timestamp').unlink()
+    self.waitForInstance()
+
+    cert_after = _getpeercert()
+    self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
