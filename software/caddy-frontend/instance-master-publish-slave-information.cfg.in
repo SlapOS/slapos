@@ -52,6 +52,11 @@
 {%   endif %}
 {% endfor %}
 
+[frontend-information]
+{% for frontend_key, frontend_value in frontend_information.items() %}
+{{ frontend_key }} = {{ frontend_value }}
+{% endfor %}
+
 # Publish information for each slave
 {% set active_slave_instance_list = json_module.loads(active_slave_instance_dict['active-slave-instance-list']) %}
 {% for slave_reference, slave_information in slave_information_dict.items() %}
@@ -61,6 +66,7 @@
 {%     set publish_section_title = 'publish-%s' % slave_reference %}
 {%     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
+<= frontend-information
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
 {%     set log_access_url = slave_information.pop('log-access-urls', None) %}
@@ -72,9 +78,6 @@ log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
 {%   endif %}
-{%   for frontend_key, frontend_value in frontend_information.items() %}
-{{ frontend_key }} = {{ frontend_value }}
-{%   endfor %}
 {% endfor %}
 
 [buildout]
