@@ -217,7 +217,7 @@ recipe = slapos.cookbook:requestoptional
 name = PeerTube Server Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+slave = shared
 {% if slapparameter_dict.get('frontend-url', 'false') != 'false' -%}
 state = stopped
 {% endif -%}
