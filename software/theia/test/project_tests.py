@@ -38,6 +38,8 @@ import requests
 
 from datetime import datetime, timedelta
 from six.moves.urllib.parse import urljoin
+from mimetypes import guess_type
+from json.decoder import JSONDecodeError
 
 from slapos.testing.testcase import installSoftwareUrlList
 
@@ -48,6 +50,9 @@ from test import SlapOSInstanceTestCase, theia_software_release_url
 erp5_software_release_url = os.path.abspath(
   os.path.join(
     os.path.dirname(__file__), '..', '..', 'erp5', 'software.cfg'))
+peertube_software_release_url = os.path.abspath(
+  os.path.join(
+    os.path.dirname(__file__), '..', '..', 'peertube', 'software.cfg'))
 
 
 def setUpModule():
@@ -232,3 +237,210 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     # Check that the mariadb catalog was properly restored
     out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
     self.assertIn(self._erp5_new_title, out, 'Mariadb catalog is not properly restored')
+
+class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
+  test_instance_max_retries = 12
+  backup_max_tries = 480
+  backup_wait_interval = 60
+  _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
+  _test_software_url = peertube_software_release_url
+
+  def _getPeertubeConnexionParameters(self, instance_type='export'):
+    out = self.captureSlapos(
+      'request', 'test_instance', self._test_software_url,
+      stderr=subprocess.STDOUT,
+      text=True,
+    )
+    print(out)
+    return json.loads(self._connexion_parameters_regex.search(out).group(0).replace("'", '"'))
+
+  def test_twice(self):
+    # do nothing
+    pass
+
+  def _prepareExport(self):
+    super(TestTheiaResiliencePeertube, self)._prepareExport()
+
+    postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
+    postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
+    postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
+    postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
+
+    peertube_conenction_info = self._getPeertubeConnexionParameters()
+    frontend_url = peertube_conenction_info['frontend-url']
+
+    response = requests.get(frontend_url + '/api/v1/oauth-clients/local', verify=False)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    try:
+      data = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube API is incorrect.")
+
+    client_id = data['client_id']
+    client_secret = data['client_secret']
+    username = peertube_conenction_info['username']
+    password = peertube_conenction_info['password']
+    auth_data = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'grant_type': 'password',
+        'response_type': 'code',
+        'username': username,
+        'password': password
+    }
+
+    auth_result = requests.post(frontend_url + '/api/v1/users/token', data=auth_data, verify=False)
+    try:
+      auth_result_json = auth_result.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube API is incorrect.")
+
+    token_type = auth_result_json['token_type']
+    access_token = auth_result_json['access_token']
+    headers = {
+        'Authorization': token_type + ' ' + access_token
+    }
+    video_name = "Small test video"
+    file_path = "../../peertube/test/small.mp4"
+    pwd_file_path = os.path.realpath(__file__)
+    print(pwd_file_path)
+    file_mime_type = guess_type(file_path)[0]
+
+    with open(file_path, 'rb') as f:
+        video_data = {
+            'channelId': 1,
+            'name': video_name,
+            'commentEnabled': False,
+        }
+        upload_response = requests.post(
+            frontend_url + '/api/v1/videos/upload',
+            headers=headers,
+            data=video_data,
+            files={'videofile': (os.path.basename(file_path), f, file_mime_type)},
+            verify=False
+        )
+    try:
+      video_ids = upload_response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube API is incorrect.")
+    # e.g: {'video': {'id': 7, 'shortUUID': 'nrnKJNCsRP7NkwRr51TK3e', 'uuid': 'ad9ae99d-07db-4e4c-adc3-73566d59a4c5'}}
+    self.assertIn('video', video_ids)
+
+    # Checked the modification has been updated in the database
+    output = subprocess.check_output(
+      (postgresql_bin, '-h', postgresql_srv, '-U', 'peertube', '-d', 'peertube_prod',
+      '-c', 'SELECT * FROM "video"'),
+      universal_newlines=True)
+    self.assertIn("Small test video", output)
+
+    # Do a fake periodically update
+    # Compute backup date in the near future
+    soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
+    frequency = "%d * * * *" % soon.minute
+    params = 'frequency=%s' % frequency
+
+    # Update Peertube parameters
+    print('Requesting Peertube with parameters %s' % params)
+    self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
+
+    # Process twice to propagate parameter changes
+    for _ in range(2):
+      self.checkSlapos('node', 'instance')
+
+    self.callSlapos('node', 'restart', 'all')
+
+    # Wait until after the programmed backup date, and a bit more
+    t = (soon - datetime.now()).total_seconds()
+    self.assertLess(0, t)
+    time.sleep(t + 120)
+    self.callSlapos('node', 'status')
+
+    # Check that postgresql backup has started
+    postgresql_backup = os.path.join(postgresql_partition, 'srv', 'backup')
+    self.assertIn('peertube_prod-dump.db', os.listdir(postgresql_backup))
+
+  def _checkTakeover(self):
+    super(TestTheiaResiliencePeertube, self)._checkTakeover()
+
+    postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
+    postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
+    postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
+    postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
+
+    peertube_conenction_info = self._getPeertubeConnexionParameters()
+    frontend_url = peertube_conenction_info['frontend-url']
+    storage_path = os.path.join(postgresql_partition, 'var', 'www', 'peertube', 'storage')
+
+    # Wait for connect Peertube
+    for _ in range(5):
+      try:
+        response = requests.get(frontend_url, verify=False, allow_redirects=False)
+      except Exception:
+        time.sleep(20)
+        continue
+      if response.status_code != 200:
+        time.sleep(20)
+        continue
+      break
+    else:
+      self.fail('Failed to connect to Peertube')
+
+    # Get the video path, the part of this path will be used in the video URL
+    # e.g: var/www/peertube/storage/streaming-playlists/hls/XXXX/YYYY.mp4
+
+    # path before hls dir
+    hls_path = os.path.join(storage_path, 'streaming-playlists', 'hls')
+
+    #Choose only one video path
+    video_path = None
+    for root, dirs, files in os.walk(hls_path):
+      for a_file in files:
+        if a_file.endswith('.mp4'):
+          video_path = os.path.join(root, a_file)
+          break
+      else:
+        continue
+      break
+
+    # path like "streaming-playlists/hls/XXXX/YYYY.mp4"
+    self.assertIn('streaming-playlists', video_path)
+
+    streaming_video_path = video_path[video_path.index('streaming-playlists'):]
+    video_url = frontend_url + '/static/' + streaming_video_path
+    response = requests.get(video_url, verify=False)
+    # The video mp4 file is accesible through the URL
+    self.assertEqual(requests.codes['OK'], response.status_code)
+
+    video_feeds_url = frontend_url + '/feeds/videos.json'
+    response = requests.get(video_feeds_url, verify=False)
+
+    # The video feeds returns the correct status code
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    try:
+      video_data= response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Peertube feeds URL is incorrect.")
+
+    # Check the first video title is in the response content
+    video_title = video_data['items'][0]['title']
+    self.assertIn("Small test video" in video_title)
+
+  def _getPeertubePartition(self, servicename):
+    p = subprocess.Popen(
+      (self._getSlapos(), 'node', 'status'),
+      stdout=subprocess.PIPE, universal_newlines=True)
+    out, _ = p.communicate()
+    found = set()
+    for line in out.splitlines():
+      if servicename in line:
+        found.add(line.split(':')[0])
+    if not found:
+      raise Exception("Peertube %s partition not found" % servicename)
+    elif len(found) > 1:
+      raise Exception("Found several partitions for Peertube %s" % servicename)
+    return found.pop()
+
+  def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
+    partition = self._getPeertubePartition(servicename)
+    return self.getPartitionPath(
+      instance_type, 'srv', 'runner', 'instance', partition, *paths)
