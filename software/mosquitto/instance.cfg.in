@@ -1,0 +1,61 @@
+[buildout]
+parts =
+  promises
+  mosquitto-service
+  publish-connection-parameter
+
+eggs-directory = {{ buildout["eggs-directory"] }}
+develop-eggs-directory = {{ buildout["develop-eggs-directory"] }}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise/
+log = ${:var}/log
+bin = ${:home}/bin
+
+[mosquitto-config-file]
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.cfg
+ip = ${instance-parameter:ipv4-random}
+install =
+  config = open(self.options["location"], "w")
+  ip = self.options["ip"]
+  config.write(f"listener 1883 {ip}\nprotocol mqtt")
+
+[mosquitto-listen-promise]
+<= check-port-listening-promise
+hostname = ${mosquitto-config-file:ip}
+port = 1883
+
+[promises]
+recipe =
+instance-promises =
+  ${mosquitto-listen-promise:path}
+
+[mosquitto-service]
+recipe  = slapos.cookbook:wrapper
+command-line = {{ mosquitto_location }}/sbin/mosquitto -c ${mosquitto-config-file:location}
+wrapper-path = ${directory:service}/mosquitto-service
+output = $${:wrapper-path}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = mqtt://${mosquitto-listen-promise:hostname}:${mosquitto-listen-promise:port}
