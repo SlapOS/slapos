@@ -58,6 +58,8 @@ import { Worker } from "os";
       },
       getInitialAltitude: getInitialAltitude,
       getYaw: getYaw,
+      getSpeed: getAirspeed,
+      getClimbRate: getClimbRate,
       id: configuration.id,
       landed: landed,
       loiter: loiter,
