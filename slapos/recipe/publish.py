@@ -71,15 +71,17 @@ class Serialised(Recipe):
 class Failsafe(object):
   def _setConnectionDict(self, publish_dict, slave_reference):
     error_status_file = self.options.get('-error-status-file')
+    if error_status_file:
+      self.return_list = [error_status_file]
+    else:
+      self.return_list = []
     try:
       super(Failsafe, self)._setConnectionDict(publish_dict, slave_reference)
     except Exception:
       if error_status_file is not None:
         with open(error_status_file, 'w') as fh:
           fh.write('')
-          self.return_list = [error_status_file]
     else:
-      self.return_list = []
       if error_status_file is not None:
         if os.path.exists(error_status_file):
           os.unlink(error_status_file)
