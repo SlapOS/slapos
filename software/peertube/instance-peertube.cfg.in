@@ -1,0 +1,285 @@
+[buildout]
+extends =
+  {{ monitor_template }}
+
+parts =
+  service-redis
+  promise-redis
+  postgresql
+  postgresql-binary-link
+  nginx-service
+  nginx-listen-promise
+  peertube-yaml
+  peertube-service
+  peertube-listen-promise
+  dcron-service
+  activate-crontab-file
+  peertube-backup-cron
+  peertube-database-resiliency-after-import-script
+  peertube-database-resiliency-exclude-file
+  publish-connection-parameter
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+log = ${:var}/log
+run = ${:var}/run
+www = ${:var}/www
+crontabs = ${:etc}/crontabs
+cron-entries = ${:etc}/cron.d
+cronstamps = ${:etc}/cronstamps
+cron-lines = ${:etc}/cron.lines
+peertube_nginx_log = ${:log}/nginx
+varnginx = ${:var}/nginx
+services = ${:etc}/service
+peertube_directory = ${:www}/peertube
+config = ${:peertube_directory}/config
+storage = ${:peertube_directory}/storage
+versions = ${:peertube_directory}/versions
+ssl = ${:etc}/ssl
+
+##################
+#   Postgresql   #
+##################
+
+[postgresql-password]
+recipe = slapos.cookbook:generate.password
+
+[postgresql-address]
+recipe = slapos.cookbook:free_port
+minimum = 5432
+maximum = 5452
+ip = {{ ipv4_random }}
+
+[postgresql]
+recipe = slapos.cookbook:postgres
+bin = {{ postgresql10_location }}/bin/
+services = ${directory:services}
+dbname  = peertube_prod
+superuser = peertube
+password = ${postgresql-password:passwd}
+pgdata-directory = ${directory:srv}/postgresql
+
+ipv4 = ${postgresql-address:ip}
+# disable listening on ipv6
+ipv6 =
+port = ${postgresql-address:port}
+
+[postgresql-binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = ${postgresql:bin}/postgres ${postgresql:bin}/psql
+
+#############
+#   Nginx   #
+#############
+
+[nginx-service]
+recipe = slapos.recipe.template
+url = {{ template_nginx_service }}
+output = ${directory:services}/nginx
+virtual-depends =
+  ${nginx-configuration:ip}
+
+[nginx-listen-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = nginx_listen.py
+config-verify = 0
+config-url = https://[${nginx-configuration:ip}]:${nginx-configuration:port}
+
+[nginx-configuration]
+recipe = slapos.recipe.template
+url = {{ template_nginx_configration }}
+output = ${directory:etc}/nginx.cfg
+access_log = ${directory:log}/nginx-access.log
+error_log = ${directory:log}/nginx-error.log
+ip = {{ ipv6_random }}
+port = 9443
+ssl_key = ${directory:ssl}/nginx.key
+ssl_csr = ${directory:ssl}/nginx.csr
+ssl_crt = ${directory:ssl}/nginx.crt
+
+#############
+#   Redis   #
+#############
+[redis]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/redis
+log     = ${directory:log}/redis
+
+[service-redis]
+recipe  = slapos.cookbook:redis.server
+wrapper = ${directory:services}/redis
+promise-wrapper = ${directory:bin}/redis-promise
+
+server-dir  = ${redis:srv}
+config-file = ${directory:etc}/redis.conf
+log-file    = ${redis:log}/redis.log
+pid-file    = ${directory:run}/redis.pid
+use-passwd  = false
+unixsocket  = ${:server-dir}/redis.socket
+# port = 0 means "don't listen on TCP at all" - listen only on unix socket
+ipv6    = ::1
+port    = 0
+
+server-bin = {{ redis_binprefix }}/redis-server
+cli-bin  = {{ redis_binprefix }}/redis-cli
+depend  =
+    ${logrotate-entry-redis:recipe}
+
+[promise-redis]
+<= monitor-promise-base
+promise = check_command_execute
+name = promise-redis.py
+config-command = ${service-redis:promise-wrapper}
+
+[logrotate-entry-redis]
+<= logrotate-entry-base
+log     = ${redis:log}/*.log
+name = redis
+
+################
+#   Peertube   #
+################
+
+[peertube-passwd]
+recipe = slapos.cookbook:generate.password
+username = root
+
+[peertube-yaml]
+recipe = slapos.recipe.template
+url = {{ template_peertube_yaml }}
+output = ${directory:config}/peertube.yaml
+
+[peertube-listen-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = peertube_listen.py
+config-verify = 0
+config-url = ${peertube-parameters:frontend-url}
+
+[peertube-service]
+recipe = slapos.recipe.template
+url = {{ template_peertube_service }}
+output = ${directory:services}/peertube
+
+[peertube-database-resiliency-exclude-file]
+recipe = slapos.recipe.template:jinja2
+inline = {{ "${postgresql:pgdata-directory}/" }}
+output = ${directory:srv}/exporter.exclude
+
+[peertube-database-resiliency-after-import-script]
+recipe = slapos.recipe.template
+url = {{ template_peertube_restore }}
+output = ${directory:srv}/runner-import-restore
+mode = 755
+
+#################################
+#         Cron service          #
+#################################
+[dcron-service]
+recipe = slapos.recipe.template
+url = {{ template_dcron_service }}
+output = ${directory:services}/crond
+logfile = ${directory:log}/crond.log
+
+[peertube-backup-script]
+recipe = slapos.recipe.template
+url = {{ template_peertube_backup }}
+backup-file = ${directory:srv}/backup/peertube_prod-dump.db
+output = ${directory:bin}/${:_buildout_section_name_}
+mode = 0744
+
+[peertube-backup-cron]
+recipe = slapos.recipe.template
+url = {{ template_crontab_line }}
+output = ${directory:bin}/${:_buildout_section_name_}
+script = ${peertube-backup-script:output}
+name = ${:_buildout_section_name_}
+frequency = {{ slapparameter_dict.get('frequency', '@daily') }}
+
+[activate-crontab-file]
+# XXX File is never removed
+recipe = plone.recipe.command
+stop-on-error = true
+command = {{ coreutils_cat }} {{ template_crontab }} ${peertube-backup-cron:output} | {{ dcron_output }} -c ${directory:crontabs} -
+
+[frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = PeerTube Server Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+{% if slapparameter_dict.get('frontend-url', 'false') != 'false' -%}
+state = stopped
+{% endif -%}
+config-type = websocket
+config-websocket-path-list = /socket.io /socket /tracker/socket
+config-url = https://[${nginx-configuration:ip}]:${nginx-configuration:port}
+return = domain secure_access
+
+[peertube-parameters]
+recipe = slapos.recipe.build
+slapparameter-dict = {{ dumps(slapparameter_dict) }}
+default-frontend-url = ${frontend:connection-secure_access}
+working-dir = {{ peertube_location }}
+ipv4-port=9000
+node-config-dir=${directory:config}
+node-env=production
+npm-bin={{ nodejs_location }}/bin/npm
+default-parameters =
+  {
+    "name" : "Peertube in Slapos",
+    "frontend-url" : "",
+    "short_description" : "PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.",
+    "description" : "Welcome to this PeerTube instance!",
+    "terms" : "No terms for now.",
+    "code_of_conduct" : "",
+    "moderation_information" : "",
+    "creation_reason" : "",
+    "administrator" : "",
+    "maintenance_lifetime" : "",
+    "business_model" : "",
+    "hardware_information" : ""
+  }
+init =
+  from six.moves.urllib.parse import urlparse
+  import json
+  default_parameters = json.loads(options.get('default-parameters').strip())
+  default_parameters['frontend-url'] = options['default-frontend-url']
+  parameters = dict(default_parameters, **options['slapparameter-dict'])
+  # options is not a dict...
+  options['name'] = parameters['name']
+  options['frontend-url'] = parameters['frontend-url']
+  options['short_description'] = parameters['short_description']
+  options['description'] = parameters['description']
+  options['terms'] = parameters['terms']
+  options['code_of_conduct'] = parameters['code_of_conduct']
+  options['moderation_information'] = parameters['moderation_information']
+  options['creation_reason'] = parameters['creation_reason']
+  options['administrator'] = parameters['administrator']
+  options['maintenance_lifetime'] = parameters['maintenance_lifetime']
+  options['business_model'] = parameters['business_model']
+  options['hardware_information'] = parameters['hardware_information']
+  url = urlparse(options.get('frontend-url'))
+  if url.port:
+    options['host'] = '[' + url.hostname + ']'
+    options['port'] = str(url.port)
+  else:
+    options['host'] = url.hostname
+    options['port'] = str(443)
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+backend-url = ${frontend:config-url}
+frontend-url = ${peertube-parameters:frontend-url}
+password = ${peertube-passwd:passwd}
+username = ${peertube-passwd:username}
