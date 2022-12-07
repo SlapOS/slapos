@@ -1,0 +1,75 @@
+#!${dash-output:dash}
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# OR POSTGRESQL DATA WILL BE ERASED.
+
+# This script will import the dump of the postgresql database to the real
+# database. It is launched by the clone (importer) instance of theia
+# in the end of the import script.
+
+# Depending on the output, it will create a file containing
+# the status of the restoration (success or failure)
+
+die() {
+    echo "$*" 1>&2
+    exit 1
+}
+
+echo "Postgresql data directory is ready"
+# 2. Make sure the postgresql process is not running.
+# Quote from the postgresql doc:
+# > While the server is running, its PID is stored in the file postmaster.pid in the data directory.
+# https://www.postgresql.org/docs/current/server-start.html
+# which means if the postmaster.pid exist, then the postgresql is running.
+pid_file=$${postgresql:pgdata-directory}/postmaster.pid
+if [ -e "$pid_file" ]; then
+  echo "Postgresql is running, this should not happened, aborting."
+  exit 1
+fi
+
+echo "Starting postgresql..."
+$${postgresql:bin}/postgres -D $${postgresql:pgdata-directory} &
+postgresql_pid=$!
+trap "kill $postgresql_pid" EXIT TERM INT
+
+# If postgres has stopped, abort
+if ! [ -d /proc/$postgresql_pid ]; then
+  echo "postgresql exited, aborting."
+  exit 1
+fi
+
+# run psql
+psql() {
+    PGPASSWORD=$${postgresql:password} $${postgresql:bin}/psql \
+        -h $${postgresql:ipv4}              \
+        -p $${postgresql:port}              \
+        -U $${postgresql:superuser}         \
+        -d $${postgresql:dbname}            \
+        "$@"
+}
+
+echo "Ready to check postgresql is running..."
+
+# initial db setup
+# ( first quering PG several times waiting a bit till postgresql is started and ready )
+tpgwait=60
+while true; do
+    pgtables="$(psql -c '\d' 2>&1)" && break
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pg query problem"
+    echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+echo "I: PostgreSQL ready." 1>&2
+
+echo "Postgresql is running, ready to restore"
+
+# Restore the database
+# Use -d to connect to the default 'postgres' database to allow us to restore the $${postgresql:dbname}
+PGPASSWORD=$${postgresql:password} $${postgresql:bin}/pg_restore -h $${postgresql:ipv4} -p $${postgresql:port} -U $${postgresql:superuser} -e -c -C -d postgres $${peertube-backup-script:backup-file} || {
+  RESTORE_EXIT_CODE=$?
+  echo 'Backup restoration failed.'
+  exit $RESTORE_EXIT_CODE
+}
+
+echo "Postgresql restore finished"
