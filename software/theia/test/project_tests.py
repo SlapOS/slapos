@@ -411,7 +411,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     # The video mp4 file is accesible through the URL
     self.assertEqual(requests.codes['OK'], response.status_code)
 
-    video_feeds_url = frontend_url + '/feeds/video.json'
+    video_feeds_url = frontend_url + '/feeds/videos.json'
     response = requests.get(video_feeds_url, verify=False)
 
     # The video feeds returns the correct status code
