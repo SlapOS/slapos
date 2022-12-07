@@ -422,8 +422,9 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
       self.fail("No json file returned! Maybe your Peertube feeds URL is incorrect.")
 
     # Check the first video title is in the response content
+    self.assertIn("xxx", video_data)
     video_title = video_data['items'][0]['title']
-    self.assertIn("Small test video" in video_title)
+    self.assertIn("Small test video", video_title)
 
   def _getPeertubePartition(self, servicename):
     p = subprocess.Popen(
