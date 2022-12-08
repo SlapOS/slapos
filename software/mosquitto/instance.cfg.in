@@ -49,12 +49,12 @@ install =
   config.write(f"password_file {password}\n\n")
 
 [mosquitto-password-file]
-recipe = slapos.recipe.build
+recipe = plone.recipe.command
 location = ${directory:etc}/${:_buildout_section_name_}.txt
-install = 
-  import os
-  os.system("touch ${directory:etc}/${:_buildout_section_name_}.txt")
-  os.system("mosquitto_passwd -b ${directory:etc}/${:_buildout_section_name_}.txt mosquitto ${mosquitto-password:passwd}")
+command = 
+  touch ${:location}
+  {{ mosquitto_location }}/bin/mosquitto_passwd -b ${:location} ${mosquitto-password:username} ${mosquitto-password:passwd}
+stop-on-error = true
 
 [mosquitto-password]
 recipe = slapos.cookbook:generate.password
@@ -86,5 +86,5 @@ output = $${:wrapper-path}
 recipe = slapos.cookbook:publish
 ipv4 = mqtt://${mosquitto-config-file:ipv4}:${mosquitto-config-file:port}
 ipv6 = mqtt://${mosquitto-config-file:ipv6}:${mosquitto-config-file:port}
-username = mosquitto
+username = ${mosquitto-password:username}
 password = ${mosquitto-password:passwd}
