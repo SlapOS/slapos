@@ -34,21 +34,47 @@ bin = ${:home}/bin
 [mosquitto-config-file]
 recipe = slapos.recipe.build
 location = ${directory:etc}/${:_buildout_section_name_}.cfg
-ip = ${instance-parameter:ipv4-random}
+ipv4 = ${instance-parameter:ipv4-random}
+ipv6 = ${instance-parameter:ipv6-random}
+port = 1883
+password = ${mosquitto-password-file:location}
 install =
   config = open(self.options["location"], "w")
-  ip = self.options["ip"]
-  config.write(f"listener 1883 {ip}\nprotocol mqtt")
+  port = self.options["port"]
+  ipv4 = self.options["ipv4"]
+  ipv6 = self.options["ipv6"]
+  password = self.options["password"]
+  config.write(f"listener {port} {ipv4}\nprotocol mqtt\n\n")
+  config.write(f"listener {port} {ipv6}\nprotocol mqtt\n\n")
+  config.write(f"password_file {password}\n\n")
 
-[mosquitto-listen-promise]
+[mosquitto-password-file]
+recipe = plone.recipe.command
+location = ${directory:etc}/${:_buildout_section_name_}.txt
+command = 
+  touch ${:location}
+  {{ mosquitto_location }}/bin/mosquitto_passwd -b ${:location} ${mosquitto-password:username} ${mosquitto-password:passwd}
+stop-on-error = true
+
+[mosquitto-password]
+recipe = slapos.cookbook:generate.password
+username = mosquitto
+
+[mosquitto-listen-promise-ipv4]
 <= check-port-listening-promise
-hostname = ${mosquitto-config-file:ip}
-port = 1883
+hostname = ${mosquitto-config-file:ipv4}
+port = ${mosquitto-config-file:port}
+
+[mosquitto-listen-promise-ipv6]
+<= check-port-listening-promise
+hostname = ${mosquitto-config-file:ipv6}
+port = ${mosquitto-config-file:port}
 
 [promises]
 recipe =
 instance-promises =
-  ${mosquitto-listen-promise:path}
+  ${mosquitto-listen-promise-ipv4:path}
+  ${mosquitto-listen-promise-ipv6:path}
 
 [mosquitto-service]
 recipe  = slapos.cookbook:wrapper
@@ -58,4 +84,7 @@ output = $${:wrapper-path}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-url = mqtt://${mosquitto-listen-promise:hostname}:${mosquitto-listen-promise:port}
+ipv4 = mqtt://${mosquitto-config-file:ipv4}:${mosquitto-config-file:port}
+ipv6 = mqtt://${mosquitto-config-file:ipv6}:${mosquitto-config-file:port}
+username = ${mosquitto-password:username}
+password = ${mosquitto-password:passwd}

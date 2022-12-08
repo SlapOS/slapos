@@ -1,0 +1,36 @@
+#!${dash-output:dash}
+
+# setup db
+
+die() {
+    echo "$*" 1>&2
+    exit 1
+}
+
+# run psql on gitlab db
+psql() {
+    PGPASSWORD=$${postgresql:password} $${postgresql:bin}/psql \
+        -h $${postgresql:ipv4}              \
+        -p $${postgresql:port}              \
+        -U $${postgresql:superuser}         \
+        -d $${postgresql:dbname}            \
+        "$@"
+}
+
+# initial db setup
+# ( first quering PG several times waiting a bit till postgresql is started and ready )
+tpgwait=5
+while true; do
+    pgtables="$(psql -c '\d' 2>&1)" && break
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pg query problem"
+    echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+echo "I: PostgreSQL ready." 1>&2
+
+cd ${peertube:location}
+
+exec env PT_INITIAL_ROOT_PASSWORD=$${peertube-passwd:passwd} NODE_ENV=peertube\
+  NODE_CONFIG_DIR=$${directory:config} PATH=${ffmpeg:location}/bin:$PATH\
+  ${nodejs:location}/bin/node ${peertube:location}/dist/server
