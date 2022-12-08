@@ -344,9 +344,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     print('Requesting Peertube with parameters %s' % params)
     self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
 
-    # Process twice to propagate parameter changes
-    for _ in range(2):
-      self.checkSlapos('node', 'instance')
+    self.checkSlapos('node', 'instance')
 
     self.callSlapos('node', 'restart', 'all')
 
