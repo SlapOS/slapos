@@ -421,7 +421,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
       video_data= response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Peertube feeds URL is incorrect.")
-
+    self.assertIn("xxx", video_data)
     # Check the first video title is in the response content
     video_title = video_data['items'][0]['title']
     self.assertIn("Small test video", video_title)
