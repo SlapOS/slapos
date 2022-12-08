@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2019 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,29 +24,29 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import GenericBaseRecipe
-import binascii
-import os
-import sys
+from setuptools import setup, find_packages
 
-class Recipe(GenericBaseRecipe):
-  """
-  novnc instance configuration.
-  """
+version = '0.0.1.dev0'
+name = 'slapos.test.peertube'
+with open("README.md") as f:
+  long_description = f.read()
 
-  def install(self):
-    return self.createWrapper(
-      self.options['path'],
-      (
-        self.options['websockify-path'],
-        '--web',
-        self.options['novnc-location'],
-        '--key=%s' % self.options['ssl-key-path'],
-        '--cert=%s' % self.options['ssl-cert-path'],
-        '--ssl-only',
-        '%s:%s' % (self.options['ip'], self.options['port']),
-        '%s:%s' % (self.options['vnc-ip'], self.options['vnc-port']),
-       ),
-      wait_list=(self.options['ssl-key-path'],
-                 self.options['ssl-cert-path']),
-    )
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' peertube",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
+        'slapos.core',
+        'slapos.libnetworkcache',
+        'erp5.util',
+        'requests',
+    ],
+    zip_safe=True,
+    test_suite='test',
+)

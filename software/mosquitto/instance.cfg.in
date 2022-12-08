@@ -1,0 +1,90 @@
+[buildout]
+parts =
+  promises
+  mosquitto-service
+  publish-connection-parameter
+
+eggs-directory = {{ buildout["eggs-directory"] }}
+develop-eggs-directory = {{ buildout["develop-eggs-directory"] }}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise/
+log = ${:var}/log
+bin = ${:home}/bin
+
+[mosquitto-config-file]
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.cfg
+ipv4 = ${instance-parameter:ipv4-random}
+ipv6 = ${instance-parameter:ipv6-random}
+port = 1883
+password = ${mosquitto-password-file:location}
+install =
+  config = open(self.options["location"], "w")
+  port = self.options["port"]
+  ipv4 = self.options["ipv4"]
+  ipv6 = self.options["ipv6"]
+  password = self.options["password"]
+  config.write(f"listener {port} {ipv4}\nprotocol mqtt\n\n")
+  config.write(f"listener {port} {ipv6}\nprotocol mqtt\n\n")
+  config.write(f"password_file {password}\n\n")
+
+[mosquitto-password-file]
+recipe = plone.recipe.command
+location = ${directory:etc}/${:_buildout_section_name_}.txt
+command = 
+  touch ${:location}
+  {{ mosquitto_location }}/bin/mosquitto_passwd -b ${:location} ${mosquitto-password:username} ${mosquitto-password:passwd}
+stop-on-error = true
+
+[mosquitto-password]
+recipe = slapos.cookbook:generate.password
+username = mosquitto
+
+[mosquitto-listen-promise-ipv4]
+<= check-port-listening-promise
+hostname = ${mosquitto-config-file:ipv4}
+port = ${mosquitto-config-file:port}
+
+[mosquitto-listen-promise-ipv6]
+<= check-port-listening-promise
+hostname = ${mosquitto-config-file:ipv6}
+port = ${mosquitto-config-file:port}
+
+[promises]
+recipe =
+instance-promises =
+  ${mosquitto-listen-promise-ipv4:path}
+  ${mosquitto-listen-promise-ipv6:path}
+
+[mosquitto-service]
+recipe  = slapos.cookbook:wrapper
+command-line = {{ mosquitto_location }}/sbin/mosquitto -c ${mosquitto-config-file:location}
+wrapper-path = ${directory:service}/mosquitto-service
+output = $${:wrapper-path}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+ipv4 = mqtt://${mosquitto-config-file:ipv4}:${mosquitto-config-file:port}
+ipv6 = mqtt://${mosquitto-config-file:ipv6}:${mosquitto-config-file:port}
+username = ${mosquitto-password:username}
+password = ${mosquitto-password:passwd}

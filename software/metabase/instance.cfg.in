@@ -70,7 +70,6 @@ config-url= $${metabase-instance:url}/api/session/properties
 
 [metabase-keystore-password]
 recipe = slapos.cookbook:generate.password
-bytes = 24
 
 [metabase-keystore]
 recipe = plone.recipe.command
