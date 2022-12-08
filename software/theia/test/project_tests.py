@@ -311,6 +311,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
             'channelId': 1,
             'name': video_name,
             'commentEnabled': False,
+            'privacy': 1,
         }
         upload_response = requests.post(
             frontend_url + '/api/v1/videos/upload',
@@ -423,7 +424,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
     # Check the first video title is in the response content
     video_title = video_data['items'][0]['title']
-    self.assertIn("Small test video" in video_title)
+    self.assertIn("Small test video", video_title)
 
   def _getPeertubePartition(self, servicename):
     p = subprocess.Popen(
