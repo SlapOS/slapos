@@ -185,7 +185,8 @@ context =
 
 [monitor-httpd-cors]
 recipe = slapos.recipe.template:jinja2
-url = {{ monitor_https_cors }}
+# url = {{ monitor_https_cors }}
+url = softinst89926.host.vifib.net
 output = ${directory:etc}/httpd-cors.cfg
 context =
   key domain monitor-instance-parameter:cors-domains
