@@ -10,7 +10,7 @@
       "default": "",
       "type": "string"
     },
-    "fronted-url": {
+    "frontend-url": {
       "title": "Frontend URL",
       "description": "Frontend URL",
       "default": "",
@@ -64,7 +64,7 @@
       "type": "string"
     },
     "administrator": {
-      "title":"Administrator",
+      "title": "Administrator",
       "description": "Who is behind the instance? A single person? A non profit?",
       "default": "",
       "type": "string"
