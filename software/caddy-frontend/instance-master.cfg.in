@@ -832,27 +832,41 @@ context =
 service = ${:etc}/service
 promise-output = ${:srv}/promise-output
 
-[rejected-slave-publish-configuration]
+[master-introspection-server-configuration]
 ip = {{ instance_parameter_dict['ipv6-random'] }}
 port = 14455
 
-[rejected-slave-publish]
-directory = ${rejected-slave-json:directory}
-url = https://${rejected-slave-password:user}:${rejected-slave-password:passwd}@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
+[master-introspection-server]
+ip = ${master-introspection-server-configuration:ip}
+port = ${master-introspection-server-configuration:port}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
-  -c ${rejected-slave-template:output}
+  -c ${master-introspection-template:output}
 
-wrapper-path = ${directory:service}/rejected-slave-publish
+wrapper-path = ${directory:service}/master-introspection-server
 hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
 hash-files =
-  ${rejected-slave-template:output}
-  ${rejected-slave-certificate:certificate}
+  ${master-introspection-template:output}
+  ${master-introspection-certificate:certificate}
 
-[rejected-slave-certificate]
+[master-introspection-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Master Introspection Frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = https://[${master-introspection-server:ip}]:${master-introspection-server:port}/
+config-https-only = true
+return = secure_access
+
+[rejected-slave-publish]
+#url = https://${master-introspection-password:user}:${master-introspection-password:passwd}@${master-introspection-frontend:secure_access}/rejected-slave/${rejected-slave-json:filename}
+url = ${master-introspection-frontend:connection-secure_access}/rejected-slave/${rejected-slave-json:filename}
+
+[master-introspection-certificate]
 recipe = plone.recipe.command
-certificate = ${directory:etc}/rejected-slave.pem
+certificate = ${directory:etc}/master-introspection.pem
 key = ${:certificate}
 
 {#- Can be stopped on error, as does not rely on self provided service #}
@@ -862,26 +876,26 @@ command =
   [ -f ${:certificate} ] && {{ software_parameter_dict['findutils'] }}/bin/find ${:certificate} -type f -mtime +3 -delete
   if ! [ -f ${:certificate} ] ; then
     openssl req -new -newkey rsa:2048 -sha256 -subj \
-      "/CN=${rejected-slave-publish-configuration:ip}" \
+      "/CN=${master-introspection-server-configuration:ip}" \
       -days 5 -nodes -x509 -keyout ${:certificate} -out ${:certificate}
   fi
 
-[rejected-slave-password]
+[master-introspection-password]
 recipe = slapos.cookbook:generate.password
-storage-path = ${directory:etc}/.rejected-slave.passwd
+storage-path = ${directory:etc}/.master-introspection.passwd
 bytes = 8
 user = admin
 
-[rejected-slave-htpasswd]
+[master-introspection-htpasswd]
 recipe = plone.recipe.command
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 file = ${directory:var}/nginx-rejected.htpasswd
 {#- update-command is not needed, as if the ${:password} would change, the whole part will be recalculated #}
-password = ${rejected-slave-password:passwd}
-command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slave-password:user} ${:password}
+password = ${master-introspection-password:passwd}
+command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${master-introspection-password:user} ${:password}
 
-[rejected-slave-template]
+[master-introspection-template]
 recipe = slapos.recipe.template:jinja2
 var = ${directory:rejected-var}
 pid = ${directory:var}/nginx-rejected.pid
@@ -898,35 +912,34 @@ inline =
       port_in_redirect off;
       error_log stderr;
       access_log /dev/null;
-      listen [${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port} ssl;
-      ssl_certificate ${rejected-slave-certificate:certificate};
-      ssl_certificate_key ${rejected-slave-certificate:certificate};
+      listen [${master-introspection-server-configuration:ip}]:${master-introspection-server-configuration:port} ssl;
+      ssl_certificate ${master-introspection-certificate:certificate};
+      ssl_certificate_key ${master-introspection-certificate:certificate};
       default_type application/octet-stream;
       client_body_temp_path ${:var} 1 2;
       proxy_temp_path ${:var} 1 2;
       fastcgi_temp_path ${:var} 1 2;
       uwsgi_temp_path ${:var} 1 2;
       scgi_temp_path ${:var} 1 2;
-
-      location / {
+      auth_basic "Master Introspection";
+      auth_basic_user_file ${master-introspection-htpasswd:file};
+      location /rejected-slave {
         alias ${rejected-slave-json:directory}/;
         autoindex off;
         sendfile on;
         sendfile_max_chunk 1m;
-        auth_basic "Rejected slave template";
-        auth_basic_user_file ${rejected-slave-htpasswd:file};
       }
     }
   }
 
-output = ${directory:etc}/nginx-rejected-slave.conf
+output = ${directory:etc}/nginx-master-introspection.conf
 
-[promise-rejected-slave-publish-ip-port]
+[master-introspection-server-ip-port]
 <= monitor-promise-base
 promise = check_socket_listening
-name = rejected-slave-publish-ip-port-listening.py
-config-host = ${rejected-slave-publish-configuration:ip}
-config-port = ${rejected-slave-publish-configuration:port}
+name = master-introspection-server-ip-port-listening.py
+config-host = ${master-introspection-server-configuration:ip}
+config-port = ${master-introspection-server-configuration:port}
 
 [rejected-slave-promise]
 <= monitor-promise-base
@@ -1014,12 +1027,13 @@ parts =
   publish-information
   request-kedifa
   rejected-slave-promise
-  promise-rejected-slave-publish-ip-port
+  master-introspection-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise
   master-key-upload-url-ready-promise
   master-key-generate-auth-url-ready-promise
   master-key-download-url-ready-promise
+  master-introspection-frontend
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
