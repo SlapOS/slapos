@@ -2,9 +2,9 @@ T-0:bootstrap-monitor EXITED
 T-0:caucased-backend-client-{hash-generic}-on-watch RUNNING
 T-0:certificate_authority-{hash-generic}-on-watch RUNNING
 T-0:crond-{hash-generic}-on-watch RUNNING
+T-0:master-introspection-server-{hash-generic}-on-watch RUNNING
 T-0:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-0:monitor-httpd-graceful EXITED
-T-0:rejected-slave-publish-{hash-rejected-slave-publish}-on-watch RUNNING
 T-1:bootstrap-monitor EXITED
 T-1:caucase-updater-on-watch RUNNING
 T-1:caucased-{hash-generic}-on-watch RUNNING

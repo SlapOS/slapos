@@ -955,6 +955,18 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
       return getattr(instance_supervisor, method)(*args, **kwargs)
 
+  def assertPublishFailsafeErrorPromiseEmptyWithPop(self, parameter_dict):
+    promise_url = parameter_dict.pop(
+      'publish-failsafe-error-promise-url')
+
+    try:
+      result = requests.get(promise_url, verify=False)
+      self.assertEqual("", result.text)
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(e)
+
   def assertRejectedSlavePromiseEmptyWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
       'rejected-slave-promise-url')
@@ -1185,11 +1197,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return parsed_parameter_dict
 
   def getMasterPartitionPath(self):
-    # partition with etc/nginx-rejected-slave.conf
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(
-        os.path.join(q, 'etc', 'nginx-rejected-slave.conf'))][0]
+        os.path.join(q, 'etc', 'etc/nginx-master-introspection.conf'))][0]
 
   def parseConnectionParameterDict(self):
     return self.parseParameterDict(
@@ -1461,6 +1472,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
@@ -1493,6 +1505,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
@@ -1601,6 +1614,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
@@ -2073,6 +2087,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
@@ -5169,6 +5184,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5676,6 +5692,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5768,6 +5785,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
