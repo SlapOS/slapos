@@ -180,7 +180,6 @@ caddy-https-port = ${configuration:port}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
 slave-introspection-https-port = ${configuration:slave-introspection-https-port}
 slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
-slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
@@ -979,7 +978,7 @@ software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/a
 shared = true
 config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
 config-https-only = true
-return = domain secure_access
+return = secure_access
 
 [backend-haproxy-statistic-frontend]
 <= slap-connection
