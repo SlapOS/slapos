@@ -64,7 +64,7 @@
       "type": "string"
     },
     "administrator": {
-      "title":"Administrator",
+      "title": "Administrator",
       "description": "Who is behind the instance? A single person? A non profit?",
       "default": "",
       "type": "string"
