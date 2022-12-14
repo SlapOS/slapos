@@ -31,7 +31,7 @@ pids = ${directory:run}/monitor
 webdav = ${directory:monitor}/webdav
 public = ${directory:monitor}/public
 private = ${directory:monitor}/private
-gadget = ${directory:monitor}/public/gadget
+gadget = ${:public}/gadget
 documents = ${:private}/documents
 log = ${directory:log}/monitor
 promise-result = ${buildout:directory}/.slapgrid/promise/result
@@ -185,8 +185,7 @@ context =
 
 [monitor-httpd-cors]
 recipe = slapos.recipe.template:jinja2
-# url = {{ monitor_https_cors }}
-url = softinst89926.host.vifib.net
+url = {{ monitor_https_cors }}
 output = ${directory:etc}/httpd-cors.cfg
 context =
   key domain monitor-instance-parameter:cors-domains
