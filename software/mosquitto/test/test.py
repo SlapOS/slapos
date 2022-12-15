@@ -17,7 +17,7 @@ class MosquittoTestCase(SlapOSInstanceTestCase):
     return { "name": cls.name }
 
 
-class MQTTRequestTestMixin(SlapOSInstanceTestCase):
+class TestMQTT(SlapOSInstanceTestCase):
 
   """
   Test if mosquitto service can publish and subscribe
