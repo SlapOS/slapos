@@ -14,17 +14,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 )
 
 
-class MosquittoTestCase(SlapOSInstanceTestCase):
-
-  name = None
-  kind = None
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return { "name": cls.name }
-
-
-class MQTTRequestTestMixin:
+class MQTTRequestTestMixin(SlapOSInstanceTestCase):
 
   """
   Test if mosquitto service can publish and subscribe
