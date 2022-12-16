@@ -113,6 +113,7 @@ extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 erp5-location = {{ erp5_location }}
 egg-interpreter = {{egg_interpreter}}
+faketime = {{ faketime_location }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
