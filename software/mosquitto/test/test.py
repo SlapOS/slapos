@@ -25,7 +25,7 @@ class TestMQTT(SlapOSInstanceTestCase):
   """
 
   def test_publish_subscribe_ipv4(self):
-    host = self.computer_partition.getConnectionParameterDict()["ipv4-ip"]
+    host = self.computer_partition.getConnectionParameterDict()["ipv4"]
     username = self.computer_partition.getConnectionParameterDict()["username"]
     password = self.computer_partition.getConnectionParameterDict()["password"]
 
