@@ -79,12 +79,12 @@ class RunPromise(GenericPromise):
       data = psutil.sensors_temperatures()
       cpu_temp = data['coretemp'][0][1]
 
-    l = get_data_interval(self.__log_file, max_avg_temp_duration)
+    l = get_data_interval(self.__log_file, max_avg_temp_duration) or [{'cpu_temperature': cpu_temp}]
     avg_temp = sum(map(lambda x: x['cpu_temperature'], l)) / len(l)
 
     data = json.dumps({'cpu_temperature': cpu_temp, 'avg_cpu_temperature': avg_temp})
     self.json_logger.info("Temperature data", extra={'data': data})
-    
+
     promise_success = True
     if cpu_temp > max_temp:
       self.logger.error("Temperature reached critical threshold: %s degrees celsius (threshold is %s degrees celsius)" % (cpu_temp, max_temp))

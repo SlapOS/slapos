@@ -84,7 +84,10 @@ output = $${:wrapper-path}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-ipv4 = mqtt://${mosquitto-config-file:ipv4}:${mosquitto-config-file:port}
-ipv6 = mqtt://${mosquitto-config-file:ipv6}:${mosquitto-config-file:port}
+ipv4 = ${mosquitto-config-file:ipv4}
+ipv6 = ${mosquitto-config-file:ipv6}
+port = ${mosquitto-config-file:port}
+ipv4-url = mqtt://${mosquitto-config-file:ipv4}:${mosquitto-config-file:port}
+ipv6-url = mqtt://${mosquitto-config-file:ipv6}:${mosquitto-config-file:port}
 username = ${mosquitto-password:username}
 password = ${mosquitto-password:passwd}

@@ -142,7 +142,7 @@ recipe = slapos.recipe.build
 # it will be automatically removed at the beginning of "install".
 location = ${directory:srv}/html5as
 # All the keys in this section will be available as a dict called "self.options"
-archive = {{ '${downloader:destination}' if parameter_dict['download_url'] else '' }}
+archive = {{ '${downloader:target}' if parameter_dict['download_url'] else '' }}
 default_index_html = ${default_index_html:output}
 # If a tarball is passed as a parameter in download url
 # it's content will be served by the instance.
