@@ -64,15 +64,28 @@ class ERP5InstanceTestMeta(type):
       cls._parameterize(base_class)
     return base_class
 
+  # _isParameterized tells whether class is parameterized.
+  # A user-defined class with .__parameterize__ = True is considered
+  # to be parameterized.
+  # But classes automatically instantiated from such user class with
+  # particular parameters are considered to be not parameterized.
+  def _isParameterized(self):
+    return (
+      getattr(self, '__parameterize__', True) and
+      not getattr(self, '.created_by_parametrize', False)
+    )
+
   # Create two test classes from single definition: e.g. TestX -> TestX_ZEO and TestX_NEO.
   @classmethod
   def _parameterize(cls, base_class):
     mod_dict = sys.modules[base_class.__module__].__dict__
     for flavour in ("zeo", "neo"):
-      # Override metaclass to avoid infinite loop due to parameterized
-      # class which infinitely creates a parameterized class of itself.
-      class patched(base_class, metaclass=_deactivate):
-        zodb_storage = flavour
+      patched_cls_dict = dict(base_class.__dict__)        # dict for flavoured class
+      patched_cls_dict['.created_by_parametrize'] = True  # prevent infinite recursion
+      patched_cls_dict['zodb_storage'] = flavour
+
+      name = "%s_%s" % (base_class.__name__, flavour.upper())
+      patched = type(name, (base_class,), patched_cls_dict)
 
       # Switch
       #   - .getInstanceParameterDict       to ._test_getInstanceParameterDict, and
@@ -82,8 +95,7 @@ class ERP5InstanceTestMeta(type):
       patched._test_getInstanceParameterDict = patched.getInstanceParameterDict
       patched.getInstanceParameterDict       = patched._base_getInstanceParameterDict
 
-      name = "%s_%s" % (base_class.__name__, flavour.upper())
-      mod_dict[name] = type(name, (patched,), dict(patched.__dict__))
+      mod_dict[name] = patched
 
   # Hide tests in unpatched base class: It doesn't make sense to run tests
   # in original class, because parameters have not been assigned yet.
@@ -96,35 +108,6 @@ class ERP5InstanceTestMeta(type):
     if self._isParameterized():
       return [attr for attr in super().__dir__() if not attr.startswith('test')]
     return super().__dir__()
-
-  def _isParameterized(self):
-    return getattr(self, '__parameterize__', True)
-
-
-class _deactivate(ERP5InstanceTestMeta):
-  """_deactivate behaves exactly the same like plain type.
-
-  It allows the syntax
-
-    >>> class A(metaclass=ERP5InstanceTestMeta): ...
-    >>> class B(A, metaclass=_deactivate): ...
-
-  to deactivate ERP5InstanceTestMeta in a subclass of A.
-  """
-  # We need '_deactivate' and can't simply use 'type',
-  # because it's not possible to replace an inherited
-  # metaclass by its parent:
-  #
-  #   >>> class meta(type): ...
-  #   >>> class a(object, metaclass=meta): ...
-  #   >>> class b(a, metaclass=type): ...
-  #   >>> type(b)
-  #   __main__.meta
-  def __new__(cls, name, bases, attrs):
-    return type.__new__(cls, name, bases, attrs)
-
-  def __dir__(self):
-    return type.__dir__(self)
 
 
 class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMeta):
