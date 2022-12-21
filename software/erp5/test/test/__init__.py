@@ -46,6 +46,11 @@ def setUpModule():
   setup_module_executed = True
 
 
+# Metaclass to parameterize our tests.
+# This is a rough adaption of the parameterized package:
+#   https://github.com/wolever/parameterized
+# Consult following note for rationale why we don't use parameterized:
+#   https://lab.nexedi.com/nexedi/slapos/merge_requests/1306
 class ERP5InstanceTestMeta(type):
   """ERP5InstanceTestMeta adjusts instances of ERP5InstanceTestCase to
      be run in several flavours: with ZEO and with NEO. Adjustment
@@ -62,7 +67,7 @@ class ERP5InstanceTestMeta(type):
   # Create two test classes from single definition: e.g. TestX -> TestX_ZEO and TestX_NEO.
   @classmethod
   def _parameterize(cls, base_class):
-    test_class_module = sys.modules[base_class.__module__].__dict__
+    mod_dict = sys.modules[base_class.__module__].__dict__
     for flavour in ("zeo", "neo"):
       # Override metaclass to avoid infinite loop due to parameterized
       # class which infinitely creates a parameterized class of itself.
@@ -78,9 +83,11 @@ class ERP5InstanceTestMeta(type):
       patched.getInstanceParameterDict       = patched._base_getInstanceParameterDict
 
       name = "%s_%s" % (base_class.__name__, flavour.upper())
-      test_class_module[name] = type(name, (patched,), dict(patched.__dict__))
+      mod_dict[name] = type(name, (patched,), dict(patched.__dict__))
 
-  # Hide tests in patched class.
+  # Hide tests in unpatched base class: It doesn't make sense to run tests
+  # in original class, because parameters have not been assigned yet.
+  #
   # We can't simply call 'delattr', because this wouldn't remove
   # inherited tests. Overriding dir is sufficient, because this is
   # the way how unittest discovers tests:
@@ -104,6 +111,15 @@ class _deactivate(ERP5InstanceTestMeta):
 
   to deactivate ERP5InstanceTestMeta in a subclass of A.
   """
+  # We need '_deactivate' and can't simply use 'type',
+  # because it's not possible to replace an inherited
+  # metaclass by its parent:
+  #
+  #   >>> class meta(type): ...
+  #   >>> class a(object, metaclass=meta): ...
+  #   >>> class b(a, metaclass=type): ...
+  #   >>> type(b)
+  #   __main__.meta
   def __new__(cls, name, bases, attrs):
     return type.__new__(cls, name, bases, attrs)
 
@@ -125,6 +141,10 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMet
         parameter_dict = json.loads(cls._test_getInstanceParameterDict()["_"])
       except KeyError:
         parameter_dict = {}
+      # We don't provide encryption certificates in test runs for the sake
+      # of simplicity. By default SSL is turned on, we need to explicitly
+      # deactivate it:
+      #   https://lab.nexedi.com/nexedi/slapos/blob/a8150a1ac/software/neoppod/instance-neo-input-schema.json#L61-65
       server = {"ssl": False} if cls.zodb_storage == "neo" else {}
       parameter_dict["zodb"] = [{"type": cls.zodb_storage, "server": server}]
       return {"_": json.dumps(parameter_dict)}
