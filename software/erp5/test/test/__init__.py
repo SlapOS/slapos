@@ -85,7 +85,7 @@ class ERP5InstanceTestMeta(type):
   @classmethod
   def _parameterize(cls, base_class):
     mod_dict = sys.modules[base_class.__module__].__dict__
-    for class_name_suffix, parameter_tuple in (cls.__test_matrix__.items() or ()):
+    for class_name_suffix, parameter_tuple in (cls.__test_matrix__ or {}).items():
       @classmethod
       def getInstanceParameterDict(cls):
         instance_parameter_dict = json.loads(
@@ -111,9 +111,8 @@ class ERP5InstanceTestMeta(type):
           "getInstanceParameterDict": getInstanceParameterDict
         }
       )
-      mod_dict[name] = type(
-        "{base_class.__name__}{class_name_suffix}", (base_class,), parameterized_cls_dict
-      )
+      name = f"{base_class.__name__}{class_name_suffix}"
+      mod_dict[name] = type(name, (base_class,), parameterized_cls_dict)
 
   # Hide tests in unpatched base class: It doesn't make sense to run tests
   # in original class, because parameters have not been assigned yet.
