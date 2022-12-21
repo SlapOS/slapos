@@ -45,11 +45,14 @@ class TestWCFS(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
 
   # Only run in ZEO mode; don't run with NEO.
   # Current NEO/py and NEO/go versions have interoperability
-  # issues. Once these issues are fixed the __parameterize__
-  # line has to be removed so that test case runs agains NEO.
+  # issues. Once these issues are fixed the following
+  # lines have to be removed so that test case runs agains NEO.
   # Please see the following MR for more context:
   # https://lab.nexedi.com/nexedi/slapos/merge_requests/1283#note_174854
-  __parameterize__ = False
+  def setUp(self):
+    if getattr(self, "zodb_storage", None) == "neo":
+      raise unittest.SkipTest("Not yet fixed WCFS+NEO interoperability issue.")
+    super().setUp()
 
   @classmethod
   def getInstanceParameterDict(cls):
