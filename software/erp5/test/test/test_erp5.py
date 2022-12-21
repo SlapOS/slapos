@@ -46,7 +46,7 @@ import xmlrpc.client
 import urllib3
 from slapos.testing.utils import CrontabMixin
 
-from . import ERP5InstanceTestCase, setUpModule
+from . import ERP5InstanceTestCase, setUpModule, matrix, default
 
 setUpModule # pyflakes
 
@@ -119,7 +119,7 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   """Test ERP5 can be instantiated with no parameters
   """
   __partition_reference__ = 'defp'
-  __parameterize__ = False
+  __test_matrix__ = matrix((default,))
 
 
 class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -311,7 +311,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
   """Test override zope node parameters
   """
   __partition_reference__ = 'override'
-  __parameterize__ = False
+  __test_matrix__ = matrix((default,))
 
   @classmethod
   def getInstanceParameterDict(cls):

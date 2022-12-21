@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import itertools
 import json
 import os
 import sys
@@ -52,10 +53,18 @@ def setUpModule():
 # Consult following note for rationale why we don't use parameterized:
 #   https://lab.nexedi.com/nexedi/slapos/merge_requests/1306
 class ERP5InstanceTestMeta(type):
-  """ERP5InstanceTestMeta adjusts instances of ERP5InstanceTestCase to
-     be run in several flavours: with ZEO and with NEO. Adjustment
-     of individual classes can be deactivated by setting the class
-     attribute '__parameterize__' to 'False'.
+  """Adjust ERP5InstanceTestCase instances to be run in several flavours (e.g. NEO/ZEO)
+
+  Adjustements can be declared via setting the '__test_matrix__' attribute
+  of a test case.
+  A test matrix is a dict which maps the flavoured class name suffix to
+  a tuple of parameters.
+  A parameter is a function which receives the instance_parameter_dict
+  and modifies it in place (therefore no return value is needed).
+  You can use the 'matrix' helper function to construct a test matrix.
+  If .__test_matrix__ is 'None' the test case is ignored.
+  If the test case should be run without any adaptions, you can set
+  .__test_matrix__ to 'matrix((default,))'.
   """
 
   def __new__(cls, name, bases, attrs):
@@ -65,37 +74,46 @@ class ERP5InstanceTestMeta(type):
     return base_class
 
   # _isParameterized tells whether class is parameterized.
-  # A user-defined class with .__parameterize__ = True is considered
-  # to be parameterized.
-  # But classes automatically instantiated from such user class with
-  # particular parameters are considered to be not parameterized.
+  # All classes with 'metaclass=ERP5InstanceTestMeta' are parameterized
+  # except from a class which has been automatically instantiated from
+  # such user class. This exception prevents infinite recursion due to
+  # a parameterized class which tries to parameterize itself again.
   def _isParameterized(self):
-    return (
-      getattr(self, '__parameterize__', True) and
-      not getattr(self, '.created_by_parametrize', False)
-    )
+    return not getattr(self, '.created_by_parametrize', False)
 
-  # Create two test classes from single definition: e.g. TestX -> TestX_ZEO and TestX_NEO.
+  # Create multiple test classes from single definition.
   @classmethod
   def _parameterize(cls, base_class):
     mod_dict = sys.modules[base_class.__module__].__dict__
-    for flavour in ("zeo", "neo"):
-      patched_cls_dict = dict(base_class.__dict__)        # dict for flavoured class
-      patched_cls_dict['.created_by_parametrize'] = True  # prevent infinite recursion
-      patched_cls_dict['zodb_storage'] = flavour
+    for class_name_suffix, parameter_tuple in (cls.__test_matrix__.items() or ()):
+      @classmethod
+      def getInstanceParameterDict(cls):
+        instance_parameter_dict = json.loads(
+          cls._test_getInstanceParameterDict().get("_", r"{}")
+        )
+        [p(instance_parameter_dict) for p in parameter_tuple]
+        return {"_": json.dumps(instance_parameter_dict)}
 
-      name = "%s_%s" % (base_class.__name__, flavour.upper())
-      patched = type(name, (base_class,), patched_cls_dict)
-
-      # Switch
-      #   - .getInstanceParameterDict       to ._test_getInstanceParameterDict, and
-      #   - ._base_getInstanceParameterDict to .getInstanceParameterDict
-      # so that we could inject base implementation to be called above user-defined getInstanceParameterDict.
-      # see ERP5InstanceTestCase._base_getInstanceParameterDict for details.
-      patched._test_getInstanceParameterDict = patched.getInstanceParameterDict
-      patched.getInstanceParameterDict       = patched._base_getInstanceParameterDict
-
-      mod_dict[name] = patched
+      parameterized_cls_dict = dict(
+        base_class.__dict__,
+        **{
+          # Avoid infinite loop by a parameterized class which
+          # parameterize itself again and again and..
+          ".created_by_parametrize": True,
+          # Switch
+          #
+          #  .getInstanceParameterDict       to ._test_getInstanceParameterDict
+          #  ._base_getInstanceParameterDict to .getInstanceParameterDict
+          #
+          # so that we could inject base implementation to be called above
+          # user-defined getInstanceParameterDict.
+          "_test_getInstanceParameterDict": base_class.getInstanceParameterDict,
+          "getInstanceParameterDict": getInstanceParameterDict
+        }
+      )
+      mod_dict[name] = type(
+        "{base_class.__name__}{class_name_suffix}", (base_class,), parameterized_cls_dict
+      )
 
   # Hide tests in unpatched base class: It doesn't make sense to run tests
   # in original class, because parameters have not been assigned yet.
@@ -110,27 +128,51 @@ class ERP5InstanceTestMeta(type):
     return super().__dir__()
 
 
+def matrix(*parameter_tuple):
+  """matrix creates a mapping of test_name -> parameter_tuple.
+
+  Each provided parameter_tuple won't be combined within itself,
+  but with any other provided parameter_tuple, for instance
+
+    >>> parameter_tuple0 = (param0, param1)
+    >>> parameter_tuple1 = (param2, param3)
+    >>> matrix(parameter_tuple0, parameter_tuple1)
+
+  will return all options of (param0 | param1) & (param2 | param3):
+
+    - param0_param2
+    - param0_param3
+    - param1_param2
+    - param1_param3
+  """
+  return {
+    "_".join([p.__name__ for p in params]): params
+    for params in itertools.product(*parameter_tuple)
+  }
+
+
+# Define parameters (function which receives instance params + modifies them).
+#
+# default runs tests without any adaption
+def default(instance_parameter_dict): ...
+
+
+def zeo(instance_parameter_dict):
+  instance_parameter_dict['zodb'] = [{"type": "zeo"}]
+
+
+def neo(instance_parameter_dict):
+   # We don't provide encryption certificates in test runs for the sake
+  # of simplicity. By default SSL is turned on, we need to explicitly
+  # deactivate it:
+  #   https://lab.nexedi.com/nexedi/slapos/blob/a8150a1ac/software/neoppod/instance-neo-input-schema.json#L61-65
+  instance_parameter_dict['zodb'] = [{"type": "neo", "server": {"ssl": False}]
+
+
 class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMeta):
   """ERP5 base test case
   """
-
-  # ERP5InstanceTestMeta switches:
-  #   - _base_getInstanceParameterDict to be real getInstanceParameterDict, while
-  #   - test-defined getInstanceParameterDict is switched to _test_getInstanceParameterDict
-  # here we invoke user-defined getInstanceParameterDict and adjust it according to "zodb_storage" parameter.
-  @classmethod
-  def _base_getInstanceParameterDict(cls):
-      try:
-        parameter_dict = json.loads(cls._test_getInstanceParameterDict()["_"])
-      except KeyError:
-        parameter_dict = {}
-      # We don't provide encryption certificates in test runs for the sake
-      # of simplicity. By default SSL is turned on, we need to explicitly
-      # deactivate it:
-      #   https://lab.nexedi.com/nexedi/slapos/blob/a8150a1ac/software/neoppod/instance-neo-input-schema.json#L61-65
-      server = {"ssl": False} if cls.zodb_storage == "neo" else {}
-      parameter_dict["zodb"] = [{"type": cls.zodb_storage, "server": server}]
-      return {"_": json.dumps(parameter_dict)}
+  __test_matrix__ = matrix((zeo, neo))  # switch between NEO and ZEO mode
 
   @classmethod
   def getRootPartitionConnectionParameterDict(cls):
