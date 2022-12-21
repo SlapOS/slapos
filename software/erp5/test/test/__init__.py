@@ -166,7 +166,7 @@ def neo(instance_parameter_dict):
   # of simplicity. By default SSL is turned on, we need to explicitly
   # deactivate it:
   #   https://lab.nexedi.com/nexedi/slapos/blob/a8150a1ac/software/neoppod/instance-neo-input-schema.json#L61-65
-  instance_parameter_dict['zodb'] = [{"type": "neo", "server": {"ssl": False}]
+  instance_parameter_dict['zodb'] = [{"type": "neo", "server": {"ssl": False}}]
 
 
 class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMeta):
