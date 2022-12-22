@@ -87,3 +87,4 @@ extra-context =
   raw opencv_location    {{ opencv_location }}
   raw openssl_location   {{ openssl_location }}
   raw nxdtest_dir        {{ buildout_directory }}
+  raw tesseract_data     {{ tesseract_location }}/share/tessdata
