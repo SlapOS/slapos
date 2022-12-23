@@ -37,9 +37,31 @@ class TestMQTT(SlapOSInstanceTestCase):
 
     publish.single(
       topic="test",
-      payload="Hello, World! I'm just testing ...",
+      payload="Hello, World! I'm just testing from IPv4 ...",
+      hostname=f"{host}",
+      auth={ "username": f"{username}", "password": f"{password}" },
+      keepalive=5
+    )
+
+    self.assertEqual(f"{message.topic}: {message.payload}", "test: b\"Hello, World! I'm just testing from IPv4 ...\"")
+
+  def test_publish_subscribe_ipv6(self):
+    host = self.computer_partition.getConnectionParameterDict()["ipv6"]
+    username = self.computer_partition.getConnectionParameterDict()["username"]
+    password = self.computer_partition.getConnectionParameterDict()["password"]
+
+    message = subscribe.simple(
+      topics="test",
       hostname=f"{host}",
       auth={ "username": f"{username}", "password": f"{password}" }
     )
 
-    self.assertEqual(f"{message.topic}: {message.payload}", "test: b\"Hello, World! I'm just testing ...\"")
+    publish.single(
+      topic="test",
+      payload="Hello, World! I'm just testing from IPv6 ...",
+      hostname=f"{host}",
+      auth={ "username": f"{username}", "password": f"{password}" },
+      keepalive=5
+    )
+
+    self.assertEqual(f"{message.topic}: {message.payload}", "test: b\"Hello, World! I'm just testing from IPv6 ...\"")
