@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.291'
+version = '1.0.297'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -131,6 +131,8 @@ setup(name=name,
           'publish-early = slapos.recipe.publish_early:Recipe',
           'publishsection = slapos.recipe.publish:PublishSection',
           'publishurl = slapos.recipe.publishurl:Recipe',
+          'publish_failsafe = slapos.recipe.publish:RecipeFailsafe',
+          'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe',
           'random.time = slapos.recipe.random:Time',
           'random.integer = slapos.recipe.random:Integer',
           'readline = slapos.recipe.readline:Recipe',

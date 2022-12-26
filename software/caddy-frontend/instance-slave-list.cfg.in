@@ -376,22 +376,12 @@ config-frequency = 720
 {%-   endif %}
 
 {#-   ###############################  #}
-{#-   Publish Slave Information        #}
-{%-   if not configuration['extra_slave_instance_list'] %}
-{%-     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') %}
-{%-     do part_list.append(publish_section_title) %}
-[{{ publish_section_title }}]
-recipe = slapos.cookbook:publish
-{%-     for key, value in slave_publish_dict.items() %}
-{{ key }} = {{ value }}
-{%-     endfor %}
-{%-   else %}
-{%-     do slave_instance_information_list.append(slave_publish_dict) %}
+{#-   Prepare Slave Information        #}
+{%-   do slave_instance_information_list.append(slave_publish_dict) %}
+{%-   do frontend_slave_list.append(slave_instance) %}
+{%-   if slave_type != 'redirect' %}
+{%-     do backend_slave_list.append(slave_instance) %}
 {%-   endif %}
-{%-  do frontend_slave_list.append(slave_instance) %}
-{%-  if slave_type != 'redirect' %}
-{%-    do backend_slave_list.append(slave_instance) %}
-{%-  endif %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
 {%- do part_list.append('slave-introspection') %}
