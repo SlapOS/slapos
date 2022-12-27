@@ -31,6 +31,7 @@ environment =
 # Add openssl needed to build matiec during tests
 inline +=
   export OPENSSL_ROOT_DIR={{ openssl_location }}
+  export LDLAGS=-L{{ openssl_location }}/lib
   export TESSDATAPATH={{ tesseract_data }}
 
 [runTestSuite]
