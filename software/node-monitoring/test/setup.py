@@ -27,14 +27,14 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.promise_testing'
+name = 'slapos.test.node-monitoring'
 with open("README.md") as f:
   long_description = f.read()
 
 setup(
     name=name,
     version=version,
-    description="Test for SlapOS' promise-testing",
+    description="Test for SlapOS' node-monitoring",
     long_description=long_description,
     long_description_content_type='text/markdown',
     maintainer="Nexedi",

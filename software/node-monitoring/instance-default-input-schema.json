@@ -14,6 +14,18 @@
       "title": "Max Average Temp",
       "description": "Max Average Temp",
       "type": "string"
+    },
+    "avg_flag_file": {
+      "default": "80",
+      "title": "Max Average Temp",
+      "description": "Max Average Temp",
+      "type": "string"
+    },
+    "avg_temp_duration": {
+      "default": "80",
+      "title": "Max Average Temp",
+      "description": "Max Average Temp",
+      "type": "string"
     }
   }
 }
