@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "type": "object",
+  "properties": {
+    "max_spot_temp": {
+      "default": "80",
+      "title": "Max Threshold Temp",
+      "description": "Max Threshold Temp",
+      "type": "string"
+    },
+    "max_avg_temp": {
+      "default": "80",
+      "title": "Max Average Temp",
+      "description": "Max Average Temp",
+      "type": "string"
+    },
+    "avg_flag_file": {
+      "default": "80",
+      "title": "Max Average Temp",
+      "description": "Max Average Temp",
+      "type": "string"
+    },
+    "avg_temp_duration": {
+      "default": "80",
+      "title": "Max Average Temp",
+      "description": "Max Average Temp",
+      "type": "string"
+    }
+  }
+}

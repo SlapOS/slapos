@@ -1,0 +1,15 @@
+{
+  "name": "Node Monitoring",
+  "description": "Node Monitoring Website Text",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-node-monitoring-input-schema.json",
+      "response": "instance-node-monitoring-output-schema.json",
+      "index": 1
+    }
+  }
+}
