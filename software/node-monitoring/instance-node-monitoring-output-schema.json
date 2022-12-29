@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
-  "title": "Input Parameters",
+  "description": "Values returned by Peertube instanciation",
   "type": "object",
   "properties": {
     "max_spot_temp": {
@@ -16,14 +16,10 @@
       "type": "string"
     },
     "avg_flag_file": {
-      "default": "80",
-      "title": "Max Average Temp",
       "description": "Max Average Temp",
       "type": "string"
     },
     "avg_temp_duration": {
-      "default": "80",
-      "title": "Max Average Temp",
       "description": "Max Average Temp",
       "type": "string"
     }

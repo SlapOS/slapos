@@ -30,21 +30,22 @@ import json
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, TestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-#TODO: use mock for temperature ?
-
-class TestInstance(TestCase):
+class TestNodeMonitoring(SlapOSInstanceTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({
           'max_temp': 70,
           'testing': True,
           })}
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "default"
+
     def test_instance(self):
+        print("yooo")
         pass
