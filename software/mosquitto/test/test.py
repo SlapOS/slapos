@@ -8,7 +8,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-message = str()
+global message = str()
 
 class TestMosquitto(SlapOSInstanceTestCase):
 
@@ -21,7 +21,7 @@ class TestMosquitto(SlapOSInstanceTestCase):
     client.subscribe("test")
 
   def on_message(client, userdata, msg):
-    global message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+    message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
