@@ -8,14 +8,14 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
+message = str()
+
 class TestMosquitto(SlapOSInstanceTestCase):
 
   """
   Test if mosquitto service can publish and subscribe
   to specific topics with custom authentication ...
   """
-
-  message = str()
 
   def on_connect(client, userdata, flags, rc):
     client.subscribe("test")
