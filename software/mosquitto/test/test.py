@@ -25,7 +25,6 @@ class TestMosquitto(SlapOSInstanceTestCase):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
     username = self.computer_partition.getConnectionParameterDict()["username"]
     password = self.computer_partition.getConnectionParameterDict()["password"]
-    message = TestMosquitto.message
     payload="Hello, World! I'm just testing ..."
 
     client = mqtt.Client()
