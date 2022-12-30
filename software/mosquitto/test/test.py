@@ -1,7 +1,7 @@
 import os
 import time
+import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
-import paho.mqtt.subscribe as subscribe
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
