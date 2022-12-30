@@ -8,6 +8,8 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
+message = ""
+
 class TestMosquitto(SlapOSInstanceTestCase):
 
   """
@@ -17,8 +19,6 @@ class TestMosquitto(SlapOSInstanceTestCase):
 
   def on_connect(client, userdata, flags, rc):
     client.subscribe("test")
-
-  message = ""
 
   def on_message(client, userdata, msg):
     global message
