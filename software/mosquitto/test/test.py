@@ -1,4 +1,5 @@
 import os
+import time
 import paho.mqtt.publish as publish
 import paho.mqtt.subscribe as subscribe
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -24,44 +25,36 @@ class TestMQTT(SlapOSInstanceTestCase):
   to specific topics with custom authentications ...
   """
 
+  message = str()
+
+  def on_connect(client, userdata, flags, rc):
+    client.subscribe("test")
+
+  def on_message(client, userdata, msg):
+    message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
     username = self.computer_partition.getConnectionParameterDict()["username"]
     password = self.computer_partition.getConnectionParameterDict()["password"]
+    payload="Hello, World! I'm just testing ..."
 
-    message = subscribe.simple(
-      topics="test",
-      hostname=f"{host}",
-      auth={ "username": f"{username}", "password": f"{password}" }
-    )
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.username_pw_set(username=f"{username}", password=f"{password}")
+    client.connect(f"{host}", 1883, 10)
 
-    publish.single(
-      topic="test",
-      payload="Hello, World! I'm just testing from IPv4 ...",
-      hostname=f"{host}",
-      auth={ "username": f"{username}", "password": f"{password}" },
-      keepalive=5
-    )
-
-    self.assertEqual(f"{message.topic}: {message.payload}", "test: b\"Hello, World! I'm just testing from IPv4 ...\"")
-
-  def test_publish_subscribe_ipv6(self):
-    host = self.computer_partition.getConnectionParameterDict()["ipv6"]
-    username = self.computer_partition.getConnectionParameterDict()["username"]
-    password = self.computer_partition.getConnectionParameterDict()["password"]
-
-    message = subscribe.simple(
-      topics="test",
-      hostname=f"{host}",
-      auth={ "username": f"{username}", "password": f"{password}" }
-    )
+    client.loop_start()
 
     publish.single(
       topic="test",
-      payload="Hello, World! I'm just testing from IPv6 ...",
+      payload=payload,
       hostname=f"{host}",
-      auth={ "username": f"{username}", "password": f"{password}" },
-      keepalive=5
+      auth={"username": f"{username}", "password": f"{password}"}
     )
 
-    self.assertEqual(f"{message.topic}: {message.payload}", "test: b\"Hello, World! I'm just testing from IPv6 ...\"")
+    time.sleep(10)
+    client.loop_stop()
+
+    self.assertEqual(message, payload)
