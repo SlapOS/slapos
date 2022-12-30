@@ -8,26 +8,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-message = str()
-
-def on_connect(client, userdata, flags, rc):
-  print("Connected with result code "+str(rc))
-  client.subscribe("test")
-
-def on_message(client, userdata, msg):
-  message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
-
-class MosquittoTestCase(SlapOSInstanceTestCase):
-
-  name = None
-  kind = None
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return { "name": cls.name }
-
-
-class TestMQTT(SlapOSInstanceTestCase):
+class TestMosquitto(SlapOSInstanceTestCase):
 
   """
   Test if mosquitto service can publish and subscribe
