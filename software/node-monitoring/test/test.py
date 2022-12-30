@@ -35,17 +35,19 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 class TestNodeMonitoring(SlapOSInstanceTestCase):
+
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({
-          'max_temp': 70,
-          'testing': True,
+          'max_spot_temp': 70,
+          'avg_flag_file': "toto",
           })}
 
     @classmethod
     def getInstanceSoftwareType(cls):
         return "default"
 
-    def test_instance(self):
-        print("yooo")
+    def test_get(self):
+        connection_param_dict = self.computer_partition.getInstanceParameterDict()
+        print(connection_param_dict)
         pass
