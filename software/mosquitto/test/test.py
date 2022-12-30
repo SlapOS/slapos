@@ -15,14 +15,11 @@ class TestMosquitto(SlapOSInstanceTestCase):
   to specific topics with custom authentication ...
   """
 
-  def __init__(self):
-    self.message = str()
-
   def on_connect(client, userdata, flags, rc):
     client.subscribe("test")
 
   def on_message(client, userdata, msg):
-    TestMosquitto.message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+    self.message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
@@ -49,4 +46,4 @@ class TestMosquitto(SlapOSInstanceTestCase):
     time.sleep(10)
     client.loop_stop()
 
-    self.assertEqual(message, payload)
+    self.assertEqual(self.message, payload)
