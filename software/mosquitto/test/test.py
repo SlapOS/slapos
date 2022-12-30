@@ -45,4 +45,4 @@ class TestMosquitto(SlapOSInstanceTestCase):
     time.sleep(10)
     client.loop_stop()
 
-    self.assertEqual(self.message, payload)
+    self.assertEqual(message, payload)
