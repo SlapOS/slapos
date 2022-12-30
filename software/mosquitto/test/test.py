@@ -15,13 +15,14 @@ class TestMosquitto(SlapOSInstanceTestCase):
   to specific topics with custom authentications ...
   """
 
-  message = str()
+  def __init__(self, message: str):
+    self.message = str()
 
   def on_connect(client, userdata, flags, rc):
     client.subscribe("test")
 
   def on_message(client, userdata, msg):
-    message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+    self.message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
