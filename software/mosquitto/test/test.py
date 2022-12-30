@@ -23,6 +23,7 @@ class TestMosquitto(SlapOSInstanceTestCase):
   def on_message(client, userdata, msg):
     global message
     message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+    print(message)
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
