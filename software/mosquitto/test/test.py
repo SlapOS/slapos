@@ -10,8 +10,6 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestMosquitto(SlapOSInstanceTestCase):
 
-  message = str()
-
   """
   Test if mosquitto service can publish and subscribe
   to specific topics with custom authentication ...
@@ -19,6 +17,8 @@ class TestMosquitto(SlapOSInstanceTestCase):
 
   def on_connect(client, userdata, flags, rc):
     client.subscribe("test")
+
+  message = ""
 
   def on_message(client, userdata, msg):
     global message
@@ -42,7 +42,7 @@ class TestMosquitto(SlapOSInstanceTestCase):
       topic="test",
       payload=payload,
       hostname=f"{host}",
-      auth={"username": f"{username}", "password": f"{password}"}
+      auth={ "username": f"{username}", "password": f"{password}" }
     )
 
     time.sleep(10)
