@@ -8,8 +8,6 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-global message = str()
-
 class TestMosquitto(SlapOSInstanceTestCase):
 
   """
@@ -17,16 +15,20 @@ class TestMosquitto(SlapOSInstanceTestCase):
   to specific topics with custom authentication ...
   """
 
+  def __init__(self):
+    self.message = str()
+
   def on_connect(client, userdata, flags, rc):
     client.subscribe("test")
 
   def on_message(client, userdata, msg):
-    message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+    TestMosquitto.message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
     username = self.computer_partition.getConnectionParameterDict()["username"]
     password = self.computer_partition.getConnectionParameterDict()["password"]
+    message = TestMosquitto.message
     payload="Hello, World! I'm just testing ..."
 
     client = mqtt.Client()
