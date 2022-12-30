@@ -7,25 +7,25 @@
       "default": "80",
       "title": "Max Threshold Temp",
       "description": "Max Threshold Temp",
-      "type": "string"
+      "type": "number"
     },
     "max_avg_temp": {
       "default": "80",
       "title": "Max Average Temp",
       "description": "Max Average Temp",
-      "type": "string"
+      "type": "number"
     },
     "avg_flag_file": {
-      "default": "80",
-      "title": "Max Average Temp",
-      "description": "Max Average Temp",
+      "default": "cpu_avg_flag_file",
+      "title": "Flag file name",
+      "description": "Flag file where timestamp is rewrite",
       "type": "string"
     },
     "avg_temp_duration": {
-      "default": "80",
-      "title": "Max Average Temp",
-      "description": "Max Average Temp",
-      "type": "string"
+      "default": "5",
+      "title": "Average period",
+      "description": "Average period for calculating average period",
+      "type": "number"
     }
   }
 }
