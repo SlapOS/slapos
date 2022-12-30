@@ -34,6 +34,14 @@ class TestMQTT(SlapOSInstanceTestCase):
   to specific topics with custom authentications ...
   """
 
+  message = str()
+
+  def on_connect(client, userdata, flags, rc):
+    client.subscribe("test")
+
+  def on_message(client, userdata, msg):
+    message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
+
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
     username = self.computer_partition.getConnectionParameterDict()["username"]
@@ -41,8 +49,8 @@ class TestMQTT(SlapOSInstanceTestCase):
     payload="Hello, World! I'm just testing ..."
 
     client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
+    client.on_connect = self.on_connect
+    client.on_message = self.on_message
     client.username_pw_set(username=f"{username}", password=f"{password}")
     client.connect(f"{host}", 1883, 10)
 
