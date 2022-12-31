@@ -19,7 +19,7 @@ class TestMosquitto(SlapOSInstanceTestCase):
     client.subscribe("test")
 
   def on_message(self, client, userdata, msg):
-    self.message = str(msg.payload)
+    self.message = str(msg.payload.decode())
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
