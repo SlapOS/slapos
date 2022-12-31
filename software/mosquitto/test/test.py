@@ -15,14 +15,10 @@ class TestMosquitto(SlapOSInstanceTestCase):
   to specific topics with custom authentication ...
   """
 
-  def __init__(self):
-    super().__init__()
-    self.message = str()
-
-  def on_connect(client, userdata, flags, rc):
+  def on_connect(self, client, userdata, flags, rc):
     client.subscribe("test")
 
-  def on_message(client, userdata, msg):
+  def on_message(self, client, userdata, msg):
     self.message = str(msg.payload)
 
   def test_publish_subscribe_ipv4(self):
