@@ -8,7 +8,8 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-message = ""
+topic = str()
+message = str()
 
 class TestMosquitto(SlapOSInstanceTestCase):
 
@@ -21,15 +22,19 @@ class TestMosquitto(SlapOSInstanceTestCase):
     client.subscribe("test")
 
   def on_message(client, userdata, msg):
+    global topic
     global message
-    message = f"Topic: {msg.topic}; Content: {str(msg.payload)}"
-    print(message)
+
+    topic = str(msg.topic)
+    message = str(msg.payload)
 
   def test_publish_subscribe_ipv4(self):
     host = self.computer_partition.getConnectionParameterDict()["ipv4"]
     username = self.computer_partition.getConnectionParameterDict()["username"]
     password = self.computer_partition.getConnectionParameterDict()["password"]
-    payload="Hello, World! I'm just testing ..."
+
+    topic = "test"
+    payload = "Hello, World!"
 
     client = mqtt.Client()
     client.on_connect = self.on_connect
@@ -40,7 +45,7 @@ class TestMosquitto(SlapOSInstanceTestCase):
     client.loop_start()
 
     publish.single(
-      topic="test",
+      topic=topic,
       payload=payload,
       hostname=f"{host}",
       auth={ "username": f"{username}", "password": f"{password}" }
