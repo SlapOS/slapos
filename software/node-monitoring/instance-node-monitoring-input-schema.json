@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "promise_cpu_temperature_threshold": {
-      "default": "80",
+      "default": "90",
       "title": "CPU temperature promise threshold",
       "description": "Temperature threshold above which CPU temperature promise will fail",
       "type": "number"
@@ -16,9 +16,27 @@
       "type": "number"
     },
     "promise_cpu_avg_temperature_threshold_duration": {
-      "default": "5",
+      "default": "600",
       "title": "Average CPU temperature promise threshold duration",
       "description": "Duration during which average temperature should not exceed specified threshold",
+      "type": "number"
+    },
+    "promise_ram_available_threshold": {
+      "default": "500e6",
+      "title": "Minimum available RAM promise threshold",
+      "description": "Minimum available RAM threshold below which RAM available promise will fail",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold": {
+      "default": "1e9",
+      "title": "Minimum average available RAM promise threshold",
+      "description": "If average available ram over specified duration reaches this threshold, promise will fail",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold_duration": {
+      "default": "600",
+      "title": "Minimum average available RAM promise threshold duration",
+      "description": "Duration during which average available RAM shall not be below specified threshold",
       "type": "number"
     }
   }

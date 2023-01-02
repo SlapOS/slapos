@@ -14,6 +14,20 @@
     "promise_cpu_avg_temperature_threshold_duration": {
       "description": "Duration during which average temperature should not exceed specified threshold",
       "type": "number"
+    },
+    "promise_ram_available_threshold": {
+      "default": "500e6",
+      "title": "Minimum available RAM promise threshold",
+      "description": "Minimum available RAM threshold below which RAM available promise will fail",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold": {
+      "description": "If average available ram over specified duration reaches this threshold, promise will fail",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold_duration": {
+      "description": "Duration during which average available RAM shall not be below specified threshold",
+      "type": "number"
     }
   }
 }
