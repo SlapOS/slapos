@@ -28,6 +28,50 @@
     "promise_ram_avg_available_threshold_duration": {
       "description": "Duration during which average available RAM shall not be below specified threshold",
       "type": "number"
+    },
+    "promise_network_errors_threshold": {
+      "description": "Maximum network errors threshold(per MB) above which the promise will fail",
+      "type": "number"
+    },
+    "promise_network_lost_packets_threshold": {
+      "description": "Maximum network lost packets threshold(per MB) above which the promise will fail",
+      "type": "number"
+    },
+    "promise_network_transit_recv_threshold": {
+      "description": "Minimum received packets in bytes below which the promise will fail",
+      "type": "number"
+    },
+    "promise_network_transit_sent_threshold": {
+      "description": "Minimum sent packets in bytes below which the promise will fail",
+      "type": "number"
+    },
+    "promise_network_transit_duration": {
+      "description": "Duration during which received and sent packets shall not be below specified thresholds",
+      "type": "number"
+    },
+    "promise_cpu_load_threshold": {
+      "description": "Maximum CPU load ratio threshold above which the promise will fail",
+      "type": "number"
+    },
+    "promise_partition_space_threshold": {
+      "description": "Minimum partition space ratio threshold below which the promise will fail",
+      "type": "number"
+    },
+    "promise_free_disk_space_threshold": {
+      "description": "Minimum partition space ratio threshold below which the promise will fail",
+      "type": "number"
+    },
+    "promise_free_disk_space_nb_days_predicted": {
+      "description": "Number of days that will be take into account for prediction calculation",
+      "type": "number"
+    },
+    "promise_free_disk_space_display_partition": {
+      "description": "Enable partition display by setting Boolean to 1 ",
+      "type": "number"
+    },
+    "promise_free_disk_space_display_prediction": {
+      "description": "Enable prediction display by setting Boolean to 1 ",
+      "type": "number"
     }
   }
 }
