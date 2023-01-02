@@ -1,27 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
-  "description": "Values returned by Peertube instanciation",
+  "title": "Values returned by node-monitoring instanciation",
   "type": "object",
   "properties": {
-    "max_spot_temp": {
-      "default": "80",
-      "title": "Max Threshold Temp",
-      "description": "Max Threshold Temp",
-      "type": "string"
+    "promise_cpu_temperature_threshold": {
+      "description": "Temperature threshold above which CPU temperature promise will fail",
+      "type": "number"
     },
-    "max_avg_temp": {
-      "default": "80",
-      "title": "Max Average Temp",
-      "description": "Max Average Temp",
-      "type": "string"
+    "promise_cpu_avg_temperature_threshold": {
+      "description": "If average temperature over specified duration reaches this threshold, promise will fail",
+      "type": "number"
     },
-    "avg_flag_file": {
-      "description": "Max Average Temp",
-      "type": "string"
-    },
-    "avg_temp_duration": {
-      "description": "Max Average Temp",
-      "type": "string"
+    "promise_cpu_avg_temperature_threshold_duration": {
+      "description": "Duration during which average temperature should not exceed specified threshold",
+      "type": "number"
     }
   }
 }
