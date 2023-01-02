@@ -9,7 +9,7 @@
       "description": "Default",
       "request": "instance-node-monitoring-input-schema.json",
       "response": "instance-node-monitoring-output-schema.json",
-      "index": 1
+      "index": 0
     }
   }
 }
