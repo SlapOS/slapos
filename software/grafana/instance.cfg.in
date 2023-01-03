@@ -251,7 +251,7 @@ init =
   inputs = collections.defaultdict(list)
   processors = collections.defaultdict(list)
   slapparameter_dict = self.options["slapparameter-dict"]
-  for application in slapparameter_dict.get('applications', []):
+  for application in slapparameter_dict.get("applications", []):
     partition_mapping = {}
     for partition in application.get("partitions", []):
       partition.setdefault("type", "default")
@@ -351,50 +351,49 @@ init =
         "tags": {"app": application["name"]},
       })
 
+    if application.get("type") == "SlapOS":
+      telegraf_slapos_input_config_file = os.path.join(
+          self.options['location'],
+          f"telegraf-input-slapos-{application['name']}.cfg")
+      self._config_files[telegraf_slapos_input_config_file] = toml.dumps({
+        "inputs": {
+          "slapos": [{
+            "instance_root": application["instance-root"]}]}})
 
-    # TODO: don't run more than one per instance_root
-    telegraf_slapos_input_config_file = os.path.join(
-        self.options['location'],
-        f"telegraf-input-slapos-{application['name']}.cfg")
-    self._config_files[telegraf_slapos_input_config_file] = toml.dumps({
-      "inputs": {
-        "slapos": [{
-          "instance_root": application['instance-root']}]}})
-
-    # TODO: supervisor process finder for
-    # https://github.com/influxdata/telegraf/tree/master/plugins/inputs/procstat ?
-    telegraf_slapos_input_command = self.options['telegraf-input-slapos-bin']
-    inputs["execd"].append({
-      "name_override": f"{application['name']}-processes",
-      "command": [telegraf_slapos_input_command, '-config', telegraf_slapos_input_config_file],
-      "tags": {"app": application["name"]},
-    })
-    # "cleanup" slapos process names, remove hash from wrappers and -on-watch suffix
-    processors["regex"].append({
-      "namepass": [f"{application['name']}-processes"],
-      "order": 1,
-      "tags": [{
-        "key": "name",
-        "pattern": "^(.*)-.{32}",
-         # XXX we concatenate strings so that we don't have to escape them for buildout
-        "replacement": "$" + "{1}",
-      }]})
-    processors["regex"].append({
-      "namepass": [f"{application['name']}-processes"],
-      "order": 2,
-      "tags": [{
-        "key": "name",
-        "pattern": "^(.*)-on-watch$",
-        "replacement": "$" + "{1}",
-      }]})
-    processors["enum"].append({
-      "namepass": [ f"{application['name']}-processes"],
-      "mapping": [{
-#        "tag": "group", # TODO: rename this in input plugin
-        "tag": "slappart",
-        "dest": "partition",
-        "value_mappings": partition_mapping,
-      }]})
+      # TODO: supervisor process finder for
+      # https://github.com/influxdata/telegraf/tree/master/plugins/inputs/procstat ?
+      telegraf_slapos_input_command = self.options['telegraf-input-slapos-bin']
+      inputs["execd"].append({
+        "name_override": f"{application['name']}-processes",
+        "command": [telegraf_slapos_input_command, '-config', telegraf_slapos_input_config_file],
+        "tags": {"app": application["name"]},
+      })
+      # "cleanup" slapos process names, remove hash from wrappers and -on-watch suffix
+      processors["regex"].append({
+        "namepass": [f"{application['name']}-processes"],
+        "order": 1,
+        "tags": [{
+          "key": "name",
+          "pattern": "^(.*)-.{32}",
+           # XXX we concatenate strings so that we don't have to escape them for buildout
+          "replacement": "$" + "{1}",
+        }]})
+      processors["regex"].append({
+        "namepass": [f"{application['name']}-processes"],
+        "order": 2,
+        "tags": [{
+          "key": "name",
+          "pattern": "^(.*)-on-watch$",
+          "replacement": "$" + "{1}",
+        }]})
+      processors["enum"].append({
+        "namepass": [ f"{application['name']}-processes"],
+        "mapping": [{
+  #        "tag": "group", # TODO: rename this in input plugin # XXX I don't remember what this means
+          "tag": "slappart",
+          "dest": "partition",
+          "value_mappings": partition_mapping,
+        }]})
 
   # TODOs:
   #  - [ ] slapos input
@@ -404,6 +403,7 @@ init =
   #  - [ ] alert dashboard
   #  - [ ] inclu "jerome-dev" partout ???
   #  - [ ] apdex
+  #  - [ ] "job" is bad name in Explore
 
   options["extra-config"] = toml.dumps({
     "inputs": inputs,
@@ -496,8 +496,6 @@ command-line =
       ${:extra-command-line}'
 wrapper-path = ${directory:service}/${:_buildout_section_name_}
 extra-command-line =
-
-# level=error ts=2022-09-24T14:40:13.636615531Z caller=scheduler_processor.go:182 org_id=fake msg="error notifying frontend about finished query" err="rpc error: code = ResourceExhausted desc = grpc: received message larger than max (4200411 vs. 4194304)" frontend=10.0.44.65:9099
 
 
 [loki-listen-promise-macro]
@@ -703,6 +701,7 @@ install =
                     },
                     {
                       "regex": {
+                        # TODO don't include the ----
                         "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
                       }
                     },
@@ -714,9 +713,7 @@ install =
                     },
                     {
                       "labels": {
-                        "level": None,
-                        # XXX do we really want `component` ? it may cause lots of cardinality
-                        # "component": None
+                        "level": None
                       }
                     }
                   ]
@@ -873,7 +870,6 @@ install =
                       {
                         "labels": {
                           "level": None,
-                          "component": None
                         }
                       }
                     ]
