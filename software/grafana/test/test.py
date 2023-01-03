@@ -82,7 +82,7 @@ class TestGrafana(GrafanaTestCase):
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertEqual(1, resp.json()['id'])
 
-  def test_grafana_datasource_povisinonned(self):
+  def test_grafana_datasource_provisioned(self):
     # data sources are provisionned
     connection_params = self.computer_partition.getConnectionParameterDict()
     resp = requests.get(

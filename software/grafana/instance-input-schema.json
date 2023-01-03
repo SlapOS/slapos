@@ -1,11 +1,50 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Parameters to instantiate Grafana",
   "type": "object",
   "additionalProperties": false,
+  "$defs": {
+    "type": {
+      "description": "Type of the application. With `SlapOS` type, some metrics are collected from supervisor and from some known partition types (for example: ERP5's mariadb or ERP5's zopes). With `system` type, only log files are ingested.",
+      "type": "string",
+      "default": "SlapOS",
+      "enum": [
+        "SlapOS",
+        "system"
+      ]
+    },
+    "name": {
+      "description": "Name of this application",
+      "type": "string"
+    },
+    "urls": {
+      "description": "URLs to monitor for availability and certificate lifetime",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "log-file-patterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Glob patterns for watched log files."
+    },
+    "static-tags": {
+      "type": "object",
+      "description": "Static tags for this partition",
+      "examples": [
+        {
+          "region": "eu",
+          "data-center": "abc123"
+        }
+      ]
+    }
+  },
   "properties": {
     "smtp-server": {
-      "description": "SMTP server used by grafana to send emails (in host:port format). Leaving this empty will disable email sending.",
+      "description": "SMTP server used by Grafana to send emails (in host:port format). Leaving this empty will disable email sending.",
       "type": "string"
     },
     "smtp-username": {
@@ -33,133 +72,171 @@
       "description": "Applications to monitor",
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "name",
-          "instance-root",
-          "partitions"
-        ],
-        "properties": {
-          "name": {
-            "description": "Name of this application",
-            "type": "string"
-          },
-          "instance-root": {
-            "description": "Directory containing SlapOS partitions.",
-            "type": "string"
-          },
-          "urls": {
-            "description": "URLs to monitor for availability and certificate lifetime",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "partitions": {
-            "description": "SlapOS partitions to monitor",
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Friendly name of the partition",
-                  "examples": [
-                    "mariadb",
-                    "zope-activity"
-                  ]
-                },
-                "reference": {
-                  "type": "string",
-                  "description": "Reference of the partition",
-                  "examples": [
-                    "slappart1",
-                    "slappart2"
-                  ]
-                },
-                "type": {
-                  "type": "string",
-                  "description": "Type of the partition. Known types have extra metrics and logs collected",
-                  "enum": [
-                    "erp5/mariadb",
-                    "erp5/balancer",
-                    "erp5/zope-activity",
-                    "erp5/zope-front",
-                    "erp5/zeo",
-                    "mariadb",
-                    "default"
-                  ]
-                },
-                "file-path": {
-                  "type": "string",
-                  "description": "Glob for the files to watch. This mostly makes sense for `default` type"
-                },
-                "static-tags": {
-                  "type": "object",
-                  "description": "Static tags for this partition",
-                  "examples": [
-                    {
-                      "region": "eu",
-                      "data-center": "abc123"
-                    }
-                  ]
-                }
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Configuration for SlapOS type application",
+            "required": [
+              "type",
+              "name",
+              "instance-root",
+              "partitions"
+            ],
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/type",
+                "const": "SlapOS"
               },
-              "anyOf": [
-                {
-                  "properties": {
-                    "type": {
-                      "const": "default"
-                    }
-                  },
-                  "required": [
-                    "name",
-                    "file-path"
-                  ]
-                },
-                {
-                  "properties": {
-                    "type": {
-                      "not": {
-                        "const": "default"
-                      }
-                    }
-                  },
+              "name": {
+                "$ref": "#/$defs/name"
+              },
+              "urls": {
+                "$ref": "#/$defs/urls"
+              },
+              "instance-root": {
+                "description": "Directory containing SlapOS partitions.",
+                "type": "string"
+              },
+              "partitions": {
+                "description": "SlapOS partitions to monitor",
+                "type": "array",
+                "items": {
+                  "type": "object",
                   "required": [
                     "name",
                     "reference"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Friendly name of the partition",
+                      "examples": [
+                        "mariadb",
+                        "zope-activity"
+                      ]
+                    },
+                    "reference": {
+                      "type": "string",
+                      "description": "Reference of the partition",
+                      "examples": [
+                        "slappart1",
+                        "slappart2"
+                      ]
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Type of the partition. Known types have metrics and logs collected",
+                      "enum": [
+                        "erp5/mariadb",
+                        "erp5/balancer",
+                        "erp5/zope-activity",
+                        "erp5/zope-front",
+                        "erp5/zeo",
+                        "mariadb",
+                        "default"
+                      ],
+                      "default": "default"
+                    },
+                    "log-file-patterns": {
+                      "$refs": "#/$defs/log-file-patterns",
+                      "description": "Glob pattern for log files to watch. This mostly makes sense for `default` partition type"
+                    },
+                    "static-tags": {
+                      "$refs": "#/$defs/static-tags"
+                    }
+                  },
+                  "examples": [
+                    {
+                      "name": "zope-backoffice",
+                      "type": "erp5/zope-front",
+                      "reference": "slappart1",
+                      "static-tags": {
+                        "instance": "instance-name"
+                      }
+                    },
+                    {
+                      "name": "mariadb",
+                      "type": "erp5/mariadb",
+                      "reference": "slappart2"
+                    },
+                    {
+                      "name": "Theia",
+                      "type": "default",
+                      "log-file-patterns": [
+                        ".slappart*log"
+                      ]
+                    }
                   ]
                 }
-              ],
-              "examples": [
-                {
-                  "name": "zope-backoffice",
-                  "type": "erp5/zope-front",
-                  "reference": "slappart1",
-                  "static-tags": {
-                    "instance": "instance-name"
-                  }
-                },
-                {
-                  "name": "mariadb",
-                  "type": "erp5/mariadb",
-                  "reference": "slappart2"
-                },
-                {
-                  "name": "syslog",
-                  "type": "default",
-                  "file-path": "/var/log/syslog"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Configuration for `system` type application",
+            "required": [
+              "type",
+              "name"
+            ],
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/type",
+                "const": "system"
+              },
+              "name": {
+                "$ref": "#/$defs/name"
+              },
+              "urls": {
+                "$ref": "#/$defs/urls"
+              },
+              "partitions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Friendly name of the partition",
+                      "examples": [
+                        "syslog",
+                        "email"
+                      ]
+                    },
+                    "log-file-patterns": {
+                      "$refs": "#/$defs/log-file-patterns"
+                    },
+                    "static-tags": {
+                      "$refs": "#/$defs/static-tags"
+                    }
+                  },
+                  "examples": [
+                    {
+                      "name": "syslog",
+                      "log-file-patterns": [
+                        "/var/log/syslog"
+                      ]
+                    },
+                    {
+                      "name": "kernel",
+                      "log-file-patterns": [
+                        "/var/log/kern.log",
+                        "/var/log/messages"
+                      ]
+                    },
+                    {
+                      "name": "re6stnet",
+                      "log-file-patterns": [
+                        "/var/log/re6stnet/*.log"
+                      ]
+                    }
+                  ]
                 }
-              ]
+              }
             }
           }
-        }
+        ]
       }
-    },
-    "promtail-extra-scrape-config": {
-      "description": "Raw promtail config (experimental parameter, see https://github.com/grafana/loki/blob/v0.3.0/docs/promtail.md#scrape-configs for detail)",
-      "default": "",
-      "type": "string"
     }
   }
 }
