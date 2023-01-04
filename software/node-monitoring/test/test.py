@@ -34,20 +34,37 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-class TestNodeMonitoring(SlapOSInstanceTestCase):
+param_dict = {
+    'promise_cpu_temperature_threshold': 90,
+    'promise_cpu_avg_temperature_threshold': 80,
+    'promise_cpu_avg_temperature_threshold_duration': 600,
+    'promise_ram_available_threshold': 500e6,
+    'promise_ram_avg_available_threshold': 1e9,
+    'promise_ram_avg_available_threshold_duration': 600,
+    'promise_network_errors_threshold': 100,
+    'promise_network_lost_packets_threshold': 100,
+    'promise_network_transit_recv_threshold': 100,
+    'promise_network_transit_sent_threshold': 100,
+    'promise_network_transit_duration': 600,
+    'promise_cpu_load_threshold': 1.5,
+    'promise_partition_space_threshold': 0.08,
+    'promise_free_disk_space_threshold': 0.08,
+    'promise_free_disk_space_nb_days_predicted': 10,
+    'promise_free_disk_space_display_partition': True,
+    'promise_free_disk_space_display_prediction': True
+}
 
+class TestNodeMonitoring(SlapOSInstanceTestCase):
+    """
+    This class test the instance
+    """
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps({
-          'max_spot_temp': 70,
-          'avg_flag_file': "toto",
-          })}
+        return {'_': json.dumps(param_dict)}
 
     @classmethod
     def getInstanceSoftwareType(cls):
         return "default"
 
-    def test_get(self):
-        connection_param_dict = self.computer_partition.getInstanceParameterDict()
-        print(connection_param_dict)
+    def test_instance(self):
         pass
