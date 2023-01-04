@@ -66,12 +66,12 @@
       "type": "number"
     },
     "promise_free_disk_space_display_partition": {
-      "description": "Enable partition display by setting Boolean to 1 ",
-      "type": "number"
+      "description": "Enable partition display by setting boolean to True",
+      "type": "boolean"
     },
     "promise_free_disk_space_display_prediction": {
-      "description": "Enable prediction display by setting Boolean to 1 ",
-      "type": "number"
+      "description": "Enable prediction display by setting boolean to True",
+      "type": "boolean"
     }
   }
 }

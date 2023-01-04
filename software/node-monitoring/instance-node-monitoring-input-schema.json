@@ -94,16 +94,16 @@
       "type": "number"
     },
     "promise_free_disk_space_display_partition": {
-      "default": "1",
+      "default": true,
       "title": "Boolean to display partition",
-      "description": "Enable partition display by setting Boolean to 1 ",
-      "type": "number"
+      "description": "Enable partition display by setting boolean to True",
+      "type": "boolean"
     },
     "promise_free_disk_space_display_prediction": {
-      "default": "1",
-      "title": "Boolean to display predition",
-      "description": "Enable prediction display by setting Boolean to 1 ",
-      "type": "number"
+      "default": true,
+      "title": "Boolean to display prediction",
+      "description": "Enable prediction display by setting boolean to True",
+      "type": "boolean"
     }
   }
 }
