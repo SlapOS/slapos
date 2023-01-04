@@ -564,8 +564,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
       print(response.text)
       success = success and (response.text == self.sample_file)
 
-    self.assertEqual((response.text, self.sample_file)
-
+    self.assertEqual((response.text, self.sample_file))
 
   def _getGitlabPartition(self, servicename):
     p = subprocess.Popen(
