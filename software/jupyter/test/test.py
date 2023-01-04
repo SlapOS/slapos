@@ -31,6 +31,7 @@ import json
 import os
 import requests
 import sqlite3
+import subprocess
 
 from slapos.proxy.db_version import DB_VERSION
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -268,3 +269,67 @@ class TestJupyterCustomAdditional(SelectMixin, InstanceTestCase):
 
     # clean up the fake master
     r.destroyed()
+
+
+class TestIPython(InstanceTestCase):
+
+  converted_notebook = 'test.nbconvert.ipynb'
+  notebook_filename = 'test.ipynb'
+  test_sentence = 'test'
+
+  def setUp(self):
+    super().setUp()
+    notebook_source = {
+      "cells": [
+        {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": [
+          "import sys\n",
+          "print('" + self.test_sentence + "')"
+        ]
+        }
+      ],
+      "metadata": {},
+      "nbformat": 4,
+      "nbformat_minor": 4
+    }
+    with open(self.notebook_filename, 'w') as notebook:
+      notebook.write(json.dumps(notebook_source))
+
+  def tearDown(self):
+    os.remove(self.notebook_filename)
+    if os.path.exists(self.converted_notebook):
+      os.remove(self.converted_notebook)
+    super().tearDown()
+
+  def test(self):
+    conversion_output = subprocess.check_output([
+      os.path.join(
+        self.slap.software_directory,
+        os.listdir(self.slap.software_directory)[0],
+        'bin',
+        'jupyter-nbconvert'
+      ),
+      '--execute',
+      '--to',
+      'notebook',
+      self.notebook_filename,
+    ], stderr=subprocess.STDOUT, text=True)
+    self.assertIn(
+      '[NbConvertApp] Converting notebook %s to notebook' % self.notebook_filename,
+      conversion_output,
+    )
+    self.assertIn(
+      '[NbConvertApp] Writing 863 bytes to ' + self.converted_notebook,
+      conversion_output,
+    )
+
+    self.assertTrue(os.path.exists(self.converted_notebook))
+    with open(self.converted_notebook) as json_result:
+      self.assertEqual(
+        json.loads(json_result.read())['cells'][0]['outputs'][0]['text'][0],
+        self.test_sentence + '\n',
+      )
