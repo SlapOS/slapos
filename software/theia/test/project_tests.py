@@ -472,11 +472,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   def _prepareExport(self):
     super(TestTheiaResilienceGitlab, self)._prepareExport()
 
-    # postgresql_partition = self._getPeertubePartitionPath('export', 'postgres')
-    # postgresql_bin = os.path.join(postgresql_partition, 'bin', 'psql')
-    # postgres_bin = os.path.join(postgresql_partition, 'bin', 'postgres')
-    # postgresql_srv = os.path.join(postgresql_partition, 'srv', 'postgresql')
-
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnexionParameters()
     print(parameter_dict)
@@ -504,7 +499,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     parameter_dict = {'name': 'sample.test', 'namespace': 'open'}
     headers = {"PRIVATE-TOKEN" : self.private_token}
     # return self._connectToGitlab(uri, post_data={}, parameter_dict=parameter_dict)
-    response = requests.post(request_url + path, params=parameter_dict,
+    response = requests.post(backend_url + path, params=parameter_dict,
                                 headers=headers, verify=False)
     print("Gitlab create a project")
     try:
@@ -517,7 +512,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # Check the project is exist
     print("Gitlab check project is exist")
     path = 'api/v3/projects'
-    response = requests.get(request_url + path, headers=headers, verify=False)
+    response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
       data = response.json()
     except JSONDecodeError:
@@ -535,8 +530,41 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
 
   def _checkTakeover(self):
-    # checkDataOnCloneInstance
-    pass
+    # Get Gitlab parameters
+    parameter_dict = self._getGitlabConnexionParameters()
+    print(parameter_dict)
+    backend_url = parameter_dict['backend_url']
+
+    # Check the project is exist
+    print("Gitlab check project is exist")
+    path = 'api/v3/projects'
+    response = requests.get(backend_url + path, headers=headers, verify=False)
+    try:
+      data = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
+    print(response.text)
+
+    project_list = self._listProjects()
+    success = True
+    print("Default project list")
+    print(self.default_project_list)
+    print("Name with namespace:")
+    for project in project_list:
+      success = success and (project['name_with_namespace'] in self.default_project_list)
+      print(project['name_with_namespace'])
+      self.assertIn(project['name_with_namespace'], self.default_project_list)
+
+    if success:
+      headers = {"PRIVATE-TOKEN" : self.private_token}
+      print("self.file_uri:")
+      print(self.file_uri)
+      response = requests.get(self.file_uri, headers=headers, verify=False)
+      print(response.text)
+      success = success and (response.text == self.sample_file)
+
+    self.assertEqual((response.text, self.sample_file)
+
 
   def _getGitlabPartition(self, servicename):
     p = subprocess.Popen(
