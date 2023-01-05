@@ -13,7 +13,9 @@ theia-environment-parts =
   settings.json
 
 theia-parts =
-  frontend-reload
+  frontend-instance
+  frontend-instance-rsyslogd
+  python-server
   promises
 
 parts =
@@ -90,11 +92,13 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
+  $${python-server-listen-promise:name}
   $${frontend-authentication-promise:name}
   $${remote-frontend-url-available-promise:name}
   {% if additional_frontend %}
   $${remote-additional-frontend-url-available-promise:name}
   {% endif %}
+  $${frontend-instance-rsyslogd-promise:name}
   $${slapos-standalone-listen-promise:name}
   $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
@@ -115,6 +119,13 @@ promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+
+[python-server-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = $${:_buildout_section_name_}.py
+config-host = $${python-server-port:ip}
+config-port = $${python-server-port:port}
 
 [frontend-authentication-promise]
 <= monitor-promise-base
@@ -141,6 +152,12 @@ name = $${:_buildout_section_name_}.py
 config-url = $${remote-additional-frontend:connection-secure_access}
 config-http-code = 401
 {% endif %}
+
+[frontend-instance-rsyslogd-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = rsyslogd_listen_promise.py
+config-command = test -S $${frontend-instance-rsyslogd-config:log-socket}
 
 [slapos-standalone-listen-promise]
 <= monitor-promise-base
@@ -207,13 +224,46 @@ sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 {% endif %}
 
 
-# Local Caddy Frontend
+# Local Haproxy Frontend
 # --------------------
 
 [frontend-instance-password]
 recipe = slapos.cookbook:generate.password
 username = admin
 storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
+
+[frontend-instance-rsyslogd-config]
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+log-file = $${directory:log}/frontend-instance.log
+log-socket = $${directory:run}/rsyslog.sock
+pidfile = $${directory:pidfiles}/rsyslogd.pid
+inline =
+  module(
+    load="imuxsock"
+    SysSock.Name="$${:log-socket}")
+
+  # Just simply output the raw line without any additional information, as
+  # haproxy emits enough information by itself
+  # Also cut out first empty space in msg, which is related to rsyslogd
+  # internal and end up cutting on 8k, as it's default of $MaxMessageSize
+  template(name="rawoutput" type="string" string="%msg:2:8192%\n")
+  $ActionFileDefaultTemplate rawoutput
+
+  $FileCreateMode 0600
+  $DirCreateMode 0700
+  $Umask 0022
+
+  $WorkDirectory $${directory:run}
+
+  *.* $${:log-file};rawoutput
+
+
+[frontend-instance-rsyslogd]
+recipe = slapos.cookbook:wrapper
+command-line = ${rsyslogd:location}/sbin/rsyslogd -i $${frontend-instance-rsyslogd-config:pidfile} -n -f $${frontend-instance-rsyslogd-config:output}
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+hash-files = $${frontend-instance-rsyslogd-config:output}
 
 [frontend-instance-port]
 recipe = slapos.cookbook:free_port
@@ -224,61 +274,77 @@ ip = {{ ipv6_random }}
 [frontend-instance-certificate]
 recipe = plone.recipe.command
 command =
-  if [ ! -e $${:key-file} ]
+  if [ ! -e $${:cert-file} ]
   then
     ${openssl-output:openssl} req -x509 -nodes -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
-      -newkey rsa:1024 -keyout $${:key-file} \
+      -newkey rsa:1024 -keyout $${:cert-file} \
       -out $${:cert-file}
   fi
 update-command = $${:command}
-key-file = $${directory:etc}/$${:_buildout_section_name_}.key
-cert-file = $${directory:etc}/$${:_buildout_section_name_}.crt
+cert-file = $${directory:etc}/$${:_buildout_section_name_}.pem
 common-name = $${frontend-instance-config:ip}
 location =
-  $${:key-file}
   $${:cert-file}
 
 [frontend-instance-config]
 recipe = slapos.recipe.template
 output = $${directory:etc}/$${:_buildout_section_name_}
+blankline =
 inline =
-  :$${:port} {
-    bind $${:ip}
-    tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
-    log stdout
-    errors stderr
-    gzip
-    # because caddy does not support upgrade http2 to websocket
-    # https://tools.ietf.org/html/rfc8441
-    tls {
-      alpn http/1.1
-    }
-    root $${directory:frontend-static}
-    browse
-    proxy / $${theia-instance:base-url} {
-      except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename} $${frontend-instance-logo:filename}
-    }
-    proxy /services $${theia-instance:base-url} {
-      websocket
-    }
-    proxy /socket.io $${theia-instance:base-url} {
-      websocket
-    }
-    basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
-      realm "Theia"
-      /
-    }
-  }
+  global
+    maxconn 4096
+    master-worker
+    pidfile $${frontend-instance:pidfile}
+    log $${frontend-instance-rsyslogd-config:log-socket} local0  info
+
+  defaults
+    log global
+    option httplog
+    mode http
+    retries 1
+    option redispatch
+    maxconn 2000
+    balance roundrobin
+
+  userlist basic-auth-list
+    user $${frontend-instance-password:username} insecure-password $${frontend-instance-password:passwd}
+
+  frontend app
+    log global
+    bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
+    timeout client 8h
+    # writing twice the same ACL is doing OR
+    acl is_public path_beg /public/
+    acl is_public path /$${favicon.ico:filename}
+    acl auth_ok http_auth(basic-auth-list)
+    # No authentication for public folder
+    http-request auth unless auth_ok || is_public
+    use_backend static if { path_beg /$${frontend-instance-fonts:folder-name} } || { path_beg /$${frontend-instance-slapos.css:folder-name} } || { path /$${frontend-instance-logo:filename} } || is_public
+    default_backend nodejs
+
+  backend nodejs
+    log global
+    timeout server 8h
+    server nodejs_backend $${theia-instance:ip}:$${theia-instance:port}
+
+  backend static
+    log global
+    timeout server 8h
+    server static_backend $${python-server-port:ip}:$${python-server-port:port}
+  $${:blankline}
+
 ip = $${frontend-instance-port:ip}
 hostname = [$${:ip}]
 port = $${frontend-instance-port:port}
+pidfile = $${directory:pidfiles}/haproxy.pid
 
 [frontend-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${frontend-instance-config:output} -pidfile $${:pidfile}
+  ${haproxy:location}/sbin/haproxy -f $${frontend-instance-config:output}
+hash-files = $${frontend-instance-config:output}
 
 ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
@@ -287,7 +353,7 @@ pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
 url = https://$${:hostname}:$${:port}/
 
 [frontend-instance-fonts]
-; XXX caddy 1 does not seem to serve different folders at different locations
+; XXX python server only serves one folder
 ; so we link fonts in static folder
 recipe = plone.recipe.command
 location = $${directory:frontend-static}/$${:folder-name}
@@ -314,18 +380,6 @@ folder-name = css
 context =
   key logo_image frontend-instance-logo:filename
 
-[frontend-reload]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line =
-  ${bash:location}/bin/bash -c
-  "kill -s USR1 $$(${coreutils:location}/bin/cat $${frontend-instance:pidfile}) \
-    && ${coreutils:location}/bin/sleep infinity"
-hash-files =
-  $${frontend-instance-config:output}
-  $${frontend-instance:wrapper-path}
-wait-for-files = $${frontend-instance:pidfile}
-
 [favicon.ico]
 # generate a pseudo random favicon, different for each instance name.
 recipe = slapos.recipe.build
@@ -349,6 +403,20 @@ install =
 
 location = $${directory:frontend-static}/$${:filename}
 filename = $${:_buildout_section_name_}
+
+# Local Python Server
+# -------------------
+
+[python-server-port]
+recipe = slapos.cookbook:free_port
+minimum = 3000
+maximum = 3100
+ip = {{ ipv4_random }}
+
+[python-server]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line = $${buildout:executable} -m http.server $${python-server-port:port} --bind $${python-server-port:ip} --directory $${directory:frontend-static}
 
 
 # Common Environment
@@ -406,7 +474,6 @@ hash-existing-files =
 ip =  {{ ipv4_random }}
 hostname = $${:ip}
 port = $${theia-service:port}
-base-url = $${theia-service:base-url}
 
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
