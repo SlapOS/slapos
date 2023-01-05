@@ -207,7 +207,7 @@ sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 {% endif %}
 
 
-# Local Caddy Frontend
+# Local Haproxy Frontend
 # --------------------
 
 [frontend-instance-password]
@@ -243,33 +243,37 @@ location =
 recipe = slapos.recipe.template
 output = $${directory:etc}/$${:_buildout_section_name_}
 inline =
-  :$${:port} {
-    bind $${:ip}
-    tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
-    log stdout
-    errors stderr
-    gzip
-    # because caddy does not support upgrade http2 to websocket
-    # https://tools.ietf.org/html/rfc8441
-    tls {
-      alpn http/1.1
-    }
-    root $${directory:frontend-static}
-    browse
-    proxy / $${theia-instance:base-url} {
-      except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename} $${frontend-instance-logo:filename}
-    }
-    proxy /services $${theia-instance:base-url} {
-      websocket
-    }
-    proxy /socket.io $${theia-instance:base-url} {
-      websocket
-    }
-    basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
-      realm "Theia"
-      /
-    }
-  }
+  global
+    maxconn 4096
+    master-worker
+    pidfile {{ parameter_dict['pidfile'] }}
+
+  defaults
+    mode http
+    retries 1
+    option redispatch
+    maxconn 2000
+    balance roundrobin
+
+  userlist basic-auth-list
+    user $${frontend-instance-password:username} password $${frontend-instance-password:passwd}
+
+  frontend app
+    bind {{:ip}}:{{:port}} $${frontend-instance-certificate:cert-file}
+    timeout client 8h
+    acl ValidUser http_auth(basic-auth-list)
+    http-request auth realm User if !ValidUser
+    use_backend static if { path_beg $${frontend-instance-fonts:folder-name} } || { path_beg $${frontend-instance-slapos.css:folder-name} }} || { path_beg public }} || { path $${favicon.ico:filename} }
+    default_backend nodejs
+
+  backend nodejs
+    timeout server 8h
+    server nodejs_backend $${theia-instance:base-url}
+
+  backend static
+    timeout server 8h
+    server static_backend http://$${python_server_port:ip}:$${python_server_port:ip}
+
 ip = $${frontend-instance-port:ip}
 hostname = [$${:ip}]
 port = $${frontend-instance-port:port}
@@ -278,7 +282,7 @@ port = $${frontend-instance-port:port}
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${frontend-instance-config:output} -pidfile $${:pidfile}
+  ${haproxy:location}/sbin/haproxy -f $${frontend-instance-config:output}
 
 ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
@@ -287,7 +291,7 @@ pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
 url = https://$${:hostname}:$${:port}/
 
 [frontend-instance-fonts]
-; XXX caddy 1 does not seem to serve different folders at different locations
+; XXX python server only serves one folder
 ; so we link fonts in static folder
 recipe = plone.recipe.command
 location = $${directory:frontend-static}/$${:folder-name}
@@ -349,6 +353,20 @@ install =
 
 location = $${directory:frontend-static}/$${:filename}
 filename = $${:_buildout_section_name_}
+
+# Local Python Server
+# -------------------
+
+[python-server-port]
+recipe = slapos.cookbook:free_port
+minimum = 3000
+maximum = 3100
+ip = {{ ipv4_random }}
+
+[python-server]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line = $${buildout:executable} -m http.server $${python-server-port:port} --bind $${python_server_port:ip} --directory $${directory:frontend-static}
 
 
 # Common Environment
