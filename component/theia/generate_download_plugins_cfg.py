@@ -83,9 +83,6 @@ for plugin_and_version in '''\
     ms-vscode/references-view/latest
 # golang.Go removed because it overwrites the PATH in theia shell
 # golang/Go/0.16.2
-    vscjava/vscode-java-debug/0.29.0
-    redhat/java/0.61.0
-    vscjava/vscode-java-test/0.26.0
     ms-python/python/2020.10.332292344
     perrinjerome/vscode-zc-buildout/latest
     jebbs/plantuml/2.14.0
