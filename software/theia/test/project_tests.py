@@ -456,6 +456,13 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = gitlab_software_release_url
 
+  @classmethod
+  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
+    super(TestTheiaResilienceGitlab, self)._deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type)
+    parameters = 'software_type="gitlab-test"'
+    cls.callSlapos('request', instance_name, software_url, instance_type=instance_type, "--parameters", parameters)
+    cls._processEmbeddedInstance(retries, instance_type)
+
   def _getGitlabConnexionParameters(self, instance_type='export'):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,
@@ -526,8 +533,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     print('Gitlab project list is:\n%s' % self.default_project_list)
     print('Getting test file at url: %s' % self.file_uri)
-    self.sample_file = self._connectToGitlab(url=self.file_uri)
-
 
   def _checkTakeover(self):
     super(TestTheiaResiliencePeertube, self)._checkTakeover()
