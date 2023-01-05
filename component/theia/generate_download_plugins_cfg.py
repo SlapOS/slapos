@@ -1,8 +1,13 @@
 import configparser
+import logging
 import requests
 import hashlib
 
 urls = []
+session = requests.Session()
+timeout = 30
+logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 
 for plugin_and_version in '''\
     vscode/bat/latest
@@ -96,8 +101,9 @@ for plugin_and_version in '''\
   publisher, extension_name, version = plugin_and_version.split('/')
 
   api_url = f'https://open-vsx.org/api/{publisher}/{extension_name}/{version}'
-  download_url = requests.get(api_url).json()['files']['download']
-  md5sum = hashlib.md5(requests.get(download_url).content).hexdigest()
+  logger.info(plugin_and_version)
+  download_url = session.get(api_url, timeout=timeout).json()['files']['download']
+  md5sum = hashlib.md5(session.get(download_url, timeout=timeout).content).hexdigest()
   urls.append(f'{publisher}-{extension_name} {download_url} {md5sum}')
 
 cfg = configparser.ConfigParser()
