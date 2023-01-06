@@ -21,6 +21,10 @@
 {%   set test_runner_total_database_count = mariadb_test_database_amount %}
 {%   set test_runner_enabled = mariadb_test_database_amount > 0 %}
 {% endif -%}
+{# Backward compatibility for cloudooo-url #}
+{% if slapparameter_dict.get('cloudooo-url') -%}
+{%   do slapparameter_dict.setdefault('cloudooo-url-list', slapparameter_dict['cloudooo-url'].split(',')) %}
+{% endif -%}
 {% set test_runner_random_activity_priority = slapparameter_dict.get('test-runner', {}).get('random-activity-priority') -%}
 {% set monitor_base_url_dict = {} -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
@@ -234,7 +238,7 @@ return =
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', ' '.join(bt5_default_list))) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
-config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cloudooo_url)) }}
+config-cloudooo-url-list = {{ dumps(slapparameter_dict.get('cloudooo-url-list', default_cloudooo_url_list)) }}
 config-caucase-url = {{ dumps(caucase_url) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
