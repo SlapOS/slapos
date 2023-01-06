@@ -265,12 +265,13 @@ config-wcfs_enable = {{ dumps(wcfs_enable) }}
 config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
-{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}
+{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout', 300) -%}
 {% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
 {% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
+{% set balancer_timeout_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
 {% for custom_name, zope_parameter_dict in six.iteritems(zope_partition_dict) -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
@@ -288,6 +289,7 @@ software-type = zope
 {%   do zope_backend_path_dict.__setitem__(zope_family, backend_path) -%}
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
 {%   set current_zope_family_override_dict = zope_family_override_dict.get(zope_family, {}) -%}
+{%   do balancer_timeout_dict.__setitem__(zope_family, current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) -%}
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
@@ -406,6 +408,7 @@ config-url = ${request-jupyter:connection-url}
     'zope-family-dict': zope_family_parameter_dict,
     'backend-path-dict': zope_backend_path_dict,
     'ssl-authentication-dict': ssl_authentication_dict,
+    'timeout-dict': balancer_timeout_dict,
     'apachedex-promise-threshold': monitor_dict.get('apachedex-promise-threshold', 70),
     'apachedex-configuration': monitor_dict.get(
       'apachedex-configuration',
@@ -431,7 +434,7 @@ recipe = slapos.cookbook:request
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
 {{ root_common.sla('frontend', True) }}
-slave = true
+shared = true
 {% set config_dict = {
   'type': 'zope',
 } -%}

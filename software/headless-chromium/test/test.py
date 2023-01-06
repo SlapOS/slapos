@@ -68,3 +68,26 @@ class TestHeadlessChromium(SlapOSInstanceTestCase):
     response = requests.get(proxyURL + frontend, verify=False,
                             auth=(username, password))
     self.assertEqual(requests.codes['ok'], response.status_code)
+
+class TestHeadlessChromiumParameters(SlapOSInstanceTestCase):
+
+  instance_parameter_dict = {
+    # this website echoes the get request for debugging purposes
+    'target-url': 'https://httpbin.org/get?a=6&b=4',
+    'incognito': True,
+    "block-new-web-contents": False,
+    "window-size": "900,600"
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
+
+  def setUp(self):
+    self.connection_parameters = self.requestDefaultInstance().getConnectionParameterDict()
+
+  def test_chromium_loads_target_url_parameter(self):
+    url = self.connection_parameters['remote-debug-url']
+    response = requests.get('%s/json' % url)
+    loaded_url = response.json()[0]['url']
+    self.assertEqual(loaded_url, self.instance_parameter_dict['target-url'])

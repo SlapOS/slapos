@@ -1,10 +1,10 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "http://json-schema.org/draft-06/schema",
   "type": "object",
   "description": "Parameters to instantiate resilient Theia",
   "allOf": [
     {
-      "$ref": "instance-input-schema.json#/"
+      "$ref": "./instance-input-schema.json#"
     },
     {
       "properties": {
@@ -58,13 +58,6 @@
           "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
           "type": "string",
           "default": "2W",
-          "optional": true
-        },
-        "ignore-known-hosts-file": {
-          "title": "Ignore known_hosts file",
-          "description": "Set either to fill known_hosts file for ssh or not. Useful if main instance and PBS are using the same IP (slapos proxy, theia).",
-          "type": "boolean",
-          "default": false,
           "optional": true
         }
       }

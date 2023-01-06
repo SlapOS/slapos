@@ -5,35 +5,12 @@ dir-backup = ${directory:backup}
 find-bin = {{ findutils_location }}
 diff-bin = {{ diffutils_location }}
 
-#php.ini parameters
-php.memory_limit = 512M
-php.date.timezone = Europe/Paris
-php.upload_max_filesize = 10240M
-php.post_max_size = 10240M
-php.session.cookie_secure = True
-php.max_execution_time = 1800
-php.max_input_time = 3600
-php.output_buffering = 'Off'
-php.max_file_uploads = 100
-
-[php-bin]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
-
 [matomo-backup-cron]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = matomo-backup
 frequency = 0 0 * * *
 command = ${matomo-backup.sh:output}
-
-[matomo-apache-httpd]
-recipe = slapos.recipe.template:jinja2
-url = {{ matomo_apache_httpd }}
-output = ${directory:apache.d}/matomo.conf
-context =
-  section parameter_dict apache-php-configuration
 
 [matomo-backup.sh]
 recipe = slapos.recipe.template:jinja2
@@ -43,5 +20,11 @@ context =
   section parameter_dict instance-parameter
   key php_bin php-bin:wrapper-path
 
-[slap-parameter]
-instance.cli-url = ${apache-php-configuration:url}
+[apache-php-service]
+environment=
+  MATOMO_DATABASE_HOST=${mariadb-urlparse:host}:${mariadb-urlparse:port}
+  MATOMO_DATABASE_ADAPTER=mysql
+  MATOMO_DATABASE_TABLES_PREFIX=matomo_
+  MATOMO_DATABASE_USERNAME=${mariadb-urlparse:username}
+  MATOMO_DATABASE_PASSWORD=${mariadb-urlparse:password}
+  MATOMO_DATABASE_DBNAME=${mariadb-urlparse:path}

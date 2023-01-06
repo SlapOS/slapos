@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 r"""Command-line tool to format software release JSON for slapos.
 
 Inspired by json.tool from python, but enforcing 2 spaces and non-sorted keys.

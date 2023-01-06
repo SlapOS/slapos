@@ -6,19 +6,19 @@
 {%   endif %}
 {% endfor %}
 {% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') %}
-{% set enable_http = str(slapparameter_dict.get('enable-http-server', False)).lower() == 'true' -%}
-{% set use_tap = str(slapparameter_dict.get('use-tap', True)).lower() == 'true' -%}
-{% set use_nat = str(slapparameter_dict.get('use-nat', True)).lower() == 'true' -%}
-{% set wipe_disk = str(slapparameter_dict.get('wipe-disk-ondestroy', False)).lower() == 'true' -%}
-{% set nat_restrict = str(slapparameter_dict.get('nat-restrict-mode', False)).lower() == 'true' -%}
+{% set enable_http = slapparameter_dict.get('enable-http-server', False) -%}
+{% set use_tap = slapparameter_dict.get('use-tap', True) -%}
+{% set use_nat = slapparameter_dict.get('use-nat', True) -%}
+{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', False) -%}
+{% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', False) -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
-{% set disable_ansible_promise = str(slapparameter_dict.get('disable-ansible-promise', True)).lower() == 'true' -%}
+{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', True) -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set whitelist_domains = slapparameter_dict.get('whitelist-domains', '') -%}
 {% set virtual_hard_drive_url_enabled = 'virtual-hard-drive-url' in slapparameter_dict %}
-{% set virtual_hard_drive_url_gzipped = str(slapparameter_dict.get('virtual-hard-drive-gzipped', False)).lower() == 'true' %}
+{% set virtual_hard_drive_url_gzipped = slapparameter_dict.get('virtual-hard-drive-gzipped', False) %}
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
 {% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
@@ -434,7 +434,7 @@ network-adapter = ${slap-parameter:network-adapter}
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 
-{%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() == 'true' %}
+{%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', False) %}
 smp-max-count = {{ cpu_max_count }}
 ram-max-size = {{ ram_max_size }}
 {%- if enable_device_hotplug %}
@@ -457,7 +457,6 @@ enable-vhost = ${slap-parameter:enable-vhost}
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
-hard-drive-url-check-certificate = ${slap-parameter:hard-drive-url-check-certificate}
 
 shell-path = {{ dash_executable_location }}
 qemu-path =  {{ qemu_executable_location }}
@@ -471,6 +470,9 @@ disk-storage-list =
 external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
+# new external-disk parameter
+external-disk = ${slap-parameter:external-disk}
+instance-root = ${buildout:directory}
 
 {% if enable_http -%}
 httpd-port = ${slap-parameter:httpd-port}
@@ -641,31 +643,48 @@ promise = check_command_execute
 name = qemu-virtual-machine-is-ready.py
 config-command = ${kvm-started-bin:output}
 
-[novnc-instance]
-recipe = slapos.cookbook:novnc
-path = ${ca-novnc:executable}
+[nginx-tempdir]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${buildout:directory}/tmp
+client-body-temp-path = ${:tmp}/client_body_temp_path
+proxy-temp-path = ${:tmp}/proxy_temp_path
+fastcgi-temp-path = ${:tmp}/fastcgi_temp_path
+uwsgi-temp-path = ${:tmp}/uwsgi_temp_path
+scgi-temp-path = ${:tmp}/scgi_temp_path
+
+[nginx-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-novnc:executable} -c ${nginx-config:output}
+wrapper-path = ${directory:services}/nginx
+
+[nginx-config]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_nginx }}
+output = ${directory:etc}/nginx.conf
+context =
+    section params nginx-params
+    section ca ca-novnc
+    section tempdir nginx-tempdir
+    raw docroot {{ novnc_location }}
+    raw mime {{ nginx_mime }}
+
+[nginx-params]
+path-pid = ${directory:run}/nginx.pid
+path-error-log = ${directory:log}/nginx-error.log
+path-access-log = ${directory:log}/nginx-access.log
 ip = ${slap-network-information:global-ipv6}
 port = 6080
-vnc-ip = ${kvm-parameter-dict:vnc-ip}
-vnc-port = ${kvm-parameter-dict:vnc-port}
-novnc-location = {{ novnc_location }}
-websockify-path = {{ websockify_executable_location }}
-ssl-key-path = ${ca-novnc:key-file}
-ssl-cert-path = ${ca-novnc:cert-file}
+websocket-ip = ${kvm-parameter-dict:vnc-ip}
+websocket-port = ${kvm-parameter-dict:vnc-port}
+websocket-path = websockify
+nb-workers = 2
 
-[websockify-sighandler]
-recipe = slapos.cookbook:signalwrapper
-wrapper-path = ${directory:bin}/websockify-sighandler
-wrapped-path = ${novnc-instance:path}
-
-[websockify-sighandler-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${websockify-sighandler:wrapper-path}
-wrapper-path = ${directory:services}/websockify
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-wait-for-files =
-  ${ca-novnc:key-file}
-  ${ca-novnc:cert-file}
+[nginx-graceful]
+recipe = slapos.recipe.template
+output = ${directory:scripts}/nginx-graceful
+inline =
+  #!/bin/sh
+  exec kill -s SIGHUP $(cat ${nginx-params:path-pid})
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -697,15 +716,15 @@ crl = ${directory:ca-dir}/crl/
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${directory:novnc-conf}/novnc.key
 cert-file = ${directory:novnc-conf}/novnc.crt
-executable = ${directory:bin}/novnc
-wrapper = ${directory:bin}/websockify
+executable = {{ nginx_executable }}
+wrapper = ${directory:bin}/nginx-with-ca
 
 [novnc-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = novnc_promise.py
-config-host = ${novnc-instance:ip}
-config-port = ${novnc-instance:port}
+config-host = ${nginx-params:ip}
+config-port = ${nginx-params:port}
 
 
 #----------------
@@ -743,10 +762,11 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-slave = true
+shared = true
 config-https-only = True
 config-type = websocket
-config-url = https://[${novnc-instance:ip}]:${novnc-instance:port}
+config-websocket-path-list = ${nginx-params:websocket-path}
+config-url = https://[${nginx-params:ip}]:${nginx-params:port}
 return = secure_access domain
 
 [request-slave-frontend]
@@ -760,7 +780,7 @@ sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 <= monitor-promise-base
 promise = check_url_available
 name = frontend_promise.py
-config-url = ${request-slave-frontend:connection-secure_access}
+config-url = ${request-slave-frontend:connection-secure_access}/vnc.html
 
 {% if additional_frontend %}
 [request-slave-frontend-additional]
@@ -819,12 +839,12 @@ blank-line =
 
 [publish-connection-information]
 <= monitor-publish
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
@@ -936,7 +956,9 @@ recipe = collective.recipe.template
 input = inline:
   {{ data_list | join('\n  ') }}
 output = {{ file_path }}
+{%   if mode %}
 mode = {{ mode }}
+{%   endif %}
 {% endmacro -%}
 
 # write vm-data into file public/data
@@ -1021,6 +1043,7 @@ extensions = jinja2.ext.do
 context =
   raw logs ${directory:public}/ansible
   raw name {{ name }}
+  raw python_executable ${buildout:executable}
 
 [ansible-vm-promise]
 <= monitor-promise-base
@@ -1085,12 +1108,11 @@ enable-vhost = False
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
 virtual-hard-drive-gzipped = False
-# if virtual-hard-drive-url use https, then specify if https certificate should be checked or not
-hard-drive-url-check-certificate = True
 
 external-disk-number = 0
 external-disk-size = 20
 external-disk-format = qcow2
+external-disk = {}
 
 # Help to get some configuration files into the vm from http
 enable-http-server = False
@@ -1106,7 +1128,7 @@ data-to-vm =
 {% set key_list =  v.split('\n') -%}
 {{ k }} =
   {{ key_list | join('\n  ') }}
-{% elif k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains'] %}
+{% elif k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'data-to-vm'] %}
 {# needs to decorate possibly multiline or maybe unsafe value #}
 {{ k }} = {{ dumps(v) }}
 {% else -%}
@@ -1238,8 +1260,8 @@ parts =
   kvm-controller-wrapper
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
-  websockify-sighandler
-  websockify-sighandler-service
+  nginx-launcher
+  nginx-graceful
   novnc-promise
   kvm-started-promise
   cron

@@ -29,7 +29,9 @@ These parameters are:
   * ``-frontend-quantity`` : The quantity of frontends to request (default to "1")
   * ``-frontend-i-state``: The state of frontend i
   * ``-frontend-i-software-release-url``: Software release to be used for frontends, default to the current software release
-  * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo
+  * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo, supported parameters are:
+    * ``ram-cache-size``
+    * ``disk-cache-size``
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
 For example::
@@ -46,13 +48,6 @@ will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/
 *Note*: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
 
 **Important NOTE**: The way you ask for slave to a replicate frontend is the same as the one you would use for the software given in "-frontend-quantity". Do not forget to use "replicate" for software type. XXXXX So far it is not possible to do a simple request on a replicate frontend if you do not know the software_guid or other sla-parameter of the master instance. In fact we do not know yet the software type of the "requested" frontends. TO BE IMPLEMENTED
-
-XXX Should be moved to specific JSON File
-
-Extra-parameter per frontend with default::
-
-  ram-cache-size = 1G
-  disk-cache-size = 8G
 
 How to deploy a frontend server
 ===============================
@@ -176,7 +171,7 @@ Instance Parameters
 Master Instance Parameters
 --------------------------
 
-The parameters for instances are described at `instance-caddy-input-schema.json <instance-caddy-input-schema.json>`_.
+The parameters for instances are described at `instance-input-schema.json <instance-input-schema.json>`_.
 
 Here some additional informations about the parameters listed, below:
 
@@ -202,7 +197,7 @@ Optional parameter, defaults to 8080.
 Slave Instance Parameters
 -------------------------
 
-The parameters for instances are described at `instance-slave-caddy-input-schema.json <instance-slave-caddy-input-schema.json>`_.
+The parameters for instances are described at `instance-slave-input-schema.json <instance-slave-input-schema.json>`_.
 
 Here some additional informations about the parameters listed, below:
 
@@ -237,6 +232,8 @@ This set of parameters is used to control the way how the backend checks will be
 Please be aware that the `health-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `health-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
 
 Thanks to using health-check it's possible to configure failover system. By providing `health-check-failover-url` or `health-check-failover-https-url` some special backend can be used to reply in case if original backend replies with error (codes like `5xx`). As a note one can setup this failover URL like `https://failover.example.com/?p=` so that the path from the incoming request will be passed as parameter. Additionally authentication to failover URL is supported with `health-check-authenticate-to-failover-backend` and SSL Proxy verification with `health-check-failover-ssl-proxy-verify` and `health-check-failover-ssl-proxy-ca-crt`.
+
+**Note**: It's important to correctly configure failover URL response, especially in case if it's expected to use `stale-if-error` simulation available while `enable_cache` is used. In order to serve pages from cache the failover URL have to return error HTTP code (like 503 SERVICE_UNAVAILABLE), so that in such case cached page will have precedence over the reply from failover URL.
 
 Examples
 ========
@@ -457,9 +454,9 @@ Instantiating caddy-frontend results with a cluster in various partitions:
 
  * master (the controlling one)
  * kedifa (contains kedifa server)
- * caddy-frontend-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
+ * frontend-node-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
 
-It means sites are served in ``caddy-frontend-N`` partition, and this partition is structured as:
+It means sites are served in ``frontend-node-N`` partition, and this partition is structured as:
 
  * Caddy serving the browser [client-facing-caddy]
  * (optional) Apache Traffic Server for caching [ats]
@@ -481,11 +478,11 @@ Kedifa implementation
 
 `Kedifa <https://lab.nexedi.com/nexedi/kedifa>`_ server runs on kedifa partition.
 
-Each `caddy-frontend-N` partition downloads certificates from the kedifa server.
+Each `frontend-node-N` partition downloads certificates from the kedifa server.
 
 Caucase (exposed by ``kedifa-caucase-url`` in master partition parameters) is used to handle certificates for authentication to kedifa server.
 
-If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each caddy-frontend-N node.
+If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each frontend-node-N node.
 
 Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------

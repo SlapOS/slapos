@@ -33,7 +33,7 @@ def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
   parser.add_argument('--test_suite', help='The test suite name',
                       default=parsed_parameters.get('test-suite', ''),
-                      required=not parsed_parameters.has_key('test-suite'))
+                      required='test-suite' not in parsed_parameters)
   parser.add_argument('--test_suite_title', help='The test suite title')
   parser.add_argument('--test_node_title', help='The test node title')
   parser.add_argument('--project_title', help='The project title')
@@ -96,7 +96,7 @@ def main():
             firefox_binary='${firefox-wrapper-68:location}',
             executable_path='${geckodriver:location}')
       else:
-        assert target == 'selenium-server', "Unsupported target {}".format(test_runner['target'])
+        assert target == 'selenium-server', f"Unsupported target {test_runner['target']}"
         # use a remote connection which optionally verifies TLS certificate
         # and optionally against a user provided CA.
         executor = RemoteConnection(test_runner['server-url'], keep_alive=True)
@@ -120,14 +120,14 @@ def main():
       remote_access_url = parsed_parameters.get('remote-access-url')
       if remote_access_url:
         if ('jio' in test_suite):
-          url = '{}/jio/test/tests.html'.format(remote_access_url)
+          url = f'{remote_access_url}/jio/test/tests.html'
         else:
-          url = '{}/renderjs/test/'.format(remote_access_url)
+          url = f'{remote_access_url}/renderjs/test/'
 
       is_browser_running = True
       agent = browser.execute_script("return navigator.userAgent")
-      print agent
-      print url
+      print(agent)
+      print(url)
 
       browser.get(url)
       WebDriverWait(browser, 300).until(EC.presence_of_element_located((
@@ -137,7 +137,7 @@ def main():
       html_parser = etree.HTMLParser(recover=True)
       body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
 
-      print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
+      print(' '.join(body.xpath('//*[@id="qunit-testresult"]//text()')))
 
       for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
         if (len(elt.xpath('.//span[@class="module-name"]'))):
@@ -149,7 +149,7 @@ def main():
         else:
           test_name = elt.xpath('.//span[@class="test-name"]')[0].text
 
-        print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
+        print(elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext()))
         # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 
         failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
@@ -176,7 +176,7 @@ def main():
     # Send results
     tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
-                                        test_name_list = test_line_dict.keys(),
+                                        test_name_list = list(test_line_dict.keys()),
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
@@ -186,17 +186,17 @@ def main():
     while 1:
       test_result_line = test_result.start()
       if not test_result_line:
-        print 'No test result anymore.'
+        print('No test result anymore.')
         break
 
-      print 'Submitting: "%s"' % test_result_line.name
+      print('Submitting: "%s"' % test_result_line.name)
       # report status back to Nexedi ERP5
       test_result_line.stop(**test_line_dict[test_result_line.name])
 
   except:
     # Catch any exception here, to warn user instead of being silent,
     # by generating fake error result
-    print traceback.format_exc()
+    print(traceback.format_exc())
     result = dict(status_code=-1,
                   command=url,
                   stderr=traceback.format_exc(),

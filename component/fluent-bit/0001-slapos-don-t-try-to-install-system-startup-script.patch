@@ -1,0 +1,45 @@
+From 90950c10cf6bfcba777a5b22cdcd3b54b4043d35 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 20 Sep 2022 23:10:16 +0900
+Subject: [PATCH] slapos: don't try to install system startup script
+
+in slapos context we don't write to system directories when installing
+packages
+---
+ src/CMakeLists.txt | 21 ---------------------
+ 1 file changed, 21 deletions(-)
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 630f875bf..388c72ab1 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -477,27 +477,6 @@ if(FLB_BINARY)
+       DESTINATION "${FLB_INSTALL_BINDIR}")
+   endif()
+ 
+-  # Detect init system, install upstart, systemd or init.d script
+-  if(IS_DIRECTORY /lib/systemd/system)
+-    set(FLB_SYSTEMD_SCRIPT "${PROJECT_SOURCE_DIR}/init/${FLB_OUT_NAME}.service")
+-    configure_file(
+-      "${PROJECT_SOURCE_DIR}/init/systemd.in"
+-      ${FLB_SYSTEMD_SCRIPT}
+-      )
+-    install(FILES ${FLB_SYSTEMD_SCRIPT} COMPONENT binary DESTINATION /lib/systemd/system)
+-    install(DIRECTORY DESTINATION ${FLB_INSTALL_CONFDIR} COMPONENT binary)
+-  elseif(IS_DIRECTORY /usr/share/upstart)
+-    set(FLB_UPSTART_SCRIPT "${PROJECT_SOURCE_DIR}/init/${FLB_OUT_NAME}.conf")
+-    configure_file(
+-      "${PROJECT_SOURCE_DIR}/init/upstart.in"
+-      ${FLB_UPSTART_SCRIPT}
+-      )
+-    install(FILES ${FLB_UPSTART_SCRIPT} COMPONENT binary DESTINATION /etc/init)
+-    install(DIRECTORY DESTINATION COMPONENT binary ${FLB_INSTALL_CONFDIR})
+-  else()
+-    # FIXME: should we support Sysv init script ?
+-  endif()
+-
+   if(FLB_SYSTEM_WINDOWS)
+     install(FILES
+       "${PROJECT_SOURCE_DIR}/conf/fluent-bit-win32.conf"
+-- 
+2.37.0

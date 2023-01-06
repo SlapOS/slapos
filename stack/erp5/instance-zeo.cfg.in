@@ -109,7 +109,7 @@ command = ${tidstorage:repozo-wrapper}
 # webrunner resiliency with erp5 inside.
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 inline = {{ '{{ "${directory:zodb}/**\\n${directory:log}/**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
 

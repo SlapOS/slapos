@@ -17,7 +17,6 @@ changes to the code, run tests and publish changes.
 
 ```bash
 # install this software release and request an instance
-# use software-py3.cfg instead of software.cfg if the SR you want to test is written in Python 3
 SR=https://lab.nexedi.com/nexedi/slapos/raw/1.0/software/slapos-sr-testing/software.cfg
 COMP=slaprunner
 INSTANCE_NAME=$COMP
@@ -57,6 +56,7 @@ The `environment-script` set all variables except `SLAPOS_TEST_DEBUG`, `SLAPOS_T
 | `SLAPOS_TEST_IPV4` | ipv4 used by this instance. |
 | `SLAPOS_TEST_WORKING_DIR` | Path to use as a working directory to hold the standalone SlapOS. |
 | `SLAPOS_TEST_SHARED_PART_LIST` | A `:` separated of paths to look for already installed shared parts. The SlapOS used in the test will not write in these, but will use a dedicated directory in `$SLAPOS_TEST_WORKING_DIR` |
+| `SLAPOS_TEST_LOG_DIRECTORY` | If set, slapos testing will save a snapshot of the instance and/or software files in there in case of failure. Mostly used in testnodes to be able to debug afterward. Note that this directory is expected to be empty for each test. |
 
 
 ## Frequently Asked Questions

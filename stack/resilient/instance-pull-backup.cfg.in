@@ -124,7 +124,6 @@ pull-push-maximum-run = 5
 # XXX: this should be named "notifier-host"
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = {{ dumps(slave_instance_list) }}
-ignore-known-hosts-file = {{ slapparameter_dict.get('ignore-known-hosts-file', 'false') }}
 # To get a verbose feed about PBS state
 instance-root-name = $${monitor-instance-parameter:root-instance-title}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/

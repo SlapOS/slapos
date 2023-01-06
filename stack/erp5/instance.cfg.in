@@ -15,6 +15,7 @@ postfix-location = {{ postfix_location }}
 template-postfix-aliases = {{ template_postfix_aliases }}
 template-postfix-main-cf = {{ template_postfix_main_cf }}
 template-postfix-master-cf = {{ template_postfix_master_cf }}
+xz-utils-location =  {{ xz_utils_location }}
 
 [dynamic-template-postfix]
 < = jinja2-template-base
@@ -103,7 +104,6 @@ coreutils = {{ coreutils_location }}
 sqlbench_path = {{ mariadb_location }}/sql-bench
 perl_dbd_mariadb_path = {{ perl_dbd_mariadb_path }}
 dash = {{ dash_location }}
-jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 fonts = {{ dumps(zope_fonts) }}
 fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
@@ -114,6 +114,11 @@ extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 erp5-location = {{ erp5_location }}
 egg-interpreter = {{egg_interpreter}}
+erp5-kernel-location = {{ erp5_kernel_location }}
+erp5-kernel-filename = {{ erp5_kernel_filename }}
+kernel-json-location = {{ kernel_json_location }}
+kernel-json-filename = {{ kernel_json_filename }}
+python-executable-for-kernel = {{ python_executable_for_kernel }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
@@ -201,6 +206,7 @@ url = {{ instance_wcfs_cfg_in }}
 filename = instance_wcfs.cfg
 extra-context =
     section parameter_dict dynamic-template-zope-parameters
+    import urllib_parse six.moves.urllib.parse
 import-list =
     file instance_zodb_base context:template-zodb-base
 

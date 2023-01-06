@@ -97,7 +97,7 @@
     },
     "publisher-timeout": {
       "description": "How long a publisher-initiated transaction may last, in seconds",
-      "default": null,
+      "default": 300,
       "type": [
         "number",
         "null"
@@ -339,6 +339,7 @@
     },
     "zodb-zeo": {
       "description": "Common settings ZEO servers",
+      "additionalProperties": false,
       "properties": {
         "tcpv4-port": {
           "allOf": [
@@ -464,6 +465,7 @@
     },
     "jupyter": {
       "description": "Jupyter subinstance parameters",
+      "additionalProperties": false,
       "properties": {
         "enable": {
           "description": "Whether to enable creation of associated Jupyter subinstance",
@@ -480,6 +482,7 @@
     },
     "wcfs": {
       "description": "Parameters for wendelin.core filesystem",
+      "additionalProperties": false,
       "properties": {
         "enable": {
           "description": "Whether to enable WCFS filesystem and use it to access ZBigArray/ZBigFile data. In WCFS mode wendelin.core clients (Zope/ERP5 processes) share in-RAM cache for in-ZODB data without duplicating it for every client. This cache sharing does not affect correctness as isolation property is continued to be provided to every client.",
@@ -495,27 +498,72 @@
     },
     "caucase": {
       "description": "Caucase certificate authority parameters",
-      "properties": {
-        "url": {
-          "title": "Caucase URL",
-          "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
-          "default": "",
-          "type": "string",
-          "format": "uri"
+      "allOf": [
+        {
+          "properties": {
+            "url": {
+              "title": "Caucase URL",
+              "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+              "default": "",
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        {
+          "$ref": "../caucase/instance-caucase-input-schema.json"
         }
-      },
-      "additionalProperties": {
-        "$ref": "../caucase/instance-caucase-input-schema.json"
-      },
+      ],
       "type": "object"
     },
     "test-runner": {
       "description": "Test runner parameters.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
           "description": "Generate helper scripts to run test suite.",
           "default": true,
           "type": "boolean"
+        },
+        "coverage": {
+          "type": "object",
+          "title": "Coverage",
+          "description": "Coverage configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Collect python coverage data during test run.",
+              "default": false,
+              "type": "boolean"
+            },
+            "include": {
+              "description": "File name patterns to include in coverage data, relative to software buildout's directory. Default to all repositories defined in software by ${erp5_repository_list:repository_id_list}.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "examples": [
+                [
+                  "parts/erp5/*",
+                  "parts/custom-repository/*",
+                  "develop-eggs/custom-egg/*"
+                ]
+              ]
+            },
+            "branch": {
+              "description": "Enable branch coverage",
+              "type": "boolean",
+              "default": false
+            },
+            "upload-url": {
+              "description": "URL to upload coverage data. This is interpreted as a RFC 6570 URI Template, with the following parameters: test_name, test_result_id and test_result_revision. The request will be a PUT request with the coverage file content as body, suitable for WebDav servers. If the URL contains user and password, they will be used to attempt authentication using Digest and Basic authentication schemes.",
+              "type": "string",
+              "format": "uri",
+              "examples": [
+                "https://user:password@example.com/{test_result_id}/{test_name}.coverage.sqlite3"
+              ]
+            }
+          }
         },
         "node-count": {
           "description": "Number of tests this instance can execute in parallel. This must be at least equal to the number of nodes configured on testnode running the test",
@@ -650,6 +698,7 @@
         },
         "ssl": {
           "description": "HTTPS certificate generation parameters",
+          "additionalProperties": false,
           "properties": {
             "frontend-caucase-url-list": {
               "title": "Frontend Caucase URL List",

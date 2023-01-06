@@ -1,11 +1,11 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-06/schema",
   "type": "object",
   "description": "Parameters to instantiate Theia",
   "additionalProperties": false,
   "properties": {
     "autorun": {
-      "title": "Automatically Run Sofware/Instance",
+      "title": "Automatically Run Software/Instance",
       "description": "The option used to pilot automatic build and run of software and instances hosted inside Theia. When 'running', build and run is done automatically in the background. When 'stopped' build and run processes are stopped and need to be run manually. When 'user-controlled', the user can manage it directly in the local supervisord. ",
       "type": "string",
       "enum": [
@@ -19,10 +19,21 @@
       "title": "Initial Embedded Instance Configuration",
       "description": "One-shot optional JSON preconfiguration for an embedded instance. Only applied once when Theia is instantiated. Changing this option afterward will have no effect.",
       "type": "string",
+      "textarea": true,
       "examples": [
         "{\"software-url\": \"~/srv/project/slapos/software/html5as-base/software.cfg\"}",
         "{\"software-url\": \"~/srv/project/slapos/software/html5as/software.cfg\", \"software-type\": \"replicate\", \"instance-parameters\": {\"replicate-quantity\": 3}}"
       ]
+    },
+    "forward-slapos-frontend-requests": {
+      "title": "Forward Frontend Requests in the Embedded SlapOS",
+      "description": "Embedded SlapOS instance by default forwards frontend requests as shared instances attached to the Theia instance, so that HTTP frontends can be allocated for services. This behavior can be disabled, in that case frontends will not be allocated.",
+      "type": "string",
+      "enum": [
+        "enabled",
+        "disabled"
+      ],
+      "default": "enabled"
     },
     "frontend-guid": {
       "title": "Frontend Instance ID",

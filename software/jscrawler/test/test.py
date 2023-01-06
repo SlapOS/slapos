@@ -26,8 +26,7 @@
 ##############################################################################
 
 import os
-import logging
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 import requests
 import time
@@ -51,7 +50,7 @@ class TestJSCrawler(SlapOSInstanceTestCase):
         self.send_response(200)
         self.send_header("Content-Type", "application/html")
         self.end_headers()
-        self.wfile.write('<title>Hello {}</title>'.format(self._name))
+        self.wfile.write(f'<title>Hello {self._name}</title>'.encode())
 
     return {
       'urls': '\n'.join([

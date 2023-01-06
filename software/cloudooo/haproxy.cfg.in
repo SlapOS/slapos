@@ -1,0 +1,25 @@
+global
+  maxconn 4096
+  stats socket {{ parameter_dict['socket-path'] }} level admin
+  master-worker
+  pidfile {{ parameter_dict['pidfile'] }}
+
+defaults
+  mode http
+  retries 1
+  option redispatch
+  maxconn 2000
+  timeout server 305s
+  timeout queue 60s
+  timeout connect 5s
+  timeout client 305s
+  option httpclose
+
+listen cloudooo
+  bind {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+  balance roundrobin
+  stats uri /haproxy
+
+{% for i, backend_netloc in enumerate(parameter_dict['backend-list'].splitlines()) -%}
+  server cloudooo_{{ i + 1 }} {{ backend_netloc }} rise 1 fall 2 maxqueue 5 maxconn 1
+{% endfor %}

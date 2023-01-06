@@ -1,8 +1,13 @@
 import configparser
+import logging
 import requests
 import hashlib
 
 urls = []
+session = requests.Session()
+timeout = 30
+logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 
 for plugin_and_version in '''\
     vscode/bat/latest
@@ -17,6 +22,7 @@ for plugin_and_version in '''\
     vscode/docker/latest
     vscode/emmet/latest
     vscode/fsharp/latest
+    vscode/git-base/latest
     vscode/git/latest
     vscode/go/latest
     vscode/groovy/latest
@@ -25,17 +31,17 @@ for plugin_and_version in '''\
     vscode/handlebars/latest
     vscode/hlsl/latest
     vscode/html/latest
-# latest fails to activate:
-# Activating extension 'HTML Language Features (built-in)' failed: The language client requires VS Code version ^1.52.0 but received version 1.50.0
-    vscode/html-language-features/1.52.1
+    vscode/html-language-features/latest
     vscode/ini/latest
     vscode/jake/latest
     vscode/java/latest
     vscode/javascript/latest
-    ms-vscode/js-debug/latest
+# js-debug 1.66.1 was starting OK with previous theia version, but since 1.27.0:
+# Activating extension 'JavaScript Debugger' failed: a.window.registerTerminalProfileProvider is not a function
+# (which is curious because registerTerminalProfileProvider was never supported in Theia)
+    ms-vscode/js-debug/1.51.0
     vscode/json/latest
-# latest json-language-features does offer completions with .theia/settings.json
-    vscode/json-language-features/1.45.1
+    vscode/json-language-features/latest
     vscode/less/latest
     vscode/log/latest
     vscode/lua/latest
@@ -70,9 +76,7 @@ for plugin_and_version in '''\
     vscode/theme-solarized-dark/latest
     vscode/theme-tomorrow-night-blue/latest
     vscode/typescript/latest
-# latest (1.62.3) does not activate because it uses a proposed API not in theia:
-# Activating extension 'TypeScript and JavaScript Language Features (built-in)' failed: r.languages.createLanguageStatusItem is not a function
-    vscode/typescript-language-features/1.54.3
+    vscode/typescript-language-features/latest
     vscode/vb/latest
     vscode/vscode-theme-seti/latest
     vscode/xml/latest
@@ -84,10 +88,7 @@ for plugin_and_version in '''\
     ms-vscode/references-view/latest
 # golang.Go removed because it overwrites the PATH in theia shell
 # golang/Go/0.16.2
-    vscjava/vscode-java-debug/0.29.0
-    redhat/java/0.61.0
-    vscjava/vscode-java-test/0.26.0
-    ms-python/python/2020.9.112786
+    ms-python/python/2020.10.332292344
     perrinjerome/vscode-zc-buildout/latest
     jebbs/plantuml/2.14.0
     rafaelmaiolla/diff/latest
@@ -100,8 +101,9 @@ for plugin_and_version in '''\
   publisher, extension_name, version = plugin_and_version.split('/')
 
   api_url = f'https://open-vsx.org/api/{publisher}/{extension_name}/{version}'
-  download_url = requests.get(api_url).json()['files']['download']
-  md5sum = hashlib.md5(requests.get(download_url).content).hexdigest()
+  logger.info(plugin_and_version)
+  download_url = session.get(api_url, timeout=timeout).json()['files']['download']
+  md5sum = hashlib.md5(session.get(download_url, timeout=timeout).content).hexdigest()
   urls.append(f'{publisher}-{extension_name} {download_url} {md5sum}')
 
 cfg = configparser.ConfigParser()

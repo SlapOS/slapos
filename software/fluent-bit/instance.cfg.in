@@ -1,0 +1,55 @@
+[buildout]
+parts =
+  directory
+  fluent-bit-config-file
+  fluent-bit-service
+
+eggs-directory = {{ buildout["eggs-directory"] }}
+develop-eggs-directory = {{ buildout["develop-eggs-directory"] }}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise/
+log = ${:var}/log
+bin = ${:home}/bin
+
+[fluent-bit-config-file]
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.cfg
+ip = ${instance-parameter:ipv4-random}
+install =
+  config = open(self.options["location"], "w")
+  ip = self.options["ip"]
+  input = ${instance-parameter:configuration.input}
+  output = ${instance-parameter:configuration.output}
+  config.write(f"[INPUT]\n")
+
+  for key in input:
+    config.write(f"    {str(key).capitalize()} {input[key]}\n")
+
+  config.write(f"    Listen {ip}\n")
+  config.write("\n")
+  config.write(f"[OUTPUT]\n")
+
+  for key in output:
+    config.write(f"    {str(key).capitalize()} {output[key]}\n")
+
+[fluent-bit-service]
+recipe  = slapos.cookbook:wrapper
+command-line = {{ fluent_bit_location }}/bin/fluent-bit -e {{ fluentbit_plugin_wendelin_location }}/lib/libfluentbit_wendelin.so -c ${fluent-bit-config-file:location}
+wrapper-path = ${directory:service}/fluentbit-service
+output = $${:wrapper-path}

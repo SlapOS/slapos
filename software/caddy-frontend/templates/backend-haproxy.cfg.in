@@ -69,6 +69,8 @@ frontend http-backend
 
 frontend https-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+  http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
 {%- for slave_instance in backend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', False) }}
 {%- endfor %}

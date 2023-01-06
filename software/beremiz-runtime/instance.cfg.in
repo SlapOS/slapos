@@ -46,8 +46,19 @@ log = ${:var}/log
 [beremiz-runtime]
 logfile = ${directory:log}/beremiz-runtime.log
 recipe = slapos.cookbook:wrapper
+# adding BEREMIZPYTHONPATH is needed so we can override the Beremiz'
+# internal code which tries to use sys.executable to spawn processes
+# and in the context of SlapOS it's a plain Python without needed modules
+# adding LIBRARY_PATH / COMPILER_PATH is needed so that gcc can find
+# needed libraries and tools inside SlapOS context
+environment =
+  BEREMIZPYTHONPATH = {{ buildout['bin-directory'] }}/pythonwitheggs
+  PATH=$PATH:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
+  LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/9/:/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu/:/lib:/usr/lib/x86_64-linux-gnu/
+  COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/9/:/usr/lib/gcc/x86_64-linux-gnu/
+
 command-line =
-    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/parts/download-plc
+ {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_cli.py -k --project-home ${directory:home}/parts/download-plc/ build transfer run
 wrapper-path = ${directory:service}/beremiz-runtime
 
 [beremiz-runtime-promise]

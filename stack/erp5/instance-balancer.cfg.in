@@ -123,7 +123,7 @@ update-command = ${:command}
 {% for family_name, parameter_id_list in sorted(
   six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
 {%   set zope_family_address_list = [] -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
+{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name] -%}
 {%   set has_webdav = [] -%}
 {%   for parameter_id in parameter_id_list -%}
 {%     set zope_address_list = slapparameter_dict[parameter_id] -%}
@@ -177,7 +177,7 @@ update-command = ${:command}
 {%   else %}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'].get(family_name, False), zope_family_address_list)) -%}
+{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'][family_name], slapparameter_dict['timeout-dict'][family_name], zope_family_address_list)) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -309,7 +309,7 @@ config-port = {{ next(six.itervalues(haproxy_dict))[0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (port, scheme, _, _) in haproxy_dict.items() -%}
+{% for family_name, (port, scheme, _, _, _) in haproxy_dict.items() -%}
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ port }}
 {% endfor -%}
