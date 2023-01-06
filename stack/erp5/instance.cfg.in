@@ -26,8 +26,21 @@ extra-context =
     section parameter_dict dynamic-template-postfix-parameters
     import urllib urllib
 
+[default-cloudooo-url-list]
+recipe = slapos.recipe.build
+default-url-list =
+  {{ default_cloudooo_url_list | indent }}
+init =
+  # Expose the default cloudooo URLs, sorted using a pseudo-random seed,
+  # so that the same instance keep the same order
+  import six, random
+  seed = repr(sorted(six.iteritems(self.buildout['slap-connection'])))
+  default_cloudooo_url_list = [url.strip() for url in self.options['default-url-list'].splitlines()]
+  random.Random(seed).shuffle(default_cloudooo_url_list)
+  self.options['url-list'] = default_cloudooo_url_list
+
 [dynamic-template-erp5-parameters]
-default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
+default-cloudooo-url-list = ${default-cloudooo-url-list:url-list}
 jupyter-enable-default = {{ jupyter_enable_default }}
 wcfs-enable-default = {{ wcfs_enable_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
@@ -42,7 +55,7 @@ template-zodb-base = {{ template_zodb_base }}
 url = {{ template_erp5 }}
 filename = instance-erp5.cfg
 extra-context =
-    key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
+    key default_cloudooo_url_list dynamic-template-erp5-parameters:default-cloudooo-url-list
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key wcfs_enable_default dynamic-template-erp5-parameters:wcfs-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
