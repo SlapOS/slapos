@@ -34,6 +34,11 @@ name = Import {{ parameter_dict['additional-frontend-name'] }}
 abstract-socket-path = $${directory:home}/standalone-import-ready
 
 
+# Disable frontend request forwarding in the 'import' instance
+[slapos-standalone-script]
+forward-frontend-requests = disabled
+
+
 # Change port ranges to avoid race conditions on port allocation
 [frontend-instance-port]
 minimum = 3200

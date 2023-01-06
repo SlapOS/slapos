@@ -51,6 +51,7 @@ def signal_handler(signum, frame):
 
 @contextlib.contextmanager
 def setupStandalone():
+{%- if forward_frontend_requests != "disabled" %}
   partition_forward_configuration = (
     slapos.slap.standalone.PartitionForwardAsPartitionConfiguration(
       master_url={{ repr(slap_connection['server-url']) }},
@@ -63,6 +64,9 @@ def setupStandalone():
       ),
     ),
   )
+{%- else %}
+  partition_forward_configuration = ()
+{%- endif %}
   shared_parts = {{ repr(shared_part_list) }}
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
   standalone = slapos.slap.standalone.StandaloneSlapOS(

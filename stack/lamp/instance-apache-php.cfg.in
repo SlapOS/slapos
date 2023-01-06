@@ -13,6 +13,7 @@ parts =
   php.ini-conf
   apache-php-service
   publish-connection-information
+  lamp-apache-httpd
   {{ parameter_dict['application-part-list'] }}
 
 
@@ -133,10 +134,17 @@ cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 apache-config-dir = ${directory:apache.d}
 
+[lamp-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+url = {{ lamp_apache_httpd }}
+output = ${directory:apache.d}/lamp.conf
+context =
+  section parameter_dict apache-php-configuration
+
 [apache-php-conf]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['template-apache-conf'] }}
-output = ${directory:etc}/apache.conf
+output = ${directory:etc}/apache.confgraceful
 context =
   section parameter_dict apache-php-configuration
 extensions = jinja2.ext.do
@@ -188,6 +196,24 @@ backend-url = ${apache-php-configuration:url}
 php-bin = {{ parameter_dict['apache-php-location'] }}/bin/php
 php-ini = ${php.ini-conf:output}
 
+#Defaut php.ini parameters
+#They have been set in file php.ini.in
+#I reserve them here just for an example
+#You can reset them like this in your own software
+php.memory_limit = 512M
+php.date.timezone = Europe/Paris
+php.upload_max_filesize = 10240M
+php.post_max_size = 10240M
+php.session.cookie_secure = True
+php.max_execution_time = 1800
+php.max_input_time = 3600
+php.output_buffering = 'Off'
+php.max_file_uploads = 100
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
 
 #----------------
 #--

@@ -1,7 +1,7 @@
 {
   "name": "ORS Amarisoft",
   "description": "4G and 5G amarisoft stack for ORS",
-  "serialisation": "xml",
+  "serialisation": "json-in-xml",
   "software-type": {
     "enb": {
       "title": "eNB",
@@ -43,14 +43,48 @@
       "response": "instance-epc-schema.json",
       "index": 4
     },
+    "gnb-epc-slave": {
+      "title": "gNB-EPC Sim Card",
+      "description": "gNB-EPC Sim Card Configuration",
+      "software-type": "gnb-epc",
+      "request": "instance-gnb-epc-slave-input-schema.json",
+      "response": "instance-gnb-epc-slave-schema.json",
+      "shared": true,
+      "index": 5
+    },
+    "enb-epc-slave": {
+      "title": "eNB-EPC Sim Card",
+      "description": "eNB-EPC Sim Card Configuration",
+      "software-type": "enb-epc",
+      "request": "instance-enb-epc-slave-input-schema.json",
+      "response": "instance-enb-epc-slave-schema.json",
+      "shared": true,
+      "index": 6
+    },
     "epc-slave": {
-      "title": "Sim Card",
-      "description": "EPC Configuration",
+      "title": "EPC Sim Card",
+      "description": "EPC Sim Card Configuration",
       "software-type": "epc",
       "request": "instance-epc-slave-input-schema.json",
       "response": "instance-epc-slave-schema.json",
       "shared": true,
-      "index": 5
+      "index": 7
+    },
+    "ue-lte": {
+      "title": "UE-LTE",
+      "description": "UE LTE Configuration",
+      "software-type": "ue-lte",
+      "request": "instance-tdd1900-ue-lte-input-schema.json",
+      "response": "instance-tdd1900-ue-lte-schema.json",
+      "index": 8
+    },
+    "ue-nr": {
+      "title": "UE-NR",
+      "description": "UE NR Configuration",
+      "software-type": "ue-nr",
+      "request": "instance-tdd1900-ue-nr-input-schema.json",
+      "response": "instance-tdd1900-ue-nr-schema.json",
+      "index": 9
     }
   }
 }

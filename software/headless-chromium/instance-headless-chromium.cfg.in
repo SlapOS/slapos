@@ -1,23 +1,5 @@
 {% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
 
-[buildout]
-parts =
-  chromium-launcher
-  generate-passwd-file
-  nginx-config
-  nginx-mime-types
-  nginx-launcher
-  logrotate-entry-nginx
-  publish-connection-information
-  frontend-ok-promise
-  frontend-secure-promise
-
-eggs-directory = {{ buildout['eggs-directory'] }}
-develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
-offline = true
-
-extends = {{ parameter_list['template-monitor'] }}
-
 # Create necessary directories.
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -34,7 +16,10 @@ service = ${:etc}/service
 ipv4 = {{ partition_ipv4 }}
 ipv6 = {{ partition_ipv6 }}
 remote-debugging-port = {{ parameter_dict['remote-debugging-port'] }}
-url = {{ parameter_dict['target-url'] }}
+target-url = {{ parameter_dict['target-url'] }}
+incognito = {{ parameter_dict['incognito'] }}
+window-size = {{ parameter_dict['window-size'] }}
+block-new-web-contents = {{ parameter_dict['block-new-web-contents'] }}
 remote-debugging-address = ${:ipv4}:${:remote-debugging-port}
 devtools-frontend-root = {{ parameter_list['devtools-frontend'] }}
 
@@ -51,19 +36,29 @@ nginx-cert-file = ${frontend-instance-certificate:cert-file}
 nginx-mime-types = ${directory:etc}/mime-types
 
 
-# Create a launcher script in /etc/service for the headless shell
+# Create a wrapper script in /bin/chromium for the headless shell
 # executable.
-[chromium-launcher]
-recipe = slapos.recipe.template
-inline =
-  #!/bin/sh
+[chromium-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/chromium
+command-line =
+  {{ parameter_list['chromium-wrapper'] }}
+  --remote-debugging-address=${headless-chromium:ipv4}
+  --remote-debugging-port=${headless-chromium:remote-debugging-port}
+  --user-data-dir=${directory:tmp}
+  --window-size="${headless-chromium:window-size}"
+  {% if parameter_dict['incognito'] %}--incognito{% endif -%}
+  {% if parameter_dict['block-new-web-contents'] %}--block-new-web-contents{% endif -%}
+{{ '\n  "${headless-chromium:target-url}"' }}
+environment =
+  FONTCONFIG_FILE=${font-config:output}
 
-  export FONTCONFIG_FILE=${font-config:output}
-  exec {{ parameter_list['chromium-wrapper'] }} \
-    --remote-debugging-address=${headless-chromium:ipv4} \
-    --remote-debugging-port=${headless-chromium:remote-debugging-port} \
-    ${headless-chromium:url}
-output = ${directory:service}/chromium
+[chromium-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = ${chromium-wrapper:wrapper-path}
+wrapper-path = ${directory:service}/chromium
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${chromium-wrapper:wrapper-path}
 
 
 # Configure and launch the proxy server.
@@ -81,7 +76,9 @@ output = ${headless-chromium:nginx-mime-types}
 
 [nginx-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_list['nginx-location'] }}/sbin/nginx -c ${headless-chromium:nginx-config-target}
+command-line =
+  {{ parameter_list['nginx-location'] }}/sbin/nginx
+  -c ${headless-chromium:nginx-config-target}
 wrapper-path = ${directory:service}/nginx
 
 [logrotate-entry-nginx]
@@ -156,7 +153,7 @@ password = ${frontend-instance-password:passwd}
 recipe = slapos.cookbook:requestoptional
 name = Headless Chromium Remote Debugging Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+shared = true
 config-url = https://${headless-chromium:proxy-address}
 config-https-only = true
 config-type = websocket
@@ -189,3 +186,22 @@ name = headless-chromium-frontend-secure.py
 url = ${remote-debugging-frontend:connection-secure_access}
 config-url = ${:url}
 config-http-code = 401
+
+[buildout]
+extends = {{ parameter_list['template-monitor'] }}
+
+parts =
+  chromium-launcher
+  generate-passwd-file
+  nginx-config
+  nginx-mime-types
+  nginx-launcher
+  logrotate-entry-nginx
+  remote-debugging-frontend
+  publish-connection-information
+  frontend-ok-promise
+  frontend-secure-promise
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true

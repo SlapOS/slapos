@@ -1,9 +1,11 @@
-# Main caddy configuration file
-
 import {{ slave_configuration_directory }}/*.conf
 
 :{{ https_port }} {
-  tls {{ master_certificate }} {{ master_certificate }}
+  tls {{ master_certificate }} {{ master_certificate }} {
+    # Allow http2
+    alpn h2 http/1.1
+
+  }
   bind {{ local_ipv4 }}
   status 404 /
   log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
@@ -29,7 +31,10 @@ import {{ slave_configuration_directory }}/*.conf
 
 # Access to server-status Caddy-style
 https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv4 }}:{{ https_port }}/server-status {
-  tls {{ frontend_configuration['ip-access-certificate'] }} {{ frontend_configuration['ip-access-certificate'] }}
+  tls {{ frontend_configuration['ip-access-certificate'] }} {{ frontend_configuration['ip-access-certificate'] }} {
+    # Allow http2
+    alpn h2 http/1.1
+  }
   bind {{ local_ipv4 }}
   basicauth "{{ username }}" {{ password | trim }} {
     "Server Status"

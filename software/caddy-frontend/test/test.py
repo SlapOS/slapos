@@ -28,40 +28,35 @@
 import glob
 import os
 import requests
-import httplib
+import http.client
 from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skip
+from unittest import skip, expectedFailure
 import ssl
-from BaseHTTPServer import HTTPServer
-from BaseHTTPServer import BaseHTTPRequestHandler
-from SocketServer import ThreadingMixIn
+from http.server import HTTPServer
+from http.server import BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 import time
 import tempfile
 import ipaddress
-import StringIO
+import io
 import gzip
 import base64
 import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
-import urlparse
+import urllib.parse
 import socket
 import sys
 import logging
+import lzma
 import random
 import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
-
-
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 
 import datetime
 
@@ -75,15 +70,12 @@ from cryptography.x509.oid import NameOID
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
-if int(os.environ.get('SLAPOS_HACK_STANDALONE', '0')) == 1:
+if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
   setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
-
-  # XXX Keep using slapos node instance --all, because of missing promises
-  SlapOSInstanceTestCase.slap._force_slapos_node_instance_all = True
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -102,6 +94,10 @@ TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 DNS_CACHE = {}
 
 
+def unicode_escape(s):
+  return s.encode('unicode_escape').decode()
+
+
 def add_custom_dns(domain, port, ip):
   port = int(port)
   key = (domain, port)
@@ -111,13 +107,6 @@ def add_custom_dns(domain, port, ip):
 
 def new_getaddrinfo(*args):
   return DNS_CACHE[args[:2]]
-
-
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
 
 
 def der2pem(der):
@@ -130,7 +119,7 @@ def patch_broken_pipe_error():
     """Monkey Patch BaseServer.handle_error to not write
     a stacktrace to stderr on broken pipe.
     https://stackoverflow.com/a/7913160"""
-    from SocketServer import BaseServer
+    from socketserver import BaseServer
 
     handle_error = BaseServer.handle_error
 
@@ -162,10 +151,10 @@ def createKey():
 def createSelfSignedCertificate(name_list):
   key, key_pem = createKey()
   subject_alternative_name_list = x509.SubjectAlternativeName(
-    [x509.DNSName(unicode(q)) for q in name_list]
+    [x509.DNSName(str(q)) for q in name_list]
   )
   subject = issuer = x509.Name([
-    x509.NameAttribute(NameOID.COMMON_NAME, u'Test Self Signed Certificate'),
+    x509.NameAttribute(NameOID.COMMON_NAME, 'Test Self Signed Certificate'),
   ])
   certificate = x509.CertificateBuilder().subject_name(
     subject
@@ -192,10 +181,10 @@ def createCSR(common_name, ip=None):
   subject_alternative_name_list = []
   if ip is not None:
     subject_alternative_name_list.append(
-      x509.IPAddress(ipaddress.ip_address(unicode(ip)))
+      x509.IPAddress(ipaddress.ip_address(str(ip)))
     )
   csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-     x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+     x509.NameAttribute(NameOID.COMMON_NAME, str(common_name)),
   ]))
 
   if len(subject_alternative_name_list):
@@ -219,10 +208,10 @@ class CertificateAuthority(object):
     public_key = self.key.public_key()
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(x509.Name([
-      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+      x509.NameAttribute(NameOID.COMMON_NAME, str(common_name)),
     ]))
     builder = builder.issuer_name(x509.Name([
-      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+      x509.NameAttribute(NameOID.COMMON_NAME, str(common_name)),
     ]))
     builder = builder.not_valid_before(
       datetime.datetime.utcnow() - datetime.timedelta(days=2))
@@ -283,7 +272,59 @@ def isHTTP2(domain):
   out, err = prc.communicate()
   assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
     curl_command, out, err)
-  return 'Using HTTP2, server supports' in err
+  return 'Using HTTP2, server supports'.encode() in err
+
+
+class AtsMixin(object):
+  def _hack_ats(self, max_stale_age):
+    records_config = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'trafficserver', 'records.config'
+      ))
+    self.assertEqual(1, len(records_config))
+    self._hack_ats_records_config_path = records_config[0]
+    original_max_stale_age = \
+        'CONFIG proxy.config.http.cache.max_stale_age INT 604800\n'
+    new_max_stale_age = \
+        'CONFIG proxy.config.http.cache.max_stale_age INT %s\n' % (
+          max_stale_age,)
+    with open(self._hack_ats_records_config_path) as fh:
+      self._hack_ats_original_records_config = fh.readlines()
+    # sanity check - are we really do it?
+    self.assertIn(
+      original_max_stale_age,
+      self._hack_ats_original_records_config)
+    new_records_config = []
+    max_stale_age_changed = False
+    for line in self._hack_ats_original_records_config:
+      if line == original_max_stale_age:
+        line = new_max_stale_age
+        max_stale_age_changed = True
+      new_records_config.append(line)
+    self.assertTrue(max_stale_age_changed)
+    with open(self._hack_ats_records_config_path, 'w') as fh:
+      fh.write(''.join(new_records_config))
+    self._hack_ats_restart()
+
+  def _unhack_ats(self):
+    with open(self._hack_ats_records_config_path, 'w') as fh:
+      fh.write(''.join(self._hack_ats_original_records_config))
+    self._hack_ats_restart()
+
+  def _hack_ats_restart(self):
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if process_info['name'].startswith(
+        'trafficserver') and process_info['name'].endswith('-on-watch'):
+        self.callSupervisorMethod(
+          'stopProcess', '%(group)s:%(name)s' % process_info)
+        self.callSupervisorMethod(
+          'startProcess', '%(group)s:%(name)s' % process_info)
+    # give short time for the ATS to start back
+    time.sleep(5)
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if process_info['name'].startswith(
+        'trafficserver') and process_info['name'].endswith('-on-watch'):
+        self.assertEqual(process_info['statename'], 'RUNNING')
 
 
 class TestDataMixin(object):
@@ -293,21 +334,22 @@ class TestDataMixin(object):
       in self.callSupervisorMethod('getAllProcessInfo')
       if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
 
-  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
-    if hash_value_dict is None:
-      hash_value_dict = {}
-    filename = '%s-%s.txt' % (self.id().replace('zz_', ''), 'CADDY')
+  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None):
+    if data_replacement_dict is None:
+      data_replacement_dict = {}
+    filename = '%s.txt' % (self.id(),)
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
     try:
-      test_data = open(test_data_file).read().strip()
+      with open(test_data_file) as fh:
+        test_data = fh.read().strip()
     except IOError:
       test_data = ''
 
-    for hash_type, hash_value in hash_value_dict.items():
-      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
-        hash_type),)
+    for replacement in sorted(data_replacement_dict.keys()):
+      value = data_replacement_dict[replacement]
+      runtime_data = runtime_data.replace(value, replacement)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -321,7 +363,8 @@ class TestDataMixin(object):
       )
     except AssertionError:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
-        open(test_data_file, 'w').write(runtime_data.strip() + '\n')
+        with open(test_data_file, 'w') as fh:
+          fh.write(runtime_data.strip() + '\n')
       raise
     finally:
       self.maxDiff = maxDiff
@@ -341,9 +384,8 @@ class TestDataMixin(object):
     runtime_data = '\n'.join(sorted(runtime_data))
     self.assertTestData(runtime_data)
 
-  # convince test to be run last; it's a hack, but log files shall be checked
-  # after all other tests had chance to execute
-  def zz_test_file_list_log(self):
+  def test00file_list_log(self):
+    # test00 name chosen to be run just after setup
     self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
@@ -360,7 +402,8 @@ class TestDataMixin(object):
       'trafficserver/traffic.out',
     ])
 
-  def test_file_list_run(self):
+  def test00file_list_run(self):
+    # test00 name chosen to be run just after setup
     self._test_file_list(['var', 'run'], [
       # can't be sure regarding its presence
       'caddy_configuration_last_state',
@@ -377,42 +420,111 @@ class TestDataMixin(object):
   def test_file_list_plugin(self):
     self._test_file_list(['etc', 'plugin'], ['.pyc'])
 
-  def test_supervisor_state(self):
+  def test00supervisor_state(self):
+    # test00 name chosen to be run just after setup
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
     hash_file_list = [os.path.join(
         self.computer_partition_root_path, 'software_release/buildout.cfg')]
-    hash_value_dict = {
-      'generic': generateHashFromFiles(hash_file_list),
+    data_replacement_dict = {
+      '{hash-generic}': generateHashFromFiles(hash_file_list)
     }
     for caddy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'caddy-wrapper')):
       partition_id = caddy_wrapper_path.split('/')[-3]
-      hash_value_dict[
-        'caddy-%s' % (partition_id)] = generateHashFromFiles(
-        [caddy_wrapper_path] + hash_file_list
-      )
+      data_replacement_dict['{hash-caddy-%s}' % (partition_id)] = \
+          generateHashFromFiles([caddy_wrapper_path] + hash_file_list)
     for backend_haproxy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
       partition_id = backend_haproxy_wrapper_path.split('/')[-3]
-      hash_value_dict[
-        'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
-        [backend_haproxy_wrapper_path] + hash_file_list
-      )
+      data_replacement_dict['{hash-backend-haproxy-%s}' % (partition_id)] =  \
+          generateHashFromFiles([
+            backend_haproxy_wrapper_path] + hash_file_list)
     for rejected_slave_publish_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'nginx-rejected-slave.conf')):
+      self.instance_path, '*', 'etc', 'nginx-master-introspection.conf')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
       rejected_slave_pem_path = os.path.join(
-        self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
-      hash_value_dict[
-        'rejected-slave-publish'
+        self.instance_path, partition_id, 'etc', 'master-introspection.pem')
+      data_replacement_dict[
+        '{hash-master-introspection}'
       ] = generateHashFromFiles(
         [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
       )
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
+    self.assertTestData(
+      runtime_data, data_replacement_dict=data_replacement_dict)
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    pass
+
+  def test00cluster_request_instance_parameter_dict(self):
+    # test00 name chosen to be run just after setup
+    cluster_request_parameter_list = []
+    data_replacement_dict = {}
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      if '_' in parameter_dict:
+        # deserialize for pretty printing only, and keep in mind
+        # that slave-kedifa-information content is string, so exactly it's
+        # sent like this to the real master
+        parameter_dict['_'] = json.loads(parameter_dict['_'])
+      parameter_dict['timestamp'] = '@@TIMESTAMP@@'
+      cluster_request_parameter_list.append(parameter_dict)
+
+    # XXX: Dirty decode/encode/decode...?
+    data_replacement_dict = {
+      '@@_ipv4_address@@': self._ipv4_address,
+      '@@_ipv6_address@@': self._ipv6_address,
+      '@@_server_http_port@@': str(self._server_http_port),
+      '@@_server_https_auth_port@@': str(self._server_https_auth_port),
+      '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
+      '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
+      '@@another_server_ca.certificate_pem@@': unicode_escape(
+        self.another_server_ca.certificate_pem.decode()),
+      '@@another_server_ca.certificate_pem_double@@': unicode_escape(
+        unicode_escape(self.another_server_ca.certificate_pem.decode())),
+      # self.getSoftwareURL can contain other replacements so do it first
+      '@@00getSoftwareURL@@': self.getSoftwareURL(),
+      '@@test_server_ca.certificate_pem@@': unicode_escape(
+        self.test_server_ca.certificate_pem.decode()),
+      '@@test_server_ca.certificate_pem_double@@': unicode_escape(
+        unicode_escape(self.test_server_ca.certificate_pem.decode())),
+    }
+
+    # support slave-less test cases
+    if getattr(self, 'getSlaveConnectionParameterDictDict', None) is not None:
+      for reference, value in self.getSlaveConnectionParameterDictDict(
+        ).items():
+        data_replacement_dict[
+          '@@%s_key-generate-auth-url@@' % reference] = value[
+          'key-generate-auth-url'].split('/')[-2]
+        data_replacement_dict[
+          '@@%s_key-upload-url@@' % reference] = value[
+          'key-generate-auth-url'].split('/')[-1]
+
+    connection_parameter_dict = self.requestDefaultInstance(
+      ).getConnectionParameterDict()
+    data_replacement_dict[
+      '@@master-key-download-url_endpoint@@'] = connection_parameter_dict[
+      'master-key-generate-auth-url'].split('/')[-2]
+    data_replacement_dict['@@monitor-password@@'] = connection_parameter_dict[
+      'monitor-setup-url'].split('=')[-1]
+    json_data = json.dumps(
+      cluster_request_parameter_list, indent=2,
+      # keys are sorted, even after deserializing, in order to have
+      # stable information about the sent parameters between runs
+      sort_keys=True
+    )
+    # again some mangling -- allow subclasses to update on need
+    self._updateDataReplacementDict(data_replacement_dict)
+    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
@@ -430,31 +542,32 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   headers.setdefault('Via', 'http/1.1 clientvia')
 
   session = requests.Session()
-  if source_ip is not None:
-    new_source = source.SourceAddressAdapter(source_ip)
-    session.mount('http://', new_source)
-    session.mount('https://', new_source)
-  socket_getaddrinfo = socket.getaddrinfo
-  try:
-    add_custom_dns(domain, port, TEST_IP)
-    socket.getaddrinfo = new_getaddrinfo
-    # Use a prepared request, to disable path normalization.
-    # We need this because some test checks requests with paths like
-    # /test-path/deep/.././deeper but we don't want the client to send
-    # /test-path/deeper
-    # See also https://github.com/psf/requests/issues/5289
-    url = 'https://%s:%s/%s' % (domain, port, path)
-    req = requests.Request(
-        method='GET',
-        url=url,
-        headers=headers,
-        cookies=cookies,
-    )
-    prepped = req.prepare()
-    prepped.url = url
-    return session.send(prepped, verify=False, allow_redirects=False)
-  finally:
-    socket.getaddrinfo = socket_getaddrinfo
+  with session:
+    if source_ip is not None:
+      new_source = source.SourceAddressAdapter(source_ip)
+      session.mount('http://', new_source)
+      session.mount('https://', new_source)
+    socket_getaddrinfo = socket.getaddrinfo
+    try:
+      add_custom_dns(domain, port, TEST_IP)
+      socket.getaddrinfo = new_getaddrinfo
+      # Use a prepared request, to disable path normalization.
+      # We need this because some test checks requests with paths like
+      # /test-path/deep/.././deeper but we don't want the client to send
+      # /test-path/deeper
+      # See also https://github.com/psf/requests/issues/5289
+      url = 'https://%s:%s/%s' % (domain, port, path)
+      req = requests.Request(
+          method='GET',
+          url=url,
+          headers=headers,
+          cookies=cookies,
+      )
+      prepped = req.prepare()
+      prepped.url = url
+      return session.send(prepped, verify=False, allow_redirects=False)
+    finally:
+      socket.getaddrinfo = socket_getaddrinfo
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
@@ -472,17 +585,18 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   headers.setdefault('Via', 'http/1.1 clientvia')
   headers['Host'] = '%s:%s' % (domain, port)
   session = requests.Session()
-  if source_ip is not None:
-    new_source = source.SourceAddressAdapter(source_ip)
-    session.mount('http://', new_source)
-    session.mount('https://', new_source)
+  with session:
+    if source_ip is not None:
+      new_source = source.SourceAddressAdapter(source_ip)
+      session.mount('http://', new_source)
+      session.mount('https://', new_source)
 
-  # Use a prepared request, to disable path normalization.
-  url = 'http://%s:%s/%s' % (TEST_IP, port, path)
-  req = requests.Request(method='GET', url=url, headers=headers)
-  prepped = req.prepare()
-  prepped.url = url
-  return session.send(prepped, allow_redirects=False)
+    # Use a prepared request, to disable path normalization.
+    url = 'http://%s:%s/%s' % (TEST_IP, port, path)
+    req = requests.Request(method='GET', url=url, headers=headers)
+    prepped = req.prepare()
+    prepped.url = url
+    return session.send(prepped, allow_redirects=False)
 
 
 class TestHandler(BaseHTTPRequestHandler):
@@ -492,11 +606,7 @@ class TestHandler(BaseHTTPRequestHandler):
   server_version = "TestBackend"
   sys_version = ""
 
-  def log_message(self, *args):
-    if os.environ.get('SLAPOS_TEST_DEBUG'):
-      return BaseHTTPRequestHandler.log_message(self, *args)
-    else:
-      return
+  log_message = logging.getLogger(__name__ + '.TestHandler').info
 
   def do_DELETE(self):
     config = self.configuration.pop(self.path, None)
@@ -510,26 +620,34 @@ class TestHandler(BaseHTTPRequestHandler):
       self.wfile.write(json.dumps({self.path: config}, indent=2))
 
   def do_PUT(self):
+    incoming_config = {}
+    for key, value in list(self.headers.items()):
+      if key.startswith('X-'):
+        incoming_config[key] = value
     config = {
-      'status_code': self.headers.dict.get('x-reply-status-code', '200')
+      'status_code': incoming_config.pop('X-Reply-Status-Code', '200')
     }
-    prefix = 'x-reply-header-'
+    prefix = 'X-Reply-Header-'
     length = len(prefix)
-    for key, value in self.headers.dict.items():
+    for key in list(incoming_config.keys()):
       if key.startswith(prefix):
         header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-        config[header] = value.strip()
+        config[header] = incoming_config.pop(key)
 
-    if 'x-reply-body' in self.headers.dict:
-      config['Body'] = base64.b64decode(self.headers.dict['x-reply-body'])
+    if 'X-Reply-Body' in incoming_config:
+      config['Body'] = base64.b64decode(
+        incoming_config.pop('X-Reply-Body')).decode()
 
-    config['X-Drop-Header'] = self.headers.dict.get('x-drop-header')
+    config['X-Drop-Header'] = incoming_config.pop('X-Drop-Header', None)
     self.configuration[self.path] = config
 
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
     self.end_headers()
-    self.wfile.write(json.dumps({self.path: config}, indent=2))
+    reply = {self.path: config}
+    if incoming_config:
+      reply['unknown_config'] = incoming_config
+    self.wfile.write(json.dumps(reply, indent=2).encode())
 
   def do_POST(self):
     return self.do_GET()
@@ -548,33 +666,33 @@ class TestHandler(BaseHTTPRequestHandler):
       header_dict = config
     else:
       drop_header_list = []
-      for header in (self.headers.dict.get('x-drop-header') or '').split():
+      for header in (self.headers.get('x-drop-header') or '').split():
         drop_header_list.append(header)
       response = None
       status_code = 200
-      timeout = int(self.headers.dict.get('timeout', '0'))
-      if 'x-maximum-timeout' in self.headers.dict:
-        maximum_timeout = int(self.headers.dict['x-maximum-timeout'])
+      timeout = int(self.headers.get('timeout', '0'))
+      if 'x-maximum-timeout' in self.headers:
+        maximum_timeout = int(self.headers['x-maximum-timeout'])
         timeout = random.randrange(maximum_timeout)
-      if 'x-response-size' in self.headers.dict:
+      if 'x-response-size' in self.headers:
         min_response, max_response = [
-          int(q) for q in self.headers.dict['x-response-size'].split(' ')]
+          int(q) for q in self.headers['x-response-size'].split(' ')]
         reponse_size = random.randrange(min_response, max_response)
         response = ''.join(
           random.choice(string.lowercase) for x in range(reponse_size))
-      compress = int(self.headers.dict.get('compress', '0'))
+      compress = int(self.headers.get('compress', '0'))
       header_dict = {}
       prefix = 'x-reply-header-'
       length = len(prefix)
-      for key, value in self.headers.dict.items():
+      for key, value in list(self.headers.items()):
         if key.startswith(prefix):
           header = '-'.join([q.capitalize() for q in key[length:].split('-')])
           header_dict[header] = value.strip()
     if response is None:
-      if 'x-reply-body' not in self.headers.dict:
+      if 'x-reply-body' not in self.headers:
         headers_dict = dict()
-        for header in self.headers.keys():
-          content = self.headers.getheaders(header)
+        for header in list(self.headers.keys()):
+          content = self.headers.get_all(header)
           if len(content) == 0:
             headers_dict[header] = None
           elif len(content) == 1:
@@ -587,12 +705,12 @@ class TestHandler(BaseHTTPRequestHandler):
         }
         response = json.dumps(response, indent=2)
       else:
-        response = base64.b64decode(self.headers.dict['x-reply-body'])
+        response = base64.b64decode(self.headers['x-reply-body'])
 
     time.sleep(timeout)
     self.send_response(status_code)
 
-    for key, value in header_dict.items():
+    for key, value in list(header_dict.items()):
       self.send_header(key, value)
 
     if self.identification is not None:
@@ -608,16 +726,18 @@ class TestHandler(BaseHTTPRequestHandler):
       self.send_header('Via', 'http/1.1 backendvia')
     if compress:
       self.send_header('Content-Encoding', 'gzip')
-      out = StringIO.StringIO()
+      out = io.BytesIO()
       # compress with level 0, to find out if in the middle someting would
       # like to alter the compression
-      with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
-        f.write(response)
+      with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=0) as f:
+        f.write(response.encode())
       response = out.getvalue()
       self.send_header('Backend-Content-Length', len(response))
     if 'Content-Length' not in drop_header_list:
       self.send_header('Content-Length', len(response))
     self.end_headers()
+    if getattr(response, 'encode', None) is not None:
+      response = response.encode()
     self.wfile.write(response)
 
 
@@ -664,12 +784,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
     server_process.start()
+    # from now on, socket is used by server subprocess, we can close it
+    server.socket.close()
     cls.logger.debug('Started process %s' % (server_process,))
 
     cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
     server_https_process = multiprocessing.Process(
       target=server_https.serve_forever, name='HTTPSServer')
     server_https_process.start()
+    server_https.socket.close()
     cls.logger.debug('Started process %s' % (server_https_process,))
 
     class NetlocHandler(TestHandler):
@@ -681,6 +804,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_a_http_process = multiprocessing.Process(
       target=netloc_a_http.serve_forever, name='netloc-a-http')
     netloc_a_http_process.start()
+    netloc_a_http.socket.close()
 
     netloc_b_http = ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_b_http_port),
@@ -688,6 +812,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_b_http_process = multiprocessing.Process(
       target=netloc_b_http.serve_forever, name='netloc-b-http')
     netloc_b_http_process.start()
+    netloc_b_http.socket.close()
 
     cls.server_process_list = [
       server_process,
@@ -717,7 +842,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     master_parameter_dict = self.parseConnectionParameterDict()
     caucase_url = master_parameter_dict['backend-client-caucase-url']
     ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
+    assert ca_certificate.status_code == http.client.OK
     ca_certificate_file = os.path.join(
       self.working_directory, 'ca-backend-client.crt.pem')
     with open(ca_certificate_file, 'w') as fh:
@@ -743,6 +868,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.server_https_auth_process = multiprocessing.Process(
       target=server_https_auth.serve_forever, name='HTTPSServerAuth')
     self.server_https_auth_process.start()
+    server_https_auth.socket.close()
     self.logger.debug('Started process %s' % (self.server_https_auth_process,))
 
   def stopAuthenticatedServerProcess(self):
@@ -759,38 +885,35 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   def _fetchKedifaCaucaseCaCertificateFile(cls, parameter_dict):
     ca_certificate = requests.get(
       parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
+    assert ca_certificate.status_code == http.client.OK
     cls.kedifa_caucase_ca_certificate_file = os.path.join(
       cls.working_directory, 'kedifa-caucase.ca.crt.pem')
-    open(cls.kedifa_caucase_ca_certificate_file, 'w').write(
-        ca_certificate.text)
+    with open(cls.kedifa_caucase_ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
 
   @classmethod
   def _fetchBackendClientCaCertificateFile(cls, parameter_dict):
     ca_certificate = requests.get(
       parameter_dict['backend-client-caucase-url'] + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
+    assert ca_certificate.status_code == http.client.OK
     cls.backend_client_caucase_ca_certificate_file = os.path.join(
       cls.working_directory, 'backend-client-caucase.ca.crt.pem')
-    open(cls.backend_client_caucase_ca_certificate_file, 'w').write(
-      ca_certificate.text)
+    with open(cls.backend_client_caucase_ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
 
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     auth = requests.get(
       parameter_dict['master-key-generate-auth-url'],
       verify=cls.kedifa_caucase_ca_certificate_file)
-    assert auth.status_code == httplib.CREATED
+    assert auth.status_code == http.client.CREATED
     upload = requests.put(
       parameter_dict['master-key-upload-url'] + auth.text,
       data=cls.key_pem + cls.certificate_pem,
       verify=cls.kedifa_caucase_ca_certificate_file)
-    assert upload.status_code == httplib.CREATED
+    assert upload.status_code == http.client.CREATED
     cls.runKedifaUpdater()
 
   @classmethod
@@ -828,34 +951,21 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       ])
 
   @classmethod
-  def runComputerPartitionUntil(cls, until):
-    max_try = 10
-    try_num = 1
-    while True:
-      if until():
-        break
-      if try_num > max_try:
-        raise ValueError('Failed to run computer partition with %r' % (until,))
-      try:
-        cls.slap.waitForInstance()
-      except Exception:
-        cls.logger.exception("Error during until run")
-      try_num += 1
-
-  @classmethod
-  def untilNotReadyYetNotInMasterKeyGenerateAuthUrl(cls):
-    parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    key = 'master-key-generate-auth-url'
-    if key not in parameter_dict:
-      return False
-    if 'NotReadyYet' in parameter_dict[key]:
-      return False
-    return True
-
-  @classmethod
   def callSupervisorMethod(cls, method, *args, **kwargs):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
       return getattr(instance_supervisor, method)(*args, **kwargs)
+
+  def assertPublishFailsafeErrorPromiseEmptyWithPop(self, parameter_dict):
+    promise_url = parameter_dict.pop(
+      'publish-failsafe-error-promise-url')
+
+    try:
+      result = requests.get(promise_url, verify=False)
+      self.assertEqual("", result.text)
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(e)
 
   def assertRejectedSlavePromiseEmptyWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
@@ -891,7 +1001,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
-      self.node_information_dict['version-hash-history'].keys()[0])
+      list(self.node_information_dict['version-hash-history'].keys())[0])
     if via:
       self.assertIn('Via', headers)
       if cached:
@@ -925,7 +1035,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     frontend, url = entry
     result = requests.get(url, verify=False)
     self.assertEqual(
-      httplib.OK,
+      http.client.OK,
       result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
@@ -939,11 +1049,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       sorted([q['name'] for q in result.json()]),
       ['access.log', 'backend.log', 'error.log'])
     self.assertEqual(
-      httplib.OK,
+      http.client.OK,
       requests.get(url + 'access.log', verify=False).status_code
     )
     self.assertEqual(
-      httplib.OK,
+      http.client.OK,
       requests.get(url + 'error.log', verify=False).status_code
     )
     # assert only for few tests, as backend log is not available for many of
@@ -952,7 +1062,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       'test_url', 'test_auth_to_backend', 'test_compressed_result']:
       if self.id().endswith(test_name):
         self.assertEqual(
-          httplib.OK,
+          http.client.OK,
           requests.get(url + 'backend.log', verify=False).status_code
         )
 
@@ -963,11 +1073,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     kedifa_ipv6_base = 'https://[%s]:%s' % (self._ipv6_address, KEDIFA_PORT)
     base = '^' + kedifa_ipv6_base.replace(
       '[', r'\[').replace(']', r'\]') + '/.{32}'
-    self.assertRegexpMatches(
+    self.assertRegex(
       generate_auth_url,
       base + r'\/generateauth$'
     )
-    self.assertRegexpMatches(
+    self.assertRegex(
       upload_url,
       base + r'\?auth=$'
     )
@@ -981,15 +1091,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return generate_auth_url, upload_url
 
   def assertNodeInformationWithPop(self, parameter_dict):
-    key = 'caddy-frontend-1-node-information-json'
+    key = 'frontend-node-1-node-information-json'
     node_information_json_dict = {}
-    for k in parameter_dict.keys():
-      if k.startswith('caddy-frontend') and k.endswith(
+    for k in list(parameter_dict.keys()):
+      if k.startswith('frontend-node') and k.endswith(
         'node-information-json'):
         node_information_json_dict[k] = parameter_dict.pop(k)
     self.assertEqual(
       [key],
-      node_information_json_dict.keys()
+      list(node_information_json_dict.keys())
     )
 
     node_information_dict = json.loads(node_information_json_dict[key])
@@ -998,15 +1108,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.node_information_dict = node_information_dict
 
   def assertBackendHaproxyStatisticUrl(self, parameter_dict):
-    url_key = 'caddy-frontend-1-backend-haproxy-statistic-url'
+    url_key = 'frontend-node-1-backend-haproxy-statistic-url'
     backend_haproxy_statistic_url_dict = {}
-    for key in parameter_dict.keys():
-      if key.startswith('caddy-frontend') and key.endswith(
+    for key in list(parameter_dict.keys()):
+      if key.startswith('frontend-node') and key.endswith(
         'backend-haproxy-statistic-url'):
         backend_haproxy_statistic_url_dict[key] = parameter_dict.pop(key)
     self.assertEqual(
       [url_key],
-      backend_haproxy_statistic_url_dict.keys()
+      list(backend_haproxy_statistic_url_dict.keys())
     )
 
     backend_haproxy_statistic_url = backend_haproxy_statistic_url_dict[url_key]
@@ -1014,7 +1124,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       backend_haproxy_statistic_url,
       verify=False,
     )
-    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqual(http.client.OK, result.status_code)
     self.assertIn('testing partition 0', result.text)
     self.assertIn('Statistics Report for HAProxy', result.text)
 
@@ -1075,7 +1185,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def parseParameterDict(self, parameter_dict):
     parsed_parameter_dict = {}
-    for key, value in parameter_dict.items():
+    for key, value in list(parameter_dict.items()):
       if key in [
         'rejected-slave-dict',
         'warning-slave-dict',
@@ -1087,11 +1197,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return parsed_parameter_dict
 
   def getMasterPartitionPath(self):
-    # partition with etc/nginx-rejected-slave.conf
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(
-        os.path.join(q, 'etc', 'nginx-rejected-slave.conf'))][0]
+        os.path.join(q, 'etc', 'nginx-master-introspection.conf'))][0]
 
   def parseConnectionParameterDict(self):
     return self.parseParameterDict(
@@ -1180,7 +1289,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       # by SlapOSInstanceTestCase.setUpClass so we use another name for
       # snapshot, to make sure we don't store another snapshot in same
       # directory.
-      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
+      cls._cleanup("{}.HttpFrontendTestCase.{}.setUpClass".format(
         cls.__module__, cls.__name__))
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
@@ -1218,8 +1327,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def requestSlaves(cls):
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
       software_url = cls.getSoftwareURL()
       software_type = cls.getInstanceSoftwareType()
       cls.logger.debug(
@@ -1265,8 +1374,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def getSlaveConnectionParameterDictList(cls):
     parameter_dict_list = []
 
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
       parameter_dict_list.append(cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
@@ -1274,37 +1383,27 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return parameter_dict_list
 
   @classmethod
-  def untilSlavePartitionReady(cls):
-    # all on-watch services shall not be exited
-    for process in cls.callSupervisorMethod('getAllProcessInfo'):
-      if process['name'].endswith('-on-watch') and \
-        process['statename'] == 'EXITED':
-        if process['name'].startswith('monitor-http'):
-          continue
-        return False
+  def getSlaveConnectionParameterDictDict(cls):
+    parameter_dict_dict = {}
 
-    for parameter_dict in cls.getSlaveConnectionParameterDictList():
-      log_access_ready = 'log-access-url' in parameter_dict
-      key = 'key-generate-auth-url'
-      key_generate_auth_ready = key in parameter_dict \
-          and 'NotReadyYet' not in parameter_dict[key]
-      if not(log_access_ready and key_generate_auth_ready):
-        return False
-
-    return True
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
+      parameter_dict_dict[slave_reference] = cls.requestSlaveInstance(
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+      ).getConnectionParameterDict()
+    return parameter_dict_dict
 
   @classmethod
   def setUpSlaves(cls):
-    cls.runComputerPartitionUntil(
-      cls.untilSlavePartitionReady)
     cls.updateSlaveConnectionParameterDictDict()
 
   @classmethod
   def updateSlaveConnectionParameterDictDict(cls):
     cls.slave_connection_parameter_dict_dict = {}
     # run partition for slaves to be setup
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
+    for slave_reference, partition_parameter_kw in list(
+      cls.getSlaveParameterDictDict().items()):
       slave_instance = cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
@@ -1329,7 +1428,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.assertKedifaKeysWithPop(parameter_dict, '')
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
-      hostname = reference.translate(None, '_-').lower()
+      hostname = reference.replace('_', '').replace('-', '').lower()
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
       'replication_number': '1',
@@ -1351,9 +1450,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.instance_path, '*', 'var', 'log', 'httpd', log_name
       ))[0]
 
-    self.assertRegexpMatches(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
+    with open(log_file) as fh:
+      self.assertRegex(
+        fh.readlines()[-1],
+        log_regexp)
 
 
 class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
@@ -1372,6 +1472,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
@@ -1404,6 +1505,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
@@ -1477,11 +1579,11 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
       backend_client_caucase_url, backend_client_ca_pem,
       backend_client_csr_pem)
     kedifa_key_file = os.path.join(cls.working_directory, 'kedifa-key.pem')
-    with open(kedifa_key_file, 'w') as fh:
+    with open(kedifa_key_file, 'wb') as fh:
       fh.write(kedifa_crt_pem + kedifa_key_pem)
     backend_client_key_file = os.path.join(
       cls.working_directory, 'backend-client-key.pem')
-    with open(backend_client_key_file, 'w') as fh:
+    with open(backend_client_key_file, 'wb') as fh:
       fh.write(backend_client_crt_pem + backend_client_key_pem)
 
     # Simulate human: create service keys
@@ -1512,14 +1614,15 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
-    self.assertKeyWithPop('caddy-frontend-1-kedifa-csr-url', parameter_dict)
+    self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop(
-      'caddy-frontend-1-backend-client-csr-url', parameter_dict)
+      'frontend-node-1-backend-client-csr-url', parameter_dict)
     self.assertKeyWithPop(
-      'caddy-frontend-1-csr-certificate', parameter_dict)
+      'frontend-node-1-csr-certificate', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1534,7 +1637,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     )
 
 
-class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -1750,7 +1853,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'type-redirect': {
         'url': cls.backend_url,
+        'https-url': cls.backend_https_url,
         'type': 'redirect',
+        'https-only': False,
       },
       'type-redirect-custom_domain': {
         'url': cls.backend_url,
@@ -1804,7 +1909,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
-        'disabled-cookie-list': 'Chocolate Vanilia',
+        # Note: Do not reorder the entires below, see comments in
+        #       test_disabled_cookie_list
+        'disabled-cookie-list': 'Coconut Chocolate Vanilia',
+      },
+      'disabled-cookie-list-simple': {
+        'url': cls.backend_url,
+        'disabled-cookie-list': 'Chocolate',
       },
       'monitor-ipv4-test': {
         'monitor-ipv4-test': 'monitor-ipv4-test',
@@ -1949,13 +2060,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     with lzma.open(
       os.path.join(ats_logrotate_dir, old_file_name + '.xz')) as fh:
       self.assertEqual(
-        'old',
+        'old'.encode(),
         fh.read()
       )
     with lzma.open(
       os.path.join(ats_logrotate_dir, older_file_name + '.xz')) as fh:
       self.assertEqual(
-        'older',
+        'older'.encode(),
         fh.read()
       )
 
@@ -1976,6 +2087,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
@@ -1983,9 +2095,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '55',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '55',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2004,10 +2116,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that monitor cors domains are correctly setup by file presence, as
     # we trust monitor stack being tested in proper place and it is too hard
     # to have working monitor with local proxy
-    self.assertTestData(
-      open(
-        os.path.join(
-          partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
+    with open(os.path.join(
+      partition_path, 'etc', 'httpd-cors.cfg')) as fh:
+      self.assertTestData(fh.read().strip())
 
   def test_node_information_json(self):
     node_information_file_path = glob.glob(os.path.join(
@@ -2020,9 +2131,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     def writeNodeInformation(node_information, path):
       with open(path, 'w') as fh:
         json.dump(node_information, fh, sort_keys=True)
-      self.waitForInstance()
-      self.waitForInstance()
-      self.waitForInstance()
+      # full processing is needed as this is just simulation which does
+      # not bang the instance tree
+      slap_force_slapos_node_instance_all = \
+          self.slap._force_slapos_node_instance_all
+      self.slap._force_slapos_node_instance_all = True
+      try:
+        self.waitForInstance()
+        self.waitForInstance()
+        self.waitForInstance()
+      finally:
+        self.slap._force_slapos_node_instance_all = \
+          slap_force_slapos_node_instance_all
 
     self.addCleanup(
       writeNodeInformation, current_node_information,
@@ -2039,16 +2159,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     }
     expected_node_information['version-hash-history']['testhash'] = 'testurl'
     self.assertEqual(
-      json.loads(parameter_dict['caddy-frontend-1-node-information-json']),
+      json.loads(parameter_dict['frontend-node-1-node-information-json']),
       expected_node_information
     )
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
-    self.assertTrue(
-      '-grace 2s' in
-      open(os.path.join(partition_path, 'bin', 'caddy-wrapper'), 'r').read()
-    )
+    with open(os.path.join(partition_path, 'bin', 'caddy-wrapper')) as fh:
+      self.assertIn('-grace 2s', fh.read())
 
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
@@ -2057,8 +2175,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       ))
     self.assertEqual(3, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
-    got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
-    # check that no monitor.conf in generated configuratio has magic !py!
+    got = []
+    for q in monitor_conf_list:
+      with open(q) as fh:
+        got.append(('!py!' in fh.read(), q))
+    # check that no monitor.conf in generated configuration has magic !py!
     self.assertEqual(
       expected,
       got
@@ -2072,12 +2193,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -2089,7 +2210,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that 404 is as configured
     result_missing = fakeHTTPSResult(
       'forsuredoesnotexists.example.com', '')
-    self.assertEqual(httplib.NOT_FOUND, result_missing.status_code)
+    self.assertEqual(http.client.NOT_FOUND, result_missing.status_code)
     self.assertEqual(
       """<html>
 <head>
@@ -2117,15 +2238,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
-    for line in [
-      q for q in open(buildout_file).readlines()
-      if q.startswith('config-slave-list') or q.startswith(
-          'config-extra_slave_instance_list')]:
-      self.assertFalse('slave_title' in line)
-      self.assertFalse('slap_software_type' in line)
-      self.assertFalse('connection-parameter-hash' in line)
-      self.assertFalse('timestamp' in line)
+      self.getMasterPartitionPath(), 'instance-master.cfg')
+    with open(buildout_file) as fh:
+      for line in [
+        q for q in fh.readlines()
+        if q.startswith('config-slave-list') or q.startswith(
+            'config-extra_slave_instance_list')]:
+        self.assertFalse('slave_title' in line)
+        self.assertFalse('slap_software_type' in line)
+        self.assertFalse('connection-parameter-hash' in line)
+        self.assertFalse('timestamp' in line)
 
   def assertBackendHeaders(
     self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
@@ -2150,7 +2272,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
-      self.node_information_dict['version-hash-history'].keys()[0])
+      list(self.node_information_dict['version-hash-history'].keys())[0])
     if cached:
       self.assertEqual(
         [
@@ -2245,7 +2367,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -2366,7 +2488,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         result.status_code,
-        httplib.BAD_GATEWAY
+        http.client.BAD_GATEWAY
       )
     finally:
       self.stopAuthenticatedServerProcess()
@@ -2408,7 +2530,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -2551,7 +2673,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.MOVED_PERMANENTLY,
+      http.client.MOVED_PERMANENTLY,
       result.status_code
     )
 
@@ -2694,11 +2816,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-  @skip('Feature postponed')
-  def test_check_error_log(self):
-    # Caddy: Need to implement similar thing like check-error-on-apache-log
-    raise NotImplementedError(self.id())
-
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
@@ -2707,7 +2824,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = self.customdomain_ca_certificate_pem + \
         self.customdomain_ca_key_pem + \
@@ -2717,7 +2834,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -2734,7 +2851,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
-    with open(certificate_file) as out:
+    with open(certificate_file, 'rb') as out:
       self.assertEqual(data, out.read())
 
   def test_ssl_ca_crt_only(self):
@@ -2743,7 +2860,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = self.ca.certificate_pem
 
@@ -2752,7 +2869,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
 
-    self.assertEqual(httplib.UNPROCESSABLE_ENTITY, upload.status_code)
+    self.assertEqual(http.client.UNPROCESSABLE_ENTITY, upload.status_code)
     self.assertEqual('Key incorrect', upload.text)
 
   def test_ssl_ca_crt_garbage(self):
@@ -2762,19 +2879,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     _, ca_key_pem, csr, _ = createCSR(
       parameter_dict['domain'])
     _, ca_certificate_pem = self.ca.signCSR(csr)
 
-    data = ca_certificate_pem + ca_key_pem + 'some garbage'
+    data = ca_certificate_pem + ca_key_pem + 'some garbage'.encode()
     upload = requests.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
 
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -2792,7 +2909,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '_ssl_ca_crt_garbage.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
-    with open(certificate_file) as out:
+    with open(certificate_file, 'rb') as out:
       self.assertEqual(data, out.read())
 
   def test_ssl_ca_crt_does_not_match(self):
@@ -2801,7 +2918,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = self.certificate_pem + self.key_pem + self.ca.certificate_pem
 
@@ -2810,7 +2927,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
 
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -2827,7 +2944,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '_ssl_ca_crt_does_not_match.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
-    with open(certificate_file) as out:
+    with open(certificate_file, 'rb') as out:
       self.assertEqual(data, out.read())
 
   def test_https_only(self):
@@ -2906,14 +3023,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
     data = self.customdomain_certificate_pem + \
         self.customdomain_key_pem
     upload = requests.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -2954,7 +3071,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -3073,7 +3190,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -3114,7 +3231,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -3234,7 +3351,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    parsed = urlparse.urlparse(self.backend_url)
+    parsed = urllib.parse.urlparse(self.backend_url)
     self.assertBackendHeaders(
       j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
       ignore_header_list=['Host'])
@@ -3340,7 +3457,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    parsed = urlparse.urlparse(self.backend_url)
+    parsed = urllib.parse.urlparse(self.backend_url)
     self.assertBackendHeaders(
       j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
       ignore_header_list=['Host'])
@@ -3406,7 +3523,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%stest-path/deeper' % (self.backend_https_url,),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
       result.status_code
     )
 
@@ -3428,7 +3559,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -3449,7 +3580,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.SERVICE_UNAVAILABLE,
+      http.client.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3457,7 +3588,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -3496,7 +3627,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -3517,7 +3648,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.SERVICE_UNAVAILABLE,
+      http.client.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3531,12 +3662,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -3568,12 +3699,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -3606,13 +3737,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -3625,10 +3756,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       os.path.join(
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
+        fh.read())
 
   def test_enable_cache_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
@@ -3694,7 +3825,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -3733,7 +3864,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
 
-    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqual(http.client.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
 
     self.assertResponseHeaders(result, cached=True)
@@ -3798,58 +3929,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     with open(ats_log_file) as fh:
       ats_log = fh.read()
-    self.assertRegexpMatches(ats_log, direct_pattern)
+    self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
-
-  def _hack_ats(self, max_stale_age):
-    records_config = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'trafficserver', 'records.config'
-      ))
-    self.assertEqual(1, len(records_config))
-    self._hack_ats_records_config_path = records_config[0]
-    original_max_stale_age = \
-        'CONFIG proxy.config.http.cache.max_stale_age INT 604800\n'
-    new_max_stale_age = \
-        'CONFIG proxy.config.http.cache.max_stale_age INT %s\n' % (
-          max_stale_age,)
-    with open(self._hack_ats_records_config_path) as fh:
-      self._hack_ats_original_records_config = fh.readlines()
-    # sanity check - are we really do it?
-    self.assertIn(
-      original_max_stale_age,
-      self._hack_ats_original_records_config)
-    new_records_config = []
-    max_stale_age_changed = False
-    for line in self._hack_ats_original_records_config:
-      if line == original_max_stale_age:
-        line = new_max_stale_age
-        max_stale_age_changed = True
-      new_records_config.append(line)
-    self.assertTrue(max_stale_age_changed)
-    with open(self._hack_ats_records_config_path, 'w') as fh:
-      fh.write(''.join(new_records_config))
-    self._hack_ats_restart()
-
-  def _unhack_ats(self):
-    with open(self._hack_ats_records_config_path, 'w') as fh:
-      fh.write(''.join(self._hack_ats_original_records_config))
-    self._hack_ats_restart()
-
-  def _hack_ats_restart(self):
-    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
-      if process_info['name'].startswith(
-        'trafficserver') and process_info['name'].endswith('-on-watch'):
-        self.callSupervisorMethod(
-          'stopProcess', '%(group)s:%(name)s' % process_info)
-        self.callSupervisorMethod(
-          'startProcess', '%(group)s:%(name)s' % process_info)
-    # give short time for the ATS to start back
-    time.sleep(5)
-    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
-      if process_info['name'].startswith(
-        'trafficserver') and process_info['name'].endswith('-on-watch'):
-        self.assertEqual(process_info['statename'], 'RUNNING')
 
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3862,10 +3943,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     max_age = int(max_stale_age / 2.)
     # body_200 is big enough to trigger
     # https://github.com/apache/trafficserver/issues/7880
-    body_200 = b'Body 200' * 500
-    body_502 = b'Body 502'
-    body_502_new = b'Body 502 new'
-    body_200_new = b'Body 200 new'
+    body_200 = 'Body 200' * 500
+    body_502 = 'Body 502'
+    body_502_new = 'Body 502 new'
+    body_200_new = 'Body 200 new'
 
     self.addCleanup(self._unhack_ats)
     self._hack_ats(max_stale_age)
@@ -3875,12 +3956,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result = requests.put(backend_url + path, headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
-          'X-Reply-Body': base64.b64encode(body),
+          'X-Reply-Body': base64.b64encode(body.encode()),
           # drop Content-Length header to ensure
           # https://github.com/apache/trafficserver/issues/7880
           'X-Drop-Header': 'Content-Length',
         })
-      self.assertEqual(result.status_code, httplib.CREATED)
+      self.assertEqual(result.status_code, http.client.CREATED)
 
     def checkResult(status_code, body):
       result = fakeHTTPSResult(
@@ -3892,39 +3973,39 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     # backend returns something correctly
     configureResult('200', body_200)
-    checkResult(httplib.OK, body_200)
+    checkResult(http.client.OK, body_200)
 
     configureResult('502', body_502)
     time.sleep(1)
     # even if backend returns 502, ATS gives cached result
-    checkResult(httplib.OK, body_200)
+    checkResult(http.client.OK, body_200)
 
     # interesting moment, time is between max_age and max_stale_age, triggers
     # https://github.com/apache/trafficserver/issues/7880
     time.sleep(max_age + 1)
-    checkResult(httplib.OK, body_200)
+    checkResult(http.client.OK, body_200)
 
     # max_stale_age passed, time to return 502 from the backend
     time.sleep(max_stale_age + 2)
-    checkResult(httplib.BAD_GATEWAY, body_502)
+    checkResult(http.client.BAD_GATEWAY, body_502)
 
     configureResult('502', body_502_new)
     time.sleep(1)
     # even if there is new negative response on the backend, the old one is
     # served from the cache
-    checkResult(httplib.BAD_GATEWAY, body_502)
+    checkResult(http.client.BAD_GATEWAY, body_502)
 
     time.sleep(max_age + 2)
     # now as max-age of negative response passed, the new one is served
-    checkResult(httplib.BAD_GATEWAY, body_502_new)
+    checkResult(http.client.BAD_GATEWAY, body_502_new)
 
     configureResult('200', body_200_new)
     time.sleep(1)
-    checkResult(httplib.BAD_GATEWAY, body_502_new)
+    checkResult(http.client.BAD_GATEWAY, body_502_new)
     time.sleep(max_age + 2)
     # backend is back to normal, as soon as negative response max-age passed
     # the new response is served
-    checkResult(httplib.OK, body_200_new)
+    checkResult(http.client.OK, body_200_new)
 
   @skip('Feature postponed')
   def test_enable_cache_stale_if_error_respected(self):
@@ -3976,7 +4057,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         },
         source_ip=source_ip
       )
-      self.assertEqual(result.status_code, httplib.BAD_GATEWAY)
+      self.assertEqual(result.status_code, http.client.BAD_GATEWAY)
     finally:
       self.startServerProcess()
     # END: check stale-if-error support
@@ -3994,7 +4075,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     # ATS timed out
     self.assertEqual(
-      httplib.GATEWAY_TIMEOUT,
+      http.client.GATEWAY_TIMEOUT,
       result.status_code
     )
 
@@ -4094,7 +4175,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('pragma' in j['Incoming Headers'].keys())
+    self.assertFalse('pragma' in list(j['Incoming Headers'].keys()))
 
   def test_enable_cache_disable_via_header(self):
     parameter_dict = self.assertSlaveBase('enable_cache-disable-via-header')
@@ -4313,7 +4394,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -4328,7 +4409,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers={'Accept-Encoding': 'deflate'})
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -4342,7 +4423,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -4356,7 +4437,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result.status_code
     )
 
@@ -4365,27 +4446,58 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location']
     )
 
+  def _curl(self, domain, ip, port, cookie):
+    replacement_dict = dict(
+      domain=domain, ip=TEST_IP, port=HTTPS_PORT)
+    curl_command = [
+        'curl', '-v', '-k',
+        '-H', 'Host: %(domain)s' % replacement_dict,
+        '--resolve', '%(domain)s:%(port)s:%(ip)s' % replacement_dict,
+        '--cookie', cookie,
+        'https://%(domain)s:%(port)s/' % replacement_dict,
+    ]
+    prc = subprocess.Popen(
+      curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = prc.communicate()
+    self.assertEqual(
+      prc.returncode, 0,
+      "Problem running %r. Output:\n%s\nError:\n%s" % (
+        curl_command, out, err))
+    return out, err
+
+  @expectedFailure
   def test_disabled_cookie_list(self):
     parameter_dict = self.assertSlaveBase('disabled-cookie-list')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path',
-      cookies=dict(
-          Chocolate='absent',
-          Vanilia='absent',
-          Coffee='present'
-        ))
-
+    out, err = self._curl(
+      parameter_dict['domain'], TEST_IP, HTTPS_PORT,
+      # Note: Cookie order is extremely important here, do not change
+      # or test will start to pass incorrectly
+      'Coconut=absent; Chocolate=absent; Coffee=present; Vanilia=absent',
+    )
+    # self check - were the cookies sent in required order?
+    self.assertIn(
+      'ookie: Coconut=absent; Chocolate=absent; Coffee=present; '
+      'Vanilia=absent',
+      err.decode())
+    # real test - all configured cookies are dropped
     self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
+      'Coffee=present', json.loads(out)['Incoming Headers']['cookie'])
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    self.assertBackendHeaders(
-      result.json()['Incoming Headers'], parameter_dict['domain'])
+  def test_disabled_cookie_list_simple(self):
+    parameter_dict = self.assertSlaveBase('disabled-cookie-list')
+    out, err = self._curl(
+      parameter_dict['domain'], TEST_IP, HTTPS_PORT,
+      'WhiteChocolate=present; Chocolate=absent; Coffee=present',
+    )
+    # self check - were the cookies sent in required order?
+    self.assertIn(
+      'ookie: WhiteChocolate=present; Chocolate=absent; Coffee=present',
+      err.decode())
+    # real test - all configured cookies are dropped
     self.assertEqual(
-      'Coffee=present', result.json()['Incoming Headers']['cookie'])
+      'WhiteChocolate=present ; Coffee=present',
+      json.loads(out)['Incoming Headers']['cookie'])
 
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
@@ -4403,13 +4515,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Strict-Transport-Security'])
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'],
+      parameter_dict['domain'])
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
-      httplib.FOUND,
+      http.client.FOUND,
       result_http.status_code
     )
 
@@ -4444,7 +4559,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotIn('X-Backend-Identification', result.headers)
 
 
-class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   instance_parameter_dict = {
       'domain': 'example.com',
       'port': HTTPS_PORT,
@@ -4494,17 +4609,17 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     key_list = [
-      'caddy-frontend-1-node-information-json',
-      'caddy-frontend-2-node-information-json'
+      'frontend-node-1-node-information-json',
+      'frontend-node-2-node-information-json'
     ]
     node_information_json_dict = {}
-    for k in parameter_dict.keys():
-      if k.startswith('caddy-frontend') and k.endswith(
+    for k in list(parameter_dict.keys()):
+      if k.startswith('frontend-node') and k.endswith(
         'node-information-json'):
         node_information_json_dict[k] = parameter_dict.pop(k)
     self.assertEqual(
       key_list,
-      node_information_json_dict.keys()
+      list(node_information_json_dict.keys())
     )
 
     node_information_dict = json.loads(node_information_json_dict[key_list[0]])
@@ -4534,7 +4649,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
-    self.assertEqual(httplib.FOUND, result_http.status_code)
+    self.assertEqual(http.client.FOUND, result_http.status_code)
 
     # prove 2nd frontend by inspection of the instance
     slave_configuration_name = '_replicate.conf'
@@ -4595,7 +4710,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
     self.slap.waitForInstance(self.instance_max_retry)
 
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
+      self.getMasterPartitionPath(), 'instance-master.cfg')
     with open(buildout_file) as fh:
       buildout_file_content = fh.read()
       node_1_present = re.search(
@@ -4803,90 +4918,24 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     )
 
 
-class TestSlaveGlobalDisableHttp2(TestSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestSlaveGlobalDisableHttp2, cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = self.assertResponseHeaders(result)
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-      },
-      headers
-    )
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
-class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
-  TestEnableHttp2ByDefaultFalseSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2,
-      cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
-class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
-  TestEnableHttp2ByDefaultDefaultSlave):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    instance_parameter_dict = super(
-      TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2,
-      cls).getInstanceParameterDict()
-    instance_parameter_dict['global-disable-http2'] = 'TrUe'
-    return instance_parameter_dict
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
-
-
 class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -4950,12 +4999,52 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 class TestSlaveSlapOSMasterCertificateCompatibility(
   SlaveHttpFrontendTestCase, TestDataMixin):
 
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+      '@@ssl_from_slave_certificate_pem@@': unicode_escape(
+        self.ssl_from_slave_certificate_pem.decode()),
+      '@@ssl_from_slave_key_pem@@': unicode_escape(
+        self.ssl_from_slave_key_pem.decode()),
+      '@@customdomain_certificate_pem@@': unicode_escape(
+        self.customdomain_certificate_pem.decode()),
+      '@@customdomain_key_pem@@': unicode_escape(
+        self.customdomain_key_pem.decode()),
+      '@@ssl_from_slave_kedifa_overrides_key_pem@@': unicode_escape(
+        self.ssl_from_slave_kedifa_overrides_key_pem.decode()),
+      '@@ssl_from_slave_kedifa_overrides_certificate_pem@@': unicode_escape(
+        self.ssl_from_slave_kedifa_overrides_certificate_pem.decode()),
+      '@@customdomain_ca_certificate_pem@@': unicode_escape(
+        self.customdomain_ca_certificate_pem.decode()),
+      '@@customdomain_ca_key_pem@@': unicode_escape(
+        self.customdomain_ca_key_pem.decode()),
+      '@@ca.certificate_pem@@': unicode_escape(
+        self.ca.certificate_pem.decode()),
+      '@@sslcacrtgarbage_ca_certificate_pem@@': unicode_escape(
+        self.sslcacrtgarbage_ca_certificate_pem.decode()),
+      '@@sslcacrtgarbage_ca_key_pem@@': unicode_escape(
+        self.sslcacrtgarbage_ca_key_pem.decode()),
+      '@@type_notebook_ssl_from_slave_certificate_pem@@': unicode_escape(
+        self.type_notebook_ssl_from_slave_certificate_pem.decode()),
+      '@@type_notebook_ssl_from_slave_key_pem@@': unicode_escape(
+        self.type_notebook_ssl_from_slave_key_pem.decode()),
+      '@@type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem@@':
+      unicode_escape(
+        self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem
+        .decode()),
+      '@@type_notebook_ssl_from_slave_kedifa_overrides_key_pem@@':
+      unicode_escape(
+        self.type_notebook_ssl_from_slave_kedifa_overrides_key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
+
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
@@ -5095,6 +5184,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5107,51 +5197,51 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'rejected-slave-dict': {
       },
       'warning-list': [
-        u'apache-certificate is obsolete, please use master-key-upload-url',
-        u'apache-key is obsolete, please use master-key-upload-url',
+        'apache-certificate is obsolete, please use master-key-upload-url',
+        'apache-key is obsolete, please use master-key-upload-url',
       ],
       'warning-slave-dict': {
-        u'_custom_domain_ssl_crt_ssl_key': [
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url'
+        '_custom_domain_ssl_crt_ssl_key': [
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url'
         ],
-        u'_custom_domain_ssl_crt_ssl_key_ssl_ca_crt': [
-          u'ssl_ca_crt is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url'
+        '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt': [
+          'ssl_ca_crt is obsolete, please use key-upload-url',
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url'
         ],
-        u'_ssl_ca_crt_does_not_match': [
-          u'ssl_ca_crt is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url',
+        '_ssl_ca_crt_does_not_match': [
+          'ssl_ca_crt is obsolete, please use key-upload-url',
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
         ],
-        u'_ssl_ca_crt_garbage': [
-          u'ssl_ca_crt is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url',
+        '_ssl_ca_crt_garbage': [
+          'ssl_ca_crt is obsolete, please use key-upload-url',
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
         ],
         # u'_ssl_ca_crt_only': [
         #   u'ssl_ca_crt is obsolete, please use key-upload-url',
         # ],
-        u'_ssl_from_slave': [
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url',
+        '_ssl_from_slave': [
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
         ],
-        u'_ssl_from_slave_kedifa_overrides': [
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url',
+        '_ssl_from_slave_kedifa_overrides': [
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
         ],
         # u'_ssl_key-ssl_crt-unsafe': [
         #   u'ssl_key is obsolete, please use key-upload-url',
         #   u'ssl_crt is obsolete, please use key-upload-url',
         # ],
-        u'_type-notebook-ssl_from_slave': [
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url',
+        '_type-notebook-ssl_from_slave': [
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
         ],
-        u'_type-notebook-ssl_from_slave_kedifa_overrides': [
-          u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_key is obsolete, please use key-upload-url',
+        '_type-notebook-ssl_from_slave_kedifa_overrides': [
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
         ],
       }
     }
@@ -5192,7 +5282,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
@@ -5200,7 +5290,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -5255,7 +5345,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
@@ -5263,7 +5353,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
 
     self.runKedifaUpdater()
 
@@ -5310,7 +5400,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
@@ -5318,7 +5408,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
 
     self.runKedifaUpdater()
 
@@ -5377,7 +5467,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     auth = requests.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, auth.status_code)
+    self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
@@ -5385,7 +5475,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
-    self.assertEqual(httplib.CREATED, upload.status_code)
+    self.assertEqual(http.client.CREATED, upload.status_code)
 
     self.runKedifaUpdater()
 
@@ -5443,8 +5533,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
-      expected = self.customdomain_ca_certificate_pem + '\n' + \
-        self.ca.certificate_pem + '\n' + self.customdomain_ca_key_pem
+      expected = \
+        self.customdomain_ca_certificate_pem.decode() + '\n' + \
+        self.ca.certificate_pem.decode() + '\n' + \
+        self.customdomain_ca_key_pem.decode()
       self.assertEqual(
         expected,
         out.read()
@@ -5487,8 +5579,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
-      expected = customdomain_ca_certificate_pem + '\n' + ca.certificate_pem \
-        + '\n' + customdomain_ca_key_pem
+      expected = customdomain_ca_certificate_pem.decode() + '\n' + \
+        ca.certificate_pem.decode() + '\n' + \
+        customdomain_ca_key_pem.decode()
       self.assertEqual(
         expected,
         out.read()
@@ -5538,8 +5631,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
-      expected = self.certificate_pem + '\n' + self.ca.certificate_pem + \
-        '\n' + self.key_pem
+      expected = self.certificate_pem.decode() + '\n' + \
+        self.ca.certificate_pem.decode() + '\n' + \
+        self.key_pem.decode()
       self.assertEqual(
         expected,
         out.read()
@@ -5550,13 +5644,20 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def setUpMaster(cls):
-    # run partition until AIKC finishes
-    cls.runComputerPartitionUntil(
-      cls.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
     # Do not upload certificates for the master partition
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    local_replacement_dict = {
+      '@@certificate_pem@@': unicode_escape(self.certificate_pem.decode()),
+      '@@key_pem@@': unicode_escape(self.key_pem.decode()),
+    }
+    for key in list(local_replacement_dict.keys()):
+      new_key = ''.join([key[:-2], '_double', '@@'])
+      local_replacement_dict[new_key] = unicode_escape(
+        local_replacement_dict[key])
+    data_replacement_dict.update(**local_replacement_dict)
 
   instance_parameter_dict = {
     'domain': 'example.com',
@@ -5591,6 +5692,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5602,8 +5704,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       'rejected-slave-dict': {},
       'slave-amount': '1',
       'warning-list': [
-        u'apache-certificate is obsolete, please use master-key-upload-url',
-        u'apache-key is obsolete, please use master-key-upload-url',
+        'apache-certificate is obsolete, please use master-key-upload-url',
+        'apache-key is obsolete, please use master-key-upload-url',
       ],
     }
 
@@ -5683,6 +5785,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5710,21 +5813,21 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqual(http.client.OK, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
-    self.assertEqual(httplib.FOUND, result_http.status_code)
+    self.assertEqual(http.client.FOUND, result_http.status_code)
 
     configuration_file = glob.glob(
       os.path.join(
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
         '_default_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384',
+        fh.read())
 
   def test_own_ciphers(self):
     parameter_dict = self.assertSlaveBase('own_ciphers')
@@ -5736,21 +5839,21 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqual(http.client.OK, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
-    self.assertEqual(httplib.FOUND, result_http.status_code)
+    self.assertEqual(http.client.FOUND, result_http.status_code)
 
     configuration_file = glob.glob(
       os.path.join(
         self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
         '_own_ciphers.conf'
       ))[0]
-    self.assertTrue(
-      'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256'
-      in open(configuration_file).read()
-    )
+    with open(configuration_file) as fh:
+      self.assertIn(
+        'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
+        fh.read())
 
 
 class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
@@ -5775,9 +5878,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     cls.fillSlaveParameterDictDict()
     cls.requestSlaves()
     try:
-      cls.slap.waitForInstance(
-        max_retry=2  # two runs shall be enough
-      )
+      cls.slap.waitForInstance(max_retry=10)
     except Exception:
       # ignores exceptions, as problems are tested
       pass
@@ -5935,9 +6036,9 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         result_json = result.json()
       self.assertEqual(
         {
-          u'_SITE_4': [u"custom_domain 'duplicate.example.com' clashes"],
-          u'_SITE_2': [u"custom_domain 'duplicate.example.com' clashes"],
-          u'_SITE_3': [u"server-alias 'duplicate.example.com' clashes"]
+          '_SITE_4': ["custom_domain 'duplicate.example.com' clashes"],
+          '_SITE_2': ["custom_domain 'duplicate.example.com' clashes"],
+          '_SITE_3': ["server-alias 'duplicate.example.com' clashes"]
         },
         result_json
       )
@@ -5952,6 +6053,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5964,7 +6066,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'rejected-slave-dict': {
         '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
-        '_URL': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
+        '_URL': ['slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
         '_SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': [
           'ssl_proxy_ca_crt is invalid'
         ],
@@ -6204,7 +6306,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.MOVED_PERMANENTLY,
+      http.client.MOVED_PERMANENTLY,
       result.status_code
     )
 
@@ -6224,11 +6326,11 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
-    self.assertEqual(httplib.FOUND, result_http.status_code)
+    self.assertEqual(http.client.FOUND, result_http.status_code)
 
     monitor_file = glob.glob(
       os.path.join(
@@ -6255,11 +6357,11 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
-    self.assertEqual(httplib.FOUND, result_http.status_code)
+    self.assertEqual(http.client.FOUND, result_http.status_code)
 
     monitor_file = glob.glob(
       os.path.join(
@@ -6471,7 +6573,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'apache-key': self.key_pem,
       'domain': 'example.com',
       'enable-http2-by-default': True,
-      'global-disable-http2': True,
       'mpm-graceful-shutdown-timeout': 2,
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
@@ -6548,98 +6649,95 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'kedifa'].pop('monitor-password')
     )
 
-    backend_client_caucase_url = u'http://[%s]:8990' % (self._ipv6_address,)
-    kedifa_caucase_url = u'http://[%s]:15090' % (self._ipv6_address,)
+    backend_client_caucase_url = 'http://[%s]:8990' % (self._ipv6_address,)
+    kedifa_caucase_url = 'http://[%s]:15090' % (self._ipv6_address,)
     expected_partition_parameter_dict_dict = {
       'caddy-frontend-1': {
         'X-software_release_url': base_software_url,
-        u'apache-certificate': unicode(self.certificate_pem),
-        u'apache-key': unicode(self.key_pem),
-        u'authenticate-to-backend': u'True',
-        u'backend-client-caucase-url': backend_client_caucase_url,
-        u'backend-connect-retries': u'1',
-        u'backend-connect-timeout': u'2',
-        u'ciphers': u'ciphers',
-        u'cluster-identification': u'testing partition 0',
-        u'domain': u'example.com',
-        u'enable-http2-by-default': u'True',
-        u'extra_slave_instance_list': u'[]',
-        u'frontend-name': u'caddy-frontend-1',
-        u'global-disable-http2': u'True',
-        u'kedifa-caucase-url': kedifa_caucase_url,
-        u'monitor-cors-domains': u'monitor.app.officejs.com',
-        u'monitor-httpd-port': 8411,
-        u'monitor-username': u'admin',
-        u'mpm-graceful-shutdown-timeout': u'2',
-        u'plain_http_port': '11080',
-        u'port': '11443',
-        u'ram-cache-size': u'512K',
-        u're6st-verification-url': u're6st-verification-url',
-        u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
+        'authenticate-to-backend': 'True',
+        'backend-client-caucase-url': backend_client_caucase_url,
+        'backend-connect-retries': '1',
+        'backend-connect-timeout': '2',
+        'ciphers': 'ciphers',
+        'cluster-identification': 'testing partition 0',
+        'domain': 'example.com',
+        'enable-http2-by-default': 'True',
+        'extra_slave_instance_list': '[]',
+        'frontend-name': 'caddy-frontend-1',
+        'kedifa-caucase-url': kedifa_caucase_url,
+        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-httpd-port': 8411,
+        'monitor-username': 'admin',
+        'mpm-graceful-shutdown-timeout': '2',
+        'plain_http_port': '11080',
+        'port': '11443',
+        'ram-cache-size': '512K',
+        're6st-verification-url': 're6st-verification-url',
+        'request-timeout': '100',
+        'slave-kedifa-information': '{}'
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
-        u'apache-certificate': unicode(self.certificate_pem),
-        u'apache-key': unicode(self.key_pem),
-        u'authenticate-to-backend': u'True',
-        u'backend-client-caucase-url': backend_client_caucase_url,
-        u'backend-connect-retries': u'1',
-        u'backend-connect-timeout': u'2',
-        u'ciphers': u'ciphers',
-        u'cluster-identification': u'testing partition 0',
-        u'domain': u'example.com',
-        u'enable-http2-by-default': u'True',
-        u'extra_slave_instance_list': u'[]',
-        u'frontend-name': u'caddy-frontend-2',
-        u'global-disable-http2': u'True',
-        u'kedifa-caucase-url': kedifa_caucase_url,
-        u'monitor-cors-domains': u'monitor.app.officejs.com',
-        u'monitor-httpd-port': 8412,
-        u'monitor-username': u'admin',
-        u'mpm-graceful-shutdown-timeout': u'2',
-        u'plain_http_port': u'11080',
-        u'port': u'11443',
-        u'ram-cache-size': u'256K',
-        u're6st-verification-url': u're6st-verification-url',
-        u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
+        'authenticate-to-backend': 'True',
+        'backend-client-caucase-url': backend_client_caucase_url,
+        'backend-connect-retries': '1',
+        'backend-connect-timeout': '2',
+        'ciphers': 'ciphers',
+        'cluster-identification': 'testing partition 0',
+        'domain': 'example.com',
+        'enable-http2-by-default': 'True',
+        'extra_slave_instance_list': '[]',
+        'frontend-name': 'caddy-frontend-2',
+        'kedifa-caucase-url': kedifa_caucase_url,
+        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-httpd-port': 8412,
+        'monitor-username': 'admin',
+        'mpm-graceful-shutdown-timeout': '2',
+        'plain_http_port': '11080',
+        'port': '11443',
+        'ram-cache-size': '256K',
+        're6st-verification-url': 're6st-verification-url',
+        'request-timeout': '100',
+        'slave-kedifa-information': '{}'
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
-        u'apache-certificate': unicode(self.certificate_pem),
-        u'apache-key': unicode(self.key_pem),
-        u'authenticate-to-backend': u'True',
-        u'backend-client-caucase-url': backend_client_caucase_url,
-        u'backend-connect-retries': u'1',
-        u'backend-connect-timeout': u'2',
-        u'ciphers': u'ciphers',
-        u'cluster-identification': u'testing partition 0',
-        u'domain': u'example.com',
-        u'enable-http2-by-default': u'True',
-        u'extra_slave_instance_list': u'[]',
-        u'frontend-name': u'caddy-frontend-3',
-        u'global-disable-http2': u'True',
-        u'kedifa-caucase-url': kedifa_caucase_url,
-        u'monitor-cors-domains': u'monitor.app.officejs.com',
-        u'monitor-httpd-port': 8413,
-        u'monitor-username': u'admin',
-        u'mpm-graceful-shutdown-timeout': u'2',
-        u'plain_http_port': u'11080',
-        u'port': u'11443',
-        u're6st-verification-url': u're6st-verification-url',
-        u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
+        'authenticate-to-backend': 'True',
+        'backend-client-caucase-url': backend_client_caucase_url,
+        'backend-connect-retries': '1',
+        'backend-connect-timeout': '2',
+        'ciphers': 'ciphers',
+        'cluster-identification': 'testing partition 0',
+        'domain': 'example.com',
+        'enable-http2-by-default': 'True',
+        'extra_slave_instance_list': '[]',
+        'frontend-name': 'caddy-frontend-3',
+        'kedifa-caucase-url': kedifa_caucase_url,
+        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-httpd-port': 8413,
+        'monitor-username': 'admin',
+        'mpm-graceful-shutdown-timeout': '2',
+        'plain_http_port': '11080',
+        'port': '11443',
+        're6st-verification-url': 're6st-verification-url',
+        'request-timeout': '100',
+        'slave-kedifa-information': '{}'
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
-        u'caucase_port': u'15090',
-        u'cluster-identification': u'testing partition 0',
-        u'kedifa_port': u'15080',
-        u'monitor-cors-domains': u'monitor.app.officejs.com',
-        u'monitor-httpd-port': u'8402',
-        u'monitor-username': u'admin',
-        u'slave-list': []
+        'caucase_port': '15090',
+        'cluster-identification': 'testing partition 0',
+        'kedifa_port': '15080',
+        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-httpd-port': '8402',
+        'monitor-username': 'admin',
+        'slave-list': []
       },
       'testing partition 0': {
         '-frontend-2-software-release-url': self.frontend_2_sr,
@@ -6653,8 +6751,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         '-sla-2-computer_guid': 'local',
         '-sla-3-computer_guid': 'local',
         'X-software_release_url': base_software_url,
-        'apache-certificate': unicode(self.certificate_pem),
-        'apache-key': unicode(self.key_pem),
+        'apache-certificate': self.certificate_pem.decode(),
+        'apache-key': self.key_pem.decode(),
         'authenticate-to-backend': 'True',
         'automatic-internal-backend-client-caucase-csr': 'False',
         'automatic-internal-kedifa-caucase-csr': 'False',
@@ -6665,7 +6763,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
         'full_address_list': [],
-        'global-disable-http2': 'True',
         'instance_title': 'testing partition 0',
         'kedifa_port': '15080',
         'mpm-graceful-shutdown-timeout': '2',
@@ -6687,7 +6784,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     )
 
 
-class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -6729,6 +6826,7 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'health-check-failover-url': {
         'https-only': False,  # http and https access to check
+        'enable_cache': True,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
         'url': cls.backend_url + 'url',
@@ -6809,7 +6907,7 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
 
   @classmethod
   def setUpAssertionDict(cls):
-    backend = urlparse.urlparse(cls.backend_url).netloc
+    backend = urllib.parse.urlparse(cls.backend_url).netloc
     cls.assertion_dict = {
       'health-check-disabled': """\
 backend _health-check-disabled-http
@@ -6882,34 +6980,86 @@ backend _health-check-default-http
     slave_parameter_dict = self.getSlaveParameterDictDict()[
       'health-check-failover-url']
 
-    # check normal access
+    source_ip = '127.0.0.1'
+    max_stale_age = 30
+    max_age = int(max_stale_age / 2.)
+    body_200 = 'Body 200' * 500
+    body_failover = 'Failover response'
+    cached_path = self.id()
+    self.addCleanup(self._unhack_ats)
+    self._hack_ats(max_stale_age)
+
+    # Prerequisite for cache: setup failover backend with proper code
+    # for normal access (not cached, typical scenario) and cached access
+    # in order to check ATS behaviour
+    for path in ['/failoverpath', '/' + cached_path]:
+      for url in [
+        'failover-url?a=b&c=',
+        'failover-https-url?a=b&c='
+      ]:
+        result = requests.put(
+          self.backend_url + url + path,
+          headers={
+            'X-Reply-Status-Code': '503',
+            'X-Reply-Body': base64.b64encode(body_failover.encode()),
+          })
+        self.assertEqual(result.status_code, http.client.CREATED)
+
+    def configureResult(status_code, body):
+      backend_url = self.getSlaveParameterDictDict()[
+        'health-check-failover-url']['https-url']
+      result = requests.put(
+        '/'.join([backend_url, cached_path]),
+        headers={
+          'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
+          'X-Reply-Status-Code': status_code,
+          'X-Reply-Body': base64.b64encode(body.encode()),
+          # drop Content-Length header to ensure
+          # https://github.com/apache/trafficserver/issues/7880
+          'X-Drop-Header': 'Content-Length',
+        })
+      self.assertEqual(result.status_code, http.client.CREATED)
+
+    def checkResult(status_code, body):
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], cached_path,
+        source_ip=source_ip
+      )
+      self.assertEqual(result.status_code, status_code)
+      self.assertEqual(result.text, body)
+
+    # check normal access...
     result = fakeHTTPResult(parameter_dict['domain'], '/path')
     self.assertEqualResultJson(result, 'Path', '/url/path')
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
     self.assertEqual(self.certificate_pem, der2pem(result.peercert))
     self.assertEqualResultJson(result, 'Path', '/https-url/path')
+    # ...and cached result, also in order to store it in the cache
+    configureResult('200', body_200)
+    checkResult(http.client.OK, body_200)
 
     # start replying with bad status code
     result = requests.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
-    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
       result = requests.put(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
-      self.assertEqual(result.status_code, httplib.CREATED)
+      self.assertEqual(result.status_code, http.client.CREATED)
     self.addCleanup(restoreBackend)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
+    # check simple failover
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
     self.assertEqual(self.certificate_pem, der2pem(result.peercert))
-    self.assertEqualResultJson(
-      result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
+    self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
+    self.assertEqual(result.text, body_failover)
 
     self.assertLastLogLineRegexp(
       '_health-check-failover-url_backend_log',
@@ -6918,14 +7068,14 @@ backend _health-check-default-http
       r'https-backend _health-check-failover-url-https-failover'
       r'\/_health-check-failover-url-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
-      r'200 \d+ - - ---- '
+      r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
       r'"GET /failoverpath HTTP/1.1"'
     )
 
     result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
-    self.assertEqualResultJson(
-      result, 'Path', '/failover-url?a=b&c=/failoverpath')
+    self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
+    self.assertEqual(result.text, body_failover)
     self.assertLastLogLineRegexp(
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
@@ -6933,10 +7083,22 @@ backend _health-check-default-http
       r'http-backend _health-check-failover-url-http-failover'
       r'\/_health-check-failover-url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
-      r'200 \d+ - - ---- '
+      r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
       r'"GET /failoverpath HTTP/1.1"'
     )
+
+    # It's time to check that ATS gives cached result, even if failover
+    # backend is used
+    checkResult(http.client.OK, body_200)
+    # interesting moment, time is between max_age and max_stale_age, triggers
+    # https://github.com/apache/trafficserver/issues/7880
+    # which is stale-if-error simulated by ATS while using failover backend
+    time.sleep(max_age + 1 - 3)
+    checkResult(http.client.OK, body_200)
+    # max_stale_age passed, time to return 502 with failover url
+    time.sleep(max_stale_age + 2 - 3)
+    checkResult(http.client.SERVICE_UNAVAILABLE, body_failover)
 
   def test_health_check_failover_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase(
@@ -6951,15 +7113,15 @@ backend _health-check-default-http
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
-    self.assertEqual(result.status_code, httplib.CREATED)
-    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
       result = requests.put(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
-      self.assertEqual(result.status_code, httplib.CREATED)
+      self.assertEqual(result.status_code, http.client.CREATED)
     self.addCleanup(restoreBackend)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
@@ -7001,7 +7163,7 @@ backend _health-check-default-http
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
-    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
@@ -7034,7 +7196,7 @@ backend _health-check-default-http
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
-    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
@@ -7063,7 +7225,7 @@ backend _health-check-default-http
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
-    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
@@ -7075,7 +7237,7 @@ backend _health-check-default-http
       der2pem(result.peercert))
 
     # as ssl proxy verification failed, service is unavailable
-    self.assertEqual(result.status_code, httplib.SERVICE_UNAVAILABLE)
+    self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
   def test_health_check_failover_url_ssl_proxy_missing(self):
     parameter_dict = self.assertSlaveBase(
@@ -7093,7 +7255,7 @@ backend _health-check-default-http
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
-    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
@@ -7105,7 +7267,7 @@ backend _health-check-default-http
       der2pem(result.peercert))
 
     # as ssl proxy verification failed, service is unavailable
-    self.assertEqual(result.status_code, httplib.SERVICE_UNAVAILABLE)
+    self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
 
 if __name__ == '__main__':
@@ -7120,5 +7282,5 @@ if __name__ == '__main__':
     url_template = 'http://%s:%s/'
 
   server = klass((ip, port), TestHandler)
-  print url_template % server.server_address[:2]
+  print((url_template % server.server_address[:2]))
   server.serve_forever()

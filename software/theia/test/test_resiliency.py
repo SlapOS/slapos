@@ -30,10 +30,13 @@ import errno
 import os
 import re
 import shutil
+import sqlite3
 import subprocess
 import time
 
 import requests
+
+from slapos.proxy.db_version import DB_VERSION
 
 from slapos.testing.testcase import SlapOSNodeCommandError, installSoftwareUrlList
 
@@ -479,7 +482,26 @@ class TakeoverMixin(ExportAndImportMixin):
     return resp.text
 
 
-class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase):
+class TheiaSyncMixin(ResilienceMixin, TakeoverMixin):
+  def _doSync(self, max_tries=None, wait_interval=None):
+    max_tries = max_tries or self.backup_max_tries
+    wait_interval = wait_interval or self.backup_wait_interval
+
+    start = time.time()
+
+    # Call exporter script instead of waiting for cron job
+    # XXX Accelerate cron frequency instead ?
+    exporter_script = self.getPartitionPath('export', 'bin', 'exporter')
+    transaction_id = str(int(time.time()))
+    subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
+
+    takeover_url, _ = self._getTakeoverUrlAndPassword()
+
+    # Wait for takoever to be ready
+    self._waitTakeoverReady(takeover_url, start, max_tries, wait_interval)
+
+
+class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
   test_instance_max_retries = 0
   backup_max_tries = 70
   backup_wait_interval = 10
@@ -504,20 +526,6 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
 
     # Remember content of ~/etc in the import theia
     self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
-
-  def _doSync(self):
-    start = time.time()
-
-    # Call exporter script instead of waiting for cron job
-    # XXX Accelerate cron frequency instead ?
-    exporter_script = self.getPartitionPath('export', 'bin', 'exporter')
-    transaction_id = str(int(time.time()))
-    subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
-
-    takeover_url, _ = self._getTakeoverUrlAndPassword()
-
-    # Wait for takoever to be ready
-    self._waitTakeoverReady(takeover_url, start, self.backup_max_tries, self.backup_wait_interval)
 
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
@@ -554,3 +562,35 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
     self._processEmbeddedInstance(self.test_instance_max_retries)
+
+
+class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
+  backup_max_tries = 100
+  backup_wait_interval = 20
+
+  html5as_url = os.path.abspath(
+    os.path.join(
+      os.path.dirname(__file__), '..', '..', 'html5as', 'software.cfg'))
+
+  def _prepareExport(self):
+    # Deploy an embedded html5as
+    self._deployEmbeddedSoftware(self.html5as_url, 'html5as', 1)
+
+  def _checkSync(self):
+    proxy_relpath = os.path.join('srv', 'runner', 'var', 'proxy.db')
+    query = "SELECT rowid, partition_reference FROM forwarded_partition_request%s" % DB_VERSION
+
+    # Check that theia0 forwards frontend requests
+    with sqlite3.connect(self.getPartitionPath('export', proxy_relpath)) as db:
+      rows = db.execute(query).fetchall()
+      self.assertIn("slappart0_HTML5AS frontend", (row[1] for row in rows))
+
+    # Check that theia1 does not forward frontend requests
+    # i.e that there were no new insertions in the database since it was cloned
+    # by ensuring the rowids are still the same
+    with sqlite3.connect(self.getPartitionPath('import', proxy_relpath)) as db:
+      self.assertEqual(db.execute(query).fetchall(), rows)
+
+  def _doTakeover(self):
+    # do nothing
+    pass

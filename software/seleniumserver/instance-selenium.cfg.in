@@ -316,10 +316,10 @@ recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!${buildout:executable}
-  import json, urllib, sys
+  import json, urllib.request, sys
   api_url = sys.argv[1]
   expected_node_count = int(sys.argv[2])
-  actual_node_count = json.load(urllib.urlopen(api_url))['slotCounts']['total']
+  actual_node_count = json.load(urllib.request.urlopen(api_url))['slotCounts']['total']
   sys.exit(0 if expected_node_count == actual_node_count else 1)
 
 

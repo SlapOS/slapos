@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Parameters to instantiate Peertube",
+  "additionalProperties": false,
+  "properties": {
+    "frequency": {
+      "title": "Backup Frequency",
+      "description": "Backup Frequency",
+      "default": "",
+      "type": "string"
+    },
+    "fronted-url": {
+      "title": "Frontend URL",
+      "description": "Frontend URL",
+      "default": "",
+      "type": "string"
+    },
+    "name": {
+      "title": "Instance Title",
+      "description": "The name of your peertube instance.",
+      "default": "Peertube in Slapos",
+      "type": "string"
+    },
+    "short_description": {
+      "title": "PeerTube Short Description",
+      "description": "Short description of your peertube instance.",
+      "default": "PeerTube, an ActivityPub-federated video streaming platform using P2P directly in your web browser.",
+      "type": "string"
+    },
+    "description": {
+      "title": "Peertube Long Description",
+      "description": "The description of your instance",
+      "default": "Welcome to this PeerTube instance!",
+      "textarea": true,
+      "type": "string"
+    },
+    "terms": {
+      "title": "Terms",
+      "description": "",
+      "default": "No terms for now.",
+      "textarea": true,
+      "type": "string"
+    },
+    "code_of_conduct": {
+      "title": "Code of Conduct",
+      "description": "",
+      "default": "",
+      "textarea": true,
+      "type": "string"
+    },
+    "moderation_information": {
+      "title": "Moderation Information",
+      "description": "Who moderates the instance? What is the policy regarding NSFW videos? Political videos? etc",
+      "default": "",
+      "textarea": true,
+      "type": "string"
+    },
+    "creation_reason": {
+      "title": "Creation Reason",
+      "description": "Why did you create this instance?",
+      "default": "",
+      "textarea": true,
+      "type": "string"
+    },
+    "administrator": {
+      "title": "Administrator",
+      "description": "Who is behind the instance? A single person? A non profit?",
+      "default": "",
+      "type": "string"
+    },
+    "maintenance_lifetime": {
+      "title": "Maintenance Lifetime",
+      "description": "How long do you plan to maintain this instance?",
+      "default": "",
+      "type": "string"
+    },
+    "business_model": {
+      "title": "Business Model",
+      "description": "How will you pay the PeerTube instance server? With your own funds? With users donations? Advertising?",
+      "default": "",
+      "textarea": true,
+      "type": "string"
+    },
+    "hardware_information": {
+      "title": "Hardware Information",
+      "description": "",
+      "default": "",
+      "textarea": true,
+      "type": "string"
+    }
+  }
+}

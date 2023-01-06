@@ -46,6 +46,7 @@ setup(name=name,
         'slapos.libnetworkcache',
         'erp5.util',
         'supervisor',
+        'pillow',
         'psutil',
         'plantuml',
         'requests'

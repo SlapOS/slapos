@@ -179,7 +179,7 @@ config-command = $${embedded-instance-requested-promise-script:output}
 [remote-frontend-base]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-slave = true
+shared = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
@@ -336,14 +336,14 @@ install =
   self.buildout['buildout']['offline'] = 'false'
   try:
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-      b'''$${:seed}'''
+      options['seed'].encode()
     ).hexdigest() + "?s=256&d=retro"
-    shutil.copy(self.download(gravatar_url), '''$${:location}''')
+    shutil.copy(self.download(gravatar_url), location)
   except Exception:
     # Because installation should work offline, if we can't download a favicon,
     # just ignore this step.
     self.logger.exception("Error while downloading favicon, using empty one")
-    open('''$${:location}''', 'w').close()
+    open(location, 'w').close()
   finally:
     self.buildout['buildout']['offline'] = buildout_offline
 
@@ -360,7 +360,7 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
   export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
@@ -532,8 +532,10 @@ context =
   key embedded_request_exitcode_file :embedded-request-exitcode-file
   key embedded_instance_config embedded-instance-config:output
   key home_path directory:home
+  key forward_frontend_requests :forward-frontend-requests
   section slap_connection slap-connection
   section slapos_standalone_config slapos-standalone-config
+forward-frontend-requests = {{ parameter_dict['forward-slapos-frontend-requests'] }}
 url = ${slapos-standalone-script:output}
 
 [slapos-standalone]
@@ -660,7 +662,8 @@ inline =
       "$${directory:project}/runner/**":true
     },
     "git.terminalAuthentication": false,
-    "security.workspace.trust.startupPrompt": "once"
+    "security.workspace.trust.startupPrompt": "once",
+    "zc-buildout.python.executable": "${python-for-buildout-languageserver:executable}"
   }
 
 [runner-link]

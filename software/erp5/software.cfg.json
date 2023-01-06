@@ -6,7 +6,6 @@
     "default": {
       "title": "Default",
       "software-type": "default",
-      "description": "No automated database modification (ERP5Site is not automatically created).",
       "request": "instance-erp5-input-schema.json",
       "response": "instance-erp5-output-schema.json",
       "index": 0

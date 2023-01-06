@@ -5,6 +5,7 @@
   "software-type": {
     "default": {
       "title": "Default",
+      "serialisation": "json-in-xml",
       "description": "Standalone KVM",
       "request": "instance-kvm-input-schema.json",
       "response": "instance-kvm-output-schema.json",

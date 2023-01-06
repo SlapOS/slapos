@@ -64,8 +64,21 @@ class TestSimpleDiagram(PlantUMLTestCase, ImageComparisonTestCase):
     # http://www.plantuml.com/plantuml/png/SoWkIImgAStDuNBAJrBGjLDmpCbCJbMmKiX8pSd9vuBmWC8WMIi5ztm5n_B4IYw7rBmKe1u0
     # because plantuml include information about the server in the output image metadata ( you can
     # use http://exif.regex.info/exif.cgi to see metadata )
-    # So we process the image to remove metadata.
+    # We just compare that image are similar.
     reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_sequence_diagram.png"))
+    self.assertImagesSame(Image.open(BytesIO(png)), reference)
+
+  def test_sequence_diagram_skin_rose(self):
+    # default theme changed, but we can use `skin rose` to keep old theme
+    # https://github.com/plantuml/plantuml/issues/996
+    png = self.plantuml.processes(textwrap.dedent("""\
+    @startuml
+    skin rose
+    Bob -> Alice : hello
+    Alice -> Bob : Go Away
+    @enduml
+    """))
+    reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_sequence_diagram_skin_rose.png"))
     self.assertImagesSame(Image.open(BytesIO(png)), reference)
 
   def test_class_diagram(self):

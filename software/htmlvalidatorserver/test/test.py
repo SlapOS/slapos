@@ -26,7 +26,6 @@
 ##############################################################################
 
 
-import httplib
 import json
 import os
 import requests
@@ -42,7 +41,6 @@ class TestHtmlValidatorServer(InstanceTestCase):
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
 
-    # Check that there is a RSS feed
     self.assertTrue('vnu-url' in parameter_dict)
     self.assertEqual(
       'https://[%s]:8899/' % (self._ipv6_address, ),
@@ -53,7 +51,7 @@ class TestHtmlValidatorServer(InstanceTestCase):
       parameter_dict['vnu-url'], verify=False, allow_redirects=False)
 
     self.assertEqual(
-      [httplib.OK, False, 'Apache-Coyote/1.1'],
+      [requests.codes.ok, False, 'Apache-Coyote/1.1'],
       [result.status_code, result.is_redirect, result.headers['Server']]
     )
 
@@ -64,7 +62,7 @@ class TestHtmlValidatorServer(InstanceTestCase):
     result = requests.get(
       parameter_dict['monitor-base-url'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [httplib.UNAUTHORIZED, False],
+      [requests.codes.unauthorized, False],
       [result.status_code, result.is_redirect]
     )
 

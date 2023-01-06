@@ -26,5 +26,8 @@ The following instance parameters can be configured:
 - remote-debugging-port:  Port for Chromium to listen on.
 - nginx-proxy-port:       Port for Ningx proxy to listen on.
 - monitor-httpd-port:     Port for monitor.
+- incognito:              Force Incognito mode
+- window-size:            Initial windo size
+- block-new-web-contents: Block new web contents
 
 See `instance-headless-chromium-input-schema.json` for default values.

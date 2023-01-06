@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!{{ python_executable }}
 
 # Parse Ansible result log file and define if execution succeed or not
 

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Peertube instanciation",
+  "properties": {
+    "frontend-url": {
+      "description": "Peertube Frontend URL",
+      "type": "string"
+    },
+    "backend-url": {
+      "description": "Peertube Backend URL",
+      "type": "string"
+    },
+    "username": {
+      "description": "Peertube username",
+      "type": "string"
+    },
+    "password": {
+      "description": "Peertube password",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

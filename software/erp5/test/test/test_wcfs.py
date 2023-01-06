@@ -16,7 +16,6 @@
 # See COPYING file for full licensing terms.
 # See https://www.nexedi.com/licensing for rationale and options.
 
-from __future__ import absolute_import
 import json
 import os.path
 import unittest
@@ -76,5 +75,5 @@ def lookupMount(zurl):
 
 # readfile returns content of file @path.
 def readfile(path):
-  with open(path, 'r') as f:
+  with open(path) as f:
     return f.read()

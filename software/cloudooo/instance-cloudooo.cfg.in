@@ -68,7 +68,7 @@ parts =
   apache-promise
   apache-logrotate
   cloudooo-test-runner
-  haproxy
+  haproxy-service
   xvfb-instance
   wkhtmltopdf-on-xvfb
 
@@ -181,17 +181,25 @@ wrapper = ${directory:services}/{{ name }}
 
 {% endfor -%}
 
+[haproxy-cfg]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-haproxy-cfg'] }}
+output = ${directory:etc}/haproxy.cfg
+context =
+  section parameter_dict haproxy
+
+[haproxy-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/${:_buildout_section_name_}
+command-line =
+  "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:output}"
+hash-files = ${haproxy-cfg:output}
+
 [haproxy]
-recipe = slapos.cookbook:haproxy
-name = cloudooo
-conf-path = ${directory:etc}/haproxy.cfg
 socket-path = ${directory:run}/haproxy.sock
+pidfile =  ${directory:run}/haproxy.pid
 ip = {{ ipv4 }}
 port = {{ haproxy_port }}
-maxconn = 1
-wrapper-path = ${directory:services}/haproxy
-binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
-ctl-path = ${directory:bin}/haproxy-ctl
 backend-list =
 {%- for section_name in cloudooo_section_list %}
   {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
@@ -230,7 +238,6 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
   {{ parameter_dict['onlyoffice-core'] }}/bin/x2t
 
-# rest of parts are candidates for some generic stuff
 [directory]
 recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache

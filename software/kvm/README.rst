@@ -69,14 +69,6 @@ KVM instance parameters:
     MD5Sum of image disk to download
 - virtual-hard-drive-gzipped (default: False)
     Compress image to reduce size with gzip (.gz)
-- hard-drive-url-check-certificate (default: True)
-    if virtual-hard-drive-url use self-signed https, then specify if https certificate should be verified or not
-
-- external-disk-number (default: 0)
-    Number of additional disk to attach to this VM. Need slapformat to be configured for this feature.
-- external-disk-size (default: 20)
-- external-disk-format (default: qcow2)
-  additional disk format. should be in this list: ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed']
 
 - enable-http-server (default: False)
     Configure server that will help to get some files into the vm from http
@@ -118,11 +110,92 @@ Technical notes
 Updating boot-image-url-select
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * download the new OS installation image
- * calculate it's sha512sum and store as <SHA512>
- * calculate it's md5sum and store as <MD5>
- * upload it to shacache
- * construct download url: ``https://shacache.nxdcdn.com/<SHA512>#<MD5>``
- * update the ``boot-image-url-select`` in:
-    * ``instance-kvm-input-schema.json``
-    * ``instance-kvm-cluster-input-schema.json``
+* download the new OS installation image
+* calculate it's sha512sum and store as <SHA512>
+* calculate it's md5sum and store as <MD5>
+* upload it to shacache
+* construct download url: ``https://shacache.nxdcdn.com/<SHA512>#<MD5>``
+* update the ``boot-image-url-select`` in:
+   * ``instance-kvm-input-schema.json``
+   * ``instance-kvm-cluster-input-schema.json``
+
+Migration to modern external-disk parameter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Note**: ``external-disk`` and old way are mutually exclusive, thus it will
+result with not starting kvm and failing partition for sake of data
+consistency.
+
+Despite ``external-disk-number``, ``external-disk-size`` and
+``external-disk-format`` are supported fully until unknown moment in the
+future, it's advised to migrate to external-disk parameter as soon as possible,
+as slapos.core ``slapos.cfg`` ``instance_storage_home`` can become obsoleted
+and removed in future versions.
+
+**Note**: Due to how technically ``instance_storage_home`` is implemented, such
+migration requires full access to the Compute Node hosting given KVM instance.
+
+Let's imagine that there is a kvm instance which was requested with parameters::
+
+  {
+    "external-disk-number": 2,
+    "external-disk-size": 10
+  }
+
+After locating the partition on proper Compute Node, the node administrator
+has to find the kvm processing running there with::
+
+  slapos node status slappartNN: | grep kvm-
+
+The interesting part is the ``PID``, which can be used to find which disk paths
+are configured for the running KVM process with::
+
+  ps axu | grep PID | grep --color DATA
+
+It will be possible to find two entries pointing to ``DATA`` directory in the
+partition::
+
+  -drive file=/srv/slapgrid/slappartNN/DATA/dataX/kvm_virtual_disk.qcow2,if=virtio
+  -drive file=/srv/slapgrid/slappartNN/DATA/dataY/kvm_virtual_disk.qcow2,if=virtio
+
+**Attention**: Order of the disks is important.
+
+The administrator shall provide absolute path to both for both disks::
+
+  readlink -f /srv/slapgrid/slappartNN/DATA/dataX/kvm_virtual_disk.qcow2 --> /<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2
+  readlink -f /srv/slapgrid/slappartNN/DATA/dataY/kvm_virtual_disk.qcow2 --> /<instance_storage_home>/dataY/slappartNN/kvm_virtual_disk.qcow2
+
+And now it will be safe to use the paths in ``external-disk`` parameter::
+
+  {
+    "external-disk": {
+      "first": {
+        "path": "/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2",
+        "index": 1
+      },
+      "second": {
+        "path": "/<instance_storage_home>/dataY/slappartNN/kvm_virtual_disk.qcow2",
+        "index": 2
+      }
+    }
+  }
+
+Of course ``external-disk-number``, ``external-disk-size`` and
+``external-disk-format`` HAVE TO be removed from instance parameters before
+continuing.
+
+For now such configuration will lead to no starting kvm process, so after
+parameters are updated in SlapOS Master **and** are processed on the Compute
+Node The administrator shall release the images from automatic detection by
+removing files:
+
+* ``etc/.data-disk-amount``
+* ``etc/.data-disk-ids``
+
+from the partition (typically ``/srv/slapgrid/slappartNN/`` directory).
+
+The failure observed to confirm the situation can be found in
+``.slappartNN_kvm-HASH.log`` with presence of message like::
+
+  qemu-system-x86_64: -drive file=/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2,if=virtio,cache=writeback: Failed to get "write" lock
+  Is another process using the image [/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2]?

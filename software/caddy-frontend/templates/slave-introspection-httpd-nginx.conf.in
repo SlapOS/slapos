@@ -23,7 +23,7 @@ http {
     fastcgi_temp_path {{ parameter_dict['var'] }} 1 2;
     uwsgi_temp_path {{ parameter_dict['var'] }} 1 2;
     scgi_temp_path {{ parameter_dict['var'] }} 1 2;
-  {% for slave, directory in slave_log_directory.iteritems() %}
+  {% for slave, directory in slave_log_directory.items() %}
     location /{{ slave }} {
       alias {{ directory }};
       autoindex on;

@@ -19,7 +19,7 @@ $WorkDirectory {{ configuration['spool-directory'] }}
 {%- set regex = ".*-backend (.*)-http.{0,1}(|-failover)/" %}
 template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
 set $!slave_name = exec_template("extract_slave_name");
-template(name="slave_output" type="string" string="{{ configuration['caddy-log-directory'] }}/%$!slave_name%_backend_log")
+template(name="slave_output" type="string" string="{{ configuration['log-directory'] }}/%$!slave_name%_backend_log")
 if (re_match($msg, "{{ regex }}")) then {
  action(type="omfile" dynaFile="slave_output")
  stop

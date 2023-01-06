@@ -21,6 +21,13 @@ environment =
   XORG_LOCK_DIR=${xserver:lock-dir}
   DISPLAY=${xserver:display}
 
+[beremiz-env.sh]
+# Add openssl needed to build matiec during tests
+inline +=
+  #export OPENSSL_CRYPTO_LIBRARY={{ openssl_location }}/lib
+  #export OPENSSL_INCLUDE_DIR={{ openssl_location }}/include
+  export OPENSSL_ROOT_DIR={{ openssl_location }}
+
 [runTestSuite]
 env.sh  = ${beremiz-env.sh:output}
 workdir = {{ nxdtest_dir }}

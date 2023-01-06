@@ -2,7 +2,7 @@
 
 set -e
 
-if {{ caddy_configuration_state }} ; then
+if {{ configuration_state }} ; then
   echo "Reloading.."
   {{ graceful_reload_command }}
 else

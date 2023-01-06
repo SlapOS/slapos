@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import six
 import time
 from urllib import urlopen
 import json
@@ -32,7 +33,7 @@ def main():
   test_suite = args.test_suite
   revision = args.revision
 
- 
+
   if not parser_configuration['server-url'] or not parser_configuration['remote-access-url']:
     sys.exit(-1)
 
@@ -50,7 +51,7 @@ def main():
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
       "&__ac_password=%s" % (parser_configuration['remote-access-url'], {{ repr(user) }}, {{ repr(password) }})
-    
+
   # Wait until all activities are finished...
   wait_url = "%s/erp5/ActivityTool_getSqlStatisticList" \
       "?__ac_name=%s" \
@@ -75,10 +76,27 @@ def main():
     except Exception:
       traceback.print_exc()
     time.sleep(600)
- 
+
+  # Unsubscribe activity
+  # Launch Zuite_waitForActivities with activity suscribed may create conflict
+
+  activity_unsubscribe_url = "%s/erp5/portal_activities/unsubscribe" \
+      "?__ac_name=%s" \
+      "&__ac_password=%s" % (parser_configuration['remote-access-url'],  {{ repr(user) }}, {{ repr(password) }})
+  print activity_unsubscribe_url
+  try:
+    response = urlopen(activity_unsubscribe_url)
+    try:
+      if response.code != 200:
+        sys.exit(-1)
+    finally:
+      response.close()
+  except Exception:
+    traceback.print_exc()
+
   tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
   browser = webdriver.Remote(parser_configuration['server-url'] , parser_configuration['desired-capabilities'] )
-  
+
   try:
     agent = browser.execute_script("return navigator.userAgent")
     print url

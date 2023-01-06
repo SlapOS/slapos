@@ -67,7 +67,7 @@ def generic_exec(args, extra_environ=None, wait_list=None,
     else:
       # With chained shebangs, several paths may be inserted at the beginning.
       n = len(args)
-      for i in xrange(1+len(running)-n):
+      for i in six.moves.xrange(1+len(running)-n):
         if args == running[i:n+i]:
           sys.exit("Already running with pid %s." % pid)
     with open(pidfile, 'w') as f:
@@ -91,16 +91,19 @@ def generic_exec(args, extra_environ=None, wait_list=None,
     uid = os.getuid()
     gid = os.getgid()
     unshare(CLONE_NEWUSER |CLONE_NEWNS)
-    with open('/proc/self/setgroups', 'wb') as f: f.write('deny')
-    with open('/proc/self/uid_map',   'wb') as f: f.write('%s %s 1' % (uid, uid))
-    with open('/proc/self/gid_map',   'wb') as f: f.write('%s %s 1' % (gid, gid))
+    with open('/proc/self/setgroups', 'w') as f:
+      f.write('deny')
+    with open('/proc/self/uid_map', 'w') as f:
+      f.write('%s %s 1' % (uid, uid))
+    with open('/proc/self/gid_map', 'w') as f:
+      f.write('%s %s 1' % (gid, gid))
     for size, path in private_tmpfs:
       try:
         os.mkdir(path)
       except OSError as e:
         if e.errno != errno.EEXIST:
           raise
-      mount('tmpfs', path, 'tmpfs', 0, 'size=' + size)
+      mount(b'tmpfs', path.encode(), b'tmpfs', 0, ('size=' + size).encode())
 
   if extra_environ:
     env = os.environ.copy()

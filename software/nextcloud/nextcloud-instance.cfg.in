@@ -55,17 +55,6 @@ cli-url = ${slap-parameter:instance.cli-url}
 data-dir = ${nc-directory:data}
 redis-socket = ${service-redis:unixsocket}
 
-#php.ini parameters
-php.memory_limit = 512M
-php.date.timezone = Europe/Paris
-php.upload_max_filesize = 10240M
-php.post_max_size = 10240M
-php.session.cookie_secure = True
-php.max_execution_time = 1800
-php.max_input_time = 3600
-php.output_buffering = 'Off'
-php.max_file_uploads = 100
-
 #SMTP settings
 mail.from = ${slap-parameter:instance.mail-from}
 mail.domain = ${slap-parameter:instance.mail-domain}
@@ -93,7 +82,6 @@ depends =
   ${redis-promise:recipe}
   ${nextcloud-cron:recipe}
   ${nextcloud-optimize:recipe}
-  ${nextcloud-apache-httpd:recipe}
   ${nextcloud-backup-cron:recipe}
   ${nextcloud-news-updater:recipe}
   ${nextcloud-config-update:recipe}
@@ -119,13 +107,6 @@ input = inline:#!/bin/bash
   fi
 output = ${directory:bin}/check-nc-install
 mode = 744
-
-[nextcloud-apache-httpd]
-recipe = slapos.recipe.template:jinja2
-url = {{ nextcloud_apache_httpd }}
-output = ${directory:apache.d}/nextcloud.conf
-context =
-  section parameter_dict apache-php-configuration
 
 [nextcloud-cron]
 recipe = slapos.cookbook:cron.d
@@ -198,11 +179,6 @@ input = inline:#!/bin/sh
   fi
   ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ config:import ${nextcloud-config.json:output}
 mode = 744
-
-[php-bin]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
 
 [publish-connection-information]
 admin-user = ${instance-parameter:admin-user}

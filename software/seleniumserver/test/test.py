@@ -31,12 +31,12 @@ import multiprocessing
 import os
 import tempfile
 import unittest
-import urlparse
+import urllib.parse
 import base64
 import hashlib
 import logging
 import contextlib
-from BaseHTTPServer import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler
 
 from io import BytesIO
 
@@ -72,7 +72,7 @@ class WebServer(ManagedHTTPServer):
       self.send_response(200)
       self.end_headers()
       self.wfile.write(
-          '''
+          b'''
         <html>
           <title>Test page</title>
           <body>
@@ -97,15 +97,15 @@ class WebServer(ManagedHTTPServer):
       self.send_response(200)
       self.end_headers()
       file_data = 'no file'
-      if form.has_key('f'):
-        file_data = form['f'].file.read()
+      if 'f' in form:
+        file_data = form['f'].file.read().decode()
       self.wfile.write(
-          '''
+          ('''
         <html>
           <title>%s</title>
           <div>%s</div>
         </html>
-      ''' % (form['q'].value, file_data))
+      ''' % (form['q'].value, file_data)).encode())
 
     log_message = logging.getLogger(__name__ + '.WebServer').info
 
@@ -148,7 +148,7 @@ class BrowserCompatibilityMixin(WebServerMixin):
     WebDriverWait(self.driver, 3).until(EC.title_is(self.id()))
 
   def test_upload_file(self):
-    f = tempfile.NamedTemporaryFile(delete=False)
+    f = tempfile.NamedTemporaryFile(delete=False, mode='w')
     f.write(self.id())
     f.close()
     self.addCleanup(lambda: os.remove(f.name))
@@ -307,7 +307,7 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     admin_url = parameter_dict['admin-url']
 
-    parsed = urlparse.urlparse(admin_url)
+    parsed = urllib.parse.urlparse(admin_url)
     self.assertEqual('admin', parsed.username)
     self.assertTrue(parsed.password)
 
@@ -316,7 +316,7 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
   def test_browser_use_hub(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     webdriver_url = parameter_dict['url']
-    parsed = urlparse.urlparse(webdriver_url)
+    parsed = urllib.parse.urlparse(webdriver_url)
     self.assertEqual('selenium', parsed.username)
     self.assertTrue(parsed.password)
 
@@ -343,7 +343,7 @@ class TestSSHServer(SeleniumServerTestCase):
   def test_connect(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     ssh_url = parameter_dict['ssh-url']
-    parsed = urlparse.urlparse(ssh_url)
+    parsed = urllib.parse.urlparse(ssh_url)
     self.assertEqual('ssh', parsed.scheme)
 
     client = paramiko.SSHClient()
@@ -359,9 +359,9 @@ class TestSSHServer(SeleniumServerTestCase):
 
     with contextlib.closing(client):
       client.connect(
-          username=urlparse.urlparse(ssh_url).username,
-          hostname=urlparse.urlparse(ssh_url).hostname,
-          port=urlparse.urlparse(ssh_url).port,
+          username=urllib.parse.urlparse(ssh_url).username,
+          hostname=urllib.parse.urlparse(ssh_url).hostname,
+          port=urllib.parse.urlparse(ssh_url).port,
           pkey=self.ssh_key,
       )
 
@@ -378,7 +378,7 @@ class TestSSHServer(SeleniumServerTestCase):
       # Paramiko does not allow to get the fingerprint as SHA256 easily yet
       # https://github.com/paramiko/paramiko/pull/1103
       self.assertEqual(
-          fingerprint,
+          fingerprint.encode(),
           # XXX with sha256, we need to remove that trailing =
           base64.b64encode(
               hashlib.new(fingerprint_algorithm,
@@ -386,15 +386,15 @@ class TestSSHServer(SeleniumServerTestCase):
 
       channel = client.invoke_shell()
       channel.settimeout(30)
-      received = ''
+      received = b''
       while True:
         r = channel.recv(1024)
         if not r:
           break
         received += r
-        if 'Selenium Server.' in received:
+        if b'Selenium Server.' in received:
           break
-      self.assertIn("Welcome to SlapOS Selenium Server.", received)
+      self.assertIn(b"Welcome to SlapOS Selenium Server.", received)
 
 
 class TestFirefox52(
@@ -405,8 +405,9 @@ class TestFirefox52(
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='52.9.0esr')
   user_agent = 'Gecko/20100101 Firefox/52.0'
   # resizing window is not supported on firefox 52 geckodriver
-  test_resize_window = unittest.expectedFailure(
-      BrowserCompatibilityMixin.test_resize_window)
+  @unittest.expectedFailure
+  def test_resize_window(self):
+    super().test_resize_window()
 
 
 class TestFirefox60(

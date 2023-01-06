@@ -48,7 +48,7 @@ setup(
         'erp5.util',
         'selenium',
         'psutil',
-        'image',
+        'pillow',
         'requests',
         'paramiko',
     ],

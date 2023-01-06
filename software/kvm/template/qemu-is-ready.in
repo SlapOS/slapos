@@ -1,8 +1,7 @@
 #!{{ dash }}
 
 FILE="{{ qemu_ready_path }}"
-# don't start checks too fast
-sleep 2
+
 if [ -f "$FILE" ]; then
   if [ "$(cat $FILE)" = "" ]; then
     echo "VM correctly started."

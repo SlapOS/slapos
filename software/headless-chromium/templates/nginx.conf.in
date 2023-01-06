@@ -1,6 +1,8 @@
 pid {{ param_headless_chromium['nginx-pid-path'] }};
 error_log {{ param_headless_chromium['nginx-error-log'] }};
 
+daemon off;
+
 events {
   worker_connections 1024;
 }
@@ -10,12 +12,6 @@ http {
 
   include {{ param_headless_chromium['nginx-mime-types'] }};
   default_type application/octet-stream;
-
-  types {
-    text/html html;
-    text/css css;
-    application/javascript js;
-  }
 
   server {
     listen {{ param_headless_chromium['proxy-address'] }} ssl;

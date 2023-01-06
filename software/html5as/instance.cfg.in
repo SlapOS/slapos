@@ -61,7 +61,7 @@ default = instance-html5as:output
 replicate = instance-replicate:output
 
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}

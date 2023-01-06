@@ -26,7 +26,6 @@
 ##############################################################################
 
 
-import httplib
 import json
 import os
 import requests
@@ -46,7 +45,7 @@ class TestBackupServer(InstanceTestCase):
     # Check that there is a RSS feed
     self.assertTrue('rss' in parameter_dict)
     self.assertTrue(parameter_dict['rss'].startswith(
-      'https://[%s]:9443/' % (self._ipv6_address, )
+      f'https://[{self._ipv6_address}]:9443/'
     ))
 
     result = requests.get(
@@ -54,7 +53,7 @@ class TestBackupServer(InstanceTestCase):
 
     # XXX crontab not triggered yet
     self.assertEqual(
-      [httplib.NOT_FOUND, False],
+      [requests.codes.not_found, False],
       [result.status_code, result.is_redirect]
     )
 
@@ -65,6 +64,6 @@ class TestBackupServer(InstanceTestCase):
     result = requests.get(
       parameter_dict['monitor-base-url'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [httplib.UNAUTHORIZED, False],
+      [requests.codes.unauthorized, False],
       [result.status_code, result.is_redirect]
     )

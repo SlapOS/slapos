@@ -181,15 +181,15 @@ def main():
   # Create the site
   status_dict = waitForSite(args.partition_path)
 
-  status_file = tempfile.NamedTemporaryFile()
-  status_file.write(json.dumps(status_dict))
+  status_file = tempfile.NamedTemporaryFile(mode='w')
+  json.dump(status_dict, status_file)
   status_file.flush()
   os.fsync(status_file.fileno())
   os.environ['TEST_SITE_STATUS_JSON'] = status_file.name
 
   assert revision == test_result.revision, (revision, test_result.revision)
   while suite.acquire():
-    test = test_result.start(suite.running.keys())
+    test = test_result.start(list(suite.running.keys()))
     if test is not None:
       suite.start(test.name, lambda status_dict,
                   __test=test: __test.stop(**status_dict))

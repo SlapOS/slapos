@@ -12,6 +12,7 @@ from random import shuffle
 import glob
 import re
 import json
+import operator
 
 # XXX: give all of this through parameter, don't use this as template, but as module
 qemu_img_path = {{ repr(parameter_dict["qemu-img-path"]) }}
@@ -46,6 +47,10 @@ pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
 external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
+external_disk = {{ parameter_dict['external-disk'] }}
+if int(external_disk_number) > 0 and len(external_disk) > 0:
+  raise ValueError("external-disk-number and external-disk are mutually exclusive.")
+instance_root = '{{ parameter_dict['instance-root'] }}'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
 map_storage_list = []
@@ -54,11 +59,10 @@ httpd_port = {{ parameter_dict.get("httpd-port") }}
 netcat_bin = '{{ parameter_dict.get("netcat-binary") }}'.strip()
 cluster_doc_host = '{{ parameter_dict.get("cluster-doc-host") }}'
 cluster_doc_port = {{ parameter_dict.get("cluster-doc-port") }}
-url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate", "true") }}'.lower()
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
 
-# If a device (ie.: /dev/sdb) is provided, use it instead 
+# If a device (ie.: /dev/sdb) is provided, use it instead
 # the disk_path with disk_format
 disk_info_list = []
 for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split():
@@ -130,7 +134,7 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
       # ID are writen in one line: data1 data3 data2 ...
       content = mf.readline()
       for id in content.split(' '):
-        if disk_storage_dict.has_key(id):
+        if id in disk_storage_dict:
           id_list.append(id)
         else:
           # Mean that this disk path has been removed (disk unmounted)
@@ -141,7 +145,7 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
 
   if id_list:
     if not map_f_exist:
-      # shuffle the list to not write disk in data1, data2, ... everytime 
+      # shuffle the list to not write disk in data1, data2, ... everytime
       shuffle(id_list)
     if external_disk_number < last_amount:
       # Drop created disk is not allowed
@@ -273,7 +277,7 @@ ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
-  '-vnc', '%s:1,ipv4,password' % listen_ip,
+  '-vnc', '%s:1,password=on,websocket=on' % listen_ip,
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
@@ -304,6 +308,32 @@ else:
 for disk in additional_disk_list:
   kvm_argument_list.extend([
             '-drive', 'file=%s,if=%s' % (disk, disk_type)])
+
+# support external-disk parameter
+# allow empty index if only one disk is provided
+if len(external_disk) > 1:
+  for key, value in external_disk.items():
+    if 'index' not in value:
+      raise ValueError('index is missing and more than one disk is present in external-disk configuration')
+for disk_info in sorted(external_disk.values(), key=operator.itemgetter('index')):
+  if disk_info['path'].startswith('rbd:') or disk_info['path'].startswith('/'):
+    path = disk_info['path']
+  else:
+    path = os.path.join(instance_root, disk_info['path'])
+
+  drive_argument_list = [
+    "file=%s" %( path,),
+    "if=%s" % (disk_type,),
+    "cache=%s" % (disk_info.get('cache', 'writeback'),)
+  ]
+  if disk_info.get('format', 'autodetect') != 'autodetect':
+    drive_argument_list.append(
+      "format=%s" % (disk_info['format'],)
+    )
+  kvm_argument_list += (
+    '-drive',
+    ",".join(drive_argument_list)
+  )
 
 if auto_ballooning:
   kvm_argument_list.extend(['-device', 'virtio-balloon-pci,id=balloon0'])

@@ -44,7 +44,6 @@ setup(name=name,
         'slapos.core',
         'supervisor',
         'slapos.libnetworkcache',
-        'typing; python_version<"3"',
       ],
       test_suite='test',
     )

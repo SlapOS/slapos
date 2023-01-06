@@ -1,0 +1,207 @@
+{% import "caucase" as caucase with context %}
+
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+extends =
+  {{ template_monitor }}
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-configuration]
+# frontend reads from from a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+tmp = ${:home}/tmp
+var-log = ${:var}/log
+service = ${:etc}/service
+promise = ${:etc}/promise
+dufs-data-dir = ${:srv}/www
+dufs-data-dir-pub = ${:dufs-data-dir}/pub
+backup-caucased = ${:srv}/backup/caucased/
+
+# Macros
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[check-url-available-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promise}/${:_buildout_section_name_}
+dash_path = {{ dash_bin }}
+curl_path = {{ curl_bin }}
+
+# Caucase
+[dufs-certificate]
+key-file = ${directory:etc}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+ca-file = ${directory:etc}/${:_buildout_section_name_}.ca.crt
+crl-file = ${directory:etc}/${:_buildout_section_name_}.crl
+
+{{
+caucase.updater(
+    prefix='dufs-certificate',
+    buildout_bin_directory=buildout['bin-directory'],
+    updater_path='${directory:service}/dufs-certificate-updater',
+    url='${caucased:url}',
+    data_dir='${directory:srv}/caucase-updater',
+    crt_path='${dufs-certificate:cert-file}',
+    ca_path='${dufs-certificate:ca-file}',
+    crl_path='${dufs-certificate:crl-file}',
+    key_path='${dufs-certificate:key-file}',
+    template_csr='${dufs-certificate-prepare-csr:csr}',
+    openssl=openssl_bin,
+)}}
+
+[dufs-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [req]
+  prompt = no
+  req_extensions = req_ext
+  distinguished_name = dn
+  [ dn ]
+  CN = dufs
+  [ req_ext ]
+  subjectAltName = @alt_names
+  [ alt_names ]
+  IP.1 = ${instance-parameter:ipv4-random}
+  IP.2 = ${instance-parameter:ipv6-random}
+
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
+
+[dufs-certificate-prepare-csr]
+recipe = plone.recipe.command
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ openssl_bin }} req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -nodes \
+      -keyout /dev/null \
+      -config '${dufs-certificate-csr-config:output}' \
+      -out '${:csr}'
+  fi
+stop-on-error = true
+csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
+
+[caucased]
+port = 19980
+ip = ${instance-parameter:ipv6-random}
+netloc = [${:ip}]:${:port}
+url = http://${:netloc}/
+
+{{
+caucase.caucased(
+    prefix='caucased',
+    buildout_bin_directory=buildout['bin-directory'],
+    caucased_path='${directory:service}/caucased',
+    backup_dir='${directory:backup-caucased}',
+    data_dir='${directory:srv}/caucased',
+    netloc='${caucased:netloc}',
+    tmp='${directory:tmp}',
+    service_auto_approve_count=1,
+    user_auto_approve_count=0,
+    key_len=2048,
+)}}
+
+[admin-password]
+recipe = slapos.cookbook:generate.password
+user = admin
+
+
+[dufs-server]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ dufs_bin }}
+    --enable-cors
+    --bind ${:ip}
+    --port ${:port}
+    --allow-all
+    --auth /@${admin-password:user}:${admin-password:passwd}
+    --auth /pub@${admin-password:user}:${admin-password:passwd}@*
+    --tls-cert ${dufs-certificate:cert-file}
+    --tls-key ${dufs-certificate:key-file}
+    ${directory:dufs-data-dir}
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+
+port = 19080
+ip = ${instance-parameter:ipv6-random}
+url = https://[${:ip}]:${:port}
+
+[dufs-listen-promise]
+<= check-port-listening-promise
+hostname= ${dufs-server:ip}
+port = ${dufs-server:port}
+
+[frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = dufs Server Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${dufs-server:url}
+return = domain secure_access
+
+[frontend-available-promise]
+<= check-url-available-promise
+url = ${frontend:connection-secure_access}
+check-secure = 1
+
+
+[promises]
+recipe =
+instance-promises =
+  ${caucased-promise:recipe}
+  ${dufs-certificate-promise:recipe}
+  ${dufs-listen-promise:path}
+  ${frontend-available-promise:path}
+
+
+[frontend-url]
+recipe = slapos.recipe.build
+frontend-url = ${frontend:connection-secure_access}
+admin-user = ${admin-password:user}
+admin-password = ${admin-password:passwd}
+init =
+  from urllib.parse import urlparse
+  frontend_url = urlparse(self.options['frontend-url'])
+  admin_user = self.options['admin-user']
+  admin_password = self.options['admin-password']
+  self.options['public-url'] = frontend_url._replace(path='/pub').geturl()
+  assert not frontend_url.username
+  self.options['upload-url'] = frontend_url._replace(
+    netloc=f'{admin_user}:{admin_password}@{frontend_url.netloc}').geturl()
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+upload-url = ${frontend-url:upload-url}
+public-url = ${frontend-url:public-url}
+caucase-url = ${caucased:url}
+backend-url = ${dufs-server:url}

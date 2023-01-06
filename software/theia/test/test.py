@@ -31,6 +31,7 @@ import logging
 import os
 import re
 import subprocess
+import sqlite3
 import time
 
 import pexpect
@@ -42,6 +43,7 @@ from six.moves.urllib.parse import urlparse, urljoin
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
+from slapos.proxy.db_version import DB_VERSION
 
 
 theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
@@ -238,6 +240,10 @@ class TestTheia(TheiaTestCase):
     self.assertIn(b'slaprunner', self.captureSlapos('computer', 'list'))
 
 
+class TestTheiaWithNonAsciiInstanceName(TestTheia):
+  default_partition_reference = '💥'
+
+
 class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
   def test_stopping_instance_stops_embedded_slapos(self):
     embedded_slapos_supervisord_socket = _getSupervisordSocketPath(
@@ -271,9 +277,9 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
 
 
 class TestTheiaWithEmbeddedInstance(TheiaTestCase):
-  sr_url = '~/bogus/sr/url.cfg'
-  sr_type = 'bogus-type'
-  sr_config = {"bogus": "yes"}
+  sr_url = os.path.abspath('dummy/software.cfg')
+  sr_type = 'dummy-type'
+  sr_config = {"dummy": "yes"}
   regexpr = re.compile(r"([\w/\-\.]+)\s+slaprunner\s+available")
 
   @classmethod
@@ -305,10 +311,12 @@ class TestTheiaWithEmbeddedInstance(TheiaTestCase):
     self.assertSupplied(sr_url, info=proxy_info)
     name = 'embedded_instance'
     self.assertIn(name, self.captureSlapos('service', 'list', text=True))
-    info = self.captureSlapos('service', 'info', name, text=True)
-    self.assertIn(sr_url, info)
+    info = json.loads(self.captureSlapos('service', 'info', name, text=True))
+    self.assertEqual(info['software-url'], sr_url)
+    # XXX: slapos service info does not show the software type, so we check in
+    # slapos proxy show output
     self.assertIn(sr_type, proxy_info)
-    self.assertIn(repr(config).replace("u'", "'"), info)
+    self.assertEqual(info['instance-parameters'], config)
 
   def assertNotEmbedded(self, sr_url, sr_type, config):
     sr_url = self.expandUrl(sr_url)
@@ -322,9 +330,9 @@ class TestTheiaWithEmbeddedInstance(TheiaTestCase):
     self.assertEmbedded(initial_sr_url, self.sr_type, self.sr_config)
 
     # Change parameters for embedded instance
-    sr_url = '/bogus/sr/url-2.cfg'
-    sr_type = 'bogus-type-2'
-    sr_config = {"bogus-2": "true"}
+    sr_url = os.path.abspath('bogus/software.cfg')
+    sr_type = 'bogus-type'
+    sr_config = {"bogus": "true"}
     self.requestInstance(
       self.getInstanceParameterDict(sr_url, sr_type, sr_config))
     self.waitForInstance()
@@ -350,6 +358,60 @@ class TestTheiaFrontend(TheiaTestCase):
     for key in ('url', 'additional-url'):
       resp = requests.get(self.connection_parameters[key], verify=False)
       self.assertEqual(requests.codes.unauthorized, resp.status_code)
+
+
+class TestTheiaForwardFrontendRequestsEnabled(TheiaTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {"autorun": "user-controlled"} # we interact with slapos in this test
+
+  def _getRequestedInstanceList(self, query):
+    with sqlite3.connect(os.path.join(
+        self.computer_partition_root_path,
+        'srv/runner/var/proxy.db',
+    )) as db:
+      return [row[0] for row in db.execute(query).fetchall()]
+
+  def getRequestedInstanceList(self):
+    return self._getRequestedInstanceList(
+      f"SELECT partition_reference FROM partition{DB_VERSION} where slap_state='busy'"
+    )
+
+  def getForwardedInstanceList(self):
+    return self._getRequestedInstanceList(
+      f"SELECT partition_reference FROM forwarded_partition_request{DB_VERSION}"
+    )
+
+  def requestEmbeddedFrontendInstance(self, state='available'):
+    self.checkSlapos(
+      'request',
+      '--state',
+      state,
+      'frontend',
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg',
+    )
+
+  def test(self):
+    self.requestEmbeddedFrontendInstance()
+    # partition requested directly by user are forwarded with user_ prefix
+    self.assertEqual(self.getForwardedInstanceList(), ['user_frontend'])
+    self.assertEqual(self.getRequestedInstanceList(), [])
+    self.requestEmbeddedFrontendInstance(state='destroyed')
+
+    self.requestInstance({'forward-slapos-frontend-requests': 'disabled'})
+    self.waitForInstance()
+    self.requestEmbeddedFrontendInstance()
+    self.assertEqual(self.getForwardedInstanceList(), [])
+    self.assertEqual(self.getRequestedInstanceList(), ['frontend'])
+    self.requestEmbeddedFrontendInstance(state='destroyed')
+    self.checkSlapos('node', 'report')
+
+    self.requestInstance({'forward-slapos-frontend-requests': 'enabled'})
+    self.waitForInstance()
+    self.requestEmbeddedFrontendInstance()
+    self.assertEqual(self.getForwardedInstanceList(), ['user_frontend'])
+    self.assertEqual(self.getRequestedInstanceList(), [])
 
 
 class TestTheiaEnv(TheiaTestCase):
@@ -387,52 +449,49 @@ class TestTheiaEnv(TheiaTestCase):
     # Start a theia shell that inherits the environment of the theia process
     # This simulates the environment of a shell launched from the browser application
     theia_shell_process = pexpect.spawnu('{}/bin/theia-shell'.format(self.getPath()), env=theia_env)
-    try:
-      theia_shell_process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
+    self.addCleanup(theia_shell_process.wait)
+    self.addCleanup(theia_shell_process.terminate)
 
-      # Launch slapos node software from theia shell
-      theia_shell_process.sendline('slapos node software')
-      theia_shell_process.expect('Installing software release %s' % self.dummy_software_path)
-      theia_shell_process.expect('Finished software releases.')
+    theia_shell_process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
 
-      # Get the theia shell environment
-      with open(env_json_path) as f:
-        theia_shell_env = json.load(f)
+    # Launch slapos node software from theia shell
+    theia_shell_process.sendline('slapos node software')
+    theia_shell_process.expect('Installing software release %s' % self.dummy_software_path)
+    theia_shell_process.expect('Finished software releases.')
 
-      # Remove the env.json file to later be sure that a new one has been generated
-      os.remove(env_json_path)
+    # Get the theia shell environment
+    with open(env_json_path) as f:
+      theia_shell_env = json.load(f)
 
-      # Launch slapos node software service from the embedded supervisord.
-      # Note that we have two services, slapos-node-software and slapos-node-software-all
-      # The later uses --all which is what we want to use here, because the software
-      # is already installed and we want to install it again, this time from supervisor
-      embedded_run_path = self.getPath('srv', 'runner', 'var', 'run')
-      embedded_supervisord_socket_path = _getSupervisordSocketPath(embedded_run_path, self.logger)
-      with getSupervisorRPC(embedded_supervisord_socket_path) as embedded_supervisor:
-        previous_stop_time = embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop']
-        embedded_supervisor.startProcess('slapos-node-software-all')
-        for _retries in range(20):
-          time.sleep(1)
-          if embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop'] != previous_stop_time:
-            break
-        else:
-          self.fail("the supervisord service 'slapos-node-software-all' takes too long to finish")
+    # Remove the env.json file to later be sure that a new one has been generated
+    os.remove(env_json_path)
 
-      # Get the supervisord environment
-      with open(env_json_path) as f:
-        supervisord_env = json.load(f)
+    # Launch slapos node software service from the embedded supervisord.
+    # Note that we have two services, slapos-node-software and slapos-node-software-all
+    # The later uses --all which is what we want to use here, because the software
+    # is already installed and we want to install it again, this time from supervisor
+    embedded_run_path = self.getPath('srv', 'runner', 'var', 'run')
+    embedded_supervisord_socket_path = _getSupervisordSocketPath(embedded_run_path, self.logger)
+    with getSupervisorRPC(embedded_supervisord_socket_path) as embedded_supervisor:
+      previous_stop_time = embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop']
+      embedded_supervisor.startProcess('slapos-node-software-all')
+      for _retries in range(20):
+        time.sleep(1)
+        if embedded_supervisor.getProcessInfo('slapos-node-software-all')['stop'] != previous_stop_time:
+          break
+      else:
+        self.fail("the supervisord service 'slapos-node-software-all' takes too long to finish")
 
-      # Compare relevant variables from both environments
-      self.maxDiff = None
-      self.assertEqual(theia_shell_env['PATH'].split(':'), supervisord_env['PATH'].split(':'))
-      self.assertEqual(theia_shell_env['SLAPOS_CONFIGURATION'], supervisord_env['SLAPOS_CONFIGURATION'])
-      self.assertEqual(theia_shell_env['SLAPOS_CLIENT_CONFIGURATION'], supervisord_env['SLAPOS_CLIENT_CONFIGURATION'])
-      self.assertEqual(theia_shell_env['HOME'], supervisord_env['HOME'])
+    # Get the supervisord environment
+    with open(env_json_path) as f:
+      supervisord_env = json.load(f)
 
-    finally:
-      # Cleanup the theia shell process
-      theia_shell_process.terminate()
-      theia_shell_process.wait()
+    # Compare relevant variables from both environments
+    self.maxDiff = None
+    self.assertEqual(theia_shell_env['PATH'].split(':'), supervisord_env['PATH'].split(':'))
+    self.assertEqual(theia_shell_env['SLAPOS_CONFIGURATION'], supervisord_env['SLAPOS_CONFIGURATION'])
+    self.assertEqual(theia_shell_env['SLAPOS_CLIENT_CONFIGURATION'], supervisord_env['SLAPOS_CLIENT_CONFIGURATION'])
+    self.assertEqual(theia_shell_env['HOME'], supervisord_env['HOME'])
 
 
 class ResilientTheiaMixin(object):

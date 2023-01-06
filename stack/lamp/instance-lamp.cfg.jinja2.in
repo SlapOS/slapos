@@ -37,8 +37,7 @@ return =
 {% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
 {% do monitor_base_url_dict.__setitem__('apache', '${request-apache:connection-monitor-base-url}') -%}
 
-
-{% do mariadb_dict.__setitem__('database-list', [{'name': 'nextcloud', 'user': 'nextcloud', 'password': 'insecure'}]) -%}
+{% do mariadb_dict.__setitem__('database-list', [{'name': db_name, 'user': db_user, 'password': db_password }]) -%}
 {% do mariadb_dict.__setitem__('test-database-amount', 0) -%}
 {% do mariadb_dict.__setitem__('tcpv4-port', 2099) -%}
 {% do mariadb_dict.__setitem__('max-slowqueries-threshold', 1000) -%}
@@ -56,7 +55,7 @@ sla-computer_guid = {{ dumps(slapparameter_dict.get('mariadb-computer-guid', '')
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-return = 
+return =
   database-list
   monitor-base-url
 
@@ -70,7 +69,7 @@ recipe = slapos.cookbook:requestoptional
 name = Instance Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+shared = true
 config-url = ${request-apache:connection-backend-url}
 config-https-only = true
 return = domain secure_access
@@ -92,7 +91,7 @@ recipe = slapos.cookbook:publish-early
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
 
@@ -120,7 +119,7 @@ parts =
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
- 
+
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true

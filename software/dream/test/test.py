@@ -1,5 +1,4 @@
 ##############################################################################
-# coding: utf-8
 #
 # Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
 #
