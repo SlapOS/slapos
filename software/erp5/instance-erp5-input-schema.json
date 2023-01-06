@@ -145,7 +145,7 @@
       "type": "object"
     },
     "hosts-dict": {
-      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-cloudooo, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
       "patternProperties": {
         ".*": {
           "description": "An IP or domain name to which current entry will resolve",
@@ -294,11 +294,14 @@
       ],
       "type": "object"
     },
-    "cloudooo-url": {
-      "description": "Format conversion service URL",
-      "pattern": "^https?://",
-      "type": "string",
-      "format": "uri"
+    "cloudooo-url-list": {
+      "description": "Format conversion service URLs",
+      "type": "array",
+      "items": {
+        "pattern": "^https?://",
+        "type": "string",
+        "format": "uri"
+      }
     },
     "cloudooo-retry-count": {
       "description": "Define retry count for cloudooo in network error case in test",
