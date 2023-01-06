@@ -76,13 +76,13 @@
       "type": "number"
     },
     "promise_network_transit_max_data_threshold": {
-      "default": "10e3",
+      "default": "1e6",
       "title": "Maximum data amount on network (unit: MB)",
       "description": "Maximum data amount on network below which the promise will fail (unit: MB)",
       "type": "number"
     },
     "promise_network_transit_min_data_threshold": {
-      "default": "O.1",
+      "default": "O",
       "title": "Minimum data amount on network (unit: MB)",
       "description": "Minimum data amount on network below which the promise will fail (unit: MB)",
       "type": "number"
