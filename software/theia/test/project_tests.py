@@ -458,7 +458,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
   @classmethod
   def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
-    super(TestTheiaResilienceGitlab, self)._deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type=instance_type)
+    super(TestTheiaResilienceGitlab, cls)._deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type=instance_type)
     parameters = 'software_type="gitlab-test"'
     cls.callSlapos('request', instance_name, software_url, "--parameters", parameters, instance_type=instance_type)
     cls._processEmbeddedInstance(retries, instance_type)
