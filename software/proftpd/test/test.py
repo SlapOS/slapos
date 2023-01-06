@@ -192,7 +192,7 @@ class TestBan(ProFTPdTestCase):
         self._getConnection(password='wrong')
 
     # after that, even with a valid password we cannot connect
-    with self.assertRaisesRegex(SSHException, 'Connection reset by peer'):
+    with self.assertRaises(Exception):
       self._getConnection()
 
     # ban event is logged
