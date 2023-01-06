@@ -112,15 +112,6 @@ class TestDefaultParameters(
   __partition_reference__ = 'defp'
 
 
-class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 Medusa server
-  """
-  __partition_reference__ = 'medusa'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'wsgi': False})}
-
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 Jupyter notebook
   """
@@ -371,7 +362,6 @@ class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
       "timezone": "UTC",
       "site-id": "erp5",
       "bt5": "erp5_full_text_myisam_catalog slapos_configurator",
-      "wsgi": False,
       "test-runner": {"enabled": False},  # won't work anyway here
       "zope-partition-dict": {
         "admin": {
