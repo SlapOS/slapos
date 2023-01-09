@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "type": "object",
+  "properties": {
+    "promise_cpu_temperature_frequency": {
+      "default": "2",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_cpu_temperature_threshold": {
+      "default": "90",
+      "title": "CPU temperature promise threshold (unit: Celsius)",
+      "description": "Temperature threshold above which CPU temperature promise will fail (unit: Celsius)",
+      "type": "number"
+    },
+    "promise_cpu_avg_temperature_threshold": {
+      "default": "80",
+      "title": "Average CPU temperature promise threshold (unit: Celsius)",
+      "description": "If average temperature over specified duration reaches this threshold, promise will fail (unit: Celsius)",
+      "type": "number"
+    },
+    "promise_cpu_avg_temperature_threshold_duration": {
+      "default": "600",
+      "title": "Average CPU temperature promise threshold duration (unit: secondes)",
+      "description": "Duration during which average temperature should not exceed specified threshold (unit: secondes)",
+      "type": "number"
+    },
+    "promise_ram_available_frequency": {
+      "default": "2",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_ram_available_threshold": {
+      "default": "500",
+      "title": "Minimum available RAM promise threshold (unit: MB)",
+      "description": "Minimum available RAM threshold below which RAM available promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold": {
+      "default": "1e3",
+      "title": "Minimum average available RAM promise threshold (unit: MB)",
+      "description": "If average available ram over specified duration reaches this threshold, promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold_duration": {
+      "default": "600",
+      "title": "Minimum average available RAM promise threshold duration (unit: secondes)",
+      "description": "Duration during which average available RAM shall not be below specified threshold (unit: secondes)",
+      "type": "number"
+    },
+    "promise_network_errors_frequency": {
+      "default": "5",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_network_errors_threshold": {
+      "default": "100",
+      "title": "Maximum errors on Network per MB (unit: N/A)",
+      "description": "Maximum network errors threshold(per MB) above which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_network_lost_packets_threshold": {
+      "default": "100",
+      "title": "Maximum lost packets on Network per MB (unit: N/A)",
+      "description": "Maximum network lost packets threshold(per MB) above which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_network_transit_frequency": {
+      "default": "1",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_network_transit_max_data_threshold": {
+      "default": "1e6",
+      "title": "Maximum data amount on network (unit: MB)",
+      "description": "Maximum data amount on network below which the promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_network_transit_min_data_threshold": {
+      "default": "0",
+      "title": "Minimum data amount on network (unit: MB)",
+      "description": "Minimum data amount on network below which the promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_network_transit_duration": {
+      "default": "600",
+      "title": "Duration to check thresholds (unit: secondes)",
+      "description": "Duration during which data amount on network shall not be above maximum and below minimum (unit: secondes)",
+      "type": "number"
+    },
+    "promise_cpu_load_threshold": {
+      "default": "1.5",
+      "title": "Maximum CPU load ratio threshold (unit: N/A)",
+      "description": "Maximum CPU load ratio threshold above which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_monitor_space_frequency": {
+      "default": "5",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_partition_space_threshold": {
+      "default": "0.08",
+      "title": "Minimum partition space ratio threshold (unit: N/A)",
+      "description": "Minimum partition space ratio threshold below which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_free_disk_space_frequency": {
+      "default": "3",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_free_disk_space_threshold": {
+      "default": "0.08",
+      "title": "Minimum partition space ratio threshold (unit: N/A)",
+      "description": "Minimum partition space ratio threshold below which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_free_disk_space_nb_days_predicted": {
+      "default": "10",
+      "title": "Number of days for prediction (unit: Days)",
+      "description": "Number of days (unit: Days) that will be take into account for prediction calculation",
+      "type": "number"
+    },
+    "promise_free_disk_space_display_partition": {
+      "default": true,
+      "title": "Boolean to display partition (unit: N/A)",
+      "description": "Enable partition display by setting boolean to True (unit: N/A)",
+      "type": "boolean"
+    },
+    "promise_free_disk_space_display_prediction": {
+      "default": true,
+      "title": "Boolean to display prediction (unit: N/A)",
+      "description": "Enable prediction display by setting boolean to True (unit: N/A)",
+      "type": "boolean"
+    }
+  }
+}
