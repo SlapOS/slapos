@@ -1,11 +1,103 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by Re6st Master instanciation",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Values returned by node-monitoring instanciation",
+  "type": "object",
   "properties": {
-    "re6stry-url": {
-      "description": "ipv6 url to access your re6st registry service",
-      "type": "string"
+    "promise_cpu_temperature_frequency": {
+      "description": "Frequency at which CPU temperature promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_cpu_temperature_threshold": {
+      "description": "Temperature threshold above which CPU temperature promise will fail (unit: Celsius)",
+      "type": "number"
+    },
+    "promise_cpu_avg_temperature_threshold": {
+      "description": "If average temperature over specified duration reaches this threshold, promise will fail (unit: Celsius)",
+      "type": "number"
+    },
+    "promise_cpu_avg_temperature_threshold_duration": {
+      "description": "Duration during which average temperature should not exceed specified threshold (unit: secondes)",
+      "type": "number"
+    },
+    "promise_ram_available_frequency": {
+      "description": "Frequency at which RAM availalble promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_ram_available_threshold": {
+      "description": "Minimum available RAM threshold below which RAM available promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold": {
+      "description": "If average available ram over specified duration reaches this threshold, promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_ram_avg_available_threshold_duration": {
+      "description": "Duration during which average available RAM shall not be below specified threshold (unit: secondes)",
+      "type": "number"
+    },
+    "promise_network_errors_frequency": {
+      "description": "Frequency at which network errors promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_network_errors_threshold": {
+      "description": "Maximum network errors threshold(per MB) above which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_network_lost_packets_threshold": {
+      "description": "Maximum network lost packets threshold(per MB) above which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_network_transit_frequency": {
+      "description": "Frequency at which network transit promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_network_transit_max_data_threshold": {
+      "description": "Maximum data amount on network below which the promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_network_transit_min_data_threshold": {
+      "description": "Minimum data amount on network below which the promise will fail (unit: MB)",
+      "type": "number"
+    },
+    "promise_network_transit_duration": {
+      "description": "Duration during which data amount on network shall not be above maximum and below minimum (unit: secondes)",
+      "type": "number"
+    },
+    "promise_cpu_load_frequency": {
+      "description": "Frequency at which CPU load promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_cpu_load_threshold": {
+      "description": "Maximum CPU load ratio threshold above which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_monitor_space_frequency": {
+      "description": "Frequency at which monitor space promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_partition_space_threshold": {
+      "description": "Minimum partition space ratio threshold below which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_free_disk_space_frequency": {
+      "description": "Frequency at which free disk space promise will be run (unit: minutes)",
+      "type": "number"
+    },
+    "promise_free_disk_space_threshold": {
+      "description": "Minimum partition space ratio threshold below which the promise will fail (unit: N/A)",
+      "type": "number"
+    },
+    "promise_free_disk_space_nb_days_predicted": {
+      "description": "Number of days (unit: Days) that will be take into account for prediction calculation",
+      "type": "number"
+    },
+    "promise_free_disk_space_display_partition": {
+      "description": "Enable partition display by setting boolean to True (unit: N/A)",
+      "type": "boolean"
+    },
+    "promise_free_disk_space_display_prediction": {
+      "description": "Enable prediction display by setting boolean to True (unit: N/A)",
+      "type": "boolean"
     }
-  },
-  "type": "object"
+  }
 }
