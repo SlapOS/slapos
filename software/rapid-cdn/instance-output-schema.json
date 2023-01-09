@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Rapid.CDN instanciation",
+  "properties": {
+    "accepted-slave-amount": {
+      "description": "Amount of Slaves allocated to the Instance which are deployed",
+      "type": "integer"
+    },
+    "domain": {
+      "description": "Base domain used by the instance",
+      "type": "string"
+    },
+    "master-key-generate-auth-url": {
+      "description": "URL to GET once auth for master-key-upload-url",
+      "type": "string"
+    },
+    "master-key-upload-url": {
+      "description": "URL to PUT PEM bundle of main certificate and key",
+      "type": "string"
+    },
+    "monitor-base-url": {
+      "description": "Base url for monitor",
+      "type": "string"
+    },
+    "monitor-password": {
+      "description": "Password to access the monitor",
+      "type": "string"
+    },
+    "monitor-url": {
+      "description": "Url of Monitor (opml)",
+      "type": "string"
+    },
+    "monitor-user": {
+      "description": "User to access the monitor",
+      "type": "string"
+    },
+    "rejected-slave-amount": {
+      "description": "Rejected Amount of Slaves allocated to the Instance which are not deployed",
+      "type": "integer"
+    },
+    "rejected-slave-dict": {
+      "description": "Dict of slaves which were rejected. Keys are slave references, values are lists of errors on slaves.",
+      "type": "array"
+    },
+    "slave-amount": {
+      "description": "Total amount of Slaves allocated to the Instance (include blocked ones)",
+      "type": "integer"
+    },
+    "kedifa-csr-url": {
+      "description": "URL on which KeDiFa publishes its CSR sent to caucase.",
+      "type": "string"
+    },
+    "kedifa-csr-certificate": {
+      "description": "Certificate used to serve data on kedifa-csr-url.",
+      "type": "string"
+    },
+    "kedifa-caucase-url": {
+      "description": "Url to caucase used by KeDiFa.",
+      "type": "string"
+    },
+    "frontend-node-N-kedifa-csr-url": {
+      "description": "URL on which frontend node number N publishes its Kedifa CSR sent to caucase.",
+      "type": "string"
+    },
+    "frontend-node-N-backend-client-csr-url": {
+      "description": "URL on which frontend node number N publishes its Backend Client CSR sent to caucase.",
+      "type": "string"
+    },
+    "frontend-node-N-csr-certificate": {
+      "description": "Certificate used to serve data on CSRs.",
+      "type": "string"
+    },
+    "warning-slave-dict": {
+      "description": "Dict of slaves which got warnings. Keys are slave references, values are lists of warnings on slaves.",
+      "type": "array"
+    },
+    "warning-list": {
+      "description": "List of warning found during the request.",
+      "type": "array"
+    },
+    "backend-client-caucase-url": {
+      "description": "URL to caucase used by authentication to the backend.",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

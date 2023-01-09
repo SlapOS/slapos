@@ -1,0 +1,199 @@
+global
+  pidfile {{ configuration['pid-file'] }}
+  # master-worker is compatible with foreground with process management
+  master-worker
+
+log {{ configuration['log-socket'] }} local0
+defaults
+  log global
+  mode http
+  option httplog
+  timeout queue 60s
+  timeout server {{ configuration['request-timeout'] }}s
+  timeout client {{ configuration['request-timeout'] }}s
+  timeout connect {{ configuration['backend-connect-timeout'] }}s
+  retries {{ configuration['backend-connect-retries'] }}
+  {#- Allow to start with not resolved yet servers #}
+  default-server init-addr last,libc,none
+
+{%- set SCHEME_PREFIX_MAPPING = { 'http': 'http_backend', 'https': 'https_backend'} %}
+{%- macro frontend_entry(slave_instance, scheme, wildcard) %}
+{#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
+{%-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] %}
+{%-     set matched = {'count': 0} %}
+{%-     for host in slave_instance['host_list'] %}
+{#-       Match up to the end or optional port (starting with ':') #}
+{#-       Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
+{%-       if wildcard and host.startswith('*.') %}
+{%-         do matched.__setitem__('count', matched['count'] + 1) %}
+# match wildcard {{ host }}
+  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
+{%-       elif not wildcard and not host.startswith('*.') %}
+{%-         do matched.__setitem__('count', matched['count'] + 1) %}
+  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i ^{{ host }}($|:.*)
+{%-       endif %}
+{%-     endfor %}
+{%-     if matched['count'] > 0 %}
+{%-       if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['health-check-failover-hostname'] %}
+  acl is_failover_{{ slave_instance['slave_reference'] }}_{{ scheme }} nbsrv({{ slave_instance['slave_reference'] }}-{{ scheme }}) eq 0
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}_{{ scheme }} ! is_failover_{{ slave_instance['slave_reference'] }}_{{ scheme }}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover if is_{{ slave_instance['slave_reference'] }}_{{ scheme }} is_failover_{{ slave_instance['slave_reference'] }}_{{ scheme }}
+{%-       else %}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}_{{ scheme }}
+{%-       endif %}
+{%-     endif %}
+{%-   endif %}
+{%- endmacro %}
+
+# statistic
+frontend statistic
+  bind {{ configuration['global-ipv6']}}:{{ configuration['statistic-port'] }} ssl crt {{ configuration['statistic-certificate'] }}
+  stats enable
+  stats uri /
+  stats show-desc {{ configuration['statistic-identification'] }}
+  stats auth {{ configuration['statistic-username'] }}:{{ configuration['statistic-password'] }}
+  stats realm {{ configuration['statistic-identification'] }}
+  stats scope http-backend
+  stats scope https-backend
+
+frontend http-backend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+  http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
+  # setup Date
+  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+{%- for slave_instance in backend_slave_list -%}
+{{ frontend_entry(slave_instance, 'http', False) }}
+{%- endfor %}
+{%- for slave_instance in backend_slave_list -%}
+{{ frontend_entry(slave_instance, 'http', True) }}
+{%- endfor %}
+
+frontend https-backend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+  http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
+  # setup Date
+  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+{%- for slave_instance in backend_slave_list -%}
+{{ frontend_entry(slave_instance, 'https', False) }}
+{%- endfor %}
+{%- for slave_instance in backend_slave_list -%}
+{{ frontend_entry(slave_instance, 'https', True) }}
+{% endfor %}
+
+{%- for slave_instance in backend_slave_list %}
+{%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     if info_dict['hostname'] and info_dict['port'] %}
+{%-       set ssl_list = [] %}
+{%-       if info_dict['scheme'] == 'https' %}
+{%-         if slave_instance['authenticate-to-backend'] %}
+{%-           do ssl_list.append('crt %s' % (configuration['certificate'],)) %}
+{%-         endif %}
+{%-         do ssl_list.append('ssl verify') %}
+{%-         if slave_instance['ssl_proxy_verify'] %}
+{%-           if slave_instance['path_to_ssl_proxy_ca_crt']  %}
+{%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_ssl_proxy_ca_crt'],)) %}
+{%-           else %}
+{#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
+{#-           Simply dropping hostname from the dict will result with ignoring it... #}
+{%-           do info_dict.__setitem__('hostname', '') %}
+{%-           endif %}
+{%-         else %}
+{%-           do ssl_list.append('none') %}
+{%-         endif %}
+{%-       endif %}
+
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-       set hostname = info_dict['hostname'] %}
+{%-       set port = info_dict['port'] %}
+{%-       set path_list = [info_dict['path'].rstrip('/')] %}
+{%-       set query = info_dict['query'] %}
+{%-       if query %}
+{%-         do path_list.append(query) %}
+{%-       endif %}
+{%-       set path = '?'.join(path_list) %}
+{%-       if hostname and port or len(info_dict['netloc-list']) > 0 %}
+  timeout server {{ slave_instance['request-timeout'] }}s
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
+{%-         set active_check_list = [] %}
+{%-         set active_check_option_list = [] %}
+{%-         if slave_instance['health-check'] %}
+{%-           do active_check_list.append('check') %}
+{%-           do active_check_list.append('inter %ss' % (slave_instance['health-check-interval'])) %}
+{%-           do active_check_list.append('rise %s' % (slave_instance['health-check-rise'])) %}
+{%-           do active_check_list.append('fall %s' % (slave_instance['health-check-fall'])) %}
+{%-           if slave_instance['health-check-http-method'] != 'CONNECT' %}
+{%-             do active_check_option_list.append('option httpchk %s %s %s' % (slave_instance['health-check-http-method'], slave_instance['health-check-http-path'] | urlencode | replace('%', '%%'), slave_instance['health-check-http-version'])) %}
+{%-           endif %}
+{%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
+{%-         endif %}
+{%-         if len(info_dict['netloc-list']) > 0 %}
+{%-           set counter = {'count': 1} %}
+{%-           for netloc in info_dict['netloc-list'] %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }}-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-             do counter.__setitem__('count', counter['count'] + 1) %}
+{%-           endfor %}
+{%-         else %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-         endif %}
+{%-         for active_check_option in active_check_option_list %}
+  {{ active_check_option }}
+{%-         endfor %}
+{%-         if path %}
+  http-request set-path {{ path }}%[path]
+{%-         endif %}
+{%-       endif %}
+{%-     endif %}
+{%-     if info_dict['health-check-failover-hostname'] and info_dict['health-check-failover-port'] %}
+{%-       set ssl_list = [] %}
+{%-       if info_dict['health-check-failover-scheme'] == 'https' %}
+{%-         if slave_instance['health-check-authenticate-to-failover-backend'] %}
+{%-           do ssl_list.append('crt %s' % (configuration['certificate'],)) %}
+{%-         endif %}
+{%-         do ssl_list.append('ssl verify') %}
+{%-         if slave_instance['health-check-failover-ssl-proxy-verify'] %}
+{%-           if slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt']  %}
+{%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt'],)) %}
+{%-           else %}
+{#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
+{#-           Simply dropping hostname from the dict will result with ignoring it... #}
+{%-           do info_dict.__setitem__('health-check-failover-hostname', '') %}
+{%-           endif %}
+{%-         else %}
+{%-           do ssl_list.append('none') %}
+{%-         endif %}
+{%-       endif %}
+
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
+{%-       set hostname = info_dict['health-check-failover-hostname'] %}
+{%-       set port = info_dict['health-check-failover-port'] %}
+{%-       set path_list = [info_dict['health-check-failover-path'].rstrip('/')] %}
+{%-       set query = info_dict['health-check-failover-query'] %}
+{%-       if query %}
+{%-         do path_list.append(query) %}
+{%-       endif %}
+{%-       set path = '?'.join(path_list) %}
+{%-       if hostname and port %}
+{%-         if len(info_dict['health-check-netloc-list']) > 0 %}
+{%-           set counter = {'count': 1} %}
+{%-           for netloc in info_dict['health-check-netloc-list'] %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }}-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }}
+{%-             do counter.__setitem__('count', counter['count'] + 1) %}
+{%-           endfor %}
+{%-         else %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
+{%-         endif %}
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  timeout server {{ slave_instance['request-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
+{%-         if path %}
+  http-request set-path {{ path }}%[path]
+{%-         endif %}
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
+{% endfor %}
+{# END OF FILE #}

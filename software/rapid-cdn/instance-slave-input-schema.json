@@ -1,0 +1,375 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "custom_domain": {
+      "description": "Custom Domain to use for the website. Shall contain only letters, numbers and -, and can look like example.com, first2.example.com special-site.example.com.",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "title": "Custom Domain",
+      "type": "string"
+    },
+    "url": {
+      "description": "URL of the backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Backend URL",
+      "type": "string"
+    },
+    "type": {
+      "default": "",
+      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster. All frontends support websocket by default and under the hood, but switch to type:websocket allow to configure websocket-path-list and websocket-transparent options.",
+      "enum": [
+        "",
+        "zope",
+        "redirect",
+        "notebook",
+        "websocket"
+      ],
+      "title": "Backend Type",
+      "type": "string"
+    },
+    "path": {
+      "default": "",
+      "description": "Path to proxy to in the backend",
+      "title": "type:zope Backend Path",
+      "type": "string"
+    },
+    "enable_cache": {
+      "default": "false",
+      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend and backend",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Enable Cache",
+      "type": "string"
+    },
+    "https-only": {
+      "default": "true",
+      "description": "If set to true, http requests will be redirected to https",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "HTTPS Only",
+      "type": "string"
+    },
+    "default-path": {
+      "default": "",
+      "description": "Provide default path to redirect user to when user access / (the site root)",
+      "title": "type:zope Default Path",
+      "type": "string"
+    },
+    "disable-no-cache-request": {
+      "default": "false",
+      "description": "If set to true, Cache-Control and Pragma requests headers will not be sent to cache and backend servers. This prevents clients from bypassing cache when enable_cache is true",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "enable_cache: Disable 'no-cache' requests",
+      "type": "string"
+    },
+    "disable-via-header": {
+      "default": "false",
+      "description": "If set to true, Via response headers will not be sent to client",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "enable_cache: Disable 'Via' headers from cache",
+      "type": "string"
+    },
+    "disabled-cookie-list": {
+      "default": "",
+      "description": "List of Cookies separated by space that will not be sent to cache and backend servers. This is especially useful to discard analytics tracking cookies when using Vary: Cookie cache headers",
+      "title": "Disabled Cookies",
+      "type": "string"
+    },
+    "enable-http2": {
+      "default": "true",
+      "description": "Use HTTP2 Protocol for the site",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Enable HTTP2 Protocol",
+      "type": "string"
+    },
+    "https-url": {
+      "description": "HTTPS URL of the backend if it is different from url parameter",
+      "pattern": "^(http|https|ftp)://",
+      "title": "HTTPS Backend URL",
+      "type": "string"
+    },
+    "monitor-ipv4-test": {
+      "default": "",
+      "description": "IPv4 Address for the frontend keep monitoring with ping",
+      "title": "IPv4 Address to Monitor Packet Lost",
+      "type": "string"
+    },
+    "monitor-ipv6-test": {
+      "default": "",
+      "description": "IPv6 Address for the frontend keep monitoring with ping6 (without brackets)",
+      "title": "IPv6 Address to Monitor Packet Lost",
+      "type": "string"
+    },
+    "websocket-path-list": {
+      "default": "",
+      "description": "Space separated list of path to the websocket application. If not set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS. In order to have ' ' in the space use '%20'",
+      "title": "type:websocket Websocket Application Path List",
+      "type": "string"
+    },
+    "websocket-transparent": {
+      "default": "true",
+      "description": "If set to false, websocket slave will be without passing X-Real-Ip, X-Forwarded-Proto and X-Forwarded-Port. Depending on the application the setting shall be false or true. Defaults to true for transparent proxying.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "type:websocket Transparent proxy",
+      "type": "string"
+    },
+    "prefer-gzip-encoding-to-backend": {
+      "default": "false",
+      "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Prefer gzip Encoding for Backend",
+      "type": "string"
+    },
+    "server-alias": {
+      "default": "",
+      "description": "Server Alias List separated by space",
+      "title": "Server Alias",
+      "type": "string"
+    },
+    "ssl-proxy-verify": {
+      "default": "false",
+      "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Verify Backend Certificates",
+      "type": "string"
+    },
+    "ssl_crt": {
+      "default": "",
+      "description": "Content of the SSL Certificate file. Deprecated, please use key-upload-url.",
+      "textarea": true,
+      "title": "[DEPRECATED] SSL Certificate",
+      "type": "string"
+    },
+    "ssl_key": {
+      "default": "",
+      "description": "Content of the SSL Key file. Deprecated, please use key-upload-url.",
+      "textarea": true,
+      "title": "[DEPRECATED] SSL Key",
+      "type": "string"
+    },
+    "ssl_ca_crt": {
+      "default": "",
+      "description": "Content of the CA certificate file. Deprecated, please use key-upload-url.",
+      "textarea": true,
+      "title": "[DEPRECATED] SSL Certificate Authority's Certificate",
+      "type": "string"
+    },
+    "ssl_proxy_ca_crt": {
+      "default": "",
+      "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
+      "textarea": true,
+      "title": "SSL Backend Authority's Certificate",
+      "type": "string"
+    },
+    "virtualhostroot-http-port": {
+      "default": 80,
+      "description": "Port where http requests to frontend will be redirected.",
+      "title": "type:zope virtualhostroot-http-port",
+      "type": "integer"
+    },
+    "virtualhostroot-https-port": {
+      "default": 443,
+      "description": "Port where https requests to frontend will be redirected.",
+      "title": "type:zope virtualhostroot-https-port",
+      "type": "integer"
+    },
+    "backend-connect-timeout": {
+      "description": "Time in seconds for establishing connection to the backend.",
+      "title": "Timeout for backend connection (seconds)",
+      "type": "integer"
+    },
+    "backend-connect-retries": {
+      "description": "Amount of retries to connect to the backend. The amount of backend-connect-timeout*backend-connect-retries seconds will be spent to connect to the backend.",
+      "title": "Amount of retries to connect to the backend.",
+      "type": "integer"
+    },
+    "request-timeout": {
+      "description": "Timeout for HTTP requests.",
+      "title": "HTTP Request timeout in seconds",
+      "type": "integer"
+    },
+    "ciphers": {
+      "title": "Ordered space separated list of ciphers",
+      "type": "string",
+      "default": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA"
+    },
+    "authenticate-to-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
+    },
+    "health-check": {
+      "title": "Health Check",
+      "description": "Enables active checks of the backend. For HTTP level checks the HTTP code shall be 2xx or 3xx, otherwise backend will be considered down.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "type": "string"
+    },
+    "health-check-http-method": {
+      "title": "Health Check HTTP Metod",
+      "description": "Selects method to do the active check. CONNECT means that connection will be enough for the check, otherwise it's HTTP method.",
+      "enum": [
+        "GET",
+        "OPTIONS",
+        "POST",
+        "CONNECT"
+      ],
+      "default": "GET",
+      "type": "string"
+    },
+    "health-check-http-path": {
+      "title": "Health Check HTTP Path",
+      "description": "A path on which do the active check, unused in case of CONNECT.",
+      "default": "/",
+      "type": "string"
+    },
+    "health-check-http-version": {
+      "title": "Health Check HTTP Version",
+      "description": "A HTTP version to use to check the backend, unused in case of CONNECT.",
+      "enum": [
+        "HTTP/1.1",
+        "HTTP/1.0"
+      ],
+      "default": "HTTP/1.1",
+      "type": "string"
+    },
+    "health-check-timeout": {
+      "title": "Health Check Timeout (seconds)",
+      "description": "A timeout to for the request to be fulfilled, after connection happen.",
+      "default": "2",
+      "type": "integer"
+    },
+    "health-check-interval": {
+      "title": "Health Check Interval (seconds)",
+      "description": "An interval of health check.",
+      "default": "5",
+      "type": "integer"
+    },
+    "health-check-rise": {
+      "title": "Health Check Rise",
+      "description": "Amount of correct responses from the backend to consider it up.",
+      "default": "1",
+      "type": "integer"
+    },
+    "health-check-fall": {
+      "title": "Health Check Fall",
+      "description": "Amount of bad responses from the backend to consider it down.",
+      "default": "1",
+      "type": "integer"
+    },
+    "health-check-failover-url": {
+      "description": "URL of the failover backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Failover backend URL",
+      "type": "string"
+    },
+    "health-check-failover-https-url": {
+      "description": "HTTPS URL of the failover backend if it is different from health-check-failover-url parameter. Note: It requires https-url to be configured, as otherwise the differentiation does not make sense..",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Failover HTTPS Backend URL",
+      "type": "string"
+    },
+    "health-check-authenticate-to-failover-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the failover backend. Note: failover backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to failover backend",
+      "type": "string"
+    },
+    "health-check-failover-ssl-proxy-verify": {
+      "default": "false",
+      "description": "If set to true, failover backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Verify failover backend certificates",
+      "type": "string"
+    },
+    "health-check-failover-ssl-proxy-ca-crt": {
+      "default": "",
+      "description": "Content of the SSL Certificate Authority file of the failover backend (to be used with health-check-failover-ssl-proxy-verify)",
+      "textarea": true,
+      "title": "SSL failover backend Authority's Certificate",
+      "type": "string"
+    },
+    "strict-transport-security": {
+      "title": "Strict Transport Security",
+      "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. Setting the value enables HSTS and sets the value of max-age. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
+      "default": "0",
+      "type": "integer"
+    },
+    "strict-transport-security-sub-domains": {
+      "title": "Strict Transport Security Sub Domains",
+      "description": "Configures Strict Transport Security for sub domains.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "type": "string",
+      "default": "false"
+    },
+    "strict-transport-security-preload": {
+      "title": "Strict Transport Security Preload",
+      "description": "Configures Strict Transport Security preload mechanism.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "type": "string",
+      "default": "false"
+    },
+    "url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"Backend URL\"",
+      "description": "Space separated list of netlocs (ip and port) of backend to connect to. They will share the scheme and path of the original URL and additional backend parameters (like \"SSL Backend Authority's Certificate\"). Each of them will be used, and at least one is enough for the connectivity to work, and the best results are with \"Health Check\" feature enabled. Port is mandatory, so hostnames shall be provided as hostname:port (eg. example.com:80), IPv4 - as ipv4:port (eg. 127.0.0.1:80), IPv6 - as ipv6:port (eg. ::1:80). Simply this parameters only overrides netloc (network location) of the original URL."
+    },
+    "https-url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"HTTPS Backend URL\"",
+      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
+    },
+    "health-check-failover-url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"Failover backend URL\"",
+      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
+    },
+    "health-check-failover-https-url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"Failover HTTPS Backend URL\"",
+      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
+}
