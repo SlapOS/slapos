@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Re6st Master instanciation",
+  "properties": {
+    "re6stry-url": {
+      "description": "ipv6 url to access your re6st registry service",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
