@@ -135,8 +135,8 @@ command = ${surykatka-status-json-{{ class }}:output}
 {%- endfor %} {#- for class, class_check_list in CHECK_DICT.items() #}
 
 [buildout]
-extends = {{ instance_base_monitor }}
-parts +=
+parts =
+  publish-connection-information
 {% for part_id in sorted(PART_LIST) %}
   {{ part_id }}
 {% endfor %}
