@@ -11,14 +11,14 @@
     },
     "promise_cpu_temperature_threshold": {
       "default": "90",
-      "title": "CPU temperature promise threshold (unit: °C)",
-      "description": "Temperature threshold above which CPU temperature promise will fail (unit: °C)",
+      "title": "CPU temperature promise threshold (unit: Celsius)",
+      "description": "Temperature threshold above which CPU temperature promise will fail (unit: Celsius)",
       "type": "number"
     },
     "promise_cpu_avg_temperature_threshold": {
       "default": "80",
-      "title": "Average CPU temperature promise threshold (unit: °C)",
-      "description": "If average temperature over specified duration reaches this threshold, promise will fail (unit: °C)",
+      "title": "Average CPU temperature promise threshold (unit: Celsius)",
+      "description": "If average temperature over specified duration reaches this threshold, promise will fail (unit: Celsius)",
       "type": "number"
     },
     "promise_cpu_avg_temperature_threshold_duration": {
