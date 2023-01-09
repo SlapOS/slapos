@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "promise_cpu_temperature_frequency": {
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_cpu_temperature_threshold": {
@@ -20,7 +20,7 @@
       "type": "number"
     },
     "promise_ram_available_frequency": {
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_ram_available_threshold": {
@@ -36,7 +36,7 @@
       "type": "number"
     },
     "promise_network_errors_frequency": {
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_network_errors_threshold": {
@@ -48,7 +48,7 @@
       "type": "number"
     },
     "promise_network_transit_frequency": {
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_network_transit_max_data_threshold": {
@@ -68,7 +68,7 @@
       "type": "number"
     },
     "promise_monitor_space_frequency": {
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_partition_space_threshold": {
@@ -76,7 +76,7 @@
       "type": "number"
     },
     "promise_free_disk_space_frequency": {
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_free_disk_space_threshold": {

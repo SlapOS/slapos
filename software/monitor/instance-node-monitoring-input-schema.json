@@ -5,8 +5,8 @@
   "properties": {
     "promise_cpu_temperature_frequency": {
       "default": "2",
-      "title": "Frequence at which the promise will be run (unit: minutes)",
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_cpu_temperature_threshold": {
@@ -29,8 +29,8 @@
     },
     "promise_ram_available_frequency": {
       "default": "2",
-      "title": "Frequence at which the promise will be run (unit: minutes)",
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_ram_available_threshold": {
@@ -53,8 +53,8 @@
     },
     "promise_network_errors_frequency": {
       "default": "5",
-      "title": "Frequence at which the promise will be run (unit: minutes)",
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_network_errors_threshold": {
@@ -71,8 +71,8 @@
     },
     "promise_network_transit_frequency": {
       "default": "1",
-      "title": "Frequence at which the promise will be run (unit: minutes)",
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_network_transit_max_data_threshold": {
@@ -82,7 +82,7 @@
       "type": "number"
     },
     "promise_network_transit_min_data_threshold": {
-      "default": "O",
+      "default": "0",
       "title": "Minimum data amount on network (unit: MB)",
       "description": "Minimum data amount on network below which the promise will fail (unit: MB)",
       "type": "number"
@@ -101,8 +101,8 @@
     },
     "promise_monitor_space_frequency": {
       "default": "5",
-      "title": "Frequence at which the promise will be run (unit: minutes)",
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_partition_space_threshold": {
@@ -113,8 +113,8 @@
     },
     "promise_free_disk_space_frequency": {
       "default": "3",
-      "title": "Frequence at which the promise will be run (unit: minutes)",
-      "description": "Frequence at which the promise will be run (unit: minutes)",
+      "title": "Frequency at which the promise will be run (unit: minutes)",
+      "description": "Frequency at which the promise will be run (unit: minutes)",
       "type": "number"
     },
     "promise_free_disk_space_threshold": {
