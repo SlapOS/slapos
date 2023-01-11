@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2022 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -46,7 +46,7 @@ import xmlrpc.client
 import urllib3
 from slapos.testing.utils import CrontabMixin
 
-from . import ERP5InstanceTestCase, setUpModule
+from . import ERP5InstanceTestCase, setUpModule, matrix, default
 
 setUpModule # pyflakes
 
@@ -119,6 +119,7 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   """Test ERP5 can be instantiated with no parameters
   """
   __partition_reference__ = 'defp'
+  __test_matrix__ = matrix((default,))
 
 
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -300,6 +301,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
   """Test override zope node parameters
   """
   __partition_reference__ = 'override'
+  __test_matrix__ = matrix((default,))
 
   @classmethod
   def getInstanceParameterDict(cls):
