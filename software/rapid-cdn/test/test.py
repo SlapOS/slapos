@@ -7364,6 +7364,41 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
 
+class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': '12',
+      '-frontend-1-experimental-haproxy-quic': True,
+      '-frontend-1-experimental-haproxy-flavour': 'quic',
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'url': {
+        'url': cls.backend_url,
+      },
+      'enable_cache': {
+        'url': cls.backend_url,
+        'enable_cache': True,
+      },
+    }
+
+  def test_url(self):
+    parameter_dict = self.assertSlaveBase('url')
+    self.fail('TODO')
+
+  def test_enable_cache(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    self.fail('TODO')
+
+
 if __name__ == '__main__':
   class HTTP6Server(ThreadedHTTPServer):
     address_family = socket.AF_INET6
