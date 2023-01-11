@@ -82,7 +82,7 @@ frontend https-frontend
 {%- if QUIC %}
   bind quic4@{{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
   bind quic6@{{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
-  http-response set-header alt-svc "h3=\":{{ configuration['quic-port'] }}\"; ma=900"
+  http-response set-header alt-svc "h3=\":{{ configuration['quic-port'] }}\"; ma=3600"
   {#- Ask Chromium to use QUIC #}
   http-response set-header alternate-protocol {{ configuration['quic-port'] }}:quic
 {%- endif %}

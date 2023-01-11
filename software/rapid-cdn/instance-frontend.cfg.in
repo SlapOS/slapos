@@ -372,6 +372,7 @@ organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] 
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 partition_ipv6 =  ${slap-configuration:ipv6-random}
 url-ready-file = ${directory:var}/url-ready.txt
+quic = {{ FRONTEND_HAPROXY_QUIC }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
@@ -385,6 +386,7 @@ extra-context =
     key empty_template software-release-path:template-empty
     key template_expose_csr_nginx_conf software-release-path:template-expose-csr-nginx-conf
     key software_type :software_type
+    key quic :quic
     key frontend_lazy_graceful_reload frontend-haproxy-lazy-graceful:output
     key monitor_base_url monitor-instance-parameter:monitor-base-url
     key node_id frontend-node-id:value
