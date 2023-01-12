@@ -7,7 +7,6 @@ takeover_script = '${resiliency-takeover-script:wrapper-takeover}'
 
 import atexit
 import cgi
-import cgitb
 import datetime
 try:
   import dbm.gnu as gdbm
@@ -24,8 +23,6 @@ if os.path.exists('resilient_software_release_information.py'):
   from resilient_software_release_information import main as resilient_main
 else:
   resilient_main = lambda: {}
-
-cgitb.enable()
 
 def deleteTemporaryDirectory(path):
   if os.path.exists(path):
