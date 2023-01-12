@@ -1,5 +1,6 @@
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{%- set QUIC_PORT = instance_parameter_dict.get('configuration.frontend-quic-port', '443') %}
 {%- if instance_parameter_dict.get('configuration.frontend-haproxy-flavour', 'basic') == 'quic' %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
 {%-   if instance_parameter_dict.get('configuration.frontend-haproxy-quic', 'false').lower() in TRUE_VALUES %}
@@ -487,6 +488,7 @@ local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
 quic = {{ FRONTEND_HAPROXY_QUIC }}
+quic-port = {{ QUIC_PORT }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
