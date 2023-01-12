@@ -472,42 +472,37 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   def _prepareExport(self):
     super(TestTheiaResilienceGitlab, self)._prepareExport()
 
+    gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
+    gitlab_rails_bin = os.path.join(postgresql_partition, 'bin', 'gitlab-rails')
+
+    print("-------------Path:")
+    print(gitlab_partition)
+    print(gitlab_rails_bin)
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnexionParameters()
     print(parameter_dict)
     backend_url = parameter_dict['backend_url']
-    self.password = parameter_dict['password']
-    self.private_token = parameter_dict['private-token']
-    self.file_uri = parameter_dict['latest-file-uri']
-
-    print('Retrieved gitlab url is:\n%s' % backend_url)
-    print('Gitlab root password is:\n%s' % self.password)
-    print('Gitlab private token is:\n%s' % self.private_token)
-
 
     print('Trying to connect to gitlab backend URL...')
     response = requests.get(backend_url, verify=False)
     self.assertEqual(requests.codes['OK'], response.status_code)
-    try:
-      data = response.json()
-    except JSONDecodeError:
-      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
 
+    # Set the password and token
+    output = subprocess.check_output(
+      (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!"),
+      universal_newlines=True)
+    output = subprocess.check_output(
+      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!"),
+      universal_newlines=True)
 
     # Create a new project
+    print("Gitlab create a project")
     path = 'api/v3/projects'
     parameter_dict = {'name': 'sample.test', 'namespace': 'open'}
-    headers = {"PRIVATE-TOKEN" : self.private_token}
+    headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
     # return self._connectToGitlab(uri, post_data={}, parameter_dict=parameter_dict)
     response = requests.post(backend_url + path, params=parameter_dict,
-                                headers=headers, verify=False)
-    print("Gitlab create a project")
-    try:
-      data = response.json()
-    except JSONDecodeError:
-      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
-    # Add a check?
-    print(response.text)
+                                  headers=headers, verify=False)
 
     # Check the project is exist
     print("Gitlab check project is exist")
