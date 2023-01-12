@@ -333,19 +333,19 @@ Solution 1 (iptables)
 It is a good idea then to go on the node where the instance is
 and set some ``iptables`` rules like (if using default ports)::
 
-  iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 443 -j DNAT --to-destination {listening_ipv4}:4443
-  iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 80 -j DNAT --to-destination {listening_ipv4}:8080
-  ip6tables -t nat -A PREROUTING -p tcp -d {public_ipv6} --dport 443 -j DNAT --to-destination {listening_ipv6}:4443
-  ip6tables -t nat -A PREROUTING -p tcp -d {public_ipv6} --dport 80 -j DNAT --to-destination {listening_ipv6}:8080
+  iptables -t nat -A PREROUTING -p tcp -d ${public_ipv4} --dport 443 -j DNAT --to-destination ${listening_ipv4}:4443
+  iptables -t nat -A PREROUTING -p tcp -d ${public_ipv4} --dport 80 -j DNAT --to-destination ${listening_ipv4}:8080
+  ip6tables -t nat -A PREROUTING -p tcp -d ${public_ipv6} --dport 443 -j DNAT --to-destination ${listening_ipv6}:4443
+  ip6tables -t nat -A PREROUTING -p tcp -d ${public_ipv6} --dport 80 -j DNAT --to-destination ${listening_ipv6}:8080
 
 Where ``{public_ipv[46]}`` is the public IP of your server, or at least the LAN IP to where your NAT will forward to, and ``{listening_ipv[46]}`` is the private ipv4 (like 10.0.34.123) that the instance is using and sending as connection parameter.
 
 Additionally in order to access the server by itself such entries are needed in ``OUTPUT`` chain (as the internal packets won't appear in the ``PREROUTING`` chain)::
 
-  iptables -t nat -A OUTPUT -p tcp -d {public_ipv4} --dport 443 -j DNAT --to {listening_ipv4}:4443
-  iptables -t nat -A OUTPUT -p tcp -d {public_ipv4} --dport 80 -j DNAT --to {listening_ipv4}:8080
-  ip6tables -t nat -A OUTPUT -p tcp -d {public_ipv6} --dport 443 -j DNAT --to {listening_ipv6}:4443
-  ip6tables -t nat -A OUTPUT -p tcp -d {public_ipv6} --dport 80 -j DNAT --to {listening_ipv6}:8080
+  iptables -t nat -A OUTPUT -p tcp -d ${public_ipv4} --dport 443 -j DNAT --to ${listening_ipv4}:4443
+  iptables -t nat -A OUTPUT -p tcp -d ${public_ipv4} --dport 80 -j DNAT --to ${listening_ipv4}:8080
+  ip6tables -t nat -A OUTPUT -p tcp -d ${public_ipv6} --dport 443 -j DNAT --to ${listening_ipv6}:4443
+  ip6tables -t nat -A OUTPUT -p tcp -d ${public_ipv6} --dport 80 -j DNAT --to ${listening_ipv6}:8080
 
 Solution 2 (network capability)
 -------------------------------
