@@ -8,6 +8,7 @@ takeover_script = '${resiliency-takeover-script:wrapper-takeover}'
 import atexit
 import cgi
 import datetime
+import hmac
 try:
   import dbm.gnu as gdbm
 except ImportError:
@@ -105,7 +106,7 @@ if "password" not in form:
 </html>""" % (latest_backup_message, isBackupInProgress(), getSoftwareReleaseInformationFormatted()))
   sys.exit(0)
 
-if form['password'].value != '${:password}':
+if not hmac.compare_digest(form['password'].value.encode(), b'${:password}'):
   print("<H1>Error</H1>")
   print("Password is invalid.")
   sys.exit(1)
