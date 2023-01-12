@@ -473,7 +473,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     super(TestTheiaResilienceGitlab, self)._prepareExport()
 
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
-    gitlab_rails_bin = os.path.join(postgresql_partition, 'bin', 'gitlab-rails')
+    gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
 
     print("-------------Path:")
     print(gitlab_partition)
