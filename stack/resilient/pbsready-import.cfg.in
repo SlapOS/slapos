@@ -105,7 +105,6 @@ takeover-triggered-file-path = $${resiliency-takeover-script:takeover-triggered-
 [resilient-web-takeover-password]
 recipe = slapos.cookbook:generate.password
 storage-path = $${directory:srv}/passwd
-bytes = 8
 
 [resilient-web-takeover-cgi-script]
 recipe = collective.recipe.template
