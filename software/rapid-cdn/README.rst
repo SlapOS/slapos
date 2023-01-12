@@ -491,4 +491,6 @@ Experimental QUIC
 
 QUIC with HTTP3 is available as experimental feature. It has to be enabled on each node separately by using ``-frontend-i-experimental-haproxy-quic``. Then given node will reply with proper headers on HTTPS to advertise QUIC. Please note that ``-frontend-i-experimental-haproxy-flavour`` has to be set to ``quic`` on this node too.
 
+Please note that due to limitations of iptables method used to expose low ports, the ``-frontend-i-experimental-quic-port`` is by default ``443``, which is used when advertisting the QUIC/HTTP3 port to the client.
+
 Note that then all frontends will be served with QUIC advertised on such node, so it's important to run such experiments very carefully, for example on same zone/region with DNS.
