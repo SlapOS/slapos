@@ -1,4 +1,4 @@
-# Copyright (C) 2021  Nexedi SA and Contributors.
+# Copyright (C) 2022  Nexedi SA and Contributors.
 #
 # This program is free software: you can Use, Study, Modify and Redistribute
 # it under the terms of the GNU General Public License version 3, or (at your
@@ -42,6 +42,18 @@ class TestWCFS(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test Wendelin Core File System
   """
   __partition_reference__ = 'wcfs'
+
+  # Only run in ZEO mode; don't run with NEO.
+  # Current NEO/py and NEO/go versions have interoperability
+  # issues. Once these issues are fixed the following
+  # lines have to be removed so that test case runs agains NEO.
+  # Please see the following MR for more context:
+  # https://lab.nexedi.com/nexedi/slapos/merge_requests/1283#note_174854
+  @classmethod
+  def setUpClass(cls):
+    if json.loads(cls.getInstanceParameterDict()["_"])['zodb'][0]["type"] == "neo":
+      raise unittest.SkipTest("Not yet fixed WCFS+NEO interoperability issue.")
+    super().setUpClass()
 
   @classmethod
   def getInstanceParameterDict(cls):

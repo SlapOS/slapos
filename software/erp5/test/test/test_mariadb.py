@@ -45,6 +45,9 @@ from slapos.testing.utils import getPromisePluginParameterDict
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
+from . import matrix
+from . import default
+
 setUpModule  # pyflakes
 
 
@@ -52,6 +55,12 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   """Base test case for mariadb tests.
   """
   __partition_reference__ = 'm'
+  # We explicitly specify 'mariadb' as our software type here,
+  # therefore we don't request ZODB. We therefore don't
+  # need to run these tests with both NEO and ZEO mode,
+  # it wouldn't make any difference.
+  #   https://lab.nexedi.com/nexedi/slapos/blob/273037c8/stack/erp5/instance.cfg.in#L216-230
+  __test_matrix__ = matrix((default,))
 
   @classmethod
   def getInstanceSoftwareType(cls):

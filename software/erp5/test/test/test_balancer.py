@@ -25,7 +25,7 @@ from slapos.testing.testcase import ManagedResource
 from slapos.testing.utils import (CrontabMixin, ManagedHTTPServer,
                                   findFreeTCPPort)
 
-from . import ERP5InstanceTestCase, setUpModule
+from . import ERP5InstanceTestCase, setUpModule, matrix, default
 
 setUpModule  # pyflakes
 
@@ -132,6 +132,12 @@ class CaucaseService(ManagedResource):
 
 
 class BalancerTestCase(ERP5InstanceTestCase):
+  # We explicitly specify 'balancer' as our software type here,
+  # therefore we don't request ZODB. We therefore don't
+  # need to run these tests with both NEO and ZEO mode,
+  # it wouldn't make any difference.
+  #   https://lab.nexedi.com/nexedi/slapos/blob/273037c8/stack/erp5/instance.cfg.in#L216-230
+  __test_matrix__ = matrix((default,))
 
   @classmethod
   def getInstanceSoftwareType(cls):
