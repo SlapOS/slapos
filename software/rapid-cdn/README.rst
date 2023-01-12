@@ -347,6 +347,12 @@ Additionally in order to access the server by itself such entries are needed in 
   ip6tables -t nat -A OUTPUT -p tcp -d ${public_ipv6} --dport 443 -j DNAT --to ${listening_ipv6}:4443
   ip6tables -t nat -A OUTPUT -p tcp -d ${public_ipv6} --dport 80 -j DNAT --to ${listening_ipv6}:8080
 
+**Note regarding ports**:
+
+ * the port seen by application in case of IPv4 will be "correct" - the ``443`` or ``80``
+ * the port seen by application in case of IPv6 will be "incorrect" - the ``4443`` or ``8080``
+
+
 Solution 2 (network capability)
 -------------------------------
 
@@ -358,6 +364,10 @@ Then specify in the master instance parameters:
 
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
+
+**Note regarding securitry**:
+
+ * such configuration results with all partitions being able to bind to low ports using this binary
 
 Authentication to the backend
 =============================
