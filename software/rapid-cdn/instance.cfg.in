@@ -91,7 +91,6 @@ configuration.caucase_port = 8890
 configuration.caucase_backend_client_port = 8990
 configuration.apache-key =
 configuration.apache-certificate =
-configuration.open-port = 80 443
 configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
 configuration.re6st-verification-url = http://[2001:67c:1254:4::1]/index.html
