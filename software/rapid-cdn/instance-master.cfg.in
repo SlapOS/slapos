@@ -171,6 +171,8 @@ context =
 {%   do config_dict.__setitem__('frontend-haproxy-flavour', slapparameter_dict.get(frontend_haproxy_flavour_key) or 'basic') %}
 {%   set frontend_haproxy_quic_key = "-frontend-%s-experimental-haproxy-quic" % i %}
 {%   do config_dict.__setitem__('frontend-haproxy-quic', slapparameter_dict.get(frontend_haproxy_quic_key) or 'False') %}
+{%   set frontend_quic_port_key = "-frontend-%s-experimental-quic-port" % i %}
+{%   do config_dict.__setitem__('frontend-quic-port', slapparameter_dict.get(frontend_quic_port_key) or '443') %}
 # Filling request dict for slave
 {%   set request_content_dict = {
                                   'config': config_dict,
