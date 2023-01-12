@@ -7390,13 +7390,57 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
     }
 
+  def get_curl_http3(self):
+    # Very hacky way to fetch curl from own software release instead of
+    # polluting slapos-sr-testing
+    with open(os.path.join(self.software_path, '.installed.cfg')) as fh:
+      for line in fh.readlines():
+        if line.startswith('location =') and 'curl-http3' in line:
+          return '/'.join([line.strip().split()[-1], 'bin/curl'])
+
+  def assertHttp3(self, domain, direct=True):
+    alt_svc = tempfile.NamedTemporaryFile(delete=False)
+    curl_command = [self.get_curl_http3()]
+    if direct:
+      curl_command.append('--http3')
+    else:
+      curl_command.extend(['--alt-svc', alt_svc.name])
+    curl_command.extend([
+      '-k',
+      '-v',
+      '-D', '-',
+      '-o', '/dev/null',
+      '-H', 'Host: %s' % (domain,),
+      '--resolve', '%(domain)s:%(https_port)s:%(ip)s' % dict(
+        ip=TEST_IP, domain=domain, https_port=HTTPS_PORT),
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=domain, https_port=HTTPS_PORT),
+    ])
+
+    def call_curl():
+      prc = subprocess.Popen(
+        curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
+      out, err = prc.communicate()
+      assert prc.returncode == 0, "Problem running %r. "\
+          "Output:\n%s\nError:\n%s" % (
+            ' '.join(curl_command), out, err)
+      return [q.strip() for q in out.decode().splitlines()]
+
+    if not direct:
+      # curl with alt-svc does not switch to HTTP3 in one request
+      self.assertEqual('HTTP/2 200', call_curl()[0])
+    self.assertEqual('HTTP/3 200', call_curl()[0])
+
   def test_url(self):
     parameter_dict = self.assertSlaveBase('url')
-    self.fail('TODO')
+    self.assertHttp3(parameter_dict['domain'])
+    self.assertHttp3(parameter_dict['domain'], direct=False)
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
-    self.fail('TODO')
+    self.assertHttp3(parameter_dict['domain'])
+    self.assertHttp3(parameter_dict['domain'], direct=False)
 
 
 if __name__ == '__main__':
