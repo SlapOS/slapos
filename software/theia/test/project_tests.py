@@ -456,13 +456,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = gitlab_software_release_url
 
-  @classmethod
-  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
-    super(TestTheiaResilienceGitlab, cls)._deployEmbeddedSoftware(software_url, instance_name, instance_type=instance_type)
-    parameters = '--type gitlab-test'
-    cls.callSlapos('request', instance_name, software_url, parameters, instance_type=instance_type)
-    cls._processEmbeddedInstance(retries, instance_type)
-
   def _getGitlabConnexionParameters(self, instance_type='export'):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,
