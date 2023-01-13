@@ -523,7 +523,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     self.assertIn("sample.test", projects[0]['name_with_namespace'])
 
   def _checkTakeover(self):
-    super(TestTheiaResiliencePeertube, self)._checkTakeover()
+    super(TestTheiaResilienceGitlab, self)._checkTakeover()
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnexionParameters()
     print(parameter_dict)
