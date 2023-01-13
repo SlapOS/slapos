@@ -28,6 +28,7 @@
 
 import contextlib
 import glob
+import http.client
 import json
 import os
 import shutil
@@ -442,17 +443,20 @@ class ZopeSkinsMixin:
   def _setUpClass(cls):
     super()._setUpClass()
     param_dict = cls.getRootPartitionConnectionParameterDict()
-    with cls.getXMLRPCClient() as erp5_xmlrpc_client:
-      # wait for ERP5 to be ready (TODO: this should probably be a promise)
-      for _ in range(120):
-        time.sleep(1)
+    # wait for ERP5 to be ready and have processed all activities
+    # from initial setup
+    for _ in range(120):
+      with cls.getXMLRPCClient() as erp5_xmlrpc_client:
         try:
-          erp5_xmlrpc_client.getTitle()
+          if erp5_xmlrpc_client.portal_activities.countMessage() == 0:
+            break
         except (xmlrpc.client.ProtocolError,
-                xmlrpc.client.Fault):
+                xmlrpc.client.Fault,
+                http.client.HTTPException):
           pass
-        else:
-          break
+      time.sleep(5)
+    else:
+      raise AssertionError("ERP5 is not ready")
 
   @classmethod
   def _getAuthenticatedZopeUrl(cls, path, family_name='default'):
@@ -902,3 +906,65 @@ class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
         self._getAuthenticatedZopeUrl('ERP5Site_doSlowRequest', family_name='no-timeout'),
         verify=False,
         timeout=6)
+
+
+class TestCloudooo(ZopeSkinsMixin, ERP5InstanceTestCase):
+  """Test ERP5 can be instantiated with cloudooo parameters
+  """
+  __partition_reference__ = 'c'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+        json.dumps({
+            'cloudooo-url-list': [
+              'https://cloudooo1.example.com/',
+              'https://cloudooo2.example.com/',
+            ],
+            'cloudooo-retry-count': 123,
+        })
+    }
+
+  def test_cloudooo_url_list_preference(self):
+    self.assertEqual(
+      requests.get(
+          self._getAuthenticatedZopeUrl(
+            'portal_preferences/getPreferredDocumentConversionServerUrlList'),
+          verify=False).text,
+      "['https://cloudooo1.example.com/', 'https://cloudooo2.example.com/']")
+
+  @unittest.expectedFailure # setting "retry" is not implemented
+  def test_cloudooo_retry_count_preference(self):
+    self.assertEqual(
+      requests.get(
+          self._getAuthenticatedZopeUrl(
+            'portal_preferences/getPreferredDocumentConversionServerRetry'),
+          verify=False).text,
+      "123")
+
+
+class TestCloudoooDefaultParameter(ZopeSkinsMixin, ERP5InstanceTestCase):
+  """Test default ERP5 cloudooo parameters
+  """
+  __partition_reference__ = 'cd'
+
+  def test_cloudooo_url_list_preference(self):
+    self.assertIn(
+      requests.get(
+          self._getAuthenticatedZopeUrl(
+            'portal_preferences/getPreferredDocumentConversionServerUrlList'),
+          verify=False).text,
+      [
+        "['https://cloudooo1.erp5.net/', 'https://cloudooo.erp5.net/']",
+        "['https://cloudooo.erp5.net/', 'https://cloudooo1.erp5.net/']",
+      ])
+
+  @unittest.expectedFailure # default value of "retry" does not match schema
+  def test_cloudooo_retry_count_preference(self):
+    self.assertEqual(
+      requests.get(
+          self._getAuthenticatedZopeUrl(
+            'portal_preferences/getPreferredDocumentConversionServerRetry'),
+          verify=False).text,
+      "2")

@@ -33,7 +33,6 @@ partition. No more (undefined result), no less (IndexError).
 {% for alias, url in (
     ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
     ('erp5-memcached-persistent', slapparameter_dict['kumofs-url']),
-    ('erp5-cloudooo', slapparameter_dict['cloudooo-url']),
     ('erp5-smtp', slapparameter_dict['smtp-url']),
   ) -%}
 {%   set parsed_url = urllib_parse.urlparse(url) -%}
@@ -269,12 +268,7 @@ bt5 = {{ slapparameter_dict['bt5'] }}
 bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
 home = ${buildout:directory}
-# We only want to change the hostname to 'erp5-cloudooo' if we use the internal
-# cloudooo. We plan to remove the ability to have an internal one, so this
-# heuristic is enough.
-{%  set cloudooo = urllib_parse.urlsplit(slapparameter_dict['cloudooo-url']) -%}
-cloudooo-url = {{ (cloudooo if cloudooo.port == None else
-  cloudooo._replace(netloc='erp5-cloudooo:%s' % cloudooo.port)).geturl() }}
+cloudooo-url = {{ ",".join(slapparameter_dict['cloudooo-url-list']) }}
 
 {% endif -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
@@ -514,11 +508,8 @@ wrapper-path = ${directory:bin}/${:command-name}.real
 command-line =
   '{{ parameter_dict['bin-directory'] }}/${:command-name}'
   ${:command-line-extra}
-  --conversion_server_url={{ slapparameter_dict['cloudooo-url'] }}
+  --conversion_server_url={{ ",".join(slapparameter_dict['cloudooo-url-list']) }}
   --conversion_server_retry_count={{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
-{#- BBB: We still have test suites that only accept the following 2 options. #}
-  --conversion_server_hostname=erp5-cloudooo
-  --conversion_server_port={{ port_dict['erp5-cloudooo'] }}
   --volatile_memcached_server_hostname=erp5-memcached-volatile
   --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
   --persistent_memcached_server_hostname=erp5-memcached-persistent
