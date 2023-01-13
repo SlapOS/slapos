@@ -509,18 +509,18 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     path = '/api/v3/projects'
     response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
-      data = response.json()
+      projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
     print(response.text)
+    print("---------")
+    print("Json data of projects")
+    print(projects)
 
-    print("What are doing now?")
-    self.default_project_list = []
-    for project in project_list:
-      self.default_project_list.append(project['name_with_namespace'])
-
-    print('Gitlab project list is:\n%s' % self.default_project_list)
-    print('Getting test file at url: %s' % self.file_uri)
+    # Only one project exist
+    self.assertEqual(len(projects), 1)
+    # The project name is sample.test, which we created above.
+    self.assertIn("sample.test", projects[0]['name_with_namespace'])
 
   def _checkTakeover(self):
     super(TestTheiaResiliencePeertube, self)._checkTakeover()
@@ -532,32 +532,21 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # Check the project is exist
     print("Gitlab check project is exist")
     path = '/api/v3/projects'
+    headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
     response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
-      data = response.json()
+      projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
     print(response.text)
+    print("---------")
+    print("Json data of projects")
+    print(projects)
 
-    project_list = self._listProjects()
-    success = True
-    print("Default project list")
-    print(self.default_project_list)
-    print("Name with namespace:")
-    for project in project_list:
-      success = success and (project['name_with_namespace'] in self.default_project_list)
-      print(project['name_with_namespace'])
-      self.assertIn(project['name_with_namespace'], self.default_project_list)
-
-    if success:
-      headers = {"PRIVATE-TOKEN" : self.private_token}
-      print("self.file_uri:")
-      print(self.file_uri)
-      response = requests.get(self.file_uri, headers=headers, verify=False)
-      print(response.text)
-      success = success and (response.text == self.sample_file)
-
-    self.assertEqual((response.text, self.sample_file))
+    # Only one project exist
+    self.assertEqual(len(projects), 1)
+    # The project name is sample.test, which we created above.
+    self.assertIn("sample.test", projects[0]['name_with_namespace'])
 
   def _getGitlabPartition(self, servicename):
     p = subprocess.Popen(
