@@ -108,19 +108,24 @@ class MariaDBTestCase(ERP5InstanceTestCase):
 
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
+  _save_instance_file_pattern_list = \
+    MariaDBTestCase._save_instance_file_pattern_list + (
+      '*/srv/backup/*',
+    )
 
   def test_full_backup(self):
     # type: () -> None
     self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
-    with gzip.open(
-        os.path.join(
-            self.computer_partition_root_path,
-            'srv',
-            'backup',
-            'mariadb-full',
-            '20500101000000.sql.gz',
-        ),
-        'rt') as dump:
+    full_backup_file, = glob.glob(
+      os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'backup',
+        'mariadb-full',
+        '205001010000??.sql.gz',
+    ))
+
+    with gzip.open(full_backup_file, 'rt') as dump:
       self.assertIn('CREATE TABLE', dump.read())
 
   def test_logrotate_and_slow_query_digest(self):
@@ -192,6 +197,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       "Expected total queries : 1.0 and current is: 2\n"
       "Expected slowest query : 0.1 and current is: 3\n",
     )
+
 
 class TestMariaDB(MariaDBTestCase):
   def test_utf8_collation(self):
