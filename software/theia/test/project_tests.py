@@ -30,8 +30,6 @@ import gzip
 import json
 import os
 import re
-import random
-import string
 import subprocess
 import time
 import unittest
