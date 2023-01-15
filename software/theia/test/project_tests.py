@@ -475,12 +475,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
     gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
 
-    print("-------------Path:")
-    print(gitlab_partition)
-    print(gitlab_rails_bin)
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnexionParameters()
-    print(parameter_dict)
     backend_url = parameter_dict['backend_url']
 
     print('Trying to connect to gitlab backend URL...')
@@ -512,10 +508,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
       projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
-    print(response.text)
-    print("---------")
-    print("Json data of projects")
-    print(projects)
 
     # Only one project exist
     self.assertEqual(len(projects), 1)
@@ -526,7 +518,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     super(TestTheiaResilienceGitlab, self)._checkTakeover()
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnexionParameters()
-    print(parameter_dict)
     backend_url = parameter_dict['backend_url']
 
     # Check the project is exist
@@ -538,10 +529,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
       projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
-    print(response.text)
-    print("---------")
-    print("Json data of projects")
-    print(projects)
 
     # Only one project exist
     self.assertEqual(len(projects), 1)
