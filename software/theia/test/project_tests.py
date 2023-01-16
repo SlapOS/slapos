@@ -53,6 +53,9 @@ erp5_software_release_url = os.path.abspath(
 peertube_software_release_url = os.path.abspath(
   os.path.join(
     os.path.dirname(__file__), '..', '..', 'peertube', 'software.cfg'))
+gitlab_software_release_url = os.path.abspath(
+  os.path.join(
+    os.path.dirname(__file__), '..', '..', 'gitlab', 'software.cfg'))
 
 
 def setUpModule():
@@ -441,5 +444,110 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
     partition = self._getPeertubePartition(servicename)
+    return self.getPartitionPath(
+      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+
+class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
+  test_instance_max_retries = 12
+  backup_max_tries = 480
+  backup_wait_interval = 60
+  _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
+  _test_software_url = gitlab_software_release_url
+
+  def _getGitlabConnexionParameters(self, instance_type='export'):
+    out = self.captureSlapos(
+      'request', 'test_instance', self._test_software_url,
+      stderr=subprocess.STDOUT,
+      text=True,
+    )
+    print(out)
+    return json.loads(self._connexion_parameters_regex.search(out).group(0).replace("'", '"'))
+
+  def test_twice(self):
+    # do nothing
+    pass
+
+  def _prepareExport(self):
+    super(TestTheiaResilienceGitlab, self)._prepareExport()
+
+    gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
+    gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
+
+    # Get Gitlab parameters
+    parameter_dict = self._getGitlabConnexionParameters()
+    backend_url = parameter_dict['backend_url']
+
+    print('Trying to connect to gitlab backend URL...')
+    response = requests.get(backend_url, verify=False)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+
+    # Set the password and token
+    output = subprocess.check_output(
+      (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!"),
+      universal_newlines=True)
+    output = subprocess.check_output(
+      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!"),
+      universal_newlines=True)
+
+    # Create a new project
+    print("Gitlab create a project")
+    path = '/api/v3/projects'
+    parameter_dict = {'name': 'sample.test', 'namespace': 'open'}
+    headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
+    response = requests.post(backend_url + path, params=parameter_dict,
+                                  headers=headers, verify=False)
+
+    # Check the project is exist
+    print("Gitlab check project is exist")
+    path = '/api/v3/projects'
+    response = requests.get(backend_url + path, headers=headers, verify=False)
+    try:
+      projects = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
+
+    # Only one project exist
+    self.assertEqual(len(projects), 1)
+    # The project name is sample.test, which we created above.
+    self.assertIn("sample.test", projects[0]['name_with_namespace'])
+
+  def _checkTakeover(self):
+    super(TestTheiaResilienceGitlab, self)._checkTakeover()
+    # Get Gitlab parameters
+    parameter_dict = self._getGitlabConnexionParameters()
+    backend_url = parameter_dict['backend_url']
+
+    # Check the project is exist
+    print("Gitlab check project is exist")
+    path = '/api/v3/projects'
+    headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
+    response = requests.get(backend_url + path, headers=headers, verify=False)
+    try:
+      projects = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
+
+    # Only one project exist
+    self.assertEqual(len(projects), 1)
+    # The project name is sample.test, which we created above.
+    self.assertIn("sample.test", projects[0]['name_with_namespace'])
+
+  def _getGitlabPartition(self, servicename):
+    p = subprocess.Popen(
+      (self._getSlapos(), 'node', 'status'),
+      stdout=subprocess.PIPE, universal_newlines=True)
+    out, _ = p.communicate()
+    found = set()
+    for line in out.splitlines():
+      if servicename in line:
+        found.add(line.split(':')[0])
+    if not found:
+      raise Exception("Gitlab %s partition not found" % servicename)
+    elif len(found) > 1:
+      raise Exception("Found several partitions for Gitlab %s" % servicename)
+    return found.pop()
+
+  def _getGitlabPartitionPath(self, instance_type, servicename, *paths):
+    partition = self._getGitlabPartition(servicename)
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
