@@ -66,6 +66,9 @@ class RunPromise(GenericPromise):
   def sense(self):
 
     testing = self.getConfig('testing') == "True"
+    if testing:
+        self.logger.info("skipping promise")
+        return
     amarisoft_stats_log = self.getConfig('amarisoft-stats-log')
     stats_period = int(self.getConfig('stats-period'))
     min_txrx_delay = float(self.getConfig('min-txrx-delay', 5))
