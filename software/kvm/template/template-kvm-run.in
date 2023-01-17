@@ -48,13 +48,19 @@ external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
 external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
 external_disk = {{ parameter_dict['external-disk'] }}
-if int(external_disk_number) > 0 and len(external_disk) > 0:
-  raise ValueError("external-disk-number and external-disk are mutually exclusive.")
+etc_directory = '{{ parameter_dict.get("etc-directory") }}'.strip()
+last_disk_num_f = os.path.join(etc_directory, '.data-disk-amount')
+if os.path.exists(last_disk_num_f):
+  with open(last_disk_num_f, 'r') as lf:
+    last_amount = int(lf.readline())
+else:
+  last_amount = 0
+if len(external_disk) > 0 and (int(external_disk_number) > 0 or last_amount > 0):
+  raise ValueError("external-disk conflicts with external-disk-number with value %s and last amount of disks %s" % (external_disk_number, last_amount))
 instance_root = '{{ parameter_dict['instance-root'] }}'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
 map_storage_list = []
-etc_directory = '{{ parameter_dict.get("etc-directory") }}'.strip()
 httpd_port = {{ parameter_dict.get("httpd-port") }}
 netcat_bin = '{{ parameter_dict.get("netcat-binary") }}'.strip()
 cluster_doc_host = '{{ parameter_dict.get("cluster-doc-host") }}'
