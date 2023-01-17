@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Runner instanciation",
+  "properties": {
+    "ssh_command": {
+      "description": "SSH command used to access your instance in ssh when you provided a ssh public key",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
