@@ -79,6 +79,7 @@
       "frontend-haproxy-flavour": "basic",
       "frontend-haproxy-quic": "False",
       "frontend-name": "caddy-frontend-1",
+      "frontend-quic-port": "443",
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
       "master-key-download-url": "https://[@@_ipv6_address@@]:15080/@@master-key-download-url_endpoint@@",
       "monitor-cors-domains": "monitor.app.officejs.com",
