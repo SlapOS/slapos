@@ -107,23 +107,43 @@ inline =
     --unixdomain-only=$${:socket}:$(id -u):$(id -g):0600 \
     --service "/:$(id -u):$(id -g):HOME:$${shell-environment:shell} -l"
 
-[shellinabox-frontend-config]
-recipe = slapos.recipe.template
-output = $${directory:etc}/$${:_buildout_section_name_}
-inline =
-  https://$${:hostname}:$${:port} {
-    bind $${:ipv6}
-    tls self_signed
-    gzip
-    log stdout
-    errors stderr
-    proxy / unix:$${shellinabox:socket}
-    basicauth $${:username} $${:passwd} {
-      realm "Test Node $${testnode:test-node-title}"
-      /
-    }
-  }
+[shellinabox-frontend-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:cert-file} ]
+  then
+    ${openssl-output:openssl} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
+      -newkey rsa:1024 -keyout $${:cert-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+cert-file = $${directory:var}/$${:_buildout_section_name_}.pem
+common-name = $${:ipv6}
+location =
+  $${:cert-file}
 ipv6 = {{ partition_ipv6 }}
+
+[shellinabox-frontend-config]
+recipe = slapos.recipe.template:jinja2
+url = ${stack-haproxy-default-backend-config:target}
+output = $${directory:etc}/$${:_buildout_section_name_}
+context =
+  key pidfile :pidfile
+  key content :content
+pidfile = $${:pidfile}
+content =
+  userlist auth
+    user $${:username} insecure-password $${:passwd}
+
+  listen app
+    log global
+    acl auth_ok http_auth(auth)
+    http-request auth realm "Test Node $${testnode:test-node-title}" unless auth_ok
+    bind $${:ipv6}:$${:port} ssl crt $${shellinabox-frontend-certificate:cert-file} alpn h2,http/1.1
+    server app unix@$${shellinabox:socket}
+
+ipv6 = $${shellinabox-frontend-certificate:ipv6}
 hostname = [$${:ipv6}]
 port = 8080
 username = testnode
@@ -131,24 +151,24 @@ passwd = $${pwgen:passwd}
 cert-file = $${directory:shellinabox}/public.crt
 key-file = $${directory:shellinabox}/private.key
 backend-url = https://$${:username}:$${:passwd}@$${:hostname}:$${:port}
-
+pidfile = $${basedirectory:run}/shellinabox-haproxy.pid
 
 [shellinabox-frontend]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${rootdirectory:bin}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${shellinabox-frontend-config:output} -pidfile $${:pidfile}
+  ${haproxy:location}/sbin/haproxy -f $${shellinabox-frontend-config:output}
 url =  $${shellinabox-frontend-config:backend-url}
 hostname = $${shellinabox-frontend-config:ipv6}
 port = $${shellinabox-frontend-config:port}
-pidfile = $${basedirectory:run}/$${:_buildout_section_name_}.pid
+pidfile = $${shellinabox-frontend-config:pidfile}
 
 [shellinabox-frontend-reload]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${basedirectory:services}/$${:_buildout_section_name_}
 command-line =
   ${bash:location}/bin/bash -c
-  "kill -s USR1 $$(${coreutils:location}/bin/cat $${shellinabox-frontend:pidfile}) \
+  "kill -s USR2 $$(${coreutils:location}/bin/cat $${shellinabox-frontend:pidfile}) \
     && ${coreutils:location}/bin/sleep infinity"
 hash-files =
   $${shellinabox-frontend-config:output}
