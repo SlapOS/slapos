@@ -148,7 +148,7 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
     return json.loads(resp.text)["result"]
 
 
-class TestSSH(SlaprunnerTestCase):
+class TestSSH(SlapOSInstanceTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     cls.ssh_key_list = [paramiko.ECDSAKey.generate(bits=384) for i in range(2)]
