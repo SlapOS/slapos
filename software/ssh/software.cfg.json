@@ -1,0 +1,15 @@
+{
+  "name": "SSH",
+  "description": "SSH parameters",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-ssh-input-schema.json",
+      "response": "instance-ssh-output-schema.json",
+      "index": 1
+    }
+  }
+}
