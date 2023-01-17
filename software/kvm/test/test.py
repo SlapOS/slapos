@@ -2097,8 +2097,9 @@ class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
           self.working_directory)
       ]
     )
+    self.fail('Create etc/.data-disk-ids and etc/.data-disk-amount in the partition to prove the protection really works!')
     update_dict = {
-      "external-disk-number": 1,
+      "external-disk-number": 0,
       "external-disk-size": 100,
       "external-disk-format": "qcow2",
     }
