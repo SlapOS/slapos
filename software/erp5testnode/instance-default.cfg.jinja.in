@@ -137,7 +137,7 @@ backend-url = https://$${:username}:$${:passwd}@$${:hostname}:$${:port}
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${rootdirectory:bin}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${shellinabox-frontend-config:output} -pidfile $${:pidfile}
+  ${haproxy:location}/sbin/haproxy -conf $${shellinabox-frontend-config:output} -pidfile $${:pidfile}
 url =  $${shellinabox-frontend-config:backend-url}
 hostname = $${shellinabox-frontend-config:ipv6}
 port = $${shellinabox-frontend-config:port}
