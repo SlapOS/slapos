@@ -175,7 +175,7 @@ path-hub = /wd/hub
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${selenium-server-frontend-config:output}
+  ${haproxy:location}/sbin/haproxy -conf $${selenium-server-frontend-config:output}
 
 ip = $${selenium-server-frontend-config:ip}
 hostname = $${selenium-server-frontend-config:hostname}
