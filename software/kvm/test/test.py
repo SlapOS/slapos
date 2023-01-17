@@ -1875,38 +1875,6 @@ class TestParameterCluster(TestParameterDefault):
 
 
 class ExternalDiskMixin(KvmMixin):
-  def getRunningDriveList(self, kvm_instance_partition):
-    _match_drive = re.compile('file.*if=virtio.*').match
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
-    drive_list = []
-    for entry in psutil.Process(kvm_pid).cmdline():
-      m = _match_drive(entry)
-      if m:
-        path = m.group(0)
-        drive_list.append(
-          path.replace(kvm_instance_partition, '${partition}')
-        )
-    return drive_list
-
-
-@skipUnlessKvm
-class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
-  __partition_reference__ = 'ed'
-  kvm_instance_partition_reference = 'ed0'
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'default'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'external-disk-number': 2,
-      'external-disk-size': 1
-    }
-
   @classmethod
   def _prepareExternalStorageList(cls):
     external_storage_path = os.path.join(cls.working_directory, 'STORAGE')
@@ -1966,6 +1934,38 @@ class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
 
+  def getRunningDriveList(self, kvm_instance_partition):
+    _match_drive = re.compile('file.*if=virtio.*').match
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    drive_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_drive(entry)
+      if m:
+        path = m.group(0)
+        drive_list.append(
+          path.replace(kvm_instance_partition, '${partition}')
+        )
+    return drive_list
+
+
+@skipUnlessKvm
+class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
+  __partition_reference__ = 'ed'
+  kvm_instance_partition_reference = 'ed0'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'external-disk-number': 2,
+      'external-disk-size': 1
+    }
+
   @classmethod
   def _setUpClass(cls):
     super()._setUpClass()
@@ -2015,18 +2015,28 @@ class TestExternalDiskJson(
   pass
 
 
-@skipUnlessKvm
-class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
+class ExternalDiskModernMixin(object):
   __partition_reference__ = 'edm'
   kvm_instance_partition_reference = 'edm0'
 
   @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'default'
-
-  @classmethod
   def setUpClass(cls):
     super().setUpClass()
+
+  @classmethod
+  def _setUpClass(cls):
+    super()._setUpClass()
+    cls.working_directory = tempfile.mkdtemp()
+    # setup the external_storage_list, to mimic part of slapformat
+    cls._prepareExternalStorageList()
+    # re-run the instance, as information has been updated
+    cls.waitForInstance()
+
+  @classmethod
+  def tearDownClass(cls):
+    cls._dropExternalStorageList()
+    super().tearDownClass()
+    shutil.rmtree(cls.working_directory)
 
   def getExternalDiskInstanceParameterDict(
     self, first, second, third, update_dict=None):
@@ -2052,39 +2062,50 @@ class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
       parameter_dict.update(update_dict)
     return parameter_dict
 
-  def test(self):
+  def prepareEnv(self):
     # Disks can't be created in /tmp, as it's specially mounted on testnodes
     # and then KVM can't use them:
     # -drive file=/tmp/tmpX/third_disk,if=virtio,cache=none: Could not open
     # '/tmp/tmpX/third_disk': filesystem does not support O_DIRECT
     self.working_directory = tempfile.mkdtemp(dir=self.slap.instance_directory)
     self.addCleanup(shutil.rmtree, self.working_directory)
-    kvm_instance_partition = os.path.join(
+    self.kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
       os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
-      qemu_img = [
+      self.qemu_img = [
         q for q in fh.readlines()
         if 'raw qemu_img_executable_location' in q][0].split()[-1]
-
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
-      qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
-    second_disk = 'second_disk'
-    self.second_disk = os.path.join(kvm_instance_partition, second_disk)
+      self.qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+    self.second_disk_name = 'second_disk'
+    self.second_disk = os.path.join(
+      self.kvm_instance_partition, self.second_disk_name)
     subprocess.check_call([
-      qemu_img, "create", "-f", "qcow2", os.path.join(
-        kvm_instance_partition, self.second_disk), "1M"])
+      self.qemu_img, "create", "-f", "qcow2", os.path.join(
+        self.kvm_instance_partition, self.second_disk), "1M"])
     self.third_disk = os.path.join(self.working_directory, 'third_disk')
     subprocess.check_call([
-      qemu_img, "create", "-f", "qcow2", self.third_disk, "1M"])
+      self.qemu_img, "create", "-f", "qcow2", self.third_disk, "1M"])
     self.rerequestInstance({'_': json.dumps(
         self.getExternalDiskInstanceParameterDict(
-          self.first_disk, second_disk, self.third_disk))})
+          self.first_disk, self.second_disk_name, self.third_disk))})
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+
+@skipUnlessKvm
+class TestExternalDiskModern(
+  InstanceTestCase, ExternalDiskModernMixin, ExternalDiskMixin):
+  def test(self):
+    self.prepareEnv()
     self.waitForInstance()
-    drive_list = self.getRunningDriveList(kvm_instance_partition)
+    drive_list = self.getRunningDriveList(self.kvm_instance_partition)
     self.assertEqual(
       drive_list,
       [
@@ -2097,16 +2118,37 @@ class TestExternalDiskModern(InstanceTestCase, ExternalDiskMixin):
           self.working_directory)
       ]
     )
-    update_dict = {
+
+
+@skipUnlessKvm
+class TestExternalDiskModernConflictAssurance(
+  InstanceTestCase, ExternalDiskModernMixin, ExternalDiskMixin):
+  def test(self):
+    self.prepareEnv()
+    # Create conflicting configuration
+    parameter_dict = {
       "external-disk-number": 1,
-      "external-disk-size": 100,
+      "external-disk-size": 10,
       "external-disk-format": "qcow2",
     }
-    parameter_dict = self.getExternalDiskInstanceParameterDict(
-      self.first_disk, second_disk, self.third_disk, update_dict)
-    # assert mutual exclusivity
+    self.rerequestInstance({'_': json.dumps(parameter_dict)})
+    self.waitForInstance()
+    data_disk_ids = os.path.join(
+      self.kvm_instance_partition, 'etc', '.data-disk-ids')
+    data_disk_amount = os.path.join(
+      self.kvm_instance_partition, 'etc', '.data-disk-amount')
+    self.assertTrue(os.path.exists(data_disk_ids))
+    self.assertTrue(os.path.exists(data_disk_amount))
+    parameter_dict.update(self.getExternalDiskInstanceParameterDict(
+      self.first_disk, self.second_disk_name, self.third_disk))
+    parameter_dict["external-disk-number"] = 0
+    # assert mutual exclusivity of old and modern
     self.rerequestInstance({'_': json.dumps(parameter_dict)})
     self.raising_waitForInstance(3)
+    # Fix the situation, as explained in the readme
+    os.unlink(data_disk_ids)
+    os.unlink(data_disk_amount)
+    self.waitForInstance()
 
 
 @skipUnlessKvm
