@@ -48,8 +48,10 @@ external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
 external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
 external_disk = {{ parameter_dict['external-disk'] }}
-if int(external_disk_number) > 0 and len(external_disk) > 0:
-  raise ValueError("external-disk-number and external-disk are mutually exclusive.")
+map_disk_file = os.path.join(etc_directory, '.data-disk-ids')
+last_disk_num_f = os.path.join(etc_directory, '.data-disk-amount')
+if len(external_disk) > 0 and (int(external_disk_number) > 0 or os.path.exists(map_disk_file) or os.path.exists(last_disk_num_f)):
+  raise ValueError("external-disk conflicts with external-disk-number, etc/.data-disk-ids, etc/.data-disk-amount .")
 instance_root = '{{ parameter_dict['instance-root'] }}'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
