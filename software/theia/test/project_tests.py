@@ -518,10 +518,10 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Get repo url, default one is http://lab.example.com/root/sample.test.git
     # We need the path like http://[2001:67c:1254:e:c4::5041]:7777/root/sample.test
-    repo_url = backend_url.replace("http://", "") + project_1['path_with_namespace']
+    repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
     print(repo_url)
     # Clone the repo with token
-    clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN' + repo_url
+    clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
     print(clone_url)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
@@ -555,9 +555,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     self.assertEqual(len(projects), 1)
     # The project name is sample.test, which we created above.
     self.assertIn("sample.test", projects[0]['name_with_namespace'])
-    repo_url = backend_url.replace("http://", "") + project_1['path_with_namespace']
+    repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
     print(repo_url)
-    clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN' + repo_url
+    clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
     print(clone_url)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
