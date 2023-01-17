@@ -145,44 +145,83 @@ username = selenium
 bytes = 12
 
 
-[selenium-server-frontend-config]
-recipe = slapos.recipe.template
-output = $${directory:etc}/$${:_buildout_section_name_}
-inline =
-  https://[$${:ip}]:$${:port} {
-    bind $${:ip}
-    tls self_signed # TODO
-    proxy / $${selenium-server-hub-instance:base-url} {
-      transparent
-    }
-    basicauth $${selenium-server-admin-password:username} $${selenium-server-admin-password:passwd} {
-      realm "Grid Admin"
-      $${:path-admin}
-    }
-    basicauth $${selenium-server-selenium-password:username} $${selenium-server-selenium-password:passwd} {
-      realm "Selenium Server"
-      $${:path-hub}
-    }
-  }
+[selenium-server-frontnend-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:cert-file} ]
+  then
+    ${openssl-output:openssl} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
+      -newkey rsa:1024 -keyout $${:cert-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+cert-file = $${directory:var}/$${:_buildout_section_name_}.pem
+common-name = $${selenium-server-frontend-configuration:ip}
+location =
+  $${:cert-file}
+
+[selenium-server-frontend-configuration]
 ip = $${slap-configuration:ipv6-random}
 hostname = [$${:ip}]
 port = 9443
 path-admin = /grid/console
 path-hub = /wd/hub
+pidfile = $${directory:run}/haproxy.pid
 
+[selenium-server-frontend-config]
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}
+blankline =
+inline =
+  global
+    maxconn 4096
+    master-worker
+    pidfile $${selenium-server-frontend-configuration:pidfile}
+    log stdout format raw daemon
+
+  defaults
+    log global
+    option httplog
+    mode http
+    retries 1
+    option redispatch
+    maxconn 2000
+    balance roundrobin
+    timeout connect 10s
+    timeout queue 60s
+    timeout server 305s
+    timeout client 305s
+
+  userlist basic-auth-list
+    user $${selenium-server-admin-password:username} insecure-password $${selenium-server-admin-password:passwd}
+
+  frontend app
+    log global
+    bind $${selenium-server-frontend-configuration:ip}:$${selenium-server-frontend-configuration:port} ssl crt $${selenium-server-frontnend-certificate:cert-file} alpn h2,http/1.1
+#    acl is_admin path_beg $${:path-admin} auth with proper user
+#    acl is_hub path_beg $${:path-hub} auth with proper user
+#    http-request auth unless auth_ok || is_public
+#    acl auth_ok http_auth(basic-auth-list)
+    default_backend app
+
+  backend app
+    log global
+    server selenium_backend $${selenium-server-hub-instance:hostname}:$${selenium-server-hub-instance:port}
+  $${:blankline}
 
 [selenium-server-frontend-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${selenium-server-frontend-config:output}
+  ${haproxy:location}/sbin/haproxy -f $${selenium-server-frontend-config:output}
 
-ip = $${selenium-server-frontend-config:ip}
-hostname = $${selenium-server-frontend-config:hostname}
-port = $${selenium-server-frontend-config:port}
+ip = $${selenium-server-frontend-configuration:ip}
+hostname = $${selenium-server-frontend-configuration:hostname}
+port = $${selenium-server-frontend-configuration:port}
 
-admin-url = https://$${selenium-server-admin-password:username}:$${selenium-server-admin-password:passwd}@$${:hostname}:$${:port}$${selenium-server-frontend-config:path-admin}
-url = https://$${selenium-server-selenium-password:username}:$${selenium-server-selenium-password:passwd}@$${:hostname}:$${:port}$${selenium-server-frontend-config:path-hub}
+admin-url = https://$${selenium-server-admin-password:username}:$${selenium-server-admin-password:passwd}@$${:hostname}:$${:port}$${selenium-server-frontend-configuration:path-admin}
+url = https://$${selenium-server-selenium-password:username}:$${selenium-server-selenium-password:passwd}@$${:hostname}:$${:port}$${selenium-server-frontend-configuration:path-hub}
 
 
 [userinfo]
