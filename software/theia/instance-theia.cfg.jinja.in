@@ -14,7 +14,6 @@ theia-environment-parts =
 
 theia-parts =
   frontend-instance
-  frontend-instance-rsyslogd
   python-server
   promises
 
@@ -98,7 +97,6 @@ instance-promises =
   {% if additional_frontend %}
   $${remote-additional-frontend-url-available-promise:name}
   {% endif %}
-  $${frontend-instance-rsyslogd-promise:name}
   $${slapos-standalone-listen-promise:name}
   $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
@@ -152,12 +150,6 @@ name = $${:_buildout_section_name_}.py
 config-url = $${remote-additional-frontend:connection-secure_access}
 config-http-code = 401
 {% endif %}
-
-[frontend-instance-rsyslogd-promise]
-<= monitor-promise-base
-promise = check_command_execute
-name = rsyslogd_listen_promise.py
-config-command = test -S $${frontend-instance-rsyslogd-config:log-socket}
 
 [slapos-standalone-listen-promise]
 <= monitor-promise-base
@@ -232,39 +224,6 @@ recipe = slapos.cookbook:generate.password
 username = admin
 storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
 
-[frontend-instance-rsyslogd-config]
-recipe = slapos.recipe.template
-output = $${directory:etc}/$${:_buildout_section_name_}
-log-file = $${directory:log}/frontend-instance.log
-log-socket = $${directory:run}/rsyslog.sock
-pidfile = $${directory:pidfiles}/rsyslogd.pid
-inline =
-  module(
-    load="imuxsock"
-    SysSock.Name="$${:log-socket}")
-
-  # Just simply output the raw line without any additional information, as
-  # haproxy emits enough information by itself
-  # Also cut out first empty space in msg, which is related to rsyslogd
-  # internal and end up cutting on 8k, as it's default of $MaxMessageSize
-  template(name="rawoutput" type="string" string="%msg:2:8192%\n")
-  $ActionFileDefaultTemplate rawoutput
-
-  $FileCreateMode 0600
-  $DirCreateMode 0700
-  $Umask 0022
-
-  $WorkDirectory $${directory:run}
-
-  *.* $${:log-file};rawoutput
-
-
-[frontend-instance-rsyslogd]
-recipe = slapos.cookbook:wrapper
-command-line = ${rsyslogd:location}/sbin/rsyslogd -i $${frontend-instance-rsyslogd-config:pidfile} -n -f $${frontend-instance-rsyslogd-config:output}
-wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-hash-files = $${frontend-instance-rsyslogd-config:output}
-
 [frontend-instance-port]
 recipe = slapos.cookbook:free_port
 minimum = 3000
@@ -288,34 +247,13 @@ location =
   $${:cert-file}
 
 [frontend-instance-config]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
+url = ${stack-haproxy-default-backend-config:target}
 output = $${directory:etc}/$${:_buildout_section_name_}
-blankline =
-inline =
-  global
-    maxconn 4096
-    master-worker
-    pidfile $${frontend-instance:pidfile}
-    log $${frontend-instance-rsyslogd-config:log-socket} local0  info
-
-  defaults
-    log global
-    option httplog
-    mode http
-    retries 1
-    option redispatch
-    maxconn 2000
-    balance roundrobin
-    timeout connect 10s
-    timeout queue 60s
-    timeout server 305s
-    timeout client 305s
-
-    # compress some content types
-    compression algo gzip
-    compression type application/font-woff application/font-woff2 application/hal+json application/javascript application/json application/rss+xml application/wasm application/x-font-opentype application/x-font-ttf application/x-javascript application/xml image/svg+xml text/cache-manifest text/css text/html text/javascript text/plain text/xml
-
-
+context =
+  key pidfile frontend-instance:pidfile
+  key content :content
+content =
   userlist basic-auth-list
     user $${frontend-instance-password:username} insecure-password $${frontend-instance-password:passwd}
 
@@ -340,7 +278,6 @@ inline =
   backend static
     log global
     server static_backend $${python-server-port:ip}:$${python-server-port:port}
-  $${:blankline}
 
 ip = $${frontend-instance-port:ip}
 hostname = [$${:ip}]
