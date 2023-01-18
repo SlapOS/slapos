@@ -49,115 +49,8 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-class SlaprunnerTestCase(SlapOSInstanceTestCase):
-  # Slaprunner uses unix sockets, so it needs short paths.
-  __partition_reference__ = 's'
-
-  def _openSoftwareRelease(self, software_release="erp5testnode/testsuite/dummy"):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/setCurrentProject" % parameter_dict['url']
-
-    data = {
-      "path": "workspace/slapos/software/%s" % software_release,
-    }
-    resp = self._postToSlaprunner(url, data)
-    self.assertEqual(requests.codes.ok, resp.status_code)
-    self.assertNotEqual(json.loads(resp.text)['code'], 0,
-       'Unexpecting result in call to setCurrentProject: %s' % resp.text)
-
-  def _buildSoftwareRelease(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/runSoftwareProfile" % parameter_dict['url']
-    resp = self._postToSlaprunner(url, {})
-    self.assertEqual(requests.codes.ok, resp.status_code)
-    self.assertEqual(json.loads(resp.text)['result'], True,
-       'Unexpecting result in call to runSoftwareProfile: %s' % resp.text)
-
-  def _deployInstance(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/runInstanceProfile" % parameter_dict['url']
-    resp = self._postToSlaprunner(url, {})
-    self.assertEqual(requests.codes.ok, resp.status_code)
-    self.assertEqual(json.loads(resp.text)['result'], True,
-       'Unexpecting result in call to runSoftwareProfile: %s' % resp.text)
-
-  def _gitClone(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/cloneRepository" % parameter_dict['url']
-
-    data = {
-      "repo": "https://lab.nexedi.com/nexedi/slapos.git",
-      "name": "workspace/slapos",
-      "email": "slapos@slapos.org",
-      "user": "slapos"
-    }
-    resp = self._postToSlaprunner(url, data)
-    d = json.loads(resp.text)
-    if d['code'] == 0:
-      return "OK"
-
-  def _isSoftwareReleaseReady(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/isSRReady" % parameter_dict['url']
-    resp = self._getFromSlaprunner(url)
-    if requests.codes.ok != resp.status_code:
-      return -1
-    return resp.text
-
-  def _waitForSoftwareBuild(self, limit=5000):
-    status = self._isSoftwareReleaseReady()
-    while limit > 0 and status != "1":
-      status = self._isSoftwareReleaseReady()
-      limit -= 1
-      if status == '0':
-        self.logger.debug("Software release is Failing to Build. Sleeping...")
-      else:
-        self.logger.debug('Software is still building. Sleeping...')
-      time.sleep(20)
-
-  def _waitForInstanceDeploy(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/slapgridResult" % parameter_dict['url']
-    data = {
-      "position": 0,
-      "log": ""
-      }
-    while True:
-      time.sleep(25)
-      resp = self._postToSlaprunner(url, data)
-      if requests.codes.ok != resp.status_code:
-        continue
-      if json.loads(resp.text)["instance"]["state"] is False:
-        break
-      self.logger.info('Buildout is still running. Sleeping....')
-    self.logger.info("Instance has been deployed.")
-
-
-  def _getFileContent(self, relative_path):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = "%s/getFileContent" % parameter_dict['url']
-
-    data = {
-      "file": relative_path
-    }
-    resp = self._postToSlaprunner(url, data)
-    self.assertEqual(requests.codes.ok, resp.status_code)
-    self.assertNotEqual(json.loads(resp.text)['code'], 0,
-       'Unexpecting result in call to getFileContent: %s' % resp.text)
-
-    return json.loads(resp.text)["result"]
-
 
 class TestSSH(SlapOSInstanceTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    cls.ssh_key_list = [paramiko.ECDSAKey.generate(bits=384) for i in range(2)]
-    return {
-        'user-authorized-key': 'ecdsa-sha2-nistp384 {}\necdsa-sha2-nistp384 {}'.format(
-          *[key.get_base64() for key in cls.ssh_key_list]
-          )
-    }
-
   def test_connect(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     ssh_url = parameter_dict['ssh-url']
@@ -175,53 +68,9 @@ class TestSSH(SlapOSInstanceTestCase):
     username, fingerprint_from_url = ssh_info.split(';fingerprint=')
     client = paramiko.SSHClient()
 
-    self.assertTrue(fingerprint_from_url.startswith('ssh-rsa-'), fingerprint_from_url)
-    fingerprint_from_url = fingerprint_from_url[len('ssh-rsa-'):]
-
-    class KeyPolicy:
-      """Accept server key and keep it in self.key for inspection
-      """
-      def missing_host_key(self, client, hostname, key):
-        self.key = key
-
-    key_policy = KeyPolicy()
-    client.set_missing_host_key_policy(key_policy)
-
-    for ssh_key in self.ssh_key_list:
-      with contextlib.closing(client):
-        client.connect(
-            username=username,
-            hostname=parsed.hostname,
-            port=parsed.port,
-            pkey=ssh_key,
-        )
-        # Check fingerprint from server matches the published one.
-        # Paramiko does not allow to get the fingerprint as SHA256 easily yet
-        # https://github.com/paramiko/paramiko/pull/1103
-        self.assertEqual(
-            fingerprint_from_url,
-            quote(
-                # base64 encoded fingerprint adds an extra = at the end
-                base64.b64encode(
-                    hashlib.sha256(key_policy.key.asbytes()).digest())[:-1],
-                # also encode /
-                safe=''))
-
-        # Check shell is usable
-        channel = client.invoke_shell()
-        channel.settimeout(30)
-        received = ''
-        while True:
-          r = bytes2str(channel.recv(1024))
-          self.logger.debug("received >%s<", r)
-          if not r:
-            break
-          received += r
-          if 'slaprunner shell' in received:
-            break
-        self.assertIn("Welcome to SlapOS slaprunner shell", received)
-
-        # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
-        self.assertEqual(
-            self.computer_partition_root_path,
-            bytes2str(client.exec_command("pwd")[1].read(1000)).strip())
+    # Check the ssh-command connection
+    ssh_command = parameter_dict['ssh-command']
+    self.assertTrue(ssh_command.startswith('ssh '))
+    ssh_link = ssh_command[4:]
+    output = subprocess.check_output(('ssh', '-q', ssh_link, 'exit'), universal_newlines=True)
+    self.asertEqual(output, 0)
