@@ -512,7 +512,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # The project name is sample.test, which we created above.
     self.assertIn("sample.test", projects[0]['name_with_namespace'])
 
-    repo_acess_url = backend_url.replace("http://", "")
     project_1 = projects[0]
     print(project_1)
 
@@ -522,6 +521,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     print(repo_url)
     # Clone the repo with token
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
+    print(clone_url)
+    clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
@@ -558,6 +559,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
     print(repo_url)
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
+    print(clone_url)
+    clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
