@@ -310,6 +310,12 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     parsed = urllib.parse.urlparse(admin_url)
     self.assertEqual('admin', parsed.username)
     self.assertTrue(parsed.password)
+    self.assertEqual(
+      requests.get(
+        parsed._replace(netloc=f"[{parsed.hostname}]:{parsed.port}").geturl(),
+        verify=False).status_code,
+      requests.codes.unauthorized
+    )
 
     self.assertIn('Grid Console', requests.get(admin_url, verify=False).text)
 
@@ -319,6 +325,12 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     parsed = urllib.parse.urlparse(webdriver_url)
     self.assertEqual('selenium', parsed.username)
     self.assertTrue(parsed.password)
+    self.assertEqual(
+      requests.get(
+        parsed._replace(netloc=f"[{parsed.hostname}]:{parsed.port}").geturl(),
+        verify=False).status_code,
+      requests.codes.unauthorized
+    )
 
     # XXX we are using a self signed certificate, but selenium 3.141.0 does
     # not expose API to ignore certificate verification
