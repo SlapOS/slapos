@@ -461,8 +461,9 @@ inline =
   {% raw -%}
   #!{{ bash }}
   SHELL=$BASH
-  # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if [ $# = 0 ]; then
+  # when running interactively, or as a login shell, activate slapos configuration
+  # and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+  if [ $# = 0 ] || [ $# = 1 -a "$1" = -l ]; then
     . {{ activate }}
     unset GIT_EXEC_PATH
     set -- --rcfile {{ bashrc }}
@@ -709,7 +710,7 @@ inline =
     },
     "git.terminalAuthentication": false,
     "security.workspace.trust.startupPrompt": "once",
-    "zc-buildout.python.executable": "${python-for-buildout-languageserver:executable}"
+    "zc-buildout.python.executable": "$${buildout:directory}/software_release/bin/${python-for-buildout-languageserver:interpreter}"
   }
 
 [runner-link]
