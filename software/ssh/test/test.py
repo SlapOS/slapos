@@ -48,3 +48,8 @@ class TestSSH(SlapOSInstanceTestCase):
     # Check the ssh-command connection
     ssh_command = parameter_dict['ssh-command']
     self.assertTrue(ssh_command.startswith('ssh '))
+    ssh_command = parameter_dict['ssh-command']
+    self.assertTrue(ssh_command.startswith('ssh '))
+    ssh_link = ssh_command[4:]
+    output = subprocess.check_output(('ssh', '-qvvv', ssh_link, 'exit'), universal_newlines=True)
+    self.asertEqual(output, 0)
