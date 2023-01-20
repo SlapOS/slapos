@@ -26,12 +26,15 @@
 ##############################################################################
 
 import os
+import contextlib
+import paramiko
 import subprocess
 
 from urllib.parse import urlparse
 import socket
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.util import bytes2str
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -39,6 +42,15 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestSSH(SlapOSInstanceTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    cls.ssh_key_list = [paramiko.ECDSAKey.generate(bits=384) for i in range(2)]
+    return {
+        'user-authorized-key': 'ecdsa-sha2-nistp384 {}\necdsa-sha2-nistp384 {}'.format(
+          *[key.get_base64() for key in cls.ssh_key_list]
+          )
+    }
+
   def test_connect(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     ssh_url = parameter_dict['ssh-url']
@@ -50,6 +62,79 @@ class TestSSH(SlapOSInstanceTestCase):
     self.assertTrue(ssh_command.startswith('ssh '))
     ssh_command = parameter_dict['ssh-command']
     self.assertTrue(ssh_command.startswith('ssh '))
-    ssh_link = ssh_command[4:]
-    output = subprocess.check_output(('ssh', '-qvvv', ssh_link, 'exit'), universal_newlines=True)
-    self.asertEqual(output, 0)
+    ssh_link, port = ssh_command[4:].split('-p')
+    output = subprocess.check_output(('ssh', '-q', ssh_link.strip(), '-p', port.strip(), 'exit'), universal_newlines=True)
+    # self.asertEqual(output, 0)
+    ssh_url = parameter_dict['ssh-url']
+    parsed = urlparse(ssh_url)
+    self.assertEqual('ssh', parsed.scheme)
+
+    # username contain a fingerprint (only, so we simplify the parsing)
+    #
+    # relevant parts of the grammar defined in
+    # https://tools.ietf.org/id/draft-salowey-secsh-uri-00.html
+    #
+    #   ssh-info      =  [ userinfo ] [";" c-param *("," c-param)]
+    #   c-param       =  paramname "=" paramvalue
+    ssh_info = parsed.username
+    username, fingerprint_from_url = ssh_info.split(';fingerprint=')
+    client = paramiko.SSHClient()
+
+    # self.assertTrue(fingerprint_from_url.startswith('ssh-rsa-'), fingerprint_from_url)
+    fingerprint_from_url = fingerprint_from_url[len('ssh-rsa-'):]
+
+    class KeyPolicy:
+      """Accept server key and keep it in self.key for inspection
+      """
+      def missing_host_key(self, client, hostname, key):
+        self.key = key
+
+    key_policy = KeyPolicy()
+    client.set_missing_host_key_policy(key_policy)
+
+    for ssh_key in self.ssh_key_list:
+      with contextlib.closing(client):
+        client.connect(
+            username=username,
+            hostname=parsed.hostname,
+            port=parsed.port,
+            pkey=ssh_key,
+        )
+        print("=====================")
+        print("=====================")
+        print("=====================")
+        print(username)
+        print(parsed.hostname)
+        print(parsed.port)
+        # ssh -o PubkeyAuthentication=no -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no -o ChallengeResponseAuthentication=no host.foo.com 2>&1 | grep "Permission denied"
+
+        # Check fingerprint from server matches the published one.
+        # Paramiko does not allow to get the fingerprint as SHA256 easily yet
+        # https://github.com/paramiko/paramiko/pull/1103
+        # self.assertEqual(
+        #     fingerprint_from_url,
+        #     quote(
+        #         # base64 encoded fingerprint adds an extra = at the end
+        #         base64.b64encode(
+        #             hashlib.sha256(key_policy.key.asbytes()).digest())[:-1],
+        #         # also encode /
+        #         safe=''))
+
+        # Check shell is usable
+        channel = client.invoke_shell()
+        channel.settimeout(30)
+        received = ''
+        while True:
+          r = bytes2str(channel.recv(1024))
+          self.logger.debug("received >%s<", r)
+          if not r:
+            break
+          received += r
+          if 'slaprunner shell' in received:
+            break
+        self.assertIn("Welcome to SlapOS slaprunner shell", received)
+
+        # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
+        self.assertEqual(
+            self.computer_partition_root_path,
+            bytes2str(client.exec_command("pwd")[1].read(1000)).strip())
