@@ -63,7 +63,7 @@ class TestSSH(SlapOSInstanceTestCase):
     ssh_command = parameter_dict['ssh-command']
     self.assertTrue(ssh_command.startswith('ssh '))
     ssh_link, port = ssh_command[4:].split('-p')
-    output = subprocess.check_output(('ssh', '-q', ssh_link.strip(), '-p', port.strip(), 'exit'), universal_newlines=True)
+    output = subprocess.check_output(('ssh', '-qvvv', ssh_link.strip(), '-p', port.strip(), 'exit'), universal_newlines=True)
     # self.asertEqual(output, 0)
     ssh_url = parameter_dict['ssh-url']
     parsed = urlparse(ssh_url)
