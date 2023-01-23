@@ -1,6 +1,19 @@
 <script>
-let link = document.createElement('link');
-link.rel = "stylesheet";
-link.href = "/css/slapos.css";
-document.head.appendChild(link);
+  let link = document.createElement('link');
+  link.rel = "stylesheet";
+  link.href = "/css/slapos.css";
+  document.head.appendChild(link);
+
+  link = document.createElement('link');
+  link.rel = "manifest";
+  link.href = "/theia.webmanifest";
+  document.head.appendChild(link);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/theia-serviceworker.js').then(function (reg) {
+      console.log('Successfully registered service worker', reg);
+    }).catch(function (err) {
+      console.warn('Error whilst registering service worker', err);
+    });
+  }
 </script>

@@ -324,7 +324,9 @@ inline =
     bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
     # writing twice the same ACL is doing OR
     acl is_public path_beg /public/
-    acl is_public path /$${favicon.ico:filename}
+    acl is_public path /$${frontend-instance-favicon.ico:filename}
+    acl is_public path /$${frontend-instance-theia.webmanifest:filename}
+    acl is_public path /$${frontend-instance-theia-serviceworker.js:filename}
     acl auth_ok http_auth(basic-auth-list)
     # No authentication for public folder
     http-request auth unless auth_ok || is_public
@@ -386,7 +388,42 @@ folder-name = css
 context =
   key logo_image frontend-instance-logo:filename
 
-[favicon.ico]
+[frontend-instance-theia.webmanifest]
+recipe = slapos.recipe.build
+short-name = {{ root_title }}
+name = Theia SlapOS $${:short-name}
+background-color = #3c3c3c
+install =
+  import json
+  with open(options['location'], 'w') as f:
+    json.dump({
+      "name": options["name"],
+      "short_name": options["short-name"],
+      "icons": [
+        {
+          "src": "/" + self.buildout["frontend-instance-favicon.ico"]["filename"],
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+      ],
+      "start_url": "/",
+      "display": "fullscreen",
+      "background_color": options["background-color"]
+    }, f)
+
+location = $${directory:frontend-static}/$${:filename}
+filename = theia.webmanifest
+
+[frontend-instance-theia-serviceworker.js]
+recipe = slapos.recipe.template
+inline =
+  /* minimal service worker for A2HS */
+  self.addEventListener("fetch", function(event) { });
+
+output = $${directory:frontend-static}/$${:filename}
+filename = theia-serviceworker.js
+
+[frontend-instance-favicon.ico]
 # generate a pseudo random favicon, different for each instance name.
 recipe = slapos.recipe.build
 seed = {{ root_title }}
@@ -408,7 +445,7 @@ install =
     self.buildout['buildout']['offline'] = buildout_offline
 
 location = $${directory:frontend-static}/$${:filename}
-filename = $${:_buildout_section_name_}
+filename = favicon.ico
 
 # Local Python Server
 # -------------------

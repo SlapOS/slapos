@@ -1,5 +1,6 @@
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{%- set QUIC_PORT = instance_parameter_dict.get('configuration.frontend-quic-port', '443') %}
 {%- if instance_parameter_dict.get('configuration.frontend-haproxy-flavour', 'basic') == 'quic' %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
 {%-   if instance_parameter_dict.get('configuration.frontend-haproxy-quic', 'false').lower() in TRUE_VALUES %}
@@ -371,6 +372,7 @@ organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] 
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 partition_ipv6 =  ${slap-configuration:ipv6-random}
 url-ready-file = ${directory:var}/url-ready.txt
+quic = {{ FRONTEND_HAPROXY_QUIC }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
@@ -384,6 +386,7 @@ extra-context =
     key empty_template software-release-path:template-empty
     key template_expose_csr_nginx_conf software-release-path:template-expose-csr-nginx-conf
     key software_type :software_type
+    key quic :quic
     key frontend_lazy_graceful_reload frontend-haproxy-lazy-graceful:output
     key monitor_base_url monitor-instance-parameter:monitor-base-url
     key node_id frontend-node-id:value
@@ -485,6 +488,7 @@ local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
 quic = {{ FRONTEND_HAPROXY_QUIC }}
+quic-port = {{ QUIC_PORT }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]

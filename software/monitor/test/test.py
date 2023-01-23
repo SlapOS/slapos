@@ -533,3 +533,41 @@ URL =
     self.assertSurykatkaPromises()
     self.assertSurykatkaCron()
     self.assertConnectionParameterDict()
+
+
+class TestNodeMonitoring(SlapOSInstanceTestCase):
+  """Test class for node monitoring instanciation"""
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'promise_cpu_temperature_frequency': 2,
+      'promise_cpu_temperature_threshold': 90,
+      'promise_cpu_avg_temperature_threshold': 80,
+      'promise_cpu_avg_temperature_threshold_duration': 600,
+      'promise_ram_available_frequency': 2,
+      'promise_ram_available_threshold': 500,
+      'promise_ram_avg_available_threshold': 1e3,
+      'promise_ram_avg_available_threshold_duration': 600,
+      'promise_network_errors_frequency': 5,
+      'promise_network_errors_threshold': 100,
+      'promise_network_lost_packets_threshold': 100,
+      'promise_network_transit_frequency': 1,
+      'promise_network_transit_max_data_threshold': 1e6,
+      'promise_network_transit_min_data_threshold': 0,
+      'promise_network_transit_duration': 600,
+      'promise_cpu_load_threshold': 1.5,
+      'promise_monitor_space_frequency': 5,
+      'promise_partition_space_threshold': 0.08,
+      'promise_free_disk_space_frequency': 3,
+      'promise_free_disk_space_threshold': 0.08,
+      'promise_free_disk_space_nb_days_predicted': 10,
+      'promise_free_disk_space_display_partition': True,
+      'promise_free_disk_space_display_prediction': True,
+      })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def test_node_monitoring_instance(self):
+    pass

@@ -333,19 +333,27 @@ Solution 1 (iptables)
 It is a good idea then to go on the node where the instance is
 and set some ``iptables`` rules like (if using default ports)::
 
-  iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 443 -j DNAT --to-destination {listening_ipv4}:4443
-  iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 80 -j DNAT --to-destination {listening_ipv4}:8080
-  ip6tables -t nat -A PREROUTING -p tcp -d {public_ipv6} --dport 443 -j DNAT --to-destination {listening_ipv6}:4443
-  ip6tables -t nat -A PREROUTING -p tcp -d {public_ipv6} --dport 80 -j DNAT --to-destination {listening_ipv6}:8080
+  iptables -t nat -A PREROUTING -p tcp -d ${public_ipv4} --dport 443 -j DNAT --to-destination ${listening_ipv4}:4443
+  iptables -t nat -A PREROUTING -p udp -d ${public_ipv4} --dport 443 -j DNAT --to-destination ${listening_ipv4}:4443
+  iptables -t nat -A PREROUTING -p tcp -d ${public_ipv4} --dport 80 -j DNAT --to-destination ${listening_ipv4}:8080
+  ip6tables -t nat -A PREROUTING -p tcp -d ${public_ipv6} --dport 443 -j DNAT --to-destination ${listening_ipv6}:4443
+  ip6tables -t nat -A PREROUTING -p tcp -d ${public_ipv6} --dport 80 -j DNAT --to-destination ${listening_ipv6}:8080
 
 Where ``{public_ipv[46]}`` is the public IP of your server, or at least the LAN IP to where your NAT will forward to, and ``{listening_ipv[46]}`` is the private ipv4 (like 10.0.34.123) that the instance is using and sending as connection parameter.
 
 Additionally in order to access the server by itself such entries are needed in ``OUTPUT`` chain (as the internal packets won't appear in the ``PREROUTING`` chain)::
 
-  iptables -t nat -A OUTPUT -p tcp -d {public_ipv4} --dport 443 -j DNAT --to {listening_ipv4}:4443
-  iptables -t nat -A OUTPUT -p tcp -d {public_ipv4} --dport 80 -j DNAT --to {listening_ipv4}:8080
-  ip6tables -t nat -A OUTPUT -p tcp -d {public_ipv6} --dport 443 -j DNAT --to {listening_ipv6}:4443
-  ip6tables -t nat -A OUTPUT -p tcp -d {public_ipv6} --dport 80 -j DNAT --to {listening_ipv6}:8080
+  iptables -t nat -A OUTPUT -p tcp -d ${public_ipv4} --dport 443 -j DNAT --to ${listening_ipv4}:4443
+  iptables -t nat -A OUTPUT -p udp -d ${public_ipv4} --dport 443 -j DNAT --to ${listening_ipv4}:4443
+  iptables -t nat -A OUTPUT -p tcp -d ${public_ipv4} --dport 80 -j DNAT --to ${listening_ipv4}:8080
+  ip6tables -t nat -A OUTPUT -p tcp -d ${public_ipv6} --dport 443 -j DNAT --to ${listening_ipv6}:4443
+  ip6tables -t nat -A OUTPUT -p tcp -d ${public_ipv6} --dport 80 -j DNAT --to ${listening_ipv6}:8080
+
+**Note regarding ports**:
+
+ * the port seen by application in case of IPv4 TCP will be "correct" - the ``443`` or ``80``
+ * the port seen by application in case of IPv6 and IPv4 UDP will be "incorrect" - the ``4443`` or ``8080``
+
 
 Solution 2 (network capability)
 -------------------------------
@@ -358,6 +366,10 @@ Then specify in the master instance parameters:
 
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
+
+**Note regarding securitry**:
+
+ * such configuration results with all partitions being able to bind to low ports using this binary
 
 Authentication to the backend
 =============================
@@ -478,5 +490,7 @@ Experimental QUIC
 ~~~~~~~~~~~~~~~~~
 
 QUIC with HTTP3 is available as experimental feature. It has to be enabled on each node separately by using ``-frontend-i-experimental-haproxy-quic``. Then given node will reply with proper headers on HTTPS to advertise QUIC. Please note that ``-frontend-i-experimental-haproxy-flavour`` has to be set to ``quic`` on this node too.
+
+Please note that due to limitations of iptables method used to expose low ports, the ``-frontend-i-experimental-quic-port`` is by default ``443``, which is used when advertisting the QUIC/HTTP3 port to the client.
 
 Note that then all frontends will be served with QUIC advertised on such node, so it's important to run such experiments very carefully, for example on same zone/region with DNS.
