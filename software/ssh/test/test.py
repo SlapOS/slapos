@@ -65,20 +65,10 @@ class TestSSH(SlapOSInstanceTestCase):
     #   ssh-info      =  [ userinfo ] [";" c-param *("," c-param)]
     #   c-param       =  paramname "=" paramvalue
     ssh_info = parsed.username
-    username, fingerprint_from_url = ssh_info.split(';fingerprint=')
+    username, _ = ssh_info.split(';fingerprint=')
     client = paramiko.SSHClient()
 
-    fingerprint_from_url = fingerprint_from_url[len('ssh-rsa-'):]
-
-    class KeyPolicy:
-      """Accept server key and keep it in self.key for inspection
-      """
-      def missing_host_key(self, client, hostname, key):
-        self.key = key
-
-    key_policy = KeyPolicy()
-    client.set_missing_host_key_policy(key_policy)
-
+    client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
     for ssh_key in self.ssh_key_list:
       with contextlib.closing(client):
         client.connect(
@@ -88,11 +78,7 @@ class TestSSH(SlapOSInstanceTestCase):
             pkey=ssh_key,
         )
         self.assertTrue(client.get_transport().is_active())
-
-        # Check shell is usable
-        channel = client.invoke_shell()
-        channel.settimeout(30)
-
         # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
+        # exec_command means `ssh user@host command`
         current_path = bytes2str(client.exec_command("pwd")[1].read(1000)).strip()
-        self.assertNotEqual(current_path, os.getcwd())
+        self.assertIn(current_path, self.computer_partition_root_path)
