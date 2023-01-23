@@ -451,17 +451,17 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
-  _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
+  _connection_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = gitlab_software_release_url
 
-  def _getGitlabConnexionParameters(self, instance_type='export'):
+  def _getGitlabConnectionParameters(self, instance_type='export'):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,
       stderr=subprocess.STDOUT,
       text=True,
     )
     print(out)
-    return json.loads(self._connexion_parameters_regex.search(out).group(0).replace("'", '"'))
+    return json.loads(self._connection_parameters_regex.search(out).group(0).replace("'", '"'))
 
   def test_twice(self):
     # do nothing
@@ -474,12 +474,16 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
 
     # Get Gitlab parameters
-    parameter_dict = self._getGitlabConnexionParameters()
+    parameter_dict = self._getGitlabConnectionParameters()
     backend_url = parameter_dict['backend_url']
 
     print('Trying to connect to gitlab backend URL...')
     response = requests.get(backend_url, verify=False)
     self.assertEqual(requests.codes['OK'], response.status_code)
+
+    gitlab_partition = self._getGitlabPartitionPath('export', 'postgres')
+    unicorn_log = os.path.join(gitlab_partition, '.slappart0_unicorn.log')
+
 
     # Set the password and token
     output = subprocess.check_output(
@@ -522,7 +526,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # Clone the repo with token
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
     print(clone_url)
-    clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
+    # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
@@ -539,7 +543,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   def _checkTakeover(self):
     super(TestTheiaResilienceGitlab, self)._checkTakeover()
     # Get Gitlab parameters
-    parameter_dict = self._getGitlabConnexionParameters()
+    parameter_dict = self._getGitlabConnectionParameters()
     backend_url = parameter_dict['backend_url']
 
     # Check the project is exist
