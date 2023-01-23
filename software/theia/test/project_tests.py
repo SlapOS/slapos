@@ -564,7 +564,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     print(repo_url)
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
     print(clone_url)
-    clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
+    # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
