@@ -24,6 +24,14 @@ offline = true
 
 #----------------
 #--
+#-- Monitor password aggregation.
+
+[monitor-instance-parameter]
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
+
+#----------------
+#--
 #-- Creation of all needed directories.
 
 [directory]
