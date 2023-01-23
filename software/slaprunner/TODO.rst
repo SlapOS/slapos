@@ -1,3 +1,0 @@
-- resilient sr: Cloned instances should not launch slapgrid-sr if it was not launched on export instance
-- add test for parameter auto-deploy-instance
-- Add download facility in file browser
