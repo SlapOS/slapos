@@ -174,7 +174,7 @@ internal = ${:sockets}/internal
 log     = ${directory:log}/gitaly
 
 [gitaly]
-socket  = ${gitaly-dir:sockets}/gitaly.socket
+socket  = ${directory:etc}/gitaly.socket
 log     = ${gitaly-dir:log}
 location = {{ gitaly_location }}
 pid     = ${directory:run}/gitaly.pid
