@@ -174,11 +174,17 @@ internal = ${:sockets}/internal
 log     = ${directory:log}/gitaly
 
 [gitaly]
-socket  = ${directory:etc}/gitaly.socket
+socket  = ${directory:var}/gitaly.socket
 log     = ${gitaly-dir:log}
 location = {{ gitaly_location }}
 pid     = ${directory:run}/gitaly.pid
 internal_socket = ${gitaly-dir:internal}
+
+[gitaly-listen-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = gitaly_listen_promise.py
+config-command = test -S ${gitaly:socket}
 
 # 2. configuration files
 [etc-template]
