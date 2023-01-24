@@ -37,6 +37,7 @@ parts =
     logrotate-entry-cron
 
     on-reinstantiate
+    gitaly-listen-promise
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -183,8 +184,15 @@ internal_socket = ${gitaly-dir:internal}
 [gitaly-listen-promise]
 <= monitor-promise-base
 promise = check_command_execute
-name = gitaly_listen_promise.py
+name = gitaly_socket_command_check_promise.py
 config-command = test -S ${gitaly:socket}
+
+[gitaly-socket-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = gitaly_socket_listen_promise.py
+config-abstract = ${gitaly:socket}
+
 
 # 2. configuration files
 [etc-template]

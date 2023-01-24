@@ -468,7 +468,13 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     pass
 
   def _prepareExport(self):
-    super(TestTheiaResilienceGitlab, self)._prepareExport()
+    # A workaround for slapos node software
+    # which may failed at the first time to install nodejs
+    for i in range(2):
+      try:
+        super(TestTheiaResilienceGitlab, self)._prepareExport()
+      except:
+        pass
 
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
     gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
