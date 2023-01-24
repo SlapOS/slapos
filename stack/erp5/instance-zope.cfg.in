@@ -472,7 +472,7 @@ context =
 {% else -%}
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
-wrapped-command-line = ${runUnitTest:wrapper-path}
+wrapped-command-line = {{ parameter_dict['faketime'] }}/bin/faketime "2057/01/03 00:00:00" ${runUnitTest:wrapper-path}
 wrapper-path = ${buildout:bin-directory}/runUnitTest
 
 [{{ section('run-test-suite-userhosts-wrapper') }}]
