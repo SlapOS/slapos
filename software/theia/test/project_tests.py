@@ -33,7 +33,7 @@ import re
 import subprocess
 import time
 import unittest
-
+import shutil
 import requests
 
 from datetime import datetime, timedelta
@@ -528,6 +528,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     print(clone_url)
     # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
+    repo_path = os.getcwd() + project_1['path_with_namespace']
+    if os.path.exists(repo_path):
+      shutil.rmtree(repo_path, ignore_errors=True)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
 
@@ -537,6 +540,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     f.write('This is the new file.')
     f.close()
     output = subprocess.check_output(('git', 'add', '.'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'config', '--global', 'user.name', 'Resilience Test'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'config', '--global', 'user.email', 'resilience-test@example.com'), cwd=repo_path, universal_newlines=True)
     output = subprocess.check_output(('git', 'commit', '-m', 'Initial commit'), cwd=repo_path, universal_newlines=True)
     output = subprocess.check_output(('git', 'push', 'origin', 'master'), cwd=repo_path, universal_newlines=True)
 
@@ -566,6 +571,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     print(clone_url)
     # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
+    repo_path = os.getcwd() + project_1['path_with_namespace']
+    if os.path.exists(repo_path):
+      shutil.rmtree(repo_path, ignore_errors=True)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
     repo_path = os.path.join(os.getcwd(), project_1['name'])
