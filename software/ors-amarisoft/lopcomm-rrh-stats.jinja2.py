@@ -23,7 +23,7 @@ class LopcommNetconfClient:
 
         if {{ testing }}:
             return
-  
+
     def connect(host, port, user, password):
 
         if {{ testing }}:
@@ -44,9 +44,11 @@ class LopcommNetconfClient:
         result = None
         while result == None:
             result = conn.take_notification(block=True, timeout=60)
-            print(result)
-        import pdb; pdb.set_trace()
-        #self.logger.info('', extra={'data': r})
+            result_in_xml = result._raw
+            data_dict = xmltodict.parse(result_in_xml)
+            result_in_json = json.dumps(data_dict)
+            print(result_in_json)
+            self.logger.info('', extra={'data': result_in_json})
 
 if __name__ == '__main__':
     #LOG_FORMAT = '%(asctime)s %(levelname)s %(filename)s:%(lineno)d %(message)s'
