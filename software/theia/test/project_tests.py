@@ -496,7 +496,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # Create a new project
     print("Gitlab create a project")
     path = '/api/v3/projects'
-    parameter_dict = {'name': 'sample.test', 'namespace': 'open'}
+    parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
     # Token can be set manually
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
     response = requests.post(backend_url + path, params=parameter_dict,
@@ -513,14 +513,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Only one project exist
     self.assertEqual(len(projects), 1)
-    # The project name is sample.test, which we created above.
-    self.assertIn("sample.test", projects[0]['name_with_namespace'])
+    # The project name is sample-test, which we created above.
+    self.assertIn("sample-test", projects[0]['name_with_namespace'])
 
     project_1 = projects[0]
     print(project_1)
 
-    # Get repo url, default one is http://lab.example.com/root/sample.test.git
-    # We need the path like http://[2001:67c:1254:e:c4::5041]:7777/root/sample.test
+    # Get repo url, default one is http://lab.example.com/root/sample-test.git
+    # We need the path like http://[2001:67c:1254:e:c4::5041]:7777/root/sample-test
     repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
     print(repo_url)
     # Clone the repo with token
@@ -558,8 +558,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Only one project exist
     self.assertEqual(len(projects), 1)
-    # The project name is sample.test, which we created above.
-    self.assertIn("sample.test", projects[0]['name_with_namespace'])
+    # The project name is sample-test, which we created above.
+    self.assertIn("sample-test", projects[0]['name_with_namespace'])
     repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
     print(repo_url)
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
