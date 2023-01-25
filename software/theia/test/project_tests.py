@@ -487,10 +487,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     response = requests.get(backend_url, verify=False)
     self.assertEqual(requests.codes['OK'], response.status_code)
 
-    gitlab_partition = self._getGitlabPartitionPath('export', 'postgres')
-    unicorn_log = os.path.join(gitlab_partition, '.slappart0_unicorn.log')
-
-
     # Set the password and token
     output = subprocess.check_output(
       (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!"),
@@ -522,29 +518,19 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # The project name is sample-test, which we created above.
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
 
-    project_1 = projects[0]
-    print(project_1)
-
     # Get repo url, default one is http://lab.example.com/root/sample-test.git
     # We need the path like http://[2001:67c:1254:e:c4::5041]:7777/root/sample-test
+    project_1 = projects[0]
     repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
-    print(repo_url)
     # Clone the repo with token
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
-    print(clone_url)
-    # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
-    print(clone_url)
     repo_path = os.path.join(os.getcwd(), project_1['name'])
     print(repo_path)
     if os.path.exists(repo_path):
       shutil.rmtree(repo_path, ignore_errors=True)
-    if os.path.exists(project_1['path']):
-      shutil.rmtree(project_1['path'], ignore_errors=True)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
-    print(os.getcwd())
 
     # Create a new file and push the commit
-    repo_path = os.path.join(os.getcwd(), project_1['name'])
     f = open(os.path.join(repo_path, 'file.txt'), 'x')
     f.write('This is the new file.')
     f.close()
@@ -576,18 +562,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
     project_1 = projects[0]
     repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
-    print(repo_url)
     clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
-    print(clone_url)
-    # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
-    print(clone_url)
-    # repo_path = os.getcwd() + project_1['path_with_namespace']
-    # if os.path.exists(repo_path):
-    #   shutil.rmtree(repo_path, ignore_errors=True)
-    # output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
-    print(os.getcwd())
     repo_path = os.path.join(os.getcwd(), project_1['name'])
-    print(repo_path)
 
     # Check the file we committed in the original theia is exist and the content is matching.
     output = subprocess.check_output(('git', 'show', 'origin/master:file.txt'), cwd=repo_path, universal_newlines=True)
