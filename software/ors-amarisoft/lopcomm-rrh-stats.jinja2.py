@@ -50,7 +50,7 @@ class LopcommNetconfClient:
 
     def close(self):
         #self.conn.close()
-				pass
+        pass
 
 if __name__ == '__main__':
 
