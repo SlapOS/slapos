@@ -38,6 +38,7 @@ parts =
 
     on-reinstantiate
     gitaly-listen-promise
+    gitaly-socket-promise
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -191,8 +192,7 @@ config-command = test -S ${gitaly:socket}
 <= monitor-promise-base
 promise = check_socket_listening
 name = gitaly_socket_listen_promise.py
-config-abstract = ${gitaly:socket}
-
+config-pathname = ${gitaly:socket}
 
 # 2. configuration files
 [etc-template]
