@@ -1,5 +1,4 @@
 #!{{ python_path }}
-
 import json
 import logging
 import time
@@ -29,7 +28,7 @@ class LopcommNetconfClient:
         if {{ testing }}:
             return
 
-        conn = manager.connect(host=host,
+        self.conn = manager.connect(host=host,
                                port=port,
                                username=user,
                                password=password,
@@ -39,15 +38,19 @@ class LopcommNetconfClient:
                                },
                                hostkey_verify=False)
 
-        #result = conn.create_subscription(filter=('xpath', '/o-ran-fm:*'))
-        sub = conn.create_subscription()
+        #result = self.conn.create_subscription(filter=('xpath', '/o-ran-fm:*'))
+        sub = self.conn.create_subscription()
         result = None
         while result == None:
-            result = conn.take_notification(block=True, timeout=60)
+            result = self.conn.take_notification(block=True, timeout=60)
             result_in_xml = result._raw
             data_dict = xmltodict.parse(result_in_xml)
             result_in_json = json.dumps(data_dict)
             self.logger.info('', extra={'data': result_in_json})
+
+    def close(self):
+        #self.conn.close()
+				pass
 
 if __name__ == '__main__':
 
