@@ -535,8 +535,11 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # clone_url = 'http://' + 'root:nexedi4321@' + backend_url.replace("http://", "") + "/" + project_1['path_with_namespace'] + ".git"
     print(clone_url)
     repo_path = os.getcwd() + project_1['path_with_namespace']
+    print(repo_path)
     if os.path.exists(repo_path):
       shutil.rmtree(repo_path, ignore_errors=True)
+    if os.path.exists(project_1['path']):
+      shutil.rmtree(project_1['path'], ignore_errors=True)
     output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
     print(os.getcwd())
 
