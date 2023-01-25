@@ -24,7 +24,7 @@ class LopcommNetconfClient:
         if {{ testing }}:
             return
 
-    def connect(host, port, user, password):
+    def connect(self, host, port, user, password):
 
         if {{ testing }}:
             return
@@ -47,20 +47,14 @@ class LopcommNetconfClient:
             result_in_xml = result._raw
             data_dict = xmltodict.parse(result_in_xml)
             result_in_json = json.dumps(data_dict)
-            print(result_in_json)
             self.logger.info('', extra={'data': result_in_json})
 
 if __name__ == '__main__':
-    #LOG_FORMAT = '%(asctime)s %(levelname)s %(filename)s:%(lineno)d %(message)s'
-    #logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=LOG_FORMAT)
-    #logging.getLogger().setLevel(logging.DEBUG)
-
-    connect("192.168.0.210", 830, "oranuser", "oranpassword")
 
     nc = LopcommNetconfClient()
     while True:
       try:
-          nc.connect()
+          nc.connect("192.168.0.210", 830, "oranuser", "oranpassword")
           time.sleep(10)
       except Exception as e:
           nc.logger.debug(e)
