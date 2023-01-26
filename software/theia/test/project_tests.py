@@ -478,7 +478,10 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
     gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
-
+    tmp_dir = os.path.join(gitlab_partition, 'tmp')
+    if not os.path.exists(tmp_dir):
+        os.makedirs(tmp_dir)
+    os.chdir(tmp_dir)
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnectionParameters()
     backend_url = parameter_dict['backend_url']
@@ -540,11 +543,36 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     output = subprocess.check_output(('git', 'commit', '-m', 'Initial commit'), cwd=repo_path, universal_newlines=True)
     output = subprocess.check_output(('git', 'push', 'origin', 'master'), cwd=repo_path, universal_newlines=True)
 
+    # Do a fake periodically update
+    # Compute backup date in the near future
+    soon = (datetime.now() + timedelta(minutes=4)).replace(second=0)
+    frequency = "%d * * * *" % soon.minute
+    params = 'backup_frequency=%s' % frequency
+
+    # Update Peertube parameters
+    print('Requesting Gitlab with parameters %s' % params)
+    self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
+
+    self.checkSlapos('node', 'instance')
+
+    self.callSlapos('node', 'restart', 'all')
+
+    # Wait until after the programmed backup date, and a bit more
+    t = (soon - datetime.now()).total_seconds()
+    self.assertLess(0, t)
+    time.sleep(t + 120)
+    self.callSlapos('node', 'status')
+
   def _checkTakeover(self):
     super(TestTheiaResilienceGitlab, self)._checkTakeover()
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnectionParameters()
     backend_url = parameter_dict['backend_url']
+
+    gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
+    # The temp dir which created in theia0, it should be exist and contains the repo
+    tmp_dir = os.path.join(gitlab_partition, 'tmp')
+    os.chdir(tmp_dir)
 
     # Check the project is exist
     print("Gitlab check project is exist")
