@@ -15,6 +15,7 @@ T-1:crond-{hash-generic}-on-watch RUNNING
 T-1:expose-csr-{hash-generic}-on-watch RUNNING
 T-1:kedifa-{hash-generic}-on-watch RUNNING
 T-1:kedifa-reloader EXITED
+T-1:logrotate-setup-validate EXITED
 T-1:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-1:monitor-httpd-graceful EXITED
 T-2:backend-client-login-certificate-caucase-updater-on-watch RUNNING
@@ -28,6 +29,7 @@ T-2:expose-csr-{hash-generic}-on-watch RUNNING
 T-2:frontend-haproxy-{hash-generic}-on-watch RUNNING
 T-2:frontend-haproxy-rsyslogd-{hash-generic}-on-watch RUNNING
 T-2:frontend-haproxy-safe-graceful EXITED
+T-2:logrotate-setup-validate EXITED
 T-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 T-2:kedifa-updater-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-{hash-generic}-on-watch RUNNING
