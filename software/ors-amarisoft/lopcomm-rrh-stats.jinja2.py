@@ -57,7 +57,7 @@ if __name__ == '__main__':
     nc = LopcommNetconfClient()
     while True:
       try:
-          nc.connect("192.168.0.210", 830, "oranuser", "oranpassword")
+          nc.connect("fe80::20a:ff:fe00:1020%slaptap6", 830, "oranuser", "oranpassword")
           time.sleep(10)
       except Exception as e:
           nc.logger.debug(e)
