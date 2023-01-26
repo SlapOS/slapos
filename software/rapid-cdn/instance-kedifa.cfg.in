@@ -324,12 +324,24 @@ kedifa-csr-url = ${expose-csr:url}/${expose-csr-link-csr:filename}
 csr-certificate = ${expose-csr-certificate-get:certificate}
 monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
 
+[logrotate-setup-validate]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_wrapper'] }}
+output = ${directory:scripts}/logrotate-setup-validate
+command =
+  if ${logrotate:wrapper-path} -d > ${:state-file} 2>&1 ; then
+    cat /dev/null > ${:state-file}
+  fi
+extra-context =
+  key content :command
+state-file = ${directory:run}/logrotate-setup.state
+
 [promise-logrotate-setup]
 <= monitor-promise-base
-promise = check_command_execute
+promise = check_file_state
 name = ${:_buildout_section_name_}.py
-config-command =
-  ${logrotate:wrapper-path} -d
+config-filename = ${logrotate-setup-validate:state-file}
+config-state = empty
 
 [kedifa-auth-ready]
 recipe = plone.recipe.command
