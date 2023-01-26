@@ -52,6 +52,9 @@ class MatomoTestCase(SlapOSInstanceTestCase):
         break
     self.assertTrue(self.matomo_path,"matomo path not found in %r" % (partition_path_list,))
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
+    # parse <url> out of ['<url>']
+    url = self.connection_parameters['mariadb-url-list'][2:-2]
+    self.db_info = urllib.parse.urlparse(url)
 
   #Check if matomo root directory is empty
   def test_matomo_dir(self):
@@ -83,8 +86,9 @@ class MatomoTestCase(SlapOSInstanceTestCase):
     self.assertEqual(
       tree.xpath('//input[@name="dbname"]/@value'),
       ['matomo'])
-    self.assertTrue(
-      tree.xpath('//input[@name="password"]/@value')[0])
+    self.assertEqual(
+      tree.xpath('//input[@name="password"]/@value'),
+      [self.db_info.password])
     self.assertEqual(
       tree.xpath('//input[@name="host"]/@value'),
       [f'{self._ipv4_address}:2099']
