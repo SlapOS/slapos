@@ -2,7 +2,6 @@
 {% set part_list = [] -%}
 {% set ipv6 = (ipv6 | list)[0] -%}
 {% set monitor_base_url_dict = {} -%}
-{% set mariadb_dict = {} -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -28,6 +27,7 @@ sla-computer_guid = {{ dumps(slapparameter_dict.get('apache-computer-guid', ''))
 config-{{ key }} = {{ dumps(value) }}
 {%  endif -%}
 {% endfor -%}
+config-monitor-passwd = ${monitor-instance-parameter:password}
 config-database-list = ${request-mariadb:connection-database-list}
 return =
   backend-url
@@ -37,24 +37,20 @@ return =
 {% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
 {% do monitor_base_url_dict.__setitem__('apache', '${request-apache:connection-monitor-base-url}') -%}
 
-{% do mariadb_dict.__setitem__('database-list', [{'name': db_name, 'user': db_user, 'password': db_password }]) -%}
-{% do mariadb_dict.__setitem__('test-database-amount', 0) -%}
-{% do mariadb_dict.__setitem__('tcpv4-port', 2099) -%}
-{% do mariadb_dict.__setitem__('max-slowqueries-threshold', 1000) -%}
-{% do mariadb_dict.__setitem__('slowest-query-threshold', '') -%}
-{% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
-{% do mariadb_dict.__setitem__('monitor-passwd', '${monitor-htpasswd:passwd}') -%}
-{% do mariadb_dict.__setitem__('name', 'Mariadb') -%}
-{% do mariadb_dict.__setitem__('innodb-file-per-table', slapparameter_dict.get('innodb-file-per-table', 1)) -%}
-
 [request-mariadb]
 <= request-common
 software-type = mariadb
 name = Mariadb
 sla-computer_guid = {{ dumps(slapparameter_dict.get('mariadb-computer-guid', '')) }}
-{% for key, value in mariadb_dict.items() -%}
-config-{{ key }} = {{ dumps(value) }}
-{% endfor -%}
+config-database-list = {{ dumps([{'name': db_name, 'user': db_user, 'password': db_password }]) }}
+config-test-database-amount = {{ dumps(0) }}
+config-tcpv4-port = {{ dumps(2099) }}
+config-max-slowqueries-threshold = {{ dumps(1000) }}
+config-slowest-query-threshold =
+config-computer-memory-percent-threshold = {{ dumps(80) }}
+config-monitor-passwd = ${monitor-instance-parameter:password}
+config-name = ${:name}
+config-innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 1)) }}
 return =
   database-list
   monitor-base-url
