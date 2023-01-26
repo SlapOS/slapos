@@ -1,0 +1,49 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[default-dynamic-template-parameters]
+bin-directory = ${buildout:bin-directory}
+buildout-bin-directory = ${buildout:bin-directory}
+
+[dynamic-template-postfix-parameters]
+<= default-dynamic-template-parameters
+cyrus-sasl-location = ${cyrus-sasl:location}
+openssl = ${openssl:location}
+postfix-location = ${postfix:location}
+dovecot-location = ${dovecot:location}
+template-postfix-aliases = ${template-postfix-aliases:target}
+template-postfix-main-cf = ${template-postfix-main-cf:target}
+template-postfix-master-cf = ${template-postfix-master-cf:target}
+xz-utils-location =  ${xz-utils:location}
+
+[dynamic-template-postfix]
+recipe = slapos.recipe.template:jinja2
+url = ${template-postfix:output}
+filename = instance-postfix.cfg
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+context =
+    import urllib urllib
+    section parameter_dict dynamic-template-postfix-parameters
+    key slapparameter_dict slap-configuration:configuration
+    key ipv6_set slap-configuration:ipv6
+    raw template_monitor ${monitor2-template:output}
+    raw template_dovecot ${template-dovecot:output}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-postfix:output
+RootSoftwareInstance = $${:default}
