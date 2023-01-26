@@ -573,7 +573,6 @@ parts +=
     kedifa-updater-run
     frontend-haproxy-configuration
     backend-haproxy-configuration
-    promise-logrotate-setup
     promise-key-download-url-ready
 {%- for part in part_list %}
 {{ '    %s' % part }}
@@ -641,13 +640,6 @@ init =
   if os.path.exists(options['certificate-file']):
     with open(options['certificate-file'], 'r') as fh:
       options['certificate'] = fh.read()
-
-[promise-logrotate-setup]
-<= monitor-promise-base
-promise = check_command_execute
-name = ${:_buildout_section_name_}.py
-config-command =
-  ${logrotate:wrapper-path} -d
 
 [key-download-url-ready]
 recipe = slapos.recipe.build
