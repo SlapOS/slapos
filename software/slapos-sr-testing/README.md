@@ -12,7 +12,7 @@ The results of this test suite running on Nexedi ERP5 are published as `SlapOS.S
 ## Running test locally
 
 Here's an example session of how a developer could use this software release in
-slaprunner to develop a slapos profile, in the example `helloworld`, make
+Theia to develop a slapos profile, in the example `helloworld`, make
 changes to the code, run tests and publish changes.
 
 ```bash

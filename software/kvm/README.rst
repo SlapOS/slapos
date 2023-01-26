@@ -194,8 +194,12 @@ removing files:
 
 from the partition (typically ``/srv/slapgrid/slappartNN/`` directory).
 
+They will reappear automatically after some time, but as the old
+``external-disk-amount`` approach is now disabled, they won't be updated.
+
 The failure observed to confirm the situation can be found in
 ``.slappartNN_kvm-HASH.log`` with presence of message like::
 
-  qemu-system-x86_64: -drive file=/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2,if=virtio,cache=writeback: Failed to get "write" lock
-  Is another process using the image [/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2]?
+  ValueError: external-disk problems: conflicts with external-disk-number = XX, conflicts with already configured disks amount XX in /srv/slapgrid/slappartNN/etc/.data-disk-amount
+
+Where ``XX`` is the previously used ``external-disk-number`` and ``NN`` is the partition.
