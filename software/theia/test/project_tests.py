@@ -35,6 +35,7 @@ import time
 import unittest
 import shutil
 import requests
+import tempfile
 
 from datetime import datetime, timedelta
 from six.moves.urllib.parse import urljoin
