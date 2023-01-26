@@ -1,0 +1,60 @@
+#############################
+#
+# Deploy  OSIE coupler instance
+#
+#############################
+[buildout]
+parts =
+  directory
+  publish-connection-parameter
+  coupler-opc-ua
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+extends = {{ template_monitor }}
+
+[coupler-opc-ua]
+recipe = slapos.cookbook:wrapper
+environment =
+  LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ open62541_location }}/lib::{{ mbedtls_location }}/lib
+command-line =
+    {{ buildout['bin-directory'] }}/server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -m 1 -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id}
+
+wrapper-path = ${directory:service}/coupler-opc-ua-virtual
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+configuration.coupler_block_device = /dev/i2c-1
+configuration.coupler_i2c_slave_list = 0x58
+configuration.interface = 0.0.0.0
+configuration.opc_ua_port = 4840
+configuration.username = 
+configuration.password =
+configuration.id = 0
+configuration.heart_beat = 0
+configuration.heart_beat_interval = 500
+configuration.heart_beat_id_list =
+configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
+configuration.heart_beat_timeout_interval = 2000
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+log = ${:var}/log
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+opc_ua_port = ${instance-parameter:configuration.opc_ua_port}
+interface = ${instance-parameter:configuration.interface}
