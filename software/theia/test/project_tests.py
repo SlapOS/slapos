@@ -454,6 +454,10 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   _connection_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = gitlab_software_release_url
 
+  def setUp(self):
+    self.temp_dir = os.path.realpath(tempfile.mkdtemp())
+    self.addCleanup(shutil.rmtree, self.temp_dir)
+
   def _getGitlabConnectionParameters(self, instance_type='export'):
     out = self.captureSlapos(
       'request', 'test_instance', self._test_software_url,
@@ -478,10 +482,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
     gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
-    tmp_dir = os.path.join(gitlab_partition, 'tmp')
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir)
-    os.chdir(tmp_dir)
+    os.chdir(self.temp_dir)
+
     # Get Gitlab parameters
     parameter_dict = self._getGitlabConnectionParameters()
     backend_url = parameter_dict['backend_url']
@@ -569,10 +571,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     parameter_dict = self._getGitlabConnectionParameters()
     backend_url = parameter_dict['backend_url']
 
-    gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
     # The temp dir which created in theia0, it should be exist and contains the repo
-    tmp_dir = os.path.join(gitlab_partition, 'tmp')
-    os.chdir(tmp_dir)
+    os.chdir(self.temp_dir)
 
     # Check the project is exist
     print("Gitlab check project is exist")
