@@ -12,16 +12,20 @@ class LopcommNetconfClient:
     def __init__(self):
 
         log_file = "{{ log_file }}"
+        json_log_file = "{{ json_log_file }}"
 
         self.logger = logging.getLogger('logger')
         self.json_logger = logging.getLogger('json_logger')
-
         self.logger.setLevel(logging.DEBUG)
         self.json_logger.setLevel(logging.DEBUG)
-        handler = RotatingFileHandler(log_file, maxBytes=30000, backupCount=2)
-        formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
-        handler.setFormatter(formatter)
-        self.json_logger.addHandler(handler)
+
+        json_handler = RotatingFileHandler(json_log_file, maxBytes=100000, backupCount=5)
+        json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
+        json_handler.setFormatter(json_formatter)
+        self.json_logger.addHandler(json_handler)
+
+        handler = RotatingFileHandler(log_file, maxBytes=100000, backupCount=5)
+        self.logger.addHandler(handler)
 
         if {{ testing }}:
             return
