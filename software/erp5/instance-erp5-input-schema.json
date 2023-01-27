@@ -186,11 +186,6 @@
       },
       "type": "object"
     },
-    "wsgi": {
-      "description": "If set to true, Zope is run as a WSGI application, instead of using the Medusa HTTP server.",
-      "type": "boolean",
-      "default": true
-    },
     "zope-partition-dict": {
       "description": "Zope layout definition",
       "default": {
