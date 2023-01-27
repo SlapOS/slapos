@@ -173,6 +173,12 @@ class TestPidFile(WrapperTestCase):
 
 
 class TestWaitForFiles(WrapperTestCase):
+  env = None
+  if sys.platform.startswith("linux"):
+    expected_output = 'done\n'
+  else:
+    expected_output = 'Error using inotify, falling back to polling\ndone\n'
+
   def getOptions(self):
     self.waitfile = self.getTempPath('wait')
     return {
@@ -190,6 +196,7 @@ class TestWaitForFiles(WrapperTestCase):
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
       universal_newlines=True,
+      env=self.env,
     )
     self.addCleanup(self.terminate_process, process)
     if process.poll():
@@ -205,11 +212,55 @@ class TestWaitForFiles(WrapperTestCase):
     for _ in range(20):
       time.sleep(0.1)
       if process.poll() is not None:
-        self.assertEqual(process.stdout.read(), 'done\n')
+        self.assertEqual(process.stdout.read(), self.expected_output)
         self.assertEqual(process.returncode, 0)
         break
     else:
       self.fail('process did not start after file was created')
+
+
+@unittest.skipUnless(sys.platform.startswith("linux"), "Inotify is linux only")
+class TestWaitForFilesInotifyError(TestWaitForFiles):
+
+  def setUp(self):
+    super(TestWaitForFilesInotifyError, self).setUp()
+    # use LD_PRELOAD to inject errors into inotify_add_watch calls
+    inotify_mock_c = self.getTempPath('inotify_mock.c')
+    inotify_mock_o = self.getTempPath('inotify_mock.o')
+    inotify_mock_so = self.getTempPath('inotify_mock.so')
+    with open(inotify_mock_c, 'w') as f:
+      f.write('''
+        #include <sys/inotify.h>
+        #include <string.h>
+        #include <errno.h>
+
+        int inotify_add_watch(int fd, const char *pathname, uint32_t mask) {
+          errno = ENOSPC;
+          return -1;
+        }
+
+        /* This is a bit tricky because inotify_simple calls
+        inotify_add_watch with ctypes.CDLL("libc.so"), which uses
+        dlopen("libc.so") and dlsym("inotify_add_watch"), so we first
+        override dlsym to return our own inotify_add_watch.
+        https://github.com/chrisjbillington/inotify_simple/blob/55737898/inotify_simple.py#L110
+        */
+        extern void *__libc_dlsym (void *, const char *);
+        void *dlsym(void *handle, const char *symbol) {
+          if (strcmp(symbol, "inotify_add_watch") == 0) {
+            return (void *)inotify_add_watch;
+          }
+          return (void *)__libc_dlsym(handle, symbol);
+        }
+        ''')
+    subprocess.check_call(['gcc', '-c', '-fPIC', '-o', inotify_mock_o, inotify_mock_c])
+    subprocess.check_call(['gcc', '-shared', '-o', inotify_mock_so, inotify_mock_o])
+    self.env = dict(
+      os.environ,
+      PYTHONUNBUFFERED='1',
+      LD_PRELOAD=inotify_mock_so)
+
+  expected_output = 'Error using inotify, falling back to polling\ndone\n'
 
 
 class TestPrivateTmpFS(WrapperTestCase):
