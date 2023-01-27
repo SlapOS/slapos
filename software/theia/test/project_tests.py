@@ -473,6 +473,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     pass
 
   def _prepareExport(self):
+    # This is a workaround
+    # In the step of slapos node software
+    # The installation of nodejs may failed at the first time.
+    try:
+      cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      print(e.output)
+
     super(TestTheiaResilienceGitlab, self)._prepareExport()
 
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
