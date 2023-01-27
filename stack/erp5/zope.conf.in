@@ -22,9 +22,6 @@ default-zpublisher-encoding utf-8
 rest-input-encoding utf-8
 rest-output-encoding utf-8
 
-# XXX: isn't this entry implicit ?
-products {{ parameter_dict['instance-products'] }}
-
 # Magic parameter to use the first entry of X-Forwarded-For as the source IP address.
 # (see monkey patches in ERP5Type/patches/HTTPRequest.py and ERP5Type/patches/http_server.py)
 # * Frontend HTTP server should drop incoming X-Forwarded-For.
