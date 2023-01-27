@@ -107,7 +107,6 @@ instance-etc-package-include = ${:instance}/etc/package-include
 instance-extensions = ${:instance}/Extensions
 instance-import = ${:instance}/import
 instance-lib = ${:instance}/lib
-instance-products = ${:instance}/Products
 instance-propertysheet = ${:instance}/PropertySheet
 instance-tests = ${:instance}/tests
 log = ${:var}/log
@@ -296,7 +295,6 @@ developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
 publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
 activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
 instance = ${directory:instance}
-instance-products = ${directory:instance-products}
 deadlock-path = /manage_debug_threads
 deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-password']) }}
 {% if slapparameter_dict.get('tidstorage-ip') -%}
