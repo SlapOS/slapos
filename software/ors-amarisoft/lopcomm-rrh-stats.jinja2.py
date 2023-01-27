@@ -71,8 +71,7 @@ class LopcommNetconfClient:
               self.logger.debug('Got new notification from %s...' % (self.address,))
               result_in_xml = result._raw
               data_dict = xmltodict.parse(result_in_xml)
-              result_in_json = json.dumps(data_dict)
-              self.json_logger.info('', extra={'data': result_in_json})
+              self.json_logger.info('', extra={'data': data_dict})
 
     def close(self):
         # Close not compatible between ncclient and netconf server
