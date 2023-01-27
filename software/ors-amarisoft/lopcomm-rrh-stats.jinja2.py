@@ -14,11 +14,14 @@ class LopcommNetconfClient:
         log_file = "{{ log_file }}"
 
         self.logger = logging.getLogger('logger')
-        self.logger.setLevel(logging.INFO)
+        self.json_logger = logging.getLogger('json_logger')
+
+        self.logger.setLevel(logging.DEBUG)
+        self.json_logger.setLevel(logging.DEBUG)
         handler = RotatingFileHandler(log_file, maxBytes=30000, backupCount=2)
         formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
         handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
+        self.json_logger.addHandler(handler)
 
         if {{ testing }}:
             return
@@ -27,6 +30,8 @@ class LopcommNetconfClient:
 
         if {{ testing }}:
             return
+
+        logger.info('Connecting to %s, user %s...' % ((host, port), user))
 
         self.conn = manager.connect(host=host,
                                port=port,
@@ -38,17 +43,30 @@ class LopcommNetconfClient:
                                },
                                hostkey_verify=False)
 
+        logger.info('Connection to %s successful' % ((host, port),))
+
+    def subscribe(self):
+
+        # Filter not compatible between ncclient and netconf server
         #result = self.conn.create_subscription(filter=('xpath', '/o-ran-fm:*'))
         sub = self.conn.create_subscription()
+        logger.info('Subscription to %s successful' % ((host, port),))
+
+    def get_notification(self):
+
         result = None
         while result == None:
-            result = self.conn.take_notification(block=True, timeout=60)
-            result_in_xml = result._raw
-            data_dict = xmltodict.parse(result_in_xml)
-            result_in_json = json.dumps(data_dict)
-            self.logger.info('', extra={'data': result_in_json})
+            logger.debug('Waiting for notification from %s...' % ((host, port),))
+            result = self.conn.take_notification(block=True)
+            if result:
+              logger.debug('Got new notification from %s...' % ((host, port),))
+              result_in_xml = result._raw
+              data_dict = xmltodict.parse(result_in_xml)
+              result_in_json = json.dumps(data_dict)
+              self.json_logger.info('', extra={'data': result_in_json})
 
     def close(self):
+        # Close not compatible between ncclient and netconf server
         #self.conn.close()
         pass
 
@@ -57,9 +75,13 @@ if __name__ == '__main__':
     nc = LopcommNetconfClient()
     while True:
       try:
-          nc.connect("fe80::20a:ff:fe00:1020%slaptap6", 830, "oranuser", "oranpassword")
-          time.sleep(10)
+          nc.connect("192.168.0.210", 830, "oranuser", "oranpassword")
+          nc.subscribe()
+          while True:
+            nc.get_notification()
       except Exception as e:
+          nc.logger.debug('Got exception, waiting 10 seconds before reconnecting...')
           nc.logger.debug(e)
+          time.sleep(10)
       finally:
           nc.close()
