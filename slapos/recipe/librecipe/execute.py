@@ -5,6 +5,7 @@ import sys
 import os
 import signal
 import subprocess
+import time
 from collections import defaultdict
 from inotify_simple import INotify, flags
 
@@ -14,24 +15,35 @@ def _wait_files_creation(file_list):
   # Establish a list of directory and subfiles.
   # and test existence before watching, so that we don't miss an event.
   directories = defaultdict(dict)
-  for f in file_list:
-    dirname, filename = os.path.split(f)
-    directories[dirname][filename] = os.path.lexists(f)
+  def check_if_files_exists():
+    for f in file_list:
+      dirname, filename = os.path.split(f)
+      directories[dirname][filename] = os.path.lexists(f)
+  check_if_files_exists()
 
   def all_files_exists():
     return all(all(six.itervalues(files)) for files in six.itervalues(directories))
 
   with INotify() as inotify:
-    watchdescriptors = {inotify.add_watch(dirname,
-        flags.CREATE | flags.DELETE | flags.MOVED_TO | flags.MOVED_FROM
-        ): dirname
-      for dirname in directories}
+    try:
+      watchdescriptors = {inotify.add_watch(dirname,
+          flags.CREATE | flags.DELETE | flags.MOVED_TO | flags.MOVED_FROM
+          ): dirname
+        for dirname in directories}
+    except OSError as e:
+      if e.errno not in (errno.ENOSPC, errno.EMFILE):
+        raise
+      print('Error using inotify, falling back to polling')
+    else:
+      while not all_files_exists():
+        for event in inotify.read():
+          directory = directories[watchdescriptors[event.wd]]
+          if event.name in directory:
+            directory[event.name] = event.mask & (flags.CREATE | flags.MOVED_TO)
 
-    while not all_files_exists():
-      for event in inotify.read():
-        directory = directories[watchdescriptors[event.wd]]
-        if event.name in directory:
-          directory[event.name] = event.mask & (flags.CREATE | flags.MOVED_TO)
+  while not all_files_exists():
+    time.sleep(0.1)
+    check_if_files_exists()
 
 def _libc():
   from ctypes import CDLL, get_errno, c_char_p, c_int, c_ulong, util
