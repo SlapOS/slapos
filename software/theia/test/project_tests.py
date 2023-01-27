@@ -477,7 +477,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     # In the step of slapos node software
     # The installation of nodejs may failed at the first time.
     try:
-      cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
+      self.captureSlapos('node', 'software', instance_type='export', stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
       print(e.output)
 
