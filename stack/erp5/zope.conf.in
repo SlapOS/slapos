@@ -5,7 +5,7 @@
 # too late for some components.
 %define INSTANCE {{ parameter_dict['instance'] }}
 instancehome $INSTANCE
-zserver-threads {{ parameter_dict['thread-amount'] }}
+
 # When ownership checking is enabled, the roles a script runs as are the
 # intersection between user's roles and script owner's roles. This means
 # that revoking a code author's access to the system prevent all scripts
@@ -65,10 +65,6 @@ trusted-proxy 0.0.0.0
 
 {% endif -%}
 
-{% if 'large-file-threshold' in parameter_dict -%}
-large-file-threshold {{ parameter_dict['large-file-threshold'] }}
-
-{% endif -%}
 {% if 'tidstorage-ip' in parameter_dict -%}
 <product-config TIDStorage>
   backend-ip {{ parameter_dict['tidstorage-ip'] }}
