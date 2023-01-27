@@ -35,7 +35,9 @@ class LopcommNetconfClient:
         if {{ testing }}:
             return
 
-        self.logger.info('Connecting to %s, user %s...' % ((host, port), user))
+        self.address = (host, port)
+
+        self.logger.info('Connecting to %s, user %s...' % (self.address, user))
 
         self.conn = manager.connect(host=host,
                                port=port,
@@ -47,23 +49,23 @@ class LopcommNetconfClient:
                                },
                                hostkey_verify=False)
 
-        self.logger.info('Connection to %s successful' % ((host, port),))
+        self.logger.info('Connection to %s successful' % (self.address,))
 
     def subscribe(self):
 
         # Filter not compatible between ncclient and netconf server
         #result = self.conn.create_subscription(filter=('xpath', '/o-ran-fm:*'))
         sub = self.conn.create_subscription()
-        self.logger.info('Subscription to %s successful' % ((host, port),))
+        self.logger.info('Subscription to %s successful' % (self.address,))
 
     def get_notification(self):
 
         result = None
         while result == None:
-            self.logger.debug('Waiting for notification from %s...' % ((host, port),))
+            self.logger.debug('Waiting for notification from %s...' % (self.address,))
             result = self.conn.take_notification(block=True)
             if result:
-              self.logger.debug('Got new notification from %s...' % ((host, port),))
+              self.logger.debug('Got new notification from %s...' % (self.address,))
               result_in_xml = result._raw
               data_dict = xmltodict.parse(result_in_xml)
               result_in_json = json.dumps(data_dict)
