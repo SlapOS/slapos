@@ -1,19 +1,18 @@
-diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/DCWorkflow.py Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/DCWorkflow.py
---- Products.DCWorkflow-2.2.4/Products/DCWorkflow/DCWorkflow.py	2011-11-01 18:55:01.000000000 +0100
-+++ Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/DCWorkflow.py	2013-10-31 16:42:05.021141352 +0100
-@@ -40,6 +40,7 @@
- from Products.DCWorkflow.permissions import ManagePortal
+diff -Naur Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/DCWorkflow.py Products.DCWorkflow-2.4.1/Products/DCWorkflow/DCWorkflow.py
+--- Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/DCWorkflow.py	2020-03-09 22:05:43.000000000 +0100
++++ Products.DCWorkflow-2.4.1/Products/DCWorkflow/DCWorkflow.py	2021-03-18 15:43:47.791236880 +0100
+@@ -38,6 +38,7 @@
+ from Products.DCWorkflow.interfaces import IDCWorkflowDefinition
  from Products.DCWorkflow.Transitions import TRIGGER_AUTOMATIC
  from Products.DCWorkflow.Transitions import TRIGGER_USER_ACTION
 +from Products.DCWorkflow.Transitions import TRIGGER_WORKFLOW_METHOD
  from Products.DCWorkflow.utils import Message as _
  from Products.DCWorkflow.utils import modifyRolesForGroup
  from Products.DCWorkflow.utils import modifyRolesForPermission
-@@ -281,6 +282,52 @@
-             raise Unauthorized(action)
+@@ -279,6 +280,52 @@
          self._changeStateOf(ob, tdef, kw)
  
-+    security.declarePrivate('isWorkflowMethodSupported')
+     @security.private
 +    def isWorkflowMethodSupported(self, ob, method_id):
 +        '''
 +        Returns a true value if the given workflow method
@@ -30,7 +29,7 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/DCWorkflow.py Products.D
 +                return 1
 +        return 0
 +
-+    security.declarePrivate('wrapWorkflowMethod')
++    @security.private
 +    def wrapWorkflowMethod(self, ob, method_id, func, args, kw):
 +        '''
 +        Allows the user to request a workflow action.  This method
@@ -38,12 +37,12 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/DCWorkflow.py Products.D
 +        '''
 +        sdef = self._getWorkflowStateOf(ob)
 +        if sdef is None:
-+            raise WorkflowException, 'Object is in an undefined state'
++            raise WorkflowException('Object is in an undefined state')
 +        if method_id not in sdef.transitions:
 +            raise Unauthorized(method_id)
 +        tdef = self.transitions.get(method_id, None)
 +        if tdef is None or tdef.trigger_type != TRIGGER_WORKFLOW_METHOD:
-+            raise WorkflowException, (
++            raise WorkflowException(
 +                'Transition %s is not triggered by a workflow method'
 +                % method_id)
 +        if not self._checkTransitionGuard(tdef, ob):
@@ -54,17 +53,18 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/DCWorkflow.py Products.D
 +        except ObjectDeleted:
 +            # Re-raise with a different result.
 +            raise ObjectDeleted(res)
-+        except ObjectMoved, ex:
++        except ObjectMoved as ex:
 +            # Re-raise with a different result.
 +            raise ObjectMoved(ex.getNewObject(), res)
 +        return res
 +
-     security.declarePrivate('isInfoSupported')
++    @security.private
      def isInfoSupported(self, ob, name):
          '''
-diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/dtml/transition_properties.dtml Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/dtml/transition_properties.dtml
---- Products.DCWorkflow-2.2.4/Products/DCWorkflow/dtml/transition_properties.dtml	2011-11-01 18:55:01.000000000 +0100
-+++ Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/dtml/transition_properties.dtml	2013-10-31 16:42:05.021141352 +0100
+         Returns a true value if the given info name is supported.
+diff -Naur Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/dtml/transition_properties.dtml Products.DCWorkflow-2.4.1/Products/DCWorkflow/dtml/transition_properties.dtml
+--- Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/dtml/transition_properties.dtml	2020-03-09 22:05:43.000000000 +0100
++++ Products.DCWorkflow-2.4.1/Products/DCWorkflow/dtml/transition_properties.dtml	2021-03-18 15:37:55.144028451 +0100
 @@ -56,6 +56,16 @@
  </tr>
  
@@ -82,9 +82,9 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/dtml/transition_properti
  <th align="left">Script (before)</th>
  <td>
  <select name="script_name">
-diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/dtml/transitions.dtml Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/dtml/transitions.dtml
---- Products.DCWorkflow-2.2.4/Products/DCWorkflow/dtml/transitions.dtml	2011-11-01 18:55:01.000000000 +0100
-+++ Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/dtml/transitions.dtml	2013-10-31 16:42:05.021141352 +0100
+diff -Naur Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/dtml/transitions.dtml Products.DCWorkflow-2.4.1/Products/DCWorkflow/dtml/transitions.dtml
+--- Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/dtml/transitions.dtml	2020-03-09 22:05:43.000000000 +0100
++++ Products.DCWorkflow-2.4.1/Products/DCWorkflow/dtml/transitions.dtml	2021-03-18 15:37:55.144028451 +0100
 @@ -17,7 +17,8 @@
    <td>
     Destination state: <code><dtml-if new_state_id>&dtml-new_state_id;<dtml-else>(Remain in state)</dtml-if></code> <br />
@@ -95,21 +95,21 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/dtml/transitions.dtml Pr
     <br />
     <dtml-if script_name>
       Script (before): &dtml-script_name;
-diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/exportimport.py Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/exportimport.py
---- Products.DCWorkflow-2.2.4/Products/DCWorkflow/exportimport.py	2011-11-01 18:55:01.000000000 +0100
-+++ Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/exportimport.py	2013-10-31 16:42:09.221141578 +0100
-@@ -34,7 +34,7 @@
- from Products.GenericSetup.interfaces import ISetupEnviron
- from Products.GenericSetup.utils import BodyAdapterBase
+diff -Naur Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/exportimport.py Products.DCWorkflow-2.4.1/Products/DCWorkflow/exportimport.py
+--- Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/exportimport.py	2020-03-09 22:05:43.000000000 +0100
++++ Products.DCWorkflow-2.4.1/Products/DCWorkflow/exportimport.py	2021-03-18 15:44:34.903667147 +0100
+@@ -40,7 +40,7 @@
+ from Products.DCWorkflow.utils import _xmldir
  
--TRIGGER_TYPES = ( 'AUTOMATIC', 'USER' )
-+TRIGGER_TYPES = ( 'AUTOMATIC', 'USER', 'METHOD' )
+ 
+-TRIGGER_TYPES = ('AUTOMATIC', 'USER')
++TRIGGER_TYPES = ('AUTOMATIC', 'USER', 'METHOD' )
  _FILENAME = 'workflows.xml'
  
  
-diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/Transitions.py Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/Transitions.py
---- Products.DCWorkflow-2.2.4/Products/DCWorkflow/Transitions.py	2011-11-01 18:55:01.000000000 +0100
-+++ Products.DCWorkflow-2.2.4nxd001/Products/DCWorkflow/Transitions.py	2013-10-31 16:42:12.389141749 +0100
+diff -Naur Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/Transitions.py Products.DCWorkflow-2.4.1/Products/DCWorkflow/Transitions.py
+--- Products.DCWorkflow-2.4.1.orig/Products/DCWorkflow/Transitions.py	2020-03-09 22:05:43.000000000 +0100
++++ Products.DCWorkflow-2.4.1/Products/DCWorkflow/Transitions.py	2021-03-18 15:37:55.148028486 +0100
 @@ -31,6 +31,7 @@
  
  TRIGGER_AUTOMATIC = 0
@@ -117,4 +117,4 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/Transitions.py Products.
 +TRIGGER_WORKFLOW_METHOD = 2
  
  
- class TransitionDefinition (SimpleItem):
+ class TransitionDefinition(SimpleItem):
