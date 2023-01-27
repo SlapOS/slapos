@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "Parameters to instantiate coupler",
+  "type": "object",
+  "configuration": {
+
+  "coupler_block_device": {
+      "description": "The Linux block device using I2C protocol,",
+      "type": "string",
+      "default": "/dev/i2c-1"
+    },
+
+  "coupler_i2c_slave_list": {
+      "description": "The list of comma separated addresses of I2C enabled devices on the I2C bus.",
+      "type": "string",
+      "default": "0x58"
+    },
+
+  "opc_ua_port": {
+      "description": "The OPC UA server bind to bind to.",
+      "type": "integer",
+      "default": 4840
+  },
+
+  "username": {
+      "description": "The username for OPC UA server.",
+      "type": "string",
+      "default": ""
+    },
+
+  "password": {
+      "description": "The password for OPC UA server.",
+      "type": "string",
+      "default": ""
+    },
+
+  "heart_beat": {
+      "description": "Indication if coupler should send heart beats over a keep-alive network.",
+      "type": "boolean",
+      "default": 0
+    },
+
+  "heart_beat_interval": {
+      "description": "The heart beat interval (in ms)",
+      "type": "integer",
+      "default": 500
+    },
+
+  "heart_beat_id_list": {
+      "description": "A comma separated list of couplers' IDs which should send to us keep-alive messages. ",
+      "type": "string",
+      "default": ""
+    },
+
+  "heart_beat_timeout_interval": {
+      "description": "The timeout (in ms) which when expired without a keep alive message will cause the coupler to go to a safe mode. ",
+      "type": "integer",
+      "default": 2000
+    }
+  }
+}
