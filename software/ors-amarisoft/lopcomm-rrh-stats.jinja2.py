@@ -26,6 +26,7 @@ class LopcommNetconfClient:
 
         handler = RotatingFileHandler(log_file, maxBytes=100000, backupCount=5)
         self.logger.addHandler(handler)
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
         if {{ testing }}:
             return
