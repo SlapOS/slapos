@@ -2,6 +2,7 @@
 import json
 import logging
 import time
+import xmltodict
 from logging.handlers import RotatingFileHandler
 from ncclient import manager
 from ncclient.xml_ import *
