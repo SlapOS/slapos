@@ -15,12 +15,9 @@ instancehome $INSTANCE
 # revoked when their account is terminated.
 skip-ownership-checking true
 
-lock-filename {{ parameter_dict['lock-file'] }}
 pid-filename {{ parameter_dict['pid-file'] }}
 
 default-zpublisher-encoding utf-8
-rest-input-encoding utf-8
-rest-output-encoding utf-8
 
 # Magic parameter to use the first entry of X-Forwarded-For as the source IP address.
 # (see monkey patches in ERP5Type/patches/HTTPRequest.py and ERP5Type/patches/http_server.py)
@@ -28,23 +25,6 @@ rest-output-encoding utf-8
 # * Communication between frontend and backend should use SSL Client Authentication.
 # * Backend proxy drops incoming X-Forwarded-For without valid SSL Client Authentification.
 trusted-proxy 0.0.0.0
-
-{% if not parameter_dict['wsgi'] -%}
-{%   if parameter_dict['webdav'] -%}
-<webdav-source-server>
-  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
-  force-connection-close off
-</webdav-source-server>
-{%   else %}
-<http-server>
-  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
-</http-server>
-{%   endif %}
-{%- endif %}
-
-<zoperunner>
-    program $INSTANCE/bin/runzope
-</zoperunner>
 
 <product-config DeadlockDebugger>
   dump_url {{ parameter_dict['deadlock-path'] }}
@@ -76,16 +56,7 @@ trusted-proxy 0.0.0.0
   node-id {{ node_id }}
 </product-config>
 
-{% if not parameter_dict['wsgi'] -%}
-{%   set timerserver_interval = parameter_dict['timerserver-interval'] -%}
-{%   if timerserver_interval -%}
-%import Products.TimerService.timerserver
-<timer-server>
-  interval {{ timerserver_interval }}
-</timer-server>
-{%   endif %}
 
-{% endif -%}
 {% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
 {% if sql_connection_string -%}
 {%   set bt5_repository_url = [] -%}
@@ -110,22 +81,6 @@ trusted-proxy 0.0.0.0
 </product-config>
 
 {% endif -%}
-<eventlog>
-  level info
-  <logfile>
-    dateformat
-    path {{ parameter_dict['event-log'] }}
-  </logfile>
-</eventlog>
-
-<logger access>
-  level WARN
-  <logfile>
-    dateformat
-    format %(message)s
-    path {{ parameter_dict['z2-log'] }}
-  </logfile>
-</logger>
 
 <zodb_db temporary>
   <temporarystorage>
