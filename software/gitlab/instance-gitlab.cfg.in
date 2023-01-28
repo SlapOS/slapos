@@ -37,6 +37,7 @@ parts =
     logrotate-entry-cron
 
     on-reinstantiate
+    gitaly-socket-listening-promise
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -174,11 +175,17 @@ internal = ${:sockets}/internal
 log     = ${directory:log}/gitaly
 
 [gitaly]
-socket  = ${gitaly-dir:sockets}/gitaly.socket
+socket  = ${directory:var}/gitaly.socket
 log     = ${gitaly-dir:log}
 location = {{ gitaly_location }}
 pid     = ${directory:run}/gitaly.pid
 internal_socket = ${gitaly-dir:internal}
+
+[gitaly-socket-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = gitaly_socket_listening_promise.py
+config-pathname = ${gitaly:socket}
 
 # 2. configuration files
 [etc-template]
@@ -535,9 +542,9 @@ srv     = ${directory:srv}/gitlab-workhorse
 log     = ${directory:log}/workhorse
 
 [gitlab-workhorse]
-srv     = ${gitlab-workhorse-dir:srv}
-socket  = ${gitlab-workhorse:srv}/gitlab-workhorse.socket
-log     = ${gitlab-workhorse-dir:log}/gitlab-workhorse.log
+srv     = ${directory:srv}
+socket  = ${directory:srv}/gitlab-workhorse.socket
+log     = ${directory:log}/gitlab-workhorse.log
 secret  = ${secrets:secrets}/gitlab_workhorse_secret
 
 [service-gitlab-workhorse]
@@ -637,7 +644,7 @@ command-line    = ${:rake} gitlab:gitlab_shell:check
 [logrotate-entry-unicorn]
 <= logrotate-entry-base
 log     = ${unicorn:log}/*.log
-name    = unicorn 
+name    = unicorn
 
 [logrotate-entry-gitlab]
 <= logrotate-entry-base
