@@ -33,8 +33,9 @@ import re
 import subprocess
 import time
 import unittest
-
+import shutil
 import requests
+import tempfile
 
 from datetime import datetime, timedelta
 from six.moves.urllib.parse import urljoin
@@ -53,6 +54,9 @@ erp5_software_release_url = os.path.abspath(
 peertube_software_release_url = os.path.abspath(
   os.path.join(
     os.path.dirname(__file__), '..', '..', 'peertube', 'software.cfg'))
+gitlab_software_release_url = os.path.abspath(
+  os.path.join(
+    os.path.dirname(__file__), '..', '..', 'gitlab', 'software.cfg'))
 
 
 def setUpModule():
@@ -441,5 +445,179 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
 
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
     partition = self._getPeertubePartition(servicename)
+    return self.getPartitionPath(
+      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+
+class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
+  test_instance_max_retries = 12
+  backup_max_tries = 480
+  backup_wait_interval = 60
+  _connection_parameters_regex = re.compile(r"{.*}", re.DOTALL)
+  _test_software_url = gitlab_software_release_url
+
+  def setUp(self):
+    self.temp_dir = os.path.realpath(tempfile.mkdtemp())
+    self.addCleanup(shutil.rmtree, self.temp_dir)
+
+  def _getGitlabConnectionParameters(self, instance_type='export'):
+    out = self.captureSlapos(
+      'request', 'test_instance', self._test_software_url,
+      stderr=subprocess.STDOUT,
+      text=True,
+    )
+    print(out)
+    return json.loads(self._connection_parameters_regex.search(out).group(0).replace("'", '"'))
+
+  def test_twice(self):
+    # do nothing
+    pass
+
+  def _prepareExport(self):
+    # This is a dirty fixup
+    # In the step of slapos node software
+    # The installation of nodejs may failed at the first time.
+    self.callSlapos('supply', gitlab_software_release_url, 'slaprunner', instance_type='export')
+    try:
+      self.captureSlapos('node', 'software', instance_type='export', stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      print(e.output)
+
+    super(TestTheiaResilienceGitlab, self)._prepareExport()
+
+    gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
+    gitlab_rails_bin = os.path.join(gitlab_partition, 'bin', 'gitlab-rails')
+    os.chdir(self.temp_dir)
+
+    # Get Gitlab parameters
+    parameter_dict = self._getGitlabConnectionParameters()
+    backend_url = parameter_dict['backend_url']
+
+    print('Trying to connect to gitlab backend URL...')
+    response = requests.get(backend_url, verify=False)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+
+    # Set the password and token
+    output = subprocess.check_output(
+      (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!"),
+      universal_newlines=True)
+    output = subprocess.check_output(
+      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!"),
+      universal_newlines=True)
+
+    # Create a new project
+    print("Gitlab create a project")
+    path = '/api/v3/projects'
+    parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
+    # Token can be set manually
+    headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
+    response = requests.post(backend_url + path, params=parameter_dict,
+                                  headers=headers, verify=False)
+
+    # Check the project is exist
+    print("Gitlab check project is exist")
+    path = '/api/v3/projects'
+    response = requests.get(backend_url + path, headers=headers, verify=False)
+    try:
+      projects = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
+
+    # Only one project exist
+    self.assertEqual(len(projects), 1)
+    # The project name is sample-test, which we created above.
+    self.assertIn("sample-test", projects[0]['name_with_namespace'])
+
+    # Get repo url, default one is http://lab.example.com/root/sample-test.git
+    # We need the path like http://[2001:67c:1254:e:c4::5041]:7777/root/sample-test
+    project_1 = projects[0]
+    repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
+    # Clone the repo with token
+    clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
+    repo_path = os.path.join(os.getcwd(), project_1['name'])
+    print(repo_path)
+    if os.path.exists(repo_path):
+      shutil.rmtree(repo_path, ignore_errors=True)
+    output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
+
+    # Create a new file and push the commit
+    f = open(os.path.join(repo_path, 'file.txt'), 'x')
+    f.write('This is the new file.')
+    f.close()
+    output = subprocess.check_output(('git', 'add', '.'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'config', '--global', 'user.name', 'Resilience Test'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'config', '--global', 'user.email', 'resilience-test@example.com'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'commit', '-m', 'Initial commit'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'push', 'origin', 'master'), cwd=repo_path, universal_newlines=True)
+
+    # Do a fake periodically update
+    # Compute backup date in the near future
+    soon = (datetime.now() + timedelta(minutes=4))
+    frequency = "%d * * * *" % soon.minute
+    params = 'backup_frequency=%s' % frequency
+
+    # Update Peertube parameters
+    print('Requesting Gitlab with parameters %s' % params)
+    self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
+
+    self.checkSlapos('node', 'instance')
+
+    self.callSlapos('node', 'restart', 'all')
+
+    # Wait until after the programmed backup date, and a bit more
+    t = (soon - datetime.now()).total_seconds()
+    self.assertLess(0, t)
+    time.sleep(t + 120)
+    self.callSlapos('node', 'status')
+
+  def _checkTakeover(self):
+    super(TestTheiaResilienceGitlab, self)._checkTakeover()
+    # Get Gitlab parameters
+    parameter_dict = self._getGitlabConnectionParameters()
+    backend_url = parameter_dict['backend_url']
+
+    # The temp dir which created in theia0, it should be exist and contains the repo
+    os.chdir(self.temp_dir)
+
+    # Check the project is exist
+    print("Gitlab check project is exist")
+    path = '/api/v3/projects'
+    headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
+    response = requests.get(backend_url + path, headers=headers, verify=False)
+    try:
+      projects = response.json()
+    except JSONDecodeError:
+      self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
+
+    # Only one project exist
+    self.assertEqual(len(projects), 1)
+    # The project name is sample-test, which we created above.
+    self.assertIn("sample-test", projects[0]['name_with_namespace'])
+    project_1 = projects[0]
+    repo_url = backend_url.replace("http://", "") + "/" + project_1['path_with_namespace']
+    clone_url = 'http://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
+    repo_path = os.path.join(os.getcwd(), project_1['name'])
+
+    # Check the file we committed in the original theia is exist and the content is matching.
+    output = subprocess.check_output(('git', 'show', 'origin/master:file.txt'), cwd=repo_path, universal_newlines=True)
+    self.assertIn('This is the new file.', output)
+
+
+  def _getGitlabPartition(self, servicename):
+    p = subprocess.Popen(
+      (self._getSlapos(), 'node', 'status'),
+      stdout=subprocess.PIPE, universal_newlines=True)
+    out, _ = p.communicate()
+    found = set()
+    for line in out.splitlines():
+      if servicename in line:
+        found.add(line.split(':')[0])
+    if not found:
+      raise Exception("Gitlab %s partition not found" % servicename)
+    elif len(found) > 1:
+      raise Exception("Found several partitions for Gitlab %s" % servicename)
+    return found.pop()
+
+  def _getGitlabPartitionPath(self, instance_type, servicename, *paths):
+    partition = self._getGitlabPartition(servicename)
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
