@@ -70,8 +70,43 @@ class RunPromise(GenericPromise):
         self.logger.info("skipping promise")
         return
     lopcomm_stats_log = self.getConfig('lopcomm-stats-log')
+    data_list = get_data_interval(lopcomm_stats_log, 120)
+#    notifications = []
+#    fault_texts = []
+# Example of data_list
+#('[\n'
+# '    {\n'
+# '        "notification": {\n'
+# '            "@xmlns": "urn:ietf:params:xml:ns:netconf:notification:1.0",\n'
+# '            "eventTime": "1970-01-05T00:38:50Z",\n'
+# '            "alarm-notif": {\n'
+# '                "@xmlns": "urn:o-ran:fm:1.0",\n'
+# '                "fault-id": "9",\n'
+# '                "fault-source": "Antport1",\n'
+# '                "affected-objects": {\n'
+# '                    "name": "Antport1"\n'
+# '                },\n'
+# '                "fault-severity": "MAJOR",\n'
+# '                "is-cleared": "false",\n'
+# '                "fault-text": "PA 1 VSWR Alarm",\n'
+# '                "event-time": "1970-01-05T00:38:50Z"\n'
+# '            }\n'
+# '        }\n'
+# '    },\n'
+# ']')
 
-    self.logger.error("lopcomm error:" + lopcomm_stats_log)
+
+    if data_list:
+      for data in data_list:
+        notification = data['notification']
+        alarm_notif = notification['alarm-notif']
+        fault_texts = alarm_notif['fault-text']
+        if 'VSWR' in fault_texts:
+          self.logger.error("lopcomm error:" + fault_texts)
+        else:
+          self.logger.info("OK")
+      else:
+        self.logger.info("No notification, all good")
 
   def test(self):
     """
