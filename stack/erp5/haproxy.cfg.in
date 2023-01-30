@@ -51,7 +51,7 @@
  #               None,  # timeout (in seconds) int | None
  #               [  # backends
  #                  '10.0.0.10:8001', # netloc str
- #                   1, # max_connection_count int
+ #                   5, # connection_count int
  #                   False, # is_web_dav bool
  #               ],
  #            ),
@@ -63,7 +63,7 @@
  #               None,  # timeout (in seconds) int | None
  #               [  # backends
  #                  '10.0.0.10:8003', # netloc str
- #                   1, # max_connection_count int
+ #                   10, # connection_count int
  #                   False, # is_web_dav bool
  #               ],
  #            ),
@@ -138,6 +138,7 @@ defaults
   timeout connect 10s
   timeout queue 60s
   timeout client 305s
+  timeout server 306s
 
   option http-server-close
 
@@ -193,10 +194,11 @@ listen family_{{ name }}
 {%   for address, connection_count, webdav in backend_list -%}
 {%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
 {%     set server_name = name ~ '-' ~ loop.index0 %}
-  server {{ server_name }} {{ address }} cookie {{ server_name }} check inter 3s rise 1 fall 2 maxqueue 5 maxconn {{ connection_count }}
+  server {{ server_name }} {{ address }} cookie {{ server_name }} check inter 3s rise 1 fall 2 maxqueue 5 maxconn {% if connection_count > 4 %} {{ connection_count }} {% else %} 4 {% endif %}
 {%-  endfor -%}
 {%-  if not has_webdav and server_check_path %}
-  option httpchk GET {{ server_check_path }}
+  option httpchk
+  http-check send meth GET uri {{ server_check_path }}
 {%-   endif %}
 
 {% endfor %}
