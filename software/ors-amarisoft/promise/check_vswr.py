@@ -2,6 +2,7 @@ import errno
 import json
 import logging
 import os
+import time
 
 from dateutil import parser
 
@@ -71,7 +72,7 @@ class RunPromise(GenericPromise):
         return
     lopcomm_stats_log = self.getConfig('lopcomm-stats-log')
     data_list = get_data_interval(lopcomm_stats_log, 120)
-#    notifications = []
+
 #    fault_texts = []
 # Example of data_list
 #('[\n'
@@ -94,19 +95,33 @@ class RunPromise(GenericPromise):
 # '        }\n'
 # '    },\n'
 # ']')
+    fault_text_list = []
+    alarm = False
 
+    for data in data_list:
+        notifications = data['notification']
+        alarm_notifs = notifications['alarm-notif']
+        fault_texts = alarm_notifs['fault-text']
+        fault_sources = alarm_notifs['fault-source']
+        event_time = alarm_notifs['event-time']
+        if not fault_text_list:
+            fault_text_list = ["None",]
+        for i, fault_text in enumerate(fault_texts):
+            if 'VSWR' in fault_text:
+                alarm = True
 
-    if data_list:
-      for data in data_list:
-        notification = data['notification']
-        alarm_notif = notification['alarm-notif']
-        fault_texts = alarm_notif['fault-text']
-        if 'VSWR' in fault_texts:
-          self.logger.error("lopcomm error:" + fault_texts)
-        else:
-          self.logger.info("OK")
-      else:
-        self.logger.info("No notification, all good")
+    if not fault_text_list:
+        self.logger.error("No notification available")
+    elif alarm:
+        self.logger.error(fault_source + ": " +fault_text)
+    else:
+        self.logger.info("No VSWR alarm detected")
+
+    now = time.time()
+    event_time_seconds = time.mktime(time.strptime(event_time, "%Y-%m-%dT%H:%M:%SZ"))
+    if now - event_time_seconds >= 300:
+        alarm = False
+    time.sleep(1)
 
   def test(self):
     """
