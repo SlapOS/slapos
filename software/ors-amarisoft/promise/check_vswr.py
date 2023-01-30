@@ -71,7 +71,7 @@ class RunPromise(GenericPromise):
         return
     lopcomm_stats_log = self.getConfig('lopcomm-stats-log')
 
-    self.logger.error("lopcomm error")
+    self.logger.error("lopcomm error:" + lopcomm_stats_log)
 
   def test(self):
     """
