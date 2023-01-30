@@ -135,6 +135,8 @@ class TestPidFile(WrapperTestCase):
       time.sleep(0.1)
       if os.path.exists(self.pidfile):
         break
+    else:
+      self.fail(process.stdout.read())
 
     with open(self.pidfile) as f:
       pid = int(f.read())
@@ -169,7 +171,7 @@ class TestPidFile(WrapperTestCase):
       if process.pid == pid:
         break
     else:
-      self.fail('pidfile not updated', process.stdout.read())
+      self.fail('pidfile not updated: %s' % process.stdout.read())
 
 
 class TestWaitForFiles(WrapperTestCase):
