@@ -40,8 +40,11 @@ context =
   ${:extra-context}
 
 
-[dynamic-template-lamp-parameters]
 
+[mariadb-password]
+recipe = slapos.cookbook:generate.password
+
+[dynamic-template-lamp-parameters]
 
 [dynamic-template-lamp]
 <= jinja2-template-base
@@ -51,7 +54,7 @@ extra-context =
   section parameter_dict dynamic-template-lamp-parameters
   raw db_name {{ db_name }}
   raw db_user {{ db_user }}
-  raw db_password {{ db_password }}
+  key db_password mariadb-password:passwd
 
 [dynamic-template-apache-php-parameters]
 {% if application_archive_root %}

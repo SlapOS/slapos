@@ -31,6 +31,8 @@ import json
 import glob
 import re
 
+from six.moves.urllib.parse import urlparse
+
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -63,13 +65,17 @@ class NextCloudTestCase(InstanceTestCase):
         self.nextcloud_path,
         "Nextcloud path not found in %r" % (partition_path_list,))
 
+    # parse database info from mariadb url
+    d = self.computer_partition.getConnectionParameterDict()
+    db_url = d['mariadb-url-list'][2:-2] # parse <url> out of "['<url>']"
+    self._db_info = urlparse(db_url)
 
   def getNextcloudConfig(self, config_dict={}):
     data_dict = dict(
       datadirectory=self.partition_dir + "/srv/data",
       dbhost="%s:2099" % self._ipv4_address,
       dbname="nextcloud",
-      dbpassword="insecure",
+      dbpassword=self._db_info.password,
       dbport="",
       dbuser="nextcloud",
       mail_domain="nextcloud@example.com",
