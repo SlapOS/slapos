@@ -408,7 +408,7 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$HOME/.local/bin:$PATH
   export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
