@@ -1,6 +1,6 @@
 #############################
 #
-# Deploy  OSIE coupler instance
+# Deploy coupler instance
 #
 #############################
 [buildout]
@@ -9,9 +9,6 @@ parts =
   publish-connection-parameter
   coupler-opc-ua
 
-# Define egg directories to be the one from Software Release
-# (/opt/slapgrid/...)
-# Always the same.
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
@@ -23,7 +20,6 @@ environment =
   LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ open62541_location }}/lib:{{ mbedtls_location }}/lib
 command-line =
     {{ buildout['bin-directory'] }}/server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id}
-
 wrapper-path = ${directory:service}/coupler-opc-ua
 
 [instance-parameter]
@@ -33,8 +29,6 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-
-# below are the default as set in coupler's application
 configuration.coupler_block_device = /dev/i2c-1
 configuration.coupler_i2c_slave_list = 0x58
 configuration.username =
@@ -48,7 +42,6 @@ configuration.heart_beat_id_list =
 configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
 configuration.heart_beat_timeout_interval = 2000
 
-# Create all needed directories, depending on your needs
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
