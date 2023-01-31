@@ -11,6 +11,7 @@ theia-environment-parts =
   slapos-repository
   runner-link
   settings.json
+  python-enable-user-pip
 
 theia-parts =
   frontend-instance
@@ -407,7 +408,7 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$HOME/.local/bin:$PATH
   export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
@@ -493,6 +494,12 @@ command =
   ${buildout:bin-directory}/slapos complete > $${directory:bash-completions}/slapos
   ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
+[python-enable-user-pip]
+# enable pip user installation for python extension
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  ${python:executable} -m ensurepip --user
 
 # Embedded Instance
 # -----------------
