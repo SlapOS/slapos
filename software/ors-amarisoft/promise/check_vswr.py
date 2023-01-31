@@ -2,7 +2,6 @@ import errno
 import json
 import logging
 import os
-import time
 
 from dateutil import parser
 
@@ -103,25 +102,22 @@ class RunPromise(GenericPromise):
         alarm_notifs = notifications['alarm-notif']
         fault_texts = alarm_notifs['fault-text']
         fault_sources = alarm_notifs['fault-source']
-        event_time = alarm_notifs['event-time']
+        is_cleared = alarm_notifs['is-cleared']
+
         if not fault_text_list:
             fault_text_list = ["None",]
         for i, fault_text in enumerate(fault_texts):
             if 'VSWR' in fault_text:
-                alarm = True
+                if is_cleared == 'false':
+                    alarm = True
+                    self.logger.error(fault_sources + ": " +fault_texts)
+                else:
+                    self.logger.info(fault_sources + ": " +fault_texts + " is no longer over threshold")
 
-    if not fault_text_list:
+    if not data_list:
         self.logger.error("No notification available")
-    elif alarm:
-        self.logger.error(fault_source + ": " +fault_text)
-    else:
+    elif not alarm:
         self.logger.info("No VSWR alarm detected")
-
-    now = time.time()
-    event_time_seconds = time.mktime(time.strptime(event_time, "%Y-%m-%dT%H:%M:%SZ"))
-    if now - event_time_seconds >= 300:
-        alarm = False
-    time.sleep(1)
 
   def test(self):
     """
