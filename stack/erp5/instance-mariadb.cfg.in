@@ -193,7 +193,7 @@ environ =
 [{{ section('odbc-ini') }}]
 recipe = slapos.recipe.template
 output = ${directory:etc}/odbc.ini
-inline = {{ dumps(slapparameter_dict.get('odbc-ini', '')) }}
+inline = {{ dumps(slapparameter_dict.get('odbc-ini', ' ')) }}
 
 [{{ section('logrotate-entry-mariadb') }}]
 < = logrotate-entry-base
