@@ -146,14 +146,17 @@ class TestTheia(TheiaTestCase):
         )).geturl()
     self.get(authenticated_url)
 
-    # there's a public folder to serve file (no need for authentication)
+    # there's a public folder to serve file
     with open('{}/srv/frontend-static/public/test_file'.format(
         self.getPath()), 'w') as f:
       f.write("hello")
-    resp = self.get(urljoin(url, '/public/'))
+    resp = self.get(urljoin(authenticated_url, '/public/'))
     self.assertIn('test_file', resp.text)
-    resp = self.get(urljoin(url, '/public/test_file'))
+    resp = self.get(urljoin(authenticated_url, '/public/test_file'))
     self.assertEqual('hello', resp.text)
+    # make sure public folder is protected
+    resp = self.get(urljoin(url, '/public/test_file'))
+    self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
     # there's a (not empty) favicon (no need for authentication)
     resp = self.get(urljoin(url, '/favicon.ico'))
