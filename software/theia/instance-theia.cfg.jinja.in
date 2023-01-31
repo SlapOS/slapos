@@ -483,6 +483,9 @@ output = $${directory:etc}/$${:_buildout_section_name_}
 inline =
   # enable bash completion
   . ${bash-completion:location}/etc/profile.d/bash_completion.sh
+  # enable color for ls
+  eval "$(${coreutils:location}/bin/dircolors -b)"
+  alias ls='ls --color=auto'
   # source user's .bashrc
   [ -f ~/.bashrc ] && . ~/.bashrc
 depends =
