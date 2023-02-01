@@ -141,6 +141,18 @@
       "description": "Duration during which average temperature should not exceed specified threshold",
       "type": "number",
       "default": 600
+    },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 2
     }
   }
 }
