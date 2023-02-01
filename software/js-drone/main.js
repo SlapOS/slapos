@@ -1,21 +1,33 @@
-/* global console */
+/*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
+/*global arm, console, exit, open, scriptArgs, setTimeout, start, stop,
+  stopPubsub, takeOffAndWait, Worker*/
 import {
   arm,
   start,
   stop,
   stopPubsub,
   takeOffAndWait
-} from "{{ qjs_wrapper }}";
+} from {{ json_module.dumps(qjs_wrapper) }};
 import { setTimeout, Worker } from "os";
-import { exit } from "std";
+import { open, exit } from "std";
 
-(function (console, setTimeout, Worker) {
+(function (arm, console, exit, open, scriptArgs, setTimeout, start, stop,
+           stopPubsub, takeOffAndWait, Worker) {
   "use strict";
-  const IP = "{{ autopilot_ip }}",
-    URL = "udp://" + IP + ":7909",
+
+  var CONF_PATH = {{ json_module.dumps(configuration) }},
+    conf_file = open(CONF_PATH, "r"),
+    configuration = JSON.parse(conf_file.readAsString()),
+    URL = "udp://" + configuration.autopilotIp + ":7909",
     LOG_FILE = "{{ log_dir }}/mavsdk-log",
-    IS_A_DRONE = {{ 'true' if is_a_drone else 'false' }},
-    SIMULATION = {{ 'true' if is_a_simulation else 'false' }};
+    pubsubWorker,
+    worker,
+    user_script = scriptArgs[1],
+    FPS = 50, // Minimum sampling interval for open62541 monitored items
+    previous_timestamp,
+    can_update = false;
+
+  conf_file.close();
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -23,17 +35,14 @@ import { exit } from "std";
 
   // Create the update loop in the main script
   // to prevent it to finish (and so, exit the quickjs process)
-  var pubsubWorker,
-    worker = new Worker("{{ worker_script }}"),
-    user_script = scriptArgs[1],
-    // Use the same FPS than browser's requestAnimationFrame
-    FPS = 1000 / 60,
-    previous_timestamp,
-    can_update = false;
+  worker = new Worker("{{ worker_script }}");
 
-  function connect() {
-    console.log("Will connect to", URL);
-    exitOnFail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
+  function quit(is_a_drone, exit_code) {
+    stopPubsub();
+    if (is_a_drone) {
+      stop();
+    }
+    exit(exit_code);
   }
 
   function exitOnFail(ret, msg) {
@@ -43,25 +52,22 @@ import { exit } from "std";
     }
   }
 
-  function quit(is_a_drone, exit_code) {
-    if (is_a_drone) {
-      stop();
-    }
-    stopPubsub();
-    exit(exit_code);
+  function connect() {
+    console.log("Will connect to", URL);
+    exitOnFail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
   }
 
-  if (IS_A_DRONE) {
+  if (configuration.isADrone) {
     console.log("Connecting to aupilot\n");
     connect();
   }
 
   pubsubWorker = new Worker("{{ pubsub_script }}");
-  pubsubWorker.onmessage = function(e) {
+  pubsubWorker.onmessage = function (e) {
     if (!e.data.publishing) {
       pubsubWorker.onmessage = null;
     }
-  }
+  };
 
   worker.postMessage({type: "initPubsub"});
 
@@ -71,7 +77,7 @@ import { exit } from "std";
   }
 
   function load() {
-    if (IS_A_DRONE && SIMULATION) {
+    if (configuration.isADrone && configuration.isASimulation) {
       takeOff();
     }
 
@@ -88,7 +94,7 @@ import { exit } from "std";
   }
 
   function loop() {
-    let timestamp = Date.now(),
+    var timestamp = Date.now(),
       timeout;
     if (can_update) {
       if (FPS <= (timestamp - previous_timestamp)) {
@@ -114,13 +120,13 @@ import { exit } from "std";
   }
 
   worker.onmessage = function (e) {
-    let type = e.data.type;
+    var type = e.data.type;
     if (type === 'initialized') {
       pubsubWorker.postMessage({
         action: "run",
-        id: {{ id }},
+        id: configuration.id,
         interval: FPS,
-        publish: IS_A_DRONE
+        publish: configuration.isADrone
       });
       load();
     } else if (type === 'loaded') {
@@ -132,10 +138,11 @@ import { exit } from "std";
       can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
-      quit(IS_A_DRONE, e.data.exit);
+      quit(configuration.isADrone, e.data.exit);
     } else {
       console.log('Unsupported message type', type);
-      quit(IS_A_DRONE, 1);
+      quit(configuration.isADrone, 1);
     }
   };
-}(console, setTimeout, Worker));
+}(arm, console, exit, open, scriptArgs, setTimeout, start, stop, stopPubsub, 
+  takeOffAndWait, Worker));
