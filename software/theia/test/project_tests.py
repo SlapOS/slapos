@@ -457,7 +457,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
   def setUp(self):
     self.temp_dir = os.path.realpath(tempfile.mkdtemp())
+    self.temp_clone_dir = os.path.realpath(tempfile.mkdtemp())
     self.addCleanup(shutil.rmtree, self.temp_dir)
+    self.addCleanup(shutil.rmtree, self.temp_clone_dir)
 
   def _getGitlabConnectionParameters(self, instance_type='export'):
     out = self.captureSlapos(
@@ -568,6 +570,17 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     self.assertLess(0, t)
     time.sleep(t + 120)
     self.callSlapos('node', 'status')
+
+    os.chdir(self.temp_clone_dir)
+    repo_path = os.path.join(os.getcwd(), project_1['name'])
+    print(repo_path)
+    if os.path.exists(repo_path):
+      shutil.rmtree(repo_path, ignore_errors=True)
+    output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
+
+    # Check the file we committed in exist and the content is matching.
+    output = subprocess.check_output(('git', 'show', 'origin/master:file.txt'), cwd=repo_path, universal_newlines=True)
+    self.assertIn('This is the new file.', output)
 
   def _checkTakeover(self):
     super(TestTheiaResilienceGitlab, self)._checkTakeover()
