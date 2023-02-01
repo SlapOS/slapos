@@ -22,6 +22,12 @@
       "default": 4840
   },
 
+  "mode": {
+      "description": "The operationg mode of the coupler. By default 0 - i.e. control for real I2C devices attached. If 1 selected emulate them (useful for testing). ",
+      "type": "integer",
+      "default": 0
+  },
+
   "username": {
       "description": "The username for OPC UA server.",
       "type": "string",
