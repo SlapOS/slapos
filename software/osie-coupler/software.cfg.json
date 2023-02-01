@@ -1,0 +1,14 @@
+{
+  "name": "OSIE coupler",
+  "description": "Coupler is an open source thin C client application supporting OPC UA protocol and used in conjunction with beremiz-ide / beremiz-runtime to control industrial processes on the shop field.",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json"
+    }
+  }
+}
