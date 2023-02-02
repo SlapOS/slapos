@@ -1,7 +1,7 @@
 {
   "name": "SSH",
   "description": "SSH software release which provide the SSH service",
-  "serialisation": "json-in-xml",
+  "serialisation": "xml",
   "software-type": {
     "default": {
       "title": "Default",
