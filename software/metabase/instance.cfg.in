@@ -32,7 +32,7 @@ home = $${buildout:directory}
 init =
   default_parameters = options.get('slapparameter-dict')
   options['mb_password_complexity'] = default_parameters.get('mb_password_complexity', 'normal')
-  options['mb_password_length'] = default_parameters.get('mb_password_length', 6)
+  options['mb_password_length'] = default_parameters.get('mb_password_length', '6')
 
 [metabase-instance]
 recipe = slapos.cookbook:wrapper
