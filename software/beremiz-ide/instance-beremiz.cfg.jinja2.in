@@ -227,6 +227,8 @@ inline =
   export LANG=C.UTF-8
   export LC_ALL=C.UTF-8
   export BEREMIZPYTHONPATH={{ python_bin }}
+  export OPCUA_DEFAULT_HOST={{ ipv4 }}
+  export BEREMIZ_LOCAL_HOST={{ ipv4 }}
 
 output = ${directory:bin}/beremiz-env.sh
 
