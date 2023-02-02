@@ -28,6 +28,12 @@
       "default": 0
   },
 
+  "id": {
+      "description": "The numeric ID of the coupler",
+      "type": "integer",
+      "default": 0
+  },
+
   "username": {
       "description": "The username for OPC UA server.",
       "type": "string",
@@ -62,6 +68,13 @@
       "description": "The timeout (in ms) which when expired without a keep alive message will cause the coupler to go to a safe mode. ",
       "type": "integer",
       "default": 2000
+    },
+
+  "network_address_url_data_type": {
+      "description": "Network address URL type used for Pub/Sub.",
+      "type": "string",
+      "default": "opc.udp://224.0.0.22:4840/"
     }
+
   }
 }
