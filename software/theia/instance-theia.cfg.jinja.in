@@ -602,8 +602,6 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   . $${common-environment:output}
-  #XXX find out where the extra nodejs in theia's PATH comes from
-  export PATH=${nodejs:location}/bin/:$PATH
   . $${slapos-standalone-activate:output}
   exec $${slapos-standalone-script:output}
 
