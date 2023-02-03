@@ -1,8 +1,7 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 /*global console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, execUserScript, initPubsub, isInManualMode, landed,
-  loiter, setAirspeed, setAltitude, setManualControlInput, setMessage,
-  setTargetCoordinates, std, triggerParachute, Drone, Worker*/
+  getLongitude, getYaw, execUserScript, initPubsub, landed, loiter, setAirspeed,
+  setMessage, setTargetCoordinates, std, triggerParachute, Drone, Worker*/
 import {
   Drone,
   triggerParachute,
@@ -15,12 +14,9 @@ import {
   getLongitude,
   getYaw,
   initPubsub,
-  isInManualMode,
   landed,
   loiter,
   setAirspeed,
-  setAltitude,
-  setManualControlInput,
   setMessage,
   setTargetCoordinates
 } from {{ json_module.dumps(qjs_wrapper) }};
@@ -28,10 +24,9 @@ import * as std from "std";
 import { Worker } from "os";
 
 (function (console, getAltitude, getAltitudeRel, getInitialAltitude,
-           getLatitude, getLongitude, getYaw, initPubsub, isInManualMode,
-           landed, loiter, setAirspeed, setAltitude, setManualControlInput,
-           setMessage, setTargetCoordinates, std, triggerParachute, Drone,
-           Worker) {
+           getLatitude, getLongitude, getYaw, initPubsub, landed, loiter,
+           setAirspeed, setMessage, setTargetCoordinates, std, triggerParachute,
+           Drone, Worker) {
   // Every script is evaluated per drone
   "use strict";
 
@@ -70,7 +65,6 @@ import { Worker } from "os";
         setMessage(JSON.stringify({ content: msg, dest_id: id }));
       },
       setAirspeed: setAirspeed,
-      setAltitude: setAltitude,
       setTargetCoordinates: setTargetCoordinates
     };
   conf_file.close();
@@ -123,9 +117,6 @@ import { Worker } from "os";
       });
       // Call the drone onStart function
       if (user_me.hasOwnProperty("onUpdate")) {
-        if (configuration.isADrone && isInManualMode()) {
-          setManualControlInput();
-        }
         user_me.onUpdate(evt.data.timestamp);
       }
       parent.postMessage({type: "updated"});
@@ -145,6 +136,5 @@ import { Worker } from "os";
     }
   };
 }(console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, initPubsub, isInManualMode, landed, loiter, setAirspeed,
-  setAltitude, setManualControlInput, setMessage, setTargetCoordinates, std,
-  triggerParachute, Drone, Worker));
+  getLongitude, getYaw, initPubsub, landed, loiter, setAirspeed, setMessage,
+  setTargetCoordinates, std, triggerParachute, Drone, Worker));
