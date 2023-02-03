@@ -18,7 +18,6 @@ import { open, exit } from "std";
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
-    URL = "udp://" + configuration.autopilotIp + ":7909",
     LOG_FILE = "{{ log_dir }}/mavsdk-log",
     pubsubWorker,
     worker,
@@ -53,8 +52,12 @@ import { open, exit } from "std";
   }
 
   function connect() {
-    console.log("Will connect to", URL);
-    exitOnFail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
+    var address = configuration.autopilotIp + ":" + configuration.autopilotPort;
+    console.log("Will connect to", address);
+    exitOnFail(
+      start(configuration.autopilotIp, configuration.autopilotPort, LOG_FILE, 60),
+      "Failed to connect to " + address
+    );
   }
 
   if (configuration.isADrone) {
