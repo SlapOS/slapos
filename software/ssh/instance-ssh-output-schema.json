@@ -2,9 +2,14 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Values returned by instanciation",
   "properties": {
-    "ssh_command": {
-      "description": "SSH command used to access your instance in ssh when you provided a ssh public key",
+    "ssh-command": {
+      "description": "SSH command used to access the instance",
       "type": "string"
+    },
+    "ssh-url": {
+      "description": "ssh:// URL to access the instance",
+      "type": "string",
+      "format": "uri"
     }
   },
   "type": "object"
