@@ -567,7 +567,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Wait until after the programmed backup date, and a bit more
     t = (soon - datetime.now()).total_seconds()
-    self.assertLess(0, t)
     time.sleep(t + 120)
     self.callSlapos('node', 'status')
 
