@@ -9,6 +9,11 @@
       "description": "IP used to create a connection with the autopilot.",
       "type": "string"
     },
+    "autopilotPort": {
+      "title": "Port of the drone's autopilot",
+      "description": "Port on which autopilot service is running.",
+      "type": "string"
+    },
     "numberOfPeers": {
       "title": "Number of Peers",
       "description": "Number of drones and subscribers in the swarm",
