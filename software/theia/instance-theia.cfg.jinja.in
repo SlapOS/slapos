@@ -11,6 +11,7 @@ theia-environment-parts =
   slapos-repository
   runner-link
   settings.json
+  python-enable-user-pip
 
 theia-parts =
   frontend-instance
@@ -261,14 +262,13 @@ content =
     log global
     bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
     # writing twice the same ACL is doing OR
-    acl is_public path_beg /public/
     acl is_public path /$${frontend-instance-favicon.ico:filename}
     acl is_public path /$${frontend-instance-theia.webmanifest:filename}
     acl is_public path /$${frontend-instance-theia-serviceworker.js:filename}
     acl auth_ok http_auth(basic-auth-list)
-    # No authentication for public folder
+    # No authentication for some files
     http-request auth unless auth_ok || is_public
-    use_backend static if { path_beg /$${frontend-instance-fonts:folder-name} } || { path_beg /$${frontend-instance-slapos.css:folder-name} } || { path /$${frontend-instance-logo:filename} } || is_public
+    use_backend static if { path_beg /$${frontend-instance-fonts:folder-name} } || { path_beg /$${frontend-instance-slapos.css:folder-name} } || { path /$${frontend-instance-logo:filename} } || { path_beg /public/ } || is_public
     default_backend nodejs
 
   backend nodejs
@@ -408,7 +408,7 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$HOME/.local/bin:$PATH
   export IPV6_SLAPRUNNER={{ ipv6_random }}
 
 # Theia Backend
@@ -462,8 +462,9 @@ inline =
   {% raw -%}
   #!{{ bash }}
   SHELL=$BASH
-  # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if [ $# = 0 ]; then
+  # when running interactively, or as a login shell, activate slapos configuration
+  # and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+  if [ $# = 0 ] || [ $# = 1 -a "$1" = -l ]; then
     . {{ activate }}
     unset GIT_EXEC_PATH
     set -- --rcfile {{ bashrc }}
@@ -481,6 +482,9 @@ output = $${directory:etc}/$${:_buildout_section_name_}
 inline =
   # enable bash completion
   . ${bash-completion:location}/etc/profile.d/bash_completion.sh
+  # enable color for ls
+  eval "$(${coreutils:location}/bin/dircolors -b)"
+  alias ls='ls --color=auto'
   # source user's .bashrc
   [ -f ~/.bashrc ] && . ~/.bashrc
 depends =
@@ -493,6 +497,12 @@ command =
   ${buildout:bin-directory}/slapos complete > $${directory:bash-completions}/slapos
   ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
+[python-enable-user-pip]
+# enable pip user installation for python extension
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  ${python:executable} -m ensurepip --user
 
 # Embedded Instance
 # -----------------
@@ -591,8 +601,6 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   . $${common-environment:output}
-  #XXX find out where the extra nodejs in theia's PATH comes from
-  export PATH=${nodejs:location}/bin/:$PATH
   . $${slapos-standalone-activate:output}
   exec $${slapos-standalone-script:output}
 
@@ -710,7 +718,7 @@ inline =
     },
     "git.terminalAuthentication": false,
     "security.workspace.trust.startupPrompt": "once",
-    "zc-buildout.python.executable": "${python-for-buildout-languageserver:executable}"
+    "zc-buildout.python.executable": "$${buildout:directory}/software_release/bin/${python-for-buildout-languageserver:interpreter}"
   }
 
 [runner-link]
