@@ -84,11 +84,18 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
   @classmethod
   def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
     cls.callSlapos('supply', software_url, 'slaprunner', instance_type=instance_type)
-    try:
-      cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
+    for _ in range(retries):
+      try:
+        cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
+      except subprocess.CalledProcessError as e:
+        continue
       print(e.output)
-      raise
+      break
+    else:
+      if retries:
+        print("Wait before running slapos node software one last time")
+        time.sleep(120)
+        cls.checkSlapos('node', 'software', instance_type=instance_type)
     cls.callSlapos('request', instance_name, software_url, instance_type=instance_type)
     cls._processEmbeddedInstance(retries, instance_type)
 
