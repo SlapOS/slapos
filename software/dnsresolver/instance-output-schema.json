@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by instanciation",
+  "properties": {
+    "dnsresolver-url-v6": {
+      "description": "URI to access over IPv6",
+      "type": "string",
+      "format": "uri"
+    },
+    "dnsresolver-url-v4": {
+      "description": "URI to access over IPv4",
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "type": "object"
+}
