@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by instanciation",
+  "properties": {
+    "dnsresolver-v6": {
+      "description": "IPv6 address of the resolver",
+      "type": "string"
+    },
+    "dnsresolver-v4": {
+      "description": "IPv4 address of the resolver",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
