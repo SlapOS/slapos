@@ -86,16 +86,16 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
     cls.callSlapos('supply', software_url, 'slaprunner', instance_type=instance_type)
     for _ in range(retries):
       try:
-        cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
-      except subprocess.CalledProcessError as e:
+        output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
+      except subprocess.CalledProcessError:
         continue
-      print(e.output)
+      print(output)
       break
     else:
       if retries:
         print("Wait before running slapos node software one last time")
         time.sleep(120)
-        cls.checkSlapos('node', 'software', instance_type=instance_type)
+      cls.checkSlapos('node', 'software', instance_type=instance_type)
     cls.callSlapos('request', instance_name, software_url, instance_type=instance_type)
     cls._processEmbeddedInstance(retries, instance_type)
 
