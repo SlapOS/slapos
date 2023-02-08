@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by instanciation",
+  "properties": {
+    "dnsresolver": {
+      "description": "Connection address of the resolver",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

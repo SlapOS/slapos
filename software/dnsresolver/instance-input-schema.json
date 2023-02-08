@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nameserver-list": {
+      "description": "List of nameservers to use",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "type": "array"
+    },
+    "cache-size": {
+      "description": "Size of the entry cache",
+      "type": "number",
+      "default": 5000
+    }
+  }
+}
