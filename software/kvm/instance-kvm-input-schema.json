@@ -334,6 +334,12 @@
         },
         {
           "const": [
+            "https://shacache.nxdcdn.com/8017c532ed74586b718662d8b11cf8c34fa638b0affd0413ed38623989b8f98ffd0bcb475246e279ea2f3c194a3e33c55e0f376a9727de13e4bfd87e75e47b5d#e8d2a77c51b599c10651608a5d8c286f"
+          ],
+          "title": "Ubuntu Jammy 22.04.1 Live Server x86_64"
+        },
+        {
+          "const": [
             "https://shacache.nxdcdn.com/302c990c6d69575ff24c96566e5c7e26bf36908abb0cd546e22687c46fb07bf8dba595bf77a9d4fd9ab63e75c0437c133f35462fd41ea77f6f616140cd0e5e6a#f3a306f40e4a313fb5a584d73b3dee8f"
           ],
           "title": "Ubuntu Focal 20.04.1 Live Server x86_64"
