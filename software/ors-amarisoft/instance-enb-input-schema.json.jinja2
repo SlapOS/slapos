@@ -23,6 +23,16 @@
       "type": "boolean"
     },
 {%- endif %}
+    "rrh": {
+      "title": "RRH",
+      "description": "RRH",
+      "type": "string",
+      "default": "SDR",
+      "enum": [
+        "SDR",
+        "Lopcomm ORAN"
+      ]
+    },
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
@@ -144,20 +154,20 @@
       "type": "number",
       "default": 7
     },
-    "promise_cpu_temperature_threshold": {
-      "title": "CPU temperature promise threshold",
-      "description": "Temperature threshold above which CPU temperature promise will fail",
+    "promise_cpu_max_spot_temp": {
+      "title": "Maximum CPU spot temperature",
+      "description": "Maximum CPU spot temperature above which CPU temperature promise will fail",
       "type": "number",
       "default": 90
     },
-    "promise_cpu_avg_temperature_threshold": {
-      "title": "Average CPU temperature promise threshold",
-      "description": "If average temperature over specified duration reaches this threshold, promise will fail",
+    "promise_cpu_max_avg_temp": {
+      "title": "Maximum average CPU temperature",
+      "description": "If average temperature over specified period reaches this threshold, promise will fail",
       "type": "number",
       "default": 80
     },
-    "promise_cpu_avg_temperature_threshold_duration": {
-      "title": "Average CPU temperature promise threshold duration",
+    "promise_cpu_avg_temp_period": {
+      "title": "Period of Average CPU temperature checks",
       "description": "Duration during which average temperature should not exceed specified threshold",
       "type": "number",
       "default": 600
