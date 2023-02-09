@@ -66,6 +66,7 @@ param_dict = {
     'n_antenna_ul': 2,
     'inactivity_timer': 17,
     'gnb_id': "0x17",
+    'gnb_id_bits': 30,
     'ssb_pos_bitmap': "10",
     'amf_list': {
         '10.0.0.1': {'amf_addr': '10.0.0.1'},
@@ -133,6 +134,7 @@ def test_gnb_conf1(self):
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
         self.assertEqual(conf['nr_cell_default']['n_id_cell'], gnb_param_dict1['pci'])
         self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
+        self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
         for p in conf['nr_cell_default']['plmn_list']:
           for n in "plmn ranac reserved tac".split():
               self.assertEqual(p[n], gnb_param_dict1['plmn_list'][p['plmn']][n])
