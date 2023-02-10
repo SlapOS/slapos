@@ -16,10 +16,18 @@ usr = $${buildout:directory}/usr
 run = $${:etc}/run
 service = $${:etc}/service
 
-[instance-parameter]
+[slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+
+[dovecot.conf]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+url = {{ dovecot_conf_template }}
+context =
+  section directory directory
+  key ipv6 slap-configuration:ipv6-random
