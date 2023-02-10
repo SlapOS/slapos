@@ -29,6 +29,7 @@ import os
 import yaml
 import json
 import glob
+import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -181,8 +182,30 @@ def test_sim_card(self):
 
     self.slap.waitForInstance() # Wait until publish is done
     p = self.requestSlaveInstance().getConnectionParameterDict()
-    p = p['_'] if '_' in p else p                  
-    self.assertIn('info', p)  
+    p = p['_'] if '_' in p else p
+    self.assertIn('info', p)
+
+class TestMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(enb_param_dict)}
+
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "enb"
+
+    def test_monitor_gadget_url(self):
+        self.slap.waitForInstance() # Wait until publish is done
+
+        parameters = json.loads(self.requestDefaultInstance().getConnectionParameterDict()['_'])
+        self.assertIn('monitor-gadget-url', parameters)
+
+        response = requests.get(parameters['monitor-gadget-url'], verify=False)
+        self.assertEqual(requests.codes['OK'], response.status_code)
+
+        self.assertIn('renderjs.js', response.text)
+        self.assertIn('g-chart.line.js', response.text)
+        self.assertIn('promise.gadget.js', response.text)
 
 class TestENBParameters(ORSTestCase):
     @classmethod
