@@ -35,6 +35,16 @@ context =
     raw template_monitor ${monitor2-template:output}
     raw template_dovecot ${template-dovecot:output}
 
+[dynamic-template-default]
+recipe = slapos.recipe.template:jinja2
+url = ${template-default:output}
+filename = instance-default.cfg
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+context =
+    key slapparameter_dict slap-configuration:configuration
+    raw template_monitor ${monitor2-template:output}
+
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
 computer = $${slap-connection:computer-id}
@@ -45,5 +55,5 @@ cert = $${slap-connection:cert-file}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-template-postfix:output
+default = dynamic-template-default:output
 RootSoftwareInstance = $${:default}
