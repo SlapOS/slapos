@@ -1,20 +1,25 @@
 [buildout]
 parts =
   directory
-eggs-directory = {{ buildout['eggs-directory'] }}
-develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+  dovecot-conf
+  dovecot-service
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-usr = $${buildout:directory}/usr
-run = $${:etc}/run
-service = $${:etc}/service
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+etc = ${:home}/etc
+bin = ${:home}/bin
+tmp = ${:home}/tmp
+run = ${:var}/run
+script = ${:etc}/run
+service = ${:etc}/service
+promise = ${:etc}/promise
+log = ${:var}/log
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -24,10 +29,38 @@ url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
-[dovecot.conf]
+[config-base]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
-url = {{ dovecot_conf_template }}
+extra-context =
 context =
   section directory directory
-  key ipv6 slap-configuration:ipv6-random
+# section slap_configuration slap-configuration
+  ${:extra-context}
+[dovecot-conf]
+<= config-base
+url = {{ dovecot_conf_template }}
+output = ${directory:etc}/dovecot.conf
+extra-context =
+  key dovecot_passwd dovecot-passwd:output
+[dovecot-passwd]
+<= config-base
+url = {{ dovecot_passwd_template }}
+output = ${directory:etc}/dovecot-passwd
+
+[dovecot-wrapper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  {{ dovecot_binary }} -c ${dovecot-conf:output}
+
+[dovecot-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${dovecot-wrapper:output}
+wrapper-path = ${directory:service}/dovecot
+mode = 0775
+pidfile = ${directory:run}/dovecot.pid
+hash-files =
+  ${dovecot-conf:output}
+  ${dovecot-wrapper:output}

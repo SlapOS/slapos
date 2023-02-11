@@ -10,41 +10,20 @@ offline = true
 bin-directory = ${buildout:bin-directory}
 buildout-bin-directory = ${buildout:bin-directory}
 
-[dynamic-template-postfix-parameters]
-<= default-dynamic-template-parameters
-cyrus-sasl-location = ${cyrus-sasl:location}
-openssl = ${openssl:location}
-postfix-location = ${postfix:location}
-dovecot-location = ${dovecot:location}
-template-postfix-aliases = ${template-postfix-aliases:target}
-template-postfix-main-cf = ${template-postfix-main-cf:target}
-template-postfix-master-cf = ${template-postfix-master-cf:target}
-xz-utils-location =  ${xz-utils:location}
-
-[dynamic-template-postfix]
-recipe = slapos.recipe.template:jinja2
-url = ${template-postfix:output}
-filename = instance-postfix.cfg
-output = $${buildout:directory}/$${:filename}
-extensions = jinja2.ext.do
-context =
-    import urllib urllib
-    section parameter_dict dynamic-template-postfix-parameters
-    key slapparameter_dict slap-configuration:configuration
-    key ipv6_set slap-configuration:ipv6
-    raw template_monitor ${monitor2-template:output}
-    raw template_default ${template-default:output}
-
 [dynamic-template-default]
 recipe = slapos.recipe.template:jinja2
-url = ${template-default:output}
+url = ${template-default:target}
 filename = instance-default.cfg
 output = $${buildout:directory}/$${:filename}
 extensions = jinja2.ext.do
 context =
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw template_monitor ${monitor2-template:output}
     raw dovecot_conf_template ${dovecot.jinja2.conf:target}
+    raw dovecot_passwd_template ${dovecot-passwd.jinja2:target}
+    raw dovecot_binary ${dovecot:location}/sbin/dovecot
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
