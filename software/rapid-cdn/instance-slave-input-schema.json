@@ -100,18 +100,6 @@
       "title": "HTTPS Backend URL",
       "type": "string"
     },
-    "monitor-ipv4-test": {
-      "default": "",
-      "description": "IPv4 Address for the frontend keep monitoring with ping",
-      "title": "IPv4 Address to Monitor Packet Lost",
-      "type": "string"
-    },
-    "monitor-ipv6-test": {
-      "default": "",
-      "description": "IPv6 Address for the frontend keep monitoring with ping6 (without brackets)",
-      "title": "IPv6 Address to Monitor Packet Lost",
-      "type": "string"
-    },
     "websocket-path-list": {
       "default": "",
       "description": "Space separated list of path to the websocket application. If not set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS. In order to have ' ' in the space use '%20'",
