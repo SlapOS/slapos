@@ -829,7 +829,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         )
         if not resp.ok:
           # XXX we start by flushing existing activities from site creation
-          # and inital upgrader run. During this time it may happen that
+          # and initial upgrader run. During this time it may happen that
           # ERP5 replies with site errors, we tolerate these errors and only
           # check the final state.
           continue
