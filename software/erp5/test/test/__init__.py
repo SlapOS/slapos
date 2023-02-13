@@ -55,7 +55,7 @@ def setUpModule():
 class ERP5InstanceTestMeta(type):
   """Adjust ERP5InstanceTestCase instances to be run in several flavours (e.g. NEO/ZEO)
 
-  Adjustements can be declared via setting the '__test_matrix__' attribute
+  Adjustments can be declared via setting the '__test_matrix__' attribute
   of a test case.
   A test matrix is a dict which maps the flavoured class name suffix to
   a tuple of parameters.
@@ -181,7 +181,7 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMet
 
   @classmethod
   def getRootPartitionConnectionParameterDict(cls):
-    """Return the output paramters from the root partition"""
+    """Return the output parameters from the root partition"""
     return json.loads(
         cls.computer_partition.getConnectionParameterDict()['_'])
 
