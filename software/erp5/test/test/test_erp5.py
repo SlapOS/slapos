@@ -27,6 +27,7 @@
 
 
 import contextlib
+import datetime
 import glob
 import http.client
 import json
@@ -450,10 +451,13 @@ class ZopeSkinsMixin:
   @classmethod
   def _setUpClass(cls):
     super()._setUpClass()
-    param_dict = cls.getRootPartitionConnectionParameterDict()
-    # wait for ERP5 to be ready and have processed all activities
-    # from initial setup
-    for _ in range(120):
+    cls._waitForActivities()
+
+  @classmethod
+  def _waitForActivities(cls, timeout=datetime.timedelta(minutes=10).total_seconds()):
+    """Wait for ERP5 to be ready and have processed all activities.
+    """
+    for _ in range(int(timeout / 5)):
       with cls.getXMLRPCClient() as erp5_xmlrpc_client:
         try:
           if erp5_xmlrpc_client.portal_activities.countMessage() == 0:
@@ -464,7 +468,7 @@ class ZopeSkinsMixin:
           pass
       time.sleep(5)
     else:
-      raise AssertionError("ERP5 is not ready")
+      raise AssertionError("Timeout waiting for activities")
 
   @classmethod
   def _getAuthenticatedZopeUrl(cls, path, family_name='default'):
