@@ -317,7 +317,7 @@ monitor-base-url = ${monitor-base:base-url}
 monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
-monitor-gadget-url = ${:monitor-base-url}/public/gadget
+monitor-gadget-url = ${:monitor-base-url}/public/gadget/ors-gadget/software.cfg.html
 
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
