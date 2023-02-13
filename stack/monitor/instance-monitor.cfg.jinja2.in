@@ -173,7 +173,7 @@ key-file = ${ca-directory:certs}/monitor-httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
 httpd-cors-config-file = ${monitor-httpd-cors:output}
-httpd-include-file =
+httpd-include-file = ${buildout:directory}/httpd-include-file.conf
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
@@ -317,7 +317,7 @@ monitor-base-url = ${monitor-base:base-url}
 monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
-monitor-gadget-url = ${:monitor-base-url}/public/gadget
+monitor-gadget-url = ${:monitor-base-url}/gadget/software.cfg.html
 
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
@@ -430,6 +430,5 @@ monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_c
 monitor-gadget-url = ${monitor-publish-parameters:monitor-gadget-url}
 
 [buildout]
-
 extends =
   {{ template_logrotate_base }}
