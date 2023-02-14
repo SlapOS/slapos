@@ -38,6 +38,7 @@ parts =
 
     on-reinstantiate
     gitaly-socket-listening-promise
+    promise-unicorn-1
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -595,7 +596,7 @@ log     = ${directory:log}/unicorn
 [unicorn]
 srv     = ${unicorn-dir:srv}
 log     = ${unicorn-dir:log}
-socket  = ${:srv}/unicorn.socket
+socket  = ${directory:srv}/unicorn.socket
 
 [service-unicorn]
 recipe  = slapos.cookbook:wrapper
@@ -616,6 +617,11 @@ depend  =
 # -> associate their logs rotation to here
     ${logrotate-entry-gitlab:recipe}
 
+[promise-unicorn-1]
+<= monitor-promise-base
+promise = check_socket_listening
+name = unicorn_socket_listening_promise.py
+config-pathname = ${unicorn:socket}
 
 [promise-unicorn]
 <= promise-byurl
