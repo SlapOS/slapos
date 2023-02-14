@@ -424,12 +424,15 @@ depends =
   ${logrotate-entry-monitor-data:name}
   ${logrotate-entry-monitor-promise-history:name}
 
+[gadget-conf]
+directory =
+
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
 monitor-gadget-url = ${monitor-publish-parameters:monitor-gadget-url}
+monitor-gadget-directory = ${gadget-conf:directory}
 
 [buildout]
-
 extends =
   {{ template_logrotate_base }}
