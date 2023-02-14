@@ -48,6 +48,3 @@ extra-context =
     raw template_mysqld_wrapper {{ template_mysqld_wrapper }}
     raw template_neo_my_cnf {{ template_neo_my_cnf }}
 {%- endif %}
-{%- if pypy_location is defined %}
-    raw pypy_location {{ pypy_location }}
-{%- endif %}
