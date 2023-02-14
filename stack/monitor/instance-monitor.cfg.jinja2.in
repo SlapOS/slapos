@@ -31,7 +31,6 @@ pids = ${directory:run}/monitor
 webdav = ${directory:monitor}/webdav
 public = ${directory:monitor}/public
 private = ${directory:monitor}/private
-gadget = ${:public}/gadget
 documents = ${:private}/documents
 log = ${directory:log}/monitor
 promise-result = ${buildout:directory}/.slapgrid/promise/result
@@ -83,7 +82,6 @@ root-title = ${monitor-instance-parameter:root-instance-title}
 public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
 webdav-folder = ${monitor-directory:webdav}
-gadget-folder = ${monitor-directory:gadget}
 base-url = ${monitor-instance-parameter:monitor-base-url}
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
@@ -108,7 +106,6 @@ promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 [monitor-promise-conf]
 output-folder = ${monitor-directory:public}/promise
 history-folder = ${monitor-directory:public}
-gadget-folder = ${monitor-directory:gadget}
 promise-folder = ${directory:plugins}
 pid-path = ${monitor-directory:pids}/runpromise.pid
 partition-folder = ${buildout:directory}
@@ -173,7 +170,7 @@ key-file = ${ca-directory:certs}/monitor-httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
 httpd-cors-config-file = ${monitor-httpd-cors:output}
-httpd-include-file = ${buildout:directory}/httpd-include-file.conf
+httpd-include-file = ${buildout:directory}/etc/httpd-include-file.conf
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
@@ -430,5 +427,6 @@ monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_c
 monitor-gadget-url = ${monitor-publish-parameters:monitor-gadget-url}
 
 [buildout]
+
 extends =
   {{ template_logrotate_base }}
