@@ -16,6 +16,7 @@ etc = ${:home}/etc
 var = ${:home}/var
 etc = ${:home}/etc
 bin = ${:home}/bin
+usr = ${:home}/usr
 tmp = ${:home}/tmp
 run = ${:var}/run
 script = ${:etc}/run
@@ -99,7 +100,6 @@ output = ${directory:etc}/postfix_main.cf
 extra-context =
   key postfix_alias postfix-alias:output
   key postfix_mailname postfix-mailname:output
-  key postfix_vhosts postfix-vhosts:output
   key postfix_vmailbox postfix-vmailbox:output
   key postfix_virtual postfix-virtual:output
   key bin_directory directory:bin
