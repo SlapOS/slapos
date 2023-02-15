@@ -59,8 +59,8 @@ extensions = jinja2.ext.do
 extra-context =
 context =
   section directory directory
+  section slap_configuration slap-configuration
   import  netaddr netaddr
-# section slap_configuration slap-configuration
   ${:extra-context}
 
 [dovecot-conf]
