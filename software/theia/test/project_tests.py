@@ -457,7 +457,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
   def setUp(self):
     self.temp_dir = os.path.realpath(tempfile.mkdtemp())
+    self.temp_clone_dir = os.path.realpath(tempfile.mkdtemp())
     self.addCleanup(shutil.rmtree, self.temp_dir)
+    self.addCleanup(shutil.rmtree, self.temp_clone_dir)
 
   def _getGitlabConnectionParameters(self, instance_type='export'):
     out = self.captureSlapos(
@@ -473,15 +475,6 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     pass
 
   def _prepareExport(self):
-    # This is a dirty fixup
-    # In the step of slapos node software
-    # The installation of nodejs may failed at the first time.
-    self.callSlapos('supply', gitlab_software_release_url, 'slaprunner', instance_type='export')
-    try:
-      self.captureSlapos('node', 'software', instance_type='export', stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-      print(e.output)
-
     super(TestTheiaResilienceGitlab, self)._prepareExport()
 
     gitlab_partition = self._getGitlabPartitionPath('export', 'gitlab')
@@ -547,7 +540,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     output = subprocess.check_output(('git', 'config', '--global', 'user.name', 'Resilience Test'), cwd=repo_path, universal_newlines=True)
     output = subprocess.check_output(('git', 'config', '--global', 'user.email', 'resilience-test@example.com'), cwd=repo_path, universal_newlines=True)
     output = subprocess.check_output(('git', 'commit', '-m', 'Initial commit'), cwd=repo_path, universal_newlines=True)
-    output = subprocess.check_output(('git', 'push', 'origin', 'master'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'push', 'origin'), cwd=repo_path, universal_newlines=True)
 
     # Do a fake periodically update
     # Compute backup date in the near future
@@ -565,9 +558,19 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Wait until after the programmed backup date, and a bit more
     t = (soon - datetime.now()).total_seconds()
-    self.assertLess(0, t)
     time.sleep(t + 120)
     self.callSlapos('node', 'status')
+
+    os.chdir(self.temp_clone_dir)
+    repo_path = os.path.join(os.getcwd(), project_1['name'])
+    print(repo_path)
+    if os.path.exists(repo_path):
+      shutil.rmtree(repo_path, ignore_errors=True)
+    output = subprocess.check_output(('git', 'clone', clone_url), universal_newlines=True)
+
+    # Check the file we committed in exist and the content is matching.
+    output = subprocess.check_output(('git', 'show', 'origin/master:file.txt'), cwd=repo_path, universal_newlines=True)
+    self.assertIn('This is the new file.', output)
 
   def _checkTakeover(self):
     super(TestTheiaResilienceGitlab, self)._checkTakeover()
