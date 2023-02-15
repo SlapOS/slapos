@@ -26,6 +26,7 @@
 ##############################################################################
 from __future__ import unicode_literals
 
+import configparser
 import json
 import logging
 import os
@@ -40,11 +41,13 @@ import psutil
 import requests
 import six
 
+
 from six.moves.urllib.parse import urlparse, urljoin
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 from slapos.proxy.db_version import DB_VERSION
+from slapos.slap.standalone import SlapOSConfigWriter
 
 
 theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
@@ -508,6 +511,32 @@ class TestTheiaEnv(TheiaTestCase):
     self.assertEqual(theia_shell_env['SLAPOS_CONFIGURATION'], supervisord_env['SLAPOS_CONFIGURATION'])
     self.assertEqual(theia_shell_env['SLAPOS_CLIENT_CONFIGURATION'], supervisord_env['SLAPOS_CLIENT_CONFIGURATION'])
     self.assertEqual(theia_shell_env['HOME'], supervisord_env['HOME'])
+
+
+class TestTheiaSharedPath(TheiaTestCase):
+  bogus_path = 'bogus'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaSharedPath, cls).setUpClass()
+    # Change shared part list to include bogus paths
+    cls.slap._shared_part_list.append(cls.bogus_path)
+    SlapOSConfigWriter(cls.slap).writeConfig(cls.slap._slapos_config)
+    # Re-instantiate
+    cls.slap._force_slapos_node_instance_all = True
+    try:
+      cls.waitForInstance()
+    finally:
+      cls.slap._force_slapos_node_instance_all = False
+
+  def test(self):
+    theia_cfg_path = self.getPath('srv', 'runner', 'etc', 'slapos.cfg')
+    cfg = configparser.ConfigParser()
+    cfg.read(theia_cfg_path)
+    self.assertTrue(cfg.has_option('slapos', 'shared_part_list'))
+    shared_parts_string = cfg.get('slapos', 'shared_part_list')
+    shared_parts_list = [s.strip() for s in shared_parts_string.splitlines()]
+    self.assertIn(self.bogus_path, shared_parts_list)
 
 
 class ResilientTheiaMixin(object):
