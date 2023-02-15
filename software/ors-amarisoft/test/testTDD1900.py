@@ -200,12 +200,16 @@ class TestMonitorGadgetUrl(ORSTestCase):
         parameters = json.loads(self.requestDefaultInstance().getConnectionParameterDict()['_'])
         self.assertIn('monitor-gadget-url', parameters)
 
-        response = requests.get(parameters['monitor-gadget-url'], verify=False)
-        self.assertEqual(requests.codes['OK'], response.status_code)
+        monitor_gadget_url = parameters['monitor-gadget-url']
+        self.assertIn('software.cfg.html', monitor_gadget_url)
 
-        self.assertIn('renderjs.js', response.text)
-        self.assertIn('g-chart.line.js', response.text)
-        self.assertIn('promise.gadget.js', response.text)
+        response = requests.get(monitor_gadget_url, verify=False)
+        self.assertEqual(requests.codes['OK'], response.status_code)
+        self.assertIn('<script src="rsvp.js"></script>', response.text)
+        self.assertIn('<script src="renderjs.js"></script>', response.text)
+        self.assertIn('<script src="g-chart.line.js"></script>', response.text)
+        self.assertIn('<script src="promise.gadget.js"></script>', response.text)
+
 
 class TestENBParameters(ORSTestCase):
     @classmethod
