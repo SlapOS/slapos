@@ -26,6 +26,7 @@ context =
     raw dovecot_binary ${dovecot:location}/sbin/dovecot
     raw postfix_main_template ${postfix_main.jinja2.cf:target}
     raw postfix_alias_template ${postfix_alias.jinja2:target}
+    raw postfix_virtual_template ${postfix_virtual.jinja2:target}
     raw postfix_mailname_template ${postfix_mailname.jinja2:target}
     raw postfix_vmailbox_template ${postfix_vmailbox.jinja2:target}
     raw postfix_binary ${postfix:location}/usr/libexec/sbin/master
