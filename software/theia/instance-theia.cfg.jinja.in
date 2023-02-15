@@ -593,7 +593,11 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 embedded-request-exitcode-file = $${directory:statefiles}/embedded-request.exitcode
 standalone-ran-before-flag = $${directory:statefiles}/standalone-ran-before.flag
 shared-part-list =
+{%- if 'shared-part-list' in slap_connection %}
+  {{ slap_connection['shared-part-list'] | indent(2) }}
+{%- else %}
   {{ """${buildout:shared-part-list}""" | indent(2) }}
+{%- endif %}
 context =
   raw python_for_standalone ${python-for-standalone:executable}
   raw request_script_path $${directory:project}/request-embedded-instance.sh
