@@ -46,12 +46,12 @@ var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
 
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = {{ slap_connection['computer-id'] }}
+partition = {{ slap_connection['partition-id'] }}
+url = {{ slap_connection['server-url'] }}
+key = {{ slap_connection['key-file'] }}
+cert = {{ slap_connection['cert-file'] }}
 
 [config-base]
 recipe = slapos.recipe.template:jinja2
