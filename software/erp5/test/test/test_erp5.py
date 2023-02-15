@@ -539,6 +539,11 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
                     "longrequest-logger-interval": 1,
                     "longrequest-logger-timeout": 1,
                 },
+                "multiple": {
+                    "family": "multiple",
+                    "instance-count": 3,
+                    "port-base":  2210,
+                },
             },
             "wsgi": cls.wsgi,
         })
@@ -853,6 +858,21 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
     ).raise_for_status()
     wait_for_activities(10)
 
+  def test_multiple_zope_family_log_files(self):
+    logfiles = [
+      os.path.basename(p) for p in glob.glob(
+        os.path.join(
+          self.getComputerPartitionPath('zope-multiple'), 'var', 'log', '*'))
+    ]
+    self.assertEqual(
+      sorted([l for l in logfiles if l.startswith('zope')]), [
+        'zope-0-Z2.log',
+        'zope-0-event.log',
+        'zope-1-Z2.log',
+        'zope-1-event.log',
+        'zope-2-Z2.log',
+        'zope-2-event.log',
+      ])
 
 class TestZopeMedusa(ZopeTestMixin, ERP5InstanceTestCase):
   wsgi = False
