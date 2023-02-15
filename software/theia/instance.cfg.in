@@ -33,6 +33,7 @@ url = ${instance-theia:output}
 output = $${buildout:directory}/instance-theia.cfg
 extensions = jinja2.ext.do
 context =
+  section slap_connection slap-connection
   jsonkey default_parameter_dict :default-parameters
   key parameter_dict slap-configuration:configuration
   key root_title slap-configuration:root-instance-title
