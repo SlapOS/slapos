@@ -1,0 +1,59 @@
+queue_directory = {{ queue_directory }}
+command_directory = {{ bin_directory }}
+daemon_directory = {{ usr_directory }}/libexec/postfix
+data_directory = {{ data_directory }}
+mail_spool_directory = {{ spool_directory }}
+sendmail_path = {{ bin_directory }}/sendmail
+newaliases_path = {{ bin_directory }}/newaliases
+mailq_path = {{ bin_directory }}/mailq
+manpage_directory = {{ postfix_location }}/usr/local/man
+sample_directory = {{ postfix_location }}/etc/postfix
+
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+readme_directory = no
+
+# See http://www.postfix.org/COMPATIBILITY_README.html -- default to 2 on
+# fresh installs.
+compatibility_level = 2
+
+home_mailbox = Maildir/
+
+smtpd_tls_security_level = none
+
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+
+myhostname = mydomain.local
+alias_maps = hash:{{ alias_file }}
+alias_database = hash:{{ alias_file }}
+myorigin = {{ mailname_file }}
+#mydestination = ors64, localhost.localdomain, localhost
+relayhost = 
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 {{ ip_network }}
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = {{ ip_address }}
+default_transport = error
+relay_transport = error
+inet_protocols = all
+
+virtual_mailbox_domains = mydomain.local
+virtual_mailbox_base = {{ vhosts_directory }}
+virtual_mailbox_maps = hash:{{ vmailbox_file }}
+virtual_minimum_uid = 100
+virtual_uid_maps = static:1001
+virtual_gid_maps = static:1022
+virtual_alias_maps = hash:{{ virtual_file }}
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
+maillog_file = {{ directory['log'] }}/postfix.log
+

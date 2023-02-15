@@ -24,6 +24,12 @@ context =
     raw dovecot_conf_template ${dovecot.jinja2.conf:target}
     raw dovecot_passwd_template ${dovecot-passwd.jinja2:target}
     raw dovecot_binary ${dovecot:location}/sbin/dovecot
+    raw postfix_main_template ${postfix_main_jinja2.cf}
+    raw postfix_alias_template ${postfix_alias_jinja2}
+    raw postfix_mailname_template ${postfix_mailname_jinja2}
+    raw postfix_vmailbox_template ${postfix_vmailbox_jinja2}
+    raw postfix_binary ${postfix:location}/usr/libexec/sbin/master
+    raw postfix_location ${postfix:location}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised

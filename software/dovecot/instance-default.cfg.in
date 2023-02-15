@@ -3,6 +3,8 @@ parts =
   directory
   dovecot-conf
   dovecot-service
+  postfix-conf
+  postftix-service
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
@@ -20,6 +22,27 @@ script = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
 log = ${:var}/log
+var-log = ${:var}/log
+var-lib = ${:var}/lib
+var-lib-postfix = ${:var-lib}/postfix
+var-spool = ${:var}/spool
+var-spool-postfix = ${:var-spool}/postfix
+vhosts = ${:home}/vhosts
+# Not used at buildout level, presence needed by postfix.
+var-spool-postfix-active = ${:var-spool-postfix}/active
+var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
+var-spool-postfix-corrupt = ${:var-spool-postfix}/corrupt
+var-spool-postfix-defer = ${:var-spool-postfix}/defer
+var-spool-postfix-deferred = ${:var-spool-postfix}/deferred
+var-spool-postfix-flush = ${:var-spool-postfix}/flush
+var-spool-postfix-hold = ${:var-spool-postfix}/hold
+var-spool-postfix-incoming = ${:var-spool-postfix}/incoming
+var-spool-postfix-maildrop = ${:var-spool-postfix}/maildrop
+var-spool-postfix-pid = ${:var-spool-postfix}/pid
+var-spool-postfix-private = ${:var-spool-postfix}/private
+var-spool-postfix-public = ${:var-spool-postfix}/public
+var-spool-postfix-saved = ${:var-spool-postfix}/saved
+var-spool-postfix-trace = ${:var-spool-postfix}/trace
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -37,6 +60,7 @@ context =
   section directory directory
 # section slap_configuration slap-configuration
   ${:extra-context}
+
 [dovecot-conf]
 <= config-base
 url = {{ dovecot_conf_template }}
@@ -47,6 +71,46 @@ extra-context =
 <= config-base
 url = {{ dovecot_passwd_template }}
 output = ${directory:etc}/dovecot-passwd
+
+[userinfo]
+recipe = slapos.cookbook:userinfo
+
+[postfix-conf]
+<= config-base
+url = {{ postfix_main_template }}
+output = ${directory:etc}/postfix_main.cf
+extra-context =
+  key postfix_alias postfix-alias:output
+  key postfix_mailname postfix-mailname:output
+  key postfix_vhosts postfix-vhosts:output
+  key postfix_vmailbox postfix-vmailbox:output
+  key postfix_virtual postfix-virtual:output
+  key bin_directory directory:bin
+  key usr_directory directory:usr
+  key queue_directory directory:var-spool-postfix
+  key data_directory directory:var-lib-postfix
+  key spool_directory directory:var-spool
+  key vhosts_directory directory:vhosts
+  key mail_owner userinfo:pw-name
+  key setgid_group userinfo:gr-name
+  raw postfix_location {{ postfix_location }}
+
+[postfix-alias]
+<= config-base
+url = {{ postfix_alias_template }}
+output = ${directory:etc}/postfix-alias
+[postfix-mailname]
+<= config-base
+url = {{ postfix_mailname_template }}
+output = ${directory:etc}/postfix-mailname
+[postfix-vmailbox]
+<= config-base
+url = {{ postfix_vmailbox_template }}
+output = ${directory:etc}/postfix-vmailbox
+[postfix-virtual]
+<= config-base
+url = {{ postfix_virtual_template }}
+output = ${directory:etc}/postfix-virtual
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
@@ -64,3 +128,20 @@ pidfile = ${directory:run}/dovecot.pid
 hash-files =
   ${dovecot-conf:output}
   ${dovecot-wrapper:output}
+
+[postfix-wrapper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  {{ postfix_binary }}
+
+[postfix-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${postfix-wrapper:output}
+wrapper-path = ${directory:service}/postfix
+mode = 0775
+pidfile = ${directory:run}/postfix.pid
+hash-files =
+  ${postfix-conf:output}
+  ${postfix-wrapper:output}
