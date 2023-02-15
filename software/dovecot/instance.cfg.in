@@ -25,6 +25,7 @@ context =
     raw dovecot_passwd_template ${dovecot-passwd.jinja2:target}
     raw dovecot_binary ${dovecot:location}/sbin/dovecot
     raw postfix_main_template ${postfix_main.jinja2.cf:target}
+    raw postfix_master_template ${postfix_master.jinja2.cf:target}
     raw postfix_alias_template ${postfix_alias.jinja2:target}
     raw postfix_virtual_template ${postfix_virtual.jinja2:target}
     raw postfix_mailname_template ${postfix_mailname.jinja2:target}

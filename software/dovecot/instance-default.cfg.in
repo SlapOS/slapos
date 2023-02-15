@@ -3,7 +3,8 @@ parts =
   directory
   dovecot-conf
   dovecot-service
-  postfix-conf
+  postfix-conf-main
+  postfix-conf-master
   postfix-service
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -99,7 +100,7 @@ init =
                   options['ipv4'] = "0.0.0.0"
 
 
-[postfix-conf]
+[postfix-conf-main]
 <= config-base
 url = {{ postfix_main_template }}
 output = ${directory:etc}/postfix_main.cf
@@ -119,6 +120,10 @@ extra-context =
   key ip_address ethernet-ip:ipv4
   raw postfix_location {{ postfix_location }}
 
+[postfix-conf-master]
+<= config-base
+url = {{ postfix_master_template }}
+output = ${directory:etc}/postfix-master
 [postfix-alias]
 <= config-base
 url = {{ postfix_alias_template }}
@@ -167,5 +172,5 @@ wrapper-path = ${directory:service}/postfix
 mode = 0775
 pidfile = ${directory:run}/postfix.pid
 hash-files =
-  ${postfix-conf:output}
+  ${postfix-conf-main:output}
   ${postfix-wrapper:output}
