@@ -78,6 +78,20 @@ output = ${directory:etc}/dovecot-passwd
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
+[ethernet-ip]
+recipe = slapos.recipe.build
+init =
+  import netifaces
+  for i in netifaces.interfaces():
+      if not (i.startswith("slaptun") or i.startswith("re6stnet") or i == "lo"):
+          a = netifaces.ifaddresses(i)
+          if netifaces.AF_INET in a:
+              try:
+                  options['ipv4'] = a[netifaces.AF_INET][0]['addr']
+              except:
+                  options['ipv4'] = "0.0.0.0"
+
+
 [postfix-conf]
 <= config-base
 url = {{ postfix_main_template }}
@@ -96,6 +110,8 @@ extra-context =
   key vhosts_directory directory:vhosts
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
+  key ip_network ethernet-ip:ipv4
+  key ip_address slap-configuration:tun-ipv4-network
   raw postfix_location {{ postfix_location }}
 
 [postfix-alias]
