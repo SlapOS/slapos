@@ -19,6 +19,11 @@ bin = ${:home}/bin
 usr = ${:home}/usr
 tmp = ${:home}/tmp
 run = ${:var}/run
+libexec = ${:usr}/libexec
+run-dovecot = ${:run}/dovecot
+var-dovecot = ${:var}/dovecot
+tmp-dovecot = ${:tmp}/dovecot
+libexec-dovecot = ${:libexec}/dovecot
 script = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
@@ -99,10 +104,10 @@ init =
 url = {{ postfix_main_template }}
 output = ${directory:etc}/postfix_main.cf
 extra-context =
-  key postfix_alias postfix-alias:output
-  key postfix_mailname postfix-mailname:output
-  key postfix_vmailbox postfix-vmailbox:output
-  key postfix_virtual postfix-virtual:output
+  key alias_file postfix-alias:output
+  key mailname_file postfix-mailname:output
+  key vmailbox_file postfix-vmailbox:output
+  key virtual_file postfix-virtual:output
   key bin_directory directory:bin
   key usr_directory directory:usr
   key queue_directory directory:var-spool-postfix
@@ -111,7 +116,7 @@ extra-context =
   key vhosts_directory directory:vhosts
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  key ip_network ethernet-ip:ipv4
+  key ip_address ethernet-ip:ipv4
   raw postfix_location {{ postfix_location }}
 
 [postfix-alias]
@@ -136,7 +141,7 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  {{ dovecot_binary }} -c ${dovecot-conf:output}
+  {{ dovecot_binary }} -F -c ${dovecot-conf:output}
 
 [dovecot-service]
 recipe = slapos.cookbook:wrapper
