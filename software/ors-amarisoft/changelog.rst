@@ -1,8 +1,14 @@
 Changelog
 =========
 
+Upcoming Version (unreleased)
+-----------------------------
+
+* Add xamari xlog service
+
+
 Version 1.0.308 (2023-02-09)
--------------
+----------------------------
 
 * Add support for IPv6 in UEs if available
 * Use latest amarisoft version on ORS if available
