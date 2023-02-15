@@ -4,7 +4,7 @@ parts =
   dovecot-conf
   dovecot-service
   postfix-conf
-  postftix-service
+  postfix-service
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
