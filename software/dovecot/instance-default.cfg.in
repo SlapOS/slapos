@@ -118,9 +118,11 @@ extra-context =
   key data_directory directory:var-lib-postfix
   key spool_directory directory:var-spool
   key vhosts_directory directory:vhosts
+  key log_directory directory:var-log
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_address ethernet-ip:ipv4
+  raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
 
 [postfix-conf-master]

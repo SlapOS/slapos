@@ -31,6 +31,7 @@ context =
     raw postfix_mailname_template ${postfix_mailname.jinja2:target}
     raw postfix_vmailbox_template ${postfix_vmailbox.jinja2:target}
     raw postfix_location ${postfix:location}
+    raw xz_utils_location ${xz-utils:location}
     section slap_connection slap-connection
 
 [slap-configuration]

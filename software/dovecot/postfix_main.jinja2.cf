@@ -9,6 +9,22 @@ mailq_path = {{ bin_directory }}/mailq
 manpage_directory = {{ postfix_location }}/usr/local/man
 sample_directory = {{ postfix_location }}/etc/postfix
 
+mail_owner = {{ mail_owner }}
+setgid_group = {{ setgid_group }}
+html_directory = no
+readme_directory = no
+smtp_bind_address = 0.0.0.0
+smtp_bind_address6 = ::
+smtputf8_enable = no
+
+import_environment =
+  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+  SASL_CONF_PATH
+
+allow_min_user = yes
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ log_directory }}
+
 biff = no
 
 # appending .domain is the MUA's job.
