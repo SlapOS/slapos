@@ -67,6 +67,9 @@ url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
 extra-context =
   key dovecot_passwd dovecot-passwd:output
+  raw postfix_auth ${directory:var-spool-postfix-private}/auth
+  raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
+
 [dovecot-passwd]
 <= config-base
 url = {{ dovecot_passwd_template }}
