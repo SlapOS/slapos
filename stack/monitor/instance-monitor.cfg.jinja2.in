@@ -170,7 +170,7 @@ key-file = ${ca-directory:certs}/monitor-httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
 httpd-cors-config-file = ${monitor-httpd-cors:output}
-httpd-include-file = ${buildout:directory}/etc/httpd-include-file.conf
+httpd-include-file =
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
