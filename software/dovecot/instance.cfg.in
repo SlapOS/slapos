@@ -30,7 +30,6 @@ context =
     raw postfix_virtual_template ${postfix_virtual.jinja2:target}
     raw postfix_mailname_template ${postfix_mailname.jinja2:target}
     raw postfix_vmailbox_template ${postfix_vmailbox.jinja2:target}
-    raw postfix_binary ${postfix:location}/usr/libexec/sbin/master
     raw postfix_location ${postfix:location}
     section slap_connection slap-connection
 

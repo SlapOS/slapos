@@ -6,6 +6,7 @@ parts =
   postfix-conf-main
   postfix-conf-master
   postfix-service
+  postfix-symlinks-libexec
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
@@ -29,6 +30,8 @@ script = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
 log = ${:var}/log
+usr-postfix = ${:usr}/postfix
+etc-postfix = ${:etc}/postfix
 var-log = ${:var}/log
 var-lib = ${:var}/lib
 var-lib-postfix = ${:var-lib}/postfix
@@ -103,7 +106,7 @@ init =
 [postfix-conf-main]
 <= config-base
 url = {{ postfix_main_template }}
-output = ${directory:etc}/postfix_main.cf
+output = ${directory:etc}/main.cf
 extra-context =
   key alias_file postfix-alias:output
   key mailname_file postfix-mailname:output
@@ -123,7 +126,7 @@ extra-context =
 [postfix-conf-master]
 <= config-base
 url = {{ postfix_master_template }}
-output = ${directory:etc}/postfix-master
+output = ${directory:etc}/master.cf
 [postfix-alias]
 <= config-base
 url = {{ postfix_alias_template }}
@@ -158,12 +161,18 @@ hash-files =
   ${dovecot-conf:output}
   ${dovecot-wrapper:output}
 
+[postfix-symlinks-libexec]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr-postfix}
+link-binary =
+    {{ postfix_location }}/usr/libexec
+
 [postfix-wrapper]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  {{ postfix_binary }}
+  ${directory:usr-postfix}/libexec/postfix/master
 
 [postfix-service]
 recipe = slapos.cookbook:wrapper
@@ -171,6 +180,8 @@ command-line = ${postfix-wrapper:output}
 wrapper-path = ${directory:service}/postfix
 mode = 0775
 pidfile = ${directory:run}/postfix.pid
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
 hash-files =
   ${postfix-conf-main:output}
   ${postfix-wrapper:output}
