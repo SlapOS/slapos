@@ -185,32 +185,6 @@ def test_sim_card(self):
     p = p['_'] if '_' in p else p
     self.assertIn('info', p)
 
-class TestMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb"
-
-    def test_monitor_gadget_url(self):
-        self.slap.waitForInstance() # Wait until publish is done
-
-        parameters = json.loads(self.requestDefaultInstance().getConnectionParameterDict()['_'])
-        self.assertIn('monitor-gadget-url', parameters)
-
-        monitor_gadget_url = parameters['monitor-gadget-url']
-        self.assertIn('software.cfg.html', monitor_gadget_url)
-
-        response = requests.get(monitor_gadget_url, verify=False)
-        self.assertEqual(requests.codes['OK'], response.status_code)
-        self.assertIn('<script src="rsvp.js"></script>', response.text)
-        self.assertIn('<script src="renderjs.js"></script>', response.text)
-        self.assertIn('<script src="g-chart.line.js"></script>', response.text)
-        self.assertIn('<script src="promise.gadget.js"></script>', response.text)
-
-
 class TestENBParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
@@ -289,6 +263,39 @@ def requestSlaveInstance(cls, software_type):
         shared=True,
         software_type=software_type,
     )
+
+class TestMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(enb_param_dict)}
+
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "enb-epc"
+
+    def test_monitor_gadget_url(self):
+        self.slap.waitForInstance() # Wait until publish is done
+
+        instance = self.slap.request(
+          software_release=self.getSoftwareURL(),
+          software_type=self.getInstanceSoftwareType(),
+          partition_reference=self.default_partition_reference,
+          partition_parameter_kw=None,
+          state='started'
+        )
+        parameters = json.loads(instance.getConnectionParameterDict()['_'])
+
+        self.assertIn('monitor-gadget-url', parameters)
+
+        monitor_gadget_url = parameters['monitor-gadget-url']
+        self.assertIn('software.cfg.html', monitor_gadget_url)
+
+        response = requests.get(monitor_gadget_url, verify=False)
+        self.assertEqual(requests.codes['OK'], response.status_code)
+        self.assertIn('<script src="rsvp.js"></script>', response.text)
+        self.assertIn('<script src="renderjs.js"></script>', response.text)
+        self.assertIn('<script src="g-chart.line.js"></script>', response.text)
+        self.assertIn('<script src="promise.gadget.js"></script>', response.text)
 
 class TestEPCSimCard(ORSTestCase):
     @classmethod
