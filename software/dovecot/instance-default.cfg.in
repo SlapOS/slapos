@@ -59,6 +59,7 @@ extensions = jinja2.ext.do
 extra-context =
 context =
   section directory directory
+  import  netaddr netaddr
 # section slap_configuration slap-configuration
   ${:extra-context}
 
@@ -111,7 +112,6 @@ extra-context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_network ethernet-ip:ipv4
-  key ip_address slap-configuration:tun-ipv4-network
   raw postfix_location {{ postfix_location }}
 
 [postfix-alias]
