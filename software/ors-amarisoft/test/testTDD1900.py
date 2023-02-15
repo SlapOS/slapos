@@ -288,6 +288,10 @@ class TestMonitorGadgetUrl(ORSTestCase):
         self.assertIn('monitor-gadget-url', parameters)
 
         monitor_gadget_url = parameters['monitor-gadget-url']
+        print('--------------------------')
+        print('--------------------------')
+        print('--------------------------')
+        print(monitor_gadget_url)
         self.assertIn('software.cfg.html', monitor_gadget_url)
 
         response = requests.get(monitor_gadget_url, verify=False)
