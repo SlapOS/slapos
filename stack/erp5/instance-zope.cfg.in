@@ -534,7 +534,7 @@ environment-extra +=
 [promise-test-runner-apache-url-executable]
 # promise to wait for apache partition to have returned the parameter
 recipe = slapos.cookbook:check_parameter
-value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
+value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
 expected-not-value = not-ready
 path = ${directory:bin}/${:_buildout_section_name_}
 expected-value =
