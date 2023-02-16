@@ -617,6 +617,7 @@ depend  =
 # -> associate their logs rotation to here
     ${logrotate-entry-gitlab:recipe}
 
+
 [promise-unicorn-1]
 <= monitor-promise-base
 promise = check_socket_listening
