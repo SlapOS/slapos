@@ -292,7 +292,7 @@ class TestMonitorGadgetUrl(ORSTestCase):
         monitor_gadget_url = parameters['monitor-gadget-url']
         monitor_base_url = parameters['monitor-base-url']
         public_url = monitor_base_url + '/public'
-        response = requests.get(monitor_gadget_url, verify=False)
+        response = requests.get(public_url, verify=False)
         self.assertEqual(requests.codes['OK'], response.status_code)
         print(response.text)
         print('--------------------------')
