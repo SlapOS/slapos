@@ -5,7 +5,7 @@
 {% set private_tmpfs = slapparameter_dict.get('private-tmpfs') -%}
 {% set storage_type = slapparameter_dict.get('storage-type') or (
      'MySQL' if mariadb_location is defined else 'SQLite') -%}
-{% set mysql = storage_type == 'MySQL' -%}
+{% set mysql = storage_type != 'SQLite' -%}
 {% if mysql -%}
 
 [{{ section('mysqld') }}]
@@ -167,33 +167,37 @@ post = ${binary-wrap-mysql:command-line} -e "FLUSH LOGS"
 
 {% if runTestSuite_in is defined -%}
 # bin/runTestSuite to run NEO tests
+
+[runTestSuite-parameters]
+bin_directory = {{ bin_directory }}
+prepend_path = {{ mariadb_location }}/bin
+test_binding_list = {{ dumps(slapparameter_dict.get('test-binding-list', (
+  'MySQLdb', 'PyMySQL', 'SQLite',
+))) }}
+
 [{{ section('runTestSuite') }}]
-{%- if private_tmpfs %}
+{%-  if private_tmpfs %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
 private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
 command-line = ${runTestSuite-ns:output}
 
 [runTestSuite-ns]
-{%- endif %}
+{%-  endif %}
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 url = {{ runTestSuite_in }}
 context =
     section directory         directory
     section my_cnf_parameters my-cnf-parameters
-    raw     bin_directory     {{ bin_directory }}
-    raw     prepend_path      {{ mariadb_location }}/bin
-{%- if pypy_location is defined %}
-    raw     pypy_location     {{ pypy_location }}/bin/pypy
-{%- endif %}
-{%- if private_tmpfs %}
+    section parameters        runTestSuite-parameters
+{%-  if private_tmpfs %}
     key     datadir           my-cnf-parameters:data-directory
     key     results_directory directory:results
 
 [directory]
 results = ${directory:srv}/tests
-{%- endif %}
+{%-  endif %}
 {%- endif %}
 
 {%- endif %}
