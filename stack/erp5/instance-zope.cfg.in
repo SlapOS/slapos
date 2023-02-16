@@ -1,5 +1,6 @@
 {% from "instance_zodb_base" import zodb_dict  with context %}
 {% set webdav = slapparameter_dict['webdav'] -%}
+{% set thread_amount = slapparameter_dict['thread-amount'] %}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set ports = itertools.count(slapparameter_dict['port-base']) -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
@@ -279,9 +280,6 @@ deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-pass
 tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
 tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% endif -%}
-{% set thread_amount = slapparameter_dict['thread-amount'] -%}
-webdav = {{ dumps(webdav) }}
-timerserver-interval = {{ dumps(timerserver_interval) }}
 
 [zope-conf-base]
 < = jinja2-template-base
@@ -338,9 +336,9 @@ context =
   section parameter_dict {{ conf_parameter_name }}
   import os os
   import re re
-[runzope-base]
+
+[{{ section(name) }}]
 <= run-common
-instance-home = ${directory:instance}
 wrapped-command-line =
   '{{ bin_directory }}/runwsgi'
     --event-log-file={{ '${' ~ conf_parameter_name ~ ':event-log}' }}
@@ -356,16 +354,15 @@ wrapped-command-line =
 {%- if private_dev_shm %}
 private-tmpfs = {{ private_dev_shm }} /dev/shm
 {%- endif %}
-
-[{{ section(name) }}]
-< = runzope-base
 wrapper-path = ${directory:service-on-watch}/{{ name }}
-configuration-file = {{ '${' ~ conf_name ~ ':output}' }}
-port = {{ port }}
 hash-files =
   ${:configuration-file}
 hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
+
+configuration-file = {{ '${' ~ conf_name ~ ':output}' }}
+instance-home = ${directory:instance}
+port = {{ port }}
 
 [{{ section("promise-" ~ name) }}]
 {% if six.PY3 -%}
