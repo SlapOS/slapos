@@ -291,27 +291,15 @@ class TestMonitorGadgetUrl(ORSTestCase):
         monitor_setup_url = parameters['monitor-setup-url']
         monitor_gadget_url = parameters['monitor-gadget-url']
 
-        parsed_url = urlsplit(monitor_setup_url)
-        query_params = parsed_url.fragment.split('&')
-        username = ''
-        password = ''
-
-        for param in query_params:
-            if 'username=' in param:
-                username = param.split('=')[1]
-            elif 'password=' in param:
-                password = param.split('=')[1]
-
         print('--------------------------')
         print('--------------------------')
         print('--------------------------')
         print(monitor_gadget_url)
         print(monitor_setup_url)
-        print(username)
-        print(password)
+
         self.assertIn('software.cfg.html', monitor_gadget_url)
 
-        response = requests.get(monitor_gadget_url, verify=False, auth=(username, password))
+        response = requests.get(monitor_gadget_url, verify=False)
         self.assertEqual(requests.codes['OK'], response.status_code)
         self.assertIn('<script src="rsvp.js"></script>', response.text)
         self.assertIn('<script src="renderjs.js"></script>', response.text)
