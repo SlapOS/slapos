@@ -35,7 +35,7 @@ trusted-proxy 0.0.0.0
 %import haufe.requestmonitoring
 <requestmonitor requestmonitor>
   period {{ parameter_dict['longrequest-logger-timeout'] }}s
-  verbosity 2
+  verbosity 0
   <monitorhandler dumper>
     factory Products.ERP5Type.patches.LongRequestLogger_dumper.factory
     repeat -1
