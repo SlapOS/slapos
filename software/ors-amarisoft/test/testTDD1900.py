@@ -276,14 +276,6 @@ class TestMonitorGadgetUrl(ORSTestCase):
         return "enb-epc"
 
     def test_monitor_gadget_url(self):
-        # instance = self.slap.request(
-        #   software_release=self.getSoftwareURL(),
-        #   software_type=self.getInstanceSoftwareType(),
-        #   partition_reference=self.default_partition_reference,
-        #   partition_parameter_kw=None,
-        #   state='started'
-        # )
-        # parameters = json.loads(instance.getConnectionParameterDict()['_'])
         parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
         self.assertIn('monitor-gadget-url', parameters)
 
