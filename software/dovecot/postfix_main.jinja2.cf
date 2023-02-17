@@ -22,8 +22,6 @@ import_environment =
   SASL_CONF_PATH
 
 allow_min_user = yes
-maillog_file_compressor = {{ xz_utils_location }}/bin/xz
-maillog_file_prefixes = {{ log_directory }}
 
 biff = no
 
@@ -72,4 +70,5 @@ virtual_alias_maps = hash:{{ virtual_file }}
 virtual_transport = lmtp:unix:private/dovecot-lmtp
 
 maillog_file = {{ directory['log'] }}/postfix.log
-
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ log_directory }}
