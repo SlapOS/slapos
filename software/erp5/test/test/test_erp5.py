@@ -868,6 +868,16 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
       sorted([l for l in logfiles if l.startswith('zope')]), [
         'zope-0-Z2.log',
         'zope-0-event.log',
+        'zope-0-neo-root.log',
+        'zope-1-Z2.log',
+        'zope-1-event.log',
+        'zope-1-neo-root.log',
+        'zope-2-Z2.log',
+        'zope-2-event.log',
+        'zope-2-neo-root.log',
+      ] if '_neo' in self.__class__.__name__ else [
+        'zope-0-Z2.log',
+        'zope-0-event.log',
         'zope-1-Z2.log',
         'zope-1-event.log',
         'zope-2-Z2.log',
