@@ -1,15 +1,5 @@
-[buildout]
-parts =
-  directory
-  dovecot-conf
-  dovecot-service
-  postfix-conf-main
-  postfix-conf-master
-  postfix-service
-  postfix-symlinks-libexec
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline= true
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -102,6 +92,15 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
+[typed-paths]
+# Postfix-friendly rendering of file paths, prefixed with database type.
+aliases = hash:${postfix-alias:output}
+
+[{{ section('postalias-db') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command = '${wrapper-postalias:wrapper-path}' '${typed-paths:aliases}'
+update-command = ${:command}
 
 [postfix-conf-main]
 <= config-base
@@ -174,7 +173,7 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  ${directory:usr-postfix}/libexec/postfix/master -d -v -w -c ${directory:etc-postfix}
+  ${directory:usr-postfix}/libexec/postfix/master -c ${directory:etc-postfix}
 
 [postfix-service]
 recipe = slapos.cookbook:wrapper
@@ -187,3 +186,76 @@ environment =
 hash-files =
   ${postfix-conf-main:output}
   ${postfix-wrapper:output}
+
+[base-wrapper]
+recipe = slapos.cookbook:wrapper
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
+
+[base-bin-wrapper]
+< = base-wrapper
+command-line = ${:path}/${:basename}
+wrapper-path = ${directory:bin}/${:basename}
+
+[base-bin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ postfix_location }}/usr/bin
+
+[base-sbin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ postfix_location }}/usr/sbin
+
+{% for extend, basename_list in (
+  (
+    'base-bin-bin-wrapper',
+    (
+      'mailq',
+      'newaliases',
+    ),
+  ),
+  (
+    'base-sbin-bin-wrapper',
+    (
+      'postalias',
+      'postcat',
+      'postconf',
+      'postdrop',
+      'postfix',
+      'postkick',
+      'postlock',
+      'postlog',
+      'postmap',
+      'postmulti',
+      'postqueue',
+      'postsuper',
+      'sendmail',
+    ),
+  ),
+) %}
+{%   for basename in basename_list -%}
+[{{ section('wrapper-' ~ basename) }}]
+< = {{ extend }}
+basename = {{ basename }}
+{%   endfor %}
+{% endfor %}
+
+[{{ section('service-postfix-master') }}]
+< = base-wrapper
+command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfix}
+wrapper-path = ${directory:run}/postfix-master
+
+[buildout]
+parts =
+  directory
+  dovecot-conf
+  dovecot-service
+  postfix-conf-main
+  postfix-conf-master
+  postfix-service
+  postfix-symlinks-libexec
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline= true
+
