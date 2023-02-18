@@ -248,7 +248,7 @@
             },
             "db-memory-shared-pct": {
               "title": "Percent memory list shared per buffer",
-              "description": "Percent memory shared per buffer. Default: [\"threads:16\", \"innodb:60\", \"myisam:10\", \"aria:10\", \"rocksdb:1\", \"tokudb:1\", \"s3:1\", \"archive:1\", \"querycache:0\"]",
+              "description": "Percent memory shared per buffer. Default: [\"threads:16\", \"innodb:60\", \"myisam:10\", \"aria:10\", \"rocksdb:1\", \"s3:1\", \"archive:1\", \"querycache:0\"]",
               "type": "array",
               "items": {
                 "type": "string"
@@ -259,7 +259,6 @@
                 "myisam:10",
                 "aria:10",
                 "rocksdb:1",
-                "tokudb:1",
                 "s3:1",
                 "archive:1",
                 "querycache:0"

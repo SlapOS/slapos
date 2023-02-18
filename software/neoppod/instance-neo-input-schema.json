@@ -137,13 +137,13 @@
                 }
               },
               "additionalProperties": {
-                "description": "To configure important parameters like innodb_buffer_pool_size, tokudb_cache_size, etc.",
+                "description": "To configure important parameters like innodb_buffer_pool_size, rocksdb_block_cache_size, etc.",
                 "type": "string"
               },
               "type": "object"
             },
             "engine": {
-              "description": "Configures storage engine, currently only InnoDB, RocksDB and TokuDB are supported. Defaults to NEO's default.",
+              "description": "Configures storage engine, currently only InnoDB and RocksDB are supported. Defaults to NEO's default.",
               "type": "string"
             }
           },
