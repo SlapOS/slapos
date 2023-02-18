@@ -13,10 +13,6 @@
 {% do extra_dict.setdefault('rocksdb_max_log_file_size', '16M') -%}
 {% endif -%}
 
-{% if not engine or engine == 'TokuDB' -%}
-{% do plugins.append('ha_tokudb') -%}
-{% endif -%}
-
 [mysqld]
 skip_networking
 socket = {{ socket }}
