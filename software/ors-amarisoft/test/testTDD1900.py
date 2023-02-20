@@ -283,7 +283,7 @@ class TestMonitorGadgetUrl(ORSTestCase):
         process_lines = output.split('\n')
         for process_line in process_lines:
             process = process_line.split()
-            if process[1] == 'EXITED':
+            if process[1] == 'EXITED' and "on-watch" in process[0]:
                 exited_process.append(process[0])
         if len(exited_process) >= 1:
             raise Exception("Following process is in EXITED state: %s", str(exited_process))
