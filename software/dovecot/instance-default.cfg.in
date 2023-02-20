@@ -120,7 +120,7 @@ extra-context =
   key log_directory directory:var-log
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  key ip_address ethernet-ip:ipv4
+  key ip_address slap-configuration:ipv6-random
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
 

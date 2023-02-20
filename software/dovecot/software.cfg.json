@@ -1,13 +1,13 @@
 {
-  "name": "ERP5",
-  "description": "ERP5, Open-Source ERP",
+  "name": "Mail Server",
+  "description": "Mail Server",
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
       "title": "Default",
       "software-type": "default",
-      "request": "instance-dovecot-input-schema.json",
-      "response": "instance-dovecot-output-schema.json",
+      "request": "instance-default-input-schema.json",
+      "response": "instance-default-output-schema.json",
       "index": 0
     }
   }
