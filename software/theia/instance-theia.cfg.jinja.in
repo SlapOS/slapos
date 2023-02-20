@@ -15,7 +15,6 @@ theia-environment-parts =
 
 theia-parts =
   frontend-instance
-  python-server
   promises
 
 parts =
@@ -123,8 +122,7 @@ config-port = $${frontend-instance:port}
 <= monitor-promise-base
 promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
-config-host = $${python-server-port:ip}
-config-port = $${python-server-port:port}
+config-pathname = $${python-server:socket}
 
 [frontend-authentication-promise]
 <= monitor-promise-base
@@ -262,13 +260,14 @@ content =
     log global
     bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
     # writing twice the same ACL is doing OR
+    acl is_public path_beg /public/
     acl is_public path /$${frontend-instance-favicon.ico:filename}
     acl is_public path /$${frontend-instance-theia.webmanifest:filename}
     acl is_public path /$${frontend-instance-theia-serviceworker.js:filename}
     acl auth_ok http_auth(basic-auth-list)
-    # No authentication for some files
+    # No authentication for public folder
     http-request auth unless auth_ok || is_public
-    use_backend static if { path_beg /$${frontend-instance-fonts:folder-name} } || { path_beg /$${frontend-instance-slapos.css:folder-name} } || { path /$${frontend-instance-logo:filename} } || { path_beg /public/ } || is_public
+    use_backend static if { path_beg /$${frontend-instance-fonts:folder-name} } || { path_beg /$${frontend-instance-slapos.css:folder-name} } || { path /$${frontend-instance-logo:filename} } || is_public
     default_backend nodejs
 
   backend nodejs
@@ -277,7 +276,9 @@ content =
 
   backend static
     log global
-    server static_backend $${python-server-port:ip}:$${python-server-port:port}
+    server static_backend $${python-server:socket}
+    option forwardfor
+    http-response set-header Content-Security-Policy "default-src 'self'; img-src 'self' data:; script-src 'none'"
 
 ip = $${frontend-instance-port:ip}
 hostname = [$${:ip}]
@@ -387,17 +388,28 @@ filename = favicon.ico
 # Local Python Server
 # -------------------
 
-[python-server-port]
-recipe = slapos.cookbook:free_port
-minimum = 3000
-maximum = 3100
-ip = {{ ipv4_random }}
-
 [python-server]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${buildout:executable} -m http.server $${python-server-port:port} --bind $${python-server-port:ip} --directory $${directory:frontend-static}
-
+recipe = slapos.recipe.template
+output = $${directory:services}/$${:_buildout_section_name_}
+socket = $${directory:run}/$${:_buildout_section_name_}.sock
+inline =
+  #!$${buildout:executable}
+  import atexit, os, socketserver
+  from http import server
+  class Server(socketserver.ThreadingUnixStreamServer):
+    daemon_threads = True
+  class Handler(server.SimpleHTTPRequestHandler):
+    def address_string(self): # insecure but ok for logging
+      return self.headers.get("X-Forwarded-For", "local")
+  s = "$${:socket}"
+  os.chdir("$${directory:frontend-static}")
+  def cleanup():
+    try:
+      os.remove(s)
+    except FileNotFoundError:
+      pass
+  atexit.register(cleanup)()
+  Server(s, Handler).serve_forever()
 
 # Common Environment
 # ------------------
