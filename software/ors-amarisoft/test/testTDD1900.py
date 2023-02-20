@@ -275,6 +275,20 @@ class TestMonitorGadgetUrl(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "enb-epc"
 
+    @classmethod
+    def waitForInstance(cls):
+        super().waitForInstance()
+        exited_process = []
+        output = subprocess.getoutput('slapos node status')
+        process_lines = output.split('\n')
+        for process_line in process_lines:
+            process = process_line.split()
+            if process[1] == 'EXITED':
+                exited_process.append(process[0])
+        if len(exited_process) >= 1:
+            raise Exception("Following process is in EXITED state: %s", str(exited_process))
+
+
     def test_monitor_gadget_url(self):
         parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
         self.assertIn('monitor-gadget-url', parameters)
