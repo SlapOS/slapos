@@ -1,0 +1,66 @@
+# vim: set et sts=2:
+##############################################################################
+#
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
+#
+# WARNING: This program as such is intended to be used by professional
+# programmers who take the whole responsibility of assessing all potential
+# consequences resulting from its eventual inadequacies and bugs
+# End users who are looking for a ready-to-use solution with commercial
+# guarantees and support are strongly adviced to contract a Free Software
+# Service Company
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+##############################################################################
+from slapos.recipe.librecipe import GenericBaseRecipe
+from zc.buildout.easy_install import script_header
+import sys
+
+template = script_header + r"""
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+import socket
+import sys
+
+exited_services = []
+output = subprocess.getoutput('slapos node status')
+service_lines = output.split('\n')
+for service_line in service_lines:
+  service = service_line.split()
+  if service[1] == 'EXITED' and "on-watch" in service[0]:
+    exited_services.append(service[0])
+
+if len(exited_services) >= 1:
+  for exited_on_watch_service in exited_services:
+    sys.stderr.write("EXITED on watch service: %s", exited_on_watch_service)
+  sys.exit(127)
+"""
+
+class Recipe(GenericBaseRecipe):
+  """
+  Check listening port promise
+  """
+
+  def install(self):
+    config = dict(
+      python_path=sys.executable,
+    )
+
+    promise = self.createExecutable(
+      self.options['path'],
+      self.substituteTemplate(template, config))
+
+    return [promise]
