@@ -1,0 +1,23 @@
+{# base for instances that need to access ZODB storage #}
+{# provides zodb_dict #}
+
+{% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
+
+{% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
+{% for name, zodb in six.iteritems(zodb_dict) -%}
+{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
+{%   if zodb['type'] == 'zeo' -%}
+{%     do storage_dict.update(zeo_dict.get(name, ())) -%}
+{%   else -%}
+{%     if name == slapparameter_dict.get('neo-name') -%}
+{%       do storage_dict.update(master_nodes=slapparameter_dict['neo-masters'],
+                                name=slapparameter_dict['neo-cluster']) -%}
+{%     endif -%}
+{{     assert(storage_dict['master_nodes'], name) }}
+{%     if storage_dict.pop('ssl', 1) -%}
+{%       do storage_dict.update(ca='~/etc/ca.crt',
+                                cert='~/etc/neo.crt',
+                                key='~/etc/neo.key') -%}
+{%     endif -%}
+{%   endif -%}
+{% endfor -%}
