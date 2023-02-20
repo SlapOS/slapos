@@ -294,7 +294,7 @@ class TestMonitorGadgetUrl(ORSTestCase):
         print("================")
         print("================")
         print("All on watch services is running")
-        print(all_services)
+        print(service_lines)
 
 
     def test_monitor_gadget_url(self):
