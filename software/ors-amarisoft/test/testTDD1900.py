@@ -283,8 +283,8 @@ class TestMonitorGadgetUrl(ORSTestCase):
         service_lines = output.split('\n')
         for service_line in service_lines:
           service = service_line.split()
-          if service[1] == 'EXITED' and "on-watch" in service[0]:
-            exited_services.append(service[0])
+          if service[1] != 'RUNNING' and "on-watch" in service[0]:
+            exited_services.append((service[0], service[1]))
 
         if len(exited_services) >= 1:
           raise Exception("Exited on watch service: %s", str(exited_services))
