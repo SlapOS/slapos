@@ -1,0 +1,172 @@
+{% set slapparameter_dict = {} %}{# dummy -#}
+{% import "root_common" as root_common with context -%}
+{% set node_id = parameter_dict['node-id'] -%}
+# Note: Environment is setup in running wrapper script, as zope.conf is read
+# too late for some components.
+%define INSTANCE {{ parameter_dict['instance'] }}
+instancehome $INSTANCE
+zserver-threads {{ parameter_dict['thread-amount'] }}
+# When ownership checking is enabled, the roles a script runs as are the
+# intersection between user's roles and script owner's roles. This means
+# that revoking a code author's access to the system prevent all scripts
+# owned by that user from being of much use.
+# This is not how ERP5 approaches development: Managers write code,
+# Managers must be trustable and trusted, and their past work should not be
+# revoked when their account is terminated.
+skip-ownership-checking true
+
+lock-filename {{ parameter_dict['lock-file'] }}
+pid-filename {{ parameter_dict['pid-file'] }}
+
+default-zpublisher-encoding utf-8
+rest-input-encoding utf-8
+rest-output-encoding utf-8
+
+# XXX: isn't this entry implicit ?
+products {{ parameter_dict['instance-products'] }}
+
+# Magic parameter to use the first entry of X-Forwarded-For as the source IP address.
+# (see monkey patches in ERP5Type/patches/HTTPRequest.py and ERP5Type/patches/http_server.py)
+# * Frontend HTTP server should drop incoming X-Forwarded-For.
+# * Communication between frontend and backend should use SSL Client Authentication.
+# * Backend proxy drops incoming X-Forwarded-For without valid SSL Client Authentification.
+trusted-proxy 0.0.0.0
+
+{% if not parameter_dict['wsgi'] -%}
+{%   if parameter_dict['webdav'] -%}
+<webdav-source-server>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+  force-connection-close off
+</webdav-source-server>
+{%   else %}
+<http-server>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+</http-server>
+{%   endif %}
+{%- endif %}
+
+<zoperunner>
+    program $INSTANCE/bin/runzope
+</zoperunner>
+
+<product-config DeadlockDebugger>
+  dump_url {{ parameter_dict['deadlock-path'] }}
+  secret {{ parameter_dict['deadlock-debugger-password'] }}
+</product-config>
+
+{% if 'longrequest-logger-interval' in parameter_dict -%}
+<product-config LongRequestLogger>
+  logfile {{ parameter_dict['longrequest-logger-file'] }}
+  timeout {{ parameter_dict['longrequest-logger-timeout'] }}
+  interval {{ parameter_dict['longrequest-logger-interval'] }}
+</product-config>
+
+{% endif -%}
+
+{% if 'large-file-threshold' in parameter_dict -%}
+large-file-threshold {{ parameter_dict['large-file-threshold'] }}
+
+{% endif -%}
+{% if 'tidstorage-ip' in parameter_dict -%}
+<product-config TIDStorage>
+  backend-ip {{ parameter_dict['tidstorage-ip'] }}
+  backend-port {{ parameter_dict['tidstorage-port'] }}
+</product-config>
+
+{% endif -%}
+<product-config CMFActivity>
+  node-id {{ node_id }}
+</product-config>
+
+{% if not parameter_dict['wsgi'] -%}
+{%   set timerserver_interval = parameter_dict['timerserver-interval'] -%}
+{%   if timerserver_interval -%}
+%import Products.TimerService.timerserver
+<timer-server>
+  interval {{ timerserver_interval }}
+</timer-server>
+{%   endif %}
+
+{% endif -%}
+{% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
+{% if sql_connection_string -%}
+{%   set bt5_repository_url = [] -%}
+{%   set sr_path = os.path.realpath(parameter_dict['home'] + '/software_release') + '/' -%}
+{%   for url in parameter_dict['bt5-repository-url'].split() -%}
+{%     if url.startswith(sr_path) -%}
+{%       set url = '~/software_release/' + url[len(sr_path):] -%}
+{%     endif -%}
+{%     do bt5_repository_url.append(url) -%}
+{%   endfor -%}
+<product-config initsite>
+  id {{ parameter_dict['site-id'] }}
+  owner {{ parameter_dict['inituser'] }}
+  erp5_sql_connection_string {{ sql_connection_string }}
+  cmf_activity_sql_connection_string {{ sql_connection_string }}
+  bt5_repository_url {{ ' '.join(bt5_repository_url) }}
+  bt5 {{ parameter_dict['bt5'] }}
+{%- if parameter_dict['id-store-interval'] != None %}
+  id_store_interval {{ parameter_dict['id-store-interval'] }}
+{%- endif %}
+  cloudooo_url {{ parameter_dict['cloudooo-url'] }}
+</product-config>
+
+{% endif -%}
+<eventlog>
+  level info
+  <logfile>
+    dateformat
+    path {{ parameter_dict['event-log'] }}
+  </logfile>
+</eventlog>
+
+<logger access>
+  level WARN
+  <logfile>
+    dateformat
+    format %(message)s
+    path {{ parameter_dict['z2-log'] }}
+  </logfile>
+</logger>
+
+<zodb_db temporary>
+  <temporarystorage>
+    name temporary storage for sessioning
+  </temporarystorage>
+  mount-point /temp_folder
+  container-class Products.TemporaryFolder.TemporaryContainer
+</zodb_db>
+
+{% set developer_list = parameter_dict['developer-list'] -%}
+{% set publisher_timeout = parameter_dict['publisher-timeout'] -%}
+{% set activity_timeout = parameter_dict['activity-timeout'] -%}
+{% if developer_list or publisher_timeout or activity_timeout -%}
+%import Products.ERP5Type
+<ERP5Type erp5>
+  {% if developer_list %}developers {{ developer_list | join(' ') }}{% endif %}
+  {% if publisher_timeout %}publisher-timeout {{ publisher_timeout }}{% endif %}
+  {% if activity_timeout %}activity-timeout {{ activity_timeout }}{% endif %}
+</ERP5Type>
+
+{% endif -%}
+{% for m in parameter_dict['import-list'] -%}
+%import {{ m }}
+{% endfor -%}
+{% set type_dict = {'neo': 'NEOStorage', 'zeo': 'zeoclient'} %}
+{% for name, zodb_dict in six.iteritems(parameter_dict['zodb-dict']) %}
+<zodb_db {{ name }}>
+{%- set storage_type = type_dict[zodb_dict.pop('type')] %}
+{%- set storage_dict = zodb_dict.pop('storage-dict') %}
+{%- do root_common.apply_overrides(zodb_dict, node_id) %}
+{%- for key, value in six.iteritems(zodb_dict) %}
+  {{ key }} {{ value }}
+{%- endfor %}
+  <{{ storage_type }}>
+{%- do root_common.apply_overrides(storage_dict, node_id) %}
+{%- for key, value in six.iteritems(storage_dict) %}
+    {{ key }} {{ value }}
+{%- endfor %}
+  </{{ storage_type }}>
+</zodb_db>
+
+{% endfor -%}

@@ -1,0 +1,594 @@
+{% from "instance_zodb_base" import zodb_dict  with context %}
+{% set wsgi = slapparameter_dict['wsgi'] -%}
+{% set webdav = slapparameter_dict['webdav'] -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set ports = itertools.count(slapparameter_dict['port-base']) -%}
+{% set site_id = slapparameter_dict['site-id'] -%}
+{% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
+{% set node_id_base = slapparameter_dict['name'] -%}
+{% set selenium_server_configuration_dict = slapparameter_dict.get('selenium-server-configuration-dict', None) -%}
+{% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
+{% set part_list = [] -%}
+{% set publish_list = [] -%}
+{% set test_runner_address_list = [] -%}
+{% set test_runner_enabled = slapparameter_dict['test-runner-enabled'] -%}
+{% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
+{% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
+{% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
+{% if webdav -%}
+{%   set timerserver_interval = 0 -%}
+{% else -%}
+{%   set timerserver_interval = slapparameter_dict['timerserver-interval'] -%}
+{%- endif %}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{#
+XXX: This template only supports exactly one IPv4 and one IPv6 per
+partition. No more (undefined result), no less (IndexError).
+-#}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+
+{% set publishable_hosts_dict = {} -%}
+{% set port_dict = {} -%}
+{% for alias, url in (
+    ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
+    ('erp5-memcached-persistent', slapparameter_dict['kumofs-url']),
+    ('erp5-smtp', slapparameter_dict['smtp-url']),
+  ) -%}
+{%   set parsed_url = urllib_parse.urlparse(url) -%}
+{%   do port_dict.__setitem__(alias, parsed_url.port)  -%}
+{%   do publishable_hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
+{%- endfor %}
+{% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
+{%   do publishable_hosts_dict.__setitem__(
+       'erp5-catalog-' ~ i,
+       urllib_parse.urlparse(url).hostname,
+     ) -%}
+{%- endfor %}
+{% do publishable_hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+{% set hosts_dict = publishable_hosts_dict.copy() -%}
+{% do hosts_dict.update(slapparameter_dict['computer-hosts-dict'].get(computer, {})) -%}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+
+[erp5-kernel]
+recipe = slapos.cookbook:symbolic.link
+link-binary = {{ parameter_dict['erp5-kernel-location'] }}/{{ parameter_dict['erp5-kernel-filename'] }}
+target-directory = ${directory:erp5-kernel-dir}
+
+[kernel-json-dir]
+<= jinja2-template-base
+template = {{ parameter_dict['kernel-json-location'] }}/{{ parameter_dict['kernel-json-filename'] }}
+rendered = ${directory:erp5-kernel-dir}/kernel.json
+context =
+  raw erp5_url {{ ipv4 }}
+  raw python_executable {{ parameter_dict['python-executable-for-kernel'] }}
+  raw kernel_dir ${erp5-kernel:target-directory}/{{ parameter_dict['erp5-kernel-filename'] }}
+  raw display_name ERP5
+  raw language_name python
+
+[run-common]
+<= userhosts-wrapper-base
+environment-extra =
+environment +=
+  TMP=${directory:tmp}
+  TMPDIR=${directory:tmp}
+  HOME=${buildout:directory}
+  PATH=${binary-link:target-directory}:{{ parameter_dict['coreutils'] }}/bin:{{ parameter_dict['perl_dbd_mariadb_path'] }}
+  TZ={{ slapparameter_dict['timezone'] }}
+  MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
+  INSTANCE_HOME=${:instance-home}
+  CAUCASE={{ slapparameter_dict['caucase-url'] }}
+  FONTCONFIG_FILE=${fontconfig-conf:output}
+  JUPYTER_PATH=${directory:jupyter-dir}
+  JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
+  JUPYTER_RUNTIME_DIR=${directory:jupyter-runtime-dir}
+{% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
+  WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
+{% endif %}
+  WENDELIN_CORE_WCFS_AUTOSTART=no
+{% if slapparameter_dict['wcfs_enable'] %}
+  WENDELIN_CORE_VIRTMEM=r:wcfs+w:uvmm
+{% else %}
+  WENDELIN_CORE_VIRTMEM=rw:uvmm
+{% endif %}
+  ${:environment-extra}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+instance = ${:srv}/erp5shared
+instance-constraint = ${:instance}/Constraint
+instance-document = ${:instance}/Document
+instance-etc = ${:instance}/etc
+instance-etc-package-include = ${:instance}/etc/package-include
+instance-extensions = ${:instance}/Extensions
+instance-import = ${:instance}/import
+instance-lib = ${:instance}/lib
+instance-products = ${:instance}/Products
+instance-propertysheet = ${:instance}/PropertySheet
+instance-tests = ${:instance}/tests
+log = ${:var}/log
+run = ${:var}/run
+services = ${:etc}/run
+service-on-watch = ${:etc}/service
+srv = ${buildout:directory}/srv
+ca-dir = ${:srv}/ssl
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+plugin = ${:etc}/plugin
+unit-test-path = ${:srv}/test-instance/unit_test
+fontconfig-cache = ${buildout:directory}/.fontconfig
+jupyter-dir = ${buildout:directory}/jupyter
+jupyter-config-dir = ${:jupyter-dir}/etc
+jupyter-runtime-dir = ${:jupyter-dir}/runtime
+jupyter-kernel-dir = ${:jupyter-dir}/kernels
+erp5-kernel-dir = ${:jupyter-kernel-dir}/ERP5
+
+[fontconfig-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-fonts-conf'] }}
+output = ${directory:etc}/fonts.conf
+context =
+    key cachedir directory:fontconfig-cache
+    key fonts :fonts
+    key includes :includes
+fonts =
+{% for font in parameter_dict['fonts'].splitlines() %}
+   {{ font }}
+{% endfor %}
+includes =
+{% for include in parameter_dict['fontconfig-includes'].splitlines() %}
+   {{ include }}
+{% endfor %}
+
+# Used for ERP5 resiliency or (more probably)
+# webrunner resiliency with erp5 inside.
+[{{ section("resiliency-exclude-file") }}]
+# Generate rdiff exclude file
+recipe = slapos.recipe.template:jinja2
+inline = {{ '{{ "${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
+output = ${directory:srv}/exporter.exclude
+
+[{{ section("resiliency-identity-signature-script")}}]
+# Generate identity script used by webrunner to check data integrity
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/backup-identity-script-excluding-path --exclude-path "srv/backup/logrotate/**"
+wrapper-path = ${directory:srv}/.backup_identity_script
+mode = 770
+
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = {{ dumps(parameter_dict['link-binary']) }}
+
+{% if use_ipv6 -%}
+{%   set ipv6 = (ipv6_set | list)[0] -%}
+
+[ipv6toipv4-base]
+recipe = slapos.cookbook:ipv6toipv4
+runner-path = ${directory:services}/${:base-name}
+6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = {{ ipv4 }}
+ipv6 = {{ ipv6 }}
+{% endif -%}
+
+[hosts-parameter]
+# Used for both hosts and hostaliases sections.
+host-dict = {{ dumps(hosts_dict) }}
+hostalias-dict = {{ dumps(slapparameter_dict['hostalias-dict']) }}
+
+# Note: there is a subtle difference between hosts and hostaliases files:
+# - hosts files start with resolved, followed by alias(es) (only one alias per
+#   line in this case)
+# - hostaliases start with alias, followed by resolved
+# ...so it's not possible to merge these templates (not a big deal anyway).
+
+[hostaliases]
+< = jinja2-template-base
+inline = {{ '
+  {% for alias, aliased in host_dict.items() -%}
+  {{ alias }} {{ aliased }}
+  {% endfor %}
+' }}
+output = ${directory:etc}/hostaliases
+context = key host_dict hosts-parameter:hostalias-dict
+
+[hosts]
+< = jinja2-template-base
+inline = {{ '
+  {% for alias, aliased in host_dict.items() -%}
+  {{ aliased }} {{ alias }}
+  {% endfor %}
+' }}
+output = ${directory:etc}/hosts
+context = key host_dict hosts-parameter:host-dict
+
+[userhosts-bin]
+recipe = slapos.recipe.template:jinja2
+inline =
+  #!{{ parameter_dict['dash'] }}/bin/dash
+  export HOSTS_FILE=${hosts:output}
+  export LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
+  exec "$@"
+output = ${directory:bin}/userhosts
+
+[userhosts-wrapper-base]
+recipe = slapos.cookbook:wrapper
+environment =
+  HOSTALIASES=${hostaliases:output}
+command-line = '${userhosts-bin:output}' ${:wrapped-command-line}
+
+{# Hack to deploy SSL certs via instance parameters -#}
+{% for zodb in six.itervalues(zodb_dict) -%}
+{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
+{%   if zodb['type'] == 'neo' and storage_dict.get('ssl', 1) -%}
+{%     for k, v in (('_ca', 'ca.crt'),
+                    ('_cert', 'neo.crt'),
+                    ('_key', 'neo.key')) -%}
+{%       if k in storage_dict -%}
+[{{ section('neo-ssl-' + k[1:]) }}]
+< = jinja2-template-base
+output = ${directory:etc}/{{v}}
+inline = {{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(storage_dict.pop(k))}}
+
+{%       endif -%}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+{# endhack -#}
+
+[runzope-base]
+<= run-common
+instance-home = ${directory:instance}
+{% if wsgi -%}
+wrapped-command-line = '{{ bin_directory }}/runwsgi' {% if webdav %}-w{% endif %} {{ ipv4 }}:${:port} {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %} '${:configuration-file}'
+{% else -%}
+wrapped-command-line = '{{ bin_directory }}/runzope' -C '${:configuration-file}'
+{%- endif %}
+{%- set private_dev_shm = slapparameter_dict['private-dev-shm'] %}
+{%- if private_dev_shm %}
+private-tmpfs = {{ private_dev_shm }} /dev/shm
+{%- endif %}
+
+[{{ section('zcml') }}]
+recipe = slapos.cookbook:copyfilelist
+target-directory = ${directory:instance-etc}
+file-list = {{ parameter_dict['site-zcml'] }}
+
+[{{ section('zope-inituser') }}]
+< = jinja2-template-base
+output = ${directory:instance}/inituser
+inline = {{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
+once = ${:output}_done
+
+[zope-conf-parameter-base]
+ip = {{ ipv4 }}
+site-id = {{ site_id }}
+{% if site_id -%}
+mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
+inituser = {{ slapparameter_dict['inituser-login'] }}
+{%  set mysql = urllib_parse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
+{%  set mysql_db = mysql.path.split('/')[1] -%}
+sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
+    mysql_db, mysql.port, mysql.username, mysql.password) }}
+bt5 = {{ slapparameter_dict['bt5'] }}
+bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
+id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
+home = ${buildout:directory}
+cloudooo-url = {{ ",".join(slapparameter_dict['cloudooo-url-list']) }}
+
+{% endif -%}
+developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
+publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
+activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
+instance = ${directory:instance}
+instance-products = ${directory:instance-products}
+deadlock-path = /manage_debug_threads
+deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-password']) }}
+{% if slapparameter_dict.get('tidstorage-ip') -%}
+tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
+tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
+{% endif -%}
+{% set thread_amount = slapparameter_dict['thread-amount'] -%}
+{% set large_file_threshold = slapparameter_dict['large-file-threshold']  -%}
+thread-amount = {{ thread_amount }}
+webdav = {{ dumps(webdav) }}
+wsgi = {{ dumps(wsgi) }}
+timerserver-interval = {{ dumps(timerserver_interval) }}
+
+[zope-conf-base]
+< = jinja2-template-base
+url = {{ parameter_dict['zope-conf-template'] }}
+extensions =
+    jinja2.ext.do
+    jinja2.ext.loopcontrols
+import-list =
+    rawfile root_common {{ root_common }}
+
+{% macro zope(
+  index,
+  port,
+  longrequest_logger_timeout,
+  longrequest_logger_interval
+) -%}
+{% set name = 'zope-' ~ index -%}
+{% set conf_name = name ~ '-conf' -%}
+{% set conf_parameter_name = conf_name ~ '-param' -%}
+{% set zope_tunnel_section_name = name ~ '-ipv6toipv4' -%}
+{% set zope_tunnel_base_name = zope_tunnel_section_name -%}
+[{{ conf_parameter_name }}]
+< = zope-conf-parameter-base
+pid-file = ${directory:run}/{{ name }}.pid
+lock-file = ${directory:run}/{{ name }}.lock
+port = {{ port }}
+event-log = ${directory:log}/{{ name }}-event.log
+z2-log = ${directory:log}/{{ name }}-Z2.log
+node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
+{% set log_list = [] -%}
+{% set import_set = set() -%}
+{% for db_name, zodb in six.iteritems(zodb_dict) -%}
+{%   do zodb.setdefault('pool-size', thread_amount) -%}
+{%   if zodb['type'] == 'neo' -%}
+{%     do import_set.add('neo.client') -%}
+{%     set log = name ~ '-neo-' ~ db_name ~ '.log' -%}
+{%     do log_list.append('${directory:log}/' + log) -%}
+{%     do zodb['storage-dict'].update(logfile='~/var/log/'+log) -%}
+{%   endif -%}
+{% endfor -%}
+import-list = {{ dumps(list(import_set)) }}
+zodb-dict = {{ dumps(zodb_dict) }}
+large-file-threshold = {{ large_file_threshold }}
+{% if longrequest_logger_interval > 0 -%}
+longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
+longrequest-logger-timeout = {{ longrequest_logger_timeout }}
+longrequest-logger-interval = {{ longrequest_logger_interval }}
+{% else -%}
+longrequest-logger-file =
+{% endif -%}
+
+[{{ conf_name }}]
+< = zope-conf-base
+output = ${directory:etc}/{{ name }}.conf
+context =
+  section parameter_dict {{ conf_parameter_name }}
+  import os os
+  import re re
+
+[{{ section(name) }}]
+< = runzope-base
+wrapper-path = ${directory:service-on-watch}/{{ name }}
+configuration-file = {{ '${' ~ conf_name ~ ':output}' }}
+{%- if wsgi %}
+port = {{ port }}
+{%- endif %}
+hash-files =
+  ${:configuration-file}
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
+
+[{{ section("promise-" ~ name) }}]
+{% if six.PY3 -%}
+# Disable the promise in Python 3. ERP5 is not compatible with Python 3 yet, so
+# the promise would always fail.
+recipe =
+{% else -%}
+<= monitor-promise-base
+promise = check_socket_listening
+name = {{ name }}.py
+config-host = {{ ipv4 }}
+config-port = {{ port }}
+{% endif -%}
+
+{% if use_ipv6 -%}
+[{{ zope_tunnel_section_name }}]
+< = ipv6toipv4-base
+base-name = {{ zope_tunnel_base_name }}
+ipv6-port = {{ port }}
+ipv4-port = {{ port }}
+{%   do publish_list.append(("[" ~ ipv6 ~ "]:" ~ port, thread_amount, webdav)) -%}
+
+[{{ section("promise-tunnel-" ~ name) }}]
+<= monitor-promise-base
+promise = check_socket_listening
+name = {{ zope_tunnel_base_name }}.py
+config-host = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
+{% else -%}
+{%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
+{% endif -%}
+
+{% if longrequest_logger_interval > 0 -%}
+[{{ section('promise-check-' ~name ~ '-longrequest-error-log') }}]
+<= monitor-promise-base
+promise = check_error_on_zope_longrequest_log
+name = {{'check-' ~ name ~ '-longrequest-error-log.py'}}
+config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
+config-error-threshold = {{ slapparameter_dict["zope-longrequest-logger-error-threshold"] }}
+config-maximum-delay = {{ slapparameter_dict["zope-longrequest-logger-maximum-delay"] }}
+{% endif -%}
+
+[{{ section('logrotate-entry-' ~ name) }}]
+< = logrotate-entry-base
+name = {{ name }}
+log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
+post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
+{% endmacro -%}
+
+{% for i in instance_index_list -%}
+{{   zope(
+       i,
+       next(ports),
+       slapparameter_dict['longrequest-logger-timeout'],
+       slapparameter_dict['longrequest-logger-interval'],
+     ) }}
+{% endfor -%}
+
+[{{ section("watch_activities") }}]
+<= userhosts-wrapper-base
+environment +=
+  MYSQL=${binary-link:target-directory}/mysql
+wrapped-command-line = {{ parameter_dict['erp5-location'] }}/product/CMFActivity/bin/${:_buildout_section_name_} "-h erp5-catalog-0 -P  {{ mysql.port }}  -u {{ mysql.username }} -p{{ mysql.password}} {{ mysql_db }}" 5 3600
+wrapper-path = ${buildout:bin-directory}/${:_buildout_section_name_}
+
+[{{ section("wait_activities") }}]
+<= watch_activities
+
+{% if test_runner_enabled and test_runner_node_count -%}
+{% for _ in range(test_runner_node_count) %}
+{%   do test_runner_address_list.append((ipv4, next(ports))) %}
+{% endfor %}
+
+{% if selenium_server_configuration_dict -%}
+[test-zelenium-runner-parameter]
+configuration = {{ dumps(selenium_server_configuration_dict) }}
+user = {{ dumps(slapparameter_dict['inituser-login']) }}
+password = {{ dumps(slapparameter_dict['inituser-password']) }}
+bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
+
+[{{ section('test-zelenium-runner') }}]
+<= jinja2-template-base
+url = {{ parameter_dict['run-zelenium-template'] }}
+output = ${directory:bin}/runTestSuite
+context =
+    import json_module json
+    key configuration test-zelenium-runner-parameter:configuration
+    key user test-zelenium-runner-parameter:user
+    key password test-zelenium-runner-parameter:password
+    key bin_path test-zelenium-runner-parameter:bin-path
+{% else -%}
+[{{ section('run-unit-test-userhosts-wrapper') }}]
+<= userhosts-wrapper-base
+wrapped-command-line = ${runUnitTest:wrapper-path}
+wrapper-path = ${buildout:bin-directory}/runUnitTest
+
+[{{ section('run-test-suite-userhosts-wrapper') }}]
+<= userhosts-wrapper-base
+wrapped-command-line = ${runTestSuite:wrapper-path}
+wrapper-path = ${buildout:bin-directory}/runTestSuite
+
+{%   set connection_string_list = [] -%}
+{%   for url in slapparameter_dict['mysql-test-url-list'] -%}
+{%     set parsed_url = urllib_parse.urlparse(url) -%}
+{%     do connection_string_list.append(
+         '%s@%s:%s %s %s' % (
+           parsed_url.path.lstrip('/'),
+           parsed_url.hostname,
+           parsed_url.port,
+           parsed_url.username,
+           parsed_url.password,
+         ),
+       ) -%}
+{%   endfor -%}
+[run-test-common]
+< = run-common
+environment-extra =
+  REAL_INSTANCE_HOME=${:instance-home}
+  SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
+  TEST_CA_PATH=${directory:ca-dir}
+  ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:output}
+{%- if wsgi %}
+  erp5_wsgi=1
+{%- endif %}
+instance-home = ${directory:unit-test-path}
+wrapper-path = ${directory:bin}/${:command-name}.real
+command-line =
+  '{{ parameter_dict['bin-directory'] }}/${:command-name}'
+  ${:command-line-extra}
+  --conversion_server_url={{ ",".join(slapparameter_dict['cloudooo-url-list']) }}
+  --conversion_server_retry_count={{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
+  --volatile_memcached_server_hostname=erp5-memcached-volatile
+  --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
+  --persistent_memcached_server_hostname=erp5-memcached-persistent
+  --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+
+[test-runner-configuration]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/${:_buildout_section_name_}.json
+inline =
+  {{ json.dumps(slapparameter_dict['test-runner-configuration']) }}
+
+[{{ section('runUnitTest') }}]
+< = run-test-common
+command-name = runUnitTest
+command-line-extra =
+  --erp5_sql_connection_string '{{ connection_string_list[0] }}'
+  --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
+  --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
+  --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
+  {% if test_runner_random_activity_priority is not none %}
+    --random_activity_priority={{ test_runner_random_activity_priority }}
+  {%- endif %}
+
+[{{ section('runTestSuite') }}]
+< = run-test-common
+command-name = runTestSuite
+command-line-extra =
+  --db_list '{{ ','.join(connection_string_list) }}'
+environment-extra +=
+  {#- turn a list of (ip, port) in a list of 'ip:port' #}
+  {% set zserver_address_list = [] -%}
+  {% for ip, port in test_runner_address_list %}
+  {%   do zserver_address_list.append(ip ~ ':' ~ port) %}
+  {% endfor -%}
+  zserver_address_list={{ ','.join(zserver_address_list) }}
+  zserver_frontend_url_list={{ ','.join(slapparameter_dict['test-runner-apache-url-list']) }}
+
+[promise-test-runner-apache-url-executable]
+# promise to wait for apache partition to have returned the parameter
+recipe = slapos.cookbook:check_parameter
+value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
+expected-not-value = not-ready
+path = ${directory:bin}/${:_buildout_section_name_}
+expected-value =
+
+[{{ section("promise-test-runner-apache-url") }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = ${promise-test-runner-apache-url-executable:path}
+
+{%-   endif %}
+{%- endif %}
+
+[{{ section('promise-check-computer-memory') }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = check-computer-memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+zope-address-list = {{ dumps(publish_list) }}
+{#
+Note: hosts_dist is generated at zope level rather than at erp5 (root partition)
+level, as it is easier: we can access urls as python values trivially here.
+This has the downside of making each zope partition publish the (hopefuly) same
+dict toward erp5 partition, violating the DRY principle and making the intent
+hard to guess.
+-#}
+hosts-dict = {{ dumps(publishable_hosts_dict) }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+test-runner-address-list = {{ dumps(test_runner_address_list) }}
+software-release-url = ${slap-connection:software-release-url}
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ next(ports) }}
+monitor-title = {{ slapparameter_dict['name'] }}
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
+[buildout]
+extends =
+  {{ template_monitor }}
+parts +=
+  {{ '\n  '.join(part_list) }}
+  publish
+  erp5-kernel
+  kernel-json-dir
