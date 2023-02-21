@@ -23,6 +23,7 @@ context =
     raw template_monitor ${monitor2-template:output}
     raw dovecot_conf_template ${dovecot.jinja2.conf:target}
     raw dovecot_passwd_template ${dovecot-passwd.jinja2:target}
+    raw dovecot_passdb_lua_template ${dovecot-passdb.jinja2.lua:target}
     raw dovecot_binary ${dovecot:location}/sbin/dovecot
     raw postfix_main_template ${postfix_main.jinja2.cf:target}
     raw postfix_master_template ${postfix_master.jinja2.cf:target}
