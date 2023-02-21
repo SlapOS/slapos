@@ -1,8 +1,5 @@
 function auth_passdb_lookup(req)
-  if req.user == "alpha" then
-    return dovecot.auth.PASSDB_RESULT_OK, "password=pass"
-  end
-  return dovecot.auth.PASSDB_RESULT_USER_UNKNOWN, "no such user"
+  return dovecot.auth.PASSDB_RESULT_OK, string.format("password=%s", req.password)
 end
 
 function script_init()

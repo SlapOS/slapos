@@ -21,6 +21,15 @@ setgid_group = {{ setgid_group }}
 alias_maps = hash:{{ alias_file }}
 alias_database = hash:{{ alias_file }}
 
+virtual_mailbox_domains = {{ mail_domain }}
+virtual_mailbox_base = {{ vhosts_directory }}
+virtual_mailbox_maps = hash:{{ vmailbox_file }}
+virtual_minimum_uid = 100
+virtual_uid_maps = static:1001
+virtual_gid_maps = static:1022
+virtual_alias_maps = hash:{{ virtual_file }}
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
 inet_interfaces = {{ ip_address }}
 inet_protocols = all
 smtp_bind_address = 0.0.0.0
@@ -34,11 +43,13 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
+# smtpd_recipient_restrictions =
+#   reject_non_fqdn_recipient
+#   reject_unknown_recipient_domain
+#   permit_sasl_authenticated
+#   reject
 smtpd_recipient_restrictions =
-  reject_non_fqdn_recipient
-  reject_unknown_recipient_domain
   permit_sasl_authenticated
-  reject
 smtpd_relay_restrictions =
   permit_sasl_authenticated
   defer_unauth_destination

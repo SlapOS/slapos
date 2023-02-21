@@ -107,6 +107,18 @@ stop-on-error = true
 command = '${wrapper-postalias:wrapper-path}' '${typed-paths:aliases}'
 update-command = ${:command}
 
+[{{ section('postmap-virtual') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command = '${wrapper-postmap:wrapper-path}' '${postfix-virtual:output}'
+update-command = ${:command}
+
+[{{ section('postmap-vmailbox') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command = '${wrapper-postmap:wrapper-path}' '${postfix-vmailbox:output}'
+update-command = ${:command}
+
 [postfix-conf-main]
 <= config-base
 url = {{ postfix_main_template }}
@@ -128,6 +140,7 @@ extra-context =
   key ip_address slap-configuration:ipv6-random
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
+  raw mail_domain {{ slapparameter_dict.get('mail-domain', 'ors.rapid.space') }}
 
 [postfix-conf-master]
 <= config-base
@@ -145,10 +158,14 @@ output = ${directory:etc-postfix}/postfix-mailname
 <= config-base
 url = {{ postfix_vmailbox_template }}
 output = ${directory:etc-postfix}/postfix-vmailbox
+extra-context =
+  raw mail_domain {{ slapparameter_dict.get('mail-domain', 'ors.rapid.space') }}
 [postfix-virtual]
 <= config-base
 url = {{ postfix_virtual_template }}
 output = ${directory:etc-postfix}/postfix-virtual
+extra-context =
+  raw mail_domain {{ slapparameter_dict.get('mail-domain', 'ors.rapid.space') }}
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
