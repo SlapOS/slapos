@@ -128,3 +128,4 @@ class ERP5MariadbCrashTestCase(SlapOSInstanceTestCase):
     except Exception:
       import pdb; pdb.post_mortem()
       raise
+    import pdb; pdb.set_trace()
