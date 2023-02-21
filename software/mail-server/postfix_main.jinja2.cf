@@ -30,7 +30,7 @@ virtual_gid_maps = static:1022
 virtual_alias_maps = hash:{{ virtual_file }}
 virtual_transport = lmtp:unix:private/dovecot-lmtp
 
-inet_interfaces = ::1
+inet_interfaces = ::
 inet_protocols = all
 smtp_bind_address = 0.0.0.0
 smtp_bind_address6 = ::
