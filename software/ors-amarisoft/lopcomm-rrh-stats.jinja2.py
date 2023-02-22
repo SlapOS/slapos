@@ -14,16 +14,24 @@ class LopcommNetconfClient:
 
         log_file = "{{ log_file }}"
         json_log_file = "{{ json_log_file }}"
+        cfg_json_log_file = "{{ cfg_json_log_file }}"
 
         self.logger = logging.getLogger('logger')
         self.json_logger = logging.getLogger('json_logger')
+        self.cfg_json_logger = logging.getLogger('cfg_json_logger')
         self.logger.setLevel(logging.DEBUG)
         self.json_logger.setLevel(logging.DEBUG)
+        self.cfg_json_logger.setLevel(logging.DEBUG)
 
         json_handler = RotatingFileHandler(json_log_file, maxBytes=100000, backupCount=5)
         json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
         json_handler.setFormatter(json_formatter)
         self.json_logger.addHandler(json_handler)
+
+        cfg_json_handler = RotatingFileHandler(cfg_json_log_file, maxBytes=100000, backupCount=5)
+        cfg_json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
+        cfg_json_handler.setFormatter(cfg_json_formatter)
+        self.cfg_json_logger.addHandler(cfg_json_handler)
 
         handler = RotatingFileHandler(log_file, maxBytes=100000, backupCount=5)
         self.logger.addHandler(handler)
@@ -48,7 +56,7 @@ class LopcommNetconfClient:
                                password=password,
                                timeout=1800,
                                device_params={
-                                   'name': 'huawei'
+                                   'name': 'default'
                                },
                                hostkey_verify=False)
 
@@ -71,7 +79,11 @@ class LopcommNetconfClient:
               self.logger.debug('Got new notification from %s...' % (self.address,))
               result_in_xml = result._raw
               data_dict = xmltodict.parse(result_in_xml)
-              self.json_logger.info('', extra={'data': data_dict})
+              if 'alarm-notif' in data_dict['notification']:
+                self.json_logger.info('', extra={'data': data_dict})
+              else:
+                self.cfg_json_logger.info('', extra={'data': data_dict})
+
 
     def close(self):
         # Close not compatible between ncclient and netconf server
