@@ -181,6 +181,26 @@
       "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
       "default": 2
+    },
+    "txa0cc00_active": {
+      "title": "Lopcomm ORAN TX array carriers (TXA0CC00)",
+      "description": "Activate or inactivate Lopcomm ORAN TX array carriers (TXA0CC00)",
+      "type": "string",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
+    },
+    "rxa0cc00_active": {
+      "title": "Lopcomm ORAN RX array carriers (RXA0CC00)",
+      "description": "Activate or inactivate Lopcomm ORAN RX array carriers (RXA0CC00)",
+      "type": "string",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
     }
   }
 }
