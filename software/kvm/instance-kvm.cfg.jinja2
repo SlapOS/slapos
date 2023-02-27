@@ -397,7 +397,7 @@ python-path = {{ python_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 vnc-ip = ${:ipv4}
-vnc-port = 5901
+vnc-websocket-port = 5701
 
 default-cdrom-iso = {{ debian_amd64_netinst_location }}
 {% if virtual_hard_drive_url_enabled %}
@@ -586,7 +586,7 @@ command-line = ${kvm-controller:output}
 promise = check_socket_listening
 name = vnc_promise.py
 config-host = ${kvm-parameter-dict:vnc-ip}
-config-port = ${kvm-parameter-dict:vnc-port}
+config-port = ${kvm-parameter-dict:vnc-websocket-port}
 
 [kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
@@ -675,7 +675,7 @@ path-access-log = ${directory:log}/nginx-access.log
 ip = ${slap-network-information:global-ipv6}
 port = 6080
 websocket-ip = ${kvm-parameter-dict:vnc-ip}
-websocket-port = ${kvm-parameter-dict:vnc-port}
+websocket-port = ${kvm-parameter-dict:vnc-websocket-port}
 websocket-path = websockify
 nb-workers = 2
 
@@ -781,6 +781,15 @@ sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 promise = check_url_available
 name = frontend_promise.py
 config-url = ${request-slave-frontend:connection-secure_access}/vnc.html
+
+[frontend-websocket-promise]
+<= monitor-promise-base
+promise = check_websocket_available
+name = frontend_websocket_promise.py
+config-url = wss://${request-slave-frontend:connection-domain}/websockify
+config-content-to-send = RFB 003.008
+# Jinja cannot parse byte literal so use encode()
+config-content-to-receive = {{ dumps('RFB 003.008\n'.encode()) }}
 
 {% if additional_frontend %}
 [request-slave-frontend-additional]
@@ -1268,6 +1277,7 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+  frontend-websocket-promise
 {% if virtual_hard_drive_url_enabled %}
   virtual-hard-drive-url-download-wrapper
   virtual-hard-drive-url-config-state-promise
