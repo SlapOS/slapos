@@ -5,13 +5,13 @@ This slows down jedi a lot and can make it crash on some scripts.
 See also https://github.com/davidhalter/jedi/issues/1325
 
 ---
- extension/pythonFiles/lib/python/jedi/inference/sys_path.py | 1 +
+ extension/pythonFiles/lib/jedilsp/jedi/inference/sys_path.py | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/extension/pythonFiles/lib/python/jedi/inference/sys_path.py b/extension/pythonFiles/lib/python/jedi/inference/sys_path.py
-index 5b82ec1..256b19c 100644
---- a/extension/pythonFiles/lib/python/jedi/inference/sys_path.py
-+++ b/extension/pythonFiles/lib/python/jedi/inference/sys_path.py
+diff --git a/extension/pythonFiles/lib/jedilsp/jedi/inference/sys_path.py b/extension/pythonFiles/lib/jedilsp/jedi/inference/sys_path.py
+index 062a0aa..7b5fd42 100644
+--- a/extension/pythonFiles/lib/jedilsp/jedi/inference/sys_path.py
++++ b/extension/pythonFiles/lib/jedilsp/jedi/inference/sys_path.py
 @@ -137,6 +137,7 @@ def check_sys_path_modifications(module_context):
  
  def discover_buildout_paths(inference_state, script_path):
