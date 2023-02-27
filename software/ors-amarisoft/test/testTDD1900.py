@@ -287,12 +287,6 @@ class TestMonitorGadgetUrl(ORSTestCase):
         self.assertEqual(requests.codes['OK'], response.status_code)
 
         self.assertIn('software.cfg.html', monitor_gadget_url)
-        output = subprocess.check_output(['curl', '-k', '--show-error', monitor_gadget_url],  universal_newlines=True)
-        print(output)
-        self.assertIn('<script src="rsvp.js"></script>', output)
-        self.assertIn('<script src="renderjs.js"></script>', output)
-        self.assertIn('<script src="g-chart.line.js"></script>', output)
-        self.assertIn('<script src="promise.gadget.js"></script>', output)
         response = requests.get(monitor_gadget_url, verify=False)
         self.assertEqual(requests.codes['OK'], response.status_code)
         self.assertIn('<script src="rsvp.js"></script>', response.text)
