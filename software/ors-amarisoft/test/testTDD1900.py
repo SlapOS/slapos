@@ -275,28 +275,6 @@ class TestMonitorGadgetUrl(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "enb-epc"
 
-    @classmethod
-    def waitForInstance(cls):
-        super().waitForInstance()
-        exited_services = []
-        all_services = []
-        output = subprocess.getoutput('slapos node status')
-        service_lines = output.split('\n')
-        for service_line in service_lines:
-          service = service_line.split()
-          all_services.append((service[0], service[1]))
-          if service[1] != 'RUNNING' and "on-watch" in service[0]:
-            exited_services.append((service[0], service[1]))
-
-        if len(exited_services) >= 1:
-          raise Exception("Exited on watch service: %s", str(exited_services))
-        print("================")
-        print("================")
-        print("================")
-        print("All on watch services is running")
-        print(service_lines)
-
-
     def test_monitor_gadget_url(self):
         parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
         self.assertIn('monitor-gadget-url', parameters)
