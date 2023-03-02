@@ -146,6 +146,21 @@
       "title": "Boolean to display prediction (unit: N/A)",
       "description": "Enable prediction display by setting boolean to True (unit: N/A)",
       "type": "boolean"
+    },
+    "promise_re6stnet_config_directory": {
+      "default": "/etc/re6stnet/",
+      "title": "Directory of re6stnet configuration on the node",
+      "type": "string"
+    },
+    "promise_re6stnet_certificate_file": {
+      "default": "cert.crt",
+      "title": "Filename of the re6stnet certificate in the re6stnet directory",
+      "type": "string"
+    },
+    "re6stnet_certificate_expiration_delay": {
+      "default": 15,
+      "title": "Days before expiration until certificate is considered valid",
+      "type": "number"
     }
   }
 }
