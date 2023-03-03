@@ -128,11 +128,3 @@ url = ${instance-gitlab.cfg.in:target}
 url = ${instance-gitlab-export.cfg.in:target}
 context-extra =
     raw instance_gitlab_cfg         $${instance-gitlab.cfg:output}
-
-[instance-gitlab-test.cfg]
-<= instance-cfg
-url = ${instance-gitlab-test.cfg.in:target}
-context-extra =
-    raw instance_gitlab_cfg        $${instance-gitlab.cfg:output}
-    raw instance_gitlab_export_cfg $${instance-gitlab-export.cfg:output}
-    raw gitlab_demo_backup_path    ${gitlab-demo-backup.git:location}
