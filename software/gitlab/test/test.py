@@ -44,7 +44,7 @@ class TestGitlab(SlapOSInstanceTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return 'gitlab-test'
+    return 'gitlab'
 
   def setUp(self):
     self.backend_url = self.computer_partition.getConnectionParameterDict(

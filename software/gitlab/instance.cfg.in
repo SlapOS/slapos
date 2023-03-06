@@ -15,7 +15,6 @@ offline = true
 recipe = slapos.cookbook:switch-softwaretype
 gitlab = instance-gitlab.cfg:output
 gitlab-export = instance-gitlab-export.cfg:output
-gitlab-test = instance-gitlab-test.cfg:output
 RootSoftwareInstance = $${:gitlab}
 # TODO -import, -pull-backup
 
