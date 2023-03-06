@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "description": "Parameters to instantiate beremiz-runtime.",
   "type": "object",
-  "configuration": {
+  "properties": {
     "runtime_plc_url": {
       "description": "The network (http / https) address of the gzipped PLC source project program file.",
       "type": "string",
