@@ -194,7 +194,7 @@ class EdgeMixin(object):
         with open(info_dict['status-cron']) as fh:
           self.assertEqual(
             '*/2 * * * * %s' % (info_dict['status-json'],),
-          fh.read().strip()
+            fh.read().strip()
           )
 
   def initiateSurykatkaRun(self):
@@ -563,7 +563,7 @@ class TestNodeMonitoring(SlapOSInstanceTestCase):
       'promise_free_disk_space_nb_days_predicted': 10,
       'promise_free_disk_space_display_partition': True,
       'promise_free_disk_space_display_prediction': True,
-      })}
+    })}
 
   @classmethod
   def getInstanceSoftwareType(cls):
