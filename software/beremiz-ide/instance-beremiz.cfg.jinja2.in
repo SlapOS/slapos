@@ -11,6 +11,9 @@ var = ${buildout:directory}/var
 tmp = ${buildout:directory}/tmp
 log = ${:var}/log
 vnc = ${buildout:directory}/.vnc
+themes = ${buildout:directory}/.themes
+config = ${buildout:directory}/.config
+gtk3-config = ${:config}/gtk-3.0
 scripts = ${:etc}/run
 services = ${:etc}/service
 promise = ${:etc}/promise
@@ -159,6 +162,21 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/xserver-is-up
 command-line = bash -c "[ -S ${xserver:lock-dir}/.X11-unix/X${xserver:display-num} ]"
 
+[install-gtk-materia-theme]
+recipe = plone.recipe.command
+command =
+  cp -r {{ gtk_materia_theme }}/share/themes/* ${directory:themes}/
+update-command = ${:command}
+stop-on-error = true
+
+[enable-matieria-theme]
+recipe = slapos.recipe.template
+inline =
+  [Settings]
+  gtk-font-name=FreeSans,10
+  gtk-theme-name=Materia
+output = ${directory:gtk3-config}/settings.ini
+
 [fluxbox-menu]
 recipe = slapos.recipe.template:jinja2
 url = {{ fluxbox_menu }}
@@ -201,6 +219,7 @@ inline =
   export LD_LIBRARY_PATH={{ mesa_location }}/lib
   export PATH=${directory:bin}:{{ git_bin_dir }}:{{ cmake_bin }}:{{ autoconf_bin }}:{{ automake_bin }}:{{ matiec_location }}/bin:{{ bison_location }}/bin:{{ flex_location }}/bin:{{ bin_directory }}:{{ gcc_location }}/bin:$PATH
   export XDG_DATA_DIR={{ gtk3_location }}/share
+  export HOME=${buildout:directory}
   export GSETTINGS_SCHEMA_DIR={{ gtk3_location }}/share/glib-2.0/schemas
   export FONTCONFIG_FILE=${font-config:output}
   export DISPLAY=${xserver:display}
@@ -208,6 +227,8 @@ inline =
   export LANG=C.UTF-8
   export LC_ALL=C.UTF-8
   export BEREMIZPYTHONPATH={{ python_bin }}
+  export OPCUA_DEFAULT_HOST={{ ipv4 }}
+  export BEREMIZ_LOCAL_HOST={{ ipv4 }}
 
 output = ${directory:bin}/beremiz-env.sh
 
@@ -261,6 +282,8 @@ parts =
   novnc-promise
   xserver-promise
   x11vnc-listen-promise
+  enable-matieria-theme
+  install-gtk-materia-theme
   beremiz-x11
   nginx-launcher
   nginx-graceful

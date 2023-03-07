@@ -1,0 +1,248 @@
+[buildout]
+extends =
+  {{ instance_common_cfg }}
+
+[default-dynamic-template-parameters]
+bin-directory = {{ bin_directory }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
+
+[dynamic-template-postfix-parameters]
+<= default-dynamic-template-parameters
+cyrus-sasl-location = {{ cyrus_sasl_location }}
+openssl = {{ openssl_location }}
+postfix-location = {{ postfix_location }}
+template-postfix-aliases = {{ template_postfix_aliases }}
+template-postfix-main-cf = {{ template_postfix_main_cf }}
+template-postfix-master-cf = {{ template_postfix_master_cf }}
+xz-utils-location =  {{ xz_utils_location }}
+
+[dynamic-template-postfix]
+< = jinja2-template-base
+url = {{ template_postfix }}
+filename = instance-postfix.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section parameter_dict dynamic-template-postfix-parameters
+    import urllib urllib
+
+[default-cloudooo-url-list]
+recipe = slapos.recipe.build
+default-url-list =
+  {{ default_cloudooo_url_list | indent }}
+init =
+  # Expose the default cloudooo URLs, sorted using a pseudo-random seed,
+  # so that the same instance keep the same order
+  import six, random
+  seed = repr(sorted(six.iteritems(self.buildout['slap-connection'])))
+  default_cloudooo_url_list = [url.strip() for url in self.options['default-url-list'].splitlines()]
+  random.Random(seed).shuffle(default_cloudooo_url_list)
+  self.options['url-list'] = default_cloudooo_url_list
+
+[dynamic-template-erp5-parameters]
+default-cloudooo-url-list = ${default-cloudooo-url-list:url-list}
+jupyter-enable-default = {{ jupyter_enable_default }}
+wcfs-enable-default = {{ wcfs_enable_default }}
+local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
+
+[context]
+root-common = {{ root_common }}
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+template-zodb-base = {{ template_zodb_base }}
+
+[dynamic-template-erp5]
+<= jinja2-template-base
+url = {{ template_erp5 }}
+filename = instance-erp5.cfg
+extra-context =
+    key default_cloudooo_url_list dynamic-template-erp5-parameters:default-cloudooo-url-list
+    key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
+    key wcfs_enable_default dynamic-template-erp5-parameters:wcfs-enable-default
+    key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    key openssl_location :openssl-location
+    import re re
+    import urllib_parse six.moves.urllib.parse
+import-list =
+    file root_common context:root-common
+    file caucase context:caucase-jinja2-library
+
+openssl-location = {{ openssl_location }}
+
+[dynamic-template-balancer-parameters]
+<= default-dynamic-template-parameters
+openssl = {{ openssl_location }}
+haproxy = {{ haproxy_location }}
+rsyslogd = {{ rsyslogd_location }}
+socat = {{ socat_location }}
+apachedex-location = {{ bin_directory }}/apachedex
+run-apachedex-location = {{ bin_directory }}/runApacheDex
+promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
+template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-rsyslogd-cfg = {{ template_rsyslogd_cfg }}
+# XXX: only used in software/slapos-master:
+apache = {{ apache_location }}
+template-apache-conf = {{ template_apache_conf }}
+
+[dynamic-template-balancer]
+<= jinja2-template-base
+url = {{ template_balancer }}
+filename = instance-balancer.cfg
+extra-context =
+    section parameter_dict dynamic-template-balancer-parameters
+    import itertools itertools
+    import hashlib hashlib
+    import functools functools
+import-list =
+    file caucase context:caucase-jinja2-library
+
+[dynamic-template-zeo-parameters]
+<= default-dynamic-template-parameters
+
+[dynamic-template-zeo]
+<= jinja2-template-base
+url = {{ template_zeo }}
+filename = instance-zeo.cfg
+extra-context =
+    key buildout_directory buildout:directory
+    section parameter_dict dynamic-template-zeo-parameters
+    import json_module json
+    import itertools itertools
+
+[dynamic-template-zope-parameters]
+<= default-dynamic-template-parameters
+zope-conf-template = {{ template_zope_conf }}
+run-zelenium-template = {{ template_run_zelenium }}
+6tunnel = {{ sixtunnel_location }}
+coreutils = {{ coreutils_location }}
+sqlbench_path = {{ mariadb_location }}/sql-bench
+perl_dbd_mariadb_path = {{ perl_dbd_mariadb_path }}
+dash = {{ dash_location }}
+link-binary = {{ dumps(zope_link_binary) }}
+fonts = {{ dumps(zope_fonts) }}
+fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
+template-fonts-conf = {{ dumps(template_fonts_conf) }}
+userhosts = {{ userhosts_location }}/lib/libuserhosts.so
+site-zcml = {{ site_zcml }}
+extra-path-list = {{ dumps(extra_path_list) }}
+matplotlibrc = {{ matplotlibrc_location }}
+erp5-location = {{ erp5_location }}
+egg-interpreter = {{egg_interpreter}}
+erp5-kernel-location = {{ erp5_kernel_location }}
+erp5-kernel-filename = {{ erp5_kernel_filename }}
+kernel-json-location = {{ kernel_json_location }}
+kernel-json-filename = {{ kernel_json_filename }}
+python-executable-for-kernel = {{ python_executable_for_kernel }}
+
+[dynamic-template-zope]
+<= jinja2-template-base
+url = {{ template_zope }}
+filename = instance-zope.cfg
+extra-context =
+    key buildout_directory buildout:directory
+    key root_common context:root-common
+    section parameter_dict dynamic-template-zope-parameters
+    import base64 base64
+    import urllib_parse six.moves.urllib.parse
+    import hashlib hashlib
+    import itertools itertools
+    import json json
+import-list =
+    file instance_zodb_base context:template-zodb-base
+
+[dynamic-template-kumofs-parameters]
+<= default-dynamic-template-parameters
+dash-location = {{ dash_location }}
+dcron-location = {{ dcron_location }}
+gzip-location = {{ gzip_location }}
+kumo-location = {{ kumo_location }}
+logrotate-location = {{ logrotate_location }}
+
+[dynamic-template-kumofs]
+<= jinja2-template-base
+url = {{ template_kumofs }}
+filename = instance-kumofs.cfg
+extra-context =
+    section parameter_dict dynamic-template-kumofs-parameters
+
+[dynamic-template-mariadb-parameters]
+<= default-dynamic-template-parameters
+bash = {{ bash_location }}
+coreutils-location = {{ coreutils_location }}
+dash-location = {{ dash_location }}
+findutils-location = {{ findutils_location }}
+gzip-location = {{ gzip_location }}
+xz-utils-location = {{ xz_utils_location }}
+mariadb-location = {{ mariadb_location }}
+template-my-cnf = {{ template_my_cnf }}
+template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
+template-mysqld-wrapper = {{ template_mysqld_wrapper }}
+link-binary = {{ dumps(mariadb_link_binary) }}
+mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
+mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
+mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
+promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
+percona-tools-location = {{ percona_toolkit_location }}
+unixodbc-location = {{ unixodbc_location }}
+mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
+mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
+groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
+
+[dynamic-template-mariadb]
+<= jinja2-template-base
+url = {{ template_mariadb }}
+filename = instance-mariadb.cfg
+extra-context =
+    section parameter_dict dynamic-template-mariadb-parameters
+
+# Keep a section for backward compatibility for removed types
+# Once the section is removed, ghost instances will keep failing until
+# garbage collection be implemented.
+[dynamic-template-legacy]
+recipe = collective.recipe.template
+input = inline:[buildout]
+  eggs-directory = ${buildout:eggs-directory}
+  develop-eggs-directory = ${buildout:develop-eggs-directory}
+  offline = true
+  parts =
+
+output = ${directory:directory/instance-legacy.cfg
+mode = 644
+
+# we need this value to be present in a section,
+# for slapos.cookbook:switch-softwaretype to work
+[dynamic-template-jupyter]
+output = {{ template_jupyter_cfg }}
+
+[dynamic-template-wcfs]
+<= jinja2-template-base
+url = {{ instance_wcfs_cfg_in }}
+filename = instance_wcfs.cfg
+extra-context =
+    section parameter_dict dynamic-template-zope-parameters
+    import urllib_parse six.moves.urllib.parse
+import-list =
+    file instance_zodb_base context:template-zodb-base
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+override = {{ dumps(override_switch_softwaretype |default) }}
+
+# Public software types
+default = dynamic-template-erp5:output
+# BBB
+RootSoftwareInstance = ${:default}
+# Internal software types
+kumofs = dynamic-template-kumofs:output
+caucase = dynamic-template-caucase:output
+mariadb = dynamic-template-mariadb:output
+balancer = dynamic-template-balancer:output
+postfix = dynamic-template-postfix:output
+zodb-zeo = dynamic-template-zeo:output
+zodb-neo = neo:output
+zope = dynamic-template-zope:output
+jupyter = dynamic-template-jupyter:output
+wcfs = dynamic-template-wcfs:output
+
+# Keep cloudooo backward compatibility
+cloudooo = dynamic-template-legacy:output
+caucase = dynamic-template-legacy:output

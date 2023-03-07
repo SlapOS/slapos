@@ -10,6 +10,7 @@
   create
   olddir {{ backup }}
   missingok
+  {% if copytruncate %}copytruncate{% endif %}
   {% if pre %}prerotate
     {{ pre }}
   endscript{% endif %}

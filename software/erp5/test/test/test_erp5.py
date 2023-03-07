@@ -27,6 +27,7 @@
 
 
 import contextlib
+import datetime
 import glob
 import http.client
 import json
@@ -121,16 +122,6 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   """
   __partition_reference__ = 'defp'
   __test_matrix__ = matrix((default,))
-
-
-class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 Medusa server
-  """
-  __partition_reference__ = 'medusa'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'wsgi': False})}
 
 
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -365,16 +356,18 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       zodb["mount-point"] = "/"
       zodb["pool-size"] = 4
       zodb["pool-timeout"] = "10m"
+      zodb["%import"] = "ZEO"
       storage["storage"] = "root"
       storage["server"] = zeo_addr
+      storage["server-sync"] = "true"
       with open(f'{partition}/etc/zope-{zope}.conf') as f:
         conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
-        if line == '<zeoclient>':
+        if line == '<clientstorage>':
           for line in conf:
-            if line == '</zeoclient>':
+            if line == '</clientstorage>':
               break
             checkParameter(line, storage)
           for k, v in storage.items():
@@ -450,10 +443,13 @@ class ZopeSkinsMixin:
   @classmethod
   def _setUpClass(cls):
     super()._setUpClass()
-    param_dict = cls.getRootPartitionConnectionParameterDict()
-    # wait for ERP5 to be ready and have processed all activities
-    # from initial setup
-    for _ in range(120):
+    cls._waitForActivities()
+
+  @classmethod
+  def _waitForActivities(cls, timeout=datetime.timedelta(minutes=10).total_seconds()):
+    """Wait for ERP5 to be ready and have processed all activities.
+    """
+    for _ in range(int(timeout / 5)):
       with cls.getXMLRPCClient() as erp5_xmlrpc_client:
         try:
           if erp5_xmlrpc_client.portal_activities.countMessage() == 0:
@@ -464,7 +460,7 @@ class ZopeSkinsMixin:
           pass
       time.sleep(5)
     else:
-      raise AssertionError("ERP5 is not ready")
+      raise AssertionError("Timeout waiting for activities")
 
   @classmethod
   def _getAuthenticatedZopeUrl(cls, path, family_name='default'):
@@ -521,8 +517,6 @@ class ZopeSkinsMixin:
 class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
   """Mixin class for zope features.
   """
-  wsgi = NotImplemented # type: bool
-
   __partition_reference__ = 'z'
 
   @classmethod
@@ -535,9 +529,13 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
                     "longrequest-logger-interval": 1,
                     "longrequest-logger-timeout": 1,
                 },
+                "multiple": {
+                    "family": "multiple",
+                    "instance-count": 3,
+                    "port-base":  2210,
+                },
             },
-            "wsgi": cls.wsgi,
-        })
+        }),
     }
 
   @classmethod
@@ -829,7 +827,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         )
         if not resp.ok:
           # XXX we start by flushing existing activities from site creation
-          # and inital upgrader run. During this time it may happen that
+          # and initial upgrader run. During this time it may happen that
           # ERP5 replies with site errors, we tolerate these errors and only
           # check the final state.
           continue
@@ -849,21 +847,35 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
     ).raise_for_status()
     wait_for_activities(10)
 
-
-class TestZopeMedusa(ZopeTestMixin, ERP5InstanceTestCase):
-  wsgi = False
+  def test_multiple_zope_family_log_files(self):
+    logfiles = [
+      os.path.basename(p) for p in glob.glob(
+        os.path.join(
+          self.getComputerPartitionPath('zope-multiple'), 'var', 'log', '*'))
+    ]
+    self.assertEqual(
+      sorted([l for l in logfiles if l.startswith('zope')]), [
+        'zope-0-Z2.log',
+        'zope-0-event.log',
+        'zope-0-neo-root.log',
+        'zope-1-Z2.log',
+        'zope-1-event.log',
+        'zope-1-neo-root.log',
+        'zope-2-Z2.log',
+        'zope-2-event.log',
+        'zope-2-neo-root.log',
+      ] if '_neo' in self.__class__.__name__ else [
+        'zope-0-Z2.log',
+        'zope-0-event.log',
+        'zope-1-Z2.log',
+        'zope-1-event.log',
+        'zope-2-Z2.log',
+        'zope-2-event.log',
+      ])
 
 
 class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
-  wsgi = True
-
-  @unittest.expectedFailure
-  def test_long_request_log_rotation(self):
-    super().test_long_request_log_rotation()
-
-  @unittest.expectedFailure
-  def test_basic_authentication_user_in_access_log(self):
-    super().test_basic_authentication_user_in_access_log()
+  pass
 
 
 class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):

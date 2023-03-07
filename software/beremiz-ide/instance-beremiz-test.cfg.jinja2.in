@@ -13,6 +13,12 @@ environment =
   XORG_LOCK_DIR=${xserver:lock-dir}
   DISPLAY=${xserver:display}
 
+[enable-matieria-theme]
+inline =
+  [Settings]
+  gtk-font-name=FreeSans,12
+  gtk-theme-name=Materia
+
 [xdotool]
 recipe = slapos.cookbook:wrapper
 command-line = {{ xdotool_bin }}
@@ -24,9 +30,9 @@ environment =
 [beremiz-env.sh]
 # Add openssl needed to build matiec during tests
 inline +=
-  #export OPENSSL_CRYPTO_LIBRARY={{ openssl_location }}/lib
-  #export OPENSSL_INCLUDE_DIR={{ openssl_location }}/include
   export OPENSSL_ROOT_DIR={{ openssl_location }}
+  export LDFLAGS=-L{{ openssl_location }}/lib
+  export TESSDATAPATH={{ tesseract_data }}
 
 [runTestSuite]
 env.sh  = ${beremiz-env.sh:output}

@@ -53,12 +53,14 @@ output = ${logrotate-conf-parameter:logrotate-entries}/${:name}
 context =
   key backup :backup
   key log :log
+  key copytruncate :copytruncate
   key post :post
   key pre :pre
   key frequency :frequency
   key rotate_num :rotate-num
   key nocompress :nocompress
   key delaycompress :delaycompress
+copytruncate = false
 post =
 pre =
 frequency = daily

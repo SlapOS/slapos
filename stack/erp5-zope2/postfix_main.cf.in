@@ -1,0 +1,77 @@
+# http://www.postfix.org/STANDARD_CONFIGURATION_README.html
+# http://www.postfix.org/postconf.5.html
+queue_directory = {{ queue_directory }}
+command_directory = {{ bin_directory }}
+daemon_directory = {{ usr_directory }}/libexec/postfix
+data_directory = {{ data_directory }}
+mail_owner = {{ mail_owner }}
+alias_maps = {{ aliases }}
+alias_database = {{ aliases }}
+mail_spool_directory = {{ spool_directory }}
+sendmail_path = {{ bin_directory }}/sendmail
+newaliases_path = {{ bin_directory }}/newaliases
+mailq_path = {{ bin_directory }}/mailq
+setgid_group = {{ setgid_group }}
+html_directory = no
+manpage_directory = {{ postfix_location }}/usr/local/man
+sample_directory = {{ postfix_location }}/etc/postfix
+readme_directory = no
+inet_interfaces = {{ inet_interfaces }}
+smtp_bind_address = 0.0.0.0
+smtp_bind_address6 = ::
+compatibility_level = 3.6
+smtputf8_enable = no
+
+# Compared to default:
+# - remove X-related variables, irrelevant for slapos, to be concise
+# - add SASL_CONF_PATH to have per-partition cyrus-sasl configuration
+import_environment =
+  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+  SASL_CONF_PATH
+
+# Mandatory sasl auth over TLS
+# XXX: no man-in-the-middle protection
+smtpd_tls_cert_file = {{ cert }}
+smtpd_tls_key_file = {{ key }}
+smtpd_tls_dh512_param_file = {{ dh_512 }}
+{#
+  Note: 1024 vs. 2048 is not a typo, but what is actually recommended in
+  postfix documentation
+-#}
+smtpd_tls_dh1024_param_file = {{ dh_2048 }}
+
+smtpd_tls_security_level = encrypt
+smtpd_sasl_auth_enable = yes
+# Reject as many bogus cases as soon as possible, so errors are visible to ERP5
+# developper rather than relying on bounces.
+smtpd_recipient_restrictions =
+  reject_non_fqdn_recipient
+  reject_unknown_recipient_domain
+  permit_sasl_authenticated
+  reject
+# Do not allow mynetworks to send mails, only authenticated clients.
+smtpd_relay_restrictions =
+  permit_sasl_authenticated
+  defer_unauth_destination
+
+# We do not pass mail address in command lines, so accept those starting with
+# a dash.
+allow_min_user = yes
+
+# Disable local delivery
+local_transport = error
+
+smtpd_milters ={{ '\n  '.join(milter_list) }}
+
+{% if relayhost -%}
+relayhost = {{ relayhost }}
+smtp_tls_security_level = encrypt
+smtp_tls_session_cache_database = btree:{{ data_directory }}/smtp_scache
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = {{ sasl_passwd }}
+smtp_sasl_tls_security_options = noanonymous
+{%- endif %}
+
+maillog_file = {{ log_directory }}/postfix.log
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ log_directory }}

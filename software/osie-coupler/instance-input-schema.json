@@ -62,6 +62,11 @@
       "description": "Network address URL type used for Pub/Sub.",
       "type": "string",
       "default": "opc.udp://224.0.0.22:4840/"
+    },
+    "network_interface": {
+      "description": "Network interface to be used for Pub/Sub.",
+      "type": "string",
+      "default": ""
     }
   }
 }

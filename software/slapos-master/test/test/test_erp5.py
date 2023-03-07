@@ -112,15 +112,6 @@ class TestDefaultParameters(
   __partition_reference__ = 'defp'
 
 
-class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 Medusa server
-  """
-  __partition_reference__ = 'medusa'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'wsgi': False})}
-
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 Jupyter notebook
   """
@@ -288,16 +279,18 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       zodb["mount-point"] = "/"
       zodb["pool-size"] = 4
       zodb["pool-timeout"] = "10m"
+      zodb["%import"] = "ZEO"
       storage["storage"] = "root"
       storage["server"] = zeo_addr
+      storage["server-sync"] = "true"
       with open(f'{partition}/etc/zope-{zope}.conf') as f:
         conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
-        if line == '<zeoclient>':
+        if line == '<clientstorage>':
           for line in conf:
-            if line == '</zeoclient>':
+            if line == '</clientstorage>':
               break
             checkParameter(line, storage)
           for k, v in storage.items():
@@ -369,7 +362,6 @@ class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
       "timezone": "UTC",
       "site-id": "erp5",
       "bt5": "erp5_full_text_myisam_catalog slapos_configurator",
-      "wsgi": False,
       "test-runner": {"enabled": False},  # won't work anyway here
       "zope-partition-dict": {
         "admin": {
