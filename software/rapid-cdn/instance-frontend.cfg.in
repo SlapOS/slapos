@@ -370,6 +370,7 @@ software_type = single-custom-personal
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+partition_ipv6 =  ${slap-configuration:ipv6-random}
 url-ready-file = ${directory:var}/url-ready.txt
 quic = {{ FRONTEND_HAPROXY_QUIC }}
 extra-context =

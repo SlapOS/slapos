@@ -1910,6 +1910,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'disabled-cookie-list': 'Chocolate',
       },
+      'monitor-ipv4-test': {
+        'monitor-ipv4-test': 'monitor-ipv4-test',
+      },
+      'monitor-ipv6-test': {
+        'monitor-ipv6-test': 'monitor-ipv6-test',
+      },
       'ciphers': {
         'ciphers': 'RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
       },
@@ -2094,9 +2100,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '56',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '56',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -3645,6 +3651,81 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       http.client.SERVICE_UNAVAILABLE,
       result.status_code
+    )
+
+  def test_monitor_ipv6_test(self):
+    parameter_dict = self.assertSlaveBase('monitor-ipv6-test')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], 'test-path')
+    self.assertEqual(
+      http.client.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://monitoripv6test.example.com:%s/test-path' % (HTTP_PORT,),
+      result_http.headers['Location']
+    )
+
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv6-test-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    self.assertEqual(
+      getPromisePluginParameterDict(monitor_file),
+      {
+        'frequency': '720',
+        'address': 'monitor-ipv6-test'
+      }
+    )
+
+  def test_monitor_ipv4_test(self):
+    parameter_dict = self.assertSlaveBase('monitor-ipv4-test')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], 'test-path')
+    self.assertEqual(
+      http.client.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://monitoripv4test.example.com:%s/test-path' % (HTTP_PORT,),
+      result_http.headers['Location']
+    )
+
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv4-test-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    self.assertEqual(
+      getPromisePluginParameterDict(monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': 'monitor-ipv4-test',
+      }
     )
 
   def test_ciphers(self):
@@ -5966,6 +6047,12 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': cls.backend_url,
         'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
       },
+      'MONITOR-IPV4-TEST-UNSAFE': {
+        'monitor-ipv4-test': '${section:option}\nafternewline ipv4',
+      },
+      'MONITOR-IPV6-TEST-UNSAFE': {
+        'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
+      },
       'BAD-CIPHERS': {
         'ciphers': 'bad ECDHE-ECDSA-AES256-GCM-SHA384 again',
       },
@@ -6068,9 +6155,9 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '3',
+      'accepted-slave-amount': '5',
       'rejected-slave-amount': '28',
-      'slave-amount': '31',
+      'slave-amount': '33',
       'rejected-slave-dict': {
         '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
@@ -6322,6 +6409,66 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
       '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,),
       result.headers['Location']
+    )
+
+  def test_monitor_ipv4_test_unsafe(self):
+    parameter_dict = self.assertSlaveBase('MONITOR-IPV4-TEST-UNSAFE')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], 'test-path')
+    self.assertEqual(http.client.FOUND, result_http.status_code)
+
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_MONITOR-IPV4-TEST-UNSAFE-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+
+    self.assertEqual(
+      getPromisePluginParameterDict(monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': '${section:option}\nafternewline ipv4',
+      }
+    )
+
+  def test_monitor_ipv6_test_unsafe(self):
+    parameter_dict = self.assertSlaveBase('MONITOR-IPV6-TEST-UNSAFE')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], 'test-path')
+    self.assertEqual(http.client.FOUND, result_http.status_code)
+
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_MONITOR-IPV6-TEST-UNSAFE-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    self.assertEqual(
+      getPromisePluginParameterDict(monitor_file),
+      {
+        'frequency': '720',
+        'address': '${section:option}\nafternewline ipv6'
+      }
     )
 
   def test_site_1(self):

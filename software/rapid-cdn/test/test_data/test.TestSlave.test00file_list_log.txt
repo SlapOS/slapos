@@ -53,6 +53,8 @@ T-2/var/log/httpd/_https-only_access_log
 T-2/var/log/httpd/_https-only_backend_log
 T-2/var/log/httpd/_https-url-netloc-list_access_log
 T-2/var/log/httpd/_https-url-netloc-list_backend_log
+T-2/var/log/httpd/_monitor-ipv4-test_access_log
+T-2/var/log/httpd/_monitor-ipv6-test_access_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_access_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_backend_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend_access_log

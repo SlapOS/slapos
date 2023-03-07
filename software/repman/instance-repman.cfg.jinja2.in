@@ -234,7 +234,7 @@ proxy-memory = {{ parameter_dict.get("proxy-memory", 1) }}
 db-cpu-cores = {{ parameter_dict.get("db-cpu-cores", 2) }}
 db-disk-iops = {{ parameter_dict.get("db-disk-iops", 300) }}
 db-memory = {{ parameter_dict.get("db-memory", 256) }}
-db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", ["threads:16", "innodb:60", "myisam:10", "aria:10", "rocksdb:1", "s3:1", "archive:1", "querycache:0"]) | join(',') }}
+db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", ["threads:16", "innodb:60", "myisam:10", "aria:10", "rocksdb:1", "tokudb:1", "s3:1", "archive:1", "querycache:0"]) | join(',') }}
 db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", ["tmp:70", "join:20", "sort:10"]) | join(',') }}
 # failover
 failover-mode = {{ parameter_dict.get('failover-mode', 'manual') }}

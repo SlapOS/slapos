@@ -122,10 +122,6 @@
               "description": "Size of private tmpfs mount to store the database. See filesystems/tmpfs.txt in Linux documentation. Use only for testing.",
               "type": "string"
             },
-            "test-binding-list": {
-              "description": "List of bindings to test when running the test suite.",
-              "type": "array"
-            },
             "mysql": {
               "description": "Dictionary containing parameters for MySQL.",
               "default": {},
@@ -137,13 +133,13 @@
                 }
               },
               "additionalProperties": {
-                "description": "To configure important parameters like innodb_buffer_pool_size, rocksdb_block_cache_size, etc.",
+                "description": "To configure important parameters like innodb_buffer_pool_size, tokudb_cache_size, etc.",
                 "type": "string"
               },
               "type": "object"
             },
             "engine": {
-              "description": "Configures storage engine, currently only InnoDB and RocksDB are supported. Defaults to NEO's default.",
+              "description": "Configures storage engine, currently only InnoDB, RocksDB and TokuDB are supported. Defaults to NEO's default.",
               "type": "string"
             }
           },

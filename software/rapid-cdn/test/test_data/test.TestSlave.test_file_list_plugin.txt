@@ -35,6 +35,8 @@ T-2/etc/plugin/backend_haproxy_http.py
 T-2/etc/plugin/backend_haproxy_https.py
 T-2/etc/plugin/buildout-T-2-status.py
 T-2/etc/plugin/caucase-updater.py
+T-2/etc/plugin/check-_monitor-ipv4-test-ipv4-packet-list-test.py
+T-2/etc/plugin/check-_monitor-ipv6-test-ipv6-packet-list-test.py
 T-2/etc/plugin/check-free-disk-space.py
 T-2/etc/plugin/expose-csr-ip-port-listening.py
 T-2/etc/plugin/frontend-frontend-haproxy-configuration-promise.py

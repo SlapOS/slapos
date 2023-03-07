@@ -74,6 +74,8 @@
       'https-only',
       'https-url',
       'https-url-netloc-list',
+      'monitor-ipv4-test',
+      'monitor-ipv6-test',
       'path',
       'prefer-gzip-encoding-to-backend',
       'request-timeout',

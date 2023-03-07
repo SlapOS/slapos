@@ -371,6 +371,32 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 {%-     endif %}
 {%-   endfor %}
 
+{%-   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
+{%-   if monitor_ipv6_test %}
+{%-     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
+{%-     do part_list.append(monitor_ipv6_section_title) %}
+[{{ monitor_ipv6_section_title }}]
+<= monitor-promise-base
+promise = check_icmp_packet_lost
+name = {{ monitor_ipv6_section_title }}.py
+config-address = {{ dumps(monitor_ipv6_test) }}
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
+{%-   endif %}
+{%-   set monitor_ipv4_test = slave_instance.get('monitor-ipv4-test', '') %}
+{%-   if monitor_ipv4_test %}
+{%-     set monitor_ipv4_section_title = 'check-%s-ipv4-packet-list-test' % slave_instance.get('slave_reference') %}
+{%-     do part_list.append(monitor_ipv4_section_title) %}
+[{{ monitor_ipv4_section_title }}]
+<= monitor-promise-base
+promise = check_icmp_packet_lost
+name = {{ monitor_ipv4_section_title }}.py
+config-address = {{ dumps(monitor_ipv4_test) }}
+config-ipv4 = true
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
+{%-   endif %}
+
 {#-   ###############################  #}
 {#-   Prepare Slave Information        #}
 {%-   do slave_instance_information_list.append(slave_publish_dict) %}

@@ -27,7 +27,6 @@
 
 
 import contextlib
-import datetime
 import glob
 import http.client
 import json
@@ -451,13 +450,10 @@ class ZopeSkinsMixin:
   @classmethod
   def _setUpClass(cls):
     super()._setUpClass()
-    cls._waitForActivities()
-
-  @classmethod
-  def _waitForActivities(cls, timeout=datetime.timedelta(minutes=10).total_seconds()):
-    """Wait for ERP5 to be ready and have processed all activities.
-    """
-    for _ in range(int(timeout / 5)):
+    param_dict = cls.getRootPartitionConnectionParameterDict()
+    # wait for ERP5 to be ready and have processed all activities
+    # from initial setup
+    for _ in range(120):
       with cls.getXMLRPCClient() as erp5_xmlrpc_client:
         try:
           if erp5_xmlrpc_client.portal_activities.countMessage() == 0:
@@ -468,7 +464,7 @@ class ZopeSkinsMixin:
           pass
       time.sleep(5)
     else:
-      raise AssertionError("Timeout waiting for activities")
+      raise AssertionError("ERP5 is not ready")
 
   @classmethod
   def _getAuthenticatedZopeUrl(cls, path, family_name='default'):
@@ -538,11 +534,6 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
                 "default": {
                     "longrequest-logger-interval": 1,
                     "longrequest-logger-timeout": 1,
-                },
-                "multiple": {
-                    "family": "multiple",
-                    "instance-count": 3,
-                    "port-base":  2210,
                 },
             },
             "wsgi": cls.wsgi,
@@ -838,7 +829,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         )
         if not resp.ok:
           # XXX we start by flushing existing activities from site creation
-          # and initial upgrader run. During this time it may happen that
+          # and inital upgrader run. During this time it may happen that
           # ERP5 replies with site errors, we tolerate these errors and only
           # check the final state.
           continue
@@ -858,31 +849,6 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
     ).raise_for_status()
     wait_for_activities(10)
 
-  def test_multiple_zope_family_log_files(self):
-    logfiles = [
-      os.path.basename(p) for p in glob.glob(
-        os.path.join(
-          self.getComputerPartitionPath('zope-multiple'), 'var', 'log', '*'))
-    ]
-    self.assertEqual(
-      sorted([l for l in logfiles if l.startswith('zope')]), [
-        'zope-0-Z2.log',
-        'zope-0-event.log',
-        'zope-0-neo-root.log',
-        'zope-1-Z2.log',
-        'zope-1-event.log',
-        'zope-1-neo-root.log',
-        'zope-2-Z2.log',
-        'zope-2-event.log',
-        'zope-2-neo-root.log',
-      ] if '_neo' in self.__class__.__name__ else [
-        'zope-0-Z2.log',
-        'zope-0-event.log',
-        'zope-1-Z2.log',
-        'zope-1-event.log',
-        'zope-2-Z2.log',
-        'zope-2-event.log',
-      ])
 
 class TestZopeMedusa(ZopeTestMixin, ERP5InstanceTestCase):
   wsgi = False
