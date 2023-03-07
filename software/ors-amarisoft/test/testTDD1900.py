@@ -30,8 +30,6 @@ import yaml
 import json
 import glob
 import requests
-from urllib.parse import urlsplit
-import subprocess
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
