@@ -7245,6 +7245,10 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'enable_cache': True,
       },
+      'http2-false': {
+        'url': cls.backend_url,
+        'enable-http2': False
+      }
     }
 
   def get_curl_http3(self):
@@ -7289,15 +7293,81 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual('HTTP/2 200', call_curl()[0])
     self.assertEqual('HTTP/3 200', call_curl()[0])
 
+  def assertHttp11(self, domain, direct=True):
+    alt_svc = tempfile.NamedTemporaryFile(delete=False)
+    curl_command = [self.get_curl_http3()]
+    if direct:
+      curl_command.append('--http3')
+    else:
+      curl_command.extend(['--alt-svc', alt_svc.name])
+    curl_command.extend([
+      '-k',
+      '-v',
+      '-D', '-',
+      '-o', '/dev/null',
+      '-H', 'Host: %s' % (domain,),
+      '--resolve', '%(domain)s:%(https_port)s:%(ip)s' % dict(
+        ip=TEST_IP, domain=domain, https_port=HTTPS_PORT),
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=domain, https_port=HTTPS_PORT),
+    ])
+
+    def call_curl():
+      prc = subprocess.Popen(
+        curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
+      return [q.decode() for q in prc.communicate()]
+
+    out, err = call_curl()
+    if direct:
+      self.assertIn(
+        'Failed to connect to %s port %s' % (
+          domain, HTTPS_PORT), err)
+    else:
+      self.assertEqual(
+        out.splitlines()[0],
+        'HTTP/1.0 200 OK'
+      )
+      self.assertNotIn(
+        'alt-svc',
+        out.lower()
+      )
+
   def test_url(self):
     parameter_dict = self.assertSlaveBase('url')
     self.assertHttp3(parameter_dict['domain'])
     self.assertHttp3(parameter_dict['domain'], direct=False)
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(
+      result.headers['alt-svc'],
+      'h3=":%s"; ma=3600' % (HTTPS_PORT,)
+    )
+    self.assertEqual(
+      result.headers['alternate-protocol'],
+      '%s:quic' % (HTTPS_PORT,)
+    )
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
     self.assertHttp3(parameter_dict['domain'])
     self.assertHttp3(parameter_dict['domain'], direct=False)
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(
+      result.headers['alt-svc'],
+      'h3=":%s"; ma=3600' % (HTTPS_PORT,)
+    )
+    self.assertEqual(
+      result.headers['alternate-protocol'],
+      '%s:quic' % (HTTPS_PORT,)
+    )
+
+  def test_http2_false(self):
+    parameter_dict = self.assertSlaveBase('http2-false')
+    self.assertHttp11(parameter_dict['domain'])
+    self.assertHttp11(parameter_dict['domain'], direct=False)
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertNotIn('alt-svc', result.headers)
+    self.assertNotIn('alternate-protocol', result.headers)
 
 
 if __name__ == '__main__':
