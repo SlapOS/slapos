@@ -7220,6 +7220,159 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
 
+class RecurlestsHttp3ForcedFailedException(Exception):
+  pass
+
+
+class RecurlestsResponse(object):
+  # properties:
+  #   content Content of the response, in bytes.
+  #   cookies A CookieJar of Cookies the server sent back.
+  #    history A list of Response objects from the history of the Request. Any redirect responses will end up here. The list is sorted from the oldest to the most recent request.
+  #    is_permanent_redirect True if this Response one of the permanent versions of redirect.
+  #    is_redirect True if this Response is a well-formed HTTP redirect that could have been processed automatically (by Session.resolve_redirects).
+  #    links Returns the parsed header links of the response, if any.
+  #    next Returns a PreparedRequest for the next request in a redirect chain, if there is one.
+  #    reason Textual reason of responded HTTP Status, e.g. “Not Found” or “OK”.
+  def json(self, *args, **kwargs):
+    return json.loads(self.text, *args, **kwargs)
+
+
+class Recurlests(object):
+  """curl command wrapper, mimicing requests"""
+  def __init__(self, curl):
+    self.curl = curl
+
+  def request(
+    self,
+    method,
+    url,
+    http3=True,
+    http3_only=False,
+    resolve_all=None,
+    verify=True,
+    allow_redirects=True,
+    headers=None,
+    auth=None,
+    timeout=None,
+  ):
+    try:
+      alt_svc = tempfile.NamedTemporaryFile(delete=False).name
+      response_header_file = tempfile.NamedTemporaryFile(delete=False).name
+      response_file = tempfile.NamedTemporaryFile(delete=False).name
+      command_list = [
+        self.curl,
+        '--disable',
+        '--globoff',
+        '--include',
+        '--no-progress-meter',
+        '--dump-header', response_header_file,
+        '--output', response_file,
+        '--alt-svc', alt_svc,
+        '--request', method,
+      ]
+      command_list.extend(['--write-out', '%{json}'])
+      if allow_redirects:
+        command_list.append('--location')
+      if not verify:
+        command_list.append('--insecure')
+      if headers is None:
+        headers = {}
+      for header, value in headers.items():
+        command_list.extend(['--header', '%s: %s' % (header, value)])
+      if auth is not None:
+        command_list.extend(['--user', '%s:%s' % auth])
+      if resolve_all is not None:
+        for port, ip in resolve_all.items():
+          command_list.extend(['--resolve', '*:%s:%s' % (port, ip)])
+      if http3_only:
+        command_list.append('--http3-only')
+        if timeout is None:
+          # forcibly set timeout to some nice value to detect case 2 of HTTP3
+          # unavailable
+          timeout = 5
+      if timeout is not None:
+        if isinstance(timeout, int) or isinstance(timeout, float):
+          command_list.extend(['--max-time', str(timeout)])
+        else:
+          command_list.exetend(['--connect-timeout', str(timeout[0]), '--max-time', str(timeout[1])])
+      elif http3:
+        command_list.append('--http3')
+      command_list.append(url)
+      prc = subprocess.Popen(
+        command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
+      response = RecurlestsResponse()
+      response.command_output, response.command_error = [
+        q.decode() for q in prc.communicate()]
+      if http3_only:
+        # 1st case - the server does not implemented HTTP3 on udp at all
+        if re.match(
+          'curl: \\(7\\) ngtcp2: connection to .* port .* refused',
+          response.command_error
+        ):
+          raise RecurlestsHttp3ForcedFailedException
+        # 2nd case - the server does not implement HTTP3 for given site
+        if re.match(
+          'curl: \\(28\\) Connection timed out after .* milliseconds',
+          response.command_error
+        ):
+          raise RecurlestsHttp3ForcedFailedException
+      response.command_returncode = prc.returncode
+      try:
+        response.write_out_json = json.loads(response.command_output)
+      except Exception:
+        raise
+      with open(response_file) as fh:
+        response.text = fh.read()
+      with open(response_header_file) as fh:
+        response.header_text = fh.read()
+      response.headers = requests.structures.CaseInsensitiveDict()
+      response.protocol = response.write_out_json['http_version']
+      response.status_code = int(response.write_out_json['http_code'])
+      if response.status_code < 400 and response.status_code != 0:
+        response.ok = True
+      else:
+        response.ok = False
+      response.content_type = response.write_out_json['content_type']
+      response.method = response.write_out_json['method']
+      response.response_code = response.write_out_json['response_code']
+      response.speed_download = response.write_out_json['speed_download']
+      response.speed_upload = response.write_out_json['speed_upload']
+      response.time_appconnect = response.write_out_json['time_appconnect']
+      response.time_connect = response.write_out_json['time_connect']
+      response.time_namelookup = response.write_out_json['time_namelookup']
+      response.time_pretransfer = response.write_out_json['time_pretransfer']
+      response.time_redirect = response.write_out_json['time_redirect']
+      response.time_starttransfer = response.write_out_json['time_starttransfer']
+      response.time_total = response.write_out_json['time_total']
+      response.elapsed = float(response.time_total)
+      response.url = response.write_out_json['url']
+      response.url_effective = response.write_out_json['url_effective']
+      response.urlnum = response.write_out_json['urlnum']
+      response.curl_version = response.write_out_json['curl_version']
+      header_list = response.header_text.splitlines()
+      for line in header_list[1:]:
+        if line.strip():
+         header, value = line.split(':', 1)
+         response.headers[header] = value.strip()
+      response.command_list = command_list
+      return response
+    finally:
+      os.unlink(alt_svc)
+      os.unlink(response_header_file)
+      os.unlink(response_file)
+    # kwargs:
+    #  params – (optional) Dictionary, list of tuples or bytes to send in the query string for the Request.
+    #  data – (optional) Dictionary, list of tuples, bytes, or file-like object to send in the body of the Request.
+    #  json – (optional) A JSON serializable Python object to send in the body of the Request.
+    #  cookies – (optional) Dict or CookieJar object to send with the Request.
+    #  files – (optional) Dictionary of 'name': file-like-objects (or {'name':
+    #  proxies – (optional) Dictionary mapping protocol to the URL of the proxy.
+    #  stream – (optional) if False, the response content will be immediately downloaded.
+    #  cert – (optional) if String, path to ssl client cert file (.pem). If Tuple, (‘cert’, ‘key’) pair.
+
+
 class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -7241,63 +7394,90 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'url': {
         'url': cls.backend_url,
       },
-      'enable_cache': {
+      'http2-false': {
         'url': cls.backend_url,
-        'enable_cache': True,
+        'enable-http2': False
+      },
+      'http3-false': {
+        'url': cls.backend_url,
+        'enable-http3': False
       },
     }
 
-  def get_curl_http3(self):
-    # Very hacky way to fetch curl from own software release instead of
-    # polluting slapos-sr-testing
-    with open(os.path.join(self.software_path, '.installed.cfg')) as fh:
-      for line in fh.readlines():
-        if line.startswith('location =') and 'curl-http3' in line:
-          return '/'.join([line.strip().split()[-1], 'bin/curl'])
-
-  def assertHttp3(self, domain, direct=True):
-    alt_svc = tempfile.NamedTemporaryFile(delete=False)
-    curl_command = [self.get_curl_http3()]
-    if direct:
-      curl_command.append('--http3')
-    else:
-      curl_command.extend(['--alt-svc', alt_svc.name])
-    curl_command.extend([
-      '-k',
-      '-v',
-      '-D', '-',
-      '-o', '/dev/null',
-      '-H', 'Host: %s' % (domain,),
-      '--resolve', '%(domain)s:%(https_port)s:%(ip)s' % dict(
-        ip=TEST_IP, domain=domain, https_port=HTTPS_PORT),
-      'https://%(domain)s:%(https_port)s/' % dict(
-        domain=domain, https_port=HTTPS_PORT),
-    ])
-
-    def call_curl():
-      prc = subprocess.Popen(
-        curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-      )
-      out, err = prc.communicate()
-      assert prc.returncode == 0, "Problem running %r. "\
-          "Output:\n%s\nError:\n%s" % (
-            ' '.join(curl_command), out, err)
-      return [q.strip() for q in out.decode().splitlines()]
-
-    if not direct:
-      # curl with alt-svc does not switch to HTTP3 in one request
-      self.assertEqual('HTTP/2 200', call_curl()[0])
-    self.assertEqual('HTTP/3 200', call_curl()[0])
-
   def test_url(self):
     parameter_dict = self.assertSlaveBase('url')
-    self.assertHttp3(parameter_dict['domain'])
-    self.assertHttp3(parameter_dict['domain'], direct=False)
+    result = Recurlests('curl').request(
+      'GET',
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False,
+      http3_only=True, timeout=1,
+    )
+    self.assertTrue(result.ok)
+    self.assertEqual(result.protocol, '3')
+    result = Recurlests('curl').request(
+      'GET',
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False,
+    )
+    self.assertTrue(result.ok)
+    self.assertEqual(result.protocol, '3')
+    self.assertEqual(
+      result.headers['alt-svc'],
+      'h3=":%s"; ma=3600' % (HTTPS_PORT,)
+    )
+    self.assertEqual(
+      result.headers['alternate-protocol'],
+      '%s:quic' % (HTTPS_PORT,)
+    )
 
-  def test_enable_cache(self):
-    parameter_dict = self.assertSlaveBase('enable_cache')
-    self.assertHttp3(parameter_dict['domain'])
-    self.assertHttp3(parameter_dict['domain'], direct=False)
+  def test_http2_false(self):
+    parameter_dict = self.assertSlaveBase('http2-false')
+    with self.assertRaises(RecurlestsHttp3ForcedFailedException):
+      Recurlests('curl').request(
+        'GET',
+        'https://%(domain)s:%(https_port)s/' % dict(
+          domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+        resolve_all={HTTPS_PORT: TEST_IP},
+        verify=False,
+        http3_only=True, timeout=1,
+      )
+    result = Recurlests('curl').request(
+      'GET',
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False,
+    )
+    self.assertEqual('1', result.protocol)
+    self.assertNotIn('alt-svc', result.headers)
+    self.assertNotIn('alternate-protocol', result.headers)
+
+  def test_http3_false(self):
+    parameter_dict = self.assertSlaveBase('http3-false')
+    with self.assertRaises(RecurlestsHttp3ForcedFailedException):
+      Recurlests('curl').request(
+        'GET',
+        'https://%(domain)s:%(https_port)s/' % dict(
+          domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+        resolve_all={HTTPS_PORT: TEST_IP},
+        verify=False,
+        http3_only=True, timeout=1,
+      )
+    result = Recurlests('curl').request(
+      'GET',
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False,
+      http3=True,
+    )
+    self.assertEqual('2', result.protocol)
+    self.assertNotIn('alt-svc', result.headers)
+    self.assertNotIn('alternate-protocol', result.headers)
 
 
 if __name__ == '__main__':
