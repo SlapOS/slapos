@@ -185,6 +185,23 @@ def test_sim_card(self):
     p = p['_'] if '_' in p else p
     self.assertIn('info', p)
 
+def test_monitor_gadget_url(self):
+    parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
+    self.assertIn('monitor-gadget-url', parameters)
+    monitor_setup_url = parameters['monitor-setup-url']
+    monitor_gadget_url = parameters['monitor-gadget-url']
+    monitor_base_url = parameters['monitor-base-url']
+    public_url = monitor_base_url + '/public'
+    response = requests.get(public_url, verify=False)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    self.assertIn('software.cfg.html', monitor_gadget_url)
+    response = requests.get(monitor_gadget_url, verify=False)
+    self.assertEqual(requests.codes['OK'], response.status_code)
+    self.assertIn('<script src="rsvp.js"></script>', response.text)
+    self.assertIn('<script src="renderjs.js"></script>', response.text)
+    self.assertIn('<script src="g-chart.line.js"></script>', response.text)
+    self.assertIn('<script src="promise.gadget.js"></script>', response.text)
+
 class TestENBParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
@@ -264,33 +281,77 @@ def requestSlaveInstance(cls, software_type):
         software_type=software_type,
     )
 
-class TestMonitorGadgetUrl(ORSTestCase):
+class TestEPCMonitorGadgetUrl(ORSTestCase):
     @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
+    def getInstanceSoftwareType(cls):
+        return "epc"
 
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
+
+class TestENBMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "enb"
+
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
+
+class TestENBEPCMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb-epc"
 
     def test_monitor_gadget_url(self):
-        parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
-        self.assertIn('monitor-gadget-url', parameters)
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
 
-        monitor_setup_url = parameters['monitor-setup-url']
-        monitor_gadget_url = parameters['monitor-gadget-url']
-        monitor_base_url = parameters['monitor-base-url']
-        public_url = monitor_base_url + '/public'
-        response = requests.get(public_url, verify=False)
-        self.assertEqual(requests.codes['OK'], response.status_code)
+class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "gnb-epc"
 
-        self.assertIn('software.cfg.html', monitor_gadget_url)
-        response = requests.get(monitor_gadget_url, verify=False)
-        self.assertEqual(requests.codes['OK'], response.status_code)
-        self.assertIn('<script src="rsvp.js"></script>', response.text)
-        self.assertIn('<script src="renderjs.js"></script>', response.text)
-        self.assertIn('<script src="g-chart.line.js"></script>', response.text)
-        self.assertIn('<script src="promise.gadget.js"></script>', response.text)
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
+
+class TestGNBMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "gnb"
+
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
+
+class TestMMEMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "mme"
+
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
+
+class TestUELTEMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-lte"
+
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
+
+class TestUENRMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue-nr"
+
+    def test_monitor_gadget_url(self):
+      self.slap.waitForInstance() # Wait until publish is done
+      test_monitor_gadget_url(self)
 
 class TestEPCSimCard(ORSTestCase):
     @classmethod
