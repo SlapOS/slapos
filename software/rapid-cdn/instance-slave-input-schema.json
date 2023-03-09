@@ -94,6 +94,16 @@
       "title": "Enable HTTP2 Protocol",
       "type": "string"
     },
+    "enable-http3": {
+      "default": "true",
+      "description": "Use HTTP3 Protocol for the site. Setting it to forces enable-http2 too. The end results depends on the cluster configuration.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Enable HTTP3 Protocol",
+      "type": "string"
+    },
     "https-url": {
       "description": "HTTPS URL of the backend if it is different from url parameter",
       "pattern": "^(http|https|ftp)://",
