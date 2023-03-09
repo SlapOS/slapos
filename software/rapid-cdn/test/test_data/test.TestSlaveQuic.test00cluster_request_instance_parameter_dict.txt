@@ -34,10 +34,17 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "enable_cache": true,
+        "enable-http2": false,
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache",
-        "slave_title": "_enable_cache",
+        "slave_reference": "_http2-false",
+        "slave_title": "_http2-false",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http3": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_http3-false",
+        "slave_title": "_http3-false",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       }
     ],
@@ -54,8 +61,13 @@
       "monitor-username": "admin",
       "slave-list": [
         {
-          "enable_cache": true,
-          "slave_reference": "_enable_cache",
+          "enable-http2": false,
+          "slave_reference": "_http2-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http3": false,
+          "slave_reference": "_http3-false",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -89,7 +101,7 @@
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "cluster-identification": "testing partition 0",
       "domain": "example.com",
-      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_enable_cache\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_url\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
+      "extra_slave_instance_list": "[{\"enable-http2\": false, \"slave_reference\": \"_http2-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": false, \"slave_reference\": \"_http3-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_url\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-haproxy-flavour": "quic",
       "frontend-haproxy-quic": "True",
       "frontend-name": "caddy-frontend-1",
@@ -103,7 +115,7 @@
       "plain_http_port": "11080",
       "port": "11443",
       "request-timeout": "12",
-      "slave-kedifa-information": "{\"_enable_cache\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_key-generate-auth-url@@/@@enable_cache_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_key-generate-auth-url@@?auth=\"}, \"_url\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url_key-generate-auth-url@@/@@enable_cache_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url_key-generate-auth-url@@?auth=\"}}"
+      "slave-kedifa-information": "{\"_http2-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@http2-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@http2-false_key-generate-auth-url@@/@@http2-false_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@http2-false_key-generate-auth-url@@?auth=\"}, \"_http3-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@http3-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@http3-false_key-generate-auth-url@@/@@http2-false_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@http3-false_key-generate-auth-url@@?auth=\"}, \"_url\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url_key-generate-auth-url@@/@@http2-false_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
