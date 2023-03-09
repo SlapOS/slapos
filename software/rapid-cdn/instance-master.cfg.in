@@ -55,6 +55,7 @@
       'disable-via-header',
       'disabled-cookie-list',
       'enable-http2',
+      'enable-http3',
       'enable_cache',
       'health-check',
       'health-check-authenticate-to-failover-backend',
@@ -139,6 +140,10 @@ context =
 
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
+{% set NODE_DEFAULT_KEY_VALUE = {
+  'enable-http3': 'false',
+  'http3-port': '443'
+} %}
 {% for i in range(1, frontend_quantity + 1) %}
 {%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
 {%   set request_section_title = 'request-%s' % frontend_name %}
@@ -153,9 +158,20 @@ context =
 {%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
 # We check for specific configuration regarding the frontend
 {%     elif key.startswith(config_key) %}
-{%       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
+{%       set node_config_key = key[config_key_length:] %}
+{%       if node_config_key in ('enable-http3', 'http3-port') %}
+{%         do config_dict.__setitem__(node_config_key, slapparameter_dict.pop(key) or slapparameter_dict.get(node_config_key) or NODE_DEFAULT_KEY_VALUE[node_config_key]) %}
+{%       else %}
+{%         do config_dict.__setitem__(node_config_key, slapparameter_dict.pop(key)) %}
+{%       endif %}
 {%     endif %}
 {%   endfor %}
+{%   if 'http3-port' not in config_dict %}
+{%     do config_dict.__setitem__('http3-port', slapparameter_dict.get('http3-port') or NODE_DEFAULT_KEY_VALUE['http3-port']) %}
+{%   endif %}
+{%   if 'enable-http3' not in config_dict %}
+{%     do config_dict.__setitem__('enable-http3', slapparameter_dict.get('enable-http3') or NODE_DEFAULT_KEY_VALUE['enable-http3']) %}
+{%   endif %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
 {%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
 {%   set state_key = "-frontend-%s-state" % i %}
@@ -165,12 +181,6 @@ context =
 {%     do frontend_section_list.append(request_section_title) %}
 {%   endif %}
 {%   do part_list.append(request_section_title) %}
-{%   set frontend_haproxy_flavour_key = "-frontend-%s-experimental-haproxy-flavour" % i %}
-{%   do config_dict.__setitem__('frontend-haproxy-flavour', slapparameter_dict.get(frontend_haproxy_flavour_key) or 'basic') %}
-{%   set frontend_haproxy_quic_key = "-frontend-%s-experimental-haproxy-quic" % i %}
-{%   do config_dict.__setitem__('frontend-haproxy-quic', slapparameter_dict.get(frontend_haproxy_quic_key) or 'False') %}
-{%   set frontend_quic_port_key = "-frontend-%s-experimental-quic-port" % i %}
-{%   do config_dict.__setitem__('frontend-quic-port', slapparameter_dict.get(frontend_quic_port_key) or '443') %}
 # Filling request dict for slave
 {%   set request_content_dict = {
                                   'config': config_dict,
