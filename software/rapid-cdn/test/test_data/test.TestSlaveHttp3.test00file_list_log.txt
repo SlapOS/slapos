@@ -8,8 +8,12 @@ T-1/var/log/monitor-httpd-error.log
 T-2/var/log/backend-haproxy.log
 T-2/var/log/expose-csr.log
 T-2/var/log/frontend-haproxy.log
-T-2/var/log/httpd/_enable_cache_access_log
-T-2/var/log/httpd/_enable_cache_backend_log
+T-2/var/log/httpd/_http2-false_access_log
+T-2/var/log/httpd/_http2-false_backend_log
+T-2/var/log/httpd/_http3-false_access_log
+T-2/var/log/httpd/_http3-false_backend_log
+T-2/var/log/httpd/_http3-true-http2-false_access_log
+T-2/var/log/httpd/_http3-true-http2-false_backend_log
 T-2/var/log/httpd/_url_access_log
 T-2/var/log/httpd/_url_backend_log
 T-2/var/log/monitor-httpd-access.log
