@@ -82,9 +82,6 @@ frontend https-frontend
 {%- if QUIC %}
   bind quic4@{{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
   bind quic6@{{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
-  http-response set-header alt-svc "h3=\":{{ configuration['quic-port'] }}\"; ma=3600"
-  {#- Ask Chromium to use QUIC #}
-  http-response set-header alternate-protocol {{ configuration['quic-port'] }}:quic
 {%- endif %}
 {{ frontend_common() }}
 {%- for slave_instance in frontend_slave_list -%}
@@ -100,6 +97,11 @@ frontend https-frontend
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-     if QUIC and slave_instance['enable-http3'] %}
+  http-response set-header alt-svc "h3=\":{{ configuration['quic-port'] }}\"; ma=3600"
+  {#- Ask Chromium to use QUIC #}
+  http-response set-header alternate-protocol {{ configuration['quic-port'] }}:quic
+{%-     endif %}
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
   redirect scheme https code 302
