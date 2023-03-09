@@ -7392,7 +7392,7 @@ class Recurlests(object):
 mimikra = Recurlests()
 
 
-class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+class TestSlaveHttp3(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -7402,9 +7402,8 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'request-timeout': '12',
-      '-frontend-1-experimental-haproxy-quic': True,
-      '-frontend-1-experimental-haproxy-flavour': 'quic',
-      '-frontend-1-experimental-quic-port': HTTPS_PORT,
+      'enable-http3': 'True',
+      'http3-port': HTTPS_PORT,
     }
 
   @classmethod
