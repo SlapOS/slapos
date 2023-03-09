@@ -6804,11 +6804,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-1',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6832,11 +6831,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-2',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6860,11 +6858,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-3',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -7414,7 +7411,7 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
 
-class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+class TestSlaveHttp3(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -7424,9 +7421,8 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'request-timeout': '12',
-      '-frontend-1-experimental-haproxy-quic': True,
-      '-frontend-1-experimental-haproxy-flavour': 'quic',
-      '-frontend-1-experimental-quic-port': HTTPS_PORT,
+      'enable-http3': 'True',
+      'http3-port': HTTPS_PORT,
     }
 
   @classmethod
@@ -7442,6 +7438,11 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'http3-false': {
         'url': cls.backend_url,
         'enable-http3': False
+      },
+      'http3-true-http2-false': {
+        'url': cls.backend_url,
+        'enable-http2': False,
+        'enable-http3': True,
       },
     }
 
@@ -7475,14 +7476,15 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_http2_false(self):
     parameter_dict = self.assertSlaveBase('http2-false')
-    with self.assertRaises(RecurlestsHttp3ForcedFailedException):
+    self.assertEqual(
+      '0',
       mimikra.get(
         'https://%(domain)s:%(https_port)s/' % dict(
           domain=parameter_dict['domain'], https_port=HTTPS_PORT),
         resolve_all={HTTPS_PORT: TEST_IP},
         verify=False,
         http3_only=True
-      )
+      ).protocol)
     result = mimikra.get(
       'https://%(domain)s:%(https_port)s/' % dict(
         domain=parameter_dict['domain'], https_port=HTTPS_PORT),
@@ -7495,14 +7497,15 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_http3_false(self):
     parameter_dict = self.assertSlaveBase('http3-false')
-    with self.assertRaises(RecurlestsHttp3ForcedFailedException):
+    self.assertEqual(
+      '0',
       mimikra.get(
         'https://%(domain)s:%(https_port)s/' % dict(
           domain=parameter_dict['domain'], https_port=HTTPS_PORT),
         resolve_all={HTTPS_PORT: TEST_IP},
         verify=False,
         http3_only=True
-      )
+      ).protocol)
     result = mimikra.get(
       'https://%(domain)s:%(https_port)s/' % dict(
         domain=parameter_dict['domain'], https_port=HTTPS_PORT),
@@ -7511,6 +7514,28 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       http3=True,
     )
     self.assertEqual('2', result.protocol)
+    self.assertNotIn('alt-svc', result.headers)
+    self.assertNotIn('alternate-protocol', result.headers)
+
+  def test_http3_true_http2_false(self):
+    parameter_dict = self.assertSlaveBase('http3-true-http2-false')
+    self.assertEqual(
+      '0',
+      mimikra.get(
+        'https://%(domain)s:%(https_port)s/' % dict(
+          domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+        resolve_all={HTTPS_PORT: TEST_IP},
+        verify=False,
+        http3_only=True
+      ).protocol)
+    result = mimikra.get(
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=parameter_dict['domain'], https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False,
+      http3=True,
+    )
+    self.assertEqual('1', result.protocol)
     self.assertNotIn('alt-svc', result.headers)
     self.assertNotIn('alternate-protocol', result.headers)
 
