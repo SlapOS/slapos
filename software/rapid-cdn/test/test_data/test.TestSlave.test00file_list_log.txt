@@ -37,6 +37,10 @@ T-2/var/log/httpd/_enable-http2-default_access_log
 T-2/var/log/httpd/_enable-http2-default_backend_log
 T-2/var/log/httpd/_enable-http2-false_access_log
 T-2/var/log/httpd/_enable-http2-false_backend_log
+T-2/var/log/httpd/_enable-http3-default_access_log
+T-2/var/log/httpd/_enable-http3-default_backend_log
+T-2/var/log/httpd/_enable-http3-true_access_log
+T-2/var/log/httpd/_enable-http3-true_backend_log
 T-2/var/log/httpd/_enable_cache-disable-no-cache-request_access_log
 T-2/var/log/httpd/_enable_cache-disable-no-cache-request_backend_log
 T-2/var/log/httpd/_enable_cache-disable-via-header_access_log
