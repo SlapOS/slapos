@@ -120,6 +120,7 @@ url = {{ slapparameter_dict['database-list'][0] }}
 #-- Common network parameters
 [apache-network-configuration]
 listening-ip = {{ (ipv6 | list)[0] }}
+listening-ip4 = {{ (ipv4 | list)[0] }}
 listening-port = 9988
 
 
