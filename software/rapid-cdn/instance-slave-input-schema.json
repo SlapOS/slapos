@@ -95,7 +95,7 @@
       "type": "string"
     },
     "enable-http3": {
-      "description": "Use HTTP3 Protocol for the site. The default value follows enable-http2 switch. Setting it to forces enable-http2 too.",
+      "description": "Use HTTP3 Protocol for the site. The default value follows enable-http2 switch. Setting it to forces enable-http2 too. The end results depends on the cluster configuration.",
       "enum": [
         "true",
         "false"
