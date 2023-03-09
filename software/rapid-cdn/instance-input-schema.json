@@ -34,6 +34,28 @@
       "title": "Enable HTTP2 by Default",
       "type": "string"
     },
+    "enable-http3": {
+      "default": "false",
+      "title": "Enable HTTP3",
+      "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "type": "string"
+    },
+    "http3-port": {
+      "default": 443,
+      "title": "Real advertised HTTP3 port",
+      "description": "As most common deloyment is using iptables for port redirection and in case of udp it is advertising to the process it's bind port instead of the really connected to, it's required to manually set this port for the whole cluster. Can be precisely set on each node by -frontend-i-config-http3-port",
+      "type": "integer"
+    },
+    "https-url": {
+      "description": "HTTPS URL of the backend if it is different from url parameter",
+      "pattern": "^(http|https|ftp)://",
+      "title": "HTTPS Backend URL",
+      "type": "string"
+    },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
