@@ -38,10 +38,10 @@ configuration.interface = 0.0.0.0
 configuration.opc_ua_port = 4840
 configuration.id = 0
 configuration.heart_beat = 0
-configuration.heart_beat_interval = 500
+configuration.heart_beat_interval = 50
 configuration.heart_beat_id_list =
 configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
-configuration.heart_beat_timeout_interval = 2000
+configuration.heart_beat_timeout_interval = 100
 configuration.network_interface =
 
 [directory]
