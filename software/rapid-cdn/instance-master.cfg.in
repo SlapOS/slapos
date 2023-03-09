@@ -55,6 +55,7 @@
       'disable-via-header',
       'disabled-cookie-list',
       'enable-http2',
+      'enable-http3',
       'enable_cache',
       'health-check',
       'health-check-authenticate-to-failover-backend',
