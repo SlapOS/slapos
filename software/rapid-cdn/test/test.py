@@ -6795,11 +6795,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-1',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6823,11 +6822,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-2',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6851,11 +6849,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-3',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -6899,7 +6896,9 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ciphers': 'ciphers',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'full_address_list': [],
+        'http3-port': '443',
         'instance_title': 'testing partition 0',
         'kedifa_port': '15080',
         'plain_http_port': '11080',
@@ -7405,7 +7404,7 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
 
-class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+class TestSlaveHttp3(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -7415,9 +7414,8 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'request-timeout': '12',
-      '-frontend-1-experimental-haproxy-quic': True,
-      '-frontend-1-experimental-haproxy-flavour': 'quic',
-      '-frontend-1-experimental-quic-port': HTTPS_PORT,
+      'enable-http3': 'True',
+      'http3-port': HTTPS_PORT,
     }
 
   @classmethod
