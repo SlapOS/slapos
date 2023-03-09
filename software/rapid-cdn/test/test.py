@@ -1156,12 +1156,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     HTTPResponse = requests.packages.urllib3.response.HTTPResponse
     if getattr(HTTPResponse, 'orig__init__', None) is not None:
       HTTPResponse.__init__ = HTTPResponse.orig__init__
-      del(HTTPResponse.orig__init__)
+      del (HTTPResponse.orig__init__)
 
     HTTPAdapter = requests.adapters.HTTPAdapter
     if getattr(HTTPAdapter, 'orig_build_response', None) is not None:
       HTTPAdapter.build_response = HTTPAdapter.orig_build_response
-      del(HTTPAdapter.orig_build_response)
+      del (HTTPAdapter.orig_build_response)
 
   def setUp(self):
     # patch requests in order to being able to extract SSL certs
