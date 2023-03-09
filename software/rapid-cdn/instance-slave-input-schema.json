@@ -94,6 +94,15 @@
       "title": "Enable HTTP2 Protocol",
       "type": "string"
     },
+    "enable-http3": {
+      "description": "Use HTTP3 Protocol for the site. The default value follows enable-http2 switch. Setting it to forces enable-http2 too.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Enable HTTP3 Protocol",
+      "type": "string"
+    },
     "https-url": {
       "description": "HTTPS URL of the backend if it is different from url parameter",
       "pattern": "^(http|https|ftp)://",
