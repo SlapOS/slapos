@@ -9,12 +9,6 @@
 {%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['http-port']) %}
 {%- set backend_haproxy_https_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set ALPN_HTTP11 = "alpn http/1.1,http/1.0" %}
-{%- if quic.lower() in TRUE_VALUES %}
-{%-   set ALPN_HTTP2PLUS = "alpn h3,h2,http/1.1,http/1.0" %}
-{%- else %}
-{%-   set ALPN_HTTP2PLUS = "alpn h2,http/1.1,http/1.0" %}
-{%- endif %}
 {%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter_dict['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
 {%- set slave_log_dict = {} %}
 {%- set slave_instance_information_list = [] %}
@@ -88,7 +82,6 @@ context =
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('health-check-failover-ssl-proxy-verify', ('' ~ slave_instance.get('health-check-failover-ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
-{%-   do slave_instance.__setitem__('enable-http2', ('' ~ slave_instance.get('enable-http2', configuration['enable-http2-by-default'])).lower() in TRUE_VALUES) %}
 {%-   for key in ['https-only', 'websocket-transparent'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
@@ -239,6 +232,18 @@ context =
 {%-   endif %}
 {%-   do slave_instance.__setitem__('host_list', host_list) %}
 {%-   do slave_instance.__setitem__('type', slave_instance.get('type', '')) %}
+{%-   if slave_instance['type'] in ['notebook', 'websocket'] %}
+{#-     For websocket like sites forcibly disable HTTP2 and HTTP3 #}
+{%-     do slave_instance.__setitem__('enable-http2', False) %}
+{%-     do slave_instance.__setitem__('enable-http3', False) %}
+{%-   else %}
+{%-     do slave_instance.__setitem__('enable-http2', ('' ~ slave_instance.get('enable-http2', configuration['enable-http2-by-default'])).lower() in TRUE_VALUES) %}
+{%-     if slave_instance['enable-http2'] %}
+{%-       do slave_instance.__setitem__('enable-http3', ('' ~ slave_instance.get('enable-http3', configuration['enable-http3'])).lower() in TRUE_VALUES) %}
+{%-     else %}
+{%-       do slave_instance.__setitem__('enable-http3', False) %}
+{%-     endif %}
+{%-   endif %}
 {%-   set websocket_path_list = [] %}
 {%-   for websocket_path in slave_instance.get('websocket-path-list', '').split() %}
 {%-     set websocket_path = websocket_path.strip('/') %}
@@ -250,11 +255,14 @@ context =
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('websocket-path-list', websocket_path_list) %}
 {#- Handle alpn negotiation -#}
-{%-   if slave_instance['type'] in ['notebook', 'websocket'] or not slave_instance['enable-http2'] %}
-{#    websocket style needs http 1.1 max, just like non-http2 frontends #}
-{%-     do slave_instance.__setitem__('alpn', ALPN_HTTP11) %}
+{%-   if not slave_instance['enable-http2'] %}
+{%-     do slave_instance.__setitem__('alpn', "alpn http/1.1,http/1.0") %}
 {%-   else %}
-{%-     do slave_instance.__setitem__('alpn', ALPN_HTTP2PLUS) %}
+{%-     if http3.lower() in TRUE_VALUES and slave_instance['enable-http3'] %}
+{%-       do slave_instance.__setitem__('alpn', "alpn h3,h2,http/1.1,http/1.0") %}
+{%-     else %}
+{%-       do slave_instance.__setitem__('alpn', "alpn h2,http/1.1,http/1.0") %}
+{%-     endif %}
 {%-   endif %}
 
 [slave-log-directory-dict]
