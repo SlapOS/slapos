@@ -29,7 +29,6 @@ import glob
 import os
 from recurls.recurls import Recurls
 import http.client
-from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
@@ -90,28 +89,9 @@ SOURCE_IP = '127.0.0.1'
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
-# "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
-DNS_CACHE = {}
-
 
 def unicode_escape(s):
   return s.encode('unicode_escape').decode()
-
-
-def add_custom_dns(domain, port, ip):
-  port = int(port)
-  key = (domain, port)
-  value = (socket.AF_INET, 1, 6, '', (ip, port))
-  DNS_CACHE[key] = [value]
-
-
-def new_getaddrinfo(*args):
-  return DNS_CACHE[args[:2]]
-
-
-def der2pem(der):
-  certificate = x509.load_der_x509_certificate(der, default_backend())
-  return certificate.public_bytes(serialization.Encoding.PEM)
 
 
 # comes from https://stackoverflow.com/a/21788372/9256748
@@ -512,7 +492,7 @@ class TestDataMixin(object):
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, cookies=None, source_ip=SOURCE_IP):
+                    headers=None, source_ip=SOURCE_IP):
   if headers is None:
     headers = {}
   # workaround request problem of setting Accept-Encoding
@@ -525,33 +505,24 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   # Expose some Via to show how nicely it arrives to the backend
   headers.setdefault('Via', 'http/1.1 clientvia')
 
-  session = requests.Session()
-  with session:
-    if source_ip is not None:
-      new_source = source.SourceAddressAdapter(source_ip)
-      session.mount('http://', new_source)
-      session.mount('https://', new_source)
-    socket_getaddrinfo = socket.getaddrinfo
-    try:
-      add_custom_dns(domain, port, TEST_IP)
-      socket.getaddrinfo = new_getaddrinfo
-      # Use a prepared request, to disable path normalization.
-      # We need this because some test checks requests with paths like
-      # /test-path/deep/.././deeper but we don't want the client to send
-      # /test-path/deeper
-      # See also https://github.com/psf/requests/issues/5289
-      url = 'https://%s:%s/%s' % (domain, port, path)
-      req = requests.Request(
-          method='GET',
-          url=url,
-          headers=headers,
-          cookies=cookies,
-      )
-      prepped = req.prepare()
-      prepped.url = url
-      return session.send(prepped, verify=False, allow_redirects=False)
-    finally:
-      socket.getaddrinfo = socket_getaddrinfo
+  url = 'https://%s:%s/%s' % (domain, port, path)
+
+  return mimikra.get(
+    url,
+    headers=headers,
+    verify=False,
+    allow_redirects=False,
+    source_ip=source_ip,
+    resolve_all={
+      port: TEST_IP
+    }
+  )
+  # XXX: Reassert below
+  # Use a prepared request, to disable path normalization.
+  # We need this because some test checks requests with paths like
+  # /test-path/deep/.././deeper but we don't want the client to send
+  # /test-path/deeper
+  # See also https://github.com/psf/requests/issues/5289
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
@@ -568,19 +539,17 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   # Expose some Via to show how nicely it arrives to the backend
   headers.setdefault('Via', 'http/1.1 clientvia')
   headers['Host'] = '%s:%s' % (domain, port)
-  session = requests.Session()
-  with session:
-    if source_ip is not None:
-      new_source = source.SourceAddressAdapter(source_ip)
-      session.mount('http://', new_source)
-      session.mount('https://', new_source)
-
-    # Use a prepared request, to disable path normalization.
-    url = 'http://%s:%s/%s' % (TEST_IP, port, path)
-    req = requests.Request(method='GET', url=url, headers=headers)
-    prepped = req.prepare()
-    prepped.url = url
-    return session.send(prepped, allow_redirects=False)
+  url = 'http://%s:%s/%s' % (TEST_IP, port, path)
+  return mimikra.get(
+    url,
+    headers=headers,
+    verify=False,
+    allow_redirects=False,
+    source_ip=source_ip,
+    resolve_all={
+      port: TEST_IP
+    }
+  )
 
 
 class TestHandler(BaseHTTPRequestHandler):
@@ -826,7 +795,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   def startAuthenticatedServerProcess(self):
     master_parameter_dict = self.parseConnectionParameterDict()
     caucase_url = master_parameter_dict['backend-client-caucase-url']
-    ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
+    ca_certificate = mimikra.get(
+      caucase_url + '/cas/crt/ca.crt.pem')
     assert ca_certificate.status_code == http.client.OK
     ca_certificate_file = os.path.join(
       self.working_directory, 'ca-backend-client.crt.pem')
@@ -868,7 +838,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def _fetchKedifaCaucaseCaCertificateFile(cls, parameter_dict):
-    ca_certificate = requests.get(
+    ca_certificate = mimikra.get(
       parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
     assert ca_certificate.status_code == http.client.OK
     cls.kedifa_caucase_ca_certificate_file = os.path.join(
@@ -878,7 +848,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def _fetchBackendClientCaCertificateFile(cls, parameter_dict):
-    ca_certificate = requests.get(
+    ca_certificate = mimikra.get(
       parameter_dict['backend-client-caucase-url'] + '/cas/crt/ca.crt.pem')
     assert ca_certificate.status_code == http.client.OK
     cls.backend_client_caucase_ca_certificate_file = os.path.join(
@@ -890,11 +860,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   def setUpMaster(cls):
     parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
     cls._fetchKedifaCaucaseCaCertificateFile(parameter_dict)
-    auth = requests.get(
+    auth = mimikra.get(
       parameter_dict['master-key-generate-auth-url'],
       verify=cls.kedifa_caucase_ca_certificate_file)
     assert auth.status_code == http.client.CREATED
-    upload = requests.put(
+    upload = mimikra.put(
       parameter_dict['master-key-upload-url'] + auth.text,
       data=cls.key_pem + cls.certificate_pem,
       verify=cls.kedifa_caucase_ca_certificate_file)
@@ -945,7 +915,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       'publish-failsafe-error-promise-url')
 
     try:
-      result = requests.get(promise_url, verify=False)
+      result = mimikra.get(promise_url, verify=False)
       self.assertEqual("", result.text)
     except AssertionError:
       raise
@@ -957,7 +927,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       'rejected-slave-promise-url')
 
     try:
-      result = requests.get(rejected_slave_promise_url, verify=False)
+      result = mimikra.get(rejected_slave_promise_url, verify=False)
       if result.text == '':
         result_json = {}
       else:
@@ -978,7 +948,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       resolve_all={HTTPS_PORT: TEST_IP},
       verify=False
     )
-    self.assertEqual('2', result.protocol)
+    self.assertEqual('2', result.effective_http_version)
 
   def assertHttp11(self, domain):
     result = mimikra.get(
@@ -987,7 +957,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       resolve_all={HTTPS_PORT: TEST_IP},
       verify=False
     )
-    self.assertEqual('1.1', result.protocol)
+    self.assertEqual('1.1', result.effective_http_version)
 
   def assertHttp1(self, domain):
     result = mimikra.get(
@@ -996,12 +966,29 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       resolve_all={HTTPS_PORT: TEST_IP},
       verify=False
     )
-    self.assertEqual('1', result.protocol)
+    self.assertEqual('1', result.effective_http_version)
 
   def assertResponseHeaders(
-    self, result, cached=False, via=True, backend_reached=True):
+    self, result, cached=False, via=True, backend_reached=True,
+    client_version=None, alt_svc=None):
+    if client_version is None:
+      client_version = self.max_client_version
+    if alt_svc is None:
+      alt_svc = self.alt_svc
     headers = result.headers.copy()
     self.assertKeyWithPop('Content-Length', headers)
+    if 'Connection' in headers and headers[
+      'Connection'].lower() == 'keep-alive':
+      headers.pop('Connection')
+    if alt_svc:
+      self.assertEqual(
+        'h3=":%s"; ma=3600' % (HTTPS_PORT,),
+        headers.pop('Alt-Svc', '')
+      )
+      self.assertEqual(
+        '%s:quic' % (HTTPS_PORT,),
+        headers.pop('Alternate-Protocol', '')
+      )
 
     if backend_reached:
       self.assertEqual('TestBackend', headers.pop('Server', ''))
@@ -1017,14 +1004,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
           'http/1.1 backendvia, '
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
           'http/1.0 rapid-cdn-cache-%(via_id)s, '
-          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           headers.pop('Via')
         )
       else:
         self.assertEqual(
           'http/1.1 backendvia, '
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           headers.pop('Via')
         )
     else:
@@ -1041,7 +1030,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     if len(entry) != 2:
       self.fail('Cannot parse %r' % (log_access,))
     frontend, url = entry
-    result = requests.get(url, verify=False)
+    result = mimikra.get(url, verify=False)
     self.assertEqual(
       http.client.OK,
       result.status_code,
@@ -1063,11 +1052,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       if self.id().endswith(test_name):
         self.assertEqual(
           http.client.OK,
-          requests.get(url + 'backend.log', verify=False).status_code
+          mimikra.get(url + 'backend.log', verify=False).status_code
         )
         self.assertEqual(
           http.client.OK,
-          requests.get(url + 'access.log', verify=False).status_code
+          mimikra.get(url + 'access.log', verify=False).status_code
         )
 
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
@@ -1124,7 +1113,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
 
     backend_haproxy_statistic_url = backend_haproxy_statistic_url_dict[url_key]
-    result = requests.get(
+    result = mimikra.get(
       backend_haproxy_statistic_url,
       verify=False,
     )
@@ -1143,49 +1132,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertTrue(key in j, 'No key %r in %s' % (key, j))
     self.assertEqual(value, j[key])
-
-  def patchRequests(self):
-    HTTPResponse = requests.packages.urllib3.response.HTTPResponse
-    HTTPResponse.orig__init__ = HTTPResponse.__init__
-
-    def new_HTTPResponse__init__(self, *args, **kwargs):
-      self.orig__init__(*args, **kwargs)
-      try:
-        self.peercert = self._connection.sock.getpeercert(binary_form=True)
-      except AttributeError:
-        pass
-    HTTPResponse.__init__ = new_HTTPResponse__init__
-
-    HTTPAdapter = requests.adapters.HTTPAdapter
-    HTTPAdapter.orig_build_response = HTTPAdapter.build_response
-
-    def new_HTTPAdapter_build_response(self, request, resp):
-      response = self.orig_build_response(request, resp)
-      try:
-        response.peercert = resp.peercert
-      except AttributeError:
-        pass
-      return response
-    HTTPAdapter.build_response = new_HTTPAdapter_build_response
-
-  def unpatchRequests(self):
-    HTTPResponse = requests.packages.urllib3.response.HTTPResponse
-    if getattr(HTTPResponse, 'orig__init__', None) is not None:
-      HTTPResponse.__init__ = HTTPResponse.orig__init__
-      del (HTTPResponse.orig__init__)
-
-    HTTPAdapter = requests.adapters.HTTPAdapter
-    if getattr(HTTPAdapter, 'orig_build_response', None) is not None:
-      HTTPAdapter.build_response = HTTPAdapter.orig_build_response
-      del (HTTPAdapter.orig_build_response)
-
-  def setUp(self):
-    # patch requests in order to being able to extract SSL certs
-    self.patchRequests()
-
-  def tearDown(self):
-    self.unpatchRequests()
-    super(HttpFrontendTestCase, self).tearDown()
 
   def parseParameterDict(self, parameter_dict):
     parsed_parameter_dict = {}
@@ -1366,12 +1312,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     def method():
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
         if 'domain' in parameter_dict:
-          try:
-            fakeHTTPSResult(
-              parameter_dict['domain'], '/')
-          except requests.exceptions.InvalidURL:
-            # ignore slaves to which connection is impossible by default
-            continue
+          fakeHTTPSResult(parameter_dict['domain'], '/')
     cls.waitForMethod('waitForSlave', method)
 
   @classmethod
@@ -1648,16 +1589,25 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+    'request-timeout': '12',
+  }
+  max_client_version = '2.0'
+  max_http_version = '2'
+  alt_svc = False
+  test_enable_http2_true_client_version = '2.0'
+  test_enable_http2_true_http_version = '2'
+  test_enable_http3_false_client_version = '2.0'
+  test_enable_http3_false_http_version = '2'
+
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': '12',
-    }
+    return cls.parameter_dict
 
   @classmethod
   def prepareCertificate(cls):
@@ -1904,8 +1854,32 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'enable-http2': False,
       },
+      'enable-http2-true': {
+        'url': cls.backend_url,
+        'enable-http2': True,
+      },
       'enable-http2-default': {
         'url': cls.backend_url,
+      },
+      'enable-http3-true': {
+        'url': cls.backend_url,
+        'enable-http3': True,
+      },
+      'enable-http3-false': {
+        'url': cls.backend_url,
+        'enable-http3': False,
+      },
+      'enable-http3-default': {
+        'url': cls.backend_url,
+      },
+      'enable-http3-default-enable-http2-false': {
+        'url': cls.backend_url,
+        'enable-http2': False,
+      },
+      'enable-http3-true-enable-http2-false': {
+        'url': cls.backend_url,
+        'enable-http2': False,
+        'enable-http3': True,
       },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
@@ -2001,7 +1975,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.monitor_username = monitor_username[1]
     self.monitor_password = monitor_password[1]
 
-    opml_text = requests.get(self.monitor_url, verify=False).text
+    opml_text = mimikra.get(self.monitor_url, verify=False).text
     opml = ET.fromstring(opml_text)
 
     body = opml[1]
@@ -2017,7 +1991,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     expected_status_code_list = []
     got_status_code_list = []
     for monitor_configuration in self.monitor_configuration_list:
-      status_code = requests.get(
+      status_code = mimikra.get(
           monitor_configuration['url'],
           verify=False,
           auth=(self.monitor_username, self.monitor_password)
@@ -2110,9 +2084,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '60',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '60',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2224,7 +2198,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       parameter_dict['domain'], 'test-path')
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
@@ -2284,7 +2258,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def assertRequestHeaders(
     self, header_dict, domain=None, source_ip=SOURCE_IP,
-    port=HTTPS_PORT, proto='https', cached=False):
+    port=HTTPS_PORT, proto='https', cached=False, client_version=None):
+    if client_version is None:
+      client_version = self.max_client_version
+
     if domain is not None:
       self.assertEqual(
         header_dict['host'],
@@ -2308,8 +2285,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(
         [
           'http/1.1 clientvia',
-          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s, '
-          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
+          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
         header_dict['via']
@@ -2318,7 +2296,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(
         [
           'http/1.1 clientvia',
-          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
         header_dict['via']
@@ -2345,7 +2324,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
@@ -2369,10 +2348,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_access_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
-      r'"GET https:\/\/%(domain)s:%(port)s\/test-path\/deep\/..\/.\/deeper '
-      r'HTTP\/2.0" \d{3} '
+      r'"GET \/test-path\/deep\/..\/.\/deeper '
+      r'HTTP\/%(http_version)s" \d{3} '
       r'\d+ "-" "TEST USER AGENT" \d+' % dict(
-        domain=parameter_dict['domain'], port=HTTPS_PORT)
+        http_version=self.max_client_version)
     )
 
     self.assertLastLogLineRegexp(
@@ -2449,14 +2428,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
-      try:
-        requests.get(self.backend_https_auth_url, verify=False)
-      except Exception:
-        pass
-      else:
-        self.fail(
-          'Access to %r shall be not possible without certificate' % (
-            self.backend_https_auth_url,))
+      self.assertEqual(
+        0,
+        mimikra.get(self.backend_https_auth_url, verify=False).status_code,
+        'Access to %r shall be not possible without certificate' % (
+          self.backend_https_auth_url,))
       # check that you can access this backend via frontend
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
@@ -2470,7 +2446,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
       self.assertEqual(
         self.certificate_pem,
-        der2pem(result.peercert))
+        result.certificate)
 
       self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -2501,14 +2477,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
-      try:
-        requests.get(self.backend_https_auth_url, verify=False)
-      except Exception:
-        pass
-      else:
-        self.fail(
-          'Access to %r shall be not possible without certificate' % (
-            self.backend_https_auth_url,))
+      self.assertEqual(
+        0,
+        mimikra.get(self.backend_https_auth_url, verify=False).status_code,
+        'Access to %r shall be not possible without certificate' % (
+          self.backend_https_auth_url,))
       # check that you can access this backend via frontend
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
@@ -2522,7 +2495,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
       self.assertEqual(
         self.certificate_pem,
-        der2pem(result.peercert))
+        result.certificate)
 
       self.assertEqual(
         result.status_code,
@@ -2545,7 +2518,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -2656,7 +2629,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -2675,7 +2648,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.MOVED_PERMANENTLY,
@@ -2698,7 +2671,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200', result.headers['Strict-Transport-Security'])
@@ -2710,7 +2683,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200', result.headers['Strict-Transport-Security'])
@@ -2724,7 +2697,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
   def test_server_alias_empty(self):
     parameter_dict = self.assertSlaveBase('server-alias-empty')
@@ -2740,7 +2713,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; includeSubDomains',
@@ -2769,7 +2742,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; preload',
@@ -2781,7 +2754,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; preload',
@@ -2796,7 +2769,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2805,7 +2778,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2817,7 +2790,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2826,7 +2799,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
@@ -2835,7 +2808,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.customdomain_ca_key_pem + \
         self.ca.certificate_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2847,7 +2820,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2862,14 +2835,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_ssl_ca_crt_only(self):
     self.assertSlaveBase('ssl_ca_crt_only')
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = self.ca.certificate_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2881,7 +2854,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.assertSlaveBase('ssl_ca_crt_garbage')
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
@@ -2891,7 +2864,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     _, ca_certificate_pem = self.ca.signCSR(csr)
 
     data = ca_certificate_pem + ca_key_pem + 'some garbage'.encode()
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2904,8 +2877,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       ca_certificate_pem,
-      der2pem(result.peercert)
-    )
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2920,14 +2892,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_ssl_ca_crt_does_not_match(self):
     parameter_dict = self.assertSlaveBase('ssl_ca_crt_does_not_match')
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = self.certificate_pem + self.key_pem + self.ca.certificate_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2940,7 +2912,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2961,7 +2933,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -2980,7 +2952,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2993,7 +2965,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3003,7 +2975,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -3017,7 +2989,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3025,13 +2997,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.assertSlaveBase('custom_domain_ssl_crt_ssl_key')
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
     data = self.customdomain_certificate_pem + \
         self.customdomain_key_pem
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -3043,7 +3015,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.customdomain_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3056,7 +3028,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3096,7 +3068,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3131,7 +3103,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3174,7 +3146,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3212,7 +3184,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3269,7 +3241,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3291,65 +3263,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/test-path'
-    )
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
-    self.assertHttp11(parameter_dict['domain'])
-
-  def test_type_websocket(self):
-    parameter_dict = self.assertSlaveBase(
-      'type-websocket')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/test-path'
-    )
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
-    self.assertHttp11(parameter_dict['domain'])
-
-  def test_type_websocket_websocket_transparent_false(self):
-    parameter_dict = self.assertSlaveBase(
-      'type-websocket-websocket-transparent-false')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3361,13 +3275,73 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
-      j['Incoming Headers'], port='17', proto='irc')
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertHttp1(parameter_dict['domain'])
+
+  def test_type_websocket(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertHttp1(parameter_dict['domain'])
+
+  def test_type_websocket_websocket_transparent_false(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-transparent-false')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertRequestHeaders(
+      j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
     )
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
-    self.assertHttp11(parameter_dict['domain'])
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_type_websocket_websocket_path_list(self):
     parameter_dict = self.assertSlaveBase(
@@ -3379,7 +3353,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3391,7 +3365,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3408,7 +3383,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3429,7 +3405,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3447,7 +3424,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3459,7 +3436,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3477,7 +3455,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
-      j['Incoming Headers'], port='17', proto='irc')
+      j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3499,7 +3477,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
-      j['Incoming Headers'], port='17', proto='irc')
+      j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3515,7 +3493,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.FOUND,
@@ -3545,7 +3523,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertResponseHeaders(
-      result, via=False, backend_reached=False)
+      result, via=False, backend_reached=False, alt_svc=False)
 
   def test_type_redirect_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
@@ -3557,7 +3535,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.FOUND,
@@ -3581,7 +3559,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.SERVICE_UNAVAILABLE,
@@ -3610,7 +3588,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3649,7 +3627,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.SERVICE_UNAVAILABLE,
@@ -3668,7 +3646,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
@@ -3722,7 +3700,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
@@ -3861,7 +3839,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(http.client.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
 
-    self.assertResponseHeaders(result, cached=True)
+    self.assertResponseHeaders(result, cached=True, client_version='1.1')
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3947,10 +3925,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
-      result = requests.put(backend_url + path, headers={
+      result = mimikra.put(backend_url + path, headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
-          'X-Reply-Body': base64.b64encode(body.encode()),
+          'X-Reply-Body': base64.b64encode(body.encode()).decode(),
           # drop Content-Length header to ensure
           # https://github.com/apache/trafficserver/issues/7880
           'X-Drop-Header': 'Content-Length',
@@ -4145,7 +4123,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4179,7 +4157,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4207,22 +4185,51 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(
+      result, client_version='1.1', alt_svc=False)
 
     self.assertEqual(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Connection': 'keep-alive',
       },
       headers
     )
 
-    self.assertHttp11(parameter_dict['domain'])
+    self.assertHttp1(parameter_dict['domain'])
+
+  def test_enable_http2_true(self):
+    parameter_dict = self.assertSlaveBase('enable-http2-true')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(
+      result, client_version=self.test_enable_http2_true_client_version,
+      alt_svc=self.alt_svc)
+
+    self.assertEqual(
+      {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
+      headers
+    )
+
+    self.assertEqual(
+      result.effective_http_version,
+      self.test_enable_http2_true_http_version
+    )
 
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
@@ -4232,7 +4239,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4241,12 +4248,148 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       {
         'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Connection': 'keep-alive',
       },
       headers
     )
 
-    self.assertHttp2(parameter_dict['domain'])
+    self.assertEqual(
+      result.effective_http_version,
+      self.max_http_version
+    )
+
+  def test_enable_http3_true(self):
+    parameter_dict = self.assertSlaveBase('enable-http3-true')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(result)
+
+    self.assertEqual(
+      {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
+      headers
+    )
+
+    self.assertEqual(
+      result.effective_http_version,
+      self.max_http_version
+    )
+
+  def test_enable_http3_false(self):
+    parameter_dict = self.assertSlaveBase('enable-http3-false')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(
+      result, alt_svc=False,
+      client_version=self.test_enable_http3_false_client_version)
+
+    self.assertEqual(
+      {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
+      headers
+    )
+
+    self.assertEqual(
+      result.effective_http_version,
+      self.test_enable_http3_false_http_version
+    )
+
+  def test_enable_http3_default(self):
+    parameter_dict = self.assertSlaveBase('enable-http3-default')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(result)
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
+      headers
+    )
+
+    self.assertEqual(
+      result.effective_http_version,
+      self.max_http_version
+    )
+
+  def test_enable_http3_true_enable_http2_false(self):
+    parameter_dict = self.assertSlaveBase(
+      'enable-http3-true-enable-http2-false')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(
+      result, client_version='1.1', alt_svc=False)
+
+    self.assertEqual(
+      {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
+      headers
+    )
+
+    self.assertHttp1(parameter_dict['domain'])
+
+  def test_enable_http3_default_enable_http2_false(self):
+    parameter_dict = self.assertSlaveBase(
+      'enable-http3-default-enable-http2-false')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(
+      result, client_version='1.1', alt_svc=False)
+
+    self.assertEqual(
+      {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
+      headers
+    )
+
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_prefer_gzip_encoding_to_backend_https_only(self):
     parameter_dict = self.assertSlaveBase(
@@ -4259,7 +4402,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4286,7 +4429,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4305,7 +4448,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'],
-      port=HTTP_PORT, proto='http')
+      port=HTTP_PORT, proto='http', client_version='1.1')
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -4318,7 +4461,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'],
-      port=HTTP_PORT, proto='http')
+      port=HTTP_PORT, proto='http', client_version='1.1')
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -4345,7 +4488,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4372,7 +4515,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4505,7 +4648,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; includeSubDomains; preload',
@@ -4551,7 +4694,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     normal_path = 'normal'
     with_date_path = 'with_date'
     specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
-    result_configure = requests.put(
+    result_configure = mimikra.put(
       backend_url + '/' + with_date_path, headers={
         'X-Reply-Header-Date': specific_date
       })
@@ -4578,6 +4721,45 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPResult(parameter_dict['domain'], 'path')
     # assure that the request went to backend NOT specified in the netloc
     self.assertNotIn('X-Backend-Identification', result.headers)
+
+
+class TestSlaveHttp3(TestSlave):
+  parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+    'request-timeout': '12',
+    'enable-http3': 'True',
+    'http3-port': HTTPS_PORT,
+  }
+  max_client_version = '3.0'
+  max_http_version = '3'
+  alt_svc = True
+  test_enable_http2_true_client_version = '3.0'
+  test_enable_http2_true_http_version = '3'
+  test_enable_http3_false_client_version = '2.0'
+  test_enable_http3_false_http_version = '2'
+
+
+class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
+  parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+    'request-timeout': '12',
+    'enable-http2-by-default': 'false',
+  }
+  max_client_version = '1.1'
+  max_http_version = '1'
+  alt_svc = False
+  test_enable_http2_true_client_version = '2.0'
+  test_enable_http2_true_http_version = '2'
+  test_enable_http3_false_client_version = '1.1'
+  test_enable_http3_false_http_version = '1'
 
 
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
@@ -4664,7 +4846,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4746,97 +4928,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
         buildout_file_content, flags=re.M) is not None
     self.assertTrue(node_1_present)
     self.assertFalse(node_2_present)
-
-
-class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
-                                         TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'enable-http2-by-default': 'false',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'enable-http2-default': {
-      },
-      'enable-http2-false': {
-        'enable-http2': 'false',
-      },
-      'enable-http2-true': {
-        'enable-http2': 'true',
-      },
-      'dummy-cached': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      }
-    }
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    self.assertHttp11(parameter_dict['domain'])
-
-  def test_enable_http2_false(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-false')
-
-    self.assertHttp11(parameter_dict['domain'])
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertHttp2(parameter_dict['domain'])
-
-
-class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
-                                           TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'enable-http2-default': {
-      },
-      'enable-http2-false': {
-        'enable-http2': 'false',
-      },
-      'enable-http2-true': {
-        'enable-http2': 'true',
-      },
-      'dummy-cached': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      }
-    }
-
-  def test_enable_http2_default(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-default')
-
-    self.assertHttp2(parameter_dict['domain'])
-
-  def test_enable_http2_false(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-false')
-
-    self.assertHttp11(parameter_dict['domain'])
-
-  def test_enable_http2_true(self):
-    parameter_dict = self.assertSlaveBase('enable-http2-true')
-
-    self.assertHttp2(parameter_dict['domain'])
 
 
 class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
@@ -4986,7 +5077,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4995,10 +5086,10 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
     master_parameter_dict = \
         self.requestDefaultInstance().getConnectionParameterDict()
-    auth = requests.get(
+    auth = mimikra.get(
       master_parameter_dict['master-key-generate-auth-url'],
       verify=self.kedifa_caucase_ca_certificate_file)
-    requests.put(
+    mimikra.put(
       master_parameter_dict['master-key-upload-url'] + auth.text,
       data=key_pem + certificate_pem,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5009,7 +5100,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5276,7 +5367,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5288,7 +5379,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5296,14 +5387,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         createSelfSignedCertificate([parameter_dict['domain']])
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5315,7 +5406,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5334,7 +5425,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.ssl_from_slave_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5351,7 +5442,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.ssl_from_slave_kedifa_overrides_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5359,14 +5450,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         createSelfSignedCertificate([parameter_dict['domain']])
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5379,7 +5470,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5392,7 +5483,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5406,7 +5497,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5414,14 +5505,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         createSelfSignedCertificate([parameter_dict['domain']])
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5435,7 +5526,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5455,7 +5546,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.type_notebook_ssl_from_slave_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5473,7 +5564,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5481,14 +5572,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         createSelfSignedCertificate([parameter_dict['domain']])
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(
+    auth = mimikra.get(
       self.current_generate_auth,
       verify=self.kedifa_caucase_ca_certificate_file)
     self.assertEqual(http.client.CREATED, auth.status_code)
 
     data = certificate_pem + key_pem
 
-    upload = requests.put(
+    upload = mimikra.put(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5502,7 +5593,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5520,7 +5611,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.customdomain_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5540,7 +5631,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5586,7 +5677,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5619,7 +5710,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.sslcacrtgarbage_ca_certificate_pem,
-      der2pem(result.peercert)
+      result.certificate
     )
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5640,7 +5731,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'bbb-ssl',
@@ -5738,7 +5829,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5763,7 +5854,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5826,7 +5917,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.OK, result.status_code)
 
@@ -5852,7 +5943,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.OK, result.status_code)
 
@@ -6038,7 +6129,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'rejected-slave-promise-url')
 
     try:
-      result = requests.get(rejected_slave_promise_url, verify=False)
+      result = mimikra.get(rejected_slave_promise_url, verify=False)
       if result.text == '':
         result_json = {}
       else:
@@ -6223,7 +6314,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -6312,7 +6403,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.MOVED_PERMANENTLY,
@@ -6454,7 +6545,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         'Accept-Encoding': 'gzip',
       }
     )
-    self.assertEqual(self.certificate_pem, der2pem(result_wildcard.peercert))
+    self.assertEqual(self.certificate_pem, result_wildcard.certificate)
     self.assertEqualResultJson(result_wildcard, 'Path', '/wildcard/test-path')
 
     result_specific = fakeHTTPSResult(
@@ -6465,7 +6556,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         'Accept-Encoding': 'gzip',
       }
     )
-    self.assertEqual(self.certificate_pem, der2pem(result_specific.peercert))
+    self.assertEqual(self.certificate_pem, result_specific.certificate)
     self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
 
 
@@ -6611,11 +6702,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-1',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6639,11 +6729,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-2',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6667,11 +6756,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
+        'enable-http3': 'false',
         'extra_slave_instance_list': '[]',
-        'frontend-haproxy-flavour': 'basic',
-        'frontend-haproxy-quic': 'False',
         'frontend-name': 'caddy-frontend-3',
-        'frontend-quic-port': '443',
+        'http3-port': '443',
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -6910,7 +6998,7 @@ backend _health-check-default-http
     )
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -6948,23 +7036,23 @@ backend _health-check-default-http
         'failover-url?a=b&c=',
         'failover-https-url?a=b&c='
       ]:
-        result = requests.put(
+        result = mimikra.put(
           self.backend_url + url + path,
           headers={
             'X-Reply-Status-Code': '503',
-            'X-Reply-Body': base64.b64encode(body_failover.encode()),
+            'X-Reply-Body': base64.b64encode(body_failover.encode()).decode(),
           })
         self.assertEqual(result.status_code, http.client.CREATED)
 
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()[
         'health-check-failover-url']['https-url']
-      result = requests.put(
+      result = mimikra.put(
         '/'.join([backend_url, cached_path]),
         headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
-          'X-Reply-Body': base64.b64encode(body.encode()),
+          'X-Reply-Body': base64.b64encode(body.encode()).decode(),
           # drop Content-Length header to ensure
           # https://github.com/apache/trafficserver/issues/7880
           'X-Drop-Header': 'Content-Length',
@@ -6983,21 +7071,21 @@ backend _health-check-default-http
     result = fakeHTTPResult(parameter_dict['domain'], '/path')
     self.assertEqualResultJson(result, 'Path', '/url/path')
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/https-url/path')
     # ...and cached result, also in order to store it in the cache
     configureResult('200', body_200)
     checkResult(http.client.OK, body_200)
 
     # start replying with bad status code
-    result = requests.put(
+    result = mimikra.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = requests.put(
+      result = mimikra.put(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7008,7 +7096,7 @@ backend _health-check-default-http
 
     # check simple failover
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
     self.assertEqual(result.text, body_failover)
 
@@ -7060,7 +7148,7 @@ backend _health-check-default-http
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
     # start replying with bad status code
-    result = requests.put(
+    result = mimikra.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7068,7 +7156,7 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = requests.put(
+      result = mimikra.put(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7092,25 +7180,22 @@ backend _health-check-default-http
     self.startAuthenticatedServerProcess()
     self.addCleanup(self.stopAuthenticatedServerProcess)
     # assert that you can't fetch nothing without key
-    try:
-      requests.get(self.backend_https_auth_url, verify=False)
-    except Exception:
-      pass
-    else:
-      self.fail(
-        'Access to %r shall be not possible without certificate' % (
-          self.backend_https_auth_url,))
+    self.assertEqual(
+      0,
+      mimikra.get(self.backend_https_auth_url, verify=False).status_code,
+      'Access to %r shall be not possible without certificate' % (
+        self.backend_https_auth_url,))
     # check normal access
     result = fakeHTTPResult(parameter_dict['domain'], '/path')
     self.assertEqualResultJson(result, 'Path', '/url/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/https-url/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
 
     # start replying with bad status code
-    result = requests.put(
+    result = mimikra.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7119,7 +7204,7 @@ backend _health-check-default-http
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(
       result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
     self.assertEqual(
@@ -7139,11 +7224,11 @@ backend _health-check-default-http
 
     # check normal access
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = requests.put(
+    result = mimikra.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7156,7 +7241,7 @@ backend _health-check-default-http
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -7168,11 +7253,11 @@ backend _health-check-default-http
 
     # check normal access
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = requests.put(
+    result = mimikra.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7185,7 +7270,7 @@ backend _health-check-default-http
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     # as ssl proxy verification failed, service is unavailable
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
@@ -7198,11 +7283,11 @@ backend _health-check-default-http
 
     # check normal access
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = requests.put(
+    result = mimikra.put(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7215,90 +7300,10 @@ backend _health-check-default-http
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     # as ssl proxy verification failed, service is unavailable
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
-
-
-class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': '12',
-      '-frontend-1-experimental-haproxy-quic': True,
-      '-frontend-1-experimental-haproxy-flavour': 'quic',
-      '-frontend-1-experimental-quic-port': HTTPS_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'url': {
-        'url': cls.backend_url,
-      },
-      'enable_cache': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      },
-    }
-
-  def get_curl_http3(self):
-    # Very hacky way to fetch curl from own software release instead of
-    # polluting slapos-sr-testing
-    with open(os.path.join(self.software_path, '.installed.cfg')) as fh:
-      for line in fh.readlines():
-        if line.startswith('location =') and 'curl-http3' in line:
-          return '/'.join([line.strip().split()[-1], 'bin/curl'])
-
-  def assertHttp3(self, domain, direct=True):
-    alt_svc = tempfile.NamedTemporaryFile(delete=False)
-    curl_command = [self.get_curl_http3()]
-    if direct:
-      curl_command.append('--http3')
-    else:
-      curl_command.extend(['--alt-svc', alt_svc.name])
-    curl_command.extend([
-      '-k',
-      '-v',
-      '-D', '-',
-      '-o', '/dev/null',
-      '-H', 'Host: %s' % (domain,),
-      '--resolve', '%(domain)s:%(https_port)s:%(ip)s' % dict(
-        ip=TEST_IP, domain=domain, https_port=HTTPS_PORT),
-      'https://%(domain)s:%(https_port)s/' % dict(
-        domain=domain, https_port=HTTPS_PORT),
-    ])
-
-    def call_curl():
-      prc = subprocess.Popen(
-        curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-      )
-      out, err = prc.communicate()
-      assert prc.returncode == 0, "Problem running %r. "\
-          "Output:\n%s\nError:\n%s" % (
-            ' '.join(curl_command), out, err)
-      return [q.strip() for q in out.decode().splitlines()]
-
-    if not direct:
-      # curl with alt-svc does not switch to HTTP3 in one request
-      self.assertEqual('HTTP/2 200', call_curl()[0])
-    self.assertEqual('HTTP/3 200', call_curl()[0])
-
-  def test_url(self):
-    parameter_dict = self.assertSlaveBase('url')
-    self.assertHttp3(parameter_dict['domain'])
-    self.assertHttp3(parameter_dict['domain'], direct=False)
-
-  def test_enable_cache(self):
-    parameter_dict = self.assertSlaveBase('enable_cache')
-    self.assertHttp3(parameter_dict['domain'])
-    self.assertHttp3(parameter_dict['domain'], direct=False)
 
 
 if __name__ == '__main__':
