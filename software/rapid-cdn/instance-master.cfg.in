@@ -28,8 +28,6 @@
 {%- endfor %}
 {#- Allow to pass only some parameters to frontend nodes #}
 {%- set FRONTEND_NODE_PASSED_KEY_LIST = [
-        'plain_http_port',
-        'port',
         'apache-certificate',
         'apache-key',
         'domain',
@@ -166,6 +164,8 @@ context =
 {%     do frontend_section_list.append(request_section_title) %}
 {%   endif %}
 {%   do part_list.append(request_section_title) %}
+{%   do config_dict.__setitem__('port', slapparameter_dict.get("-frontend-%s-port" % i) or slapparameter_dict.get('port')) %}
+{%   do config_dict.__setitem__('plain_http_port', slapparameter_dict.get("-frontend-%s-plain_http_port" % i) or slapparameter_dict.get('plain_http_port')) %}
 {%   set frontend_haproxy_flavour_key = "-frontend-%s-experimental-haproxy-flavour" % i %}
 {%   do config_dict.__setitem__('frontend-haproxy-flavour', slapparameter_dict.get(frontend_haproxy_flavour_key) or 'basic') %}
 {%   set frontend_haproxy_quic_key = "-frontend-%s-experimental-haproxy-quic" % i %}
