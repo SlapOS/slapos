@@ -7220,6 +7220,113 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
 
 
+class RecurlestsHttp3FailedException(Exception):
+  pass
+
+
+class RecurlestsResponse(object):
+  # properties:
+  #   content Content of the response, in bytes.
+  #   cookies A CookieJar of Cookies the server sent back.
+  #   elapsed The amount of time elapsed between sending the request and the arrival of the response (as a timedelta). This property specifically measures the time taken between sending the first byte of the request and finishing parsing the headers. It is therefore unaffected by consuming the response content or the value of the stream keyword argument.
+  #    encoding Encoding to decode with when accessing r.text.
+  #    headers Case-insensitive Dictionary of Response Headers. For example, headers['content-encoding'] will return the value of a 'Content-Encoding' response header.
+  #    history A list of Response objects from the history of the Request. Any redirect responses will end up here. The list is sorted from the oldest to the most recent request.
+  #    is_permanent_redirect True if this Response one of the permanent versions of redirect.
+  #    is_redirect True if this Response is a well-formed HTTP redirect that could have been processed automatically (by Session.resolve_redirects).
+  #    json(**kwargs) Returns the json-encoded content of a response, if any.
+  #    links Returns the parsed header links of the response, if any.
+  #    next Returns a PreparedRequest for the next request in a redirect chain, if there is one.
+  #    ok Returns True if status_code is less than 400, False if not.
+  #    reason Textual reason of responded HTTP Status, e.g. “Not Found” or “OK”.
+  #    status_code Integer Code of responded HTTP Status, e.g. 404 or 200.
+  #    text Content of the response, in unicode.
+  #    url Final URL location of Response.
+  pass
+
+
+class Recurlests(object):
+  """curl command wrapper, mimicing requests"""
+  def __init__(self, curl):
+    self.curl = curl
+
+  def request(
+    self,
+    method,
+    url,
+    http3=True,
+    http3_only=False,
+    resolve_all=None,
+    verify=True,
+  ):
+    try:
+      alt_svc = tempfile.NamedTemporaryFile(delete=False).name
+      response_header_file = tempfile.NamedTemporaryFile(delete=False).name
+      response_file = tempfile.NamedTemporaryFile(delete=False).name
+      command_list = [
+        self.curl,
+        #'--verbose',
+        '--disable',
+        '--globoff',
+        '--include',
+        '--no-progress-meter',
+        '--dump-header', response_header_file,
+        '--output', response_file,
+        '--alt-svc', alt_svc,
+        '--request', method,
+      ]
+      if not verify:
+        command_list.append('--insecure')
+      if resolve_all is not None:
+        for port, ip in resolve_all:
+          command_list.extend(['--resolve', '*:%s:%s' % (port, ip)])
+      if http3_only:
+        command_list.append('--http3-only')
+      elif http3:
+        command_list.append('--http3')
+      command_list.append(url)
+      prc = subprocess.Popen(
+        command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
+      response = RecurlestsResponse()
+      response.command_output, response.command_error = [
+        q.decode() for q in prc.communicate()]
+      response.command_returncode = prc.returncode
+      with open(response_file) as fh:
+        response.text = fh.read()
+      with open(response_header_file) as fh:
+        response.header_text = fh.read()
+      response.headers = requests.structures.CaseInsensitiveDict()
+      header_list = response.header_text.splitlines()
+      response.protocol, status_code  = header_list[0].split()
+      response.status_code = int(status_code)
+      for line in header_list[1:]:
+        if line.strip():
+         header, value = line.split(':', 1)
+         response.headers[header] = value.strip()
+      response.command_list = command_list
+      return response
+    finally:
+      os.unlink(alt_svc)
+      os.unlink(response_header_file)
+      os.unlink(response_file)
+    # kwargs:
+    #  params – (optional) Dictionary, list of tuples or bytes to send in the query string for the Request.
+    #  data – (optional) Dictionary, list of tuples, bytes, or file-like object to send in the body of the Request.
+    #  json – (optional) A JSON serializable Python object to send in the body of the Request.
+    #  headers – (optional) Dictionary of HTTP Headers to send with the Request.
+    #  cookies – (optional) Dict or CookieJar object to send with the Request.
+    #  files – (optional) Dictionary of 'name': file-like-objects (or {'name':
+    #  auth – (optional) Auth tuple to enable Basic/Digest/Custom HTTP Auth.
+    #  timeout (float or tuple) – (optional) How many seconds to wait for the server to send data before giving up, as a float, or a (connect timeout, read timeout) tuple.
+    #  allow_redirects (bool) – (optional) Boolean. Enable/disable GET/OPTIONS/POST/PUT/PATCH/DELETE/HEAD redirection. Defaults to True.
+    #  proxies – (optional) Dictionary mapping protocol to the URL of the proxy.
+    #  verify – (optional) Either a boolean, in which case it controls whether we verify the server’s TLS certificate, or a string, in which case it must be a path to a CA bundle to use. Defaults to True.
+    #  stream – (optional) if False, the response content will be immediately downloaded.
+    #  cert – (optional) if String, path to ssl client cert file (.pem). If Tuple, (‘cert’, ‘key’) pair.
+    return RecurlestsResponse()
+
+
 class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -7291,10 +7398,6 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     else:
       curl_command.extend(['--alt-svc', alt_svc.name])
     curl_command.extend([
-      '-k',
-      '-v',
-      '-D', '-',
-      '-o', '/dev/null',
       '-H', 'Host: %s' % (domain,),
       '--resolve', '%(domain)s:%(https_port)s:%(ip)s' % dict(
         ip=TEST_IP, domain=domain, https_port=HTTPS_PORT),
@@ -7309,10 +7412,19 @@ class TestSlaveQuic(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       return [q.decode() for q in prc.communicate()]
 
     out, err = call_curl()
+    curly = Recurlests('curl')
     if direct:
-      self.assertIn(
-        'Failed to connect to %s port %s' % (
-          domain, HTTPS_PORT), err)
+      self.assertRaises(
+        RecurlestsHttp3FailedException,
+        curly.request(
+          'GET',
+          'https://%s(domain)s:%s(https_port)s/' % dict(
+            domain=domain, https_port=HTTPS_PORT),
+          resolve_all={HTTPS_PORT: TEST_IP},
+          verify=False,
+          http3_only=True,
+        )
+      )
     else:
       self.assertEqual(
         out.splitlines()[0],
