@@ -27,7 +27,6 @@ parts =
   caucase-updater-promise
   backend-client-caucase-updater
   backend-client-caucase-updater-promise
-  port-redirection
   promise-logrotate-setup
 
   trafficserver-launcher
@@ -998,15 +997,6 @@ context =
 promise = check_url_available
 name = re6st-connectivity.py
 config-url = ${configuration:re6st-verification-url}
-
-[port-redirection]
-<= jinja2-template-base
-inline =
-  [{"srcPort": 80, "destPort": {{ '{{' }} http_port {{ '}}' }}}, {"srcPort": 443, "destPort": {{ '{{' }} https_port {{ '}}' }}}]
-output = ${buildout:directory}/.slapos-port-redirect
-extra-context =
-    key http_port configuration:plain_http_port
-    key https_port configuration:port
 
 [slave-introspection-frontend]
 <= slap-connection
