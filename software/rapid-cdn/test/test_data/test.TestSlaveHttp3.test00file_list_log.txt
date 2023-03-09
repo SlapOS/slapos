@@ -12,6 +12,8 @@ T-2/var/log/httpd/_http2-false_access_log
 T-2/var/log/httpd/_http2-false_backend_log
 T-2/var/log/httpd/_http3-false_access_log
 T-2/var/log/httpd/_http3-false_backend_log
+T-2/var/log/httpd/_http3-true-http2-false_access_log
+T-2/var/log/httpd/_http3-true-http2-false_backend_log
 T-2/var/log/httpd/_url_access_log
 T-2/var/log/httpd/_url_backend_log
 T-2/var/log/monitor-httpd-access.log
