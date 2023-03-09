@@ -25,6 +25,8 @@ These parameters are:
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo, supported parameters are:
     * ``ram-cache-size``
     * ``disk-cache-size``
+    * ``enable-http3``
+    * ``http3-port``
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
 For example::
@@ -480,17 +482,3 @@ websocket
 ~~~~~~~~~
 
 All frontends are websocket aware now, and ``type:websocket`` parameter became optional. It's required if support for ``websocket-path-list`` or ``websocket-transparent`` is required.
-
-Experimental QuicTLS
-~~~~~~~~~~~~~~~~~~~~
-
-`QuicTLS <https://github.com/quictls/openssl>`_ can be used instead of classic OpenSSL on given node by using parameter ``-frontend-i-experimental-haproxy-flavour`` and setting it to ``quic``. This allows to test out if there are any issues with QuicTLS are with normal usage.
-
-Experimental QUIC
-~~~~~~~~~~~~~~~~~
-
-QUIC with HTTP3 is available as experimental feature. It has to be enabled on each node separately by using ``-frontend-i-experimental-haproxy-quic``. Then given node will reply with proper headers on HTTPS to advertise QUIC. Please note that ``-frontend-i-experimental-haproxy-flavour`` has to be set to ``quic`` on this node too.
-
-Please note that due to limitations of iptables method used to expose low ports, the ``-frontend-i-experimental-quic-port`` is by default ``443``, which is used when advertisting the QUIC/HTTP3 port to the client.
-
-Note that then all frontends will be served with QUIC advertised on such node, so it's important to run such experiments very carefully, for example on same zone/region with DNS.
