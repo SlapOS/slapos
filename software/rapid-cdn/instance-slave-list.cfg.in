@@ -258,7 +258,7 @@ context =
 {%-   if not slave_instance['enable-http2'] %}
 {%-     do slave_instance.__setitem__('alpn', "alpn http/1.1,http/1.0") %}
 {%-   else %}
-{%-     if quic.lower() in TRUE_VALUES and slave_instance['enable-http3'] %}
+{%-     if http3.lower() in TRUE_VALUES and slave_instance['enable-http3'] %}
 {%-       do slave_instance.__setitem__('alpn', "alpn h3,h2,http/1.1,http/1.0") %}
 {%-     else %}
 {%-       do slave_instance.__setitem__('alpn', "alpn h2,http/1.1,http/1.0") %}
