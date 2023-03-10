@@ -349,7 +349,7 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
 class TestMMEMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
+        return {'_': json.dumps({'testing': True, 'slave-list': []})}
 
     @classmethod
     def getInstanceSoftwareType(cls):
