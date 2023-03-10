@@ -283,6 +283,10 @@ def requestSlaveInstance(cls, software_type):
 
 class TestEPCMonitorGadgetUrl(ORSTestCase):
     @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({'testing': True})}
+
+    @classmethod
     def getInstanceSoftwareType(cls):
         return "epc"
 
@@ -291,6 +295,10 @@ class TestEPCMonitorGadgetUrl(ORSTestCase):
       test_monitor_gadget_url(self)
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(enb_param_dict)}
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb"
@@ -301,6 +309,10 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
 
 class TestENBEPCMonitorGadgetUrl(ORSTestCase):
     @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(enb_param_dict)}
+
+    @classmethod
     def getInstanceSoftwareType(cls):
         return "enb-epc"
 
@@ -309,6 +321,10 @@ class TestENBEPCMonitorGadgetUrl(ORSTestCase):
       test_monitor_gadget_url(self)
 
 class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(gnb_param_dict1)}
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "gnb-epc"
@@ -319,6 +335,10 @@ class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
 
 class TestGNBMonitorGadgetUrl(ORSTestCase):
     @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps(gnb_param_dict1)}
+
+    @classmethod
     def getInstanceSoftwareType(cls):
         return "gnb"
 
@@ -327,6 +347,10 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
       test_monitor_gadget_url(self)
 
 class TestMMEMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({'testing': True})}
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "mme"
@@ -337,6 +361,10 @@ class TestMMEMonitorGadgetUrl(ORSTestCase):
 
 class TestUELTEMonitorGadgetUrl(ORSTestCase):
     @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({'testing': True})}
+
+    @classmethod
     def getInstanceSoftwareType(cls):
         return "ue-lte"
 
@@ -345,6 +373,10 @@ class TestUELTEMonitorGadgetUrl(ORSTestCase):
       test_monitor_gadget_url(self)
 
 class TestUENRMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({'testing': True})}
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "ue-nr"
