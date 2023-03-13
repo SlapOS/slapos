@@ -166,10 +166,18 @@ common-name = $${selenium-server-frontend-configuration:ip}
 location =
   $${:cert-file}
 
+#[server-address]
+#recipe = slapos.cookbook:free_port
+#minimum = 9430
+#maximum = 9458
+#ip = ${selenium-server-frontend-configuration:ip}
+
+
 [selenium-server-frontend-configuration]
 ip = $${slap-configuration:ipv6-random}
 hostname = [$${:ip}]
 port = 9443
+# port = ${server-addres:port}
 path-admin = /grid/console
 path-hub = /wd/hub
 pidfile = $${directory:run}/haproxy.pid
