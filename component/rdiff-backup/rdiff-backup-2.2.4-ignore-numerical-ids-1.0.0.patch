@@ -1,0 +1,49 @@
+diff -Naur src/rdiff_backup/Globals.py src/rdiff_backup/Globals.py
+--- src/rdiff_backup/Globals.py	2023-02-27 07:45:09.000000000 +0100
++++ src/rdiff_backup/Globals.py	2023-05-11 16:02:08.544025324 +0200
+@@ -291,6 +291,9 @@
+ # Protocol 4 is understood since Python 3.4, protocol 5 since 3.8.
+ PICKLE_PROTOCOL = 4
+ 
++# If set, don't compare uid/gid or uname/gname when comparing
++# two RORPath
++ignore_numerical_ids = None
+ 
+ # @API(get, 200)
+ def get(name):
+diff -Naur src/rdiff_backup/rpath.py src/rdiff_backup/rpath.py
+--- src/rdiff_backup/rpath.py	2023-02-27 07:45:09.000000000 +0100
++++ src/rdiff_backup/rpath.py	2023-05-11 16:38:06.011273968 +0200
+@@ -592,6 +592,7 @@
+                     and (self.issym() or not compare_ownership)):
+                 # Don't compare gid/uid for symlinks, or if told not to
+                 pass
++            elif key in ('uid', 'gid', 'uname', 'gname') and Globals.ignore_numerical_ids: pass
+             elif key == 'type' and not compare_type:
+                 pass
+             elif key == 'atime' and not Globals.preserve_atime:
+diff -Naur src/rdiffbackup/actions/__init__.py src/rdiffbackup/actions/__init__.py
+--- src/rdiffbackup/actions/__init__.py	2023-02-27 07:45:09.000000000 +0100
++++ src/rdiffbackup/actions/__init__.py	2023-05-11 16:25:36.095180254 +0200
+@@ -55,6 +55,9 @@
+     "--api-version", type=int,
+     help="[opt] integer to set the API version forcefully used")
+ COMMON_PARSER.add_argument(
++    "--ignore-numerical-ids", type=int,
++    help="[opt] integer to set the numerical ids")
++COMMON_PARSER.add_argument(
+     "--current-time", type=int,
+     help="[opt] fake the current time in seconds (for testing)")
+ COMMON_PARSER.add_argument(
+diff -Naur src/rdiffbackup/run.py src/rdiffbackup/run.py
+--- src/rdiffbackup/run.py	2023-02-27 07:45:09.000000000 +0100
++++ src/rdiffbackup/run.py	2023-05-11 16:29:37.489784756 +0200
+@@ -158,6 +158,8 @@
+     Globals.set("null_separator", arglist.null_separator)
+     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
+     Globals.set("do_fsync", arglist.fsync)
++    if arglist.ignore_numerical_ids is not None:
++        Globals.set_integer('ignore_numerical_ids', 1)
+     if arglist.current_time is not None:
+         Globals.set_integer('current_time', arglist.current_time)
+     if arglist.chars_to_quote is not None:
