@@ -37,6 +37,7 @@ context =
   raw template_monitor {{ template_monitor }}
   raw openssl_location {{ openssl_location }}
   raw logrotate_cfg {{ logrotate_cfg }}
+  raw nxdtest_template {{ nxdtest_template }}
   ${:extra-context}
 
 
