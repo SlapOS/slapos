@@ -2,6 +2,7 @@
 extends =
   {{ template_monitor }}
   {{ logrotate_cfg }}
+  {{ nxdtest_template }}
   {{ custom_application_template }}
 
 parts =
