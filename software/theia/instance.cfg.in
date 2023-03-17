@@ -27,6 +27,12 @@ resilient = resilient:output
 frozen = instance-frozen:output
 pull-backup = template-pull-backup:output
 
+[theia-monitor-port]
+recipe = slapos.cookbook:free_port
+minimum = 8386
+maximum = 8486
+ip = $${slap-configuration:ipv6-random}
+
 [theia]
 recipe = slapos.recipe.template:jinja2
 url = ${instance-theia:output}
@@ -54,7 +60,7 @@ default-parameters =
     "additional-frontend-sr": "$${:frontend-sr}",
     "additional-frontend-sr-type": "RootSoftwareInstance",
     "additional-frontend-guid": null,
-    "monitor-httpd-port": 8386
+    "monitor-httpd-port": $${theia-monitor-port:port}
   }
 frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 
