@@ -97,7 +97,6 @@ gnb_param_dict1.update(param_dict)
 gnb_param_dict2.update(param_dict)
 
 def test_enb_conf(self):
-
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
@@ -121,7 +120,6 @@ def test_enb_conf(self):
                 self.assertIn(str(enb_param_dict['n_rb_dl']), l)
 
 def test_gnb_conf1(self):
-
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
 
@@ -148,7 +146,6 @@ def test_gnb_conf1(self):
                     self.assertIn(str(gnb_param_dict1['nr_bandwidth']), l)
 
 def test_gnb_conf2(self):
-
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
 
@@ -160,7 +157,6 @@ def test_gnb_conf2(self):
               self.assertEqual(p[n], gnb_param_dict2['nssai'][str(p['sd'])][n])
 
 def test_mme_conf(self):
-
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
 
@@ -169,7 +165,6 @@ def test_mme_conf(self):
     self.assertEqual(conf['plmn'], param_dict['epc_plmn'])
 
 def test_sim_card(self):
-
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'ue_db.cfg'))[0]
 
@@ -180,7 +175,6 @@ def test_sim_card(self):
     self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
     self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
 
-    self.slap.waitForInstance() # Wait until publish is done
     p = self.requestSlaveInstance().getConnectionParameterDict()
     p = p['_'] if '_' in p else p
     self.assertIn('info', p)
@@ -240,7 +234,6 @@ class TestEPCParameters(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "epc"
     def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
 class TestENBEPCParameters(ORSTestCase):
@@ -251,10 +244,8 @@ class TestENBEPCParameters(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "enb-epc"
     def test_enb_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_enb_conf(self)
     def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
 class TestGNBEPCParameters(ORSTestCase):
@@ -265,10 +256,8 @@ class TestGNBEPCParameters(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "gnb-epc"
     def test_gnb_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_gnb_conf1(self)
     def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
 def requestSlaveInstance(cls, software_type):
@@ -291,7 +280,6 @@ class TestEPCMonitorGadgetUrl(ORSTestCase):
         return "epc"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
@@ -304,7 +292,6 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
         return "enb"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestENBEPCMonitorGadgetUrl(ORSTestCase):
@@ -317,7 +304,6 @@ class TestENBEPCMonitorGadgetUrl(ORSTestCase):
         return "enb-epc"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
@@ -330,7 +316,6 @@ class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
         return "gnb-epc"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestGNBMonitorGadgetUrl(ORSTestCase):
@@ -343,7 +328,6 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
         return "gnb"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestMMEMonitorGadgetUrl(ORSTestCase):
@@ -356,7 +340,6 @@ class TestMMEMonitorGadgetUrl(ORSTestCase):
         return "mme"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestUELTEMonitorGadgetUrl(ORSTestCase):
@@ -369,7 +352,6 @@ class TestUELTEMonitorGadgetUrl(ORSTestCase):
         return "ue-lte"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestUENRMonitorGadgetUrl(ORSTestCase):
@@ -382,7 +364,6 @@ class TestUENRMonitorGadgetUrl(ORSTestCase):
         return "ue-nr"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestEPCSimCard(ORSTestCase):
@@ -402,7 +383,6 @@ class TestEPCSimCard(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "epc"
     def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_sim_card(self)
 
 class TestENBEPCSimCard(ORSTestCase):
@@ -422,7 +402,6 @@ class TestENBEPCSimCard(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "enb-epc"
     def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_sim_card(self)
 
 class TestGNBEPCSimCard(ORSTestCase):
@@ -442,7 +421,6 @@ class TestGNBEPCSimCard(ORSTestCase):
     def getInstanceSoftwareType(cls):
         return "gnb-epc"
     def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_sim_card(self)
 
 class TestUELTEParameters(ORSTestCase):
