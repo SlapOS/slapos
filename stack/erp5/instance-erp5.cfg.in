@@ -203,7 +203,7 @@ config-zodb-dict = {{ dumps(zodb_dict) }}
 {% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}
-config-neo-name = {{ server_dict.keys()[0] }}
+config-neo-name = {{ list(server_dict.keys())[0] }}
 config-neo-masters = ${publish-early:neo-masters}
 {%   else -%}
 config-zodb-zeo = ${request-zodb:connection-storage-dict}
