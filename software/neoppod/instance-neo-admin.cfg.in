@@ -45,7 +45,7 @@ ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = {{ dumps(slapparameter_dict['masters']) }}
 extra-options =
-{%- for k, v in monitor_dict.iteritems() %}
+{%- for k, v in six.iteritems(monitor_dict) %}
 {%-   if k == 'backup' %}
 {%-     set k = 'monitor-backup' %}
 {%-   endif %}
