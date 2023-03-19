@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import six
 import os
 import shlex
 from zc.buildout import UserError
@@ -41,7 +42,7 @@ class Cluster(object):
     for node in sorted(options['nodes'].split()):
       node = buildout[node]
       node_list.append(node)
-      for k, v in result_dict.iteritems():
+      for k, v in six.iteritems(result_dict):
         x = node[k]
         if x:
           v.append(x)
