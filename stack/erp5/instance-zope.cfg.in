@@ -397,8 +397,8 @@ config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 promise = check_error_on_zope_longrequest_log
 name = {{'check-' ~ name ~ '-longrequest-error-log.py'}}
 config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
-config-error-threshold = {{ slapparameter_dict["zope-longrequest-logger-error-threshold"] }}
-config-maximum-delay = {{ slapparameter_dict["zope-longrequest-logger-maximum-delay"] }}
+config-error-threshold = {{ dumps(slapparameter_dict["zope-longrequest-logger-error-threshold"]) }}
+config-maximum-delay = {{ dumps(slapparameter_dict["zope-longrequest-logger-maximum-delay"]) }}
 {% endif -%}
 
 [{{ section('logrotate-entry-' ~ name) }}]
