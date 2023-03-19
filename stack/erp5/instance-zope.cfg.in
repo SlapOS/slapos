@@ -251,7 +251,7 @@ file-list = {{ parameter_dict['site-zcml'] }}
 [{{ section('zope-inituser') }}]
 < = jinja2-template-base
 output = ${directory:instance}/inituser
-inline = {{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()) }}
+inline = {{ slapparameter_dict['inituser-login'] }}:{SHA}{{ base64.b64encode(hashlib.sha1(slapparameter_dict['inituser-password'].encode('utf-8')).digest()).decode() }}
 once = ${:output}_done
 
 [zope-conf-parameter-base]
