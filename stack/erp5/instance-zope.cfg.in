@@ -365,17 +365,11 @@ instance-home = ${directory:instance}
 port = {{ port }}
 
 [{{ section("promise-" ~ name) }}]
-{% if six.PY3 -%}
-# Disable the promise in Python 3. ERP5 is not compatible with Python 3 yet, so
-# the promise would always fail.
-recipe =
-{% else -%}
 <= monitor-promise-base
 promise = check_socket_listening
 name = {{ name }}.py
 config-host = {{ ipv4 }}
 config-port = {{ port }}
-{% endif -%}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
