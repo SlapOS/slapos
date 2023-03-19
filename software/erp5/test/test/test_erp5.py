@@ -878,6 +878,64 @@ class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
   pass
 
 
+
+class TestZopeShutdown(ZopeSkinsMixin, ERP5InstanceTestCase):
+  __partition_reference__ = 's'
+
+  @classmethod
+  def _setUpClass(cls):
+    super()._setUpClass()
+    cls.zope_base_url = cls._getAuthenticatedZopeUrl('')
+    param_dict = cls.getRootPartitionConnectionParameterDict()
+
+    # a python script to schedule activities
+    cls._addPythonScript(
+        script_id='ERP5Site_runActivityLoop',
+        params='mode="start"',
+        body='''if 1:
+          from time import sleep
+          portal = context.getPortalObject()
+          if mode == "run":
+            for i in range(1000):
+              for j in range(1000):
+                i * j # use CPU
+            portal.log("ERP5Site_runActivityLoop: %s" % portal.getTitle())
+            portal.setTitle(portal.getTitle() + '.')
+            return
+          if mode == "start":
+            for i in range(100):
+              portal.portal_templates.activate(activity="SQLQueue").ERP5Site_runActivityLoop(mode="run")
+            return "started"
+          raise ValueError("Unknown mode: %s" % mode)
+        ''',
+    )
+    cls.zope_verify_activity_processing_url = urllib.parse.urljoin(
+        cls.zope_base_url,
+        'ERP5Site_runActivityLoop',
+    )
+
+  def test_shutdown(self):
+    requests.get(self.zope_verify_activity_processing_url, verify=False).raise_for_status()
+
+    # XXX wait for a first execution
+    time.sleep(2)
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      zope_info, = [info for info in supervisor.getAllProcessInfo() if 'zope' in info['name']]
+      zope_name = f'{zope_info["group"]}:{zope_info["name"]}'
+      supervisor.stopProcess(zope_name)
+
+#    breakpoint()
+
+    for _ in range(20):
+      with self.slap.instance_supervisor_rpc as supervisor:
+        if supervisor.getProcessInfo(zope_name)['statename'] == 'RUNNING':
+          break
+      time.sleep(0.1)
+    else:
+      time.sleep(60)
+      self.fail("did not stop in time")
+
 class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
   __partition_reference__ = 't'
 
