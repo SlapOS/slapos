@@ -316,6 +316,7 @@ config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publi
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+{%   endif -%}
 
 [{{ check_test_runner_url_section_name }}]
 # Promise to wait for zope partition to receive the expected test-runner URL
