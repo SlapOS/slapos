@@ -281,6 +281,7 @@ software-type = zope
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
+{%   set promise_testrunner_balancer_ready_section_name = 'promise-tesrunner-balancer-ready-' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
 {%   do zope_family_name_list.append(zope_family) %}
 {%   set backend_path = zope_parameter_dict.get('backend-path', '') % {'site-id': site_id} %}
@@ -314,6 +315,23 @@ config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publi
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+
+[{{ promise_testrunner_balancer_ready_section_name }}-executable]
+# promise to wait for balancer partition to have returned the parameter
+recipe = slapos.cookbook:check_parameter
+value = ${publish-early:{{ zope_family }}-test-runner-url-list}
+expected-not-value = not-ready
+path = ${directory:bin}/${:_buildout_section_name_}
+expected-value =
+
+[{{ promise_testrunner_balancer_ready_section_name }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = {{ '${' ~ promise_testrunner_balancer_ready_section_name ~ '-executable:path}' }}
+
+{% do root_common.section(promise_testrunner_balancer_ready_section_name) -%}
+
 {%   endif -%}
 
 [{{ promise_software_url_section_name }}]
