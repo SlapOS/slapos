@@ -1,0 +1,11 @@
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <processing-elements xmlns="urn:o-ran:processing-element:1.0">
+        <transport-session-type>CPRI-INTERFACE</transport-session-type>
+        <ru-elements>
+            <name>PE0</name>
+            <transport-flow>
+                <interface-name>eth1</interface-name>
+            </transport-flow>
+        </ru-elements>
+    </processing-elements>
+</config>
