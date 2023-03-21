@@ -490,6 +490,9 @@ class AtsMixin(object):
 
 
 class TestDataMixin(object):
+  # show full diffs, as it is required for proper analysis of problems
+  maxDiff = None
+
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
       '%(group)s:%(name)s %(statename)s' % q for q
@@ -513,8 +516,6 @@ class TestDataMixin(object):
       value = data_replacement_dict[replacement]
       runtime_data = runtime_data.replace(value, replacement)
 
-    maxDiff = self.maxDiff
-    self.maxDiff = None
     longMessage = self.longMessage
     self.longMessage = True
     try:
@@ -529,7 +530,6 @@ class TestDataMixin(object):
           fh.write(runtime_data.strip() + '\n')
       raise
     finally:
-      self.maxDiff = maxDiff
       self.longMessage = longMessage
 
   def _test_file_list(self, slave_dir_list, IGNORE_PATH_LIST=None):
