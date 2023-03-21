@@ -25,16 +25,26 @@
 #
 ##############################################################################
 
+import datetime
 import glob
 import hashlib
 import json
 import os
 import re
 import requests
+import shutil
 import subprocess
+import tempfile
 import xml.etree.ElementTree as ET
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.util import bytes2str
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -194,7 +204,7 @@ class EdgeMixin(object):
         with open(info_dict['status-cron']) as fh:
           self.assertEqual(
             '*/2 * * * * %s' % (info_dict['status-json'],),
-          fh.read().strip()
+            fh.read().strip()
           )
 
   def initiateSurykatkaRun(self):
@@ -563,7 +573,7 @@ class TestNodeMonitoring(SlapOSInstanceTestCase):
       'promise_free_disk_space_nb_days_predicted': 10,
       'promise_free_disk_space_display_partition': True,
       'promise_free_disk_space_display_prediction': True,
-      })}
+    })}
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -571,3 +581,131 @@ class TestNodeMonitoring(SlapOSInstanceTestCase):
 
   def test_node_monitoring_instance(self):
     pass
+
+
+class TestNodeMonitoringRe6stCertificate(SlapOSInstanceTestCase):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def reRequestInstance(self, partition_parameter_kw=None, state='started'):
+    if partition_parameter_kw is None:
+      partition_parameter_kw = {}
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        state=state)
+
+  def test_default(self):
+    self.reRequestInstance()
+    self.slap.waitForInstance()
+    promise = os.path.join(
+      self.computer_partition_root_path, 'etc', 'plugin',
+      'check-re6stnet-certificate.py')
+    self.assertTrue(os.path.exists(promise))
+    with open(promise) as fh:
+      promise_content = fh.read()
+    # this test depends on OS level configuration
+    if os.path.exists('/etc/re6stnet/cert.crt'):
+      self.assertIn(
+        "extra_config_dict = {'certificate': '/etc/re6stnet/cert.crt', "
+        "'certificate-expiration-days': '15'}", promise_content)
+      self.assertIn(
+        "from slapos.promise.plugin.check_certificate import RunPromise",
+        promise_content)
+    else:
+      self.assertIn(
+        "extra_config_dict = {'command': 'echo \"re6stnet disabled on the "
+        "node\"'}", promise_content)
+      self.assertIn(
+        "from slapos.promise.plugin.check_command_execute import RunPromise",
+        promise_content)
+
+  def createKey(self):
+    key = rsa.generate_private_key(
+      public_exponent=65537, key_size=2048, backend=default_backend())
+    key_pem = key.private_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PrivateFormat.TraditionalOpenSSL,
+      encryption_algorithm=serialization.NoEncryption()
+    )
+    return key, key_pem
+
+  def createCertificate(self, key, days=30):
+    subject = issuer = x509.Name([
+      x509.NameAttribute(NameOID.COUNTRY_NAME, u"FR"),
+      x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Nord"),
+      x509.NameAttribute(NameOID.LOCALITY_NAME, u"Lille"),
+      x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Nexedi"),
+      x509.NameAttribute(NameOID.COMMON_NAME, u"Common"),
+    ])
+    certificate = x509.CertificateBuilder().subject_name(
+        subject
+    ).issuer_name(
+        issuer
+    ).public_key(
+        key.public_key()
+    ).serial_number(
+        x509.random_serial_number()
+    ).not_valid_before(
+        datetime.datetime.utcnow()
+    ).not_valid_after(
+        datetime.datetime.utcnow() + datetime.timedelta(days)
+    ).sign(key, hashes.SHA256(), default_backend())
+    certificate_pem = certificate.public_bytes(
+      encoding=serialization.Encoding.PEM)
+    return certificate, certificate_pem
+
+  def createKeyCertificate(self, certificate_path):
+    key, key_pem = self.createKey()
+    certificate, certificate_pem = self.createCertificate(key, 30)
+    with open(certificate_path, 'w') as fh:
+      fh.write(bytes2str(key_pem))
+    with open(certificate_path, 'a') as fh:
+      fh.write(bytes2str(certificate_pem))
+
+  def setUp(self):
+    super().setUp()
+    self.re6st_dir = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, self.re6st_dir)
+
+  def test_re6st_dir(self, days=None, filename='cert.crt'):
+    self.createKeyCertificate(os.path.join(self.re6st_dir, filename))
+    with open(os.path.join(self.re6st_dir, 're6stnet.conf'), 'w') as fh:
+      fh.write("")
+    partition_parameter_kw = {
+      'promise_re6stnet_config_directory': self.re6st_dir
+    }
+    if filename != 'cert.crt':
+      partition_parameter_kw['promise_re6stnet_certificate_file'] = filename
+    if days is not None:
+      partition_parameter_kw['re6stnet_certificate_expiration_delay'] = days
+    self.reRequestInstance(
+      partition_parameter_kw={'_': json.dumps(partition_parameter_kw)})
+    self.slap.waitForInstance()
+    promise = os.path.join(
+      self.computer_partition_root_path, 'etc', 'plugin',
+      'check-re6stnet-certificate.py')
+    self.assertTrue(os.path.exists(promise))
+    with open(promise) as fh:
+      promise_content = fh.read()
+    self.assertIn(
+      """extra_config_dict = { 'certificate': '%(re6st_dir)s/%(filename)s',
+  'certificate-expiration-days': '%(days)s'}""" % {
+       're6st_dir': self.re6st_dir,
+       'days': days or 15,
+       'filename': filename},
+      promise_content)
+    self.assertIn(
+      "from slapos.promise.plugin.check_certificate import RunPromise",
+      promise_content)
+
+  def test_re6st_dir_expiration(self):
+    self.test_re6st_dir(days=10)
+
+  def test_re6st_dir_filename(self):
+    self.test_re6st_dir(filename="cert.pem")
