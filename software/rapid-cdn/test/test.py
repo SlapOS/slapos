@@ -2063,6 +2063,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'enable-http2-default': {
         'url': cls.backend_url,
       },
+      'enable-http3-true': {
+        'url': cls.backend_url,
+        'enable-http3': True,
+      },
+      'enable-http3-default': {
+        'url': cls.backend_url,
+      },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
@@ -2266,9 +2273,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '56',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '56',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -4390,6 +4397,57 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(result)
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Connection': 'keep-alive',
+      },
+      headers
+    )
+
+    self.assertTrue(
+      isHTTP2(parameter_dict['domain']))
+
+  def test_enable_http3_true(self):
+    parameter_dict = self.assertSlaveBase('enable-http3-true')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = self.assertResponseHeaders(result)
+
+    self.assertEqual(
+      {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Connection': 'keep-alive',
+      },
+      headers
+    )
+
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain']))
+
+  def test_enable_http3_default(self):
+    parameter_dict = self.assertSlaveBase('enable-http3-default')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
