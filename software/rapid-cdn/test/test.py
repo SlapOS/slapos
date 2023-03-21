@@ -434,17 +434,13 @@ mimikra = Recurlests()
 
 
 def isHTTP2(domain):
-  curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
-    'https://%(domain)s:%(https_port)s/ '\
-    '--resolve %(domain)s:%(https_port)s:%(ip)s' % dict(
-      ip=TEST_IP, domain=domain, https_port=HTTPS_PORT)
-  prc = subprocess.Popen(
-    curl_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+  result = mimikra.get(
+    'https://%(domain)s:%(https_port)s/' % dict(
+      domain=domain, https_port=HTTPS_PORT),
+    resolve_all={HTTPS_PORT: TEST_IP},
+    verify=False
   )
-  out, err = prc.communicate()
-  assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
-    curl_command, out, err)
-  return 'Using HTTP2, server supports'.encode() in err
+  return result.protocol == '2'
 
 
 class AtsMixin(object):
