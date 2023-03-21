@@ -27,10 +27,9 @@
 
 import glob
 import os
-import requests
+import requests  # XXX to be removed
 from requests.structures import CaseInsensitiveDict
 import http.client
-from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
@@ -91,28 +90,9 @@ SOURCE_IP = '127.0.0.1'
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
-# "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
-DNS_CACHE = {}
-
 
 def unicode_escape(s):
   return s.encode('unicode_escape').decode()
-
-
-def add_custom_dns(domain, port, ip):
-  port = int(port)
-  key = (domain, port)
-  value = (socket.AF_INET, 1, 6, '', (ip, port))
-  DNS_CACHE[key] = [value]
-
-
-def new_getaddrinfo(*args):
-  return DNS_CACHE[args[:2]]
-
-
-def der2pem(der):
-  certificate = x509.load_der_x509_certificate(der, default_backend())
-  return certificate.public_bytes(serialization.Encoding.PEM)
 
 
 # comes from https://stackoverflow.com/a/21788372/9256748
@@ -707,7 +687,7 @@ class TestDataMixin(object):
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, cookies=None, source_ip=SOURCE_IP):
+                    headers=None, source_ip=SOURCE_IP):
   if headers is None:
     headers = {}
   # workaround request problem of setting Accept-Encoding
@@ -720,33 +700,24 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   # Expose some Via to show how nicely it arrives to the backend
   headers.setdefault('Via', 'http/1.1 clientvia')
 
-  session = requests.Session()
-  with session:
-    if source_ip is not None:
-      new_source = source.SourceAddressAdapter(source_ip)
-      session.mount('http://', new_source)
-      session.mount('https://', new_source)
-    socket_getaddrinfo = socket.getaddrinfo
-    try:
-      add_custom_dns(domain, port, TEST_IP)
-      socket.getaddrinfo = new_getaddrinfo
-      # Use a prepared request, to disable path normalization.
-      # We need this because some test checks requests with paths like
-      # /test-path/deep/.././deeper but we don't want the client to send
-      # /test-path/deeper
-      # See also https://github.com/psf/requests/issues/5289
-      url = 'https://%s:%s/%s' % (domain, port, path)
-      req = requests.Request(
-          method='GET',
-          url=url,
-          headers=headers,
-          cookies=cookies,
-      )
-      prepped = req.prepare()
-      prepped.url = url
-      return session.send(prepped, verify=False, allow_redirects=False)
-    finally:
-      socket.getaddrinfo = socket_getaddrinfo
+  url = 'https://%s:%s/%s' % (domain, port, path)
+
+  return mimikra.get(
+    url,
+    headers=headers,
+    verify=False,
+    allow_redirects=False,
+    source_ip=source_ip,
+    resolve_all={
+      port: TEST_IP
+    }
+  )
+  # XXX: Reassert below
+  # Use a prepared request, to disable path normalization.
+  # We need this because some test checks requests with paths like
+  # /test-path/deep/.././deeper but we don't want the client to send
+  # /test-path/deeper
+  # See also https://github.com/psf/requests/issues/5289
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
@@ -763,19 +734,17 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   # Expose some Via to show how nicely it arrives to the backend
   headers.setdefault('Via', 'http/1.1 clientvia')
   headers['Host'] = '%s:%s' % (domain, port)
-  session = requests.Session()
-  with session:
-    if source_ip is not None:
-      new_source = source.SourceAddressAdapter(source_ip)
-      session.mount('http://', new_source)
-      session.mount('https://', new_source)
-
-    # Use a prepared request, to disable path normalization.
-    url = 'http://%s:%s/%s' % (TEST_IP, port, path)
-    req = requests.Request(method='GET', url=url, headers=headers)
-    prepped = req.prepare()
-    prepped.url = url
-    return session.send(prepped, allow_redirects=False)
+  url = 'http://%s:%s/%s' % (TEST_IP, port, path)
+  return mimikra.get(
+    url,
+    headers=headers,
+    verify=False,
+    allow_redirects=False,
+    source_ip=source_ip,
+    resolve_all={
+      port: TEST_IP
+    }
+  )
 
 
 class TestHandler(BaseHTTPRequestHandler):
@@ -2417,7 +2386,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       parameter_dict['domain'], 'test-path')
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
@@ -2538,7 +2507,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
@@ -2661,7 +2630,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
       self.assertEqual(
         self.certificate_pem,
-        der2pem(result.peercert))
+        result.certificate)
 
       self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -2713,7 +2682,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
       self.assertEqual(
         self.certificate_pem,
-        der2pem(result.peercert))
+        result.certificate)
 
       self.assertEqual(
         result.status_code,
@@ -2736,7 +2705,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -2847,7 +2816,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -2866,7 +2835,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.MOVED_PERMANENTLY,
@@ -2889,7 +2858,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200', result.headers['Strict-Transport-Security'])
@@ -2901,7 +2870,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200', result.headers['Strict-Transport-Security'])
@@ -2915,7 +2884,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
   def test_server_alias_empty(self):
     parameter_dict = self.assertSlaveBase('server-alias-empty')
@@ -2931,7 +2900,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; includeSubDomains',
@@ -2960,7 +2929,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; preload',
@@ -2972,7 +2941,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; preload',
@@ -2987,7 +2956,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2996,7 +2965,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3008,7 +2977,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3038,7 +3007,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3095,8 +3064,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       ca_certificate_pem,
-      der2pem(result.peercert)
-    )
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3131,7 +3099,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3152,7 +3120,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -3171,7 +3139,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3184,7 +3152,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3194,7 +3162,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -3208,7 +3176,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3234,7 +3202,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.customdomain_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3247,7 +3215,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3287,7 +3255,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3322,7 +3290,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3365,7 +3333,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3403,7 +3371,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     try:
       j = result.json()
@@ -3460,7 +3428,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3482,7 +3450,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3511,7 +3479,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3540,7 +3508,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3570,7 +3538,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3638,7 +3606,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(
       result,
@@ -3706,7 +3674,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.FOUND,
@@ -3748,7 +3716,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.FOUND,
@@ -3772,7 +3740,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.SERVICE_UNAVAILABLE,
@@ -3801,7 +3769,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3840,7 +3808,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.SERVICE_UNAVAILABLE,
@@ -3859,7 +3827,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
@@ -3913,7 +3881,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
 
@@ -4336,7 +4304,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4370,7 +4338,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4398,7 +4366,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4423,7 +4391,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4447,7 +4415,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4472,7 +4440,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -4499,7 +4467,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4526,7 +4494,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4585,7 +4553,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4612,7 +4580,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -4745,7 +4713,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       'max-age=200; includeSubDomains; preload',
@@ -4904,7 +4872,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5226,7 +5194,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5249,7 +5217,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5516,7 +5484,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5528,7 +5496,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5555,7 +5523,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5574,7 +5542,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.ssl_from_slave_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5591,7 +5559,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.ssl_from_slave_kedifa_overrides_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5619,7 +5587,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5632,7 +5600,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5646,7 +5614,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5675,7 +5643,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5695,7 +5663,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.type_notebook_ssl_from_slave_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5713,7 +5681,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5742,7 +5710,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5760,7 +5728,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.customdomain_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5780,7 +5748,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5826,7 +5794,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -5859,7 +5827,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.sslcacrtgarbage_ca_certificate_pem,
-      der2pem(result.peercert)
+      result.certificate
     )
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5880,7 +5848,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'bbb-ssl',
@@ -5978,7 +5946,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -6003,7 +5971,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     self.assertEqual(
       certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -6066,7 +6034,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.OK, result.status_code)
 
@@ -6092,7 +6060,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(http.client.OK, result.status_code)
 
@@ -6463,7 +6431,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -6552,7 +6520,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqual(
       http.client.MOVED_PERMANENTLY,
@@ -6694,7 +6662,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         'Accept-Encoding': 'gzip',
       }
     )
-    self.assertEqual(self.certificate_pem, der2pem(result_wildcard.peercert))
+    self.assertEqual(self.certificate_pem, result_wildcard.certificate)
     self.assertEqualResultJson(result_wildcard, 'Path', '/wildcard/test-path')
 
     result_specific = fakeHTTPSResult(
@@ -6705,7 +6673,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         'Accept-Encoding': 'gzip',
       }
     )
-    self.assertEqual(self.certificate_pem, der2pem(result_specific.peercert))
+    self.assertEqual(self.certificate_pem, result_specific.certificate)
     self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
 
 
@@ -7149,7 +7117,7 @@ backend _health-check-default-http
     )
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -7222,7 +7190,7 @@ backend _health-check-default-http
     result = fakeHTTPResult(parameter_dict['domain'], '/path')
     self.assertEqualResultJson(result, 'Path', '/url/path')
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/https-url/path')
     # ...and cached result, also in order to store it in the cache
     configureResult('200', body_200)
@@ -7247,7 +7215,7 @@ backend _health-check-default-http
 
     # check simple failover
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
     self.assertEqual(result.text, body_failover)
 
@@ -7344,7 +7312,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/url/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/https-url/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
 
@@ -7358,7 +7326,7 @@ backend _health-check-default-http
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(
       result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
     self.assertEqual(
@@ -7378,7 +7346,7 @@ backend _health-check-default-http
 
     # check normal access
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
@@ -7395,7 +7363,7 @@ backend _health-check-default-http
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -7407,7 +7375,7 @@ backend _health-check-default-http
 
     # check normal access
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
@@ -7424,7 +7392,7 @@ backend _health-check-default-http
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     # as ssl proxy verification failed, service is unavailable
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
@@ -7437,7 +7405,7 @@ backend _health-check-default-http
 
     # check normal access
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
-    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqual(self.certificate_pem, result.certificate)
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
@@ -7454,7 +7422,7 @@ backend _health-check-default-http
 
     self.assertEqual(
       self.certificate_pem,
-      der2pem(result.peercert))
+      result.certificate)
 
     # as ssl proxy verification failed, service is unavailable
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
