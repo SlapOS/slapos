@@ -465,20 +465,6 @@ class Recurlests(object):
 mimikra = Recurlests()
 
 
-def isHTTP2(domain):
-  curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
-    'https://%(domain)s:%(https_port)s/ '\
-    '--resolve %(domain)s:%(https_port)s:%(ip)s' % dict(
-      ip=TEST_IP, domain=domain, https_port=HTTPS_PORT)
-  prc = subprocess.Popen(
-    curl_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
-  )
-  out, err = prc.communicate()
-  assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
-    curl_command, out, err)
-  return 'Using HTTP2, server supports'.encode() in err
-
-
 class AtsMixin(object):
   def _hack_ats(self, max_stale_age):
     records_config = glob.glob(
@@ -1185,6 +1171,24 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       raise
     except Exception as e:
       self.fail(e)
+
+  def assertHttp2(self, domain):
+    result = mimikra.get(
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=domain, https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False
+    )
+    self.assertEqual('2', result.protocol)
+
+  def assertHttp1(self, domain):
+    result = mimikra.get(
+      'https://%(domain)s:%(https_port)s/' % dict(
+        domain=domain, https_port=HTTPS_PORT),
+      resolve_all={HTTPS_PORT: TEST_IP},
+      verify=False
+    )
+    self.assertEqual('1', result.protocol)
 
   def assertResponseHeaders(
     self, result, cached=False, via=True, backend_reached=True):
@@ -3494,8 +3498,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j['Incoming Headers']['connection']
     )
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_type_websocket(self):
     parameter_dict = self.assertSlaveBase(
@@ -3524,8 +3527,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j['Incoming Headers']['connection']
     )
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_type_websocket_websocket_transparent_false(self):
     parameter_dict = self.assertSlaveBase(
@@ -3555,8 +3557,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j['Incoming Headers']['connection']
     )
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_type_websocket_websocket_path_list(self):
     parameter_dict = self.assertSlaveBase(
@@ -3575,8 +3576,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Path',
       '/test-path'
     )
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
     try:
       j = result.json()
     except Exception:
@@ -3593,8 +3593,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Path',
       '/ws/test-path'
     )
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
     try:
       j = result.json()
     except Exception:
@@ -3615,8 +3614,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Path',
       '/with%20space/test-path'
     )
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
     try:
       j = result.json()
     except Exception:
@@ -3646,8 +3644,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Path',
       '/test-path'
     )
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
     try:
       j = result.json()
     except Exception:
@@ -3664,8 +3661,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Path',
       '/ws/test-path'
     )
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
     try:
       j = result.json()
     except Exception:
@@ -3687,8 +3683,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Path',
       '/with%20space/test-path'
     )
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
     try:
       j = result.json()
     except Exception:
@@ -4417,8 +4412,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       headers
     )
 
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
@@ -4442,8 +4436,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       headers
     )
 
-    self.assertTrue(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp2(parameter_dict['domain'])
 
   def test_prefer_gzip_encoding_to_backend_https_only(self):
     parameter_dict = self.assertSlaveBase(
@@ -4978,20 +4971,17 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
 
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_enable_http2_false(self):
     parameter_dict = self.assertSlaveBase('enable-http2-false')
 
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_enable_http2_true(self):
     parameter_dict = self.assertSlaveBase('enable-http2-true')
 
-    self.assertTrue(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp2(parameter_dict['domain'])
 
 
 class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
@@ -5026,20 +5016,17 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
 
-    self.assertTrue(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp2(parameter_dict['domain'])
 
   def test_enable_http2_false(self):
     parameter_dict = self.assertSlaveBase('enable-http2-false')
 
-    self.assertFalse(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_enable_http2_true(self):
     parameter_dict = self.assertSlaveBase('enable-http2-true')
 
-    self.assertTrue(
-      isHTTP2(parameter_dict['domain']))
+    self.assertHttp2(parameter_dict['domain'])
 
 
 class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
