@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version ?.?.??? (unreleased)
+----------------------------
+
+* Add xamari xlog service
+
 Version 1.0.316 (2023-04-14)
 ----------------------------
 
