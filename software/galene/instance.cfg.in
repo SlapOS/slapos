@@ -1,96 +1,32 @@
 [buildout]
 parts =
-  publish-connection-parameter
-  stat-password
+  switch-softwaretype
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-url = https://[$${galene-wrapper:ip}]:$${galene-wrapper:port}
-admin-user = $${admin-password:username}
-admin-password = $${admin-password:passwd}
-
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.serialised
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
-configuration.ice-servers.json = [{"urls":["stun:turn-paris-rapidspace.api.nexedi.net:443"]}]
 
-[directory]
-recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-run = $${:var}/run
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-default:output
+RootSoftwareInstance = $${:default}
 
-services   = $${:etc}/service
-data       = $${:srv}/data
-groups     = $${:srv}/groups
-recordings = $${:srv}/recordings
-
-[galene-ssl]
-recipe = plone.recipe.command
-cert-file = $${directory:data}/cert.pem
-key-file = $${directory:data}/key.pem
-command = ${openssl:location}/bin/openssl req -newkey rsa:2048 -batch -new -x509  -days 3650 -nodes -keyout "$${:key-file}" -out "$${:cert-file}"
-update-command =
-stop-on-error = true
-
-[admin-password]
-recipe = slapos.cookbook:generate.password
-storage-path = $${directory:data}/.passwd
-username = admin
-
-[stat-password]
-recipe = slapos.recipe.template
-inline =
-  $${admin-password:username}:$${admin-password:passwd}
-output = $${directory:data}/passwd
-
-[ice-servers.json]
-recipe = slapos.recipe.template
-inline =
-  $${slap-configuration:configuration.ice-servers.json}
-output = $${directory:data}/ice-servers.json
-
-[groups-json]
-recipe = slapos.recipe.template
-inline =
-  {
-    "public":true,
-    "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
-    "other": [],
-    "presenter": [{"username": "", "password": "nexedi"}]
-  }
-output = $${directory:groups}/public.json
-
-[galene-wrapper]
-recipe = slapos.recipe.template
-port = 8443
-ip = $${slap-configuration:ipv6-random}
-inline =
-  #!/bin/sh
-
-  ulimit -n $(ulimit -Hn)
-  exec ${gowork:bin}/galene \
-    -static ${galene:location}/static \
-    -recordings $${directory:recordings} \
-    -groups $${directory:groups} \
-    -data $${directory:data} \
-    -http [$${:ip}]:$${:port} \
-    -turn ""
-output = $${directory:services}/galene
-depends =
-  $${ice-servers.json:recipe}
-  $${groups-json:recipe}
-  $${galene-ssl:recipe}
-
+[dynamic-template-default]
+recipe = slapos.recipe.template:jinja2
+url = ${template-default:output}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+filename = instance-default.cfg
+context =
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    raw buildout_directory ${buildout:directory}
+    section slap_connection slap-connection
+    key slapparameter_dict slap-configuration:configuration
