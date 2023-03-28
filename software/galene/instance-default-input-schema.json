@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "allow_subgroups": {
+      "title": "Allow subgroups",
+      "description": "Subgroups are automatically created when first accessed",
+      "type": "boolean",
+      "default": false
+    },
+    "use_password": {
+      "title": "Use password",
+      "description": "Use a password for presenter",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}
