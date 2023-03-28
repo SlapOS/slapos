@@ -1,0 +1,149 @@
+{% if slapparameter_dict.get("use_password", True) %}
+{% set presenter_password = "nexedi" %}
+{% else %}
+{% set presenter_password = "" %}
+{% endif %}
+
+[buildout]
+parts =
+  publish-connection-parameter
+  stat-password
+  monitor-base
+  port-listening-promise
+  galene-service
+{% if slapparameter_dict.get('dns_sr_url', '') %}
+  request-dns-entry
+{% endif %}
+
+extends = ${monitor-template:output}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+<= monitor-publish
+url = https://[$${galene-wrapper:ip}]:$${galene-wrapper:port}
+admin-user = $${admin-password:username}
+admin-password = $${admin-password:passwd}
+{% if slapparameter_dict.get('dns_sr_url', '') %}
+domain-url = https://$${request-dns-entry:connection-domain}:$${galene-wrapper:port}
+{% endif %}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = {{ slap_connection['computer-id'] }}
+partition = {{ slap_connection['partition-id'] }}
+url = {{ slap_connection['server-url'] }}
+key = {{ slap_connection['key-file'] }}
+cert = {{ slap_connection['cert-file'] }}
+configuration.ice-servers.json = [{"urls":["stun:turn-paris-rapidspace.api.nexedi.net:443"]}]
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+run = $${:var}/run
+
+services   = $${:etc}/service
+data       = $${:srv}/data
+groups     = $${:srv}/groups
+recordings = $${:srv}/recordings
+
+[galene-ssl]
+recipe = plone.recipe.command
+cert-file = $${directory:data}/cert.pem
+key-file = $${directory:data}/key.pem
+command = ${openssl:location}/bin/openssl req -newkey rsa:2048 -batch -new -x509  -days 3650 -nodes -keyout "$${:key-file}" -out "$${:cert-file}"
+update-command =
+stop-on-error = true
+
+[admin-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:data}/.passwd
+username = admin
+
+[stat-password]
+recipe = slapos.recipe.template
+inline =
+  $${admin-password:username}:$${admin-password:passwd}
+output = $${directory:data}/passwd
+
+[ice-servers.json]
+recipe = slapos.recipe.template
+inline =
+  $${slap-configuration:configuration.ice-servers.json}
+output = $${directory:data}/ice-servers.json
+
+[groups-json]
+recipe = slapos.recipe.template
+inline =
+  {
+    "public":true,
+    "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
+    "other": [],
+    "presenter": [{"username": "", "password": "{{ presenter_password }}"}],
+{%- if slapparameter_dict.get("allow_subgroups", False) %}
+    "allow-subgroups": true
+{%- else %}
+    "allow-subgroups": false
+{%- endif %}
+  }
+output = $${directory:groups}/public.json
+
+[galene-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${galene-wrapper:output}
+wrapper-path = $${directory:services}/galene
+mode = 0775
+hash-files =
+  $${groups-json:output}
+
+[galene-wrapper]
+recipe = slapos.recipe.template
+port = 8443
+ip = $${slap-configuration:ipv6-random}
+inline =
+  #!/bin/sh
+
+  ulimit -n $(ulimit -Hn)
+  exec ${gowork:bin}/galene \
+    -static ${galene:location}/static \
+    -recordings $${directory:recordings} \
+    -groups $${directory:groups} \
+    -data $${directory:data} \
+    -http [$${:ip}]:$${:port} \
+    -turn ""
+output = $${directory:bin}/galene-wrapper
+depends =
+  $${ice-servers.json:recipe}
+  $${groups-json:recipe}
+  $${galene-ssl:recipe}
+
+[port-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = galene-port-listening.py
+config-host = $${slap-configuration:ipv6-random}
+config-port = 8443
+
+[request-dns-entry]
+name = dns-galene-entry
+recipe = slapos.cookbook:request.serialised
+software-url = {{ slapparameter_dict['dns_sr_url'] }}
+software-type = core-network
+server-url = {{ slap_connection['server-url'] }}
+computer-id = {{ slap_connection['computer-id'] }}
+partition-id = {{ slap_connection['partition-id'] }}
+key-file = {{ slap_connection['key-file'] }}
+cert-file = {{ slap_connection['cert-file'] }}
+shared = true
+sla-computer_guid = {{ slap_connection['computer-id'] }}
+config-name = dns-galene-entry
+config-subdomain = conference
+config-ip = $${slap-configuration:ipv6-random}
+return = domain ip
