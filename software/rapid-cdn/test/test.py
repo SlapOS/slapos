@@ -1161,7 +1161,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertEqual('1.1', result.protocol)
 
   def assertResponseHeaders(
-    self, result, cached=False, via=True, backend_reached=True):
+    self, result, cached=False, via=True, backend_reached=True,
+    client_version='2.0'):
     headers = result.headers.copy()
     self.assertKeyWithPop('Content-Length', headers)
 
@@ -1179,14 +1180,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
           'http/1.1 backendvia, '
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
           'http/1.0 rapid-cdn-cache-%(via_id)s, '
-          'HTTP/2.0 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           headers.pop('Via')
         )
       else:
         self.assertEqual(
           'http/1.1 backendvia, '
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'HTTP/2.0 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           headers.pop('Via')
         )
     else:
@@ -2405,7 +2408,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def assertRequestHeaders(
     self, header_dict, domain=None, source_ip=SOURCE_IP,
-    port=HTTPS_PORT, proto='https', cached=False):
+    port=HTTPS_PORT, proto='https', cached=False, client_version='2.0'):
     if domain is not None:
       self.assertEqual(
         header_dict['host'],
@@ -2429,8 +2432,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(
         [
           'http/1.1 clientvia',
-          'HTTP/2.0 rapid-cdn-frontend-%(via_id)s, '
-          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
+          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
         header_dict['via']
@@ -2439,7 +2443,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(
         [
           'http/1.1 clientvia',
-          'HTTP/2.0 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
         header_dict['via']
@@ -3416,7 +3421,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3445,7 +3451,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+    self.assertRequestHeaders(
+      j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3475,7 +3482,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
-      j['Incoming Headers'], port='17', proto='irc')
+      j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -3975,7 +3982,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(http.client.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
 
-    self.assertResponseHeaders(result, cached=True)
+    self.assertResponseHeaders(result, cached=True, client_version='1.1')
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -4325,17 +4332,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, client_version='1.1')
 
     self.assertEqual(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Connection': 'Keep-Alive',
       },
       headers
     )
 
-    self.assertHttp11(parameter_dict['domain'])
+    self.assertHttp1(parameter_dict['domain'])
 
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
@@ -4464,7 +4472,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'],
-      port=HTTP_PORT, proto='http')
+      port=HTTP_PORT, proto='http', client_version='1.1')
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
