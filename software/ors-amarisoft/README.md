@@ -12,21 +12,13 @@ How to deploy from scratch
 Since there are many ors-amarisoft softwares releases and software types, the following files are
 generated with jinja2 templates with the render-templates script before being pushed to gitlab:
 
- * instance-tdd1900-enb-epc-input-schema.json
  * instance-tdd1900-enb-input-schema.json
- * instance-tdd1900-gnb-epc-input-schema.json
  * instance-tdd1900-gnb-input-schema.json
- * instance-tdd2600-enb-epc-input-schema.json
  * instance-tdd2600-enb-input-schema.json
- * instance-tdd2600-gnb-epc-input-schema.json
  * instance-tdd2600-gnb-input-schema.json
- * instance-tdd3500-enb-epc-input-schema.json
  * instance-tdd3500-enb-input-schema.json
- * instance-tdd3500-gnb-epc-input-schema.json
  * instance-tdd3500-gnb-input-schema.json
- * instance-tdd3700-enb-epc-input-schema.json
  * instance-tdd3700-enb-input-schema.json
- * instance-tdd3700-gnb-epc-input-schema.json
  * instance-tdd3700-gnb-input-schema.json
  * software-tdd1900.cfg
  * software-tdd1900.cfg.json
