@@ -11,64 +11,30 @@
       "response": "instance-tdd3500-enb-schema.json",
       "index": 0
     },
-    "enb-epc": {
-      "title": "eNB and EPC",
-      "software-type": "enb-epc",
-      "description": "eNodeB and EPC Configuration",
-      "request": "instance-tdd3500-enb-epc-input-schema.json",
-      "response": "instance-tdd3500-enb-epc-schema.json",
-      "index": 1
-    },
     "gnb": {
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
       "request": "instance-tdd3500-gnb-input-schema.json",
       "response": "instance-tdd3500-gnb-schema.json",
+      "index": 1
+    },
+    "mme": {
+      "title": "EPC",
+      "software-type": "mme",
+      "description": "EPC Configuration",
+      "request": "instance-mme-input-schema.json",
+      "response": "instance-mme-schema.json",
       "index": 2
     },
-    "gnb-epc": {
-      "title": "gNB and EPC",
-      "software-type": "gnb-epc",
-      "description": "gNodeB and EPC Configuration",
-      "request": "instance-tdd3500-gnb-epc-input-schema.json",
-      "response": "instance-tdd3500-gnb-epc-schema.json",
-      "index": 3
-    },
-    "epc": {
-      "title": "EPC",
-      "software-type": "epc",
-      "description": "EPC Configuration",
-      "request": "instance-epc-input-schema.json",
-      "response": "instance-epc-schema.json",
-      "index": 4
-    },
-    "gnb-epc-slave": {
-      "title": "gNB-EPC Sim Card",
-      "description": "gNB-EPC Sim Card Configuration",
-      "software-type": "gnb-epc",
-      "request": "instance-gnb-epc-slave-input-schema.json",
-      "response": "instance-gnb-epc-slave-schema.json",
-      "shared": true,
-      "index": 5
-    },
-    "enb-epc-slave": {
-      "title": "eNB-EPC Sim Card",
-      "description": "eNB-EPC Sim Card Configuration",
-      "software-type": "enb-epc",
-      "request": "instance-enb-epc-slave-input-schema.json",
-      "response": "instance-enb-epc-slave-schema.json",
-      "shared": true,
-      "index": 6
-    },
-    "epc-slave": {
+    "mme-slave": {
       "title": "EPC Sim Card",
       "description": "EPC Sim Card Configuration",
-      "software-type": "epc",
-      "request": "instance-epc-slave-input-schema.json",
-      "response": "instance-epc-slave-schema.json",
+      "software-type": "mme",
+      "request": "instance-mme-slave-input-schema.json",
+      "response": "instance-mme-slave-schema.json",
       "shared": true,
-      "index": 7
+      "index": 3
     },
     "ue-lte": {
       "title": "UE-LTE",
@@ -76,7 +42,7 @@
       "software-type": "ue-lte",
       "request": "instance-tdd3500-ue-lte-input-schema.json",
       "response": "instance-tdd3500-ue-lte-schema.json",
-      "index": 8
+      "index": 4
     },
     "ue-nr": {
       "title": "UE-NR",
@@ -84,7 +50,7 @@
       "software-type": "ue-nr",
       "request": "instance-tdd3500-ue-nr-input-schema.json",
       "response": "instance-tdd3500-ue-nr-schema.json",
-      "index": 9
+      "index": 5
     }
   }
 }
