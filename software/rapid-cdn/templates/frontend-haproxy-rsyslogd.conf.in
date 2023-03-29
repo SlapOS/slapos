@@ -26,7 +26,7 @@ template(name="haproxy_slave_line" type="string" string="%msg:R,ERE,2,FIELD:{{ r
 # React on match
 if (re_match($msg, '{{ regex }}')) then {
  action(type="omfile" dynaFile="slave_output" template="haproxy_slave_line")
- stop
+# stop {#- XXX DEBUGGING - trying to find out what is escaping the regex #}
 }
 
 {#- emit all not catched messages to full log file #}
