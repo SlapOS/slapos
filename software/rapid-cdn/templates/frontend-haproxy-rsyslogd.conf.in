@@ -16,7 +16,7 @@ $Umask 0022
 $WorkDirectory {{ configuration['spool-directory'] }}
 
 # Setup logging per slave, by extracting the slave name from the log stream
-{%- set regex = "^\\\\s*(\\\\S.*)-https{0,1} (.*)" %}
+{%- set regex = "^\\\\s*\\\\{(\\\\S.*)-https{0,1}\\\\} (.*)" %}
 # Extract file name part from 1st match
 template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
 set $!slave_name = exec_template("extract_slave_name");
