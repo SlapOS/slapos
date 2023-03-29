@@ -95,14 +95,12 @@ for i in range (4):
 
 with open('software.cfg.json.jinja2', 'r') as f:
     software_json_template = Template(f.read())
-with open('instance-enb-input-schema.json.jinja2', 'r') as f:
-    instance_enb_json_template = Template(f.read())
-with open('instance-gnb-input-schema.json.jinja2', 'r') as f:
-    instance_gnb_json_template = Template(f.read())
-with open('instance-ue-lte-input-schema.json.jinja2', 'r') as f:
-    instance_ue_lte_json_template = Template(f.read())
-with open('instance-ue-nr-input-schema.json.jinja2', 'r') as f:
-    instance_ue_nr_json_template = Template(f.read())
+
+instance_json_template_map = {}
+for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
+    with open('instance-{}-input-schema.json.jinja2'.format(software_type), 'r') as f:
+        instance_json_template_map[software_type] = Template(f.read())
+
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
 with open('test/test.jinja2.py', 'r') as f:
@@ -118,17 +116,9 @@ for rf_mode_context in rf_mode_context_list:
     with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
               'w+') as f:
         f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
-    for software_type in ['enb', 'enb-epc', 'gnb', 'gnb-epc', 'ue-lte', 'ue-nr']:
+    for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
         with open('instance-{}-{}-input-schema.json'.format(
                     rf_mode_context['rf_mode'],
                     software_type),
                   'w+') as f:
-            if software_type in ['enb', 'enb-epc']:
-                f.write(instance_enb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
-            elif software_type in ['gnb', 'gnb-epc']: 
-                f.write(instance_gnb_json_template.render(**rf_mode_context, **global_context, epc='epc' in software_type) + '\n')
-            elif software_type in ['ue-lte']:
-                f.write(instance_ue_lte_json_template.render(**rf_mode_context, **global_context) + '\n')
-            else: 
-                f.write(instance_ue_nr_json_template.render(**rf_mode_context, **global_context) + '\n')
-  
+            f.write(instance_json_template_map[software_type].render(**rf_mode_context, **global_context) + '\n')

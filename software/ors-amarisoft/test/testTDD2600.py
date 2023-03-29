@@ -232,67 +232,26 @@ class TestGNBParameters2(ORSTestCase):
     def test_gnb_conf(self):
         test_gnb_conf2(self)
 
-class TestEPCParameters(ORSTestCase):
+class TestCoreNetworkParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps(param_dict)}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "epc"
+        return "mme"
     def test_mme_conf(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
-class TestENBEPCParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-    def test_enb_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_enb_conf(self)
-    def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_mme_conf(self)
-
-class TestGNBEPCParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb-epc"
-    def test_gnb_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_gnb_conf1(self)
-    def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_mme_conf(self)
-
-def requestSlaveInstance(cls, software_type):
+def requestSlaveInstance(cls):
     software_url = cls.getSoftwareURL()
     return cls.slap.request(
         software_release=software_url,
-        partition_reference="SIM-CARD-EPC",
+        partition_reference="SIM-CARD",
         partition_parameter_kw={'_': json.dumps(param_dict)},
         shared=True,
-        software_type=software_type,
+        software_type='mme',
     )
-
-class TestEPCMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "epc"
-
-    def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
-      test_monitor_gadget_url(self)
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
     @classmethod
@@ -302,32 +261,6 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb"
-
-    def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
-      test_monitor_gadget_url(self)
-
-class TestENBEPCMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-
-    def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
-      test_monitor_gadget_url(self)
-
-class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb-epc"
 
     def test_monitor_gadget_url(self):
       self.slap.waitForInstance() # Wait until publish is done
@@ -346,7 +279,7 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
       self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
-class TestMMEMonitorGadgetUrl(ORSTestCase):
+class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({'testing': True, 'slave-list': []})}
@@ -385,7 +318,7 @@ class TestUENRMonitorGadgetUrl(ORSTestCase):
       self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
-class TestEPCSimCard(ORSTestCase):
+class TestSimCard(ORSTestCase):
     @classmethod
     def requestDefaultInstance(cls, state='started'):
         default_instance = super(
@@ -394,53 +327,13 @@ class TestEPCSimCard(ORSTestCase):
         return default_instance
     @classmethod
     def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls, 'epc')
+        return requestSlaveInstance(cls)
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({'testing': True})}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "epc"
-    def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_sim_card(self)
-
-class TestENBEPCSimCard(ORSTestCase):
-    @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        default_instance = super(
-            ORSTestCase, cls).requestDefaultInstance(state=state)
-        cls.requestSlaveInstance()
-        return default_instance
-    @classmethod
-    def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls, 'enb-epc')
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-    def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_sim_card(self)
-
-class TestGNBEPCSimCard(ORSTestCase):
-    @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        default_instance = super(
-            ORSTestCase, cls).requestDefaultInstance(state=state)
-        cls.requestSlaveInstance()
-        return default_instance
-    @classmethod
-    def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls, 'gnb-epc')
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb-epc"
+        return "mme"
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_sim_card(self)
