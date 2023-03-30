@@ -6,7 +6,8 @@ def post_make_hook(options, buildout):
   location = options['location']
   matches = [os.path.join(root, filename)
     for root, dirnames, filenames in os.walk(location)
-    for filename in fnmatch.filter(filenames, 'libperl.a')]
+    for filename in fnmatch.filter(filenames, 'libperl.a')
+    if '.build' not in root]
   if not matches:
     raise UserError("ERROR - no libperl.* found!")
   if len(matches) > 1:
