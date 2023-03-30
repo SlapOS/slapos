@@ -19,20 +19,20 @@
       "response": "instance-tdd2600-gnb-schema.json",
       "index": 1
     },
-    "mme": {
-      "title": "EPC",
-      "software-type": "mme",
-      "description": "EPC Configuration",
-      "request": "instance-mme-input-schema.json",
-      "response": "instance-mme-schema.json",
+    "core-network": {
+      "title": "Core Network",
+      "software-type": "core-network",
+      "description": "Core Network Configuration",
+      "request": "instance-core-network-input-schema.json",
+      "response": "instance-core-network-schema.json",
       "index": 2
     },
-    "mme-slave": {
-      "title": "EPC Sim Card",
-      "description": "EPC Sim Card Configuration",
-      "software-type": "mme",
-      "request": "instance-mme-slave-input-schema.json",
-      "response": "instance-mme-slave-schema.json",
+    "core-network-slave": {
+      "title": "Core Network Sim Card",
+      "description": "Core Network Sim Card Configuration",
+      "software-type": "core-network",
+      "request": "instance-core-network-slave-input-schema.json",
+      "response": "instance-core-network-slave-schema.json",
       "shared": true,
       "index": 3
     },
