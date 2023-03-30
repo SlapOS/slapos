@@ -3,7 +3,7 @@
   "title": "Core Network Input Parameters",
   "type": "object",
   "properties": {
-    "epc_plmn": {
+    "core_network_plmn": {
       "default": "00101",
       "title": "Core Network PLMN",
       "description": "Core Network Public Land Mobile Network",

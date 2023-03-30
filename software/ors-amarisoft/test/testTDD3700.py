@@ -57,7 +57,7 @@ param_dict = {
         '10.0.0.1': {'mme_addr': '10.0.0.1'},
         '2001:db8::1': {'mme_addr': '2001:db8::1'},
     },
-    'epc_plmn': '00102',
+    'core_network_plmn': '00102',
     'dl_nr_arfcn': 325320,
     'nr_band': 99,
     'nr_bandwidth': 50,
@@ -166,7 +166,7 @@ def test_mme_conf(self):
 
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)
-    self.assertEqual(conf['plmn'], param_dict['epc_plmn'])
+    self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_sim_card(self):
 
@@ -238,7 +238,7 @@ class TestCoreNetworkParameters(ORSTestCase):
         return {'_': json.dumps(param_dict)}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "mme"
+        return "core-network"
     def test_mme_conf(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
@@ -250,7 +250,7 @@ def requestSlaveInstance(cls):
         partition_reference="SIM-CARD",
         partition_parameter_kw={'_': json.dumps(param_dict)},
         shared=True,
-        software_type='mme',
+        software_type='core-network',
     )
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
@@ -286,7 +286,7 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
 
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "mme"
+        return "core-network"
 
     def test_monitor_gadget_url(self):
       self.slap.waitForInstance() # Wait until publish is done
@@ -333,7 +333,7 @@ class TestSimCard(ORSTestCase):
         return {'_': json.dumps({'testing': True})}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "mme"
+        return "core-network"
     def test_sim_card(self):
         self.slap.waitForInstance() # Wait until publish is done
         test_sim_card(self)
