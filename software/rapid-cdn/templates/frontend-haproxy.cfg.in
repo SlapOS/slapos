@@ -98,9 +98,9 @@ frontend https-frontend
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     if HTTP3 and slave_instance['enable-http3'] %}
-  http-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
+  http-after-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
   {#- Ask Chromium to use HTTP3 #}
-  http-response set-header alternate-protocol {{ configuration['http3-port'] }}:quic
+  http-after-response set-header alternate-protocol {{ configuration['http3-port'] }}:quic
 {%-     endif %}
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
@@ -112,9 +112,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
 {%-           if slave_instance['disable-via-header'] %}
-  http-response del-header Via
+  http-after-response del-header Via
 {%-           else %}
-  http-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-           endif %}
 {%-           if scheme == 'https' %}
 {%-             if slave_instance['strict-transport-security'] > 0 %}
@@ -125,7 +125,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-               if slave_instance['strict-transport-security-preload'] %}
 {%-                 do strict_transport_security.append('; preload') %}
 {%-               endif %}
-  http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+  http-after-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
 {%-             endif %}
 {%-           endif %}
 {%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}
