@@ -110,9 +110,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
 {%-           if slave_instance['disable-via-header'] %}
-  http-response del-header Via
+  http-after-response del-header Via
 {%-           else %}
-  http-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-           endif %}
 {%-           if scheme == 'https' %}
 {%-             if slave_instance['strict-transport-security'] > 0 %}
@@ -123,7 +123,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-               if slave_instance['strict-transport-security-preload'] %}
 {%-                 do strict_transport_security.append('; preload') %}
 {%-               endif %}
-  http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+  http-after-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
 {%-             endif %}
 {%-           endif %}
 {%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}
