@@ -418,6 +418,8 @@ backend-url = $${selenium-server-hub-instance:url}
 url = $${selenium-server-frontend-instance:url}
 admin-url = $${selenium-server-frontend-instance:admin-url}
 frontend-url = $${selenium-server-apache-frontend:connection-secure_access}
+user = $${selenium-server-selenium-password:username}
+pass = $${selenium-server-selenium-password:passwd}
 ssh-url = $${sshd-service:url}
 ssh-fingerprint = $${ssh-key-fingerprint:fingerprint}
 # to run a local node - useful to see what tests are doing or
