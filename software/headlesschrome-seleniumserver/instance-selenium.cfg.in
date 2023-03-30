@@ -210,6 +210,22 @@ content =
     http-request auth realm "Grid Admin" unless auth_ok
     server admin $${selenium-server-hub-instance:hostname}:$${selenium-server-hub-instance:port}
 
+[selenium-server-apache-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Selenium Public Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+#config-url = ${monitor-httpd-conf-parameter:url}
+# monitor-httpd-conf-parameter:url is url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
+config-url = ${selenium-server-frontend-instance:url}
+
+config-https-only = true
+#software-type = custom-personal
+return = domain secure_access
+
+
 [selenium-server-frontend-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
@@ -406,7 +422,7 @@ recipe = slapos.cookbook:publish
 backend-url = $${selenium-server-hub-instance:url}
 url = $${selenium-server-frontend-instance:url}
 admin-url = $${selenium-server-frontend-instance:admin-url}
-
+frontend-url = $${selenium-server-apache-frontend:url}
 ssh-url = $${sshd-service:url}
 ssh-fingerprint = $${ssh-key-fingerprint:fingerprint}
 # to run a local node - useful to see what tests are doing or
