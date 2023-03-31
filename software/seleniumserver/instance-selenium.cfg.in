@@ -133,11 +133,6 @@ capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromi
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
 port = 7782
 
-[selenium-server-node-instance-headless-chromium]
-<= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-source:version},chrome_binary=${headless-chromium-wrapper:output}
-java-args = -Dwebdriver.chrome.driver=${headless-chromium:chromedriver}
-port = 7783
 
 [selenium-server-admin-password]
 recipe = slapos.cookbook:generate.password
@@ -314,7 +309,7 @@ instance-promises =
   $${selenium-server-node-firefox-78-listen-promise:name}
   $${selenium-server-node-instance-chromium-69-listen-promise:name}
   $${selenium-server-node-instance-chromium-91-listen-promise:name}
-  $${selenium-server-node-instance-headless-chromium-listen-promise:name}
+
 
 [check-port-listening-promise]
 <= monitor-promise-base
@@ -349,7 +344,6 @@ expected-node-count = 18
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0755
 inline =
   #!${buildout:executable}
   import json, urllib.request, sys
@@ -389,10 +383,6 @@ config-port = $${selenium-server-node-instance-chromium-69:port}
 config-host = $${selenium-server-node-instance-chromium-91:hostname}
 config-port = $${selenium-server-node-instance-chromium-91:port}
 
-[selenium-server-node-instance-headless-chromium-listen-promise]
-<= check-port-listening-promise
-config-host = $${selenium-server-node-instance-headless-chromium:hostname}
-config-port = $${selenium-server-node-instance-headless-chromium:port}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
