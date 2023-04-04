@@ -27,8 +27,14 @@ monitor-url = ${monitor-publish-parameters:monitor-url}
 monitor-user = ${monitor-publish-parameters:monitor-user}
 monitor-password = ${monitor-publish-parameters:monitor-password}
 
+[kvm-monitor-port]
+recipe = slapos.cookbook:free_port
+minimum = 8276
+maximum = 8296
+ip = {{ partition_ipv6 }}
+
 [monitor-instance-parameter]
-monitor-httpd-port = 8276
+monitor-httpd-port = ${kvm-monitor-port:port}
 monitor-title = {{ slapparameter_dict.get('name', 'Kvm Resilient clone') }}
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
 {%   if slapparameter_dict.get('monitor-username', '') -%}
