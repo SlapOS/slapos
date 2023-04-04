@@ -69,6 +69,7 @@ extra-context =
   raw template_content ${template-content:target}
   raw template_httpd_cfg ${template-httpd:output}
   raw template_monitor ${monitor2-template:output}
+  key partition_ipv6 slap-configuration:ipv6-random
 
 [dynamic-template-kvm]
 <= jinja2-template-base
@@ -105,6 +106,7 @@ extra-context =
   raw template_nginx ${template-nginx:target}
   raw websockify_executable_location ${buildout:directory}/bin/websockify
   raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
+  key partition_ipv6 slap-configuration:ipv6-random
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
@@ -121,6 +123,7 @@ context =
     key slapparameter_dict slap-configuration:configuration
     raw curl_executable_location ${curl:location}/bin/curl
     raw template_monitor ${monitor2-template:output}
+    key partition_ipv6 slap-configuration:ipv6-random
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
@@ -139,6 +142,7 @@ context =
     key pbsready_export_template template-pbsready-export:output
     raw gzip_binary ${gzip:location}/bin/gzip
     key slapparameter_dict slap-configuration:configuration
+    key partition_ipv6 slap-configuration:ipv6-random
 
 [dynamic-template-kvm-import]
 recipe = slapos.recipe.template:jinja2
@@ -154,6 +158,7 @@ context =
     key slapparameter_dict slap-configuration:configuration
     raw zcat_binary ${gzip:location}/bin/zcat
     raw gzip_binary ${gzip:location}/bin/gzip
+    key partition_ipv6 slap-configuration:ipv6-random
 
 [dynamic-template-nbd]
 <= jinja2-template-base
