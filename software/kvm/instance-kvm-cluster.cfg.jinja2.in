@@ -300,8 +300,14 @@ recipe = slapos.cookbook:publish-early
 -init =
   monitor-password monitor-htpasswd:passwd
 
+[kvm-monitor-port]
+recipe = slapos.cookbook:free_port
+minimum = 8060
+maximum = 8080
+ip = {{ partition_ipv6 }}
+
 [monitor-instance-parameter]
-monitor-httpd-port = 8060
+monitor-httpd-port = ${kvm-monitor-port:port}
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
