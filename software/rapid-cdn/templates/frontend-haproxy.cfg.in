@@ -58,7 +58,7 @@ defaults
   capture request header REMOTE_USER len 255
   capture request header Referer len 255
   capture request header User-Agent len 255
-  log-format "%{+E}o {{ '{' }}%b{{ '}' }} %ci - %[capture.req.hdr(0)] [%trl] \"%HM %HU %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
+  log-format "%{+E}o {{ '{' }}%b{{ '}' }} %ci - %[capture.req.hdr(0)] [%trl] \"%HM %[capture.req.uri] %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
   # setup Via
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   # setup X-Forwarded-For
