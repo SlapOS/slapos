@@ -317,7 +317,7 @@ monitor-password = ${monitor-instance-parameter:password}
 
 [monitor-address]
 recipe = slapos.cookbook:free_port
-minimum = 8196
+minimum = 8200
 maximum = 8396
 ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
 
