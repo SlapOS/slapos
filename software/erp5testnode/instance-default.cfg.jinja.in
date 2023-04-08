@@ -32,6 +32,12 @@ log-frontend-url = $${testnode-log-frontend:connection-secure_access}
 recipe = slapos.cookbook:generate.password
 storage-path = $${buildout:directory}/.password
 
+[httpd-address]
+recipe = slapos.cookbook:free_port
+minimum = 9080
+maximum = 9180
+ip = {{ partition_ipv6 }}
+
 [testnode]
 recipe = slapos.cookbook:erp5testnode
 slapos-directory = $${directory:slapos}
@@ -64,8 +70,8 @@ httpd-pid-file = $${basedirectory:run}/httpd.pid
 httpd-lock-file = $${basedirectory:run}/httpd.lock
 httpd-conf-file = $${rootdirectory:etc}/httpd.conf
 httpd-wrapper = $${rootdirectory:bin}/httpd
-httpd-port = 9080
-httpd-software-access-port = 9081
+httpd-port = $${httpd-address:port}
+httpd-software-access-port = $${httpd-address:port} + 1
 httpd-ip = {{ partition_ipv6 }}
 httpd-log-directory = $${basedirectory:log}
 httpd-software-directory = $${directory:software}
@@ -124,6 +130,12 @@ location =
   $${:cert-file}
 ipv6 = {{ partition_ipv6 }}
 
+[shellinabox-frontend-address]
+recipe = slapos.cookbook:free_port
+minimum = 8080
+maximum = 8180
+ip = $${shellinabox-frontend-certificate:ipv6}
+
 [shellinabox-frontend-config]
 recipe = slapos.recipe.template:jinja2
 url = ${stack-haproxy-default-backend-config:target}
@@ -145,7 +157,7 @@ content =
 
 ipv6 = $${shellinabox-frontend-certificate:ipv6}
 hostname = [$${:ipv6}]
-port = 8080
+port = $${shellinabox-frontend-address:port}
 username = testnode
 passwd = $${pwgen:passwd}
 cert-file = $${directory:shellinabox}/public.crt
