@@ -668,12 +668,18 @@ context =
     raw docroot {{ novnc_location }}
     raw mime {{ nginx_mime }}
 
+[kvm-nginx-port]
+recipe = slapos.cookbook:free_port
+minimum = 6080
+maximum = 6100
+ip = {{ partition_ipv6 }}
+
 [nginx-params]
 path-pid = ${directory:run}/nginx.pid
 path-error-log = ${directory:log}/nginx-error.log
 path-access-log = ${directory:log}/nginx-access.log
 ip = ${slap-network-information:global-ipv6}
-port = 6080
+port = ${kvm-nginx-port:port}
 websocket-ip = ${kvm-parameter-dict:vnc-ip}
 websocket-port = ${kvm-parameter-dict:vnc-websocket-port}
 websocket-path = websockify
@@ -1081,6 +1087,12 @@ md5sum = {{ bootstrap_script_url[1] }}
 name = vm-bootstrap
 log = ${directory:public}/ansible/vm-bootstrap.log
 
+[kvm-slapos-parameter-port]
+recipe = slapos.cookbook:free_port
+minimum = 8081
+maximum = 8101
+ip = {{ partition_ipv6 }}
+
 [slap-parameter]
 # Default values if not specified
 frontend-software-type = RootSoftwareInstance
@@ -1131,7 +1143,7 @@ external-disk = {}
 
 # Help to get some configuration files into the vm from http
 enable-http-server = False
-httpd-port = 8081
+httpd-port = ${kvm-slapos-parameter-port:port}
 # for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_key if use-nat = True
 authorized-key =
 
