@@ -35,7 +35,13 @@ storage-path = $${buildout:directory}/.password
 [httpd-address]
 recipe = slapos.cookbook:free_port
 minimum = 9080
-maximum = 9180
+maximum = 9100
+ip = {{ partition_ipv6 }}
+
+[httpd-software-address]
+recipe = slapos.cookbook:free_port
+minimum = 9100
+maximum = 9120
 ip = {{ partition_ipv6 }}
 
 [testnode]
@@ -71,7 +77,7 @@ httpd-lock-file = $${basedirectory:run}/httpd.lock
 httpd-conf-file = $${rootdirectory:etc}/httpd.conf
 httpd-wrapper = $${rootdirectory:bin}/httpd
 httpd-port = $${httpd-address:port}
-httpd-software-access-port = $${httpd-address:port} + 1
+httpd-software-access-port = $${httpd-software-address:port}
 httpd-ip = {{ partition_ipv6 }}
 httpd-log-directory = $${basedirectory:log}
 httpd-software-directory = $${directory:software}
