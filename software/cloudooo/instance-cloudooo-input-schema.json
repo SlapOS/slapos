@@ -1,18 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
-  "extends": "./schema-definitions.json#",
   "properties": {
     "tcpv4-port": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/tcpv4port"
-        },
-        {
-          "description": "Start allocating ports at this value, going upward",
-          "default": 23000
-        }
-      ]
+      "description": "TCP port used for HTTP server",
+      "default": 8000,
+      "type": "integer"
     },
     "backend-count": {
       "description": "Number of backend cloudooo instances",
@@ -20,7 +13,7 @@
       "type": "integer"
     },
     "timeout": {
-      "description": "Configure apache with this timeout",
+      "description": "Timeout for document conversions, in seconds",
       "type": "integer"
     },
     "mimetype-entry-addition": {
