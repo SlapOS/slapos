@@ -19,7 +19,7 @@ recipe = slapos.cookbook:wrapper
 environment =
   LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ open62541_location }}/lib:{{ mbedtls_location }}/lib
 command-line =
-    {{ coupler_location }}server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface}
+    {{ coupler_location }}server -j 0.0.0.0 -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface}
 wrapper-path = ${directory:service}/coupler-opc-ua
 
 [instance-parameter]
