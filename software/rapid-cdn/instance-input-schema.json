@@ -1,25 +1,121 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "type": "object",
   "properties": {
-    "-frontend-quantity": {
-      "description": "Quantity of Frontends Replicate.",
-      "title": "Frontend Replication Quantity",
-      "type": "integer",
-      "default": 1
-    },
-    "apache-certificate": {
-      "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string",
-      "default": ""
-    },
-    "apache-key": {
-      "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Key",
-      "type": "string",
-      "default": ""
+    "frontend-node-dict": {
+      "title": "Frontend node configuration",
+      "description": "The name used here will be reference of the node, used in the request, so changing it will result with new allocation. Note: This can be used while migrating clusters by using caddy-frontend-N.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "sla-computer_guid": {
+              "title": "SLA Computer GIUD (aka reference) of the node",
+              "description": "This parameter allows to select to which Compute Node this node will be allocated to. If nothing set, it will be randomly picked up during the alloaction process.",
+              "type": "string"
+            },
+            "enable-http2": {
+              "title": "Enable HTTP2",
+              "default": true,
+              "description": "Enables HTTP2 on the node.",
+              "type": "boolean"
+            },
+            "enable-http3": {
+              "title": "Enable HTTP3",
+              "default": false,
+              "description": "Enables HTTP3 on the node, defauts to the frontend cluster parameter.",
+              "type": "boolean"
+            },
+            "ram-cache-size": {
+              "default": "1G",
+              "title": "Size of RAM cache on each node (bytes)",
+              "description": "The value can be provided with suffix 'K', 'M', 'G'",
+              "type": "string"
+            },
+            "disk-cache-size": {
+              "default": "8G",
+              "title": "Size of disk cache on each node (bytes)",
+              "description": "The value can be provided with suffix 'K', 'M', 'G'",
+              "type": "string"
+            },
+            "software-release-url": {
+              "title": "Software Release URL",
+              "description": "Software Release URL used to on this frontend node, defaults to cluster Software Release URL.",
+              "type": "string"
+            },
+            "state": {
+              "default": "started",
+              "title": "State of the frontend node",
+              "description": "It can be mostly used to destroy (collect) not needed nodes.",
+              "type": "string",
+              "enum": [
+                "started",
+                "stopped",
+                "destroyed"
+              ]
+            },
+            "expert": {
+              "title": "Expert node parameters",
+              "type": "object",
+              "properties": {
+                "rotate-num": {
+                  "default": 4000,
+                  "title": "Amount of daily log rotations",
+                  "type": "integer"
+                },
+                "advertised-http3-port": {
+                  "default": 443,
+                  "title": "Advertised HTTP3 port",
+                  "description": "As most common deloyment is using iptables for port redirection and in case of udp it is advertising to the process it's bind port instead of the really connected to, it's required to manually set this port for the whole cluster. Can be precisely set on each node by -frontend-i-config-http3-port",
+                  "type": "integer"
+                },
+                "frontend-haproxy-http-port": {
+                  "default": 8080,
+                  "title": "Frontend HAProxy HTTP port",
+                  "type": "integer"
+                },
+                "frontend-haproxy-https-port": {
+                  "default": 4443,
+                  "title": "Frontend HAProxy HTTPS port",
+                  "type": "integer"
+                },
+                "monitor-httpd-port": {
+                  "default": 8196,
+                  "title": "Monitor HTTPD port",
+                  "type": "integer"
+                },
+                "backend-haproxy-http-port": {
+                  "default": 21080,
+                  "title": "Backend HAProxy HTTP port",
+                  "type": "integer"
+                },
+                "backend-haproxy-https-port": {
+                  "default": 21443,
+                  "title": "Backend HAProxy HTTPS port",
+                  "type": "integer"
+                },
+                "backend-haproxy-statistic-port": {
+                  "default": 21444,
+                  "title": "Backend HAProxy statistic port",
+                  "type": "integer"
+                },
+                "slave-introspection-https-port": {
+                  "default": 22443,
+                  "title": "Backend HAProxy statistic port",
+                  "type": "integer"
+                },
+                "trafficserver-port": {
+                  "default": 23432,
+                  "title": "TrafficServer port",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
     },
     "domain": {
       "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
@@ -27,32 +123,6 @@
       "title": "Domain",
       "type": "string",
       "default": "example.org"
-    },
-    "enable-http2-by-default": {
-      "default": "true",
-      "description": "Use HTTP2 as default Protocol",
-      "enum": [
-        "true",
-        "false"
-      ],
-      "title": "Enable HTTP2 by Default",
-      "type": "string"
-    },
-    "enable-http3": {
-      "default": "false",
-      "title": "Enable HTTP3",
-      "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
-      "enum": [
-        "true",
-        "false"
-      ],
-      "type": "string"
-    },
-    "http3-port": {
-      "default": 443,
-      "title": "Real advertised HTTP3 port",
-      "description": "As most common deloyment is using iptables for port redirection and in case of udp it is advertising to the process it's bind port instead of the really connected to, it's required to manually set this port for the whole cluster. Can be precisely set on each node by -frontend-i-config-http3-port",
-      "type": "integer"
     },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
@@ -73,28 +143,21 @@
       "type": "integer"
     },
     "automatic-internal-kedifa-caucase-csr": {
-      "default": "true",
+      "default": true,
       "description": "Automatically signs CSRs sent to KeDiFa's caucase, based on CSR comparison.",
-      "enum": [
-        "true",
-        "false"
-      ],
       "title": "Automatic Internal KeDiFa's Caucase CSR",
-      "type": "string"
+      "type": "boolean"
     },
     "automatic-internal-backend-client-caucase-csr": {
-      "default": "true",
+      "default": true,
       "description": "Automatically signs CSRs sent to Backend Client's caucase, based on CSR comparison.",
-      "enum": [
-        "true",
-        "false"
-      ],
       "title": "Automatic Internal Backend Client's Caucase CSR",
-      "type": "string"
+      "type": "boolean"
     },
     "ciphers": {
-      "title": "Ordered space separated list of ciphers",
+      "title": "Ordered whitespace separated list of ciphers",
       "type": "string",
+      "textarea": true,
       "default": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA"
     },
     "request-timeout": {
@@ -104,38 +167,63 @@
       "type": "integer"
     },
     "authenticate-to-backend": {
-      "default": "false",
+      "default": false,
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "enum": [
-        "false",
-        "true"
-      ],
       "title": "Authenticate to backend",
+      "type": "boolean"
+    },
+    "certificate-chain": {
+      "description": "SSL Certificate chain to be used. It shall start with a certificate, optionally intermediate certificates and end with a key. Deprecated: please use master-key-upload-url.",
+      "textarea": true,
+      "title": "[DEPRECATED] Certificate chain",
       "type": "string"
     },
-    "ram-cache-size": {
-      "default": "1G",
-      "title": "Default size of RAM cache on each node (bytes)",
-      "description": "The value can be provided with suffix 'K', 'M', 'G'",
-      "type": "string"
+    "expert": {
+      "title": "Expert parameters",
+      "type": "object",
+      "properties": {
+        "caucase-backend-client-port": {
+          "default": 8890,
+          "title": "caucase Backend client port",
+          "type": "integer"
+        },
+        "monitor-httpd-port": {
+          "default": 8196,
+          "title": "Monitor HTTPD port",
+          "type": "integer"
+        },
+        "rotate-num": {
+          "default": 4000,
+          "title": "Amount of daily log rotations",
+          "type": "integer"
+        }
+      }
     },
-    "disk-cache-size": {
-      "default": "8G",
-      "title": "Default size of disk cache on each node (bytes)",
-      "description": "The value can be provided with suffix 'K', 'M', 'G'",
-      "type": "string"
-    },
-    "plain_http_port": {
-      "default": 8080,
-      "title": "Port to which frontend node shall bind to serve HTTP traffic",
-      "type": "integer"
-    },
-    "port": {
-      "default": 4443,
-      "title": "Port to which frontend node shall bind to serve HTTPS (and HTTP/3) traffic",
-      "type": "integer"
+    "expert-kedifa": {
+      "title": "Expert KeDiFa parameters",
+      "type": "object",
+      "properties": {
+        "kedifa-port": {
+          "default": 7879,
+          "title": "KeDiFa port",
+          "type": "integer"
+        },
+        "monitor-httpd-port": {
+          "default": 8196,
+          "title": "Monitor HTTPD port",
+          "type": "integer"
+        },
+        "caucase-port": {
+          "default": 8890,
+          "title": "caucase port",
+          "type": "integer"
+        },
+        "rotate-num": {
+          "default": 4000,
+          "title": "Amount of daily log rotations",
+          "type": "integer"
+        }
+      }
     }
-  },
-  "title": "Input Parameters",
-  "type": "object"
+  }
 }
