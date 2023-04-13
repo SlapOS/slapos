@@ -518,7 +518,7 @@ recipe = slapos.cookbook:wrapper
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = ${directory:services}/6tunnel-${:ipv6-port}
-command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
+command-line = lsof -i :${:ipv6-port} ; {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {% if use_nat and nat_rule_list -%}
