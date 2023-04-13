@@ -108,7 +108,7 @@
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
 {% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration']['caucase_backend_client_port'] %}
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
