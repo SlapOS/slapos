@@ -11,36 +11,17 @@ Software release which provides CDN - Content Delivery Network. It has a lot of 
 
 This documentation is fully minimalistict, as `software.cfg.json <software.cfg.json>`_ contains most of explanations.
 
-About frontend replication
+Hidden very expert parametrs
+============================
+
+In order to being able to support some backward compatiblity those parameters are hidden from `software.cfg.json <software.cfg.json>`_:
+
+ * ``-compat-node-reference``, ``type``: ``string``, which allows to set instance title during the request, so that old style clusters can be upgraded, typical value is ``caddy-frontend-N``, where ``N`` is number of the node in the cluster
+
+About frontend replication XXX very very bad title, it's not replication!!!
 ==========================
 
-Slaves of the root instance are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the would-be published information to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 5 type of parameters for itself and will transmit the rest to requested frontends.
-
-These parameters are:
-
-  * ``-frontend-type`` : the type to deploy frontends with. (default to "default")
-  * ``-frontend-quantity`` : The quantity of frontends to request (default to "1")
-  * ``-frontend-i-state``: The state of frontend i
-  * ``-frontend-i-software-release-url``: Software release to be used for frontends, default to the current software release
-  * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo, supported parameters are:
-    * ``ram-cache-size``
-    * ``disk-cache-size``
-    * ``enable-http3``
-    * ``http3-port``
-  * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
-
-For example::
-
-  <parameter id="-frontend-quantity">3</parameter>
-  <parameter id="-frontend-type">custom-personal</parameter>
-  <parameter id="-frontend-2-state">stopped</parameter>
-  <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
-  <parameter id="-frontend-3-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/rapid-cdn/software.cfg</parameter>
-
-
-will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/nexedi/slapos/raw/someid/software/rapid-cdn/software.cfg. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped.
-
-*Note*: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
+XXX - rewrite Slaves of the root instance are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the would-be published information to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 5 type of parameters for itself and will transmit the rest to requested frontends.
 
 How to deploy a frontend server
 ===============================
