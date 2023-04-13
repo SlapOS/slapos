@@ -15,6 +15,12 @@ per partition. No more (undefined result), no less (IndexError).
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 
+[tcp-port]
+recipe = slapos.cookbook:free_port
+minimum = {{ slapparameter_dict['tcpv4-port'] }}
+maximum = {{ slapparameter_dict['tcpv4-port']}} + 100
+ip = ipv6
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 
@@ -60,7 +66,7 @@ recipe = slapos.recipe.template:jinja2
 {%     if test_runner_address_list -%}
 {%       set test_runner_backend_mapping = {} %}
 {%       set test_runner_balancer_url_list = [] %}
-{%       set test_runner_external_port = next_port() %}
+{%       set test_runner_external_port = ${tcp-port:port} %}
 {%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
