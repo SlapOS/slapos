@@ -76,35 +76,3 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-# Define default parameter(s) that will be used later, in case user didn't
-# specify it
-# All parameters are available through the configuration.XX syntax.
-# All possible parameters should have a default.
-configuration.domain = example.org
-configuration.port = 4443
-configuration.plain_http_port = 8080
-configuration.plain_nginx_port = 8081
-configuration.nginx_port = 9443
-configuration.kedifa_port = 7879
-# Warning: Caucase takes also cacuase_port+1
-configuration.caucase_port = 8890
-configuration.caucase_backend_client_port = 8990
-configuration.apache-key =
-configuration.apache-certificate =
-configuration.disk-cache-size = 8G
-configuration.ram-cache-size = 1G
-configuration.re6st-verification-url = http://[2001:67c:1254:4::1]/index.html
-configuration.enable-http2-by-default = true
-configuration.enable-http3 = false
-configuration.http3-port = 443
-configuration.ciphers = ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA
-configuration.request-timeout = 600
-configuration.frontend-name =
-configuration.backend-connect-timeout = 5
-configuration.backend-connect-retries = 3
-configuration.backend-haproxy-http-port = 21080
-configuration.backend-haproxy-https-port = 21443
-configuration.backend-haproxy-statistic-port = 21444
-configuration.authenticate-to-backend = False
-configuration.rotate-num = 4000
-configuration.slave-introspection-https-port = 22443

@@ -443,7 +443,7 @@ return =
 
 [publish-information]
 <= monitor-publish
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
