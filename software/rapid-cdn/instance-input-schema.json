@@ -1,21 +1,52 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
   "properties": {
-    "-frontend-quantity": {
-      "description": "Quantity of Frontends Replicate.",
-      "title": "Frontend Replication Quantity",
-      "type": "integer"
+    "frontend-node-dict": {
+      "title": "Frontend node configuration",
+      "description": "The name used here will be reference of the node, used in the request, so changing it will result with new allocation.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "sla-computer_guid": {
+              "title": "SLA Computer GIUD (aka reference) of the node",
+              "description": "This parameter allows to select to which Compute Node this node will be allocated to. If nothing set, it will be randomly picked up during the alloaction process.",
+              "type": "string"
+            },
+           "enable-http2": {
+             "enum": [
+               "true",
+               "false"
+             ],
+             "title": "Enable HTTP2",
+             "description": "Enables HTTP2 on the node, defauts to the frontend cluster parameter.",
+             "type": "string"
+           },
+           "enable-http3": {
+             "default": "false",
+             "title": "Enable HTTP3",
+             "description": "Enables HTTP3 on the node, defauts to the frontend cluster parameter.",
+             "enum": [
+               "true",
+               "false"
+             ],
+             "type": "string"
+           },
+            "-compat-node-name": {
+              "title": "(Compat) Node name",
+              "description": "The node name for compatiblity, in order for the node to be requested like old style instance reference, quite often like \"caddy-frontend-N\", where N is the number of the node in old style way. It will override the chosen node title.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
-    "apache-certificate": {
-      "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
+    "certificate-chain": {
+      "description": "SSL Certificate chain to be used. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string"
-    },
-    "apache-key": {
-      "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
-      "textarea": true,
-      "title": "[DEPRECATED] SSL Key",
       "type": "string"
     },
     "domain": {
@@ -24,37 +55,23 @@
       "title": "Domain",
       "type": "string"
     },
-    "enable-http2-by-default": {
-      "default": "true",
-      "description": "Use HTTP2 as default Protocol",
-      "enum": [
-        "true",
-        "false"
-      ],
-      "title": "Enable HTTP2 by Default",
-      "type": "string"
+    "enable-http2": {
+      "default": true,
+      "title": "Enable HTTP2",
+      "description": "Enables HTTP2 by default on each frontend node.",
+      "type": "boolean"
     },
     "enable-http3": {
-      "default": "false",
+      "default": false,
       "title": "Enable HTTP3",
-      "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
-      "enum": [
-        "true",
-        "false"
-      ],
-      "type": "string"
+      "description": "Enables HTTP3 by default on each frontend node.",
+      "type": "boolean"
     },
     "http3-port": {
       "default": 443,
       "title": "Real advertised HTTP3 port",
       "description": "As most common deloyment is using iptables for port redirection and in case of udp it is advertising to the process it's bind port instead of the really connected to, it's required to manually set this port for the whole cluster. Can be precisely set on each node by -frontend-i-config-http3-port",
       "type": "integer"
-    },
-    "https-url": {
-      "description": "HTTPS URL of the backend if it is different from url parameter",
-      "pattern": "^(http|https|ftp)://",
-      "title": "HTTPS Backend URL",
-      "type": "string"
     },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
