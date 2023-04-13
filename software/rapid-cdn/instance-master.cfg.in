@@ -103,12 +103,9 @@
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
-{% set master_partition_monitor_monitor_httpd_port = 8401 %}
-{% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
 {% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{% set caucase_netloc = caucase_host ~ ':' ~ slapparameter_dict.get('-internal-caucase-backend-client-port', 8890) %}
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -377,7 +374,7 @@ context =
 {% do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
 [monitor-instance-parameter]
-monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
+monitor-httpd-port = {{ slapparameter_dict.get('-internal-monitor-httpd-port', 8196) }}
 
 [replicate]
 <= slap-connection
@@ -443,7 +440,7 @@ return =
 
 [publish-information]
 <= monitor-publish
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
@@ -520,12 +517,9 @@ recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
-{% for key in ['kedifa_port', 'caucase_port'] -%}
-{%-   if key in slapparameter_dict %}
-config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
-{%-   endif %}
-{%- endfor %}
+config-monitor-httpd-port = {{ slapparameter_dict.get('-internal-monitor-httpd-kedifa-port', 8402) }}
+config-kedifa-port = {{ slapparameter_dict.get('-internal-kedifa-port', 7879) }}
+config-caucase-port = {{ slapparameter_dict.get('-internal-caucase-kedifa-port', 8890) }}
 config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 

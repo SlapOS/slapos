@@ -32,7 +32,7 @@ password = {{ instance_parameter_dict['configuration.monitor-password'] | string
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
+{%  set caucase_netloc = caucase_host ~ ':' ~ slapparameter_dict['caucase-port'] -%}
 {%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
