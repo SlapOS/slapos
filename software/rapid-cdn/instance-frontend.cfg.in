@@ -242,7 +242,6 @@ recipe = slapos.recipe.template:jinja2
 output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
-slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
@@ -250,7 +249,6 @@ context =
     raw profile_logrotate_base {{ software_parameter_dict['profile_logrotate_base'] }}
     raw profile_monitor {{ software_parameter_dict['profile_monitor'] }}
     key slap_software_type :slap_software_type
-    key slapparameter_dict :slapparameter_dict
     section directory directory
     ${:extra-context}
 
@@ -274,10 +272,10 @@ crl = ${:d}/kedifa-login-crl.pem
 
 [kedifa-login-csr]
 recipe = plone.recipe.command
-organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 command =
-{% if slapparameter_dict['kedifa-caucase-url'] %}
+{% if instance_parameter_dict['configuration']['kedifa-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
@@ -296,7 +294,7 @@ stop-on-error = True
      prefix='caucase-updater',
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/kedifa-login-certificate-caucase-updater',
-     url=slapparameter_dict['kedifa-caucase-url'],
+     url=instance_parameter_dict['configuration']['kedifa-caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
      crt_path='${kedifa-login-config:certificate}',
      ca_path='${kedifa-login-config:ca-certificate}',
@@ -306,7 +304,7 @@ stop-on-error = True
 )}}
 
 [kedifa-configuration]
-caucase-url = {{ slapparameter_dict['kedifa-caucase-url'] }}
+caucase-url = {{ instance_parameter_dict['configuration']['kedifa-caucase-url'] }}
 ca-certificate = ${kedifa-login-config:ca-certificate}
 certificate = ${kedifa-login-config:certificate}
 cas-ca-certificate = ${kedifa-login-config:cas-ca-certificate}
@@ -314,7 +312,7 @@ csr = ${caucase-updater-csr:csr}
 crl = ${kedifa-login-config:crl}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
-slave_kedifa_information = {{ dumps(slapparameter_dict['slave-kedifa-information']) }}
+slave_kedifa_information = {{ dumps(instance_parameter_dict['configuration']['slave-kedifa-information']) }}
 
 [backend-client-login-config]
 d = ${directory:backend-client-dir}
@@ -327,10 +325,10 @@ crl = ${:d}/crl.pem
 
 [backend-client-login-csr]
 recipe = plone.recipe.command
-organization = {{ slapparameter_dict['cluster-identification'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
 organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 command =
-{% if slapparameter_dict['backend-client-caucase-url'] %}
+{% if instance_parameter_dict['configuration']['backend-client-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
@@ -349,7 +347,7 @@ stop-on-error = True
      prefix='backend-client-caucase-updater',
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/backend-client-login-certificate-caucase-updater',
-     url=slapparameter_dict['backend-client-caucase-url'],
+     url=instance_parameter_dict['configuration']['backend-client-caucase-url'],
      data_dir='${directory:srv}/backend-client-caucase-updater',
      crt_path='${backend-client-login-config:certificate}',
      ca_path='${backend-client-login-config:ca-certificate}',
@@ -363,11 +361,11 @@ stop-on-error = True
 depends = ${software-py:recipe}
 url = {{ software_parameter_dict['profile_slave_list'] }}
 filename = instance-slave-list.cfg
-master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
+master_key_download_url = {{ dumps(instance_parameter_dict['configuration']['master-key-download-url']) }}
 software_type = single-custom-personal
-organization = {{ slapparameter_dict['cluster-identification'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
-backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+backend-client-caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
 http3-enable = {{ FRONTEND_HTTP3 }}
 extra-context =
@@ -806,7 +804,7 @@ graceful-command = ${backend-haproxy-validate:output} && kill -USR2 $(cat ${:pid
 http-port = ${configuration:backend-haproxy-http-port}
 https-port = ${configuration:backend-haproxy-https-port}
 # Caucase related configuration
-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 ca-certificate = ${backend-client-login-config:ca-certificate}
 certificate = ${backend-client-login-config:certificate}
 cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
@@ -817,7 +815,7 @@ statistic-certificate = ${self-signed-ip-access:certificate}
 statistic-port = ${configuration:backend-haproxy-statistic-port}
 statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
-statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
+statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + instance_parameter_dict['configuration']['cluster-identification'] }}
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
