@@ -154,7 +154,7 @@ context =
 [apache-php-conf]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['template-apache-conf'] }}
-output = ${directory:etc}/apache.confgraceful
+output = ${directory:etc}/apache.conf
 context =
   section parameter_dict apache-php-configuration
 extensions = jinja2.ext.do
@@ -232,6 +232,27 @@ command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 backend-url = ${apache-php-configuration:url}
+{% if parameter_dict['publish-frontend'] -%}
+url = ${lamp-frontend-promise:url}
+{% endif -%}
+
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Instance Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${apache-php-configuration:url}
+config-https-only = true
+return = domain secure_access
+
+[lamp-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = lamp-http-frontend.py
+url = ${request-frontend:connection-secure_access}
+config-url = ${:url}
 
 
 #----------------

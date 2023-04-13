@@ -82,4 +82,7 @@ LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule deflate_module modules/mod_deflate.so
 LoadModule filter_module modules/mod_filter.so
-LoadModule php_module modules/libphp.so
+LoadModule php{{ '_module modules/libphp' if parameter_dict['enable-php8'] else '7_module modules/libphp7' }}.so
+{% for module in parameter_dict['php-module-list'].split('\n') -%}
+LoadModule {{ module.strip() }}
+{% endfor -%}
