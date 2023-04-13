@@ -15,7 +15,6 @@ extensions = jinja2.ext.do
 extra-context =
 context =
     import json_module json
-    key slapparameter_dict slap-configuration:configuration
     section instance_parameter_dict slap-configuration
     section software_parameter_dict software-parameter-section
     ${:extra-context}
