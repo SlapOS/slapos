@@ -33,8 +33,8 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-configuration.hugo-monitor-httpd-port = 8196
-configuration.nginx-monitor-httpd-port = 8197
+configuration.hugo-monitor-httpd-port = 8198
+configuration.nginx-monitor-httpd-port = 8199
 configuration.site = default
 
 # Create all needed directories, depending on your needs
