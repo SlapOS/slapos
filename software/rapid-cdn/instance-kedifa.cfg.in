@@ -84,7 +84,7 @@ expose-csr-var = ${:var}/expose-csr
 
 [kedifa-csr]
 recipe = plone.recipe.command
-organization = {{ slapparameter_dict['cluster-identification'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
 organizational_unit = Kedifa Partition
 command =
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
@@ -188,13 +188,11 @@ init =
 recipe = slapos.recipe.template:jinja2
 output = ${buildout:directory}/${:filename}
 extra-context =
-slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
     raw profile_common {{ software_parameter_dict['profile_common'] }}
     key slap_software_type :slap_software_type
-    key slapparameter_dict :slapparameter_dict
     section directory directory
     ${:extra-context}
 
@@ -252,7 +250,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 # Publish KeDiFa configuration for upload and download for each slave
 {%- set slave_kedifa_information = {} -%}
-{%- for slave in slapparameter_dict['slave-list'] -%}
+{%- for slave in instance_parameter_dict['configuration']['slave-list'] -%}
 {%-   set slave_reference = slave['slave_reference'] -%}
 {%-   set slave_dict = {} -%}
 {%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
