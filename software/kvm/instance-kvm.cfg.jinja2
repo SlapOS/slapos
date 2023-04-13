@@ -670,8 +670,8 @@ context =
 
 [kvm-nginx-port]
 recipe = slapos.cookbook:free_port
-minimum = 6080
-maximum = 6100
+minimum = 6180
+maximum = 6200
 ip = {{ partition_ipv6 }}
 
 [nginx-params]
@@ -893,7 +893,7 @@ tap-ipv4 = {{ slap_configuration.get('tap-ipv4-addr', '') }}
 tap-ipv6 = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 {% endif -%}
 
-{% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
+{% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', ${kvm-slapos-parameter-port:port}) -%}
 {% if enable_http %}
 {%   if use_nat -%}
 {%     set kvm_http = 'http://10.0.2.100' -%}
