@@ -101,8 +101,8 @@
     ]
 %}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
-{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
 {% set master_partition_monitor_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
@@ -123,19 +123,19 @@ context =
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
 {% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
-{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
+{% set frontend_quantity = instance_parameter_dict['configuration'].pop('-frontend-quantity', '1') | int %}
 {% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
 # XXX Dirty hack, not possible to define default value before
 {% set sla_computer_1_key = '-sla-1-computer_guid' %}
-{% if not sla_computer_1_key in slapparameter_dict %}
-{%   do slapparameter_dict.__setitem__(sla_computer_1_key, '${slap-connection:computer-id}') %}
+{% if not sla_computer_1_key in instance_parameter_dict['configuration'] %}
+{%   do instance_parameter_dict['configuration'].__setitem__(sla_computer_1_key, '${slap-connection:computer-id}') %}
 {% endif %}
 {% set sla_computer_kedifa_key = '-sla-kedifa-computer_guid' %}
-{% if not sla_computer_kedifa_key in slapparameter_dict %}
-{%   do slapparameter_dict.__setitem__(sla_computer_kedifa_key, '${slap-connection:computer-id}') %}
+{% if not sla_computer_kedifa_key in instance_parameter_dict['configuration'] %}
+{%   do instance_parameter_dict['configuration'].__setitem__(sla_computer_kedifa_key, '${slap-connection:computer-id}') %}
 {% endif %}
 
 # Here we request individually each frontend.
@@ -153,29 +153,29 @@ context =
 {%   set config_key = "-frontend-config-%s-" % i %}
 {%   set config_key_length = config_key | length %}
 {%   set config_dict = {} %}
-{%   for key in list(slapparameter_dict.keys()) %}
+{%   for key in list(instance_parameter_dict['configuration'].keys()) %}
 {%     if key.startswith(sla_key) %}
-{%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
+{%       do sla_dict.__setitem__(key[sla_key_length:], instance_parameter_dict['configuration'].pop(key)) %}
 # We check for specific configuration regarding the frontend
 {%     elif key.startswith(config_key) %}
 {%       set node_config_key = key[config_key_length:] %}
 {%       if node_config_key in ('enable-http3', 'http3-port') %}
-{%         do config_dict.__setitem__(node_config_key, slapparameter_dict.pop(key) or slapparameter_dict.get(node_config_key) or NODE_DEFAULT_KEY_VALUE[node_config_key]) %}
+{%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key) or instance_parameter_dict['configuration'].get(node_config_key) or NODE_DEFAULT_KEY_VALUE[node_config_key]) %}
 {%       else %}
-{%         do config_dict.__setitem__(node_config_key, slapparameter_dict.pop(key)) %}
+{%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key)) %}
 {%       endif %}
 {%     endif %}
 {%   endfor %}
 {%   if 'http3-port' not in config_dict %}
-{%     do config_dict.__setitem__('http3-port', slapparameter_dict.get('http3-port') or NODE_DEFAULT_KEY_VALUE['http3-port']) %}
+{%     do config_dict.__setitem__('http3-port', instance_parameter_dict['configuration'].get('http3-port') or NODE_DEFAULT_KEY_VALUE['http3-port']) %}
 {%   endif %}
 {%   if 'enable-http3' not in config_dict %}
-{%     do config_dict.__setitem__('enable-http3', slapparameter_dict.get('enable-http3') or NODE_DEFAULT_KEY_VALUE['enable-http3']) %}
+{%     do config_dict.__setitem__('enable-http3', instance_parameter_dict['configuration'].get('enable-http3') or NODE_DEFAULT_KEY_VALUE['enable-http3']) %}
 {%   endif %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
 {%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
 {%   set state_key = "-frontend-%s-state" % i %}
-{%   set frontend_state = slapparameter_dict.pop(state_key, None) %}
+{%   set frontend_state = instance_parameter_dict['configuration'].pop(state_key, None) %}
 {%   if frontend_state != 'destroyed' %}
 {%     do frontend_list.append(frontend_name) %}
 {%     do frontend_section_list.append(request_section_title) %}
@@ -189,7 +189,7 @@ context =
                                   'state': frontend_state
                                   } %}
 {%   set frontend_software_url_key = "-frontend-%s-software-release-url" % i %}
-{%   do request_content_dict.__setitem__('software-url', slapparameter_dict.get(frontend_software_url_key) or '${slap-connection:software-release-url}') %}
+{%   do request_content_dict.__setitem__('software-url', instance_parameter_dict['configuration'].get(frontend_software_url_key) or '${slap-connection:software-release-url}') %}
 {%   do request_dict.__setitem__(request_section_title, request_content_dict) %}
 {% endfor %}
 
@@ -382,7 +382,7 @@ monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-cors-domains = {{ instance_parameter_dict['configuration'].get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
@@ -392,8 +392,8 @@ return = slave-instance-information-list monitor-base-url backend-client-csr-url
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
 {%- for key in FRONTEND_NODE_PASSED_KEY_LIST %}
-{%-   if key in slapparameter_dict %}
-{%-     do base_node_configuration_dict.__setitem__(key,  slapparameter_dict[key]) %}
+{%-   if key in instance_parameter_dict['configuration'] %}
+{%-     do base_node_configuration_dict.__setitem__(key,  instance_parameter_dict['configuration'][key]) %}
 {%-   endif %}
 {%- endfor %}
 {% for section, frontend_request in request_dict.items() %}
@@ -436,7 +436,7 @@ return =
 
 {%  set warning_list = [] %}
 {%  for key in ['apache-certificate', 'apache-key'] %}
-{%    if key in slapparameter_dict %}
+{%    if key in instance_parameter_dict['configuration'] %}
 {%      do warning_list.append('%s is obsolete, please use master-key-upload-url' % (key, )) %}
 {%    endif %}
 {%  endfor %}
@@ -444,7 +444,7 @@ return =
 [publish-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-domain = {{ slapparameter_dict.get('domain') }}
+domain = {{ instance_parameter_dict['configuration'].get('domain') }}
 slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
@@ -517,21 +517,21 @@ custom-group = instance-publish-slave-information:output
 [request-kedifa]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-cors-domains = {{ instance_parameter_dict['configuration'].get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
 {% for key in ['kedifa_port', 'caucase_port'] -%}
-{%-   if key in slapparameter_dict %}
-config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
+{%-   if key in instance_parameter_dict['configuration'] %}
+config-{{ key }} = {{ dumps(instance_parameter_dict['configuration'][key]) }}
 {%-   endif %}
 {%- endfor %}
 config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
-{% if software_url_key in slapparameter_dict %}
-software-url = {{ slapparameter_dict.pop(software_url_key) }}
+{% if software_url_key in instance_parameter_dict['configuration'] %}
+software-url = {{ instance_parameter_dict['configuration'].pop(software_url_key) }}
 {% else %}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
@@ -540,9 +540,9 @@ name = kedifa
 return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url kedifa-csr-url csr-certificate  monitor-base-url
 {% set sla_kedifa_key = "-sla-kedifa-" %}
 {% set sla_kedifa_key_length = sla_kedifa_key | length %}
-{% for key in list(slapparameter_dict.keys()) %}
+{% for key in list(instance_parameter_dict['configuration'].keys()) %}
 {%   if key.startswith(sla_kedifa_key) %}
-sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
+sla-{{ key[sla_kedifa_key_length:] }} = {{ instance_parameter_dict['configuration'].pop(key) }}
 {%   endif %}
 {% endfor %}
 
