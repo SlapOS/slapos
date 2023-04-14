@@ -70,14 +70,14 @@
           "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
         },
         "slave-frontend-dict": {
-          "title": "Slave Front end definition",
-          "description": "Slave Front end definition",
+          "title": "Shared Front end definition",
+          "description": "Shared Front end definition",
           "patternProperties": {
             ".*": {
               "properties": {
                 "domain": {
                   "title": "Name of the domain to be used",
-                  "description": "Name of the domain to be used (example: mydomain.com). Subdomains of this domain will be used for the slave instances (example: instance12345.mydomain.com).",
+                  "description": "Name of the domain to be used (example: mydomain.com). Subdomains of this domain will be used for the shared instances (example: instance12345.mydomain.com).",
                   "type": "string",
                   "default": ""
                 },
@@ -89,13 +89,13 @@
                   "default": ""
                 },
                 "enable-cache": {
-                  "title": "Use cache for this slave frontend.",
-                  "description": "Specify if slave frontend should use a squid to connect to backend.",
+                  "title": "Use cache for this shared frontend.",
+                  "description": "Specify if shared frontend should use a cache to connect to backend.",
                   "type": "boolean",
                   "default": false
                 },
                 "type": {
-                  "title": "Specify if slave frontend will redirect to a zope backend.",
+                  "title": "Specify if shared frontend will redirect to a zope backend.",
                   "description": "If specified, Apache RewriteRule will use Zope's Virtual Host Daemon. Possible values: 'zope', 'default'.",
                   "type": "string",
                   "default": "default"

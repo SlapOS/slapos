@@ -57,7 +57,7 @@ param_dict = {
         '10.0.0.1': {'mme_addr': '10.0.0.1'},
         '2001:db8::1': {'mme_addr': '2001:db8::1'},
     },
-    'epc_plmn': '00102',
+    'core_network_plmn': '00102',
     'dl_nr_arfcn': 325320,
     'nr_band': 99,
     'nr_bandwidth': 50,
@@ -166,7 +166,7 @@ def test_mme_conf(self):
 
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)
-    self.assertEqual(conf['plmn'], param_dict['epc_plmn'])
+    self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_sim_card(self):
 
@@ -180,7 +180,6 @@ def test_sim_card(self):
     self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
     self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
 
-    self.slap.waitForInstance() # Wait until publish is done
     p = self.requestSlaveInstance().getConnectionParameterDict()
     p = p['_'] if '_' in p else p
     self.assertIn('info', p)
@@ -232,67 +231,25 @@ class TestGNBParameters2(ORSTestCase):
     def test_gnb_conf(self):
         test_gnb_conf2(self)
 
-class TestEPCParameters(ORSTestCase):
+class TestCoreNetworkParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps(param_dict)}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "epc"
+        return "core-network"
     def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_mme_conf(self)
 
-class TestENBEPCParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-    def test_enb_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_enb_conf(self)
-    def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_mme_conf(self)
-
-class TestGNBEPCParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb-epc"
-    def test_gnb_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_gnb_conf1(self)
-    def test_mme_conf(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_mme_conf(self)
-
-def requestSlaveInstance(cls, software_type):
+def requestSlaveInstance(cls):
     software_url = cls.getSoftwareURL()
     return cls.slap.request(
         software_release=software_url,
-        partition_reference="SIM-CARD-EPC",
+        partition_reference="SIM-CARD",
         partition_parameter_kw={'_': json.dumps(param_dict)},
         shared=True,
-        software_type=software_type,
+        software_type='core-network',
     )
-
-class TestEPCMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "epc"
-
-    def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
-      test_monitor_gadget_url(self)
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
     @classmethod
@@ -304,33 +261,6 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
         return "enb"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
-      test_monitor_gadget_url(self)
-
-class TestENBEPCMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-
-    def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
-      test_monitor_gadget_url(self)
-
-class TestGNBEPCMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb-epc"
-
-    def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestGNBMonitorGadgetUrl(ORSTestCase):
@@ -343,20 +273,18 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
         return "gnb"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
-class TestMMEMonitorGadgetUrl(ORSTestCase):
+class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({'testing': True, 'slave-list': []})}
 
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "mme"
+        return "core-network"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestUELTEMonitorGadgetUrl(ORSTestCase):
@@ -369,7 +297,6 @@ class TestUELTEMonitorGadgetUrl(ORSTestCase):
         return "ue-lte"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
 class TestUENRMonitorGadgetUrl(ORSTestCase):
@@ -382,10 +309,9 @@ class TestUENRMonitorGadgetUrl(ORSTestCase):
         return "ue-nr"
 
     def test_monitor_gadget_url(self):
-      self.slap.waitForInstance() # Wait until publish is done
       test_monitor_gadget_url(self)
 
-class TestEPCSimCard(ORSTestCase):
+class TestSimCard(ORSTestCase):
     @classmethod
     def requestDefaultInstance(cls, state='started'):
         default_instance = super(
@@ -394,55 +320,14 @@ class TestEPCSimCard(ORSTestCase):
         return default_instance
     @classmethod
     def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls, 'epc')
+        return requestSlaveInstance(cls)
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({'testing': True})}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "epc"
+        return "core-network"
     def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_sim_card(self)
-
-class TestENBEPCSimCard(ORSTestCase):
-    @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        default_instance = super(
-            ORSTestCase, cls).requestDefaultInstance(state=state)
-        cls.requestSlaveInstance()
-        return default_instance
-    @classmethod
-    def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls, 'enb-epc')
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb-epc"
-    def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
-        test_sim_card(self)
-
-class TestGNBEPCSimCard(ORSTestCase):
-    @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        default_instance = super(
-            ORSTestCase, cls).requestDefaultInstance(state=state)
-        cls.requestSlaveInstance()
-        return default_instance
-    @classmethod
-    def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls, 'gnb-epc')
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb-epc"
-    def test_sim_card(self):
-        self.slap.waitForInstance() # Wait until publish is done
         test_sim_card(self)
 
 class TestUELTEParameters(ORSTestCase):

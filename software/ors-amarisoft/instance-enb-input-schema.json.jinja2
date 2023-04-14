@@ -3,26 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-{%- if epc %}
-    "epc_plmn": {
-      "default": "00101",
-      "title": "Core Network PLMN",
-      "description": "Core Network Public Land Mobile Network",
-      "type": "string"
-    },
-    "external_enb_gnb": {
-      "default": false,
-      "title": "External eNB / gNB",
-      "description": "Set to true if external eNB / gNB will need to connect to this core network.",
-      "type": "boolean"
-    },
-    "iperf3": {
-      "default": false,
-      "title": "iperf3 UDP server",
-      "description": "Activate iperf3 UDP server",
-      "type": "boolean"
-    },
-{%- endif %}
     "rrh": {
       "title": "RRH",
       "description": "RRH",

@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
-  "title": "EPC Input Parameters",
+  "title": "Core Network Input Parameters",
   "type": "object",
   "properties": {
-    "epc_plmn": {
+    "core_network_plmn": {
       "default": "00101",
       "title": "Core Network PLMN",
       "description": "Core Network Public Land Mobile Network",
