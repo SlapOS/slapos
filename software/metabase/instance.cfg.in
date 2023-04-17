@@ -190,13 +190,12 @@ wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
 command-line =
   sh -e -c "\
     echo 'This will replace current database with latest backup. Hit Ctrl+C to cancel';
-    sleep 5;
+    sleep 30;
     $${postgresql:bin}/pg_restore \
         --exit-on-error \
-        --clean \
-        --create \
         -h $${postgresql:pgdata-directory} \
         -U $${postgresql:superuser} \
+        -d $${postgresql:dbname} \
         $${postgresql-backup:backup-file}"
 
 [cron]
