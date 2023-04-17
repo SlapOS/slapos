@@ -130,7 +130,7 @@ recipe = slapos.cookbook:generate.password
 
 [postgresql]
 recipe = slapos.cookbook:postgres
-bin = ${postgresql10:location}/bin/
+bin = ${postgresql10:location}/bin
 services = $${directory:service}
 dbname  = metabase_db
 superuser = metabase-psql
@@ -190,13 +190,21 @@ wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
 command-line =
   sh -e -c "\
     echo 'This will replace current database with latest backup. Hit Ctrl+C to cancel';
-    sleep 5;
-    $${postgresql:bin}/pg_restore \
-        --exit-on-error \
-        --clean \
-        --create \
+    sleep 10;
+    $${postgresql:bin}/dropdb \
         -h $${postgresql:pgdata-directory} \
         -U $${postgresql:superuser} \
+        --if-exists \
+        $${postgresql:dbname};
+    $${postgresql:bin}/createdb \
+        -h $${postgresql:pgdata-directory} \
+        -U $${postgresql:superuser} \
+        $${postgresql:dbname};
+    $${postgresql:bin}/pg_restore \
+        --exit-on-error \
+        -h $${postgresql:pgdata-directory} \
+        -U $${postgresql:superuser} \
+        -d $${postgresql:dbname} \
         $${postgresql-backup:backup-file}"
 
 [cron]

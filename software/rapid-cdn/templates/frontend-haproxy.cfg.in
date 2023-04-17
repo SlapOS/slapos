@@ -1,7 +1,7 @@
-{%- if configuration['quic'] == 'True' %}
-{%-   set QUIC = True %}
+{%- if configuration['http3-enable'] == 'True' %}
+{%-   set HTTP3 = True %}
 {%- else %}
-{%-   set QUIC = False %}
+{%-   set HTTP3 = False %}
 {%- endif %}
 global
   pidfile {{ configuration['pid-file'] }}
@@ -58,7 +58,7 @@ defaults
   capture request header REMOTE_USER len 255
   capture request header Referer len 255
   capture request header User-Agent len 255
-  log-format "%{+E}o %b %ci - %[capture.req.hdr(0)] [%trl] \"%HM %HU %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
+  log-format "%{+E}o {{ '{' }}%b{{ '}' }} %ci - %[capture.req.hdr(0)] [%trl] \"%HM %[capture.req.uri] %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
   # setup Via
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   # setup X-Forwarded-For
@@ -79,12 +79,9 @@ frontend http-frontend
 frontend https-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
   bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
-{%- if QUIC %}
+{%- if HTTP3 %}
   bind quic4@{{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
   bind quic6@{{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
-  http-response set-header alt-svc "h3=\":{{ configuration['quic-port'] }}\"; ma=3600"
-  {#- Ask Chromium to use QUIC #}
-  http-response set-header alternate-protocol {{ configuration['quic-port'] }}:quic
 {%- endif %}
 {{ frontend_common() }}
 {%- for slave_instance in frontend_slave_list -%}
@@ -100,6 +97,11 @@ frontend https-frontend
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-     if HTTP3 and slave_instance['enable-http3'] %}
+  http-after-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
+  {#- Ask Chromium to use HTTP3 #}
+  http-after-response set-header alternate-protocol {{ configuration['http3-port'] }}:quic
+{%-     endif %}
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
   redirect scheme https code 302
@@ -110,9 +112,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
 {%-           if slave_instance['disable-via-header'] %}
-  http-response del-header Via
+  http-after-response del-header Via
 {%-           else %}
-  http-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+  http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
 {%-           endif %}
 {%-           if scheme == 'https' %}
 {%-             if slave_instance['strict-transport-security'] > 0 %}
@@ -123,7 +125,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-               if slave_instance['strict-transport-security-preload'] %}
 {%-                 do strict_transport_security.append('; preload') %}
 {%-               endif %}
-  http-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+  http-after-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
 {%-             endif %}
 {%-           endif %}
 {%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}

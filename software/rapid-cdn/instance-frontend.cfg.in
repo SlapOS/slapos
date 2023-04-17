@@ -1,16 +1,15 @@
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{%- set QUIC_PORT = instance_parameter_dict.get('configuration.frontend-quic-port', '443') %}
-{%- if instance_parameter_dict.get('configuration.frontend-haproxy-flavour', 'basic') == 'quic' %}
+{%- set HTTP3_PORT = instance_parameter_dict.get('configuration.http3-port', '443') %}
+{%- if instance_parameter_dict.get('configuration.enable-http3', 'false').lower() in TRUE_VALUES %}
+{%-   set FRONTEND_HTTP3 = True %}
+{%- else %}
+{%-   set FRONTEND_HTTP3 = False %}
+{%- endif %}
+{%- if FRONTEND_HTTP3 %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
-{%-   if instance_parameter_dict.get('configuration.frontend-haproxy-quic', 'false').lower() in TRUE_VALUES %}
-{%-     set FRONTEND_HAPROXY_QUIC = True %}
-{%-   else %}
-{%-     set FRONTEND_HAPROXY_QUIC = False %}
-{%-   endif %}
 {%- else %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
-{%-   set FRONTEND_HAPROXY_QUIC = False %}
 {%- endif %}
 {%- set BACKEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
 [buildout]
@@ -27,7 +26,6 @@ parts =
   caucase-updater-promise
   backend-client-caucase-updater
   backend-client-caucase-updater-promise
-  port-redirection
   promise-logrotate-setup
 
   trafficserver-launcher
@@ -371,7 +369,7 @@ organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
-quic = {{ FRONTEND_HAPROXY_QUIC }}
+http3-enable = {{ FRONTEND_HTTP3 }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
@@ -385,7 +383,7 @@ extra-context =
     key empty_template software-release-path:template-empty
     key template_expose_csr_nginx_conf software-release-path:template-expose-csr-nginx-conf
     key software_type :software_type
-    key quic :quic
+    key http3_enable :http3-enable
     key frontend_lazy_graceful_reload frontend-haproxy-lazy-graceful:output
     key monitor_base_url monitor-instance-parameter:monitor-base-url
     key node_id frontend-node-id:value
@@ -486,8 +484,8 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
-quic = {{ FRONTEND_HAPROXY_QUIC }}
-quic-port = {{ QUIC_PORT }}
+http3-enable = {{ FRONTEND_HTTP3 }}
+http3-port = {{ HTTP3_PORT }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -998,15 +996,6 @@ context =
 promise = check_url_available
 name = re6st-connectivity.py
 config-url = ${configuration:re6st-verification-url}
-
-[port-redirection]
-<= jinja2-template-base
-inline =
-  [{"srcPort": 80, "destPort": {{ '{{' }} http_port {{ '}}' }}}, {"srcPort": 443, "destPort": {{ '{{' }} https_port {{ '}}' }}}]
-output = ${buildout:directory}/.slapos-port-redirect
-extra-context =
-    key http_port configuration:plain_http_port
-    key https_port configuration:port
 
 [slave-introspection-frontend]
 <= slap-connection
