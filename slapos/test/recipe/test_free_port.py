@@ -60,6 +60,11 @@ class FreePortTest(unittest.TestCase):
     recipe = self.new_recipe(minimum=2000, maximum=2100)
     self.assertEqual(recipe.options['port'], '0')
 
+  @useMock
+  def test_forcePort(self):
+    recipe = self.new_recipe(minimum=2134, maximum=2134)
+    self.assertEqual(recipe.options['port'], '2134')
+
 
 if __name__ == '__main__':
   unittest.main()
