@@ -201,9 +201,15 @@ context =
     section directory directory
     ${:extra-context}
 
-[kedifa-config]
+[kedifa-port]
+recipe = slapos.cookbook:free_port
 ip = {{ instance_parameter_dict['ipv6-random'] }}
-port = {{ instance_parameter_dict['configuration.kedifa_port'] }}
+minimum = 7850
+maximum = 7900
+
+[kedifa-config]
+ip = ${kedifa-port:ip}
+port = ${kedifa-port:port}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
@@ -319,7 +325,7 @@ file = ${master-auth-random-generate:file}
 recipe = slapos.cookbook:publish.serialised
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information, sort_keys=True) }}
-caucase-url = {{ caucase_url }}
+caucase-url = ${caucased:caucase_url}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
