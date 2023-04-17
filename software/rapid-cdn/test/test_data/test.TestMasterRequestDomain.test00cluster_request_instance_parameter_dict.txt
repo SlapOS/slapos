@@ -1,6 +1,5 @@
 [
   {
-    "caucase_port": "15090",
     "domain": "example.com",
     "full_address_list": [],
     "instance_title": "testing partition 0",
@@ -14,7 +13,6 @@
         "@@_ipv6_address@@"
       ]
     ],
-    "kedifa_port": "15080",
     "plain_http_port": "11080",
     "port": "11443",
     "root_instance_title": "testing partition 0",
@@ -27,11 +25,8 @@
   },
   {
     "_": {
-      "caucase_port": "15090",
       "cluster-identification": "testing partition 0",
-      "kedifa_port": "15080",
       "monitor-cors-domains": "monitor.app.officejs.com",
-      "monitor-httpd-port": "8402",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
       "slave-list": []
@@ -58,17 +53,16 @@
   },
   {
     "_": {
-      "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
+      "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8900",
       "cluster-identification": "testing partition 0",
       "domain": "example.com",
       "enable-http3": "false",
       "extra_slave_instance_list": "[]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": "443",
-      "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
-      "master-key-download-url": "https://[@@_ipv6_address@@]:15080/@@master-key-download-url_endpoint@@",
+      "kedifa-caucase-url": "http://[@@_ipv6_address@@]:8800",
+      "master-key-download-url": "https://[@@_ipv6_address@@]:7850/@@master-key-download-url_endpoint@@",
       "monitor-cors-domains": "monitor.app.officejs.com",
-      "monitor-httpd-port": 8411,
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
       "plain_http_port": "11080",

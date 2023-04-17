@@ -22,25 +22,28 @@ parts =
   promise-kedifa-auth-ready
 
 [monitor-instance-parameter]
-# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
-#       directly, and in our case it can come from the network, thus resulting
-#       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
 password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
+
+[caucased-port]
+recipe = slapos.cookbook:free_port
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+minimum = 8800
+maximum = 8850
+
+[caucased-netloc]
+caucase_netloc = [${caucased-port:ip}]:${caucased-port:port}
 
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+caucase_url = http://${caucased-netloc:caucase_netloc}
 
-{%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
-{%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
       buildout_bin_directory=software_parameter_dict['bin_directory'],
       caucased_path='${directory:service}/caucased',
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
-      netloc=caucase_netloc,
+      netloc='${caucased-netloc:caucase_netloc}',
       tmp='${directory:tmp}',
       service_auto_approve_count=0,
       user_auto_approve_count=1,
@@ -106,7 +109,7 @@ stop-on-error = True
      prefix='caucase-updater',
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/caucase-updater',
-     url=caucase_url,
+     url='${caucased:caucase_url}',
      data_dir='${directory:srv}/caucase-updater',
      crt_path='${kedifa-config:certificate}',
      ca_path='${kedifa-config:ca-certificate}',
@@ -198,9 +201,15 @@ context =
     section directory directory
     ${:extra-context}
 
-[kedifa-config]
+[kedifa-port]
+recipe = slapos.cookbook:free_port
 ip = {{ instance_parameter_dict['ipv6-random'] }}
-port = {{ instance_parameter_dict['configuration.kedifa_port'] }}
+minimum = 7850
+maximum = 7900
+
+[kedifa-config]
+ip = ${kedifa-port:ip}
+port = ${kedifa-port:port}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
@@ -258,7 +267,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
+{%-   do slave_dict.__setitem__('kedifa-caucase-url', '${caucased:caucase_url}' ) -%}
 {%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
 [{{ slave_reference }}-auth-random-generate]
 recipe = plone.recipe.command
@@ -316,7 +325,7 @@ file = ${master-auth-random-generate:file}
 recipe = slapos.cookbook:publish.serialised
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information, sort_keys=True) }}
-caucase-url = {{ caucase_url }}
+caucase-url = ${caucased:caucase_url}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
