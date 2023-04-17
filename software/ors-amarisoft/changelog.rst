@@ -19,3 +19,8 @@ Version 1.0.316 (2023-04-14)
     - enb
     - gnb
     - core-network (replaces epc software type)
+
+Version 1.0.317 (2023-04-18)
+-------------
+
+* Add support for inter gNB NR handover
