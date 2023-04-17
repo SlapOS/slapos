@@ -187,10 +187,16 @@ RootSoftwareInstance = ${:default}
 single-default = dynamic-custom-personal-profile-slave-list:output
 single-custom-personal = dynamic-custom-personal-profile-slave-list:output
 
+[slave-introspection-port]
+recipe = slapos.cookbook:free_port
+ip = ${slap-configuration:ipv6-random}
+minimum = 22400
+maximum = 22450
+
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
-slave-introspection-https-port = ${configuration:slave-introspection-https-port}
+slave-introspection-https-port = ${slave-introspection-port:port}
 slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
 
 [self-signed-ip-access]
@@ -798,13 +804,31 @@ name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
 
+[statistic-port]
+recipe = slapos.cookbook:free_port
+ip = ${slap-configuration:ipv6-random}
+minimum = 21400
+maximum = 21450
+
+[backend-haproxy-http-port]
+recipe = slapos.cookbook:free_port
+ip = ${slap-configuration:ipv6-random}
+minimum = 21050
+maximum = 21100
+
+[backend-haproxy-https-port]
+recipe = slapos.cookbook:free_port
+ip = ${slap-configuration:ipv6-random}
+minimum = 21400
+maximum = 21450
+
 [backend-haproxy-configuration]
 file = ${directory:etc}/backend-haproxy.cfg
 pid-file = ${directory:run}/backend-haproxy.pid
 log-socket = ${backend-haproxy-rsyslogd-config:log-socket}
 graceful-command = ${backend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
-http-port = ${configuration:backend-haproxy-http-port}
-https-port = ${configuration:backend-haproxy-https-port}
+http-port = ${backend-haproxy-http-port:port}
+https-port = ${backend-haproxy-https-port:port}
 # Caucase related configuration
 caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 ca-certificate = ${backend-client-login-config:ca-certificate}
@@ -814,7 +838,7 @@ csr = ${backend-client-caucase-updater-csr:csr}
 crl = ${backend-client-login-config:crl}
 # the statistic page
 statistic-certificate = ${self-signed-ip-access:certificate}
-statistic-port = ${configuration:backend-haproxy-statistic-port}
+statistic-port = ${statistic-port:port}
 statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
 statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
@@ -956,10 +980,6 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 #
 
 [monitor-instance-parameter]
-# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
-#       directly, and in our case it can come from the network, thus resulting
-#       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
 password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
@@ -1003,7 +1023,7 @@ recipe = slapos.cookbook:requestoptional
 name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:${frontend-configuration:slave-introspection-https-port}/
 config-https-only = true
 return = secure_access
 
@@ -1013,7 +1033,7 @@ recipe = slapos.cookbook:requestoptional
 name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:${backend-haproxy-configuration:statistic-port}/
 config-https-only = true
 return = domain secure_access
 
