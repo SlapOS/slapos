@@ -25,6 +25,12 @@
       "type": "number",
       "default": 45
     },
+    "gps_sync": {
+      "default": false,
+      "title": "GPS synchronisation",
+      "description": "True if GPS should be used for synchronisation",
+      "type": "boolean"
+    },
     "dl_earfcn": {
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
