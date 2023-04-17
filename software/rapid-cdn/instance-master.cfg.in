@@ -103,13 +103,6 @@
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
-{% set master_partition_monitor_monitor_httpd_port = 8401 %}
-{% set kedifa_partition_monitor_httpd_port = 8402 %}
-{% set frontend_monitor_httpd_base_port = 8410 %}
-{% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
-{% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 output = ${buildout:directory}/${:filename}
@@ -172,8 +165,6 @@ context =
 {%   if 'enable-http3' not in config_dict %}
 {%     do config_dict.__setitem__('enable-http3', slapparameter_dict.get('enable-http3') or NODE_DEFAULT_KEY_VALUE['enable-http3']) %}
 {%   endif %}
-{%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
-{%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
 {%   set state_key = "-frontend-%s-state" % i %}
 {%   set frontend_state = slapparameter_dict.pop(state_key, None) %}
 {%   if frontend_state != 'destroyed' %}
@@ -376,9 +367,6 @@ context =
 {% endfor %}
 {% do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
-[monitor-instance-parameter]
-monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
-
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
@@ -409,7 +397,7 @@ state = {{ state }}
 {%   if state != 'destroyed' %}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
-config-backend-client-caucase-url = {{ caucase_url }}
+config-backend-client-caucase-url = ${caucased-backend-client-netloc:caucase_url}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 {%     set node_configuration_dict = {} %}
@@ -448,7 +436,7 @@ domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
-backend-client-caucase-url = {{ caucase_url }}
+backend-client-caucase-url = ${caucased-backend-client-netloc:caucase_url}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-promise-url = ${rejected-slave-promise:config-url}
@@ -520,12 +508,6 @@ recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
-{% for key in ['kedifa_port', 'caucase_port'] -%}
-{%-   if key in slapparameter_dict %}
-config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
-{%-   endif %}
-{%- endfor %}
 config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
@@ -734,7 +716,7 @@ update-command = ${:command}
 aibcc = ${:srv}/aibcc
 
 [aibcc-config]
-caucase-url = {{ caucase_url }}
+caucase-url = ${caucased-backend-client-netloc:caucase_url}
 
 csr = ${directory:aibcc}/csr.pem
 key = ${directory:aibcc}/key.pem
@@ -1047,6 +1029,16 @@ key = ${request-kedifa:connection-master-key-download-url}
 <= master-key-upload-url-ready-promise
 config-filename = ${master-key-download-url-ready:output}
 
+[caucased-backend-client-port]
+recipe = slapos.cookbook:free_port
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+minimum = 8900
+maximum = 8950
+
+[caucased-backend-client-netloc]
+netloc = [${caucased-backend-client-port:ip}]:${caucased-backend-client-port:port}
+caucase_url = http://${:netloc}
+
 [caucased-backend-client]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {{  caucase.caucased(
@@ -1055,7 +1047,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       caucased_path='${directory:service}/caucased-backend-client',
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
-      netloc=caucase_netloc,
+      netloc='${caucased-backend-client-netloc:netloc}',
       tmp='${directory:tmp}',
       service_auto_approve_count=0,
       user_auto_approve_count=1,

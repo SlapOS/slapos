@@ -79,8 +79,6 @@ else:
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
-CAUCASE_PORT = '15090'
-KEDIFA_PORT = '15080'
 
 # IP to originate requests from
 # has to be not partition one
@@ -1063,23 +1061,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
       prefix,))
     upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
-    kedifa_ipv6_base = 'https://[%s]:%s' % (self._ipv6_address, KEDIFA_PORT)
-    base = '^' + kedifa_ipv6_base.replace(
-      '[', r'\[').replace(']', r'\]') + '/.{32}'
     self.assertRegex(
       generate_auth_url,
-      base + r'\/generateauth$'
+      r'\/generateauth$'
     )
     self.assertRegex(
       upload_url,
-      base + r'\?auth=$'
+      r'\?auth=$'
     )
 
-    kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
-    self.assertEqual(
-      kedifa_caucase_url,
-      'http://[%s]:%s' % (self._ipv6_address, CAUCASE_PORT),
-    )
+    self.assertNotEqual(None, parameter_dict.pop('kedifa-caucase-url'))
 
     return generate_auth_url, upload_url
 
@@ -1414,8 +1405,6 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   def test(self):
@@ -1447,8 +1436,6 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   def test(self):
@@ -1479,8 +1466,6 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'false',
       'automatic-internal-backend-client-caucase-csr': 'false',
     }
@@ -1593,8 +1578,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     'domain': 'example.com',
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
     'request-timeout': '12',
   }
   max_client_version = '2.0'
@@ -4728,8 +4711,6 @@ class TestSlaveHttp3(TestSlave):
     'domain': 'example.com',
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
     'request-timeout': '12',
     'enable-http3': 'True',
     'http3-port': HTTPS_PORT,
@@ -4748,8 +4729,6 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
     'domain': 'example.com',
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
     'request-timeout': '12',
     'enable-http2-by-default': 'false',
   }
@@ -4767,8 +4746,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -4876,8 +4853,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -4938,8 +4913,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -4981,8 +4954,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'port': HTTPS_PORT,
       'domain': 'example.com',
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -5055,8 +5026,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -5213,8 +5182,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -5771,8 +5738,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     'domain': 'example.com',
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
   }
 
   @classmethod
@@ -5866,8 +5831,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
       'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
     }
 
@@ -5974,8 +5937,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
     }
 
   @classmethod
@@ -6508,8 +6469,6 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
       'request-timeout': '12',
     }
 
@@ -6586,8 +6545,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
   instance_parameter_dict = {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
   }
 
   @classmethod
@@ -6831,8 +6788,6 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
       'request-timeout': '12',
     }
 
