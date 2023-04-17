@@ -211,6 +211,43 @@
       "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
       "default": 2
-    }
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
+    },
+    "gps_sync": {
+      "default": false,
+      "title": "GPS synchronisation",
+      "description": "True if GPS should be used for synchronisation",
+      "type": "boolean"
+    },
+    "ncell_list": {
+      "title": "Neighbour Cell Info",
+      "description": "Neighbour Cell Info",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "nr_cell_id": {
+              "title": "NR Cell ID",
+              "description": "Concatenation of gnb_id and cell_id of the neighbour cell",
+              "type": "string",
+              "default": "0x1234501"
+            },
+            "tac": {
+              "default": 100,
+              "title": "Tracking Area Code",
+              "description": "Integer (range 0 to 16777215)",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
   }
 }
