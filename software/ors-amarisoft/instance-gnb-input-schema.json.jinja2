@@ -25,6 +25,24 @@
       "type": "number",
       "default": {{ default_nr_rx_gain }}
     },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": {{ default_n_antenna_dl }}
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": {{ default_n_antenna_ul }}
+    },
+    "gps_sync": {
+      "default": false,
+      "title": "GPS synchronisation",
+      "description": "True if GPS should be used for synchronisation",
+      "type": "boolean"
+    },
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
@@ -61,6 +79,31 @@
       "type": "object",
       "default": {}
     },
+    "ncell_list": {
+      "title": "Neighbour Cell Info",
+      "description": "Neighbour Cell Info",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "nr_cell_id": {
+              "title": "NR Cell ID",
+              "description": "Concatenation of gnb_id and cell_id of the neighbour cell",
+              "type": "string",
+              "default": "0x1234501"
+            },
+            "tac": {
+              "default": 100,
+              "title": "Tracking Area Code",
+              "description": "Integer (range 0 to 16777215)",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
     "gnb_id": {
       "title": "gNB ID",
       "description": "gNB ID",
@@ -72,6 +115,12 @@
       "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
       "type": "number",
       "default": 28
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
     },
     "pci": {
       "title": "Physical Cell ID",
@@ -199,18 +248,6 @@
       "description": "Duration during which average temperature should not exceed specified threshold",
       "type": "number",
       "default": 600
-    },
-    "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
-      "type": "number",
-      "default": {{ default_n_antenna_dl }}
-    },
-    "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
-      "type": "number",
-      "default": {{ default_n_antenna_ul }}
     }
   }
 }
