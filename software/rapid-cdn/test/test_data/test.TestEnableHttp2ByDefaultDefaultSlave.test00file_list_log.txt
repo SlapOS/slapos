@@ -10,9 +10,13 @@ T-2/var/log/expose-csr.log
 T-2/var/log/frontend-haproxy.log
 T-2/var/log/httpd/_dummy-cached_access_log
 T-2/var/log/httpd/_dummy-cached_backend_log
+T-2/var/log/httpd/_dummy-cached_frontend_log
 T-2/var/log/httpd/_enable-http2-default_access_log
+T-2/var/log/httpd/_enable-http2-default_frontend_log
 T-2/var/log/httpd/_enable-http2-false_access_log
+T-2/var/log/httpd/_enable-http2-false_frontend_log
 T-2/var/log/httpd/_enable-http2-true_access_log
+T-2/var/log/httpd/_enable-http2-true_frontend_log
 T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
 T-2/var/log/slave-introspection-access.log
