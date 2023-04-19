@@ -10,8 +10,10 @@ T-2/var/log/expose-csr.log
 T-2/var/log/frontend-haproxy.log
 T-2/var/log/httpd/_default_ciphers_access_log
 T-2/var/log/httpd/_default_ciphers_backend_log
+T-2/var/log/httpd/_default_ciphers_frontend_log
 T-2/var/log/httpd/_own_ciphers_access_log
 T-2/var/log/httpd/_own_ciphers_backend_log
+T-2/var/log/httpd/_own_ciphers_frontend_log
 T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
 T-2/var/log/slave-introspection-access.log
