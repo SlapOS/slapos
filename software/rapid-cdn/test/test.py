@@ -1044,7 +1044,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(
       sorted([q['name'] for q in result.json()]),
-      ['access.log', 'backend.log'])
+      ['access.log', 'backend.log', 'frontend.log'])
     # assert only for few tests, as logs are available for sure only
     # for few of them
     for test_name in [
@@ -2346,6 +2346,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertLastLogLineRegexp(
       '_Url_access_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
+      r'"GET \/test-path\/deep\/..\/.\/deeper '
+      r'HTTP\/%(http_version)s" \d{3} '
+      r'\d+ "-" "TEST USER AGENT" \d+' % dict(
+        http_version=self.max_client_version)
+    )
+
+    self.assertLastLogLineRegexp(
+      '_Url_frontend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
       r'"GET \/test-path\/deep\/..\/.\/deeper '
