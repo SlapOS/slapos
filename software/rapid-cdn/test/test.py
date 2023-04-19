@@ -2355,6 +2355,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertLastLogLineRegexp(
+      '_Url_frontend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
+      r'"GET \/test-path\/deep\/..\/.\/deeper '
+      r'HTTP\/%(http_version)s" \d{3} '
+      r'\d+ "-" "TEST USER AGENT" \d+' % dict(
+        http_version=self.max_client_version)
+    )
+
+    self.assertLastLogLineRegexp(
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
