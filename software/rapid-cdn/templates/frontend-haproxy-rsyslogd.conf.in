@@ -16,16 +16,20 @@ $Umask 0022
 $WorkDirectory {{ configuration['spool-directory'] }}
 
 # Setup logging per slave, by extracting the slave name from the log stream
-{%- set regex = "^\\\\s*\\\\{(\\\\S.*)-https{0,1}\\\\} (.*)" %}
+{%- set regex = "^\\\\s*\\\\{(\\\\S.*)-https{0,1}\\\\} (.*)!!!(.*)" %}
 # Extract file name part from 1st match
 template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
 set $!slave_name = exec_template("extract_slave_name");
-template(name="slave_output" type="string" string="{{ configuration['slave-log-directory'] }}/%$!slave_name%_access_log")
-# Output only 2nd match, add the newline in the ned
-template(name="haproxy_slave_line" type="string" string="%msg:R,ERE,2,FIELD:{{ regex }}--end%\n")
+# Frontend output - the HAProxy's like httplog
+template(name="frontend_output" type="string" string="{{ configuration['slave-log-directory'] }}/%$!slave_name%_frontend_log")
+template(name="haproxy_frontend_line" type="string" string="%msg:R,ERE,2,FIELD:{{ regex }}--end%\n")
+# Access output - the Apache's CLF
+template(name="access_output" type="string" string="{{ configuration['slave-log-directory'] }}/%$!slave_name%_access_log")
+template(name="haproxy_access_line" type="string" string="%msg:R,ERE,3,FIELD:{{ regex }}--end%\n")
 # React on match
 if (re_match($msg, '{{ regex }}')) then {
- action(type="omfile" dynaFile="slave_output" template="haproxy_slave_line")
+ action(type="omfile" dynaFile="frontend_output" template="haproxy_frontend_line")
+ action(type="omfile" dynaFile="access_output" template="haproxy_access_line")
  stop
 }
 
