@@ -960,6 +960,50 @@ class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
   pass
 
 
+
+class TestZopeShutdown(ZopeSkinsMixin):
+  __partition_reference__ = 's'
+
+  @classmethod
+  def _setUpClass(cls):
+    super()._setUpClass()
+    cls.zope_base_url = cls._getAuthenticatedZopeUrl('')
+    param_dict = cls.getRootPartitionConnectionParameterDict()
+
+    # a python script to schedule activities
+    cls._addPythonScript(
+        script_id='ERP5Site_runActivityLoop',
+        params='mode,i=0',
+        body='''if 1:
+          import json
+          from time import sleep
+          portal = context.getPortalObject()
+          if mode == "run":
+            sleep(1)
+            portal.log("ERP5Site_runActivityLoop (loop %s)" % i)
+            return
+          if mode == "activate":
+            activate_kw = {"activity": "SQLQueue"}
+            previous_tag = None
+            for i in range(100):
+              if previous_tag:
+                activate_kw["after_tag"] = previous_tag
+              activate_kw["tag"] = "tag-%s" % i
+              portal.portal_templates.activate(**activate_kw).ERP5Site_runActivityLoop(mode="run", i=i)
+              previous_tag = tag
+            return "activated"
+          raise ValueError("Unknown mode: %s" % mode)
+        ''',
+    )
+    cls.zope_verify_activity_processing_url = urllib.parse.urljoin(
+        cls.zope_base_url,
+        'ERP5Site_runActivityLoop',
+    )
+
+  def test_shutdown(self):
+    breakpoint()
+
+
 class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
   __partition_reference__ = 't'
 
