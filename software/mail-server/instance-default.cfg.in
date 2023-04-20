@@ -1,0 +1,306 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+bin = ${:home}/bin
+usr = ${:home}/usr
+tmp = ${:home}/tmp
+run = ${:var}/run
+libexec = ${:usr}/libexec
+run-dovecot = ${:run}/dovecot
+var-dovecot = ${:var}/dovecot
+tmp-dovecot = ${:tmp}/dovecot
+libexec-dovecot = ${:libexec}/dovecot
+home-dovecot = ${:home}/dovecot-home
+script = ${:etc}/run
+service = ${:etc}/service
+promise = ${:etc}/promise
+log = ${:var}/log
+usr-postfix = ${:usr}/postfix
+etc-postfix = ${:etc}/postfix
+var-log = ${:var}/log
+var-lib = ${:var}/lib
+var-lib-postfix = ${:var-lib}/postfix
+var-spool = ${:var}/spool
+var-spool-postfix = ${:var-spool}/postfix
+vhosts = ${:home}/vhosts
+# Not used at buildout level, presence needed by postfix.
+var-spool-postfix-active = ${:var-spool-postfix}/active
+var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
+var-spool-postfix-corrupt = ${:var-spool-postfix}/corrupt
+var-spool-postfix-defer = ${:var-spool-postfix}/defer
+var-spool-postfix-deferred = ${:var-spool-postfix}/deferred
+var-spool-postfix-flush = ${:var-spool-postfix}/flush
+var-spool-postfix-hold = ${:var-spool-postfix}/hold
+var-spool-postfix-incoming = ${:var-spool-postfix}/incoming
+var-spool-postfix-maildrop = ${:var-spool-postfix}/maildrop
+var-spool-postfix-pid = ${:var-spool-postfix}/pid
+var-spool-postfix-private = ${:var-spool-postfix}/private
+var-spool-postfix-public = ${:var-spool-postfix}/public
+var-spool-postfix-saved = ${:var-spool-postfix}/saved
+var-spool-postfix-trace = ${:var-spool-postfix}/trace
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = {{ slap_connection['computer-id'] }}
+partition = {{ slap_connection['partition-id'] }}
+url = {{ slap_connection['server-url'] }}
+key = {{ slap_connection['key-file'] }}
+cert = {{ slap_connection['cert-file'] }}
+
+[config-base]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+extra-context =
+context =
+  section directory directory
+  section slap_configuration slap-configuration
+  import  netaddr netaddr
+  ${:extra-context}
+
+[dovecot-conf]
+<= config-base
+url = {{ dovecot_conf_template }}
+output = ${directory:etc}/dovecot.conf
+extra-context =
+  key dovecot_passdb_lua dovecot-passdb-lua:output
+  raw postfix_auth ${directory:var-spool-postfix-private}/auth
+  raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
+
+[dovecot-passdb-lua]
+<= config-base
+url = {{ dovecot_passdb_lua_template }}
+output = ${directory:etc}/dovecot-passdb.lua
+
+[userinfo]
+recipe = slapos.cookbook:userinfo
+
+[ethernet-ip]
+recipe = slapos.recipe.build
+init =
+  import netifaces
+  for i in netifaces.interfaces():
+      if not (i.startswith("slaptun") or i.startswith("re6stnet") or i == "lo"):
+          a = netifaces.ifaddresses(i)
+          if netifaces.AF_INET in a:
+              try:
+                  options['ipv4'] = a[netifaces.AF_INET][0]['addr']
+              except:
+                  options['ipv4'] = "0.0.0.0"
+
+[{{ section('postmap-virtual') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command = '${wrapper-postmap:wrapper-path}' '${postfix-virtual:output}'
+update-command = ${:command}
+
+[{{ section('postmap-vmailbox') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command = '${wrapper-postmap:wrapper-path}' '${postfix-vmailbox:output}'
+update-command = ${:command}
+
+[postfix-conf-main]
+<= config-base
+url = {{ postfix_main_template }}
+output = ${directory:etc-postfix}/main.cf
+extra-context =
+  key vmailbox_file postfix-vmailbox:output
+  key virtual_file postfix-virtual:output
+  key bin_directory directory:bin
+  key usr_directory directory:usr-postfix
+  key queue_directory directory:var-spool-postfix
+  key data_directory directory:var-lib-postfix
+  key spool_directory directory:var-spool
+  key vhosts_directory directory:vhosts
+  key log_directory directory:var-log
+  key mail_owner userinfo:pw-name
+  key setgid_group userinfo:gr-name
+  key ip_address slap-configuration:ipv6-random
+  key mail_domain request-dns-entry:connection-domain
+  raw xz_utils_location {{ xz_utils_location }}
+  raw postfix_location {{ postfix_location }}
+
+[postfix-conf-master]
+<= config-base
+url = {{ postfix_master_template }}
+output = ${directory:etc-postfix}/master.cf
+[postfix-vmailbox]
+<= config-base
+url = {{ postfix_vmailbox_template }}
+output = ${directory:etc-postfix}/postfix-vmailbox
+extra-context =
+  raw mail_domain {{ slapparameter_dict.get('mail_domain', '') }}
+[postfix-virtual]
+<= config-base
+url = {{ postfix_virtual_template }}
+output = ${directory:etc-postfix}/postfix-virtual
+extra-context =
+  raw mail_domain {{ slapparameter_dict.get('mail_domain', '') }}
+
+[dovecot-wrapper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  {{ dovecot_binary }} -F -c ${dovecot-conf:output}
+
+[dovecot-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${dovecot-wrapper:output}
+wrapper-path = ${directory:service}/dovecot
+mode = 0775
+pidfile = ${directory:run}/dovecot.pid
+hash-files =
+  ${dovecot-conf:output}
+  ${dovecot-wrapper:output}
+
+[postfix-symlinks-libexec]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr-postfix}
+link-binary =
+    {{ postfix_location }}/usr/libexec
+
+[postfix-wrapper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  ${directory:usr-postfix}/libexec/postfix/master -c ${directory:etc-postfix}
+
+[postfix-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${postfix-wrapper:output}
+wrapper-path = ${directory:service}/postfix
+mode = 0775
+pidfile = ${directory:run}/postfix.pid
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
+hash-files =
+  ${postfix-conf-main:output}
+  ${postfix-wrapper:output}
+
+[publish-connection-parameters]
+recipe = slapos.cookbook:publish
+<= monitor-publish
+imap-port = 10143
+smtp-port = 10025
+imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
+{% if slapparameter_dict.get('dns_sr_url', '') %}
+domain = ${request-dns-entry:connection-domain}
+{% endif %}
+
+[imap-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = imap_listen.py
+config-host = ${slap-configuration:ipv6-random}
+config-port = 10143
+
+[smtp-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = smtp_listen.py
+config-host = ${slap-configuration:ipv6-random}
+config-port = 10025
+
+[request-dns-entry]
+name = dns-mail-entry
+recipe = slapos.cookbook:request.serialised
+software-url = {{ slapparameter_dict['dns_sr_url'] }}
+software-type = core-network
+server-url = {{ slap_connection['server-url'] }}
+computer-id = {{ slap_connection['computer-id'] }}
+partition-id = {{ slap_connection['partition-id'] }}
+key-file = {{ slap_connection['key-file'] }}
+cert-file = {{ slap_connection['cert-file'] }}
+shared = true
+sla-computer_guid = {{ slap_connection['computer-id'] }}
+config-name = dns-mail-entry
+config-subdomain = mail
+config-ip = ${slap-configuration:ipv6-random}
+return = domain ip
+
+[base-wrapper]
+recipe = slapos.cookbook:wrapper
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
+
+[base-bin-wrapper]
+< = base-wrapper
+command-line = ${:path}/${:basename}
+wrapper-path = ${directory:bin}/${:basename}
+
+[base-bin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ postfix_location }}/usr/bin
+
+[base-sbin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ postfix_location }}/usr/sbin
+
+{% for extend, basename_list in (
+  (
+    'base-bin-bin-wrapper',
+    (
+      'mailq',
+      'newaliases',
+    ),
+  ),
+  (
+    'base-sbin-bin-wrapper',
+    (
+      'postcat',
+      'postconf',
+      'postdrop',
+      'postfix',
+      'postkick',
+      'postlock',
+      'postlog',
+      'postmap',
+      'postmulti',
+      'postqueue',
+      'postsuper',
+      'sendmail',
+    ),
+  ),
+) %}
+{%   for basename in basename_list -%}
+[{{ section('wrapper-' ~ basename) }}]
+< = {{ extend }}
+basename = {{ basename }}
+{%   endfor %}
+{% endfor %}
+
+[{{ section('service-postfix-master') }}]
+< = base-wrapper
+command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfix}
+wrapper-path = ${directory:run}/postfix-master
+
+[buildout]
+extends =
+  {{ template_monitor }}
+parts =
+  directory
+  dovecot-conf
+  dovecot-service
+  postfix-conf-main
+  postfix-conf-master
+  postfix-service
+  postfix-symlinks-libexec
+  monitor-base
+  publish-connection-parameters
+  imap-listen-promise
+  smtp-listen-promise
+  {{ part_list | join('\n  ') }}
+{% if slapparameter_dict.get('dns_sr_url', '') %}
+  request-dns-entry
+{% endif %}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline= true
