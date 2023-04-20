@@ -1,0 +1,46 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[default-dynamic-template-parameters]
+bin-directory = ${buildout:bin-directory}
+buildout-bin-directory = ${buildout:bin-directory}
+
+[dynamic-template-default]
+recipe = slapos.recipe.template:jinja2
+url = ${template-default:target}
+filename = instance-default.cfg
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+context =
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key eggs_directory buildout:eggs-directory
+    key slapparameter_dict slap-configuration:configuration
+    raw template_monitor ${monitor2-template:output}
+    raw dovecot_conf_template ${dovecot.jinja2.conf:target}
+    raw dovecot_passdb_lua_template ${dovecot-passdb.jinja2.lua:target}
+    raw dovecot_binary ${dovecot:location}/sbin/dovecot
+    raw postfix_main_template ${postfix_main.jinja2.cf:target}
+    raw postfix_master_template ${postfix_master.jinja2.cf:target}
+    raw postfix_virtual_template ${postfix_virtual.jinja2:target}
+    raw postfix_vmailbox_template ${postfix_vmailbox.jinja2:target}
+    raw postfix_location ${postfix:location}
+    raw xz_utils_location ${xz-utils:location}
+    section slap_connection slap-connection
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-default:output
+RootSoftwareInstance = $${:default}
