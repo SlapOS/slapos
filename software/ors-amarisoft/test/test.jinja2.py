@@ -223,7 +223,7 @@ def test_mme_conf(self):
 def test_sim_card(self):
 
     conf_file = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'ue_db.cfg'))[0]
+      self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
 
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)

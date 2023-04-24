@@ -21,6 +21,12 @@
       "description": "Activate iperf3 UDP server",
       "type": "boolean"
     },
+    "dnsmasq": {
+      "default": false,
+      "title": "dnsmasq",
+      "description": "dnsmasq",
+      "type": "boolean"
+    },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
