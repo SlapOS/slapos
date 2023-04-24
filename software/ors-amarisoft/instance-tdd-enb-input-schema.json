@@ -162,6 +162,12 @@
       "type": "number",
       "default": 60
     },
+    "enb_drb_stats_enabled": {
+      "title": "Enable eNB drb statistics",
+      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
+      "type": "boolean",
+      "default": true
+    },
     "max_rx_sample_db": {
       "title": "Maximum RX sample value (dB)",
       "description": "Maximum RX sample threshold above which RX saturated promise will fail",
