@@ -1,0 +1,68 @@
+[apache-php-configuration]
+enable-php8 = !py!True
+document-root = ${:default-document-root}/docroot
+
+[drush-bin]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${php-bin:wrapper-path} ${directory:www}/vendor/drush/drush/drush
+wrapper-path = ${directory:bin}/drush
+
+[drupal-env]
+recipe = collective.recipe.template
+input = inline:
+  export DRUPAL_PROFILE=${instance-parameter:site-profile}
+  export LOCALE=${instance-parameter:site-locale}
+  export DB_URL=${mariadb-urlparse:url}
+  export SITE_NAME="${instance-parameter:site-name}"
+  export SITE_MAIL=${instance-parameter:site-mail}
+  export ACCOUNT_NAME="${instance-parameter:account-name}"
+  export ACCOUNT_MAIL=${instance-parameter:account-mail}
+  export ACCOUNT_PASS=${drupal-admin-passwd:passwd}
+  export PATH={{ mariadb_location }}/bin:$PATH
+output = ${directory:etc}/site.env
+mode = 600
+
+[drupal-site-install]
+output = ${directory:scripts}/drupal-install
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  set -e
+
+  INSTALL_FILE=${directory:var}/.install-done
+  if [ -s "$INSTALL_FILE" ]; then
+    echo "Drupal is installed."
+    exit 0;
+  fi
+  . ${drupal-env:output}
+  ${drush-bin:wrapper-path} site:install $DRUPAL_PROFILE \
+    --locale=$LOCALE \
+    --db-url=$DB_URL \
+    --site-name=$SITE_NAME \
+    --site-mail=$SITE_MAIL \
+    --account-name=$ACCOUNT_NAME \
+    --account-mail=$ACCOUNT_MAIL \
+    --account-pass=$ACCOUNT_PASS \
+    --verbose --yes
+   echo "done" > $INSTALL_FILE
+mode = 744
+
+[drupal-admin-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.admin_pwd
+
+[instance-parameter]
+site-profile = ${slap-parameter:instance.site-profile}
+site-locale = ${slap-parameter:instance.site-locate}
+site-name = ${slap-parameter:instance.site-name}
+site-mail = ${slap-parameter:instance.site-mail}
+account-name = ${slap-parameter:instance.account-name}
+account-mail = ${slap-parameter:instance.account-mail}
+
+[slap-parameter]
+instance.site-profile = standard
+instance.site-locate = fr
+instance.site-name = Drupal SlapOS
+instance.site-mail = admin@example.com
+instance.account-name = admin
+instance.account-mail = admin@example.com
