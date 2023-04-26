@@ -20,7 +20,7 @@ Version 1.0.316 (2023-04-14)
     - gnb
     - core-network (replaces epc software type)
 
-Version 1.0.318 (2023-04-20)
+Version 1.0.320 (2023-04-26)
 -------------
 
 * Add support for inter gNB XnAP and NGAP NR handover
