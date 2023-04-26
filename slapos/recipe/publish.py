@@ -30,6 +30,7 @@ from slapos.recipe.librecipe import wrap
 from slapos.recipe.librecipe import GenericSlapRecipe
 import six
 import os
+import traceback
 
 CONNECTION_PARAMETER_STRING = 'connection-'
 
@@ -79,7 +80,7 @@ class Failsafe(object):
     except Exception:
       if error_status_file is not None:
         with open(error_status_file, 'w') as fh:
-          fh.write('')
+          fh.write(traceback.format_exc())
     else:
       if error_status_file is not None:
         if os.path.exists(error_status_file):
