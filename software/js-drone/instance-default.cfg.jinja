@@ -1,0 +1,46 @@
+{%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
+{% set guid_list = parameter_dict['droneGuidList'] + parameter_dict['subscriberGuidList'] -%}
+{% set drone_id_list = [] -%}
+{% set subscriber_id_list = [] -%}
+{% set part_list = ['publish-connection-information'] -%}
+
+{% for id, guid in enumerate(guid_list) -%}
+{%   set request_peer_section_title = 'request-peer' ~ id -%}
+{%   do part_list.append(request_peer_section_title) %}
+[{{ request_peer_section_title }}]
+<= slap-connection
+recipe = slapos.cookbook:request.serialised
+name = Peer{{ id }}
+software-url = ${:software-release-url}
+software-type = peer
+return = instance-path
+sla-computer_guid = {{ guid }}
+config-autopilotIp = {{ parameter_dict['autopilotIp'] }}
+config-autopilotPort = {{ dumps(parameter_dict['autopilotPort']) }}
+config-numberOfDrone = {{ dumps(len(parameter_dict['droneGuidList'])) }}
+config-numberOfSubscriber = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
+config-id = {{ dumps(id) }}
+config-isASimulation = {{ dumps(parameter_dict['isASimulation']) }}
+{% if id < len(parameter_dict['droneGuidList']) -%}
+{%   do drone_id_list.append(id) %}
+config-isADrone = {{ dumps(True) }}
+config-flightScript = {{ parameter_dict['flightScript'] }}
+{% else -%}
+{%   do subscriber_id_list.append(id) %}
+config-isADrone = {{ dumps(False) }}
+config-flightScript = https://lab.nexedi.com/nexedi/flight-scripts/raw/api_update/subscribe.js
+{% endif -%}
+config-multicastIp = {{ parameter_dict['multicastIp'] }}
+config-netIf = {{ parameter_dict['netIf'] }}
+{% endfor %}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+drone-id-list = {{ dumps(drone_id_list) }}
+subscriber-id-list = {{ dumps(subscriber_id_list) }}
+
+[buildout]
+parts =
+{%- for part in part_list %}
+  {{ part }}
+{%- endfor -%}
