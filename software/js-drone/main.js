@@ -36,10 +36,10 @@ import { open, exit } from "std";
   // to prevent it to finish (and so, exit the quickjs process)
   worker = new Worker("{{ worker_script }}");
 
-  function quit(is_a_drone, exit_code) {
+  function quit(is_a_drone, shutdown, exit_code) {
     stopPubsub();
     if (is_a_drone) {
-      stop();
+      stop(shutdown);
     }
     exit(exit_code);
   }
@@ -141,10 +141,10 @@ import { open, exit } from "std";
       can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
-      quit(configuration.isADrone, e.data.exit);
+      quit(configuration.isADrone, !configuration.isASimulation, e.data.exit);
     } else {
       console.log('Unsupported message type', type);
-      quit(configuration.isADrone, 1);
+      quit(configuration.isADrone, !configuration.isASimulation, 1);
     }
   };
 }(arm, console, exit, open, scriptArgs, setTimeout, start, stop, stopPubsub, 
