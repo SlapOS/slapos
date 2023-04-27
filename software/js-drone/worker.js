@@ -1,6 +1,6 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 /*global console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, execUserScript, initPubsub, landed, loiter, setAirspeed,
+  getLongitude, getYaw, execUserScript, initPubsub, loiter, setAirspeed,
   setMessage, setTargetCoordinates, std, triggerParachute, Drone, Worker*/
 import {
   Drone,
@@ -14,7 +14,6 @@ import {
   getLongitude,
   getYaw,
   initPubsub,
-  landed,
   loiter,
   setAirspeed,
   setMessage,
@@ -24,7 +23,7 @@ import * as std from "std";
 import { Worker } from "os";
 
 (function (console, getAltitude, getAltitudeRel, getInitialAltitude,
-           getLatitude, getLongitude, getYaw, initPubsub, landed, loiter,
+           getLatitude, getLongitude, getYaw, initPubsub, loiter,
            setAirspeed, setMessage, setTargetCoordinates, std, triggerParachute,
            Drone, Worker) {
   // Every script is evaluated per drone
@@ -58,7 +57,6 @@ import { Worker } from "os";
       getSpeed: getAirspeed,
       getClimbRate: getClimbRate,
       id: configuration.id,
-      landed: landed,
       loiter: loiter,
       sendMsg: function (msg, id) {
         if (id === undefined) { id = -1; }
@@ -136,5 +134,5 @@ import { Worker } from "os";
     }
   };
 }(console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, initPubsub, landed, loiter, setAirspeed, setMessage,
+  getLongitude, getYaw, initPubsub, loiter, setAirspeed, setMessage,
   setTargetCoordinates, std, triggerParachute, Drone, Worker));
