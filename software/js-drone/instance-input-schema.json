@@ -14,7 +14,7 @@
       "title": "Port of the drone's autopilot",
       "description": "Port on which autopilot service is running.",
       "type": "integer",
-      "default": "7909"
+      "default": 7909
     },
     "droneGuidList": {
       "title": "List of drones computer ID",
