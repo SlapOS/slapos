@@ -30,12 +30,11 @@ import json
 import os
 import socket
 import struct
-import subprocess
 import time
+import websocket
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-MAIN_SCRIPT_NAME = 'main.js'
 '''
   0. positionArray
     0.1 latitude
@@ -52,7 +51,6 @@ MONITORED_ITEM_NB = 3
 OPC_UA_PORT = 4840
 OPC_UA_NET_IF = 'lo'
 MCAST_GRP = 'ff15::1111'
-USER_SCRIPT_NAME = 'user.js'
 
 # OPC UA Pub/Sub related constants
 VERSION = 1
@@ -98,63 +96,47 @@ UA_DATETIME_UNIX_EPOCH = 11644473600 * UA_DATETIME_SEC
 CONFIG_VERSION_MAJOR_VERSION = 1690792766
 CONFIG_VERSION_MINOR_VERSION = 1690781976
 
-POSITION_ARRAY_TYPE = 11 #double
-POSITION_ARRAY_VALUES = (45.64, 14.25, 686.61, 91.24)
+POSITION_ARRAY_TYPE = 8 #int64
+POSITION_ARRAY_INPUT_VALUES = (456400000, 142500000, 686000, 91000, 1697878907)
+POSITION_ARRAY_OUTPUT_COEFS = (1e7, 1e7, 1000, 1000)
+POSITION_ARRAY_OUTPUT_VALUES = tuple(value / coef for value, coef in zip(POSITION_ARRAY_INPUT_VALUES[:-1], POSITION_ARRAY_OUTPUT_COEFS))
 
 SPEED_ARRAY_TYPE = 10 #float
 SPEED_ARRAY_VALUES = (-72.419998, 15.93, -0.015)
 
 STRING_TYPE = 12
-TEST_MESSAGE = b'{"content":"{\\"next_checkpoint\\":1}","dest_id":-1}'
+MESSAGE_CONTENT = b'{\\"next_checkpoint\\":1}'
+TEST_MESSAGE = b'{"content":"' + MESSAGE_CONTENT + b'","dest_id":-1}'
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class JSDroneTestCase(SlapOSInstanceTestCase):
-
+class SubscriberTestCase(SlapOSInstanceTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
+        'droneGuidList': [cls.slap._computer_id],
         'netIf': OPC_UA_NET_IF,
         'subscriberGuidList': [cls.slap._computer_id],
       })
     }
 
-  def get_partition(self, instance_type):
+  def get_partition(self, partition_id):
     software_url = self.getSoftwareURL()
     for computer_partition in self.slap.computer.getComputerPartitionList():
-      partition_url = computer_partition.getSoftwareRelease()._software_release
-      partition_type = computer_partition.getType()
-      if partition_url == software_url and partition_type == instance_type:
+      if computer_partition.getId() == partition_id:
         return computer_partition
-    raise Exception("JS-drone %s partition not found" % instance_type)
+    raise Exception("Partition %s not found" % partition_id)
 
   def setUp(self):
     super().setUp()
-    subscriber_partition = self.get_partition('drone')
-    instance_path = json.loads(
-      subscriber_partition.getConnectionParameterDict()['_'])['instance-path']
-    quickjs_bin = os.path.join(instance_path, 'bin', 'qjs')
-    script_dir = os.path.join(instance_path, 'etc')
-    self.qjs_process = subprocess.Popen(
-      [
-        quickjs_bin,
-        os.path.join(script_dir, MAIN_SCRIPT_NAME),
-        os.path.join(script_dir, USER_SCRIPT_NAME),
-      ],
-      stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE,
-    )
-    time.sleep(0.1)
-
-  def tearDown(self):
-    if self.qjs_process.returncode == None:
-      self.qjs_process.kill()
-      self.qjs_process.communicate()
-    super().tearDown()
+    subscriber_partition = self.get_partition('SubscriberTestCase-2')
+    self.websocket_server_address = json.loads(
+      subscriber_partition.getConnectionParameterDict()['_'])['websocket-url']
+    time.sleep(0.5)
 
   def ua_networkMessage_encodeHeader(self):
     ua_byte1 = int(VERSION)
@@ -224,8 +206,8 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
     data_set_message += struct.pack('H', MONITORED_ITEM_NB)
     data_set_message += self.ua_array_encode(
       POSITION_ARRAY_TYPE,
-      'd',
-      POSITION_ARRAY_VALUES,
+      'q',
+      POSITION_ARRAY_INPUT_VALUES,
     )
     data_set_message += self.ua_array_encode(
       SPEED_ARRAY_TYPE,
@@ -244,25 +226,39 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
       s.sendto(ua_message, ('::1', OPC_UA_PORT))
 
+  def test_process(self):
+    expected_process_name_list = [
+      'qjs-launcher',
+      'http-server-on-watch',
+    ]
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
+
+    for expected_process_name in expected_process_name_list:
+      self.assertIn(expected_process_name, process_names)
+
+
   def test_requested_instances(self):
     connection_parameter_dict = json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
-    self.assertEqual(connection_parameter_dict['drone-id-list'], [])
-    self.assertEqual(connection_parameter_dict['subscriber-id-list'], [0])
+    self.assertEqual(connection_parameter_dict['drone-id-list'], [0])
+    self.assertEqual(connection_parameter_dict['subscriber-id-list'], [1])
 
   def test_subscriber_instance_parameter_dict(self):
     self.assertEqual(
-      json.loads(self.get_partition('drone').getInstanceParameterDict()['_']),
+      json.loads(self.get_partition('SubscriberTestCase-2').getInstanceParameterDict()['_']),
       {
         'autopilotIp': '192.168.27.1',
         'autopilotPort': 7909,
-        'id': 0,
+        'numberOfDrone': 1,
+        'numberOfSubscriber': 1,
+        'id': 1,
         'isASimulation': False,
         'isADrone': False,
-        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/raw/master/subscribe.js',
-        'multicastIp': MCAST_GRP,
-        'numberOfPeers': 1,
-        'netIf': OPC_UA_NET_IF
+        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/raw/api_update/subscribe.js',
+        'netIf': OPC_UA_NET_IF,
+        'multicastIp': MCAST_GRP
       }
     )
 
@@ -281,14 +277,31 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_string, f.readlines())
 
   def test_pubsub_subscription(self):
+    ws = websocket.WebSocket()
+    ws.connect(self.websocket_server_address, timeout=5)
+    self.assertEqual(
+      ws.recv_frame().data,
+      b'Unknown instruction %s\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' % ws.sock.getsockname()[0].encode()
+    )
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
+        b'"timestamp":%d}}}' % 0,
+      ))
+    )
     self.send_ua_networkMessage()
     time.sleep(0.1)
-    outs, _ = self.qjs_process.communicate(b'q\n', timeout=15)
-    decoded_out = outs.decode()
-    for line in (
-      'Subscription 0 | MonitoredItem %s' % MONITORED_ITEM_NB,
-      'Received position of drone 0: %f° %f° %fm %fm' % POSITION_ARRAY_VALUES,
-      'Received speed of drone 0: %f° %fm/s %fm/s' % SPEED_ARRAY_VALUES,
-      'Received message for drone 0: %s' % TEST_MESSAGE.decode(),
-    ):
-      self.assertIn(line, decoded_out)
+    self.assertEqual(ws.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % POSITION_ARRAY_OUTPUT_VALUES[:-1],
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % SPEED_ARRAY_VALUES,
+        b'"timestamp":%d}}}' % POSITION_ARRAY_INPUT_VALUES[-1],
+      ))
+    )
+    ws.close()
