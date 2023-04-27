@@ -1,6 +1,6 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
-/*global arm, console, exit, open, scriptArgs, setTimeout, start, stop,
-  stopPubsub, takeOffAndWait, Worker*/
+/*global arm, console, close, dup2, exit, open, scriptArgs, setTimeout, start,
+  stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM*/
 import {
   arm,
   start,
@@ -8,17 +8,27 @@ import {
   stopPubsub,
   takeOffAndWait
 } from {{ json_module.dumps(qjs_wrapper) }};
-import { setTimeout, Worker } from "os";
-import { open, exit } from "std";
+import {
+  Worker,
+  SIGTERM,
+  dup2,
+  setTimeout,
+  signal
+} from "os";
+import { err, exit, open, out } from "std";
 
-(function (arm, console, exit, open, scriptArgs, setTimeout, start, stop,
-           stopPubsub, takeOffAndWait, Worker) {
+(function (arm, console, dup2, err, exit, open, out, scriptArgs,
+           setTimeout, start, stop, stopPubsub, takeOffAndWait, Worker,
+           SIGTERM) {
   "use strict";
 
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
-    LOG_FILE = "{{ log_dir }}/mavsdk-log",
+    MAVSDK_LOG_FILE_PATH =
+      "{{ log_dir }}/mavsdk_" + new Date().toISOString() + ".log",
+    LOG_FILE =
+      open("{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log", "w"),
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
@@ -27,6 +37,10 @@ import { open, exit } from "std";
     can_update = false;
 
   conf_file.close();
+
+  // redirect stdout and stderr
+  dup2(LOG_FILE.fileno(), out.fileno());
+  dup2(LOG_FILE.fileno(), err.fileno());
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -37,17 +51,28 @@ import { open, exit } from "std";
   worker = new Worker("{{ worker_script }}");
 
   function quit(is_a_drone, exit_code) {
+    worker.onmessage = null;
     stopPubsub();
     if (is_a_drone) {
       stop();
     }
+    LOG_FILE.close();
     exit(exit_code);
   }
+
+  function exitWorker(exit_code) {
+    worker.postMessage({
+      type: "exit",
+      code: exit_code
+    });
+  }
+
+  signal(SIGTERM, exitWorker.bind(null, 0));
 
   function exitOnFail(ret, msg) {
     if (ret) {
       console.log(msg);
-      quit(1);
+      exitWorker(1);
     }
   }
 
@@ -55,7 +80,12 @@ import { open, exit } from "std";
     var address = configuration.autopilotIp + ":" + configuration.autopilotPort;
     console.log("Will connect to", address);
     exitOnFail(
-      start(configuration.autopilotIp, configuration.autopilotPort, LOG_FILE, 60),
+      start(
+        configuration.autopilotIp,
+        configuration.autopilotPort,
+        MAVSDK_LOG_FILE_PATH,
+        60
+      ),
       "Failed to connect to " + address
     );
   }
@@ -87,7 +117,7 @@ import { open, exit } from "std";
     // First argument must provide the user script path
     if (user_script === undefined) {
       console.log('Please provide the user_script path.');
-      quit(1);
+      exitWorker(1);
     }
 
     worker.postMessage({
@@ -138,14 +168,16 @@ import { open, exit } from "std";
       // Start the update loop
       loop();
     } else if (type === 'updated') {
+      err.flush();
+      out.flush();
       can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
       quit(configuration.isADrone, e.data.exit);
     } else {
       console.log('Unsupported message type', type);
-      quit(configuration.isADrone, 1);
+      exitWorker(1);
     }
   };
-}(arm, console, exit, open, scriptArgs, setTimeout, start, stop, stopPubsub, 
-  takeOffAndWait, Worker));
+}(arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout, start, stop,
+  stopPubsub, takeOffAndWait, Worker, SIGTERM));
