@@ -43,7 +43,8 @@ setup(name=name,
       install_requires=[
         'slapos.core',
         'slapos.libnetworkcache',
-        'erp5.util'
+        'erp5.util',
+        'websocket-client',
       ],
       zip_safe=True,
       test_suite='test',
