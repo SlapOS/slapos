@@ -175,6 +175,8 @@ class TestOrderBuildPackingListSimulation(
         params={'user_quantity:int': 1})
       if not ret.ok:
         self.logger.error(ret.text)
+        if self._debug:
+          breakpoint()
       ret.raise_for_status()
       self._waitForActivities(
         timeout=datetime.timedelta(hours=2).total_seconds())
@@ -211,6 +213,8 @@ class TestOrderBuildPackingListSimulation(
           )
           if not ret.ok:
             self.logger.error(ret.text)
+            if self._debug:
+              breakpoint()
           ret.raise_for_status()
         self._waitForActivities(
           timeout=datetime.timedelta(hours=2).total_seconds())
@@ -241,5 +245,3 @@ class TestOrderBuildPackingListSimulation(
           subprocess.check_output(
             (pt_query_digest, mariadb_slowquery_log), text=True)
         })
-
-      breakpoint()
