@@ -460,6 +460,8 @@ class ZopeSkinsMixin:
           pass
       time.sleep(5)
     else:
+      if cls._debug:
+        breakpoint()
       raise AssertionError("Timeout waiting for activities")
 
   @classmethod
