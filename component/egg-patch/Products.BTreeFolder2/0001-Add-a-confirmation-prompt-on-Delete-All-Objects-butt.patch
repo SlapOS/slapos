@@ -1,0 +1,30 @@
+From cfdd177131b8f453c024ad3008da4951aab16a50 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 2 May 2023 13:53:46 +0900
+Subject: [PATCH] Add a confirmation prompt on ``Delete All Objects`` button
+ (#19)
+
+Co-authored-by: Michael Howitz <icemac@gmx.net>
+
+patch amended to remove the changelog entry
+
+---
+ src/Products/BTreeFolder2/contents.dtml | 2 +-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/Products/BTreeFolder2/contents.dtml b/src/Products/BTreeFolder2/contents.dtml
+index d00e04a..9629700 100644
+--- a/src/Products/BTreeFolder2/contents.dtml
++++ b/src/Products/BTreeFolder2/contents.dtml
+@@ -82,7 +82,7 @@ function toggleSelect() {
+   <input class="form-element" type="submit" name="manage_delObjects:method"
+    value="Delete" />
+   <input class="form-element" type="submit" name="manage_delAllObjects:method"
+-   value="Delete All Objects" />
++   value="Delete All Objects" onClick="return confirm('Really delete all objects?')"/>
+   </dtml-if>
+   <dtml-if "_.SecurityCheckPermission('Import/Export objects', this())">
+   <input class="form-element" type="submit"
+-- 
+2.39.1
+
