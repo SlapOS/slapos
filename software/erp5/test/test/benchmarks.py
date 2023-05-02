@@ -25,9 +25,12 @@
 #
 ##############################################################################
 
+import contextlib
 import datetime
 import json
 import pathlib
+import socket
+import struct
 import subprocess
 import time
 import typing
@@ -68,7 +71,7 @@ class TestOrderBuildPackingListSimulation(
           "mariadb": {
             # We use a large innodb-buffer-pool-size because the simulation
             # select method used for sale packing list does not use index and
-            # cause slpow queries
+            # cause slow queries
             "innodb-buffer-pool-size": 32 * 1024 * 1024 * 1024,  # 32Go
           },
           "zope-partition-dict": {
@@ -129,6 +132,16 @@ class TestOrderBuildPackingListSimulation(
       self.getComputerPartitionPath('zodb')) / 'srv' / 'zodb' / 'root.fs'
     root_fs_size = root_fs.stat().st_size
 
+    # ZEO stats ( using ruok protocol https://github.com/zopefoundation/ZEO/commit/d5082536 )
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+      s.connect((self._ipv4_address, 2100))
+      s.sendall(b'\x00\x00\x00\x04ruok')
+      _ = s.recv(struct.unpack(">I", s.recv(4))[0])
+      zeo_stats = json.loads(s.recv(struct.unpack(">I", s.recv(4))[0]))
+    # we are supposed to have only one storage with name "root"
+    zeo_root_stats = zeo_stats.pop('root')
+    assert not zeo_stats
+
     self.logger.info(
       "Measurements for %s (after %s): "
       "elapsed=%s zope_total_rss=%s / %s root_fs_size=%s",
@@ -147,6 +160,7 @@ class TestOrderBuildPackingListSimulation(
         'zope_total_rss': zope_total_rss,
         'zope_count': zope_count,
         'root_fs_size': root_fs_size,
+        'zeo_stats': zeo_root_stats,
         'now': str(now),
       })
 
