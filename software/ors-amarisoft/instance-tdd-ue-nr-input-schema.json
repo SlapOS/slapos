@@ -1,0 +1,127 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "rue_addr": {
+      "title": "[Required] Remote UE address",
+      "description": "[Required] Address of remote UE server. Default port is 2152.",
+      "type": "string",
+      "default": ""
+    },
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number",
+      "default": 
+    },
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number",
+      "default": 
+    },
+    "dl_nr_arfcn": {
+      "title": "DL NR ARFCN",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
+      "type": "number",
+      "default": 0
+    },
+    "nr_band": {
+      "title": "NR band",
+      "description": "NR band number",
+      "type": "number",
+      "default": 0
+    },
+    "nr_bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number",
+      "default": 
+    },
+    "ssb_nr_arfcn": {
+      "title": "SSB NR ARFCN",
+      "description": "SSB NR ARFCN, you can retrieve from ENB/GNB side",
+      "type": "number",
+      "default": 0
+    },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 
+    },
+    "imsi": {
+      "title": "IMSI",
+      "description": "IMSI",
+      "type": "string",
+      "default": ""
+    },
+    "k": {
+      "title": "K",
+      "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
+      "type": "string",
+      "default": ""
+    },
+    "sim_algo": {
+      "title": "sim_algo",
+      "description": "Optional enumeration. xor, milenage or tuak (default = milenage). Set the USIM authentication algorithm. Note: test USIM cards use the XOR algorithm.",
+      "type": "string",
+      "default": "milenage"
+    },
+    "opc": {
+      "title": "opc",
+      "description": "Optional string. Operator key preprocessed with the user secret key (as a 16 byte hexadecimal string). When the Milenage authentication algorithm is used, either op or opc must be set.",
+      "type": "string",
+      "default": "milenage"
+    },
+    "amf": {
+      "title": "amf",
+      "description": "Range: 0 to 65535. Set the Authentication Management Field.",
+      "type": "string",
+      "default": "0x9001"
+    },
+    "sqn": {
+      "title": "sqn",
+      "description": "Optional String (6 byte hexadecimal string). Default = '000000000000'. Set the initial sequence number. For the XOR algorithm, the actual value does not matter. For the Milenage or TUAK algorithm, a sequence number resynchronization is initiated if the sequence number does not match the one stored in the USIM.",
+      "type": "string",
+      "default": "000000000000"
+    },
+    "impu": {
+      "title": "impu",
+      "description": "Array of string or object. Each string represent an IMPU and can be a sip URI or a telephone number.",
+      "type": "string",
+      "default": ""
+    },
+    "impi": {
+      "title": "impi",
+      "description": "String. Defines user IMPI. Must be fully filled with hostname if necessary.",
+      "type": "string",
+      "default": ""
+    },
+    "promise_cpu_temperature_threshold": {
+      "title": "CPU temperature promise threshold",
+      "description": "Temperature threshold above which CPU temperature promise will fail",
+      "type": "number",
+      "default": 80
+    },
+    "promise_cpu_avg_temperature_threshold": {
+      "title": "Average CPU temperature promise threshold",
+      "description": "If average temperature over specified duration reaches this threshold, promise will fail",
+      "type": "number",
+      "default": 80
+    },
+    "promise_cpu_avg_temperature_threshold_duration": {
+      "title": "Average CPU temperature promise threshold duration",
+      "description": "Duration during which average temperature should not exceed specified threshold",
+      "type": "number",
+      "default": 600
+    }
+  }
+}

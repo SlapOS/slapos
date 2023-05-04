@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-{% if rf_mode == 'tdd' %}
+
     "rrh": {
       "title": "RRH",
       "description": "RRH",
@@ -14,30 +14,30 @@
         "M2RU Sunwave"
       ]
     },
-{% endif %}
+
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number",
-      "default": {{ default_nr_tx_gain }}
+      "default": 
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number",
-      "default": {{ default_nr_rx_gain }}
+      "default": 
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": {{ default_n_antenna_dl }}
+      "default": 
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": {{ default_n_antenna_ul }}
+      "default": 
     },
     "gps_sync": {
       "default": false,
@@ -49,19 +49,19 @@
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
       "type": "number",
-      "default": {{ default_dl_nr_arfcn }}
+      "default": 0
     },
     "nr_band": {
       "title": "NR band",
       "description": "NR band number",
       "type": "number",
-      "default": {{ default_nr_band }}
+      "default": 0
     },
     "nr_bandwidth": {
       "title": "Bandwidth",
       "description": "Downlink Bandwidth (in MHz)",
       "type": "number",
-      "default": {{ default_nr_bandwidth }}
+      "default": 
     },
     "amf_list": {
       "title": "AMF list",
@@ -175,7 +175,7 @@
       "title": "SSB Position Bitmap",
       "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
       "type": "string",
-      "default": {{ default_nr_ssb_pos_bitmap }}
+      "default": 10000000
     },
     "plmn_list": {
       "title": "PLMN list",
@@ -242,7 +242,7 @@
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
-      "default": {{ default_nr_inactivity_timer }}
+      "default": 
     },
     "use_ipv4": {
       "default": false,
@@ -255,12 +255,6 @@
       "description": "Describes how often a call to Amarisoft remote API is made to get gNB statistics",
       "type": "number",
       "default": 60
-    },
-    "gnb_drb_stats_enabled": {
-      "title": "Enable gNB drb statistics",
-      "description": "Enable gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
-      "type": "boolean",
-      "default": true
     },
     "max_rx_sample_db": {
       "title": "Maximum RX sample value (dB)",

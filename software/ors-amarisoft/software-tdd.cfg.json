@@ -4,20 +4,37 @@
   "serialisation": "json-in-xml",
   "software-type": {
 
+    "ue-lte": {
+      "title": "UE-LTE",
+      "description": "UE LTE Configuration",
+      "software-type": "ue-lte",
+      "request": "instance-tdd-ue-lte-input-schema.json",
+      "response": "instance-tdd-ue-lte-schema.json",
+      "index": 4
+    },
+    "ue-nr": {
+      "title": "UE-NR",
+      "description": "UE NR Configuration",
+      "software-type": "ue-nr",
+      "request": "instance-tdd-ue-nr-input-schema.json",
+      "response": "instance-tdd-ue-nr-schema.json",
+      "index": 5
+    },
+
     "enb": {
       "title": "eNB",
       "software-type": "enb",
       "description": "eNodeB Configuration",
-      "request": "instance-tdd2600-enb-input-schema.json",
-      "response": "instance-tdd2600-enb-schema.json",
+      "request": "instance-tdd-enb-input-schema.json",
+      "response": "instance-tdd-enb-schema.json",
       "index": 0
     },
     "gnb": {
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
-      "request": "instance-tdd2600-gnb-input-schema.json",
-      "response": "instance-tdd2600-gnb-schema.json",
+      "request": "instance-tdd-gnb-input-schema.json",
+      "response": "instance-tdd-gnb-schema.json",
       "index": 1
     },
     "core-network": {
