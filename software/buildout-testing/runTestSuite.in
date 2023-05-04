@@ -117,11 +117,10 @@ eggs =
   zope.testrunner
 scripts =
   zope-testrunner
-extra-paths =
-  %s
+extra-paths =%s
 """ % (''.join('\n  ' + x for x in test_dict.values()),
        '\n'.join(x + ' =' for x in test_dict),
-       get_distribution('manuel').location,
+       ''.join('\n  ' + get_distribution(x).location for x in ('manuel', 'six')),
        )))
   finally:
     os.close(fd)
