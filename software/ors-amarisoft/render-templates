@@ -32,7 +32,7 @@ rf_mode_context_list = [
             'default_dl_nr_arfcn'          : 378000,
             'default_nr_band'              : 39,
             'default_nr_dl_freq'           : 1890.0,
-            'default_nr_ssb_pos_bitmap'    : "1000",
+            'default_nr_ssb_pos_bitmap'    : "10000000",
             'default_ssb_nr_arfcn'         : 377790,
             'min_frequency'                : 1880.0,
             'max_frequency'                : 1920,
