@@ -3,16 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "rrh": {
-      "title": "RRH",
-      "description": "RRH",
-      "type": "string",
-      "default": "SDR",
-      "enum": [
-        "SDR",
-        "M2RU Sunwave"
-      ]
-    },
+
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",

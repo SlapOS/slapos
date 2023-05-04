@@ -4,17 +4,48 @@
   "title": "Input Parameters",
   "properties": {
 
+    "rrh": {
+      "title": "RRH",
+      "description": "RRH",
+      "type": "string",
+      "default": "SDR",
+      "enum": [
+        "SDR",
+        "Lopcomm ORAN"
+      ]
+    },
+    "txa0cc00_active": {
+      "title": "Lopcomm ORAN TX array carriers (TXA0CC00)",
+      "description": "Activate or inactivate Lopcomm ORAN TX array carriers (TXA0CC00)",
+      "type": "string",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
+    },
+    "rxa0cc00_active": {
+      "title": "Lopcomm ORAN RX array carriers (RXA0CC00)",
+      "description": "Activate or inactivate Lopcomm ORAN RX array carriers (RXA0CC00)",
+      "type": "string",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
+    },
+
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number",
-      "default": 60
+      "default": 
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number",
-      "default": 45
+      "default": 
     },
     "gps_sync": {
       "default": false,
@@ -26,13 +57,13 @@
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
       "type": "number",
-      "default": 42590
+      "default": 0
     },
     "n_rb_dl": {
       "title": "DL RB",
       "description": "number of DL resource blocks",
       "type": "number",
-      "default": 100
+      "default": 
     },
     "mme_list": {
       "title": "MME list",
@@ -99,7 +130,7 @@
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
-      "default": 10000
+      "default": 
     },
     "use_ipv4": {
       "default": false,
@@ -112,12 +143,6 @@
       "description": "Describes how often a call to Amarisoft remote API is made to get eNB statistics",
       "type": "number",
       "default": 60
-    },
-    "enb_drb_stats_enabled": {
-      "title": "Enable eNB drb statistics",
-      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
-      "type": "boolean",
-      "default": true
     },
     "max_rx_sample_db": {
       "title": "Maximum RX sample value (dB)",
@@ -159,13 +184,13 @@
       "title": "Number of DL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": 2
+      "default": 
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": 2
+      "default": 
     }
   }
 }
