@@ -20,7 +20,25 @@
       "title": "Time to Trigger for NR handover",
       "description": "Time to triger after which NR handover will be triggerd if A3 offset is reached",
       "type": "number",
-      "default": 100,
+      "enum": [
+        0,
+        40,
+        64,
+        80,
+        100,
+        128,
+        160,
+        256,
+        320,
+        480,
+        512,
+        640,
+        1024,
+        1280,
+        2560,
+        5120
+      ],
+      "default": 100
     },
     "tdd_ul_dl_config": {
       "title": "TDD",
