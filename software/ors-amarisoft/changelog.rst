@@ -1,10 +1,12 @@
 Changelog
 =========
 
-Version ?.?.??? (unreleased)
-----------------------------
+Version 1.0.321 (2023-05-05)
+-------------
 
-* Add xamari xlog service
+* Remove RRH options from ORS software releases
+* Add custom TDD UL DL configuration
+* Add time_to_trigger and a3_offset gNB XnAP and NGAP NR handover options
 
 Version 1.0.320 (2023-04-26)
 ----------------------------
@@ -42,4 +44,3 @@ Version 1.0.308 (2023-02-09)
 * Rotate and add timestamps in enb-output.log, gnb-output.log, mme-output.log etc...
 * Add support for Lopcomm RRH
 * Remove UE power emission limitation
-
