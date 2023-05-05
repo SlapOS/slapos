@@ -1,0 +1,14 @@
+{
+  "name": "Drupal",
+  "description": "Drupal Software Release",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Drupal",
+      "request": "instance-drupal-input-schema.json",
+      "response": "instance-drupal-output-schema.json",
+      "index": 0
+    }
+  }
+}

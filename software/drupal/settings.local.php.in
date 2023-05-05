@@ -1,0 +1,11 @@
+<?php
+# Warning: This file will be modified by SlapOS!
+
+$settings['trusted_host_patterns'] = [
+{% for host in parameter_dict['trusted-host-list'].split('\n') -%}
+{%   if host.strip() -%}
+  {{ "'^" ~ host.strip().replace('.', '\.') ~ "$'," }}
+{%   endif -%}
+{% endfor -%}
+];
+
