@@ -2,6 +2,21 @@
 enable-php8 = !py!True
 document-root = ${:default-document-root}/docroot
 
+[template-base]
+recipe = slapos.recipe.template:jinja2
+context =
+  section parameter_dict   instance-parameter
+
+[settings.php]
+<= template-base
+url = {{ template_settings_php }}
+output = ${directory:www}/docroot/sites/settings.base.php
+
+[settings.local.php]
+<= template-base
+url = {{ template_settings_local }}
+output = ${directory:www}/docroot/sites/settings.local.php
+
 [drush-bin]
 recipe = slapos.cookbook:wrapper
 command-line =
@@ -20,7 +35,7 @@ input = inline:
   export ACCOUNT_MAIL=${instance-parameter:account-mail}
   export ACCOUNT_PASS=${drupal-admin-passwd:passwd}
   export PATH={{ mariadb_location }}/bin:$PATH
-output = ${directory:etc}/site.env
+output = ${directory:etc}/.site.env
 mode = 600
 
 [drupal-site-install]
@@ -29,35 +44,56 @@ recipe = collective.recipe.template
 input = inline:#!/bin/sh
   set -e
 
+  CONFIG_FILE=${directory:www}/docroot/sites/default/settings.php
   INSTALL_FILE=${directory:var}/.install-done
   if [ -s "$INSTALL_FILE" ]; then
     echo "Drupal is installed."
     exit 0;
   fi
   . ${drupal-env:output}
+  if [ ! -s "$CONFIG_FILE" ]; then
+    cp ${settings.php:output} $CONFIG_FILE
+  fi
   ${drush-bin:wrapper-path} site:install $DRUPAL_PROFILE \
     --locale=$LOCALE \
     --db-url=$DB_URL \
-    --site-name=$SITE_NAME \
+    --site-name="$SITE_NAME" \
     --site-mail=$SITE_MAIL \
-    --account-name=$ACCOUNT_NAME \
+    --account-name="$ACCOUNT_NAME" \
     --account-mail=$ACCOUNT_MAIL \
     --account-pass=$ACCOUNT_PASS \
     --verbose --yes
-   echo "done" > $INSTALL_FILE
+
+  # Rebuild all caches.
+  ${drush-bin:wrapper-path} cache:rebuild
+
+  echo "done" > $INSTALL_FILE
+  chmod 440 $INSTALL_FILE
 mode = 744
+depends =
+  ${settings.php:recipe}
+  ${settings.local.php:recipe}
 
 [drupal-admin-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.admin_pwd
 
 [instance-parameter]
+tmp-dir = ${directory:tmp}
+trusted-host-list =
+  \[${apache-php-configuration:ip}\]
+  ${request-frontend:connection-domain}
+  ${slap-parameter:instance.trusted-host}
 site-profile = ${slap-parameter:instance.site-profile}
 site-locale = ${slap-parameter:instance.site-locate}
 site-name = ${slap-parameter:instance.site-name}
 site-mail = ${slap-parameter:instance.site-mail}
 account-name = ${slap-parameter:instance.account-name}
 account-mail = ${slap-parameter:instance.account-mail}
+
+[publish-connection-information]
+admin-username = ${instance-parameter:account-name}
+admin-password = ${drupal-admin-passwd:passwd}
 
 [slap-parameter]
 instance.site-profile = standard
@@ -66,3 +102,4 @@ instance.site-name = Drupal SlapOS
 instance.site-mail = admin@example.com
 instance.account-name = admin
 instance.account-mail = admin@example.com
+instance.trusted-host =

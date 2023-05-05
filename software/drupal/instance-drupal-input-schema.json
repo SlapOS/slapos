@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate NextCloud",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "apache-computer-guid": {
+      "title": "Computer ID for Apache Instance.",
+      "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
+      "type": "string"
+    },
+    "mariadb-computer-guid": {
+      "title": "Computer ID for Mariadb Instance.",
+      "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
+      "type": "string"
+    },
+    "instance.site-name": {
+      "title": "Site Name",
+      "description": "Drupal site name",
+      "type": "string"
+    },
+    "instance.site-mail": {
+      "title": "Site Mail",
+      "description": "Site email address",
+      "type": "string"
+    },
+    "instance.account-mail": {
+      "title": "Admin Mail",
+      "description": "Admin email address",
+      "type": "string"
+    },
+    "instance.account-name": {
+      "title": "Admin username",
+      "description": "Admin username.",
+      "type": "string"
+    }
+  }
+}
