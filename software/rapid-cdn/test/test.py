@@ -1393,7 +1393,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       hostname = reference.replace('_', '').replace('-', '').lower()
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
-      'replication_number': '1',
       'url': 'http://%s.example.com' % (hostname, ),
       'site_url': 'http://%s.example.com' % (hostname, ),
       'secure_access': 'https://%s.example.com' % (hostname, ),
@@ -4916,7 +4915,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, Rep
     self.assertEqual(
       {
         'domain': 'replicate.example.com',
-        'replication_number': '2',
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
@@ -6453,7 +6451,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqual(
       {
         'domain': 'defaultpathunsafe.example.com',
-        'replication_number': '1',
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
@@ -6796,8 +6793,12 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
+        'backend-haproxy-http-port': '21080',
+        'backend-haproxy-https-port': '21443',
+        'backend-haproxy-statistic-port': '21444',
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
+        'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
         'enable-http3': 'false',
@@ -6813,6 +6814,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '512K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
+        'rotate-num': '4000',
+        'slave-introspection-https-port': '22443',
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-2': {
@@ -6823,8 +6826,12 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
+        'backend-haproxy-http-port': '21080',
+        'backend-haproxy-https-port': '21443',
+        'backend-haproxy-statistic-port': '21444',
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
+        'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
         'enable-http3': 'false',
@@ -6840,6 +6847,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '256K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
+        'rotate-num': '4000',
+        'slave-introspection-https-port': '22443',
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-3': {
@@ -6850,8 +6859,12 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
+        'backend-haproxy-http-port': '21080',
+        'backend-haproxy-https-port': '21443',
+        'backend-haproxy-statistic-port': '21444',
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
+        'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
         'enable-http3': 'false',
@@ -6864,8 +6877,13 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-username': 'admin',
         'plain_http_port': '11080',
         'port': '11443',
+        'ram-cache-size': '1G',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
+        'rotate-num': '4000',
+        'slave-introspection-https-port': '22443',
+        'rotate-num': '4000',
+        'slave-introspection-https-port': '22443',
         'slave-kedifa-information': '{}'
       },
       'kedifa': {
@@ -6876,6 +6894,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': '8402',
         'monitor-username': 'admin',
+        'rotate-num': '4000',
         'slave-list': []
       },
       'testing partition 0': {
