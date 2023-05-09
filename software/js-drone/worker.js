@@ -32,7 +32,9 @@ import { Worker } from "os";
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = std.open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
+    last_message_timestamp = 0,
     parent = Worker.parent,
+    peer_dict = {},
     user_me = {
       //for debugging purpose
       fdopen: std.fdopen,
@@ -60,7 +62,11 @@ import { Worker } from "os";
       loiter: loiter,
       sendMsg: function (msg, id) {
         if (id === undefined) { id = -1; }
-        setMessage(JSON.stringify({ content: msg, dest_id: id }));
+        setMessage(JSON.stringify({
+          content: msg,
+          timestamp: Date.now(),
+          dest_id: id
+        }));
       },
       setAirspeed: setAirspeed,
       setTargetCoordinates: setTargetCoordinates
@@ -90,25 +96,30 @@ import { Worker } from "os";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, drone_id;
+    var type = evt.data.type, message, peer_id;
 
     if (type === "initPubsub") {
-      initPubsub(configuration.numberOfPeers);
-      for (drone_id = 0; drone_id < configuration.numberOfPeers; drone_id++) {
-        user_me.drone_dict[drone_id] = new Drone(drone_id);
-        user_me.drone_dict[drone_id].init(drone_id);
+      initPubsub(configuration.numberOfDrone, configuration.numberOfSubscriber);
+      for (peer_id = 0; peer_id < configuration.numberOfDrone + configuration.numberOfSubscriber; peer_id++) {
+        peer_dict[peer_id] = new Drone(peer_id);
+        peer_dict[peer_id].init(peer_id);
+        if (peer_id < configuration.numberOfDrone) {
+          user_me.drone_dict[peer_id] = peer_dict[peer_id];
+        }
       }
       parent.postMessage({type: "initialized"});
     } else if (type === "load") {
       loadUserScript(evt.data.path);
       parent.postMessage({type: "loaded"});
     } else if (type === "update") {
-      Object.entries(user_me.drone_dict).forEach(function ([id, drone]) {
-        message = drone.message;
+      Object.entries(peer_dict).forEach(function ([id, peer]) {
+        message = peer.message;
         if (user_me.id !== Number(id) && message.length > 0) {
           message = JSON.parse(message);
-          if (user_me.hasOwnProperty("onGetMsg") &&
+          if (message.timestamp != last_message_timestamp &&
+              user_me.hasOwnProperty("onGetMsg") &&
               [-1, user_me.id].includes(message.dest_id)) {
+            last_message_timestamp = message.timestamp;
             user_me.onGetMsg(message.content);
           }
         }
