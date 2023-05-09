@@ -32,6 +32,7 @@ import { Worker } from "os";
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = std.open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
+    last_message_timestamp = 0,
     parent = Worker.parent,
     user_me = {
       //for debugging purpose
@@ -60,7 +61,11 @@ import { Worker } from "os";
       loiter: loiter,
       sendMsg: function (msg, id) {
         if (id === undefined) { id = -1; }
-        setMessage(JSON.stringify({ content: msg, dest_id: id }));
+        setMessage(JSON.stringify({
+          content: msg,
+          timestamp: Date.now(),
+          dest_id: id
+        }));
       },
       setAirspeed: setAirspeed,
       setTargetCoordinates: setTargetCoordinates
@@ -93,8 +98,8 @@ import { Worker } from "os";
     var type = evt.data.type, message, drone_id;
 
     if (type === "initPubsub") {
-      initPubsub(configuration.numberOfPeers);
-      for (drone_id = 0; drone_id < configuration.numberOfPeers; drone_id++) {
+      initPubsub(configuration.numberOfDrone, configuration.numberOfSubscriber);
+      for (drone_id = 0; drone_id < configuration.numberOfDrone + configuration.numberOfSubscriber; drone_id++) {
         user_me.drone_dict[drone_id] = new Drone(drone_id);
         user_me.drone_dict[drone_id].init(drone_id);
       }
@@ -107,8 +112,10 @@ import { Worker } from "os";
         message = drone.message;
         if (user_me.id !== Number(id) && message.length > 0) {
           message = JSON.parse(message);
-          if (user_me.hasOwnProperty("onGetMsg") &&
+          if (message.timestamp != last_message_timestamp &&
+              user_me.hasOwnProperty("onGetMsg") &&
               [-1, user_me.id].includes(message.dest_id)) {
+            last_message_timestamp = message.timestamp;
             user_me.onGetMsg(message.content);
           }
         }
