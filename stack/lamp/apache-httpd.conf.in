@@ -1,6 +1,6 @@
 <VirtualHost *:{{ parameter_dict['port'] }}>
   ServerAdmin admin@example.com
-  DocumentRoot {{ parameter_dict['document-root'] }}
+  DocumentRoot {{ parameter_dict.get('document-root', parameter_dict['default-document-root']) }}
 
   SetEnvIf Origin "^http(s)?://(.+\.)?(app\.officejs\.com)$" ORIGIN_DOMAIN=$0
   Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN

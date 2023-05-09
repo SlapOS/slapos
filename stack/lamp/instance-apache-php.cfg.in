@@ -130,7 +130,7 @@ listening-port = 9988
 #-- Deploy Apache + PHP application.
 
 [apache-php-configuration]
-document-root = ${directory:www}
+default-document-root = ${directory:www}
 pid-file = ${directory:run}/apache.pid
 lock-file = ${directory:run}/apache.lock
 ip = ${apache-network-configuration:listening-ip}
