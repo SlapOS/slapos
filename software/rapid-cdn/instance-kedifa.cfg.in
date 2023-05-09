@@ -22,25 +22,28 @@ parts =
   promise-kedifa-auth-ready
 
 [monitor-instance-parameter]
-# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
-#       directly, and in our case it can come from the network, thus resulting
-#       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
 password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
+
+[caucased-port]
+recipe = slapos.cookbook:free_port
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+minimum = 8800
+maximum = 8850
+
+[caucased-netloc]
+caucase_netloc = [${caucased-port:ip}]:${caucased-port:port}
 
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+caucase_url = http://${caucased-netloc:caucase_netloc}
 
-{%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
-{%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
       buildout_bin_directory=software_parameter_dict['bin_directory'],
       caucased_path='${directory:service}/caucased',
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
-      netloc=caucase_netloc,
+      netloc='${caucased-netloc:caucase_netloc}',
       tmp='${directory:tmp}',
       service_auto_approve_count=0,
       user_auto_approve_count=1,

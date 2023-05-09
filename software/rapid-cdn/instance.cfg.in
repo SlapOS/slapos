@@ -86,9 +86,6 @@ configuration.plain_http_port = 8080
 configuration.plain_nginx_port = 8081
 configuration.nginx_port = 9443
 configuration.kedifa_port = 7879
-# Warning: Caucase takes also cacuase_port+1
-configuration.caucase_port = 8890
-configuration.caucase_backend_client_port = 8990
 configuration.apache-key =
 configuration.apache-certificate =
 configuration.disk-cache-size = 8G
