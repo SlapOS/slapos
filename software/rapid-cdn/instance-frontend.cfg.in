@@ -1,11 +1,6 @@
 {% import "caucase" as caucase with context %}
-{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{%- set HTTP3_PORT = instance_parameter_dict.get('configuration.http3-port', '443') %}
-{%- if instance_parameter_dict.get('configuration.enable-http3', 'false').lower() in TRUE_VALUES %}
-{%-   set FRONTEND_HTTP3 = True %}
-{%- else %}
-{%-   set FRONTEND_HTTP3 = False %}
-{%- endif %}
+{%- set HTTP3_PORT = instance_parameter_dict['configuration']['http3-port'] %}
+{%- set FRONTEND_HTTP3 = instance_parameter_dict['configuration']['enable-http3'] %}
 {%- if FRONTEND_HTTP3 %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
 {%- else %}
@@ -235,7 +230,7 @@ command =
      -new -newkey rsa -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
-     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
+     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration']['frontend-name'] }}" \
      -out ${:certificate}'
 
 [jinja2-template-base]
@@ -327,7 +322,7 @@ crl = ${:d}/crl.pem
 [backend-client-login-csr]
 recipe = plone.recipe.command
 organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
-organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+organizational_unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 command =
 {% if instance_parameter_dict['configuration']['backend-client-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
@@ -365,15 +360,17 @@ filename = instance-slave-list.cfg
 master_key_download_url = {{ dumps(instance_parameter_dict['configuration']['master-key-download-url']) }}
 software_type = single-custom-personal
 organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
-organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+organizational-unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 backend-client-caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
-http3-enable = {{ FRONTEND_HTTP3 }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+SLAVE_DEFAULTS = {{ dumps(SLAVE_DEFAULTS) }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
     import urllib_module urllib
     import operator_module operator
+    key SLAVE_DEFAULTS :SLAVE_DEFAULTS
     key master_key_download_url :master_key_download_url
     key url_ready_file :url-ready-file
     key expose_csr_organization :organization
@@ -483,8 +480,8 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
-http3-enable = {{ FRONTEND_HTTP3 }}
-http3-port = {{ HTTP3_PORT }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+http3-port = {{ dumps(HTTP3_PORT) }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -816,7 +813,7 @@ statistic-certificate = ${self-signed-ip-access:certificate}
 statistic-port = ${configuration:backend-haproxy-statistic-port}
 statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
-statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + instance_parameter_dict['configuration']['cluster-identification'] }}
+statistic-identification = {{ instance_parameter_dict['configuration']['frontend-name'] + ' @ ' + instance_parameter_dict['configuration']['cluster-identification'] }}
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
@@ -958,8 +955,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration']['monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration']['monitor-password'] | string }}
 
 [monitor-conf-parameters]
 private-path-list +=
@@ -999,20 +996,20 @@ config-url = ${configuration:re6st-verification-url}
 [slave-introspection-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+name = Slave Introspection Frontend {{ instance_parameter_dict['configuration']['frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration']['slave-introspection-https-port'] }}/
 config-https-only = true
 return = secure_access
 
 [backend-haproxy-statistic-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration']['frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration']['backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
 
@@ -1123,10 +1120,8 @@ config-filename = ${logrotate-setup-validate:state-file}
 config-state = empty
 
 [configuration]
-{%- for key, value in instance_parameter_dict.items() -%}
-{%-   if key.startswith('configuration.') %}
-{{ key.replace('configuration.', '') }} = {{ dumps(value) }}
-{%-   endif -%}
+{% for key, value in instance_parameter_dict['configuration'].items() %}
+{{ key }} = {{ dumps(value) }}
 {%- endfor %}
 
 [instance-parameter-section]
@@ -1134,7 +1129,7 @@ config-state = empty
 {#- XXX: Some other approach would be useful #}
 {%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
 {%- for key, value in instance_parameter_dict.items() -%}
-{%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
+{%-   if not key.startswith('configuration') and key not in DROP_KEY_LIST %}
 {{ key }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor %}

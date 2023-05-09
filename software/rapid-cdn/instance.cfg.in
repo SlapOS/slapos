@@ -36,6 +36,50 @@ kedifa = dynamic-profile-kedifa:output
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
+[schema-json-to-default]
+recipe = slapos.recipe.build
+init =
+  import json
+  default_dict = dict()
+  with open(options['input']) as fh:
+    input_json = json.load(fh)
+  input_mapping = {}
+  if 'input-mapping' in options:
+    for mapping_line in options['input-mapping'].splitlines():
+      filename, section = mapping_line.split()
+      input_mapping[filename] = section
+  def fetchLevel(input_json):
+    default_dict = {}
+    for property, value_dict in input_json['properties'].items():
+      if value_dict.get('type') == 'object' and 'allOf' in value_dict:
+        value = {}
+        for entry in value_dict['allOf']:
+          with open(input_mapping[entry['$ref']]) as in_fh:
+            in_input_json = json.load(in_fh)
+            value.update(fetchLevel(in_input_json))
+        default_dict[property] = value
+      elif 'default' in value_dict:
+        if value_dict['default'] in ['false', 'true']:
+          # input schema json type is mostly incorrect, so guess the most
+          # important boolean type
+          default_dict[property] = value_dict['default'] == 'true'
+        else:
+          default_dict[property] = value_dict['default']
+      elif 'properties' in value_dict:
+        default_dict[property] = fetchLevel(value_dict)
+      else:
+        default_dict[property] = None
+    return default_dict
+  options['defaults'] = fetchLevel(input_json)
+
+[instance-slave-default]
+<= schema-json-to-default
+input = {{ software_parameter_dict['instance_slave_input_schema'] }}
+
+[instance-default]
+<= schema-json-to-default
+input = {{ software_parameter_dict['instance_input_schema'] }}
+
 [dynamic-profile-frontend]
 < = jinja2-template-base
 url = {{ software_parameter_dict['profile_frontend'] }}
@@ -43,6 +87,7 @@ filename = instance-frontend.cfg
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
+  key SLAVE_DEFAULTS instance-slave-default:defaults
 
 [dynamic-profile-master]
 < = jinja2-template-base
@@ -55,6 +100,8 @@ extra-context =
     import operator_module operator
     import validators validators
     import software software
+    key CLUSTER_DEFAULTS instance-default:defaults
+    key SLAVE_DEFAULTS instance-slave-default:defaults
 # Must match the key id in [switch-softwaretype] which uses this section.
 # Keep RootSoftwareInstance for backward compatibility until all instances have
 # changed their software_type to default
@@ -76,35 +123,3 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-# Define default parameter(s) that will be used later, in case user didn't
-# specify it
-# All parameters are available through the configuration.XX syntax.
-# All possible parameters should have a default.
-configuration.domain = example.org
-configuration.port = 4443
-configuration.plain_http_port = 8080
-configuration.plain_nginx_port = 8081
-configuration.nginx_port = 9443
-configuration.kedifa_port = 7879
-# Warning: Caucase takes also cacuase_port+1
-configuration.caucase_port = 8890
-configuration.caucase_backend_client_port = 8990
-configuration.apache-key =
-configuration.apache-certificate =
-configuration.disk-cache-size = 8G
-configuration.ram-cache-size = 1G
-configuration.re6st-verification-url =
-configuration.enable-http2-by-default = true
-configuration.enable-http3 = false
-configuration.http3-port = 443
-configuration.ciphers = ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA
-configuration.request-timeout = 600
-configuration.frontend-name =
-configuration.backend-connect-timeout = 5
-configuration.backend-connect-retries = 3
-configuration.backend-haproxy-http-port = 21080
-configuration.backend-haproxy-https-port = 21443
-configuration.backend-haproxy-statistic-port = 21444
-configuration.authenticate-to-backend = False
-configuration.rotate-num = 4000
-configuration.slave-introspection-https-port = 22443
