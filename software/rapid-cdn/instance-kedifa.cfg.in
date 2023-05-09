@@ -25,14 +25,14 @@ parts =
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration']['monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration']['monitor-password'] | string }}
 
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
+{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration'].get('caucase_port', '8890') -%}
 {%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
@@ -198,7 +198,7 @@ context =
 
 [kedifa-config]
 ip = {{ instance_parameter_dict['ipv6-random'] }}
-port = {{ instance_parameter_dict['configuration.kedifa_port'] }}
+port = {{ instance_parameter_dict['configuration'].get('kedifa_port', '7879') }}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
@@ -230,7 +230,7 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 <= logrotate-entry-base
 name = kedifa
 log = ${kedifa-config:logfile}
-rotate-num = {{ instance_parameter_dict['configuration.rotate-num'] | int }}
+rotate-num = {{ instance_parameter_dict['configuration'].get('rotate-num', '4000') | int }}
 delaycompress =
 
 [kedifa]
