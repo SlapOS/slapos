@@ -28,8 +28,6 @@
 {%- endfor %}
 {#- Allow to pass only some parameters to frontend nodes #}
 {%- set FRONTEND_NODE_PASSED_KEY_LIST = [
-        'plain_http_port',
-        'port',
         'apache-certificate',
         'apache-key',
         'domain',
@@ -108,7 +106,7 @@
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
 {% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration'].get('caucase_backend_client_port', '8990') %}
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -142,7 +140,13 @@ context =
 # The presence of sla parameters is checked and added if found
 {% set NODE_DEFAULT_KEY_VALUE = {
   'enable-http3': 'false',
-  'http3-port': '443'
+  'http3-port': '443',
+  'disk-cache-size': '8G',
+  'ram-cache-size': '1G',
+  'request-timeout': '600',
+  'plain_http_port': '8080',
+  'port': '4443',
+  'slave-introspection-https-port': '22443',
 } %}
 {% for i in range(1, frontend_quantity + 1) %}
 {%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
@@ -159,19 +163,18 @@ context =
 # We check for specific configuration regarding the frontend
 {%     elif key.startswith(config_key) %}
 {%       set node_config_key = key[config_key_length:] %}
-{%       if node_config_key in ('enable-http3', 'http3-port') %}
+{%       if node_config_key in NODE_DEFAULT_KEY_VALUE.keys() %}
 {%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key) or instance_parameter_dict['configuration'].get(node_config_key) or NODE_DEFAULT_KEY_VALUE[node_config_key]) %}
 {%       else %}
 {%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key)) %}
 {%       endif %}
 {%     endif %}
 {%   endfor %}
-{%   if 'http3-port' not in config_dict %}
-{%     do config_dict.__setitem__('http3-port', instance_parameter_dict['configuration'].get('http3-port') or NODE_DEFAULT_KEY_VALUE['http3-port']) %}
-{%   endif %}
-{%   if 'enable-http3' not in config_dict %}
-{%     do config_dict.__setitem__('enable-http3', instance_parameter_dict['configuration'].get('enable-http3') or NODE_DEFAULT_KEY_VALUE['enable-http3']) %}
-{%   endif %}
+{%   for node_config_key in NODE_DEFAULT_KEY_VALUE.keys() %}
+{%     if node_config_key not in config_dict %}
+{%       do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].get(node_config_key) or NODE_DEFAULT_KEY_VALUE[node_config_key]) %}
+{%     endif %}
+{%   endfor %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
 {%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
 {%   set state_key = "-frontend-%s-state" % i %}
