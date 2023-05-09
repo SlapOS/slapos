@@ -3,7 +3,7 @@
 {%- set backend_slave_dict = {} %}
 {%- set frontend_slave_dict = {} %}
 {%- set part_list = [] %}
-{%- set cache_port = frontend_haproxy_configuration.get('cache-port') %}
+{%- set cache_port = frontend_haproxy_configuration['cache-port'] %}
 {%- set cache_access = "http://%s:%s/HTTP" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set ssl_cache_access = "http://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['http-port']) %}
@@ -12,10 +12,7 @@
 {%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter_dict['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
 {%- set slave_log_dict = {} %}
 {%- set slave_instance_information_list = [] %}
-{%- set slave_instance_list = instance_parameter_dict['slave-instance-list'] %}
-{%- if configuration['extra_slave_instance_list'] %}
-{%-   do slave_instance_list.extend(json_module.loads(configuration['extra_slave_instance_list'])) %}
-{%- endif %}
+{%- set slave_instance_list = json_module.loads(configuration['extra_slave_instance_list']) %}
 {%- if master_key_download_url %}
 {%-   do kedifa_updater_mapping.append((master_key_download_url, frontend_haproxy_configuration['master-certificate'], apache_certificate)) %}
 {%- else %}
@@ -222,7 +219,7 @@ context =
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
 {%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
-{%-     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, instance_parameter_dict['configuration'].get('domain'))) %}
+{%-     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, configuration['domain'])) %}
 {%-   endif %}
 {%-   do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
@@ -285,7 +282,7 @@ log-directory = {{ '${slave-log-directory-dict:' + slave_reference + '}' }}
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
-log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('frontend_log')}} {{slave_parameter_dict.get('backend_log')}}
+log = {{slave_parameter_dict['access_log'] }} {{slave_parameter_dict['frontend_log'] }} {{slave_parameter_dict['backend_log'] }}
 backup = {{ '${' + slave_log_directory_section + ':log-directory}' }}
 rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
 # disable delayed compression, as log filenames shall be stable
@@ -298,9 +295,9 @@ recipe = plone.recipe.command
 stop-on-error = false
 log-directory = {{ '${' + slave_logrotate_section + ':backup}' }}
 command =
-  ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log
-  ln -sf {{slave_parameter_dict.get('frontend_log')}} ${:log-directory}/frontend.log
-  ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}/backend.log
+  ln -sf {{slave_parameter_dict['access_log'] }} ${:log-directory}/access.log
+  ln -sf {{slave_parameter_dict['frontend_log'] }} ${:log-directory}/frontend.log
+  ln -sf {{slave_parameter_dict['backend_log'] }} ${:log-directory}/backend.log
 
 {#-   Set password for slave #}
 
@@ -399,7 +396,7 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
-ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
+ip-access-certificate = {{ frontend_configuration['ip-access-certificate'] }}
 nginx-mime = {{ software_parameter_dict['nginx_mime'] }}
 access-log = {{ dumps(frontend_haproxy_configuration['slave-introspection-access-log']) }}
 error-log = {{ dumps(frontend_haproxy_configuration['slave-introspection-error-log']) }}
@@ -428,10 +425,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {#- Publish information for the instance #}
 [publish]
 recipe = slapos.cookbook:publish.serialised
-{%- if configuration['extra_slave_instance_list'] %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
-{%- endif %}
 monitor-base-url = {{ monitor_base_url }}
 kedifa-csr-url = ${expose-csr:url}/${expose-csr-link-csr-kedifa:filename}
 backend-client-csr-url = ${expose-csr:url}/${expose-csr-link-csr-backend-haproxy:filename}
