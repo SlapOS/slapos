@@ -34,6 +34,7 @@
       "monitor-httpd-port": "8402",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
+      "rotate-num": "4000",
       "slave-list": [
         {
           "enable_cache": true,
@@ -56,9 +57,18 @@
     "_": {
       "apache-certificate": "@@certificate_pem@@",
       "apache-key": "@@key_pem@@",
+      "authenticate-to-backend": "False",
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
+      "backend-connect-retries": "3",
+      "backend-connect-timeout": "5",
+      "backend-haproxy-http-port": "21080",
+      "backend-haproxy-https-port": "21443",
+      "backend-haproxy-statistic-port": "21444",
+      "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA",
       "cluster-identification": "testing partition 0",
+      "disk-cache-size": "8G",
       "domain": "example.com",
+      "enable-http2-by-default": "true",
       "enable-http3": "false",
       "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_ssl_from_master\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
@@ -71,6 +81,11 @@
       "monitor-username": "admin",
       "plain_http_port": "11080",
       "port": "11443",
+      "ram-cache-size": "1G",
+      "re6st-verification-url": "http://[2001:67c:1254:4::1]/index.html",
+      "request-timeout": "600",
+      "rotate-num": "4000",
+      "slave-introspection-https-port": "22443",
       "slave-kedifa-information": "{\"_ssl_from_master\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@/@@ssl_from_master_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
