@@ -255,6 +255,7 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       json.loads(self.get_partition('drone').getInstanceParameterDict()['_']),
       {
         'autopilotIp': '192.168.27.1',
+        'autopilotPort': 7909,
         'id': 0,
         'isASimulation': False,
         'isADrone': False,

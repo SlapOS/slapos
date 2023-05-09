@@ -10,6 +10,12 @@
       "type": "string",
       "default": "192.168.27.1"
     },
+    "autopilotPort": {
+      "title": "Port of the drone's autopilot",
+      "description": "Port on which autopilot service is running.",
+      "type": "integer",
+      "default": "7909"
+    },
     "droneGuidList": {
       "title": "List of drones computer ID",
       "description": "List of computer ID of drones in the swarm",
