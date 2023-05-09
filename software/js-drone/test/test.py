@@ -256,13 +256,14 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       {
         'autopilotIp': '192.168.27.1',
         'autopilotPort': 7909,
+        'numberOfDrone': 0,
+        'numberOfSubscriber': 1,
         'id': 0,
         'isASimulation': False,
         'isADrone': False,
         'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/raw/master/subscribe.js',
-        'multicastIp': MCAST_GRP,
-        'numberOfPeers': 1,
-        'netIf': OPC_UA_NET_IF
+        'netIf': OPC_UA_NET_IF,
+        'multicastIp': MCAST_GRP
       }
     )
 
