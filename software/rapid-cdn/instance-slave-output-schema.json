@@ -18,10 +18,6 @@
       "description": "List of URLs to access logs",
       "type": "array"
     },
-    "replication_number": {
-      "description": "Number of nodes the slave is replicated",
-      "type": "integer"
-    },
     "secure_access": {
       "description": "URL for HTTP access",
       "type": "string"
