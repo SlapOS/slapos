@@ -27,20 +27,18 @@
 {%-   do GOOD_CIPHER_LIST.append(value) %}
 {%- endfor %}
 {#- Allow to pass only some parameters to frontend nodes #}
-{%- set FRONTEND_NODE_PASSED_KEY_LIST = [
-        'plain_http_port',
-        'port',
-        'apache-certificate',
-        'apache-key',
-        'domain',
-        'enable-http2-by-default',
-        're6st-verification-url',
-        'backend-connect-timeout',
-        'backend-connect-retries',
-        'ciphers',
-        'request-timeout',
-        'authenticate-to-backend',
-    ]
+{%- set FRONTEND_PARAMETER_DICT = {
+  'apache-certificate': instance_parameter_dict['configuration'].get('apache-certificate', ''),
+  'apache-key': instance_parameter_dict['configuration'].get('apache-key', ''),
+  'authenticate-to-backend': instance_parameter_dict['configuration'].get('authenticate-to-backend', 'False'),
+  'backend-connect-retries': instance_parameter_dict['configuration'].get('backend-connect-retries', '3'),
+  'backend-connect-timeout': instance_parameter_dict['configuration'].get('backend-connect-timeout', '5'),
+  'ciphers': instance_parameter_dict['configuration'].get('ciphers', 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA'),
+  'domain': instance_parameter_dict['configuration'].get('domain', 'example.org'),
+  'enable-http2-by-default': instance_parameter_dict['configuration'].get('enable-http2-by-default', 'true'),
+  're6st-verification-url': instance_parameter_dict['configuration'].get('re6st-verification-url', 'http://[2001:67c:1254:4::1]/index.html'),
+  'rotate-num': instance_parameter_dict['configuration'].get('rotate-num', '4000'),
+}
 %}
 {#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
 {#- Note: As a result, this feature is very hard to be tested with slapproxy, as it does not pollute the slave information, this kind of whitelist is implemented #}
@@ -108,7 +106,7 @@
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
 {% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration'].get('caucase_backend_client_port', '8990') %}
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -124,7 +122,6 @@ context =
 {% set single_type_key = 'single-' %}
 {% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% set frontend_quantity = instance_parameter_dict['configuration'].pop('-frontend-quantity', '1') | int %}
-{% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
@@ -140,9 +137,18 @@ context =
 
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
-{% set NODE_DEFAULT_KEY_VALUE = {
+{% set NODE_SPECIFIC_PARAMETER_DICT = {
+  'backend-haproxy-http-port': '21080',
+  'backend-haproxy-https-port': '21443',
+  'backend-haproxy-statistic-port': '21444',
+  'disk-cache-size': '8G',
   'enable-http3': 'false',
-  'http3-port': '443'
+  'http3-port': '443',
+  'plain_http_port': '8080',
+  'port': '4443',
+  'ram-cache-size': '1G',
+  'request-timeout': '600',
+  'slave-introspection-https-port': '22443',
 } %}
 {% for i in range(1, frontend_quantity + 1) %}
 {%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
@@ -159,19 +165,18 @@ context =
 # We check for specific configuration regarding the frontend
 {%     elif key.startswith(config_key) %}
 {%       set node_config_key = key[config_key_length:] %}
-{%       if node_config_key in ('enable-http3', 'http3-port') %}
-{%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key) or instance_parameter_dict['configuration'].get(node_config_key) or NODE_DEFAULT_KEY_VALUE[node_config_key]) %}
+{%       if node_config_key in NODE_SPECIFIC_PARAMETER_DICT.keys() %}
+{%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key) or instance_parameter_dict['configuration'].get(node_config_key) or NODE_SPECIFIC_PARAMETER_DICT[node_config_key]) %}
 {%       else %}
 {%         do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].pop(key)) %}
 {%       endif %}
 {%     endif %}
 {%   endfor %}
-{%   if 'http3-port' not in config_dict %}
-{%     do config_dict.__setitem__('http3-port', instance_parameter_dict['configuration'].get('http3-port') or NODE_DEFAULT_KEY_VALUE['http3-port']) %}
-{%   endif %}
-{%   if 'enable-http3' not in config_dict %}
-{%     do config_dict.__setitem__('enable-http3', instance_parameter_dict['configuration'].get('enable-http3') or NODE_DEFAULT_KEY_VALUE['enable-http3']) %}
-{%   endif %}
+{%   for node_config_key in NODE_SPECIFIC_PARAMETER_DICT.keys() %}
+{%     if node_config_key not in config_dict %}
+{%       do config_dict.__setitem__(node_config_key, instance_parameter_dict['configuration'].get(node_config_key) or NODE_SPECIFIC_PARAMETER_DICT[node_config_key]) %}
+{%     endif %}
+{%   endfor %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
 {%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
 {%   set state_key = "-frontend-%s-state" % i %}
@@ -358,7 +363,7 @@ context =
 {#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
 {#   Send only controlled information about the slave to node #}
 {%     set authorized_slave = {} %}
-{%     for key in FRONTEND_NODE_SLAVE_PASSED_KEY_LIST + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST %}
+{%     for key in FRONTEND_NODE_SLAVE_PASSED_KEY_LIST %}
 {%       if key in slave %}
 {%         do authorized_slave.__setitem__(key, slave[key]) %}
 {%       endif %}
@@ -391,10 +396,8 @@ return = slave-instance-information-list monitor-base-url backend-client-csr-url
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
-{%- for key in FRONTEND_NODE_PASSED_KEY_LIST %}
-{%-   if key in instance_parameter_dict['configuration'] %}
-{%-     do base_node_configuration_dict.__setitem__(key,  instance_parameter_dict['configuration'][key]) %}
-{%-   endif %}
+{%- for key, value in FRONTEND_PARAMETER_DICT.items() %}
+{%-   do base_node_configuration_dict.__setitem__(key,  value) %}
 {%- endfor %}
 {% for section, frontend_request in request_dict.items() %}
 {%   set state = frontend_request.get('state', '') %}
@@ -415,7 +418,7 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 {%     set node_configuration_dict = {} %}
 {%     do node_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-{%     do node_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
+{%     do node_configuration_dict.__setitem__("extra_slave_instance_list", json_module.dumps(authorized_slave_list, sort_keys=True)) %}
 {%     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 {%-     for config_key, config_value in node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
@@ -521,6 +524,9 @@ config-monitor-cors-domains = {{ instance_parameter_dict['configuration'].get('m
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
+config-caucase_port = {{ instance_parameter_dict['configuration'].get('caucase_port', '8890') }}
+config-kedifa_port = {{ instance_parameter_dict['configuration'].get('kedifa_port', '7879') }}
+config-rotate-num = {{ instance_parameter_dict['configuration'].get('rotate-num', '4000') }}
 {% for key in ['kedifa_port', 'caucase_port'] -%}
 {%-   if key in instance_parameter_dict['configuration'] %}
 config-{{ key }} = {{ dumps(instance_parameter_dict['configuration'][key]) }}
