@@ -21,11 +21,11 @@
       "description": "Activate iperf3 UDP server",
       "type": "boolean"
     },
-    "dnsmasq": {
-      "default": false,
-      "title": "dnsmasq",
-      "description": "dnsmasq",
-      "type": "boolean"
+    "local_domain": {
+      "default": "",
+      "title": "Local Domain",
+      "description": "Activates local DNS server serving the given domain name",
+      "type": "string"
     },
     "use_ipv4": {
       "default": false,
