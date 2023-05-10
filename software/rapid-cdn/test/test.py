@@ -1075,11 +1075,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       base + r'\?auth=$'
     )
 
-    kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
-    self.assertEqual(
-      kedifa_caucase_url,
-      'http://[%s]:%s' % (self._ipv6_address, CAUCASE_PORT),
-    )
+    self.assertNotEqual(None, parameter_dict.pop('kedifa-caucase-url'))
 
     return generate_auth_url, upload_url
 

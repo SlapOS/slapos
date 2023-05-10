@@ -109,7 +109,7 @@ stop-on-error = True
      prefix='caucase-updater',
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/caucase-updater',
-     url=caucase_url,
+     url='${caucased:caucase_url}',
      data_dir='${directory:srv}/caucase-updater',
      crt_path='${kedifa-config:certificate}',
      ca_path='${kedifa-config:ca-certificate}',
@@ -261,7 +261,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
+{%-   do slave_dict.__setitem__('kedifa-caucase-url', '${caucased:caucase_url}' ) -%}
 {%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
 [{{ slave_reference }}-auth-random-generate]
 recipe = plone.recipe.command
