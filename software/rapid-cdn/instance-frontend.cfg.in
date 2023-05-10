@@ -956,10 +956,6 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 #
 
 [monitor-instance-parameter]
-# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
-#       directly, and in our case it can come from the network, thus resulting
-#       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
 password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
