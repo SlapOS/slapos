@@ -49,7 +49,6 @@ recipe = slapos.cookbook:userinfo
 [proftpd-password]
 recipe = slapos.cookbook:generate.password
 username = proftpd
-bytes = 12
 
 [proftpd]
 ipv6 = ${instance-parameter:ipv6-random}
