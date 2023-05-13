@@ -195,7 +195,7 @@ class TestWkhtmlToPDF(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
 
 class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
   __partition_reference__ = 'lo'
-  pdf_producer = 'LibreOffice 5.2'
+  pdf_producer = 'LibreOffice 7.5'
   expected_font_mapping = {
       'Arial': 'LiberationSans',
       'Arial Black': 'DejaVuSans',
@@ -223,7 +223,7 @@ class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
       'Liberation Sans Narrow': 'LiberationSansNarrow',
       'Liberation Serif': 'LiberationSerif',
       'Linux LibertineG': 'LinuxLibertineG',
-      'OpenSymbol': 'OpenSymbol',
+      'OpenSymbol': {'OpenSymbol', 'IPAMincho'},
       'Palatino': 'DejaVuSerif',
       'Roboto Black': 'Roboto-Black',
       'Roboto Condensed Light': 'RobotoCondensed-Light',
