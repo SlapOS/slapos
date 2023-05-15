@@ -3,6 +3,24 @@
   "description": "4G and 5G amarisoft stack for ORS",
   "serialisation": "json-in-xml",
   "software-type": {
+{% if rf_mode == 'tdd' %}
+    "ue-lte": {
+      "title": "UE-LTE",
+      "description": "UE LTE Configuration",
+      "software-type": "ue-lte",
+      "request": "instance-{{ rf_mode }}-ue-lte-input-schema.json",
+      "response": "instance-{{ rf_mode }}-ue-lte-schema.json",
+      "index": 4
+    },
+    "ue-nr": {
+      "title": "UE-NR",
+      "description": "UE NR Configuration",
+      "software-type": "ue-nr",
+      "request": "instance-{{ rf_mode }}-ue-nr-input-schema.json",
+      "response": "instance-{{ rf_mode }}-ue-nr-schema.json",
+      "index": 5
+    },
+{% endif %}
     "enb": {
       "title": "eNB",
       "software-type": "enb",
@@ -35,22 +53,6 @@
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
       "index": 3
-    },
-    "ue-lte": {
-      "title": "UE-LTE",
-      "description": "UE LTE Configuration",
-      "software-type": "ue-lte",
-      "request": "instance-{{ rf_mode }}-ue-lte-input-schema.json",
-      "response": "instance-{{ rf_mode }}-ue-lte-schema.json",
-      "index": 4
-    },
-    "ue-nr": {
-      "title": "UE-NR",
-      "description": "UE NR Configuration",
-      "software-type": "ue-nr",
-      "request": "instance-{{ rf_mode }}-ue-nr-input-schema.json",
-      "response": "instance-{{ rf_mode }}-ue-nr-schema.json",
-      "index": 5
     }
   }
 }

@@ -4,6 +4,17 @@
   "title": "Input Parameters",
   "properties": {
 
+    "rrh": {
+      "title": "RRH",
+      "description": "RRH",
+      "type": "string",
+      "default": "SDR",
+      "enum": [
+        "SDR",
+        "M2RU Sunwave"
+      ]
+    },
+
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
@@ -54,25 +65,25 @@
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number",
-      "default": 60
+      "default": 
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number",
-      "default": 45
+      "default": 
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": 2
+      "default": 
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": 2
+      "default": 
     },
     "gps_sync": {
       "default": false,
@@ -84,19 +95,19 @@
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
       "type": "number",
-      "default": 378000
+      "default": 0
     },
     "nr_band": {
       "title": "NR band",
       "description": "NR band number",
       "type": "number",
-      "default": 39
+      "default": 0
     },
     "nr_bandwidth": {
       "title": "Bandwidth",
       "description": "Downlink Bandwidth (in MHz)",
       "type": "number",
-      "default": 40
+      "default": 
     },
     "amf_list": {
       "title": "AMF list",
@@ -277,7 +288,7 @@
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
-      "default": 10000
+      "default": 
     },
     "use_ipv4": {
       "default": false,

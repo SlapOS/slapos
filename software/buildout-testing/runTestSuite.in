@@ -105,9 +105,10 @@ versions = versions
 
 [versions]
 %s
-zope.exceptions = 4.3
-zope.interface = 4.7.2
+zope.exceptions = 4.6
+zope.interface = 5.4.0
 zope.testing = 4.7
+zope.testrunner = 5.2
 
 [testrunner]
 recipe = zc.recipe.egg
@@ -117,11 +118,10 @@ eggs =
   zope.testrunner
 scripts =
   zope-testrunner
-extra-paths =
-  %s
+extra-paths =%s
 """ % (''.join('\n  ' + x for x in test_dict.values()),
        '\n'.join(x + ' =' for x in test_dict),
-       get_distribution('manuel').location,
+       ''.join('\n  ' + get_distribution(x).location for x in ('manuel', 'six')),
        )))
   finally:
     os.close(fd)

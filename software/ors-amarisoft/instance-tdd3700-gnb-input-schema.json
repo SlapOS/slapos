@@ -3,15 +3,52 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "rrh": {
-      "title": "RRH",
-      "description": "RRH",
-      "type": "string",
-      "default": "SDR",
+
+    "log_phy_debug": {
+      "title": "Physical layer log debug",
+      "description": "Enable debug mode for physical layer logs",
+      "type": "boolean",
+      "default": false
+    },
+    "nr_handover_a3_offset": {
+      "title": "A3 offset for NR handover",
+      "description": "RSRP gain offset between gNBs which will trigger handover",
+      "type": "number",
+      "default": 6,
+    },
+    "nr_handover_time_to_trigger": {
+      "title": "Time to Trigger for NR handover",
+      "description": "Time to triger after which NR handover will be triggerd if A3 offset is reached",
+      "type": "number",
       "enum": [
-        "SDR",
-        "M2RU Sunwave"
-      ]
+        0,
+        40,
+        64,
+        80,
+        100,
+        128,
+        160,
+        256,
+        320,
+        480,
+        512,
+        640,
+        1024,
+        1280,
+        2560,
+        5120
+      ],
+      "default": 100
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD",
+      "description": "TDD",
+      "type": "string",
+      "enum": [
+        "5ms 2UL 7DL 4/6 (default)",
+        "2.5ms 1UL 3DL 2/10",
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)"
     },
     "tx_gain": {
       "title": "Tx gain",
@@ -85,17 +122,58 @@
       "patternProperties": {
         ".*": {
           "properties": {
+            "dl_nr_arfcn": {
+              "title": "DL NR ARFCN",
+              "description": "Downlink NR Absolute Radio Frequency Channel Number of the neighbour cell",
+              "type": "number"
+            },
+            "ssb_nr_arfcn": {
+              "title": "SSB NR ARFCN",
+              "description": "SSB NR Absolute Radio Frequency Channel Number of the neighbour cell",
+              "type": "number"
+            },
+            "pci": {
+              "title": "Physical Cell ID",
+              "description": "Physical Cell ID of the neighbour cell",
+              "type": "number"
+            },
             "nr_cell_id": {
               "title": "NR Cell ID",
               "description": "Concatenation of gnb_id and cell_id of the neighbour cell",
-              "type": "string",
-              "default": "0x1234501"
+              "type": "string"
+            },
+            "gnb_id_bits": {
+              "title": "gNB ID bits",
+              "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
+              "type": "number"
+            },
+            "nr_band": {
+              "title": "NR band",
+              "description": "NR band number",
+              "type": "number"
             },
             "tac": {
-              "default": 100,
               "title": "Tracking Area Code",
               "description": "Integer (range 0 to 16777215)",
               "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "xn_peers": {
+      "title": "XN Peers",
+      "description": "XN Peers",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "xn_addr": {
+              "title": "XN Address",
+              "description": "XN Address of the neighbour cell (gNB Address)",
+              "type": "string"
             }
           },
           "type": "object"
@@ -126,7 +204,7 @@
       "title": "Physical Cell ID",
       "description": "Physical Cell ID",
       "type": "number",
-      "default": 1
+      "default": 500
     },
     "ssb_pos_bitmap": {
       "title": "SSB Position Bitmap",
@@ -212,6 +290,12 @@
       "description": "Describes how often a call to Amarisoft remote API is made to get gNB statistics",
       "type": "number",
       "default": 60
+    },
+    "gnb_drb_stats_enabled": {
+      "title": "Enable gNB drb statistics",
+      "description": "Enable gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
+      "type": "boolean",
+      "default": true
     },
     "max_rx_sample_db": {
       "title": "Maximum RX sample value (dB)",
