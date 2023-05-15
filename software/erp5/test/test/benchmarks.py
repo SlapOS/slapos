@@ -234,8 +234,8 @@ class TestOrderBuildPackingListSimulation(
 
       # and a pt-query-digest for slow log
       pt_query_digest = pathlib.Path(
-        self.computer_partition_root_path
-      ) / 'software_release' / 'parts' / 'percona-toolkit' / 'bin' / 'pt-query-digest'
+        self.getComputerPartitionPath(
+          'mariadb')) / 'bin' / 'pt-query-digest'
       mariadb_slowquery_log = pathlib.Path(
         self.getComputerPartitionPath(
           'mariadb')) / 'var' / 'log' / 'mariadb_slowquery.log'
