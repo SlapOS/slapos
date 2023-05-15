@@ -102,6 +102,41 @@ class TestOrderBuildPackingListSimulation(
     self.measurement_file = open(f'measures{self.id()}.jsonl', 'w')
     self.addCleanup(self.measurement_file.close)
 
+    # Describe the software used. TODO: use nxd-bom once integrated
+    self.write_measurement(
+      {
+        'type': 'sbom',
+        # content of runwsgi script, to know which versions of python packages were used
+        'runwsgi-content':
+        (pathlib.Path(
+      self.computer_partition_root_path
+    ) / 'software_release' / 'bin' / 'runwsgi').read_text(),
+      'mysql-show-variables':
+        subprocess.check_output((
+          pathlib.Path(self.getComputerPartitionPath('mariadb')) / 'bin' / 'mysql',
+          '-e', 'show variables'), text=True),
+      'erp5-git-describe':
+        subprocess.check_output(
+          ('git', 'describe', '--long'),
+          cwd=pathlib.Path(self.computer_partition_root_path) / 'software_release' / 'parts' / 'erp5',
+          text=True),
+      'erp5-git-diff':
+        subprocess.check_output(
+          ('git', 'diff'),
+          cwd=pathlib.Path(self.computer_partition_root_path) / 'software_release' / 'parts' / 'erp5',
+          text=True),
+      'slapos-software-release-git-describe':
+        subprocess.check_output(
+          ('git', 'describe', '--long'),
+          cwd=pathlib.Path(self.getSoftwareURL()).parent,
+          text=True),
+      'slapos-software-release-git-diff':
+        subprocess.check_output(
+          ('git', 'diff'),
+          cwd=pathlib.Path(self.getSoftwareURL()).parent,
+          text=True),
+    })
+
   def write_measurement(
       self, measurement: dict[str, typing.Union[str, float]]) -> None:
     json.dump(
