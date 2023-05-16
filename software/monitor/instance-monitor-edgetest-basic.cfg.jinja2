@@ -6,9 +6,10 @@
   'failure-amount': 2,
   'check-maximum-elapsed-time': 2,
   'check-frontend-ip-list': [],
-  'nameserver-list': []
+  'nameserver-list': [],
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate elapsed_time'
 } %}
-{%- for default_key in ['check-frontend-ip-list', 'nameserver-list', 'check-status-code', 'check-certificate-expiration-days', 'check-maximum-elapsed-time', 'failure-amount'] %}
+{%- for default_key in ['check-frontend-ip-list', 'nameserver-list', 'check-status-code', 'check-certificate-expiration-days', 'check-maximum-elapsed-time', 'failure-amount', 'enabled-sense-list'] %}
 {%-   if default_key in slapparameter_dict %}
 {%-     do DEFAULT_DICT.__setitem__(default_key, slapparameter_dict[default_key]) %}
 {%-   endif %}
@@ -68,6 +69,7 @@ config-certificate-expiration-days = {{ check['check-certificate-expiration-days
 config-failure-amount = {{ check['failure-amount'] }}
 config-maximum-elapsed-time = {{ check['check-maximum-elapsed-time'] }}
 config-ip-list = {{ ' '.join(check['check-frontend-ip-list']) }}
+config-enabled-sense-list = {{ check['enabled-sense-list'] }}
 config-json-file = ${surykatka-config-{{ class }}:json}
 {%-     endfor %} {#- for url in check['url-list'] #}
 {%-   endfor %} {#- for check in class_check_list | sort(attribute='-name') #}
