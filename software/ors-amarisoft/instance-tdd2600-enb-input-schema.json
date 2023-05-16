@@ -3,7 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",

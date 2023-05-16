@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-{% if rf_mode == 'tdd' %}
+{%- if rf_mode == 'tdd' %}
     "rrh": {
       "title": "RRH",
       "description": "RRH",
@@ -34,7 +34,7 @@
         "INACTIVE"
       ]
     },
-{% endif %}
+{%- endif %}
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
