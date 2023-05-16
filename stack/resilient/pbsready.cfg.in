@@ -293,5 +293,5 @@ recipe = slapos.cookbook:userinfo
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
-resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
+resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}$${rdiff-backup-server:path}
 ip = $${slap-network-information:global-ipv6}
