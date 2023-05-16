@@ -67,15 +67,10 @@ context =
 url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
 extra-context =
-  key dovecot_passwd dovecot-passwd:output
   key dovecot_passdb_lua dovecot-passdb-lua:output
   raw postfix_auth ${directory:var-spool-postfix-private}/auth
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
 
-[dovecot-passwd]
-<= config-base
-url = {{ dovecot_passwd_template }}
-output = ${directory:etc}/dovecot-passwd
 [dovecot-passdb-lua]
 <= config-base
 url = {{ dovecot_passdb_lua_template }}
@@ -97,16 +92,6 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
-[typed-paths]
-# Postfix-friendly rendering of file paths, prefixed with database type.
-aliases = hash:${postfix-alias:output}
-
-[{{ section('postalias-db') }}]
-recipe = plone.recipe.command
-stop-on-error = true
-command = '${wrapper-postalias:wrapper-path}' '${typed-paths:aliases}'
-update-command = ${:command}
-
 [{{ section('postmap-virtual') }}]
 recipe = plone.recipe.command
 stop-on-error = true
@@ -124,8 +109,6 @@ update-command = ${:command}
 url = {{ postfix_main_template }}
 output = ${directory:etc-postfix}/main.cf
 extra-context =
-  key alias_file postfix-alias:output
-  key mailname_file postfix-mailname:output
   key vmailbox_file postfix-vmailbox:output
   key virtual_file postfix-virtual:output
   key bin_directory directory:bin
@@ -138,34 +121,26 @@ extra-context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
+  key mail_domain request-dns-entry:connection-domain
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
-  raw mail_domain {{ slapparameter_dict.get('mail_domain', 'ors.rapid.space') }}
 
 [postfix-conf-master]
 <= config-base
 url = {{ postfix_master_template }}
 output = ${directory:etc-postfix}/master.cf
-[postfix-alias]
-<= config-base
-url = {{ postfix_alias_template }}
-output = ${directory:etc-postfix}/postfix-alias
-[postfix-mailname]
-<= config-base
-url = {{ postfix_mailname_template }}
-output = ${directory:etc-postfix}/postfix-mailname
 [postfix-vmailbox]
 <= config-base
 url = {{ postfix_vmailbox_template }}
 output = ${directory:etc-postfix}/postfix-vmailbox
 extra-context =
-  raw mail_domain {{ slapparameter_dict.get('mail_domain', 'ors.rapid.space') }}
+  raw mail_domain {{ slapparameter_dict.get('mail_domain', '') }}
 [postfix-virtual]
 <= config-base
 url = {{ postfix_virtual_template }}
 output = ${directory:etc-postfix}/postfix-virtual
 extra-context =
-  raw mail_domain {{ slapparameter_dict.get('mail_domain', 'ors.rapid.space') }}
+  raw mail_domain {{ slapparameter_dict.get('mail_domain', '') }}
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
@@ -209,6 +184,47 @@ hash-files =
   ${postfix-conf-main:output}
   ${postfix-wrapper:output}
 
+[publish-connection-parameters]
+recipe = slapos.cookbook:publish
+<= monitor-publish
+imap-port = 10143
+smtp-port = 10025
+imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
+{% if slapparameter_dict.get('dns_sr_url', '') %}
+domain = ${request-dns-entry:connection-domain}
+{% endif %}
+
+[imap-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = imap_listen.py
+config-host = ${slap-configuration:ipv6-random}
+config-port = 10143
+
+[smtp-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = smtp_listen.py
+config-host = ${slap-configuration:ipv6-random}
+config-port = 10025
+
+[request-dns-entry]
+name = dns-mail-entry
+recipe = slapos.cookbook:request.serialised
+software-url = {{ slapparameter_dict['dns_sr_url'] }}
+software-type = core-network
+server-url = {{ slap_connection['server-url'] }}
+computer-id = {{ slap_connection['computer-id'] }}
+partition-id = {{ slap_connection['partition-id'] }}
+key-file = {{ slap_connection['key-file'] }}
+cert-file = {{ slap_connection['cert-file'] }}
+shared = true
+sla-computer_guid = {{ slap_connection['computer-id'] }}
+config-name = dns-mail-entry
+config-subdomain = mail
+config-ip = ${slap-configuration:ipv6-random}
+return = domain ip
+
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
 environment =
@@ -238,7 +254,6 @@ path = {{ postfix_location }}/usr/sbin
   (
     'base-sbin-bin-wrapper',
     (
-      'postalias',
       'postcat',
       'postconf',
       'postdrop',
@@ -267,6 +282,8 @@ command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfi
 wrapper-path = ${directory:run}/postfix-master
 
 [buildout]
+extends =
+  {{ template_monitor }}
 parts =
   directory
   dovecot-conf
@@ -275,9 +292,15 @@ parts =
   postfix-conf-master
   postfix-service
   postfix-symlinks-libexec
+  monitor-base
+  publish-connection-parameters
+  imap-listen-promise
+  smtp-listen-promise
   {{ part_list | join('\n  ') }}
+{% if slapparameter_dict.get('dns_sr_url', '') %}
+  request-dns-entry
+{% endif %}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
-

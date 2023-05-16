@@ -18,9 +18,6 @@ smtputf8_enable = no
 mail_owner = {{ mail_owner }}
 setgid_group = {{ setgid_group }}
 
-alias_maps = hash:{{ alias_file }}
-alias_database = hash:{{ alias_file }}
-
 virtual_mailbox_domains = {{ mail_domain }}
 virtual_mailbox_base = {{ vhosts_directory }}
 virtual_mailbox_maps = hash:{{ vmailbox_file }}
@@ -43,11 +40,6 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
-# smtpd_recipient_restrictions =
-#   reject_non_fqdn_recipient
-#   reject_unknown_recipient_domain
-#   permit_sasl_authenticated
-#   reject
 smtpd_recipient_restrictions =
   permit_sasl_authenticated
 smtpd_relay_restrictions =

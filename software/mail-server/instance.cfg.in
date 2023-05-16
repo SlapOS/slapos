@@ -22,14 +22,11 @@ context =
     key slapparameter_dict slap-configuration:configuration
     raw template_monitor ${monitor2-template:output}
     raw dovecot_conf_template ${dovecot.jinja2.conf:target}
-    raw dovecot_passwd_template ${dovecot-passwd.jinja2:target}
     raw dovecot_passdb_lua_template ${dovecot-passdb.jinja2.lua:target}
     raw dovecot_binary ${dovecot:location}/sbin/dovecot
     raw postfix_main_template ${postfix_main.jinja2.cf:target}
     raw postfix_master_template ${postfix_master.jinja2.cf:target}
-    raw postfix_alias_template ${postfix_alias.jinja2:target}
     raw postfix_virtual_template ${postfix_virtual.jinja2:target}
-    raw postfix_mailname_template ${postfix_mailname.jinja2:target}
     raw postfix_vmailbox_template ${postfix_vmailbox.jinja2:target}
     raw postfix_location ${postfix:location}
     raw xz_utils_location ${xz-utils:location}

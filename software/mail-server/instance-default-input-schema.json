@@ -3,10 +3,10 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "mail_domain": {
-      "default": "ors.rapid.space",
-      "title": "Mail domain",
-      "description": "Mail domain",
+    "dns_sr_url": {
+      "default": "",
+      "title": "DNS SR URL",
+      "description": "URL of the SR running the DNS server",
       "type": "string"
     }
   }
