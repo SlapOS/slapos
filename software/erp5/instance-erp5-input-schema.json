@@ -53,7 +53,7 @@
       "type": "string"
     },
     "bt5": {
-      "description": "Business Template to install at automatic site creation. By default, all configurators are installed.",
+      "description": "A space-separated list of Business Templates to install at automatic site creation (e.g. \"erp5_full_text_mroonga_catalog erp5_base\"). By default, all configurators are installed.",
       "type": "string"
     },
     "id-store-interval": {
