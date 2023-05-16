@@ -87,7 +87,7 @@ rf_mode_context_list = [
         }
 ]
 
-for i in range (4):
+for i in range (len(rf_mode_context_list)):
     rf_mode_context_list[i].update({
             'default_lte_n_rb_dl'          : 100,
             'default_lte_tx_gain'          : 60,
