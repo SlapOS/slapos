@@ -383,6 +383,8 @@ URL =
       'path-check',
       'https://path.example.com/path',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -398,6 +400,8 @@ URL =
       'domain-check',
       'https://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -413,6 +417,8 @@ URL =
       'domain-check',
       'http://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -428,6 +434,8 @@ URL =
       'frontend-check',
       'https://frontend.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.3',
@@ -443,6 +451,8 @@ URL =
       'frontend-empty-check',
       'https://frontendempty.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '',
@@ -458,6 +468,8 @@ URL =
       'status-check',
       'https://status.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -473,6 +485,8 @@ URL =
       'certificate-check',
       'https://certificate.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '11',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -488,6 +502,8 @@ URL =
       'time-check',
       'https://time.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -503,6 +519,8 @@ URL =
       'failure-check',
       'https://failure.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '3',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -518,6 +536,8 @@ URL =
       'header-check',
       'https://header.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate '
+                        'elapsed_time',
   'failure-amount': '1',
   'http-header-dict': '{"A": "AAA"}',
   'ip-list': '127.0.0.1 127.0.0.2',

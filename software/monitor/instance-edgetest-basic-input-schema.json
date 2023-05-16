@@ -97,6 +97,12 @@
       "type": "number",
       "default": 2,
       "minimum": 1
+    },
+    "enabled-sense-list": {
+      "title": "[EXPERT] Enabled Senses",
+      "description": "Space separated list of enabled senses of the promise.",
+      "type": "string",
+      "default": "dns_query tcp_server http_query ssl_certificate elapsed_time"
     }
   }
 }
