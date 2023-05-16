@@ -377,12 +377,16 @@ URL =
   def getInstanceSoftwareType(cls):
     return 'edgetest-basic'
 
+  enabled_sense_list = "'dns_query tcp_server http_query ssl_certificate '\n"\
+                       "                        'elapsed_time'"
+
   def assertSurykatkaPromises(self):
     self.assertHttpQueryPromiseContent(
       'edge0',
       'path-check',
       'https://path.example.com/path',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -391,6 +395,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://path.example.com/path'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -398,6 +403,7 @@ URL =
       'domain-check',
       'https://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -406,6 +412,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://domain.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -413,6 +420,7 @@ URL =
       'domain-check',
       'http://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -421,6 +429,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'http://domain.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -428,6 +437,7 @@ URL =
       'frontend-check',
       'https://frontend.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.3',
@@ -436,6 +446,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://frontend.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -443,6 +454,7 @@ URL =
       'frontend-empty-check',
       'https://frontendempty.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '',
@@ -451,6 +463,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://frontendempty.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -458,6 +471,7 @@ URL =
       'status-check',
       'https://status.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -466,6 +480,7 @@ URL =
   'report': 'http_query',
   'status-code': '202',
   'url': 'https://status.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -473,6 +488,7 @@ URL =
       'certificate-check',
       'https://certificate.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '11',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -481,6 +497,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://certificate.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -488,6 +505,7 @@ URL =
       'time-check',
       'https://time.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -496,6 +514,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://time.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][11]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -503,6 +522,7 @@ URL =
       'failure-check',
       'https://failure.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '3',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -511,6 +531,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://failure.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -518,6 +539,7 @@ URL =
       'header-check',
       'https://header.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{"A": "AAA"}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -526,6 +548,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://header.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
   def test(self):
@@ -543,6 +566,17 @@ URL =
     self.assertSurykatkaPromises()
     self.assertSurykatkaCron()
     self.assertConnectionParameterDict()
+
+
+class TestEdgeBasicEnableSenseList(TestEdgeBasic):
+  enabled_sense_list = "'ssl_certificate'"
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    orig_instance_parameter_dict = super().getInstanceParameterDict()
+    _ = json.loads(orig_instance_parameter_dict['_'])
+    _['enabled-sense-list'] = 'ssl_certificate'
+    return {'_': json.dumps(_)}
 
 
 class TestNodeMonitoring(SlapOSInstanceTestCase):
