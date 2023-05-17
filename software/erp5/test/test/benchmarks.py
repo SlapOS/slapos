@@ -25,9 +25,12 @@
 #
 ##############################################################################
 
+import contextlib
 import datetime
 import json
 import pathlib
+import socket
+import struct
 import subprocess
 import time
 import typing
@@ -68,7 +71,7 @@ class TestOrderBuildPackingListSimulation(
           "mariadb": {
             # We use a large innodb-buffer-pool-size because the simulation
             # select method used for sale packing list does not use index and
-            # cause slpow queries
+            # cause slow queries
             "innodb-buffer-pool-size": 32 * 1024 * 1024 * 1024,  # 32Go
           },
           "zope-partition-dict": {
@@ -98,6 +101,41 @@ class TestOrderBuildPackingListSimulation(
     super().setUp()
     self.measurement_file = open(f'measures{self.id()}.jsonl', 'w')
     self.addCleanup(self.measurement_file.close)
+
+    # Describe the software used. TODO: use nxd-bom once integrated
+    self.write_measurement(
+      {
+        'type': 'sbom',
+        # content of runwsgi script, to know which versions of python packages were used
+        'runwsgi-content':
+        (pathlib.Path(
+      self.computer_partition_root_path
+    ) / 'software_release' / 'bin' / 'runwsgi').read_text(),
+      'mysql-show-variables':
+        subprocess.check_output((
+          pathlib.Path(self.getComputerPartitionPath('mariadb')) / 'bin' / 'mysql',
+          '-e', 'show variables'), text=True),
+      'erp5-git-describe':
+        subprocess.check_output(
+          ('git', 'describe', '--long'),
+          cwd=pathlib.Path(self.computer_partition_root_path) / 'software_release' / 'parts' / 'erp5',
+          text=True),
+      'erp5-git-diff':
+        subprocess.check_output(
+          ('git', 'diff'),
+          cwd=pathlib.Path(self.computer_partition_root_path) / 'software_release' / 'parts' / 'erp5',
+          text=True),
+      'slapos-software-release-git-describe':
+        subprocess.check_output(
+          ('git', 'describe', '--long'),
+          cwd=pathlib.Path(self.getSoftwareURL()).parent,
+          text=True),
+      'slapos-software-release-git-diff':
+        subprocess.check_output(
+          ('git', 'diff'),
+          cwd=pathlib.Path(self.getSoftwareURL()).parent,
+          text=True),
+    })
 
   def write_measurement(
       self, measurement: dict[str, typing.Union[str, float]]) -> None:
@@ -129,6 +167,16 @@ class TestOrderBuildPackingListSimulation(
       self.getComputerPartitionPath('zodb')) / 'srv' / 'zodb' / 'root.fs'
     root_fs_size = root_fs.stat().st_size
 
+    # ZEO stats ( using ruok protocol https://github.com/zopefoundation/ZEO/commit/d5082536 )
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+      s.connect((self._ipv4_address, 2100))
+      s.sendall(b'\x00\x00\x00\x04ruok')
+      _ = s.recv(struct.unpack(">I", s.recv(4))[0])
+      zeo_stats = json.loads(s.recv(struct.unpack(">I", s.recv(4))[0]))
+    # we are supposed to have only one storage with name "root"
+    zeo_root_stats = zeo_stats.pop('root')
+    assert not zeo_stats
+
     self.logger.info(
       "Measurements for %s (after %s): "
       "elapsed=%s zope_total_rss=%s / %s root_fs_size=%s",
@@ -147,6 +195,7 @@ class TestOrderBuildPackingListSimulation(
         'zope_total_rss': zope_total_rss,
         'zope_count': zope_count,
         'root_fs_size': root_fs_size,
+        'zeo_stats': zeo_root_stats,
         'now': str(now),
       })
 
@@ -161,6 +210,8 @@ class TestOrderBuildPackingListSimulation(
         params={'user_quantity:int': 1})
       if not ret.ok:
         self.logger.error(ret.text)
+        if self._debug:
+          breakpoint()
       ret.raise_for_status()
       self._waitForActivities(
         timeout=datetime.timedelta(hours=2).total_seconds())
@@ -197,6 +248,8 @@ class TestOrderBuildPackingListSimulation(
           )
           if not ret.ok:
             self.logger.error(ret.text)
+            if self._debug:
+              breakpoint()
           ret.raise_for_status()
         self._waitForActivities(
           timeout=datetime.timedelta(hours=2).total_seconds())
@@ -216,8 +269,8 @@ class TestOrderBuildPackingListSimulation(
 
       # and a pt-query-digest for slow log
       pt_query_digest = pathlib.Path(
-        self.computer_partition_root_path
-      ) / 'software_release' / 'parts' / 'percona-toolkit' / 'bin' / 'pt-query-digest'
+        self.getComputerPartitionPath(
+          'mariadb')) / 'bin' / 'pt-query-digest'
       mariadb_slowquery_log = pathlib.Path(
         self.getComputerPartitionPath(
           'mariadb')) / 'var' / 'log' / 'mariadb_slowquery.log'
@@ -227,5 +280,3 @@ class TestOrderBuildPackingListSimulation(
           subprocess.check_output(
             (pt_query_digest, mariadb_slowquery_log), text=True)
         })
-
-      breakpoint()
