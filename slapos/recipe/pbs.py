@@ -150,6 +150,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         $RDIFF_BACKUP \\
                 $CORRUPTED_ARGS \\
+                --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
                 %(remote_dir)s \\
                 $BACKUP_DIR
