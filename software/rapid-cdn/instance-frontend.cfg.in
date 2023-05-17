@@ -1127,7 +1127,7 @@ config-state = empty
 {#- XXX: Some other approach would be useful #}
 {%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
 {%- for key, value in instance_parameter_dict.items() -%}
-{%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
+{%-   if not key.startswith('configuration') and key not in DROP_KEY_LIST %}
 {{ key }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor %}
