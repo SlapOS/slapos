@@ -12,10 +12,7 @@
 {%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter_dict['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
 {%- set slave_log_dict = {} %}
 {%- set slave_instance_information_list = [] %}
-{%- set slave_instance_list = instance_parameter_dict['slave-instance-list'] %}
-{%- if configuration['extra_slave_instance_list'] %}
-{%-   do slave_instance_list.extend(json_module.loads(configuration['extra_slave_instance_list'])) %}
-{%- endif %}
+{%- set slave_instance_list = json_module.loads(configuration['extra_slave_instance_list']) %}
 {%- if master_key_download_url %}
 {%-   do kedifa_updater_mapping.append((master_key_download_url, frontend_haproxy_configuration['master-certificate'], apache_certificate)) %}
 {%- else %}
@@ -427,10 +424,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {#- Publish information for the instance #}
 [publish]
 recipe = slapos.cookbook:publish.serialised
-{%- if configuration['extra_slave_instance_list'] %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
-{%- endif %}
 monitor-base-url = {{ monitor_base_url }}
 kedifa-csr-url = ${expose-csr:url}/${expose-csr-link-csr-kedifa:filename}
 backend-client-csr-url = ${expose-csr:url}/${expose-csr-link-csr-backend-haproxy:filename}
