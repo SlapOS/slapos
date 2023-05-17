@@ -50,6 +50,7 @@ bin = $${:home}/bin
 tmp = $${:home}/tmp
 dot-theia = $${:home}/.theia/
 pidfiles = $${:var}/run
+statefiles = $${:var}/state
 
 services = $${:etc}/service
 runner = $${:srv}/runner
@@ -589,7 +590,8 @@ inline =
 [slapos-standalone-script]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/$${:_buildout_section_name_}
-embedded-request-exitcode-file = $${directory:etc}/embedded-request-exitcode
+embedded-request-exitcode-file = $${directory:statefiles}/embedded-request.exitcode
+standalone-ran-before-flag = $${directory:statefiles}/standalone-ran-before.flag
 shared-part-list =
   {{ """${buildout:shared-part-list}""" | indent(2) }}
 context =
@@ -599,6 +601,7 @@ context =
   key request_script_template request-script-example:inline
   key shared_part_list :shared-part-list
   key embedded_request_exitcode_file :embedded-request-exitcode-file
+  key standalone_ran_before_flag :standalone-ran-before-flag
   key embedded_instance_config embedded-instance-config:output
   key home_path directory:home
   key forward_frontend_requests :forward-frontend-requests
