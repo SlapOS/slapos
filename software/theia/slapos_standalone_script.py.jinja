@@ -153,10 +153,13 @@ def main():
   with setupStandalone() as standalone:
 
     config_json_file = {{ repr(embedded_instance_config) }}
-    done_file = config_json_file + '.done'
+    old_flag_file = config_json_file + '.done' # backwards compatibility
+    flag_file = {{ repr(embedded_request_flag_file) }}
 
-    if not os.path.exists(done_file):
-      with open(done_file, 'w'): pass
+    if os.path.exists(old_flag_file):
+      os.rename(old_flag_file, flag_file)
+    elif not os.path.exists(flag_file):
+      with open(flag_file, 'w'): pass
       try:
         config = parseEmbeddedInstanceConfig(config_json_file)
       except Exception:
