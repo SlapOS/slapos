@@ -364,7 +364,7 @@ context =
 {#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
 {#   Send only controlled information about the slave to node #}
 {%     set authorized_slave = {} %}
-{%     for key in FRONTEND_NODE_SLAVE_PASSED_KEY_LIST + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST %}
+{%     for key in FRONTEND_NODE_SLAVE_PASSED_KEY_LIST %}
 {%       if key in slave %}
 {%         do authorized_slave.__setitem__(key, slave[key]) %}
 {%       endif %}
