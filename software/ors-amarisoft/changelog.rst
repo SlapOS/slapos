@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 1.0.322 (2023-05-17)
+Version 1.0.323 (2023-05-17)
 -------------
 
 * Add support for first version of MCPTT (Mission Critical Push To Talk)
