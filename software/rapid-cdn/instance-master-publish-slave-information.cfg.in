@@ -58,11 +58,11 @@
 {% endfor %}
 
 # Publish information for each slave
-{% set active_slave_instance_list = json_module.loads(active_slave_instance_dict['active-slave-instance-list']) %}
+{% set active_frontend_list = json_module.loads(active_slave_instance_dict['active-frontend-list']) %}
 {% for slave_reference, slave_information in slave_information_dict.items() %}
 {#   Filter out destroyed, so not existing anymore, slaves #}
 {#   Note: This functionality is not yet covered by tests, please modify with care #}
-{%   if slave_reference in active_slave_instance_list %}
+{%   if slave_reference in active_frontend_list %}
 {%     set publish_section_title = 'publish-%s' % slave_reference %}
 {%     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]

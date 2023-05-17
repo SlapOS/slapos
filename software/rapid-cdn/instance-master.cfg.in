@@ -122,7 +122,6 @@ context =
 {% set single_type_key = 'single-' %}
 {% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% set frontend_quantity = instance_parameter_dict['configuration'].pop('-frontend-quantity', '1') | int %}
-{% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
@@ -419,7 +418,8 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 {%     set node_configuration_dict = {} %}
 {%     do node_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-{%     do node_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
+{%     do node_configuration_dict.__setitem__("frontend-list", json_module.dumps([])) %} {# XXX Upward compatbility #}
+{%     do node_configuration_dict.__setitem__("extra_slave_instance_list", json_module.dumps(authorized_slave_list, sort_keys=True)) %} {# XXX Backward compatibility #}
 {%     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 {%-     for config_key, config_value in node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
@@ -565,14 +565,14 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 {% endfor %}
 
 [active-slave-instance]
-{% set active_slave_instance_list = [] %}
+{% set active_frontend_list = [] %}
 {% for slave_instance in instance_parameter_dict['slave-instance-list'] %}
 {# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
 {# Note: This functionality is not yet covered by tests, please modify with care #}
-{%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
+{%   do active_frontend_list.append(slave_instance['slave_reference']) %}
 {% endfor %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
+active-frontend-list = {{ json_module.dumps(active_frontend_list, sort_keys=True) }}
 
 [frontend-information]
 {% for index, frontend in enumerate(frontend_list) %}
