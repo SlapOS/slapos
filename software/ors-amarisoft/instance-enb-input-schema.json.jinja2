@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-{% if rf_mode == 'tdd' %}
+{%- if rf_mode == 'tdd' %}
     "rrh": {
       "title": "RRH",
       "description": "RRH",
@@ -34,7 +34,7 @@
         "INACTIVE"
       ]
     },
-{% endif %}
+{%- endif %}
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
@@ -185,24 +185,6 @@
       "description": "Baseband latency promise will fail if average TX/RX diff reaches threshold (higher than this value)",
       "type": "number",
       "default": 7
-    },
-    "promise_cpu_max_spot_temp": {
-      "title": "Maximum CPU spot temperature",
-      "description": "Maximum CPU spot temperature above which CPU temperature promise will fail",
-      "type": "number",
-      "default": 90
-    },
-    "promise_cpu_max_avg_temp": {
-      "title": "Maximum average CPU temperature",
-      "description": "If average temperature over specified period reaches this threshold, promise will fail",
-      "type": "number",
-      "default": 80
-    },
-    "promise_cpu_avg_temp_period": {
-      "title": "Period of Average CPU temperature checks",
-      "description": "Duration during which average temperature should not exceed specified threshold",
-      "type": "number",
-      "default": 600
     }
   }
 }

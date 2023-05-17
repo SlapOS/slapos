@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-{% if rf_mode == 'tdd' %}
+{%- if rf_mode == 'tdd' %}
     "rrh": {
       "title": "RRH",
       "description": "RRH",
@@ -14,7 +14,7 @@
         "M2RU Sunwave"
       ]
     },
-{% endif %}
+{%- endif %}
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
@@ -25,7 +25,7 @@
       "title": "A3 offset for NR handover",
       "description": "RSRP gain offset between gNBs which will trigger handover",
       "type": "number",
-      "default": 6,
+      "default": 6
     },
     "nr_handover_time_to_trigger": {
       "title": "Time to Trigger for NR handover",
@@ -57,7 +57,7 @@
       "type": "string",
       "enum": [
         "5ms 2UL 7DL 4/6 (default)",
-        "2.5ms 1UL 3DL 2/10",
+        "2.5ms 1UL 3DL 2/10"
       ],
       "default": "5ms 2UL 7DL 4/6 (default)"
     },
@@ -325,24 +325,6 @@
       "description": "Average TX/RX diff threshold above which baseband latency promise will fail",
       "type": "number",
       "default": 7
-    },
-    "promise_cpu_temperature_threshold": {
-      "title": "CPU temperature promise threshold",
-      "description": "Temperature threshold above which CPU temperature promise will fail",
-      "type": "number",
-      "default": 80
-    },
-    "promise_cpu_avg_temperature_threshold": {
-      "title": "Average CPU temperature promise threshold",
-      "description": "If average temperature over specified duration reaches this threshold, promise will fail",
-      "type": "number",
-      "default": 80
-    },
-    "promise_cpu_avg_temperature_threshold_duration": {
-      "title": "Average CPU temperature promise threshold duration",
-      "description": "Duration during which average temperature should not exceed specified threshold",
-      "type": "number",
-      "default": 600
     }
   }
 }

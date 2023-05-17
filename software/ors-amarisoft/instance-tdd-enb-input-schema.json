@@ -3,7 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-
     "rrh": {
       "title": "RRH",
       "description": "RRH",
@@ -34,7 +33,6 @@
         "INACTIVE"
       ]
     },
-
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
@@ -45,13 +43,13 @@
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number",
-      "default": 
+      "default": 60
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number",
-      "default": 
+      "default": 45
     },
     "gps_sync": {
       "default": false,
@@ -63,13 +61,13 @@
       "title": "Number of DL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": 
+      "default": 2
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
       "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
       "type": "number",
-      "default": 
+      "default": 2
     },
     "dl_earfcn": {
       "title": "DL EARFCN",
@@ -81,7 +79,7 @@
       "title": "DL RB",
       "description": "number of DL resource blocks",
       "type": "number",
-      "default": 
+      "default": 100
     },
     "mme_list": {
       "title": "MME list",
@@ -148,7 +146,7 @@
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
-      "default": 
+      "default": 10000
     },
     "use_ipv4": {
       "default": false,
@@ -185,24 +183,6 @@
       "description": "Baseband latency promise will fail if average TX/RX diff reaches threshold (higher than this value)",
       "type": "number",
       "default": 7
-    },
-    "promise_cpu_max_spot_temp": {
-      "title": "Maximum CPU spot temperature",
-      "description": "Maximum CPU spot temperature above which CPU temperature promise will fail",
-      "type": "number",
-      "default": 90
-    },
-    "promise_cpu_max_avg_temp": {
-      "title": "Maximum average CPU temperature",
-      "description": "If average temperature over specified period reaches this threshold, promise will fail",
-      "type": "number",
-      "default": 80
-    },
-    "promise_cpu_avg_temp_period": {
-      "title": "Period of Average CPU temperature checks",
-      "description": "Duration during which average temperature should not exceed specified threshold",
-      "type": "number",
-      "default": 600
     }
   }
 }

@@ -21,35 +21,17 @@
       "description": "Activate iperf3 UDP server",
       "type": "boolean"
     },
-    "dnsmasq": {
-      "default": false,
-      "title": "dnsmasq",
-      "description": "dnsmasq",
-      "type": "boolean"
+    "local_domain": {
+      "default": "",
+      "title": "Local Domain",
+      "description": "Activates local DNS server serving the given domain name",
+      "type": "string"
     },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
       "description": "Set to true to use IPv4 for AMF / MME addresses",
       "type": "boolean"
-    },
-    "promise_cpu_temperature_threshold": {
-      "title": "CPU temperature promise threshold",
-      "description": "Temperature threshold above which CPU temperature promise will fail",
-      "type": "number",
-      "default": 80
-    },
-    "promise_cpu_avg_temperature_threshold": {
-      "title": "Average CPU temperature promise threshold",
-      "description": "If average temperature over specified duration reaches this threshold, promise will fail",
-      "type": "number",
-      "default": 80
-    },
-    "promise_cpu_avg_temperature_threshold_duration": {
-      "title": "Average CPU temperature promise threshold duration",
-      "description": "Duration during which average temperature should not exceed specified threshold",
-      "type": "number",
-      "default": 600
     }
   }
 }
