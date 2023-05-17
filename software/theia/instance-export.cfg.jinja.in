@@ -42,6 +42,7 @@ context =
   raw slapos_cfg $${directory:runner}/etc/slapos.cfg
   raw project_path $${directory:project}
   raw public_path $${directory:frontend-static-public}
+  raw statefiles_path $${directory:statefiles}
   key exitfile :exitcode-file
   key errorfile :error-file
 {%- raw %}
@@ -55,6 +56,7 @@ inline =
   --cfg {{ slapos_cfg }} \
   --dirs {{ project_path }} \
   --dirs {{ public_path }} \
+  --dirs {{ statefiles_path }} \
   --exitfile {{ exitfile }} \
   --errorfile {{ errorfile }}
 {%- endraw %}
