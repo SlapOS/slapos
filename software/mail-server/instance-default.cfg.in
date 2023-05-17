@@ -134,13 +134,13 @@ output = ${directory:etc-postfix}/master.cf
 url = {{ postfix_vmailbox_template }}
 output = ${directory:etc-postfix}/postfix-vmailbox
 extra-context =
-  raw mail_domain {{ slapparameter_dict.get('mail_domain', '') }}
+  key mail_domain request-dns-entry:connection-domain
 [postfix-virtual]
 <= config-base
 url = {{ postfix_virtual_template }}
 output = ${directory:etc-postfix}/postfix-virtual
 extra-context =
-  raw mail_domain {{ slapparameter_dict.get('mail_domain', '') }}
+  key mail_domain request-dns-entry:connection-domain
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
