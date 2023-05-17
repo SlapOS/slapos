@@ -539,6 +539,10 @@ class ResilientTheiaMixin(object):
     return os.path.join(cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
 
   @classmethod
+  def getPath(cls, *components): # patch getPath
+    return cls.getPartitionPath('export', *components)
+
+  @classmethod
   def _getSlapos(cls, instance_type='export'):
     return cls.getPartitionPath(instance_type, 'srv', 'runner', 'bin', 'slapos')
 
