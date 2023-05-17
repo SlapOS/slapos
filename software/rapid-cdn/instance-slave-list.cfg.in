@@ -3,7 +3,7 @@
 {%- set backend_slave_list = [] %}
 {%- set frontend_slave_list = [] %}
 {%- set part_list = [] %}
-{%- set cache_port = frontend_haproxy_configuration.get('cache-port') %}
+{%- set cache_port = frontend_haproxy_configuration['cache-port'] %}
 {%- set cache_access = "http://%s:%s/HTTP" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set ssl_cache_access = "http://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['http-port']) %}
@@ -284,7 +284,7 @@ log-directory = {{ '${slave-log-directory-dict:' + slave_reference + '}' }}
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
-log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('frontend_log')}} {{slave_parameter_dict.get('backend_log')}}
+log = {{slave_parameter_dict['access_log'] }} {{slave_parameter_dict['frontend_log'] }} {{slave_parameter_dict['backend_log'] }}
 backup = {{ '${' + slave_log_directory_section + ':log-directory}' }}
 rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
 # disable delayed compression, as log filenames shall be stable
@@ -297,9 +297,9 @@ recipe = plone.recipe.command
 stop-on-error = false
 log-directory = {{ '${' + slave_logrotate_section + ':backup}' }}
 command =
-  ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log
-  ln -sf {{slave_parameter_dict.get('frontend_log')}} ${:log-directory}/frontend.log
-  ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}/backend.log
+  ln -sf {{slave_parameter_dict['access_log'] }} ${:log-directory}/access.log
+  ln -sf {{slave_parameter_dict['frontend_log'] }} ${:log-directory}/frontend.log
+  ln -sf {{slave_parameter_dict['backend_log'] }} ${:log-directory}/backend.log
 
 {#-   Set password for slave #}
 
@@ -398,7 +398,7 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
-ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
+ip-access-certificate = {{ frontend_configuration['ip-access-certificate'] }}
 nginx-mime = {{ software_parameter_dict['nginx_mime'] }}
 access-log = {{ dumps(frontend_haproxy_configuration['slave-introspection-access-log']) }}
 error-log = {{ dumps(frontend_haproxy_configuration['slave-introspection-error-log']) }}
