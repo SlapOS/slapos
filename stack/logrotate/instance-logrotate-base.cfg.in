@@ -47,6 +47,8 @@ context =
 # - "post" with commands to execute after rotation
 # - "pre" with commands to execute before rotation
 # - "backup" with directory where to store logs
+# - "copytruncate" to use logrotate's copytruncate option, setting to ""
+#    (the default) disable copytruncate, setting to anything else enable copytruncate
 recipe = slapos.recipe.template:jinja2
 url = {{ logrotate_entry_template }}
 output = ${logrotate-conf-parameter:logrotate-entries}/${:name}
@@ -60,7 +62,7 @@ context =
   key rotate_num :rotate-num
   key nocompress :nocompress
   key delaycompress :delaycompress
-copytruncate = false
+copytruncate =
 post =
 pre =
 frequency = daily
