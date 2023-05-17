@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "dns_sr_url": {
+      "default": "",
+      "title": "DNS SR URL",
+      "description": "URL of the SR running the DNS server",
+      "type": "string"
+    }
+  }
+}
+
