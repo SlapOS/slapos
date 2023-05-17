@@ -190,7 +190,7 @@ single-custom-personal = dynamic-custom-personal-profile-slave-list:output
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
-slave-introspection-https-port = ${configuration:slave-introspection-https-port}
+frontend-introspection-https-port = ${configuration:frontend-introspection-https-port}
 slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
 
 [self-signed-ip-access]
@@ -312,7 +312,7 @@ csr = ${caucase-updater-csr:csr}
 crl = ${kedifa-login-config:crl}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
-slave_kedifa_information = {{ dumps(instance_parameter_dict['configuration']['slave-kedifa-information']) }}
+slave_kedifa_information = {{ dumps(instance_parameter_dict['configuration']['frontend-kedifa-information']) }}
 
 [backend-client-login-config]
 d = ${directory:backend-client-dir}
@@ -359,8 +359,8 @@ stop-on-error = True
 [dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
 depends = ${software-py:recipe}
-url = {{ software_parameter_dict['profile_slave_list'] }}
-filename = instance-slave-list.cfg
+url = {{ software_parameter_dict['profile_frontend_list'] }}
+filename = instance-frontend-list.cfg
 master_key_download_url = {{ dumps(instance_parameter_dict['configuration']['master-key-download-url']) }}
 software_type = single-custom-personal
 organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
@@ -1001,7 +1001,7 @@ recipe = slapos.cookbook:requestoptional
 name = Slave Introspection Frontend {{ instance_parameter_dict['configuration']['frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration']['slave-introspection-https-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration']['frontend-introspection-https-port'] }}/
 config-https-only = true
 return = secure_access
 
@@ -1088,7 +1088,7 @@ context =
 promise = check_socket_listening
 name = slave_introspection_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
-config-port = ${frontend-configuration:slave-introspection-https-port}
+config-port = ${frontend-configuration:frontend-introspection-https-port}
 
 [logrotate-entry-slave-introspection]
 <= logrotate-entry-base

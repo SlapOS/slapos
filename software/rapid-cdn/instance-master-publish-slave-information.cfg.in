@@ -1,66 +1,66 @@
 {% set part_list = [] %}
-{% set slave_information_dict = {} %}
+{% set frontend_information_dict = {} %}
 
-# regroup slave information from all frontends
-{% for frontend, slave_list_raw in slave_information.items() %}
-{%   if slave_list_raw %}
-{%     set slave_list = json_module.loads(slave_list_raw) %}
+# regroup frontend information from all frontend nodes
+{% for frontend_node, frontend_list_raw in frontend_information.items() %}
+{%   if frontend_list_raw %}
+{%     set frontend_list = json_module.loads(frontend_list_raw) %}
 {%   else %}
-{%    set slave_list = [] %}
+{%    set frontend_list = [] %}
 {%   endif %}
-{%   for slave_dict in slave_list %}
-{%     set slave_reference = slave_dict.pop('slave-reference') %}
-{%     set log_access_url = slave_dict.pop('log-access', '') %}
-{%     set current_slave_dict = slave_information_dict.get(slave_reference, {}) %}
-{%     do current_slave_dict.update(slave_dict) %}
-{%     set log_access_list = current_slave_dict.get('log-access-urls', []) %}
-{%     do log_access_list.append( frontend + ': ' + log_access_url) %}
-{%     do current_slave_dict.__setitem__(
+{%   for frontend_dict in frontend_list %}
+{%     set slave_reference = frontend_dict.pop('slave-reference') %}
+{%     set log_access_url = frontend_dict.pop('log-access', '') %}
+{%     set current_frontend_dict = frontend_information_dict.get(slave_reference, {}) %}
+{%     do current_frontend_dict.update(frontend_dict) %}
+{%     set log_access_list = current_frontend_dict.get('log-access-urls', []) %}
+{%     do log_access_list.append( frontend_node + ': ' + log_access_url) %}
+{%     do current_frontend_dict.__setitem__(
             'log-access-urls',
             log_access_list
             ) %}
-{%     do current_slave_dict.__setitem__(
+{%     do current_frontend_dict.__setitem__(
             'replication_number',
-            current_slave_dict.get('replication_number', 0) + 1
+            current_frontend_dict.get('replication_number', 0) + 1
             ) %}
-{%     do slave_information_dict.__setitem__(slave_reference, current_slave_dict) %}
+{%     do frontend_information_dict.__setitem__(slave_reference, current_frontend_dict) %}
 {%   endfor %}
 {% endfor %}
 
-{% for slave_reference, rejected_info_list in rejected_slave_information['rejected-slave-dict'].items() %}
-{%   if slave_reference not in slave_information_dict %}
-{%     do slave_information_dict.__setitem__(slave_reference, {}) %}
+{% for slave_reference, rejected_info_list in rejected_frontend_information['rejected-frontend-dict'].items() %}
+{%   if slave_reference not in frontend_information_dict %}
+{%     do frontend_information_dict.__setitem__(slave_reference, {}) %}
 {%   endif %}
-{%   do slave_information_dict[slave_reference].__setitem__('request-error-list', json_module.dumps(rejected_info_list)) %}
+{%   do frontend_information_dict[slave_reference].__setitem__('request-error-list', json_module.dumps(rejected_info_list)) %}
 {% endfor %}
 
-{% for slave_reference, warning_info_list in warning_slave_information['warning-slave-dict'].items() %}
-{%   if slave_reference not in slave_information_dict %}
-{%     do slave_information_dict.__setitem__(slave_reference, {}) %}
+{% for slave_reference, warning_info_list in warning_frontend_information['warning-frontend-dict'].items() %}
+{%   if slave_reference not in frontend_information_dict %}
+{%     do frontend_information_dict.__setitem__(slave_reference, {}) %}
 {%   endif %}
-{%   do slave_information_dict[slave_reference].__setitem__('warning-list', json_module.dumps(warning_info_list)) %}
+{%   do frontend_information_dict[slave_reference].__setitem__('warning-list', json_module.dumps(warning_info_list)) %}
 {% endfor %}
 
-{% for slave_reference, kedifa_dict in json_module.loads(slave_kedifa_information).items() %}
-{%   if slave_reference not in rejected_slave_information['rejected-slave-dict'] %}
-{%     if slave_reference not in slave_information_dict %}
-{%       do slave_information_dict.__setitem__(slave_reference, {}) %}
+{% for slave_reference, kedifa_dict in json_module.loads(frontend_kedifa_information).items() %}
+{%   if slave_reference not in rejected_frontend_information['rejected-frontend-dict'] %}
+{%     if slave_reference not in frontend_information_dict %}
+{%       do frontend_information_dict.__setitem__(slave_reference, {}) %}
 {%     endif %}
-{%     do slave_information_dict[slave_reference].__setitem__('key-generate-auth-url', kedifa_dict['key-generate-auth-url']) %}
-{%     do slave_information_dict[slave_reference].__setitem__('key-upload-url', kedifa_dict['key-upload-url']) %}
-{%     do slave_information_dict[slave_reference].__setitem__('kedifa-caucase-url', kedifa_dict['kedifa-caucase-url']) %}
+{%     do frontend_information_dict[slave_reference].__setitem__('key-generate-auth-url', kedifa_dict['key-generate-auth-url']) %}
+{%     do frontend_information_dict[slave_reference].__setitem__('key-upload-url', kedifa_dict['key-upload-url']) %}
+{%     do frontend_information_dict[slave_reference].__setitem__('kedifa-caucase-url', kedifa_dict['kedifa-caucase-url']) %}
 {%   endif %}
 {% endfor %}
 
 [common-frontend-information]
-{% for frontend_key, frontend_value in frontend_information.items() %}
-{{ frontend_key }} = {{ frontend_value }}
+{% for frontend_node_key, frontend_node_value in frontend_node_information.items() %}
+{{ frontend_node_key }} = {{ frontend_node_value }}
 {% endfor %}
 
-# Publish information for each slave
-{% set active_frontend_list = json_module.loads(active_slave_instance_dict['active-frontend-list']) %}
-{% for slave_reference, slave_information in slave_information_dict.items() %}
-{#   Filter out destroyed, so not existing anymore, slaves #}
+# Publish information for each frontend
+{% set active_frontend_list = json_module.loads(active_frontend_instance_dict['active-frontend-list']) %}
+{% for slave_reference, frontend_information in frontend_information_dict.items() %}
+{#   Filter out destroyed, so not existing anymore, frontends #}
 {#   Note: This functionality is not yet covered by tests, please modify with care #}
 {%   if slave_reference in active_frontend_list %}
 {%     set publish_section_title = 'publish-%s' % slave_reference %}
@@ -70,12 +70,12 @@
 recipe = slapos.cookbook:publish_failsafe
 -error-status-file = {{ publish_failsafe_error }}/{{ slave_reference }}-error.status
 -slave-reference = {{ slave_reference }}
-{%     set log_access_url = slave_information.pop('log-access-urls', None) %}
+{%     set log_access_url = frontend_information.pop('log-access-urls', None) %}
 {%     if log_access_url %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {%     endif %}
-{%     for key, value in slave_information.items() %}
+{%     for key, value in frontend_information.items() %}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
 {%   endif %}

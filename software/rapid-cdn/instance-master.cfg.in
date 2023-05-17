@@ -42,7 +42,7 @@
 %}
 {#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
 {#- Note: As a result, this feature is very hard to be tested with slapproxy, as it does not pollute the slave information, this kind of whitelist is implemented #}
-{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = [
+{%- set FRONTEND_NODE_FRONTEND_PASSED_KEY_LIST_SCHEMA = [
       'authenticate-to-backend',
       'backend-connect-retries',
       'backend-connect-timeout',
@@ -94,11 +94,11 @@
       'websocket-transparent',
     ]
 %}
-{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL = [
+{%- set FRONTEND_NODE_FRONTEND_PASSED_KEY_LIST_INTERNAL = [
       'slave_reference',
     ]
 %}
-{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
+{%- set FRONTEND_NODE_FRONTEND_PASSED_KEY_LIST = FRONTEND_NODE_FRONTEND_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_FRONTEND_PASSED_KEY_LIST_INTERNAL %}
 {% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
@@ -148,7 +148,7 @@ context =
   'port': '4443',
   'ram-cache-size': '1G',
   'request-timeout': '600',
-  'slave-introspection-https-port': '22443',
+  'frontend-introspection-https-port': '22443',
 } %}
 {% for i in range(1, frontend_quantity + 1) %}
 {%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
@@ -198,188 +198,187 @@ context =
 {%   do request_dict.__setitem__(request_section_title, request_content_dict) %}
 {% endfor %}
 
-{% set authorized_slave_string_list = [] %}
-{% set authorized_slave_list = [] %}
-{% set rejected_slave_dict = {} %}
-{% set critical_rejected_slave_dict = {} %}
-{% set warning_slave_dict = {} %}
+{% set authorized_frontend_list = [] %}
+{% set rejected_frontend_dict = {} %}
+{% set critical_rejected_frontend_dict = {} %}
+{% set warning_frontend_dict = {} %}
 {% set used_host_list = [] %}
-{% for slave in sorted(instance_parameter_dict['slave-instance-list'], key=operator_module.itemgetter('slave_reference')) %}
-{%   set slave_error_list = [] %}
-{%   set slave_critical_error_list = [] %}
-{%   set slave_warning_list = [] %}
-{%   set slave_server_alias_unclashed = [] %}
-{%   set slave_type = slave.get('type') %}
-{%   if slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
-{%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
+{% for frontend in sorted(instance_parameter_dict['slave-instance-list'], key=operator_module.itemgetter('slave_reference')) %}
+{%   set frontend_error_list = [] %}
+{%   set frontend_critical_error_list = [] %}
+{%   set frontend_warning_list = [] %}
+{%   set frontend_server_alias_unclashed = [] %}
+{%   set frontend_type = frontend.get('type') %}
+{%   if frontend_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
+{%     do frontend_error_list.append('type:%s is not supported' % (frontend_type,)) %}
 {%   endif %}
 {#   Check health-check-* #}
-{%   set health_check = (str(slave.get('health-check', False)) or 'false').lower() %}
+{%   set health_check = (str(frontend.get('health-check', False)) or 'false').lower() %}
 {%   if health_check in TRUE_VALUES %}
-{%     set health_check_http_method = slave.get('health-check-http-method') or 'GET' %}
+{%     set health_check_http_method = frontend.get('health-check-http-method') or 'GET' %}
 {%     if health_check_http_method not in ['GET', 'OPTIONS', 'CONNECT', 'POST'] %}
-{%       do slave_error_list.append('Wrong health-check-http-method %s' % (health_check_http_method,)) %}
+{%       do frontend_error_list.append('Wrong health-check-http-method %s' % (health_check_http_method,)) %}
 {%     endif %}
-{%     set health_check_http_path = slave.get('health-check-http-path') or '/' %}
-{%     set health_check_http_version = slave.get('health-check-http-version') or 'HTTP/1.1' %}
+{%     set health_check_http_path = frontend.get('health-check-http-path') or '/' %}
+{%     set health_check_http_version = frontend.get('health-check-http-version') or 'HTTP/1.1' %}
 {%     if health_check_http_version not in ['HTTP/1.1', 'HTTP/1.0'] %}
-{%       do slave_error_list.append('Wrong health-check-http-version %s' % (health_check_http_version,)) %}
+{%       do frontend_error_list.append('Wrong health-check-http-version %s' % (health_check_http_version,)) %}
 {%     endif %}
-{%     set health_check_timeout = (slave.get('health-check-timeout') or '2') | int(false) %}
+{%     set health_check_timeout = (frontend.get('health-check-timeout') or '2') | int(false) %}
 {%     if health_check_timeout is false or health_check_timeout <= 0 %}
-{%       do slave_error_list.append('Wrong health-check-timeout %s' % (slave.get('health-check-timeout'),)) %}
+{%       do frontend_error_list.append('Wrong health-check-timeout %s' % (frontend.get('health-check-timeout'),)) %}
 {%     endif %}
-{%     set health_check_interval = (slave.get('health-check-interval') or '5') | int(false) %}
+{%     set health_check_interval = (frontend.get('health-check-interval') or '5') | int(false) %}
 {%     if health_check_interval is false or health_check_interval <= 0 %}
-{%       do slave_error_list.append('Wrong health-check-interval %s' % (slave.get('health-check-interval'),)) %}
+{%       do frontend_error_list.append('Wrong health-check-interval %s' % (frontend.get('health-check-interval'),)) %}
 {%     endif %}
-{%     set health_check_rise = (slave.get('health-check-rise') or '1') | int(false) %}
+{%     set health_check_rise = (frontend.get('health-check-rise') or '1') | int(false) %}
 {%     if health_check_rise is false or health_check_rise <= 0 %}
-{%       do slave_error_list.append('Wrong health-check-rise %s' % (slave.get('health-check-rise'),)) %}
+{%       do frontend_error_list.append('Wrong health-check-rise %s' % (frontend.get('health-check-rise'),)) %}
 {%     endif %}
-{%     set health_check_fall = (slave.get('health-check-fall') or '1') | int(false) %}
+{%     set health_check_fall = (frontend.get('health-check-fall') or '1') | int(false) %}
 {%     if health_check_fall is false or health_check_fall <= 0 %}
-{%       do slave_error_list.append('Wrong health-check-fall %s' % (slave.get('health-check-fall'),)) %}
+{%       do frontend_error_list.append('Wrong health-check-fall %s' % (frontend.get('health-check-fall'),)) %}
 {%     endif %}
 {%   endif %}
 {#   Check virtualhostroot-http-port and virtualhostroot-https-port #}
 {%   for key in ['virtualhostroot-http-port', 'virtualhostroot-https-port'] %}
-{%     set value = (slave.get(key) or '1') | int(false) %}
+{%     set value = (frontend.get(key) or '1') | int(false) %}
 {%     if value is false or value < 0 %}
-{%       do slave_error_list.append('Wrong %s %r' % (key, slave.get(key))) %}
+{%       do frontend_error_list.append('Wrong %s %r' % (key, frontend.get(key))) %}
 {%     endif %}
 {%   endfor %}
 {#   Check ciphers #}
-{%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
-{%   if slave_cipher_list %}
-{%     for cipher in slave_cipher_list %}
+{%   set frontend_cipher_list = frontend.get('ciphers', '').strip().split() %}
+{%   if frontend_cipher_list %}
+{%     for cipher in frontend_cipher_list %}
 {%       if cipher not in GOOD_CIPHER_LIST %}
 {%         if cipher in CIPHER_TRANSLATION_DICT %}
-{#           Real translation happens in instance-slave-list.cfg.in #}
-{%           do slave_warning_list.append('Cipher %r translated to %r' % (cipher, CIPHER_TRANSLATION_DICT[cipher])) %}
+{#           Real translation happens in instance-frontend-list.cfg.in #}
+{%           do frontend_warning_list.append('Cipher %r translated to %r' % (cipher, CIPHER_TRANSLATION_DICT[cipher])) %}
 {%         else %}
-{%           do slave_error_list.append('Cipher %r is not supported.' % (cipher,)) %}
+{%           do frontend_error_list.append('Cipher %r is not supported.' % (cipher,)) %}
 {%         endif %}
 {%       endif %}
 {%     endfor %}
 {%   endif %}
 {#   Check strict-transport-security #}
-{%     set strict_transport_security = (slave.get('strict-transport-security') or '0') | int(false) %}
+{%     set strict_transport_security = (frontend.get('strict-transport-security') or '0') | int(false) %}
 {%     if strict_transport_security is false or strict_transport_security < 0 %}
-{%       do slave_error_list.append('Wrong strict-transport-security %s' % (slave.get('strict-transport-security'),)) %}
+{%       do frontend_error_list.append('Wrong strict-transport-security %s' % (frontend.get('strict-transport-security'),)) %}
 {%     endif %}
-{%   set custom_domain = slave.get('custom_domain') %}
+{%   set custom_domain = frontend.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
 {%      set message = 'custom_domain %r clashes' % (custom_domain,) %}
-{%      do slave_error_list.append(message) %}
-{%      do slave_critical_error_list.append(message) %}
+{%      do frontend_error_list.append(message) %}
+{%      do frontend_critical_error_list.append(message) %}
 {%   else %}
 {%      do used_host_list.append(custom_domain) %}
 {%   endif %}
-{%   if slave.get('server-alias') %}
-{%     for slave_alias in ('' ~ slave['server-alias']).split() %}
-{%       if slave_alias.startswith('*.') %}
-{%         set clean_slave_alias = slave_alias[2:] %}
+{%   if frontend.get('server-alias') %}
+{%     for frontend_alias in ('' ~ frontend['server-alias']).split() %}
+{%       if frontend_alias.startswith('*.') %}
+{%         set clean_frontend_alias = frontend_alias[2:] %}
 {%       else %}
-{%         set clean_slave_alias = slave_alias %}
+{%         set clean_frontend_alias = frontend_alias %}
 {%       endif %}
-{%       if not validators.domain(clean_slave_alias) %}
-{%         do slave_error_list.append('server-alias \'%s\' not valid' % (slave_alias,)) %}
+{%       if not validators.domain(clean_frontend_alias) %}
+{%         do frontend_error_list.append('server-alias \'%s\' not valid' % (frontend_alias,)) %}
 {%       else %}
-{%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
+{%         if frontend_alias in frontend_server_alias_unclashed or frontend_alias == custom_domain %}
 {#           optionally do something about reporting back that server-alias has been unclashed #}
-{%         elif slave_alias in used_host_list %}
-{%           set message = 'server-alias \'%s\' clashes' % (slave_alias,) %}
-{%           do slave_error_list.append(message) %}
-{%           do slave_critical_error_list.append(message) %}
+{%         elif frontend_alias in used_host_list %}
+{%           set message = 'server-alias \'%s\' clashes' % (frontend_alias,) %}
+{%           do frontend_error_list.append(message) %}
+{%           do frontend_critical_error_list.append(message) %}
 {%         else %}
-{%           do slave_server_alias_unclashed.append(slave_alias) %}
-{%           do used_host_list.append(slave_alias) %}
+{%           do frontend_server_alias_unclashed.append(frontend_alias) %}
+{%           do used_host_list.append(frontend_alias) %}
 {%         endif %}
 {%       endif %}
 {%     endfor %}
-{%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
+{%     do frontend.__setitem__('server-alias', ' '.join(frontend_server_alias_unclashed)) %}
 {%   endif %}
 {%   for url_key in ['url', 'https-url', 'health-check-failover-url', 'health-check-failover-https-url'] %}
-{%     if url_key in slave %}
-{%       set url = (slave[url_key] or '').strip() %}
+{%     if url_key in frontend %}
+{%       set url = (frontend[url_key] or '').strip() %}
 {%       if not validators.url(url) %}
-{%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
-{%       elif url != slave[url_key] %}
-{%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
+{%         do frontend_error_list.append('frontend %s %r invalid' % (url_key, url)) %}
+{%       elif url != frontend[url_key] %}
+{%         do frontend_warning_list.append('frontend %s %r has been converted to %r' % (url_key, frontend[url_key], url)) %}
 {%       endif %}
 {%     endif %}
 {%   endfor %}
 {%   for url_key in ['url-netloc-list', 'https-url-netloc-list', 'health-check-failover-url-netloc-list'] %}
-{%     if url_key in slave %}
-{%       for netloc in slave[url_key].split() %}
+{%     if url_key in frontend %}
+{%       for netloc in frontend[url_key].split() %}
 {%         if not software.validate_netloc(netloc) %}
-{%           do slave_error_list.append('slave %s %r invalid' % (url_key, netloc)) %}
+{%           do frontend_error_list.append('frontend %s %r invalid' % (url_key, netloc)) %}
 {%         endif %}
 {%       endfor %}
 {%     endif %}
 {%   endfor %}
 {%   for k in ['ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt'] %}
-{%     if k in slave %}
-{%       set crt = slave.get(k, '') %}
+{%     if k in frontend %}
+{%       set crt = frontend.get(k, '') %}
 {%       set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
 {%       do check_popen.communicate(crt.encode()) %}
 {%       if check_popen.returncode != 0 %}
-{%         do slave_error_list.append('%s is invalid' % (k,)) %}
+{%         do frontend_error_list.append('%s is invalid' % (k,)) %}
 {%       endif %}
 {%     endif %}
 {%   endfor %}
 {# BBB: SlapOS Master non-zero knowledge BEGIN #}
 {%   for key in ['ssl_key', 'ssl_crt', 'ssl_ca_crt'] %}
-{%     if key in slave %}
-{%       do slave_warning_list.append('%s is obsolete, please use key-upload-url' % (key,)) %}
+{%     if key in frontend %}
+{%       do frontend_warning_list.append('%s is obsolete, please use key-upload-url' % (key,)) %}
 {%     endif %}
 {%   endfor %}
-{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
-{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
+{%   if frontend.get('ssl_ca_crt') and not (frontend.get('ssl_crt') and frontend.get('ssl_key')) %}
+{%     do frontend_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
 {%   endif %}
-{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
+{%   if frontend.get('ssl_key') and frontend.get('ssl_crt') %}
 {%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
 {%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'].encode())[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'].encode())[0] | trim %}
+{%     set key_modulus = key_popen.communicate(frontend['ssl_key'].encode())[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(frontend['ssl_crt'].encode())[0] | trim %}
 {%     if not key_modulus or key_modulus != crt_modulus  %}
-{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
+{%       do frontend_error_list.append('frontend ssl_key and ssl_crt does not match')  %}
 {%     endif %}
 {%   endif %}
 {# BBB: SlapOS Master non-zero knowledge END #}
-{%   if slave.get('custom_domain') %}
-{%     set slave_custom_domain = '' ~ slave['custom_domain'] %}
-{%     if slave_custom_domain.startswith('*.') %}
-{%       set clean_custom_domain = slave_custom_domain[2:] %}
+{%   if frontend.get('custom_domain') %}
+{%     set frontend_custom_domain = '' ~ frontend['custom_domain'] %}
+{%     if frontend_custom_domain.startswith('*.') %}
+{%       set clean_custom_domain = frontend_custom_domain[2:] %}
 {%     else %}
-{%       set clean_custom_domain = slave_custom_domain %}
+{%       set clean_custom_domain = frontend_custom_domain %}
 {%     endif %}
 {%     if not validators.domain(clean_custom_domain) %}
-{%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}
+{%       do frontend_error_list.append('custom_domain %r invalid' % (frontend['custom_domain'],)) %}
 {%     endif %}
 {%   endif %}
-{%   if len(slave_error_list) == 0 %}
-{#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
-{#   Send only controlled information about the slave to node #}
-{%     set authorized_slave = {} %}
-{%     for key in FRONTEND_NODE_SLAVE_PASSED_KEY_LIST %}
-{%       if key in slave %}
-{%         do authorized_slave.__setitem__(key, slave[key]) %}
+{%   if len(frontend_error_list) == 0 %}
+{#   Cleanup frontend from not needed keys which come from implementation of SlapOS Master #}
+{#   Send only controlled information about the frontend to node #}
+{%     set authorized_frontend = {} %}
+{%     for key in FRONTEND_NODE_FRONTEND_PASSED_KEY_LIST %}
+{%       if key in frontend %}
+{%         do authorized_frontend.__setitem__(key, frontend[key]) %}
 {%       endif %}
 {%     endfor %}
-{%     do authorized_slave_list.append(authorized_slave) %}
+{%     do authorized_frontend_list.append(authorized_frontend) %}
 {%   else %}
-{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_error_list)) %}
+{%     do rejected_frontend_dict.__setitem__(frontend.get('slave_reference'), sorted(frontend_error_list)) %}
 {%   endif %}
-{%   if len(slave_critical_error_list) > 0 %}
-{%     do critical_rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_critical_error_list)) %}
+{%   if len(frontend_critical_error_list) > 0 %}
+{%     do critical_rejected_frontend_dict.__setitem__(frontend.get('slave_reference'), sorted(frontend_critical_error_list)) %}
 {%   endif %}
-{%   if len(slave_warning_list) > 0 %}
-{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
+{%   if len(frontend_warning_list) > 0 %}
+{%     do warning_frontend_dict.__setitem__(frontend.get('slave_reference'), sorted(frontend_warning_list)) %}
 {%   endif %}
 {% endfor %}
-{% do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
+{% do authorized_frontend_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
@@ -392,7 +391,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-information-json
+return = frontend-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-information-json
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
@@ -410,7 +409,7 @@ state = {{ state }}
 {%   endif %}
 {#   Do not send additional parameters for destroyed nodes #}
 {%   if state != 'destroyed' %}
-config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
+config-frontend-kedifa-information = ${request-kedifa:connection-frontend-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-backend-client-caucase-url = {{ caucase_url }}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
@@ -419,7 +418,7 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 {%     do node_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 {%     do node_configuration_dict.__setitem__("frontend-list", json_module.dumps([])) %} {# XXX Upward compatbility #}
-{%     do node_configuration_dict.__setitem__("extra_slave_instance_list", json_module.dumps(authorized_slave_list, sort_keys=True)) %} {# XXX Backward compatibility #}
+{%     do node_configuration_dict.__setitem__("extra_slave_instance_list", json_module.dumps(authorized_frontend_list, sort_keys=True)) %} {# XXX Backward compatibility #}
 {%     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 {%-     for config_key, config_value in node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
@@ -449,13 +448,13 @@ return =
 <= monitor-publish
 recipe = slapos.cookbook:publish
 domain = {{ instance_parameter_dict['configuration'].get('domain') }}
-slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
-accepted-slave-amount = {{ authorized_slave_list | length }}
-rejected-slave-amount = {{ rejected_slave_dict | length }}
+frontend-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
+accepted-frontend-amount = {{ authorized_frontend_list | length }}
+rejected-frontend-amount = {{ rejected_frontend_dict | length }}
 backend-client-caucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
-rejected-slave-promise-url = ${rejected-slave-promise:config-url}
+rejected-frontend-dict = {{ dumps(json_module.dumps(rejected_frontend_dict, sort_keys=True)) }}
+rejected-frontend-promise-url = ${rejected-frontend-promise:config-url}
 publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
@@ -464,9 +463,9 @@ kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 {% endif %}
-{% if len(warning_slave_dict) > 0 %}
+{% if len(warning_frontend_dict) > 0 %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
+warning-frontend-dict = {{ dumps(json_module.dumps(warning_frontend_dict, sort_keys=True)) }}
 {% endif %}
 {% if not aikc_enabled or not aibcc_enabled %}
 {% for index, frontend in enumerate(frontend_list) %}
@@ -485,7 +484,7 @@ frontend-node-{{ index + 1 }}-kedifa-csr-url = {{ section_part }}:connection-ked
 {% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
 frontend-node-{{ index + 1 }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
-frontend-node-{{ index + 1 }}-node-information-json = ${frontend-information:frontend-node-{{ index + 1 }}-node-information-json}
+frontend-node-{{ index + 1 }}-node-information-json = ${frontend-node-information:frontend-node-{{ index + 1 }}-node-information-json}
 {% endfor %}
 {% if not aibcc_enabled %}
 {% for index, frontend in enumerate(frontend_list) %}
@@ -509,14 +508,14 @@ config-url =
 
 #----------------------------
 #--
-#-- Publish slave information
-[publish-slave-information]
+#-- Publish frontend information
+[publish-frontend-information]
 recipe = slapos.cookbook:switch-softwaretype
-default = instance-publish-slave-information:output
+default = instance-publish-frontend-information:output
 RootSoftwareInstance = ${:default}
-replicate = instance-publish-slave-information:output
-custom-personal = instance-publish-slave-information:output
-custom-group = instance-publish-slave-information:output
+replicate = instance-publish-frontend-information:output
+custom-personal = instance-publish-frontend-information:output
+custom-group = instance-publish-frontend-information:output
 
 [request-kedifa]
 <= slap-connection
@@ -533,7 +532,7 @@ config-rotate-num = {{ instance_parameter_dict['configuration'].get('rotate-num'
 config-{{ key }} = {{ dumps(instance_parameter_dict['configuration'][key]) }}
 {%-   endif %}
 {%- endfor %}
-config-slave-list = {{ dumps(authorized_slave_list) }}
+config-frontend-list = {{ dumps(authorized_frontend_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
@@ -544,7 +543,7 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = kedifa
 name = kedifa
-return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url kedifa-csr-url csr-certificate  monitor-base-url
+return = frontend-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url kedifa-csr-url csr-certificate  monitor-base-url
 {% set sla_kedifa_key = "-sla-kedifa-" %}
 {% set sla_kedifa_key_length = sla_kedifa_key | length %}
 {% for key in list(instance_parameter_dict['configuration'].keys()) %}
@@ -553,45 +552,45 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ instance_parameter_dict['configuratio
 {%   endif %}
 {% endfor %}
 
-[rejected-slave-information]
-rejected-slave-dict = {{ dumps(rejected_slave_dict) }}
+[rejected-frontend-information]
+rejected-frontend-dict = {{ dumps(rejected_frontend_dict) }}
 
-[warning-slave-information]
-warning-slave-dict = {{ dumps(warning_slave_dict) }}
+[warning-frontend-information]
+warning-frontend-dict = {{ dumps(warning_frontend_dict) }}
 
-[slave-information]
+[frontend-information]
 {% for frontend_section in frontend_section_list %}
-{{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
+{{ frontend_section }} = {{ "${%s:connection-frontend-instance-information-list}" % frontend_section }}
 {% endfor %}
 
-[active-slave-instance]
+[active-frontend-instance]
 {% set active_frontend_list = [] %}
-{% for slave_instance in instance_parameter_dict['slave-instance-list'] %}
+{% for frontend in instance_parameter_dict['slave-instance-list'] %}
 {# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
 {# Note: This functionality is not yet covered by tests, please modify with care #}
-{%   do active_frontend_list.append(slave_instance['slave_reference']) %}
+{%   do active_frontend_list.append(frontend['slave_reference']) %}
 {% endfor %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 active-frontend-list = {{ json_module.dumps(active_frontend_list, sort_keys=True) }}
 
-[frontend-information]
+[frontend-node-information]
 {% for index, frontend in enumerate(frontend_list) %}
   {% set section_part = '${request-' + frontend %}
 frontend-node-{{ index + 1 }}-node-information-json = {{ section_part }}:connection-node-information-json}
 {% endfor %}
 
-[instance-publish-slave-information]
+[instance-publish-frontend-information]
 < = jinja2-template-base
-url = {{ software_parameter_dict['profile_master_publish_slave_information'] }}
-filename = instance-publish-slave-information.cfg
+url = {{ software_parameter_dict['profile_master_publish_frontend_information'] }}
+filename = instance-publish-frontend-information.cfg
 extensions = jinja2.ext.do
 extra-context =
-    section slave_information slave-information
     section frontend_information frontend-information
-    section rejected_slave_information rejected-slave-information
-    section active_slave_instance_dict active-slave-instance
-    section warning_slave_information warning-slave-information
-    key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
+    section frontend_node_information frontend-node-information
+    section rejected_frontend_information rejected-frontend-information
+    section active_frontend_instance_dict active-frontend-instance
+    section warning_frontend_information warning-frontend-information
+    key frontend_kedifa_information request-kedifa:connection-frontend-kedifa-information
     key publish_failsafe_error directory:publish-failsafe-error-var
 
 [monitor-base-url-dict]
@@ -611,7 +610,7 @@ caucased = ${:srv}/caucased
 backup-caucased = ${:backup}/caucased
 # NGINX
 master-introspection-var = ${:var}/master-introspection-nginx
-# slaves
+# frontends
 publish-failsafe-error-var = ${:var}/publish-failsafe-error
 publish-failsafe-check-var = ${:var}/publish-failsafe-check
 
@@ -860,15 +859,15 @@ update-command = ${:command}
 {% endfor %}
 {% endif %} {# if aibcc_enabled #}
 
-[rejected-slave-json]
+[rejected-frontend-json]
 recipe = slapos.recipe.template:jinja2
-filename = rejected-slave.json
+filename = rejected-frontend.json
 directory = ${directory:promise-output}
 output = ${:directory}/${:filename}
 url = {{ software_parameter_dict['template_empty'] }}
-{% if critical_rejected_slave_dict %}
+{% if critical_rejected_frontend_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-content = {{ dumps(json_module.dumps(critical_rejected_slave_dict, indent=2, sort_keys=True)) }}
+content = {{ dumps(json_module.dumps(critical_rejected_frontend_dict, indent=2, sort_keys=True)) }}
 {% else %}
 content =
 {% endif %}
@@ -920,8 +919,8 @@ init =
   url.set(path = '')
   options['frontend-url'] = url.tostr()
 
-[rejected-slave-publish]
-url = ${master-introspection-frontend-url:frontend-url}/${master-introspection-template:rejected-slave-path}/${rejected-slave-json:filename}
+[rejected-frontend-publish]
+url = ${master-introspection-frontend-url:frontend-url}/${master-introspection-template:rejected-frontend-path}/${rejected-frontend-json:filename}
 
 [master-introspection-certificate]
 recipe = plone.recipe.command
@@ -958,7 +957,7 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${master-intros
 recipe = slapos.recipe.template:jinja2
 var = ${directory:master-introspection-var}
 pid = ${directory:var}/nginx-master-introspection-server.pid
-rejected-slave-path = rejected-slave
+rejected-frontend-path = rejected-frontend
 publish-failsafe-error-path = publish-failsafe-error
 inline =
   daemon off;
@@ -984,8 +983,8 @@ inline =
       scgi_temp_path ${:var} 1 2;
       auth_basic "Master Introspection";
       auth_basic_user_file ${master-introspection-htpasswd:file};
-      location /${:rejected-slave-path} {
-        alias ${rejected-slave-json:directory}/;
+      location /${:rejected-frontend-path} {
+        alias ${rejected-frontend-json:directory}/;
         autoindex off;
         sendfile on;
         sendfile_max_chunk 1m;
@@ -1008,13 +1007,13 @@ name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
 
-[rejected-slave-promise]
+[rejected-frontend-promise]
 <= monitor-promise-base
 promise = check_file_state
-name = rejected-slave.py
-config-filename = ${rejected-slave-json:output}
+name = rejected-frontend.py
+config-filename = ${rejected-frontend-json:output}
 config-state = empty
-config-url = ${rejected-slave-publish:url}
+config-url = ${rejected-frontend-publish:url}
 
 [master-key-upload-url-ready]
 recipe = slapos.recipe.build
@@ -1094,12 +1093,12 @@ extends =
   {{ software_parameter_dict['profile_monitor2'] }}
 parts =
   monitor-base
-  publish-slave-information
+  publish-frontend-information
   check-publish-failsafe-error
   publish-failsafe-error-promise
   publish-information
   request-kedifa
-  rejected-slave-promise
+  rejected-frontend-promise
   master-introspection-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise

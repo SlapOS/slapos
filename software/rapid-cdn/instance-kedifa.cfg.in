@@ -13,7 +13,7 @@ parts =
   kedifa
   logrotate-entry-kedifa
   promise-kedifa-http-reply
-  slave-kedifa-information
+  frontend-kedifa-information
   caucased
   caucased-promise
   caucase-updater
@@ -248,16 +248,16 @@ command-line = {{ software_parameter_dict['kedifa'] }}
 wrapper-path = ${directory:service}/kedifa
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-# Publish KeDiFa configuration for upload and download for each slave
-{%- set slave_kedifa_information = {} -%}
-{%- for slave in instance_parameter_dict['configuration']['slave-list'] -%}
-{%-   set slave_reference = slave['slave_reference'] -%}
-{%-   set slave_dict = {} -%}
-{%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
-{%-   do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
-{%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
+# Publish KeDiFa configuration for upload and download for each frontend
+{%- set frontend_kedifa_information = {} -%}
+{%- for frontend in instance_parameter_dict['configuration']['frontend-list'] -%}
+{%-   set slave_reference = frontend['slave_reference'] -%}
+{%-   set frontend_dict = {} -%}
+{%-   do frontend_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
+{%-   do frontend_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
+{%-   do frontend_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
+{%-   do frontend_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
+{%-   do frontend_kedifa_information.__setitem__(slave_reference, frontend_dict) %}
 [{{ slave_reference }}-auth-random-generate]
 recipe = plone.recipe.command
 file = ${directory:reservation}/${:_buildout_section_name_}
@@ -279,7 +279,7 @@ command =
 update-command = ${:command}
 
 [cleanup-auth-ready]
-# Cleans auth-ready as some slaves can appear and be configured, but then
+# Cleans auth-ready as some frontends can appear and be configured, but then
 # become removed before auth-random kicks in
 recipe = slapos.recipe.build
 directory = ${directory:auth-ready}
@@ -310,10 +310,10 @@ init =
 <= auth-random
 file = ${master-auth-random-generate:file}
 
-[slave-kedifa-information]
+[frontend-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information, sort_keys=True) }}
+frontend-kedifa-information = {{ json_module.dumps(frontend_kedifa_information, sort_keys=True) }}
 caucase-url = {{ caucase_url }}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
