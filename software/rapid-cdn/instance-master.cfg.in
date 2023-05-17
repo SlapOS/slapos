@@ -122,7 +122,6 @@ context =
 {% set single_type_key = 'single-' %}
 {% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% set frontend_quantity = instance_parameter_dict['configuration'].pop('-frontend-quantity', '1') | int %}
-{% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
@@ -400,6 +399,7 @@ return = slave-instance-information-list monitor-base-url backend-client-csr-url
 {%- for key, value in FRONTEND_PARAMETER_DICT.items() %}
 {%-   do base_node_configuration_dict.__setitem__(key,  value) %}
 {%- endfor %}
+{%- set SLAVE_INSTANCE_LIST = json_module.dumps(authorized_slave_list, sort_keys=True) %}
 {% for section, frontend_request in request_dict.items() %}
 {%   set state = frontend_request.get('state', '') %}
 [{{section}}]
@@ -419,7 +419,8 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 {%     set node_configuration_dict = {} %}
 {%     do node_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-{%     do node_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
+{%     do node_configuration_dict.__setitem__("slave-instance-list", SLAVE_INSTANCE_LIST) %}
+{%     do node_configuration_dict.__setitem__("extra_slave_instance_list", SLAVE_INSTANCE_LIST) %} {# XXX Backward compatibility #}
 {%     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 {%-     for config_key, config_value in node_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
