@@ -34,6 +34,7 @@ import json
 import os
 import shutil
 import socket
+import sqlite3
 import ssl
 import subprocess
 import sys
@@ -48,7 +49,7 @@ import xmlrpc.client
 import urllib3
 from slapos.testing.utils import CrontabMixin
 
-from . import ERP5InstanceTestCase, setUpModule, matrix, default
+from . import ERP5InstanceTestCase, setUpModule, matrix, default, neo
 
 setUpModule # pyflakes
 
@@ -1004,3 +1005,66 @@ class TestCloudoooDefaultParameter(ZopeSkinsMixin, ERP5InstanceTestCase):
             'portal_preferences/getPreferredDocumentConversionServerRetry'),
           verify=False).text,
       "2")
+
+
+class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
+  """Tests specific to neo storage
+  """
+  __partition_reference__ = 'n'
+  __test_matrix__ = matrix((neo,))
+
+  def _getCrontabCommand(self, crontab_name):
+    # type: (str) -> str
+    """Read a crontab and return the command that is executed.
+
+    overloaded to use crontab from neo partition
+    """
+    with open(
+        os.path.join(
+            self.getComputerPartitionPath('neo-0'),
+            'etc',
+            'cron.d',
+            crontab_name,
+        )) as f:
+      crontab_spec, = f.readlines()
+    self.assertNotEqual(crontab_spec[0], '@', crontab_spec)
+    return crontab_spec.split(None, 5)[-1]
+
+  def test_log_rotation(self):
+    # first run to create state files
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+
+    def check_sqlite_log(path):
+      with self.subTest(path), contextlib.closing(sqlite3.connect(path)) as con:
+        con.execute('select * from log')
+
+    logfiles = ('neoadmin.log', 'neomaster.log', 'neostorage-0.log')
+    for f in logfiles:
+      check_sqlite_log(
+        os.path.join(
+          self.getComputerPartitionPath('neo-0'),
+          'var',
+          'log',
+          f))
+
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+
+    for f in logfiles:
+      check_sqlite_log(
+        os.path.join(
+          self.getComputerPartitionPath('neo-0'),
+          'srv',
+          'backup',
+          'logrotate',
+          f'{f}-20500101'))
+
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    requests.get(self._getAuthenticatedZopeUrl('/'), verify=False).raise_for_status()
+
+    for f in logfiles:
+      check_sqlite_log(
+        os.path.join(
+          self.getComputerPartitionPath('neo-0'),
+          'var',
+          'log',
+          f))
