@@ -66,15 +66,29 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import \
+  makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
+
+BACKWARD_COMPATBILITY_SR_URL = \
+  'https://lab.nexedi.com/nexedi/slapos/raw/' \
+  '1.0.344' \
+  '/software/rapid-cdn/software.cfg'
+
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  software_url = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+  setUpModule_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    software_url)
+
+  def setUpModule():
+    installSoftwareUrlList(
+      SlapOSInstanceTestCase,
+      [software_url, BACKWARD_COMPATBILITY_SR_URL],
+      debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))))
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -399,27 +413,44 @@ class TestDataMixin(object):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
-    hash_file_list = [os.path.join(
-        self.computer_partition_root_path, 'software_release/buildout.cfg')]
-    data_replacement_dict = {
-      '{hash-generic}': generateHashFromFiles(hash_file_list)
-    }
-    for backend_haproxy_wrapper_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
-      partition_id = backend_haproxy_wrapper_path.split('/')[-3]
-      data_replacement_dict['{hash-backend-haproxy-%s}' % (partition_id)] =  \
-          generateHashFromFiles([
-            backend_haproxy_wrapper_path] + hash_file_list)
-    for rejected_slave_publish_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'nginx-master-introspection.conf')):
-      partition_id = rejected_slave_publish_path.split('/')[-3]
-      rejected_slave_pem_path = os.path.join(
-        self.instance_path, partition_id, 'etc', 'master-introspection.pem')
-      data_replacement_dict[
-        '{hash-master-introspection}'
-      ] = generateHashFromFiles(
-        [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
-      )
+    def detectSoftwarReleaseFromBuildout(buildout):
+      with open(buildout) as fh:
+        for line in fh.readlines():
+          if line.startswith('extends'):
+            if line.split('=')[1].strip().startswith('http'):
+              return 'PREVIOUS'
+            else:
+              return 'CURRENT'
+
+    data_replacement_dict = {}
+    for hash_file in glob.glob(os.path.join(
+      self.instance_path, '*', 'software_release', 'buildout.cfg')):
+
+      partition_id = hash_file.split('/')[-3]
+      hash_file_list = [hash_file]
+      software_release = detectSoftwarReleaseFromBuildout(hash_file)
+      data_replacement_dict['{hash-sr-%s}' % (
+          software_release,)] = generateHashFromFiles(hash_file_list)
+
+      backend_haproxy_wrapper_path = os.path.join(
+        self.instance_path, partition_id, 'bin', 'backend-haproxy-wrapper')
+      if os.path.exists(backend_haproxy_wrapper_path):
+        data_replacement_dict[
+          '{hash-sr-%s-%s-backend-haproxy}' % (
+            software_release, partition_id,)] = generateHashFromFiles([
+              backend_haproxy_wrapper_path] + hash_file_list)
+      master_introspection_conf_path = os.path.join(
+        self.instance_path, partition_id, 'etc',
+        'nginx-master-introspection.conf')
+      if os.path.exists(master_introspection_conf_path):
+        master_introspection_pem_path = os.path.join(
+          self.instance_path, partition_id, 'etc', 'master-introspection.pem')
+        data_replacement_dict[
+          '{hash-sr-%s-master-introspection}' % (software_release,)
+        ] = generateHashFromFiles(
+          [master_introspection_conf_path,
+           master_introspection_pem_path] + hash_file_list
+        )
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(
@@ -4811,6 +4842,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('X-Backend-Identification', result.headers)
 
 
+class TestSlaveBackwardCompatbility(TestSlave):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = cls.parameter_dict.copy()
+    parameter_dict.update(**{
+      '-frontend-1-software-release-url': BACKWARD_COMPATBILITY_SR_URL,
+      '-frontend-1-legacy-enable-http3-string': True,
+    })
+    return parameter_dict
+
+
 class TestSlaveHttp3(TestSlave):
   parameter_dict = {
     'domain': 'example.com',
@@ -4819,7 +4861,7 @@ class TestSlaveHttp3(TestSlave):
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
     'request-timeout': '12',
-    'enable-http3': 'True',
+    'enable-http3': True,
     'http3-port': HTTPS_PORT,
   }
   max_client_version = '3.0'
@@ -6823,18 +6865,18 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
-        'backend-haproxy-http-port': '21080',
-        'backend-haproxy-https-port': '21443',
-        'backend-haproxy-statistic-port': '21444',
+        'backend-haproxy-http-port': 21080,
+        'backend-haproxy-https-port': 21443,
+        'backend-haproxy-statistic-port': 21444,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6844,8 +6886,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '512K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
+        'rotate-num': 4000,
+        'slave-introspection-https-port': 22443,
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-2': {
@@ -6856,18 +6898,18 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
-        'backend-haproxy-http-port': '21080',
-        'backend-haproxy-https-port': '21443',
-        'backend-haproxy-statistic-port': '21444',
+        'backend-haproxy-http-port': 21080,
+        'backend-haproxy-https-port': 21443,
+        'backend-haproxy-statistic-port': 21444,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6877,8 +6919,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '256K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
+        'rotate-num': 4000,
+        'slave-introspection-https-port': 22443,
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-3': {
@@ -6889,18 +6931,18 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
-        'backend-haproxy-http-port': '21080',
-        'backend-haproxy-https-port': '21443',
-        'backend-haproxy-statistic-port': '21444',
+        'backend-haproxy-http-port': 21080,
+        'backend-haproxy-https-port': 21443,
+        'backend-haproxy-statistic-port': 21444,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -6910,10 +6952,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '1G',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
+        'rotate-num': 4000,
+        'slave-introspection-https-port': 22443,
         'slave-kedifa-information': '{}'
       },
       'kedifa': {
@@ -6924,7 +6964,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': '8402',
         'monitor-username': 'admin',
-        'rotate-num': '4000',
+        'rotate-num': 4000,
         'slave-list': []
       },
       'testing partition 0': {
@@ -7107,7 +7147,7 @@ backend _health-check-connect-http
   timeout connect 5s
   retries 3
   server _health-check-connect-backend-http %s   check inter 5s"""
-      """ rise 1 fall 2
+      """ rise 1 fall 1
   timeout check 2s""" % (backend,),
       'health-check-custom': """\
 backend _health-check-custom-http
@@ -7124,7 +7164,7 @@ backend _health-check-default-http
   timeout connect 5s
   retries 3
   server _health-check-default-backend-http %s   check inter 5s"""
-      """ rise 1 fall 2
+      """ rise 1 fall 1
   option httpchk GET / HTTP/1.1
   timeout check 2s""" % (backend, )
     }
