@@ -37,6 +37,33 @@ kedifa = dynamic-profile-kedifa:output
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
+[schema-json-to-default]
+recipe = slapos.recipe.build
+init =
+  import json
+  default_dict = dict()
+  with open(options['input']) as fh:
+    input_json = json.load(fh)
+  for property, value_dict in input_json['properties'].items():
+    if 'default' in value_dict:
+      if value_dict['default'] in ['false', 'true']:
+        # input schema json type is mostly incorrect, so guess the most
+        # important boolean type
+        default_dict[property] = value_dict['default'] == 'true'
+      else:
+        default_dict[property] = value_dict['default']
+    else:
+      default_dict[property] = None
+  options['defaults'] = default_dict
+
+[instance-slave-default]
+<= schema-json-to-default
+input = {{ software_parameter_dict['instance_slave_input_schema'] }}
+
+[instance-default]
+<= schema-json-to-default
+input = {{ software_parameter_dict['instance_input_schema'] }}
+
 [dynamic-profile-frontend]
 < = jinja2-template-base
 url = {{ software_parameter_dict['profile_frontend'] }}
@@ -44,6 +71,7 @@ filename = instance-frontend.cfg
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
+  key SLAVE_DEFAULTS instance-slave-default:defaults
 
 [dynamic-profile-master]
 < = jinja2-template-base
@@ -56,6 +84,8 @@ extra-context =
     import operator_module operator
     import validators validators
     import software software
+    key CLUSTER_DEFAULTS instance-default:defaults
+    key SLAVE_DEFAULTS instance-slave-default:defaults
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
