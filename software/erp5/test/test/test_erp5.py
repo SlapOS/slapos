@@ -790,6 +790,39 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
     self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
     self.assertFalse(os.path.exists(rotated_log_file))
 
+  def test_neo_root_log_rotation(self):
+    zope_neo_root_log_path = os.path.join(
+      self.getComputerPartitionPath('zope-default'),
+      'var',
+      'log',
+      'zope-0-neo-root.log',
+    )
+    if not self.isNEO():
+      self.assertFalse(os.path.exists(zope_neo_root_log_path))
+      return
+
+    def check_sqlite_log(path):
+      with contextlib.closing(sqlite3.connect(path)) as con:
+        con.execute('select * from log')
+
+    check_sqlite_log(zope_neo_root_log_path)
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+
+    rotated_log_file = os.path.join(
+      self.getComputerPartitionPath('zope-default'),
+      'srv',
+      'backup',
+      'logrotate',
+      'zope-0-neo-root.log-20500101',
+    )
+    check_sqlite_log(rotated_log_file)
+
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
+    self.assertFalse(os.path.exists(rotated_log_file))
+    requests.get(self._getAuthenticatedZopeUrl('/'), verify=False).raise_for_status()
+    check_sqlite_log(zope_neo_root_log_path)
+
   def test_basic_authentication_user_in_access_log(self):
     param_dict = self.getRootPartitionConnectionParameterDict()
     requests.get(self.zope_base_url,
@@ -867,7 +900,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         'zope-2-Z2.log',
         'zope-2-event.log',
         'zope-2-neo-root.log',
-      ] if '_neo' in self.__class__.__name__ else [
+      ] if self.isNEO() else [
         'zope-0-Z2.log',
         'zope-0-event.log',
         'zope-1-Z2.log',
