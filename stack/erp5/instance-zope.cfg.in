@@ -308,14 +308,14 @@ port = {{ port }}
 event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
 node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
-{% set log_list = [] -%}
+{% set neo_log_list = [] -%}
 {% set import_set = set() -%}
 {% for db_name, zodb in six.iteritems(zodb_dict) -%}
 {%   do zodb.setdefault('pool-size', thread_amount) -%}
 {%   if zodb['type'] == 'neo' -%}
 {%     do import_set.add('neo.client') -%}
 {%     set log = name ~ '-neo-' ~ db_name ~ '.log' -%}
-{%     do log_list.append('${directory:log}/' + log) -%}
+{%     do neo_log_list.append('${directory:log}/' + log) -%}
 {%     do zodb['storage-dict'].update(logfile='~/var/log/'+log) -%}
 {%   endif -%}
 {% endfor -%}
@@ -350,6 +350,7 @@ wrapped-command-line =
     '${:configuration-file}'
     --threads={{ thread_amount }}
     --large-file-threshold={{ slapparameter_dict['large-file-threshold'] }}
+    --pidfile={{ '${' ~ conf_parameter_name ~ ':pid-file}' }}
 {%- set private_dev_shm = slapparameter_dict['private-dev-shm'] %}
 {%- if private_dev_shm %}
 private-tmpfs = {{ private_dev_shm }} /dev/shm
@@ -408,8 +409,18 @@ config-maximum-delay = {{ slapparameter_dict["zope-longrequest-logger-maximum-de
 [{{ section('logrotate-entry-' ~ name) }}]
 < = logrotate-entry-base
 name = {{ name }}
-log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
+log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
 copytruncate = true
+
+{% if neo_log_list -%}
+[{{ section('logrotate-entry-neo-' ~ name) }}]
+< = logrotate-entry-base
+name = neo-{{ name }}
+log = {{ ' '.join(neo_log_list) }}
+# we don't use copytruncate on neo logs, they are not regular text files but sqlite databases
+copytruncate =
+post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
+{% endif %}
 {% endmacro -%}
 
 {% for i in instance_index_list -%}
