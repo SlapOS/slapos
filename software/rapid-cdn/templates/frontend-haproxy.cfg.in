@@ -128,7 +128,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-after-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
 {%-             endif %}
 {%-           endif %}
-{%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}
+{%-           for disabled_cookie in slave_instance['disabled-cookie-list'].split() %}
   http-request replace-header Cookie (.*)(^{{ disabled_cookie | replace('%', '%%') }}=[^;]*;\ |;\ {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*) \1\3
 {%-           endfor %}
 {%-           if slave_instance['disable-no-cache-request'] %}
