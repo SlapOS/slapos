@@ -60,12 +60,19 @@ context =
 {#-     * create real lists from string lists #}
 {#-     * setup defaults to simplify other profiles #}
 {#-     * stabilise values for backend #}
+{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend', 'strict-transport-security', 'strict-transport-security-sub-domains', 'strict-transport-security-preload', 'disabled-cookie-list', 'https-only', 'websocket-transparent', 'virtualhostroot-http-port', 'virtualhostroot-https-port', 'ssl-proxy-verify', 'health-check-failover-ssl-proxy-verify', 'authenticate-to-backend', 'health-check-authenticate-to-failover-backend', 'health-check'] %}
+{#-     Use hint of a detect type to react correctly for booleans in order to simplify other checks against booleans #}
+{%-     if SLAVE_DEFAULTS[key] in [True, False] %}
+{%-       do slave_instance.__setitem__(key, ('' ~ (slave_instance.get(key) or SLAVE_DEFAULTS[key])).lower() in TRUE_VALUES) %}
+{%-     else %}
+{%-       do slave_instance.__setitem__(key, slave_instance.get(key) or SLAVE_DEFAULTS[key]) %}
+{%-     endif %}
+{%-   endfor %}
 {%-   for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
 {%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
 {%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment, 'query': parsed.query, 'netloc-list': slave_instance.get(key + '-netloc-list', '').split()} %}
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
-{%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {%-   for key, prefix in [('health-check-failover-url', 'http_backend'), ('health-check-failover-https-url', 'https_backend')] %}
 {%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
 {%-     set info_dict = slave_instance[prefix] %}
@@ -78,21 +85,8 @@ context =
 {%-     do info_dict.__setitem__('health-check-netloc-list', slave_instance.get('health-check-failover-url-netloc-list', '').split()) %}
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
-{%-   do slave_instance.__setitem__('health-check-failover-ssl-proxy-verify', ('' ~ slave_instance.get('health-check-failover-ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
-{%-   for key in ['https-only', 'websocket-transparent'] %}
-{%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
-{%-   endfor %}
-{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
-{%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'false')).lower() in TRUE_VALUES) %}
-{%-   endfor %}
-{%-   for key in ['disabled-cookie-list'] %}
-{%-     do slave_instance.__setitem__(key, slave_instance.get(key, '').split()) %}
-{%-   endfor %}
-{%-   for key, default in [('virtualhostroot-http-port', '80'), ('virtualhostroot-https-port', '443'), ('strict-transport-security', '0')] %}
-{%-     do slave_instance.__setitem__(key, int(slave_instance.get(key, default))) %}
-{%-   endfor %}
-{%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
-{%-   do slave_instance.__setitem__('path', slave_instance.get('path', '').strip('/')) %}
+{%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', SLAVE_DEFAULTS['default-path']).strip('/') | urlencode) %}
+{%-   do slave_instance.__setitem__('path', slave_instance.get('path', SLAVE_DEFAULTS['path']).strip('/')) %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = [] %}
 {%-   for cipher in slave_instance.get('ciphers', '').strip().split() %}
@@ -105,7 +99,7 @@ context =
 {%-   endif %}
 {%-   do slave_instance.__setitem__('ciphers', slave_cipher_list) %}
 {#-   Manage common instance parameters #}
-{%-   set slave_type = slave_instance.get('type', '') %}
+{%-   set slave_type = slave_instance.get('type', SLAVE_DEFAULTS['type']) %}
 {%-   set enable_cache = (slave_instance['enable_cache'] and slave_type != 'redirect') %}
 {%-   set slave_reference = slave_instance.get('slave_reference') %}
 {%-   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
@@ -169,28 +163,25 @@ context =
 {%-     endif %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('strict-transport-security', int(slave_instance['strict-transport-security'])) %}
-{%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
-{%-   do slave_instance.__setitem__('health-check-authenticate-to-failover-backend', ('' ~ slave_instance.get('health-check-authenticate-to-failover-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Setup active check #}
-{%-   do slave_instance.__setitem__('health-check',  ('' ~ slave_instance.get('health-check', '')).lower() in TRUE_VALUES) %}
 {%-   if slave_instance['health-check']  %}
 {%-     if 'health-check-http-method' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-http-method', 'GET') %}
+{%-       do slave_instance.__setitem__('health-check-http-method', SLAVE_DEFAULTS['health-check-http-method']) %}
 {%-     endif %}
 {%-     if 'health-check-http-version' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-http-version', 'HTTP/1.1') %}
+{%-       do slave_instance.__setitem__('health-check-http-version', SLAVE_DEFAULTS['health-check-http-version']) %}
 {%-     endif %}
 {%-     if 'health-check-interval' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-interval', '5') %}
+{%-       do slave_instance.__setitem__('health-check-interval', SLAVE_DEFAULTS['health-check-interval']) %}
 {%-     endif %}
 {%-     if 'health-check-rise' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-rise', '1') %}
+{%-       do slave_instance.__setitem__('health-check-rise', SLAVE_DEFAULTS['health-check-rise']) %}
 {%-     endif %}
 {%-     if 'health-check-fall' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-fall', '2') %}
+{%-       do slave_instance.__setitem__('health-check-fall', SLAVE_DEFAULTS['health-check-fall']) %}
 {%-     endif %}
 {%-     if 'health-check-timeout' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-timeout', '2') %}
+{%-       do slave_instance.__setitem__('health-check-timeout', SLAVE_DEFAULTS['health-check-timeout']) %}
 {%-     endif %}
 {%-     do slave_instance.__setitem__('health-check-http-path', slave_instance.get('health-check-http-path') or '/') %}
 {%-   else %}
@@ -225,7 +216,7 @@ context =
 {%-   do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) %}
-{%-   set host_list = slave_instance.get('server-alias', '').split() %}
+{%-   set host_list = slave_instance.get('server-alias', SLAVE_DEFAULTS['server-alias']).split() %}
 {%-   if slave_instance.get('custom_domain') not in host_list %}
 {%-     do host_list.append(slave_instance.get('custom_domain')) %}
 {%-   endif %}
@@ -244,7 +235,7 @@ context =
 {%-     endif %}
 {%-   endif %}
 {%-   set websocket_path_list = [] %}
-{%-   for websocket_path in slave_instance.get('websocket-path-list', '').split() %}
+{%-   for websocket_path in slave_instance.get('websocket-path-list', SLAVE_DEFAULTS['websocket-path-list']).split() %}
 {%-     set websocket_path = websocket_path.strip('/') %}
 {#-   Unquote the path, so %20 and similar can be represented correctly #}
 {%-     set websocket_path = urllib_module.parse.unquote(websocket_path.strip()) %}
@@ -357,7 +348,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 < = jinja2-template-base
 url = {{ empty_template }}
 output = {{ cert_file }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt', SLAVE_DEFAULTS['ssl_crt']) + '\n' + slave_instance.get('ssl_ca_crt', SLAVE_DEFAULTS['ssl_ca_crt']) + '\n' + slave_instance.get('ssl_key', SLAVE_DEFAULTS['ssl_key'])) }}
 extra-context =
     key content :cert-content
 {%-   else %}
