@@ -28,79 +28,28 @@
 {%- endfor %}
 {#- Allow to pass only some parameters to frontend nodes #}
 {%- set FRONTEND_PARAMETER_DICT = {
-  'apache-certificate': instance_parameter_dict['configuration'].get('apache-certificate', ''),
-  'apache-key': instance_parameter_dict['configuration'].get('apache-key', ''),
-  'authenticate-to-backend': instance_parameter_dict['configuration'].get('authenticate-to-backend', 'False'),
-  'backend-connect-retries': instance_parameter_dict['configuration'].get('backend-connect-retries', '3'),
-  'backend-connect-timeout': instance_parameter_dict['configuration'].get('backend-connect-timeout', '5'),
-  'ciphers': instance_parameter_dict['configuration'].get('ciphers', 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA'),
-  'domain': instance_parameter_dict['configuration'].get('domain', 'example.org'),
-  'enable-http2-by-default': instance_parameter_dict['configuration'].get('enable-http2-by-default', 'true'),
-  're6st-verification-url': instance_parameter_dict['configuration'].get('re6st-verification-url', 'http://[2001:67c:1254:4::1]/index.html'),
-  'rotate-num': instance_parameter_dict['configuration'].get('rotate-num', '4000'),
+  'apache-certificate': instance_parameter_dict['configuration'].get('apache-certificate', CLUSTER_DEFAULTS['apache-certificate']),
+  'apache-key': instance_parameter_dict['configuration'].get('apache-key', CLUSTER_DEFAULTS['apache-key']),
+  'authenticate-to-backend': instance_parameter_dict['configuration'].get('authenticate-to-backend', CLUSTER_DEFAULTS['authenticate-to-backend']),
+  'backend-connect-retries': instance_parameter_dict['configuration'].get('backend-connect-retries', CLUSTER_DEFAULTS['backend-connect-retries']),
+  'backend-connect-timeout': instance_parameter_dict['configuration'].get('backend-connect-timeout', CLUSTER_DEFAULTS['backend-connect-timeout']),
+  'ciphers': instance_parameter_dict['configuration'].get('ciphers', CLUSTER_DEFAULTS['ciphers']),
+  'domain': instance_parameter_dict['configuration'].get('domain', CLUSTER_DEFAULTS['domain']),
+  'enable-http2-by-default': instance_parameter_dict['configuration'].get('enable-http2-by-default', CLUSTER_DEFAULTS['enable-http2-by-default']),
+  're6st-verification-url': instance_parameter_dict['configuration'].get('re6st-verification-url', CLUSTER_DEFAULTS['re6st-verification-url']),
+  'rotate-num': instance_parameter_dict['configuration'].get('rotate-num', 4000),
 }
 %}
 {#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
 {#- Note: As a result, this feature is very hard to be tested with slapproxy, as it does not pollute the slave information, this kind of whitelist is implemented #}
-{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = [
-      'authenticate-to-backend',
-      'backend-connect-retries',
-      'backend-connect-timeout',
-      'ciphers',
-      'custom_domain',
-      'default-path',
-      'disable-no-cache-request',
-      'disable-via-header',
-      'disabled-cookie-list',
-      'enable-http2',
-      'enable-http3',
-      'enable_cache',
-      'health-check',
-      'health-check-authenticate-to-failover-backend',
-      'health-check-failover-https-url',
-      'health-check-failover-https-url-netloc-list',
-      'health-check-failover-ssl-proxy-ca-crt',
-      'health-check-failover-ssl-proxy-verify',
-      'health-check-failover-url',
-      'health-check-failover-url-netloc-list',
-      'health-check-fall',
-      'health-check-http-method',
-      'health-check-http-path',
-      'health-check-http-version',
-      'health-check-interval',
-      'health-check-rise',
-      'health-check-timeout',
-      'https-only',
-      'https-url',
-      'https-url-netloc-list',
-      'path',
-      'prefer-gzip-encoding-to-backend',
-      'request-timeout',
-      'server-alias',
-      'ssl-proxy-verify',
-      'ssl_ca_crt',
-      'ssl_crt',
-      'ssl_key',
-      'ssl_proxy_ca_crt',
-      'strict-transport-security',
-      'strict-transport-security-preload',
-      'strict-transport-security-sub-domains',
-      'type',
-      'url',
-      'url-netloc-list',
-      'virtualhostroot-http-port',
-      'virtualhostroot-https-port',
-      'websocket-path-list',
-      'websocket-transparent',
-    ]
-%}
+{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = list(SLAVE_DEFAULTS.keys()) %}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL = [
       'slave_reference',
     ]
 %}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
-{% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', CLUSTER_DEFAULTS['automatic-internal-kedifa-caucase-csr'] | string).lower() in TRUE_VALUES %}
+{% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', CLUSTER_DEFAULTS['automatic-internal-backend-client-caucase-csr'] | string).lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
 {% set master_partition_monitor_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
@@ -121,7 +70,7 @@ context =
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
 {% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
-{% set frontend_quantity = instance_parameter_dict['configuration'].pop('-frontend-quantity', '1') | int %}
+{% set frontend_quantity = instance_parameter_dict['configuration'].pop('-frontend-quantity', CLUSTER_DEFAULTS['-frontend-quantity']) | int %}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
@@ -137,18 +86,19 @@ context =
 
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
+{# XXX: enable-http3 is a string in order to fulfill backward compatibility of older frontend nodes which require using string #}
 {% set NODE_SPECIFIC_PARAMETER_DICT = {
-  'backend-haproxy-http-port': '21080',
-  'backend-haproxy-https-port': '21443',
-  'backend-haproxy-statistic-port': '21444',
-  'disk-cache-size': '8G',
-  'enable-http3': 'false',
-  'http3-port': '443',
-  'plain_http_port': '8080',
-  'port': '4443',
-  'ram-cache-size': '1G',
-  'request-timeout': '600',
-  'slave-introspection-https-port': '22443',
+  'backend-haproxy-http-port': 21080,
+  'backend-haproxy-https-port': 21443,
+  'backend-haproxy-statistic-port': 21444,
+  'disk-cache-size': CLUSTER_DEFAULTS['disk-cache-size'],
+  'enable-http3': CLUSTER_DEFAULTS['enable-http3'] | string,
+  'http3-port': CLUSTER_DEFAULTS['http3-port'],
+  'plain_http_port': CLUSTER_DEFAULTS['plain_http_port'],
+  'port': CLUSTER_DEFAULTS['port'],
+  'ram-cache-size': CLUSTER_DEFAULTS['ram-cache-size'],
+  'request-timeout': CLUSTER_DEFAULTS['request-timeout'],
+  'slave-introspection-https-port': 22443,
 } %}
 {% for i in range(1, frontend_quantity + 1) %}
 {%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
@@ -214,43 +164,43 @@ context =
 {%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
 {%   endif %}
 {#   Check health-check-* #}
-{%   set health_check = (str(slave.get('health-check', False)) or 'false').lower() %}
+{%   set health_check = (str(slave.get('health-check', False)) or SLAVE_DEFAULTS['health-check']).lower() %}
 {%   if health_check in TRUE_VALUES %}
-{%     set health_check_http_method = slave.get('health-check-http-method') or 'GET' %}
+{%     set health_check_http_method = slave.get('health-check-http-method') or SLAVE_DEFAULTS['health-check-http-method'] %}
 {%     if health_check_http_method not in ['GET', 'OPTIONS', 'CONNECT', 'POST'] %}
 {%       do slave_error_list.append('Wrong health-check-http-method %s' % (health_check_http_method,)) %}
 {%     endif %}
-{%     set health_check_http_path = slave.get('health-check-http-path') or '/' %}
-{%     set health_check_http_version = slave.get('health-check-http-version') or 'HTTP/1.1' %}
+{%     set health_check_http_path = slave.get('health-check-http-path') or SLAVE_DEFAULTS['health-check-http-path'] %}
+{%     set health_check_http_version = slave.get('health-check-http-version') or SLAVE_DEFAULTS['health-check-http-version'] %}
 {%     if health_check_http_version not in ['HTTP/1.1', 'HTTP/1.0'] %}
 {%       do slave_error_list.append('Wrong health-check-http-version %s' % (health_check_http_version,)) %}
 {%     endif %}
-{%     set health_check_timeout = (slave.get('health-check-timeout') or '2') | int(false) %}
+{%     set health_check_timeout = (slave.get('health-check-timeout') or SLAVE_DEFAULTS['health-check-timeout']) | int(false) %}
 {%     if health_check_timeout is false or health_check_timeout <= 0 %}
 {%       do slave_error_list.append('Wrong health-check-timeout %s' % (slave.get('health-check-timeout'),)) %}
 {%     endif %}
-{%     set health_check_interval = (slave.get('health-check-interval') or '5') | int(false) %}
+{%     set health_check_interval = (slave.get('health-check-interval') or SLAVE_DEFAULTS['health-check-interval']) | int(false) %}
 {%     if health_check_interval is false or health_check_interval <= 0 %}
 {%       do slave_error_list.append('Wrong health-check-interval %s' % (slave.get('health-check-interval'),)) %}
 {%     endif %}
-{%     set health_check_rise = (slave.get('health-check-rise') or '1') | int(false) %}
+{%     set health_check_rise = (slave.get('health-check-rise') or SLAVE_DEFAULTS['health-check-rise']) | int(false) %}
 {%     if health_check_rise is false or health_check_rise <= 0 %}
 {%       do slave_error_list.append('Wrong health-check-rise %s' % (slave.get('health-check-rise'),)) %}
 {%     endif %}
-{%     set health_check_fall = (slave.get('health-check-fall') or '1') | int(false) %}
+{%     set health_check_fall = (slave.get('health-check-fall') or SLAVE_DEFAULTS['health-check-fall']) | int(false) %}
 {%     if health_check_fall is false or health_check_fall <= 0 %}
 {%       do slave_error_list.append('Wrong health-check-fall %s' % (slave.get('health-check-fall'),)) %}
 {%     endif %}
 {%   endif %}
 {#   Check virtualhostroot-http-port and virtualhostroot-https-port #}
 {%   for key in ['virtualhostroot-http-port', 'virtualhostroot-https-port'] %}
-{%     set value = (slave.get(key) or '1') | int(false) %}
+{%     set value = (slave.get(key) or SLAVE_DEFAULTS[key]) | int(false) %}
 {%     if value is false or value < 0 %}
 {%       do slave_error_list.append('Wrong %s %r' % (key, slave.get(key))) %}
 {%     endif %}
 {%   endfor %}
 {#   Check ciphers #}
-{%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
+{%   set slave_cipher_list = slave.get('ciphers', SLAVE_DEFAULTS['ciphers']).strip().split() %}
 {%   if slave_cipher_list %}
 {%     for cipher in slave_cipher_list %}
 {%       if cipher not in GOOD_CIPHER_LIST %}
@@ -264,7 +214,7 @@ context =
 {%     endfor %}
 {%   endif %}
 {#   Check strict-transport-security #}
-{%     set strict_transport_security = (slave.get('strict-transport-security') or '0') | int(false) %}
+{%     set strict_transport_security = (slave.get('strict-transport-security') or SLAVE_DEFAULTS['strict-transport-security']) | int(false) %}
 {%     if strict_transport_security is false or strict_transport_security < 0 %}
 {%       do slave_error_list.append('Wrong strict-transport-security %s' % (slave.get('strict-transport-security'),)) %}
 {%     endif %}
@@ -302,7 +252,7 @@ context =
 {%   endif %}
 {%   for url_key in ['url', 'https-url', 'health-check-failover-url', 'health-check-failover-https-url'] %}
 {%     if url_key in slave %}
-{%       set url = (slave[url_key] or '').strip() %}
+{%       set url = ('' ~ slave[url_key] or '').strip() %}
 {%       if not validators.url(url) %}
 {%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
 {%       elif url != slave[url_key] %}
@@ -321,7 +271,7 @@ context =
 {%   endfor %}
 {%   for k in ['ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt'] %}
 {%     if k in slave %}
-{%       set crt = slave.get(k, '') %}
+{%       set crt = ('' ~ slave.get(k) or '') %}
 {%       set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
 {%       do check_popen.communicate(crt.encode()) %}
 {%       if check_popen.returncode != 0 %}
@@ -341,8 +291,8 @@ context =
 {%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
 {%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
 {%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'].encode())[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'].encode())[0] | trim %}
+{%     set key_modulus = key_popen.communicate(('' ~ slave['ssl_key']).encode())[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(('' ~ slave['ssl_crt']).encode())[0] | trim %}
 {%     if not key_modulus or key_modulus != crt_modulus  %}
 {%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
 {%     endif %}
@@ -524,9 +474,9 @@ config-monitor-cors-domains = {{ instance_parameter_dict['configuration'].get('m
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
-config-caucase_port = {{ instance_parameter_dict['configuration'].get('caucase_port', '8890') }}
-config-kedifa_port = {{ instance_parameter_dict['configuration'].get('kedifa_port', '7879') }}
-config-rotate-num = {{ instance_parameter_dict['configuration'].get('rotate-num', '4000') }}
+config-caucase_port = {{ dumps(instance_parameter_dict['configuration'].get('caucase_port', 8890)) }}
+config-kedifa_port = {{ dumps(instance_parameter_dict['configuration'].get('kedifa_port', 7879)) }}
+config-rotate-num = {{ dumps(instance_parameter_dict['configuration'].get('rotate-num', 4000)) }}
 {% for key in ['kedifa_port', 'caucase_port'] -%}
 {%-   if key in instance_parameter_dict['configuration'] %}
 config-{{ key }} = {{ dumps(instance_parameter_dict['configuration'][key]) }}
