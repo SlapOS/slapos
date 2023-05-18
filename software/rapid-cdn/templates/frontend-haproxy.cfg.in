@@ -1,8 +1,3 @@
-{%- if configuration['http3-enable'] == 'True' %}
-{%-   set HTTP3 = True %}
-{%- else %}
-{%-   set HTTP3 = False %}
-{%- endif %}
 global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
@@ -79,7 +74,7 @@ frontend http-frontend
 frontend https-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
   bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
-{%- if HTTP3 %}
+{%- if configuration['http3-enable'] %}
   bind quic4@{{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
   bind quic6@{{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
 {%- endif %}
@@ -97,7 +92,7 @@ frontend https-frontend
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
-{%-     if HTTP3 and slave_instance['enable-http3'] %}
+{%-     if configuration['http3-enable'] and slave_instance['enable-http3'] %}
   http-after-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
   {#- Ask Chromium to use HTTP3 #}
   http-after-response set-header alternate-protocol {{ configuration['http3-port'] }}:quic
@@ -128,7 +123,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-after-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
 {%-             endif %}
 {%-           endif %}
-{%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}
+{%-           for disabled_cookie in slave_instance['disabled-cookie-list'].split() %}
   http-request replace-header Cookie (.*)(^{{ disabled_cookie | replace('%', '%%') }}=[^;]*;\ |;\ {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*) \1\3
 {%-           endfor %}
 {%-           if slave_instance['disable-no-cache-request'] %}

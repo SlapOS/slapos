@@ -92,7 +92,7 @@ frontend https-backend
 {%-           do ssl_list.append('crt %s' % (configuration['certificate'],)) %}
 {%-         endif %}
 {%-         do ssl_list.append('ssl verify') %}
-{%-         if slave_instance['ssl_proxy_verify'] %}
+{%-         if slave_instance['ssl-proxy-verify'] %}
 {%-           if slave_instance['path_to_ssl_proxy_ca_crt']  %}
 {%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_ssl_proxy_ca_crt'],)) %}
 {%-           else %}
