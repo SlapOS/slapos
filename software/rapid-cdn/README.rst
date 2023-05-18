@@ -22,6 +22,7 @@ These parameters are:
   * ``-frontend-quantity`` : The quantity of frontends to request (defaults to "1")
   * ``-frontend-i-state``: The state of frontend i
   * ``-frontend-i-software-release-url``: Software release to be used for frontends, defaults to the current software release
+  * ``-frontend-i-legacy-enable-http3-string`` is a special legacy switch while upgrading clusters for older frontend nodes, which can be observed with error during instance processing like "{%- if instance_parameter_dict.get('configuration.enable-http3', 'false').lower() in TRUE_VALUES %} jinja2.exceptions.UndefinedError: 'bool object' has no attribute 'lower'", type: boolean
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo, supported parameters are:
     * ``ram-cache-size``
     * ``disk-cache-size``
