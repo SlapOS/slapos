@@ -1,11 +1,6 @@
 {% import "caucase" as caucase with context %}
-{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set HTTP3_PORT = instance_parameter_dict['configuration']['http3-port'] %}
-{%- if instance_parameter_dict['configuration']['enable-http3'].lower() in TRUE_VALUES %}
-{%-   set FRONTEND_HTTP3 = True %}
-{%- else %}
-{%-   set FRONTEND_HTTP3 = False %}
-{%- endif %}
+{%- set FRONTEND_HTTP3 = instance_parameter_dict['configuration']['enable-http3'] %}
 {%- if FRONTEND_HTTP3 %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
 {%- else %}
@@ -367,12 +362,14 @@ organization = {{ instance_parameter_dict['configuration']['cluster-identificati
 organizational-unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 backend-client-caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
-http3-enable = {{ FRONTEND_HTTP3 }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+SLAVE_DEFAULTS = {{ dumps(SLAVE_DEFAULTS) }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
     import urllib_module urllib
     import operator_module operator
+    key SLAVE_DEFAULTS :SLAVE_DEFAULTS
     key master_key_download_url :master_key_download_url
     key url_ready_file :url-ready-file
     key expose_csr_organization :organization
@@ -482,8 +479,8 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
-http3-enable = {{ FRONTEND_HTTP3 }}
-http3-port = {{ HTTP3_PORT }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+http3-port = {{ dumps(HTTP3_PORT) }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
