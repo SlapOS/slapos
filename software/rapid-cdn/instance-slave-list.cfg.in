@@ -23,6 +23,7 @@
 {%- else %}
 {%-   set slave_kedifa_information = {} %}
 {%- endif -%}
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
