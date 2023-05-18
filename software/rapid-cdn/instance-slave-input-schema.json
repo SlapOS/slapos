@@ -208,9 +208,8 @@
       "type": "integer"
     },
     "ciphers": {
-      "title": "Ordered space separated list of ciphers",
-      "type": "string",
-      "default": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA"
+      "title": "Ordered space separated list of ciphers. Defaults to cluster setup.",
+      "type": "string"
     },
     "authenticate-to-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
@@ -262,25 +261,25 @@
     "health-check-timeout": {
       "title": "Health Check Timeout (seconds)",
       "description": "A timeout to for the request to be fulfilled, after connection happen.",
-      "default": "2",
+      "default": 2,
       "type": "integer"
     },
     "health-check-interval": {
       "title": "Health Check Interval (seconds)",
       "description": "An interval of health check.",
-      "default": "5",
+      "default": 5,
       "type": "integer"
     },
     "health-check-rise": {
       "title": "Health Check Rise",
       "description": "Amount of correct responses from the backend to consider it up.",
-      "default": "1",
+      "default": 1,
       "type": "integer"
     },
     "health-check-fall": {
       "title": "Health Check Fall",
       "description": "Amount of bad responses from the backend to consider it down.",
-      "default": "1",
+      "default": 1,
       "type": "integer"
     },
     "health-check-failover-url": {
@@ -324,7 +323,7 @@
     "strict-transport-security": {
       "title": "Strict Transport Security",
       "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. Setting the value enables HSTS and sets the value of max-age. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
-      "default": "0",
+      "default": 0,
       "type": "integer"
     },
     "strict-transport-security-sub-domains": {

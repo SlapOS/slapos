@@ -69,12 +69,14 @@ from cryptography.x509.oid import NameOID
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
+
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
   setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -4822,7 +4824,7 @@ class TestSlaveHttp3(TestSlave):
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
     'request-timeout': '12',
-    'enable-http3': 'True',
+    'enable-http3': True,
     'http3-port': HTTPS_PORT,
   }
   max_client_version = '3.0'
@@ -6828,18 +6830,18 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
-        'backend-haproxy-http-port': '21080',
-        'backend-haproxy-https-port': '21443',
-        'backend-haproxy-statistic-port': '21444',
+        'backend-haproxy-http-port': 21080,
+        'backend-haproxy-https-port': 21443,
+        'backend-haproxy-statistic-port': 21444,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
@@ -6849,8 +6851,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '512K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
+        'rotate-num': 4000,
+        'slave-introspection-https-port': 22443,
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-2': {
@@ -6861,18 +6863,18 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
-        'backend-haproxy-http-port': '21080',
-        'backend-haproxy-https-port': '21443',
-        'backend-haproxy-statistic-port': '21444',
+        'backend-haproxy-http-port': 21080,
+        'backend-haproxy-https-port': 21443,
+        'backend-haproxy-statistic-port': 21444,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
@@ -6882,8 +6884,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '256K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
+        'rotate-num': 4000,
+        'slave-introspection-https-port': 22443,
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-3': {
@@ -6894,18 +6896,18 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': '1',
         'backend-connect-timeout': '2',
-        'backend-haproxy-http-port': '21080',
-        'backend-haproxy-https-port': '21443',
-        'backend-haproxy-statistic-port': '21444',
+        'backend-haproxy-http-port': 21080,
+        'backend-haproxy-https-port': 21443,
+        'backend-haproxy-statistic-port': 21444,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'disk-cache-size': '8G',
         'domain': 'example.com',
         'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
@@ -6915,10 +6917,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '1G',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
-        'rotate-num': '4000',
-        'slave-introspection-https-port': '22443',
+        'rotate-num': 4000,
+        'slave-introspection-https-port': 22443,
         'slave-kedifa-information': '{}'
       },
       'kedifa': {
@@ -6929,7 +6929,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': '8402',
         'monitor-username': 'admin',
-        'rotate-num': '4000',
+        'rotate-num': 4000,
         'slave-list': []
       },
       'testing partition 0': {
@@ -7112,7 +7112,7 @@ backend _health-check-connect-http
   timeout connect 5s
   retries 3
   server _health-check-connect-backend-http %s   check inter 5s"""
-      """ rise 1 fall 2
+      """ rise 1 fall 1
   timeout check 2s""" % (backend,),
       'health-check-custom': """\
 backend _health-check-custom-http
@@ -7129,7 +7129,7 @@ backend _health-check-default-http
   timeout connect 5s
   retries 3
   server _health-check-default-backend-http %s   check inter 5s"""
-      """ rise 1 fall 2
+      """ rise 1 fall 1
   option httpchk GET / HTTP/1.1
   timeout check 2s""" % (backend, )
     }
