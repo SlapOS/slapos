@@ -356,6 +356,14 @@ stop-on-error = True
      template_csr='${backend-client-login-csr:template-csr}'
 )}}
 
+[input-schema-json]
+recipe = slapos.recipe.build
+input = ${software-parameter-section:instance_slave_input_schema}
+init =
+  import json
+  with open(options['input']) as fh:
+    options['json'] = json.load(fh)
+
 [dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
 depends = ${software-py:recipe}
@@ -373,6 +381,7 @@ extra-context =
     import furl_module furl
     import urllib_module urllib
     import operator_module operator
+    key input_schema_json input-schema-json:json
     key master_key_download_url :master_key_download_url
     key url_ready_file :url-ready-file
     key expose_csr_organization :organization
