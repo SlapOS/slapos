@@ -368,11 +368,13 @@ organizational-unit = {{ instance_parameter_dict['configuration']['frontend-name
 backend-client-caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
 http3-enable = {{ FRONTEND_HTTP3 }}
+SLAVE_DEFAULTS = {{ dumps(SLAVE_DEFAULTS) }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
     import urllib_module urllib
     import operator_module operator
+    key SLAVE_DEFAULTS :SLAVE_DEFAULTS
     key master_key_download_url :master_key_download_url
     key url_ready_file :url-ready-file
     key expose_csr_organization :organization
