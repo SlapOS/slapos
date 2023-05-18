@@ -4,25 +4,29 @@
     "-frontend-quantity": {
       "description": "Quantity of Frontends Replicate.",
       "title": "Frontend Replication Quantity",
-      "type": "integer"
+      "type": "integer",
+      "default": 1
     },
     "apache-certificate": {
       "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "apache-key": {
       "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "domain": {
       "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
       "title": "Domain",
-      "type": "string"
+      "type": "string",
+      "default": "example.org"
     },
     "enable-http2-by-default": {
       "default": "true",
@@ -53,7 +57,8 @@
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
-      "type": "string"
+      "type": "string",
+      "default": "http://[2001:67c:1254:4::1]/index.html"
     },
     "backend-connect-timeout": {
       "default": 5,
@@ -119,6 +124,16 @@
       "title": "Default size of disk cache on each node (bytes)",
       "description": "The value can be provided with suffix 'K', 'M', 'G'",
       "type": "string"
+    },
+    "plain_http_port": {
+      "default": 8080,
+      "title": "Port to which frontend node shall bind to serve HTTP traffic",
+      "type": "integer"
+    },
+    "port": {
+      "default": 4443,
+      "title": "Port to which frontend node shall bind to serve HTTPS (and HTTP/3) traffic",
+      "type": "integer"
     }
   },
   "title": "Input Parameters",
