@@ -30,77 +30,26 @@
 {%- set FRONTEND_PARAMETER_DICT = {
   'apache-certificate': instance_parameter_dict['configuration'].get('apache-certificate', ''),
   'apache-key': instance_parameter_dict['configuration'].get('apache-key', ''),
-  'authenticate-to-backend': instance_parameter_dict['configuration'].get('authenticate-to-backend', 'False'),
-  'backend-connect-retries': instance_parameter_dict['configuration'].get('backend-connect-retries', '3'),
-  'backend-connect-timeout': instance_parameter_dict['configuration'].get('backend-connect-timeout', '5'),
-  'ciphers': instance_parameter_dict['configuration'].get('ciphers', 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA'),
+  'authenticate-to-backend': instance_parameter_dict['configuration'].get('authenticate-to-backend', CLUSTER_DEFAULTS['authenticate-to-backend']),
+  'backend-connect-retries': instance_parameter_dict['configuration'].get('backend-connect-retries', CLUSTER_DEFAULTS['backend-connect-retries']),
+  'backend-connect-timeout': instance_parameter_dict['configuration'].get('backend-connect-timeout', CLUSTER_DEFAULTS['backend-connect-timeout']),
+  'ciphers': instance_parameter_dict['configuration'].get('ciphers', CLUSTER_DEFAULTS['ciphers']),
   'domain': instance_parameter_dict['configuration'].get('domain', 'example.org'),
-  'enable-http2-by-default': instance_parameter_dict['configuration'].get('enable-http2-by-default', 'true'),
+  'enable-http2-by-default': instance_parameter_dict['configuration'].get('enable-http2-by-default', CLUSTER_DEFAULTS['enable-http2-by-default']),
   're6st-verification-url': instance_parameter_dict['configuration'].get('re6st-verification-url', 'http://[2001:67c:1254:4::1]/index.html'),
-  'rotate-num': instance_parameter_dict['configuration'].get('rotate-num', '4000'),
+  'rotate-num': instance_parameter_dict['configuration'].get('rotate-num', 4000),
 }
 %}
 {#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
 {#- Note: As a result, this feature is very hard to be tested with slapproxy, as it does not pollute the slave information, this kind of whitelist is implemented #}
-{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = [
-      'authenticate-to-backend',
-      'backend-connect-retries',
-      'backend-connect-timeout',
-      'ciphers',
-      'custom_domain',
-      'default-path',
-      'disable-no-cache-request',
-      'disable-via-header',
-      'disabled-cookie-list',
-      'enable-http2',
-      'enable-http3',
-      'enable_cache',
-      'health-check',
-      'health-check-authenticate-to-failover-backend',
-      'health-check-failover-https-url',
-      'health-check-failover-https-url-netloc-list',
-      'health-check-failover-ssl-proxy-ca-crt',
-      'health-check-failover-ssl-proxy-verify',
-      'health-check-failover-url',
-      'health-check-failover-url-netloc-list',
-      'health-check-fall',
-      'health-check-http-method',
-      'health-check-http-path',
-      'health-check-http-version',
-      'health-check-interval',
-      'health-check-rise',
-      'health-check-timeout',
-      'https-only',
-      'https-url',
-      'https-url-netloc-list',
-      'path',
-      'prefer-gzip-encoding-to-backend',
-      'request-timeout',
-      'server-alias',
-      'ssl-proxy-verify',
-      'ssl_ca_crt',
-      'ssl_crt',
-      'ssl_key',
-      'ssl_proxy_ca_crt',
-      'strict-transport-security',
-      'strict-transport-security-preload',
-      'strict-transport-security-sub-domains',
-      'type',
-      'url',
-      'url-netloc-list',
-      'virtualhostroot-http-port',
-      'virtualhostroot-https-port',
-      'websocket-path-list',
-      'websocket-transparent',
-    ]
-%}
+{%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = list(SLAVE_DEFAULTS.keys()) %}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL = [
       'slave_reference',
     ]
 %}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
-{% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', CLUSTER_DEFAULTS['automatic-internal-kedifa-caucase-csr'] | string).lower() in TRUE_VALUES %}
+{% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', CLUSTER_DEFAULTS['automatic-internal-backend-client-caucase-csr'] | string).lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
 {% set master_partition_monitor_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
@@ -138,17 +87,17 @@ context =
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
 {% set NODE_SPECIFIC_PARAMETER_DICT = {
-  'backend-haproxy-http-port': '21080',
-  'backend-haproxy-https-port': '21443',
-  'backend-haproxy-statistic-port': '21444',
-  'disk-cache-size': '8G',
-  'enable-http3': 'false',
-  'http3-port': '443',
-  'plain_http_port': '8080',
-  'port': '4443',
-  'ram-cache-size': '1G',
-  'request-timeout': '600',
-  'slave-introspection-https-port': '22443',
+  'backend-haproxy-http-port': 21080,
+  'backend-haproxy-https-port': 21443,
+  'backend-haproxy-statistic-port': 21444,
+  'disk-cache-size': CLUSTER_DEFAULTS['disk-cache-size'],
+  'enable-http3': CLUSTER_DEFAULTS['enable-http3'] | string,
+  'http3-port': CLUSTER_DEFAULTS['http3-port'],
+  'plain_http_port': 8080,
+  'port': 4443,
+  'ram-cache-size': CLUSTER_DEFAULTS['ram-cache-size'],
+  'request-timeout': CLUSTER_DEFAULTS['request-timeout'],
+  'slave-introspection-https-port': 22443,
 } %}
 {% for i in range(1, frontend_quantity + 1) %}
 {%   set frontend_name = "%s-%s" % (NAME_BASE, i) %}
@@ -524,9 +473,9 @@ config-monitor-cors-domains = {{ instance_parameter_dict['configuration'].get('m
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
-config-caucase_port = {{ instance_parameter_dict['configuration'].get('caucase_port', '8890') }}
-config-kedifa_port = {{ instance_parameter_dict['configuration'].get('kedifa_port', '7879') }}
-config-rotate-num = {{ instance_parameter_dict['configuration'].get('rotate-num', '4000') }}
+config-caucase_port = {{ dumps(instance_parameter_dict['configuration'].get('caucase_port', 8890)) }}
+config-kedifa_port = {{ dumps(instance_parameter_dict['configuration'].get('kedifa_port', 7879)) }}
+config-rotate-num = {{ dumps(instance_parameter_dict['configuration'].get('rotate-num', 4000)) }}
 {% for key in ['kedifa_port', 'caucase_port'] -%}
 {%-   if key in instance_parameter_dict['configuration'] %}
 config-{{ key }} = {{ dumps(instance_parameter_dict['configuration'][key]) }}
