@@ -262,25 +262,25 @@
     "health-check-timeout": {
       "title": "Health Check Timeout (seconds)",
       "description": "A timeout to for the request to be fulfilled, after connection happen.",
-      "default": "2",
+      "default": 2,
       "type": "integer"
     },
     "health-check-interval": {
       "title": "Health Check Interval (seconds)",
       "description": "An interval of health check.",
-      "default": "5",
+      "default": 5,
       "type": "integer"
     },
     "health-check-rise": {
       "title": "Health Check Rise",
       "description": "Amount of correct responses from the backend to consider it up.",
-      "default": "1",
+      "default": 1,
       "type": "integer"
     },
     "health-check-fall": {
       "title": "Health Check Fall",
       "description": "Amount of bad responses from the backend to consider it down.",
-      "default": "1",
+      "default": 1,
       "type": "integer"
     },
     "health-check-failover-url": {
@@ -324,7 +324,7 @@
     "strict-transport-security": {
       "title": "Strict Transport Security",
       "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. Setting the value enables HSTS and sets the value of max-age. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
-      "default": "0",
+      "default": 0,
       "type": "integer"
     },
     "strict-transport-security-sub-domains": {
