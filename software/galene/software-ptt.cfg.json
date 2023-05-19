@@ -8,7 +8,7 @@
       "software-type": "default",
       "description": "default",
       "request": "instance-ptt-default-input-schema.json",
-      "response": "instance-default-schema.json",
+      "response": "instance-ptt-default-output-schema.json",
       "index": 0
     }
   }
