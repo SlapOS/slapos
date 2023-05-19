@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by galene",
+  "properties": {
+    "url": {
+      "description": "IPv6 url of galene",
+      "type": "string"
+    },
+    "admin-user": {
+      "description": "Admin username",
+      "type": "string"
+    },
+    "admin-password": {
+      "description": "Admin password",
+      "type": "string"
+    },
+    "domain-url": {
+      "description": "URL of galene using domain configured with local DNS",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
