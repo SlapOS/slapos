@@ -118,23 +118,22 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
+        'droneGuidList': [cls.slap._computer_id],
         'netIf': OPC_UA_NET_IF,
         'subscriberGuidList': [cls.slap._computer_id],
       })
     }
 
-  def get_partition(self, instance_type):
+  def get_partition(self, partition_id):
     software_url = self.getSoftwareURL()
     for computer_partition in self.slap.computer.getComputerPartitionList():
-      partition_url = computer_partition.getSoftwareRelease()._software_release
-      partition_type = computer_partition.getType()
-      if partition_url == software_url and partition_type == instance_type:
+      if computer_partition.getId() == partition_id:
         return computer_partition
-    raise Exception("JS-drone %s partition not found" % instance_type)
+    raise Exception("Partition %s not found" % partition_id)
 
   def setUp(self):
     super().setUp()
-    subscriber_partition = self.get_partition('drone')
+    subscriber_partition = self.get_partition('JSDroneTestCase-2')
     instance_path = json.loads(
       subscriber_partition.getConnectionParameterDict()['_'])['instance-path']
     quickjs_bin = os.path.join(instance_path, 'bin', 'qjs')
@@ -247,18 +246,18 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
   def test_requested_instances(self):
     connection_parameter_dict = json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
-    self.assertEqual(connection_parameter_dict['drone-id-list'], [])
-    self.assertEqual(connection_parameter_dict['subscriber-id-list'], [0])
+    self.assertEqual(connection_parameter_dict['drone-id-list'], [0])
+    self.assertEqual(connection_parameter_dict['subscriber-id-list'], [1])
 
   def test_subscriber_instance_parameter_dict(self):
     self.assertEqual(
-      json.loads(self.get_partition('drone').getInstanceParameterDict()['_']),
+      json.loads(self.get_partition('JSDroneTestCase-2').getInstanceParameterDict()['_']),
       {
         'autopilotIp': '192.168.27.1',
         'autopilotPort': 7909,
-        'numberOfDrone': 0,
+        'numberOfDrone': 1,
         'numberOfSubscriber': 1,
-        'id': 0,
+        'id': 1,
         'isASimulation': False,
         'isADrone': False,
         'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/raw/master/subscribe.js',
