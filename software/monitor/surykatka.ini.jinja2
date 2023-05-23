@@ -2,6 +2,7 @@
 INTERVAL = 120
 TIMEOUT = {{ timeout }}
 SQLITE = {{ db }}
+ELAPSED_FAST = {{ check_maximum_elapsed_time }}
 {%- if len(nameserver_list) > 0 %}
 NAMESERVER =
 {%-   for nameserver_entry in sorted(nameserver_list) %}

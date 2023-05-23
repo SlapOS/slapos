@@ -92,6 +92,7 @@ nameserver_list = {{ dumps(DEFAULT_DICT['nameserver-list']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
 timeout = {{ int(class) + 2 }}
+check_maximum_elapsed_time = {{ int(class) }}
 
 context =
   import json_module json
@@ -99,6 +100,7 @@ context =
   key nameserver_list :nameserver_list
   key url_list :url_list
   key timeout :timeout
+  key check_maximum_elapsed_time :check_maximum_elapsed_time
 
 {%-     do PART_LIST.append('surykatka-%i'% (class,)) %}
 [surykatka-{{ class }}]
