@@ -344,6 +344,7 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
 INTERVAL = 120
 TIMEOUT = 7
 SQLITE = %(db_file)s
+ELAPSED_FAST = 5
 NAMESERVER =
   127.0.1.1
   127.0.1.2
@@ -363,6 +364,7 @@ URL =
 INTERVAL = 120
 TIMEOUT = 13
 SQLITE = %(db_file)s
+ELAPSED_FAST = 11
 NAMESERVER =
   127.0.1.1
   127.0.1.2
