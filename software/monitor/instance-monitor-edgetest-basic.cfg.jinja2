@@ -92,6 +92,7 @@ nameserver_list = {{ dumps(DEFAULT_DICT['nameserver-list']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
 timeout = {{ int(class) + 2 }}
+check_maximum_elapsed_time = {{ int(class) }}
 
 context =
   import json_module json
