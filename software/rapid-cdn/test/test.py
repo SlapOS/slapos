@@ -1376,7 +1376,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       hostname = reference.replace('_', '').replace('-', '').lower()
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
-      'replication_number': '1',
       'url': 'http://%s.example.com' % (hostname, ),
       'site_url': 'http://%s.example.com' % (hostname, ),
       'secure_access': 'https://%s.example.com' % (hostname, ),
@@ -4867,7 +4866,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       {
         'domain': 'replicate.example.com',
-        'replication_number': '2',
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
@@ -6424,7 +6422,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqual(
       {
         'domain': 'defaultpathunsafe.example.com',
-        'replication_number': '1',
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',

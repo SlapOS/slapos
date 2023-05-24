@@ -19,10 +19,6 @@
             'log-access-urls',
             log_access_list
             ) %}
-{%     do current_slave_dict.__setitem__(
-            'replication_number',
-            current_slave_dict.get('replication_number', 0) + 1
-            ) %}
 {%     do slave_information_dict.__setitem__(slave_reference, current_slave_dict) %}
 {%   endfor %}
 {% endfor %}
