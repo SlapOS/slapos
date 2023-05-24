@@ -1799,6 +1799,23 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'type': 'websocket',
         'websocket-path-list': '////ws//// /with%20space/',
       },
+      'type-websocket-websocket-path-list-none': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        # Note: With reference SlapOS Master requesting
+        #       'websocket-path-list': '' leads to a problem, as the value for
+        #       the partition is None (type: None), but with slapproxy it is
+        #       required to use None (type: None) in the **request** to lead
+        #       to the same problem. See also
+        #       type-websocket-websocket-path-list-empty
+        'websocket-path-list': None,
+      },
+      'type-websocket-websocket-path-list-empty': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        # Note: See also type-websocket-websocket-path-list-none
+        'websocket-path-list': '',
+      },
       'type-websocket-websocket-transparent-false': {
         'url': cls.backend_url,
         'type': 'websocket',
@@ -2084,9 +2101,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '60',
+      'accepted-slave-amount': '62',
       'rejected-slave-amount': '0',
-      'slave-amount': '60',
+      'slave-amount': '62',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -3293,10 +3310,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
-  def test_type_websocket(self):
-    parameter_dict = self.assertSlaveBase(
-      'type-websocket')
-
+  def _test_type_websocket(self, parameter_dict):
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
       headers={'Connection': 'Upgrade'})
@@ -3322,6 +3336,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
+
+  def test_type_websocket(self):
+    self._test_type_websocket(self.assertSlaveBase('type-websocket'))
+
+  def test_type_websocket_websocket_path_list_none(self):
+    self._test_type_websocket(self.assertSlaveBase(
+      'type-websocket-websocket-path-list-none'))
+
+  def test_type_websocket_websocket_path_list_empty(self):
+    self._test_type_websocket(self.assertSlaveBase(
+      'type-websocket-websocket-path-list-empty'))
 
   def test_type_websocket_websocket_transparent_false(self):
     parameter_dict = self.assertSlaveBase(
