@@ -14,6 +14,13 @@
       "description": "Use a password for presenter",
       "type": "boolean",
       "default": true
+    },
+    "ice-servers.json": {
+      "title": "Content of ice-servers.json",
+      "description": "Raw content of ice-servers.json (see at the end of https://galene.org/INSTALL.html)",
+      "type": "string",
+      "textarea": true,
+      "default": "[{\"urls\":[\"stun:turn-paris-rapidspace.api.nexedi.net:443\"]}]"
     }
   }
 }
