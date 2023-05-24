@@ -86,10 +86,13 @@ command = if [ -z "$(ls -A ${directory:node})" ]; then
     rm -rf ${directory:node};
     cp -ax {{ nextjs_app_location }}/ ${directory:node};
   fi
-  export NEXT_PUBLIC_DRUPAL_BASE_URL=${request-frontend:connection-secure_access}
-  export NEXT_IMAGE_DOMAIN=${request-frontend:connection-domain}
-  cd ${directory:node}
-  {{ nodejs_location }}/bin/npm run build
+  if [ -s "${directory:var}/.install-done" ]; then
+#   build next.js require next and next_jsonapi installed
+    export NEXT_PUBLIC_DRUPAL_BASE_URL=${request-frontend:connection-secure_access}
+    export NEXT_IMAGE_DOMAIN=${request-frontend:connection-domain}
+    cd ${directory:node}
+    {{ nodejs_location }}/bin/npm run build
+  fi
 update-command = ${:command}
 stop-on-error = true
 
