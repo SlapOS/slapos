@@ -247,7 +247,7 @@ context =
 {%-     endif %}
 {%-   endif %}
 {%-   set websocket_path_list = [] %}
-{%-   for websocket_path in slave_instance.get('websocket-path-list', '').split() %}
+{%-   for websocket_path in ('' ~ (slave_instance.get('websocket-path-list')) or '').split() %}
 {%-     set websocket_path = websocket_path.strip('/') %}
 {#-   Unquote the path, so %20 and similar can be represented correctly #}
 {%-     set websocket_path = urllib_module.parse.unquote(websocket_path.strip()) %}

@@ -1799,6 +1799,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'type': 'websocket',
         'websocket-path-list': '////ws//// /with%20space/',
       },
+      'type-websocket-websocket-path-list-empty': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-path-list': '',
+      },
       'type-websocket-websocket-transparent-false': {
         'url': cls.backend_url,
         'type': 'websocket',
@@ -3293,10 +3298,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
-  def test_type_websocket(self):
-    parameter_dict = self.assertSlaveBase(
-      'type-websocket')
-
+  def _test_type_websocket(self, parameter_dict):
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
       headers={'Connection': 'Upgrade'})
@@ -3322,6 +3324,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
+
+  def test_type_websocket(self):
+    self._test_type_websocket(self.assertSlaveBase('type-websocket'))
+
+  def test_type_websocket_websocket_path_list_empty(self):
+    self._test_type_websocket(self.assertSlaveBase(
+      'type-websocket-websocket-path-list-empty'))
 
   def test_type_websocket_websocket_transparent_false(self):
     parameter_dict = self.assertSlaveBase(
