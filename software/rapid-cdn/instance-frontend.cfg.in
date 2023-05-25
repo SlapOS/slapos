@@ -367,7 +367,7 @@ organization = {{ instance_parameter_dict['configuration']['cluster-identificati
 organizational-unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 backend-client-caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
-http3-enable = {{ FRONTEND_HTTP3 }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
 SLAVE_DEFAULTS = {{ dumps(SLAVE_DEFAULTS) }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
@@ -484,8 +484,8 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
-http3-enable = {{ FRONTEND_HTTP3 }}
-http3-port = {{ HTTP3_PORT }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+http3-port = {{ dumps(HTTP3_PORT) }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
