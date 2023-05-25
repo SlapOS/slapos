@@ -66,15 +66,26 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import \
+  makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
+BACKWARD_COMPATBILITY_SR_URL = \
+  'https://lab.nexedi.com/nexedi/slapos/raw/1.0.319/software/' \
+  'rapid-cdn/software.cfg'
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  software_url = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+  setUpModule_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    software_url)
+
+  def setUpModule():
+    installSoftwareUrlList(
+      SlapOSInstanceTestCase,
+      [software_url, BACKWARD_COMPATBILITY_SR_URL],
+      debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))))
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
