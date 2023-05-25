@@ -66,15 +66,27 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import \
+  makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
+BACKWARD_COMPATBILITY_SR_URL = \
+  'https://lab.nexedi.com/nexedi/slapos/raw/' \
+  '7b5b196761272c1c4b06d74ae5dae901d9358ae7' \
+  '/software/rapid-cdn/software.cfg'
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  software_url = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+  setUpModule_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    software_url)
+
+  def setUpModule():
+    installSoftwareUrlList(
+      SlapOSInstanceTestCase,
+      [software_url, BACKWARD_COMPATBILITY_SR_URL],
+      debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))))
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -394,27 +406,44 @@ class TestDataMixin(object):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
-    hash_file_list = [os.path.join(
-        self.computer_partition_root_path, 'software_release/buildout.cfg')]
-    data_replacement_dict = {
-      '{hash-generic}': generateHashFromFiles(hash_file_list)
-    }
-    for backend_haproxy_wrapper_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
-      partition_id = backend_haproxy_wrapper_path.split('/')[-3]
-      data_replacement_dict['{hash-backend-haproxy-%s}' % (partition_id)] =  \
-          generateHashFromFiles([
-            backend_haproxy_wrapper_path] + hash_file_list)
-    for rejected_slave_publish_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'nginx-master-introspection.conf')):
-      partition_id = rejected_slave_publish_path.split('/')[-3]
-      rejected_slave_pem_path = os.path.join(
-        self.instance_path, partition_id, 'etc', 'master-introspection.pem')
-      data_replacement_dict[
-        '{hash-master-introspection}'
-      ] = generateHashFromFiles(
-        [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
-      )
+    def detectSoftwarReleaseFromBuildout(buildout):
+      with open(buildout) as fh:
+        for line in fh.readlines():
+          if line.startswith('extends'):
+            if line.split('=')[1].strip().startswith('http'):
+              return 'PREVIOUS'
+            else:
+              return 'CURRENT'
+
+    data_replacement_dict = {}
+    for hash_file in glob.glob(os.path.join(
+      self.instance_path, '*', 'software_release', 'buildout.cfg')):
+
+      partition_id = hash_file.split('/')[-3]
+      hash_file_list = [hash_file]
+      software_release = detectSoftwarReleaseFromBuildout(hash_file)
+      data_replacement_dict['{hash-sr-%s}' % (
+          software_release,)] = generateHashFromFiles(hash_file_list)
+
+      backend_haproxy_wrapper_path = os.path.join(
+        self.instance_path, partition_id, 'bin', 'backend-haproxy-wrapper')
+      if os.path.exists(backend_haproxy_wrapper_path):
+        data_replacement_dict[
+          '{hash-sr-%s-%s-backend-haproxy}' % (
+            software_release, partition_id,)] = generateHashFromFiles([
+              backend_haproxy_wrapper_path] + hash_file_list)
+      master_introspection_conf_path = os.path.join(
+        self.instance_path, partition_id, 'etc',
+        'nginx-master-introspection.conf')
+      if os.path.exists(master_introspection_conf_path):
+        master_introspection_pem_path = os.path.join(
+          self.instance_path, partition_id, 'etc', 'master-introspection.pem')
+        data_replacement_dict[
+          '{hash-sr-%s-master-introspection}' % (software_release,)
+        ] = generateHashFromFiles(
+          [master_introspection_conf_path,
+           master_introspection_pem_path] + hash_file_list
+        )
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(
@@ -4755,6 +4784,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPResult(parameter_dict['domain'], 'path')
     # assure that the request went to backend NOT specified in the netloc
     self.assertNotIn('X-Backend-Identification', result.headers)
+
+
+class TestSlaveBackwardCompatbility(TestSlave):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = cls.parameter_dict.copy()
+    parameter_dict[
+      '-frontend-1-software-release-url'] = BACKWARD_COMPATBILITY_SR_URL
+    return parameter_dict
 
 
 class TestSlaveHttp3(TestSlave):
