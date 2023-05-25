@@ -243,7 +243,7 @@ context =
 {%-   if not slave_instance['enable-http2'] %}
 {%-     do slave_instance.__setitem__('alpn', "alpn http/1.1,http/1.0") %}
 {%-   else %}
-{%-     if http3_enable.lower() in TRUE_VALUES and slave_instance['enable-http3'] %}
+{%-     if http3_enable and slave_instance['enable-http3'] %}
 {%-       do slave_instance.__setitem__('alpn', "alpn h3,h2,http/1.1,http/1.0") %}
 {%-     else %}
 {%-       do slave_instance.__setitem__('alpn', "alpn h2,http/1.1,http/1.0") %}
@@ -479,7 +479,7 @@ extra-context =
 
 [frontend-haproxy-config]
 {%- for key, value in frontend_haproxy_configuration.items() %}
-{{ key }} = {{ value }}
+{{ key }} = {{ dumps(value) }}
 {%- endfor %}
 local-ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = ${slap-configuration:ipv6-random}
@@ -500,13 +500,13 @@ extra-context =
 
 [backend-haproxy-config]
 {%- for key, value in backend_haproxy_configuration.items() %}
-{{ key }} = {{ value }}
+{{ key }} = {{ dumps(value) }}
 {%- endfor %}
-local-ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
+local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = ${slap-configuration:ipv6-random}
-request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
-backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
-backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
+request-timeout = {{ dumps(configuration['request-timeout']) }}
+backend-connect-timeout = {{ dumps(configuration['backend-connect-timeout']) }}
+backend-connect-retries =  {{ dumps(configuration['backend-connect-retries']) }}
 
 [template-expose-csr-link-csr]
 recipe = plone.recipe.command
