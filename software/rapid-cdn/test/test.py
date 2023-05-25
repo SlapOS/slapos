@@ -66,15 +66,27 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import \
+  makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
+BACKWARD_COMPATBILITY_SR_URL = \
+  'https://lab.nexedi.com/nexedi/slapos/raw/' \
+  '7b5b196761272c1c4b06d74ae5dae901d9358ae7' \
+  '/software/rapid-cdn/software.cfg'
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  software_url = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+  setUpModule_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    software_url)
+
+  def setUpModule():
+    installSoftwareUrlList(
+      SlapOSInstanceTestCase,
+      [software_url, BACKWARD_COMPATBILITY_SR_URL],
+      debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))))
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -394,11 +406,15 @@ class TestDataMixin(object):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
-    hash_file_list = [os.path.join(
+    for hash_file in glob.glob(os.path.join(
+      self.instance_path, '*', 'software_release', 'buildout.cfg')):
+      partition = hash_file.split('/')[-3]
+
+      hash_file_list = [os.path.join(
         self.computer_partition_root_path, 'software_release/buildout.cfg')]
-    data_replacement_dict = {
-      '{hash-generic}': generateHashFromFiles(hash_file_list)
-    }
+      data_replacement_dict = {
+        '{hash-sr-%s}' % (partition,): generateHashFromFiles(hash_file_list)
+      }
     for backend_haproxy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
       partition_id = backend_haproxy_wrapper_path.split('/')[-3]
@@ -4755,6 +4771,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPResult(parameter_dict['domain'], 'path')
     # assure that the request went to backend NOT specified in the netloc
     self.assertNotIn('X-Backend-Identification', result.headers)
+
+
+class TestSlaveBackwardCompatbility(TestSlave):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = cls.parameter_dict.copy()
+    parameter_dict[
+      '-frontend-1-software-release-url'] = BACKWARD_COMPATBILITY_SR_URL
+    return parameter_dict
 
 
 class TestSlaveHttp3(TestSlave):
