@@ -9,13 +9,33 @@
 {%   do assert(False, ("WCFS supports only single ZODB storage", zodb_dict)) -%}
 {% endif -%}
 
+
+{# Define constants needed to build a NEO URI: -#}
+
+{#   Parameters which neither sets client nor server: -#}
+{#   they can be ignored as they are merely resulting from a convenience hack. -#}
+{#   (see https://lab.nexedi.com/nexedi/slapos/commit/706801f2) -#}
+{%   set ignore_parameter_list = ["_ca", "_key", "_cert"] -%}
+
+{#   Options which define the behaviour of our NEO client, but don't -#}
+{#   affect our NEO cluster. Should always be the same as -#}
+{#   https://lab.nexedi.com/kirr/neo/blob/4c9414ea/neo/client/zodburi.py#L34 -#}
+{%   set local_parameter_list = ["compress", "read-only", "logfile", "cache-size"] -%}
+
+
 {% set db_name, zodb = zodb_dict.popitem() -%}
 {% set z = zodb['storage-dict'] -%}
 {% if zodb['type'] == 'zeo' -%}
 {%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
 {% elif zodb['type'] == 'neo' -%}
-{#   neo(s)://[credentials@]master1,master2,...,masterN/name?options #}
+{#   neo(s)://[credentials@]master1,master2,...,masterN/name?server_options#client_options #}
 {#   (see https://lab.nexedi.com/kirr/neo/blob/3e13fa06/go/neo/client.go#L417) #}
+{#   Cleanup storage parameters: remove unused options #}
+{%   for ignore in ignore_parameter_list -%}
+{%     if ignore in z -%}
+{%       do z.pop(ignore) -%}
+{%     endif -%}
+{%   endfor -%}
 {#   If 'ca' in storage-dict, ssl is true. #}
 {#   (see https://lab.nexedi.com/nexedi/slapos/blob/397726e1/stack/erp5/instance-zodb-base.cfg.in#L17-21) #}
 {%   if "ca" in z -%}
@@ -25,7 +45,15 @@
 {%     set zurl = 'neo://' -%}
 {%   endif -%}
 {%   set zurl = ('%s%s/%s' % (zurl, z.pop('master_nodes')|replace(" ", ","), z.pop('name'))) -%}
-{%   set zurl = zurl + '?' + (z | dictsort | urlencode) -%}
+{%   set zurl_fragment_dict = {} -%}
+{%   for local in local_parameter_list -%}
+{%     if local in z -%}
+{%       zurl_fragment_dict[local] = z.pop(local) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   set zurl_fragment = zurl_fragment_dict | dictsort | urlencode %}
+{%   set zurl_query = z | dictsort | urlencode %}
+{%   set zurl = zurl + '?' + zurl_query + "#" + zurl_fragment -%}
 {% else -%}
 {%   do assert(False, ("unsupported ZODB type", zodb)) -%}
 {% endif -%}
