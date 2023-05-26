@@ -148,18 +148,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             fi
         fi
 
-        $RDIFF_BACKUP \\
-                $CORRUPTED_ARGS \\
-                --api-version 201 \\
-                --remote-schema %(remote_schema)s \\
-                backup \\
-                %(remote_dir)s \\
-                $BACKUP_DIR
-
-        RDIFF_BACKUP_STATUS=$?
-
-        [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
-
 
 
         """)
