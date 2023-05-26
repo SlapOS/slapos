@@ -132,7 +132,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         CORRUPTED_ARGS=""
         if [ "$1" = "--fix-corrupted" ]; then
-            VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
+            VERIFY=$($RDIFF_BACKUP verify $BACKUP_DIR 2>&1 >/dev/null)
             echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
 
             # Sometimes --verify reports this spurious warning:
@@ -152,6 +152,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 $CORRUPTED_ARGS \\
                 --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
+                backup \\
                 %(remote_dir)s \\
                 $BACKUP_DIR
 
@@ -163,7 +164,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             # Check the backup, go to the last consistent backup, so that next
             # run will be okay.
             echo "Checking backup directory..."
-            $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+            $RDIFF_BACKUP regress $BACKUP_DIR
             if [ ! $? -eq 0 ]; then
                 # Here, two possiblities:
                 if [ is_first_backup ]; then
@@ -179,7 +180,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             fi
         else
             # Everything's okay, cleaning up...
-            $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+            $RDIFF_BACKUP increments --older-than %(remove_backup_older_than)s --force $BACKUP_DIR
         fi
 
         """)
