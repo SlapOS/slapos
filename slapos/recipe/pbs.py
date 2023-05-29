@@ -76,7 +76,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         $RDIFF_BACKUP \\
                 --remote-schema %(remote_schema)s \\
                 --restore-as-of now \\
-                --ignore-numerical-ids \\
+                --ignore-numerical-ids 1\\
                 --force \\
                 %(local_dir)s \\
                 %(remote_dir)s
@@ -147,6 +147,16 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 echo "No corrupted or missing files to retransmit"
             fi
         fi
+
+        $RDIFF_BACKUP \\
+                $CORRUPTED_ARGS \\
+                --api-version 201 \\
+                --remote-schema %(remote_schema)s \\
+                backup \\
+                %(remote_dir)s \\
+                $BACKUP_DIR
+
+        RDIFF_BACKUP_STATUS=$?
 
 
 
