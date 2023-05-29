@@ -51,6 +51,7 @@ home = ${buildout:directory}
 etc = ${:home}/etc
 var = ${:home}/var
 srv = ${:home}/srv
+webdav = ${:srv}/webdav
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -90,8 +91,8 @@ path_access_log = ${basedirectory:log}/nginx.access.log
 path_error_log = ${basedirectory:log}/nginx.error.log
 path_tmp = ${tempdirectory:tmp}
 # Docroot
-docroot = ${docroot:location}
-default_index = ${:docroot}/index.html
+#docroot = ${docroot:location}
+#default_index = ${:docroot}/index.html
 # Config files
 path_nginx_conf = ${directory:etc}/nginx.conf
 path_mime_types = ${directory:etc}/mime_types
@@ -112,6 +113,8 @@ output = ${html5as:path_nginx_conf}
 context =
     section param_html5as html5as
     section param_tempdir tempdirectory
+    raw password_file {{ parameter_dict['password_file_path'] }}
+    key webdav_dir directory:webdav
 
 # Render necessary mime types file for nginx
 [mime_types]
