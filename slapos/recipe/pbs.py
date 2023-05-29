@@ -132,10 +132,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         CORRUPTED_ARGS=""
         if [ "$1" = "--fix-corrupted" ]; then
-            VERIFY=$($RDIFF_BACKUP verify $BACKUP_DIR 2>&1 >/dev/null)
+            VERIFY=$($RDIFF_BACKUP --api-version 201 verify $BACKUP_DIR 2>&1 >/dev/null)
             echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
 
-            # Sometimes --verify reports this spurious warning:
+            # Sometimes verify reports this spurious warning:
             echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
 
             # There can be too many files, better not to provide them through separate command line parameters
