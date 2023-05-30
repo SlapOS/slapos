@@ -32,6 +32,7 @@ import socket
 import struct
 import subprocess
 import time
+import websocket
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -105,7 +106,8 @@ SPEED_ARRAY_TYPE = 10 #float
 SPEED_ARRAY_VALUES = (-72.419998, 15.93, -0.015)
 
 STRING_TYPE = 12
-TEST_MESSAGE = b'{"content":"{\\"next_checkpoint\\":1}","dest_id":-1}'
+MESSAGE_CONTENT = b'{\\"next_checkpoint\\":1}'
+TEST_MESSAGE = b'{"content":"' + MESSAGE_CONTENT + b'","dest_id":-1}'
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -143,13 +145,22 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
         quickjs_bin,
         os.path.join(script_dir, MAIN_SCRIPT_NAME),
         os.path.join(script_dir, USER_SCRIPT_NAME),
-      ],
-      stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE,
+      ]
     )
-    time.sleep(0.1)
+    self.websocket_server_address = json.loads(
+      subscriber_partition.getConnectionParameterDict()['_'])['websocket-url']
+    time.sleep(0.5)
 
   def tearDown(self):
+    ws = websocket.WebSocket()
+    ws.connect(self.websocket_server_address, timeout=5)
+    try:
+      ws.send("quit")
+    except websocket.WebSocketTimeoutException:
+      pass
+    finally:
+      ws.close()
+    time.sleep(0.1)
     if self.qjs_process.returncode == None:
       self.qjs_process.kill()
       self.qjs_process.communicate()
@@ -260,7 +271,7 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
         'id': 1,
         'isASimulation': False,
         'isADrone': False,
-        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/raw/master/subscribe.js',
+        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/raw/api_update/subscribe.js',
         'netIf': OPC_UA_NET_IF,
         'multicastIp': MCAST_GRP
       }
@@ -281,14 +292,24 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_string, f.readlines())
 
   def test_pubsub_subscription(self):
+    ws = websocket.WebSocket()
+    ws.connect(self.websocket_server_address, timeout=5)
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f"}}}' % (0, 0, 0),
+      ))
+    )
     self.send_ua_networkMessage()
     time.sleep(0.1)
-    outs, _ = self.qjs_process.communicate(b'q\n', timeout=15)
-    decoded_out = outs.decode()
-    for line in (
-      'Subscription 0 | MonitoredItem %s' % MONITORED_ITEM_NB,
-      'Received position of drone 0: %f° %f° %fm %fm' % POSITION_ARRAY_VALUES,
-      'Received speed of drone 0: %f° %fm/s %fm/s' % SPEED_ARRAY_VALUES,
-      'Received message for drone 0: %s' % TEST_MESSAGE.decode(),
-    ):
-      self.assertIn(line, decoded_out)
+    self.assertEqual(ws.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % POSITION_ARRAY_VALUES[:-1],
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f"}}}' % SPEED_ARRAY_VALUES,
+      ))
+    )
