@@ -158,6 +158,31 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         RDIFF_BACKUP_STATUS=$?
 
+        [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
+
+        if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
+            # Check the backup, go to the last consistent backup, so that next
+            # run will be okay.
+            echo "Checking backup directory..."
+            $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+            if [ ! $? -eq 0 ]; then
+                # Here, two possiblities:
+                if [ is_first_backup ]; then
+                    continue
+                    # The first backup failed, and check-destination as well.
+                    # we may want to remove the backup.
+                else
+                    continue
+                    # The backup command has failed, while transferring an increment, and check-destination as well.
+                    # XXX We may need to publish the failure and ask the the equeue, re-run this script again,
+                    # instead do a push to the clone.
+                fi
+            fi
+        else
+            # Everything's okay, cleaning up...
+            $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+        fi
+
 
 
         """)
