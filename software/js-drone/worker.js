@@ -19,32 +19,48 @@ import {
   setMessage,
   setTargetCoordinates
 } from {{ json_module.dumps(qjs_wrapper) }};
-import * as std from "std";
-import { Worker } from "os";
+import {
+  SIGTERM,
+  WNOHANG,
+  Worker,
+  close,
+  exec,
+  kill,
+  pipe,
+  setReadHandler,
+  waitpid
+} from "os";
+import { evalScript, exit, fdopen, loadFile, open } from "std";
 
-(function (console, getAltitude, getAltitudeRel, getInitialAltitude,
-           getLatitude, getLongitude, getYaw, initPubsub, loiter,
-           setAirspeed, setMessage, setTargetCoordinates, std, triggerParachute,
-           Drone, Worker) {
+(function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
+           exit, fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
+           getLatitude, getLongitude, getYaw, initPubsub, kill, loadFile,
+           loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
+           setTargetCoordinates, triggerParachute, waitpid) {
   // Every script is evaluated per drone
   "use strict";
 
   var CONF_PATH = {{ json_module.dumps(configuration) }},
-    conf_file = std.open(CONF_PATH, "r"),
+    conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
+    clientId,
+    gwsocket_pid,
+    gwsocket_r_pipe_fd,
+    gwsocket_w_pipe_fd,
+    handleWebSocketMessage,
     last_message_timestamp = 0,
     parent = Worker.parent,
     peer_dict = {},
     user_me = {
-      //for debugging purpose
-      fdopen: std.fdopen,
-      in: std.in,
       //required to fly
       triggerParachute: triggerParachute,
       drone_dict: {},
       exit: function (exit_code) {
         parent.postMessage({type: "exited", exit: exit_code});
         parent.onmessage = null;
+        if (user_me.hasOwnProperty("onWebSocketMessage")) {
+          stopGwsocket();
+        }
       },
       getAltitudeAbs: getAltitude,
       getCurrentPosition: function () {
@@ -73,21 +89,107 @@ import { Worker } from "os";
     };
   conf_file.close();
 
+ function readMessage(rd) {
+    function read4() {
+      var b1, b2, b3, b4;
+      b1 = rd.getByte();
+      b2 = rd.getByte();
+      b3 = rd.getByte();
+      b4 = rd.getByte();
+      return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+    }
+    clientId = read4();
+    var type = read4();
+    var len = read4();
+    var data = new ArrayBuffer(len);
+    rd.read(data, 0, len);
+    return {
+      client: clientId,
+      type:   type,
+      data:   String.fromCharCode.apply(null, new Uint8Array(data)).trim()
+    };
+  }
+
+  function writeMessage(wr, m) {
+    function write4(v) {
+      wr.putByte((v >> 24) & 0xFF);
+      wr.putByte((v >> 16) & 0xFF);
+      wr.putByte((v >> 8) & 0xFF);
+      wr.putByte(v & 0xFF);
+    }
+    write4(m.client);
+    write4(m.type);
+    write4(m.data.byteLength);
+    wr.write(m.data, 0, m.data.byteLength);
+    wr.flush();
+  }
+
+  function runGwsocket(onMessage) {
+    var gwsocket_w_pipe = pipe(),
+      gwsocket_r_pipe = pipe();
+
+    gwsocket_pid = exec([
+        "gwsocket",
+        "--port=" + configuration.websocketPort,
+        "--addr=" + configuration.websocketIp,
+        "--std",
+        "--strict"
+      ], {
+        block:   false,
+        usePath: false,
+        file:    {{ json_module.dumps(gwsocket_bin) }},
+        stdin:   gwsocket_w_pipe[0],
+        stdout:  gwsocket_r_pipe[1]
+      });
+
+    gwsocket_w_pipe_fd = fdopen(gwsocket_w_pipe[1], "w");
+    gwsocket_r_pipe_fd = fdopen(gwsocket_r_pipe[0], "r");
+
+    handleWebSocketMessage = function () {
+      var message = readMessage(gwsocket_r_pipe_fd).data;
+      if (message.includes(configuration.websocketIp)) {
+        return;
+      }
+      onMessage(message);
+    };
+    user_me.writeWebsocketMessage = function (message) {
+      var buf = new ArrayBuffer(message.length);
+      var bufView = new Uint8Array(buf);
+      for (var i=0; i<message.length; i++) {
+        bufView[i] = message.charCodeAt(i);
+      }
+      writeMessage(gwsocket_w_pipe_fd, {client: clientId, type: 1, data: buf});
+    }
+    setReadHandler(gwsocket_r_pipe[0], handleWebSocketMessage);
+  }
+
+  function stopGwsocket() {
+    handleWebSocketMessage = null;
+    close(gwsocket_w_pipe_fd);
+    close(gwsocket_r_pipe_fd);
+    kill(gwsocket_pid, SIGTERM);
+    waitpid(gwsocket_pid, WNOHANG);
+  }
+
   function loadUserScript(path) {
-    var script_content = std.loadFile(path);
+    var script_content = loadFile(path);
     if (script_content === null) {
       console.log("Failed to load user script " + path);
-      std.exit(1);
+      exit(1);
     }
     try {
-      std.evalScript(
+      evalScript(
         "function execUserScript(from, me) {" + script_content + "};"
       );
     } catch (e) {
       console.log("Failed to evaluate user script", e);
-      std.exit(1);
+      exit(1);
     }
     execUserScript(null, user_me);
+
+    if (user_me.hasOwnProperty("onWebSocketMessage")) {
+      runGwsocket(user_me.onWebSocketMessage);
+    }
 
     // Call the drone onStart function
     if (user_me.hasOwnProperty("onStart")) {
@@ -141,9 +243,11 @@ import { Worker } from "os";
       // Catch all potential bug to exit the main process
       // if it occurs
       console.log(error);
-      std.exit(1);
+      exit(1);
     }
   };
-}(console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, initPubsub, loiter, setAirspeed, setMessage,
-  setTargetCoordinates, std, triggerParachute, Drone, Worker));
+}(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
+  exit, fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
+  getLatitude, getLongitude, getYaw, initPubsub, kill, loadFile,
+  loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
+  setTargetCoordinates, triggerParachute, waitpid));
