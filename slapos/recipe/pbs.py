@@ -180,7 +180,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             fi
         else
             # Everything's okay, cleaning up...
-            $RDIFF_BACKUP --api-version 201 remove --older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+            $RDIFF_BACKUP --api-version 201 remove increments --older-than %(remove_backup_older_than)s --force $BACKUP_DIR
         fi
 
 
