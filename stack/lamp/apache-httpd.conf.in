@@ -1,6 +1,7 @@
+{% set document_root = parameter_dict.get('document-root', parameter_dict['default-document-root']) -%}
 <VirtualHost *:{{ parameter_dict['port'] }}>
   ServerAdmin admin@example.com
-  DocumentRoot {{ parameter_dict.get('document-root', parameter_dict['default-document-root']) }}
+  DocumentRoot {{ document_root }}
 
   SetEnvIf Origin "^http(s)?://(.+\.)?(app\.officejs\.com)$" ORIGIN_DOMAIN=$0
   Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
@@ -9,12 +10,12 @@
   Header always set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization" env=ORIGIN_DOMAIN
   Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
 
-  <Directory {{ parameter_dict['document-root'] }}>
+  <Directory {{ document_root }}>
       Options +FollowSymlinks
       AllowOverride All
       Require all granted
-      SetEnv HOME {{ parameter_dict['document-root'] }}
-      SetEnv HTTP_HOME {{ parameter_dict['document-root'] }}
+      SetEnv HOME {{ document_root }}
+      SetEnv HTTP_HOME {{ document_root }}
       Dav off
 
   </Directory>
