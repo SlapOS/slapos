@@ -9,7 +9,7 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = instance-default:output
-drone = instance-drone:output
+peer = instance-peer:output
 RootSoftwareInstance = $${:default}
 
 [slap-configuration]
@@ -22,14 +22,28 @@ cert = $${slap_connection:cert_file}
 
 [dynamic-template-base]
 recipe = slapos.recipe.template:jinja2
-url = ${buildout:directory}/$${:_buildout_section_name_}.cfg
-output = $${buildout:directory}/$${:_buildout_section_name_}
+output = $${buildout:directory}/$${:_buildout_section_name_}.cfg
+extra-context =
+context =
+  jsonkey default_parameter_dict :default-parameters
+  key parameter_dict slap-configuration:configuration
+  $${:extra-context}
+default-parameters =
+  {
+    "autopilotIp": "192.168.27.1",
+    "autopilotPort": 7909,
+    "flightScript": "https://lab.nexedi.com/nexedi/flight-scripts/raw/master/default.js",
+    "isASimulation": false,
+    "multicastIp": "ff15::1111",
+    "netIf": "eth0",
+    "droneGuidList": [],
+    "subscriberGuidList":[]
+  }
 
 [instance-default]
 <= dynamic-template-base
+url = ${instance-default:target}
 extensions = jinja2.ext.do
-context =
-  key slapparameter_dict slap-configuration:configuration
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -48,7 +62,7 @@ minimum = 6789
 maximum = 6799
 ip = $${slap-configuration:ipv6-random}
 
-[drone-configuration]
+[peer-configuration]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:etc}/configuration.json
 extensions = jinja2.ext.do
@@ -56,17 +70,17 @@ context =
   import json_module json
   key websocket_ip gwsocket-port:ip
   key websocket_port gwsocket-port:port
-  key slapparameter_dict slap-configuration:configuration
+  key parameter_dict slap-configuration:configuration
 inline =
-  {% do slapparameter_dict.__setitem__('websocketIp', websocket_ip) -%}
-  {% do slapparameter_dict.__setitem__('websocketPort', websocket_port) -%}
-  {{ json_module.dumps(slapparameter_dict) }}
+  {% do parameter_dict.__setitem__('websocketIp', websocket_ip) -%}
+  {% do parameter_dict.__setitem__('websocketPort', websocket_port) -%}
+  {{ json_module.dumps(parameter_dict) }}
 
-[instance-drone]
+[instance-peer]
 <= dynamic-template-base
+url = ${instance-peer:output}
 depends = $${user:recipe}
-context =
-  key configuration drone-configuration:output
-  key is_a_drone slap-configuration:configuration.isADrone
-  key websocket_ip gwsocket-port:ip
+extra-context =
+  key configuration peer-configuration:output
+  key ipv6 slap-configuration:ipv6-random
   key websocket_port gwsocket-port:port
