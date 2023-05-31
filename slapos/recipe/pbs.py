@@ -178,6 +178,9 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                     # instead do a push to the clone.
                 fi
             fi
+        else
+            # Everything's okay, cleaning up...
+            $RDIFF_BACKUP --api-version 201 --older-than %(remove_backup_older_than)s --force $BACKUP_DIR
         fi
 
 
