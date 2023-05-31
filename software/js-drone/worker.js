@@ -30,10 +30,10 @@ import {
   setReadHandler,
   waitpid
 } from "os";
-import { evalScript, exit, fdopen, loadFile, open } from "std";
+import { evalScript, fdopen, loadFile, open } from "std";
 
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-           exit, fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
+           fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
            getLatitude, getLongitude, getYaw, initPubsub, kill, loadFile,
            loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
            setTargetCoordinates, triggerParachute, waitpid) {
@@ -55,13 +55,7 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
       //required to fly
       triggerParachute: triggerParachute,
       drone_dict: {},
-      exit: function (exit_code) {
-        parent.postMessage({type: "exited", exit: exit_code});
-        parent.onmessage = null;
-        if (user_me.hasOwnProperty("onWebSocketMessage")) {
-          stopGwsocket();
-        }
-      },
+      exit: exitWorker,
       getAltitudeAbs: getAltitude,
       getCurrentPosition: function () {
         return {
@@ -89,7 +83,15 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
     };
   conf_file.close();
 
- function readMessage(rd) {
+  function exitWorker(exit_code) {
+    if (user_me.hasOwnProperty("onWebSocketMessage")) {
+      stopGwsocket();
+    }
+    parent.postMessage({type: "exited", exit: exit_code});
+    parent.onmessage = null;
+  }
+
+  function readMessage(rd) {
     function read4() {
       var b1, b2, b3, b4;
       b1 = rd.getByte();
@@ -175,7 +177,7 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
     var script_content = loadFile(path);
     if (script_content === null) {
       console.log("Failed to load user script " + path);
-      exit(1);
+      exitWorker(1);
     }
     try {
       evalScript(
@@ -183,7 +185,7 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
       );
     } catch (e) {
       console.log("Failed to evaluate user script", e);
-      exit(1);
+      exitWorker(1);
     }
     execUserScript(null, user_me);
 
@@ -200,7 +202,9 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
   function handleMainMessage(evt) {
     var type = evt.data.type, message, peer_id;
 
-    if (type === "initPubsub") {
+    switch (type) {
+
+    case "initPubsub":
       initPubsub(configuration.numberOfDrone, configuration.numberOfSubscriber);
       for (peer_id = 0; peer_id < configuration.numberOfDrone + configuration.numberOfSubscriber; peer_id++) {
         peer_dict[peer_id] = new Drone(peer_id);
@@ -210,10 +214,14 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
         }
       }
       parent.postMessage({type: "initialized"});
-    } else if (type === "load") {
+      break;
+
+    case "load":
       loadUserScript(evt.data.path);
       parent.postMessage({type: "loaded"});
-    } else if (type === "update") {
+      break;
+
+    case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         message = peer.message;
         if (user_me.id !== Number(id) && message.length > 0) {
@@ -231,9 +239,15 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
         user_me.onUpdate(evt.data.timestamp);
       }
       parent.postMessage({type: "updated"});
-    } else {
+      break;
+
+    case "exit":
+      exitWorker(evt.data.code);
+      break;
+
+    default:
       throw new Error("Unsupported message type", type);
-    }
+    };
   }
 
   parent.onmessage = function (evt) {
@@ -243,11 +257,11 @@ import { evalScript, exit, fdopen, loadFile, open } from "std";
       // Catch all potential bug to exit the main process
       // if it occurs
       console.log(error);
-      exit(1);
+      exitWorker(1);
     }
   };
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  exit, fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
+  fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
   getLatitude, getLongitude, getYaw, initPubsub, kill, loadFile,
   loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
   setTargetCoordinates, triggerParachute, waitpid));
