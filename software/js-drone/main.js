@@ -8,8 +8,8 @@ import {
   stopPubsub,
   takeOffAndWait
 } from {{ json_module.dumps(qjs_wrapper) }};
-import { setTimeout, Worker } from "os";
-import { open, exit } from "std";
+import { Worker, SIGTERM, setTimeout, signal } from "os";
+import { exit, open } from "std";
 
 (function (arm, console, exit, open, scriptArgs, setTimeout, start, stop,
            stopPubsub, takeOffAndWait, Worker) {
@@ -37,6 +37,7 @@ import { open, exit } from "std";
   worker = new Worker("{{ worker_script }}");
 
   function quit(is_a_drone, shutdown, exit_code) {
+    worker.onmessage = null;
     stopPubsub();
     if (is_a_drone) {
       stop(shutdown);
@@ -44,10 +45,19 @@ import { open, exit } from "std";
     exit(exit_code);
   }
 
+  function exitWorker(exit_code) {
+    worker.postMessage({
+      type: "exit",
+      code: exit_code
+    });
+  }
+
+  signal(SIGTERM, exitWorker.bind(null, 0));
+
   function exitOnFail(ret, msg) {
     if (ret) {
       console.log(msg);
-      quit(1);
+      exitWorker(1);
     }
   }
 
@@ -87,7 +97,7 @@ import { open, exit } from "std";
     // First argument must provide the user script path
     if (user_script === undefined) {
       console.log('Please provide the user_script path.');
-      quit(1);
+      exitWorker(1);
     }
 
     worker.postMessage({
@@ -144,7 +154,7 @@ import { open, exit } from "std";
       quit(configuration.isADrone, !configuration.isASimulation, e.data.exit);
     } else {
       console.log('Unsupported message type', type);
-      quit(configuration.isADrone, !configuration.isASimulation, 1);
+      exitWorker(1);
     }
   };
 }(arm, console, exit, open, scriptArgs, setTimeout, start, stop, stopPubsub, 
