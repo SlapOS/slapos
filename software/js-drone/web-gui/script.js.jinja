@@ -1,0 +1,95 @@
+/*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
+
+(function () {
+  "use strict";
+
+  var ALTITUDE_BASE_ID = "altitude_",
+    AIRSPEED_BASE_ID = "airspeed_",
+    CONNECTED_CLASS_NAME = "connected",
+    CLIMB_RATE_BASE_ID = "climb_rate_",
+    DISCONNECTED_CLASS_NAME = "disconnected",
+    FLIGHT_BTN_ID = "flight-btn",
+    FLIGHT_STATUS_BASE_ID = "flight_state_",
+    GREEN_BTN_CLASS_NAME = "green-button",
+    LATITUDE_BASE_ID = "latitude_",
+    LONGITUDE_BASE_ID = "longitude_",
+    QUIT_BTN_ID = "quit-btn",
+    RED_BTN_CLASS_NAME = "red-button",
+    SWITCH_BTN_ID = "switch-btn",
+    WEB_SOCKET_STATUS_OUTPUT_ID = "web-socket-status",
+    YAW_BASE_ID = "yaw_",
+    socket;
+
+  function updateConnexionClass(element, status) {
+    element.classList.remove(status ? DISCONNECTED_CLASS_NAME : CONNECTED_CLASS_NAME);
+    element.classList.add(status ? CONNECTED_CLASS_NAME : DISCONNECTED_CLASS_NAME);    
+  }
+
+  function setWebSocketStatus(connected, status) {
+    var status_output = document.getElementById(WEB_SOCKET_STATUS_OUTPUT_ID);
+    updateConnexionClass(status_output, connected);
+    status_output.value = status;
+  }
+
+  function stopFlight(event) {
+    socket.send("stop");
+    event.target.removeEventListener('click', stopFlight);
+  }
+
+  function startFlight(event) {
+    var button = event.target;
+
+    socket.send("start");
+    button.removeEventListener('click', startFlight);
+    button.innerHTML = "Stop";
+    button.classList.remove(GREEN_BTN_CLASS_NAME);
+    button.classList.add(RED_BTN_CLASS_NAME);
+    button.addEventListener('click', stopFlight);
+  }
+
+  socket = new WebSocket('ws://{{ websocket_url }}');
+
+  socket.onopen = function(event) {
+    setWebSocketStatus(true, "Connected");
+  };
+
+  socket.onmessage = function(event) {
+    var message = JSON.parse(event.data),
+      flight_state_cell;
+    if (message.hasOwnProperty("drone_dict")) {
+      Object.entries(message["drone_dict"]).forEach(function ([id, drone]) {
+        document.getElementById(LATITUDE_BASE_ID + id).innerHTML = drone["latitude"];
+        document.getElementById(LONGITUDE_BASE_ID + id).innerHTML = drone["longitude"];
+        document.getElementById(ALTITUDE_BASE_ID + id).innerHTML = drone["altitude"];
+        document.getElementById(YAW_BASE_ID + id).innerHTML = drone["yaw"];
+        document.getElementById(AIRSPEED_BASE_ID + id).innerHTML = drone["speed"];
+        document.getElementById(CLIMB_RATE_BASE_ID + id).innerHTML = drone["climbRate"];
+      });
+    } else if (message.hasOwnProperty("state") && message.hasOwnProperty("id")) {
+      flight_state_cell = document.getElementById(FLIGHT_STATUS_BASE_ID + message['id']);
+      flight_state_cell.innerHTML = message['state'];
+      updateConnexionClass(flight_state_cell, message['inAir']);
+    } else {
+      console.info(message);
+    }
+  };
+
+  socket.onclose = function(event) {
+    setWebSocketStatus(false, "Closed");
+  };
+
+  socket.onerror = function(event) {
+    console.error(event.reason);
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById(FLIGHT_BTN_ID).addEventListener('click', startFlight);
+    document.getElementById(SWITCH_BTN_ID).addEventListener('click', event => {
+      
+      socket.send("switch");
+    });
+    document.getElementById(QUIT_BTN_ID).addEventListener('click', event => {
+      socket.send("quit");
+    });
+  });
+}());
