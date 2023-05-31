@@ -6,16 +6,20 @@ parts =
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+
 home = $${buildout:directory}
 bin = $${:home}/bin
 etc = $${:home}/etc
+srv = $${:home}/srv
 var = $${:home}/var
+
 log = $${:var}/log
+public = $${:srv}/public
+service = $${:etc}/service
 
 [js-dynamic-template]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}.js
-template = ${buildout:directory}/$${:_buildout_section_name_}.js
 extra-context =
 context =
   import json_module json
@@ -26,15 +30,18 @@ context =
 
 [main]
 <= js-dynamic-template
+template = ${main:target}
 extra-context =
   key log_dir directory:log
   key pubsub_script pubsub:rendered
   key worker_script worker:rendered
 
 [pubsub]
+template = ${pubsub:target}
 <= js-dynamic-template
 
 [worker]
+template = ${worker:target}
 <= js-dynamic-template
 
 [symlink-quickjs-binary]
@@ -46,9 +53,41 @@ init =
   if not os.path.exists(options['target']):
     os.symlink(options['binary-path'], options['target'])
 
+[script-js]
+recipe = slapos.recipe.template:jinja2
+template = ${script-js:target}
+rendered = $${directory:public}/script.js
+websocket-url = [{{ ipv6 }}]:{{ websocket_port }}
+context =
+  raw websocket_url $${:websocket-url}
+
+[index-html]
+recipe = slapos.recipe.template:jinja2
+template = ${index-html:target}
+rendered = $${directory:public}/index.html
+context =
+  raw nb_drones {{ parameter_dict['numberOfDrone'] }}
+
+[httpd-port]
+recipe = slapos.cookbook:free_port
+minimum = 8080
+maximum = 8090
+ip = {{ ipv6 }}
+
+[httpd]
+recipe = slapos.cookbook:simplehttpserver
+host = {{ ipv6 }}
+port = $${httpd-port:port}
+base-path = $${directory:public}
+wrapper = $${directory:service}/http-server
+log-file = $${directory:log}/httpd.log
+use-hash-url = false
+depends = $${index-html:rendered}
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 instance-path = $${directory:home}
-{% if not is_a_drone -%}
-websocket-url = ws://[{{ websocket_ip }}]:{{ websocket_port }}
+{% if not parameter_dict['isADrone'] -%}
+httpd-url = [$${httpd:host}]:$${httpd:port}
+websocket-url = ws://$${script-js:websocket-url}
 {% endif -%}
