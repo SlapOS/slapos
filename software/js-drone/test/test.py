@@ -254,6 +254,16 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
       s.sendto(ua_message, ('::1', OPC_UA_PORT))
 
+  def test_process(self):
+    expected_process_name_list = ['http-server-on-watch']
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
+
+    for expected_process_name in expected_process_name_list:
+      self.assertIn(expected_process_name, process_names)
+
+
   def test_requested_instances(self):
     connection_parameter_dict = json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
