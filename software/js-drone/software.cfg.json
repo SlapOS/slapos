@@ -12,11 +12,11 @@
       "index": 0
     },
     "drone": {
-      "title": "Drone",
-      "software-type": "drone",
-      "description": "Drone Instance",
-      "request": "instance-drone-input-schema.json",
-      "response": "instance-drone-output-schema.json",
+      "title": "Peer",
+      "software-type": "peer",
+      "description": "Peer Instance",
+      "request": "instance-peer-input-schema.json",
+      "response": "instance-peer-output-schema.json",
       "index": 1
     }
   }
