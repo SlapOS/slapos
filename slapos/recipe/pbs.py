@@ -75,7 +75,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         RDIFF_BACKUP=%(rdiffbackup_binary)s
         $RDIFF_BACKUP \\
                 --remote-schema %(remote_schema)s \\
-                --restore-as-of now \\
+                restore --at now \\
                 --ignore-numerical-ids 1\\
                 --force \\
                 %(local_dir)s \\
@@ -164,7 +164,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             # Check the backup, go to the last consistent backup, so that next
             # run will be okay.
             echo "Checking backup directory..."
-            $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+            $RDIFF_BACKUP regress $BACKUP_DIR
             if [ ! $? -eq 0 ]; then
                 # Here, two possiblities:
                 if [ is_first_backup ]; then
@@ -180,7 +180,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             fi
         else
             # Everything's okay, cleaning up...
-            $RDIFF_BACKUP --api-version 201 remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
+            echo "Cleaning backup directory..."
+            # $RDIFF_BACKUP --api-version 201 remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
         fi
 
 
