@@ -168,13 +168,14 @@ Listen {{ ip }}:{{ port }}
   # Custom block we use for now different parameters.
   RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
   SSLCACertificateFile {{ parameter_dict['shared-ca-cert'] }}
+  SSLCARevocationCheck chain
   SSLCARevocationPath {{ parameter_dict['shared-crl'] }}
 
-  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  LogFormat "%h %l %{Remote-User}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" service
 
   # We would like to separate the the authentificated logs.
   ErrorLog "{{ parameter_dict['log-dir'] }}/apache-service-error.log"
-  CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-access.log" combined
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-access.log" service
 {% endif -%}
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
 </VirtualHost>
