@@ -74,9 +74,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         export LC_ALL
         RDIFF_BACKUP=%(rdiffbackup_binary)s
         $RDIFF_BACKUP \\
+                --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
-                restore --at now \\
                 --ignore-numerical-ids 1 \\
+                restore --at now \\
                 %(local_dir)s \\
                 %(remote_dir)s
         """)
@@ -163,7 +164,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             # Check the backup, go to the last consistent backup, so that next
             # run will be okay.
             echo "Checking backup directory..."
-            $RDIFF_BACKUP regress $BACKUP_DIR
+            $RDIFF_BACKUP --api-version 201 regress $BACKUP_DIR
             if [ ! $? -eq 0 ]; then
                 # Here, two possiblities:
                 if [ is_first_backup ]; then
