@@ -76,7 +76,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         $RDIFF_BACKUP \\
                 --remote-schema %(remote_schema)s \\
                 restore --at now \\
-                --ignore-numerical-ids 1\\
+                --ignore-numerical-ids 1 \\
                 %(local_dir)s \\
                 %(remote_dir)s
         """)
