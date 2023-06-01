@@ -77,7 +77,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 --remote-schema %(remote_schema)s \\
                 restore --at now \\
                 --ignore-numerical-ids 1\\
-                --force \\
                 %(local_dir)s \\
                 %(remote_dir)s
         """)
