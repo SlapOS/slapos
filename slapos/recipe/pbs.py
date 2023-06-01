@@ -74,9 +74,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         export LC_ALL
         RDIFF_BACKUP=%(rdiffbackup_binary)s
         $RDIFF_BACKUP \\
+                --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
-                restore --at now \\
                 --ignore-numerical-ids 1 \\
+                restore --at now \\
                 %(local_dir)s \\
                 %(remote_dir)s
         """)
