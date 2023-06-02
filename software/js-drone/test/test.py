@@ -283,6 +283,46 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
       b'Unknown instruction 2001:67c:1254:2a:d41d:3738:ffff:ffff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       ws.recv_frame().data,
     )
+    self.assertIn(
+      b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 3\\n"}',
+      ws.recv_frame().data,
+    )
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f"}}}' % (0, 0, 0),
+      ))
+    )
+    self.assertIn(
+      b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % (0, 0 , 0, 0),
+      ws.recv_frame().data,
+    )
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f"}}}' % (0, 0, 0),
+      ))
+    )
+    self.assertIn(
+      b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % (0, 0 , 0),
+      ws.recv_frame().data,
+    )
+    self.assertEqual(
+      ws.recv_frame().data,
+      b''.join((
+        b'{"drone_dict":{"0":{"latitude":',
+        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
+        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f"}}}' % (0, 0, 0),
+      ))
+    )
+    self.assertIn(
+      b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 1\\n"}',
+      ws.recv_frame().data,
+    )
     self.assertEqual(
       ws.recv_frame().data,
       b''.join((

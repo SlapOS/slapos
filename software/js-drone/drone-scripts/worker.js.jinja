@@ -11,6 +11,7 @@ import {
   getClimbRate,
   getInitialAltitude,
   gpsIsOk,
+  getLog,
   getPosition,
   getYaw,
   initPubsub,
@@ -35,9 +36,9 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition,
-           getYaw, initPubsub, kill, loadFile, loiter, open, pipe, setAirSpeed,
-           setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
-           updateLogAndProjection, waitpid) {
+           getLog, getYaw, initPubsub, kill, loadFile, loiter, open, pipe,
+           setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
+           triggerParachute, updateLogAndProjection, waitpid) {
   // Every script is evaluated per drone
   "use strict";
 
@@ -197,7 +198,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, peer_id;
+    var type = evt.data.type, message, peer_id, log;
 
     switch (type) {
 
@@ -231,7 +232,15 @@ import { evalScript, fdopen, loadFile, open } from "std";
           }
         }
       });
-      // Call the drone onStart function
+
+      if (clientId !== undefined) {
+        log = getLog();
+        if (log.length > 0) {
+          user_me.writeWebsocketMessage(JSON.stringify({log: log}));
+        }
+      }
+
+      // Call the drone onUpdate function
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
@@ -264,7 +273,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     }
   };
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getYaw,
+  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getLog, getYaw,
   initPubsub, kill, loadFile, loiter, open, pipe, setAirSpeed, setMessage,
   setReadHandler, setTargetCoordinates, triggerParachute,
   updateLogAndProjection, waitpid));
