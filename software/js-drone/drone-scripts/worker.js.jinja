@@ -12,6 +12,7 @@ import {
   getInitialAltitude,
   getLatitude,
   getLongitude,
+  getLog,
   getYaw,
   initPubsub,
   loiter,
@@ -34,9 +35,9 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
-           getLatitude, getLongitude, getYaw, initPubsub, kill, loadFile,
-           loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
-           setTargetCoordinates, triggerParachute, waitpid) {
+           getLatitude, getLongitude, getLog, getYaw, initPubsub, kill,
+           loadFile, loiter, open, pipe, setAirspeed, setMessage,
+           setReadHandler, setTargetCoordinates, triggerParachute, waitpid) {
   // Every script is evaluated per drone
   "use strict";
 
@@ -200,7 +201,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, peer_id;
+    var type = evt.data.type, message, peer_id, log;
 
     switch (type) {
 
@@ -234,7 +235,15 @@ import { evalScript, fdopen, loadFile, open } from "std";
           }
         }
       });
-      // Call the drone onStart function
+
+      if (clientId !== undefined) {
+        log = getLog();
+        if (log.length > 0) {
+          user_me.writeWebsocketMessage(JSON.stringify({log: log}));
+        }
+      }
+
+      // Call the drone onUpdate function
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
@@ -262,6 +271,6 @@ import { evalScript, fdopen, loadFile, open } from "std";
   };
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
   fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
-  getLatitude, getLongitude, getYaw, initPubsub, kill, loadFile,
+  getLatitude, getLongitude, getLog, getYaw, initPubsub, kill, loadFile,
   loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
   setTargetCoordinates, triggerParachute, waitpid));

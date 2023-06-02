@@ -9,7 +9,8 @@
 
   <style>
     button {
-      padding: 0.5%;
+      margin: 2vh;
+      padding: 2vh;
       font-size: 24px;
       cursor: pointer;
       border: none;
@@ -20,36 +21,58 @@
       box-shadow: 0 2px #666;
       transform: translateY(4px);
     }
-    div > * {margin: 1%}
-    label {margin: 2%}
-    table {width: 30%}
+    label {margin: auto 2%}
+    table {
+      min-width: 1028px;
+      height: max-content;
+    }
     th, td{
       padding: 1%;
       text-align: center;
       vertical-align: middle;
     }
+    .blue-text {color: blue}
     .connected {color: green}  
     .container {
       display: flex;
       align-items: center;
       justify-content: center;
     }
+    .cyan-text {color: cyan}
     .disconnected {color: red}
+    .green-text {color: green}
     .green-button {background-color: #4caf50}
     .green-button:hover {background-color: #3e8e41}
+    .magenta-text {color: magenta}
     .red-button {background-color: red}
-    .red-button {background-color: #e42828}
+    .red-button:hover {background-color: #e42828}
+    .red-text {color: red}
+    .white-text {color: white}
+    .yellow-text {color: yellow}
+    #drones-status {height: 50vh}
+    #prompt {
+      background-color: rgb(18, 19, 20);
+      max-width: 1028px;
+      height: 20vh;
+      margin: auto;
+    }
+    #prompt-div {
+      height: max-content;
+    }
   </style>
 
 </head>
 <body>
 
-  <header class="container">
-    <label for="web-socket-status">web socket status:</label>
-    <output class="disconnected" id="web-socket-status">Disconnected</output>
-  </header>
+  <div id="prompt-div">
+    <div class="container">
+      <label for="web-socket-status">web socket status:</label>
+      <output class="disconnected" id="web-socket-status">Disconnected</output>
+    </div>
+    <pre id="prompt"></pre>
+  </div>
 
-  <div class="container">
+  <div class="container" id="drones-status">
     <table>
       <tr>
         <th></th>
