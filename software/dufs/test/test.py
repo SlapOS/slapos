@@ -67,38 +67,50 @@ class TestFileServer(SlapOSInstanceTestCase):
     )
     self.assertEqual(resp.status_code, requests.codes.ok)
 
-    resp = requests.get(
-      urllib.parse.urljoin(self.connection_parameters['public-url'], '..'),
-      verify=self.ca_cert,
-    )
-    self.assertEqual(resp.status_code, requests.codes.unauthorized)
+    with open(os.path.join(self.computer_partition_root_path, 'srv', 'www', 'secret.txt'), 'w'):
+      resp = requests.get(
+        urllib.parse.urljoin(self.connection_parameters['public-url'], '../secret.txt'),
+        verify=self.ca_cert,
+      )
+      self.assertEqual(resp.status_code, requests.codes.unauthorized)
+      resp = requests.get(
+        urllib.parse.urljoin(self.connection_parameters['public-url'], '../not-exist.txt'),
+        verify=self.ca_cert,
+      )
+      self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
-  def test_upload_file_refused_without_digest_auth(self):
+      # index is allowed on / but it only shows /pub/
+      resp = requests.get(
+        urllib.parse.urljoin(self.connection_parameters['public-url'], '..'),
+        verify=self.ca_cert,
+      )
+      self.assertIn('pub', resp.text)
+      self.assertNotIn('secret', resp.text)
+      self.assertEqual(resp.status_code, requests.codes.ok)
+
+  def test_upload_file_refused_without_auth(self):
+    parsed_upload_url = urllib.parse.urlparse(self.connection_parameters['upload-url'])
+    # upload-url has username:password, remove it
+    self.assertTrue(parsed_upload_url.password)
+    upload_url = parsed_upload_url._replace(
+      netloc=f'[{parsed_upload_url.hostname}]:{parsed_upload_url.port}').geturl()
     resp = requests.put(
-      urllib.parse.urljoin(self.connection_parameters['upload-url'], 'hello.txt'),
+      urllib.parse.urljoin(upload_url, 'hello.txt'),
       data=io.BytesIO(b'hello'),
       verify=self.ca_cert,
     )
     self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
   def test_upload_file(self):
-    parsed_url = urllib.parse.urlparse(self.connection_parameters['upload-url'])
-    auth = requests.auth.HTTPDigestAuth(
-      parsed_url.username,
-      parsed_url.password,
-    )
-
     resp = requests.put(
       urllib.parse.urljoin(self.connection_parameters['upload-url'], 'hello.txt'),
       data=io.BytesIO(b'hello'),
-      auth=auth,
       verify=self.ca_cert,
     )
     self.assertEqual(resp.status_code, requests.codes.created)
 
     resp = requests.get(
       urllib.parse.urljoin(self.connection_parameters['upload-url'], 'hello.txt'),
-      auth=auth,
       verify=self.ca_cert,
     )
     self.assertEqual(resp.text, 'hello')
