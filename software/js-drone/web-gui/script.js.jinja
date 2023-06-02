@@ -13,6 +13,9 @@
     GREEN_BTN_CLASS_NAME = "green-button",
     LATITUDE_BASE_ID = "latitude_",
     LONGITUDE_BASE_ID = "longitude_",
+    PROMPT_COLOR_RE = /\u001b.{2,3}m/g,
+    PROMPT_ID = "prompt",
+    PROMPT_MAX_MSG,
     QUIT_BTN_ID = "quit-btn",
     RED_BTN_CLASS_NAME = "red-button",
     WEB_SOCKET_STATUS_OUTPUT_ID = "web-socket-status",
@@ -20,8 +23,12 @@
     socket;
 
   function updateConnexionClass(element, status) {
-    element.classList.remove(status ? DISCONNECTED_CLASS_NAME : CONNECTED_CLASS_NAME);
-    element.classList.add(status ? CONNECTED_CLASS_NAME : DISCONNECTED_CLASS_NAME);    
+    element.classList.remove(
+      status ? DISCONNECTED_CLASS_NAME : CONNECTED_CLASS_NAME
+    );
+    element.classList.add(
+      status ? CONNECTED_CLASS_NAME : DISCONNECTED_CLASS_NAME
+    );
   }
 
   function setWebSocketStatus(connected, status) {
@@ -48,15 +55,22 @@
 
   socket = new WebSocket('ws://{{ websocket_url }}');
 
-  socket.onopen = function(event) {
+  socket.onopen = function (event) {
     setWebSocketStatus(true, "Connected");
   };
 
-  socket.onmessage = function(event) {
-    var message = JSON.parse(event.data),
-      flight_state_cell;
+  socket.onmessage = function (event) {
+    var color_array,
+      flight_state_cell,
+      i,
+      message = JSON.parse(event.data),
+      prompt,
+      new_div,
+      new_span,
+      text_array;
+
     if (message.hasOwnProperty("drone_dict")) {
-      Object.entries(message["drone_dict"]).forEach(function ([id, drone]) {
+      Object.entries(message.drone_dict).forEach(function ([id, drone]) {
         document.getElementById(LATITUDE_BASE_ID + id).innerHTML = drone["latitude"];
         document.getElementById(LONGITUDE_BASE_ID + id).innerHTML = drone["longitude"];
         document.getElementById(ALTITUDE_BASE_ID + id).innerHTML = drone["altitude"];
@@ -68,6 +82,54 @@
       flight_state_cell = document.getElementById(FLIGHT_STATUS_BASE_ID + message['id']);
       flight_state_cell.innerHTML = message['state'];
       updateConnexionClass(flight_state_cell, message['inAir']);
+    } else if(message.hasOwnProperty("log")) {
+      prompt = document.getElementById(PROMPT_ID);
+      if (PROMPT_MAX_MSG === undefined && prompt.children.length > 0) {
+        PROMPT_MAX_MSG = Math.trunc(prompt.height / prompt.children[0].height);
+      }
+
+      new_div = document.createElement("div");
+      text_array = message['log'].split(PROMPT_COLOR_RE);
+      color_array = message['log'].match(PROMPT_COLOR_RE);
+
+      for (i = 0; i < text_array.length; i++) {
+        new_span = document.createElement("span");
+        new_span.appendChild(document.createTextNode(text_array[i]));
+
+        if (i > 0 && i < color_array.length + 1) {
+          switch (color_array[i - 1]) {
+          case "\u001b[31m":
+            new_span.classList.add('red-text');
+            break;
+          case "\u001b[32m":
+            new_span.classList.add('green-text');
+            break;
+          case "\u001b[33m":
+            new_span.classList.add('yellow-text');
+            break;
+          case "\u001b[34m":
+            new_span.classList.add('blue-text');
+            break;
+          case "\u001b[35m":
+            new_span.classList.add('magenta-text');
+            break;
+          case "\u001b[36m":
+            new_span.classList.add('cyan-text');
+            break;
+          default:
+            new_span.classList.add('white-text');
+            break;
+          };
+        } else {
+          new_span.classList.add('white-text');
+        }
+        new_div.appendChild(new_span);
+      }
+
+      if (prompt.children.length === PROMPT_MAX_MSG) {
+        prompt.removeChild(prompt.firstElementChild);
+      }
+      prompt.appendChild(new_div);
     } else {
       console.info(message);
     }
