@@ -143,8 +143,9 @@ command-line =
     --bind ${:ip}
     --port ${:port}
     --allow-all
-    --auth /@${admin-password:user}:${admin-password:passwd}
-    --auth /pub@${admin-password:user}:${admin-password:passwd}@*
+    --auth-method basic
+    --auth ${admin-password:user}:${admin-password:passwd}@/:rw
+    --auth @/pub
     --tls-cert ${dufs-certificate:cert-file}
     --tls-key ${dufs-certificate:key-file}
     ${directory:dufs-data-dir}
