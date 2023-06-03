@@ -181,7 +181,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         else
             # Everything's okay, cleaning up...
             echo "Cleaning backup directory..."
-            $RDIFF_BACKUP --force remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
         fi
 
 
