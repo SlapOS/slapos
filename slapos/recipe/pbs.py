@@ -149,8 +149,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         fi
 
         $RDIFF_BACKUP \\
-                $CORRUPTED_ARGS \\
                 --api-version 201 \\
+                $CORRUPTED_ARGS \\
                 --remote-schema %(remote_schema)s \\
                 backup \\
                 %(remote_dir)s \\
@@ -181,6 +181,12 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         else
             # Everything's okay, cleaning up...
             echo "Cleaning backup directory..."
+            $RDIFF_BACKUP list increments $BACKUP_DIR
+            RDIFF_BACKUP_STATUS=$?
+
+            echo $RDIFF_BACKUP_STATUS
+            echo "Fuck!"
+            $RDIFF_BACKUP --api-version 201 --force remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
         fi
 
 
