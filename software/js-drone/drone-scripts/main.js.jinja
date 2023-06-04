@@ -1,6 +1,6 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
-/*global arm, console, exit, open, scriptArgs, setTimeout, start, stop,
-  stopPubsub, takeOffAndWait, Worker*/
+/*global arm, console, close, dup, exit, open, scriptArgs, setTimeout, start,
+  stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM*/
 import {
   arm,
   start,
@@ -8,17 +8,27 @@ import {
   stopPubsub,
   takeOffAndWait
 } from {{ json_module.dumps(qjs_wrapper) }};
-import { Worker, SIGTERM, setTimeout, signal } from "os";
-import { exit, open } from "std";
+import {
+  Worker,
+  SIGTERM,
+  dup2,
+  setTimeout,
+  signal
+} from "os";
+import { err, exit, open, out } from "std";
 
-(function (arm, console, exit, open, scriptArgs, setTimeout, start, stop,
-           stopPubsub, takeOffAndWait, Worker) {
+(function (arm, console, dup2, err, exit, open, out, scriptArgs,
+           setTimeout, start, stop, stopPubsub, takeOffAndWait, Worker,
+           SIGTERM) {
   "use strict";
 
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
-    LOG_FILE = "{{ log_dir }}/mavsdk-log",
+    MAVSDK_LOG_FILE_PATH =
+      "{{ log_dir }}/mavsdk_" + new Date().toISOString() + ".log",
+    LOG_FILE =
+      open("{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log", "w"),
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
@@ -27,6 +37,10 @@ import { exit, open } from "std";
     can_update = false;
 
   conf_file.close();
+
+  // redirect stdout and stderr
+  dup2(LOG_FILE.fileno(), out.fileno());
+  dup2(LOG_FILE.fileno(), err.fileno());
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -42,6 +56,7 @@ import { exit, open } from "std";
     if (is_a_drone) {
       stop();
     }
+    LOG_FILE.close();
     exit(exit_code);
   }
 
@@ -65,7 +80,12 @@ import { exit, open } from "std";
     var address = configuration.autopilotIp + ":" + configuration.autopilotPort;
     console.log("Will connect to", address);
     exitOnFail(
-      start(configuration.autopilotIp, configuration.autopilotPort, LOG_FILE, 60),
+      start(
+        configuration.autopilotIp,
+        configuration.autopilotPort,
+        MAVSDK_LOG_FILE_PATH,
+        60
+      ),
       "Failed to connect to " + address
     );
   }
@@ -157,5 +177,5 @@ import { exit, open } from "std";
       exitWorker(1);
     }
   };
-}(arm, console, exit, open, scriptArgs, setTimeout, start, stop, stopPubsub, 
-  takeOffAndWait, Worker));
+}(arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout, start, stop,
+  stopPubsub, takeOffAndWait, Worker, SIGTERM));

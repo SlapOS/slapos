@@ -50,12 +50,6 @@ recipe = slapos.cookbook:mkdirectory
 home = $${buildout:directory}
 etc = $${:home}/etc
 
-[user]
-recipe = slapos.recipe.build:download
-url = $${slap-configuration:configuration.flightScript}
-destination = $${directory:etc}/user.js
-offline = false
-
 [gwsocket-port]
 recipe = slapos.cookbook:free_port
 minimum = 6789
@@ -79,7 +73,6 @@ inline =
 [instance-peer]
 <= dynamic-template-base
 url = ${instance-peer:output}
-depends = $${user:recipe}
 extra-context =
   key configuration peer-configuration:output
   key ipv6 slap-configuration:ipv6-random
