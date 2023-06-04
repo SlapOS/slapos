@@ -182,11 +182,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             # Everything's okay, cleaning up...
             echo "Cleaning backup directory..."
             $RDIFF_BACKUP list increments $BACKUP_DIR
-            RDIFF_BACKUP_STATUS=$?
-
-            echo $RDIFF_BACKUP_STATUS
-            echo "Fuck!"
-            $RDIFF_BACKUP --api-version 201 --force remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
+            if [ ! $? -eq 0 ]; then
+              # There has some increments, do the cleaning
+              # XXX: How to check the increments is older than %(remove_backup_older_than)s?
+              $RDIFF_BACKUP --api-version 201 --force remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
+            fi
         fi
 
 
