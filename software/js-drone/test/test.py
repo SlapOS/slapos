@@ -30,13 +30,11 @@ import json
 import os
 import socket
 import struct
-import subprocess
 import time
 import websocket
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-MAIN_SCRIPT_NAME = 'main.js'
 '''
   0. positionArray
     0.1 latitude
@@ -53,7 +51,6 @@ MONITORED_ITEM_NB = 3
 OPC_UA_PORT = 4840
 OPC_UA_NET_IF = 'lo'
 MCAST_GRP = 'ff15::1111'
-USER_SCRIPT_NAME = 'user.js'
 
 # OPC UA Pub/Sub related constants
 VERSION = 1
@@ -114,8 +111,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class JSDroneTestCase(SlapOSInstanceTestCase):
-
+class SubscriberTestCase(SlapOSInstanceTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -135,36 +131,10 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
 
   def setUp(self):
     super().setUp()
-    subscriber_partition = self.get_partition('JSDroneTestCase-2')
-    instance_path = json.loads(
-      subscriber_partition.getConnectionParameterDict()['_'])['instance-path']
-    quickjs_bin = os.path.join(instance_path, 'bin', 'qjs')
-    script_dir = os.path.join(instance_path, 'etc')
-    self.qjs_process = subprocess.Popen(
-      [
-        quickjs_bin,
-        os.path.join(script_dir, MAIN_SCRIPT_NAME),
-        os.path.join(script_dir, USER_SCRIPT_NAME),
-      ]
-    )
+    subscriber_partition = self.get_partition('SubscriberTestCase-2')
     self.websocket_server_address = json.loads(
       subscriber_partition.getConnectionParameterDict()['_'])['websocket-url']
     time.sleep(0.5)
-
-  def tearDown(self):
-    ws = websocket.WebSocket()
-    ws.connect(self.websocket_server_address, timeout=5)
-    try:
-      ws.send("quit")
-    except websocket.WebSocketTimeoutException:
-      pass
-    finally:
-      ws.close()
-    time.sleep(0.1)
-    if self.qjs_process.returncode == None:
-      self.qjs_process.kill()
-      self.qjs_process.communicate()
-    super().tearDown()
 
   def ua_networkMessage_encodeHeader(self):
     ua_byte1 = int(VERSION)
@@ -255,7 +225,10 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       s.sendto(ua_message, ('::1', OPC_UA_PORT))
 
   def test_process(self):
-    expected_process_name_list = ['http-server-on-watch']
+    expected_process_name_list = [
+      'qjs-launcher',
+      'http-server-on-watch',
+    ]
     with self.slap.instance_supervisor_rpc as supervisor:
       process_names = [process['name']
                        for process in supervisor.getAllProcessInfo()]
@@ -272,7 +245,7 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
 
   def test_subscriber_instance_parameter_dict(self):
     self.assertEqual(
-      json.loads(self.get_partition('JSDroneTestCase-2').getInstanceParameterDict()['_']),
+      json.loads(self.get_partition('SubscriberTestCase-2').getInstanceParameterDict()['_']),
       {
         'autopilotIp': '192.168.27.1',
         'autopilotPort': 7909,
@@ -371,3 +344,4 @@ class JSDroneTestCase(SlapOSInstanceTestCase):
       b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % SPEED_ARRAY_VALUES,
       ws.recv_frame().data,
     )
+    ws.close()
