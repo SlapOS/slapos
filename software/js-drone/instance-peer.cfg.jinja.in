@@ -1,7 +1,6 @@
 [buildout]
 parts =
-  main
-  symlink-quickjs-binary
+  qjs-launcher
   publish-connection-information
 
 [directory]
@@ -43,6 +42,21 @@ template = ${pubsub:target}
 [worker]
 template = ${worker:target}
 <= js-dynamic-template
+
+[user]
+recipe = slapos.recipe.build:download
+url = {{ parameter_dict['flightScript'] }}
+destination = $${directory:etc}/user.js
+offline = false
+
+[qjs-launcher]
+recipe = slapos.recipe.template:jinja2
+output = $${directory:service}/qjs-launcher
+context =
+  key main_script main:rendered
+  key user_script user:target
+inline =
+  ${quickjs:location}/bin/qjs {{ main_script }} {{ user_script }}
 
 [symlink-quickjs-binary]
 recipe = slapos.recipe.build
