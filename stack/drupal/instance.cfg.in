@@ -1,0 +1,32 @@
+[buildout]
+extends =
+  {{ instance_lamp }}
+
+parts =
+  switch_softwaretype
+
+[switch_softwaretype]
+apache = dynamic-template-drupal:output
+
+eggs-directory = {{ buildout_egg_directory }}
+develop-eggs-directory = {{ buildout_develop_directory }}
+offline = true
+
+[dynamic-template-drupal-parameters]
+# Additional parameters for instance apache-php
+
+[dynamic-template-drupal]
+<= jinja2-template-base
+url = {{ template_instance_drupal }}
+filename = template-drupal.cfg
+extra-context =
+  section parameter_dict           dynamic-template-drupal-parameters
+  key templace_apache_php          dynamic-template-apache-php:output
+  key mariadb_location             dynamic-template-mariadb-parameters:mariadb-location
+  raw composer_location            {{ composer_location }}
+  raw php_location                 {{ php_location }}
+  raw nodejs_location              {{ nodejs_location }}
+  raw nextjs_app_location          {{ nextjs_app_location }}
+  raw template_apache_conf         {{ template_apache_conf }}
+  raw template_settings_php        {{ template_settings_php }}
+  raw template_settings_local      {{ template_settings_local }}

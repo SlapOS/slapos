@@ -1,0 +1,16 @@
+Listen {{ parameter_dict['ip'] }}:{{ parameter_dict['node-port'] }}
+<VirtualHost *:{{ parameter_dict['node-port'] }}>
+  ServerAdmin admin@example.com
+  ServerName example.com
+  SSLProxyEngine on
+  SSLProxyCheckPeerCN off
+
+  ProxyRequests Off
+  ProxyPreserveHost on
+  ProxyPass / http://{{ parameter_dict['node-server'] }}/
+  ProxyPassReverse / http://{{ parameter_dict['node-server'] }}/
+
+  ErrorLog "{{ parameter_dict['log-dir'] }}/nodejs-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/nodejs-access.log" combined
+
+</VirtualHost>
