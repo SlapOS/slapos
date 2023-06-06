@@ -33,7 +33,12 @@ return =
   url
   backend-url
   monitor-base-url
-
+{%   for param in parameter_dict['application-publish-list'].split('\n') -%}
+{%     if param.strip() -%}
+{{       '  ' ~ param }}
+{%       do publish_dict.__setitem__(param, '${request-apache:connection-' ~ param.strip() ~'}') -%}
+{%     endif -%}
+{%   endfor -%}
 {% do part_list.append('request-apache') -%}
 {% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
 {% do publish_dict.__setitem__('url', '${request-apache:connection-url}') -%}

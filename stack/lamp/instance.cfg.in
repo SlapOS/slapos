@@ -46,6 +46,7 @@ context =
 recipe = slapos.cookbook:generate.password
 
 [dynamic-template-lamp-parameters]
+application-publish-list = {{ application_deployment_publish_list.split('\n') | join('\n  ') }}
 
 [dynamic-template-lamp]
 <= jinja2-template-base
