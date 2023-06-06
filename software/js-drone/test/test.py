@@ -119,8 +119,8 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
     return {
       '_': json.dumps({
         'droneGuidList': [cls.slap._computer_id],
-        'netIf': OPC_UA_NET_IF,
         'subscriberGuidList': [cls.slap._computer_id],
+        'subscriberNetIf': OPC_UA_NET_IF
       })
     }
 
