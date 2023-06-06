@@ -12,11 +12,12 @@
 
 * autopilotIp: IPv4 address to identify the autopilot from the companion board
 * droneGuidList: List of computer id on which flight script must be deployed
+* droneNetIf: Drone network interface used for multicast traffic
 * isASimulation: Must be set to 'true' to automatically take off during simulation
 * multicastIp: IPv6 of the multicast group of the swarm
-* netIf: Network interface used for multicast traffic
 * flightScript: URL of user's script to execute to fly drone swarm
 * subscriberGuidList: List of computer id on which a GUI must be deployed
+* subscriberNetIf: Subscriber network interface used for multicast traffic
 
 
 ## How it works ##

@@ -22,6 +22,12 @@
       "type": "array",
       "default": []
     },
+    "droneNetIf": {
+      "title": "Drones Network interface",
+      "description": "Interface used for multicast traffic.",
+      "type": "string",
+      "default": "eth0"
+    },
     "isASimulation": {
       "title": "Set the flight as a simulation",
       "description": "The option used to determine if the flight is real or if it is a simulation. This affects the context of the flight (e.g. if the take off is manual or automatic).",
@@ -34,12 +40,6 @@
       "type": "string",
       "default": "ff15::1111"
     },
-    "netIf": {
-      "title": "Network interface",
-      "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
-    },
     "flightScript": {
       "title": "Script's URL of the flight",
       "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that the drone can fetch the script.",
@@ -51,6 +51,12 @@
       "description": "List of computer ID of swarms subscribers",
       "type": "array",
       "default": []
+    },
+    "subscriberNetIf": {
+      "title": "Subscribers Network interface",
+      "description": "Interface used for multicast traffic.",
+      "type": "string",
+      "default": "eth0"
     }
   }
 }
