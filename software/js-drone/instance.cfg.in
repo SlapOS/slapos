@@ -32,12 +32,13 @@ default-parameters =
   {
     "autopilotIp": "192.168.27.1",
     "autopilotPort": 7909,
+    "droneNetIf": "eth0",
     "flightScript": "https://lab.nexedi.com/nexedi/flight-scripts/raw/master/default.js",
     "isASimulation": false,
     "multicastIp": "ff15::1111",
-    "netIf": "eth0",
     "droneGuidList": [],
-    "subscriberGuidList":[]
+    "subscriberGuidList":[],
+    "subscriberNetIf": "eth0"
   }
 
 [instance-default]
