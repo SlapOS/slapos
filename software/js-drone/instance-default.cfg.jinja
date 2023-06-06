@@ -25,13 +25,14 @@ config-isASimulation = {{ dumps(parameter_dict['isASimulation']) }}
 {%   do drone_id_list.append(id) %}
 config-isADrone = {{ dumps(True) }}
 config-flightScript = {{ parameter_dict['flightScript'] }}
+config-netIf = {{ parameter_dict['droneNetIf'] }}
 {% else -%}
 {%   do subscriber_id_list.append(id) %}
 config-isADrone = {{ dumps(False) }}
 config-flightScript = https://lab.nexedi.com/nexedi/flight-scripts/raw/api_update/subscribe.js
+config-netIf = {{ parameter_dict['subscriberNetIf'] }}
 {% endif -%}
 config-multicastIp = {{ parameter_dict['multicastIp'] }}
-config-netIf = {{ parameter_dict['netIf'] }}
 {% endfor %}
 
 [publish-connection-information]
