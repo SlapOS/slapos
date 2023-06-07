@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-{%- if rf_mode == 'tdd' %}
+{%- if rf_mode == 'fdd' %}
     "rrh": {
       "title": "RRH",
       "description": "RRH",
@@ -13,6 +13,42 @@
         "SDR",
         "Lopcomm ORAN"
       ]
+    },
+    "cpri_mult": {
+      "title": "cpri_mult",
+      "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
+      "type": "number",
+      "default": 16
+    },
+    "cpri_rx_delay": {
+      "title": "cpri_rx_delay",
+      "description": "Delay between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
+      "type": "number",
+      "default": 0
+    },
+    "cpri_tx_delay": {
+      "title": "cpri_tx_delay",
+      "description": "Advance Start of Frame relative to PPS to compensate for delays in transmit line and RRH. This should be set to T12 + T2a.",
+      "type": "number",
+      "default": 0
+    },
+    "cpri_tx_dbm": {
+      "title": "cpri_tx_dbm",
+      "description": "Optional floating point value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
+      "type": "number",
+      "default": 0
+    },
+    "dnsmasq": {
+      "default": false,
+      "title": "dnsmasq",
+      "description": "dnsmasq",
+      "type": "boolean"
+    },
+    "rrh_mac_addr": {
+      "default": "00:0a:00:00:10:20",
+      "title": "RRH MAC address",
+      "description": "RRH MAC address used for DNSMASQ",
+      "type": "string"
     },
     "txa0cc00_active": {
       "title": "Lopcomm ORAN TX array carriers (TXA0CC00)",
@@ -33,6 +69,42 @@
         "ACTIVE",
         "INACTIVE"
       ]
+    },
+    "txa0cc00_center_frequency_earfcn": {
+      "title": "Lopcomm ORAN Center Frequency EARFCN (TXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency EARFCN (TXA0CC00)",
+      "type": "number",
+      "default": 300,
+    },
+    "txa0cc00_center_frequency": {
+      "title": "Lopcomm ORAN Center Frequency in Hz (TXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency in Hz (TXA0CC00)",
+      "type": "number",
+      "default": 2140000000,
+    },
+    "txa0cc00_bandwidth": {
+      "title": "Lopcomm ORAN bandwidth in Hz (TXA0CC00)",
+      "description": "Lopcomm ORAN bandwidth in Hz (TXA0CC00)",
+      "type": "number",
+      "default": 20000000,
+    },
+    "rxa0cc00_center_frequency_earfcn": {
+      "title": "Lopcomm ORAN Center Frequency EARFCN (RXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency EARFCN (RXA0CC00)",
+      "type": "number",
+      "default": 18300,
+    },
+    "rxa0cc00_center_frequency": {
+      "title": "Lopcomm ORAN Center Frequency in Hz (RXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency in Hz (RXA0CC00)",
+      "type": "number",
+      "default": 1950000000,
+    },
+    "rxa0cc00_bandwidth": {
+      "title": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
+      "description": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
+      "type": "number",
+      "default": 20000000,
     },
 {%- endif %}
     "log_phy_debug": {

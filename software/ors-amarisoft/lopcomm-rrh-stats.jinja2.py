@@ -95,7 +95,7 @@ if __name__ == '__main__':
     nc = LopcommNetconfClient()
     while True:
       try:
-          nc.connect("192.168.0.210", 830, "oranuser", "oranpassword")
+          nc.connect("2a11:9ac1:6:800a::1", 830, "oranuser", "oranpassword")
           nc.subscribe()
           while True:
             nc.get_notification()
