@@ -18,7 +18,7 @@ import { exit, open } from "std";
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
-    LOG_FILE = "{{ log_dir }}/mavsdk-log",
+    LOG_FILE = "{{ log_dir }}/" + new Date().toISOString() + ".log",
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
