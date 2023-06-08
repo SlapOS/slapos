@@ -92,12 +92,25 @@ class PostgresTest(unittest.TestCase):
 
   def test_restart_server(self):
     self.recipe.install()
+    self.start_postgres_server()
+
+    # Stop postgres service
+    pg_ctl_binary = os.path.join(self.postgres_bin_directory, 'pg_ctl')
+    self.recipe.check_exists(pg_ctl_binary)
+
     pgdata_directory = os.path.join(self.pgdata_directory, 'pgdata')
+
+    try:
+        subprocess.check_call([pg_ctl_binary,
+          '-D', pgdata_directory,
+          'stop',
+        ])
+    except subprocess.CalledProcessError:
+        raise UserError('Could not stop postgres service in %s' % pgdata)
+
     postmaster_pid_file =os.path.join(pgdata_directory, 'postmaster.pid')
     with open(postmaster_pid_file, 'w') as file:
       file.write('This is some content written to the file.\n')
-
-    self.start_postgres_server()
 
     self.recipe.install()
 

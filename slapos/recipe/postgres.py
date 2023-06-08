@@ -211,7 +211,19 @@ class Recipe(GenericBaseRecipe):
         change_password_query = """ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password)
 
         pgdata = self.options['pgdata-directory']
-        if os.path.exists(os.path.join(pgdata, 'postmaster.pid')):
+        postmaster_pid_file = os.path.join(pgdata, 'postmaster.pid')
+        if os.path.exists(postmaster_pid_file):
+            # Check the postgres is running or not
+            # if not, delete the ppostmaster.pid and run it again
+            pg_ctl_binary = os.path.join(self.options['bin'], 'pg_ctl')
+            self.check_exists(pg_ctl_binary)
+            p1 = subprocess.Popen([pg_ctl_binary, 'status', '-D', pgdata], stdin=subprocess.PIPE)
+            output, error = p1.communicate()
+            if p1.returncode:
+                os.remove(postmaster_pid_file)
+                self.runPostgresCommand(cmd=change_password_query)
+                return
+
             psql_binary = os.path.join(self.options['bin'], 'psql')
             # connect to a running postgres deamon
             p = subprocess.Popen([
@@ -224,7 +236,7 @@ class Recipe(GenericBaseRecipe):
                 stdin=subprocess.PIPE)
             p.communicate((change_password_query + '\n').encode())
             if p.returncode:
-                raise UserError("Error updating password")
+                raise UserError("Error updating password", output, error, p1.returncode)
         else:
             self.runPostgresCommand(cmd=change_password_query)
 
@@ -266,7 +278,7 @@ class Recipe(GenericBaseRecipe):
 
                 if [ -f "$pid_file" ]; then
                     echo "Deleting $pid_file"
-                    rm "$pid_file"
+                    # rm "$pid_file"
                 else
                     echo "$pid_file does not exist"
                 fi
