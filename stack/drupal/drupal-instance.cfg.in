@@ -59,8 +59,24 @@ wrapper-path = ${directory:bin}/composer
 [blt-bin]
 recipe = slapos.cookbook:wrapper
 command-line =
-  ${php-bin:wrapper-path} ${directory:www}/vendor/vendor/bin/blt
+  ${php-bin:wrapper-path} ${directory:www}/vendor/bin/blt
 wrapper-path = ${directory:bin}/blt
+
+[phpunit-bin]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${php-bin:wrapper-path} ${directory:www}/vendor/bin/phpunit
+wrapper-path = ${directory:bin}/phpunit
+
+[mysql-bin]
+recipe = slapos.cookbook:wrapper
+command-line = "{{ mariadb_location }}/bin/mysql"
+wrapper-path = ${directory:bin}/mysql
+
+[mysqldump-bin]
+recipe = slapos.cookbook:wrapper
+command-line = "{{ mariadb_location }}/bin/mysqldump"
+wrapper-path = ${directory:bin}/mysqldump
 
 [env-base]
 recipe = collective.recipe.template
@@ -193,6 +209,10 @@ depends =
   ${settings.local.php:recipe}
   ${composer-bin:recipe}
   ${drush-bin:recipe}
+  ${phpunit-bin:recipe}
+  ${blt-bin:recipe}
+  ${mysql-bin:recipe}
+  ${mysqldump-bin:recipe}
 
 [drupal-admin-passwd]
 recipe = slapos.cookbook:generate.password
