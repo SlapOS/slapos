@@ -211,7 +211,25 @@ class Recipe(GenericBaseRecipe):
         change_password_query = """ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password)
 
         pgdata = self.options['pgdata-directory']
-        if os.path.exists(os.path.join(pgdata, 'postmaster.pid')):
+        postmaster_pid_file = os.path.join(pgdata, 'postmaster.pid')
+        if os.path.exists(postmaster_pid_file):
+            pg_ctl_binary = os.path.join(self.options['bin'], 'pg_ctl')
+            self.check_exists(pg_ctl_binary)
+
+            # Check the postgres is running or not
+            # if not, delete the ppostmaster.pid and run it again
+            try:
+              output1 = subprocess.check_output([pg_ctl_binary, 'status', '-D', pgdata], stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+              if e.returncode == 3:
+                # If the server is not running, pg_ctl returns an exit status of 3
+                # see https://www.postgresql.org/docs/current/app-pg-ctl.html
+                os.remove(postmaster_pid_file)
+                self.runPostgresCommand(cmd=change_password_query)
+                return
+              else:
+                raise
+
             psql_binary = os.path.join(self.options['bin'], 'psql')
             # connect to a running postgres deamon
             p = subprocess.Popen([
