@@ -90,6 +90,18 @@ class PostgresTest(unittest.TestCase):
         self.assertEqual(cursor.fetchone(), (2,))
     cnx.close()
 
+  def test_restart_server(self):
+    self.recipe.install()
+    pgdata_directory = os.path.join(self.pgdata_directory, 'pgdata')
+    postmaster_pid_file =os.path.join(pgdata_directory, 'postmaster.pid')
+    with open(postmaster_pid_file, 'w') as file:
+      file.write('This is some content written to the file.\n')
+
+    self.start_postgres_server()
+
+    self.recipe.install()
+
+
   def test_update_password(self):
     self.recipe.install()
     self.start_postgres_server()

@@ -257,11 +257,22 @@ class Recipe(GenericBaseRecipe):
         Creates a script that runs postgres in the foreground.
         'exec' is used to allow easy control by supervisor.
         """
+        pgdata = self.options['pgdata-directory']
+        postmaster_pid_file = os.path.join(pgdata, 'postmaster.pid')
         content = textwrap.dedent("""\
                 #!/bin/sh
+
+                pid_file=%(postmaster_pid_file)s
+
+                if [ -f "$pid_file" ]; then
+                    echo "Deleting $pid_file"
+                    rm "$pid_file"
+                else
+                    echo "$pid_file does not exist"
+                fi
                 exec %(bin)s/postgres \\
                     -D %(pgdata-directory)s
-                """ % self.options)
+          """) % {'postmaster_pid_file': postmaster_pid_file, 'bin': self.options['bin'], 'pgdata-directory': self.options['pgdata-directory']}
         name = os.path.join(self.options['services'], 'postgres-start')
         return [self.createExecutable(name, content=content)]
 
