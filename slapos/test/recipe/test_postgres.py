@@ -90,6 +90,41 @@ class PostgresTest(unittest.TestCase):
         self.assertEqual(cursor.fetchone(), (2,))
     cnx.close()
 
+  def test_restart_server(self):
+    self.recipe.install()
+    self.start_postgres_server()
+
+    # Stop postgres service
+    pg_ctl_binary = os.path.join(self.postgres_bin_directory, 'pg_ctl')
+    self.recipe.check_exists(pg_ctl_binary)
+
+    pgdata_directory = os.path.join(self.pgdata_directory, 'pgdata')
+
+    try:
+        subprocess.check_call([pg_ctl_binary,
+          '-D', pgdata_directory,
+          'stop',
+        ])
+    except subprocess.CalledProcessError:
+        raise UserError('Could not stop postgres service in %s' % pgdata)
+
+    # Malformed postmaster.pid file should not prevent the service running
+    postmaster_pid_file =os.path.join(pgdata_directory, 'postmaster.pid')
+    content = '''\
+1074626
+/srv/slapgrid/slappart33/srv/runner/instance/slappart0/srv/postgresql
+1686241354
+5432
+/srv/slapgrid/slappart33/srv/runner/instance/slappart0/srv/postgresql
+10.0.156.45
+  5432001   1179658
+ready'''
+    with open(postmaster_pid_file, 'w') as file:
+      file.write(content)
+
+    self.recipe.install()
+
+
   def test_update_password(self):
     self.recipe.install()
     self.start_postgres_server()
