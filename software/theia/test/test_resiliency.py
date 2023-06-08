@@ -435,7 +435,8 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
 
 class TakeoverMixin(ExportAndImportMixin):
   def _getTakeoverUrlAndPassword(self, scope="theia-1"):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    partition = self.requestDefaultInstance() # re-request for up-to-date info
+    parameter_dict = partition.getConnectionParameterDict()
     takeover_url = parameter_dict["takeover-%s-url" % scope]
     takeover_password = parameter_dict["takeover-%s-password" % scope]
     return takeover_url, takeover_password
