@@ -49,6 +49,8 @@ recipe = slapos.cookbook:wrapper
 command-line =
   ${php-bin:wrapper-path} ${directory:www}/vendor/drush/drush/drush
 wrapper-path = ${directory:bin}/drush
+environment =
+  PATH=${directory:bin}:$PATH
 
 [composer-bin]
 recipe = slapos.cookbook:wrapper
