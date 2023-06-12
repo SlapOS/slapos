@@ -143,4 +143,3 @@ class PostgresTestNonStandardPort(PostgresTest):
 
 class PostgresTestEmptyPort(PostgresTest):
   port = ''
-
