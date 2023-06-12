@@ -108,6 +108,7 @@ class PostgresTest(unittest.TestCase):
     except subprocess.CalledProcessError:
         raise UserError('Could not stop postgres service in %s' % pgdata)
 
+    # Malformed postmaster.pid file should not prevent the service running
     postmaster_pid_file =os.path.join(pgdata_directory, 'postmaster.pid')
     with open(postmaster_pid_file, 'w') as file:
       file.write('This is some content written to the file.\n')
@@ -142,3 +143,4 @@ class PostgresTestNonStandardPort(PostgresTest):
 
 class PostgresTestEmptyPort(PostgresTest):
   port = ''
+
