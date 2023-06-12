@@ -77,6 +77,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
                 restore --at now \\
+                --force \\
                 %(local_dir)s \\
                 %(remote_dir)s
         """)
