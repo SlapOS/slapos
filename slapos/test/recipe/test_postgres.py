@@ -110,8 +110,17 @@ class PostgresTest(unittest.TestCase):
 
     # Malformed postmaster.pid file should not prevent the service running
     postmaster_pid_file =os.path.join(pgdata_directory, 'postmaster.pid')
+    content = '''\
+1074626
+/srv/slapgrid/slappart33/srv/runner/instance/slappart0/srv/postgresql
+1686241354
+5432
+/srv/slapgrid/slappart33/srv/runner/instance/slappart0/srv/postgresql
+10.0.156.45
+  5432001   1179658
+ready'''
     with open(postmaster_pid_file, 'w') as file:
-      file.write('This is some content written to the file.\n')
+      file.write(content)
 
     self.recipe.install()
 

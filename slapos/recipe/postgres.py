@@ -213,11 +213,8 @@ class Recipe(GenericBaseRecipe):
         pgdata = self.options['pgdata-directory']
         postmaster_pid_file = os.path.join(pgdata, 'postmaster.pid')
         if os.path.exists(postmaster_pid_file):
-
             pg_ctl_binary = os.path.join(self.options['bin'], 'pg_ctl')
             self.check_exists(pg_ctl_binary)
-            # p1 = subprocess.Popen([pg_ctl_binary, 'status', '-D', pgdata], stdin=subprocess.PIPE)
-            # output, error = p1.communicate()
 
             # Check the postgres is running or not
             # if not, delete the ppostmaster.pid and run it again
@@ -225,22 +222,16 @@ class Recipe(GenericBaseRecipe):
             try:
               output1 = subprocess.check_output([pg_ctl_binary, 'status', '-D', pgdata], stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
-              if e.returncode == 1 and "pg_ctl: invalid data in PID file" in e.output.decode('utf-8'):
-                # Undocumented pg_ctl behaviour
-                # run the postgres command again
-                run_postgres_again = True
-              elif e.returncode == 3:
+              if e.returncode == 3:
                 # Documented behaviour
                 # If the server is not running, pg_ctl returns an exit status of 3
                 # see https://www.postgresql.org/docs/current/app-pg-ctl.html
                 run_postgres_again = True
-              else:
-                raise RuntimeError("command '{}' returned with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-
-            if run_postgres_again:
                 os.remove(postmaster_pid_file)
                 self.runPostgresCommand(cmd=change_password_query)
                 return
+              else:
+                raise
 
             psql_binary = os.path.join(self.options['bin'], 'psql')
             # connect to a running postgres deamon
@@ -254,7 +245,7 @@ class Recipe(GenericBaseRecipe):
                 stdin=subprocess.PIPE)
             p.communicate((change_password_query + '\n').encode())
             if p.returncode:
-                raise UserError("Error updating password", p1.returncode, pg_ctl_binary, pgdata, output1)
+                raise UserError("Error updating password")
         else:
             self.runPostgresCommand(cmd=change_password_query)
 
@@ -266,6 +257,7 @@ class Recipe(GenericBaseRecipe):
         preceeded by backslash, between them.
         See http://www.postgresql.org/docs/9.1/static/app-postgres.html
         """
+
         pgdata = self.options['pgdata-directory']
         postgres_binary = os.path.join(self.options['bin'], 'postgres')
 
@@ -286,12 +278,13 @@ class Recipe(GenericBaseRecipe):
         Creates a script that runs postgres in the foreground.
         'exec' is used to allow easy control by supervisor.
         """
+        pgdata = self.options['pgdata-directory']
+        postmaster_pid_file = os.path.join(pgdata, 'postmaster.pid')
         content = textwrap.dedent("""\
                 #!/bin/sh
                 exec %(bin)s/postgres \\
                     -D %(pgdata-directory)s
-                """ % self.options)
+          """ % self.options)
         name = os.path.join(self.options['services'], 'postgres-start')
         return [self.createExecutable(name, content=content)]
-
 
