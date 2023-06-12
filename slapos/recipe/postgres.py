@@ -218,15 +218,12 @@ class Recipe(GenericBaseRecipe):
 
             # Check the postgres is running or not
             # if not, delete the ppostmaster.pid and run it again
-            run_postgres_again = False
             try:
               output1 = subprocess.check_output([pg_ctl_binary, 'status', '-D', pgdata], stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
               if e.returncode == 3:
-                # Documented behaviour
                 # If the server is not running, pg_ctl returns an exit status of 3
                 # see https://www.postgresql.org/docs/current/app-pg-ctl.html
-                run_postgres_again = True
                 os.remove(postmaster_pid_file)
                 self.runPostgresCommand(cmd=change_password_query)
                 return
