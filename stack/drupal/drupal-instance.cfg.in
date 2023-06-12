@@ -8,10 +8,6 @@ extends =
 
 parts +=
   drupal-site-install
-  next-server
-  proxy-apache-httpd
-  promise-next-server
-  nextjs-frontend-promise
 
 
 eggs-directory = {{ eggs_directory }}
@@ -22,12 +18,6 @@ offline = true
 [apache-php-configuration]
 enable-php8 = !py!True
 document-root = ${:default-document-root}/docroot
-node-port = 8000
-node-server = ${next-server:host}:${next-server:port}
-
-
-[directory]
-node = ${:srv}/node
 
 [template-base]
 recipe = slapos.recipe.template:jinja2
@@ -101,70 +91,6 @@ env =
   export PATH={{ mariadb_location }}/bin:${directory:bin}:$PATH
 env-name = site
 
-[next-env]
-<= env-base
-env =
-  export PATH={{ nodejs_location }}/bin:$PATH
-  export NEXT_PUBLIC_DRUPAL_BASE_URL=${request-frontend:connection-secure_access}
-  export NEXT_IMAGE_DOMAIN=${request-frontend:connection-domain}
-  export DRUPAL_PREVIEW_SECRET=
-  export DRUPAL_REVALIDATE_SECRET=
-  export DRUPAL_SITE_ID=
-  export DRUPAL_FRONT_PAGE=
-## Authentication (Bearer)
-#export DRUPAL_CLIENT_ID=
-#export DRUPAL_CLIENT_SECRET=
-#
-## Authentication (Basic)
-#export DRUPAL_USERNAME=
-#export DRUPAL_PASSWORD=
-env-name = next
-
-[build-next]
-recipe = plone.recipe.command
-command = if [ -z "$(ls -A ${directory:node})" ]; then
-    rm -rf ${directory:node};
-    cp -ax {{ nextjs_app_location }}/ ${directory:node};
-  fi
-  if [ -s "${directory:var}/.install-done" ]; then
-#   build next.js require next and next_jsonapi installed
-    export NEXT_PUBLIC_DRUPAL_BASE_URL=${request-frontend:connection-secure_access}
-    export NEXT_IMAGE_DOMAIN=${request-frontend:connection-domain}
-    cd ${directory:node}
-    {{ nodejs_location }}/bin/npm run build
-  fi
-update-command = ${:command}
-
-# Start next.js server
-[next-server-script]
-output = ${directory:bin}/next.js-server
-recipe = collective.recipe.template
-mode = 744
-input = inline:#!/bin/sh
-  . ${next-env:output}
-  cd ${directory:node}
-  npx next start "$@"
-depends = ${build-next:recipe}
-
-[next-server]
-recipe = slapos.cookbook:wrapper
-command-line =
-  ${next-server-script:output} -p ${:port} -H ${:host}
-wrapper-path = ${directory:services}/next.js-server
-port = 3001
-# Cannot listen on Ipv6
-host = ${apache-network-configuration:listening-ip4}
-wait-for-files =
-  ${directory:var}/.install-done
-
-[promise-next-server]
-# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
-<= monitor-promise-base
-promise = check_socket_listening
-name = nextjs-server-port-listening.py
-config-host = ${next-server:host}
-config-port = ${next-server:port}
-
 [drupal-site-install]
 output = ${directory:scripts}/drupal-install
 recipe = collective.recipe.template
@@ -220,30 +146,6 @@ depends =
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.admin_pwd
 
-[proxy-apache-httpd]
-recipe = slapos.recipe.template:jinja2
-url = {{ template_apache_conf }}
-output = ${directory:apache.d}/apache-drupal.conf
-context =
-  section parameter_dict apache-php-configuration
-
-[request-nextjs-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
-name = Next.js Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-shared = true
-config-url = https://[${apache-php-configuration:ip}]:${apache-php-configuration:node-port}
-config-https-only = true
-return = domain secure_access
-
-[nextjs-frontend-promise]
-<= monitor-promise-base
-promise = check_url_available
-name = nextjs-server-frontend.py
-config-url = ${request-nextjs-frontend:connection-secure_access}
-
 [instance-parameter]
 tmp-dir = ${directory:tmp}
 trusted-host-list =
@@ -260,7 +162,6 @@ account-mail = ${slap-parameter:instance.account-mail}
 [publish-connection-information]
 admin-username = ${instance-parameter:account-name}
 admin-password = ${drupal-admin-passwd:passwd}
-nextjs-url = ${request-nextjs-frontend:connection-secure_access}
 
 [slap-parameter]
 instance.site-profile = standard
