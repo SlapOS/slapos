@@ -25,8 +25,6 @@ extra-context =
   key mariadb_location             dynamic-template-mariadb-parameters:mariadb-location
   raw composer_location            {{ composer_location }}
   raw php_location                 {{ php_location }}
-  raw nodejs_location              {{ nodejs_location }}
-  raw nextjs_app_location          {{ nextjs_app_location }}
   raw template_apache_conf         {{ template_apache_conf }}
   raw template_settings_php        {{ template_settings_php }}
   raw template_settings_local      {{ template_settings_local }}
