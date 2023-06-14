@@ -82,12 +82,10 @@ extra-context =
     import subprocess_module subprocess
     import functools_module functools
     import operator_module operator
-    import validators validators
-    import software software
+    import validators_module validators
+    import software_module software
     key CLUSTER_DEFAULTS instance-default:defaults
     key SLAVE_DEFAULTS instance-slave-default:defaults
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
 [dynamic-profile-kedifa]
 < = jinja2-template-base
