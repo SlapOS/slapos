@@ -1,0 +1,10 @@
+--- osc-0.182.0/setup.py	2022-09-08 14:35:07.000000000 +0200
++++ osc-0.182.0/setup.py	2023-09-10 21:02:44.026954574 +0200
+@@ -102,7 +102,6 @@
+     download_url='https://github.com/openSUSE/osc',
+     packages=['osc', 'osc.util'],
+     scripts=['osc-wrapper.py'],
+-    data_files=data_files,
+     install_requires=['M2Crypto'],
+     classifiers=[
+         "Development Status :: 5 - Production/Stable",
