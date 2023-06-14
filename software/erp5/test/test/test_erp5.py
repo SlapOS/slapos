@@ -34,6 +34,7 @@ import json
 import os
 import shutil
 import socket
+import sqlite3
 import ssl
 import subprocess
 import sys
@@ -48,7 +49,7 @@ import xmlrpc.client
 import urllib3
 from slapos.testing.utils import CrontabMixin
 
-from . import ERP5InstanceTestCase, setUpModule, matrix, default
+from . import ERP5InstanceTestCase, setUpModule, matrix, default, neo
 
 setUpModule # pyflakes
 
@@ -789,6 +790,39 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
     self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
     self.assertFalse(os.path.exists(rotated_log_file))
 
+  def test_neo_root_log_rotation(self):
+    zope_neo_root_log_path = os.path.join(
+      self.getComputerPartitionPath('zope-default'),
+      'var',
+      'log',
+      'zope-0-neo-root.log',
+    )
+    if not self.isNEO():
+      self.assertFalse(os.path.exists(zope_neo_root_log_path))
+      return
+
+    def check_sqlite_log(path):
+      with contextlib.closing(sqlite3.connect(path)) as con:
+        con.execute('select * from log')
+
+    check_sqlite_log(zope_neo_root_log_path)
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+
+    rotated_log_file = os.path.join(
+      self.getComputerPartitionPath('zope-default'),
+      'srv',
+      'backup',
+      'logrotate',
+      'zope-0-neo-root.log-20500101',
+    )
+    check_sqlite_log(rotated_log_file)
+
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
+    self.assertFalse(os.path.exists(rotated_log_file))
+    requests.get(self._getAuthenticatedZopeUrl('/'), verify=False).raise_for_status()
+    check_sqlite_log(zope_neo_root_log_path)
+
   def test_basic_authentication_user_in_access_log(self):
     param_dict = self.getRootPartitionConnectionParameterDict()
     requests.get(self.zope_base_url,
@@ -866,7 +900,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         'zope-2-Z2.log',
         'zope-2-event.log',
         'zope-2-neo-root.log',
-      ] if '_neo' in self.__class__.__name__ else [
+      ] if self.isNEO() else [
         'zope-0-Z2.log',
         'zope-0-event.log',
         'zope-1-Z2.log',
@@ -1004,3 +1038,66 @@ class TestCloudoooDefaultParameter(ZopeSkinsMixin, ERP5InstanceTestCase):
             'portal_preferences/getPreferredDocumentConversionServerRetry'),
           verify=False).text,
       "2")
+
+
+class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
+  """Tests specific to neo storage
+  """
+  __partition_reference__ = 'n'
+  __test_matrix__ = matrix((neo,))
+
+  def _getCrontabCommand(self, crontab_name):
+    # type: (str) -> str
+    """Read a crontab and return the command that is executed.
+
+    overloaded to use crontab from neo partition
+    """
+    with open(
+        os.path.join(
+            self.getComputerPartitionPath('neo-0'),
+            'etc',
+            'cron.d',
+            crontab_name,
+        )) as f:
+      crontab_spec, = f.readlines()
+    self.assertNotEqual(crontab_spec[0], '@', crontab_spec)
+    return crontab_spec.split(None, 5)[-1]
+
+  def test_log_rotation(self):
+    # first run to create state files
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+
+    def check_sqlite_log(path):
+      with self.subTest(path), contextlib.closing(sqlite3.connect(path)) as con:
+        con.execute('select * from log')
+
+    logfiles = ('neoadmin.log', 'neomaster.log', 'neostorage-0.log')
+    for f in logfiles:
+      check_sqlite_log(
+        os.path.join(
+          self.getComputerPartitionPath('neo-0'),
+          'var',
+          'log',
+          f))
+
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+
+    for f in logfiles:
+      check_sqlite_log(
+        os.path.join(
+          self.getComputerPartitionPath('neo-0'),
+          'srv',
+          'backup',
+          'logrotate',
+          f'{f}-20500101'))
+
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    requests.get(self._getAuthenticatedZopeUrl('/'), verify=False).raise_for_status()
+
+    for f in logfiles:
+      check_sqlite_log(
+        os.path.join(
+          self.getComputerPartitionPath('neo-0'),
+          'var',
+          'log',
+          f))

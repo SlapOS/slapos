@@ -185,6 +185,10 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMet
     __test_matrix__ = matrix((zeo, neo))  # switch between NEO and ZEO mode
 
   @classmethod
+  def isNEO(cls):
+    return '_neo' in cls.__name__
+
+  @classmethod
   def getRootPartitionConnectionParameterDict(cls):
     """Return the output parameters from the root partition"""
     return json.loads(
