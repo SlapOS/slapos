@@ -1,4 +1,3 @@
-{% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
 {#- DANGER! DANGER! #}
 {#- Avoid touching the NAME_BASE, as it will result with backward incompatible cluster setup #}
@@ -51,7 +50,7 @@
 {% set aikc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-kedifa-caucase-csr', CLUSTER_DEFAULTS['automatic-internal-kedifa-caucase-csr'] | string).lower() in TRUE_VALUES %}
 {% set aibcc_enabled = instance_parameter_dict['configuration'].get('automatic-internal-backend-client-caucase-csr', CLUSTER_DEFAULTS['automatic-internal-backend-client-caucase-csr'] | string).lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
-{% set master_partition_monitor_monitor_httpd_port = 8401 %}
+{% set master_partition_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
 {% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
@@ -332,7 +331,7 @@ context =
 {% do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
 [monitor-instance-parameter]
-monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
+monitor-httpd-port = {{ master_partition_monitor_httpd_port }}
 
 [replicate]
 <= slap-connection
