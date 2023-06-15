@@ -16,7 +16,6 @@ offline = true
 
 
 [apache-php-configuration]
-enable-php8 = !py!True
 document-root = ${:default-document-root}/docroot
 
 [template-base]
@@ -119,7 +118,7 @@ input = inline:#!/bin/sh
 
   # Rebuild all caches.
   drush cache:rebuild
-
+{% if parameter_dict.get('php8') == True %}
   # install modules Next.js and Next.js JSON:API
   drush en next next_jsonapi --verbose --yes
   # install drush configs
@@ -128,6 +127,7 @@ input = inline:#!/bin/sh
     --uri=default --root=${directory:www} \
     --verbose --yes
   drush cache:rebuild
+{%- endif %}
 
   echo "done" > $INSTALL_FILE
   chmod 440 $INSTALL_FILE
