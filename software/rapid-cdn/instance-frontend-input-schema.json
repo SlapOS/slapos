@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "ram-cache-size": {
+      "type": "string",
+      "title": "ram-cache-size"
+    },
+    "disk-cache-size": {
+      "type": "string",
+      "title": "disk-cache-size"
+    },
+    "monitor-cors-domain": {
+      "type": "string",
+      "title": "monitor-cors-domain"
+    },
+    "extra_slave_instance_list": {
+      "type": "string",
+      "title": "JSON list of configured slaves dumped as text"
+    },
+    "-frontend-type": {
+      "type": "string",
+      "title": "-frontend-type"
+    },
+    "root_instance_short_title": {
+      "type": "string",
+      "title": "root_instance_short_title"
+    },
+    "domain": {
+      "type": "string",
+      "title": "domain"
+    },
+    "frontend-name": {
+      "type": "string",
+      "title": "frontend-name"
+    },
+    "ip-read-limit": {
+      "type": "string",
+      "title": "ip-read-limit"
+    },
+    "enable-http2-by-default": {
+      "type": "string",
+      "title": "enable-http2-by-default"
+    },
+    "monitor-password": {
+      "type": "string",
+      "title": "monitor-password"
+    },
+    "monitor-username": {
+      "type": "string",
+      "title": "monitor-username"
+    },
+    "public-ipv4": {
+      "type": "string",
+      "title": "public-ipv4"
+    },
+    "apache-ca-certificate": {
+      "type": "string",
+      "title": "apache-ca-certificate"
+    },
+    "apache-certificate": {
+      "type": "string",
+      "title": "apache-certificate"
+    },
+    "apache-key": {
+      "type": "string",
+      "title": "apache-key"
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
+}
