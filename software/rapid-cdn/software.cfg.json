@@ -35,6 +35,20 @@
       "shared": true,
       "software-type": "default",
       "title": "Default (slave)"
+    },
+    "single-custom-personal": {
+      "index": 100,
+      "request": "instance-frontend-input-schema.json",
+      "response": "instance-frontend-output-schema.json",
+      "software-type": "single-custom-personal",
+      "title": "[Technical] Frontend node"
+    },
+    "kedifa": {
+      "index": 101,
+      "request": "instance-kedifa-input-schema.json",
+      "response": "instance-kedifa-output-schema.json",
+      "software-type": "kedifa",
+      "title": "[Technical] KeDiFa node"
     }
   }
 }
