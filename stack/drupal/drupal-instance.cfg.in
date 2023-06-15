@@ -36,7 +36,7 @@ output = ${directory:www}/docroot/sites/settings.local.php
 [drush-bin]
 recipe = slapos.cookbook:wrapper
 command-line =
-  ${php-bin:wrapper-path} ${directory:www}/vendor/drush/drush/drush
+  ${php-bin:wrapper-path} ${directory:www}/vendor/drush/drush/drush  --root ${directory:www}
 wrapper-path = ${directory:bin}/drush
 environment =
   PATH=${directory:bin}:$PATH
@@ -141,10 +141,21 @@ depends =
   ${blt-bin:recipe}
   ${mysql-bin:recipe}
   ${mysqldump-bin:recipe}
+  ${cron-entry-drupal:recipe}
 
 [drupal-admin-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.admin_pwd
+
+[cron-entry-base]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+
+[cron-entry-drupal]
+<= cron-entry-base
+name = drupal-cron
+frequency = */20 * * * *
+command = cd ${apache-php-configuration:document-root} && ${directory:bin}/drush core-cron
 
 [instance-parameter]
 tmp-dir = ${directory:tmp}
