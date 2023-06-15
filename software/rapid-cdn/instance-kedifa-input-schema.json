@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "cluster-identification": {
+      "type": "string",
+      "title": "cluster-identification"
+    },
+    "monitor-cors-domains": {
+      "type": "string",
+      "title": "monitor-cors-domains"
+    },
+    "monitor-username": {
+      "type": "string",
+      "title": "monitor-username"
+    },
+    "monitor-password": {
+      "type": "string",
+      "title": "monitor-password"
+    },
+    "monitor-httpd-port": {
+      "type": "string",
+      "title": "monitor-password"
+    },
+    "slave-list": {
+      "type": "list",
+      "title": "slave-list"
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
+}
