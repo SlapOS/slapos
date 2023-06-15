@@ -143,6 +143,9 @@ php-ini-dir = ${directory:php-ini-dir}
 cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 apache-config-dir = ${directory:apache.d}
+{% if parameter_dict['application-enable-php8'] -%}
+enable-php8 = !py!True
+{% endif -%}
 
 [lamp-apache-httpd]
 recipe = slapos.recipe.template:jinja2
