@@ -65,6 +65,7 @@ application-location = {{ application_location }}/{{ application_archive_root }}
 application-location = {{ application_location }}
 {% endif %}
 application-part-list = {{ application_deployment_part_list }}
+application-enable-php8 = !py!{{ application_deployment_php8 }}
 template-apache-conf = {{ template_apache_conf }}
 apache-location = {{ apache_location }}
 apache-php-location = {{ apache_php_location }}
