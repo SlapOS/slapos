@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "slave-instance-information-list": {
+      "title": "JSON list of slave information dumped as text",
+      "type": "string"
+    },
+    "monitor-base-url": {
+      "title": "Base URL of the used monitor",
+      "type": "string"
+    },
+    "public-ipv4": {
+      "title": "Public IPv4",
+      "type": "string"
+    },
+    "private-ipv4": {
+      "title": "Private IPv4",
+      "type": "string"
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
+}

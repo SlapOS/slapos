@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "ram-cache-size": {
+      "type": "string",
+      "title": "ram-cache-size"
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
+}
