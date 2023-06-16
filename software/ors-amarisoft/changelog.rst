@@ -1,5 +1,11 @@
 Changelog
 =========
+Version 1.0.326 (2023-06-14)
+-------------
+
+* Add DHCP for Lopcomm RU's M-plane
+* Add support for FDD
+* Add more parameters and tests for lopcomm RU
 
 Version 1.0.323 (2023-05-17)
 -------------
