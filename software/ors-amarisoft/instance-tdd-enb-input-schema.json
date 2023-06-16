@@ -3,36 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "rrh": {
-      "title": "RRH",
-      "description": "RRH",
-      "type": "string",
-      "default": "SDR",
-      "enum": [
-        "SDR",
-        "Lopcomm ORAN"
-      ]
-    },
-    "txa0cc00_active": {
-      "title": "Lopcomm ORAN TX array carriers (TXA0CC00)",
-      "description": "Activate or inactivate Lopcomm ORAN TX array carriers (TXA0CC00)",
-      "type": "string",
-      "default": "ACTIVE",
-      "enum": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
-    },
-    "rxa0cc00_active": {
-      "title": "Lopcomm ORAN RX array carriers (RXA0CC00)",
-      "description": "Activate or inactivate Lopcomm ORAN RX array carriers (RXA0CC00)",
-      "type": "string",
-      "default": "ACTIVE",
-      "enum": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
-    },
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
