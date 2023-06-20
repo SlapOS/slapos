@@ -1,5 +1,10 @@
-<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
-            <!-- t[r]x-links -->
+	<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="4">	
+   <edit-config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">	
+      <target>	
+         <running />	
+      </target>	
+      <config>	
+         <user-plane-configuration xmlns="urn:o-ran:uplane-conf-option8:1.0">            <!-- t[r]x-links -->
             <tx-links>
                <name>TXA0P00C00</name>
                <processing-element>PE0</processing-element>
@@ -126,4 +131,7 @@
                 <gain-correction>0.0</gain-correction>
                 <n-ta-offset>0</n-ta-offset>
             </rx-array-carriers>
-</config>
+	         </user-plane-configuration>	
+      </config>	
+   </edit-config>	
+</rpc>
