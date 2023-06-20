@@ -1,56 +1,52 @@
-	<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="4">	
-   <edit-config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">	
-      <target>	
-         <running />	
-      </target>	
-      <config>	
-         <user-plane-configuration xmlns="urn:o-ran:uplane-conf-option8:1.0">            <!-- t[r]x-links -->
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+         <user-plane-configuration xmlns="urn:o-ran:uplane-conf-option8:1.0">
+            <!-- t[r]x-links -->
             <tx-links>
                <name>TXA0P00C00</name>
                <processing-element>PE0</processing-element>
                <tx-array-carrier>TXA0CC00</tx-array-carrier>
                <tx-endpoint>TXA0P00C00</tx-endpoint>
-             </tx-links>
+            </tx-links>
             <tx-links>
-                <name>TXA0P03C00</name>
-                <processing-element>PE0</processing-element>
-                <tx-array-carrier>TXA0CC00</tx-array-carrier>
-                <tx-endpoint>TXA0P03C00</tx-endpoint>
+               <name>TXA0P01C00</name>
+               <processing-element>PE0</processing-element>
+               <tx-array-carrier>TXA0CC00</tx-array-carrier>
+               <tx-endpoint>TXA0P01C00</tx-endpoint>
             </tx-links>
             <rx-links>
-                <name>PRACH0P01C00</name>
-                <processing-element>PE0</processing-element>
-                <rx-array-carrier>RXA0CC00</rx-array-carrier>
-                <rx-endpoint>PRACH0P01C00</rx-endpoint>
+               <name>RXA0P00C00</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>RXA0P00C00</rx-endpoint>
             </rx-links>
             <rx-links>
-                <name>RXA0P02C00</name>
-                <processing-element>PE0</processing-element>
-                <rx-array-carrier>RXA0CC00</rx-array-carrier>
-                <rx-endpoint>RXA0P02C00</rx-endpoint>
+               <name>PRACH0P00C00</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>PRACH0P00C00</rx-endpoint>
             </rx-links>
             <rx-links>
-                <name>PRACH0P02C00</name>
-                <processing-element>PE0</processing-element>
-                <rx-array-carrier>RXA0CC00</rx-array-carrier>
-                <rx-endpoint>PRACH0P02C00</rx-endpoint>
+               <name>RXA0P01C00</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>RXA0P01C00</rx-endpoint>
             </rx-links>
             <rx-links>
-                <name>RXA0P03C00</name>
-                <processing-element>PE0</processing-element>
-                <rx-array-carrier>RXA0CC00</rx-array-carrier>
-                <rx-endpoint>RXA0P03C00</rx-endpoint>
+               <name>PRACH0P01C00</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>PRACH0P01C00</rx-endpoint>
             </rx-links>
             <!-- t[r]x-endpoints -->
             <tx-endpoints>
-                <name>TXA0P00C00</name>
-                <e-axcid>
-                    <o-du-port-bitmask>61440</o-du-port-bitmask>
-                    <band-sector-bitmask>3968</band-sector-bitmask>
-                    <ccid-bitmask>112</ccid-bitmask>
-                    <ru-port-bitmask>15</ru-port-bitmask>
-                    <eaxc-id>0</eaxc-id>
-                </e-axcid>
+               <name>TXA0P00C00</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>0</eaxc-id>
+               </e-axcid>
             </tx-endpoints>
             <tx-endpoints>
                <name>TXA0P01C00</name>
@@ -62,28 +58,27 @@
                   <eaxc-id>1</eaxc-id>
                </e-axcid>
             </tx-endpoints>
-            
             <rx-endpoints>
-                <name>RXA0P00C00</name>
-                <e-axcid>
-                    <o-du-port-bitmask>61440</o-du-port-bitmask>
-                    <band-sector-bitmask>3968</band-sector-bitmask>
-                    <ccid-bitmask>112</ccid-bitmask>
-                    <ru-port-bitmask>15</ru-port-bitmask>
-                    <eaxc-id>0</eaxc-id>
-                </e-axcid>
-                <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
+               <name>RXA0P00C00</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>0</eaxc-id>
+               </e-axcid>
+               <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
             </rx-endpoints>
             <rx-endpoints>
-                <name>PRACH0P00C00</name>
-                <e-axcid>
-                    <o-du-port-bitmask>61440</o-du-port-bitmask>
-                    <band-sector-bitmask>3968</band-sector-bitmask>
-                    <ccid-bitmask>112</ccid-bitmask>
-                    <ru-port-bitmask>15</ru-port-bitmask>
-                    <eaxc-id>8</eaxc-id>
-                </e-axcid>
-                <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
+               <name>PRACH0P00C00</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>8</eaxc-id>
+               </e-axcid>
+               <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
             </rx-endpoints>
             <rx-endpoints>
                <name>RXA0P01C00</name>
@@ -97,41 +92,39 @@
                <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
             </rx-endpoints>
             <rx-endpoints>
-                <name>RXA0P03C00</name>
-                <e-axcid>
-                    <o-du-port-bitmask>61440</o-du-port-bitmask>
-                    <band-sector-bitmask>3968</band-sector-bitmask>
-                    <ccid-bitmask>112</ccid-bitmask>
-                    <ru-port-bitmask>15</ru-port-bitmask>
-                    <eaxc-id>3</eaxc-id>
-                </e-axcid>
-                <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
+               <name>PRACH0P01C00</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>9</eaxc-id>
+               </e-axcid>
+               <non-time-managed-delay-enabled>false</non-time-managed-delay-enabled>
             </rx-endpoints>
             <!-- t[r]x-array-carriers -->
             <tx-array-carriers>
-                <name>TXA0CC00</name>
-	              <absolute-frequency-center>{{ slapparameter_dict.get('txa0cc00_center_frequency_earfcn', 300) }}</absolute-frequency-center>	
-                <center-of-channel-bandwidth>{{ slapparameter_dict.get('txa0cc00_center_frequency', 2140000000) }}</center-of-channel-bandwidth>	
-                <channel-bandwidth>{{ slapparameter_dict.get('txa0cc00_bandwidth', 20000000) }}</channel-bandwidth>	
-                <active>{{ slapparameter_dict.get('txa0cc00_active', 'INACTIVE') }}</active>	
-                <rw-type>LTE</rw-type>	
-                <rw-duplex-scheme>FDD</rw-duplex-scheme>
-                <gain>50</gain>
-                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
-                <downlink-sfn-offset>0</downlink-sfn-offset>
+               <name>TXA0CC00</name>
+	           <absolute-frequency-center>{{ slapparameter_dict.get('txa0cc00_center_frequency_earfcn', 300) }}</absolute-frequency-center>
+               <center-of-channel-bandwidth>{{ slapparameter_dict.get('txa0cc00_center_frequency', 2140000000) }}</center-of-channel-bandwidth>
+               <channel-bandwidth>{{ slapparameter_dict.get('txa0cc00_bandwidth', 20000000) }}</channel-bandwidth>
+               <active>{{ slapparameter_dict.get('txa0cc00_active', 'INACTIVE') }}</active>
+               <rw-type>LTE</rw-type>
+               <rw-duplex-scheme>FDD</rw-duplex-scheme>
+               <gain>0</gain>
+               <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
+               <downlink-sfn-offset>0</downlink-sfn-offset>
             </tx-array-carriers>
             <rx-array-carriers>
-                <name>RXA0CC00</name>
-                <absolute-frequency-center>{{ slapparameter_dict.get('rxa0cc00_center_frequency_earfcn', 18300) }}</absolute-frequency-center>	
-                <center-of-channel-bandwidth>{{ slapparameter_dict.get('rxa0cc00_center_frequency', 1950000000) }}</center-of-channel-bandwidth>	
-                <channel-bandwidth>{{ slapparameter_dict.get('rxa0cc00_bandwidth', 20000000) }}</channel-bandwidth>	
-                <active>{{ slapparameter_dict.get('rxa0cc00_active', 'INACTIVE') }}</active>
-                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
-                <downlink-sfn-offset>0</downlink-sfn-offset>
-                <gain-correction>0.0</gain-correction>
-                <n-ta-offset>0</n-ta-offset>
+               <name>RXA0CC00</name>
+               <absolute-frequency-center>{{ slapparameter_dict.get('rxa0cc00_center_frequency_earfcn', 18300) }}</absolute-frequency-center>	
+               <center-of-channel-bandwidth>{{ slapparameter_dict.get('rxa0cc00_center_frequency', 1950000000) }}</center-of-channel-bandwidth>	
+               <channel-bandwidth>{{ slapparameter_dict.get('rxa0cc00_bandwidth', 20000000) }}</channel-bandwidth>	
+               <active>{{ slapparameter_dict.get('rxa0cc00_active', 'INACTIVE') }}</active>
+               <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
+               <downlink-sfn-offset>0</downlink-sfn-offset>
+               <gain-correction>0.0</gain-correction>
+               <n-ta-offset>0</n-ta-offset>
             </rx-array-carriers>
-	         </user-plane-configuration>	
-      </config>	
-   </edit-config>	
-</rpc>
+         </user-plane-configuration>
+</config>
