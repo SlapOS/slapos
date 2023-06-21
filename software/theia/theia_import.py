@@ -4,7 +4,11 @@ import itertools
 import os
 import sys
 import subprocess as sp
+import time
 import traceback
+
+import requests
+from requests.exceptions import RequestException
 
 import six
 from six.moves import configparser
@@ -56,6 +60,7 @@ class TheiaImport(object):
     configp = configparser.SafeConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
+    self.proxy_rest_url = configp.get('slapos', 'master_rest_url') # 200 OK
     self.instance_dir = configp.get('slapos', 'instance_root')
     mirror_dir = self.mirror_path(self.instance_dir)
     partitions = glob.glob(os.path.join(mirror_dir, 'slappart*'))
@@ -150,7 +155,28 @@ class TheiaImport(object):
       print(msg)
       raise Exception(msg)
 
+  def wait_for_proxy(self):
+    timeout = 10
+    sleep = 20
+    url = self.proxy_rest_url
+    for i in range(10):
+      try:
+        self.log(
+          '- GET proxy %s with timeout %d (attempt %d)' % (url, timeout, i))
+        response = requests.get(
+          url, timeout=timeout, verify=False, allow_redirects=True)
+      except RequestException:
+        if i == 9:
+          raise
+        else:
+          self.log('- Sleep %ds before retrying' % sleep)
+          time.sleep(sleep)
+      else:
+        response.raise_for_status()
+        break
+
   def log(self, msg):
+    msg = time.strftime("%Y-%B-%d %H:%M:%S - ") + msg
     print(msg)
     self.logs.append(msg)
 
@@ -213,6 +239,9 @@ class TheiaImport(object):
 
     self.log('Start slapproxy again')
     self.supervisorctl('start', 'slapos-proxy')
+
+    self.log('Wait until slapproxy is available')
+    self.wait_for_proxy()
 
     self.log('Reformat partitions')
     self.slapos('node', 'format', '--now')
