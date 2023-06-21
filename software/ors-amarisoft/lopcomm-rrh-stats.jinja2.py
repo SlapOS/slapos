@@ -15,13 +15,19 @@ class LopcommNetconfClient:
         log_file = "{{ log_file }}"
         json_log_file = "{{ json_log_file }}"
         cfg_json_log_file = "{{ cfg_json_log_file }}"
+        supervision_json_log_file = "{{ supervision_json_log_file }}"
+        ncsession_json_log_file = "{{ ncsession_json_log_file }}"
 
         self.logger = logging.getLogger('logger')
         self.json_logger = logging.getLogger('json_logger')
         self.cfg_json_logger = logging.getLogger('cfg_json_logger')
+        self.supervision_json_logger = logging.getLogger('supervision_json_logger')
+        self.ncsession_json_logger = logging.getLogger('ncsession_json_logger')
         self.logger.setLevel(logging.DEBUG)
         self.json_logger.setLevel(logging.DEBUG)
         self.cfg_json_logger.setLevel(logging.DEBUG)
+        self.supervision_json_logger.setLevel(logging.DEBUG)
+        self.ncsession_json_logger.setLevel(logging.DEBUG)
 
         json_handler = RotatingFileHandler(json_log_file, maxBytes=100000, backupCount=5)
         json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
@@ -32,6 +38,16 @@ class LopcommNetconfClient:
         cfg_json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
         cfg_json_handler.setFormatter(cfg_json_formatter)
         self.cfg_json_logger.addHandler(cfg_json_handler)
+
+        supervision_json_handler = RotatingFileHandler(supervision_json_log_file, maxBytes=100000, backupCount=5)
+        supervision_json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
+        supervision_json_handler.setFormatter(supervision_json_formatter)
+        self.supervision_json_logger.addHandler(supervision_json_handler)
+
+        ncsession_json_handler = RotatingFileHandler(ncsession_json_log_file, maxBytes=100000, backupCount=5)
+        ncsession_json_formatter = logging.Formatter('{"time": "%(asctime)s", "log_level": "%(levelname)s", "message": "%(message)s", "data": %(data)s}')
+        ncsession_json_handler.setFormatter(ncsession_json_formatter)
+        self.ncsession_json_logger.addHandler(ncsession_json_handler)
 
         handler = RotatingFileHandler(log_file, maxBytes=100000, backupCount=5)
         self.logger.addHandler(handler)
@@ -81,6 +97,10 @@ class LopcommNetconfClient:
               data_dict = xmltodict.parse(result_in_xml)
               if 'alarm-notif' in data_dict['notification']:
                 self.json_logger.info('', extra={'data': data_dict})
+              elif 'supervision-notification' in data_dict['notification']:
+                self.supervision_json_logger.info('', extra={'data': data_dict})
+              elif 'netconf-session-start' or 'netconf-session-end' in data_dict['notification']:
+                self.ncsession_json_logger.info('', extra={'data': data_dict})
               else:
                 self.cfg_json_logger.info('', extra={'data': data_dict})
 
