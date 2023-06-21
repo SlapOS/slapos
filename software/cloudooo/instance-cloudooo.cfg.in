@@ -10,7 +10,7 @@
 {%   set next_port = slapparameter_dict.get(instance_parameter_dict['port-parameter-name'], next_port) | int -%}
 {% endif -%}
 {% do assert(next_port > 0) -%}
-{% set next_port = itertools.count(next_port).next -%}
+{% set next_port = itertools.count(next_port).__next__ -%}
 
 {% set backend_count = instance_parameter_dict['backend-count'] | int -%}
 {% if instance_parameter_dict.get('backend-count-parameter-name') -%}
@@ -85,7 +85,7 @@ output = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict
 
 [apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict.values()) }}
+backend-list = {{ dumps(list(apache_dict.values())) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
 error-log = ${directory:log}/apache-error.log
@@ -103,7 +103,7 @@ ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 <= monitor-promise-base
 promise = check_url_available
 name = apache.py
-config-url = https://{{ ipv4 }}:{{ apache_dict.values()[0][0] }}
+config-url = https://{{ ipv4 }}:{{ list(apache_dict.values())[0][0] }}
 # XXX cloudooo replies "400 Bad Request" for GET on / but what we want to check
 # is that we don't have a "503 Service Unavailable" from apache or haproxy.
 config-http-code = 400
@@ -155,7 +155,7 @@ includes =
 recipe = slapos.cookbook:generic.cloudooo
 ip = {{ ipv4 }}
 environment =
-  LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+  LD_LIBRARY_PATH = {{ parameter_dict['avahi'] }}/lib:{{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['nss'] }}/lib:{{ parameter_dict['nspr'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
   FONTCONFIG_FILE = ${fontconfig-conf:output}
   PATH = ${binary-link:target-directory}
   LANG = C.UTF-8
