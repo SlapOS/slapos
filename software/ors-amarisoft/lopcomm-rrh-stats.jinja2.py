@@ -66,7 +66,7 @@ class LopcommNetconfClient:
 
         # Filter not compatible between ncclient and netconf server
         #result = self.conn.create_subscription(filter=('xpath', '/o-ran-fm:*'))
-        sub = self.conn.create_subscription(stream_name='o-ran-supervision')
+        sub = self.conn.create_subscription(filter=('stream', 'o-ran-supervision'))
         self.logger.info('Subscription to %s successful' % (self.address,))
 
     def get_notification(self):
