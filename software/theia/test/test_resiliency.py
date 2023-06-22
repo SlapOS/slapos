@@ -498,8 +498,18 @@ class TakeoverMixin(ExportAndImportMixin):
     self.assertIn("Success", resp.text, "An Error occured: %s" % resp.text)
     return resp.text
 
+  def _doTakeover(self):
+    # Takeover
+    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
+    self._requestTakeover(takeover_url, takeover_password)
 
-class TheiaSyncMixin(ResilienceMixin, TakeoverMixin):
+    # Wait for import instance to become export instance and new import to be allocated
+    # This also checks that all promises of theia instances succeed
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.computer_partition = self.requestDefaultInstance()
+
+
+class TheiaSyncMixin(TakeoverMixin, ResilienceMixin):
   def _doSync(self, max_tries=None, wait_interval=None):
     max_tries = max_tries or self.backup_max_tries
     wait_interval = wait_interval or self.backup_wait_interval
@@ -547,17 +557,10 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
     etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
-    self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
-
-  def _doTakeover(self):
-    # Takeover
-    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
-    self._requestTakeover(takeover_url, takeover_password)
-
-    # Wait for import instance to become export instance and new import to be allocated
-    # This also checks that all promises of theia instances succeed
-    self.slap.waitForInstance(self.instance_max_retry)
-    self.computer_partition = self.requestDefaultInstance()
+    try:
+      self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
+    except AssertionError:
+      breakpoint()
 
   def _checkTakeover(self):
     # Check that there is an export, import and frozen instance and get their new partition IDs
