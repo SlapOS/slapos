@@ -7,9 +7,9 @@
       "title": "RRH",
       "description": "RRH",
       "type": "string",
-      "default": "SDR",
+      "default": "ORS",
       "enum": [
-        "SDR",
+        "ORS",
         "Lopcomm ORAN"
       ]
     },
