@@ -1,5 +1,10 @@
 Changelog
 =========
+Version 1.0.3XX (2023-06-XX)
+-------------
+
+* Change Slice Differentiator input parameter to hexadecimal representation
+
 Version 1.0.326 (2023-06-14)
 -------------
 
