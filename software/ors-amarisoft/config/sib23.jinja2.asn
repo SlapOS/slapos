@@ -1,3 +1,4 @@
+{%- set tx_gain = slapparameter_dict.get('tx_gain', slap_configuration['configuration.default_lte_tx_gain']) %}
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
@@ -36,7 +37,15 @@
               }
             },
             pdsch-ConfigCommon {
+{% if slapparameter_dict.get('rrh', 'ORS') == "ORS" %}
+{%- if one_watt == "True" %}
+              referenceSignalPower {{ (tx_gain | int) - 54 }}, /* patched by eNB */
+{%- else %}
+              referenceSignalPower {{ (tx_gain | int) - 35 }}, /* patched by eNB */
+{%- endif %}
+{% else %}
               referenceSignalPower -8, /* patched by eNB */
+{% endif %}
               p-b 1 /* patched by eNB */
             },
             pusch-ConfigCommon {
