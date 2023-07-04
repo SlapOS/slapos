@@ -1,0 +1,53 @@
+[buildout]
+parts = switch-softwaretype
+
+eggs-directory = {{ buildout_egg_directory }}
+develop-eggs-directory = {{ buildout_develop_directory }}
+offline = true
+
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default  = dynamic-template-autocert:output
+RootSoftwareInstance = ${:default}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+output = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+  key develop_eggs_directory buildout:develop-eggs-directory
+  key buildout_directory buildout:directory
+  key eggs_directory buildout:eggs-directory
+  key ipv4 slap-configuration:ipv4
+  key ipv6 slap-configuration:ipv6
+  key slapparameter_dict slap-configuration:configuration
+  raw buildout_bin_directory {{ bin_directory }}
+  raw bash_executable_location {{ bash_location }}/bin/dash
+  raw curl_location {{ curl_location }}
+  raw openssl_location {{ openssl_location }}
+  raw openssl_bin {{ openssl_location }}/bin/openssl
+  raw template_monitor {{ template_monitor_cfg }}
+  ${:extra-context}
+
+
+[dynamic-template-autocert-parameters]
+dehydrated-location = {{ dehydrated_location }}
+kedifa-location = {{ kedifa_location }}
+template-config = {{ template_dehydrated_config }}
+
+[dynamic-template-autocert]
+<= jinja2-template-base
+url = {{ template_autocert }}
+filename = instance-autocert.cfg
+extra-context =
+  section parameter_dict dynamic-template-autocert-parameters
