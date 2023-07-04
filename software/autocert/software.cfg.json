@@ -1,0 +1,14 @@
+{
+  "name": "HTTPS certificate update automation",
+  "description": "HTTPS certificate update automation for letsencrypt.",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json"
+    }
+  }
+}
