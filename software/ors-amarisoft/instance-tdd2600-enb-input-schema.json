@@ -118,6 +118,16 @@
       "type": "number",
       "default": 10000
     },
+    "tdd_ul_dl_config": {
+      "title": "TDD",
+      "description": "TDD",
+      "type": "string",
+      "enum": [
+        "[Configuration 2] 5ms 2UL 6DL (default)",
+        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)"
+    },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
