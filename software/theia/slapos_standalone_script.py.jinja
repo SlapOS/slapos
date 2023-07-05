@@ -70,23 +70,23 @@ def setupStandalone():
   shared_parts = {{ repr(shared_part_list) }}
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
   standalone = slapos.slap.standalone.StandaloneSlapOS(
-    {{ repr(slapos_standalone_config['base-directory']) }},
-    {{ repr(slapos_standalone_config['ipv4']) }},
-    {{ slapos_standalone_config['port'] }},
-    computer_id={{ repr(slapos_standalone_config['computer-id']) }},
+    {{ repr(config['base-directory']) }},
+    {{ repr(config['ipv4']) }},
+    {{ config['port'] }},
+    computer_id={{ repr(config['computer-id']) }},
     shared_part_list=shared_part_list,
-    software_root={{ repr(slapos_standalone_config['software-root']) }},
-    instance_root={{ repr(slapos_standalone_config['instance-root']) }},
+    software_root={{ repr(config['software-root']) }},
+    instance_root={{ repr(config['instance-root']) }},
     partition_forward_configuration=partition_forward_configuration,
-    slapos_bin={{ repr(slapos_standalone_config['slapos-bin']) }},
-    local_software_release_root={{ repr(slapos_standalone_config['local-software-release-root']) }},
+    slapos_bin={{ repr(config['slapos-bin']) }},
+    local_software_release_root={{ repr(config['local-software-release-root']) }},
   )
   standalone.start()
   try:
     partition_count = 20
     logging.info("Standalone SlapOS: Formatting %d partitions", partition_count)
-    standalone.format(partition_count, {{ repr(slapos_standalone_config['ipv4']) }}, {{ repr(slapos_standalone_config['ipv6']) }})
-    logging.info("Standalone SlapOS for computer `%s` started", {{ repr(slapos_standalone_config['computer-id']) }})
+    standalone.format(partition_count, {{ repr(config['ipv4']) }}, {{ repr(config['ipv6']) }})
+    logging.info("Standalone SlapOS for computer `%s` started", {{ repr(config['computer-id']) }})
     # Run instance at least once, to start the supervisor managing instances.
     try:
       standalone.waitForInstance(max_retry=0)
@@ -179,7 +179,7 @@ def main():
 
     s = socket.socket(socket.AF_UNIX)
 
-    s.bind({{ repr('\0' + slapos_standalone_config['abstract-socket-path']) }})
+    s.bind({{ repr('\0' + config['abstract-socket-path']) }})
     s.listen(5)
     logging.info("Standalone SlapOS ready")
 
