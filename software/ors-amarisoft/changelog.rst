@@ -4,6 +4,8 @@ Version 1.0.3XX (2023-06-XX)
 -------------
 
 * Change Slice Differentiator input parameter to hexadecimal representation
+* Add TDD Configurations with maximum uplink
+* Modify reference power signal to improve radio link over long distances
 
 Version 1.0.326 (2023-06-14)
 -------------
