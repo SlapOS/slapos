@@ -37,7 +37,13 @@ recipe = slapos.cookbook:erp5testnode
 slapos-directory = $${directory:slapos}
 working-directory = $${directory:testnode}
 test-suite-directory = $${directory:test-suite}
-shared-part-list = $${directory:shared}
+shared-part-list =
+{%- if 'shared-part-list' in slap_connection %}
+  {{ slap_connection['shared-part-list'] | indent(2) }}
+{%- else %}
+  {{ """${buildout:shared-part-list}""" | indent(2) }}
+{%- endif %}
+  $${directory:shared}
 proxy-host = {{ partition_ipv4 }}
 proxy-port = 5000
 log-directory = $${directory:log}
