@@ -5,6 +5,7 @@ extends =
   {{ logrotate_cfg }}
   {{ nxdtest_template }}
   {{ templace_apache_php }}
+  {{ parameter_dict["custom-application-template"] }}
 
 parts +=
   drupal-site-install
@@ -17,6 +18,7 @@ offline = true
 
 [apache-php-configuration]
 document-root = ${:default-document-root}/docroot
+wellknown-proxy = ${instance-parameter:well-known-url}
 
 [template-base]
 recipe = slapos.recipe.template:jinja2
@@ -169,6 +171,7 @@ site-name = ${slap-parameter:instance.site-name}
 site-mail = ${slap-parameter:instance.site-mail}
 account-name = ${slap-parameter:instance.account-name}
 account-mail = ${slap-parameter:instance.account-mail}
+well-known-url = {{ slapparameter_dict.get("instance.wellknown-proxy", "") }}
 
 [publish-connection-information]
 admin-username = ${instance-parameter:account-name}

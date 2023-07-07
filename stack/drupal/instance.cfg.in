@@ -15,6 +15,7 @@ offline = true
 [dynamic-template-drupal-parameters]
 # Additional parameters for instance apache-php
 php8 = !py!{{ application_deployment_php8 }}
+custom-application-template = {{ custom_application_template }}
 
 [dynamic-template-drupal]
 <= jinja2-template-base

@@ -7,6 +7,7 @@ Listen {{ parameter_dict['ip'] }}:{{ parameter_dict['node-port'] }}
 
   ProxyRequests Off
   ProxyPreserveHost on
+
   ProxyPass / http://{{ parameter_dict['node-server'] }}/
   ProxyPassReverse / http://{{ parameter_dict['node-server'] }}/
 

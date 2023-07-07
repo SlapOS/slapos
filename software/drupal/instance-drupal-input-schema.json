@@ -33,6 +33,12 @@
       "title": "Admin username",
       "description": "Admin username.",
       "type": "string"
+    },
+    "instance.wellknown-proxy": {
+      "title": "Well-known backend URL",
+      "description": "Backend URL for /.well-known/acme-challenge to add as proxy. This is usefull to automatically sign certifcate with letsencrypt.",
+      "type": "string",
+      "format": "uri"
     }
   }
 }
