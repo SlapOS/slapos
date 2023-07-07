@@ -19,6 +19,11 @@
       Dav off
 
   </Directory>
+{% if parameter_dict.get('wellknown-proxy') %}
+  ProxyPass /.well-known/ {{ parameter_dict['wellknown-proxy'] }}/.well-known/
+  ProxyPassReverse /.well-known/ {{ parameter_dict['wellknown-proxy'] }}/.well-known/
+{% endif -%}
+
   ErrorLog "{{ parameter_dict['log-dir'] }}/lamp-error.log"
   CustomLog "{{ parameter_dict['log-dir'] }}/lamp-access.log" combined
 
