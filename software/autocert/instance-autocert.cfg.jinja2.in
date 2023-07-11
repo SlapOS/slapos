@@ -64,9 +64,16 @@ command-line =
   {{ parameter_dict['dehydrated-location'] }}/dehydrated
   --config ${dehydrated-config:output}
   --cron
-wrapper-path = ${directory:scripts}/dehydrated
+wrapper-path = ${directory:bin}/dehydrated
 depends =
   ${dehydrated-domains.txt:recipe}
+
+[cron-entry-dehydrated]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = dehydrated-renew
+frequency = 0 0 * * 0
+command = ${dehydrated-wrapper:wrapper-path} --keep-going
 
 [caucase-updater]
 recipe = slapos.cookbook:wrapper
@@ -115,6 +122,7 @@ wait-for-files =
 wrapper-path = ${directory:bin}/kedifa-upload-{{ domain.replace('\.', '-') }}
 depends =
   {{ "${kedifa-generate-auth-" ~ domain ~ ":recipe}" }}
+  {{ "${promise-" ~ domain ~ ":recipe}" }}
 
 [cron-entry-{{ domain }}]
 <= cron
@@ -123,8 +131,53 @@ name = upload-{{ domain }}
 frequency = 0 0 * * 0
 command = {{ "${kedifa-upload-" ~ domain ~ ":wrapper-path}" }}
 
+[dehydrated-sign-{{ domain }}]
+<= base-wrapper
+command-line =
+  {{ parameter_dict['kedifa-location'] }}
+wrapper-path = ${directory:scripts}/kedifa-genauth-{{ domain.replace('\.', '-') }}
+
+[promise-{{ domain }}]
+recipe = slapos.recipe.template:jinja2
+inline =
+  #!{{ bash_bin }}
+  set -e
+  CERT=${directory:dehydrated}/certs/{{ domain }}/fullchain.pem
+  KEY=${directory:dehydrated}/certs/{{ domain }}/privkey.pem
+  export PATH={{ openssl_location }}/bin:$PATH
+  if [ ! -s "$CERT" ]; then
+    echo "Certificate for {{ domain }} doesn't exists!"
+    exit 1
+  fi
+  certsum=$(openssl x509 -in $CERT -pubkey -noout -outform pem | sha256sum)
+  keysum=$(openssl pkey -in $KEY -pubout -outform pem | sha256sum)
+  if [ "$certsum" != "$keysum" ]; then
+    echo "Certificate and key did not match"
+    exit 2
+  fi
+  # Check if certificate will expire in 10 days
+  let datethreshold=60*60*24*10
+  openssl x509 -checkend $datethreshold -noout -in $CERT > /dev/null || RET=1
+  if [ $RET -ne 0 ]; then
+    ENDDATE=$(openssl x509 -enddate -noout -in $CERT | cut -d= -f 2)
+    echo "Certificate for {{ domain }} will expire in less than 10 days. Expiration date: $ENDDATE"
+    exit 3
+  fi
+output = ${directory:promise}/check-certificate-{{ domain }}
+mode = 755
+
 {% do part_list.append("cron-entry-" ~ domain) -%}
 {% endfor %}
+
+[dehydrated-signcert]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-signcert'] }}
+output = ${directory:scripts}/dehydrated-signcert
+domain-list = {{ dumps(domain_list) }}
+context =
+  key base_directory directory:dehydrated
+  key dehydrated_wrapper dehydrated-wrapper:wrapper-path
+  key domain_list :domain-list
 
 [dehydrated-domains.txt]
 recipe = slapos.recipe.template
@@ -152,6 +205,7 @@ log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
 plugins = ${:etc}/plugin
+promise = ${:etc}/promise
 www = ${:srv}/www
 tmp = ${:srv}/tmp
 acme = ${:www}/.well-known/acme-challenge
@@ -173,7 +227,8 @@ parts =
   httpd-listen-promise
   httpd-url-promise
   dehydrated-register
-  dehydrated-wrapper
+  dehydrated-signcert
+  cron-entry-dehydrated
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

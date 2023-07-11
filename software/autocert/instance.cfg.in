@@ -32,7 +32,7 @@ context =
   key ipv6 slap-configuration:ipv6
   key slapparameter_dict slap-configuration:configuration
   raw buildout_bin_directory {{ bin_directory }}
-  raw bash_executable_location {{ bash_location }}/bin/dash
+  raw bash_bin {{ bash_location }}/bin/bash
   raw curl_location {{ curl_location }}
   raw openssl_location {{ openssl_location }}
   raw openssl_bin {{ openssl_location }}/bin/openssl
@@ -44,6 +44,7 @@ context =
 dehydrated-location = {{ dehydrated_location }}
 kedifa-location = {{ kedifa_location }}
 template-config = {{ template_dehydrated_config }}
+template-signcert = {{ template_signcert }}
 
 [dynamic-template-autocert]
 <= jinja2-template-base
