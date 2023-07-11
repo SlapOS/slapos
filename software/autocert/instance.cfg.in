@@ -35,6 +35,7 @@ context =
   raw bash_bin {{ bash_location }}/bin/bash
   raw curl_location {{ curl_location }}
   raw openssl_location {{ openssl_location }}
+  raw linux_util_location {{ linux_util_location }}
   raw openssl_bin {{ openssl_location }}/bin/openssl
   raw template_monitor {{ template_monitor_cfg }}
   ${:extra-context}
@@ -44,7 +45,6 @@ context =
 dehydrated-location = {{ dehydrated_location }}
 kedifa-location = {{ kedifa_location }}
 template-config = {{ template_dehydrated_config }}
-template-signcert = {{ template_signcert }}
 
 [dynamic-template-autocert]
 <= jinja2-template-base

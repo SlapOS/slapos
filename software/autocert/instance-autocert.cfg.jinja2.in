@@ -53,27 +53,30 @@ context =
 [dehydrated-register]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ parameter_dict['dehydrated-location'] }}/dehydrated
-  --config ${dehydrated-config:output}
+  ${dehydrated-wrapper:wrapper-path}
   --register --accept-terms
 wrapper-path = ${directory:scripts}/dehydrated-register
-
-[dehydrated-wrapper]
-<= base-wrapper
-command-line =
-  {{ parameter_dict['dehydrated-location'] }}/dehydrated
-  --config ${dehydrated-config:output}
-  --cron
-wrapper-path = ${directory:bin}/dehydrated
-depends =
-  ${dehydrated-domains.txt:recipe}
 
 [cron-entry-dehydrated]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = dehydrated-renew
 frequency = 0 0 * * 0
-command = ${dehydrated-wrapper:wrapper-path} --keep-going
+command = {{ linux_util_location }}/bin/flock ${directory:dehydrated}/lock ${dehydrated-wrapper:wrapper-path} --cron --keep-going --no-lock
+
+[dehydrated-signcert]
+<= base-wrapper
+command-line = ${cron-entry-dehydrated:command}
+wrapper-path = ${directory:scripts}/dehydrated-signcert
+depends =
+  ${dehydrated-domains.txt:recipe}
+
+[dehydrated-wrapper]
+<= base-wrapper
+command-line =
+  {{ parameter_dict['dehydrated-location'] }}/dehydrated
+  --config ${dehydrated-config:output}
+wrapper-path = ${directory:bin}/dehydrated
 
 [caucase-updater]
 recipe = slapos.cookbook:wrapper
@@ -117,8 +120,6 @@ command-line =
      ${directory:kedifa}/{{ domain }}.sh
      ${directory:dehydrated}/certs/{{ domain }}/privkey.pem
      ${directory:dehydrated}/certs/{{ domain }}/fullchain.pem
-wait-for-files =
-  ${directory:dehydrated}/certs/{{ domain }}/fullchain.pem
 wrapper-path = ${directory:bin}/kedifa-upload-{{ domain.replace('\.', '-') }}
 depends =
   {{ "${kedifa-generate-auth-" ~ domain ~ ":recipe}" }}
@@ -130,12 +131,6 @@ recipe = slapos.cookbook:cron.d
 name = upload-{{ domain }}
 frequency = 0 0 * * 0
 command = {{ "${kedifa-upload-" ~ domain ~ ":wrapper-path}" }}
-
-[dehydrated-sign-{{ domain }}]
-<= base-wrapper
-command-line =
-  {{ parameter_dict['kedifa-location'] }}
-wrapper-path = ${directory:scripts}/kedifa-genauth-{{ domain.replace('\.', '-') }}
 
 [promise-{{ domain }}]
 recipe = slapos.recipe.template:jinja2
@@ -168,16 +163,6 @@ mode = 755
 
 {% do part_list.append("cron-entry-" ~ domain) -%}
 {% endfor %}
-
-[dehydrated-signcert]
-recipe = slapos.recipe.template:jinja2
-url = {{ parameter_dict['template-signcert'] }}
-output = ${directory:scripts}/dehydrated-signcert
-domain-list = {{ dumps(domain_list) }}
-context =
-  key base_directory directory:dehydrated
-  key dehydrated_wrapper dehydrated-wrapper:wrapper-path
-  key domain_list :domain-list
 
 [dehydrated-domains.txt]
 recipe = slapos.recipe.template
@@ -228,7 +213,6 @@ parts =
   httpd-url-promise
   dehydrated-register
   dehydrated-signcert
-  cron-entry-dehydrated
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
