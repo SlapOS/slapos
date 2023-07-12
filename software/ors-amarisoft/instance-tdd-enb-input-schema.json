@@ -128,6 +128,12 @@
       ],
       "default": "5ms 2UL 7DL 4/6 (default)"
     },
+    "disable_sdr": {
+      "default": false,
+      "title": "Disable SDR",
+      "description": "Disables radio",
+      "type": "boolean"
+    },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
