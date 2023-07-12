@@ -53,8 +53,11 @@ context =
 [dehydrated-register]
 recipe = slapos.cookbook:wrapper
 command-line =
-  ${dehydrated-wrapper:wrapper-path}
-  --register --accept-terms
+  {{ linux_util_location }}/bin/flock
+    ${directory:dehydrated}/lock
+    ${dehydrated-wrapper:wrapper-path}
+    --register --accept-terms
+    --no-lock
 wrapper-path = ${directory:scripts}/dehydrated-register
 
 [cron-entry-dehydrated]
