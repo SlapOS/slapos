@@ -248,7 +248,7 @@ name = Instance Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
 config-url = ${apache-php-configuration:url}
-config-https-only = true
+config-https-only = false
 return = domain secure_access
 
 [lamp-frontend-promise]
