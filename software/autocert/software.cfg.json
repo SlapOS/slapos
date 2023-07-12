@@ -5,6 +5,7 @@
   "software-type": {
     "default": {
       "title": "Default",
+      "serialisation": "json-in-xml",
       "software-type": "default",
       "description": "Default",
       "request": "instance-input-schema.json",

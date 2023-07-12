@@ -95,7 +95,7 @@ recipe = slapos.cookbook:wrapper
 environment =
   PATH={{ openssl_location }}/bin:{{ curl_location }}/bin:/usr/local/bin:/usr/bin:/bin
 
-{% for _, domain_dict in slapparameter_dict["kedifa-domain-dict"].items() %}
+{% for _, domain_dict in slapparameter_dict.get("kedifa-domain-dict", {}).items() %}
 {%   set domain = domain_dict['domain-list'][0] -%}
 {%   set kedifa_id = domain_dict['kedifa-id'] -%}
 {%   do folder_list.append(domain) -%}
