@@ -2,7 +2,8 @@
 slapos_directory = %(slapos_directory)s
 working_directory = %(working_directory)s
 test_suite_directory = %(test_suite_directory)s
-shared_part_list = %(shared_part_list)s
+shared_part_list =
+  %(shared_part_list)s
 software_directory = %(software_directory)s
 log_directory = %(log_directory)s
 run_directory = %(run_directory)s
