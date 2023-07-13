@@ -55,7 +55,20 @@ dash_path = {{ dash_bin }}
 curl_path = {{ curl_bin }}
 
 # Caucase
+[dufs-certificate-init-certificate]
+recipe = slapos.recipe.build
+init =
+  # pre-create a file at the path of the certificate,
+  # so that we can use hash-existing-files options
+  import pathlib
+  cert_file = pathlib.Path(self.buildout['dufs-certificate']['cert-file'])
+  if not cert_file.parent.exists():
+    cert_file.parent.mkdir()
+  if not cert_file.exists():
+    cert_file.touch()
+
 [dufs-certificate]
+init = ${dufs-certificate-init-certificate:init}
 key-file = ${directory:etc}/${:_buildout_section_name_}.key
 cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
 common-name = ${:_buildout_section_name_}
@@ -154,6 +167,8 @@ wrapper-path = ${directory:service}/${:_buildout_section_name_}
 port = 19080
 ip = ${instance-parameter:ipv6-random}
 url = https://[${:ip}]:${:port}
+hash-existing-files =
+  ${dufs-certificate:cert-file}
 
 [dufs-listen-promise]
 <= check-port-listening-promise
