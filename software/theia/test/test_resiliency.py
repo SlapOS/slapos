@@ -27,6 +27,7 @@
 from __future__ import unicode_literals
 
 import errno
+import json
 import os
 import re
 import shutil
@@ -38,9 +39,13 @@ import requests
 
 from slapos.proxy.db_version import DB_VERSION
 
+from slapos.slap.slap import DEFAULT_SOFTWARE_TYPE
+
 from slapos.testing.testcase import SlapOSNodeCommandError, installSoftwareUrlList
 
+import test
 from test import TheiaTestCase, ResilientTheiaMixin, theia_software_release_url
+
 
 
 dummy_software_url = os.path.abspath(
@@ -82,8 +87,7 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
       cls.checkSlapos('node', 'instance', instance_type=instance_type)
 
   @classmethod
-  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
-    cls.callSlapos('supply', software_url, 'slaprunner', instance_type=instance_type)
+  def _processEmbeddedSoftware(cls, retries=0, instance_type='export'):
     for _ in range(retries):
       try:
         output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
@@ -96,6 +100,11 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
         print("Wait before running slapos node software one last time")
         time.sleep(120)
       cls.checkSlapos('node', 'software', instance_type=instance_type)
+
+  @classmethod
+  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
+    cls.callSlapos('supply', software_url, 'slaprunner', instance_type=instance_type)
+    cls._processEmbeddedSoftware(retries, instance_type)
     cls.callSlapos('request', instance_name, software_url, instance_type=instance_type)
     cls._processEmbeddedInstance(retries, instance_type)
 
@@ -435,7 +444,8 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
 
 class TakeoverMixin(ExportAndImportMixin):
   def _getTakeoverUrlAndPassword(self, scope="theia-1"):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    partition = self.requestDefaultInstance() # re-request for up-to-date info
+    parameter_dict = partition.getConnectionParameterDict()
     takeover_url = parameter_dict["takeover-%s-url" % scope]
     takeover_password = parameter_dict["takeover-%s-password" % scope]
     return takeover_url, takeover_password
@@ -488,8 +498,18 @@ class TakeoverMixin(ExportAndImportMixin):
     self.assertIn("Success", resp.text, "An Error occured: %s" % resp.text)
     return resp.text
 
+  def _doTakeover(self):
+    # Takeover
+    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
+    self._requestTakeover(takeover_url, takeover_password)
 
-class TheiaSyncMixin(ResilienceMixin, TakeoverMixin):
+    # Wait for import instance to become export instance and new import to be allocated
+    # This also checks that all promises of theia instances succeed
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.computer_partition = self.requestDefaultInstance()
+
+
+class TheiaSyncMixin(TakeoverMixin, ResilienceMixin):
   def _doSync(self, max_tries=None, wait_interval=None):
     max_tries = max_tries or self.backup_max_tries
     wait_interval = wait_interval or self.backup_wait_interval
@@ -537,17 +557,10 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
     etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
-    self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
-
-  def _doTakeover(self):
-    # Takeover
-    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
-    self._requestTakeover(takeover_url, takeover_password)
-
-    # Wait for import instance to become export instance and new import to be allocated
-    # This also checks that all promises of theia instances succeed
-    self.slap.waitForInstance(self.instance_max_retry)
-    self.computer_partition = self.requestDefaultInstance()
+    try:
+      self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
+    except AssertionError:
+      breakpoint()
 
   def _checkTakeover(self):
     # Check that there is an export, import and frozen instance and get their new partition IDs
@@ -601,3 +614,43 @@ class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
   def _doTakeover(self):
     # do nothing
     pass
+
+
+class TestTheiaResilienceWithInitialInstance(TestTheiaResilience, test.TestTheiaWithEmbeddedInstance):
+  backup_max_tries = 70
+  backup_wait_interval = 10
+
+  sr_url = dummy_software_url
+  sr_type = DEFAULT_SOFTWARE_TYPE
+  sr_config = {}
+
+  @classmethod
+  def getInstanceParameterDict(cls, sr_url=None, sr_type=None, sr_config=None):
+    d = test.TestTheiaWithEmbeddedInstance.getInstanceParameterDict.__func__(
+      cls, sr_url, sr_type, sr_config)
+    d.update(autorun='stopped')
+    return d
+
+  def _prepareExport(self):
+    # Check that there is an export and import instance and get their partition IDs
+    self.export_id = self.getPartitionId('export')
+    self.import_id = self.getPartitionId('import')
+
+    # Remember content of ~/etc in the import theia
+    self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
+
+    # Check initial embedded instance
+    test.TestTheiaWithEmbeddedInstance.test(self)
+
+    self._processEmbeddedSoftware()
+    self._processEmbeddedInstance()
+
+  def _checkTakeover(self):
+    # Check takeover
+    TestTheiaResilience._checkTakeover(self)
+
+    # Check that embedded instance still exists
+    test.TestTheiaWithEmbeddedInstance.test(self)
+
+    self._processEmbeddedSoftware()
+    self._processEmbeddedInstance()

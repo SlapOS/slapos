@@ -34,6 +34,7 @@ import subprocess
 import sqlite3
 import time
 
+import netaddr
 import pexpect
 import psutil
 import requests
@@ -240,6 +241,19 @@ class TestTheia(TheiaTestCase):
   def test_slapos_cli(self):
     self.assertIn(b'slaprunner', self.captureSlapos('proxy', 'show'))
     self.assertIn(b'slaprunner', self.captureSlapos('computer', 'list'))
+
+  def test_ipv6_range(self):
+    proxy_path = self.getPath('srv', 'runner', 'var', 'proxy.db')
+    query = "SELECT partition_reference, address FROM partition_network%s" % DB_VERSION
+
+    with sqlite3.connect(proxy_path) as db:
+      rows = db.execute(query).fetchall()
+      partitions = set(p for p, _ in rows)
+      ipv6 = set(addr for _, addr in rows if netaddr.valid_ipv6(addr))
+      # Check that each partition has a different IPv6
+      self.assertEqual(len(partitions), len(ipv6))
+      # Check that no partition has the same IPv6 as theia
+      self.assertNotIn(self.connection_parameters['ipv6'], ipv6)
 
 
 class TestTheiaWithNonAsciiInstanceName(TestTheia):
@@ -523,6 +537,10 @@ class ResilientTheiaMixin(object):
   @classmethod
   def getPartitionPath(cls, instance_type='export', *paths):
     return os.path.join(cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
+
+  @classmethod
+  def getPath(cls, *components): # patch getPath
+    return cls.getPartitionPath('export', *components)
 
   @classmethod
   def _getSlapos(cls, instance_type='export'):

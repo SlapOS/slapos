@@ -70,23 +70,23 @@ def setupStandalone():
   shared_parts = {{ repr(shared_part_list) }}
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
   standalone = slapos.slap.standalone.StandaloneSlapOS(
-    {{ repr(slapos_standalone_config['base-directory']) }},
-    {{ repr(slapos_standalone_config['ipv4']) }},
-    {{ slapos_standalone_config['port'] }},
-    computer_id={{ repr(slapos_standalone_config['computer-id']) }},
+    {{ repr(config['base-directory']) }},
+    {{ repr(config['ipv4']) }},
+    {{ config['port'] }},
+    computer_id={{ repr(config['computer-id']) }},
     shared_part_list=shared_part_list,
-    software_root={{ repr(slapos_standalone_config['software-root']) }},
-    instance_root={{ repr(slapos_standalone_config['instance-root']) }},
+    software_root={{ repr(config['software-root']) }},
+    instance_root={{ repr(config['instance-root']) }},
     partition_forward_configuration=partition_forward_configuration,
-    slapos_bin={{ repr(slapos_standalone_config['slapos-bin']) }},
-    local_software_release_root={{ repr(slapos_standalone_config['local-software-release-root']) }},
+    slapos_bin={{ repr(config['slapos-bin']) }},
+    local_software_release_root={{ repr(config['local-software-release-root']) }},
   )
   standalone.start()
   try:
     partition_count = 20
     logging.info("Standalone SlapOS: Formatting %d partitions", partition_count)
-    standalone.format(partition_count, {{ repr(slapos_standalone_config['ipv4']) }}, {{ repr(slapos_standalone_config['ipv6']) }})
-    logging.info("Standalone SlapOS for computer `%s` started", {{ repr(slapos_standalone_config['computer-id']) }})
+    standalone.format(partition_count, {{ repr(config['ipv4']) }}, {{ repr(config['ipv6']) }})
+    logging.info("Standalone SlapOS for computer `%s` started", {{ repr(config['computer-id']) }})
     # Run instance at least once, to start the supervisor managing instances.
     try:
       standalone.waitForInstance(max_retry=0)
@@ -153,10 +153,28 @@ def main():
   with setupStandalone() as standalone:
 
     config_json_file = {{ repr(embedded_instance_config) }}
-    done_file = config_json_file + '.done'
 
-    if not os.path.exists(done_file):
-      with open(done_file, 'w'): pass
+    # backwards compatibility
+    old_flag_file = config_json_file + '.done'
+    old_exitcode_file = os.path.join(
+      {{ repr(home_path) }}, 'etc', 'embedded-request-exitcode')
+
+    # new state filesstandalone_ran_before_flag
+    standalone_ran_before_flag = {{ repr(standalone_ran_before_flag) }}
+    exitcode_file = {{ repr(embedded_request_exitcode_file) }}
+
+    # backwards compatibility
+    if os.path.exists(old_flag_file):
+      logging.info("Moving old %s to %s", old_flag_file, standalone_ran_before_flag)
+      os.rename(old_flag_file, standalone_ran_before_flag)
+      if os.path.exists(old_exitcode_file):
+        logging.info("Moving old %s to %s", old_exitcode_file, exitcode_file)
+        os.rename(old_exitcode_file, exitcode_file)
+
+    elif not os.path.exists(standalone_ran_before_flag):
+      logging.info("First run!")
+      logging.info("Creating flag file %s", standalone_ran_before_flag)
+      with open(standalone_ran_before_flag, 'x'): pass
       try:
         config = parseEmbeddedInstanceConfig(config_json_file)
       except Exception:
@@ -172,14 +190,14 @@ def main():
             'SLAPOS_CONFIGURATION': standalone._slapos_config,
             'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config,
           })
-          with open({{ repr(embedded_request_exitcode_file) }}, 'w') as f:
+          with open(exitcode_file, 'w') as f:
             f.write(str(exitcode))
         except Exception:
           logging.info("Failed to request embedded instance", exc_info=True)
 
     s = socket.socket(socket.AF_UNIX)
 
-    s.bind({{ repr('\0' + slapos_standalone_config['abstract-socket-path']) }})
+    s.bind({{ repr('\0' + config['abstract-socket-path']) }})
     s.listen(5)
     logging.info("Standalone SlapOS ready")
 
