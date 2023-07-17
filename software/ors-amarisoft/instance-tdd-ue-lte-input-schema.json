@@ -12,20 +12,17 @@
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
-      "type": "number",
-      "default": 60
+      "type": "number"
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
-      "type": "number",
-      "default": 45
+      "type": "number"
     },
     "dl_earfcn": {
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-      "type": "number",
-      "default": 0
+      "type": "number"
     },
     "n_rb_dl": {
       "title": "DL RB",

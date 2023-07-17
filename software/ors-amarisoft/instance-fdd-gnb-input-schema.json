@@ -53,14 +53,12 @@
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
-      "type": "number",
-      "default": 60
+      "type": "number"
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
-      "type": "number",
-      "default": 45
+      "type": "number"
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
@@ -83,14 +81,12 @@
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-      "type": "number",
-      "default": 0
+      "type": "number"
     },
     "nr_band": {
       "title": "NR band",
       "description": "NR band number",
-      "type": "number",
-      "default": 0
+      "type": "number"
     },
     "nr_bandwidth": {
       "title": "Bandwidth",
