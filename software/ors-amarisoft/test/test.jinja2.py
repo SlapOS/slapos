@@ -53,6 +53,7 @@ param_dict = {
     'n_rb_dl': 50,
     'enb_id': '0x17',
     'pci': 250,
+    'tac': '0x1717',
     'mme_list': {
         '10.0.0.1': {'mme_addr': '10.0.0.1'},
         '2001:db8::1': {'mme_addr': '2001:db8::1'},
@@ -119,8 +120,8 @@ gnb_param_dict1 = {
 }
 gnb_param_dict2 = {
     'nssai': {
-        '1': {'sd': 1, 'sst': 10},
-        '2': {'sd': 2, 'sst': 20},
+        '0x171717': {'sd': '0x171717', 'sst': 10},
+        '0x181818': {'sd': '0x181818', 'sst': 20},
     },
 }
 enb_param_dict.update(param_dict)
@@ -140,6 +141,7 @@ def test_enb_conf(self):
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
+    self.assertEqual(conf['cell_list'][0]['tac'], enb_param_dict['tac'])
     for p in conf['cell_list'][0]['plmn_list']:
       for n in "plmn attach_without_pdn reserved".split():
           self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
@@ -209,7 +211,7 @@ def test_gnb_conf2(self):
 
         for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
           for n in "sd sst".split():
-              self.assertEqual(p[n], gnb_param_dict2['nssai'][str(p['sd'])][n])
+              self.assertEqual(p[n], gnb_param_dict2['nssai'][p['sd']][n])
 
 def test_mme_conf(self):
 
