@@ -1,4 +1,3 @@
-{%- set tx_gain = slapparameter_dict.get('tx_gain', slap_configuration['configuration.default_lte_tx_gain']) %}
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
