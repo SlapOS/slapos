@@ -54,7 +54,20 @@ dash_path = {{ dash_bin }}
 curl_path = {{ curl_bin }}
 
 # Caucase
+[rest-server-certificate-init-certificate]
+recipe = slapos.recipe.build
+init =
+  # pre-create a file at the path of the certificate,
+  # so that we can use hash-existing-files options
+  import pathlib
+  cert_file = pathlib.Path(self.buildout['rest-server-certificate']['cert-file'])
+  if not cert_file.parent.exists():
+    cert_file.parent.mkdir()
+  if not cert_file.exists():
+    cert_file.touch()
+
 [rest-server-certificate]
+init = ${rest-server-certificate-init-certificate:init}
 key-file = ${directory:etc}/${:_buildout_section_name_}.key
 cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
 common-name = ${:_buildout_section_name_}
@@ -165,6 +178,8 @@ ip = ${instance-parameter:ipv6-random}
 url = https://[${:ip}]:${:port}
 depends =
   ${rest-server-htpassword:recipe}
+hash-existing-files =
+  ${rest-server-certificate:cert-file}
 
 [rest-server-listen-promise]
 <= check-port-listening-promise
