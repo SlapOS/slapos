@@ -67,12 +67,14 @@ name = dehydrated-renew
 frequency = 0 0 * * 0
 command = {{ linux_util_location }}/bin/flock ${directory:dehydrated}/lock ${dehydrated-wrapper:wrapper-path} --cron --keep-going --no-lock
 
-[dehydrated-signcert]
-<= base-wrapper
-command-line = ${cron-entry-dehydrated:command}
-wrapper-path = ${directory:scripts}/dehydrated-signcert
-depends =
-  ${dehydrated-domains.txt:recipe}
+# Sign certificate for the first time, only try 4 times per hour to not exceed the limit
+# https://letsencrypt.org/docs/failed-validation-limit/
+[cron-entry-dehydrated-signcert]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = dehydrated-sign
+frequency = 0/20 * * * *
+command = ${dehydrated-signcert:output}
 
 [dehydrated-wrapper]
 <= base-wrapper
@@ -80,6 +82,8 @@ command-line =
   {{ parameter_dict['dehydrated-location'] }}/dehydrated
   --config ${dehydrated-config:output}
 wrapper-path = ${directory:bin}/dehydrated
+depends =
+  ${dehydrated-domains.txt:recipe}
 
 [caucase-updater]
 recipe = slapos.cookbook:wrapper
@@ -134,6 +138,18 @@ recipe = slapos.cookbook:cron.d
 name = upload-{{ domain }}
 frequency = 0 0 * * 0
 command = {{ "${kedifa-upload-" ~ domain ~ ":wrapper-path}" }}
+
+[dehydrated-signcert]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-signcert'] }}
+output = ${directory:bin}/dehydrated-signcert
+domain-list = {{ dumps(domain_list) }}
+context =
+  key base_directory            directory:dehydrated
+  key dehydrated_wrapper        dehydrated-wrapper:wrapper-path
+  key domain_list               :domain-list
+  raw flock_bin                 {{ linux_util_location }}/bin/flock
+mode = 755
 
 [promise-{{ domain }}]
 recipe = slapos.recipe.template:jinja2
@@ -215,7 +231,7 @@ parts =
   httpd-listen-promise
   httpd-url-promise
   dehydrated-register
-  dehydrated-signcert
+  cron-entry-dehydrated-signcert
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

@@ -45,6 +45,7 @@ context =
 dehydrated-location = {{ dehydrated_location }}
 kedifa-location = {{ kedifa_location }}
 template-config = {{ template_dehydrated_config }}
+template-signcert = {{ template_signcert }}
 
 [dynamic-template-autocert]
 <= jinja2-template-base
