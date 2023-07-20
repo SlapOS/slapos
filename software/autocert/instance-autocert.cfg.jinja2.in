@@ -231,6 +231,7 @@ parts =
   httpd-listen-promise
   httpd-url-promise
   dehydrated-register
+  cron-entry-dehydrated
   cron-entry-dehydrated-signcert
 
 # Complete parts with sections
