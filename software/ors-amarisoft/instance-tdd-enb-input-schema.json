@@ -37,10 +37,22 @@
       "type": "number",
       "default": 2
     },
-    "dl_earfcn": {
+    "dl_earfcn_list": {
       "title": "DL EARFCN",
-      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
+      "description": "List of Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (for each port)",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "dl_earfcn": {
+              "title": "DL EARFCN",
+              "type": "number"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "n_rb_dl": {
       "title": "DL RB",
@@ -72,11 +84,39 @@
       "type": "string",
       "default": "0x1A2D0"
     },
-    "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "number",
-      "default": 1
+    "pci_list": {
+      "title": "Physical Cell ID List",
+      "description": "List of Physical Cell IDs for each port",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "pci": {
+              "title": "Physical Cell ID",
+              "type": "number"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "cell_id_list": {
+      "title": "Cell ID List",
+      "description": "List of Cell IDs for each port",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "cell_id": {
+              "title": "Cell ID",
+              "type": "string"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "tac": {
       "title": "Tracking Area Code",
