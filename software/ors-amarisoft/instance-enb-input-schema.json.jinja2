@@ -14,29 +14,89 @@
         "Lopcomm ORAN"
       ]
     },
+    "sdr_number": {
+      "title": "SDR Number",
+      "description": "SDR Number",
+      "type": "number",
+      "default": 0
+    },
+    "cpri_port_in_use": {
+      "title": "CPRI Ports In Use",
+      "description": "Selects how much CPRI ports will be used.",
+      "type": "number",
+      "default": 1,
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
     "cpri_mult": {
       "title": "cpri_mult",
       "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
       "type": "number",
-      "default": 16
+      "default": 16,
+      "enum": [
+        4,
+        5,
+        8,
+        16
+      ]
     },
-    "cpri_rx_delay": {
-      "title": "cpri_rx_delay",
-      "description": "Delay between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
-      "type": "number",
-      "default": 0
+    "cpri_rx_delay_list": {
+      "title": "CPRI RX Delay List",
+      "description": "List of delays for each port between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "cpri_rx_delay": {
+              "title": "CPRI RX Delay",
+              "type": "number",
+              "default": 0
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
-    "cpri_tx_delay": {
-      "title": "cpri_tx_delay",
-      "description": "Advance Start of Frame relative to PPS to compensate for delays in transmit line and RRH. This should be set to T12 + T2a.",
-      "type": "number",
-      "default": 0
+    "cpri_tx_delay_list": {
+      "title": "CPRI RX Delay List",
+      "description": "List of Advances Start of Frame (for each port) relative to PPS to compensate for delays in transmit line and RRH. This should be set to T12 + T2a.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "cpri_tx_delay": {
+              "title": "CPRI TX Delay",
+              "type": "number",
+              "default": 0
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
-    "cpri_tx_dbm": {
-      "title": "cpri_tx_dbm",
-      "description": "Optional floating point value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
-      "type": "number",
-      "default": 0
+    "cpri_tx_dbm_list": {
+      "title": "CPRI TX dBm List",
+      "description": "List of Optional floating points value in dBm (for each port, default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "cpri_tx_dbm": {
+              "title": "CPRI TX dBm",
+              "type": "number",
+              "default": 0
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "dnsmasq": {
       "default": false,
@@ -141,10 +201,22 @@
       "type": "number",
       "default": {{ default_n_antenna_ul }}
     },
-    "dl_earfcn": {
+    "dl_earfcn_list": {
       "title": "DL EARFCN",
-      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
+      "description": "List of Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (for each port)",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "dl_earfcn": {
+              "title": "DL EARFCN",
+              "type": "number"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "n_rb_dl": {
       "title": "DL RB",
@@ -176,11 +248,39 @@
       "type": "string",
       "default": "0x1A2D0"
     },
-    "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "number",
-      "default": 1
+    "pci_list": {
+      "title": "Physical Cell ID List",
+      "description": "List of Physical Cell IDs for each port",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "pci": {
+              "title": "Physical Cell ID",
+              "type": "number"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "cell_id_list": {
+      "title": "Cell ID List",
+      "description": "List of Cell IDs for each port",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "cell_id": {
+              "title": "Cell ID",
+              "type": "string"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "tac": {
       "title": "Tracking Area Code",
