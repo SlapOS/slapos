@@ -37,11 +37,6 @@
       "type": "number",
       "default": 2
     },
-    "dl_earfcn": {
-      "title": "DL EARFCN",
-      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
-    },
     "n_rb_dl": {
       "title": "DL RB",
       "description": "number of DL resource blocks",
@@ -71,12 +66,6 @@
       "description": "eNB ID",
       "type": "string",
       "default": "0x1A2D0"
-    },
-    "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "number",
-      "default": 1
     },
     "tac": {
       "title": "Tracking Area Code",
