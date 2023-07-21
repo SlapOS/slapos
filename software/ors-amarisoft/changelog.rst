@@ -1,5 +1,19 @@
 Changelog
 =========
+Version 1.0.330 (2023-07-19)
+-------------
+
+* Change Slice Differentiator input parameter to hexadecimal representation
+* Add TDD Configurations with maximum uplink
+* Modify reference power signal to improve radio link over long distances
+* Add Tracking Area Code (TAC) parameter to eNB
+* Publish useful values:
+  - Frequency and band
+  - Current TX and RX gain
+  - Estimated TX power in dB and W based on https://handbook.rapid.space/rapidspace-ORS.tx.gain
+  - ORS frequency range rating
+  - ORS version
+
 Version 1.0.326 (2023-06-14)
 -------------
 

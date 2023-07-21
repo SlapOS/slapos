@@ -45,21 +45,20 @@
       "type": "string",
       "enum": [
         "5ms 2UL 7DL 4/6 (default)",
-        "2.5ms 1UL 3DL 2/10"
+        "2.5ms 1UL 3DL 2/10",
+        "5ms 8UL 3DL 2/10 (maximum uplink)"
       ],
       "default": "5ms 2UL 7DL 4/6 (default)"
     },
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
-      "type": "number",
-      "default": 60
+      "type": "number"
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
-      "type": "number",
-      "default": 45
+      "type": "number"
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
@@ -82,14 +81,12 @@
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-      "type": "number",
-      "default": 0
+      "type": "number"
     },
     "nr_band": {
       "title": "NR band",
       "description": "NR band number",
-      "type": "number",
-      "default": 0
+      "type": "number"
     },
     "nr_bandwidth": {
       "title": "Bandwidth",
@@ -260,10 +257,10 @@
               "type": "number"
             },
             "sd": {
-              "default": 50,
+              "default": "0x000032",
               "title": "Slice Differentiator",
               "description": "Optional integer (range 0 to 0xFFFFFE)",
-              "type": "number"
+              "type": "string"
             }
           },
           "type": "object"
@@ -277,6 +274,12 @@
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
       "default": 10000
+    },
+    "disable_sdr": {
+      "default": false,
+      "title": "Disable SDR",
+      "description": "Disables radio",
+      "type": "boolean"
     },
     "use_ipv4": {
       "default": false,

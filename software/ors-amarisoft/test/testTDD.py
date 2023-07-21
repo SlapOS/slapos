@@ -53,6 +53,7 @@ param_dict = {
     'n_rb_dl': 50,
     'enb_id': '0x17',
     'pci': 250,
+    'tac': '0x1717',
     'mme_list': {
         '10.0.0.1': {'mme_addr': '10.0.0.1'},
         '2001:db8::1': {'mme_addr': '2001:db8::1'},
@@ -73,7 +74,7 @@ param_dict = {
         '10.0.0.1': {'amf_addr': '10.0.0.1'},
         '2001:db8::1': {'amf_addr': '2001:db8::1'},
     },
-    'nr_handover_time_to_trigger': 50,
+    'nr_handover_time_to_trigger': 40,
     'nr_handover_a3_offset': 10,
     'ncell_list': {
         'ORS1': {
@@ -103,25 +104,27 @@ param_dict = {
             'xn_addr': '2001:db8::2',
         },
     },
-    'tdd_ul_dl_config': '2.5ms 1UL 3DL 2/10',
 }
 enb_param_dict = {
     'plmn_list': {
         '00101': {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
         '00102': {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
     },
+    'tdd_ul_dl_config': '[Configuration 6] 5ms 5UL 3DL (maximum uplink)',
 }
 gnb_param_dict1 = {
     'plmn_list': {
         '00101': {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
         '00102': {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
     },
+    'tdd_ul_dl_config': '2.5ms 1UL 3DL 2/10',
 }
 gnb_param_dict2 = {
     'nssai': {
-        '1': {'sd': 1, 'sst': 10},
-        '2': {'sd': 2, 'sst': 20},
+        '0x171717': {'sd': '0x171717', 'sst': 10},
+        '0x181818': {'sd': '0x181818', 'sst': 20},
     },
+    'tdd_ul_dl_config': '2.5ms 1UL 3DL 2/10',
 }
 enb_param_dict.update(param_dict)
 gnb_param_dict1.update(param_dict)
@@ -137,9 +140,11 @@ def test_enb_conf(self):
     self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
     self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
     self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
+    self.assertEqual(conf['cell_default']['uldl_config'], 6)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
+    self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
     for p in conf['cell_list'][0]['plmn_list']:
       for n in "plmn attach_without_pdn reserved".split():
           self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
@@ -208,8 +213,9 @@ def test_gnb_conf2(self):
             conf = yaml.load(f)
 
         for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
-          for n in "sd sst".split():
-              self.assertEqual(p[n], gnb_param_dict2['nssai'][str(p['sd'])][n])
+          sd = hex(p['sd'])
+          self.assertEqual(sd, gnb_param_dict2['nssai'][sd]['sd'], 16)
+          self.assertEqual(p['sst'], gnb_param_dict2['nssai'][sd]['sst'])
 
 def test_mme_conf(self):
 

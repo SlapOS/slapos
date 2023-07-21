@@ -12,14 +12,12 @@
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
-      "type": "number",
-      "default": 60
+      "type": "number"
     },
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
-      "type": "number",
-      "default": 45
+      "type": "number"
     },
     "gps_sync": {
       "default": false,
@@ -42,8 +40,7 @@
     "dl_earfcn": {
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-      "type": "number",
-      "default": 0
+      "type": "number"
     },
     "n_rb_dl": {
       "title": "DL RB",
@@ -81,6 +78,12 @@
       "type": "number",
       "default": 1
     },
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+      "default": "0x0001",
+      "type": "string"
+    },
     "plmn_list": {
       "title": "PLMN list",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
@@ -117,6 +120,22 @@
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
       "default": 10000
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD",
+      "description": "TDD",
+      "type": "string",
+      "enum": [
+        "[Configuration 2] 5ms 2UL 6DL (default)",
+        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)"
+    },
+    "disable_sdr": {
+      "default": false,
+      "title": "Disable SDR",
+      "description": "Disables radio",
+      "type": "boolean"
     },
     "use_ipv4": {
       "default": false,
