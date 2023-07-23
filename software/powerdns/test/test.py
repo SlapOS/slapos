@@ -31,12 +31,13 @@ import dns.query
 import http.client
 import os
 import requests
+import sqlite3
 import unittest
 import urllib
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
+from slapos.proxy.db_version import DB_VERSION
 
 skip = unittest.skip('port conflit between powerdns instances')
 
@@ -90,12 +91,29 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
       'ns-record': '',
     }
 
+    # TODO make this a shared method ?
+    def getPartitionId(partition_reference):
+      query = "SELECT reference FROM partition%s WHERE partition_reference='%s'" % (DB_VERSION, partition_reference)
+      with sqlite3.connect(os.path.join(
+        self._base_directory,
+        'var/proxy.db',
+      )) as db:
+        return db.execute(query).fetchall()[0][0]
+
+    def getPartitionIPv6(partition_id):
+      query = "SELECT address FROM partition_network%s WHERE partition_reference='%s'" % (DB_VERSION, partition_id)
+      with sqlite3.connect(os.path.join(
+        self._base_directory,
+        'var/proxy.db',
+      )) as db:
+        return db.execute(query).fetchall()[0][0]
+
     ns_record = []
     for replicate_nb in range(1, dns_quantity + 1):
       ns_id = 'ns%s' % replicate_nb
       ns_record.append(ns_id + '.' + self.default_supported_zone)
       expected_dict[ns_id + '-port'] = str(DNS_PORT)
-      expected_dict[ns_id + '-ipv6'] = self._ipv6_address
+      expected_dict[ns_id + '-ipv6'] = getPartitionIPv6(getPartitionId(ns_id))
     expected_dict['ns-record'] = ','.join(ns_record)
     expected_dict['slave-amount'] = str(slave_amount)
 
@@ -199,11 +217,11 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
       ).getConnectionParameterDict())
     return parameter_dict_list
 
-  def dns_query(self, domain_name, subnet):
+  def dns_query(self, domain_name, subnet, ipv6, port):
     message = dns.message.make_query(domain_name, 'A')
     client_subnet_option = dns.edns.ECSOption(subnet)
     message.use_edns(options=[client_subnet_option])
-    answer = dns.query.udp(message, self._ipv6_address, port=DNS_PORT)
+    answer = dns.query.udp(message, ipv6, port=port)
     return answer.get_rrset(
       dns.message.ANSWER,
       dns.name.from_text(domain_name),
@@ -211,8 +229,10 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
       dns.rdatatype.CNAME
     ).to_text().split()[-1]
 
-  def _test_dns_resolver(self):
+  def _test_dns_resolver(self, dns_quantity):
     slave_parameter_dict_dict = self.getSlaveParameterDictDict()
+    connection_parameter_dict = self.requestDefaultInstance()\
+      .getConnectionParameterDict()
     subnet_dict = {
       'africa': AFRICAN_SUBNET,
       'china-telecom': CHINA_TELECOM_SUBNET,
@@ -248,21 +268,27 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
         slave_parameter_dict['record'], slave_parameter_dict['applicable-zone']
       )
       for region in subnet_dict:
-        self.assertEqual(
-          slave_parameter_dict.get(
-            region,
-            '%s.%s.' % (
-              default_rr_dict[region], slave_parameter_dict['origin'])
-          ),
-          self.dns_query(domain_name, subnet_dict[region])
-        )
+        for replicate_nb in range(1, dns_quantity + 1):
+          ns_id = 'ns%s' % replicate_nb
+          self.assertEqual(
+            slave_parameter_dict.get(
+              region,
+              '%s.%s.' % (
+                default_rr_dict[region], slave_parameter_dict['origin'])
+            ),
+            self.dns_query(
+              domain_name,
+              subnet_dict[region],
+              connection_parameter_dict[ns_id + '-ipv6'],
+              int(connection_parameter_dict[ns_id + '-port']))
+          )
 
   def _test_slaves(self, dns_quantity=1):
     self._test_parameter_dict(
       dns_quantity=dns_quantity,
       slave_amount=len(self.getSlaveParameterDictDict())
     )
-    self._test_dns_resolver()
+    self._test_dns_resolver(dns_quantity)
 
 
 class TestSlaveRequest(PowerDNSSlaveTestCase):
@@ -421,7 +447,7 @@ class TestSlaveRequestDomains(TestSlaveRequest):
     }
 
 
-# Because all powerdns instances run under the same ip address during tests,
+# Because all powerdns instances run under the same ipv4 address during tests,
 # there is a port conflict between these instances
 @skip
 class TestMultipleInstances(TestSlaveRequestDomains):
