@@ -95,7 +95,7 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
       ns_id = 'ns%s' % replicate_nb
       ns_record.append(ns_id + '.' + self.default_supported_zone)
       expected_dict[ns_id + '-port'] = str(DNS_PORT)
-      expected_dict[ns_id + '-ipv6'] = self._ipv6_address
+      expected_dict[ns_id + '-ipv6'] = self.computer_partition_ipv6_address
     expected_dict['ns-record'] = ','.join(ns_record)
     expected_dict['slave-amount'] = str(slave_amount)
 
@@ -203,7 +203,7 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
     message = dns.message.make_query(domain_name, 'A')
     client_subnet_option = dns.edns.ECSOption(subnet)
     message.use_edns(options=[client_subnet_option])
-    answer = dns.query.udp(message, self._ipv6_address, port=DNS_PORT)
+    answer = dns.query.udp(message, self.computer_partition_ipv6_address, port=DNS_PORT)
     return answer.get_rrset(
       dns.message.ANSWER,
       dns.name.from_text(domain_name),

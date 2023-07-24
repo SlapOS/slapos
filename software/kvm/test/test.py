@@ -192,12 +192,12 @@ class TestInstance(InstanceTestCase, KvmMixin):
     self.assertEqual(
       connection_parameter_dict,
       {
-        'ipv6': self._ipv6_address,
+        'ipv6': self.computer_partition_ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': f'https://[{self._ipv6_address}]:8026',
-        'nat-rule-port-tcp-22': f'{self._ipv6_address} : 10022',
-        'nat-rule-port-tcp-443': f'{self._ipv6_address} : 10443',
-        'nat-rule-port-tcp-80': f'{self._ipv6_address} : 10080',
+        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8026',
+        'nat-rule-port-tcp-22': f'{self.computer_partition_ipv6_address} : 10022',
+        'nat-rule-port-tcp-443': f'{self.computer_partition_ipv6_address} : 10443',
+        'nat-rule-port-tcp-80': f'{self.computer_partition_ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -661,19 +661,19 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
     self.assertRegex(
       feed_pull,
       'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull'.format(
-        self._ipv6_address))
+        self.computer_partition_ipv6_address))
     feed_push = connection_parameter_dict.pop('feed-url-kvm-1-push')
     self.assertRegex(
       feed_push,
       'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push'.format(
-        self._ipv6_address))
+        self.computer_partition_ipv6_address))
     self.assertEqual(
       connection_parameter_dict,
       {
-        'ipv6': self._ipv6_address,
-        'monitor-base-url': f'https://[{self._ipv6_address}]:8160',
+        'ipv6': self.computer_partition_ipv6_address,
+        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8160',
         'monitor-user': 'admin',
-        'takeover-kvm-1-url': f'http://[{self._ipv6_address}]:9263/',
+        'takeover-kvm-1-url': f'http://[{self.computer_partition_ipv6_address}]:9263/',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -1344,11 +1344,11 @@ class TestNatRules(KvmMixin, InstanceTestCase):
     self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
 
     self.assertEqual(
-      f'{self._ipv6_address} : 10100',
+      f'{self.computer_partition_ipv6_address} : 10100',
       connection_parameter_dict['nat-rule-port-tcp-100']
     )
     self.assertEqual(
-      f'{self._ipv6_address} : 10200',
+      f'{self.computer_partition_ipv6_address} : 10200',
       connection_parameter_dict['nat-rule-port-tcp-200']
     )
 
@@ -2328,12 +2328,12 @@ vm""",
     self.assertEqual(
       connection_parameter_dict,
       {
-        'ipv6': self._ipv6_address,
+        'ipv6': self.computer_partition_ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': f'https://[{self._ipv6_address}]:8026',
-        'nat-rule-port-tcp-22': f'{self._ipv6_address} : 10022',
-        'nat-rule-port-tcp-443': f'{self._ipv6_address} : 10443',
-        'nat-rule-port-tcp-80': f'{self._ipv6_address} : 10080',
+        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8026',
+        'nat-rule-port-tcp-22': f'{self.computer_partition_ipv6_address} : 10022',
+        'nat-rule-port-tcp-443': f'{self.computer_partition_ipv6_address} : 10443',
+        'nat-rule-port-tcp-80': f'{self.computer_partition_ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))

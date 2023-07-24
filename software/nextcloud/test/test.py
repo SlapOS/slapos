@@ -86,9 +86,9 @@ class NextCloudTestCase(InstanceTestCase):
       mail_smtpport="587",
       mail_smtppassword="",
       mail_smtpname="",
-      cli_url="https://[%s]:9988/" % self._ipv6_address,
+      cli_url="https://[%s]:9988/" % self.computer_partition_ipv6_address,
       partition_dir=self.partition_dir,
-      trusted_domain_list=json.dumps(["[%s]:9988" % self._ipv6_address]),
+      trusted_domain_list=json.dumps(["[%s]:9988" % self.computer_partition_ipv6_address]),
       trusted_proxy_list=[],
     )
     data_dict.update(config_dict)
@@ -336,7 +336,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       cli_url="nextcloud.example.com",
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps([
-        "[%s]:9988" % self._ipv6_address,
+        "[%s]:9988" % self.computer_partition_ipv6_address,
         "nextcloud.example.com",
         "nextcloud.proxy.com"
       ]),

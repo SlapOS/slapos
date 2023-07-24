@@ -319,7 +319,7 @@ class TestListenInPartition(GrafanaTestCase):
             c.laddr for c in self.process_dict['grafana'].connections()
             if c.status == 'LISTEN'
         ],
-        [(self._ipv6_address, 8180)],
+        [(self.computer_partition_ipv6_address, 8180)],
     )
 
   def test_influxdb_listen(self):
@@ -330,7 +330,7 @@ class TestListenInPartition(GrafanaTestCase):
         ]),
         [
             (self._ipv4_address, 8088),
-            (self._ipv6_address, 8086),
+            (self.computer_partition_ipv6_address, 8086),
         ],
     )
 

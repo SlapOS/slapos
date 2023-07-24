@@ -52,10 +52,10 @@ class TestJupyter(InstanceTestCase):
 
     self.assertEqual(
       {
-        'jupyter-classic-url': 'https://[%s]:8888/tree' % (self._ipv6_address, ),
-        'jupyterlab-url': 'https://[%s]:8888/lab' % (self._ipv6_address, ),
+        'jupyter-classic-url': 'https://[%s]:8888/tree' % (self.computer_partition_ipv6_address, ),
+        'jupyterlab-url': 'https://[%s]:8888/lab' % (self.computer_partition_ipv6_address, ),
         'password': '%s' % (password, ),
-        'url': 'https://[%s]:8888/tree' % (self._ipv6_address, )
+        'url': 'https://[%s]:8888/tree' % (self.computer_partition_ipv6_address, )
       },
       connection_dict
     )

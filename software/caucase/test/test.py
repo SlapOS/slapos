@@ -47,7 +47,7 @@ class TestCaucase(SlapOSInstanceTestCase):
     connection_parameter_dict = self.deserializeConnectionParameter()
     self.assertEqual(
       connection_parameter_dict,
-      {'url': 'http://[%s]:8009' % (self._ipv6_address,)}
+      {'url': 'http://[%s]:8009' % (self.computer_partition_ipv6_address,)}
     )
     result = requests.get(connection_parameter_dict['url'])
 
@@ -57,14 +57,14 @@ class TestCaucase(SlapOSInstanceTestCase):
       {
         '_links': {
           'self': {
-            'href': 'http://[%s]:8009' % (self._ipv6_address,)
+            'href': 'http://[%s]:8009' % (self.computer_partition_ipv6_address,)
           },
           'getCAUHAL': {
-            'href': 'http://[%s]:8009//cau' % (self._ipv6_address,),
+            'href': 'http://[%s]:8009//cau' % (self.computer_partition_ipv6_address,),
             'title': 'cau'
           },
           'getCASHAL': {
-            'href': 'http://[%s]:8009//cas' % (self._ipv6_address,),
+            'href': 'http://[%s]:8009//cas' % (self.computer_partition_ipv6_address,),
             'title': 'cas'
           }
         }
