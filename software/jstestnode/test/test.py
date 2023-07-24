@@ -52,7 +52,7 @@ class TestJSTestNode(InstanceTestCase):
 
     self.assertEqual(
       {
-        'nginx': 'http://[%s]:9443/' % (self._ipv6_address, )
+        'nginx': 'http://[%s]:9443/' % (self.computer_partition_ipv6_address, )
       },
       connection_dict
     )
@@ -83,7 +83,7 @@ class TestJSTestNode(InstanceTestCase):
 
     # Default access
     result = requests.get(
-      'http://[%s]:9443' % (self._ipv6_address, ), allow_redirects=False)
+      'http://[%s]:9443' % (self.computer_partition_ipv6_address, ), allow_redirects=False)
     self.assertEqual(
       [requests.codes.forbidden, False],
       [result.status_code, result.is_redirect]

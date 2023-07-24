@@ -444,7 +444,7 @@ class TestDataMixin(object):
     # XXX: Dirty decode/encode/decode...?
     data_replacement_dict = {
       '@@_ipv4_address@@': self._ipv4_address,
-      '@@_ipv6_address@@': self._ipv6_address,
+      '@@computer_partition_ipv6_address@@': self.computer_partition_ipv6_address,
       '@@_server_http_port@@': str(self._server_http_port),
       '@@_server_https_auth_port@@': str(self._server_https_auth_port),
       '@@_server_https_port@@': str(self._server_https_port),
@@ -1063,7 +1063,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
       prefix,))
     upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
-    kedifa_ipv6_base = 'https://[%s]:%s' % (self._ipv6_address, KEDIFA_PORT)
+    kedifa_ipv6_base = 'https://[%s]:%s' % (self.computer_partition_ipv6_address, KEDIFA_PORT)
     base = '^' + kedifa_ipv6_base.replace(
       '[', r'\[').replace(']', r'\]') + '/.{32}'
     self.assertRegex(
@@ -1078,7 +1078,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
     self.assertEqual(
       kedifa_caucase_url,
-      'http://[%s]:%s' % (self._ipv6_address, CAUCASE_PORT),
+      'http://[%s]:%s' % (self.computer_partition_ipv6_address, CAUCASE_PORT),
     )
 
     return generate_auth_url, upload_url
@@ -1380,7 +1380,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       'url': 'http://%s.example.com' % (hostname, ),
       'site_url': 'http://%s.example.com' % (hostname, ),
       'secure_access': 'https://%s.example.com' % (hostname, ),
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
     })
     self.assertEqual(
       expected_parameter_dict,
@@ -1429,8 +1429,8 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       {
-        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
         'domain': 'example.com',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1461,8 +1461,8 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
-        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1577,8 +1577,8 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
-        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1937,7 +1937,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   monitor_setup_url_key = 'monitor-setup-url'
 
   def test_monitor_setup(self):
-    IP = self._ipv6_address
+    IP = self.computer_partition_ipv6_address
     self.monitor_configuration_list = [
       {
         'htmlUrl': 'https://[%s]:8401/public/feed' % (IP,),
@@ -2098,8 +2098,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNodeInformationWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '62',
       'rejected-slave-amount': '0',
@@ -2429,14 +2429,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     # check out access via IPv6
     out_ipv6, err_ipv6 = self._curl(
-      parameter_dict['domain'], self._ipv6_address, HTTPS_PORT)
+      parameter_dict['domain'], self.computer_partition_ipv6_address, HTTPS_PORT)
 
     try:
       j = json.loads(out_ipv6.decode())
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (out_ipv6.decode(),))
     self.assertEqual(
-       self._ipv6_address,
+       self.computer_partition_ipv6_address,
        j['Incoming Headers']['x-forwarded-for']
     )
 
@@ -4871,7 +4871,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       },
       parameter_dict
     )
@@ -5331,8 +5331,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '0',
@@ -5838,8 +5838,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -5930,8 +5930,8 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',
@@ -6192,8 +6192,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self.computer_partition_ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '3',
       'rejected-slave-amount': '28',
@@ -6428,7 +6428,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.computer_partition_ipv6_address,
       },
       parameter_dict
     )
@@ -6722,8 +6722,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'kedifa'].pop('monitor-password')
     )
 
-    backend_client_caucase_url = 'http://[%s]:8990' % (self._ipv6_address,)
-    kedifa_caucase_url = 'http://[%s]:15090' % (self._ipv6_address,)
+    backend_client_caucase_url = 'http://[%s]:8990' % (self.computer_partition_ipv6_address,)
+    kedifa_caucase_url = 'http://[%s]:15090' % (self.computer_partition_ipv6_address,)
     expected_partition_parameter_dict_dict = {
       'caddy-frontend-1': {
         'X-software_release_url': base_software_url,

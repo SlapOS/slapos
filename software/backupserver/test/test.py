@@ -45,7 +45,7 @@ class TestBackupServer(InstanceTestCase):
     # Check that there is a RSS feed
     self.assertTrue('rss' in parameter_dict)
     self.assertTrue(parameter_dict['rss'].startswith(
-      f'https://[{self._ipv6_address}]:9443/'
+      f'https://[{self.computer_partition_ipv6_address}]:9443/'
     ))
 
     result = requests.get(

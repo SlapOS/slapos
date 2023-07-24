@@ -115,7 +115,7 @@ class WendelinTutorialTestCase(FluentdTestCase):
                                      round(random.uniform(-20, 50), 3))]
 
   def serve(self, port, request_handler_class):
-    server_address = (self._ipv6_address, port)
+    server_address = (self.computer_partition_ipv6_address, port)
     server = OneRequestServer(server_address, request_handler_class)
 
     data = server.get_first_data(FLUSH_INTERVAL)
@@ -181,7 +181,7 @@ class SensorConfTestCase(WendelinTutorialTestCase):
   @type forward
   <server>
     name myserver1
-    host {cls._ipv6_address}
+    host {cls.computer_partition_ipv6_address}
   </server>
   <buffer>
     flush_mode immediate
@@ -199,7 +199,7 @@ print("{measurement_text}")'''
 
   def test_configuration(self):
     self._test_configuration(
-      fr'adding forwarding server \'myserver1\' host="{self._ipv6_address}" port={FLUENTD_PORT} weight=60'
+      fr'adding forwarding server \'myserver1\' host="{self.computer_partition_ipv6_address}" port={FLUENTD_PORT} weight=60'
     )
 
   def test_send_data(self):
@@ -232,11 +232,11 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
 <source>
   @type forward
   port {fluentd_port}
-  bind {cls._ipv6_address}
+  bind {cls.computer_partition_ipv6_address}
 </source>
 <match tag.name>
   @type wendelin
-  streamtool_uri http://[{cls._ipv6_address}]:{wendelin_port}/erp5/portal_ingestion_policies/default
+  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{wendelin_port}/erp5/portal_ingestion_policies/default
   user      foo
   password  bar
   <buffer>
@@ -249,9 +249,9 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
 
   @classmethod
   def get_configuration(cls):
-    fluentd_port = findFreeTCPPort(cls._ipv6_address)
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
     cls._fluentd_port = fluentd_port
-    wendelin_port = findFreeTCPPort(cls._ipv6_address)
+    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
     cls._wendelin_port = wendelin_port
     return cls.gateway_conf(fluentd_port, wendelin_port)
 
@@ -260,7 +260,7 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
 
   def test_wendelin_data_forwarding(self):
     sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    sock.connect((self._ipv6_address, self._fluentd_port))
+    sock.connect((self.computer_partition_ipv6_address, self._fluentd_port))
 
     data = [
       msgpack.ExtType(0, struct.pack('!Q', int(time.time()) << 32)),
