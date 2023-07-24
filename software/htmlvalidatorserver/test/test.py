@@ -43,7 +43,7 @@ class TestHtmlValidatorServer(InstanceTestCase):
 
     self.assertTrue('vnu-url' in parameter_dict)
     self.assertEqual(
-      'https://[%s]:8899/' % (self._ipv6_address, ),
+      'https://[%s]:8899/' % (self.computer_partition_ipv6_address, ),
       parameter_dict['vnu-url']
     )
 
