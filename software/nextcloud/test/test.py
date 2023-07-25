@@ -65,6 +65,10 @@ class NextCloudTestCase(InstanceTestCase):
         self.nextcloud_path,
         "Nextcloud path not found in %r" % (partition_path_list,))
 
+    # lookup nextcloud partition ipv6
+    partition_id = os.path.basename(self.partition_dir)
+    self.nextcloud_ipv6 = self.getPartitionIPv6(partition_id)
+
     # parse database info from mariadb url
     d = self.computer_partition.getConnectionParameterDict()
     db_url = d['mariadb-url-list'][2:-2] # parse <url> out of "['<url>']"
@@ -86,9 +90,9 @@ class NextCloudTestCase(InstanceTestCase):
       mail_smtpport="587",
       mail_smtppassword="",
       mail_smtpname="",
-      cli_url="https://[%s]:9988/" % self.computer_partition_ipv6_address,
+      cli_url="https://[%s]:9988/" % self.nextcloud_ipv6,
       partition_dir=self.partition_dir,
-      trusted_domain_list=json.dumps(["[%s]:9988" % self.computer_partition_ipv6_address]),
+      trusted_domain_list=json.dumps(["[%s]:9988" % self.nextcloud_ipv6]),
       trusted_proxy_list=[],
     )
     data_dict.update(config_dict)
@@ -336,7 +340,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       cli_url="nextcloud.example.com",
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps([
-        "[%s]:9988" % self.computer_partition_ipv6_address,
+        "[%s]:9988" % self.nextcloud_ipv6,
         "nextcloud.example.com",
         "nextcloud.proxy.com"
       ]),
