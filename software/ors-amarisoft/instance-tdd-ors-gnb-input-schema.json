@@ -11,13 +11,13 @@
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
-      "description": "1, 2, 4 or 8. Number of DL antennas.",
+      "description": "1 or 2. Number of DL antennas.",
       "type": "number",
       "default": 2
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
-      "description": "1, 2, 4 or 8. Number of UL antennas.",
+      "description": "1 or 2. Number of UL antennas.",
       "type": "number",
       "default": 2
     },

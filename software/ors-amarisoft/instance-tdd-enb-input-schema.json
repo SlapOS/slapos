@@ -3,11 +3,75 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "log_phy_debug": {
-      "title": "Physical layer log debug",
-      "description": "Enable debug mode for physical layer logs",
-      "type": "boolean",
-      "default": false
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "type": "string",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "default": "20 MHz"
+    },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "description": "1, 2, 4 or 8. Number of DL antennas.",
+      "type": "number",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "description": "1, 2, 4 or 8. Number of UL antennas.",
+      "type": "number",
+      "default": 2
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD",
+      "description": "TDD",
+      "type": "string",
+      "enum": [
+        "[Configuration 2] 5ms 2UL 6DL (default)",
+        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)"
+    },
+    "sdr_number": {
+      "title": "SDR Number",
+      "description": "SDR Number",
+      "type": "number",
+      "default": 0
+    },
+    "cell_list": {
+      "title": "Cell List",
+      "description": "Cell List",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "dl_earfcn": {
+              "title": "DL EARFCN",
+              "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+              "type": "number"
+            },
+            "pci": {
+              "title": "Physical Cell ID",
+              "description": "Physical Cell IDs",
+              "type": "number"
+            },
+            "cell_id": {
+              "title": "Cell ID",
+              "description": "Cell IDs",
+              "type": "string"
+            },
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "tx_gain": {
       "title": "Tx gain",
@@ -19,29 +83,11 @@
       "description": "Rx gain (in dB)",
       "type": "number"
     },
-    "gps_sync": {
-      "default": false,
-      "title": "GPS synchronisation",
-      "description": "True if GPS should be used for synchronisation",
-      "type": "boolean"
-    },
-    "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
-      "type": "number",
-      "default": 2
-    },
-    "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
-      "type": "number",
-      "default": 2
-    },
-    "n_rb_dl": {
-      "title": "DL RB",
-      "description": "number of DL resource blocks",
-      "type": "number",
-      "default": 100
+    "enb_id": {
+      "title": "eNB ID",
+      "description": "eNB ID",
+      "type": "string",
+      "default": "0x1A2D0"
     },
     "mme_list": {
       "title": "MME list",
@@ -60,18 +106,6 @@
       },
       "type": "object",
       "default": {}
-    },
-    "enb_id": {
-      "title": "eNB ID",
-      "description": "eNB ID",
-      "type": "string",
-      "default": "0x1A2D0"
-    },
-    "tac": {
-      "title": "Tracking Area Code",
-      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-      "default": "0x0001",
-      "type": "string"
     },
     "plmn_list": {
       "title": "PLMN list",
@@ -110,15 +144,17 @@
       "type": "number",
       "default": 10000
     },
-    "tdd_ul_dl_config": {
-      "title": "TDD",
-      "description": "TDD",
-      "type": "string",
-      "enum": [
-        "[Configuration 2] 5ms 2UL 6DL (default)",
-        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-      ],
-      "default": "5ms 2UL 7DL 4/6 (default)"
+    "log_phy_debug": {
+      "title": "Physical layer log debug",
+      "description": "Enable debug mode for physical layer logs",
+      "type": "boolean",
+      "default": false
+    },
+    "gps_sync": {
+      "default": false,
+      "title": "GPS synchronisation",
+      "description": "True if GPS should be used for synchronisation",
+      "type": "boolean"
     },
     "disable_sdr": {
       "default": false,
