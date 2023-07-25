@@ -3,23 +3,173 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
+    "nr_bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number",
+      "default": {{ default_nr_bandwidth }}
+    },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+{%- if bbu == 'ors' %}
+      "description": "1 or 2. Number of DL antennas.",
+{%- else %}
+      "description": "1, 2, 4 or 8. Number of DL antennas.",
+{%- endif %}
+      "type": "number",
+      "default": {{ default_n_antenna_dl }}
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+{%- if bbu == 'ors' %}
+      "description": "1 or 2. Number of UL antennas.",
+{%- else %}
+      "description": "1, 2, 4 or 8. Number of UL antennas.",
+{%- endif %}
+      "type": "number",
+      "default": {{ default_n_antenna_ul }}
+    },
 {%- if rf_mode == 'tdd' %}
-    "rrh": {
-      "title": "RRH",
-      "description": "RRH",
+    "tdd_ul_dl_config": {
+      "title": "TDD",
+      "description": "TDD",
       "type": "string",
-      "default": "ORS",
       "enum": [
-        "ORS",
-        "M2RU Sunwave"
-      ]
+        "5ms 2UL 7DL 4/6 (default)",
+        "2.5ms 1UL 3DL 2/10",
+        "5ms 8UL 3DL 2/10 (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)"
     },
 {%- endif %}
-    "log_phy_debug": {
-      "title": "Physical layer log debug",
-      "description": "Enable debug mode for physical layer logs",
-      "type": "boolean",
-      "default": false
+    "dl_nr_arfcn": {
+      "title": "DL NR ARFCN",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
+      "type": "number"
+    },
+    "nr_band": {
+      "title": "NR band",
+      "description": "NR band number",
+      "type": "number"
+    },
+    "ssb_pos_bitmap": {
+      "title": "SSB Position Bitmap",
+      "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
+      "type": "string",
+      "default": {{ default_nr_ssb_pos_bitmap }}
+    },
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "number",
+      "default": 500
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
+    },
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number"
+    },
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number"
+    },
+    "gnb_id": {
+      "title": "gNB ID",
+      "description": "gNB ID",
+      "type": "string",
+      "default": "0x12345"
+    },
+    "gnb_id_bits": {
+      "title": "gNB ID bits",
+      "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
+      "type": "number",
+      "default": 28
+    },
+    "amf_list": {
+      "title": "AMF list",
+      "description": "Optionnal. List of AMF to which the gNodeB is connected",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "amf_addr": {
+              "title": "AMF Address",
+              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "plmn_list": {
+      "title": "PLMN list",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "plmn": {
+              "default": "00101",
+              "title": "Public Land Mobile Network",
+              "description": "Public Land Mobile Network",
+              "type": "string"
+            },
+            "tac": {
+              "default": 100,
+              "title": "Tracking Area Code",
+              "description": "Integer (range 0 to 16777215)",
+              "type": "number"
+            },
+            "ranac": {
+              "title": "Optional integer (range 0 to 255)",
+              "description": "RAN Area Code",
+              "type": "number"
+            },
+            "reserved": {
+              "default": false,
+              "title": "Reserved",
+              "description": "True if the cell is reserved for operator use.",
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "nssai": {
+      "title": "AMF slices configuration",
+      "description": "AMF slices configuration.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "sst": {
+              "default": 1,
+              "title": "Slice Service Type",
+              "description": "Integer (range 1 to 255).",
+              "type": "number"
+            },
+            "sd": {
+              "default": "0x000032",
+              "title": "Slice Differentiator",
+              "description": "Optional integer (range 0 to 0xFFFFFE)",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "nr_handover_a3_offset": {
       "title": "A3 offset for NR handover",
@@ -50,79 +200,6 @@
         5120
       ],
       "default": 100
-    },
-    "tdd_ul_dl_config": {
-      "title": "TDD",
-      "description": "TDD",
-      "type": "string",
-      "enum": [
-        "5ms 2UL 7DL 4/6 (default)",
-        "2.5ms 1UL 3DL 2/10",
-        "5ms 8UL 3DL 2/10 (maximum uplink)"
-      ],
-      "default": "5ms 2UL 7DL 4/6 (default)"
-    },
-    "tx_gain": {
-      "title": "Tx gain",
-      "description": "Tx gain (in dB)",
-      "type": "number"
-    },
-    "rx_gain": {
-      "title": "Rx gain",
-      "description": "Rx gain (in dB)",
-      "type": "number"
-    },
-    "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
-      "type": "number",
-      "default": {{ default_n_antenna_dl }}
-    },
-    "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
-      "type": "number",
-      "default": {{ default_n_antenna_ul }}
-    },
-    "gps_sync": {
-      "default": false,
-      "title": "GPS synchronisation",
-      "description": "True if GPS should be used for synchronisation",
-      "type": "boolean"
-    },
-    "dl_nr_arfcn": {
-      "title": "DL NR ARFCN",
-      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
-    },
-    "nr_band": {
-      "title": "NR band",
-      "description": "NR band number",
-      "type": "number"
-    },
-    "nr_bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth (in MHz)",
-      "type": "number",
-      "default": {{ default_nr_bandwidth }}
-    },
-    "amf_list": {
-      "title": "AMF list",
-      "description": "Optionnal. List of AMF to which the gNodeB is connected",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "amf_addr": {
-              "title": "AMF Address",
-              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
     },
     "ncell_list": {
       "title": "Neighbour Cell Info",
@@ -190,102 +267,23 @@
       "type": "object",
       "default": {}
     },
-    "gnb_id": {
-      "title": "gNB ID",
-      "description": "gNB ID",
-      "type": "string",
-      "default": "0x12345"
-    },
-    "gnb_id_bits": {
-      "title": "gNB ID bits",
-      "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
-      "type": "number",
-      "default": 28
-    },
-    "cell_id": {
-      "title": "Cell ID",
-      "description": "Cell ID",
-      "type": "string",
-      "default": "0x01"
-    },
-    "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "number",
-      "default": 500
-    },
-    "ssb_pos_bitmap": {
-      "title": "SSB Position Bitmap",
-      "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
-      "type": "string",
-      "default": {{ default_nr_ssb_pos_bitmap }}
-    },
-    "plmn_list": {
-      "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "plmn": {
-              "default": "00101",
-              "title": "Public Land Mobile Network",
-              "description": "Public Land Mobile Network",
-              "type": "string"
-            },
-            "tac": {
-              "default": 100,
-              "title": "Tracking Area Code",
-              "description": "Integer (range 0 to 16777215)",
-              "type": "number"
-            },
-            "ranac": {
-              "title": "Optional integer (range 0 to 255)",
-              "description": "RAN Area Code",
-              "type": "number"
-            },
-            "reserved": {
-              "default": false,
-              "title": "Reserved",
-              "description": "True if the cell is reserved for operator use.",
-              "type": "boolean"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
-    },
-    "nssai": {
-      "title": "AMF slices configuration",
-      "description": "AMF slices configuration.",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "sst": {
-              "default": 1,
-              "title": "Slice Service Type",
-              "description": "Integer (range 1 to 255).",
-              "type": "number"
-            },
-            "sd": {
-              "default": "0x000032",
-              "title": "Slice Differentiator",
-              "description": "Optional integer (range 0 to 0xFFFFFE)",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
-    },
     "inactivity_timer": {
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
       "default": {{ default_nr_inactivity_timer }}
+    },
+    "log_phy_debug": {
+      "title": "Physical layer log debug",
+      "description": "Enable debug mode for physical layer logs",
+      "type": "boolean",
+      "default": false
+    },
+    "gps_sync": {
+      "default": false,
+      "title": "GPS synchronisation",
+      "description": "True if GPS should be used for synchronisation",
+      "type": "boolean"
     },
     "disable_sdr": {
       "default": false,

@@ -3,21 +3,21 @@
   "description": "4G and 5G amarisoft stack for ORS",
   "serialisation": "json-in-xml",
   "software-type": {
-{% if rf_mode == 'tdd' %}
+{% if bbu != 'ors' %}
     "ue-lte": {
       "title": "UE-LTE",
       "description": "UE LTE Configuration",
       "software-type": "ue-lte",
-      "request": "instance-{{ rf_mode }}-ue-lte-input-schema.json",
-      "response": "instance-{{ rf_mode }}-ue-lte-schema.json",
+      "request": "instance-{{ software_name }}-ue-lte-input-schema.json",
+      "response": "instance-{{ software_name }}-ue-lte-schema.json",
       "index": 4
     },
     "ue-nr": {
       "title": "UE-NR",
       "description": "UE NR Configuration",
       "software-type": "ue-nr",
-      "request": "instance-{{ rf_mode }}-ue-nr-input-schema.json",
-      "response": "instance-{{ rf_mode }}-ue-nr-schema.json",
+      "request": "instance-{{ software_name }}-ue-nr-input-schema.json",
+      "response": "instance-{{ software_name }}-ue-nr-schema.json",
       "index": 5
     },
 {% endif %}
@@ -25,16 +25,16 @@
       "title": "eNB",
       "software-type": "enb",
       "description": "eNodeB Configuration",
-      "request": "instance-{{ rf_mode }}-enb-input-schema.json",
-      "response": "instance-{{ rf_mode }}-enb-schema.json",
+      "request": "instance-{{ software_name }}-enb-input-schema.json",
+      "response": "instance-{{ software_name }}-enb-schema.json",
       "index": 0
     },
     "gnb": {
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
-      "request": "instance-{{ rf_mode }}-gnb-input-schema.json",
-      "response": "instance-{{ rf_mode }}-gnb-schema.json",
+      "request": "instance-{{ software_name }}-gnb-input-schema.json",
+      "response": "instance-{{ software_name }}-gnb-schema.json",
       "index": 1
     },
     "core-network": {

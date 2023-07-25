@@ -19,59 +19,38 @@
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
-      "description": "1, 2, 4 or 8. Number of DL antennas.",
+      "description": "1 or 2. Number of DL antennas.",
       "type": "number",
       "default": 2
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
-      "description": "1, 2, 4 or 8. Number of UL antennas.",
+      "description": "1 or 2. Number of UL antennas.",
       "type": "number",
       "default": 2
     },
-    "tdd_ul_dl_config": {
-      "title": "TDD",
-      "description": "TDD",
-      "type": "string",
-      "enum": [
-        "[Configuration 2] 5ms 2UL 6DL (default)",
-        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-      ],
-      "default": "5ms 2UL 7DL 4/6 (default)"
+    "dl_earfcn": {
+      "title": "DL EARFCN",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "type": "number"
     },
-    "sdr_number": {
-      "title": "SDR Number",
-      "description": "SDR Number",
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
       "type": "number",
-      "default": 0
+      "default": 1
     },
-    "cell_list": {
-      "title": "Cell List",
-      "description": "Cell List",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "dl_earfcn": {
-              "title": "DL EARFCN",
-              "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-              "type": "number"
-            },
-            "pci": {
-              "title": "Physical Cell ID",
-              "description": "Physical Cell IDs",
-              "type": "number"
-            },
-            "cell_id": {
-              "title": "Cell ID",
-              "description": "Cell IDs",
-              "type": "string"
-            },
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
+    },
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+      "default": "0x0001",
+      "type": "string"
     },
     "tx_gain": {
       "title": "Tx gain",
