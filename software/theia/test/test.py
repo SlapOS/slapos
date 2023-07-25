@@ -34,6 +34,7 @@ import re
 import subprocess
 import sqlite3
 import time
+import unittest
 
 import netaddr
 import pexpect
@@ -247,6 +248,12 @@ class TestTheia(TheiaTestCase):
   def test_ipv6_range(self):
     proxy_path = self.getPath('srv', 'runner', 'var', 'proxy.db')
     query = "SELECT partition_reference, address FROM partition_network%s" % DB_VERSION
+
+    ipv6, *prefixlen = self._ipv6_address.split('/')
+    if not prefixlen:
+      raise unittest.SkipTest('No IPv6 range')
+    elif int(prefixlen[0]) >= 123:
+      raise unittest.SkipTest('IPv6 range too small: %s' % self._ipv6_address)
 
     with sqlite3.connect(proxy_path) as db:
       rows = db.execute(query).fetchall()
