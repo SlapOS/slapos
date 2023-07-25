@@ -4,37 +4,20 @@
   "serialisation": "json-in-xml",
   "software-type": {
 
-    "ue-lte": {
-      "title": "UE-LTE",
-      "description": "UE LTE Configuration",
-      "software-type": "ue-lte",
-      "request": "instance-fdd-ue-lte-input-schema.json",
-      "response": "instance-fdd-ue-lte-schema.json",
-      "index": 4
-    },
-    "ue-nr": {
-      "title": "UE-NR",
-      "description": "UE NR Configuration",
-      "software-type": "ue-nr",
-      "request": "instance-fdd-ue-nr-input-schema.json",
-      "response": "instance-fdd-ue-nr-schema.json",
-      "index": 5
-    },
-
     "enb": {
       "title": "eNB",
       "software-type": "enb",
       "description": "eNodeB Configuration",
-      "request": "instance-fdd-enb-input-schema.json",
-      "response": "instance-fdd-enb-schema.json",
+      "request": "instance-fdd-ors-enb-input-schema.json",
+      "response": "instance-fdd-ors-enb-schema.json",
       "index": 0
     },
     "gnb": {
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
-      "request": "instance-fdd-gnb-input-schema.json",
-      "response": "instance-fdd-gnb-schema.json",
+      "request": "instance-fdd-ors-gnb-input-schema.json",
+      "response": "instance-fdd-ors-gnb-schema.json",
       "index": 1
     },
     "core-network": {

@@ -11,26 +11,15 @@
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
-      "description": "1, 2, 4 or 8. Number of DL antennas.",
+      "description": "1 or 2. Number of DL antennas.",
       "type": "number",
       "default": 2
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
-      "description": "1, 2, 4 or 8. Number of UL antennas.",
+      "description": "1 or 2. Number of UL antennas.",
       "type": "number",
       "default": 2
-    },
-    "tdd_ul_dl_config": {
-      "title": "TDD",
-      "description": "TDD",
-      "type": "string",
-      "enum": [
-        "5ms 2UL 7DL 4/6 (default)",
-        "2.5ms 1UL 3DL 2/10",
-        "5ms 8UL 3DL 2/10 (maximum uplink)"
-      ],
-      "default": "5ms 2UL 7DL 4/6 (default)"
     },
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",

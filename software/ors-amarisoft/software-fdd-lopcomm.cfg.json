@@ -8,16 +8,16 @@
       "title": "UE-LTE",
       "description": "UE LTE Configuration",
       "software-type": "ue-lte",
-      "request": "instance-fdd-ue-lte-input-schema.json",
-      "response": "instance-fdd-ue-lte-schema.json",
+      "request": "instance-fdd-lopcomm-ue-lte-input-schema.json",
+      "response": "instance-fdd-lopcomm-ue-lte-schema.json",
       "index": 4
     },
     "ue-nr": {
       "title": "UE-NR",
       "description": "UE NR Configuration",
       "software-type": "ue-nr",
-      "request": "instance-fdd-ue-nr-input-schema.json",
-      "response": "instance-fdd-ue-nr-schema.json",
+      "request": "instance-fdd-lopcomm-ue-nr-input-schema.json",
+      "response": "instance-fdd-lopcomm-ue-nr-schema.json",
       "index": 5
     },
 
@@ -25,16 +25,16 @@
       "title": "eNB",
       "software-type": "enb",
       "description": "eNodeB Configuration",
-      "request": "instance-fdd-enb-input-schema.json",
-      "response": "instance-fdd-enb-schema.json",
+      "request": "instance-fdd-lopcomm-enb-input-schema.json",
+      "response": "instance-fdd-lopcomm-enb-schema.json",
       "index": 0
     },
     "gnb": {
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
-      "request": "instance-fdd-gnb-input-schema.json",
-      "response": "instance-fdd-gnb-schema.json",
+      "request": "instance-fdd-lopcomm-gnb-input-schema.json",
+      "response": "instance-fdd-lopcomm-gnb-schema.json",
       "index": 1
     },
     "core-network": {
