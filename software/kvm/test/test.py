@@ -870,7 +870,7 @@ class FakeImageServerMixin(KvmMixin):
     os.chdir(cls.image_source_directory)
     try:
       cls.server_process = multiprocessing.Process(
-        target=server.serve_forever, name='FakeImageHttpServer')
+        target=server.serve_forever, name='FakeImageHttpServer', daemon=True)
       cls.server_process.start()
       server.socket.close()
     finally:
@@ -931,8 +931,12 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
   @classmethod
   def setUpClass(cls):
-    cls.startImageHttpServer()
-    super().setUpClass()
+    try:
+      cls.startImageHttpServer()
+      super().setUpClass()
+    except BaseException:
+      cls.stopImageHttpServer()
+      raise
 
   @classmethod
   def tearDownClass(cls):
@@ -2269,7 +2273,7 @@ class TestInstanceHttpServer(InstanceTestCase, KvmMixin):
     os.chdir(cls.http_directory)
     try:
       cls.server_process = multiprocessing.Process(
-        target=server.serve_forever, name='HttpServer')
+        target=server.serve_forever, name='HttpServer', daemon=True)
       cls.server_process.start()
     finally:
       os.chdir(old_dir)
@@ -2288,8 +2292,12 @@ class TestInstanceHttpServer(InstanceTestCase, KvmMixin):
 
   @classmethod
   def setUpClass(cls):
-    cls.startHttpServer()
-    super().setUpClass()
+    try:
+      cls.startHttpServer()
+      super().setUpClass()
+    except BaseException:
+      cls.stopHttpServer()
+      raise
 
   @classmethod
   def tearDownClass(cls):
