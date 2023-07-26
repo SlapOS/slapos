@@ -439,12 +439,14 @@ class TestDataMixin(object):
         # sent like this to the real master
         parameter_dict['_'] = json.loads(parameter_dict['_'])
       parameter_dict['timestamp'] = '@@TIMESTAMP@@'
+      # remove ip_list since it's unused and the order may be unstable
+      parameter_dict.pop('ip_list', None)
       cluster_request_parameter_list.append(parameter_dict)
 
     # XXX: Dirty decode/encode/decode...?
     data_replacement_dict = {
       '@@_ipv4_address@@': self._ipv4_address,
-      '@@computer_partition_ipv6_address@@': self.computer_partition_ipv6_address,
+      '@@_ipv6_address@@': self.computer_partition_ipv6_address,
       '@@_server_http_port@@': str(self._server_http_port),
       '@@_server_https_auth_port@@': str(self._server_https_auth_port),
       '@@_server_https_port@@': str(self._server_https_port),
