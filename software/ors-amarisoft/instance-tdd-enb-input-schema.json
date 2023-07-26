@@ -65,7 +65,7 @@
               "title": "Cell ID",
               "description": "Cell IDs",
               "type": "string"
-            },
+            }
           },
           "type": "object"
         }
