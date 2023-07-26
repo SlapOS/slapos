@@ -184,6 +184,7 @@ class ExportAndImportMixin(object):
 
   def assertPromiseSucess(self):
     # Force promises to recompute regardless of periodicity
+    old_value = self.slap._force_slapos_node_instance_all
     self.slap._force_slapos_node_instance_all = True
     try:
       self.slap.waitForInstance(error_lines=0)
@@ -193,8 +194,8 @@ class ExportAndImportMixin(object):
       self.assertNotIn('ERROR export script', s)
       self.assertNotIn("Promise 'resiliency-import-promise.py' failed", s)
       self.assertNotIn('ERROR import script', s)
-    else:
-      pass
+    finally:
+      self.slap._force_slapos_node_instance_all = old_value
 
   def _doExport(self):
     # Compute last modification of the export exitcode file
@@ -247,6 +248,7 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
 
   def assertPromiseFailure(self, *msg):
     # Force promises to recompute regardless of periodicity
+    old_value = self.slap._force_slapos_node_instance_all
     self.slap._force_slapos_node_instance_all = True
     try:
       self.slap.waitForInstance(error_lines=0)
@@ -256,6 +258,8 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
         self.assertIn(m, s)
     else:
       self.fail('No promise failed')
+    finally:
+      self.slap._force_slapos_node_instance_all = old_value
 
   def assertScriptFailure(self, func, errorfile, exitfile, *msg):
     self.assertRaises(
