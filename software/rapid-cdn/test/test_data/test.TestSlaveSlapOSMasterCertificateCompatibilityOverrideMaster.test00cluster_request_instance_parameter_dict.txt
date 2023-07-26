@@ -6,16 +6,6 @@
     "domain": "example.com",
     "full_address_list": [],
     "instance_title": "testing partition 0",
-    "ip_list": [
-      [
-        "T-0",
-        "@@_ipv4_address@@"
-      ],
-      [
-        "T-0",
-        "@@_ipv6_address@@"
-      ]
-    ],
     "kedifa_port": "15080",
     "plain_http_port": "11080",
     "port": "11443",
@@ -54,16 +44,6 @@
     },
     "full_address_list": [],
     "instance_title": "kedifa",
-    "ip_list": [
-      [
-        "T-1",
-        "@@_ipv4_address@@"
-      ],
-      [
-        "T-1",
-        "@@_ipv6_address@@"
-      ]
-    ],
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-1",
@@ -95,16 +75,6 @@
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
-    "ip_list": [
-      [
-        "T-2",
-        "@@_ipv4_address@@"
-      ],
-      [
-        "T-2",
-        "@@_ipv6_address@@"
-      ]
-    ],
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-2",
