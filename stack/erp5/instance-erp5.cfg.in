@@ -281,6 +281,8 @@ software-type = zope
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
+{%   set check_test_runner_url_section_name = 'check-test-runner-url' ~ partition_name -%}
+{%   set promise_test_runner_url_section_name = 'promise-test-runner-url' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
 {%   do zope_family_name_list.append(zope_family) %}
 {%   set backend_path = zope_parameter_dict.get('backend-path', '') % {'site-id': site_id} %}
@@ -315,6 +317,25 @@ config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activi
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
+[{{ check_test_runner_url_section_name }}]
+# Promise to wait for zope partition to receive the expected test-runner URL
+recipe = slapos.cookbook:check_parameter
+value = {{ '${' ~ section_name ~ ':config-test-runner-apache-url-list}' }}
+expected-not-value = not-ready
+expected-value =
+path = ${directory:bin}/${:_buildout_section_name_}
+
+[{{ promise_test_runner_url_section_name }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = {{ '${' ~ check_test_runner_url_section_name ~ ':path}' }}
+
+{% do root_common.section(promise_test_runner_url_section_name) -%}
+
+{%   endif -%}
+
+
 [{{ promise_software_url_section_name }}]
 # Promise to wait for zope partition to use the expected software URL,
 # used on upgrades.
@@ -326,7 +347,6 @@ path = ${directory:bin}/${:_buildout_section_name_}
 
 {% do root_common.section(promise_software_url_section_name) -%}
 
-{%   endif -%}
 {% endfor -%}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
