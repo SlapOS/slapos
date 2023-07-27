@@ -9,9 +9,15 @@ offline = true
 [profile-common]
 nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
+tar_location = {{ tar_location }}
+curl_location = {{ curl_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
-template_mime_types = {{ template_mime_types_target }} 
-template_launcher = {{ template_launcher_target }} 
+template_mime_types = {{ template_mime_types_target }}
+template_launcher = {{ template_launcher_target }}
+template_index_html = {{ template_index_html_target }}
+template_graceful  = {{ template_graceful_target }}
+template_monitor = {{ template_monitor }}
+
 
 [instance-html5as]
 recipe = slapos.recipe.template:jinja2
@@ -23,11 +29,45 @@ context =
   section parameter_list profile-common
 # partition_ipv6 is the random ipv6 allocated to the local partition
   key partition_ipv6 slap-configuration:ipv6-random
+# slapparameter_dict: dictionary of all parameters
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "title": "Tutorial html5as",
+    "download_url": "",
+    "port": 8081,
+    "monitor-httpd-port": 8197
+  }
+
+[instance-replicate]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_instance_replicate }}
+output = ${buildout:directory}/${:filename}
+filename = instance-replicate-html5as.cfg
+context =
+  section buildout buildout
+  section parameter_list profile-common
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+# User can specify parameter for any of the two instances
+default-parameters =
+  {
+    "title": "",
+    "title1": "",
+    "title2": "",
+    "download_url": "",
+    "port1": 8081,
+    "port2": 8082,
+    "monitor-httpd-port1": 8197,
+    "monitor-httpd-port2": 8198
+  }
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
 default = instance-html5as:output
+replicate = instance-replicate:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration

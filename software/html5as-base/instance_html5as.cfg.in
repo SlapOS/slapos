@@ -3,12 +3,19 @@
 # Deploy html5as instance
 #
 #############################
+# parameter_dict: a dictionary with the default parameters from instance.cfg.in
+# replaces the values with the parameters of the instance request if there are any
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
 [buildout]
 parts =
     nginx_conf
     downloader
     mime_types
     launcher
+    nginx-graceful
+    port-listening-promise
+    logrotate-entry-nginx
     publish-connection-information
 
 # Define egg directories to be the one from Software Release
@@ -17,6 +24,9 @@ parts =
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
+
+extends = {{ parameter_list['template_monitor'] }}
+
 
 # partition tree
 # /
@@ -66,12 +76,11 @@ scgi_temp_path = ${:tmp}/scgi_temp_path
 # List of options for html5as configuration
 # It will run a simple nginx serving the content of srv/html5as
 [html5as]
-# Options
 nb_workers = 2
 
 # Network
 ip = {{ partition_ipv6 }}
-port = 8081
+port = {{ parameter_dict['port'] }}
 access_url = http://[${:ip}]:${:port}
 
 # Paths
@@ -89,9 +98,10 @@ path_nginx_conf = ${directory:etc}/nginx.conf
 path_mime_types = ${directory:etc}/mime_types
 # Binaries
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
-
+curl-binary = {{ parameter_list['curl_location'] }}/bin/curl
+tar-binary = {{ parameter_list['tar_location'] }}/bin/tar
 # Executables
-bin_launcher = ${basedirectory:script}/launcher
+bin_launcher = ${basedirectory:service}/launcher
 
 # Utils
 path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
@@ -120,11 +130,98 @@ context =
     section param_html5as html5as
 
 # Simple command to put content in the docroot
+# Command to put content in the docroot
 [downloader]
 recipe = plone.recipe.command
-command = rm -r ${html5as:docroot}/*; echo "Hello World!" >  ${html5as:docroot}/index.html
+# Paths that buildout should consider as being managed by this buildout part.
+# These will be removed when buildout (re)installs or removes this part.
+location = ${html5as:docroot}
+# This section will fail if the command fails.
+stop-on-error = true
+# If a tarball is passed as a parameter in download url
+# it's content will be served by the instance.
+# If the parameter is not provided it fallback to the default template
+command =
+  URL={{ parameter_dict['download_url'] }};
+  if [ -n "$URL" ];
+  then
+    ${html5as:curl-binary} -Lks $URL | ${html5as:tar-binary} xzv -C ${:location} --strip-components 1;
+  else
+    cp ${default_index_html:rendered} ${:location}/;
+  fi
 
-# Publish nginx address
+[default_index_html]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${directory:srv}/index.html
+title = {{ parameter_dict['title'] }}
+context =
+  key title :title
+
+
+### Nginx Graceful
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+context =
+    section param_html5as html5as
+
+# Port Listening checking promise
+[port-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = nginx-port-listening.py
+config-host = ${html5as:ip}
+config-port = ${html5as:port}
+
+# Use a port different from the default one in order to be able to
+# use it in a SlapOS webrunner or a Theia SlapOS Runner
+[monitor-instance-parameter]
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
+
+# Monitor Stack also provides logrotate stack. We only need to extend
+# the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
+# More parameters can be added following the logrotate-entry-base section
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${html5as:path_access_log} ${html5as:path_error_log}
+post = kill -USR1 $(cat ${html5as:path_pid})
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
+# By extending monitor publish, all the section deploying monitoring will
+# be deployed. The parameters needed for accessing monitoring will be published
+<= monitor-publish
 server_url = ${html5as:access_url}
+title = Title {{ parameter_dict['title'] }}!
+# Add dependency to the promise so that frontend sections are processed
+# and there is no need to declare the new part in buildout:parts
+server-cdn-url = ${html5as-frontend-promise:url}
+
+# Request a CDN entry to master
+[html5as-frontend]
+# Extend slap-connnection to get the credentials for the request
+<= slap-connection
+# Recipe used to make requests
+recipe = slapos.cookbook:requestoptional
+name = HTML5AS frontend
+# Specify the software url of the frontend software release
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+# It is not a dedicated instance but an instance allocated on a shared instance
+slave = true
+config-url = ${html5as:access_url}
+config-https-only = true
+# The parameter expected to be received from the request are listed here.
+return = domain secure_access
+
+# Add a promise to make sure the cdn is properly configured
+[html5as-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = html5as-http-frontend.py
+url = ${html5as-frontend:connection-secure_access}
+config-url = ${:url}
+config-check-secure = 1
