@@ -172,6 +172,21 @@
       "description": "Baseband latency promise will fail if average TX/RX diff reaches threshold (higher than this value)",
       "type": "number",
       "default": 7
+    },
+    "xlog_fluentbit_wendelin_ingestion_url": {
+      "title": "Xlog Wendelin Ingestion URL",
+      "description": "Wendelin Ingestion URL to send xlog data for KPI computation",
+      "type": "string"
+    },
+    "xlog_fluentbit_user": {
+      "title": "Xlog Wendelin Username",
+      "description": "Username for Wendelin Ingestion URL",
+      "type": "string"
+    },
+    "xlog_fluentbit_password": {
+      "title": "Xlog Wendelin Password",
+      "description": "Password for Wendelin Ingestion URL",
+      "type": "string"
     }
   }
 }
