@@ -3,9 +3,10 @@
 {% set init_list = [] -%}
 
 {% set private_tmpfs = slapparameter_dict.get('private-tmpfs') -%}
+{% set storage_count = slapparameter_dict.get('storage-count', 1) -%}
 {% set storage_type = slapparameter_dict.get('storage-type') or (
      'MySQL' if mariadb_location is defined else 'SQLite') -%}
-{% set mysql = storage_type != 'SQLite' -%}
+{% set mysql = storage_count and storage_type != 'SQLite' -%}
 {% if mysql -%}
 
 [{{ section('mysqld') }}]
@@ -113,7 +114,7 @@ engine = ${my-cnf-parameters:engine}
 dedup = {{ dumps(bool(slapparameter_dict.get('data-deduplication'))) }}
 disable-drop-partitions = {{ dumps(bool(slapparameter_dict.get('disable-drop-partitions'))) }}
 
-{% for i in range(slapparameter_dict.get('storage-count', 1)) -%}
+{% for i in range(storage_count) -%}
 {%   set storage_id = 'neo-storage-' ~ i -%}
 [{{ section(storage_id) }}]
 < = neo-storage
