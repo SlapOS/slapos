@@ -67,8 +67,22 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${monitor-httpd-conf-parameter:key-file}
 cert-file = ${monitor-httpd-conf-parameter:cert-file}
-executable = ${monitor-httpd-wrapper:wrapper-path}
+executable = ${monitor-httpd-service-wrapper:output}
 wrapper = ${directory:bin}/ca-monitor-httpd
+
+[monitor-httpd-service-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_monitor_httpd_wrapper }}
+output = ${directory:bin}/monitor-httpd-service-wrapper
+mode = 755
+pid-file = ${monitor-httpd-conf-parameter:pid-file}
+monitor-httpd-wrapper-path = ${monitor-httpd-wrapper:wrapper-path}
+monitor-httpd-conf = ${monitor-httpd-conf:output}
+context =
+    key pid_file :pid-file
+    key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
+    key monitor_httpd_conf :monitor-httpd-conf
+    raw dash_binary {{ dash_executable_location }}
 
 [ca-monitor-httpd-service]
 recipe = slapos.cookbook:wrapper
