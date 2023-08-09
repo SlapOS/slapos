@@ -30,11 +30,13 @@ import glob
 import hashlib
 import json
 import os
+import psutil
 import re
 import requests
 import shutil
 import subprocess
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -74,6 +76,149 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+  def test_monitor_httpd_normal_reboot(self):
+    # Start the monitor-httpd service
+    monitor_httpd_process_name = ''
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      partition = info['group']
+      if info['statename'] != "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.startProcess(monitor_httpd_process_name)
+      for _retries in range(20):
+        time.sleep(1)
+        info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+        if info['statename'] == "RUNNING":
+          break
+      else:
+        self.fail(f"the supervisord service '{monitor_httpd_process_name}' is not running")
+
+    # Get the partition path
+    partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc/monitor-httpd.conf')):
+        self.partition_path = partition_path
+        break
+
+    # Make sure we are focusing the same httpd service
+    self.assertIn(partition, self.partition_path)
+
+    # Get the monitor-httpd-service
+    monitor_httpd_service_path = glob.glob(os.path.join(
+      self.partition_path, 'etc', 'service', 'monitor-httpd*'
+    ))[0]
+
+    # Get the pid of the monitor_httpd from the PID file
+    monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+    monitor_httpd_pid = ""
+
+    if os.path.exists(monitor_httpd_pid_file):
+      with open(monitor_httpd_pid_file, "r") as pid_file:
+        monitor_httpd_pid = pid_file.read()
+
+    try:
+      print("Ready to run the process in normal reboot")
+      print(monitor_httpd_pid)
+      output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
+      # If the httpd-monitor service is running
+      # and the monitor-httpd.pid contains the identical PID as the servicse
+      # run the monitor-httpd service can cause the "already running" error correctly
+      self.assertIn("already running", output)
+    except subprocess.CalledProcessError as e:
+      print(e.output)
+      print("Unexpected error when running the monitor-httpd service:", e)
+      self.fail("Unexpected error when running the monitor-httpd service")
+    except subprocess.TimeoutExpired as e:
+      # Timeout means we run the httpd service corrrectly
+      # This is not the expected behaviour
+      print("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
+      # Kill the process that we started manually
+      try:
+        pid_to_kill = monitor_httpd_pid.strip('\n')
+        subprocess.run(["kill", "-9", str(pid_to_kill)], check=True)
+        print(f"Process with PID {pid_to_kill} killed.")
+      except subprocess.CalledProcessError as e:
+        print(f"Error killing process with PID {pid_to_kill}: {e}")
+      self.fail("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test")
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      partition = info['group']
+      if info['statename'] == "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.stopProcess(monitor_httpd_process_name)
+
+  def test_monitor_httpd_crash_reboot(self):
+    # Get the partition path
+    partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc/monitor-httpd.conf')):
+        self.partition_path = partition_path
+        break
+
+    # Get the pid file
+    monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+    monitor_httpd_process_name = ''
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      if info['statename'] == "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.stopProcess(monitor_httpd_process_name)
+
+    # Write the PID of the infinite process to the pid file.
+    with open(monitor_httpd_pid_file, "w") as file:
+      file.write(str(os.getpid()))
+
+    # Get the monitor-httpd-service
+    monitor_httpd_service_path = glob.glob(os.path.join(
+      self.partition_path, 'etc', 'service', 'monitor-httpd*'
+    ))[0]
+    output = ''
+
+    monitor_httpd_service_is_running = False
+
+    # Create the subprocess
+    print("Ready to run the process in crash reboot")
+    try:
+      process = subprocess.Popen(monitor_httpd_service_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+      stdout, stderr = '', ''
+      try:
+        # Wait for the process to finish, but with a timeout
+        stdout, stderr = process.communicate(timeout=3)
+        print("Communicated!")
+      except subprocess.TimeoutExpired:
+        monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
+        # If the process times out, terminate it
+        try:
+          main_process = psutil.Process(process.pid)
+          child_processes = main_process.children(recursive=True)
+
+          for process in child_processes + [main_process]:
+            process.terminate()
+
+          psutil.wait_procs(child_processes + [main_process])
+
+          print(f"Processes with PID {process.pid} and its subprocesses terminated.")
+        except psutil.NoSuchProcess as e:
+          # This print will generate ResourceWarningm but it is normal in Python 3
+          # See https://github.com/giampaolo/psutil/blob/master/psutil/tests/test_process.py#L1526
+          print("No process found with PID: %s" % process.pid)
+    except subprocess.CalledProcessError as e:
+      print(e.output)
+      print("Unexpected error when running the monitor-httpd service:", e)
+      self.fail("Unexpected error when running the monitor-httpd service")
+
+    # "httpd (pid 21934) already running" means we start httpd failed
+    if "already running" in stdout:
+      self.fail("Unexepected output from the monitor-httpd process: %s" % stdout)
+      raise Exception("Unexepected output from the monitor-httpd process: %s" % stdout)
+
+    self.assertTrue(monitor_httpd_service_is_running)
 
 
 class MonitorTestMixin:
