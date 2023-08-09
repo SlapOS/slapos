@@ -1,0 +1,27 @@
+#!{{ dash_binary }}
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+pid_file="{{ pid_file }}"
+monitor_httpd_conf_file={{ monitor_httpd_conf }}
+
+if [ -f "$pid_file" ]; then
+    pid=$(cat "$pid_file")
+    result=$(ps aux | grep "^\S*\s*$pid\s")
+
+    # The process with the specified PID is running
+    if [ -n "$result" ]; then
+        echo "there is a process running with the same pid"
+        # Get the command line of the process and replace null characters with spaces
+        cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+
+        # There is a process running with the pid,
+        # but it is not one using our monitor-httpd.conf
+        if ! expr "$cmdline" : ".*$monitor_httpd_conf_file" > /dev/null; then
+            echo "The process is not running with the monitor_httpd_conf"
+            rm -f {{ pid_file }};
+        fi
+    fi
+fi
+
+exec {{ monitor_httpd_wrapper_path }} "$@"
