@@ -75,6 +75,35 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
       self.assertIn(expected_process_name, process_names)
 
+  def test_monitor_httpd_service(self):
+    # Run a stub process
+    command = "while true; do sleep 1; done"
+    infinite_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, detached=True)
+
+    # Get the partition path
+    partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc/monitor-httpd.conf')):
+        self.partition_path = partition_path
+        break
+
+    # Stop the monitor-httpd service?
+
+    # Get the pid file, write the PID of the infinite process to it.
+    monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+    with open(monitor_httpd_pid_file, "w") as file:
+      file.write(infinite_process.pid)
+
+    # Get the monitor-httpd-service
+    monitor_httpd_service_path = os.path.join(
+      self.partition_path, 'etc', 'service', 'monitor-httpd*'
+    )
+    print(monitor_httpd_service_path)
+    try:
+      subprocess.run(["bash", monitor_httpd_service_path], check=True)
+    except subprocess.CalledProcessError as e:
+      print("Error running the script:", e)
+
 
 class MonitorTestMixin:
   monitor_setup_url_key = 'monitor-setup-url'
