@@ -72,7 +72,7 @@ wrapper = ${directory:bin}/ca-monitor-httpd
 
 [ca-monitor-httpd-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${ca-monitor-httpd:wrapper}
+command-line = rm -f ${monitor-httpd-conf-parameter:pid-file} && ${ca-monitor-httpd:wrapper}
 wrapper-path = ${directory:services}/monitor-httpd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 

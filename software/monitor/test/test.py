@@ -77,8 +77,8 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
   def test_monitor_httpd_service(self):
     # Run a stub process
-    command = "while true; do sleep 1; done"
-    infinite_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, detached=True)
+    command = "while true; do sleep 300; done"
+    infinite_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
@@ -92,17 +92,27 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     # Get the pid file, write the PID of the infinite process to it.
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
     with open(monitor_httpd_pid_file, "w") as file:
-      file.write(infinite_process.pid)
-
+      file.write(str(infinite_process.pid))
+    print("------------")
+    print(infinite_process.pid)
+    error_msg = "httpd (pid %s) already running" % infinite_process.pid
     # Get the monitor-httpd-service
-    monitor_httpd_service_path = os.path.join(
+    monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
-    )
+    ))[0]
     print(monitor_httpd_service_path)
     try:
-      subprocess.run(["bash", monitor_httpd_service_path], check=True)
+      output = subprocess.run(["bash", monitor_httpd_service_path], capture_output=True, text=True, check=True)
+      # output.stdout is something like "httpd (pid 21934) already running"
+      self.assertEqual(error_msg, output.stdout.rstrip('\n'))
     except subprocess.CalledProcessError as e:
       print("Error running the script:", e)
+
+    # Terminate the infinite process
+    infinite_process.terminate()
+    infinite_process.wait()
+    # The process got killed, the return code should be -15
+    self.assertEqual(-15, infinite_process.returncode)
 
 
 class MonitorTestMixin:
