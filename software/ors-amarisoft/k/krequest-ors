@@ -1,0 +1,90 @@
+#!/usr/bin/env -S slapos console
+"""request erp5 for kirr"""
+
+import sys, json
+from pprint import pprint
+
+# ref_of_instance returns reference an instance was requested with
+def ref_of_instance(inst):
+    i_comp_id = inst.slap_computer_id
+    i_part_id = inst.slap_computer_partition_id
+    for x in slap.getOpenOrderDict().values():      # XXX linear search
+        if x._computer_reference == i_comp_id  and  \
+           x._reference          == i_part_id:
+            return x._partition_reference
+
+"""
+x =slap.getOpenOrderDict()
+print(x)
+x = x['kcore']
+for _ in dir(x):
+    if not _.startswith('__'):
+        print('%s:\t%s' % (_, getattr(x, _)))
+print('\n\n\n')
+#sys.exit()
+"""
+
+ors="/srv/slapgrid/slappart91/srv/project/slapos/software/ors-amarisoft/k.cfg"
+
+core = request(ors,
+        software_type="core-network",
+        partition_reference="kcore",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+            'core_network_plmn': '31415',
+        })})
+
+print("ref(core):", ref_of_instance(core))
+
+"""
+print(core)
+print(core.getId())
+print(core.getInstanceGuid())
+print(core.getState())
+#print(core.getSoftwareRelease())
+print(core.getAccessStatus())
+pprint(core.getInstanceParameterDict())
+pprint(core.getConnectionParameterDict())
+#print(core.getType())
+print(core.getStatus())
+#print(core.getFullHostingIpAddressList())
+#print(core.getInformation())
+print(core.request)
+print()
+print(slap)
+print(slap.getComputerDict())
+print(slap.getOpenOrderDict())
+
+print('\n\n\n')
+print(dir(core))
+print('\n\n\n')
+
+for x in '_computer_id', '_instance_guid', '_parameter_dict', '_partition_id', '_requestComputerPartition', '_request_dict', 'slap_computer_id', 'slap_computer_partition_id', 'slap_server_url', 'slap_software_type':
+    print('%s:\t%s' % (x, getattr(core, x)))
+"""
+
+
+#1/0
+
+def request_sim(core, sim_n):
+    core_ref = ref_of_instance(core)
+    sim = request(ors,
+        software_type="core-network",
+        partition_reference="%s/sim%d" % (core_ref, sim_n),
+        shared=True,
+        filter_kw={"instance_guid": core_ref},
+        partition_parameter_kw={"_": json.dumps({
+            "sim_algo": "milenage",
+            "imsi": "001010000000%d" % sim_n,
+            "opc": "000102030405060708090A0B0C0D0E0F",
+            "amf": "0x9001",
+            "sqn": "000000000000",
+            "k": "00112233445566778899AABBCCDDEEFF",
+            "impu": "impu%d" % sim_n,
+            "impi": "impi%d@amarisoft.com" % sim_n,
+         })})
+    return sim
+
+sim1 = request_sim(core, 1)
+print(sim1)
