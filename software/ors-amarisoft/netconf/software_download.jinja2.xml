@@ -1,0 +1,6 @@
+<software-download xmlns="urn:o-ran:software-management:1.0">
+  <remote-file-path>sftp://test@10.75.35.7/PR.PR46Q1LNV1001.1.tar.gz</remote-file-path>
+  <password>
+	 <password>123456</password>
+  </password>
+</software-download>

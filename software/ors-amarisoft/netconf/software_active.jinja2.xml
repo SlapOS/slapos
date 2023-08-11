@@ -1,0 +1,3 @@
+<software-activate xmlns="urn:o-ran:software-management:1.0">
+    <slot-name>slot-1</slot-name>    
+</software-activate>
