@@ -68,12 +68,13 @@ for x in '_computer_id', '_instance_guid', '_parameter_dict', '_partition_id', '
 #1/0
 
 def request_sim(core, sim_n):
-    core_ref = ref_of_instance(core)
+    core_ref  = ref_of_instance(core)
+    core_guid = core.getInstanceGuid()
     sim = request(ors,
         software_type="core-network",
         partition_reference="%s/sim%d" % (core_ref, sim_n),
         shared=True,
-        filter_kw={"instance_guid": core_ref},
+        filter_kw={"instance_guid": core_guid},
         partition_parameter_kw={"_": json.dumps({
             "sim_algo": "milenage",
             "imsi": "001010000000%d" % sim_n,
@@ -87,4 +88,5 @@ def request_sim(core, sim_n):
     return sim
 
 sim1 = request_sim(core, 1)
+sim2 = request_sim(core, 2)
 print(sim1)
