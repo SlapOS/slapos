@@ -12,6 +12,7 @@ def ref_of_instance(inst):
         if x._computer_reference == i_comp_id  and  \
            x._reference          == i_part_id:
             return x._partition_reference
+    raise KeyError('not found reference of instance_guid=%s-%s' % (i_comp_id, i_part_id))
 
 """
 x =slap.getOpenOrderDict()
