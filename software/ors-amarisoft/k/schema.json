@@ -18,13 +18,15 @@
             "required": [
               "rrh_type",
               "loop_property1",
-	      "loop_property2"
+              "loop_property2"
             ],
             "properties": {
               "rrh_type": {
-                  "type": "string",
                   "const": "lopcomm_rrh",
-                  "template": "lopcomm_rrh"
+                  "template": "lopcomm_rrh",
+                  "options": {
+                    "hidden": true
+                  }
               },
               "loop_property1": {
                   "title": "Loopcom-specific property1",
@@ -42,14 +44,16 @@
             "required": [
               "rrh_type",
               "m2_property1",
-	      "m2_property2",
-	      "m2_property3"
+              "m2_property2",
+              "m2_property3"
             ],
             "properties": {
               "rrh_type": {
-                  "type": "string",
                   "const": "m2_rrh",
-                  "template": "m2_rrh"
+                  "template": "m2_rrh",
+                  "options": {
+                    "hidden": true
+                  }
               },
               "m2_property1": {
                   "title": "M2-specific property1",
