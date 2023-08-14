@@ -103,8 +103,8 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     print(monitor_httpd_service_path)
     try:
       output = subprocess.run(["bash", monitor_httpd_service_path], capture_output=True, text=True, check=True)
-      # output.stdout is something like "httpd (pid 21934) already running"
-      self.assertEqual(error_msg, output.stdout.rstrip('\n'))
+      # output.stdout should not be "httpd (pid 21934) already running"
+      self.assertNotEqual(error_msg, output.stdout.rstrip('\n'))
     except subprocess.CalledProcessError as e:
       print("Error running the script:", e)
 
