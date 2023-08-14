@@ -338,6 +338,7 @@ configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
 
 interface-url = https://monitor.app.officejs.com
 
+# NOTE
 [monitor-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
