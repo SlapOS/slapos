@@ -70,9 +70,20 @@ cert-file = ${monitor-httpd-conf-parameter:cert-file}
 executable = ${monitor-httpd-wrapper:wrapper-path}
 wrapper = ${directory:bin}/ca-monitor-httpd
 
+[monitor-httpd-service-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_monitor_httpd_wrapper }}
+output = ${directory:bin}/monitor-httpd-service-wrapper
+mode = 755
+pid-file = ${monitor-httpd-conf-parameter:pid-file}
+ca-monitor-httpd-wrapper = ${ca-monitor-httpd:wrapper}
+context =
+    key pid_file :pid-file
+    key ca_monitor_httpd_wrapper :ca-monitor-httpd-wrapper
+
 [ca-monitor-httpd-service]
 recipe = slapos.cookbook:wrapper
-command-line = rm -f ${monitor-httpd-conf-parameter:pid-file} && ${ca-monitor-httpd:wrapper}
+command-line = {{ dash_executable_location }} ${monitor-httpd-service-wrapper:output}
 wrapper-path = ${directory:services}/monitor-httpd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
