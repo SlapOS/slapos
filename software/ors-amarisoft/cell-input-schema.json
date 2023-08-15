@@ -1,0 +1,72 @@
+{
+  "title": "Cell",
+  "type": "object",
+  "$schema": "XXX",
+  "anyOf": [
+    {
+      "title": "LTE Cell",
+      "type": "object",
+      "required": [
+        "cell_type",
+        "rf_mode",
+        XXX
+      ],
+      "properties": {
+        "cell_type": {
+          "const": "cell_lte",
+          "template": "cell_lte",
+          "options": {
+            "hidden": true
+          }
+        },
+        "rf_mode": {
+          "$ref": "#/$defs/rf_mode"
+        }
+      }
+    },
+    {
+      "title": "NR Cell",
+      "type": "object",
+      "required": [
+        "cell_type",
+        "rf_mode",
+        XXX
+      ],
+      "properties": {
+        "cell_type": {
+          "const": "cell_nr",
+          "template": "cell_nr",
+          "options": {
+            "hidden": true
+          }
+        },
+        "rf_mode": {
+          "$ref": "#/$defs/rf_mode"
+        }
+      }
+    }
+  ],
+
+  "$defs": {
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Frequency- or Time- based multiplexing",
+      "enum": ["FDD", "TDD"]
+    }
+  }
+
+  cell_type: LTE/NR
+  rf_mode: FDD/TDD
+
+  dl_nr_arfcn, tac, cell_id
+  XXX cell parameters: frequency, band, cell ID, tac ...
+  "anyOf": [
+    {
+      "$ref": "rrh_lopcomm/rrh-input-schema.json"
+    },
+    {
+      "$ref": "rrh_sunvawe/rrh-input-schema.json"
+    }
+  ]
+}
+
