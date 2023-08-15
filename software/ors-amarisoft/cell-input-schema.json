@@ -1,16 +1,12 @@
 NOTE: lte_cell -> forces enb_id to be defined
 NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 
-XXX link to trx?
-XXX link to rrh? (then it is rrh who links to trx, not cell)
+XXX link to rrh
 "n_antenna_dl XXX -> rrh ?"
 "n_antenna_ul XXX -> rrh ?"
-"cpri_rx_delay"
-"cpri_tx_delay"
-"cpri_tx_dbm"
-"cpri_port_number"
-"tx_gain"
-"rx_gain"
+
+"tx_gain" -> per rrh  (docs says it is "per channel")
+"rx_gain" -> per rrh  ----//----
 
 {
   "title": "Cell",

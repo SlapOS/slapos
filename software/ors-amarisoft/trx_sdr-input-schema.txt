@@ -1,0 +1,17 @@
+args: "dev0=/dev/sdr1,dev1=/dev/sdr2,dev2=/dev/sdr0"
+args: "dev0=/dev/sdr1@0"
+
+sample_hw_fmt
+rx_antenna: auto/tx_rx, rx
+sync: none / internal / gps / external
+clock: internal / external
+
+cpri_mult:        []int                     per card
+cpri_mapping:     [](standard|hw|spread)    per card
+fast_cm_pointer:  []int                     per card
+ifname:           []ifname                  per card
+vss_data          []...
+cpri_rx_delay:    []int
+cpri_tx_delay:    []int
+cpri_tx_dbm:      []float
+
