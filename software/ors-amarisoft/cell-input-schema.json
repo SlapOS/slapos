@@ -1,5 +1,17 @@
 NOTE: lte_cell -> forces enb_id to be defined
 NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
+
+XXX link to trx?
+XXX link to rrh? (then it is rrh who links to trx, not cell)
+"n_antenna_dl XXX -> rrh ?"
+"n_antenna_ul XXX -> rrh ?"
+"cpri_rx_delay"
+"cpri_tx_delay"
+"cpri_tx_dbm"
+"cpri_port_number"
+"tx_gain"
+"rx_gain"
+
 {
   "title": "Cell",
   "type": "object",
@@ -17,7 +29,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
         "pci",
         "cell_id",
         "tac",
-        XXX
+        "rrh"
       ],
       "properties": {
         "cell_type": {
@@ -27,9 +39,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
             "hidden": true
           }
         },
-        "rf_mode": {
-          "$ref": "#/$defs/rf_mode"
-        },
+        "rf_mode": { "$ref": "#/$defs/rf_mode" },
         "bandwidth": {
           "title": "Bandwidth",
           "description": "Downlink Bandwidth",
@@ -42,18 +52,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
             "15 MHz",
             "20 MHz"
           ]
-        }
-
-        XXX link to trx?
-        XXX link to rrh? (then it is rrh who links to trx, not cell)
-        "n_antenna_dl XXX -> rrh ?"
-        "n_antenna_ul XXX -> rrh ?"
-        "cpri_rx_delay"
-        "cpri_tx_delay"
-        "cpri_tx_dbm"
-        "cpri_port_number"
-        "tx_gain"
-        "rx_gain"
+        },
 
         if rf_mode == "TDD":
             "tdd_ul_dl_config": {
@@ -78,13 +77,15 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
           "type": "number",
           "default": 1
         },
+        "cell_id": { "$ref": "#/$defs/cell_id" },
         "tac": {
           "title": "Tracking Area Code",
           "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
           "default": "0x0001",
           "type": "string"
-        },
-
+        }
+      }
+    },
     {
       "title": "NR Cell",
       "type": "object",
@@ -93,7 +94,10 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
         "rf_mode",
         "bandwidth",
         "tdd_ul_dl_config" if rf_mode=="TDD",
-        XXX
+        "dl_nr_arfcn",
+        "pci",
+        "cell_id",
+        "rrh"
       ],
       "properties": {
         "cell_type": {
@@ -103,7 +107,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
             "hidden": true
           }
         },
-        "$ref": "#/$defs/lte_nr_common",
+        "rf_mode": { "$ref": "#/$defs/rf_mode" },
         "bandwidth": {
           "title": "Bandwidth",
           "description": "Downlink Bandwidth (in MHz)",
@@ -144,38 +148,34 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
           "description": "Physical Cell ID",
           "type": "number",
           "default": 500
-        }
-        XXX no tac in 5g ?
-
+        },
+        "cell_id": { "$ref": "#/$defs/cell_id" }
       }
     }
   ],
 
   "$defs": {
-    "lte_nr_common": {
-      "rf_mode": {
-        "title": "RF mode",
-        "description": "Frequency- or Time- based multiplexing",
-        "enum": ["FDD", "TDD"]
-      },
-      "cell_id": {
-        "title": "Cell ID",
-        "description": "Cell ID",
-        "type": "string",
-        "default": "0x01"
-      }
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Frequency- or Time- based multiplexing",
+      "enum": ["FDD", "TDD"]
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
+    },
+    "rrh": {
+      "anyOf": [
+        {
+          "$ref": "rrh_lopcomm/rrh-input-schema.json"
+        },
+        {
+          "$ref": "rrh_sunvawe/rrh-input-schema.json"
+        }
+        ...
+      ]
     }
   }
-
-  dl_nr_arfcn, tac
-  XXX cell parameters: frequency, band, cell ID, tac ...
-  "anyOf": [
-    {
-      "$ref": "rrh_lopcomm/rrh-input-schema.json"
-    },
-    {
-      "$ref": "rrh_sunvawe/rrh-input-schema.json"
-    }
-  ]
 }
-
