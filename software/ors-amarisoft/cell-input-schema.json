@@ -84,6 +84,8 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
           "default": "0x0001",
           "type": "string"
         }
+
+        "rrh": { "$ref": "#/$defs/rrh" }
       }
     },
     {
@@ -149,7 +151,9 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
           "type": "number",
           "default": 500
         },
-        "cell_id": { "$ref": "#/$defs/cell_id" }
+        "cell_id": { "$ref": "#/$defs/cell_id" },
+
+        "rrh": { "$ref": "#/$defs/rrh" }
       }
     }
   ],
