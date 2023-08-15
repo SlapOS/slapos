@@ -72,9 +72,7 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
           "type": "number"
         },
         "pci": {
-          "title": "Physical Cell ID",
-          "description": "Physical Cell ID",
-          "type": "number",
+          "$ref": "#/$defs/pci",
           "default": 1
         },
         "cell_id": { "$ref": "#/$defs/cell_id" },
@@ -83,11 +81,12 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
           "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
           "default": "0x0001",
           "type": "string"
-        }
+        },
 
         "rrh": { "$ref": "#/$defs/rrh" }
       }
     },
+
     {
       "title": "NR Cell",
       "type": "object",
@@ -146,9 +145,7 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
           "default": "10000000"
         },
         "pci": {
-          "title": "Physical Cell ID",
-          "description": "Physical Cell ID",
-          "type": "number",
+          "$ref": "#/$defs/pci",
           "default": 500
         },
         "cell_id": { "$ref": "#/$defs/cell_id" },
@@ -164,6 +161,11 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
       "description": "Frequency- or Time- based multiplexing",
       "enum": ["FDD", "TDD"]
     },
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "number"
+    },
     "cell_id": {
       "title": "Cell ID",
       "description": "Cell ID",
@@ -171,6 +173,7 @@ XXX link to rrh? (then it is rrh who links to trx, not cell)
       "default": "0x01"
     },
     "rrh": {
+      "title": "Radio Unit",
       "anyOf": [
         {
           "$ref": "rrh_lopcomm/rrh-input-schema.json"
