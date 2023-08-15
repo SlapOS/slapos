@@ -1,3 +1,5 @@
+NOTE: lte_cell -> forces enb_id to be defined
+NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 {
   "title": "Cell",
   "type": "object",
@@ -9,6 +11,12 @@
       "required": [
         "cell_type",
         "rf_mode",
+        "bandwidth",
+        "tdd_ul_dl_config" if rf_mode=="TDD",
+        "dl_earfcn",
+        "pci",
+        "cell_id",
+        "tac",
         XXX
       ],
       "properties": {
@@ -21,15 +29,70 @@
         },
         "rf_mode": {
           "$ref": "#/$defs/rf_mode"
+        },
+        "bandwidth": {
+          "title": "Bandwidth",
+          "description": "Downlink Bandwidth",
+          "type": "string",
+          "enum": [
+            "1.4 MHz",
+            "3 MHz",
+            "5 MHz",
+            "10 MHz",
+            "15 MHz",
+            "20 MHz"
+          ]
         }
-      }
-    },
+
+        XXX link to trx?
+        XXX link to rrh? (then it is rrh who links to trx, not cell)
+        "n_antenna_dl XXX -> rrh ?"
+        "n_antenna_ul XXX -> rrh ?"
+        "cpri_rx_delay"
+        "cpri_tx_delay"
+        "cpri_tx_dbm"
+        "cpri_port_number"
+        "tx_gain"
+        "rx_gain"
+
+        if rf_mode == "TDD":
+            "tdd_ul_dl_config": {
+              "title": "TDD",
+              "description": "TDD",
+              "type": "string",
+              "enum": [
+                "[Configuration 2] 5ms 2UL 6DL (default)",
+                "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+              ],
+              "default": "5ms 2UL 7DL 4/6 (default)"
+            },
+
+        "dl_earfcn": {
+          "title": "DL EARFCN",
+          "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+          "type": "number"
+        },
+        "pci": {
+          "title": "Physical Cell ID",
+          "description": "Physical Cell ID",
+          "type": "number",
+          "default": 1
+        },
+        "tac": {
+          "title": "Tracking Area Code",
+          "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+          "default": "0x0001",
+          "type": "string"
+        },
+
     {
       "title": "NR Cell",
       "type": "object",
       "required": [
         "cell_type",
         "rf_mode",
+        "bandwidth",
+        "tdd_ul_dl_config" if rf_mode=="TDD",
         XXX
       ],
       "properties": {
@@ -40,25 +103,71 @@
             "hidden": true
           }
         },
-        "rf_mode": {
-          "$ref": "#/$defs/rf_mode"
+        "$ref": "#/$defs/lte_nr_common",
+        "bandwidth": {
+          "title": "Bandwidth",
+          "description": "Downlink Bandwidth (in MHz)",
+          "type": "number"
         }
+
+        if rf_mode == "TDD":
+            "tdd_ul_dl_config": {
+              "title": "TDD",
+              "description": "TDD",
+              "type": "string",
+              "enum": [
+                "5ms 2UL 7DL 4/6 (default)",
+                "2.5ms 1UL 3DL 2/10",
+                "5ms 8UL 3DL 2/10 (maximum uplink)"
+              ],
+              "default": "5ms 2UL 7DL 4/6 (default)"
+            },
+
+        "dl_nr_arfcn": {
+          "title": "DL NR ARFCN",
+          "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
+          "type": "number"
+        },
+        "nr_band": {
+          "title": "NR band",
+          "description": "NR band number",
+          "type": "number"
+        },
+        "ssb_pos_bitmap": {
+          "title": "SSB Position Bitmap",
+          "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
+          "type": "string",
+          "default": "10000000"
+        },
+        "pci": {
+          "title": "Physical Cell ID",
+          "description": "Physical Cell ID",
+          "type": "number",
+          "default": 500
+        }
+        XXX no tac in 5g ?
+
       }
     }
   ],
 
   "$defs": {
-    "rf_mode": {
-      "title": "RF mode",
-      "description": "Frequency- or Time- based multiplexing",
-      "enum": ["FDD", "TDD"]
+    "lte_nr_common": {
+      "rf_mode": {
+        "title": "RF mode",
+        "description": "Frequency- or Time- based multiplexing",
+        "enum": ["FDD", "TDD"]
+      },
+      "cell_id": {
+        "title": "Cell ID",
+        "description": "Cell ID",
+        "type": "string",
+        "default": "0x01"
+      }
     }
   }
 
-  cell_type: LTE/NR
-  rf_mode: FDD/TDD
-
-  dl_nr_arfcn, tac, cell_id
+  dl_nr_arfcn, tac
   XXX cell parameters: frequency, band, cell ID, tac ...
   "anyOf": [
     {
