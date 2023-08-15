@@ -6,12 +6,12 @@ rx_antenna: auto/tx_rx, rx
 sync: none / internal / gps / external
 clock: internal / external
 
-cpri_mult:        []int                     per card
-cpri_mapping:     [](standard|hw|spread)    per card
-fast_cm_pointer:  []int                     per card
-ifname:           []ifname                  per card
+cpri_mult:        []int				per port
+cpri_mapping:     [](standard|hw|spread|bf1)    per port	<- selected by rrh model
+fast_cm_pointer:  []int				per port
+ifname:           []ifname                  	per port
 vss_data          []...
-cpri_rx_delay:    []int
-cpri_tx_delay:    []int
+cpri_rx_delay:    []int						<- selected by rrh model
+cpri_tx_delay:    []int						<- ? selected by rrh or not ?
 cpri_tx_dbm:      []float
 
