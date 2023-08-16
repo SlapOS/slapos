@@ -6,6 +6,12 @@
     "mac_addr",
     "txa0cc00_active",
     "rxa0cc00_active",
+    "txa0cc00_center_frequency_earfcn",
+    "txa0cc00_center_frequency",
+    "txa0cc00_bandwidth",
+    "rxa0cc00_center_frequency_earfcn",
+    "rxa0cc00_center_frequency",
+    "rxa0cc00_bandwidth"
   ],
   "properties": {
     "rrh_type": {
