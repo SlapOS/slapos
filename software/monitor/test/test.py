@@ -33,6 +33,7 @@ import os
 import re
 import requests
 import shutil
+import signal
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
@@ -76,10 +77,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_process_name, process_names)
 
   def test_monitor_httpd_service(self):
-    # Run a stub process
-    command = "while true; do sleep 300; done"
-    infinite_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
     for partition_path in partition_path_list:
@@ -87,32 +84,40 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         self.partition_path = partition_path
         break
 
-    # Stop the monitor-httpd service?
-
-    # Get the pid file, write the PID of the infinite process to it.
+    # Get the pid file
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
-    with open(monitor_httpd_pid_file, "w") as file:
-      file.write(str(infinite_process.pid))
     print("------------")
+    with open(monitor_httpd_pid_file, "r") as pid_file:
+        monitor_httpd_pid = pid_file.read()
+        print(monitor_httpd_pid)
+
+    # Stop the current monitor-httpd service
+    try:
+        os.kill(int(monitor_httpd_pid), signal.SIGTERM)
+        print("Process with PID %s terminated." % monitor_httpd_pid.strip('\n'))
+    except OSError as e:
+        print("Error terminating process with PID %s: %s" % (monitor_httpd_pid, e))
+        
+    print("================")
+    # Write the PID of the infinite process to the pid file.
     print(infinite_process.pid)
-    error_msg = "httpd (pid %s) already running" % infinite_process.pid
+    with open(monitor_httpd_pid_file, "w") as file:
+      file.write(os.getpid())
+
     # Get the monitor-httpd-service
     monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
-    print(monitor_httpd_service_path)
-    try:
-      output = subprocess.run(["bash", monitor_httpd_service_path], capture_output=True, text=True, check=True)
-      # output.stdout is something like "httpd (pid 21934) already running"
-      self.assertEqual(error_msg, output.stdout.rstrip('\n'))
-    except subprocess.CalledProcessError as e:
-      print("Error running the script:", e)
 
-    # Terminate the infinite process
-    infinite_process.terminate()
-    infinite_process.wait()
-    # The process got killed, the return code should be -15
-    self.assertEqual(-15, infinite_process.returncode)
+    try:
+      print("Ready to run the prcoess")
+      output = subprocess.check_output(["bash", monitor_httpd_service_path], stderr=subprocess.PIPE, text=True, timeout=3)
+      # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
+      raise Exception("Unexepected output from the monitor-httpd process: %s" % output)
+    except subprocess.CalledProcessError as e:
+      print("Unexpected error when running the monitor-httpd service:", e)
+    except subprocess.TimeoutExpired:
+      pass # We didn't get any output within 3 seconds, this means everything is fine.
 
 
 class MonitorTestMixin:
