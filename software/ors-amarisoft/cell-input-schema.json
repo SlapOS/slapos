@@ -2,8 +2,6 @@ NOTE: lte_cell -> forces enb_id to be defined
 NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 
 XXX link to rrh
-"n_antenna_dl XXX -> rrh ?"
-"n_antenna_ul XXX -> rrh ?"
 
 "tx_gain" -> per rrh  (docs says it is "per channel")
 "rx_gain" -> per rrh  ----//----
