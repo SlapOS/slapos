@@ -87,22 +87,23 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     # Get the pid file
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
     print("------------")
-    with open(monitor_httpd_pid_file, "r") as pid_file:
-        monitor_httpd_pid = pid_file.read()
-        print(monitor_httpd_pid)
+    if os.path.exists(monitor_httpd_pid_file):
+      with open(monitor_httpd_pid_file, "r") as pid_file:
+          monitor_httpd_pid = pid_file.read()
+          print(monitor_httpd_pid)
 
-    # Stop the current monitor-httpd service
-    try:
-        os.kill(int(monitor_httpd_pid), signal.SIGTERM)
-        print("Process with PID %s terminated." % monitor_httpd_pid.strip('\n'))
-    except OSError as e:
-        print("Error terminating process with PID %s: %s" % (monitor_httpd_pid, e))
+      # Stop the current monitor-httpd service
+      try:
+          os.kill(int(monitor_httpd_pid), signal.SIGTERM)
+          print("Process with PID %s terminated." % monitor_httpd_pid.strip('\n'))
+      except OSError as e:
+          print("Error terminating process with PID %s: %s" % (monitor_httpd_pid, e))
         
     print("================")
     # Write the PID of the infinite process to the pid file.
-    print(infinite_process.pid)
+    # print(infinite_process.pid)
     with open(monitor_httpd_pid_file, "w") as file:
-      file.write(os.getpid())
+      file.write(str(os.getpid()))
 
     # Get the monitor-httpd-service
     monitor_httpd_service_path = glob.glob(os.path.join(
