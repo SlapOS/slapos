@@ -40,31 +40,31 @@
         "INACTIVE"
       ]
     },
-    "txa0cc00_center_frequency_earfcn  XXX -> cell ?": {
+    "txa0cc00_center_frequency_earfcn": {
       "title": "Center Frequency EARFCN (TXA0CC00)",
       "description": "Center Frequency EARFCN (TXA0CC00)",
       "type": "number",
       "default": 300
     },
-    "txa0cc00_center_frequency  XXX -> cell ?": {
+    "txa0cc00_center_frequency": {
       "title": "Center Frequency in Hz (TXA0CC00)",
       "description": "Center Frequency in Hz (TXA0CC00)",
       "type": "number",
       "default": 2140000000
     },
-    "txa0cc00_bandwidth  XXX -> cell ?": {
+    "txa0cc00_bandwidth": {
       "title": "bandwidth in Hz (TXA0CC00)",
       "description": "bandwidth in Hz (TXA0CC00)",
       "type": "number",
       "default": 20000000
     },
-    "rxa0cc00_center_frequency_earfcn  XXX -> cell ?": {
+    "rxa0cc00_center_frequency_earfcn": {
       "title": "Center Frequency EARFCN (RXA0CC00)",
       "description": "Center Frequency EARFCN (RXA0CC00)",
       "type": "number",
       "default": 18300
     },
-    "rxa0cc00_center_frequency  XXX -> cell ?": {
+    "rxa0cc00_center_frequency": {
       "title": "Center Frequency in Hz (RXA0CC00)",
       "description": "Center Frequency in Hz (RXA0CC00)",
       "type": "number",
@@ -75,14 +75,6 @@
       "description": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
       "type": "number",
       "default": 20000000
-    },
-    "loop_property1": {
-        "title": "Loopcom-specific property1",
-        "type":  "string"
-    },
-    "loop_property2": {
-          "title": "Loopcom-specific property2",
-          "type":  "number"
     }
   }
 }

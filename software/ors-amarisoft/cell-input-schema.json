@@ -29,8 +29,8 @@ XXX link to rrh
       ],
       "properties": {
         "cell_type": {
-          "const": "cell_lte",
-          "template": "cell_lte",
+          "const": "lte",
+          "template": "lte",
           "options": {
             "hidden": true
           }
@@ -53,7 +53,7 @@ XXX link to rrh
         if rf_mode == "TDD":
             "tdd_ul_dl_config": {
               "title": "TDD",
-              "description": "TDD",
+              "description": "TDD Configuration",
               "type": "string",
               "enum": [
                 "[Configuration 2] 5ms 2UL 6DL (default)",
@@ -98,8 +98,8 @@ XXX link to rrh
       ],
       "properties": {
         "cell_type": {
-          "const": "cell_nr",
-          "template": "cell_nr",
+          "const": "nr",
+          "template": "nr",
           "options": {
             "hidden": true
           }
@@ -154,7 +154,7 @@ XXX link to rrh
   "$defs": {
     "rf_mode": {
       "title": "RF mode",
-      "description": "Frequency- or Time- based multiplexing",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- based",
       "enum": ["FDD", "TDD"]
     },
     "pci": {
