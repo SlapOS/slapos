@@ -131,14 +131,14 @@ class TestFileServer(SlapOSInstanceTestCase):
           return cnx.sock._sslobj.getpeercert()
 
     cert_before = _getpeercert()
-    # execute certificate updater two month later, when it's time to renew certificate.
+    # execute certificate updater when it's time to renew certificate.
     # use a timeout, because this service runs forever
     subprocess.run(
       (
         'timeout',
         '5',
         'faketime',
-        '+2 months',
+        '+63 days',
         os.path.join(
           self.computer_partition_root_path,
           'etc/service/dufs-certificate-updater'),
