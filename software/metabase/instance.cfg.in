@@ -44,11 +44,7 @@ command-line = sh -c "cd $${directory:srv-metabase}; ${java:location}/bin/java $
 environment =
   MB_EMOJI_IN_LOGS=false
   MB_JETTY_HOST=$${:ip}
-  MB_JETTY_PORT=$${:-http-port}
-  MB_JETTY_SSL_PORT=$${:port}
-  MB_JETTY_SSL=true
-  MB_JETTY_SSL_KEYSTORE=$${metabase-keystore:file}
-  MB_JETTY_SSL_KEYSTORE_PASSWORD=$${metabase-keystore:password}
+  MB_JETTY_PORT=$${:port}
   MB_DB_TYPE=postgres
   MB_DB_DBNAME=$${postgresql:dbname}
   MB_DB_PORT=$${postgresql:port}
@@ -62,68 +58,57 @@ environment =
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
-ip = $${instance-parameter:ipv6-random}
-port = 8443
-# XXX It does not seem we can prevent metabase to also listen on http, so we
-# give it an http port, but don't use it.
--http-port = 18080
-hostname = [$${:ip}]
-scheme = https
-url = $${:scheme}://$${:hostname}:$${:port}
+ip = $${instance-parameter:ipv4-random}
+port = 18080
 promises =
   $${metabase-promise:name}
+
+[metabase-frontend-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:cert-file} ]
+  then
+    ${openssl-output:openssl} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
+      -newkey rsa -keyout $${:cert-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+cert-file = $${directory:var}/$${:_buildout_section_name_}.pem
+common-name = $${metabase-frontend-config:ip}
+location =
+  $${:cert-file}
+
+[metabase-frontend-config]
+recipe = slapos.recipe.template:jinja2
+url = ${stack-haproxy-default-backend-config:target}
+output = $${directory:etc}/$${:_buildout_section_name_}
+context =
+  key pidfile :pidfile
+  key content :content
+content =
+  listen app
+  log global
+  bind $${:ip}:$${:port} ssl crt $${metabase-frontend-certificate:cert-file} alpn h2,http/1.1
+  server app $${metabase-instance:ip}:$${metabase-instance:port}
+
+pidfile = $${directory:run}/$${:_buildout_section_name_}.pid
+ip = $${instance-parameter:ipv6-random}
+port = 8443
+
+[metabase-frontend]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  ${haproxy:location}/sbin/haproxy -f $${metabase-frontend-config:output}
+
+url = https://[$${metabase-frontend-config:ip}]:$${metabase-frontend-config:port}
 
 [metabase-promise]
 <= monitor-promise-base
 promise = check_url_available
 name = $${:_buildout_section_name_}.py
-config-url= $${metabase-instance:url}/api/session/properties
-
-[metabase-keystore-password]
-recipe = slapos.cookbook:generate.password
-
-[metabase-keystore]
-recipe = plone.recipe.command
-stop-on-error = true
-command =
-  if [ -f $${:file} ]
-  then
-    # XXX password used to be "insecure", but we changed to proper password.
-    # We try to list the store with the new password and if it fail we change
-    # the keystore password.
-    if ! ${java:location}/bin/keytool \
-      -list \
-      -keystore "$${:file}" \
-      -storepass "$${:password}"
-    then
-      echo "Migrating keystore password" && \
-      ${java:location}/bin/keytool \
-        -storepasswd \
-        -keystore "$${:file}" \
-        -storepass insecure \
-        -new "$${:password}" && \
-      echo "Migrating certificate key password" && \
-      ${java:location}/bin/keytool \
-        -keypasswd \
-        -alias "$${:alias}" \
-        -keypass insecure \
-        -new "$${:password}" \
-        -keystore "$${:file}" \
-        -storepass "$${:password}"
-    fi
-  else
-    ${java:location}/bin/keytool \
-      -genkeypair \
-      -alias "$${:alias}" \
-      -keyalg RSA \
-      -keypass "$${:password}" \
-      -dname "CN=$${metabase-instance:ip},OU=Unit,O=Organization,L=City,S=State,C=Country" \
-      -keystore "$${:file}" \
-      -storepass "$${:password}"
-  fi
-file = $${directory:etc}/.metabase_keystore
-password = $${metabase-keystore-password:passwd}
-alias = metabase
+config-url= $${metabase-frontend:url}/api/session/properties
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
@@ -247,6 +232,7 @@ var-cron-entries = $${:var}/cron-entries
 srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
+run = $${buildout:directory}/run
 service = $${:etc}/service
 srv-metabase = $${:srv}/metabase
 srv-backup = $${:srv}/backup
@@ -254,6 +240,6 @@ fontconfig-cache = $${buildout:directory}/.fontconfig
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-url = $${metabase-instance:url}
+url = $${metabase-frontend:url}
 backup-crontab = $${postgresql-backup-crontab-entry:name}
 restore-backup-script = $${postgresql-restore-backup:wrapper-path}
