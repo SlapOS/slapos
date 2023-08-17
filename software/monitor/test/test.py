@@ -107,16 +107,20 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
+    output = ''
     try:
       print("Ready to run the prcoess")
-      output = subprocess.check_output([monitor_httpd_service_path], timeout=3)
+      output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
       # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
+      if output:
+        raise Exception("Unexepected output from the monitor-httpd process: %s" % output)
     except subprocess.CalledProcessError as e:
-      print("Unexpected error when running the monitor-httpd service:", e)
-      print("Return code:", e.returncode)
-      print("Command:", e.cmd)
-      print("Output:", e.output)
-      self.fail("Unexpected error when running the monitor-httpd service")
+      # Ignore the addres in use error, because here we are checking he httpd pid issue
+      if "Address already in use" in e.output:
+        pass
+      else:
+        print("Unexpected error when running the monitor-httpd service:", e)
+        self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired:
       pass # We didn't get any output within 3 seconds, this means everything is fine.
 
