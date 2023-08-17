@@ -86,7 +86,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
     # Get the pid file
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
-    print("------------")
     if os.path.exists(monitor_httpd_pid_file):
       with open(monitor_httpd_pid_file, "r") as pid_file:
           monitor_httpd_pid = pid_file.read()
@@ -99,7 +98,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       except OSError as e:
           print("Error terminating process with PID %s: %s" % (monitor_httpd_pid, e))
         
-    print("================")
     # Write the PID of the infinite process to the pid file.
     # print(infinite_process.pid)
     with open(monitor_httpd_pid_file, "w") as file:
@@ -109,14 +107,16 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
-
     try:
       print("Ready to run the prcoess")
-      output = subprocess.check_output(["bash", monitor_httpd_service_path], stderr=subprocess.PIPE, text=True, timeout=3)
+      output = subprocess.check_output([monitor_httpd_service_path], timeout=3)
       # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
-      raise Exception("Unexepected output from the monitor-httpd process: %s" % output)
     except subprocess.CalledProcessError as e:
       print("Unexpected error when running the monitor-httpd service:", e)
+      print("Return code:", e.returncode)
+      print("Command:", e.cmd)
+      print("Output:", e.output)
+      self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired:
       pass # We didn't get any output within 3 seconds, this means everything is fine.
 
