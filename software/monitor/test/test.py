@@ -76,7 +76,55 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
       self.assertIn(expected_process_name, process_names)
 
-  def test_monitor_httpd_service(self):
+  def test_monitor_httpd_normal_reboot(self):
+    # Start the monitor-httpd service
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      print(info)
+      partition = info['group']
+      if info['statename'] != "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.startProcess(monitor_httpd_process_name)
+
+    # Get the partition path
+    partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc/monitor-httpd.conf')):
+        self.partition_path = partition_path
+        break
+
+    # Make sure we are focusing the same httpd service
+    self.assertIn(partition, self.partition_path)
+
+    # Get the monitor-httpd-service
+    monitor_httpd_service_path = glob.glob(os.path.join(
+      self.partition_path, 'etc', 'service', 'monitor-httpd*'
+    ))[0]
+
+    # Get the pid of the running monitor_httpd process
+    monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+    monitor_httpd_pid = ""
+
+    if os.path.exists(monitor_httpd_pid_file):
+      with open(monitor_httpd_pid_file, "r") as pid_file:
+          monitor_httpd_pid = pid_file.read()
+          print(monitor_httpd_pid)
+
+    try:
+      print("Ready to run the prcoess")
+      print(monitor_httpd_pid)
+      output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
+      expected_string = f"Process with PID {monitor_httpd_pid} and monitor-httpd.conf is running."
+      self.assertIn(expected_string, output)
+    except subprocess.CalledProcessError as e:
+      print(e.output)
+      print("Unexpected error when running the monitor-httpd service:", e)
+      self.fail("Unexpected error when running the monitor-httpd service")
+    except subprocess.TimeoutExpired:
+      pass # We didn't get any output within 3 seconds, this means everything is fine.
+
+  def test_monitor_httpd_crash_reboot(self):
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
     for partition_path in partition_path_list:
@@ -86,18 +134,15 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
     # Get the pid file
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
-    if os.path.exists(monitor_httpd_pid_file):
-      with open(monitor_httpd_pid_file, "r") as pid_file:
-          monitor_httpd_pid = pid_file.read()
-          print(monitor_httpd_pid)
 
-      # Stop the current monitor-httpd service
-      try:
-          os.kill(int(monitor_httpd_pid), signal.SIGTERM)
-          print("Process with PID %s terminated." % monitor_httpd_pid.strip('\n'))
-      except OSError as e:
-          print("Error terminating process with PID %s: %s" % (monitor_httpd_pid, e))
-        
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      print(info)
+      if info['statename'] == "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.stopProcess(monitor_httpd_process_name)
+
     # Write the PID of the infinite process to the pid file.
     # print(infinite_process.pid)
     with open(monitor_httpd_pid_file, "w") as file:
@@ -115,12 +160,9 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       if output:
         raise Exception("Unexepected output from the monitor-httpd process: %s" % output)
     except subprocess.CalledProcessError as e:
-      # Ignore the addres in use error, because here we are checking he httpd pid issue
-      if "Address already in use" in e.output:
-        pass
-      else:
-        print("Unexpected error when running the monitor-httpd service:", e)
-        self.fail("Unexpected error when running the monitor-httpd service")
+      print(e.output)
+      print("Unexpected error when running the monitor-httpd service:", e)
+      self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired:
       pass # We didn't get any output within 3 seconds, this means everything is fine.
 

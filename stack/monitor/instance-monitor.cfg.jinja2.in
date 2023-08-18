@@ -77,9 +77,11 @@ output = ${directory:bin}/monitor-httpd-service-wrapper
 mode = 755
 pid-file = ${monitor-httpd-conf-parameter:pid-file}
 ca-monitor-httpd-wrapper = ${ca-monitor-httpd:wrapper}
+monitor-httpd-conf = ${monitor-httpd-conf:output}
 context =
     key pid_file :pid-file
     key ca_monitor_httpd_wrapper :ca-monitor-httpd-wrapper
+    key monitor_httpd_conf :monitor-httpd-conf
     raw dash_binary {{ dash_executable_location }}
 
 [ca-monitor-httpd-service]
