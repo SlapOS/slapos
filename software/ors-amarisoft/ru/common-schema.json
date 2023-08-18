@@ -1,12 +1,14 @@
+ru_type: string                   hidden
+ru_link_type: string  sdr|cpri    hidden
+
 n_antenna_dl  int
 n_antenna_ul  int
 
 if ru_link_type = "cpri":
+  cpri_link: string  # e.g. sdrX@Y
+
   cpri_mapping
   cpri_mult
   cpri_rx_delay
   cpri_tx_delay
   ifname
-
-
-  cpri_link: string  # e.g. sdrX@Y
