@@ -8,3 +8,5 @@ if ru_link_type = "cpri":
   cpri_tx_delay
   ifname
 
+
+  cpri_link: string  # e.g. sdrX@Y
