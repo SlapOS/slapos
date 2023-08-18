@@ -1,0 +1,4 @@
+ru_type = "sdr"
+ru_link_type = "sdr"
+
+rfport: string  # e.g. sdrX + sdrY + sdrZ
