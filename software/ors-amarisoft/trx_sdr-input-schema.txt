@@ -1,17 +1,3 @@
-args: "dev0=/dev/sdr1,dev1=/dev/sdr2,dev2=/dev/sdr0"
-args: "dev0=/dev/sdr1@0"
-
 sample_hw_fmt
-rx_antenna: auto/tx_rx, rx
 sync: none / internal / gps / external
 clock: internal / external
-
-cpri_mult:        []int				per port
-cpri_mapping:     [](standard|hw|spread|bf1)    per port	<- selected by rrh model
-fast_cm_pointer:  []int				per port
-ifname:           []ifname                  	per port
-vss_data          []...
-cpri_rx_delay:    []int						<- selected by rrh model
-cpri_tx_delay:    []int						<- ? selected by rrh or not ?
-cpri_tx_dbm:      []float
-
