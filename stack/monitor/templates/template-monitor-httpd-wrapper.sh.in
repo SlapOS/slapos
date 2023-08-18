@@ -3,27 +3,23 @@
 # BEWARE: It will be overwritten automatically
 
 pid_file="{{ pid_file }}"
-monitor_httpd_conf_file = {{ monitor_httpd_conf }}
+monitor_httpd_conf_file={{ monitor_httpd_conf }}
 
 if [ -f "$pid_file" ]; then
     pid=$(cat "$pid_file")
     result=$(ps aux | grep "^\S*\s*$pid\s")
 
-    # Check if the process with the specified PID is running
+    # The process with the specified PID is running
     if [ -n "$result" ]; then
         # Get the command line of the process and replace null characters with spaces
         cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
 
-        # Check if the command line contains the monitor-httpd.conf file
-        if echo "$cmdline" | grep -q "$monitor_httpd_conf"; then
-            echo "Process with PID $pid_file and monitor-httpd.conf is running."
-        else
-            echo "Process with PID $pid_file is running, but not using monitor-httpd.conf."
+        # There has a service running with the pid.
+        # but it not the one use the monitor-httpd.conf
+        if ! echo "$cmdline" | grep -q "$monitor_httpd_conf"; then
             rm -f {{ pid_file }};
-            {{ ca_monitor_httpd_wrapper }} "$@"
         fi
-    else
-        echo "Process with PID $pid_file is not running."
-        {{ ca_monitor_httpd_wrapper }} "$@"
     fi
 fi
+
+{{ ca_monitor_httpd_wrapper }} "$@"
