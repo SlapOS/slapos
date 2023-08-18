@@ -169,12 +169,9 @@ XXX link to rrh
     "rrh": {
       "title": "Radio Unit",
       "anyOf": [
-        {
-          "$ref": "rrh_lopcomm/rrh-input-schema.json"
-        },
-        {
-          "$ref": "rrh_sunvawe/rrh-input-schema.json"
-        }
+        { "$ref": "ru/sdr/ru-input-schema.json" },
+        { "$ref": "ru/lopcomm/rrh-input-schema.json" },
+        { "$ref": "ru/sunvawe/rrh-input-schema.json" },
         ...
       ]
     }
