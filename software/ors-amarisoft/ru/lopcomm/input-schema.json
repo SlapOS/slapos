@@ -1,5 +1,5 @@
 {
-  "title": "Loopcom ORAN Radio Unit",
+  "title": "Loopcom ORAN",
   "type": "object",
   "required": [
     "rrh_type",

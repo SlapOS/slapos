@@ -1,8 +1,6 @@
 NOTE: lte_cell -> forces enb_id to be defined
 NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 
-XXX link to rrh
-
 "tx_gain" -> per rrh  (docs says it is "per channel")
 "rx_gain" -> per rrh  ----//----
 
@@ -23,7 +21,7 @@ XXX link to rrh
         "pci",
         "cell_id",
         "tac",
-        "rrh"
+        "ru"
       ],
       "properties": {
         "cell_type": {
@@ -77,7 +75,7 @@ XXX link to rrh
           "type": "string"
         },
 
-        "rrh": { "$ref": "#/$defs/rrh" }
+        "ru": { "$ref": "#/$defs/ru" }
       }
     },
 
@@ -92,7 +90,7 @@ XXX link to rrh
         "dl_nr_arfcn",
         "pci",
         "cell_id",
-        "rrh"
+        "ru"
       ],
       "properties": {
         "cell_type": {
@@ -144,7 +142,7 @@ XXX link to rrh
         },
         "cell_id": { "$ref": "#/$defs/cell_id" },
 
-        "rrh": { "$ref": "#/$defs/rrh" }
+        "ru": { "$ref": "#/$defs/ru" }
       }
     }
   ],
@@ -166,12 +164,16 @@ XXX link to rrh
       "type": "string",
       "default": "0x01"
     },
-    "rrh": {
+    "ru": {
       "title": "Radio Unit",
       "anyOf": [
-        { "$ref": "ru/sdr/ru-input-schema.json" },
-        { "$ref": "ru/lopcomm/rrh-input-schema.json" },
-        { "$ref": "ru/sunvawe/rrh-input-schema.json" },
+        {
+          "title": "",
+
+        },
+        { "$ref": "ru/sdr/input-schema.json" },
+        { "$ref": "ru/lopcomm/input-schema.json" },
+        { "$ref": "ru/sunvawe/input-schema.json" },
         ...
       ]
     }
