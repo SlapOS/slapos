@@ -1,5 +1,18 @@
 {
   "title": "SDR board transiever",
   "description": XXX,
+  "type": "object",
+  "required": [
+    "ru_type",
+  ],
 
+  "properties": {
+    "ru_type": {
+        "const": "ru_sdr",
+        "template": "ru_sdr",
+        "options": {
+          "hidden": true
+        }
+    },
+  }
 }

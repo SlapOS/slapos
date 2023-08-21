@@ -2,4 +2,19 @@
   "title": "Sunwave M2RU",
   "description": XXX,
 
+  "type": "object",
+  "required": [
+    "ru_type",
+  ],
+
+  "properties": {
+    "ru_type": {
+        "const": "ru_sunvawe",
+        "template": "ru_sunvawe",
+        "options": {
+          "hidden": true
+        }
+    },
+  }
+
 }
