@@ -174,9 +174,9 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
           "required": ["ru_type", "ru_ref"],
           "properties": {
             "ru_type": {
-                "const": "ru_ref",
+                "const":    "ru_ref",
                 "template": "ru_ref",
-                "options": { "hidden": true }
+                "options":  { "hidden": true }
             },
             "ru_ref": {
               "title": "RU Reference",
@@ -198,15 +198,14 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
             },
             "ruincell_ref": {
               "title": "Cell Reference",
-              "description": "Reference of cell instance whose radio unit is to share",
+              "description": "Reference of cell instance whose radio unit to share",
               "type": "string"
             }
           }
         },
         { "$ref": "ru/sdr/input-schema.json" },
         { "$ref": "ru/lopcomm/input-schema.json" },
-        { "$ref": "ru/sunvawe/input-schema.json" },
-        ...
+        { "$ref": "ru/sunvawe/input-schema.json" }
       ]
     }
   }
