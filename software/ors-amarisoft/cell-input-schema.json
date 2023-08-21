@@ -168,8 +168,31 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
       "title": "Radio Unit",
       "anyOf": [
         {
-          "title": "",
-
+          "title": "Shared Radio Unit",
+          "description": XXX,
+          "type": "object",
+          "required": ["ru_ref"],
+          "properties": {
+            "ru_ref": {
+              "title": "Reference",
+              "description": "Reference of shared radio unit instance",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Shared Radio Unit inside Cell",
+          "description": XXX,
+          "type": "object",
+          "required": ["ruincell_ref"],
+          "properties": {
+            "ruincell_ref": {
+              "title": "Reference",
+              "description": "Reference of shared radio unit instance",
+              "type": "string"
+            }
+          }
+        },
         },
         { "$ref": "ru/sdr/input-schema.json" },
         { "$ref": "ru/lopcomm/input-schema.json" },

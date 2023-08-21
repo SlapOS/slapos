@@ -1,5 +1,6 @@
 {
   "title": "Loopcom ORAN",
+  "description": XXX,
   "type": "object",
   "required": [
     "rrh_type",
