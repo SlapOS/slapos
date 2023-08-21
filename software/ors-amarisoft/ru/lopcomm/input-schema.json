@@ -16,8 +16,8 @@
   ],
   "properties": {
     "ru_type": {
-        "const":    "ru_lopcomm",
-        "template": "ru_lopcomm",
+        "const":    "lopcomm",
+        "template": "lopcomm",
         "options":  { "hidden": true }
     },
     "mac_addr": {
