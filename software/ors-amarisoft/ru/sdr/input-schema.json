@@ -1,16 +1,33 @@
 {
-  "title": "SDR board transiever",
-  "description": XXX,
+  "title": "SDR transiever",
+  "description": "Radio Unit constituted several SDR boards",
   "type": "object",
   "required": [
     "ru_type",
+    "ru_link_type",
+    "rf_port"
   ],
 
   "properties": {
     "ru_type": {
-        "const":    "sdr",
-        "template": "sdr",
-        "options":  { "hidden": true }
+      "const":    "sdr",
+      "template": "sdr",
+      "options":  { "hidden": true }
     },
+    "ru_link_type": {
+      "const":    "sdr",
+      "template": "sdr",
+      "options":  { "hidden": true }
+    },
+
+    "rf_port": {
+      "title": "SDR boards",
+      "description": "Which SDR boards to use to build up an RF port",
+      "type": "array",
+      "items": {
+        "title": "/dev/sdr #",
+        "type": "number"
+      }
+    }
   }
 }

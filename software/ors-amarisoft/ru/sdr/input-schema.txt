@@ -1,5 +1,2 @@
-ru_type = "sdr"
-ru_link_type = "sdr"
-
 rfport: string  # e.g. sdrX + sdrY + sdrZ
 rx_antenna: auto/tx_rx, rx
