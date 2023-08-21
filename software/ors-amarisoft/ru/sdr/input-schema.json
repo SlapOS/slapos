@@ -22,12 +22,14 @@
 
     "rf_port": {
       "title": "SDR boards",
-      "description": "Which SDR boards to use to build up an RF port",
+      "description": "Which SDR boards to use as combined RF port",
       "type": "array",
       "items": {
         "title": "/dev/sdr #",
         "type": "number"
-      }
+      },
+      "minItems": 1,
+      "uniqueItems": true
     }
   }
 }
