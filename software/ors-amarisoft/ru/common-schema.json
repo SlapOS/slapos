@@ -5,7 +5,9 @@ n_antenna_dl  int
 n_antenna_ul  int
 
 if ru_link_type = "cpri":
-  cpri_link: string  # e.g. sdrX@Y
+  sdr_dev   number  # e.g. sdrX@Y
+  sfp_port  number
+  //cpri_link: string  # e.g. sdrX@Y
 
   cpri_mult:        int			per port
   cpri_mapping:     standard|hw|spread|bf1)  per port	<- selected by ru model

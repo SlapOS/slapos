@@ -8,12 +8,12 @@
   ],
 
   "properties": {
+    "$ref": "../common-input-schema.json",
+
     "ru_type": {
         "const":    "sunvawe",
         "template": "sunvawe",
         "options":  { "hidden": true }
-    },
-
-    "$ref": "../common-input-schema.json"
+    }
   }
 }

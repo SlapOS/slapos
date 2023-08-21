@@ -15,13 +15,13 @@
     "rxa0cc00_bandwidth"
   ],
   "properties": {
+    "$ref": "../common-input-schema.json",
+
     "ru_type": {
         "const":    "lopcomm",
         "template": "lopcomm",
         "options":  { "hidden": true }
     },
-
-    "$ref": "../common-input-schema.json",
 
     "mac_addr": {
       "title": "RRH MAC address",
