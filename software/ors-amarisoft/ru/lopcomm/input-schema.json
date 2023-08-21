@@ -20,6 +20,9 @@
         "template": "lopcomm",
         "options":  { "hidden": true }
     },
+
+    "$ref": "../common-input-schema.json",
+
     "mac_addr": {
       "title": "RRH MAC address",
       "description": "RRH MAC address used for DNSMASQ",
