@@ -8,11 +8,9 @@
 
   "properties": {
     "ru_type": {
-        "const": "ru_sdr",
+        "const":    "ru_sdr",
         "template": "ru_sdr",
-        "options": {
-          "hidden": true
-        }
+        "options":  { "hidden": true }
     },
   }
 }
