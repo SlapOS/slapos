@@ -9,8 +9,8 @@
 
   "properties": {
     "ru_type": {
-        "const":    "ru_sunvawe",
-        "template": "ru_sunvawe",
+        "const":    "sunvawe",
+        "template": "sunvawe",
         "options":  { "hidden": true }
     },
 
