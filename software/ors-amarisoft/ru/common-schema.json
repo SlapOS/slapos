@@ -9,10 +9,8 @@ if ru_link_type = "cpri":
   sfp_port  number
   //cpri_link: string  # e.g. sdrX@Y
 
-  cpri_mult:        int			per port
-  cpri_mapping:     standard|hw|spread|bf1)  per port	<- selected by ru model
-  fast_cm_pointer:  int			per port
-  vss_data          ...
-  cpri_rx_delay:    int					<- selected by ru model
-  cpri_tx_delay:    int					<- ? selected by ru or not ?
+  cpri_mult:        int
+  cpri_mapping:     standard|hw|spread|bf1    <- selected by ru model ?
+  cpri_rx_delay:    int			      <- selected by ru model
+  cpri_tx_delay:    int			      <- ? selected by ru or not ?
   cpri_tx_dbm:      float
