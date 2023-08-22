@@ -241,11 +241,13 @@ class Recipe():
             super(Recipe, self).update()
 
 r = Recipe()
+ctx = json.loads(json_params)
+ctx.update({'json_module': json})
 r._init("recipe", {
   'extensions': 'jinja2.ext.do',
   'url': 'config/{}.jinja2.cfg'.format(config),
   'output': 'config/{}.cfg'.format(config),
-  'context': json.loads(json_params),
+  'context': ctx,
   'import-list': 'rawfile lte.jinja2 config/lte.jinja2',
   })
 with open('config/{}.cfg'.format(config), 'w+') as f:
