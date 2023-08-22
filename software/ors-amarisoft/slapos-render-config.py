@@ -176,6 +176,7 @@ compiled_source_cache = {}
 class Recipe():
 
     def _init(self, name, options):
+        args = None, name, options
         self.once = options.get('once')
         self.encoding = options.get('encoding', 'utf-8')
         self._update = True
@@ -245,6 +246,7 @@ r._init("recipe", {
   'url': 'config/{}.jinja2.cfg'.format(config),
   'output': 'config/{}.cfg'.format(config),
   'context': json.loads(json_params),
+  'import-list': 'rawfile lte.jinja2 config/lte.jinja2',
   })
 with open('config/{}.cfg'.format(config), 'w+') as f:
   f.write(r._render().decode())
