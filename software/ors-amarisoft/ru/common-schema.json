@@ -12,7 +12,6 @@ if ru_link_type = "cpri":
   cpri_mult:        int			per port
   cpri_mapping:     standard|hw|spread|bf1)  per port	<- selected by ru model
   fast_cm_pointer:  int			per port
-  ifname:           ifname                  	per port
   vss_data          ...
   cpri_rx_delay:    int					<- selected by ru model
   cpri_tx_delay:    int					<- ? selected by ru or not ?
