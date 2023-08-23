@@ -16,7 +16,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
         "cell_type",
         "rf_mode",
         "bandwidth",
-        "tdd_ul_dl_config" if rf_mode=="TDD",
+        "tdd_ul_dl_config" if rf_mode=="tdd",
         "dl_earfcn",
         "pci",
         "cell_id",
@@ -46,7 +46,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
           ]
         },
 
-        if rf_mode == "TDD":
+        if rf_mode == "tdd":
             "tdd_ul_dl_config": {
               "title": "TDD",
               "description": "TDD Configuration",
@@ -86,7 +86,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
         "cell_type",
         "rf_mode",
         "bandwidth",
-        "tdd_ul_dl_config" if rf_mode=="TDD",
+        "tdd_ul_dl_config" if rf_mode=="tdd",
         "dl_nr_arfcn",
         "pci",
         "cell_id",
@@ -107,7 +107,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
           "type": "number"
         }
 
-        if rf_mode == "TDD":
+        if rf_mode == "tdd":
             "tdd_ul_dl_config": {
               "title": "TDD",
               "description": "TDD",
@@ -151,7 +151,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
     "rf_mode": {
       "title": "RF mode",
       "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- based",
-      "enum": ["FDD", "TDD"]
+      "enum": ["fdd", "tdd"]
     },
     "pci": {
       "title": "Physical Cell ID",
