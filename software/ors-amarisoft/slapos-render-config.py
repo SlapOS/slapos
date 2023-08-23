@@ -221,7 +221,7 @@ class Recipe():
         template_object = env.template_class.from_code(env,
             compiled_source,
             env.make_globals(None), None)
-        print(self.context)
+        #print(self.context)
         return template_object.render(**self.context).encode(self.encoding)
 
     def install(self):
