@@ -36,26 +36,41 @@ core = request(ors,
             'core_network_plmn': '31415',
         })})
 
+print("core:", core)
 print("ref(core):", ref_of_instance(core))
+print("core.getInstanceParameterDict:")
+pprint(core.getInstanceParameterDict())
+print()
+
+# core -> core_part to retrieve all information about instance state
+# NOTE even though both core and core_part are ComputerPartition this is needed
+# because core.getInstanceParameterDict returns only what _we_ requested, while
+# core_part merge that with information from master (slave_instance_list + ...)
+core_part = slap.registerComputerPartition(core.slap_computer_id, core.slap_computer_partition_id)
+print('core_part:', core_part)
+print('core_part.getInstanceParameterDict:')
+pprint(core_part.getInstanceParameterDict())
+
 
 """
-print(core)
-print(core.getId())
-print(core.getInstanceGuid())
-print(core.getState())
-#print(core.getSoftwareRelease())
-print(core.getAccessStatus())
+print()
+print("core:", core)
+print("  getId:", core.getId())
+print("  getInstanceGuid:", core.getInstanceGuid())
+print("  getState:", core.getState())
+#print("  getSoftwareRelease:", core.getSoftwareRelease())
+print("  getAccessStatus:", core.getAccessStatus())
 pprint(core.getInstanceParameterDict())
 pprint(core.getConnectionParameterDict())
 #print(core.getType())
-print(core.getStatus())
+print("  getStatus:", core.getStatus())
 #print(core.getFullHostingIpAddressList())
 #print(core.getInformation())
-print(core.request)
+#print(core.request)
 print()
-print(slap)
-print(slap.getComputerDict())
-print(slap.getOpenOrderDict())
+#print(slap)
+#print(slap.getComputerDict())
+#print(slap.getOpenOrderDict())
 
 print('\n\n\n')
 print(dir(core))
@@ -65,8 +80,6 @@ for x in '_computer_id', '_instance_guid', '_parameter_dict', '_partition_id', '
     print('%s:\t%s' % (x, getattr(core, x)))
 """
 
-
-#1/0
 
 def request_sim(core, sim_n):
     core_ref  = ref_of_instance(core)
@@ -88,6 +101,8 @@ def request_sim(core, sim_n):
          })})
     return sim
 
+print()
 sim1 = request_sim(core, 1)
 sim2 = request_sim(core, 2)
-print(sim1)
+print('sim1:', sim1)
+print('sim2:', sim2)
