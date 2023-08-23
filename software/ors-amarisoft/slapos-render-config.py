@@ -117,14 +117,7 @@ json_params = """{
         "configuration.default_nr_ssb_pos_bitmap": "10000000",
         "configuration.default_n_antenna_dl": 2,
         "configuration.default_n_antenna_ul": 2,
-        "configuration.default_nr_inactivity_timer": 10000
-    },
-    "directory": {
-        "log": "log",
-        "etc": "etc",
-        "var": "var"
-    },
-    "slapparameter_dict": {
+        "configuration.default_nr_inactivity_timer": 10000,
         "slave_instance_list": [
             {
                 "slave_title":          "Cell 1a",
@@ -163,6 +156,13 @@ json_params = """{
                 "_": %(jRU2_b)s
             }
         ]
+    },
+    "directory": {
+        "log": "log",
+        "etc": "etc",
+        "var": "var"
+    },
+    "slapparameter_dict": {
     }
 }""" % globals()
 
