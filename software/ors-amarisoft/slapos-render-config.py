@@ -118,7 +118,7 @@ json_params = """{
         "configuration.default_n_antenna_dl": 2,
         "configuration.default_n_antenna_ul": 2,
         "configuration.default_nr_inactivity_timer": 10000,
-        "slave_instance_list": [
+        "slave-instance-list": [
             {
                 "slave_title":          "Cell 1a",
                 "slave_reference":      "_CELL1_a",
