@@ -1,4 +1,4 @@
-import json
+import json, copy
 
 config = "enb"
 json_params_empty = """{
@@ -45,9 +45,9 @@ CELL1_b = {
     }
 }
 
-# another cell that uses CPRI-based Lopcomm RU
-# here we instantiate RU separately since embedding RU into a cell is covered by CELL1_a above
-RU2 = {
+# another couple of cells that use CPRI-based Lopcomm radio units
+# here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL1_a above
+RU2_a = {
     'ru_type':      'lopcomm',
     'ru_link_type': 'cpri',
     'mac_addr':     'XXX',
@@ -64,27 +64,40 @@ RU2 = {
     'n_antenna_ul': 1,
 }
 
-CELL2_1 = {
+RU2_b = copy.deepcopy(RU2_a)
+RU2_b['mac_addr'] = 'YYY'
+RU2_b['cpri_link']['sfp_port'] = 1
+
+CELL2_a = {
     'cell_type':    'lte',
     'rf_mode':      'fdd',
     'bandwidth':    '5 MHz',
-    'dl_earfcn':    XXX,      # XXX MHz
+    'dl_earfcn':    3350,       # 2680 MHz
     'pci':          21,
     'cell_id':      "0x21",
-    'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
-        'ru_type':      'ruincell_ref',
-        'ruincell_ref': 'CELL1_a'
+    'ru':           {           # CELL2_a links to RU2_a by its reference
+        'ru_type':  'ru_ref',
+        'ru_ref':   'RU2_a'
     }
 }
 
+CELL2_b = copy.deepcopy(CELL2_a)
+CELL2_b.update({
+    'dl_earfcn':    3410,       # 2686 MHz
+    'pci':          22,
+    'cell_id':      "0x22"
+}
+CELL2_b['ru']['ru_ref'] = 'RU2_b'
 
-# XXX CELL3 TDD LTE
+
 # XXX CELL3 FDD NR
-# XXX RU_ref
 
-jCELL1 = json.dumps(CELL1)
-jCELL2 = json.dumps(CELL2)
-jRU2   = json.dumps(RU2)
+jCELL1_a = json.dumps(CELL1_a)
+jCELL1_b = json.dumps(CELL1_b)
+jCELL2_a = json.dumps(CELL2_a)
+jCELL2_b = json.dumps(CELL2_b)
+jRU2_a   = json.dumps(RU2_a)
+jRU2_b   = json.dumps(RU2_b)
 json_params = """{
     "earfcn": 126357,
     "tx_gain": 50,
