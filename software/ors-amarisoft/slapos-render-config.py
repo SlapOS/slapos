@@ -107,6 +107,7 @@ json_params = """{
     "rf_mode": "fdd",
     "slap_configuration": {
         "tap-name": "slaptap9",
+        "slap-computer-partition-id": "slappart9",
         "configuration.default_lte_bandwidth": "10 MHz",
         "configuration.default_lte_imsi": "001010123456789",
         "configuration.default_lte_k": "00112233445566778899aabbccddeeff",
