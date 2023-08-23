@@ -1,3 +1,5 @@
+import json
+
 config = "enb"
 json_params_empty = """{
     "rf_mode": 'fdd',
@@ -8,6 +10,15 @@ json_params_empty = """{
     "slapparameter_dict": {
     }
 }"""
+
+CELL1 = {
+}
+
+RU2 = {
+}
+
+jCELL1 = json.dumps(CELL1)
+jRU2   = json.dumps(RU2)
 json_params = """{
     "earfcn": 126357,
     "tx_gain": 50,
@@ -61,18 +72,21 @@ json_params = """{
 		},
         "slave_instance_list": [
             {
-                "slave_title":          XXX,
-                "slave_reference":      XXX,
-                "slap_software_type":   XXX
-                "timestamp":
-                "xml":
-                "connection_xml":
+                "slave_title":          "Cell 1",
+                "slave_reference":      "_cell1",
+                "slap_software_type":   "enb",
+                "_": %(jCELL1)s
+            },
+            {
+                "slave_title":          "Radio Unit 2",
+                "slave_reference":      "_ru2",
+                "slap_software_type":   "enb",
+                "_": %(jRU2)s
             },
         ],
     }
-}"""
+}""" % globals()
 import os
-import json
 from jinja2 import Environment, StrictUndefined, \
     BaseLoader, TemplateNotFound, PrefixLoader
 import six
