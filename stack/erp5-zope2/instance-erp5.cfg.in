@@ -266,7 +266,7 @@ config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 config-test-runner-random-activity-priority = {{ dumps(test_runner_random_activity_priority) }}
 config-wcfs_enable = {{ dumps(wcfs_enable) }}
-config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
+config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
 {% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout', 300) -%}
