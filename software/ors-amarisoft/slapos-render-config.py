@@ -40,13 +40,27 @@ CELL1 = {
     'cell_type':    'lte',
     'rf_mode':      'fdd',
     'bandwidth':    '5 MHz',
-    'dl_earfcn':    3350,
+    'dl_earfcn':    3350,       # 2680 MHz
     'pci':          1,
     'cell_id':      "0x01",
     'ru':           RU1,        # RU definition embedded into CELL
 }
 
-# XXX CELL2 TDD LTE
+CELL2 = {
+    'cell_type':    'lte',
+    'rf_mode':      'fdd',
+    'bandwidth':    '5 MHz',
+    'dl_earfcn':    3400,       # 2685 MHz
+    'pci':          2,
+    'cell_id':      "0x02",
+    'ru':           {           # CELL2 shares RU with CELL1 referring to it via CELL1 reference
+        'ru_type':      'ruincell_ref',
+        'ruincell_ref': 'CELL1'
+    }
+}
+
+
+# XXX CELL3 TDD LTE
 # XXX CELL3 FDD NR
 
 # XXX RU embedded
@@ -54,6 +68,7 @@ CELL1 = {
 # XXX RU_ref_incell
 
 jCELL1 = json.dumps(CELL1)
+jCELL2 = json.dumps(CELL2)
 jRU2   = json.dumps(RU2)
 json_params = """{
     "earfcn": 126357,
@@ -81,37 +96,18 @@ json_params = """{
         "var": "var"
     },
     "slapparameter_dict": {
-		"rrh": "Lopcomm ORAN",
-		"sdr_number": 3,
-		"cpri_mult": 8,
-		"cell_list": {
-			"RRH2": {
-				"cpri_rx_delay": 10,
-				"cpri_tx_delay": 10,
-				"cpri_tx_dbm": 50,
-				"dl_earfcn": 100000,
-				"pci": 4,
-				"cell_id": "0x04",
-				"cpri_port_number": 0
-			},
-			"RRH1": {
-				"cpri_rx_delay": 15.4,
-				"cpri_tx_delay": 15.1,
-				"cpri_tx_dbm": 20,
-				"dl_earfcn": 546115,
-				"pci": 3,
-				"cell_id": "0x03",
-				"cpri_port_number": 1
-			},
-			"RRH3": {
-			}
-		},
         "slave_instance_list": [
             {
                 "slave_title":          "Cell 1",
-                "slave_reference":      "_cell1",
+                "slave_reference":      "_CELL1",
                 "slap_software_type":   "enb",
                 "_": %(jCELL1)s
+            },
+            {
+                "slave_title":          "Cell 2",
+                "slave_reference":      "_CELL2",
+                "slap_software_type":   "enb",
+                "_": %(jCELL2)s
             },
             {
                 "slave_title":          "Radio Unit 2",
