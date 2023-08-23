@@ -59,7 +59,7 @@ RU2_a = {
         'rx_delay': 10,
         'tx_delay': 11,
         'tx_dbm':   50
-    }
+    },
     'n_antenna_dl': 2,
     'n_antenna_ul': 1,
 }
@@ -86,7 +86,7 @@ CELL2_b.update({
     'dl_earfcn':    3410,       # 2686 MHz
     'pci':          22,
     'cell_id':      "0x22"
-}
+})
 CELL2_b['ru']['ru_ref'] = 'RU2_b'
 
 
@@ -126,23 +126,41 @@ json_params = """{
     "slapparameter_dict": {
         "slave_instance_list": [
             {
-                "slave_title":          "Cell 1",
-                "slave_reference":      "_CELL1",
+                "slave_title":          "Cell 1a",
+                "slave_reference":      "_CELL1_a",
                 "slap_software_type":   "enb",
-                "_": %(jCELL1)s
+                "_": %(jCELL1_a)s
             },
             {
-                "slave_title":          "Cell 2",
-                "slave_reference":      "_CELL2",
+                "slave_title":          "Cell 1b",
+                "slave_reference":      "_CELL1_b",
                 "slap_software_type":   "enb",
-                "_": %(jCELL2)s
+                "_": %(jCELL1_b)s
             },
             {
-                "slave_title":          "Radio Unit 2",
-                "slave_reference":      "_ru2",
+                "slave_title":          "Cell 2a",
+                "slave_reference":      "_CELL2_a",
                 "slap_software_type":   "enb",
-                "_": %(jRU2)s
+                "_": %(jCELL2_a)s
             },
+            {
+                "slave_title":          "Cell 2b",
+                "slave_reference":      "_CELL2_b",
+                "slap_software_type":   "enb",
+                "_": %(jCELL2_b)s
+            },
+            {
+                "slave_title":          "Radio Unit 2a",
+                "slave_reference":      "_RU2_a",
+                "slap_software_type":   "enb",
+                "_": %(jRU2_a)s
+            },
+            {
+                "slave_title":          "Radio Unit 2b",
+                "slave_reference":      "_RU2_b",
+                "slap_software_type":   "enb",
+                "_": %(jRU2_b)s
+            }
         ],
     }
 }""" % globals()
