@@ -1,7 +1,7 @@
-{# Package lte provides helpers for configuring LTE cells. #}
+{#- Package lte provides helpers for configuring LTE cells. -#}
 
-{# cell_tdd_config returns tdd_config for an LTE cell. #}
-{%- macro cell_tdd_config(cell) %}
+{#- cell_tdd_config returns tdd_config for an LTE cell. -#}
+{%- macro cell_tdd_config(cell) -%}
 {%-   set _ = {'[Configuration 2] 5ms 2UL 6DL (default)':        2,
                '[Configuration 6] 5ms 5UL 3DL (maximum uplink)': 6} %}
 {{    _[cell.get('tdd_ul_dl_config', '[Configuration 2] 5ms 2UL 6DL (default)')]  }}
