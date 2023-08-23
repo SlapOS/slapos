@@ -1,4 +1,4 @@
-import json, copy
+import json, copy, sys, pprint
 
 config = "enb"
 json_params_empty = """{
@@ -345,9 +345,20 @@ class Recipe():
         else:
             super(Recipe, self).update()
 
+
+def _print(*argv):
+    print(*argv, file=sys.stderr)
+
+def _pprint(obj):
+    pprint.pprint(obj, sys.stderr)
+
 r = Recipe()
 ctx = json.loads(json_params)
-ctx.update({'json_module': json})
+ctx.update({
+    'json_module': json,
+    'print': _print,
+    'pprint': _pprint,
+})
 r._init("recipe", {
   'extensions': 'jinja2.ext.do',
   'url': 'config/{}.jinja2.cfg'.format(config),
