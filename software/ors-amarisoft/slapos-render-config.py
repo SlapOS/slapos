@@ -58,7 +58,17 @@ json_params = """{
 			},
 			"RRH3": {
 			}
-		}
+		},
+        "slave_instance_list": [
+            {
+                "slave_title":          XXX,
+                "slave_reference":      XXX,
+                "slap_software_type":   XXX
+                "timestamp":
+                "xml":
+                "connection_xml":
+            },
+        ],
     }
 }"""
 import os
