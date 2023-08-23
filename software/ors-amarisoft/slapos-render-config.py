@@ -92,12 +92,13 @@ CELL2_b['ru']['ru_ref'] = 'RU2_b'
 
 # XXX CELL3 FDD NR
 
-jCELL1_a = json.dumps(CELL1_a)
-jCELL1_b = json.dumps(CELL1_b)
-jCELL2_a = json.dumps(CELL2_a)
-jCELL2_b = json.dumps(CELL2_b)
-jRU2_a   = json.dumps(RU2_a)
-jRU2_b   = json.dumps(RU2_b)
+jjdumps = lambda obj: json.dumps(json.dumps(obj))
+jCELL1_a = jjdumps(CELL1_a)
+jCELL1_b = jjdumps(CELL1_b)
+jCELL2_a = jjdumps(CELL2_a)
+jCELL2_b = jjdumps(CELL2_b)
+jRU2_a   = jjdumps(RU2_a)
+jRU2_b   = jjdumps(RU2_b)
 json_params = """{
     "earfcn": 126357,
     "tx_gain": 50,
@@ -161,9 +162,10 @@ json_params = """{
                 "slap_software_type":   "enb",
                 "_": %(jRU2_b)s
             }
-        ],
+        ]
     }
 }""" % globals()
+
 import os
 from jinja2 import Environment, StrictUndefined, \
     BaseLoader, TemplateNotFound, PrefixLoader
