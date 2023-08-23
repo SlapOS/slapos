@@ -20,7 +20,7 @@
       "options":  { "hidden": true }
     },
 
-    "dev_list": {
+    "sdr_dev_list": {
       "title": "SDR boards",
       "description": "Which SDR boards to use as combined RF port",
       "type": "array",

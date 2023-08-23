@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "ru_type",
+    "ru_link_type",
     "mac_addr",
     "txa0cc00_active",
     "rxa0cc00_active",

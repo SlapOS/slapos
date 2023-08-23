@@ -11,11 +11,47 @@ json_params_empty = """{
     }
 }"""
 
-CELL1 = {
+RU1 = {
+    'ru_type':      'sdr',
+    'ru_link_type': 'sdr',
+    'sdr_dev_list': [3, 4],
+    'n_antenna_dl': 4,
+    'n_antenna_ul': 2,
 }
 
 RU2 = {
+    'ru_type':      'lopcomm',
+    'ru_link_type': 'cpri',
+    'mac_addr':     'XXX',
+    'cpri_link':    {
+        'sdr_dev':  2,
+        'sfp_port': 0,
+        'mult':     8,
+        'mapping':  'bf1',
+        'rx_delay': 10,
+        'tx_delay': 11,
+        'tx_dbm':   50
+    }
+    'n_antenna_dl': 2,
+    'n_antenna_ul': 1,
 }
+
+CELL1 = {
+    'cell_type':    'lte',
+    'rf_mode':      'fdd',
+    'bandwidth':    '5 MHz',
+    'dl_earfcn':    3350,
+    'pci':          1,
+    'cell_id':      "0x01",
+    'ru':           RU1,        # RU definition embedded into CELL
+}
+
+# XXX CELL2 TDD LTE
+# XXX CELL3 FDD NR
+
+# XXX RU embedded
+# XXX RU_ref
+# XXX RU_ref_incell
 
 jCELL1 = json.dumps(CELL1)
 jRU2   = json.dumps(RU2)
