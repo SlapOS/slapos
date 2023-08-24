@@ -1,9 +1,3 @@
-NOTE: lte_cell -> forces enb_id to be defined
-NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
-
-"tx_gain" -> per rrh  (docs says it is "per channel")
-"rx_gain" -> per rrh  ----//----
-
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
