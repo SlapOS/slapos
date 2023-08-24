@@ -4,9 +4,7 @@
   "title": "SDR transiever",
   "description": "Radio Unit constituted of several SDR boards",
   "type": "object",
-  "allOf": {
-    "$ref": "../common-input-schema.json"
-  },
+  "$ref": "../common-input-schema.json",
 
   "required": [
     "sdr_dev_list"

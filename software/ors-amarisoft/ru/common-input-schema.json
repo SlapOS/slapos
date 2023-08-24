@@ -3,7 +3,9 @@
 
   "required": [
     "ru_type",
-    "ru_link_type"
+    "ru_link_type",
+    "n_antenna_dl",
+    "n_antenna_ul"
   ],
 
   "properties": {
@@ -12,6 +14,16 @@
     },
     "ru_link_type": {
       "type": "string"
+    },
+
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "type": "integer"
+    },
+
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "type": "integer"
     }
   }
 }

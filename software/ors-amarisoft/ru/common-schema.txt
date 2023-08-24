@@ -1,9 +1,6 @@
 ru_type: string                   hidden
 ru_link_type: string  sdr|cpri    hidden
 
-n_antenna_dl  int
-n_antenna_ul  int
-
 if ru_link_type = "cpri":
   cpri_link:
     sdr_dev   number  # e.g. sdrX@Y
