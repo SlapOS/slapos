@@ -1,33 +1,37 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "required": [
-    "ru_type",
-    "ru_link_type",
-    "n_antenna_dl",
-    "n_antenna_ul"
-  ],
+  "$defs": {
+    "ru-common": {
+      "required": [
+        "ru_type",
+        "ru_link_type",
+        "n_antenna_dl",
+        "n_antenna_ul"
+      ],
 
-  "properties": {
-    "ru_type": {
-      "type": "string",
-      "enum": ["sdr", "lopcomm", "sunwave"],
-      "options":  { "hidden": true }
-    },
-    "ru_link_type": {
-      "type": "string",
-      "enum": ["sdr", "cpri"],
-      "options":  { "hidden": true }
-    },
+      "properties": {
+        "ru_type": {
+          "type": "string",
+          "enum": ["sdr", "lopcomm", "sunwave"],
+          "options":  { "hidden": true }
+        },
+        "ru_link_type": {
+          "type": "string",
+          "enum": ["sdr", "cpri"],
+          "options":  { "hidden": true }
+        },
 
-    "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "type": "integer"
-    },
+        "n_antenna_dl": {
+          "title": "Number of DL antennas",
+          "type": "integer"
+        },
 
-    "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "type": "integer"
+        "n_antenna_ul": {
+          "title": "Number of UL antennas",
+          "type": "integer"
+        }
+      }
     }
   }
 }
