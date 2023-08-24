@@ -8,7 +8,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
   "title": "Cell",
   "type": "object",
   "$schema": "XXX",
-  "anyOf": [
+  "oneOf": [
     {
       "title": "LTE Cell",
       "type": "object",
@@ -166,7 +166,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
     },
     "ru": {
       "title": "Radio Unit",
-      "anyOf": [
+      "oneOf": [
         {
           "title": "Shared Radio Unit",
           "description": "Use radio unit defined in separate shared instance",

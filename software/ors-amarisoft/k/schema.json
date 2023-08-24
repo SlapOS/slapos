@@ -1,5 +1,5 @@
 {
-  "title": "Array[anyOf] test",
+  "title": "Array[oneOf] test",
   "type": "object",
   "required": [
     "rrh_list"
@@ -11,7 +11,7 @@
       "type": "array",
       "format": "table",
       "items": {
-        "anyOf": [
+        "oneOf": [
           {
             "title": "Loopcom RU",
             "type": "object",
