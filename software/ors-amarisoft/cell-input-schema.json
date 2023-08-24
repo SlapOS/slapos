@@ -62,7 +62,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
         "dl_earfcn": {
           "title": "DL EARFCN",
           "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-          "type": "number"
+          "type": "integer"
         },
         "pci": {
           "$ref": "#/$defs/pci",
@@ -124,12 +124,12 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
         "dl_nr_arfcn": {
           "title": "DL NR ARFCN",
           "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-          "type": "number"
+          "type": "integer"
         },
         "nr_band": {
           "title": "NR band",
           "description": "NR band number",
-          "type": "number"
+          "type": "integer"
         },
         "ssb_pos_bitmap": {
           "title": "SSB Position Bitmap",
@@ -157,7 +157,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
     "pci": {
       "title": "Physical Cell ID",
       "description": "Physical Cell ID",
-      "type": "number"
+      "type": "integer"
     },
     "cell_id": {
       "title": "Cell ID",
