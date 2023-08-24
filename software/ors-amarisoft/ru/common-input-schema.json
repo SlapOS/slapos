@@ -10,10 +10,14 @@
 
   "properties": {
     "ru_type": {
-      "type": "string"
+      "type": "string",
+      "enum": ["sdr", "lopcomm", "sunwave"],
+      "options":  { "hidden": true }
     },
     "ru_link_type": {
-      "type": "string"
+      "type": "string",
+      "enum": ["sdr", "cpri"],
+      "options":  { "hidden": true }
     },
 
     "n_antenna_dl": {

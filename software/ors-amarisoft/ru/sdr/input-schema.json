@@ -13,13 +13,11 @@
   "properties": {
     "ru_type": {
       "const":    "sdr",
-      "template": "sdr",
-      "options":  { "hidden": true }
+      "template": "sdr"
     },
     "ru_link_type": {
       "const":    "sdr",
-      "template": "sdr",
-      "options":  { "hidden": true }
+      "template": "sdr"
     },
 
     "sdr_dev_list": {
