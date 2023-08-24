@@ -5,9 +5,9 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 "rx_gain" -> per rrh  ----//----
 
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cell",
   "type": "object",
-  "$schema": "XXX",
   "oneOf": [
     {
       "title": "LTE Cell",
