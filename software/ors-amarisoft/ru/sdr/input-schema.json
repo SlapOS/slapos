@@ -28,7 +28,7 @@
       "type": "array",
       "items": {
         "title": "/dev/sdr #",
-        "type": "number"
+        "type": "integer"
       },
       "minItems": 1,
       "uniqueItems": true
