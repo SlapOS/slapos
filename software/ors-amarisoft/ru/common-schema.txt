@@ -1,5 +1,3 @@
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-
 ru_type: string                   hidden
 ru_link_type: string  sdr|cpri    hidden
 
