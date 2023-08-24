@@ -1,11 +1,11 @@
 {
   "title": "SDR transiever",
-  "description": "Radio Unit constituted several SDR boards",
+  "description": "Radio Unit constituted of several SDR boards",
   "type": "object",
   "required": [
     "ru_type",
     "ru_link_type",
-    "rf_port"
+    "sdr_dev_list"
   ],
 
   "properties": {
