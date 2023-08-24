@@ -6,6 +6,7 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+
   "title": "Cell",
   "type": "object",
   "oneOf": [
