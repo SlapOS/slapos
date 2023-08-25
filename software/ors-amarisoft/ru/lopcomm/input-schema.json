@@ -22,6 +22,9 @@
         "template": "lopcomm"
     },
 
+    "n_antenna_dl": { "default": 2 },
+    "n_antenna_ul": { "default": 2 },
+
     "mac_addr": {
       "title": "RU MAC address",
       "description": "RU MAC address used for DNSMASQ",
