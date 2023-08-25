@@ -54,6 +54,7 @@ DLL_PUBLIC float getYaw(void);
 DLL_PUBLIC float getSpeed(void);
 DLL_PUBLIC float getClimbRate(void);
 DLL_PUBLIC int healthAllOk(void);
+DLL_PUBLIC int updateLogAndProjection(void);
 #ifdef __cplusplus
 }
 #endif
