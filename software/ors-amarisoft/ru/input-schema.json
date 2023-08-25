@@ -4,7 +4,8 @@
   "title": "Radio Unit",
   "type": "object",
   "oneOf": [
-    { "$ref": "sdr/input-schema.json" }
+    { "$ref": "sdr/input-schema.json" },
+    { "$ref": "lopcomm/input-schema.json" }
   ],
 
   "$defs": {
