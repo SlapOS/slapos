@@ -2,9 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "title": "Loopcom ORAN",
-  "description": XXX,
   "type": "object",
-  "$ref": "../common-input-schema.json",
+  "$ref": "../input-schema.json#/$defs/ru-common",
 
   "required": [
     "mac_addr",
@@ -24,8 +23,8 @@
     },
 
     "mac_addr": {
-      "title": "RRH MAC address",
-      "description": "RRH MAC address used for DNSMASQ",
+      "title": "RU MAC address",
+      "description": "RU MAC address used for DNSMASQ",
       "type": "string"
     },
     "txa0cc00_active": {
