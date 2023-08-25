@@ -26,6 +26,20 @@
           }
         },
         "rf_mode": { "$ref": "#/$defs/rf_mode" },
+        "tdd_ul_dl_config": {
+          "title": "TDD Configuration",
+          "type": "string",
+          "enum": [
+            "[Configuration 2] 5ms 2UL 6DL (default)",
+            "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+          ],
+          "default": "5ms 2UL 7DL 4/6 (default)",
+          "options": {
+            "dependencies": {
+              "rf_mode": "tdd"
+            }
+          }
+        },
         "bandwidth": {
           "title": "Bandwidth",
           "description": "Downlink Bandwidth",
@@ -58,29 +72,6 @@
         },
 
         "ru": { "$ref": "#/$defs/ru" }
-      },
-
-      "if": {
-        "properties": {
-          "rf_mode": {
-            "const": "tdd"
-          }
-        }
-      },
-      "then": {
-        "required": ["tdd_ul_dl_config"],
-        "properties": {
-          "tdd_ul_dl_config": {
-            "title": "TDD",
-            "description": "TDD Configuration",
-            "type": "string",
-            "enum": [
-              "[Configuration 2] 5ms 2UL 6DL (default)",
-              "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-            ],
-            "default": "5ms 2UL 7DL 4/6 (default)"
-          }
-        }
       }
     },
 
