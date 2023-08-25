@@ -37,7 +37,51 @@
           "title": "Number of UL antennas",
           "type": "integer"
         }
+      },
+
+      "if": {
+        "properties": {
+          "ru_link_type": {
+            "const": "cpri"
+          }
+        }
+      },
+      "then": {
+        "required": ["cpri_link"],
+        "properties": {
+          "cpri_link": {
+            "title": "CPRI link settings",
+            "type": "object",
+            "required": [
+              "sdr_dev",
+              "sfp_port",
+              "mult",
+              "mapping",
+              "rx_delay",
+              "tx_delay",
+              "tx_dbm"
+            ],
+            "properties": {
+              "sdr_dev": {
+                "title": "SDR/CPRI board #",
+                "type": "integer"
+              },
+              "sfp_port": {
+                "title": "SFP port # on the SDR/CPRI board",
+                "type": "integer"
+              },
+              "mult": {
+                "title": "CPRI line bit rate multipler",
+                "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7",
+                "type": "integer",
+                "enum": [4, 5, 8, 16],
+                "default": 16
+              }
+            }
+          }
+        }
       }
+
     }
   }
 }
