@@ -163,7 +163,8 @@
   "$defs": {
     "rf_mode": {
       "title": "RF mode",
-      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- based",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
       "enum": ["fdd", "tdd"]
     },
     "pci": {
@@ -200,7 +201,7 @@
         },
         {
           "title": "Shared Radio Unit of a Cell",
-          "description": "Use the same radio unit as referenced cell does",
+          "description": "Use the same radio unit as referenced cell instance does",
           "type": "object",
           "required": ["ru_type", "ruincell_ref"],
           "properties": {

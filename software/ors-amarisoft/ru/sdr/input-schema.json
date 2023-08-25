@@ -25,7 +25,7 @@
       "description": "Which SDR boards to use as combined RF port",
       "type": "array",
       "items": {
-        "title": "/dev/sdr #",
+        "title": "/dev/sdr # of SDR board",
         "type": "integer"
       },
       "minItems": 1,
