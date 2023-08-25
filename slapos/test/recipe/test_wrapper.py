@@ -221,7 +221,9 @@ class TestWaitForFiles(WrapperTestCase):
       self.fail('process did not start after file was created')
 
 
-@unittest.skipUnless(sys.platform.startswith("linux"), "Inotify is linux only")
+@unittest.skipUnless(
+  sys.platform.startswith("linux") and platform.libc_ver()[0] == "glibc" and platform.libc_ver()[1] < '2.34',
+  "Inotify is linux only and test only runs on old glibc")
 class TestWaitForFilesInotifyError(TestWaitForFiles):
 
   def setUp(self):
