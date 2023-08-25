@@ -91,7 +91,6 @@
         "cell_type",
         "rf_mode",
         "bandwidth",
-        "tdd_ul_dl_config" if rf_mode=="tdd",
         "dl_nr_arfcn",
         "pci",
         "cell_id",
@@ -110,20 +109,7 @@
           "title": "Bandwidth",
           "description": "Downlink Bandwidth (in MHz)",
           "type": "number"
-        }
-
-        if rf_mode == "tdd":
-            "tdd_ul_dl_config": {
-              "title": "TDD",
-              "description": "TDD",
-              "type": "string",
-              "enum": [
-                "5ms 2UL 7DL 4/6 (default)",
-                "2.5ms 1UL 3DL 2/10",
-                "5ms 8UL 3DL 2/10 (maximum uplink)"
-              ],
-              "default": "5ms 2UL 7DL 4/6 (default)"
-            },
+        },
 
         "dl_nr_arfcn": {
           "title": "DL NR ARFCN",
@@ -148,7 +134,29 @@
         "cell_id": { "$ref": "#/$defs/cell_id" },
 
         "ru": { "$ref": "#/$defs/ru" }
+      },
+
+      "if": {
+        "properties": {
+          "rf_mode": {
+            "const": "tdd"
+          }
+        }
+      },
+      "then": {
+        "tdd_ul_dl_config": {
+          "title": "TDD",
+          "description": "TDD",
+          "type": "string",
+          "enum": [
+            "5ms 2UL 7DL 4/6 (default)",
+            "2.5ms 1UL 3DL 2/10",
+            "5ms 8UL 3DL 2/10 (maximum uplink)"
+          ],
+          "default": "5ms 2UL 7DL 4/6 (default)"
+        }
       }
+
     }
   ],
 
