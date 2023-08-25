@@ -17,4 +17,3 @@ Lopcomm:
 
 M2RU:
   mapping: bf1
-

@@ -55,20 +55,21 @@
             "required": [
               "sdr_dev",
               "sfp_port",
-              "mult",
-              "mapping",
-              "rx_delay",
-              "tx_delay",
-              "tx_dbm"
+              "mapping"
             ],
             "properties": {
               "sdr_dev": {
-                "title": "SDR/CPRI board #",
+                "title": "/dev/sdr # of CPRI board",
                 "type": "integer"
               },
               "sfp_port": {
-                "title": "SFP port # on the SDR/CPRI board",
+                "title": "SFP port # on the CPRI board",
                 "type": "integer"
+              },
+              "mapping": {
+                "title": "Mapping method of AxCs on the CPRI",
+                "type": "string",
+                "enum": ["standard", "hw", "spread", "bf1"]
               },
               "mult": {
                 "title": "CPRI line bit rate multipler",

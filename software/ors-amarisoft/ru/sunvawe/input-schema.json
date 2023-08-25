@@ -19,6 +19,17 @@
     },
 
     "n_antenna_dl": { "default": 4 },
-    "n_antenna_ul": { "default": 4 }
+    "n_antenna_ul": { "default": 4 },
+
+    "cpri_link": {
+      "type": "object",
+      "properties": {
+        "mapping": {
+          "const":    "bf1",
+          "template": "bf1",
+          "options":  { "hidden": true }
+        }
+      }
+    }
   }
 }
