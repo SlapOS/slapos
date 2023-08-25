@@ -18,8 +18,12 @@
   ],
   "properties": {
     "ru_type": {
-        "const":    "lopcomm",
-        "template": "lopcomm"
+      "const":    "lopcomm",
+      "template": "lopcomm"
+    },
+    "ru_link_type": {
+      "const":    "cpri",
+      "template": "cpri"
     },
 
     "n_antenna_dl": { "default": 2 },
