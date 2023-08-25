@@ -11,7 +11,6 @@
         "cell_type",
         "rf_mode",
         "bandwidth",
-        "tdd_ul_dl_config" if rf_mode=="tdd",
         "dl_earfcn",
         "pci",
         "cell_id",
@@ -41,18 +40,6 @@
           ]
         },
 
-        if rf_mode == "tdd":
-            "tdd_ul_dl_config": {
-              "title": "TDD",
-              "description": "TDD Configuration",
-              "type": "string",
-              "enum": [
-                "[Configuration 2] 5ms 2UL 6DL (default)",
-                "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-              ],
-              "default": "5ms 2UL 7DL 4/6 (default)"
-            },
-
         "dl_earfcn": {
           "title": "DL EARFCN",
           "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
@@ -71,7 +58,32 @@
         },
 
         "ru": { "$ref": "#/$defs/ru" }
+      },
+
+      "if": {
+        "properties": {
+          "rf_mode": {
+            "const": "tdd"
+          }
+        }
+      },
+      "then": {
+        "required": ["tdd_ul_dl_config"],
+        "properties": {
+          "tdd_ul_dl_config": {
+            "title": "TDD",
+            "description": "TDD Configuration",
+            "type": "string",
+            "enum": [
+              "[Configuration 2] 5ms 2UL 6DL (default)",
+              "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+            ],
+            "default": "5ms 2UL 7DL 4/6 (default)"
+          }
+        }
       }
+
+
     },
 
     {
