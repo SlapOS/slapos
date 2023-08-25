@@ -1,7 +1,8 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 /*global console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
   getLongitude, getYaw, execUserScript, initPubsub, loiter, setAirspeed,
-  setMessage, setTargetCoordinates, std, triggerParachute, Drone, Worker*/
+  setMessage, setTargetCoordinates, std, triggerParachute,
+  updateLogAndProjection Drone, Worker*/
 import {
   Drone,
   triggerParachute,
@@ -18,7 +19,8 @@ import {
   loiter,
   setAirspeed,
   setMessage,
-  setTargetCoordinates
+  setTargetCoordinates,
+  updateLogAndProjection
 } from {{ json_module.dumps(qjs_wrapper) }};
 import {
   SIGTERM,
@@ -50,6 +52,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     gwsocket_w_pipe_fd,
     handleWebSocketMessage,
     last_message_timestamp = 0,
+    last_log_timestamp = 0,
     parent = Worker.parent,
     peer_dict = {},
     user_me = {
@@ -247,6 +250,12 @@ import { evalScript, fdopen, loadFile, open } from "std";
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
+
+      if (evt.data.timestamp - last_log_timestamp >= 1000) {
+        updateLogAndProjection();
+        last_log_timestamp = evt.data.timestamp; 
+      }
+
       parent.postMessage({type: "updated"});
       break;
 
