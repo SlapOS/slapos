@@ -90,7 +90,7 @@ path_access_log = ${basedirectory:log}/nginx.access.log
 path_error_log = ${basedirectory:log}/nginx.error.log
 path_tmp = ${tempdirectory:tmp}
 # Docroot
-docroot = ${docroot:location}
+docroot = ${downloader:location}
 default_index = ${:docroot}/index.html
 # Config files
 path_nginx_conf = ${directory:etc}/nginx.conf
@@ -98,8 +98,10 @@ path_mime_types = ${directory:etc}/mime_types
 # Binaries
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
 
+
 # Executables
 bin_launcher = ${basedirectory:service}/launcher
+
 
 # Utils
 path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
@@ -127,44 +129,51 @@ output = ${html5as:bin_launcher}
 context =
     section param_html5as html5as
 
-# Command to download archive from provided url
-[downloader]
-recipe = slapos.recipe.build:download
-# We add: or '', otherwise jinja2 will render a 'None' string
-url = {{ parameter_dict['download_url'] or '' }}
-# Allow to use slapos.recipe.build:download which can only be used in "online" mode
-offline = false
-
 # Command to put content in the docroot
-[docroot]
+[downloader]
 recipe = slapos.recipe.build
 # Path where the recipe stores any produced file,
 # it will be automatically removed at the beginning of "install".
 location = ${directory:srv}/html5as
 # All the keys in this section will be available as a dict called "self.options"
-archive = {{ '${downloader:target}' if parameter_dict['download_url'] else '' }}
-default_index_html = ${default_index_html:output}
+# We add: or '', otherwise jinja2 will render a 'None' string
+url = {{ parameter_dict['download_url'] or '' }}
+default_index_html = ${default_index_html:rendered}
 # If a tarball is passed as a parameter in download url
 # it's content will be served by the instance.
 # If the parameter is not provided it fallback to the default template
 install =
   import os, shutil
-  if self.options['archive']:
-    # Create a directory and extract the file that are compressed inside
-    extract_dir = self.extract(self.options['archive'])
-    # Return the right directory path
-    workdir = guessworkdir(extract_dir)
-    # Recursively copy directory
-    self.copyTree(workdir, location)
-  else:
-    # Create directory and copy the default template inside
-    os.makedirs(location)
-    shutil.copy(self.options['default_index_html'], location)
+  buildout_offline = self.buildout['buildout']['offline']
+  try:
+    # Allow to do self.download() which can only be used in "online" mode
+    self.buildout['buildout']['offline'] = 'false'
+    if self.options['url']:
+      # Use fonctions from the slapos.recipe.build repository
+      # Download a file from a URL to a temporary path
+      file = self.download(self.options['url'])
+      # Create a directory and extract the file that are compressed inside
+      extract_dir = self.extract(file)
+      # Return the right directory path
+      workdir = guessworkdir(extract_dir)
+      # Recursively copy directory
+      self.copyTree(workdir, location)
+    else:
+      # Create directory and copy the default template inside
+      os.makedirs(location)
+      shutil.copy(self.options['default_index_html'], location)
+  finally:
+    # reset the parameter
+    self.buildout['buildout']['offline'] = buildout_offline
+
+[downloader]
+recipe = plone.recipe.command
+command = rm -r ${html5as:docroot}/*; cp ${default_index_html:rendered} ${html5as:docroot}/
 
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
-url = {{ parameter_list['template_index_html'] }}
-output = ${directory:srv}/index.html
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${directory:srv}/index.html
 title = {{ parameter_dict['title'] }}
 context =
   key title :title
@@ -172,8 +181,8 @@ context =
 ### Nginx Graceful
 [nginx-graceful]
 recipe = slapos.recipe.template:jinja2
-url = {{ parameter_list['template_graceful'] }}
-output = ${basedirectory:script}/nginx-graceful
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
 context =
     section param_html5as html5as
 
@@ -201,7 +210,7 @@ post = kill -USR1 $(cat ${html5as:path_pid})
 
 # Publish nginx address
 [publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 # By extending monitor publish, all the section deploying monitoring will
 # be deployed. The parameters needed for accessing monitoring will be published
 <= monitor-publish
@@ -210,6 +219,8 @@ title = Title {{ parameter_dict['title'] }}!
 # Add dependency to the promise so that frontend sections are processed
 # and there is no need to declare the new part in buildout:parts
 server-cdn-url = ${html5as-frontend-promise:url}
+
+
 
 # Request a CDN entry to master
 [html5as-frontend]
@@ -234,3 +245,4 @@ promise = check_url_available
 name = html5as-http-frontend.py
 url = ${html5as-frontend:connection-secure_access}
 config-url = ${:url}
+config-check-secure = 1

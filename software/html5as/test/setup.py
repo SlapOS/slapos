@@ -27,14 +27,14 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.html5as'
+name = 'slapos.test.html5asbase'
 with open("README.md") as f:
   long_description = f.read()
 
 setup(
     name=name,
     version=version,
-    description="Test for SlapOS' HTML5AS",
+    description="Test for SlapOS' HTML5AS Base",
     long_description=long_description,
     long_description_content_type='text/markdown',
     maintainer="Nexedi",
