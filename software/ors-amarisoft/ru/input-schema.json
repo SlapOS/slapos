@@ -76,6 +76,24 @@
                 "type": "integer",
                 "enum": [4, 5, 8, 16],
                 "default": 16
+              },
+              "rx_delay": {
+                "title": "CPRI RX Delay",
+                "description": "Delays between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RU specification.",
+                "type": "number",
+                "default": 0
+              },
+              "tx_delay": {
+                "title": "CPRI TX Delay",
+                "description": "Advances Start of Frame relative to PPS to compensate for delays in transmit line and RU. This should be set to T12 + T2a.",
+                "type": "number",
+                "default": 0
+              },
+              "tx_dbm": {
+                "title": "CPRI TX dBm",
+                "description": "Optional floating points value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
+                "type": "number",
+                "default": 0
               }
             }
           }
