@@ -3,19 +3,20 @@
 
   "title": "Sunwave M2RU",
   "description": XXX,
-
   "type": "object",
+  "$ref": "../input-schema.json#/$defs/ru-common",
+
   "required": [
-    "ru_type"
   ],
 
   "properties": {
-    "$ref": "../common-input-schema.json",
-
     "ru_type": {
-        "const":    "sunvawe",
-        "template": "sunvawe",
-        "options":  { "hidden": true }
+      "const":    "sunvawe",
+      "template": "sunvawe"
+    },
+    "ru_link_type": {
+      "const":    "cpri",
+      "template": "cpri"
     }
   }
 }

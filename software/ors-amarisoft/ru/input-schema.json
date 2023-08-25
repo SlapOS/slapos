@@ -5,7 +5,8 @@
   "type": "object",
   "oneOf": [
     { "$ref": "sdr/input-schema.json" },
-    { "$ref": "lopcomm/input-schema.json" }
+    { "$ref": "lopcomm/input-schema.json" },
+    { "$ref": "sunvawe/input-schema.json" }
   ],
 
   "$defs": {

@@ -8,3 +8,13 @@ if ru_link_type = "cpri":
     rx_delay:    int			      <- selected by ru model
     tx_delay:    int			      <- ? selected by ru or not ?
     tx_dbm:      float
+
+
+
+Lopcomm:
+  mapping: hw
+
+
+M2RU:
+  mapping: bf1
+
