@@ -2,7 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "title": "Sunwave M2RU",
-  "description": XXX,
   "type": "object",
   "$ref": "../input-schema.json#/$defs/ru-common",
 
@@ -17,6 +16,9 @@
     "ru_link_type": {
       "const":    "cpri",
       "template": "cpri"
-    }
+    },
+
+    "n_antenna_dl": { "default": 4 },
+    "n_antenna_ul": { "default": 4 }
   }
 }
