@@ -17,7 +17,7 @@ json_params_empty = """{
 RU1 = {
     'ru_type':      'sdr',
     'ru_link_type': 'sdr',
-    'sdr_dev_list': [3, 4],
+    'sdr_dev_list': [0, 1],
     'n_antenna_dl': 4,
     'n_antenna_ul': 2,
 }
