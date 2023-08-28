@@ -1,3 +1,0 @@
-sample_hw_fmt
-sync: none / internal / gps / external
-clock: internal / external
