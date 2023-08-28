@@ -4,207 +4,90 @@
   "title": "Cell",
   "type": "object",
   "oneOf": [
-    {
-      "title": "LTE Cell",
-      "type": "object",
-      "required": [
-        "cell_type",
-        "rf_mode",
-        "bandwidth",
-        "dl_earfcn",
-        "pci",
-        "cell_id",
-        "tac",
-        "ru"
-      ],
-      "properties": {
-        "cell_type": {
-          "const": "lte",
-          "template": "lte",
-          "options": {
-            "hidden": true
-          }
-        },
-        "rf_mode": { "$ref": "#/$defs/rf_mode" },
-        "tdd_ul_dl_config": {
-          "title": "TDD Configuration",
-          "type": "string",
-          "enum": [
-            "[Configuration 2] 5ms 2UL 6DL (default)",
-            "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-          ],
-          "default": "5ms 2UL 7DL 4/6 (default)",
-          "options": {
-            "dependencies": {
-              "rf_mode": "tdd"
-            }
-          }
-        },
-        "bandwidth": {
-          "title": "Bandwidth",
-          "description": "Downlink Bandwidth",
-          "type": "string",
-          "enum": [
-            "1.4 MHz",
-            "3 MHz",
-            "5 MHz",
-            "10 MHz",
-            "15 MHz",
-            "20 MHz"
-          ]
-        },
-
-        "dl_earfcn": {
-          "title": "DL EARFCN",
-          "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-          "type": "integer"
-        },
-        "pci": {
-          "$ref": "#/$defs/pci",
-          "default": 1
-        },
-        "cell_id": { "$ref": "#/$defs/cell_id" },
-        "tac": {
-          "title": "Tracking Area Code",
-          "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-          "default": "0x0001",
-          "type": "string"
-        },
-
-        "ru": { "$ref": "#/$defs/ru" }
-      }
-    },
-
-    {
-      "title": "NR Cell",
-      "type": "object",
-      "required": [
-        "cell_type",
-        "rf_mode",
-        "bandwidth",
-        "dl_nr_arfcn",
-        "pci",
-        "cell_id",
-        "ru"
-      ],
-      "properties": {
-        "cell_type": {
-          "const": "nr",
-          "template": "nr",
-          "options": {
-            "hidden": true
-          }
-        },
-        "rf_mode": { "$ref": "#/$defs/rf_mode" },
-        "tdd_ul_dl_config": {
-          "title": "TDD Configuration",
-          "type": "string",
-          "enum": [
-            "5ms 2UL 7DL 4/6 (default)",
-            "2.5ms 1UL 3DL 2/10",
-            "5ms 8UL 3DL 2/10 (maximum uplink)"
-          ],
-          "default": "5ms 2UL 7DL 4/6 (default)",
-          "options": {
-            "dependencies": {
-              "rf_mode": "tdd"
-            }
-          }
-        },
-        "bandwidth": {
-          "title": "Bandwidth",
-          "description": "Downlink Bandwidth (in MHz)",
-          "type": "number"
-        },
-
-        "dl_nr_arfcn": {
-          "title": "DL NR ARFCN",
-          "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-          "type": "integer"
-        },
-        "nr_band": {
-          "title": "NR band",
-          "description": "NR band number",
-          "type": "integer"
-        },
-        "ssb_pos_bitmap": {
-          "title": "SSB Position Bitmap",
-          "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
-          "type": "string",
-          "default": "10000000"
-        },
-        "pci": {
-          "$ref": "#/$defs/pci",
-          "default": 500
-        },
-        "cell_id": { "$ref": "#/$defs/cell_id" },
-
-        "ru": { "$ref": "#/$defs/ru" }
-      }
-    }
+    { "$ref": "lte/input-schema.json" },
+    { "$ref": "nr/input-schema.json" }
   ],
 
   "$defs": {
-    "rf_mode": {
-      "title": "RF mode",
-      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
-      "type": "string",
-      "enum": ["fdd", "tdd"]
-    },
-    "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "integer"
-    },
-    "cell_id": {
-      "title": "Cell ID",
-      "description": "Cell ID",
-      "type": "string",
-      "default": "0x01"
-    },
-    "ru": {
-      "title": "Radio Unit",
-      "oneOf": [
-        {
-          "title": "Shared Radio Unit",
-          "description": "Use radio unit defined in separate shared instance",
-          "type": "object",
-          "required": ["ru_type", "ru_ref"],
-          "properties": {
-            "ru_type": {
-                "const":    "ru_ref",
-                "template": "ru_ref",
-                "options":  { "hidden": true }
-            },
-            "ru_ref": {
-              "title": "RU Reference",
-              "description": "Reference of shared radio unit instance",
-              "type": "string"
-            }
-          }
+    "cell-common": {
+      "required": [
+        "cell_type",
+        "rf_mode",
+        "pci",
+        "cell_id",
+        "ru"
+      ],
+
+      "properties": {
+        "cell_type": {
+          "type": "string",
+          "options":  { "hidden": true }
         },
-        {
-          "title": "Shared Radio Unit of a Cell",
-          "description": "Use the same radio unit as referenced cell instance does",
-          "type": "object",
-          "required": ["ru_type", "ruincell_ref"],
-          "properties": {
-            "ru_type": {
-                "const":    "ruincell_ref",
-                "template": "ruincell_ref",
-                "options":  { "hidden": true }
-            },
-            "ruincell_ref": {
-              "title": "Cell Reference",
-              "description": "Reference of cell instance whose radio unit to share",
-              "type": "string"
-            }
-          }
+
+        "rf_mode": {
+          "title": "RF mode",
+          "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+          "type": "string",
+          "enum": ["fdd", "tdd"],
+          "propertyOrder": 101
         },
-        { "$ref": "ru/sdr/input-schema.json" },
-        { "$ref": "ru/lopcomm/input-schema.json" },
-        { "$ref": "ru/sunvawe/input-schema.json" }
-      ]
+        "pci": {
+          "title": "Physical Cell ID",
+          "description": "Physical Cell ID",
+          "type": "integer"
+        },
+        "cell_id": {
+          "title": "Cell ID",
+          "description": "Cell ID",
+          "type": "string",
+          "default": "0x01"
+        },
+        "ru": {
+          "title": "Radio Unit",
+          "oneOf": [
+            {
+              "title": "Shared Radio Unit",
+              "description": "Use radio unit defined in separate shared instance",
+              "type": "object",
+              "required": ["ru_type", "ru_ref"],
+              "properties": {
+                "ru_type": {
+                    "const":    "ru_ref",
+                    "template": "ru_ref",
+                    "options":  { "hidden": true }
+                },
+                "ru_ref": {
+                  "title": "RU Reference",
+                  "description": "Reference of shared radio unit instance",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "title": "Shared Radio Unit of a Cell",
+              "description": "Use the same radio unit as referenced cell instance does",
+              "type": "object",
+              "required": ["ru_type", "ruincell_ref"],
+              "properties": {
+                "ru_type": {
+                    "const":    "ruincell_ref",
+                    "template": "ruincell_ref",
+                    "options":  { "hidden": true }
+                },
+                "ruincell_ref": {
+                  "title": "Cell Reference",
+                  "description": "Reference of cell instance whose radio unit to share",
+                  "type": "string"
+                }
+              }
+            },
+            { "$ref": "../ru/sdr/input-schema.json" },
+            { "$ref": "../ru/lopcomm/input-schema.json" },
+            { "$ref": "../ru/sunvawe/input-schema.json" }
+          ],
+          "propertyOrder": 9999
+        }
+      }
     }
   }
 }

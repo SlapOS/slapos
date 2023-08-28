@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "NR Cell",
+  "type": "object",
+  "$ref": "../input-schema.json#/$defs/cell-common",
+
+  "required": [
+    "bandwidth",
+    "dl_nr_arfcn"
+  ],
+  "properties": {
+    "cell_type": {
+      "const":    "nr",
+      "template": "nr"
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD Configuration",
+      "type": "string",
+      "enum": [
+        "5ms 2UL 7DL 4/6 (default)",
+        "2.5ms 1UL 3DL 2/10",
+        "5ms 8UL 3DL 2/10 (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
+    },
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number"
+    },
+
+    "dl_nr_arfcn": {
+      "title": "DL NR ARFCN",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
+      "type": "integer"
+    },
+    "nr_band": {
+      "title": "NR band",
+      "description": "NR band number",
+      "type": "integer"
+    },
+    "ssb_pos_bitmap": {
+      "title": "SSB Position Bitmap",
+      "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
+      "type": "string",
+      "default": "10000000"
+    },
+    "pci": {
+      "default": 500
+    }
+  }
+}

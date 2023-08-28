@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "LTE Cell",
+  "type": "object",
+  "$ref": "../input-schema.json#/$defs/cell-common",
+
+  "required": [
+    "bandwidth",
+    "dl_earfcn",
+    "tac"
+  ],
+  "properties": {
+    "cell_type": {
+      "const":    "lte",
+      "template": "lte"
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD Configuration",
+      "type": "string",
+      "enum": [
+        "[Configuration 2] 5ms 2UL 6DL (default)",
+        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
+    },
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "type": "string",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ]
+    },
+
+    "dl_earfcn": {
+      "title": "DL EARFCN",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "type": "integer"
+    },
+    "pci": {
+      "default": 1
+    },
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+      "default": "0x0001",
+      "type": "string"
+    }
+  }
+}
