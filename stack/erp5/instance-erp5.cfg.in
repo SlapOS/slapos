@@ -280,6 +280,7 @@ software-type = zope
 {% for custom_name, zope_parameter_dict in six.iteritems(zope_partition_dict) -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
+{%   set check_software_url_section_name = 'check-software-url' ~ partition_name -%}
 {%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
 {%   set check_test_runner_url_section_name = 'check-test-runner-url' ~ partition_name -%}
 {%   set promise_test_runner_url_section_name = 'promise-test-runner-url' ~ partition_name -%}
@@ -336,7 +337,7 @@ config-command = {{ '${' ~ check_test_runner_url_section_name ~ ':path}' }}
 {%   endif -%}
 
 
-[{{ promise_software_url_section_name }}]
+[{{ check_software_url_section_name }}]
 # Promise to wait for zope partition to use the expected software URL,
 # used on upgrades.
 recipe = slapos.cookbook:check_parameter
@@ -344,6 +345,12 @@ value = {{ '${' ~ section_name ~ ':connection-software-release-url}' }}
 expected-not-value =
 expected-value = ${slap-connection:software-release-url}
 path = ${directory:bin}/${:_buildout_section_name_}
+
+[{{ promise_software_url_section_name }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = {{ '${' ~ check_software_url_section_name ~ ':path}' }}
 
 {% do root_common.section(promise_software_url_section_name) -%}
 
