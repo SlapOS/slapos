@@ -103,7 +103,7 @@ json_params = """{
     "earfcn": 126357,
     "tx_gain": 50,
     "rx_gain": 50,
-    "sib23_file": "sib",
+    "sib23_file": "sib2_3.asn",
     "rf_mode": "fdd",
     "slap_configuration": {
         "tap-name": "slaptap9",
