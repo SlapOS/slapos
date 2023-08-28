@@ -1,2 +1,0 @@
-gps_sync	-> trx_sdr
-diable_sdr	-> trx_sdr | trx_dummy ?
