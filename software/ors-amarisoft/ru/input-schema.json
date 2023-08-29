@@ -36,71 +36,66 @@
         "n_antenna_ul": {
           "title": "Number of UL antennas",
           "type": "integer"
-        }
-      },
+        },
 
-      "if": {
-        "properties": {
-          "ru_link_type": {
-            "const": "cpri"
-          }
-        }
-      },
-      "then": {
-        "required": ["cpri_link"],
-        "properties": {
-          "cpri_link": {
-            "title": "CPRI link settings",
-            "type": "object",
-            "required": [
-              "sdr_dev",
-              "sfp_port",
-              "mapping"
-            ],
-            "properties": {
-              "sdr_dev": {
-                "title": "/dev/sdr # of CPRI board",
-                "type": "integer"
-              },
-              "sfp_port": {
-                "title": "SFP port # on the CPRI board",
-                "type": "integer"
-              },
-              "mapping": {
-                "title": "Mapping method of AxCs on the CPRI",
-                "type": "string",
-                "enum": ["standard", "hw", "spread", "bf1"]
-              },
-              "mult": {
-                "title": "CPRI line bit rate multipler",
-                "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7",
-                "type": "integer",
-                "enum": [4, 5, 8, 16],
-                "default": 16
-              },
-              "rx_delay": {
-                "title": "CPRI RX Delay",
-                "description": "Delays between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RU specification.",
-                "type": "number",
-                "default": 0
-              },
-              "tx_delay": {
-                "title": "CPRI TX Delay",
-                "description": "Advances Start of Frame relative to PPS to compensate for delays in transmit line and RU. This should be set to T12 + T2a.",
-                "type": "number",
-                "default": 0
-              },
-              "tx_dbm": {
-                "title": "CPRI TX dBm",
-                "description": "Optional floating points value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
-                "type": "number",
-                "default": 0
-              }
+        "cpri_link": {
+          "title": "CPRI link settings",
+
+          "options": {
+            "dependencies": {
+              "ru_link_type": "cpri"
+            }
+          },
+
+          "type": "object",
+          "required": [
+            "sdr_dev",
+            "sfp_port",
+            "mapping"
+          ],
+          "properties": {
+            "sdr_dev": {
+              "title": "/dev/sdr # of CPRI board",
+              "type": "integer"
+            },
+            "sfp_port": {
+              "title": "SFP port # on the CPRI board",
+              "type": "integer"
+            },
+            "mapping": {
+              "title": "Mapping method of AxCs on the CPRI",
+              "type": "string",
+              "enum": ["standard", "hw", "spread", "bf1"]
+            },
+            "mult": {
+              "title": "CPRI line bit rate multipler",
+              "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7",
+              "type": "integer",
+              "enum": [4, 5, 8, 16],
+              "default": 16
+            },
+            "rx_delay": {
+              "title": "CPRI RX Delay",
+              "description": "Delays between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RU specification.",
+              "type": "number",
+              "default": 0
+            },
+            "tx_delay": {
+              "title": "CPRI TX Delay",
+              "description": "Advances Start of Frame relative to PPS to compensate for delays in transmit line and RU. This should be set to T12 + T2a.",
+              "type": "number",
+              "default": 0
+            },
+            "tx_dbm": {
+              "title": "CPRI TX dBm",
+              "description": "Optional floating points value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
+              "type": "number",
+              "default": 0
             }
           }
         }
-      }
 
+      }
     }
   }
 }
