@@ -3,3 +3,10 @@ NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
 
 "tx_gain" -> per rrh  (docs says it is "per channel")
 "rx_gain" -> per rrh  ----//----
+
+
+JSONEditor:
+
+    use_default_values: false,          // important
+    no_additional_properties: true,     // important
+    keep_oneof_values: false            // important

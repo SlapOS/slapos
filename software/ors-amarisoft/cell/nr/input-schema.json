@@ -3,7 +3,7 @@
 
   "title": "NR Cell",
   "type": "object",
-  "$ref": "../input-schema.json#/$defs/cell-common",
+  "$ref": "../../cell/input-schema.json#/$defs/cell-common",
 
   "required": [
     "bandwidth",

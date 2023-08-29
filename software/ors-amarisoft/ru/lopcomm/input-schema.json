@@ -3,7 +3,7 @@
 
   "title": "Loopcom ORAN",
   "type": "object",
-  "$ref": "../input-schema.json#/$defs/ru-common",
+  "$ref": "../../ru/input-schema.json#/$defs/ru-common",
 
   "required": [
     "mac_addr",

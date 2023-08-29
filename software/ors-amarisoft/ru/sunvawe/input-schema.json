@@ -3,7 +3,7 @@
 
   "title": "Sunwave M2RU",
   "type": "object",
-  "$ref": "../input-schema.json#/$defs/ru-common",
+  "$ref": "../../ru/input-schema.json#/$defs/ru-common",
 
   "required": [
   ],
