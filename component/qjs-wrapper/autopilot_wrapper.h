@@ -36,7 +36,7 @@ DLL_PUBLIC int triggerParachute(void);
 
 // Flight management functions
 DLL_PUBLIC int loiter(double la, double lo, float a, float radius);
-DLL_PUBLIC int setAirspeed(float airspeed);
+DLL_PUBLIC int setAirSpeed(float airspeed);
 DLL_PUBLIC int setTargetCoordinates(double la, double lo, float a);
 
 // Information functions
