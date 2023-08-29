@@ -1,8 +1,8 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 /*global console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, execUserScript, initPubsub, loiter, setAirspeed,
+  getLongitude, getYaw, execUserScript, initPubsub, loiter, setAirSpeed,
   setMessage, setTargetCoordinates, std, triggerParachute,
-  updateLogAndProjection Drone, Worker*/
+  updateLogAndProjection, Drone, Worker*/
 import {
   Drone,
   triggerParachute,
@@ -17,7 +17,7 @@ import {
   getYaw,
   initPubsub,
   loiter,
-  setAirspeed,
+  setAirSpeed,
   setMessage,
   setTargetCoordinates,
   updateLogAndProjection
@@ -38,8 +38,9 @@ import { evalScript, fdopen, loadFile, open } from "std";
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
            getLatitude, getLongitude, getLog, getYaw, initPubsub, kill,
-           loadFile, loiter, open, pipe, setAirspeed, setMessage,
-           setReadHandler, setTargetCoordinates, triggerParachute, waitpid) {
+           loadFile, loiter, open, pipe, setAirSpeed, setMessage,
+           setReadHandler, setTargetCoordinates, triggerParachute,
+           updateLogAndProjection, waitpid) {
   // Every script is evaluated per drone
   "use strict";
 
@@ -82,7 +83,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
           dest_id: id
         }));
       },
-      setAirspeed: setAirspeed,
+      setAirSpeed: setAirSpeed,
       setTargetCoordinates: setTargetCoordinates
     };
   conf_file.close();
@@ -281,5 +282,5 @@ import { evalScript, fdopen, loadFile, open } from "std";
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
   fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
   getLatitude, getLongitude, getLog, getYaw, initPubsub, kill, loadFile,
-  loiter, open, pipe, setAirspeed, setMessage, setReadHandler,
-  setTargetCoordinates, triggerParachute, waitpid));
+  loiter, open, pipe, setAirSpeed, setMessage, setReadHandler,
+  setTargetCoordinates, triggerParachute, updateLogAndProjection, waitpid));
