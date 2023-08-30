@@ -4,9 +4,9 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
-      "title": "Default R",
+      "title": "Default S",
       "description": "Default reference parameters",
-      "request":  "../../ru/input-schema.json",
+      "request":  "../../instance-core-network-input-schema.json",
       "response": "XXX",
       "index": 0
     }
