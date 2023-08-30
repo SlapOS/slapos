@@ -7,7 +7,7 @@
       "title": "Default",
       "description": "RU configuration",
       "serialisation": "json-in-xml",
-      "request":  "../instance-core-network-input-schema.json",
+      "request":  "../ru/sdr/input-schema.json",
       "response": "XXX",
       "index": 0
     }
