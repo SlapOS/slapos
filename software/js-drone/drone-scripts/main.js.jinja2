@@ -10,6 +10,7 @@ import {
 } from {{ json_module.dumps(qjs_wrapper) }};
 import {
   Worker,
+  SIGINT,
   SIGTERM,
   dup2,
   setTimeout,
@@ -17,9 +18,8 @@ import {
 } from "os";
 import { err, exit, open, out } from "std";
 
-(function (arm, console, dup2, err, exit, open, out, scriptArgs,
-           setTimeout, start, stop, stopPubsub, takeOffAndWait, Worker,
-           SIGTERM) {
+(function (arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout,
+           start, stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM) {
   "use strict";
 
   var CONF_PATH = {{ json_module.dumps(configuration) }},
@@ -68,6 +68,7 @@ import { err, exit, open, out } from "std";
   }
 
   signal(SIGTERM, exitWorker.bind(null, 0));
+  signal(SIGINT, exitWorker.bind(null, 0));
 
   function exitOnFail(ret, msg) {
     if (ret) {
@@ -180,4 +181,4 @@ import { err, exit, open, out } from "std";
     }
   };
 }(arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout, start, stop,
-  stopPubsub, takeOffAndWait, Worker, SIGTERM));
+  stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM));
