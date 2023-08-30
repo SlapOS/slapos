@@ -102,7 +102,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
 
-    # Get the pid of the running monitor_httpd process
+    # Get the pid of the monitor_httpd from the PID file
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
     monitor_httpd_pid = ""
 
@@ -111,18 +111,40 @@ class ServicesTestCase(SlapOSInstanceTestCase):
           monitor_httpd_pid = pid_file.read()
           print(monitor_httpd_pid)
 
+    print("Monitor httpd service path")
+    print(monitor_httpd_service_path)
+    monitor_httpd_pid_x = monitor_httpd_pid.strip('\n')  # Replace with the actual PID
+
+    cmdline_path = f"/proc/{monitor_httpd_pid_x}/cmdline"
+
+    print("cmdline:")
+    print(cmdline_path)
+    try:
+        with open(cmdline_path, 'rb') as cmdline_file:
+            cmdline_content = cmdline_file.read()
+            print("Contents of cmdline file:")
+            print(cmdline_content.decode('utf-8'))
+    except FileNotFoundError:
+        print(f"Process with PID {monitor_httpd_pid} not found or cmdline file doesn't exist.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
     try:
       print("Ready to run the prcoess")
       print(monitor_httpd_pid)
       output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
-      expected_string = f"Process with PID {monitor_httpd_pid} and monitor-httpd.conf is running."
+      # If the httpd-monitor service is running
+      # and the monitor-httpd.pid contains the identical PID as the service
+      # run the monitor-httpd service can cause the "already running" error correctly
+      expected_string = "httpd (pid %s) already running" % monitor_httpd_pid.strip('\n')
       self.assertIn(expected_string, output)
     except subprocess.CalledProcessError as e:
       print(e.output)
       print("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired:
-      pass # We didn't get any output within 3 seconds, this means everything is fine.
+      print("Unexpected behaviour: The httpd service is running:", e)
+      self.fail("Unexpected behaviour: The httpd service is running")
 
   def test_monitor_httpd_crash_reboot(self):
     # Get the partition path
