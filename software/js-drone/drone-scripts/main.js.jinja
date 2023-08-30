@@ -8,7 +8,7 @@ import {
   stopPubsub,
   takeOffAndWait
 } from {{ json_module.dumps(qjs_wrapper) }};
-import { Worker, SIGTERM, setTimeout, signal } from "os";
+import { Worker, SIGINT, SIGTERM, setTimeout, signal } from "os";
 import { exit, open } from "std";
 
 (function (arm, console, exit, open, scriptArgs, setTimeout, start, stop,
@@ -53,6 +53,7 @@ import { exit, open } from "std";
   }
 
   signal(SIGTERM, exitWorker.bind(null, 0));
+  signal(SIGINT, exitWorker.bind(null, 0));
 
   function exitOnFail(ret, msg) {
     if (ret) {
