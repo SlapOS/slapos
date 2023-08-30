@@ -1,0 +1,14 @@
+{
+  "name": "Cell",
+  "description": "Cell configuration for Amarisoft/ORS",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "cell": {
+      "title": "Cell",
+      "description": "Cell configuration",
+      "serialisation": "json-in-xml",
+      "request": "../cell/input-schema.json",
+      "response": "XXX"
+    }
+  }
+}
