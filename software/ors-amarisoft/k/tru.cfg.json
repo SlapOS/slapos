@@ -7,7 +7,7 @@
       "title": "RU",
       "description": "RU configuration",
       "serialisation": "json-in-xml",
-      "request":  "../ru/sdr/input-schema.json",
+      "request":  "../ru/input-schema.json",
       "response": "XXX",
       "index": 0
     }

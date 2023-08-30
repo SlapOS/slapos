@@ -7,7 +7,7 @@
       "title": "Cell",
       "description": "Cell configuration",
       "serialisation": "json-in-xml",
-      "request": "../cell/lte/input-schema.json",
+      "request": "../cell/input-schema.json",
       "response": "XXX",
       "index": 0
     }
