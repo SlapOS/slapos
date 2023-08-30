@@ -3,13 +3,12 @@
   "description": "Radio Unit configuration for Amarisoft/ORS",
   "serialisation": "json-in-xml",
   "software-type": {
-    "ru": {
-      "title": "RU",
+    "default": {
+      "title": "Defaul",
       "description": "RU configuration",
-      "software-type": "ru",
       "serialisation": "json-in-xml",
-      "request": "../ru/input-schema.json",
-      "response": "XXX",
+      "request":  "../ru/input-schema.json",
+      "response": "../ru/input-schema.json",
       "index": 0
     }
   }
