@@ -4,7 +4,7 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
-      "title": "Defaul",
+      "title": "Default",
       "description": "RU configuration",
       "serialisation": "json-in-xml",
       "request":  "../ru/input-schema.json",
