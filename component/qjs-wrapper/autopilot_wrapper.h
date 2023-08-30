@@ -41,12 +41,9 @@ DLL_PUBLIC int setTargetCoordinates(double la, double lo, float a);
 
 // Information functions
 DLL_PUBLIC float getAltitude(void);
-DLL_PUBLIC float getAltitudeRel(void);
 DLL_PUBLIC float getInitialAltitude(void);
 DLL_PUBLIC double getInitialLatitude(void);
 DLL_PUBLIC double getInitialLongitude(void);
-DLL_PUBLIC double getLatitude(void);
-DLL_PUBLIC double getLongitude(void);
 DLL_PUBLIC double *getPositionArray(void);
 DLL_PUBLIC float *getSpeedArray(void);
 DLL_PUBLIC double getTakeOffAltitude(void);
