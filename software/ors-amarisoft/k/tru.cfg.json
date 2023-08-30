@@ -7,8 +7,8 @@
       "title": "Default",
       "description": "RU configuration",
       "serialisation": "json-in-xml",
-      "request":  "../ru/input-schema.json",
-      "response": "../ru/input-schema.json",
+      "request":  "../instance-core-network-input-schema.json",
+      "response": "XXX",
       "index": 0
     }
   }
