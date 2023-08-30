@@ -6,6 +6,7 @@
     "cell": {
       "title": "Cell",
       "description": "Cell configuration",
+      "software-type": "cell",
       "serialisation": "json-in-xml",
       "request": "../cell/input-schema.json",
       "response": "XXX"

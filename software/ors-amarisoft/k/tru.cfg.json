@@ -6,6 +6,7 @@
     "cell": {
       "title": "RU",
       "description": "RU configuration",
+      "software-type": "ru",
       "serialisation": "json-in-xml",
       "request": "../ru/input-schema.json",
       "response": "XXX"
