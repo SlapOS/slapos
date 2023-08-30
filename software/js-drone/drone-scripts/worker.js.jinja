@@ -8,12 +8,10 @@ import {
   triggerParachute,
   getAirspeed,
   getAltitude,
-  getAltitudeRel,
   getClimbRate,
   getInitialAltitude,
-  getLatitude,
-  getLongitude,
   getLog,
+  getPosition,
   getYaw,
   initPubsub,
   loiter,
@@ -36,10 +34,9 @@ import {
 import { evalScript, fdopen, loadFile, open } from "std";
 
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-           fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
-           getLatitude, getLongitude, getLog, getYaw, initPubsub, kill,
-           loadFile, loiter, open, pipe, setAirSpeed, setMessage,
-           setReadHandler, setTargetCoordinates, triggerParachute,
+           fdopen, getAltitude, getInitialAltitude, getLog, getPosition, getYaw,
+           initPubsub, kill, loadFile, loiter, open, pipe, setAirSpeed,
+           setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
            updateLogAndProjection, waitpid) {
   // Every script is evaluated per drone
   "use strict";
@@ -62,13 +59,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       drone_dict: {},
       exit: exitWorker,
       getAltitudeAbs: getAltitude,
-      getCurrentPosition: function () {
-        return {
-          x: getLatitude(),
-          y: getLongitude(),
-          z: getAltitudeRel()
-        };
-      },
+      getCurrentPosition: getPosition,
       getInitialAltitude: getInitialAltitude,
       getYaw: getYaw,
       getSpeed: getAirspeed,
@@ -280,7 +271,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     }
   };
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  fdopen, getAltitude, getAltitudeRel, getInitialAltitude,
-  getLatitude, getLongitude, getLog, getYaw, initPubsub, kill, loadFile,
-  loiter, open, pipe, setAirSpeed, setMessage, setReadHandler,
-  setTargetCoordinates, triggerParachute, updateLogAndProjection, waitpid));
+  fdopen, getAltitude, getInitialAltitude, getLog, getPosition, getYaw,
+  initPubsub, kill, loadFile, loiter, open, pipe, setAirSpeed, setMessage,
+  setReadHandler, setTargetCoordinates, triggerParachute,
+  updateLogAndProjection, waitpid));
