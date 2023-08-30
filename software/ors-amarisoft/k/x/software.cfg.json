@@ -4,10 +4,10 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
-      "title": "Default",
+      "title": "Default Q",
       "description": "Default reference parameters",
-      "request": "instance-input-schema.json",
-      "response": "instance-output-schema.json",
+      "request":  "instance-input-schema.json",
+      "response": "XXX",
       "index": 0
     }
   }
