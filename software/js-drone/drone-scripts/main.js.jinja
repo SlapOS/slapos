@@ -66,7 +66,7 @@ import { exit, open } from "std";
     var address = configuration.autopilotIp + ":" + configuration.autopilotPort;
     console.log("Will connect to", address);
     exitOnFail(
-      start(configuration.autopilotIp, configuration.autopilotPort, LOG_FILE, 60),
+      start(configuration.autopilotIp, configuration.autopilotPort, LOG_FILE, 5),
       "Failed to connect to " + address
     );
   }
