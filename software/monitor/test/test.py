@@ -81,7 +81,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     with self.slap.instance_supervisor_rpc as supervisor:
       info, = [i for i in
          supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
-      print(info)
       partition = info['group']
       if info['statename'] != "RUNNING":
         monitor_httpd_process_name = f"{info['group']}:{info['name']}"
@@ -108,26 +107,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
     if os.path.exists(monitor_httpd_pid_file):
       with open(monitor_httpd_pid_file, "r") as pid_file:
-          monitor_httpd_pid = pid_file.read()
-          print(monitor_httpd_pid)
-
-    print("Monitor httpd service path")
-    print(monitor_httpd_service_path)
-    monitor_httpd_pid_x = monitor_httpd_pid.strip('\n')  # Replace with the actual PID
-
-    cmdline_path = f"/proc/{monitor_httpd_pid_x}/cmdline"
-
-    print("cmdline:")
-    print(cmdline_path)
-    try:
-        with open(cmdline_path, 'rb') as cmdline_file:
-            cmdline_content = cmdline_file.read()
-            print("Contents of cmdline file:")
-            print(cmdline_content.decode('utf-8'))
-    except FileNotFoundError:
-        print(f"Process with PID {monitor_httpd_pid} not found or cmdline file doesn't exist.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        monitor_httpd_pid = pid_file.read()
 
     try:
       print("Ready to run the prcoess")
@@ -143,8 +123,10 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       print("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired:
-      print("Unexpected behaviour: The httpd service is running:", e)
-      self.fail("Unexpected behaviour: The httpd service is running")
+      # Timeout means we run the httpd service corrrectly
+      # This is not the expected behaviour
+      print("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
+      self.fail("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test")
 
   def test_monitor_httpd_crash_reboot(self):
     # Get the partition path
@@ -160,7 +142,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     with self.slap.instance_supervisor_rpc as supervisor:
       info, = [i for i in
          supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
-      print(info)
       if info['statename'] == "RUNNING":
         monitor_httpd_process_name = f"{info['group']}:{info['name']}"
         supervisor.stopProcess(monitor_httpd_process_name)
