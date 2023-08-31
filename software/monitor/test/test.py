@@ -155,6 +155,8 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
     output = ''
+
+    monitor_httpd_service_is_running = False
     try:
       print("Ready to run the prcoess")
       output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
@@ -166,7 +168,9 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       print("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired:
-      pass # We didn't get any output within 3 seconds, this means everything is fine.
+      monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
+
+    self.assertTrue(monitor_httpd_service_is_running)
 
 
 class MonitorTestMixin:
