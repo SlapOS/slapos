@@ -25,6 +25,7 @@ import { err, exit, open, out } from "std";
   var CONF_PATH = {{ json_module.dumps(configuration) }},
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
+    AUTOPILOT_CONNECTION_TIMEOUT = 5,
     MAVSDK_LOG_FILE_PATH =
       "{{ log_dir }}/mavsdk_" + new Date().toISOString() + ".log",
     LOG_FILE =
@@ -85,7 +86,7 @@ import { err, exit, open, out } from "std";
         configuration.autopilotIp,
         configuration.autopilotPort,
         MAVSDK_LOG_FILE_PATH,
-        60
+        AUTOPILOT_CONNECTION_TIMEOUT
       ),
       "Failed to connect to " + address
     );
