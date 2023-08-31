@@ -1,5 +1,13 @@
 Changelog
 =========
+Version 1.0.332 (2023-09-04)
+-------------
+
+* Add 4G Intra eNB Handover
+* Add public websocket URL protected by password
+* Reorganize softwares: ORS now need to use software-tdd-ors or software-fdd-ors
+* Support multiple cells for BBUs
+
 Version 1.0.330 (2023-07-19)
 -------------
 
