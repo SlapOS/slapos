@@ -10,8 +10,9 @@
  * 1. longitude (double, degrees)
  * 2. absolute altitude (double, meters)
  * 3. relative altitude (double, meters)
+ * 4. timestamp (double, milliseconds)
 */
-#define POSITION_ARRAY_SIZE 4
+#define POSITION_ARRAY_SIZE 5
 /*
  * 0. yaw angle (float, degrees)
  * 1. air speed (float, m/s)
