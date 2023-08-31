@@ -33,7 +33,6 @@ import os
 import re
 import requests
 import shutil
-import signal
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
