@@ -285,6 +285,11 @@
       "type": "object",
       "default": {}
     },
+    "websocket_password": {
+      "title": "Websocket password",
+      "description": "Activates websocket for remote control and sets password",
+      "type": "string"
+    },
     "inactivity_timer": {
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
