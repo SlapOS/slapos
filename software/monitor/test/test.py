@@ -121,7 +121,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       print(e.output)
       print("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as e:
       # Timeout means we run the httpd service corrrectly
       # This is not the expected behaviour
       print("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
@@ -146,7 +146,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         supervisor.stopProcess(monitor_httpd_process_name)
 
     # Write the PID of the infinite process to the pid file.
-    # print(infinite_process.pid)
     with open(monitor_httpd_pid_file, "w") as file:
       file.write(str(os.getpid()))
 
