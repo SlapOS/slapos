@@ -67,7 +67,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${monitor-httpd-conf-parameter:key-file}
 cert-file = ${monitor-httpd-conf-parameter:cert-file}
-executable = ${monitor-httpd-wrapper:wrapper-path}
+executable = ${monitor-httpd-service-wrapper:output}
 wrapper = ${directory:bin}/ca-monitor-httpd
 
 [monitor-httpd-service-wrapper]
