@@ -30,6 +30,7 @@ import glob
 import hashlib
 import json
 import os
+import psutil
 import re
 import requests
 import shutil
@@ -77,6 +78,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
   def test_monitor_httpd_normal_reboot(self):
     # Start the monitor-httpd service
+    monitor_httpd_process_name = ''
     with self.slap.instance_supervisor_rpc as supervisor:
       info, = [i for i in
          supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
@@ -127,6 +129,14 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       print("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
       self.fail("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test")
 
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      partition = info['group']
+      if info['statename'] == "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.stopProcess(monitor_httpd_process_name)
+
   def test_monitor_httpd_crash_reboot(self):
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
@@ -137,7 +147,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
     # Get the pid file
     monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
-
+    monitor_httpd_process_name = ''
     with self.slap.instance_supervisor_rpc as supervisor:
       info, = [i for i in
          supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
@@ -156,18 +166,54 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     output = ''
 
     monitor_httpd_service_is_running = False
+    # try:
+    #   print("Ready to run the prcoess")
+    #   output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
+    #   # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
+    #   if output:
+    #     raise Exception("Unexepected output from the monitor-httpd process: %s" % output)
+    # except subprocess.CalledProcessError as e:
+    #   print(e.output)
+    #   print("Unexpected error when running the monitor-httpd service:", e)
+    #   self.fail("Unexpected error when running the monitor-httpd service")
+    # except subprocess.TimeoutExpired:
+    #   monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
+
+    # Create the subprocess
+    print("Ready to run the process")
     try:
-      print("Ready to run the prcoess")
-      output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
-      # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
-      if output:
-        raise Exception("Unexepected output from the monitor-httpd process: %s" % output)
+      process = subprocess.Popen(monitor_httpd_service_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+      stdout, stderr = '', ''
+      try:
+        # Wait for the process to finish, but with a timeout
+        stdout, stderr = process.communicate(timeout=3)
+        print("Communicated!")
+      except subprocess.TimeoutExpired:
+        monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
+        # If the process times out, terminate it
+        try:
+          main_process = psutil.Process(process.pid)
+          child_processes = main_process.children(recursive=True)
+
+          for process in child_processes + [main_process]:
+            process.terminate()
+
+          psutil.wait_procs(child_processes + [main_process])
+
+          print(f"Processes with PID {process.pid} and its subprocesses terminated.")
+        except psutil.NoSuchProcess as e:
+          # The ResourceWarning is normal in Python 3
+          # See https://github.com/giampaolo/psutil/blob/master/psutil/tests/test_process.py#L1526
+          print("No process found with PID: %s" % process.pid)
     except subprocess.CalledProcessError as e:
       print(e.output)
       print("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
-    except subprocess.TimeoutExpired:
-      monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
+
+    # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
+    if stdout:
+      self.fail("Unexepected output from the monitor-httpd process: %s" % stdout)
+      raise Exception("Unexepected output from the monitor-httpd process: %s" % stdout)
 
     self.assertTrue(monitor_httpd_service_is_running)
 
