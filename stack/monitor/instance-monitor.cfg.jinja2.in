@@ -76,17 +76,17 @@ url = {{ template_monitor_httpd_wrapper }}
 output = ${directory:bin}/monitor-httpd-service-wrapper
 mode = 755
 pid-file = ${monitor-httpd-conf-parameter:pid-file}
-ca-monitor-httpd-wrapper = ${ca-monitor-httpd:wrapper}
+monitor-httpd-wrapper-path = ${monitor-httpd-wrapper:wrapper-path}
 monitor-httpd-conf = ${monitor-httpd-conf:output}
 context =
     key pid_file :pid-file
-    key ca_monitor_httpd_wrapper :ca-monitor-httpd-wrapper
+    key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
     key monitor_httpd_conf :monitor-httpd-conf
     raw dash_binary {{ dash_executable_location }}
 
 [ca-monitor-httpd-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${monitor-httpd-service-wrapper:output}
+command-line = ${ca-monitor-httpd:wrapper}
 wrapper-path = ${directory:services}/monitor-httpd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
