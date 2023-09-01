@@ -36,9 +36,9 @@ DLL_PUBLIC int takeOffAndWait(void);
 DLL_PUBLIC int triggerParachute(void);
 
 // Flight management functions
-DLL_PUBLIC int loiter(double la, double lo, float a, float radius);
-DLL_PUBLIC int setAirSpeed(float airspeed);
-DLL_PUBLIC int setTargetCoordinates(double la, double lo, float a);
+DLL_PUBLIC void loiter(double la, double lo, float a, float radius);
+DLL_PUBLIC void setAirSpeed_async(float airspeed);
+DLL_PUBLIC void setTargetCoordinates(double la, double lo, float a);
 
 // Information functions
 DLL_PUBLIC float getAltitude(void);
@@ -52,7 +52,7 @@ DLL_PUBLIC float getYaw(void);
 DLL_PUBLIC float getSpeed(void);
 DLL_PUBLIC float getClimbRate(void);
 DLL_PUBLIC int healthAllOk(void);
-DLL_PUBLIC int updateLogAndProjection(void);
+DLL_PUBLIC void updateLogAndProjection(void);
 #ifdef __cplusplus
 }
 #endif
