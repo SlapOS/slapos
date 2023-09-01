@@ -19,10 +19,13 @@ if [ -f "$pid_file" ]; then
         # There has a service running with the pid.
         # but it not the one use the monitor-httpd.conf
         output=$(echo "$cmdline")
+        echo "$output"
+        echo "We are still here"
         if ! expr "$output" : ".*monitor-httpd.conf" > /dev/null; then
-            echo "The process running with the monitor_httpd_conf"
+            echo "The process is not running with the monitor_httpd_conf"
             rm -f {{ pid_file }};
         fi
+        echo "Mark!"
     fi
 fi
 
