@@ -7,7 +7,7 @@ server:
   external_url: {{ promtail['url'] }}
 
 positions:
-  filename: {{ promtail['dir'] }}/positions.yaml
+  filename: {{ promtail['dir'] }}/positions.yaml
 
 clients:
   - url: {{ loki['url'] }}/api/prom/push

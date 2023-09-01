@@ -18,12 +18,12 @@ output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extensions = jinja2.ext.do
 context =
   key slapparameter_dict slap-configuration:configuration
-  raw software_parts_directory {{ buildout['parts-directory'] }}
-  raw proftpd_bin {{ proftpd_bin }}
+  raw software_parts_directory {{ buildout['parts-directory'] }}
+  raw proftpd_bin {{ proftpd_bin }}
   raw ftpasswd_bin {{ ftpasswd_bin }}
-  raw ftpdctl_bin {{ ftpdctl_bin }}
-  raw ssh_keygen_bin {{ ssh_keygen_bin }}
-  raw template_monitor {{ template_monitor }}
+  raw ftpdctl_bin {{ ftpdctl_bin }}
+  raw ssh_keygen_bin {{ ssh_keygen_bin }}
+  raw template_monitor {{ template_monitor }}
 
 [instance-default]
 <= instance-template
