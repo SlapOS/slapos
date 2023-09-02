@@ -163,7 +163,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
-    output = ''
+    # output = ''
 
     monitor_httpd_service_is_running = False
     # try:
