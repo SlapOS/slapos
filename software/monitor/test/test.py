@@ -113,7 +113,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     try:
       print("Ready to run the prcoess")
       print(monitor_httpd_pid)
-      output = subprocess.check_output([monitor_httpd_service_path], timeout=3, stderr=subprocess.STDOUT, text=True)
+      output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
       # If the httpd-monitor service is running
       # and the monitor-httpd.pid contains the identical PID as the service
       # run the monitor-httpd service can cause the "already running" error correctly
