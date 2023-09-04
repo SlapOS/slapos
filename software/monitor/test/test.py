@@ -36,6 +36,7 @@ import requests
 import shutil
 import subprocess
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -86,6 +87,15 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       if info['statename'] != "RUNNING":
         monitor_httpd_process_name = f"{info['group']}:{info['name']}"
         supervisor.startProcess(monitor_httpd_process_name)
+      for _retries in range(20):
+        time.sleep(1)
+        info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+        if info['statename'] == "RUNNING":
+          break
+      else:
+        self.fail(f"the supervisord service '{monitor_httpd_process_name}' is not running")
+
 
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
@@ -111,7 +121,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         monitor_httpd_pid = pid_file.read()
 
     try:
-      print("Ready to run the prcoess in normal reboot")
+      print("Ready to run the process in normal reboot")
       print(monitor_httpd_pid)
       output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
       # If the httpd-monitor service is running
@@ -218,7 +228,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
           print(f"Processes with PID {process.pid} and its subprocesses terminated.")
         except psutil.NoSuchProcess as e:
-          # The ResourceWarning is normal in Python 3
+          # This print will generate ResourceWarningm but it is normal in Python 3
           # See https://github.com/giampaolo/psutil/blob/master/psutil/tests/test_process.py#L1526
           print("No process found with PID: %s" % process.pid)
     except subprocess.CalledProcessError as e:
@@ -232,6 +242,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         self.fail("Unexepected output from the monitor-httpd process: %s" % stdout)
         raise Exception("Unexepected output from the monitor-httpd process: %s" % stdout)
       else:
+        print("==================")
         print(stdout)
 
     self.assertTrue(monitor_httpd_service_is_running)
