@@ -45,7 +45,7 @@ DLL_PUBLIC float getAltitude(void);
 DLL_PUBLIC float getInitialAltitude(void);
 DLL_PUBLIC double getInitialLatitude(void);
 DLL_PUBLIC double getInitialLongitude(void);
-DLL_PUBLIC double *getPositionArray(void);
+DLL_PUBLIC int64_t *getPositionArray(void);
 DLL_PUBLIC float *getSpeedArray(void);
 DLL_PUBLIC double getTakeOffAltitude(void);
 DLL_PUBLIC float getYaw(void);
