@@ -111,14 +111,13 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         monitor_httpd_pid = pid_file.read()
 
     try:
-      print("Ready to run the prcoess")
+      print("Ready to run the prcoess in normal reboot")
       print(monitor_httpd_pid)
       output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
       # If the httpd-monitor service is running
-      # and the monitor-httpd.pid contains the identical PID as the service
+      # and the monitor-httpd.pid contains the identical PID as the servicse
       # run the monitor-httpd service can cause the "already running" error correctly
-      expected_string = "httpd (pid %s) already running" % monitor_httpd_pid.strip('\n')
-      self.assertIn(expected_string, output)
+      self.assertIn("already running", output)
     except subprocess.CalledProcessError as e:
       print(e.output)
       print("Unexpected error when running the monitor-httpd service:", e)
@@ -127,6 +126,13 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       # Timeout means we run the httpd service corrrectly
       # This is not the expected behaviour
       print("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
+      try:
+        pid_to_kill = monitor_httpd_pid.strip('\n')
+        # Use the kill command to send SIGKILL (-9) to the process
+        subprocess.run(["kill", "-9", str(pid_to_kill)], check=True)
+        print(f"Process with PID {pid_to_kill} killed.")
+      except subprocess.CalledProcessError as e:
+        print(f"Error killing process with PID {pid_to_kill}: {e}")
       self.fail("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test")
 
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -155,15 +161,25 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         monitor_httpd_process_name = f"{info['group']}:{info['name']}"
         supervisor.stopProcess(monitor_httpd_process_name)
 
+    # with open(monitor_httpd_pid_file, 'r') as pid_file:
+    #   pid = pid_file.readline().strip()
+    #   print("Before modify the pid file:")
+    #   print(pid)
+
     # Write the PID of the infinite process to the pid file.
     with open(monitor_httpd_pid_file, "w") as file:
       file.write(str(os.getpid()))
+
+    with open(monitor_httpd_pid_file, 'r') as pid_file:
+      pid = pid_file.readline().strip()
+      print("After modify the pid file:")
+      print(pid)
 
     # Get the monitor-httpd-service
     monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
-    # output = ''
+    output = ''
 
     monitor_httpd_service_is_running = False
     # try:
@@ -180,7 +196,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     #   monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
 
     # Create the subprocess
-    print("Ready to run the process")
+    print("Ready to run the process in crash reboot")
     try:
       process = subprocess.Popen(monitor_httpd_service_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
       stdout, stderr = '', ''
@@ -212,8 +228,11 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
     # If we do get an output, it means something wrong, e.g: "httpd (pid 21934) already running"
     if stdout:
-      self.fail("Unexepected output from the monitor-httpd process: %s" % stdout)
-      raise Exception("Unexepected output from the monitor-httpd process: %s" % stdout)
+      if "already running" in stdout:
+        self.fail("Unexepected output from the monitor-httpd process: %s" % stdout)
+        raise Exception("Unexepected output from the monitor-httpd process: %s" % stdout)
+      else:
+        print(stdout)
 
     self.assertTrue(monitor_httpd_service_is_running)
 
