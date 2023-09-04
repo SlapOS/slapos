@@ -24,11 +24,19 @@
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
       "type": "number"
     },
-    "n_rb_dl": {
-      "title": "DL RB",
-      "description": "number of DL resource blocks",
-      "type": "number",
-      "default": {{ default_lte_n_rb_dl }}
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "type": "string",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "default": "{{ default_lte_bandwidth }}"
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",

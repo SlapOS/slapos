@@ -19,49 +19,44 @@
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
-      "description": "1, 2, 4 or 8. Number of DL antennas.",
+      "description": "1 or 2. Number of DL antennas.",
       "type": "number",
       "default": 2
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
-      "description": "1, 2, 4 or 8. Number of UL antennas.",
+      "description": "1 or 2. Number of UL antennas.",
       "type": "number",
       "default": 2
     },
-    "sdr_number": {
-      "title": "SDR Number",
-      "description": "SDR Number",
-      "type": "number",
-      "default": 0
+    "dl_earfcn": {
+      "title": "DL EARFCN",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "type": "number"
     },
-    "cell_list": {
-      "title": "Cell List",
-      "description": "Cell List",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "dl_earfcn": {
-              "title": "DL EARFCN",
-              "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-              "type": "number"
-            },
-            "pci": {
-              "title": "Physical Cell ID",
-              "description": "Physical Cell IDs",
-              "type": "number"
-            },
-            "cell_id": {
-              "title": "Cell ID",
-              "description": "Cell IDs",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "number",
+      "default": 1
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
+    },
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+      "default": "0x0001",
+      "type": "string"
+    },
+    "root_sequence_index": {
+      "title": "Root Sequence Index",
+      "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+      "type": "number",
+      "default": 204
     },
     "tx_gain": {
       "title": "Tx gain",

@@ -23,17 +23,49 @@ global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
 }
 
-rf_mode_context_list = [
+software_list = [
         {
+            'software_name'                : 'tdd-ors',
             'rf_mode'                      : 'tdd',
+            'trx'                          : 'sdr',
+            'bbu'                          : 'ors',
+            'ru'                           : 'ors',
         }, {
+            'software_name'                : 'fdd-ors',
             'rf_mode'                      : 'fdd',
+            'trx'                          : 'sdr',
+            'bbu'                          : 'ors',
+            'ru'                           : 'ors',
+        }, {
+            'software_name'                : 'tdd-m2ru',
+            'rf_mode'                      : 'tdd',
+            'trx'                          : 'cpri',
+            'bbu'                          : 'server',
+            'ru'                           : 'm2ru',
+        }, {
+            'software_name'                : 'fdd-lopcomm',
+            'rf_mode'                      : 'fdd',
+            'trx'                          : 'cpri',
+            'bbu'                          : 'server',
+            'ru'                           : 'lopcomm',
+        }, {
+            'software_name'                : 'fdd',
+            'rf_mode'                      : 'fdd',
+            'trx'                          : 'sdr',
+            'bbu'                          : 'server',
+            'ru'                           : 'any',
+        }, {
+            'software_name'                : 'tdd',
+            'rf_mode'                      : 'tdd',
+            'trx'                          : 'sdr',
+            'bbu'                          : 'server',
+            'ru'                           : 'any',
         }
 ]
 
-for i in range (len(rf_mode_context_list)):
-    rf_mode_context_list[i].update({
-            'default_lte_n_rb_dl'          : 100,
+for i in range (len(software_list)):
+    software_list[i].update({
+            'default_lte_bandwidth'        : "20 MHz",
             'default_lte_imsi'             : "001010123456789",
             'default_lte_k'                : "00112233445566778899aabbccddeeff",
             'default_lte_inactivity_timer' : 10000,
@@ -59,19 +91,19 @@ with open('software.jinja2.cfg', 'r') as f:
 with open('test/test.jinja2.py', 'r') as f:
     test_template = Template(f.read())
 
-for rf_mode_context in rf_mode_context_list:
-    with open('software-{}.cfg.json'.format(rf_mode_context['rf_mode']),
+for software in software_list:
+    with open('software-{}.cfg.json'.format(software['software_name']),
               'w+') as f:
-        f.write(software_json_template.render(**rf_mode_context, **global_context) + '\n')
-    with open('test/test{}.py'.format(rf_mode_context['rf_mode'].upper()),
+        f.write(software_json_template.render(**software, **global_context) + '\n')
+    with open('test/test{}.py'.format(software['software_name'].upper()),
               'w+') as f:
-        f.write(test_template.render(**rf_mode_context, **global_context) + '\n')
-    with open('software-{}.cfg'.format(rf_mode_context['rf_mode']),
+        f.write(test_template.render(**software, **global_context) + '\n')
+    with open('software-{}.cfg'.format(software['software_name']),
               'w+') as f:
-        f.write(software_template.render(**rf_mode_context, **global_context) + '\n')
+        f.write(software_template.render(**software, **global_context) + '\n')
     for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
         with open('instance-{}-{}-input-schema.json'.format(
-                    rf_mode_context['rf_mode'],
+                    software['software_name'],
                     software_type),
                   'w+') as f:
-            f.write(instance_json_template_map[software_type].render(**rf_mode_context, **global_context) + '\n')
+            f.write(instance_json_template_map[software_type].render(**software, **global_context) + '\n')

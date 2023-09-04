@@ -50,10 +50,11 @@ param_dict = {
     'tx_gain': 17,
     'rx_gain': 17,
     'dl_earfcn': 325320,
-    'n_rb_dl': 50,
+    'bandwidth': "10 MHz",
     'enb_id': '0x17',
     'pci': 250,
     'tac': '0x1717',
+    'root_sequence_index': '1',
     'mme_list': {
         '10.0.0.1': {'mme_addr': '10.0.0.1'},
         '2001:db8::1': {'mme_addr': '2001:db8::1'},
@@ -78,19 +79,23 @@ param_dict = {
     'nr_handover_a3_offset': 10,
     'ncell_list': {
         'ORS1': {
+            'dl_earfcn': 100000,
             'dl_nr_arfcn': 100000,
             'ssb_nr_arfcn': 100000,
             'pci': 1,
             'nr_cell_id': '0x0000001',
+            'cell_id': '0x0000001',
             'gnb_id_bits': 28,
             'nr_band': 1,
             'tac': 1
         },
         'ORS2': {
+            'dl_earfcn': 200000,
             'dl_nr_arfcn': 200000,
             'ssb_nr_arfcn': 200000,
             'pci': 2,
             'nr_cell_id': '0x0000002',
+            'cell_id': '0x0000001',
             'gnb_id_bits': 30,
             'nr_band': 2,
             'tac': 2
@@ -145,16 +150,27 @@ def test_enb_conf(self):
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
-    for p in conf['cell_list'][0]['plmn_list']:
+    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
+    for p in conf['cell_default']['plmn_list']:
       for n in "plmn attach_without_pdn reserved".split():
           self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
     for p in conf['mme_list']:
       self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
 
+    for p in conf['cell_list'][0]['ncell_list']:
+      for k in enb_param_dict['ncell_list']:
+        if p['dl_earfcn'] == gnb_param_dict1['ncell_list'][k]['dl_earfcn']:
+          break
+      conf_ncell = enb_param_dict['ncell_list'][k]
+      self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
+      self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
+      self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
+      self.assertEqual(p['tac'],          conf_ncell['tac'])
+
     with open(conf_file, 'r') as f:
         for l in f:
             if l.startswith('#define N_RB_DL'):
-                self.assertIn(str(enb_param_dict['n_rb_dl']), l)
+                self.assertIn('50', l)
 
 def test_gnb_conf1(self):
 
@@ -402,7 +418,6 @@ class TestUELTEParameters(ORSTestCase):
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], param_dict['n_rb_dl'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
         self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
@@ -416,6 +431,11 @@ class TestUELTEParameters(ORSTestCase):
         self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
         self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
+
+        with open(conf_file, 'r') as f:
+            for l in f:
+                if l.startswith('#define N_RB_DL'):
+                    self.assertIn('50', l)
 
 class TestUENRParameters(ORSTestCase):
     @classmethod
@@ -432,7 +452,7 @@ class TestUENRParameters(ORSTestCase):
           conf = yaml.load(f)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], param_dict['nr_bandwidth'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], '10 MHz')
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], param_dict['nr_band'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
