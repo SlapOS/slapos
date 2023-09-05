@@ -6,7 +6,6 @@ pid_file="{{ pid_file }}"
 monitor_httpd_conf_file={{ monitor_httpd_conf }}
 
 if [ -f "$pid_file" ]; then
-    echo "PID file existed!!!"
     pid=$(cat "$pid_file")
     result=$(ps aux | grep "^\S*\s*$pid\s")
 
@@ -18,14 +17,10 @@ if [ -f "$pid_file" ]; then
 
         # There has a service running with the pid.
         # but it not the one use the monitor-httpd.conf
-        # output=$(echo "$cmdline")
-        # echo "$output"
-        echo "We are still here"
         if ! expr "$cmdline" : ".*monitor-httpd.conf" > /dev/null; then
             echo "The process is not running with the monitor_httpd_conf"
             rm -f {{ pid_file }};
         fi
-        echo "Mark!"
     fi
 fi
 
