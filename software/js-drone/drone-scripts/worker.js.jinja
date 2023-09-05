@@ -1,7 +1,7 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
-/*global console, getAltitude, getAltitudeRel, getInitialAltitude, getLatitude,
-  getLongitude, getYaw, execUserScript, initPubsub, loiter, setAirSpeed,
-  setMessage, setTargetCoordinates, std, triggerParachute,
+/*global console, getAltitude, getAltitudeRel, getInitialAltitude, gpsIsOk,
+  getLatitude, getLongitude, getYaw, execUserScript, initPubsub, loiter,
+  setAirSpeed, setMessage, setTargetCoordinates, std, triggerParachute,
   updateLogAndProjection, Drone, Worker*/
 import {
   Drone,
@@ -10,6 +10,7 @@ import {
   getAltitude,
   getClimbRate,
   getInitialAltitude,
+  gpsIsOk,
   getLog,
   getPosition,
   getYaw,
@@ -34,10 +35,10 @@ import {
 import { evalScript, fdopen, loadFile, open } from "std";
 
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-           fdopen, getAltitude, getInitialAltitude, getLog, getPosition, getYaw,
-           initPubsub, kill, loadFile, loiter, open, pipe, setAirSpeed,
-           setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
-           updateLogAndProjection, waitpid) {
+           fdopen, getAltitude, getInitialAltitude, gpsIsOk, getLog,
+           getPosition, getYaw, initPubsub, kill, loadFile, loiter, open, pipe,
+           setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
+           triggerParachute, updateLogAndProjection, waitpid) {
   // Every script is evaluated per drone
   "use strict";
 
@@ -61,6 +62,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       getAltitudeAbs: getAltitude,
       getCurrentPosition: getPosition,
       getInitialAltitude: getInitialAltitude,
+      gpsIsOk: gpsIsOk,
       getYaw: getYaw,
       getSpeed: getAirspeed,
       getClimbRate: getClimbRate,
@@ -271,7 +273,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     }
   };
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  fdopen, getAltitude, getInitialAltitude, getLog, getPosition, getYaw,
+  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getLog, getPosition, getYaw,
   initPubsub, kill, loadFile, loiter, open, pipe, setAirSpeed, setMessage,
   setReadHandler, setTargetCoordinates, triggerParachute,
   updateLogAndProjection, waitpid));
