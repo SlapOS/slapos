@@ -52,7 +52,7 @@ offline = false
 
 [qjs-launcher]
 recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:run}/qjs-launcher
+wrapper-path = $${directory:home}/qjs-launcher
 command-line = ${quickjs:location}/bin/qjs $${main:rendered} $${user:target}
 
 [script-js]
