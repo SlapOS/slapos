@@ -1,0 +1,14 @@
+{
+  "name": "SlapOS Master",
+  "description": "SlapOS Master",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "request": "instance-erp5-input-schema.json",
+      "response": "instance-erp5-output-schema.json",
+      "index": 0
+    }
+  }
+}

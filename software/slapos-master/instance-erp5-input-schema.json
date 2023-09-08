@@ -1,0 +1,758 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "routing-rule-list": {
+      "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given. This requires the path received from the outside world (typically: frontend) to have its root correspond to Zope's root (for frontend: 'path' parameter must be empty), with the customary VirtualHostMonster construct (for frontend: 'type' must be 'zope').",
+      "type": "array",
+      "default": [
+        [
+          "/",
+          "/"
+        ]
+      ],
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": [
+          {
+            "title": "External path",
+            "description": "Path as received from the outside world, based on VirtualHostRoot element.",
+            "type": "string"
+          },
+          {
+            "title": "Internal path",
+            "description": "Zope path, based on Zope root object, the external path should correspond to. '%(site-id)s' is replaced by the site-id value, and '%%' replaced by '%'.",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "tcpv4port": {
+      "$ref": "./schemas-definitions.json#/tcpv4port"
+    }
+  },
+  "properties": {
+    "sla-dict": {
+      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (note: Zope partitions reference must be prefixed with \"zope-\").",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "uniqueItems": true
+      },
+      "type": "object"
+    },
+    "site-id": {
+      "description": "ERP5Site object's id. An empty value disables automatic site creation.",
+      "default": "erp5",
+      "type": "string"
+    },
+    "bt5": {
+      "description": "A space-separated list of Business Templates to install at automatic site creation (e.g. \"erp5_full_text_mroonga_catalog erp5_base\"). By default, all configurators are installed.",
+      "type": "string"
+    },
+    "id-store-interval": {
+      "description": "Set Store Interval of default SQL Non Continuous Increasing Id Generator at automatic site creation. If unset, the value from the erp5_core Business Template is not touched.",
+      "type": "integer"
+    },
+    "timezone": {
+      "description": "Zope's timezone. Possible values are determined by host's libc, and typically come from a separate package (tzdata, ...)",
+      "default": "UTC",
+      "type": "string"
+    },
+    "deadlock-debugger-password": {
+      "description": "Password for /manage_debug_threads",
+      "type": "string"
+    },
+    "inituser-login": {
+      "description": "Login of the initial/rescue user",
+      "default": "zope",
+      "type": "string"
+    },
+    "inituser-password": {
+      "description": "Password of the initial/rescue user",
+      "type": "string"
+    },
+    "ca-dir": {
+      "description": "Path to a directory where the SSL/TLS certificate will be created",
+      "type": "string"
+    },
+    "country-code": {
+      "description": "ISO 3166-1 Alpha-2 (2 letters) country code to use for the SSL/TLS certificate",
+      "type": "string"
+    },
+    "email": {
+      "description": "Email address to use for the SSL/TLS certificate",
+      "type": "string"
+    },
+    "state": {
+      "description": "State (administrative subdivision) name to use for the SSL/TLS certificate",
+      "type": "string"
+    },
+    "city": {
+      "description": "City name to use for the SSL/TLS certificate",
+      "type": "string"
+    },
+    "company": {
+      "description": "Company name to use for the SSL/TLS certificate",
+      "type": "string"
+    },
+    "developer-list": {
+      "description": "List of logins which should get the Developer role (required to modify portal_components' content), defaulting to inituser-login's value",
+      "items": {
+        "pattern": "^\\S+$",
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "type": "array"
+    },
+    "activity-timeout": {
+      "description": "How long a CMFActivity-initiated transaction may last, in seconds",
+      "default": null,
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "publisher-timeout": {
+      "description": "How long a publisher-initiated transaction may last, in seconds",
+      "default": 300,
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "family-override": {
+      "description": "Family-wide options, possibly overriding global options",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "default": {},
+          "properties": {
+            "webdav": {
+              "description": "Serve webdav queries, implies timerserver-interval=0 (disabled)",
+              "default": false,
+              "type": "boolean"
+            },
+            "activity-timeout": {
+              "description": "Override global activity timeout",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "publisher-timeout": {
+              "description": "Override global publisher timeout",
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "hostalias-dict": {
+      "description": "Hostname-to-domain-name mapping",
+      "default": {},
+      "additionalProperties": {
+        "description": "A hostname to which current entry will resolve",
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "hosts-dict": {
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
+      "patternProperties": {
+        ".*": {
+          "description": "An IP or domain name to which current entry will resolve",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "frontend": {
+      "description": "Front-end slave instance request parameters",
+      "properties": {
+        "software-url": {
+          "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
+          "default": "",
+          "type": "string",
+          "format": "uri"
+        },
+        "domain": {
+          "description": "The domain name to request front-end to respond as.",
+          "default": "",
+          "type": "string"
+        },
+        "software-type": {
+          "description": "Request a front-end slave instance of this software type.",
+          "default": "RootSoftwareInstance",
+          "type": "string"
+        },
+        "virtualhostroot-http-port": {
+          "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
+          "default": 80,
+          "type": "integer"
+        },
+        "virtualhostroot-https-port": {
+          "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
+          "default": 443,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "zope-partition-dict": {
+      "description": "Zope layout definition",
+      "default": {
+        "1": {}
+      },
+      "patternProperties": {
+        ".*": {
+          "additionalProperties": false,
+          "properties": {
+            "family": {
+              "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own balancer entry. It has no special meaning for the system.",
+              "default": "default",
+              "type": "string"
+            },
+            "instance-count": {
+              "description": "Number of Zopes to setup on this partition",
+              "default": 1,
+              "type": "integer"
+            },
+            "thread-amount": {
+              "description": "Number of worker threads for each created Zope process",
+              "default": 4,
+              "type": "integer"
+            },
+            "timerserver-interval": {
+              "description": "Timerserver tick period, in seconds, or 0 to disable",
+              "default": 1,
+              "type": "number"
+            },
+            "private-dev-shm": {
+              "description": "Size of private /dev/shm for wendelin.core. If sysctl kernel.unprivileged_userns_clone exists, it must be set to 1.",
+              "type": "string"
+            },
+            "ssl-authentication": {
+              "title": "Enable SSL Client authentication on this zope instance.",
+              "description": "If set to true, will set SSL Client verification to required on apache VirtualHost which allow to access this zope instance.",
+              "type": "boolean",
+              "default": false
+            },
+            "longrequest-logger-interval": {
+              "description": "Period, in seconds, with which LongRequestLogger polls worker thread stack traces, or -1 to disable",
+              "default": -1,
+              "type": "integer"
+            },
+            "longrequest-logger-timeout": {
+              "description": "Transaction duration after which LongRequestLogger will start logging its stack trace, in seconds",
+              "default": 1,
+              "type": "integer"
+            },
+            "large-file-threshold": {
+              "description": "Requests bigger than this size get saved into a temporary file instead of being read completely into memory, in bytes",
+              "default": "10MB",
+              "type": "string"
+            },
+            "port-base": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/tcpv4port"
+                },
+                {
+                  "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
+                  "default": 2200
+                }
+              ]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "kumofs": {
+      "description": "Persistent memcached service",
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2000
+            }
+          }
+        }
+      ],
+      "type": "object"
+    },
+    "memcached": {
+      "description": "Volatile memcached service",
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
+      "type": "object"
+    },
+    "cloudooo-url-list": {
+      "description": "Format conversion service URLs",
+      "type": "array",
+      "items": {
+        "pattern": "^https?://",
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "cloudooo-retry-count": {
+      "description": "Define retry count for cloudooo in network error case in test",
+      "type": "integer",
+      "default": 2
+    },
+    "smtp": {
+      "description": "Mail queuing and relay service",
+      "allOf": [
+        {
+          "$ref": "./instance-smtp-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
+      "type": "object"
+    },
+    "mariadb": {
+      "description": "Relational database service",
+      "allOf": [
+        {
+          "$ref": "./instance-mariadb-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2099
+            }
+          }
+        }
+      ],
+      "type": "object"
+    },
+    "zodb-zeo": {
+      "description": "Common settings ZEO servers",
+      "additionalProperties": false,
+      "properties": {
+        "tcpv4-port": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/tcpv4port"
+            },
+            {
+              "description": "Start allocating ports at this value, going upward"
+            }
+          ]
+        },
+        "backup-periodicity": {
+          "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined). Enter 'never' to disable backups.",
+          "default": "daily",
+          "type": "string"
+        },
+        "tidstorage-repozo-path": {
+          "description": "Directory for backup timestamp and tidstorage status files.",
+          "default": "~/srv/backup/tidstorage",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "zodb": {
+      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/4/src/ZODB/component.xml for extra options.",
+      "items": {
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "description": "Database name",
+            "default": "main",
+            "type": "string"
+          },
+          "mount-point": {
+            "description": "Mount point",
+            "default": "/",
+            "type": "string"
+          },
+          "storage-dict": {
+            "description": "Storage configuration. For NEO, 'logfile' is automatically set (see https://lab.nexedi.com/nexedi/neoppod/blob/master/neo/client/component.xml for other settings).",
+            "properties": {
+              "ssl": {
+                "description": "For external NEO. Pass false if you want to disable SSL or pass custom values for ca/cert/key.",
+                "default": true,
+                "type": "boolean"
+              }
+            },
+            "patternProperties": {
+              ".!$": {
+                "$ref": "#/properties/zodb/items/patternProperties/.!$"
+              }
+            },
+            "additionalProperties": {
+              "$ref": "#/properties/zodb/items/additionalProperties"
+            },
+            "type": "object"
+          },
+          "type": true,
+          "server": true
+        },
+        "oneOf": [
+          {
+            "title": "zeo",
+            "properties": {
+              "type": {
+                "description": "Storage type",
+                "const": "zeo"
+              },
+              "server": {
+                "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. The partition reference is 'zodb'.",
+                "$ref": "./instance-zeo-schema.json"
+              }
+            }
+          },
+          {
+            "title": "neo",
+            "properties": {
+              "type": {
+                "description": "Storage type",
+                "const": "neo"
+              },
+              "server": {
+                "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. Partitions references are 'neo-0', 'neo-1', ...",
+                "$ref": "../neoppod/instance-neo-input-schema.json#/definitions/neo-cluster"
+              }
+            }
+          }
+        ],
+        "patternProperties": {
+          ".!$": {
+            "description": "Override with the value of the first item whose zope id matches against the pattern.",
+            "items": {
+              "items": [
+                {
+                  "description": "Override pattern (Python regular expression).",
+                  "type": "string"
+                },
+                {
+                  "description": "Override value (parameter for matching nodes).",
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          }
+        },
+        "additionalProperties": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "jupyter": {
+      "description": "Jupyter subinstance parameters",
+      "additionalProperties": false,
+      "properties": {
+        "enable": {
+          "description": "Whether to enable creation of associated Jupyter subinstance",
+          "default": false,
+          "type": "boolean"
+        },
+        "zope-family": {
+          "description": "Zope family to connect Jupyter to by default",
+          "default": "<first instantiated Zope family>",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "wcfs": {
+      "description": "Parameters for wendelin.core filesystem",
+      "additionalProperties": false,
+      "properties": {
+        "enable": {
+          "description": "Whether to enable WCFS filesystem and use it to access ZBigArray/ZBigFile data. In WCFS mode wendelin.core clients (Zope/ERP5 processes) share in-RAM cache for in-ZODB data without duplicating it for every client. This cache sharing does not affect correctness as isolation property is continued to be provided to every client.",
+          "default": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "wendelin-core-zblk-fmt": {
+      "description": "In wendelin.core there are 2 formats for storing data, so called ZBlk0 and ZBlk1. See https://lab.nexedi.com/nexedi/wendelin.core/blob/2e5e1d3d/bigfile/file_zodb.py#L19 for more details.",
+      "default": "",
+      "type": "string"
+    },
+    "caucase": {
+      "description": "Caucase certificate authority parameters",
+      "allOf": [
+        {
+          "properties": {
+            "url": {
+              "title": "Caucase URL",
+              "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+              "default": "",
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        {
+          "$ref": "../caucase/instance-caucase-input-schema.json"
+        }
+      ],
+      "type": "object"
+    },
+    "test-runner": {
+      "description": "Test runner parameters.",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Generate helper scripts to run test suite.",
+          "default": true,
+          "type": "boolean"
+        },
+        "coverage": {
+          "type": "object",
+          "title": "Coverage",
+          "description": "Coverage configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Collect python coverage data during test run.",
+              "default": false,
+              "type": "boolean"
+            },
+            "include": {
+              "description": "File name patterns to include in coverage data, relative to software buildout's directory. Default to all repositories defined in software by ${erp5_repository_list:repository_id_list}.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "examples": [
+                [
+                  "parts/erp5/*",
+                  "parts/custom-repository/*",
+                  "develop-eggs/custom-egg/*"
+                ]
+              ]
+            },
+            "branch": {
+              "description": "Enable branch coverage",
+              "type": "boolean",
+              "default": false
+            },
+            "upload-url": {
+              "description": "URL to upload coverage data. This is interpreted as a RFC 6570 URI Template, with the following parameters: test_name, test_result_id and test_result_revision. The request will be a PUT request with the coverage file content as body, suitable for WebDav servers. If the URL contains user and password, they will be used to attempt authentication using Digest and Basic authentication schemes.",
+              "type": "string",
+              "format": "uri",
+              "examples": [
+                "https://user:password@example.com/{test_result_id}/{test_name}.coverage.sqlite3"
+              ]
+            }
+          }
+        },
+        "node-count": {
+          "description": "Number of tests this instance can execute in parallel. This must be at least equal to the number of nodes configured on testnode running the test",
+          "default": 3,
+          "type": "integer"
+        },
+        "extra-database-count": {
+          "description": "Number of extra databases this instance tests will need.",
+          "default": 3,
+          "type": "integer"
+        },
+        "selenium": {
+          "default": {
+            "target": "firefox"
+          },
+          "examples": [
+            {
+              "target": "selenium-server",
+              "server-url": "https://selenium.example.com",
+              "desired-capabilities": {
+                "browserName": "firefox",
+                "version": "68.0.2esr",
+                "acceptInsecureCerts": true
+              }
+            },
+            {
+              "target": "selenium-server",
+              "server-url": "https://selenium.example.com",
+              "desired-capabilities": {
+                "browserName": "chrome",
+                "version": "91.0.4472.101"
+              }
+            }
+          ],
+          "oneOf": [
+            {
+              "type": "object",
+              "title": "Selenium Server",
+              "description": "Configuration for Selenium server",
+              "additionalProperties": false,
+              "required": [
+                "desired-capabilities",
+                "server-url",
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "description": "Target system",
+                  "type": "string",
+                  "const": "selenium-server",
+                  "default": "selenium-server"
+                },
+                "server-url": {
+                  "description": "URL of the selenium server",
+                  "type": "string",
+                  "format": "uri"
+                },
+                "verify-server-certificate": {
+                  "description": "Verify the SSL/TLS certificate of the selenium server when using HTTPS",
+                  "type": "boolean",
+                  "default": true
+                },
+                "server-ca-certificate": {
+                  "description": "PEM encoded bundle of CA certificates to verify the SSL/TLS certificate of the selenium server when using HTTPS",
+                  "type": "string",
+                  "default": "Root certificates from http://certifi.io/en/latest/"
+                },
+                "desired-capabilities": {
+                  "description": "Desired browser capabilities",
+                  "required": [
+                    "browserName"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "browserName": {
+                      "description": "Name of the browser being used",
+                      "type": "string",
+                      "examples": [
+                        "firefox",
+                        "chrome",
+                        "safari"
+                      ]
+                    },
+                    "version": {
+                      "description": "The browser version",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "title": "Firefox",
+              "description": "Configuration for using firefox running as a sub-process",
+              "additionalProperties": false,
+              "properties": {
+                "target": {
+                  "description": "Target system",
+                  "const": "firefox",
+                  "type": "string",
+                  "default": "firefox"
+                }
+              }
+            }
+          ]
+        },
+        "random-activity-priority": {
+          "type": "string",
+          "title": "Random Activity Priority",
+          "description": "Control `random_activity_priority` argument of test runner. Can be set to an empty string to automatically generate a seed for each test."
+        }
+      },
+      "type": "object"
+    },
+    "balancer": {
+      "description": "HTTP(S) load balancer proxy parameters",
+      "properties": {
+        "path-routing-list": {
+          "$ref": "#/definitions/routing-rule-list",
+          "title": "Global path routing rules"
+        },
+        "family-path-routing-dict": {
+          "type": "object",
+          "title": "Family-specific path routing rules",
+          "description": "Applied, only for the eponymous family, before global path routing rules.",
+          "patternProperties": {
+            ".+": {
+              "$ref": "#/definitions/routing-rule-list"
+            }
+          }
+        },
+        "ssl": {
+          "description": "HTTPS certificate generation parameters",
+          "additionalProperties": false,
+          "properties": {
+            "frontend-caucase-url-list": {
+              "title": "Frontend Caucase URL List",
+              "description": "List of URLs of caucase service of frontend groups to authenticate access from them.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              },
+              "uniqueItems": true
+            },
+            "caucase-url": {
+              "title": "Caucase URL",
+              "description": "URL of caucase service to use. If not set, global setting will be used.",
+              "type": "string",
+              "format": "uri"
+            },
+            "csr": {
+              "title": "csr",
+              "description": "PEM-encoded certificate signature request to request server certificate with. If not provided, HTTPS will be disabled.",
+              "type": "string"
+            },
+            "max-crl-update-delay": {
+              "title": "Periodicity of CRL update (days)",
+              "description": "CRL will be updated from caucase at least this often.",
+              "type": "number",
+              "default": 1.0
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}
