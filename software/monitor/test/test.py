@@ -126,20 +126,20 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       # run the monitor-httpd service can cause the "already running" error correctly
       self.assertIn("already running", output)
     except subprocess.CalledProcessError as e:
-      print(e.output)
-      print("Unexpected error when running the monitor-httpd service:", e)
+      self.logger.debug(e.output)
+      self.logger.debug("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
     except subprocess.TimeoutExpired as e:
       # Timeout means we run the httpd service corrrectly
       # This is not the expected behaviour
-      print("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
+      self.logger.debug("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
       # Kill the process that we started manually
       try:
         pid_to_kill = monitor_httpd_pid.strip('\n')
         subprocess.run(["kill", "-9", str(pid_to_kill)], check=True)
-        print(f"Process with PID {pid_to_kill} killed.")
+        self.logger.debug(f"Process with PID {pid_to_kill} killed.")
       except subprocess.CalledProcessError as e:
-        print(f"Error killing process with PID {pid_to_kill}: {e}")
+        self.logger.debug(f"Error killing process with PID {pid_to_kill}: {e}")
       self.fail("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test")
 
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -181,14 +181,14 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     monitor_httpd_service_is_running = False
 
     # Create the subprocess
-    print("Ready to run the process in crash reboot")
+    self.logger.debug("Ready to run the process in crash reboot")
     try:
       process = subprocess.Popen(monitor_httpd_service_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
       stdout, stderr = '', ''
       try:
         # Wait for the process to finish, but with a timeout
         stdout, stderr = process.communicate(timeout=3)
-        print("Communicated!")
+        self.logger.debug("Communicated!")
       except subprocess.TimeoutExpired:
         monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
         # If the process times out, terminate it
@@ -201,14 +201,14 @@ class ServicesTestCase(SlapOSInstanceTestCase):
 
           psutil.wait_procs(child_processes + [main_process])
 
-          print(f"Processes with PID {process.pid} and its subprocesses terminated.")
+          self.logger.debug(f"Processes with PID {process.pid} and its subprocesses terminated.")
         except psutil.NoSuchProcess as e:
           # This print will generate ResourceWarningm but it is normal in Python 3
           # See https://github.com/giampaolo/psutil/blob/master/psutil/tests/test_process.py#L1526
-          print("No process found with PID: %s" % process.pid)
+          self.logger.debug("No process found with PID: %s" % process.pid)
     except subprocess.CalledProcessError as e:
-      print(e.output)
-      print("Unexpected error when running the monitor-httpd service:", e)
+      self.logger.debug(e.output)
+      self.logger.debug("Unexpected error when running the monitor-httpd service:", e)
       self.fail("Unexpected error when running the monitor-httpd service")
 
     # "httpd (pid 21934) already running" means we start httpd failed
