@@ -74,7 +74,6 @@ wrapper = ${directory:bin}/ca-monitor-httpd
 recipe = slapos.recipe.template:jinja2
 url = {{ template_monitor_httpd_wrapper }}
 output = ${directory:bin}/monitor-httpd-service-wrapper
-mode = 755
 pid-file = ${monitor-httpd-conf-parameter:pid-file}
 monitor-httpd-wrapper-path = ${monitor-httpd-wrapper:wrapper-path}
 monitor-httpd-conf = ${monitor-httpd-conf:output}

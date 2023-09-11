@@ -11,13 +11,13 @@ if [ -f "$pid_file" ]; then
 
     # The process with the specified PID is running
     if [ -n "$result" ]; then
-        echo "there has a process running with the same pid"
+        echo "there is a process running with the same pid"
         # Get the command line of the process and replace null characters with spaces
         cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
 
-        # There has a service running with the pid.
-        # but it not the one use the monitor-httpd.conf
-        if ! expr "$cmdline" : ".*monitor-httpd.conf" > /dev/null; then
+        # There is a process running with the pid,
+        # but it is not one using our monitor-httpd.conf
+        if ! expr "$cmdline" : ".*$monitor_httpd_conf_file" > /dev/null; then
             echo "The process is not running with the monitor_httpd_conf"
             rm -f {{ pid_file }};
         fi

@@ -120,8 +120,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         monitor_httpd_pid = pid_file.read()
 
     try:
-      print("Ready to run the process in normal reboot")
-      print(monitor_httpd_pid)
       output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
       # If the httpd-monitor service is running
       # and the monitor-httpd.pid contains the identical PID as the servicse
