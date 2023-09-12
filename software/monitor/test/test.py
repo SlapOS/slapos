@@ -99,7 +99,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
     for partition_path in partition_path_list:
-      if os.path.exists(os.path.join(partition_path, 'etc/monitor-httpd.conf')):
+      if os.path.exists(os.path.join(partition_path, 'etc', 'monitor-httpd.conf')):
         self.partition_path = partition_path
         break
 
@@ -110,14 +110,6 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     monitor_httpd_service_path = glob.glob(os.path.join(
       self.partition_path, 'etc', 'service', 'monitor-httpd*'
     ))[0]
-
-    # Get the pid of the monitor_httpd from the PID file
-    monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
-    monitor_httpd_pid = ""
-
-    if os.path.exists(monitor_httpd_pid_file):
-      with open(monitor_httpd_pid_file, "r") as pid_file:
-        monitor_httpd_pid = pid_file.read()
 
     try:
       output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
@@ -134,6 +126,12 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       # This is not the expected behaviour
       self.logger.debug("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
       # Kill the process that we started manually
+      # Get the pid of the monitor_httpd from the PID file
+      monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+      monitor_httpd_pid = ""
+      if os.path.exists(monitor_httpd_pid_file):
+        with open(monitor_httpd_pid_file, "r") as pid_file:
+          monitor_httpd_pid = pid_file.read()
       try:
         pid_to_kill = monitor_httpd_pid.strip('\n')
         subprocess.run(["kill", "-9", str(pid_to_kill)], check=True)
@@ -154,7 +152,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
     # Get the partition path
     partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
     for partition_path in partition_path_list:
-      if os.path.exists(os.path.join(partition_path, 'etc/monitor-httpd.conf')):
+      if os.path.exists(os.path.join(partition_path, 'etc', 'monitor-httpd.conf')):
         self.partition_path = partition_path
         break
 
