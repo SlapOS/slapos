@@ -55,7 +55,7 @@ RU2_a = {
         'sdr_dev':  2,
         'sfp_port': 0,
         'mult':     8,
-        'mapping':  'bf1',
+        'mapping':  'standard',
         'rx_delay': 10,
         'tx_delay': 11,
         'tx_dbm':   50
