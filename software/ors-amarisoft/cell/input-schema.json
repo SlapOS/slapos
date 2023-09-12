@@ -42,6 +42,12 @@
           "type": "string",
           "default": "0x01"
         },
+        "root_sequence_index": {
+          "title": "Root Sequence Index",
+          "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+          "type": "integer",
+          "default": 204
+        },
         "ru": {
           "title": "Radio Unit",
           "oneOf": [
