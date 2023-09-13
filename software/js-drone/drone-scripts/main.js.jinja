@@ -33,7 +33,7 @@ import { err, exit, open, out } from "std";
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
-    FPS = 50, // Minimum sampling interval for open62541 monitored items
+    FPS = 200, // Minimum value to not overflow radio network
     previous_timestamp,
     can_update = false;
 
