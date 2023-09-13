@@ -45,7 +45,7 @@ CELL1_b = {
     }
 }
 
-# another couple of cells that use CPRI-based Lopcomm radio units
+# LTE + NR cells that use CPRI-based Lopcomm radio units
 # here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL1_a above
 RU2_a = {
     'ru_type':      'lopcomm',
@@ -74,23 +74,26 @@ CELL2_a = {
     'bandwidth':    '5 MHz',
     'dl_earfcn':    3350,       # 2680 MHz
     'pci':          21,
-    'cell_id':      "0x21",
+    'cell_id':      '0x21',
     'ru':           {           # CELL2_a links to RU2_a by its reference
         'ru_type':  'ru_ref',
         'ru_ref':   'RU2_a'
     }
 }
 
-CELL2_b = copy.deepcopy(CELL2_a)
-CELL2_b.update({
-    'dl_earfcn':    3410,       # 2686 MHz
+CELL2_b = {
+    'cell_type':    'nr',
+    'rf_mode':      'fdd',
+    'bandwidth':    5,
+    'dl_nr_arfcn':  537200,     # 2686 MHz
+    'nr_band':      7,
     'pci':          22,
-    'cell_id':      "0x22"
-})
-CELL2_b['ru']['ru_ref'] = 'RU2_b'
-
-
-# XXX CELL3 FDD NR
+    'cell_id':      '0x22',
+    'ru':           {
+        'ru_type':  'ru_ref',
+        'ru_ref':   'RU2_b'
+    }
+}
 
 jjdumps = lambda obj: json.dumps(json.dumps(obj))
 jCELL1_a = jjdumps(CELL1_a)
