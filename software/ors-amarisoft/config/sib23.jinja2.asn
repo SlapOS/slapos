@@ -36,7 +36,7 @@
               }
             },
             pdsch-ConfigCommon {
-{% if slapparameter_dict.get('rrh', 'ORS') == "ORS" %}
+{% if bbu == "ors" %}
 {%- if one_watt == "True" %}
               referenceSignalPower {{ (tx_gain | int) - 54 }}, /* patched by eNB */
 {%- else %}
