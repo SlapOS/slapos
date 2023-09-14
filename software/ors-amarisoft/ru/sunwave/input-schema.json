@@ -10,8 +10,8 @@
 
   "properties": {
     "ru_type": {
-      "const":    "sunvawe",
-      "template": "sunvawe"
+      "const":    "sunwave",
+      "template": "sunwave"
     },
     "ru_link_type": {
       "const":    "cpri",

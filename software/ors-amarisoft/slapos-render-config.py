@@ -54,8 +54,8 @@ CELL1_c = {
     'pci':          3,
     'cell_id':      '0x03',
     'ru':           {
-        'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a/CELL1_b
-        'ruincell_ref': 'CELL1_b'           # referring to ru via CELL1_b -> CELL1_a
+        'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a and CELL1_b
+        'ruincell_ref': 'CELL1_b'           # referring to RU via CELL1_b -> CELL1_a
     }
 }
 
