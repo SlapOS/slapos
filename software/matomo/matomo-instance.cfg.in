@@ -20,6 +20,20 @@ context =
   section parameter_dict instance-parameter
   key php_bin php-bin:wrapper-path
 
+[promise-cron]
+<= monitor-promise-base
+promise = check_cron_service
+name = promise-cron.py
+config-cron_log = ${cron-simplelogger:log}
+
+# Add the custom promise to check that the index file exists
+[check-cron-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = {{ custom_promise }}
+output = ${directory:plugins}/check-cron-service.py
+config-cron_log = ${cron-simplelogger:log}
+
 [apache-php-service]
 environment=
   MATOMO_DATABASE_HOST=${mariadb-urlparse:host}:${mariadb-urlparse:port}
