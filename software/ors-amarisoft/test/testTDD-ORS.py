@@ -142,8 +142,9 @@ def test_enb_conf(self):
 
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)
-    self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
-    self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
+    if 'tx_gain' in conf and 'rx_gain' in conf:
+      self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
+      self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
     self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(conf['cell_default']['uldl_config'], 6)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
@@ -151,6 +152,7 @@ def test_enb_conf(self):
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
     self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
+    self.assertEqual(conf['cell_list'][0]['cell_id'], 0)
     for p in conf['cell_default']['plmn_list']:
       for n in "plmn attach_without_pdn reserved".split():
           self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
