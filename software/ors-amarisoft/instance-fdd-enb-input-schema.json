@@ -63,6 +63,24 @@
       "type": "object",
       "default": {}
     },
+    "cpri_rx_delay": {
+      "title": "CPRI RX Delay",
+      "description": "Delay between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
+      "type": "number",
+      "default": 25.11
+    },
+    "cpri_tx_delay": {
+      "title": "CPRI TX Delay",
+      "description": "Advance Start of Frame relative to PPS to compensate for delays in transmit line and RRH. This should be set to T12 + T2a.",
+      "type": "number",
+      "default": 14.71
+    },
+    "cpri_tx_dbm": {
+      "title": "CPRI TX dBm",
+      "description": "Optional floating point value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
+      "type": "number",
+      "default": 63
+    },
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
@@ -78,6 +96,12 @@
       "description": "eNB ID",
       "type": "string",
       "default": "0x1A2D0"
+    },
+    "gtp_addr": {	
+      "title": "GTP Address",	
+      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",	
+      "type": "string",	
+      "default": "127.0.1.1"	
     },
     "mme_list": {
       "title": "MME list",

@@ -15,7 +15,7 @@
         "15 MHz",
         "20 MHz"
       ],
-      "default": "{{ default_lte_bandwidth }}"
+      "default": "{{default_lte_bandwidth }}"
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
@@ -25,7 +25,7 @@
       "description": "1, 2, 4 or 8. Number of DL antennas.",
 {%- endif %}
       "type": "number",
-      "default": {{ default_n_antenna_dl }}
+      "default": {{default_n_antenna_dl }}
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
@@ -35,7 +35,7 @@
       "description": "1, 2, 4 or 8. Number of UL antennas.",
 {%- endif %}
       "type": "number",
-      "default": {{ default_n_antenna_ul }}
+      "default": {{default_n_antenna_ul }}
     },
 {%- if rf_mode == 'tdd' %}
     "tdd_ul_dl_config": {
@@ -59,7 +59,7 @@
 {%- endif %}
 {%- if trx == 'cpri' %}
     "cpri_mult": {
-      "title": "cpri_mult",
+      "title": "CPRI Mult",
       "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
       "type": "number",
       "default": 16,
@@ -108,32 +108,6 @@
       "patternProperties": {
         ".*": {
           "properties": {
-{%- if trx == 'cpri' %}
-            "cpri_rx_delay": {
-              "title": "CPRI RX Delay",
-              "description": "Delays between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
-              "type": "number",
-              "default": 0
-            },
-            "cpri_tx_delay": {
-              "title": "CPRI TX Delay",
-              "description": "Advances Start of Frame relative to PPS to compensate for delays in transmit line and RRH. This should be set to T12 + T2a.",
-              "type": "number",
-              "default": 0
-            },
-            "cpri_tx_dbm": {
-              "title": "CPRI TX dBm",
-              "description": "Optional floating points value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
-              "type": "number",
-              "default": 0
-            },
-            "cpri_port_number": {
-              "title": "CPRI Port Number",
-              "description": "CPRI Port Number",
-              "type": "number",
-              "default": 0
-            },
-{%- endif %}
             "dl_earfcn": {
               "title": "DL EARFCN",
               "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
@@ -155,6 +129,24 @@
       },
       "type": "object",
       "default": {}
+    },
+    "cpri_rx_delay": {
+      "title": "CPRI RX Delay",
+      "description": "Delay between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
+      "type": "number",
+      "default": 25.11
+    },
+    "cpri_tx_delay": {
+      "title": "CPRI TX Delay",
+      "description": "Advance Start of Frame relative to PPS to compensate for delays in transmit line and RRH. This should be set to T12 + T2a.",
+      "type": "number",
+      "default": 14.71
+    },
+    "cpri_tx_dbm": {
+      "title": "CPRI TX dBm",
+      "description": "Optional floating point value in dBm (default 0). Needed by ENB/GNB to have a notion of actual output power. Computed from maximum power output of the RRH for a 0dBFS input signal (full scale). ",
+      "type": "number",
+      "default": 63
     },
 {%- endif %}
 {%- if trx == 'sdr' %}
@@ -240,12 +232,30 @@
       "type": "number",
       "default": 20000000
     },
+    "txa0cc00_gain": {	
+      "title": "ORAN Gain",	
+      "description": "Lopcomm ORAN Gain (TXA0CC00)",	
+      "type": "number",	
+      "default": -20	
+    },
+    "user-authorized-key": {
+      "title": "User Authorized Key",
+      "description": "SSH public key in order to connect to the SSH server of this instance.",
+      "textarea": true,
+      "type": "string"
+    },
 {%- endif %}
     "enb_id": {
       "title": "eNB ID",
       "description": "eNB ID",
       "type": "string",
       "default": "0x1A2D0"
+    },
+    "gtp_addr": {	
+      "title": "GTP Address",	
+      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",	
+      "type": "string",	
+      "default": "127.0.1.1"	
     },
     "mme_list": {
       "title": "MME list",
@@ -368,7 +378,7 @@
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
-      "default": {{ default_lte_inactivity_timer }}
+      "default": {{default_lte_inactivity_timer }}
     },
     "log_phy_debug": {
       "title": "Physical layer log debug",
