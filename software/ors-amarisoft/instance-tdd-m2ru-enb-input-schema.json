@@ -45,8 +45,14 @@
       "type": "number",
       "default": 0
     },
+    "cpri_port": {
+      "title": "CPRI Port Number",
+      "description": "CPRI Port Number",
+      "type": "number",
+      "default": 0
+    },
     "cpri_mult": {
-      "title": "cpri_mult",
+      "title": "CPRI Mult",
       "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
       "type": "number",
       "default": 16,
@@ -87,6 +93,8 @@
               "type": "number",
               "default": 0
             },
+            tx_gain: 0,
+            rx_gain: 0,
             "dl_earfcn": {
               "title": "DL EARFCN",
               "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
@@ -126,6 +134,12 @@
       "description": "eNB ID",
       "type": "string",
       "default": "0x1A2D0"
+    },
+    "gtp_addr": {
+      "title": "GTP Address",
+      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
+      "type": "string",
+      "default": "127.0.1.1"
     },
     "mme_list": {
       "title": "MME list",
