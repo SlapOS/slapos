@@ -56,10 +56,16 @@
       "type": "number",
       "default": 0
     },
+    "cpri_port": {
+      "title": "CPRI Port Number",
+      "description": "CPRI Port Number",
+      "type": "number",
+      "default": 0
+    },
 {%- endif %}
 {%- if trx == 'cpri' %}
     "cpri_mult": {
-      "title": "cpri_mult",
+      "title": "CPRI Mult",
       "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
       "type": "number",
       "default": 16,
@@ -133,6 +139,8 @@
               "type": "number",
               "default": 0
             },
+            tx_gain: 0,
+            rx_gain: 0,
 {%- endif %}
             "dl_earfcn": {
               "title": "DL EARFCN",
@@ -204,41 +212,35 @@
         "INACTIVE"
       ]
     },
-    "txa0cc00_center_frequency_earfcn": {
-      "title": "Lopcomm ORAN Center Frequency EARFCN (TXA0CC00)",
-      "description": "Lopcomm ORAN Center Frequency EARFCN (TXA0CC00)",
-      "type": "number",
-      "default": 300
-    },
     "txa0cc00_center_frequency": {
-      "title": "Lopcomm ORAN Center Frequency in Hz (TXA0CC00)",
-      "description": "Lopcomm ORAN Center Frequency in Hz (TXA0CC00)",
+      "title": "Lopcomm ORAN DL Center Frequency in MHz (TXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency in MHz (TXA0CC00)",
       "type": "number",
-      "default": 2140000000
-    },
-    "txa0cc00_bandwidth": {
-      "title": "Lopcomm ORAN bandwidth in Hz (TXA0CC00)",
-      "description": "Lopcomm ORAN bandwidth in Hz (TXA0CC00)",
-      "type": "number",
-      "default": 20000000
+      "default": 2140
     },
     "rxa0cc00_center_frequency_earfcn": {
-      "title": "Lopcomm ORAN Center Frequency EARFCN (RXA0CC00)",
+      "title": "Lopcomm ORAN UL Center Frequency EARFCN (RXA0CC00)",
       "description": "Lopcomm ORAN Center Frequency EARFCN (RXA0CC00)",
       "type": "number",
       "default": 18300
     },
     "rxa0cc00_center_frequency": {
-      "title": "Lopcomm ORAN Center Frequency in Hz (RXA0CC00)",
-      "description": "Lopcomm ORAN Center Frequency in Hz (RXA0CC00)",
+      "title": "Lopcomm ORAN UL Center Frequency in MHz (RXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency in MHz (RXA0CC00)",
       "type": "number",
-      "default": 1950000000
+      "default": 1950
     },
-    "rxa0cc00_bandwidth": {
-      "title": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
-      "description": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
+    "txa0cc00_gain": {
+      "title": "ORAN Gain",
+      "description": "Lopcomm ORAN Gain (TXA0CC00)",
       "type": "number",
-      "default": 20000000
+      "default": -20
+    },
+    "user-authorized-key": {
+      "title": "User Authorized Key",
+      "description": "SSH public key in order to connect to the SSH server of this instance.",
+      "textarea": true,
+      "type": "string"
     },
 {%- endif %}
     "enb_id": {
@@ -246,6 +248,12 @@
       "description": "eNB ID",
       "type": "string",
       "default": "0x1A2D0"
+    },
+    "gtp_addr": {
+      "title": "GTP Address",
+      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
+      "type": "string",
+      "default": "127.0.1.1"
     },
     "mme_list": {
       "title": "MME list",
