@@ -84,6 +84,12 @@
       "type": "string",
       "default": "0x1A2D0"
     },
+    "gtp_addr": {
+      "title": "GTP Address",	
+      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",	
+      "type": "string",	
+      "default": "127.0.1.1"	
+    },
     "mme_list": {
       "title": "MME list",
       "description": "Optionnal. List of MME to which the gNodeB is connected",
