@@ -142,6 +142,7 @@ def test_enb_conf(self):
 
     with open(conf_file, 'r') as f:
         conf = yaml.load(f)
+
     self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
     self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
     self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
