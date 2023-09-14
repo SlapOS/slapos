@@ -54,7 +54,7 @@ class enbWebSocket:
                 "rf": True
             })
             r = self.recv('stats')
-        self.logger.info('Samples stats', extra={'data': r})
+        self.logger.info('Samples stats', extra={'data': json.dumps(r)})
 
 if __name__ == '__main__':
     ws = enbWebSocket()
