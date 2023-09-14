@@ -12,7 +12,7 @@ json_params_empty = """{
 }"""
 
 
-# 2 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
+# 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
 # RU definition is embedded into cell for simplicity of management
 RU1 = {
     'ru_type':      'sdr',
@@ -28,7 +28,7 @@ CELL1_a = {
     'bandwidth':    '5 MHz',
     'dl_earfcn':    38050,      # 2600 MHz
     'pci':          1,
-    'cell_id':      "0x01",
+    'cell_id':      '0x01',
     'ru':           RU1,        # RU definition embedded into CELL
 }
 
@@ -38,10 +38,24 @@ CELL1_b = {
     'bandwidth':    '5 MHz',
     'dl_earfcn':    38100,      # 2605 MHz
     'pci':          2,
-    'cell_id':      "0x02",
+    'cell_id':      '0x02',
     'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
         'ru_type':      'ruincell_ref',
         'ruincell_ref': 'CELL1_a'
+    }
+}
+
+CELL1_c = {
+    'cell_type':    'nr',
+    'rf_mode':      'tdd',
+    'bandwidth':    5,
+    'dl_nr_arfcn':  522000,     # 2610 MHz
+    'nr_band':      38,
+    'pci':          3,
+    'cell_id':      '0x03',
+    'ru':           {
+        'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a/CELL1_b
+        'ruincell_ref': 'CELL1_b'           # referring to ru via CELL1_b -> CELL1_a
     }
 }
 
@@ -98,6 +112,7 @@ CELL2_b = {
 jjdumps = lambda obj: json.dumps(json.dumps(obj))
 jCELL1_a = jjdumps(CELL1_a)
 jCELL1_b = jjdumps(CELL1_b)
+jCELL1_c = jjdumps(CELL1_c)
 jCELL2_a = jjdumps(CELL2_a)
 jCELL2_b = jjdumps(CELL2_b)
 jRU2_a   = jjdumps(RU2_a)
@@ -134,6 +149,12 @@ json_params = """{
                 "slave_reference":      "_CELL1_b",
                 "slap_software_type":   "enb",
                 "_": %(jCELL1_b)s
+            },
+            {
+                "slave_title":          "Cell 1c",
+                "slave_reference":      "_CELL1_c",
+                "slap_software_type":   "enb",
+                "_": %(jCELL1_c)s
             },
             {
                 "slave_title":          "Cell 2a",
