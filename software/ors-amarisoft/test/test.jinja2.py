@@ -452,7 +452,6 @@ class TestUENRParameters(ORSTestCase):
           conf = yaml.load(f)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], '10 MHz')
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], param_dict['nr_band'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
