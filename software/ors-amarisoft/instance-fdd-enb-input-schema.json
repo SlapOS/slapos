@@ -111,6 +111,12 @@
       "type": "number",	
       "default": -20	
     },
+    "user-authorized-key": {
+      "title": "User Authorized Key",
+      "description": "SSH public key in order to connect to the SSH server of this instance.",
+      "textarea": true,
+      "type": "string"
+    },
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",

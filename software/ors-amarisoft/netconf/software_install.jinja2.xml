@@ -1,4 +1,0 @@
-<software-install xmlns="urn:o-ran:software-management:1.0">
-    <slot-name>slot-1</slot-name>    
-    <file-names>PR.PR46Q1LNV1001.1.tar.gz</file-names>
-</software-install>
