@@ -73,7 +73,8 @@
         }
       },
       "type": "object",
-      "default": {},
+      "default": {}
+    },
     "cpri_rx_delay": {
       "title": "CPRI RX Delay",
       "description": "Delay between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
