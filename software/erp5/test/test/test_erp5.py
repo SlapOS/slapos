@@ -37,19 +37,18 @@ import socket
 import sqlite3
 import ssl
 import subprocess
-import sys
 import tempfile
 import time
 import unittest
+import urllib.parse
+import xmlrpc.client
 
 import psutil
 import requests
-import urllib.parse
-import xmlrpc.client
 import urllib3
 from slapos.testing.utils import CrontabMixin
 
-from . import ERP5InstanceTestCase, setUpModule, matrix, default, neo
+from . import ERP5InstanceTestCase, default, matrix, neo, setUpModule
 
 setUpModule # pyflakes
 

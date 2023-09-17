@@ -22,8 +22,10 @@ import unittest
 
 from slapos.grid.utils import md5digest
 
-from . import ERP5InstanceTestCase, setUpModule as _setUpModule
+from . import ERP5InstanceTestCase
+from . import setUpModule as _setUpModule
 from .test_erp5 import TestPublishedURLIsReachableMixin
+
 
 # skip tests when software release is built with wendelin.core 1.
 def setUpModule():

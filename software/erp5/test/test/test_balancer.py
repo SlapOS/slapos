@@ -10,9 +10,8 @@ import tempfile
 import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
-
 from unittest import mock
-import OpenSSL.SSL
+
 import pexpect
 import psutil
 import requests
@@ -21,11 +20,11 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
-from slapos.testing.testcase import ManagedResource
-from slapos.testing.utils import (CrontabMixin, ManagedHTTPServer,
-                                  findFreeTCPPort)
 
-from . import ERP5InstanceTestCase, setUpModule, matrix, default
+from slapos.testing.testcase import ManagedResource
+from slapos.testing.utils import CrontabMixin, ManagedHTTPServer, findFreeTCPPort
+
+from . import ERP5InstanceTestCase, default, matrix, setUpModule
 
 setUpModule  # pyflakes
 
