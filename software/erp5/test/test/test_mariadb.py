@@ -25,28 +25,21 @@
 #
 ##############################################################################
 
-import os
-import json
-import glob
-import urllib.parse
-import socket
-import sys
-import time
 import contextlib
 import datetime
-import subprocess
+import glob
 import gzip
-
+import json
 import lzma
+import os
+import subprocess
+import urllib.parse
+
 import MySQLdb
 
-from slapos.testing.utils import CrontabMixin
-from slapos.testing.utils import getPromisePluginParameterDict
+from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
 
-from . import ERP5InstanceTestCase
-from . import setUpModule
-from . import matrix
-from . import default
+from . import ERP5InstanceTestCase, default, matrix, setUpModule
 
 setUpModule  # pyflakes
 

@@ -32,7 +32,6 @@ import pathlib
 import socket
 import struct
 import subprocess
-import time
 import typing
 import urllib.parse
 
