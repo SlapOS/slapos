@@ -9,8 +9,9 @@ diff-bin = {{ diffutils_location }}
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = matomo-backup
-frequency = 0 0 * * *
-command = ${matomo-backup.sh:output}
+frequency = * * * * *
+log-file = ${directory:log}/matomo-backup.log
+command = ${matomo-backup.sh:output} 2>&1 | ${xxx.sh:output} > ${:log-file}
 
 [matomo-backup.sh]
 recipe = slapos.recipe.template:jinja2
@@ -19,6 +20,11 @@ output = ${directory:scripts}/matomo-backup
 context =
   section parameter_dict instance-parameter
   key php_bin php-bin:wrapper-path
+
+[xxx.sh]
+recipe = slapos.recipe.template:jinja2
+url = {{ xxx_sh }}
+output = ${directory:scripts}/xxx
 
 [promise-cron]
 <= monitor-promise-base
@@ -33,6 +39,9 @@ eggs = slapos.core
 file = {{ custom_promise }}
 output = ${directory:plugins}/check-cron-service.py
 config-cron_log = ${cron-simplelogger:log}
+config-partition_path = ${directory:etc}
+config-cron_name = ${matomo-backup-cron:name}
+config-log_file = ${matomo-backup-cron:log-file}
 
 [apache-php-service]
 environment=
