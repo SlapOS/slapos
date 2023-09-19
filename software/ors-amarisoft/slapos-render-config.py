@@ -27,105 +27,111 @@ def iSHARED(title, slave_reference, cfg):
 
 # 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
 # RU definition is embedded into cell for simplicity of management
-RU1 = {
-    'ru_type':      'sdr',
-    'ru_link_type': 'sdr',
-    'sdr_dev_list': [0, 1],
-    'n_antenna_dl': 4,
-    'n_antenna_ul': 2,
-}
-
-iSHARED('Cell 1a', '_CELL1_a', {
-    'cell_type':    'lte',
-    'rf_mode':      'tdd',
-    'bandwidth':    '5 MHz',
-    'dl_earfcn':    38050,      # 2600 MHz
-    'pci':          1,
-    'cell_id':      '0x01',
-    'ru':           RU1,        # RU definition embedded into CELL
-})
-
-iSHARED('Cell 1b', '_CELL1_b', {
-    'cell_type':    'lte',
-    'rf_mode':      'tdd',
-    'bandwidth':    '5 MHz',
-    'dl_earfcn':    38100,      # 2605 MHz
-    'pci':          2,
-    'cell_id':      '0x02',
-    'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
-        'ru_type':      'ruincell_ref',
-        'ruincell_ref': 'CELL1_a'
+def iRU1_SDR_CELL3():
+    RU1 = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev_list': [0, 1],
+        'n_antenna_dl': 4,
+        'n_antenna_ul': 2,
     }
-})
 
-iSHARED('Cell 1c', '_CELL1_c', {
-    'cell_type':    'nr',
-    'rf_mode':      'tdd',
-    'bandwidth':    5,
-    'dl_nr_arfcn':  522000,     # 2610 MHz
-    'nr_band':      38,
-    'pci':          3,
-    'cell_id':      '0x03',
-    'ru':           {
-        'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a and CELL1_b
-        'ruincell_ref': 'CELL1_b'           # referring to RU via CELL1_b -> CELL1_a
-    }
-})
+    iSHARED('Cell 1a', '_CELL1_a', {
+        'cell_type':    'lte',
+        'rf_mode':      'tdd',
+        'bandwidth':    '5 MHz',
+        'dl_earfcn':    38050,      # 2600 MHz
+        'pci':          1,
+        'cell_id':      '0x01',
+        'ru':           RU1,        # RU definition embedded into CELL
+    })
+
+    iSHARED('Cell 1b', '_CELL1_b', {
+        'cell_type':    'lte',
+        'rf_mode':      'tdd',
+        'bandwidth':    '5 MHz',
+        'dl_earfcn':    38100,      # 2605 MHz
+        'pci':          2,
+        'cell_id':      '0x02',
+        'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
+            'ru_type':      'ruincell_ref',
+            'ruincell_ref': 'CELL1_a'
+        }
+    })
+
+    iSHARED('Cell 1c', '_CELL1_c', {
+        'cell_type':    'nr',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  522000,     # 2610 MHz
+        'nr_band':      38,
+        'pci':          3,
+        'cell_id':      '0x03',
+        'ru':           {
+            'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a and CELL1_b
+            'ruincell_ref': 'CELL1_b'           # referring to RU via CELL1_b -> CELL1_a
+        }
+    })
+
 
 # LTE + NR cells that use CPRI-based Lopcomm radio units
 # here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL1_a above
-RU2_a = {
-    'ru_type':      'lopcomm',
-    'ru_link_type': 'cpri',
-    'mac_addr':     'XXX',
-    'cpri_link':    {
-        'sdr_dev':  2,
-        'sfp_port': 0,
-        'mult':     8,
-        'mapping':  'standard',
-        'rx_delay': 10,
-        'tx_delay': 11,
-        'tx_dbm':   50
-    },
-    'n_antenna_dl': 2,
-    'n_antenna_ul': 1,
-}
-
-RU2_b = copy.deepcopy(RU2_a)
-RU2_b['mac_addr'] = 'YYY'
-RU2_b['cpri_link']['sfp_port'] = 1
-
-iSHARED('Radio Unit 2a', '_RU2_a', RU2_a)
-iSHARED('Radio Unit 2b', '_RU2_b', RU2_b)
-
-
-iSHARED('Cell 2a', '_CELL2_a', {
-    'cell_type':    'lte',
-    'rf_mode':      'fdd',
-    'bandwidth':    '5 MHz',
-    'dl_earfcn':    3350,       # 2680 MHz
-    'pci':          21,
-    'cell_id':      '0x21',
-    'ru':           {           # CELL2_a links to RU2_a by its reference
-        'ru_type':  'ru_ref',
-        'ru_ref':   'RU2_a'
+def iRU2_LOPCOMM_LTE_NR():
+    RU2_a = {
+        'ru_type':      'lopcomm',
+        'ru_link_type': 'cpri',
+        'mac_addr':     'XXX',
+        'cpri_link':    {
+            'sdr_dev':  2,
+            'sfp_port': 0,
+            'mult':     8,
+            'mapping':  'standard',
+            'rx_delay': 10,
+            'tx_delay': 11,
+            'tx_dbm':   50
+        },
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 1,
     }
-})
 
-iSHARED('Cell 2b', '_CELL2_b', {
-    'cell_type':    'nr',
-    'rf_mode':      'fdd',
-    'bandwidth':    5,
-    'dl_nr_arfcn':  537200,     # 2686 MHz
-    'nr_band':      7,
-    'pci':          22,
-    'cell_id':      '0x22',
-    'ru':           {
-        'ru_type':  'ru_ref',
-        'ru_ref':   'RU2_b'
-    }
-})
+    RU2_b = copy.deepcopy(RU2_a)
+    RU2_b['mac_addr'] = 'YYY'
+    RU2_b['cpri_link']['sfp_port'] = 1
 
+    iSHARED('Radio Unit 2a', '_RU2_a', RU2_a)
+    iSHARED('Radio Unit 2b', '_RU2_b', RU2_b)
+
+    iSHARED('Cell 2a', '_CELL2_a', {
+        'cell_type':    'lte',
+        'rf_mode':      'fdd',
+        'bandwidth':    '5 MHz',
+        'dl_earfcn':    3350,       # 2680 MHz
+        'pci':          21,
+        'cell_id':      '0x21',
+        'ru':           {           # CELL2_a links to RU2_a by its reference
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU2_a'
+        }
+    })
+
+    iSHARED('Cell 2b', '_CELL2_b', {
+        'cell_type':    'nr',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'pci':          22,
+        'cell_id':      '0x22',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU2_b'
+        }
+    })
+
+
+
+iRU1_SDR_CELL3()
+iRU2_LOPCOMM_LTE_NR()
 
 jshared_instance_list = json.dumps(shared_instance_list)
 json_params = """{
