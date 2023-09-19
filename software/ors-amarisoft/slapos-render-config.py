@@ -27,7 +27,7 @@ def iSHARED(title, slave_reference, cfg):
 
 # 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
 # RU definition is embedded into cell for simplicity of management
-def iRU1_SDR_CELL3():
+def iRU1_SDR_tLTE2_tNR():
     RU1 = {
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
@@ -76,7 +76,7 @@ def iRU1_SDR_CELL3():
 
 # LTE + NR cells that use CPRI-based Lopcomm radio units
 # here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL1_a above
-def iRU2_LOPCOMM_LTE_NR():
+def iRU2_LOPCOMM_fLTE_fNR():
     RU2_a = {
         'ru_type':      'lopcomm',
         'ru_link_type': 'cpri',
@@ -130,8 +130,47 @@ def iRU2_LOPCOMM_LTE_NR():
 
 
 
-iRU1_SDR_CELL3()
-iRU2_LOPCOMM_LTE_NR()
+# ---- for tests ----
+
+# 2 FDD cells working via shared SDR board
+def iRU3_SDR1_fLTE2():
+    RU = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev_list': [3],
+        'n_antenna_dl': 1,
+        'n_antenna_ul': 1,
+    }
+
+    iSHARED('Cell 3a', '_CELL3_a', {
+        'cell_type':    'lte',
+        'rf_mode':      'fdd',
+        'bandwidth':    '5 MHz',
+        'dl_earfcn':    3350,      # 2680 MHz (Band 7)
+        'pci':          1,
+        'cell_id':      '0x01',
+        'ru':           RU,
+    })
+
+    iSHARED('Cell 3b', '_CELL3_b', {
+        'cell_type':    'lte',
+        'rf_mode':      'fdd',
+        'bandwidth':    '5 MHz',
+        'dl_earfcn':    3050,      # 2650 MHz (Band 7)
+        'pci':          1,
+        'cell_id':      '0x02',
+        'ru':           {
+            'ru_type':      'ruincell_ref',
+            'ruincell_ref': 'CELL3_a'
+        }
+    })
+
+
+
+iRU1_SDR_tLTE2_tNR()
+iRU2_LOPCOMM_fLTE_fNR()
+iRU3_SDR1_fLTE2()
+
 
 jshared_instance_list = json.dumps(shared_instance_list)
 json_params = """{
