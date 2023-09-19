@@ -12,6 +12,19 @@ json_params_empty = """{
 }"""
 
 
+# iSHARED appends new shared instance with specified configuration to shared_instance_list.
+shared_instance_list = []
+def iSHARED(title, slave_reference, cfg):
+    ishared = {
+        'slave_title':          title,
+        'slave_reference':      slave_reference,
+        'slap_software_type':   "enb",
+        '_': json.dumps(cfg)
+    }
+    shared_instance_list.append(ishared)
+    return ishared
+
+
 # 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
 # RU definition is embedded into cell for simplicity of management
 RU1 = {
@@ -22,7 +35,7 @@ RU1 = {
     'n_antenna_ul': 2,
 }
 
-CELL1_a = {
+iSHARED('Cell 1a', '_CELL1_a', {
     'cell_type':    'lte',
     'rf_mode':      'tdd',
     'bandwidth':    '5 MHz',
@@ -30,9 +43,9 @@ CELL1_a = {
     'pci':          1,
     'cell_id':      '0x01',
     'ru':           RU1,        # RU definition embedded into CELL
-}
+})
 
-CELL1_b = {
+iSHARED('Cell 1b', '_CELL1_b', {
     'cell_type':    'lte',
     'rf_mode':      'tdd',
     'bandwidth':    '5 MHz',
@@ -43,9 +56,9 @@ CELL1_b = {
         'ru_type':      'ruincell_ref',
         'ruincell_ref': 'CELL1_a'
     }
-}
+})
 
-CELL1_c = {
+iSHARED('Cell 1c', '_CELL1_c', {
     'cell_type':    'nr',
     'rf_mode':      'tdd',
     'bandwidth':    5,
@@ -57,7 +70,7 @@ CELL1_c = {
         'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a and CELL1_b
         'ruincell_ref': 'CELL1_b'           # referring to RU via CELL1_b -> CELL1_a
     }
-}
+})
 
 # LTE + NR cells that use CPRI-based Lopcomm radio units
 # here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL1_a above
@@ -82,7 +95,11 @@ RU2_b = copy.deepcopy(RU2_a)
 RU2_b['mac_addr'] = 'YYY'
 RU2_b['cpri_link']['sfp_port'] = 1
 
-CELL2_a = {
+iSHARED('Radio Unit 2a', '_RU2_a', RU2_a)
+iSHARED('Radio Unit 2b', '_RU2_b', RU2_b)
+
+
+iSHARED('Cell 2a', '_CELL2_a', {
     'cell_type':    'lte',
     'rf_mode':      'fdd',
     'bandwidth':    '5 MHz',
@@ -93,9 +110,9 @@ CELL2_a = {
         'ru_type':  'ru_ref',
         'ru_ref':   'RU2_a'
     }
-}
+})
 
-CELL2_b = {
+iSHARED('Cell 2b', '_CELL2_b', {
     'cell_type':    'nr',
     'rf_mode':      'fdd',
     'bandwidth':    5,
@@ -107,16 +124,10 @@ CELL2_b = {
         'ru_type':  'ru_ref',
         'ru_ref':   'RU2_b'
     }
-}
+})
 
-jjdumps = lambda obj: json.dumps(json.dumps(obj))
-jCELL1_a = jjdumps(CELL1_a)
-jCELL1_b = jjdumps(CELL1_b)
-jCELL1_c = jjdumps(CELL1_c)
-jCELL2_a = jjdumps(CELL2_a)
-jCELL2_b = jjdumps(CELL2_b)
-jRU2_a   = jjdumps(RU2_a)
-jRU2_b   = jjdumps(RU2_b)
+
+jshared_instance_list = json.dumps(shared_instance_list)
 json_params = """{
     "earfcn": 126357,
     "tx_gain": 50,
@@ -137,20 +148,7 @@ json_params = """{
         "configuration.default_n_antenna_dl": 2,
         "configuration.default_n_antenna_ul": 2,
         "configuration.default_nr_inactivity_timer": 10000,
-        "slave-instance-list": [
-            {
-                "slave_title":          "Cell 1a",
-                "slave_reference":      "_CELL1_a",
-                "slap_software_type":   "enb",
-                "_": %(jCELL1_a)s
-            },
-            {
-                "slave_title":          "Cell 1b",
-                "slave_reference":      "_CELL1_b",
-                "slap_software_type":   "enb",
-                "_": %(jCELL1_b)s
-            }
-        ]
+        "slave-instance-list": %(jshared_instance_list)s
     },
     "directory": {
         "log": "log",
@@ -161,38 +159,7 @@ json_params = """{
     }
 }""" % globals()
 
-"""
-            {
-                "slave_title":          "Cell 1c",
-                "slave_reference":      "_CELL1_c",
-                "slap_software_type":   "enb",
-                "_": %(jCELL1_c)s
-            },
-            {
-                "slave_title":          "Cell 2a",
-                "slave_reference":      "_CELL2_a",
-                "slap_software_type":   "enb",
-                "_": %(jCELL2_a)s
-            },
-            {
-                "slave_title":          "Cell 2b",
-                "slave_reference":      "_CELL2_b",
-                "slap_software_type":   "enb",
-                "_": %(jCELL2_b)s
-            },
-            {
-                "slave_title":          "Radio Unit 2a",
-                "slave_reference":      "_RU2_a",
-                "slap_software_type":   "enb",
-                "_": %(jRU2_a)s
-            },
-            {
-                "slave_title":          "Radio Unit 2b",
-                "slave_reference":      "_RU2_b",
-                "slap_software_type":   "enb",
-                "_": %(jRU2_b)s
-            }
-"""
+
 
 import os
 from jinja2 import Environment, StrictUndefined, \
