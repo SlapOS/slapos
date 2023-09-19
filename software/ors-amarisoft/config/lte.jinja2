@@ -4,7 +4,7 @@
 {%- macro cell_tdd_config(cell) %}
 {%-   set _ = {'[Configuration 2] 5ms 2UL 6DL (default)':        2,
                '[Configuration 6] 5ms 5UL 3DL (maximum uplink)': 6} %}
-{{-   _[cell['tdd_ul_dl_config']] }}
+{{-   _[cell.tdd_ul_dl_config] }}
 {%- endmacro -%}
 
 {#- XXX doc, naming ok ?  #}
@@ -12,7 +12,7 @@
 {%-   set _ = {'5ms 2UL 7DL 4/6 (default)':         1,
                '2.5ms 1UL 3DL 2/10':                2,
                '5ms 8UL 3DL 2/10 (maximum uplink)': 3}  %}
-{{-   _[cell['tdd_ul_dl_config']] }}
+{{-   _[cell.tdd_ul_dl_config] }}
 {%- endmacro -%}
 
 {#- cell_n_rb_dl returns n_rb_dl for an LTE cell. #}
@@ -23,14 +23,14 @@
                '10 MHz':  50,
                '15 MHz':  75,
                '20 MHz': 100}   %}
-{{-   _[cell['bandwidth']] }}
+{{-   _[cell.bandwidth] }}
 {%- endmacro -%}
 
 
 {#- cell_drb_config returns drb_config section for an LTE cell.
     DRB configuration varies in beteen FDD and TDD modes. #}
 {%- macro cell_drb_config(cell) %}
-{%-   if cell['rf_mode'] == 'tdd' %}
+{%-   if cell.rf_mode == 'tdd' %}
 {%-     set T_REORDERING = 65 %}
 {%-   else %}
 {%-     set T_REORDERING = 35 %}
