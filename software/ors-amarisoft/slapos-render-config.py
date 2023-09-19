@@ -175,8 +175,8 @@ iRU3_SDR1_fLTE2()
 jshared_instance_list = json.dumps(shared_instance_list)
 json_params = """{
     "earfcn": 126357,
-    "tx_gain": 50,
-    "rx_gain": 50,
+    "tx_gain": 67,
+    "rx_gain": 60,
     "sib23_file": "sib2_3.asn",
     "rf_mode": "fdd",
     "slap_configuration": {
