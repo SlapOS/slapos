@@ -1,0 +1,74 @@
+From d439b58562670886b3247829aa9ff053b6aaf7fe Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 19 Sep 2023 06:28:54 +0200
+Subject: [PATCH 2/2] mapply wip
+
+---
+ src/ZPublisher/mapply.py            |  5 ++++-
+ src/ZPublisher/tests/test_mapply.py | 21 ++++++++++++++++++---
+ 2 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/src/ZPublisher/mapply.py b/src/ZPublisher/mapply.py
+index 19deeacf4..41c9ed7e1 100644
+--- a/src/ZPublisher/mapply.py
++++ b/src/ZPublisher/mapply.py
+@@ -21,7 +21,7 @@ def default_call_object(object, args, context):
+ 
+ 
+ def default_missing_name(name, context):
+-    raise TypeError('argument %s was ommitted' % name)
++    raise TypeError('argument %s was omitted' % name)
+ 
+ 
+ def default_handle_class(klass, context):
+@@ -61,6 +61,9 @@ def mapply(object, positional=(), keyword={},
+             positional.insert(0, missing_name('self', context))
+         if len(positional) > nargs:
+             raise TypeError('too many arguments')
++        for a, name in zip(positional, names):
++            if name in keyword:
++                raise TypeError('multiple values for argument %s' % name)
+         args = positional
+     else:
+         if bind and nargs and names[0] == 'self':
+diff --git a/src/ZPublisher/tests/test_mapply.py b/src/ZPublisher/tests/test_mapply.py
+index d31f6d61b..d08a5c979 100644
+--- a/src/ZPublisher/tests/test_mapply.py
++++ b/src/ZPublisher/tests/test_mapply.py
+@@ -28,11 +28,10 @@ class MapplyTests(unittest.TestCase):
+         def compute(a, b, c=4):
+             return '%d%d%d' % (a, b, c)
+ 
+-        values = {'a': 2, 'b': 3, 'c': 5}
+-        v = mapply(compute, (), values)
++        v = mapply(compute, (), {'a': 2, 'b': 3, 'c': 5})
+         self.assertEqual(v, '235')
+ 
+-        v = mapply(compute, (7,), values)
++        v = mapply(compute, (7,), {'b': 3, 'c': 5})
+         self.assertEqual(v, '735')
+ 
+     def testClass(self):
+@@ -115,3 +114,19 @@ class MapplyTests(unittest.TestCase):
+ 
+         ob = NoCallButAcquisition().__of__(Root())
+         self.assertRaises(TypeError, mapply, ob, (), {})
++
++    def testErrors(self):
++        def compute(a, b, c=4):
++            return '%d%d%d' % (a, b, c)
++
++        with self.assertRaisesRegex(TypeError, 'argument a was omitted'):
++            mapply(compute, (), {})
++
++        with self.assertRaisesRegex(TypeError, 'argument b was omitted'):
++            mapply(compute, (1, ), {})
++
++        with self.assertRaisesRegex(TypeError, 'multiple values for argument b'):
++            mapply(compute, (1, 2, ), {'b': 3})
++
++        with self.assertRaisesRegex(TypeError, 'too many arguments'):
++            mapply(compute, (1, 2, 3, 4), {})
+-- 
+2.39.2
+
