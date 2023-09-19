@@ -1,0 +1,65 @@
+From 1f0be881320f440cec05eb838fa42c5ddf56a57c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 19 Sep 2023 15:19:51 +0900
+Subject: [PATCH 1/2] WSGIPublisher: set REMOTE_USER even in case of error
+ (#1156)
+
+This fixes a problem that user name was empty in access log for error pages.
+
+Fixes #1155
+
+---------
+
+Co-authored-by: Michael Howitz <icemac@gmx.net>
+---
+ src/ZPublisher/WSGIPublisher.py            | 13 +++++++------
+ src/ZPublisher/tests/test_WSGIPublisher.py |  9 +++++++++
+ 2 files changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/src/ZPublisher/WSGIPublisher.py b/src/ZPublisher/WSGIPublisher.py
+index bd0ae1d17..09b2c44c9 100644
+--- a/src/ZPublisher/WSGIPublisher.py
++++ b/src/ZPublisher/WSGIPublisher.py
+@@ -382,12 +382,13 @@ def publish_module(environ, start_response,
+             try:
+                 with load_app(module_info) as new_mod_info:
+                     with transaction_pubevents(request, response):
+-                        response = _publish(request, new_mod_info)
+-
+-                        user = getSecurityManager().getUser()
+-                        if user is not None and \
+-                           user.getUserName() != 'Anonymous User':
+-                            environ['REMOTE_USER'] = user.getUserName()
++                        try:
++                            response = _publish(request, new_mod_info)
++                        finally:
++                            user = getSecurityManager().getUser()
++                            if user is not None and \
++                               user.getUserName() != 'Anonymous User':
++                                environ['REMOTE_USER'] = user.getUserName()
+                 break
+             except TransientError:
+                 if request.supports_retry():
+diff --git a/src/ZPublisher/tests/test_WSGIPublisher.py b/src/ZPublisher/tests/test_WSGIPublisher.py
+index 989970f24..38e402ab3 100644
+--- a/src/ZPublisher/tests/test_WSGIPublisher.py
++++ b/src/ZPublisher/tests/test_WSGIPublisher.py
+@@ -822,6 +822,15 @@ class TestPublishModule(ZopeTestCase):
+         self._callFUT(environ, start_response, _publish)
+         self.assertFalse('REMOTE_USER' in environ)
+ 
++    def test_set_REMOTE_USER_environ_error(self):
++        environ = self._makeEnviron()
++        start_response = DummyCallable()
++        _publish = DummyCallable()
++        _publish._raise = ValueError()
++        with self.assertRaises(ValueError):
++            self._callFUT(environ, start_response, _publish)
++        self.assertEqual(environ['REMOTE_USER'], user_name)
++
+     def test_webdav_source_port(self):
+         from ZPublisher import WSGIPublisher
+         old_webdav_source_port = WSGIPublisher._WEBDAV_SOURCE_PORT
+-- 
+2.39.2
+
