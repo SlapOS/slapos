@@ -149,7 +149,19 @@ json_params = """{
                 "slave_reference":      "_CELL1_b",
                 "slap_software_type":   "enb",
                 "_": %(jCELL1_b)s
-            },
+            }
+        ]
+    },
+    "directory": {
+        "log": "log",
+        "etc": "etc",
+        "var": "var"
+    },
+    "slapparameter_dict": {
+    }
+}""" % globals()
+
+"""
             {
                 "slave_title":          "Cell 1c",
                 "slave_reference":      "_CELL1_c",
@@ -180,16 +192,7 @@ json_params = """{
                 "slap_software_type":   "enb",
                 "_": %(jRU2_b)s
             }
-        ]
-    },
-    "directory": {
-        "log": "log",
-        "etc": "etc",
-        "var": "var"
-    },
-    "slapparameter_dict": {
-    }
-}""" % globals()
+"""
 
 import os
 from jinja2 import Environment, StrictUndefined, \
