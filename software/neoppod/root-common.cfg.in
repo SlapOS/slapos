@@ -6,12 +6,12 @@
 {%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
 {% endfor -%}
 
-{% macro sla(name, required=False) -%}
+{% macro sla(name, required=False, default_to_same_computer=True) -%}
 {% if required or name in sla_dict -%}
 {%  for k, (v,) in six.iteritems(urllib_parse.parse_qs(sla_dict.pop(name), strict_parsing=1)) -%}
 sla-{{ k }} = {{ v }}
 {%  endfor -%}
-{% else -%}
+{% elif default_to_same_computer -%}
 sla-computer_guid = ${slap-connection:computer-id}
 {% endif -%}
 {% endmacro -%}
