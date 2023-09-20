@@ -37,7 +37,7 @@
   },
   "properties": {
     "sla-dict": {
-      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (note: Zope partitions reference must be prefixed with \"zope-\").",
+      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (notes: Zope partitions reference must be prefixed with \"zope-\", frontends must be prefixed with \"frontend-\").",
       "additionalProperties": {
         "type": "array",
         "items": {
@@ -155,33 +155,39 @@
       "type": "object"
     },
     "frontend": {
-      "description": "Front-end slave instance request parameters",
-      "properties": {
-        "software-url": {
-          "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
-          "default": "",
-          "type": "string",
-          "format": "uri"
-        },
-        "domain": {
-          "description": "The domain name to request front-end to respond as.",
-          "default": "",
-          "type": "string"
-        },
-        "software-type": {
-          "description": "Request a front-end slave instance of this software type.",
-          "default": "RootSoftwareInstance",
-          "type": "string"
-        },
-        "virtualhostroot-http-port": {
-          "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
-          "default": 80,
-          "type": "integer"
-        },
-        "virtualhostroot-https-port": {
-          "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
-          "default": 443,
-          "type": "integer"
+      "description": "Frontend shared instances requests parameters. When this parameter is unset, the system defaults to requesting a frontend, but only when exactly one family exists in `zope-partition-dict`. For more complex zope partition layout, the frontend layout also have to be explicitly defined.",
+      "default": {
+        "default": {}
+      },
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "zope-family": {
+              "description": "The zope family.",
+              "type": "string",
+              "default": "default"
+            },
+            "internal-path": {
+              "description": "Internal path from the backend. `%(site-id)s` is substituted by the site id.",
+              "type": "string",
+              "default": "/%(site-id)s"
+            },
+            "software-url": {
+              "description": "Software URL of the frontend shared instance.",
+              "type": "string",
+              "format": "uri",
+              "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+            },
+            "software-type": {
+              "description": "Software type of the frontend shared instance.",
+              "type": "string"
+            },
+            "instance-parameters": {
+              "description": "Instance parameters for the frontend shared instance.",
+              "$ref": "../rapid-cdn/instance-slave-input-schema.json"
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object"
