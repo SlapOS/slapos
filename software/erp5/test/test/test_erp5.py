@@ -47,6 +47,7 @@ import psutil
 import requests
 import urllib3
 from slapos.testing.utils import CrontabMixin
+import zc.buildout.configparser
 
 from . import ERP5InstanceTestCase, default, matrix, neo, setUpModule
 
@@ -116,12 +117,44 @@ class TestPublishedURLIsReachableMixin:
       verify=False,
     )
 
+  def test_published_frontend_default_is_reachable(self):
+    """Tests the frontend URL published by the root partition is reachable.
+    """
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    self._checkERP5IsReachable(
+      param_dict['url-frontend-default'],
+      param_dict['site-id'],
+      verify=False,
+    )
+
 
 class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instantiated with no parameters
   """
   __partition_reference__ = 'defp'
   __test_matrix__ = matrix((default,))
+
+  def test_frontend_request(self):
+    with open(os.path.join(self.computer_partition_root_path,
+                           '.installed-switch-softwaretype.cfg')) as f:
+      installed = zc.buildout.configparser.parse(f, 'installed')
+    self.assertEqual(
+      installed['request-frontend-default']['config-type'], 'zope')
+    self.assertEqual(
+      installed['request-frontend-default']['config-path'], '/erp5')
+    self.assertEqual(
+      installed['request-frontend-default']['config-authenticate-to-backend'], 'true')
+    self.assertEqual(installed['request-frontend-default']['shared'], 'true')
+    self.assertEqual(
+      installed['request-frontend-default']['name'], 'frontend-default')
+    self.assertEqual(
+      installed['request-frontend-default']['software-url'],
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
+    )
+
+    self.assertEqual(
+      installed['request-frontend-default']['connection-secure_access'],
+      self.getRootPartitionConnectionParameterDict()['url-frontend-default'])
 
 
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -153,6 +186,8 @@ class TestBalancerPorts(ERP5InstanceTestCase):
   """Instantiate with two zope families, this should create for each family:
    - a balancer entry point with corresponding haproxy
    - a balancer entry point for test runner
+
+  and no frontend at all, because no family with name "default" exists.
   """
   __partition_reference__ = 'ap'
 
@@ -222,6 +257,18 @@ class TestBalancerPorts(ERP5InstanceTestCase):
             for c in haproxy_worker_process.connections()
             if c.status == 'LISTEN'
         ))
+
+  def test_no_frontend_request(self):
+    with open(os.path.join(self.computer_partition_root_path,
+                           '.installed-switch-softwaretype.cfg')) as f:
+      installed = zc.buildout.configparser.parse(f, 'installed')
+    self.assertFalse(
+      [section for section in installed if 'request-frontend' in section])
+    self.assertFalse(
+      [
+        param for param in self.getRootPartitionConnectionParameterDict()
+        if 'frontend' in param
+      ])
 
 
 class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -1100,3 +1147,100 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
           'var',
           'log',
           f))
+
+
+class TestFrontend(ERP5InstanceTestCase):
+  __partition_reference__ = 'f'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_':
+      json.dumps(
+        {
+          "zope-partition-dict": {
+            "backoffice": {},
+            "web": {
+              "family": "web",
+            },
+            "activities": {
+              # this family will not have frontend
+              "family": "activities"
+            },
+          },
+          "frontend": {
+            "backoffice": {},
+            "website": {
+              "zope-family": "web",
+              "internal-path": "/%(site-id)s/web_site_module/my_website/",
+              "instance-parameters": {
+                # some extra frontend parameters
+                "enable_cache": "true",
+              }
+            }
+          },
+          "sla-dict": {
+            "computer_guid=COMP-1234": ["frontend-backoffice"]
+          }
+        })
+    }
+
+  def test_frontend_url_published(self):
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    requests.get(
+      param_dict['url-frontend-backoffice'],
+      verify=False,
+      allow_redirects=False,
+    )
+    requests.get(
+      param_dict['url-frontend-website'],
+      verify=False,
+      allow_redirects=False,
+    )
+
+  def test_request_parameters(self):
+    param_dict = self.getRootPartitionConnectionParameterDict()
+
+    with open(os.path.join(self.computer_partition_root_path,
+                           '.installed-switch-softwaretype.cfg')) as f:
+      installed = zc.buildout.configparser.parse(f, 'installed')
+    self.assertEqual(
+      installed['request-frontend-backoffice']['config-type'], 'zope')
+    self.assertEqual(
+      installed['request-frontend-backoffice']['shared'], 'true')
+    self.assertEqual(
+      installed['request-frontend-backoffice']['config-url'],
+      param_dict['family-default-v6'])
+    self.assertEqual(
+      installed['request-frontend-backoffice']['config-path'], '/erp5')
+    self.assertEqual(
+      installed['request-frontend-backoffice']['sla-computer_guid'],
+      'COMP-1234')
+    self.assertEqual(
+      installed['request-frontend-backoffice']['software-url'],
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
+    )
+    self.assertEqual(
+      installed['request-frontend-backoffice']['connection-secure_access'],
+      param_dict['url-frontend-backoffice'])
+
+    self.assertEqual(
+      installed['request-frontend-website']['config-type'], 'zope')
+    # no SLA by default
+    self.assertFalse([k for k in installed['request-frontend-website'] if k.startswith('sla-')])
+    # instance parameters are propagated
+    self.assertEqual(
+      installed['request-frontend-website']['config-enable_cache'], 'true')
+    self.assertEqual(
+      installed['request-frontend-website']['config-url'],
+      param_dict['family-web-v6'])
+    self.assertEqual(
+      installed['request-frontend-website']['config-path'],
+      '/erp5/web_site_module/my_website/')
+    self.assertEqual(
+      installed['request-frontend-website']['connection-secure_access'],
+      param_dict['url-frontend-website'])
+
+    # no frontend was requested for activities family
+    self.assertNotIn('request-frontend-activities', installed)
+    self.assertNotIn('url-frontend-activities', param_dict)

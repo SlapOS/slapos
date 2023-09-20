@@ -1,7 +1,5 @@
 {% import "root_common" as root_common with context -%}
 {% import "caucase" as caucase with context %}
-{% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
-{% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
 {% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
@@ -370,31 +368,67 @@ config-command = {{ '${' ~ check_software_url_section_name ~ ':path}' }}
 {%     do zope_address_list_id_dict.__setitem__(zope_section_id, parameter_name) -%}
 {%     do zope_family_parameter_dict.setdefault(family_name, []).append(parameter_name) -%}
 {%   endfor -%}
-{%   if has_frontend -%}
-{%     set frontend_name = 'frontend-' ~ family_name -%}
-{%     do publish_dict.__setitem__('family-' ~ family_name, '${' ~ frontend_name ~ ':connection-site_url}' ) -%}
-[{{ frontend_name }}]
-<= request-frontend-base
-name = {{ frontend_name }}
-config-url = ${request-balancer:connection-{{ family_name }}-v6}
-{%   else -%}
-{%     do publish_dict.__setitem__('family-' ~ family_name, '${request-balancer:connection-' ~ family_name ~ '}' ) -%}
-{%     do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
-{%   endif -%}
+{%   do publish_dict.__setitem__('family-' ~ family_name, '${request-balancer:connection-' ~ family_name ~ '}' ) -%}
+{%   do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
 {% endfor -%}
+
+
+{# We request a default frontend when a default zope family exists #}
+{% set frontend_parameters_dict = slapparameter_dict.get(
+  'frontend',
+  {'default': {}} if 'default' in zope_family_dict else {}
+) -%}
+
+[request-frontend-base]
+<= request-common
+recipe = slapos.cookbook:request
+shared = true
+return =
+  secure_access
+{{ root_common.sla('frontend', default_to_same_computer=False) }}
+
+{% for frontend_name, frontend_parameters in frontend_parameters_dict.items() -%}
+{%   set frontend_full_name = 'frontend-' ~ frontend_name -%}
+{%   set request_frontend_name = 'request-frontend-' ~ frontend_name -%}
+{%   set zope_family_name = frontend_parameters.get('zope-family', 'default') -%}
+{%   set frontend_software_url = frontend_parameters.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
+{%   set frontend_software_type = frontend_parameters.get('software-type', '') -%}
+{%   set frontend_instance_parameters = frontend_parameters.get('instance-parameters', {}) -%}
+{%   if frontend_instance_parameters.setdefault('type', 'zope') == 'zope' -%}
+{%     do frontend_instance_parameters.setdefault('authenticate-to-backend', 'true') -%}
+{%     do assert(zope_family_name in zope_family_dict, 'Unknown family %s for frontend %s' % (zope_family_name, frontend_name)) -%}
+{%     do frontend_instance_parameters.setdefault('url', '${request-balancer:connection-' ~ zope_family_name ~ '-v6}') -%}
+{%     do frontend_instance_parameters.setdefault('path', frontend_parameters.get('internal-path', '/%(site-id)s') % {'site-id': site_id}) -%}
+{%   endif %}
+[{{ request_frontend_name }}]
+<= request-frontend-base
+name = {{ frontend_full_name }}
+software-url = {{ frontend_software_url }}
+{%   if frontend_software_type %}
+software-type = {{ frontend_software_type }}
+{%   endif %}
+{{ root_common.sla(frontend_full_name, default_to_same_computer=False) }}
+{%   for name, value in frontend_instance_parameters.items() -%}
+config-{{ name }} = {{ value }}
+{%   endfor -%}
+
+{%   set promise_frontend_section_name = 'promise-' ~ request_frontend_name %}
+[{{ promise_frontend_section_name }}]
+<= monitor-promise-base
+promise = check_url_available
+name = ${:_buildout_section_name_}.py
+config-url = {{ "${" }}{{ request_frontend_name }}:connection-secure_access}
+config-ignore-code = 1
+config-allow-redirects = 0
+
+{%   do root_common.section(promise_frontend_section_name) -%}
+{%   do publish_dict.__setitem__('url-frontend-' ~ frontend_name, '${' ~ request_frontend_name ~ ':connection-secure_access}' ) -%}
+{% endfor -%}
+
 
 {% if has_jupyter -%}
 {# request jupyter connected to balancer of proper zope family -#}
 {{   request('jupyter', 'jupyter', 'jupyter', {}, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family}) }}
-
-{%   if has_frontend -%}
-[frontend-jupyter]
-<= request-frontend-base
-name = frontend-jupyter
-config-url = ${request-jupyter:connection-url}
-{#     # override jupyter-url in publish_dict with frontend address -#}
-{%     do publish_dict.__setitem__('jupyter-url', '${frontend-jupyter:connection-site_url}') -%}
-{%   endif -%}
 {%- endif %}
 
 {% if wcfs_enable -%}
@@ -458,31 +492,6 @@ config-url = ${request-jupyter:connection-url}
   key_config=balancer_key_config_dict,
 ) }}
 
-[request-frontend-base]
-{% if has_frontend -%}
-<= request-common
-recipe = slapos.cookbook:request
-software-url = {{ dumps(frontend_dict['software-url']) }}
-software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
-{{ root_common.sla('frontend', True) }}
-shared = true
-{% set config_dict = {
-  'type': 'zope',
-} -%}
-{%   if frontend_dict.get('domain') -%}
-{%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
-{%   endif -%}
-{%   if frontend_dict.get('virtualhostroot-http-port') -%}
-{%     do config_dict.__setitem__('virtualhostroot-http-port', frontend_dict['virtualhostroot-http-port']) -%}
-{%   endif -%}
-{%   if frontend_dict.get('virtualhostroot-https-port') -%}
-{%     do config_dict.__setitem__('virtualhostroot-https-port', frontend_dict['virtualhostroot-https-port']) -%}
-{%   endif -%}
-{%   for name, value in config_dict.items() -%}
-config-{{ name }} = {{ value }}
-{%   endfor -%}
-return = site_url
-{% endif -%}
 
 {% endif -%}{# if zope_partition_dict -#}
 
