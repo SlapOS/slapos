@@ -79,6 +79,11 @@
       "description": "Zope family access information",
       "pattern": "^https://",
       "type": "string"
+    },
+    "url-frontend-.*": {
+      "description": "Frontend URL, following `url-frontend-{frontend_name}` naming scheme",
+      "pattern": "^https://",
+      "type": "string"
     }
   },
   "type": "object"
