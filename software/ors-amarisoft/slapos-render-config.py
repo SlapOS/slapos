@@ -138,8 +138,8 @@ def iRU3_SDR1_fLTE2():
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
         'sdr_dev_list': [3],
-        'n_antenna_dl': 1,
-        'n_antenna_ul': 1,
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 2,
     }
 
     iSHARED('Cell 3a', '_CELL3_a', {
