@@ -805,7 +805,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       ).json()
       self.assertEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
 
-  def test_x_forwarded_for_stripped_when_not_verified_connection(self):
+  def test_x_forwarded_for_stripped_when_no_certificate(self):
     # type: () -> None
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
     result = requests.get(
@@ -819,6 +819,32 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       requests.get(
         balancer_url,
         headers={'X-Forwarded-For': '1.2.3.4'},
+        verify=False,
+      )
+
+  def test_x_forwarded_for_stripped_when_not_verified_certificate(self):
+    # type: () -> None
+    balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
+
+    # certificate from an unknown CA
+    another_unrelated_caucase = self.getManagedResource('another_unrelated_caucase', CaucaseService)
+    unknown_client_certificate = self.getManagedResource('unknown_client_certificate', CaucaseCertificate)
+    unknown_client_certificate.request('unrelated client certificate', another_unrelated_caucase)
+
+    result = requests.get(
+      balancer_url,
+      headers={'X-Forwarded-For': '1.2.3.4'},
+      cert=(unknown_client_certificate.cert_file, unknown_client_certificate.key_file),
+      verify=False,
+    ).json()
+    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
+
+    balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
+    with self.assertRaisesRegex(Exception, "unknown ca"):
+      requests.get(
+        balancer_url,
+        headers={'X-Forwarded-For': '1.2.3.4'},
+        cert=(unknown_client_certificate.cert_file, unknown_client_certificate.key_file),
         verify=False,
       )
 
