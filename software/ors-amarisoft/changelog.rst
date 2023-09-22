@@ -1,5 +1,16 @@
 Changelog
 =========
+Version 1.0.336 (2023-09-25)
+-------------
+
+* Support on Lopcomm RRH via netconf
+  - Lopcomm firmware auto-upgrade and verification
+  - Up to 4T4R
+  - Netconf access verification promise
+  - PA output power alarm
+  - Default value added for B1
+* fix some bugs
+
 Version 1.0.332 (2023-09-04)
 -------------
 
