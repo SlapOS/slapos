@@ -125,7 +125,7 @@ class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
     param_dict = self.getRootPartitionConnectionParameterDict()
 
     self.assertEqual(
-      f'https://[{self._ipv6_address}]:8888/tree',
+      f'https://[{self.getPartitionIPv6(self.getPartitionId("jupyter"))}]:8888/tree',
       param_dict['jupyter-url']
     )
 

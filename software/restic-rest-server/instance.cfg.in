@@ -110,7 +110,7 @@ output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_se
 recipe = plone.recipe.command
 command =
   if [ ! -f '${:csr}' ] ; then
-   {{ openssl_bin }} req \
+   {{ openssl_bin }} req \
       -newkey rsa:2048 \
       -batch \
       -new \

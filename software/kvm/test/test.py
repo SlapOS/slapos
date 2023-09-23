@@ -115,6 +115,46 @@ bootstrap_machine_param_dict = {
 }
 
 
+class KVMTestCase(InstanceTestCase):
+  @classmethod
+  def _findTopLevelPartitionPath(cls, path):
+    index = 0
+    while True:
+      index = path.find(os.path.sep, index) + len(os.path.sep)
+      top_path = path[:index]
+      if os.path.exists(os.path.join(top_path, '.slapos-resource')):
+        return top_path
+      if index == -1:
+        return None
+
+  @classmethod
+  def _updateSlaposResource(cls, partition_path, **kw):
+    with open(os.path.join(partition_path, '.slapos-resource'), 'r+') as f:
+      resource = json.load(f)
+      resource.update(kw)
+      f.seek(0)
+      f.truncate()
+      json.dump(resource, f, indent=2)
+
+  @classmethod
+  def formatPartitions(cls):
+    super().formatPartitions()
+
+    # steal tap from top level partition
+    instance_directory = cls.slap.instance_directory
+    top_partition_path = cls._findTopLevelPartitionPath(instance_directory)
+
+    with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
+      top_resource = json.load(f)
+
+    for partition in os.listdir(instance_directory):
+      if not partition.startswith(cls.__partition_reference__):
+        continue
+
+      partition_path = os.path.join(instance_directory, partition)
+      cls._updateSlaposResource(partition_path, tap=top_resource['tap'])
+
+
 class KvmMixin:
   def getConnectionParameterDictJson(self):
     return json.loads(
@@ -176,7 +216,7 @@ class KvmMixinJson:
 
 
 @skipUnlessKvm
-class TestInstance(InstanceTestCase, KvmMixin):
+class TestInstance(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
 
   def test(self):
@@ -192,12 +232,12 @@ class TestInstance(InstanceTestCase, KvmMixin):
     self.assertEqual(
       connection_parameter_dict,
       {
-        'ipv6': self._ipv6_address,
+        'ipv6': self.computer_partition_ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': f'https://[{self._ipv6_address}]:8026',
-        'nat-rule-port-tcp-22': f'{self._ipv6_address} : 10022',
-        'nat-rule-port-tcp-443': f'{self._ipv6_address} : 10443',
-        'nat-rule-port-tcp-80': f'{self._ipv6_address} : 10080',
+        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8026',
+        'nat-rule-port-tcp-22': f'{self.computer_partition_ipv6_address} : 10022',
+        'nat-rule-port-tcp-443': f'{self.computer_partition_ipv6_address} : 10443',
+        'nat-rule-port-tcp-80': f'{self.computer_partition_ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -227,7 +267,7 @@ class TestInstanceJson(
 
 
 @skipUnlessKvm
-class TestMemoryManagement(InstanceTestCase, KvmMixin):
+class TestMemoryManagement(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
 
   def getKvmProcessInfo(self, switch_list):
@@ -395,7 +435,7 @@ class MonitorAccessMixin(KvmMixin):
 
 
 @skipUnlessKvm
-class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
+class TestAccessDefault(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ad'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -416,7 +456,7 @@ class TestAccessDefaultJson(KvmMixinJson, TestAccessDefault):
 
 
 @skipUnlessKvm
-class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
+class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ada'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -452,7 +492,7 @@ class TestAccessDefaultAdditionalJson(
 
 
 @skipUnlessKvm
-class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
+class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'adb'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -464,27 +504,22 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
   def test(self):
     # START: mock .slapos-resource with tap.ipv4_addr
     # needed for netconfig.sh
-    test_partition_slapos_resource_file = os.path.join(
-      self.computer_partition_root_path, '.slapos-resource')
-    path = os.path.realpath(os.curdir)
-    while path != '/':
-      root_slapos_resource_file = os.path.join(path, '.slapos-resource')
-      if os.path.exists(root_slapos_resource_file):
-        break
-      path = os.path.realpath(os.path.join(path, '..'))
-    else:
-      raise ValueError('No .slapos-resource found to base the mock on')
-    with open(root_slapos_resource_file) as fh:
-      root_slapos_resource = json.load(fh)
-    if root_slapos_resource['tap']['ipv4_addr'] == '':
-      root_slapos_resource['tap'].update({
+    partition_path = self.computer_partition_root_path
+    top_partition_path = self._findTopLevelPartitionPath(partition_path)
+
+    with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
+      top_tap = json.load(f)['tap']
+
+    if top_tap['ipv4_addr'] == '':
+      top_tap.update({
         "ipv4_addr": "10.0.0.2",
         "ipv4_gateway": "10.0.0.1",
         "ipv4_netmask": "255.255.0.0",
         "ipv4_network": "10.0.0.0"
       })
-    with open(test_partition_slapos_resource_file, 'w') as fh:
-      json.dump(root_slapos_resource, fh, indent=4)
+
+    self._updateSlaposResource(partition_path, tap=top_tap)
+
     self.slap.waitForInstance(max_retry=10)
     # END: mock .slapos-resource with tap.ipv4_addr
 
@@ -505,7 +540,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
 
 
 @skipUnlessKvm
-class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
+class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akc'
   expected_partition_with_monitor_base_url_count = 2
 
@@ -535,7 +570,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
 
 
 @skipUnlessKvm
-class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
+class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akca'
   expected_partition_with_monitor_base_url_count = 2
 
@@ -575,7 +610,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
 
 
 @skipUnlessKvm
-class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
+class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akcb'
   expected_partition_with_monitor_base_url_count = 3
 
@@ -618,13 +653,20 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
 
 
 @skipUnlessKvm
-class TestInstanceResilient(InstanceTestCase, KvmMixin):
+class TestInstanceResilient(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ir'
   instance_max_retry = 20
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('PBS (kvm / 1)'))
+    cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm0'))
+    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm1'))
 
   def test_kvm_exporter(self):
     exporter_partition = os.path.join(
@@ -661,19 +703,19 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
     self.assertRegex(
       feed_pull,
       'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull'.format(
-        self._ipv6_address))
+        self.pbs1_ipv6))
     feed_push = connection_parameter_dict.pop('feed-url-kvm-1-push')
     self.assertRegex(
       feed_push,
       'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push'.format(
-        self._ipv6_address))
+        self.pbs1_ipv6))
     self.assertEqual(
       connection_parameter_dict,
       {
-        'ipv6': self._ipv6_address,
-        'monitor-base-url': f'https://[{self._ipv6_address}]:8160',
+        'ipv6': self.kvm0_ipv6,
+        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8160',
         'monitor-user': 'admin',
-        'takeover-kvm-1-url': f'http://[{self._ipv6_address}]:9263/',
+        'takeover-kvm-1-url': f'http://[{self.kvm1_ipv6}]:9263/',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -733,7 +775,7 @@ class TestInstanceResilientJson(
 
 
 @skipUnlessKvm
-class TestInstanceResilientDiskTypeIde(InstanceTestCase, KvmMixin):
+class TestInstanceResilientDiskTypeIde(KVMTestCase, KvmMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -748,7 +790,7 @@ class TestInstanceResilientDiskTypeIdeJson(
 
 
 @skipUnlessKvm
-class TestAccessResilientAdditional(InstanceTestCase):
+class TestAccessResilientAdditional(KVMTestCase):
   __partition_reference__ = 'ara'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -788,7 +830,7 @@ class TestAccessResilientAdditionalJson(
   pass
 
 
-class TestInstanceNbdServer(InstanceTestCase):
+class TestInstanceNbdServer(KVMTestCase):
   __partition_reference__ = 'ins'
   instance_max_retry = 5
 
@@ -890,7 +932,7 @@ class FakeImageServerMixin(KvmMixin):
 
 
 @skipUnlessKvm
-class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
+class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
   __partition_reference__ = 'biul'
   kvm_instance_partition_reference = 'biul0'
 
@@ -1250,7 +1292,7 @@ class TestBootImageUrlSelectResilientJson(
 
 
 @skipUnlessKvm
-class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
+class TestBootImageUrlListKvmCluster(KVMTestCase, FakeImageServerMixin):
   __partition_reference__ = 'biulkc'
 
   @classmethod
@@ -1328,7 +1370,7 @@ class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
 
 
 @skipUnlessKvm
-class TestNatRules(KvmMixin, InstanceTestCase):
+class TestNatRules(KvmMixin, KVMTestCase):
   __partition_reference__ = 'nr'
 
   @classmethod
@@ -1344,11 +1386,11 @@ class TestNatRules(KvmMixin, InstanceTestCase):
     self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
 
     self.assertEqual(
-      f'{self._ipv6_address} : 10100',
+      f'{self.computer_partition_ipv6_address} : 10100',
       connection_parameter_dict['nat-rule-port-tcp-100']
     )
     self.assertEqual(
-      f'{self._ipv6_address} : 10200',
+      f'{self.computer_partition_ipv6_address} : 10200',
       connection_parameter_dict['nat-rule-port-tcp-200']
     )
 
@@ -1360,7 +1402,7 @@ class TestNatRulesJson(
 
 
 @skipUnlessKvm
-class TestNatRulesKvmCluster(InstanceTestCase):
+class TestNatRulesKvmCluster(KVMTestCase):
   __partition_reference__ = 'nrkc'
 
   nat_rules = ["100", "200", "300"]
@@ -1409,7 +1451,7 @@ class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
 
 
 @skipUnlessKvm
-class TestWhitelistFirewall(InstanceTestCase):
+class TestWhitelistFirewall(KVMTestCase):
   __partition_reference__ = 'wf'
   kvm_instance_partition_reference = 'wf0'
 
@@ -1537,7 +1579,7 @@ class TestWhitelistFirewallRequestCluster(TestWhitelistFirewallRequest):
 
 
 @skipUnlessKvm
-class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
+class TestDiskDevicePathWipeDiskOndestroy(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ddpwdo'
   kvm_instance_partition_reference = 'ddpwdo0'
 
@@ -1572,7 +1614,7 @@ class TestDiskDevicePathWipeDiskOndestroyJson(
 
 
 @skipUnlessKvm
-class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
+class TestImageDownloadController(KVMTestCase, FakeImageServerMixin):
   __partition_reference__ = 'idc'
   maxDiff = None
 
@@ -1774,7 +1816,7 @@ INF: Storing errors in %(error_state_file)s
 
 
 @skipUnlessKvm
-class TestParameterDefault(InstanceTestCase, KvmMixin):
+class TestParameterDefault(KVMTestCase, KvmMixin):
   __partition_reference__ = 'pd'
 
   @classmethod
@@ -1883,22 +1925,17 @@ class ExternalDiskMixin(KvmMixin):
   def _prepareExternalStorageList(cls):
     external_storage_path = os.path.join(cls.working_directory, 'STORAGE')
     os.mkdir(external_storage_path)
-    # reuse .slapos-resource infomration of the containing partition
-    # it's similar to slapos/recipe/slapconfiguration.py
-    _resource_home = cls.slap.instance_directory
-    parent_slapos_resource = None
-    while not os.path.exists(os.path.join(_resource_home, '.slapos-resource')):
-      _resource_home = os.path.normpath(os.path.join(_resource_home, '..'))
-      if _resource_home == "/":
-        break
-    else:
-      with open(os.path.join(_resource_home, '.slapos-resource')) as fh:
-        parent_slapos_resource = json.load(fh)
-    assert parent_slapos_resource is not None
 
-    for partition in os.listdir(cls.slap.instance_directory):
+    # We already reuse tap from top level partition
+
+    instance_directory = cls.slap.instance_directory
+
+    for partition in os.listdir(instance_directory):
       if not partition.startswith(cls.__partition_reference__):
         continue
+
+      partition_path = os.path.join(instance_directory, partition)
+
       partition_store_list = []
       for number in range(10):
         storage = os.path.join(external_storage_path, f'data{number}')
@@ -1907,13 +1944,12 @@ class ExternalDiskMixin(KvmMixin):
         partition_store = os.path.join(storage, partition)
         os.mkdir(partition_store)
         partition_store_list.append(partition_store)
-      slapos_resource = parent_slapos_resource.copy()
-      slapos_resource['external_storage_list'] = partition_store_list
-      with open(
-        os.path.join(
-          cls.slap.instance_directory, partition, '.slapos-resource'),
-        'w') as fh:
-        json.dump(slapos_resource, fh, indent=2)
+
+      cls._updateSlaposResource(
+        partition_path,
+        external_storage_list=partition_store_list,
+      )
+
     # above is not enough: the presence of parameter is required in slapos.cfg
     slapos_config = []
     with open(cls.slap._slapos_config) as fh:
@@ -1955,7 +1991,7 @@ class ExternalDiskMixin(KvmMixin):
 
 
 @skipUnlessKvm
-class TestExternalDisk(InstanceTestCase, ExternalDiskMixin):
+class TestExternalDisk(KVMTestCase, ExternalDiskMixin):
   __partition_reference__ = 'ed'
   kvm_instance_partition_reference = 'ed0'
 
@@ -2105,7 +2141,7 @@ class ExternalDiskModernMixin(object):
 
 @skipUnlessKvm
 class TestExternalDiskModern(
-  ExternalDiskModernMixin, InstanceTestCase, ExternalDiskMixin):
+  ExternalDiskModernMixin, KVMTestCase, ExternalDiskMixin):
   def test(self):
     self.prepareEnv()
     self.waitForInstance()
@@ -2126,7 +2162,7 @@ class TestExternalDiskModern(
 
 @skipUnlessKvm
 class TestExternalDiskModernConflictAssurance(
-  ExternalDiskModernMixin, InstanceTestCase, ExternalDiskMixin):
+  ExternalDiskModernMixin, KVMTestCase, ExternalDiskMixin):
   def test(self):
     self.prepareEnv()
     # Create conflicting configuration
@@ -2186,7 +2222,7 @@ class TestExternalDiskModernCluster(TestExternalDiskModern):
 
 
 @skipUnlessKvm
-class TestExternalDiskModernIndexRequired(InstanceTestCase, ExternalDiskMixin):
+class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
   __partition_reference__ = 'edm'
   kvm_instance_partition_reference = 'edm0'
 
@@ -2250,7 +2286,7 @@ class TestExternalDiskModernIndexRequired(InstanceTestCase, ExternalDiskMixin):
 
 
 @skipUnlessKvm
-class TestInstanceHttpServer(InstanceTestCase, KvmMixin):
+class TestInstanceHttpServer(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ihs'
 
   @classmethod
@@ -2328,12 +2364,12 @@ vm""",
     self.assertEqual(
       connection_parameter_dict,
       {
-        'ipv6': self._ipv6_address,
+        'ipv6': self.computer_partition_ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': f'https://[{self._ipv6_address}]:8026',
-        'nat-rule-port-tcp-22': f'{self._ipv6_address} : 10022',
-        'nat-rule-port-tcp-443': f'{self._ipv6_address} : 10443',
-        'nat-rule-port-tcp-80': f'{self._ipv6_address} : 10080',
+        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8026',
+        'nat-rule-port-tcp-22': f'{self.computer_partition_ipv6_address} : 10022',
+        'nat-rule-port-tcp-443': f'{self.computer_partition_ipv6_address} : 10443',
+        'nat-rule-port-tcp-80': f'{self.computer_partition_ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
