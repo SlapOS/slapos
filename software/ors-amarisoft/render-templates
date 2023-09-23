@@ -12,10 +12,10 @@ if args.delete:
   directory = os.path.dirname(os.path.realpath(__file__))
   test_directory = os.path.join(directory, 'test')
   for f in os.listdir(directory):
-    if 'tdd' in f:
+    if ('tdd' in f)  or  ('fdd' in f):
       os.remove(os.path.join(directory, f))
   for f in os.listdir(test_directory):
-    if 'testTDD' in f:
+    if ('testTDD' in f)  or  ('testFDD' in f):
       os.remove(os.path.join(test_directory, f))
   exit()
 
