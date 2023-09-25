@@ -36,8 +36,43 @@ pprint(enb_part.getInstanceParameterDict())
 def request_ru(enb, **kw):
     1/0
 
-def request_cell(enb, **kw):
-    1/0
+def request_cell(enb, cell_ref, kw):
+    assert 'cell_type' in kw
+    enb_ref  = kslap.ref_of_instance(slap, enb)
+    enb_guid = enb.getInstanceGuid()
+    cell = request(ors,
+        software_type="enb",
+        #partition_reference="%s/cell%d" % (enb_ref, sim_n),
+        partition_reference=cell_ref,
+        shared=True,
+        filter_kw={"instance_guid": enb_guid},
+        partition_parameter_kw={"_": json.dumps(kw
+        )})
+    return cell
 
 def request_peer(enb, **kw):
     1/0
+
+RU1 = {
+    'ru_type':      'sdr',
+    'ru_link_type': 'sdr',
+    'sdr_dev_list': [0, 1],
+    'n_antenna_dl': 4,
+    'n_antenna_ul': 2,
+    'tx_gain':      51,
+    'rx_gain':      52,
+}
+
+CELL1_a = {
+    'cell_type':    'lte',
+    'rf_mode':      'tdd',
+    'bandwidth':    '5 MHz',
+    'dl_earfcn':    38050,      # 2600 MHz
+    'pci':          1,
+    'cell_id':      '0x01',
+    'ru':           RU1,        # RU definition embedded into CELL
+}
+
+iCELL1_a = request_cell(enb, 'CELL1_a', CELL1_a)
+
+print('iCELL1_a:', iCELL1_a)
