@@ -1,3 +1,4 @@
+{% set bbu = "zzz" %}{# XXX temp hack #}
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
