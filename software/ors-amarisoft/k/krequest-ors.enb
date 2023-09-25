@@ -1,15 +1,43 @@
 #!/usr/bin/env -S slapos console
 """request ors/enb for kirr"""
 
+# XXX workaround for `slapos console` not setting up sys.path the same way as std python does
+import sys
+from os.path import dirname
+sys.path.insert(0, dirname(__file__))
 import kslap
+
+import json
+from pprint import pprint
 
 ors = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
 
-env = request(ors,
+enb = request(ors,
         software_type="enb",
         partition_reference="kenb",
         filter_kw={"computer_guid": "slaprunner"},
         partition_parameter_kw={"_": json.dumps({
             'testing': True,
-            'core_network_plmn': '31415',
         })})
+
+
+print('enb:', enb)
+print('ref(enb):', kslap.ref_of_instance(slap, enb))
+
+# enb -> enb_part to retrieve all information about instance state
+# (see about core_part in krequest_ors.core for details)
+enb_part = slap.registerComputerPartition(enb.slap_computer_id, enb.slap_computer_partition_id)
+
+print('enb_part:', enb_part)
+print('enb_part.getInstanceParameterDict:')
+pprint(enb_part.getInstanceParameterDict())
+
+
+def request_ru(enb, **kw):
+    1/0
+
+def request_cell(enb, **kw):
+    1/0
+
+def request_peer(enb, **kw):
+    1/0

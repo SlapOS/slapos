@@ -1,7 +1,7 @@
 # Module kslap provides utility routines for dealing with SlapOS.
 
 # ref_of_instance returns reference an instance was requested with
-def ref_of_instance(inst):
+def ref_of_instance(slap, inst):
     i_comp_id = inst.slap_computer_id
     i_part_id = inst.slap_computer_partition_id
     for x in slap.getOpenOrderDict().values():      # XXX linear search
