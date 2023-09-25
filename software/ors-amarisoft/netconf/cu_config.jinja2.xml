@@ -217,7 +217,7 @@
                <active>{{ slapparameter_dict.get('txa0cc00_active', 'INACTIVE') }}</active>
                <rw-type>LTE</rw-type>
                <rw-duplex-scheme>FDD</rw-duplex-scheme>
-               <gain>{{ slapparameter_dict.get('txa0cc00_gain', '-20') }}</gain>
+               <gain>{{ slapparameter_dict.get('txa0cc00_gain  XXX -> global tx_gain', '-20') }}</gain>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
             </tx-array-carriers>

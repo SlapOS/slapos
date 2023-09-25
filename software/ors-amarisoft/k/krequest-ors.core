@@ -1,18 +1,10 @@
 #!/usr/bin/env -S slapos console
-"""request erp5 for kirr"""
+"""request ors/core for kirr"""
 
 import sys, json
 from pprint import pprint
+import kslap
 
-# ref_of_instance returns reference an instance was requested with
-def ref_of_instance(inst):
-    i_comp_id = inst.slap_computer_id
-    i_part_id = inst.slap_computer_partition_id
-    for x in slap.getOpenOrderDict().values():      # XXX linear search
-        if x._computer_reference == i_comp_id  and  \
-           x._reference          == i_part_id:
-            return x._partition_reference
-    raise KeyError('not found reference of instance_guid=%s-%s' % (i_comp_id, i_part_id))
 
 """
 x =slap.getOpenOrderDict()
@@ -37,7 +29,7 @@ core = request(ors,
         })})
 
 print("core:", core)
-print("ref(core):", ref_of_instance(core))
+print("ref(core):", kslap.ref_of_instance(core))
 print("core.getInstanceParameterDict:")
 pprint(core.getInstanceParameterDict())
 print()
@@ -82,7 +74,7 @@ for x in '_computer_id', '_instance_guid', '_parameter_dict', '_partition_id', '
 
 
 def request_sim(core, sim_n):
-    core_ref  = ref_of_instance(core)
+    core_ref  = kslap.ref_of_instance(core)
     core_guid = core.getInstanceGuid()
     sim = request(ors,
         software_type="core-network",

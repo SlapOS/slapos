@@ -1,0 +1,15 @@
+#!/usr/bin/env -S slapos console
+"""request ors/enb for kirr"""
+
+import kslap
+
+ors = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
+
+env = request(ors,
+        software_type="enb",
+        partition_reference="kenb",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+            'core_network_plmn': '31415',
+        })})

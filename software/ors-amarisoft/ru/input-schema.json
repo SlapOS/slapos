@@ -38,6 +38,18 @@
           "type": "integer"
         },
 
+        "tx_gain": {
+          "title": "Tx gain",
+          "description": "Tx gain (in dB)",
+          "type": "number"
+        },
+
+        "rx_gain": {
+          "title": "Rx gain",
+          "description": "Rx gain (in dB)",
+          "type": "number"
+        },
+
         "cpri_link": {
           "title": "CPRI link settings",
 

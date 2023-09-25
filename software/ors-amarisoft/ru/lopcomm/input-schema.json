@@ -9,12 +9,9 @@
     "mac_addr",
     "txa0cc00_active",
     "rxa0cc00_active",
-    "txa0cc00_center_frequency_earfcn",
     "txa0cc00_center_frequency",
-    "txa0cc00_bandwidth",
     "rxa0cc00_center_frequency_earfcn",
-    "rxa0cc00_center_frequency",
-    "rxa0cc00_bandwidth"
+    "rxa0cc00_center_frequency"
   ],
   "properties": {
     "ru_type": {
@@ -65,23 +62,11 @@
         "INACTIVE"
       ]
     },
-    "txa0cc00_center_frequency_earfcn": {
-      "title": "Center Frequency EARFCN (TXA0CC00)",
-      "description": "Center Frequency EARFCN (TXA0CC00)",
-      "type": "number",
-      "default": 300
-    },
     "txa0cc00_center_frequency": {
-      "title": "Center Frequency in Hz (TXA0CC00)",
-      "description": "Center Frequency in Hz (TXA0CC00)",
+      "title": "DL Center Frequency in MHz (TXA0CC00)",
+      "description": "Center Frequency in MHz (TXA0CC00)",
       "type": "number",
-      "default": 2140000000
-    },
-    "txa0cc00_bandwidth": {
-      "title": "bandwidth in Hz (TXA0CC00)",
-      "description": "bandwidth in Hz (TXA0CC00)",
-      "type": "number",
-      "default": 20000000
+      "default": 2140
     },
     "rxa0cc00_center_frequency_earfcn": {
       "title": "Center Frequency EARFCN (RXA0CC00)",
@@ -90,16 +75,16 @@
       "default": 18300
     },
     "rxa0cc00_center_frequency": {
-      "title": "Center Frequency in Hz (RXA0CC00)",
-      "description": "Center Frequency in Hz (RXA0CC00)",
+      "title": "UL Center Frequency in MHz (RXA0CC00)",
+      "description": "Center Frequency in MHz (RXA0CC00)",
       "type": "number",
-      "default": 1950000000
+      "default": 1950
     },
-    "rxa0cc00_bandwidth": {
-      "title": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
-      "description": "Lopcomm ORAN bandwidth in Hz (RXA0CC00)",
-      "type": "number",
-      "default": 20000000
+    "user-authorized-key": {
+      "title": "User Authorized Key",
+      "description": "SSH public key in order to connect to the SSH server of this instance.",
+      "textarea": true,
+      "type": "string"
     }
   }
 }

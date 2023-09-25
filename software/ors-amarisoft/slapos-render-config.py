@@ -34,6 +34,8 @@ def iRU1_SDR_tLTE2_tNR():
         'sdr_dev_list': [0, 1],
         'n_antenna_dl': 4,
         'n_antenna_ul': 2,
+        'tx_gain':      51,
+        'rx_gain':      52,
     }
 
     iSHARED('Cell 1a', '_CELL1_a', {
@@ -92,11 +94,15 @@ def iRU2_LOPCOMM_fLTE_fNR():
         },
         'n_antenna_dl': 2,
         'n_antenna_ul': 1,
+        'tx_gain':      -21,
+        'rx_gain':      -22,
     }
 
     RU2_b = copy.deepcopy(RU2_a)
     RU2_b['mac_addr'] = 'YYY'
     RU2_b['cpri_link']['sfp_port'] = 1
+    RU2_b['tx_gain'] += 10
+    RU2_b['rx_gain'] += 10
 
     iSHARED('Radio Unit 2a', '_RU2_a', RU2_a)
     iSHARED('Radio Unit 2b', '_RU2_b', RU2_b)
@@ -140,6 +146,8 @@ def iRU3_SDR1_fLTE2():
         'sdr_dev_list': [1],
         'n_antenna_dl': 1,
         'n_antenna_ul': 1,
+        'tx_gain':      67,
+        'rx_gain':      61,
     }
 
     iSHARED('Cell 3a', '_CELL3_a', {
@@ -174,24 +182,15 @@ iRU3_SDR1_fLTE2()
 
 jshared_instance_list = json.dumps(shared_instance_list)
 json_params = """{
-    "earfcn": 126357,
-    "tx_gain": 67,
-    "rx_gain": 60,
     "sib23_file": "sib2_3.asn",
-    "rf_mode": "fdd",
     "slap_configuration": {
         "tap-name": "slaptap9",
         "slap-computer-partition-id": "slappart9",
-        "configuration.default_lte_bandwidth": "10 MHz",
         "configuration.default_lte_imsi": "001010123456789",
         "configuration.default_lte_k": "00112233445566778899aabbccddeeff",
         "configuration.default_lte_inactivity_timer": 10000,
-        "configuration.default_nr_bandwidth": 40,
         "configuration.default_nr_imsi": "001010123456789",
         "configuration.default_nr_k": "00112233445566778899aabbccddeeff",
-        "configuration.default_nr_ssb_pos_bitmap": "10000000",
-        "configuration.default_n_antenna_dl": 2,
-        "configuration.default_n_antenna_ul": 2,
         "configuration.default_nr_inactivity_timer": 10000,
         "slave-instance-list": %(jshared_instance_list)s
     },
