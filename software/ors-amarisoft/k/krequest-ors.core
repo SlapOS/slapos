@@ -95,7 +95,7 @@ def request_sim(core, sim_n):
             "k": "00112233445566778899AABBCCDDEEFF",
             "impu": "impu%d" % sim_n,
             "impi": "impi%d@amarisoft.com" % sim_n,
-         })})
+        })})
     return sim
 
 print()

@@ -42,7 +42,6 @@ def request_cell(enb, cell_ref, kw):
     enb_guid = enb.getInstanceGuid()
     cell = request(ors,
         software_type="enb",
-        #partition_reference="%s/cell%d" % (enb_ref, sim_n),
         partition_reference=cell_ref,
         shared=True,
         filter_kw={"instance_guid": enb_guid},
@@ -74,5 +73,22 @@ CELL1_a = {
 }
 
 iCELL1_a = request_cell(enb, 'CELL1_a', CELL1_a)
-
 print('iCELL1_a:', iCELL1_a)
+
+
+CELL1_b = {
+    'cell_type':    'lte',
+    'rf_mode':      'tdd',
+    'bandwidth':    '5 MHz',
+    'dl_earfcn':    38100,      # 2605 MHz
+    'pci':          2,
+    'cell_id':      '0x02',
+    'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
+        'ru_type':      'ruincell_ref',
+        'ruincell_ref': 'CELL1_a'
+    }
+}
+
+iCELL1_b = request_cell(enb, 'CELL1_b', CELL1_b)
+print('iCELL1_b:', iCELL1_b)
+
