@@ -50,6 +50,10 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 # doesn't use "insert ... select" (in any number of queries) pattern.
 innodb_locks_unsafe_for_binlog = 1
 
+# disable innodb_change_buffering to prevent potential risk of crash or data corruption,
+# that is default from 10.5.14.
+innodb_change_buffering = none
+
 {% set log_bin = parameter_dict['binlog-path'] -%}
 {% if log_bin -%}
 log_bin = {{ log_bin }}
@@ -74,6 +78,7 @@ relay-log = mariadb-relay-bin
 {{x}}innodb_flush_log_at_trx_commit = 0
 {{x}}innodb_flush_method = nosync
 {{x}}innodb_doublewrite = 0
+{{x}}innodb_change_buffering = all
 {{x}}sync_frm = 0
 
 character_set_server = {{ parameter_dict['character-set-server'] }}
