@@ -10,6 +10,7 @@ import kslap
 import json, copy
 from pprint import pprint
 
+
 ors = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
 
 enb1 = request(ors,
@@ -153,7 +154,19 @@ iENB(enb1, 'CELL2_b', {
 })
 
 
-print('\n\n\n----\n\n\n')
+
+
+# for HO my initial idea was for enb1 to refer to enb2 and retrieve information
+# about all cells configured a that enb2 automaically. The code below checks to see
+# whether it is possible (lookup of instance by reference is currently only
+# possible with linear search and Rafael said that the lookup will also be
+# constrained to work only in the same instance tree).
 kenb_ = kslap.instance_by_ref(slap, 'kenb')
+"""
+print()
 print(kenb_)
-pprint(kenb_)
+for _ in dir(kenb_):
+    y = getattr(kenb_, _)
+    print('%s:\t' % _, end='')
+    pprint(y)
+"""

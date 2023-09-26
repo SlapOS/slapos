@@ -17,3 +17,12 @@ def instance_by_ref(slap, ref):
         if x._partition_reference == ref:
             return x
     raise KeyError('not found instance coresponding to reference %s' % ref)
+
+    # XXX vvv does not return information about slaves, nor information about
+    # to which comp/partition the instance is deployed
+    """
+    o = slap.registerOpenOrder()
+    return o._hateoas_navigator.getInstanceTreeRootSoftwareInstanceInformation(ref)
+    inst = slap.registerOpenOrder().getInformation(partition_reference=ref)
+    return inst
+    """
