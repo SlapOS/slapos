@@ -50,7 +50,8 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 # doesn't use "insert ... select" (in any number of queries) pattern.
 innodb_locks_unsafe_for_binlog = 1
 
-# disable innodb_change_buffering for safety, that is default from 10.5.14.
+# disable innodb_change_buffering to prevent potential risk of crash or data corruption,
+# that is default from 10.5.14.
 innodb_change_buffering = none
 
 {% set log_bin = parameter_dict['binlog-path'] -%}
