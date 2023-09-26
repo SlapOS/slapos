@@ -53,7 +53,6 @@
       "default": "virtio",
       "enum": [
         "ide",
-        "scsi",
         "sd",
         "mtd",
         "floppy",
