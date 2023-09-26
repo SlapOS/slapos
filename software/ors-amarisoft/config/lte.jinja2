@@ -1,5 +1,14 @@
 {#- Package lte provides helpers for configuring LTE cells. -#}
 
+{#- XXX -> nr ? #}
+{%- macro default_ssb_nr_arfcn(dl_nr_arfcn) %}
+{%-   set f = nr.get_frequency(nrarfcn=632628)  %}
+{%-   set gscn = nr.get_gscn_by_frequency(f)-1  %}{# nrarfcn round up, amari down #}
+{%-   set fg = nr.get_frequency_by_gscn(gscn)   %}
+{%-   set fg_arfcn = nr.get_nrarfcn(fg)         %}
+{{- fg_arfcn }}
+{%- endmacro %}
+
 {#- cell_tdd_config returns tdd_config for an LTE cell. #}
 {%- macro cell_tdd_config(cell) %}
 {%-   set _ = {'[Configuration 2] 5ms 2UL 6DL (default)':        2,
