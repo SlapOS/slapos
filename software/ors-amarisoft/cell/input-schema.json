@@ -4,8 +4,8 @@
   "title": "Cell",
   "type": "object",
   "oneOf": [
-    { "$ref": "lte/input-schema.json" },
-    { "$ref": "nr/input-schema.json" }
+    { "$ref": "../cell/lte/input-schema.json" },
+    { "$ref": "../cell/nr/input-schema.json" }
   ],
 
   "$defs": {

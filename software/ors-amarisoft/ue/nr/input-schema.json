@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "NR UE",
+  "type": "object",
+  "$ref": "../../ue/input-schema.json#/$defs/ue-common",
+
+  "properties": {
+    "ue_type": {
+      "const":    "nr",
+      "template": "nr"
+    }
+  }
+}
