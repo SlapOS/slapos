@@ -36,30 +36,6 @@ software_list = [
             'trx'                          : 'sdr',
             'bbu'                          : 'ors',
             'ru'                           : 'ors',
-        }, {
-            'software_name'                : 'tdd-m2ru',
-            'rf_mode'                      : 'tdd',
-            'trx'                          : 'cpri',
-            'bbu'                          : 'server',
-            'ru'                           : 'm2ru',
-        }, {
-            'software_name'                : 'fdd-lopcomm',
-            'rf_mode'                      : 'fdd',
-            'trx'                          : 'cpri',
-            'bbu'                          : 'server',
-            'ru'                           : 'lopcomm',
-        }, {
-            'software_name'                : 'fdd',
-            'rf_mode'                      : 'fdd',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'server',
-            'ru'                           : 'any',
-        }, {
-            'software_name'                : 'tdd',
-            'rf_mode'                      : 'tdd',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'server',
-            'ru'                           : 'any',
         }
 ]
 
@@ -82,7 +58,7 @@ with open('software.cfg.json.jinja2', 'r') as f:
     software_json_template = Template(f.read())
 
 instance_json_template_map = {}
-for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
+for software_type in ['enb', 'gnb']:
     with open('instance-{}-input-schema.json.jinja2'.format(software_type), 'r') as f:
         instance_json_template_map[software_type] = Template(f.read())
 
@@ -101,7 +77,7 @@ for software in software_list:
     with open('software-{}.cfg'.format(software['software_name']),
               'w+') as f:
         f.write(software_template.render(**software, **global_context) + '\n')
-    for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
+    for software_type in ['enb', 'gnb']:
         with open('instance-{}-{}-input-schema.json'.format(
                     software['software_name'],
                     software_type),

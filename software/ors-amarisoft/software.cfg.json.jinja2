@@ -4,12 +4,12 @@
   "serialisation": "json-in-xml",
   "software-type": {
 {% if bbu != 'ors' %}
-    "ue-lte": {
+    "ue": {
       "title": "UE-LTE",
       "description": "UE LTE Configuration",
-      "software-type": "ue-lte",
-      "request": "instance-{{ software_name }}-ue-lte-input-schema.json",
-      "response": "instance-{{ software_name }}-ue-lte-schema.json",
+      "software-type": "ue",
+      "request": "instance-{{ software_name }}-ue-input-schema.json",
+      "response": "instance-{{ software_name }}-ue-schema.json",
       "index": 4
     },
     "ue-nr": {
@@ -54,5 +54,6 @@
       "shared": true,
       "index": 3
     }
+    // XXX enb-slave, ue-slave
   }
 }
