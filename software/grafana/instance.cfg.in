@@ -163,7 +163,7 @@ ssl-cert-file = ${grafana-certificate:cert-file}
 
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ grafana_bin }} -config ${grafana-config-file:output} -homepath {{ grafana_homepath }}
+    {{ grafana_bin }} server -config ${grafana-config-file:output} -homepath {{ grafana_homepath }}
 wrapper-path = ${directory:service}/grafana
 
 [grafana-certificate]
@@ -267,7 +267,12 @@ init =
             "name_override": f"{partition['name']}-mysql",
             "servers": [dsn],
             "gather_innodb_metrics": True,
-            "tags": dict(partition.get("static-tags", {}), app=application["name"]),
+            "tags": dict(
+              partition.get("static-tags", {}),
+              app=application["name"],
+              name=partition["name"],
+              partition=partition["reference"],
+            ),
           }
         )
         if partition["type"] == "erp5/mariadb":
@@ -278,39 +283,44 @@ init =
               "dsn": dsn,
               "query": [
                 {
-                  "query": "select count(*) as message_count from message",
+                  "query": """
+                    select 'message' as cmf_activity_queue, count(*) as message_count from message
+                    union all select 'message_queue' as cmf_activity_queue, count(*) as message_count from message_queue
+                  """,
                   "field_columns_include": ["message_count"],
+                  "tag_columns_include": ["cmf_activity_queue"],
                 },
                 {
-                  "query": "select count(*) as message_queue_count from message_queue",
-                  "field_columns_include": ["message_queue_count"],
-                },
-                {
-                  "query": "select count(*) as message_failed_count from message where processing_node=-2",
-                  "field_columns_include": ["message_failed_count"],
-                },
-                {
-                  "query": "select count(*) as message_queue_failed_count from message_queue where processing_node=-2",
-                  "field_columns_include": ["message_queue_failed_count"],
+                  "query": """
+                    select 'message' as cmf_activity_queue, count(*) as failed_message_count
+                      from message where processing_node between -2 and -10
+                    union all select 'message_queue' as cmf_activity_queue, count(*) as failed_message_count
+                      from message_queue where processing_node between -2 and -10
+                  """,
+                  "field_columns_include": ["failed_message_count"],
+                  "tag_columns_include": ["cmf_activity_queue"],
                 },
                 {
                   "query": """
                     select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message.date)), 0) as int)
-                      as message_waiting_time from message
-                      where processing_node in (-1, 0) and message not like '%after_tag%'
-                  """,
-                  "field_columns_include": ["message_waiting_time"],
-                },
-                {
-                  "query": """
+                      as waiting_time, 'message' as cmf_activity_queue
+                      from message where processing_node in (-1, 0) and message.message not like '%after_tag%'
+                    union all
                     select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message_queue.date)), 0) as int)
-                      as message_queue_waiting_time from message_queue
-                      where processing_node in (-1, 0) and message not like '%after_tag%'
+                      as waiting_time, 'message_queue' as cmf_activity_queue
+                      from message_queue where processing_node in (-1, 0) and message.message_queue not like '%after_tag%'
                   """,
-                  "field_columns_include": ["message_queue_waiting_time"],
-                }
+                  "field_columns_include": ["waiting_time"],
+                  "tag_columns_include": ["cmf_activity_queue"],
+
+                },
               ],
-              "tags": dict(partition.get("static-tags", {}), app=application["name"]),
+              "tags": dict(
+                partition.get("static-tags", {}),
+                app=application["name"],
+                name=partition["name"],
+                partition=partition["reference"],
+              ),
             }
           )
 
@@ -326,7 +336,12 @@ init =
             ],
             "grok_timezone": "Local",
             "name_override": f"{partition['name']}",
-            "tags": dict(partition.get("static-tags", {}), app=application["name"]),
+            "tags": dict(
+              partition.get("static-tags", {}),
+              app=application["name"],
+              name=partition["name"],
+              partition=partition["reference"],
+            ),
           }
         )
     urls = application.get("urls", [])
@@ -360,8 +375,6 @@ init =
           "slapos": [{
             "instance_root": application["instance-root"]}]}})
 
-      # TODO: supervisor process finder for
-      # https://github.com/influxdata/telegraf/tree/master/plugins/inputs/procstat ?
       telegraf_slapos_input_command = self.options['telegraf-input-slapos-bin']
       inputs["execd"].append({
         "name_override": f"{application['name']}-processes",
@@ -389,9 +402,8 @@ init =
       processors["enum"].append({
         "namepass": [ f"{application['name']}-processes"],
         "mapping": [{
-  #        "tag": "group", # TODO: rename this in input plugin # XXX I don't remember what this means
-          "tag": "slappart",
-          "dest": "partition",
+          "tag": "reference",
+          "dest": "name",
           "value_mappings": partition_mapping,
         }]})
 
@@ -401,7 +413,6 @@ init =
   #    - [x] strip hashes from -on-watch
   #  - [x] activity metrics
   #  - [ ] alert dashboard
-  #  - [ ] inclu "jerome-dev" partout ???
   #  - [ ] apdex
   #  - [ ] "job" is bad name in Explore
 
@@ -476,8 +487,6 @@ command-line =
       \
       -boltdb.shipper.compactor.ring.instance-addr=${loki:ip} \
       -boltdb.shipper.compactor.ring.instance-id=${:_buildout_section_name_} \
-      -common.embedded-cachering.instance-addr=${loki:ip} \
-      -common.embedded-cachering.instance-id=${:_buildout_section_name_} \
       -distributor.ring.instance-addr=${loki:ip} \
       -distributor.ring.instance-id=${:_buildout_section_name_} \
       -frontend.instance-addr=${loki:ip} \
@@ -790,8 +799,6 @@ install =
                   "stages": [
                     {
                       "multiline": {
-                        # TODO
-                        #"firstline": "^# Time: \\d{2}\\d{2}\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}",
                         "firstline": r"^# Time: \d{2}.*",
                         "max_wait_time": "3s"
                       }
