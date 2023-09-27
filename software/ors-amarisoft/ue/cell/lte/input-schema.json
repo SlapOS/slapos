@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "LTE Cell",
+  "type": "object",
+  "$ref": "../../../ue/cell/input-schema.json#/$defs/cell-common",
+
+  "properties": {
+    "ue_cell_type": {
+      "const":    "lte",
+      "template": "lte"
+    },
+
+  }
+}

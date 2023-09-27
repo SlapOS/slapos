@@ -13,6 +13,11 @@
   ],
 
   "properties": {
+    "peer_cell_type": {
+      "const":    "lte",
+      "template": "lte"
+    },
+
     "e_cell_id": {
       "title": "Cell ID",
       "description": "28 bit E-UTRAN cell identity. Concatenation of enb_id and cell_id of the neighbour cell.",

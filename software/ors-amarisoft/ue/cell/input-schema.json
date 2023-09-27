@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Cell",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "../../ue/cell/lte/input-schema.json" },
+    { "$ref": "../../ue/cell/nr/input-schema.json" }
+  ],
+
+  "$defs": {
+    "ue-cell-common": {
+
+    "properties": {
+        "ue_cell_type": {
+          "type": "string",
+          "options":  { "hidden": true }
+        },
+
+    }
+  }
+}

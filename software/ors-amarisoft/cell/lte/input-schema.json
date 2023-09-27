@@ -15,6 +15,7 @@
       "const":    "lte",
       "template": "lte"
     },
+
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "type": "string",

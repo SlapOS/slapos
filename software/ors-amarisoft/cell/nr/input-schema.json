@@ -15,6 +15,7 @@
       "const":    "nr",
       "template": "nr"
     },
+
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "type": "string",

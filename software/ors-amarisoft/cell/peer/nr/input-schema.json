@@ -16,6 +16,11 @@
   ],
 
   "properties": {
+    "peer_cell_type": {
+      "const":    "nr",
+      "template": "nr"
+    },
+
     "nr_cell_id": {
       "title": "NR Cell ID",
       "description": "Concatenation of gnb_id and cell_id of the cell",
