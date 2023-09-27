@@ -26,6 +26,7 @@
           "$ref": "../../cell/input-schema.json#/$defs/ru-of-cell",
           "propertyOrder": 9999
         }
+      }
     }
   }
 }
