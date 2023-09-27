@@ -49,51 +49,53 @@
           "default": 204
         },
         "ru": {
-          "title": "Radio Unit",
-          "oneOf": [
-            {
-              "title": "Shared Radio Unit",
-              "description": "Use radio unit defined in separate shared instance",
-              "type": "object",
-              "required": ["ru_type", "ru_ref"],
-              "properties": {
-                "ru_type": {
-                    "const":    "ru_ref",
-                    "template": "ru_ref",
-                    "options":  { "hidden": true }
-                },
-                "ru_ref": {
-                  "title": "RU Reference",
-                  "description": "Reference of shared radio unit instance",
-                  "type": "string"
-                }
-              }
-            },
-            {
-              "title": "Shared Radio Unit of a Cell",
-              "description": "Use the same radio unit as referenced cell instance does",
-              "type": "object",
-              "required": ["ru_type", "ruincell_ref"],
-              "properties": {
-                "ru_type": {
-                    "const":    "ruincell_ref",
-                    "template": "ruincell_ref",
-                    "options":  { "hidden": true }
-                },
-                "ruincell_ref": {
-                  "title": "Cell Reference",
-                  "description": "Reference of cell instance whose radio unit to share",
-                  "type": "string"
-                }
-              }
-            },
-            { "$ref": "../ru/sdr/input-schema.json" },
-            { "$ref": "../ru/lopcomm/input-schema.json" },
-            { "$ref": "../ru/sunvawe/input-schema.json" }
-          ],
+          "$ref": "#/$defs/ru-in-cell",
           "propertyOrder": 9999
         }
       }
+    },
+
+    "ru-in-cell": {
+      "title": "Radio Unit",
+      "oneOf": [
+        {
+          "title": "Shared Radio Unit",
+          "description": "Use radio unit defined in separate shared instance",
+          "type": "object",
+          "required": ["ru_type", "ru_ref"],
+          "properties": {
+            "ru_type": {
+                "const":    "ru_ref",
+                "template": "ru_ref",
+                "options":  { "hidden": true }
+            },
+            "ru_ref": {
+              "title": "RU Reference",
+              "description": "Reference of shared radio unit instance",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Shared Radio Unit of a Cell",
+          "description": "Use the same radio unit as referenced cell instance does",
+          "type": "object",
+          "required": ["ru_type", "ruincell_ref"],
+          "properties": {
+            "ru_type": {
+                "const":    "ruincell_ref",
+                "template": "ruincell_ref",
+                "options":  { "hidden": true }
+            },
+            "ruincell_ref": {
+              "title": "Cell Reference",
+              "description": "Reference of cell instance whose radio unit to share",
+              "type": "string"
+            }
+          }
+        },
+        { "$ref": "../ru/input-schema.json" }
+      ]
     }
   }
 }
