@@ -12,7 +12,7 @@
     "ul_nr_arfcn",
     "pci",
     "tac",
-    "band"
+    "nr_band"
   ],
 
   "properties": {

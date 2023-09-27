@@ -5,11 +5,22 @@
   "type": "object",
   "$ref": "../../../ue/cell/input-schema.json#/$defs/cell-common",
 
+  "required": [
+    "dl_nr_arfcn",
+    "bandwidth",
+    "nr_band",
+    "ssb_nr_arfcn"
+  ],
+
   "properties": {
     "ue_cell_type": {
       "const":    "nr",
       "template": "nr"
     },
 
+    "dl_nr_arfcn":  { "$ref": "../../cell/nr/input-schema.json#/$defs/dl_earfcn" },
+    "bandwidth":    { "$ref": "../../cell/nr/input-schema.json#/$defs/bandwidth" },
+    "nr_band":      { "$ref": "../../cell/nr/input-schema.json#/$defs/nr_band" },
+    "ssb_nr_arfcn": { "$ref": "../../cell/nr/input-schema.json#/$defs/ssb_nr_arfcn" }
   }
 }

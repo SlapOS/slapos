@@ -5,11 +5,18 @@
   "type": "object",
   "$ref": "../../../ue/cell/input-schema.json#/$defs/cell-common",
 
+  "required": [
+    "dl_earfcn",
+    "bandwidth"
+  ],
+
   "properties": {
     "ue_cell_type": {
       "const":    "lte",
       "template": "lte"
     },
 
+    "dl_earfcn": { "$ref": "../../cell/lte/input-schema.json#/$defs/dl_earfcn" },
+    "bandwidth": { "$ref": "../../cell/lte/input-schema.json#/$defs/bandwidth" }
   }
 }

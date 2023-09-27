@@ -11,12 +11,21 @@
   "$defs": {
     "ue-cell-common": {
 
+    "required": [
+      "ue_cell_type",
+      "ru"
+    ],
+
     "properties": {
         "ue_cell_type": {
           "type": "string",
           "options":  { "hidden": true }
         },
 
+        "ru": {
+          "$ref": "../../cell/input-schema.json#/$defs/ru-in-cell",
+          "propertyOrder": 9999
+        }
     }
   }
 }
