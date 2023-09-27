@@ -177,9 +177,9 @@ def iRU3_SDR1_fLTE2():
 
 
 
-#iRU1_SDR_tLTE2_tNR()
+iRU1_SDR_tLTE2_tNR()
 #iRU2_LOPCOMM_fLTE_fNR()
-iRU3_SDR1_fLTE2()
+#iRU3_SDR1_fLTE2()
 
 
 jshared_instance_list = json.dumps(shared_instance_list)
