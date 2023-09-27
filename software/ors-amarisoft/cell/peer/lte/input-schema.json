@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "LTE Peer Cell",
+  "type": "object",
+  "$ref": "../../../cell/peer/input-schema.json#/$defs/cell-common",
+
+  "required": [
+    "e_cell_id",
+    "pci",
+    "dl_earfcn",
+    "tac"
+  ],
+
+  "properties": {
+    "e_cell_id": {
+      "title": "Cell ID",
+      "description": "28 bit E-UTRAN cell identity. Concatenation of enb_id and cell_id of the neighbour cell.",
+      "type": "string"
+    },
+    "pci":        { "$ref": "../../../cell/lte/input-schema.json#/$defs/pci" },
+    "dl_earfcn":  { "$ref": "../../../cell/lte/input-schema.json#/$defs/dl_earfcn" },
+    "tac":        { "$ref": "../../../cell/lte/input-schema.json#/$defs/tac" }
+  }
+}

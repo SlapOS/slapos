@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Peer Cell",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "../../cell/peer/lte/input-schema.json" },
+    { "$ref": "../../cell/nr/input-schema.json" }
+  ],
+
+  "$defs": {
+    "peer-cell-common": {
+      "required": [
+        "peer_cell_type",
+        "pci",
+        "tac"
+      ],
+
+      "properties": {
+        "peer_cell_type": {
+          "type": "string",
+          "options":  { "hidden": true }
+        },
+
+        "pci": { "$ref": "../../cell/input-schema.json#/$defs/pci" },
+        "tac": { "$ref": "../../cell/input-schema.json#/$defs/tac" }
+      }
+
+    }
+  }
+}
