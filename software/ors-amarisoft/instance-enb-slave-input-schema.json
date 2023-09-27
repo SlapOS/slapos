@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "title": "ENB shared instance",
+  "title": "eNB / gNB shared instance",
   "type": "object",
   "oneOf": [
     { "$ref": "ru/input-schema.json" },
