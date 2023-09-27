@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "ENB shared instance",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "ru/input-schema.json" },
+    { "$ref": "cell/input-schema.json" },
+    { "$ref": "cell/peer/input-schema.json" }
+  ]
+}
