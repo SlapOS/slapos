@@ -16,7 +16,7 @@
       "template": "lte"
     },
 
-    "dl_earfcn": { "$ref": "../../cell/lte/input-schema.json#/properties/dl_earfcn" },
-    "bandwidth": { "$ref": "../../cell/lte/input-schema.json#/properties/bandwidth" }
+    "dl_earfcn": { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
+    "bandwidth": { "$ref": "../../../cell/lte/input-schema.json#/properties/bandwidth" }
   }
 }
