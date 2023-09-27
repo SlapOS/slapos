@@ -1,5 +1,7 @@
 import json, copy, sys, pprint
 
+# XXX test both enb.cfg + ue.cfg simultaneously
+
 config = "enb"
 json_params_empty = """{
     "rf_mode": 'fdd',
