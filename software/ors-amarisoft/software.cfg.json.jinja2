@@ -5,20 +5,12 @@
   "software-type": {
 {% if bbu != 'ors' %}
     "ue": {
-      "title": "UE-LTE",
-      "description": "UE LTE Configuration",
+      "title": "UE",
+      "description": "UE Configuration",
       "software-type": "ue",
-      "request": "instance-{{ software_name }}-ue-input-schema.json",
-      "response": "instance-{{ software_name }}-ue-schema.json",
+      "request": "instance-ue-input-schema.json",
+      "response": "instance-ue-schema.json",
       "index": 4
-    },
-    "ue-nr": {
-      "title": "UE-NR",
-      "description": "UE NR Configuration",
-      "software-type": "ue-nr",
-      "request": "instance-{{ software_name }}-ue-nr-input-schema.json",
-      "response": "instance-{{ software_name }}-ue-nr-schema.json",
-      "index": 5
     },
 {% endif %}
     "enb": {
