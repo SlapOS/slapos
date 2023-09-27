@@ -363,26 +363,14 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 
-class TestUELTEMonitorGadgetUrl(ORSTestCase):
+class TestUEMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({'testing': True})}
 
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "ue-lte"
-
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
-
-class TestUENRMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue-nr"
+        return "ue"
 
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
@@ -406,7 +394,7 @@ class TestSimCard(ORSTestCase):
     def test_sim_card(self):
         test_sim_card(self)
 
-class TestUELTEParameters(ORSTestCase):
+class TestUELTEParameters(ORSTestCase):     # XXX adjust
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps(param_dict)}
@@ -439,7 +427,7 @@ class TestUELTEParameters(ORSTestCase):
                 if l.startswith('#define N_RB_DL'):
                     self.assertIn('50', l)
 
-class TestUENRParameters(ORSTestCase):
+class TestUENRParameters(ORSTestCase):      # XXX adjust
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps(param_dict)}

@@ -18,7 +18,7 @@ generated with jinja2 templates with the render-templates script before being pu
  * instance-fdd-enb-input-schema.json
  * software-fdd.cfg
  * software-tdd.cfg.json
- * instance-fdd-ue-nr-input-schema.json
+ * instance-fdd-ue-nr-input-schema.json     XXX kill x-ue
  * instance-tdd-gnb-input-schema.json
  * instance-tdd-ue-nr-input-schema.json
  * test/testFDD.py
