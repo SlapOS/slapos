@@ -3,7 +3,7 @@
 
   "title": "NR Peer Cell",
   "type": "object",
-  "$ref": "../../../cell/peer/input-schema.json#/$defs/cell-common",
+  "$ref": "../../../cell/peer/input-schema.json#/$defs/peer-cell-common",
 
   "required": [
     "nr_cell_id",
@@ -31,15 +31,15 @@
       "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
       "type": "integer"
     },
-    "dl_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/$defs/dl_nr_arfcn" },
-    "nr_band":      { "$ref": "../../../cell/nr/input-schema.json#/$defs/nr_band" },
-    "ssb_nr_arfcn": { "$ref": "../../../cell/nr/input-schema.json#/$defs/ssb_nr_arfcn" },
+    "dl_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/properties/dl_nr_arfcn" },
+    "nr_band":      { "$ref": "../../../cell/nr/input-schema.json#/properties/nr_band" },
+    "ssb_nr_arfcn": { "$ref": "../../../cell/nr/input-schema.json#/properties/ssb_nr_arfcn" },
     "ul_nr_arfcn": {
       "title": "UL NR ARFCN",
       "description": "Uplink NR Absolute Radio Frequency Channel Number of the cell",
       "type": "integer"
     },
-    "pci":          { "$ref": "../../../cell/nr/input-schema.json#/$defs/pci" },
-    "tac":          { "$ref": "../../../cell/nr/input-schema.json#/$defs/tac" }
+    "pci":          { "$ref": "../../../cell/nr/input-schema.json#/properties/pci" },
+    "tac":          { "$ref": "../../../cell/nr/input-schema.json#/properties/tac" }
   }
 }

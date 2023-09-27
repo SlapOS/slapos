@@ -5,7 +5,7 @@
   "type": "object",
   "oneOf": [
     { "$ref": "../../cell/peer/lte/input-schema.json" },
-    { "$ref": "../../cell/nr/input-schema.json" }
+    { "$ref": "../../cell/peer/nr/input-schema.json" }
   ],
 
   "$defs": {

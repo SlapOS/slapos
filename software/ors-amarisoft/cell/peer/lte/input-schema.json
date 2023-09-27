@@ -3,7 +3,7 @@
 
   "title": "LTE Peer Cell",
   "type": "object",
-  "$ref": "../../../cell/peer/input-schema.json#/$defs/cell-common",
+  "$ref": "../../../cell/peer/input-schema.json#/$defs/peer-cell-common",
 
   "required": [
     "e_cell_id",
@@ -23,8 +23,8 @@
       "description": "28 bit E-UTRAN cell identity. Concatenation of enb_id and cell_id of the neighbour cell.",
       "type": "string"
     },
-    "pci":        { "$ref": "../../../cell/lte/input-schema.json#/$defs/pci" },
-    "dl_earfcn":  { "$ref": "../../../cell/lte/input-schema.json#/$defs/dl_earfcn" },
-    "tac":        { "$ref": "../../../cell/lte/input-schema.json#/$defs/tac" }
+    "pci":        { "$ref": "../../../cell/lte/input-schema.json#/properties/pci" },
+    "dl_earfcn":  { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
+    "tac":        { "$ref": "../../../cell/lte/input-schema.json#/properties/tac" }
   }
 }
