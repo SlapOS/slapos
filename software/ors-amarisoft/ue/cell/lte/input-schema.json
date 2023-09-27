@@ -3,7 +3,7 @@
 
   "title": "LTE Cell",
   "type": "object",
-  "$ref": "../../../ue/cell/input-schema.json#/$defs/cell-common",
+  "$ref": "../../../ue/cell/input-schema.json#/$defs/ue-cell-common",
 
   "required": [
     "dl_earfcn",
@@ -16,7 +16,7 @@
       "template": "lte"
     },
 
-    "dl_earfcn": { "$ref": "../../cell/lte/input-schema.json#/$defs/dl_earfcn" },
-    "bandwidth": { "$ref": "../../cell/lte/input-schema.json#/$defs/bandwidth" }
+    "dl_earfcn": { "$ref": "../../cell/lte/input-schema.json#/properties/dl_earfcn" },
+    "bandwidth": { "$ref": "../../cell/lte/input-schema.json#/properties/bandwidth" }
   }
 }
