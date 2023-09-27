@@ -19,7 +19,7 @@
 
       "properties": {
         "ue_type": {
-          "type": "strig",
+          "type": "string",
           "options":  { "hidden": true }
         },
 
