@@ -49,13 +49,13 @@
           "default": 204
         },
         "ru": {
-          "$ref": "#/$defs/ru-in-cell",
+          "$ref": "#/$defs/ru-of-cell",
           "propertyOrder": 9999
         }
       }
     },
 
-    "ru-in-cell": {
+    "ru-of-cell": {
       "title": "Radio Unit",
       "oneOf": [
         {
