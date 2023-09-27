@@ -20,12 +20,8 @@
         "peer_cell_type": {
           "type": "string",
           "options":  { "hidden": true }
-        },
-
-        "pci": { "$ref": "../../cell/input-schema.json#/$defs/pci" },
-        "tac": { "$ref": "../../cell/input-schema.json#/$defs/tac" }
+        }
       }
-
     }
   }
 }
