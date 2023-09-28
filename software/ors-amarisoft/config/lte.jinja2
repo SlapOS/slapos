@@ -1,4 +1,94 @@
-{#- Package lte provides helpers for configuring LTE cells. -#}
+{#- Package lte provides helpers for configuring Amarisoft LTE services. -#}
+{#- XXX rename to amari ? -#}
+
+{#- ru_config emits configuration for RF driver.
+#}
+{%- macro ru_config(iru_dict) %}
+  // Radio Units
+  rf_driver: {
+  {%- if slapparameter_dict.get('disable_sdr', False) %}
+      name: "dummy",
+  {%- else %}
+      name: "sdr",
+  {%- endif %}
+  {%- if slapparameter_dict.get('gps_sync', False) %}
+      sync: "gps",
+  {%- endif %}
+
+  {#- XXX emit big warning if both cpri and sdr are present
+        to protect users from unclear eNB failues
+        see https://support.amarisoft.com/issues/26021 for details
+
+    XXX belowe we continue as if sdr and cpri are both supported by enb simultaneously #}
+
+  {%- set dev_argv = []                                                       %}
+  {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
+  {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_kind = cpri   #}
+  {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
+  {%- set rx_gainv = [] %}      {#- rx_gain by tx channel                     #}
+  {%- for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)              %}
+  {%-   set ru = iru['_']                                                     %}
+      // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R
+  {%-   do ru.update({'_rf_port': rf_port})                                   %}
+  {%-   if ru.ru_type == 'sdr'                                                %}
+  {%-     do ru_sdr_dict.update({len(dev_argv): ru})                          %}
+      {#- XXX move to ru/sdr ?  #}
+  {%-     for n in ru.sdr_dev_list                                            %}
+  {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n))       %}
+  {%-     endfor                                                              %}
+  {%-   elif ru.ru_link_type == 'cpri'                                        %}
+  {%-     do ru_cpri_dict.update({len(dev_argv): ru})                         %}
+  {%-     set link = ru.cpri_link                                             %}
+  {#-     set cpri_link parameters to default         #}
+  {%-     for k, v in defaults['cpri_link'].items()   %}
+  {%-       do link.setdefault(k, v)                  %}
+  {%-     endfor                                      %}
+  {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))   %}
+  {%-   else        %}
+  {%-     do bug('unreachable')                                 %}
+  {%-   endif                                                   %}
+  {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)        %}
+  {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
+  {%- endfor %}
+      args: "{{dev_argv | join(',')}}",
+
+  {#- emit sdr-related options if an sdr ru is present #}
+  {%- if len(ru_sdr_dict) > 0               %}
+      rx_antenna:"tx_rx",   {#- XXX -> ru/sdr ? #}
+      tdd_tx_mod: 1,
+  {%- endif                                 %}
+
+  {#- emit cpri_* optins if a cpri ru is present #}
+  {#- NOTE values for non-cpri links come as empty   XXX recheck this is ok #}
+  {%- if len(ru_cpri_dict) > 0              %}
+  {%-   set vcpri = [None]*len(dev_argv)    %}
+  {%-   for dev, ru in ru_cpri_dict|dictsort  %}
+  {%-     do vcpri.__setitem__(dev, ru.cpri_link)       %}
+  {%-   endfor                                %}
+        cpri_mapping:  "{{ vcpri | map(attribute='mapping')  | map('default', '') | join(',') }}",
+        cpri_mult:     "{{ vcpri | map(attribute='mult')     | map('default', '') | join(',') }}",
+        cpri_rx_delay: "{{ vcpri | map(attribute='rx_delay') | map('default', '') | join(',') }}",
+        cpri_tx_delay: "{{ vcpri | map(attribute='tx_delay') | map('default', '') | join(',') }}",
+        cpri_tx_dbm:   "{{ vcpri | map(attribute='tx_dbm')   | map('default', '') | join(',') }}",
+  {%-   set tap_base = slap_configuration.get('tap-name', '')   %}
+  {%-   set vtap = ['']*len(dev_argv)                           %}
+  {%-   for i, (dev, _) in enumerate(ru_cpri_dict|dictsort)     %}
+  {%-     if len(ru_cpri_dict) > 1                              %}
+  {%-       set tap = "%s-%d" % (tap_base, i)                   %}
+  {%-     else                                                  %}
+  {%-       set tap = tap_base                                  %}
+  {%-     endif                                                 %}
+  {%-     do vtap.__setitem__(dev, tap)                         %}
+  {%-   endfor                                                  %}
+        ifname:        "{{ vtap | join(',') }}",
+  {%- endif                                                     %}
+  },
+
+  {#- emit tx/rx gain for all channels #}
+  tx_gain: {{ tx_gainv }},
+  rx_gain: {{ rx_gainv }},
+{%- endmacro  %}
+
 
 {#- XXX -> nr ? #}
 {%- macro default_ssb_nr_arfcn(dl_nr_arfcn) %}
