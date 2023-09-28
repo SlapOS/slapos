@@ -1292,7 +1292,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def requestSlaves(cls):
-    for slave_reference, partition_parameter_kw in list(
+    # Note: List is sorted here, so that tests which want slaves
+    #       ordered by their slave_reference are stable
+    for slave_reference, partition_parameter_kw in sorted(
       cls.getSlaveParameterDictDict().items()):
       software_url = cls.getSoftwareURL()
       software_type = cls.getInstanceSoftwareType()
@@ -6583,43 +6585,48 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     #       by backend haproxy configuration in exactly the way seen below
     #       Ordering it here will not help at all.
     return {
-      'wildcard': {
-        'url': cls.backend_url + 'wildcard',
-        'custom_domain': '*.alias1.example.com',
+      '01wildcard': {
+        'url': cls.backend_url + '01wildcard',
+        'custom_domain': '*.example.com',
+        'server-alias': 'example.com',
       },
-      'zspecific': {
-        'url': cls.backend_url + 'zspecific',
+      '02wildcard': {
+        'url': cls.backend_url + '02wildcard',
+        'custom_domain': '*.alias1.example.com',
+        'server-alias': 'alias1.example.com',
+      },
+      '03zspecific': {
+        'url': cls.backend_url + '03zspecific',
+        'custom_domain': 'zspecific.example.com',
+      },
+      '04zspecific': {
+        'url': cls.backend_url + '04zspecific',
         'custom_domain': 'zspecific.alias1.example.com',
       },
     }
 
   def test(self):
     self.assertSlaveBase(
-      'wildcard', hostname='*.alias1')
+      '01wildcard', hostname='*')
     self.assertSlaveBase(
-      'zspecific', hostname='zspecific.alias1')
+      '02wildcard', hostname='*.alias1')
+    self.assertSlaveBase(
+      '03zspecific', hostname='zspecific')
+    self.assertSlaveBase(
+      '04zspecific', hostname='zspecific.alias1')
 
-    result_wildcard = fakeHTTPSResult(
-      'other.alias1.example.com',
-      'test-path',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
-    )
-    self.assertEqual(self.certificate_pem, result_wildcard.certificate)
-    self.assertEqualResultJson(result_wildcard, 'Path', '/wildcard/test-path')
-
-    result_specific = fakeHTTPSResult(
-      'zspecific.alias1.example.com',
-      'test-path',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
-    )
-    self.assertEqual(self.certificate_pem, result_specific.certificate)
-    self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
+    def assertResult(hostname, path):
+      result_wildcard = fakeHTTPSResult(
+        hostname,
+        'test-path',
+      )
+      self.assertEqual(self.certificate_pem, result_wildcard.certificate)
+      self.assertEqualResultJson(
+        result_wildcard, 'Path', '/%s/test-path' % (path,))
+    assertResult('www.example.com', '01wildcard')
+    assertResult('www.alias1.example.com', '02wildcard')
+    assertResult('zspecific.example.com', '03zspecific')
+    assertResult('zspecific.alias1.example.com', '04zspecific')
 
 
 class TestPassedRequestParameter(HttpFrontendTestCase):
