@@ -1292,7 +1292,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def requestSlaves(cls):
-    for slave_reference, partition_parameter_kw in list(
+    # Note: List is sorted here, so that tests which want slaves
+    #       ordered by their slave_reference are stable
+    for slave_reference, partition_parameter_kw in sorted(
       cls.getSlaveParameterDictDict().items()):
       software_url = cls.getSoftwareURL()
       software_type = cls.getInstanceSoftwareType()
@@ -6577,49 +6579,83 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
 
   @classmethod
   def getSlaveParameterDictDict(cls):
-    # Note: The slaves are specifically constructed to have an order which
-    #       is triggering the problem. Slave list is sorted in many places,
-    #       and such slave configuration will result with them begin seen
-    #       by backend haproxy configuration in exactly the way seen below
-    #       Ordering it here will not help at all.
+    # Note: Slave list is ordered by it's reference, so that requestSlaves
+    #       will result in an order, which will hit the bugs covered here:
+    #        * the most wildcard domain is requested first
+    #        * then the more specific wildcard comes
+    #        * in the end specific slaves are there
     return {
-      'wildcard': {
-        'url': cls.backend_url + 'wildcard',
-        'custom_domain': '*.alias1.example.com',
+      '01wildcard': {
+        'url': cls.backend_url + '01wildcard',
+        'custom_domain': '*.example.com',
+        'server-alias': 'example.com',
       },
-      'zspecific': {
-        'url': cls.backend_url + 'zspecific',
+      '02wildcard': {
+        'url': cls.backend_url + '02wildcard',
+        'custom_domain': '*.alias1.example.com',
+        'server-alias': 'alias1.example.com',
+      },
+      '03zspecific': {
+        'url': cls.backend_url + '03zspecific',
+        'custom_domain': 'zspecific.example.com',
+      },
+      '04zspecific': {
+        'url': cls.backend_url + '04zspecific',
         'custom_domain': 'zspecific.alias1.example.com',
       },
     }
 
   def test(self):
-    self.assertSlaveBase(
-      'wildcard', hostname='*.alias1')
-    self.assertSlaveBase(
-      'zspecific', hostname='zspecific.alias1')
+    _, wildcard_key, _, wildcard_crt = createSelfSignedCertificate([
+      '*.example.com'])
+    _, wildcard_alias1_key, _, wildcard_alias1_crt = \
+        createSelfSignedCertificate([
+          '*.alias1.example.com'])
+    _, zspecific_key, _, zspecific_crt = createSelfSignedCertificate([
+      'zspecific.example.com'])
+    _, zspecific_alias1_key, _, zspecific_alias1_crt = \
+        createSelfSignedCertificate([
+          'zspecific.alias1.example.com'])
 
-    result_wildcard = fakeHTTPSResult(
-      'other.alias1.example.com',
-      'test-path',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
-    )
-    self.assertEqual(self.certificate_pem, result_wildcard.certificate)
-    self.assertEqualResultJson(result_wildcard, 'Path', '/wildcard/test-path')
+    def uploadCertificate(shared, key, certificate):
+      auth = mimikra.get(
+        self.current_generate_auth,
+        verify=self.kedifa_caucase_ca_certificate_file)
+      self.assertEqual(http.client.CREATED, auth.status_code)
+      data = certificate + key
+      upload = mimikra.put(
+        self.current_upload_url + auth.text,
+        data=data,
+        verify=self.kedifa_caucase_ca_certificate_file)
+      self.assertEqual(http.client.CREATED, upload.status_code)
 
-    result_specific = fakeHTTPSResult(
-      'zspecific.alias1.example.com',
-      'test-path',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
-    )
-    self.assertEqual(self.certificate_pem, result_specific.certificate)
-    self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
+    self.assertSlaveBase(
+      '01wildcard', hostname='*')
+    uploadCertificate(wildcard_key, wildcard_crt)
+    self.assertSlaveBase(
+      '02wildcard', hostname='*.alias1')
+    uploadCertificate(wildcard_alias1_key, wildcard_alias1_crt)
+    self.assertSlaveBase(
+      '03zspecific', hostname='zspecific')
+    uploadCertificate(zspecific_key, zspecific_crt)
+    self.assertSlaveBase(
+      '04zspecific', hostname='zspecific.alias1')
+    uploadCertificate(zspecific_alias1_key, zspecific_alias1_crt)
+    self.runKedifaUpdater()
+
+    def assertResult(hostname, path, certificate):
+      result_wildcard = fakeHTTPSResult(
+        hostname,
+        'test-path',
+      )
+      self.assertEqual(certificate, result_wildcard.certificate)
+      self.assertEqualResultJson(
+        result_wildcard, 'Path', '/%s/test-path' % (path,))
+    assertResult('www.example.com', '01wildcard', wildcard_crt)
+    assertResult('www.alias1.example.com', '02wildcard', wildcard_alias1_crt)
+    assertResult('zspecific.example.com', '03zspecific', zspecific_crt)
+    assertResult(
+      'zspecific.alias1.example.com', '04zspecific', zspecific_alias1_crt)
 
 
 class TestPassedRequestParameter(HttpFrontendTestCase):

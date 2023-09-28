@@ -23,30 +23,14 @@ defaults
   default-server init-addr last,libc,none
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
-{%- macro frontend_entry(slave_instance, scheme, wildcard) %}
-{#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
-{#-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] #}
-{%-     set host_list = (slave_instance.get('server-alias') or  '').split() %}
-{%-     if slave_instance.get('custom_domain') not in host_list %}
-{%-       do host_list.append(slave_instance.get('custom_domain')) %}
-{%-     endif %}
-{%-     set matched = {'count': 0} %}
-{%-     for host in host_list %}
-{#-       Match up to the end or optional port (starting with ':') #}
-{#-       Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
-{%-       if wildcard and host.startswith('*.') %}
-{%-         do matched.__setitem__('count', matched['count'] + 1) %}
-# match wildcard {{ host }}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
-{%-       elif not wildcard and not host.startswith('*.') %}
-{%-         do matched.__setitem__('count', matched['count'] + 1) %}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i ^{{ host }}($|:.*)
-{%-       endif %}
-{%-     endfor %}
-{%-     if matched['count'] > 0 %}
-  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
-{%-     endif %}
-{#-   endif #}
+
+{%- macro frontend_entry(slave_reference, hostname, scheme) %}
+{%-   if hostname.startswith('*') %}
+{%-     set matcher = hostname[2:] %}
+{%-   else %}
+{%-     set matcher = '^' ~ hostname %}
+{%-   endif %}
+  use_backend {{ slave_reference }}-{{ scheme }} if { req.hdr(host),host_only -m reg {{ matcher }}$ }
 {%- endmacro %}
 
 {%- macro frontend_common() %}
@@ -68,11 +52,8 @@ frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
   bind {{ configuration['global-ipv6'] }}:{{ configuration['http-port'] }}
 {{ frontend_common() }}
-{%- for slave_instance in frontend_slave_list -%}
-{{ frontend_entry(slave_instance, 'http', False) }}
-{%- endfor %}
-{%- for slave_instance in frontend_slave_list -%}
-{{ frontend_entry(slave_instance, 'http', True) }}
+{%- for entry in frontend_slave_order | sort(attribute="index,hostname", reverse=True) %}
+{{ frontend_entry(entry['slave_reference'], entry['hostname'], 'http') }}
 {%- endfor %}
   default_backend BACKEND_NOT_FOUND
 
@@ -84,16 +65,14 @@ frontend https-frontend
   bind quic6@{{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
 {%- endif %}
 {{ frontend_common() }}
-{%- for slave_instance in frontend_slave_list -%}
-{{ frontend_entry(slave_instance, 'https', False) }}
-{%- endfor %}
-{%- for slave_instance in frontend_slave_list -%}
-{{ frontend_entry(slave_instance, 'https', True) }}
+{%- for entry in frontend_slave_order | sort(attribute="index,hostname", reverse=True) %}
+{{ frontend_entry(entry['slave_reference'], entry['hostname'], 'https') }}
 {%- endfor %}
   default_backend BACKEND_NOT_FOUND
 
 # Backends
-{%- for slave_instance in frontend_slave_list %}
+{%- for slave_reference in sorted(frontend_slave_dict) %}
+{%-   set slave_instance = frontend_slave_dict[slave_reference] %}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
@@ -189,7 +168,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-       endif %} {# if 'hostname' in info_dict and 'port' in info_dict #}
 {%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
 {%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
-{%- endfor %} {# for slave_instance in frontend_slave_list #}
+{%- endfor %} {# for slave_reference in sorted(frontend_slave_dict) #}
 
 backend BACKEND_NOT_FOUND
   {#- a bit hacky but working way to provide default CDN's 404 #}
