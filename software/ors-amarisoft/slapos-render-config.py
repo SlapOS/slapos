@@ -206,205 +206,40 @@ json_params = """{
 }""" % globals()
 
 
-
-import os
-from jinja2 import Environment, StrictUndefined, \
-    BaseLoader, TemplateNotFound, PrefixLoader
-import six
-
-DEFAULT_CONTEXT = {x.__name__: x for x in (
-    abs, all, any, bin, bool, bytes, callable, chr, complex, dict, divmod,
-    enumerate, filter, float, format, frozenset, hex, int,
-    isinstance, iter, len, list, map, max, min, next, oct, ord, pow,
-    range, repr, reversed, round, set, six, sorted, str, sum, tuple, zip)}
-
-if six.PY2:
-    import itertools
-    DEFAULT_CONTEXT.update(
-        filter=itertools.ifilter,
-        map=itertools.imap,
-        range=xrange,
-        zip=itertools.izip,
-    )
-
-def _assert(x, *args):
-    if x:
-        return ""
-    raise AssertionError(*args)
-DEFAULT_CONTEXT['assert'] = _assert
-
-DUMPS_KEY = 'dumps'
-DEFAULT_IMPORT_DELIMITER = '/'
-
-def getKey(expression, buildout, _, options):
-    section, entry = expression.split(':')
-    if section:
-        return buildout[section][entry]
-    else:
-        return options[entry]
-
-def getJsonKey(expression, buildout, _, __):
-    return json.loads(getKey(expression, buildout, _, __))
-
-EXPRESSION_HANDLER = {
-    'raw': (lambda expression, _, __, ___: expression),
-    'key': getKey,
-    'json': (lambda expression, _, __, ___: json.loads(expression)),
-    'jsonkey': getJsonKey,
-    'import': (lambda expression, _, __, ___:
-        __import__(expression, fromlist=['*'], level=0)),
-    'section': (lambda expression, buildout, _, __: dict(
-        buildout[expression])),
-}
-
-class RelaxedPrefixLoader(PrefixLoader):
-    """
-    Same as PrefixLoader, but accepts imports lacking separator.
-    """
-    def get_loader(self, template):
-        if self.delimiter not in template:
-            template += self.delimiter
-        return super(RelaxedPrefixLoader, self).get_loader(template)
-
-class RecipeBaseLoader(BaseLoader):
-    """
-    Base class for import classes altering import path.
-    """
-    def __init__(self, path, delimiter, encoding):
-        self.base = os.path.normpath(path)
-        self.delimiter = delimiter
-        self.encoding = encoding
-
-    def get_source(self, environment, template):
-        path = self._getPath(template)
-        # Code adapted from jinja2's doc on BaseLoader.
-        if path is None or not os.path.exists(path):
-            raise TemplateNotFound(template)
-        mtime = os.path.getmtime(path)
-        with open(path, 'rb') as f:
-            source = f.read().decode(self.encoding)
-        return source, path, lambda: mtime == os.path.getmtime(path)
-
-    def _getPath(self, template):
-        raise NotImplementedError
-
-class FileLoader(RecipeBaseLoader):
-    """
-    Single-path loader.
-    """
-    def _getPath(self, template):
-        if template:
-            return None
-        return self.base
-
-class FolderLoader(RecipeBaseLoader):
-    """
-    Multi-path loader (to allow importing a folder's content).
-    """
-    def _getPath(self, template):
-        path = os.path.normpath(os.path.join(
-            self.base,
-            *template.split(self.delimiter)
-        ))
-        if path.startswith(self.base):
-            return path
-        return None
-
-LOADER_TYPE_DICT = {
-    'rawfile': (FileLoader, EXPRESSION_HANDLER['raw']),
-    'file': (FileLoader, getKey),
-    'rawfolder': (FolderLoader, EXPRESSION_HANDLER['raw']),
-    'folder': (FolderLoader, getKey),
-}
-
-compiled_source_cache = {}
-class Recipe():
-
-    def _init(self, name, options):
-        args = None, name, options
-        self.once = options.get('once')
-        self.encoding = options.get('encoding', 'utf-8')
-        self._update = True
-        import_delimiter = options.get('import-delimiter',
-            DEFAULT_IMPORT_DELIMITER)
-        import_dict = {}
-        for line in options.get('import-list', '').splitlines(False):
-            if not line:
-                continue
-            expression_type, alias, expression = line.split(None, 2)
-            if alias in import_dict:
-                raise ValueError('Duplicate import-list entry %r' % alias)
-            loader_type, expression_handler = LOADER_TYPE_DICT[
-                expression_type]
-            import_dict[alias] = loader_type(
-                expression_handler(expression, *args),
-                import_delimiter, self.encoding,
-            )
-        if import_dict:
-            loader = RelaxedPrefixLoader(import_dict,
-                delimiter=import_delimiter)
-        else:
-            loader = None
-        self.template = options['url']
-        extension_list = [x for x in (y.strip()
-            for y in options.get('extensions', '').split()) if x]
-        self.context = options['context']
-        self.context.update(DEFAULT_CONTEXT.copy())
-        self.env = Environment(
-            extensions=extension_list,
-            undefined=StrictUndefined,
-            loader=loader)
-
-    def _render(self):
-        env = self.env
-        template = self.template
-        with open(template, 'rb') as f:
-          source = f.read().decode(self.encoding)
-        compiled_source_cache[template] = compiled_source = \
-            env.compile(source, filename=template)
-
-        template_object = env.template_class.from_code(env,
-            compiled_source,
-            env.make_globals(None), None)
-        #print(self.context)
-        return template_object.render(**self.context).encode(self.encoding)
-
-    def install(self):
-        once = self.once
-        if once and os.path.exists(once):
-            return
-        installed = super(Recipe, self).install()
-        if once:
-            open(once, 'ab').close()
-            return
-        return installed
-
-    def update(self):
-        if self._update:
-            self.install()
-        else:
-            super(Recipe, self).update()
+import zc.buildout.buildout # XXX workaround for bug in vvv
+from slapos.recipe.template import jinja2_template
 
 
-def _print(*argv):
-    print(*argv, file=sys.stderr)
+# j2render renders config/<config>.jinja2.cfg into config/<config>.cfg
+def j2render(config):
+    ctx = json.loads(json_params)
+    textctx = ''
+    for k, v in ctx.items():
+        textctx += 'json %s %s\n' % (k, json.dumps(v))
+    textctx += 'import json_module json\n'
+    buildout = None # stub
+    r = jinja2_template.Recipe(buildout, "recipe", {
+      'extensions': 'jinja2.ext.do',
+      'url': 'config/{}.jinja2.cfg'.format(config),
+      'output': 'config/{}.cfg'.format(config),
+      'context': textctx,
+      'import-list': 'rawfile lte.jinja2 config/lte.jinja2',
+      })
 
-def _pprint(obj):
-    pprint.pprint(obj, sys.stderr)
+    # avoid dependency on zc.buildout.download and the need to use non-stub buildout section
+    def _read(url, *args):
+        with open(url, *args) as f:
+            return f.read()
+    r._read = _read
 
-r = Recipe()
-ctx = json.loads(json_params)
-ctx.update({
-    'json_module': json,
-    'print': _print,
-    'pprint': _pprint,
-})
-r._init("recipe", {
-  'extensions': 'jinja2.ext.do',
-  'url': 'config/{}.jinja2.cfg'.format(config),
-  'output': 'config/{}.cfg'.format(config),
-  'context': ctx,
-  'import-list': 'rawfile lte.jinja2 config/lte.jinja2',
-  })
-with open('config/{}.cfg'.format(config), 'w+') as f:
-  f.write(r._render().decode())
+    # debugging
+    r.context.update({
+        'print':  lambda *argv:  print(*argv, file=sys.stderr),
+        'pprint': lambda obj:    pprint.pprint(obj, sys.stderr),
+    })
+
+    with open('config/{}.cfg'.format(config), 'w+') as f:
+      f.write(r._render().decode())
+
+
+j2render(config)    # XXX temp
