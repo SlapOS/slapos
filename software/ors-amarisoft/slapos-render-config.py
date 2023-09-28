@@ -245,7 +245,25 @@ def do_enb():
 # ---- UE ----
 
 def do_ue():
-    pass    # XXX temp
+    iue = Instance()
+
+    jshared_instance_list = json.dumps(iue.shared_instance_list)
+    json_params = """{
+        "slap_configuration": {
+            "tap-name": "slaptap9",
+            "slap-computer-partition-id": "slappart9",
+            "slave-instance-list": %(jshared_instance_list)s
+        },
+        "directory": {
+            "log": "log",
+            "etc": "etc",
+            "var": "var"
+        },
+        "slapparameter_dict": {
+        }
+    }""" % locals()
+
+    j2render('ue', json_params)
 
 
 def main():
