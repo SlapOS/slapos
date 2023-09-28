@@ -1,9 +1,8 @@
 {#- Package lte provides helpers for configuring Amarisoft LTE services. -#}
 {#- XXX rename to amari ? -#}
 
-{#- ru_config emits configuration for RF driver.
-#}
-{%- macro ru_config(iru_dict) %}
+{#- ru_config emits RF driver configuration for specified Radio Units. #}
+{%- macro ru_config(iru_dict, slapparameter_dict) %}
   // Radio Units
   rf_driver: {
   {%- if slapparameter_dict.get('disable_sdr', False) %}
