@@ -17,30 +17,20 @@ defaults
   default-server init-addr last,libc,none
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'http_backend', 'https': 'https_backend'} %}
-{%- macro frontend_entry(slave_instance, scheme, wildcard) %}
-{#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
+{%- macro frontend_entry(slave_reference, hostname, slave_instance, scheme) %}
 {%-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] %}
-{%-     set matched = {'count': 0} %}
-{%-     for host in slave_instance['host_list'] %}
-{#-       Match up to the end or optional port (starting with ':') #}
-{#-       Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
-{%-       if wildcard and host.startswith('*.') %}
-{%-         do matched.__setitem__('count', matched['count'] + 1) %}
-# match wildcard {{ host }}
-  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
-{%-       elif not wildcard and not host.startswith('*.') %}
-{%-         do matched.__setitem__('count', matched['count'] + 1) %}
-  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i ^{{ host }}($|:.*)
-{%-       endif %}
-{%-     endfor %}
-{%-     if matched['count'] > 0 %}
-{%-       if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['health-check-failover-hostname'] %}
-  acl is_failover_{{ slave_instance['slave_reference'] }}_{{ scheme }} nbsrv({{ slave_instance['slave_reference'] }}-{{ scheme }}) eq 0
-  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}_{{ scheme }} ! is_failover_{{ slave_instance['slave_reference'] }}_{{ scheme }}
-  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover if is_{{ slave_instance['slave_reference'] }}_{{ scheme }} is_failover_{{ slave_instance['slave_reference'] }}_{{ scheme }}
-{%-       else %}
-  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}_{{ scheme }}
-{%-       endif %}
+{%-     if hostname.startswith('*') %}
+{%-       set matcher = '' ~ hostname[2:] ~ '$' %}
+{%-     else %}
+{%-       set matcher = '^' ~ hostname ~ '$' %}
+{%-     endif %}
+{%-     set acl = '{ req.hdr(host),host_only -m reg ' ~ matcher ~ ' }' %}
+{%-     if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['health-check-failover-hostname'] %}
+  acl is_failover_{{ slave_reference }}_{{ scheme }} nbsrv({{ slave_reference }}-{{ scheme }}) eq 0
+  use_backend {{ slave_reference }}-{{ scheme }} if {{ acl }} ! is_failover_{{ slave_reference }}_{{ scheme }}
+  use_backend {{ slave_reference }}-{{ scheme }}-failover if {{ acl }} is_failover_{{ slave_reference }}_{{ scheme }}
+{%-     else %}
+  use_backend {{ slave_reference }}-{{ scheme }} if {{ acl }}
 {%-     endif %}
 {%-   endif %}
 {%- endmacro %}
@@ -62,11 +52,8 @@ frontend http-backend
   http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
   http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
-{%- for slave_instance in backend_slave_list -%}
-{{ frontend_entry(slave_instance, 'http', False) }}
-{%- endfor %}
-{%- for slave_instance in backend_slave_list -%}
-{{ frontend_entry(slave_instance, 'http', True) }}
+{%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
+{{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']], 'http') -}}
 {%- endfor %}
 
 frontend https-backend
@@ -75,14 +62,12 @@ frontend https-backend
   http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
   http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
-{%- for slave_instance in backend_slave_list -%}
-{{ frontend_entry(slave_instance, 'https', False) }}
+{%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
+{{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']], 'https') -}}
 {%- endfor %}
-{%- for slave_instance in backend_slave_list -%}
-{{ frontend_entry(slave_instance, 'https', True) }}
-{% endfor %}
 
-{%- for slave_instance in backend_slave_list %}
+{%- for slave_reference in sorted(backend_slave_dict) %}
+{%-   set slave_instance = backend_slave_dict[slave_reference] %}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     if info_dict['hostname'] and info_dict['port'] %}

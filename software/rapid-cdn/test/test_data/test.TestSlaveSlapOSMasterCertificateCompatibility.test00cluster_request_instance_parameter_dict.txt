@@ -16,6 +16,43 @@
     "slap_software_type": "RootSoftwareInstance",
     "slave_instance_list": [
       {
+        "custom_domain": "customdomainsslcrtsslkey.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain_ssl_crt_ssl_key",
+        "slave_title": "_custom_domain_ssl_crt_ssl_key",
+        "ssl_crt": "@@customdomain_certificate_pem@@",
+        "ssl_key": "@@customdomain_key_pem@@",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+        "slave_title": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+        "ssl_ca_crt": "@@ca.certificate_pem@@",
+        "ssl_crt": "@@customdomain_ca_certificate_pem@@",
+        "ssl_key": "@@customdomain_ca_key_pem@@",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_ca_crt_does_not_match",
+        "slave_title": "_ssl_ca_crt_does_not_match",
+        "ssl_ca_crt": "@@ca.certificate_pem@@",
+        "ssl_crt": "@@certificate_pem@@",
+        "ssl_key": "@@key_pem@@",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_ca_crt_garbage",
+        "slave_title": "_ssl_ca_crt_garbage",
+        "ssl_ca_crt": "some garbage",
+        "ssl_crt": "@@sslcacrtgarbage_ca_certificate_pem@@",
+        "ssl_key": "@@sslcacrtgarbage_ca_key_pem@@",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
         "enable_cache": true,
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_ssl_from_master",
@@ -45,46 +82,16 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "custom_domain": "customdomainsslcrtsslkey.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_custom_domain_ssl_crt_ssl_key",
-        "slave_title": "_custom_domain_ssl_crt_ssl_key",
-        "ssl_crt": "@@customdomain_certificate_pem@@",
-        "ssl_key": "@@customdomain_key_pem@@",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
-        "slave_title": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
-        "ssl_ca_crt": "@@ca.certificate_pem@@",
-        "ssl_crt": "@@customdomain_ca_certificate_pem@@",
-        "ssl_key": "@@customdomain_ca_key_pem@@",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl_ca_crt_garbage",
-        "slave_title": "_ssl_ca_crt_garbage",
-        "ssl_ca_crt": "some garbage",
-        "ssl_crt": "@@sslcacrtgarbage_ca_certificate_pem@@",
-        "ssl_key": "@@sslcacrtgarbage_ca_key_pem@@",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl_ca_crt_does_not_match",
-        "slave_title": "_ssl_ca_crt_does_not_match",
-        "ssl_ca_crt": "@@ca.certificate_pem@@",
-        "ssl_crt": "@@certificate_pem@@",
-        "ssl_key": "@@key_pem@@",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_type-notebook-ssl_from_master",
         "slave_title": "_type-notebook-ssl_from_master",
+        "type": "notebook",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-notebook-ssl_from_master_kedifa_overrides",
+        "slave_title": "_type-notebook-ssl_from_master_kedifa_overrides",
         "type": "notebook",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
@@ -94,13 +101,6 @@
         "slave_title": "_type-notebook-ssl_from_slave",
         "ssl_crt": "@@type_notebook_ssl_from_slave_certificate_pem@@",
         "ssl_key": "@@type_notebook_ssl_from_slave_key_pem@@",
-        "type": "notebook",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-notebook-ssl_from_master_kedifa_overrides",
-        "slave_title": "_type-notebook-ssl_from_master_kedifa_overrides",
         "type": "notebook",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },

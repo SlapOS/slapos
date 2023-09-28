@@ -1,4 +1,5 @@
-{%- for slave in frontend_slave_list %}
+{%- for entry in frontend_slave_order | sort(attribute="index,hostname", reverse=True) %}
+{%-   set slave = frontend_slave_dict[entry['slave_reference']] %}
 {%-   set entry_list = [] %}
 {%-   set sslbindconf = [] %}
 {#-   <crtfile> #}
@@ -9,7 +10,7 @@
 {%-   do sslbindconf.append(slave['alpn']) %}
 {%-   do entry_list.append('[' + ' '.join(sslbindconf) + ']') %}
 {#-   <snifilter> #}
-{%-   do entry_list.extend(slave['host_list']) %}
+{%-   do entry_list.append(entry['hostname']) %}
 {{-    ' '.join(entry_list) }}
 {% endfor -%}
 # Fallback to default certificate
