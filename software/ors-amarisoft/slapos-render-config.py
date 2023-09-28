@@ -252,6 +252,10 @@ def do_ue():
             "slap-computer-partition-id": "slappart9",
             "slave-instance-list": %(jshared_instance_list)s
         },
+        "pub_info": {
+            "rue_bind_addr": "::1",
+            "com_addr": "[::1]:9002"
+        },
         "directory": {
             "log": "log",
             "etc": "etc",
