@@ -1,4 +1,4 @@
-config = "enb"
+config = "gnb"
 json_params_empty = """{
     "rf_mode": 'fdd',
     "slap_configuration": {
@@ -9,11 +9,17 @@ json_params_empty = """{
     }
 }"""
 json_params = """{
-    "earfcn": 126357,
-    "tx_gain": 50,
-    "rx_gain": 50,
+    "rf_mode": "tdd",
+    "trx": "sdr",
+    "bbu": "ors",
+    "ru": "ors",
+    "one_watt": "True",
+    "earfcn": 646666,
+    "nr_arfcn": 646666,
+    "nr_band": 43,
+    "tx_gain": 62,
+    "rx_gain": 43,
     "sib23_file": "sib",
-    "rf_mode": "fdd",
     "slap_configuration": {
         "tap-name": "slaptap9",
         "configuration.default_lte_bandwidth": "10 MHz",
@@ -34,31 +40,7 @@ json_params = """{
         "var": "var"
     },
     "slapparameter_dict": {
-		"rrh": "Lopcomm ORAN",
-		"sdr_number": 3,
-		"cpri_mult": 8,
-		"cell_list": {
-			"RRH2": {
-				"cpri_rx_delay": 10,
-				"cpri_tx_delay": 10,
-				"cpri_tx_dbm": 50,
-				"dl_earfcn": 100000,
-				"pci": 4,
-				"cell_id": "0x04",
-				"cpri_port_number": 0
-			},
-			"RRH1": {
-				"cpri_rx_delay": 15.4,
-				"cpri_tx_delay": 15.1,
-				"cpri_tx_dbm": 20,
-				"dl_earfcn": 546115,
-				"pci": 3,
-				"cell_id": "0x03",
-				"cpri_port_number": 1
-			},
-			"RRH3": {
-			}
-		}
+        "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"
     }
 }"""
 import os
