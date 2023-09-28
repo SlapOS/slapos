@@ -15,19 +15,6 @@
     "slap_software_type": "RootSoftwareInstance",
     "slave_instance_list": [
       {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_health-check-disabled",
-        "slave_title": "_health-check-disabled",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "health-check": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_health-check-default",
-        "slave_title": "_health-check-default",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
         "health-check": true,
         "health-check-http-method": "CONNECT",
         "slap_software_type": "RootSoftwareInstance",
@@ -50,6 +37,19 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
+        "health-check": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_health-check-default",
+        "slave_title": "_health-check-default",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_health-check-disabled",
+        "slave_title": "_health-check-disabled",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
         "enable_cache": true,
         "health-check": true,
         "health-check-failover-https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/failover-https-url?a=b&c=",
@@ -62,21 +62,6 @@
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_health-check-failover-url",
         "slave_title": "_health-check-failover-url",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/url"
-      },
-      {
-        "health-check": true,
-        "health-check-failover-https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/failover-https-url?a=b&c=",
-        "health-check-failover-url": "http://@@_ipv4_address@@:@@_server_http_port@@/failover-url?a=b&c=",
-        "health-check-failover-url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@",
-        "health-check-http-path": "/health-check-failover-url",
-        "health-check-interval": 1,
-        "health-check-timeout": 1,
-        "https-only": false,
-        "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_health-check-failover-url-netloc-list",
-        "slave_title": "_health-check-failover-url-netloc-list",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/url"
       },
       {
@@ -96,6 +81,21 @@
       },
       {
         "health-check": true,
+        "health-check-failover-https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/failover-https-url?a=b&c=",
+        "health-check-failover-url": "http://@@_ipv4_address@@:@@_server_http_port@@/failover-url?a=b&c=",
+        "health-check-failover-url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@",
+        "health-check-http-path": "/health-check-failover-url",
+        "health-check-interval": 1,
+        "health-check-timeout": 1,
+        "https-only": false,
+        "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_health-check-failover-url-netloc-list",
+        "slave_title": "_health-check-failover-url-netloc-list",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/url"
+      },
+      {
+        "health-check": true,
         "health-check-failover-ssl-proxy-ca-crt": "@@test_server_ca.certificate_pem@@",
         "health-check-failover-ssl-proxy-verify": true,
         "health-check-failover-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
@@ -109,6 +109,18 @@
       },
       {
         "health-check": true,
+        "health-check-failover-ssl-proxy-verify": true,
+        "health-check-failover-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
+        "health-check-http-path": "/health-check-failover-url-ssl-proxy-verify-missing",
+        "health-check-interval": 1,
+        "health-check-timeout": 1,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_health-check-failover-url-ssl-proxy-verify-missing",
+        "slave_title": "_health-check-failover-url-ssl-proxy-verify-missing",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "health-check": true,
         "health-check-failover-ssl-proxy-ca-crt": "@@another_server_ca.certificate_pem@@",
         "health-check-failover-ssl-proxy-verify": true,
         "health-check-failover-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
@@ -118,18 +130,6 @@
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_health-check-failover-url-ssl-proxy-verify-unverified",
         "slave_title": "_health-check-failover-url-ssl-proxy-verify-unverified",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "health-check": true,
-        "health-check-failover-ssl-proxy-verify": true,
-        "health-check-failover-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
-        "health-check-http-path": "/health-check-failover-url-ssl-proxy-verify-missing",
-        "health-check-interval": 1,
-        "health-check-timeout": 1,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_health-check-failover-url-ssl-proxy-verify-missing",
-        "slave_title": "_health-check-failover-url-ssl-proxy-verify-missing",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       }
     ],
