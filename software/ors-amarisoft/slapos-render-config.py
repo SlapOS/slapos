@@ -3,7 +3,7 @@
 # It mimics the way config files are generated during the build but runs much
 # faster compared to full `slapos node software` + `slapos node instance` runs.
 
-import zc.buildout.buildout # XXX workaround for bug in vvv
+import zc.buildout.buildout # XXX workaround import bug in vvv
 from slapos.recipe.template import jinja2_template
 
 import json, copy, sys, pprint
@@ -41,7 +41,7 @@ def j2render(config, jcfg):
       f.write(r._render().decode())
 
 
-# Instance ...
+# Instance simulates configuration for an instance on SlapOS Master.
 class Instance:
     def __init__(self):
         self.shared_instance_list = []
@@ -56,7 +56,6 @@ class Instance:
         }
         self.shared_instance_list.append(ishared)
         return ishared
-
 
 
 # ---- eNB ----
@@ -239,7 +238,6 @@ def do_enb():
     }""" % locals()
 
     j2render('enb', json_params)
-
 
 
 # ---- UE ----
