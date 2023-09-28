@@ -15,18 +15,34 @@
     "slap_software_type": "RootSoftwareInstance",
     "slave_instance_list": [
       {
-        "custom_domain": "*.alias1.example.com",
+        "custom_domain": "*.example.com",
+        "server-alias": "example.com",
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_wildcard",
-        "slave_title": "_wildcard",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/wildcard"
+        "slave_reference": "_01wildcard",
+        "slave_title": "_01wildcard",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/01wildcard"
+      },
+      {
+        "custom_domain": "*.alias1.example.com",
+        "server-alias": "alias1.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_02wildcard",
+        "slave_title": "_02wildcard",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/02wildcard"
+      },
+      {
+        "custom_domain": "zspecific.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_03zspecific",
+        "slave_title": "_03zspecific",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/03zspecific"
       },
       {
         "custom_domain": "zspecific.alias1.example.com",
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_zspecific",
-        "slave_title": "_zspecific",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/zspecific"
+        "slave_reference": "_04zspecific",
+        "slave_title": "_04zspecific",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/04zspecific"
       }
     ],
     "timestamp": "@@TIMESTAMP@@"
@@ -42,14 +58,26 @@
       "monitor-username": "admin",
       "slave-list": [
         {
+          "custom_domain": "*.example.com",
+          "server-alias": "example.com",
+          "slave_reference": "_01wildcard",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/01wildcard"
+        },
+        {
           "custom_domain": "*.alias1.example.com",
-          "slave_reference": "_wildcard",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/wildcard"
+          "server-alias": "alias1.example.com",
+          "slave_reference": "_02wildcard",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/02wildcard"
+        },
+        {
+          "custom_domain": "zspecific.example.com",
+          "slave_reference": "_03zspecific",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/03zspecific"
         },
         {
           "custom_domain": "zspecific.alias1.example.com",
-          "slave_reference": "_zspecific",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/zspecific"
+          "slave_reference": "_04zspecific",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/04zspecific"
         }
       ]
     },
@@ -69,7 +97,7 @@
       "cluster-identification": "testing partition 0",
       "domain": "example.com",
       "enable-http3": "false",
-      "extra_slave_instance_list": "[{\"custom_domain\": \"*.alias1.example.com\", \"slave_reference\": \"_wildcard\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/wildcard\"}, {\"custom_domain\": \"zspecific.alias1.example.com\", \"slave_reference\": \"_zspecific\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/zspecific\"}]",
+      "extra_slave_instance_list": "[{\"custom_domain\": \"*.example.com\", \"server-alias\": \"example.com\", \"slave_reference\": \"_01wildcard\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/01wildcard\"}, {\"custom_domain\": \"*.alias1.example.com\", \"server-alias\": \"alias1.example.com\", \"slave_reference\": \"_02wildcard\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/02wildcard\"}, {\"custom_domain\": \"zspecific.example.com\", \"slave_reference\": \"_03zspecific\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/03zspecific\"}, {\"custom_domain\": \"zspecific.alias1.example.com\", \"slave_reference\": \"_04zspecific\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/04zspecific\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": "443",
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
@@ -81,7 +109,7 @@
       "plain_http_port": "11080",
       "port": "11443",
       "request-timeout": "12",
-      "slave-kedifa-information": "{\"_wildcard\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@wildcard_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@wildcard_key-generate-auth-url@@/@@wildcard_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@wildcard_key-generate-auth-url@@?auth=\"}, \"_zspecific\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@zspecific_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@zspecific_key-generate-auth-url@@/@@wildcard_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@zspecific_key-generate-auth-url@@?auth=\"}}"
+      "slave-kedifa-information": "{\"_01wildcard\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@01wildcard_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@01wildcard_key-generate-auth-url@@/@@01wildcard_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@01wildcard_key-generate-auth-url@@?auth=\"}, \"_02wildcard\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@02wildcard_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@02wildcard_key-generate-auth-url@@/@@01wildcard_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@02wildcard_key-generate-auth-url@@?auth=\"}, \"_03zspecific\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@03zspecific_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@03zspecific_key-generate-auth-url@@/@@01wildcard_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@03zspecific_key-generate-auth-url@@?auth=\"}, \"_04zspecific\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@04zspecific_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@04zspecific_key-generate-auth-url@@/@@01wildcard_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@04zspecific_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
