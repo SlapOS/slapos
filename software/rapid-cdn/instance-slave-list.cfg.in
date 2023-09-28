@@ -1,7 +1,9 @@
 {%- set kedifa_updater_mapping = [] %}
 {%- set cached_server_dict = {} %}
 {%- set backend_slave_list = [] %}
+{%- set backend_slave_dict = {} %}
 {%- set frontend_slave_list = [] %}
+{%- set frontend_slave_dict = {} %}
 {%- set part_list = [] %}
 {%- set cache_port = frontend_haproxy_configuration.get('cache-port') %}
 {%- set cache_access = "http://%s:%s/HTTP" % (instance_parameter_dict['ipv4-random'], cache_port) %}
@@ -228,7 +230,8 @@ context =
 {%-   do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) %}
-{%-   set host_list = slave_instance.get('server-alias', '').split() %}
+{%-   do slave_instance.__setitem__('server-alias', slave_instance.get('server-alias', '').split()) %}
+{%-   set host_list = slave_instance['server-alias'] %}
 {%-   if slave_instance.get('custom_domain') not in host_list %}
 {%-     do host_list.append(slave_instance.get('custom_domain')) %}
 {%-   endif %}
@@ -386,8 +389,10 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 {#-   Prepare Slave Information        #}
 {%-   do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   do frontend_slave_list.append(slave_instance) %}
+{%-   do frontend_slave_dict.__setitem__(slave_instance['slave_reference'], slave_instance) %}
 {%-   if slave_type != 'redirect' %}
 {%-     do backend_slave_list.append(slave_instance) %}
+{%-     do backend_slave_dict.__setitem__(slave_instance['slave_reference'], slave_instance) %}
 {%-   endif %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
@@ -478,6 +483,22 @@ output = ${:file}
 ##<Frontend haproxy>
 [frontend-haproxy-slave-list]
 list = {{ dumps(sorted(frontend_slave_list, key=operator_module.itemgetter('slave_reference'))) }}
+dict = {{ dumps(frontend_slave_dict) }}
+{%- set slave_instance_hostname_frontend_order = [] %}
+{%- for slave_instance in frontend_slave_list %}
+{%-   for hostname in slave_instance['host_list'] %}
+{%-     if '*' in hostname %}
+{%-       set order_value = hostname.count('.') %}
+{%-     else %}
+{%-       set order_value = 1000 %}
+{%-     endif %}
+{%-     do slave_instance_hostname_frontend_order.append({
+  'index': order_value,
+  'hostname': hostname,
+  'slave_reference': slave_instance['slave_reference']}) %}
+{%-   endfor  %}
+{%- endfor %}
+order = {{ dumps(slave_instance_hostname_frontend_order) }}
 
 [frontend-haproxy-crt-list]
 <= jinja2-template-base
@@ -493,6 +514,8 @@ template = {{ template_frontend_haproxy_configuration }}
 rendered = ${frontend-haproxy-config:file}
 extra-context =
   key frontend_slave_list frontend-haproxy-slave-list:list
+  key frontend_slave_dict frontend-haproxy-slave-list:dict
+  key frontend_slave_order frontend-haproxy-slave-list:order
   key crt_list frontend-haproxy-crt-list:rendered
   section configuration frontend-haproxy-config
 
@@ -513,8 +536,26 @@ autocert-directory = {{ frontend_directory['autocert'] }}
 url = {{ template_backend_haproxy_configuration }}
 output = ${backend-haproxy-config:file}
 backend_slave_list = {{ dumps(sorted(backend_slave_list, key=operator_module.itemgetter('slave_reference'))) }}
+backend_slave_dict = {{ dumps(backend_slave_dict) }}
+{%- set slave_instance_hostname_backend_order = [] %}
+{%- for slave_instance in backend_slave_list %}
+{%-   for hostname in slave_instance['host_list'] %}
+{%-     if '*' in hostname %}
+{%-       set order_value = hostname.count('.') %}
+{%-     else %}
+{%-       set order_value = 1000 %}
+{%-     endif %}
+{%-     do slave_instance_hostname_backend_order.append({
+  'index': order_value,
+  'hostname': hostname,
+  'slave_reference': slave_instance['slave_reference']}) %}
+{%-   endfor  %}
+{%- endfor %}
+order = {{ dumps(slave_instance_hostname_backend_order) }}
 extra-context =
   key backend_slave_list :backend_slave_list
+  key backend_slave_dict :backend_slave_dict
+  key backend_slave_order :order
   section configuration backend-haproxy-config
 
 [backend-haproxy-config]
