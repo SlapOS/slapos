@@ -257,7 +257,7 @@ def do_ue():
             'rx_gain':      42,
         }
     })
-    iue.ishared('Cell 2b', '_UECELL2', {
+    iue.ishared('Cell 2b', '_UCELL2', {
         'ue_cell_type': 'nr',
         'rf_mode':      'fdd',
         'bandwidth':    5,
