@@ -96,7 +96,20 @@ inline =
 output = ${re6stnet-dirs:conf}/community.conf
 {%- endif %}
 
+[re6st-registry-conf-init]
+recipe = slapos.recipe.build
+init =
+  # pre-create a file at the path of the conf,
+  # so that we can use hash-existing-files options
+  import os
+  conf_file = self.buildout['re6st-registry-conf']['output']
+  if not os.path.exists(os.path.dirname(conf_file)):
+    os.makedirs(os.path.dirname(conf_file))
+  if not os.path.exists(conf_file):
+    open(conf_file, 'a').close()
+
 [re6st-registry-conf]
+init = ${re6st-registry-conf-init:init}
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['template-re6st-registry-conf'] }}
 output = ${re6stnet-dirs:conf}/registry.conf
