@@ -26,6 +26,16 @@
 {%-   do assert(False, msg)                                         %}
 {%- endmacro                                                        %}
 
+{#- error reports an error about shared instance #}
+{#- XXX -> ierror ?   #}
+{#- XXX error(ishared, msg)  vvv is debug stub -#}
+{%- macro error(ishared, msg)   %}
+{%-   set msg = 'E: %s: %s\n' % (J(jref_of_shared(ishared)), msg)   %}
+{%-   do print('\n%s' % msg)                                        %}
+{%-   do assert(False, msg)                                         %}
+{%- endmacro  %}
+
+
 
 
 {#- ---- loading ---- #}
@@ -34,6 +44,13 @@
     load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
 {%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
 
+
+{#- check_loaded_everything verifies that all shared instances were handling during the load. #}
+{%- macro check_loaded_everything() %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     do error(ishared, "shared instance of unsupported type")  %}
+{%-   endfor  %}
+{%- endmacro %}
 
 {#- icell_dict keeps cell shared instances:  reference -> icell
     iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
