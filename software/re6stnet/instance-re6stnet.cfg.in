@@ -107,7 +107,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/re6st-registry
 pidfile = ${directory:run}/registry.pid
 command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:output}
-hash-existing-files = ${re6st-registry-conf:output}
+hash-files = ${re6st-registry-conf:output}
 
 [cron-entry-re6st-backup]
 recipe = slapos.cookbook:cron.d
