@@ -44,7 +44,6 @@
     load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
 {%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
 
-
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
 {%- macro check_loaded_everything() %}
 {%-   for ishared in qshared_instance_list  %}
@@ -52,11 +51,19 @@
 {%-   endfor  %}
 {%- endmacro %}
 
+{#- json-decode _ in all shared instances #}
+{%- for ishared in qshared_instance_list %}
+{%-   do ishared.update({'_': J(ishared['_'])})                   %}
+{%- endfor %}
+
+
 {#- icell_dict keeps cell shared instances:  reference -> icell
     iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
     in the kept instances _ is automatically json-decoded
 
     use load_iru_and_icell to initialize this cell and RU registries.
+
+    XXX defaults ?
 #}
 {%- set icell_dict = {}                                               %}
 {%- set iru_dict   = {}                                               %}
@@ -64,8 +71,7 @@
 {%-   set qother = []                                                 %}
 {%-   for ishared in qshared_instance_list                            %}
 {%-     set ref = J(jref_of_shared(ishared))                          %}
-{%-     set _ = J(ishared['_'])                                       %}
-{%-     do ishared.update({'_': _})                                   %}
+{%-     set _ = ishared['_']                                          %}
 {%-     if   'ru_type'   in _                                         %}
 {%-       set iru = ishared                                           %}
 {%-       do iru_dict.update({ref: iru})                              %}
@@ -157,6 +163,33 @@
 {%- macro load_ipeer()      %}
 // XXX TODO
 {%- endmacro                %}
+
+
+{#- iue_dict keeps ue shared instance:  reference -> iue
+
+    use load_iue to initialize this ue registry.
+#}
+{%- set iue_dict = {}                               %}
+{%- macro load_iue()                                %}
+{%-   set qother = []                               %}
+{%-   for ishared in qshared_instance_list          %}
+{%-     set ref = J(jref_of_shared(ishared))        %}
+{%-     set _ = ishared['_']                        %}
+{%-     if   'ue_type'   in _                       %}
+{%-       set iue = ishared                         %}
+{#- XXX verify ue.ue_type in lte|nr  #}
+{%-       for k, v in defaults['ue'].items()        %}
+{%-         do _.setdefault(k, v)                   %}
+{%-       endfor                                    %}
+{%-       do iue_dict.update({ref: iue})            %}
+{%-     else                                        %}
+{%-       do qother.append(ishared)                 %}
+{%-     endif                                       %}
+{%-   endfor                                        %}
+{%-   do qshared_instance_list.clear()              %}
+{%-   do qshared_instance_list.extend(qother)       %}
+{%- endmacro                                        %}
+
 
 
 {# ---- XXX ---- #}

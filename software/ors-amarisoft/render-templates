@@ -42,12 +42,12 @@ software_list = [
 for i in range (len(software_list)):
     software_list[i].update({
             #'default_lte_bandwidth'        : "20 MHz",
-            'default_lte_imsi'             : "001010123456789",
-            'default_lte_k'                : "00112233445566778899aabbccddeeff",
+            #'default_lte_imsi'             : "001010123456789",
+            #'default_lte_k'                : "00112233445566778899aabbccddeeff",
             'default_lte_inactivity_timer' : 10000,
             #'default_nr_bandwidth'         : 40,
-            'default_nr_imsi'              : "001010123456789",
-            'default_nr_k'                 : "00112233445566778899aabbccddeeff",
+            #'default_nr_imsi'              : "001010123456789",
+            #'default_nr_k'                 : "00112233445566778899aabbccddeeff",
             #'default_nr_ssb_pos_bitmap'    : "10000000",
             #'default_n_antenna_dl'         : 2,
             #'default_n_antenna_ul'         : 2,

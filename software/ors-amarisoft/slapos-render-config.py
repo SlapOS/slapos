@@ -43,15 +43,16 @@ def j2render(config, jcfg):
 
 # Instance simulates configuration for an instance on SlapOS Master.
 class Instance:
-    def __init__(self):
+    def __init__(self, slap_software_type):
         self.shared_instance_list = []
+        self.slap_software_type = slap_software_type
 
     # ishared appends new shared instance with specified configuration to .shared_instance_list .
     def ishared(self, title, slave_reference, cfg):
         ishared = {
             'slave_title':          title,
             'slave_reference':      slave_reference,
-            'slap_software_type':   "enb",
+            'slap_software_type':   self.slap_software_type,
             '_': json.dumps(cfg)
         }
         self.shared_instance_list.append(ishared)
@@ -209,7 +210,7 @@ def iRU3_SDR1_fLTE2(ienb):
 
 
 def do_enb():
-    ienb = Instance()
+    ienb = Instance('enb')
     iRU1_SDR_tLTE2_tNR(ienb)
     #iRU2_LOPCOMM_fLTE_fNR(ienb)
     #iRU3_SDR1_fLTE2(ienb)
@@ -220,11 +221,7 @@ def do_enb():
         "slap_configuration": {
             "tap-name": "slaptap9",
             "slap-computer-partition-id": "slappart9",
-            "configuration.default_lte_imsi": "001010123456789",
-            "configuration.default_lte_k": "00112233445566778899aabbccddeeff",
             "configuration.default_lte_inactivity_timer": 10000,
-            "configuration.default_nr_imsi": "001010123456789",
-            "configuration.default_nr_k": "00112233445566778899aabbccddeeff",
             "configuration.default_nr_inactivity_timer": 10000,
             "slave-instance-list": %(jshared_instance_list)s
         },
@@ -243,7 +240,15 @@ def do_enb():
 # ---- UE ----
 
 def do_ue():
-    iue = Instance()
+    iue = Instance('ue')
+    iue.ishared('UE 1', '_UE_1', {
+        'ue_type':      'lte',
+        'rue_addr':     'host1'
+    })
+    iue.ishared('UE 2', '_UE_2', {
+        'ue_type':      'nr',
+        'rue_addr':     'host2'
+    })
 
     jshared_instance_list = json.dumps(iue.shared_instance_list)
     json_params = """{
