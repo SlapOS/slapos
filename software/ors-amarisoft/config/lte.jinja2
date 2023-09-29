@@ -61,13 +61,15 @@
     iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
     in the kept instances _ is automatically json-decoded
 
-    use load_iru_and_icell to initialize this cell and RU registries.
+    use load_iru_and_icell(kind) to initialize this cell and RU registries.
+    kind=enb  - load cells definition to serve them
+    kind=ue   - load cells definition to connect to them
 
     XXX defaults ?
 #}
 {%- set icell_dict = {}                                               %}
 {%- set iru_dict   = {}                                               %}
-{%- macro load_iru_and_icell()                                        %}
+{%- macro load_iru_and_icell(kind)                                    %}
 {%-   set qother = []                                                 %}
 {%-   for ishared in qshared_instance_list                            %}
 {%-     set ref = J(jref_of_shared(ishared))                          %}
@@ -75,11 +77,14 @@
 {%-     if   'ru_type'   in _                                         %}
 {%-       set iru = ishared                                           %}
 {%-       do iru_dict.update({ref: iru})                              %}
-{%-     elif 'cell_type' in _                                         %}
+{%-     elif (kind == 'enb' and 'cell_type' in _)    or
+             (kind == 'ue'  and 'ue_cell_type' in _)                  %}
 {%-       set icell = ishared                                         %}
-{%-       for k, v in defaults['cell/' + _.cell_type].items()         %}
-{%-         do _.setdefault(k, v)                                     %}
-{%-       endfor                                                      %}
+{%-       if kind == 'enb'                                            %}
+{%-         for k, v in defaults['cell/' + _.cell_type].items()       %}
+{%-           do _.setdefault(k, v)                                   %}
+{%-         endfor                                                    %}
+{%-       endif                                                       %}
 {%-       do icell_dict.update({ref: icell})                          %}
 {%-       set ru = _['ru']                                            %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref')             %}
