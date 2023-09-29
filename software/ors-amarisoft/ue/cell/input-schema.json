@@ -13,6 +13,7 @@
 
     "required": [
       "ue_cell_type",
+      "rf_mode",
       "ru"
     ],
 
@@ -21,6 +22,8 @@
           "type": "string",
           "options":  { "hidden": true }
         },
+
+        "rf_mode": { "$ref": "../../cell/input-schema.json#/properties/rf_mode" },
 
         "ru": {
           "$ref": "../../cell/input-schema.json#/$defs/ru-of-cell",

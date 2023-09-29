@@ -241,11 +241,43 @@ def do_enb():
 
 def do_ue():
     iue = Instance('ue')
-    iue.ishared('UE 1', '_UE_1', {
+    iue.ishared('Cell 1', '_UCELL1', {
+        'ue_cell_type': 'lte',
+        'rf_mode':      'tdd',
+        'bandwidth':    '5 MHz',
+        'dl_earfcn':    38050,      # 2600 MHz
+        'ru':           {
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [0],
+            'n_antenna_dl': 2,
+            'n_antenna_ul': 1,
+            'tx_gain':      41,
+            'rx_gain':      42,
+        }
+    })
+    iue.ishared('Cell 2b', '_UECELL2', {
+        'ue_cell_type': 'nr',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'ru':           {           # NOTE contrary to eNB UEsim cannot share one RU in between several cells
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [2],
+            'n_antenna_dl': 2,
+            'n_antenna_ul': 2,
+            'tx_gain':      31,
+            'rx_gain':      32,
+        }
+    })
+
+    iue.ishared('UE 1', '_UE1', {
         'ue_type':      'lte',
         'rue_addr':     'host1'
     })
-    iue.ishared('UE 2', '_UE_2', {
+    iue.ishared('UE 2', '_UE2', {
         'ue_type':      'nr',
         'rue_addr':     'host2'
     })
