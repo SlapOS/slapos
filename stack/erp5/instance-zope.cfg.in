@@ -78,6 +78,7 @@ environment +=
   PATH=${binary-link:target-directory}:{{ parameter_dict['coreutils'] }}/bin:{{ parameter_dict['perl_dbd_mariadb_path'] }}
   TZ={{ slapparameter_dict['timezone'] }}
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
+  PYTHONUNBUFFERED=1
   INSTANCE_HOME=${:instance-home}
   CAUCASE={{ slapparameter_dict['caucase-url'] }}
   FONTCONFIG_FILE=${fontconfig-conf:output}
