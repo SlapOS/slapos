@@ -55,5 +55,4 @@ log = ${:var}/log
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-opc_ua_port = ${instance-parameter:configuration.opc_ua_port}
-interface = ${instance-parameter:configuration.interface}
+url-ipv6 = opc.tcp://[${instance-parameter:ipv6-random}]:${instance-parameter:configuration.opc_ua_port}
