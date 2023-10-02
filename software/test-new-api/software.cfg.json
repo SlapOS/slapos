@@ -1,0 +1,13 @@
+{
+  "name": "Test New API",
+  "description": "Test New API",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "index": 0
+    }
+  }
+}
+
