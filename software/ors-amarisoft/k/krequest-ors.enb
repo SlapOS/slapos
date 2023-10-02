@@ -21,6 +21,7 @@ enb1 = request(ors,
             'testing': True,
         })})
 
+"""
 enb2 = request(ors,
         software_type="enb",
         partition_reference="kenb2",
@@ -28,6 +29,8 @@ enb2 = request(ors,
         partition_parameter_kw={"_": json.dumps({
             'testing': True,
         })})
+enb2.destroyed()
+"""
 
 
 print('enb1:', enb1)
