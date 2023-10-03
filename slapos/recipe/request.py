@@ -127,7 +127,10 @@ class Recipe(object):
     # By default, propagate the state of the parent instance
     # Except if parent is destroyed, as it may lead to the unexpected
     # destruction of the full instance tree
-    default_state = buildout['slap-connection'].get('requested', 'started')
+    slap_connection = buildout['slap-connection']
+    default_state = slap_connection.get('requested', 'started')
+    slapgrid_jio_uri = slap_connection.get('slapgrid-jio-uri', None)
+
     if default_state not in ('started', 'stopped'):
       default_state = 'started'
     requested_state = options.get('state', default_state)
@@ -136,8 +139,9 @@ class Recipe(object):
     slap = slapmodule.slap()
     slap.initializeConnection(
       options['server-url'],
-      options.get('key-file'),
-      options.get('cert-file'),
+      key_file=options.get('key-file'),
+      cert_file=options.get('cert-file'),
+      slapgrid_jio_uri=slapgrid_jio_uri,
     )
     if not slap.jio_api_connector:
       request = slap.registerComputerPartition(

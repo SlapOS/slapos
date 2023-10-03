@@ -54,6 +54,7 @@ class GenericjIOAPIRecipe(GenericBaseRecipe):
     self.computer_id = slap_connection['computer-id']
     self.computer_partition_id = slap_connection['partition-id']
     self.server_url = slap_connection['server-url']
+    self.slapgrid_jio_uri = slap_connection['slapgrid-jio-uri']
     self.software_release_url = slap_connection['software-release-url']
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
@@ -72,8 +73,9 @@ class GenericjIOAPIRecipe(GenericBaseRecipe):
       with open(self.instance_json_path, "r") as f:
         self.computer_partition = json.load(f)
 
-    self.slap.initializeConnection(self.server_url, self.key_file,
-      self.cert_file)
+    self.slap.initializeConnection(self.server_url,
+      key_file=self.key_file, cert_file=self.cert_file,
+      slapgrid_jio_uri=self.slapgrid_jio_uri)
 
     # Fallback to requesting to SlapOS Master
     if not self.computer_partition:
