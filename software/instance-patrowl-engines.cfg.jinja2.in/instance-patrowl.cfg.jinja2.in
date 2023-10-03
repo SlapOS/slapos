@@ -1,0 +1,284 @@
+{% set local_ipv4 = (ipv4 | list)[0] -%}
+{% set local_ipv6 = (ipv6 | list)[0] -%}
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+run = ${:var}/run
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+plugins = ${:etc}/plugin
+ssl = ${:etc}/ssl
+www = ${:srv}/www
+tmp = ${:srv}/tmp
+rabbitmq = ${:srv}/rabbitmq
+mqlog = ${:log}/rabbitmq
+mqlib = ${:var}/lib/rabbitmq
+nginx = ${:srv}/nginx
+
+[service-rabbitmq]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ parameter_dict['rabbitmq-location'] }}/sbin/rabbitmq-server
+wrapper-path = ${directory:services}/rabbitmq
+environment =
+  RABBITMQ_CONFIG_FILES=${directory:rabbitmq}/conf.d
+  RABBITMQ_CONFIG_FILE=${directory:rabbitmq}/rabbitmq.conf
+  RABBITMQ_SCRIPTS_DIR={{ parameter_dict['rabbitmq-location'] }}/sbin
+  RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit log_levels [{connection,error}]
+  RABBITMQ_ADVANCED_CONFIG_FILE=${directory:rabbitmq}/advanced.config
+  RABBITMQ_CONF_ENV_FILE=${directory:rabbitmq}/rabbitmq-env.conf
+  RABBITMQ_NODE_IP_ADDRESS={{ local_ipv4 }}
+  RABBITMQ_NODE_PORT=${:port}
+  ERL_EPMD_ADDRESS={{ local_ipv4 }}
+  ERL_EPMD_PORT=4369
+  RABBITMQ_NODENAME={{ partition_id }}@localhost
+  RABBITMQ_LOG_BASE=${directory:mqlog}
+  RABBITMQ_MNESIA_BASE=${directory:mqlib}/mnesia
+  RABBITMQ_PLUGINS_DIR=${directory:mqlib}/plugins
+  PATH={{ parameter_dict['erlang-location'] }}/bin:/usr/local/bin:/usr/bin:/bin
+port = 5672
+
+[promise-rabbitmq]
+<= monitor-promise-base
+promise = check_socket_listening
+name = rabbitmq-port-listening.py
+config-host =  {{ local_ipv4 }}
+config-port = ${service-rabbitmq:port}
+
+[service-postgresql]
+recipe  = slapos.cookbook:postgres
+bin     = {{ parameter_dict['postgresql-location'] }}/bin
+services= ${directory:services}
+dbname  = patrowl_db
+superuser = patrowl-psql
+password=
+pgdata-directory = ${directory:srv}/postgresql
+
+# empty addresses - listen only on unix socket
+ipv4    =
+ipv6    =
+port    =
+
+[promise-postgresql]
+<= monitor-promise-base
+promise = check_command_execute
+name = promise-postgresql.py
+config-command =
+    {{ parameter_dict['postgresql-location'] }}/bin/psql \
+        -h ${service-postgresql:pgdata-directory} \
+        -U ${service-postgresql:superuser} \
+        -d ${service-postgresql:dbname} \
+        -c '\q'
+
+[gunicorn-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ parameter_dict['gunicorn-bin'] }} -b {{ local_ipv4 }}:${:port} app.wsgi:application
+    --timeout 300 --log-level error
+wrapper-path = ${directory:bin}/gunicorn
+port = 8003
+depends =
+  ${create-admin.py:recipe}
+
+[promise-gunicorn]
+<= monitor-promise-base
+promise = check_socket_listening
+name = gunicorn-port-listening.py
+config-host =  {{ local_ipv4 }}
+config-port = ${gunicorn-wrapper:port}
+
+[patrowl-env.sh]
+recipe = slapos.recipe.template
+inline =
+  PATH={{ parameter_dict['postgresql-location'] }}/bin:${directory:bin}:$PATH
+  export POSTGRES_HOST=${service-postgresql:pgdata-directory}
+  export POSTGRES_PORT=5432
+  export POSTGRES_DBNAME=${service-postgresql:dbname}
+  export POSTGRES_USER=${service-postgresql:superuser}
+  export POSTGRES_PASSWORD=
+  export POSTGRES_CONN_MAX_AGE=0
+  export RABBITMQ_HOST={{ local_ipv4 }}
+  export RABBITMQ_PORT=${service-rabbitmq:port}
+  export RABBITMQ_HOSTNAME='{{ local_ipv4 }}:${service-rabbitmq:port}'
+  export RABBIT_ENV_USER='guest'
+  #export RABBIT_ENV_PASS='guest'
+  export BROKER_URL=
+  export PE_INSTALL_PATH=
+  export PATROWL_SU_USERNAME="admin"
+  export PATROWL_SU_EMAIL="admin@dev.patrowl.io"
+  export PATROWL_SU_PASSWORD="Bonjour1!"
+  export PATROWL_REFRESH_ENGINE=7000
+  export SECRET_KEY="*** omg this is the secret !***"
+  export SECURE_SSL_REDIRECT=true
+  export USE_X_FORWARDED_HOST=true
+  export DEBUG=True
+  #export INFO,WARNING,ERROR,DEBUG
+  export LOGGING_LEVEL=DEBUG
+  export PATROWL_PROXY_HTTP=
+  export PATROWL_PROXY_HTTPS=
+  export PATROWL_TZ='Europe/Paris'
+  export EMAIL_USE_TLS=true
+  export EMAIL_USE_SSL=
+  export EMAIL_HOST=smtp.gmail.com
+  export EMAIL_HOST_USER=test@gmail.com
+  export EMAIL_HOST_PASSWORD=test
+  export EMAIL_PORT=587
+  export SCAN_TIMEOUT=600
+  export HTTP_REQUEST_MAX_TIMEOUT=600
+  export SCAN_JOB_DEFAULT_MAX_TIMEOUT=600
+  export SCAN_JOB_DEFAULT_TIMEOUT=7200
+  export SCAN_JOB_DEFAULT_SPLIT_ASSETS=100
+  export PATROWL_ASSETS_MAX=100000000
+  export PATROWL_ASSETS_MARGIN=10
+  export PATROWL_ASSETGROUPS_MAX=100000000
+  export PATROWL_USERS_MAX=5
+  export PATROWL_SCAN_DEFINITIONS_MAX=5
+  export PATROWL_FINDINGS_MAX=-1
+  export PATROWL_ENGINES_MAX=5
+  export PATROWL_ENGINE_POLICIES_MAX=100
+  export PATROWL_ENGINES_MANAGE_ENABLED=true
+  export ALERTS_AUTO_NEW_ENABLED=true
+  export ALERTS_AUTO_MISSING_ENABLED=true
+  export ASSET_DETECTION_RULES_FILENAME="app/assets_detection_rules.py"
+  export ASSET_AUTOTAG_CPE=true
+
+output = ${directory:etc}/.env.sh
+
+[configure-service]
+recipe = plone.recipe.command
+command =
+  ln -sf {{ python_bin }} ${directory:bin}/python
+  FOLDER=${:patrowl-directory}
+  [ ! -d "$FOLDER" ] && cp -ax {{ parameter_dict['patrowl-location'] }} $FOLDER
+  cd $FOLDER
+  cp app/settings.py.sample app/settings.py
+  cp app/assets_detection_rules.py.sample app/assets_detection_rules.py
+patrowl-directory = ${directory:srv}/patrowl
+update-command = ${:command}
+stop-on-error = true
+
+[create-admin.py]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-create-admin'] }}
+context =
+  key admin_email instance-parameters:admin-email
+  key admin_passwd admin-password:passwd
+  key admin_username admin-password:username
+output = ${configure-service:patrowl-directory}/var/bin/create_default_admin.py
+
+[patrowl-parameters]
+patrowl-directory = ${configure-service:patrowl-directory}
+patrowl-env = ${patrowl-env.sh:output}
+gunicorn-wrapper = ${gunicorn-wrapper:wrapper-path}
+
+[service-patrowl]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['patrowl-wrapper'] }}
+context =
+  section parameter_dict patrowl-parameters
+mode = 750
+output = ${directory:services}/patrowl
+depends =
+  ${promise-gunicorn:recipe}
+  ${configure-service:recipe}
+
+[admin-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.passwd
+username = admin
+
+[nginx-parameters]
+nginx-ip = {{ local_ipv6 }}
+nginx-port = 8083
+access-log = ${directory:log}/nginx.patrowlmanager-access.log
+error-log = ${directory:log}/nginx.patrowlmanager-error.log
+gunicorn-url = http://{{ local_ipv4 }}:${gunicorn-wrapper:port}
+patrowl-directory = ${patrowl-parameters:patrowl-directory}
+nginx-mime-types = {{ parameter_dict['nginx-mime-types'] }}
+key-file = ${nginx-certificate:key-file}
+cert-file = ${nginx-certificate:cert-file}
+path-pid = ${directory:run}/nginx.pid
+nb-workers = 4
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['nginx-conf'] }}
+context =
+  section parameter_dict nginx-parameters
+output = ${directory:etc}/nginx.conf
+
+# self-signed certificate for https
+[nginx-certificate]
+recipe  = plone.recipe.command
+stop-on-error   = true
+cert-file   = ${directory:ssl}/nginx_backend.crt
+key-file    = ${directory:ssl}/nginx_backend.key
+command =
+    test -e ${:key-file} || \
+        {{ openssl_bin }} req -newkey rsa -batch -new -x509 -days 3650 -nodes   \
+        -keyout ${:key-file} -out ${:cert-file}
+update-command = ${:command}
+
+[service-nginx]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ parameter_dict['nginx-bin'] }} -p ${directory:nginx} -c ${nginx-conf:output}
+wrapper-path = ${directory:services}/nginx
+url = https://[${nginx-parameters:nginx-ip}]:${nginx-parameters:nginx-port}
+
+[promise-nginx]
+<= monitor-promise-base
+promise = check_command_execute
+name   = promise_nginx_site.py
+promise = check_url_available
+config-http-code   = 200
+config-url     = ${service-nginx:url}
+
+[patrowl-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Patrowl nginx Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${service-nginx:url}
+config-https-only = true
+return = domain secure_access
+
+[patrowl-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = check_patrowl_frontend.py
+config-url = ${patrowl-frontend:connection-secure_access}
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+backend-url = ${service-nginx:url}
+url =${patrowl-frontend-promise:config-url}
+admin-username = ${admin-password:username}
+admin-password = ${admin-password:passwd}
+
+[instance-parameters]
+admin-email = admin@dev.patrowl.io
+
+
+[buildout]
+extends = {{ template_monitor }}
+
+parts =
+  publish-connection-information
+  promise-postgresql
+  service-rabbitmq
+  promise-rabbitmq
+  service-patrowl
+  service-nginx
+  promise-nginx
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
