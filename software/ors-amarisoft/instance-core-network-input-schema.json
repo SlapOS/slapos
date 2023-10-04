@@ -27,6 +27,18 @@
       "description": "Activates local DNS server serving the given domain name",
       "type": "string"
     },
+    "network_name": {
+      "title": "Network Name",
+      "description": "Network name displayed on UE",
+      "type": "string",
+      "default": "RAPIDSPACE"
+    },
+    "network_short_name": {
+      "title": "Network Short Name",
+      "description": "Network short name displayed on UE",
+      "type": "string",
+      "default": "RAPIDSPACE"
+    },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
