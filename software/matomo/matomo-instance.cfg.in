@@ -11,7 +11,7 @@ cron-entries = ${cron:cron-entries}
 name = matomo-backup
 frequency = * * * * *
 log-file = ${directory:log}/matomo-backup.log
-command = ${matomo-backup.sh:output} 2>&1 | ${xxx.sh:output} > ${:log-file}
+command = ${matomo-backup.sh:output}; echo $? > ${:log-file}
 
 [matomo-backup.sh]
 recipe = slapos.recipe.template:jinja2

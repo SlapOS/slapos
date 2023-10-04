@@ -30,7 +30,7 @@ class RunPromise(GenericPromise):
     if not os.path.isfile(cron_log_path):
       self.logger.error("cron_log %s does not exist or is not a file", cron_log_path)
 
-    target_string = "exit 1"
+    target_string = "1"
 
     partition_path = self.getConfig('partition_path')[:-3]
     cron_service_name = self.getConfig('cron_name')
@@ -59,8 +59,8 @@ class RunPromise(GenericPromise):
     try:
       with open(cron_log_file, "r") as file:
         log_content = file.read()
-        if "exit 1" in log_content:
-          self.logger.error(f"Cron service {cron_service_name} failed: {log_content}")
+        if "0" not in log_content:
+          self.logger.error(f"Cron service {cron_service_name} failed with the code: {log_content}")
         print(log_content)
     except FileNotFoundError:
       print(f"File not found: {cron_log_file}")
