@@ -46,6 +46,12 @@
 %}
 
 
+{#- cfg returns value of configuration parameter name #}
+{%- macro cfg(name)     %}
+{{-   slapparameter_dict.get(name, defaults.get(name)) }}
+{%- endmacro %}
+
+
 {#- J is used around macro calls to retrieve returned objects.
 
     It is needed to workaround jinja2 limitation that macro can return only
