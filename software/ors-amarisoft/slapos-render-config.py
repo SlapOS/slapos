@@ -23,7 +23,9 @@ def j2render(config, jcfg):
       'url': 'config/{}.jinja2.cfg'.format(config),
       'output': 'config/{}.cfg'.format(config),
       'context': textctx,
-      'import-list': 'rawfile amari_lte.jinja2 amari/lte.jinja2',
+      'import-list': '''
+        rawfile amari_lte.jinja2  amari/lte.jinja2
+        rawfile amari_slap.jinja2 amari/slap.jinja2''',
       })
 
     # avoid dependency on zc.buildout.download and the need to use non-stub buildout section
