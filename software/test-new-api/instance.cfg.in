@@ -1,6 +1,7 @@
 [buildout]
 parts =
   switch-softwaretype
+  request-extra
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -35,6 +36,16 @@ default-parameters =
   {
     "title": ""
   }
+
+[request-extra]
+name = test-subinstance
+recipe = slapos.cookbook:request.serialised
+software-url = https://lab.nexedi.com/tsoulard/slapos/raw/wipapi-rebase/software/test-new-api/software.cfg
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
 
 [instance-replicate]
 recipe = slapos.recipe.template:jinja2
