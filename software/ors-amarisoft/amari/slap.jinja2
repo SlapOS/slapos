@@ -163,7 +163,7 @@
 {#-   verify that there is no dangling cell->ru references #}
 {#-   XXX also verify that there is no dangling cell -> cell refs in ruincell_ref #}
 {%-   for _, icell in icell_dict|dictsort                             %}
-{%-     set ru_ref = J(jcell_ru_ref(icell))                           %}
+{%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict))               %}
 {%-     if ru_ref not in iru_dict                                     %}
 {%-       do error(icell, "referred RU %s does not exist" % ru_ref)   %}
 {%-     endif                                                         %}
@@ -172,29 +172,29 @@
 
 {#- jcell_ru_ref returns RU reference linked from a cell.
     if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
-{%- macro jcell_ru_ref(icell)                                         %}
-{{-   _jcell_ru_ref(icell, [])                                        }}
-{%- endmacro                                                          %}
-{%- macro _jcell_ru_ref(icell, seen)                                  %}
-{%-   set cell_ref = J(jref_of_shared(icell))                         %}
-{%-   if cell_ref in seen                                             %}
-{%-     for x in seen                                                 %}
-{%-       do error(x, "%s form a cycle via RU references" % seen)     %}
-{%-     endfor                                                        %}
-{#-     XXX what to return ?                                          #}
-{%-   else                                                            %}
-{%-     do seen.append(cell_ref)                                      %}
-{%-     set ru = icell['_']['ru']                                     %}
-{%-     if ru.ru_type == 'ru_ref'                                     %}
-{{-       ru.ru_ref | tojson                                          }}
-{%-     elif ru.ru_type == 'ruincell_ref'                             %}
+{%- macro jcell_ru_ref(icell, icell_dict)                               %}
+{{-   _jcell_ru_ref(icell, icell_dict, [])                              }}
+{%- endmacro                                                            %}
+{%- macro _jcell_ru_ref(icell, icell_dict, seen)                        %}
+{%-   set cell_ref = J(jref_of_shared(icell))                           %}
+{%-   if cell_ref in seen                                               %}
+{%-     for x in seen                                                   %}
+{%-       do error(x, "%s form a cycle via RU references" % seen)       %}
+{%-     endfor                                                          %}
+{#-     XXX what to return ?                                            #}
+{%-   else                                                              %}
+{%-     do seen.append(cell_ref)                                        %}
+{%-     set ru = icell['_']['ru']                                       %}
+{%-     if ru.ru_type == 'ru_ref'                                       %}
+{{-       ru.ru_ref | tojson                                            }}
+{%-     elif ru.ru_type == 'ruincell_ref'                               %}
 {#-       XXX first check referred cell exist ? #}
-{{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], seen)            }}
-{%-     else                                                          %}
-{#-       ru definition is embedded into cell                         #}
-{{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson              }}
-{%-     endif                                                         %}
-{%-   endif                                                           %}
+{{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], icell_dict, seen)  }}
+{%-     else                                                            %}
+{#-       ru definition is embedded into cell                           #}
+{{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson                }}
+{%-     endif                                                           %}
+{%-   endif                                                             %}
 {%- endmacro %}
 
 {#- jref_of_shared returns original reference used to request shared instance.
