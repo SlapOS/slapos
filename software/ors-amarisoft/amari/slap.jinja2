@@ -109,14 +109,12 @@
     in the kept instances _ is automatically json-decoded
 
     use load_iru_and_icell(kind) to initialize this cell and RU registries.
-    kind=enb  - load cells definition to serve them
-    kind=ue   - load cells definition to connect to them
+    icell_kind=enb  - load cells definition to serve them
+    icell_kind=ue   - load cells definition to connect to them
 
     XXX defaults ?
 #}
-{%- set icell_dict = {}                                               %}
-{%- set iru_dict   = {}                                               %}
-{%- macro load_iru_and_icell(kind)                                    %}
+{%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)        %}
 {%-   set qother = []                                                 %}
 {%-   for ishared in qshared_instance_list                            %}
 {%-     set ref = J(jref_of_shared(ishared))                          %}
@@ -130,10 +128,10 @@
 {%-         endfor                                                    %}
 {%-       endif                                                       %}
 {%-       do iru_dict.update({ref: iru})                              %}
-{%-     elif (kind == 'enb' and 'cell_type' in _)    or
-             (kind == 'ue'  and 'ue_cell_type' in _)                  %}
+{%-     elif (icell_kind == 'enb' and 'cell_type' in _)    or
+             (icell_kind == 'ue'  and 'ue_cell_type' in _)            %}
 {%-       set icell = ishared                                         %}
-{%-       if kind == 'enb'                                            %}
+{%-       if icell_kind == 'enb'                                      %}
 {%-         for k, v in defaults['cell/' + _.cell_type].items()       %}
 {%-           do _.setdefault(k, v)                                   %}
 {%-         endfor                                                    %}
