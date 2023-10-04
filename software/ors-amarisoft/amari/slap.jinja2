@@ -1,0 +1,199 @@
+{#- Package amari/slap provides helpers for configuring Amarisoft LTE services in SlapOS. XXX ...
+
+    XXX overview
+    XXX see also amari/lte for ...
+-#}
+
+{#- J is used around macro calls to retrieve returned objects.
+
+    It is needed to workaround jinja2 limitation that macro can return only
+    strings - not arbitrary objects: we return objects as JSON-encoded string
+    and J decodes them.
+
+    By convention macros that return JSON-encoded objects start with "j" prefix.
+
+    Usage example:
+
+      set obj = J(jmymacro(...))
+#}
+{%- set J = json_module.loads %}
+
+
+{#- bug indicates an error in template logic.
+    it should not happen.                                           #}
+{%- macro bug(msg)                                                  %}
+{%-   do assert(False, msg)                                         %}
+{%- endmacro                                                        %}
+
+{#- error reports an error about shared instance #}
+{#- XXX -> ierror ?   #}
+{#- XXX error(ishared, msg)  vvv is debug stub -#}
+{%- macro error(ishared, msg)   %}
+{%-   set msg = 'E: %s: %s\n' % (J(jref_of_shared(ishared)), msg)   %}
+{%-   do print('\n%s' % msg)                                        %}
+{%-   do assert(False, msg)                                         %}
+{%- endmacro  %}
+
+
+
+
+{#- ---- loading ---- #}
+
+{#- qshared_instance_list queues not yet loaded shared instances.
+    load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
+{%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
+
+{#- check_loaded_everything verifies that all shared instances were handling during the load. #}
+{%- macro check_loaded_everything() %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     do error(ishared, "shared instance of unsupported type")  %}
+{%-   endfor  %}
+{%- endmacro %}
+
+{#- json-decode _ in all shared instances #}
+{%- for ishared in qshared_instance_list %}
+{%-   do ishared.update({'_': J(ishared['_'])})                   %}
+{%- endfor %}
+
+
+{#- icell_dict keeps cell shared instances:  reference -> icell
+    iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
+    in the kept instances _ is automatically json-decoded
+
+    use load_iru_and_icell(kind) to initialize this cell and RU registries.
+    kind=enb  - load cells definition to serve them
+    kind=ue   - load cells definition to connect to them
+
+    XXX defaults ?
+#}
+{%- set icell_dict = {}                                               %}
+{%- set iru_dict   = {}                                               %}
+{%- macro load_iru_and_icell(kind)                                    %}
+{%-   set qother = []                                                 %}
+{%-   for ishared in qshared_instance_list                            %}
+{%-     set ref = J(jref_of_shared(ishared))                          %}
+{%-     set _ = ishared['_']                                          %}
+{%-     if   'ru_type'   in _                                         %}
+{%-       set iru = ishared                                           %}
+{%-       do iru_dict.update({ref: iru})                              %}
+{%-     elif (kind == 'enb' and 'cell_type' in _)    or
+             (kind == 'ue'  and 'ue_cell_type' in _)                  %}
+{%-       set icell = ishared                                         %}
+{%-       if kind == 'enb'                                            %}
+{%-         for k, v in defaults['cell/' + _.cell_type].items()       %}
+{%-           do _.setdefault(k, v)                                   %}
+{%-         endfor                                                    %}
+{%-       endif                                                       %}
+{%-       do icell_dict.update({ref: icell})                          %}
+{%-       set ru = _['ru']                                            %}
+{%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref')             %}
+{#-         embedded ru definition -> expose it as `_<cell_ref>_ru`   #}
+{%-         do iru_dict.update({'_%s_ru' % ref: {
+                  '_':                ru,
+                  'slave_title':      '%s. RU' % icell.slave_title,
+                  'slave_reference':  icell.slave_reference,
+               }})                                                    %}
+{%-       endif                                                       %}
+{%-     else                                                          %}
+{%-       do qother.append(ishared)                                   %}
+{%-     endif                                                         %}
+{%-   endfor                                                          %}
+{%-   do qshared_instance_list.clear()                                %}
+{%-   do qshared_instance_list.extend(qother)                         %}
+
+{#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
+{#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
+
+{#-   XXX verify cell_type = lte|nr   XXX no - this should be verified by json-schema #}
+
+{#-   verify that there is no dangling cell->ru references #}
+{#-   XXX also verify that there is no dangling cell -> cell refs in ruincell_ref #}
+{%-   for _, icell in icell_dict|dictsort                             %}
+{%-     set ru_ref = J(jcell_ru_ref(icell))                           %}
+{%-     if ru_ref not in iru_dict                                     %}
+{%-       do error(icell, "referred RU %s does not exist" % ru_ref)   %}
+{%-     endif                                                         %}
+{%-   endfor                                                          %}
+{%- endmacro                                                          %}
+
+{#- jcell_ru_ref returns RU reference linked from a cell.
+    if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
+{%- macro jcell_ru_ref(icell)                                         %}
+{{-   _jcell_ru_ref(icell, [])                                        }}
+{%- endmacro                                                          %}
+{%- macro _jcell_ru_ref(icell, seen)                                  %}
+{%-   set cell_ref = J(jref_of_shared(icell))                         %}
+{%-   if cell_ref in seen                                             %}
+{%-     for x in seen                                                 %}
+{%-       do error(x, "%s form a cycle via RU references" % seen)     %}
+{%-     endfor                                                        %}
+{#-     XXX what to return ?                                          #}
+{%-   else                                                            %}
+{%-     do seen.append(cell_ref)                                      %}
+{%-     set ru = icell['_']['ru']                                     %}
+{%-     if ru.ru_type == 'ru_ref'                                     %}
+{{-       ru.ru_ref | tojson                                          }}
+{%-     elif ru.ru_type == 'ruincell_ref'                             %}
+{#-       XXX first check referred cell exist ? #}
+{{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], seen)            }}
+{%-     else                                                          %}
+{#-       ru definition is embedded into cell                         #}
+{{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson              }}
+{%-     endif                                                         %}
+{%-   endif                                                           %}
+{%- endmacro %}
+
+{#- jref_of_shared returns original reference used to request shared instance.
+    it is extracted from slave_reference which is composed as <partition_id>_<reference>. #}
+{%- macro jref_of_shared(ishared) %}
+{#- do  print('jref_of_shared %r' % (ishared,)) #}
+{%-   set ref = ishared['slave_reference']                                  %}
+{%-   set partition_id = slap_configuration['slap-computer-partition-id']   %}
+{%-   if ref.startswith(partition_id)                                       %}
+{%-     set ref = ref[len(partition_id):]                                   %}
+{%-   endif                                                                 %}
+{%-   if ref.startswith('_')                                                %}
+{%-     set ref = ref[1:]                                                   %}
+{%-   endif                                                                 %}
+{{-   ref | tojson                                                          }}
+{%- endmacro                                                                %}
+
+
+{#- ipeer_cell_dict keeps peer cell shared instances:  reference -> ipeer_cell
+
+    use load_ipeer to initialize this peer registry.
+#}
+{%- set ipeer_cell_dict = {}     %}
+{%- macro load_ipeer_cell()      %}
+// XXX TODO
+{%- endmacro                %}
+
+
+{#- iue_dict keeps ue shared instance:  reference -> iue
+
+    use load_iue to initialize this ue registry.
+#}
+{%- set iue_dict = {}                               %}
+{%- macro load_iue()                                %}
+{%-   set qother = []                               %}
+{%-   for ishared in qshared_instance_list          %}
+{%-     set ref = J(jref_of_shared(ishared))        %}
+{%-     set _ = ishared['_']                        %}
+{%-     if   'ue_type'   in _                       %}
+{%-       set iue = ishared                         %}
+{#- XXX verify ue.ue_type in lte|nr  #}
+{%-       for k, v in defaults['ue'].items()        %}
+{%-         do _.setdefault(k, v)                   %}
+{%-       endfor                                    %}
+{%-       do iue_dict.update({ref: iue})            %}
+{%-     else                                        %}
+{%-       do qother.append(ishared)                 %}
+{%-     endif                                       %}
+{%-   endfor                                        %}
+{%-   do qshared_instance_list.clear()              %}
+{%-   do qshared_instance_list.extend(qother)       %}
+{%- endmacro                                        %}
+
+
+
+{# ---- XXX ---- #}
