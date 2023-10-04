@@ -100,7 +100,17 @@ for plugin_and_version in '''\
 
   api_url = f'https://open-vsx.org/api/{publisher}/{extension_name}/{version}'
   logger.info(plugin_and_version)
-  download_url = session.get(api_url, timeout=timeout).json()['files']['download']
+  retries = 3
+  while retries:
+    try:
+      download_url = session.get(api_url, timeout=timeout).json()['files']['download']
+    except Exception:
+      retries = retries - 1
+      if not retries:
+        raise
+    else:
+      break
+
   md5sum = hashlib.md5(session.get(download_url, timeout=timeout).content).hexdigest()
   urls.append(f'{publisher}-{extension_name} {download_url} {md5sum}')
 
