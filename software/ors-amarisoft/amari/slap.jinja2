@@ -4,6 +4,48 @@
     XXX see also amari/lte for ...
 -#}
 
+
+{#- defaults provide default values for lte parameters.
+    it should be kept in sync with "default" in json schemas  #}
+{#- XXX ssb_pos_bitmap=10000000 is for TDD only; FDD -> "1000"  #}
+{#- XXX opc='milenage' is not meaningful ?  #}
+{%- set defaults = {
+      'enb_id': '0x1A2D0',
+      'gnb_id': '0x12345',
+      'gnb_id_bits': 28,
+
+      'cell/lte': {
+        'pci':  1,
+        'tac':  "0x0001",
+        'tdd_ul_dl_config': '[Configuration 2] 5ms 2UL 6DL (default)',
+      },
+      'cell/nr': {
+        'pci':  500,
+        'ssb_pos_bitmap':   '10000000',
+        'tdd_ul_dl_config': '5ms 2UL 7DL 4/6 (default)',
+      },
+      'cpri_link': {
+        'mapping': 'hw',
+        'mult':     16,
+        'rx_delay':  0,
+        'tx_delay':  0,
+        'tx_dbm':    0,
+      },
+
+      'ue': {
+        'sim_algo': 'milenage',
+        'opc':      'milenage',
+        'amf':      '0x9001',
+        'sqn':      '000000000000',
+        'impu':     '',
+        'impi':     '',
+        'imsi':     '001010123456789',
+        'k':        '00112233445566778899aabbccddeeff',
+      }
+    }
+%}
+
+
 {#- J is used around macro calls to retrieve returned objects.
 
     It is needed to workaround jinja2 limitation that macro can return only
