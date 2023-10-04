@@ -174,7 +174,7 @@ class Recipe(object):
         request_dict["parameters"] = json.dumps(partition_parameter_kw)
       if filter_kw:
         request_dict["sla_parameters"] = filter_kw
-      if slave:
+      if shared:
         request_dict["shared"] = True
       if requested_state:
         request_dict["state"] = requested_state
@@ -192,7 +192,7 @@ class Recipe(object):
             request_name=name,
             partition_parameter_kw=partition_parameter_kw,
             filter_kw=filter_kw,
-            shared=slave,
+            shared=shared,
             state=requested_state
           )
         )
@@ -205,8 +205,8 @@ class Recipe(object):
           return_parameters
         )
         # Fetch the instance-guid and the instance-state
-        # Note: SlapOS Master does not support it for slave instances
-        if not slave:
+        # Note: SlapOS Master does not support it for shared instances
+        if not shared:
           options['instance-guid'] =  partition_dict["reference"]
           # XXX: deprecated, to be removed
           options['instance_guid'] = options['instance-guid']
@@ -218,12 +218,12 @@ class Recipe(object):
       try:
         self.instance = request(software_url, software_type,
             name, partition_parameter_kw=partition_parameter_kw,
-            filter_kw=filter_kw, shared=slave, state=requested_state)
+            filter_kw=filter_kw, shared=shared, state=requested_state)
         return_parameter_dict = self._getReturnParameterDict(self.instance,
             return_parameters)
         # Fetch the instance-guid and the instance-state
-        # Note: SlapOS Master does not support it for slave instances
-        if not slave:
+        # Note: SlapOS Master does not support it for shared instances
+        if not shared:
           try:
             options['instance-guid'] = self.instance.getInstanceGuid() \
                 .encode('UTF-8')
@@ -245,7 +245,7 @@ class Recipe(object):
             request_name=name,
             partition_parameter_kw=partition_parameter_kw,
             filter_kw=filter_kw,
-            shared=slave,
+            shared=shared,
             state=requested_state
           )
         )
