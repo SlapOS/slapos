@@ -41,6 +41,7 @@ default-parameters =
 name = test-subinstance
 recipe = slapos.cookbook:request.serialised
 software-url = https://lab.nexedi.com/tsoulard/slapos/raw/wipapi-rebase/software/test-new-api/software.cfg
+software-type = default
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
