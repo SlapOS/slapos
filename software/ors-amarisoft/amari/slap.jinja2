@@ -117,6 +117,12 @@
 {%-     set _ = ishared['_']                                          %}
 {%-     if   'ru_type'   in _                                         %}
 {%-       set iru = ishared                                           %}
+{%-       if _.ru_link_type == 'cpri'                                 %}
+{%-         set link = _.cpri_link                                    %}
+{%-         for k, v in defaults['cpri_link'].items()                 %}
+{%-           do link.setdefault(k, v)                                %}
+{%-         endfor                                                    %}
+{%-       endif                                                       %}
 {%-       do iru_dict.update({ref: iru})                              %}
 {%-     elif (kind == 'enb' and 'cell_type' in _)    or
              (kind == 'ue'  and 'ue_cell_type' in _)                  %}

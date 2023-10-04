@@ -43,10 +43,6 @@
   {%-   elif ru.ru_link_type == 'cpri'                                        %}
   {%-     do ru_cpri_dict.update({len(dev_argv): ru})                         %}
   {%-     set link = ru.cpri_link                                             %}
-  {#-     set cpri_link parameters to default         #}
-  {%-     for k, v in defaults['cpri_link'].items()   %}
-  {%-       do link.setdefault(k, v)                  %}
-  {%-     endfor                                      %}
   {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))   %}
   {%-   else        %}
   {%-     do bug('unreachable')                                 %}
