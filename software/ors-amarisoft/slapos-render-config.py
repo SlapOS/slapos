@@ -209,12 +209,68 @@ def iRU3_SDR1_fLTE2(ienb):
         }
     })
 
+def iRU2_LOPCOMM_fLTE2(ienb):
+    # supports: 2110 - 2170 MHz
+    RU_0002 = {
+        'ru_type':      'lopcomm',
+        'ru_link_type': 'cpri',
+#       'mac_addr':     'XXX',
+        'cpri_link':    {
+            'sdr_dev':  0,
+            'sfp_port': 0,
+            'mult':     8,
+            'mapping':  'hw',
+            'rx_delay': 25.11,
+            'tx_delay': 14.71,
+            'tx_dbm':   63
+        },
+        'n_antenna_dl': 1,
+        'n_antenna_ul': 1,
+        'tx_gain':      0,
+        'rx_gain':      0,
+    }
+
+    # supports: 2110 - 2170 MHz
+    RU_0004 = copy.deepcopy(RU_0002)
+#   RU_0004['mac_addr'] = 'YYY'
+    RU_0004['cpri_link']['sfp_port'] = 1
+
+    if 1:
+        ienb.ishared('Radio Unit 2a', '_RU_0002', RU_0002)
+        ienb.ishared('Cell 2', '_CELL2', {
+            'cell_type':    'lte',
+            'rf_mode':      'fdd',
+            'bandwidth':    '20 MHz',
+            'dl_earfcn':    100,        # 2120 MHz   @ B1
+            'pci':          21,
+            'cell_id':      '0x21',
+            'ru':           {
+                'ru_type':  'ru_ref',
+                'ru_ref':   'RU_0002'
+            }
+        })
+
+    if 1:
+        ienb.ishared('Radio Unit 2b', '_RU_0004', RU_0004)
+        ienb.ishared('Cell 4', '_CELL4', {
+            'cell_type':    'lte',
+            'rf_mode':      'fdd',
+            'bandwidth':    '20 MHz',
+            'dl_earfcn':    500,        # 2160 MHz  @ B1
+            'pci':          22,
+            'cell_id':      '0x22',
+            'ru':           {
+                'ru_type':  'ru_ref',
+                'ru_ref':   'RU_0004'
+            }
+        })
 
 def do_enb():
     ienb = Instance('enb')
     iRU1_SDR_tLTE2_tNR(ienb)
     #iRU2_LOPCOMM_fLTE_fNR(ienb)
     #iRU3_SDR1_fLTE2(ienb)
+    #iRU2_LOPCOMM_fLTE2(ienb)
 
     jshared_instance_list = json.dumps(ienb.shared_instance_list)
     json_params = """{

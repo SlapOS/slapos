@@ -104,7 +104,9 @@
 {%- endfor %}
 
 
-{#- icell_dict keeps cell shared instances:  reference -> icell
+{#- load_iru_and_icell initializes RU and cell registries.
+
+    icell_dict keeps cell shared instances:  reference -> icell
     iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
     in the kept instances _ is automatically json-decoded
 
