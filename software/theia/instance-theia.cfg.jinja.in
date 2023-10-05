@@ -260,15 +260,18 @@ content =
   frontend app
     log global
     bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
-    # writing twice the same ACL is doing OR
     acl is_public path_beg /public/
-    acl is_public path /$${frontend-instance-favicon.ico:filename}
-    acl is_public path /$${frontend-instance-theia.webmanifest:filename}
-    acl is_public path /$${frontend-instance-theia-serviceworker.js:filename}
     acl auth_ok http_auth(basic-auth-list)
+    # writing twice the same ACL is doing OR
+    acl is_static path_beg /$${frontend-instance-fonts:folder-name}
+    acl is_static path_beg /$${frontend-instance-slapos.css:folder-name}
+    acl is_static path /$${frontend-instance-logo:filename}
+    acl is_static path /$${frontend-instance-favicon.ico:filename}
+    acl is_static path /$${frontend-instance-theia.webmanifest:filename}
+    acl is_static path /$${frontend-instance-theia-serviceworker.js:filename}
     # No authentication for public folder
     http-request auth unless auth_ok || is_public
-    use_backend static if { path_beg /$${frontend-instance-fonts:folder-name} } || { path_beg /$${frontend-instance-slapos.css:folder-name} } || { path /$${frontend-instance-logo:filename} } || is_public
+    use_backend static if is_static || is_public
     default_backend nodejs
 
   backend nodejs

@@ -161,9 +161,21 @@ class TestTheia(TheiaTestCase):
     self.assertIn('test_file', get('/public/'))
     self.assertEqual('hello', get('/public/test_file'))
 
-    # there's a (not empty) favicon (no need for authentication)
-    resp = self.get(urljoin(url, '/favicon.ico'))
+    # favicon is not empty
+    self.get(urljoin(url, '/favicon.ico'), requests.codes.unauthorized)
+    resp = self.get(urljoin(authenticated_url, '/favicon.ico'))
+    resp.raise_for_status()
     self.assertTrue(resp.raw)
+
+    self.get(urljoin(url, '/theia-serviceworker.js'), requests.codes.unauthorized)
+    resp = self.get(urljoin(authenticated_url, '/theia-serviceworker.js'))
+    resp.raise_for_status()
+    self.assertTrue(resp.raw)
+
+    self.get(urljoin(url, '/theia.webmanifest'), requests.codes.unauthorized)
+    resp = self.get(urljoin(authenticated_url, '/theia.webmanifest'))
+    resp.raise_for_status()
+    self.assertIn('Theia SlapOS', resp.text)
 
     # there is a CSS referencing fonts
     css_text = self.get(urljoin(authenticated_url, '/css/slapos.css')).text
