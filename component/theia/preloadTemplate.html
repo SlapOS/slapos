@@ -7,6 +7,7 @@
   link = document.createElement('link');
   link.rel = "manifest";
   link.href = "/theia.webmanifest";
+  link.crossorigin = "use-credentials";
   document.head.appendChild(link);
 
   if ('serviceWorker' in navigator) {
