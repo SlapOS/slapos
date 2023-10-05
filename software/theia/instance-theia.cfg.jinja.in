@@ -260,11 +260,7 @@ content =
   frontend app
     log global
     bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
-    # writing twice the same ACL is doing OR
     acl is_public path_beg /public/
-    acl is_public path /$${frontend-instance-favicon.ico:filename}
-    acl is_public path /$${frontend-instance-theia.webmanifest:filename}
-    acl is_public path /$${frontend-instance-theia-serviceworker.js:filename}
     acl auth_ok http_auth(basic-auth-list)
     # No authentication for public folder
     http-request auth unless auth_ok || is_public
