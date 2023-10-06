@@ -221,12 +221,12 @@
 {%- endmacro                %}
 
 
-{#- iue_dict keeps ue shared instance:  reference -> iue
+{#- load_iue initializes UE registry.
 
-    use load_iue to initialize this ue registry.
+    iue_dict keeps ue shared instance:  reference -> iue
 #}
 {%- set iue_dict = {}                               %}
-{%- macro load_iue()                                %}
+{%- macro load_iue(iue_dict)                        %}
 {%-   set qother = []                               %}
 {%-   for ishared in qshared_instance_list          %}
 {%-     set ref = J(jref_of_shared(ishared))        %}
