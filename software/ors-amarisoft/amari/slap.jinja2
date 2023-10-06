@@ -110,8 +110,7 @@
     iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
     in the kept instances _ is automatically json-decoded
 
-    use load_iru_and_icell(kind) to initialize this cell and RU registries.
-    icell_kind=enb  - load cells definition to serve them
+    icell_kind=enb  - load cells definition to serve them from enb
     icell_kind=ue   - load cells definition to connect to them
 
     XXX defaults ?
@@ -213,12 +212,11 @@
 {%- endmacro                                                                %}
 
 
-{#- ipeer_cell_dict keeps peer cell shared instances:  reference -> ipeer_cell
+{#- load_ipeercell initializes peer-cell registry.
 
-    use load_ipeer to initialize this peer registry.
+    ipeercell_dict keeps peer cell shared instances:  reference -> ipeercell
 #}
-{%- set ipeer_cell_dict = {}     %}
-{%- macro load_ipeer_cell()      %}
+{%- macro load_ipeercell(ipeercell_dict)      %}
 // XXX TODO
 {%- endmacro                %}
 

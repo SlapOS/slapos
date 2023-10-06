@@ -12,6 +12,8 @@ import json, copy, sys, pprint
 # j2render renders config/<config>.jinja2.cfg into config/<config>.cfg with provided json parameters.
 def j2render(config, jcfg):
     ctx = json.loads(jcfg)
+    assert '_standalone' not in ctx
+    ctx['_standalone'] = True
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
