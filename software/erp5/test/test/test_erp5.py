@@ -555,12 +555,7 @@ class ZopeSkinsMixin:
       except xmlrpc.client.ProtocolError as e:
         if e.errcode != 302:
           raise
-      getattr(custom, script_id).ZPythonScriptHTML_editAction(
-          '',
-          '',
-          params,
-          body,
-      )
+      getattr(custom, script_id).write(f'##parameters={params}\n\n{body}')
 
 
 class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
