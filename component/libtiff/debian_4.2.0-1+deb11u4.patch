@@ -2352,3 +2352,285 @@ Index: tiff-4.2.0/tools/tiffcrop.c
        if (prev_cropsize < cropsize)
          {
          next_buff = _TIFFrealloc(crop_buff, cropsize + NUM_BUFF_OVERSIZE_BYTES);
+From: Markus Koschany <apo@debian.org>
+Date: Tue, 21 Feb 2023 14:26:43 +0100
+Subject: CVE-2023-0795
+
+This is also the fix for CVE-2023-0796, CVE-2023-0797, CVE-2023-0798,
+CVE-2023-0799.
+
+Bug-Debian: https://bugs.debian.org/1031632
+Origin: https://gitlab.com/libtiff/libtiff/-/commit/afaabc3e50d4e5d80a94143f7e3c997e7e410f68
+---
+ tools/tiffcrop.c | 51 ++++++++++++++++++++++++++++++---------------------
+ 1 file changed, 30 insertions(+), 21 deletions(-)
+
+Index: tiff-4.2.0/tools/tiffcrop.c
+===================================================================
+--- tiff-4.2.0.orig/tools/tiffcrop.c
++++ tiff-4.2.0/tools/tiffcrop.c
+@@ -278,7 +278,6 @@ struct  region {
+   uint32 width;     /* width in pixels */
+   uint32 length;    /* length in pixels */
+   uint32 buffsize;  /* size of buffer needed to hold the cropped region */
+-  unsigned char *buffptr; /* address of start of the region */
+ };
+ 
+ /* Cropping parameters from command line and image data 
+@@ -533,7 +532,7 @@ static int rotateContigSamples24bits(uin
+ static int rotateContigSamples32bits(uint16, uint16, uint16, uint32, 
+                                      uint32,   uint32, uint8 *, uint8 *);
+ static int rotateImage(uint16, struct image_data *, uint32 *, uint32 *,
+- 		       unsigned char **);
++ 		       unsigned char **, int);
+ static int mirrorImage(uint16, uint16, uint16, uint32, uint32,
+ 		       unsigned char *);
+ static int invertImage(uint16, uint16, uint16, uint32, uint32,
+@@ -5166,7 +5165,6 @@ initCropMasks (struct crop_mask *cps)
+      cps->regionlist[i].width = 0;
+      cps->regionlist[i].length = 0;
+      cps->regionlist[i].buffsize = 0;
+-     cps->regionlist[i].buffptr = NULL;
+      cps->zonelist[i].position = 0;
+      cps->zonelist[i].total = 0;
+      }
+@@ -6412,8 +6410,13 @@ static int  correct_orientation(struct i
+                   image->adjustments & ROTATE_ANY);
+       return (-1);
+       }
+- 
+-    if (rotateImage(rotation, image, &image->width, &image->length, work_buff_ptr))
++
++      /* Dummy variable in order not to switch two times the
++       * image->width,->length within rotateImage(),
++       * but switch xres, yres there. */
++      uint32_t width = image->width;
++      uint32_t length = image->length;
++      if (rotateImage(rotation, image, &width, &length, work_buff_ptr, TRUE))
+       {
+       TIFFError ("correct_orientation", "Unable to rotate image");
+       return (-1);
+@@ -6481,7 +6484,6 @@ extractCompositeRegions(struct image_dat
+     /* These should not be needed for composite images */
+     crop->regionlist[i].width = crop_width;
+     crop->regionlist[i].length = crop_length;
+-    crop->regionlist[i].buffptr = crop_buff;
+ 
+     src_rowsize = ((img_width * bps * spp) + 7) / 8;
+     dst_rowsize = (((crop_width * bps * count) + 7) / 8);
+@@ -6718,7 +6720,6 @@ extractSeparateRegion(struct image_data
+ 
+   crop->regionlist[region].width = crop_width;
+   crop->regionlist[region].length = crop_length;
+-  crop->regionlist[region].buffptr = crop_buff;
+ 
+   src = read_buff;
+   dst = crop_buff;
+@@ -7596,7 +7597,7 @@ processCropSelections(struct image_data
+     if (crop->crop_mode & CROP_ROTATE) /* rotate should be last as it can reallocate the buffer */
+       {
+       if (rotateImage(crop->rotation, image, &crop->combined_width, 
+-                      &crop->combined_length, &crop_buff))
++                      &crop->combined_length, &crop_buff, FALSE))
+         {
+         TIFFError("processCropSelections", 
+                   "Failed to rotate composite regions by %d degrees", crop->rotation);
+@@ -7702,7 +7703,7 @@ processCropSelections(struct image_data
+       if (crop->crop_mode & CROP_ROTATE) /* rotate should be last as it can reallocate the buffer */
+         {
+ 	if (rotateImage(crop->rotation, image, &crop->regionlist[i].width, 
+-			&crop->regionlist[i].length, &crop_buff))
++			&crop->regionlist[i].length, &crop_buff, FALSE))
+           {
+           TIFFError("processCropSelections", 
+                     "Failed to rotate crop region by %d degrees", crop->rotation);
+@@ -7834,7 +7835,7 @@ createCroppedImage(struct image_data *im
+   if (crop->crop_mode & CROP_ROTATE) /* rotate should be last as it can reallocate the buffer */
+     {
+     if (rotateImage(crop->rotation, image, &crop->combined_width, 
+-                    &crop->combined_length, crop_buff_ptr))
++                    &crop->combined_length, crop_buff_ptr, TRUE))
+       {
+       TIFFError("createCroppedImage", 
+                 "Failed to rotate image or cropped selection by %d degrees", crop->rotation);
+@@ -8497,7 +8498,7 @@ rotateContigSamples32bits(uint16 rotatio
+ /* Rotate an image by a multiple of 90 degrees clockwise */
+ static int
+ rotateImage(uint16 rotation, struct image_data *image, uint32 *img_width, 
+-            uint32 *img_length, unsigned char **ibuff_ptr)
++            uint32 *img_length, unsigned char **ibuff_ptr, int rot_image_params)
+   {
+   int      shift_width;
+   uint32   bytes_per_pixel, bytes_per_sample;
+@@ -8688,11 +8689,15 @@ rotateImage(uint16 rotation, struct imag
+ 
+               *img_width = length;
+               *img_length = width;
+-              image->width = length;
+-              image->length = width;
+-              res_temp = image->xres;
+-              image->xres = image->yres;
+-              image->yres = res_temp;
++            /* Only toggle image parameters if whole input image is rotated. */
++            if (rot_image_params)
++            {
++                image->width = length;
++                image->length = width;
++                res_temp = image->xres;
++                image->xres = image->yres;
++                image->yres = res_temp;
++            }
+ 	      break;
+ 
+     case 270: if ((bps % 8) == 0) /* byte aligned data */
+@@ -8765,11 +8770,15 @@ rotateImage(uint16 rotation, struct imag
+ 
+               *img_width = length;
+               *img_length = width;
+-              image->width = length;
+-              image->length = width;
+-              res_temp = image->xres;
+-              image->xres = image->yres;
+-              image->yres = res_temp;
++            /* Only toggle image parameters if whole input image is rotated. */
++            if (rot_image_params)
++            {
++                image->width = length;
++                image->length = width;
++                res_temp = image->xres;
++                image->xres = image->yres;
++                image->yres = res_temp;
++            }
+               break;
+     default:
+               break;
+From: Markus Koschany <apo@debian.org>
+Date: Tue, 21 Feb 2023 14:39:52 +0100
+Subject: CVE-2023-0800
+
+This is also the fix for CVE-2023-0801, CVE-2023-0802, CVE-2023-0803,
+CVE-2023-0804.
+
+Bug-Debian: https://bugs.debian.org/1031632
+Origin: https://gitlab.com/libtiff/libtiff/-/commit/33aee1275d9d1384791d2206776eb8152d397f00
+---
+ tools/tiffcrop.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 69 insertions(+), 4 deletions(-)
+
+Index: tiff-4.2.0/tools/tiffcrop.c
+===================================================================
+--- tiff-4.2.0.orig/tools/tiffcrop.c
++++ tiff-4.2.0/tools/tiffcrop.c
+@@ -5304,18 +5304,40 @@ computeInputPixelOffsets(struct crop_mas
+ 
+       crop->regionlist[i].buffsize = buffsize;
+       crop->bufftotal += buffsize;
++
++      /* For composite images with more than one region, the
++       * combined_length or combined_width always needs to be equal,
++       * respectively.
++       * Otherwise, even the first section/region copy
++       * action might cause buffer overrun. */
+       if (crop->img_mode == COMPOSITE_IMAGES)
+         {
+         switch (crop->edge_ref)
+           {
+           case EDGE_LEFT:
+           case EDGE_RIGHT:
++               if (i > 0 && zlength != crop->combined_length)
++               {
++                   TIFFError(
++                       "computeInputPixelOffsets",
++                       "Only equal length regions can be combined for "
++                       "-E left or right");
++                   return (-1);
++               }
+                crop->combined_length = zlength;
+                crop->combined_width += zwidth;
+                break;
+           case EDGE_BOTTOM:
+           case EDGE_TOP:  /* width from left, length from top */
+           default:
++               if (i > 0 && zwidth != crop->combined_width)
++                {
++                    TIFFError("computeInputPixelOffsets",
++                              "Only equal width regions can be "
++                              "combined for -E "
++                              "top or bottom");
++                    return (-1);
++                }
+                crop->combined_width = zwidth;
+                crop->combined_length += zlength;
+ 	       break;
+@@ -6470,6 +6492,47 @@ extractCompositeRegions(struct image_dat
+   crop->combined_width = 0;
+   crop->combined_length = 0;
+ 
++    /* If there is more than one region, check beforehand whether all the width
++     * and length values of the regions are the same, respectively. */
++    switch (crop->edge_ref)
++    {
++        default:
++        case EDGE_TOP:
++        case EDGE_BOTTOM:
++            for (i = 1; i < crop->selections; i++)
++            {
++                uint32_t crop_width0 =
++                    crop->regionlist[i - 1].x2 - crop->regionlist[i - 1].x1 + 1;
++                uint32_t crop_width1 =
++                    crop->regionlist[i].x2 - crop->regionlist[i].x1 + 1;
++                if (crop_width0 != crop_width1)
++                {
++                    TIFFError("extractCompositeRegions",
++                              "Only equal width regions can be combined for -E "
++                              "top or bottom");
++                    return (1);
++                }
++            }
++            break;
++        case EDGE_LEFT:
++        case EDGE_RIGHT:
++            for (i = 1; i < crop->selections; i++)
++            {
++                uint32_t crop_length0 =
++                    crop->regionlist[i - 1].y2 - crop->regionlist[i - 1].y1 + 1;
++                uint32_t crop_length1 =
++                    crop->regionlist[i].y2 - crop->regionlist[i].y1 + 1;
++                if (crop_length0 != crop_length1)
++                {
++                    TIFFError("extractCompositeRegions",
++                              "Only equal length regions can be combined for "
++                              "-E left or right");
++                    return (1);
++                }
++            }
++   }
++
++
+   for (i = 0; i < crop->selections; i++)
+     {
+     /* rows, columns, width, length are expressed in pixels */
+@@ -6493,8 +6556,9 @@ extractCompositeRegions(struct image_dat
+       default:
+       case EDGE_TOP:
+       case EDGE_BOTTOM:
+-	   if ((i > 0) && (crop_width != crop->regionlist[i - 1].width))
+-             {
++         if ((crop->selections > i + 1) &&
++                    (crop_width != crop->regionlist[i + 1].width))
++         {
+ 	     TIFFError ("extractCompositeRegions", 
+                           "Only equal width regions can be combined for -E top or bottom");
+ 	     return (1);
+@@ -6574,8 +6638,9 @@ extractCompositeRegions(struct image_dat
+ 	   break;
+       case EDGE_LEFT:  /* splice the pieces of each row together, side by side */
+       case EDGE_RIGHT:
+-	   if ((i > 0) && (crop_length != crop->regionlist[i - 1].length))
+-             {
++         if ((crop->selections > i + 1) &&
++                    (crop_length != crop->regionlist[i + 1].length))
++         {
+ 	     TIFFError ("extractCompositeRegions", 
+                           "Only equal length regions can be combined for -E left or right");
+ 	     return (1);
