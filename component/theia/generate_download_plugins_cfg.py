@@ -49,9 +49,7 @@ for plugin_and_version in '''\
     vscode/lua/latest
     vscode/make/latest
     vscode/markdown/latest
-# Activating extension 'Markdown Language Features (built-in)' failed:
-# i.workspace.onWillDropOnTextEditor is not a function
-    vscode/markdown-language-features/1.64.2
+    vscode/markdown-language-features/latest
     vscode/merge-conflict/latest
     vscode/npm/latest
     ms-vscode/node-debug/latest
