@@ -182,6 +182,12 @@ T-2/var/log/httpd/_type-zope_frontend_log
 T-2/var/log/httpd/_url-netloc-list_access_log
 T-2/var/log/httpd/_url-netloc-list_backend_log
 T-2/var/log/httpd/_url-netloc-list_frontend_log
+T-2/var/log/httpd/_url-trailing-slash-absent_access_log
+T-2/var/log/httpd/_url-trailing-slash-absent_backend_log
+T-2/var/log/httpd/_url-trailing-slash-absent_frontend_log
+T-2/var/log/httpd/_url-trailing-slash-present_access_log
+T-2/var/log/httpd/_url-trailing-slash-present_backend_log
+T-2/var/log/httpd/_url-trailing-slash-present_frontend_log
 T-2/var/log/httpd/_url_https-url_access_log
 T-2/var/log/httpd/_url_https-url_backend_log
 T-2/var/log/httpd/_url_https-url_frontend_log

@@ -128,7 +128,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   {{ active_check_option }}
 {%-         endfor %}
 {%-         if path %}
-  http-request set-path {{ path }}%[path]
+  http-request set-path {{ path }}%[path,regsub('^/$','')]
 {%-         endif %}
 {%-       endif %}
 {%-     endif %}
@@ -175,7 +175,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
   timeout server {{ slave_instance['request-timeout'] }}s
   retries {{ slave_instance['backend-connect-retries'] }}
 {%-         if path %}
-  http-request set-path {{ path }}%[path]
+  http-request set-path {{ path }}%[path,regsub('^/$','')]
 {%-         endif %}
 {%-       endif %}
 {%-     endif %}
