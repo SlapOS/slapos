@@ -162,19 +162,22 @@ class TestOrderBuildPackingListSimulation(
     zope_count = len(zope_memory_info_list)
 
     # Database size
-    root_fs = pathlib.Path(
-      self.getComputerPartitionPath('zodb')) / 'srv' / 'zodb' / 'root.fs'
-    root_fs_size = root_fs.stat().st_size
+    if self.isNEO():
+      root_fs_size = zeo_root_stats = 'N/A'
+    else:
+      root_fs = pathlib.Path(
+       self.getComputerPartitionPath('zodb')) / 'srv' / 'zodb' / 'root.fs'
+      root_fs_size = root_fs.stat().st_size
 
-    # ZEO stats ( using ruok protocol https://github.com/zopefoundation/ZEO/commit/d5082536 )
-    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-      s.connect((self._ipv4_address, 2100))
-      s.sendall(b'\x00\x00\x00\x04ruok')
-      _ = s.recv(struct.unpack(">I", s.recv(4))[0])
-      zeo_stats = json.loads(s.recv(struct.unpack(">I", s.recv(4))[0]))
-    # we are supposed to have only one storage with name "root"
-    zeo_root_stats = zeo_stats.pop('root')
-    assert not zeo_stats
+      # ZEO stats ( using ruok protocol https://github.com/zopefoundation/ZEO/commit/d5082536 )
+      with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.connect((self._ipv4_address, 2100))
+        s.sendall(b'\x00\x00\x00\x04ruok')
+        _ = s.recv(struct.unpack(">I", s.recv(4))[0])
+        zeo_stats = json.loads(s.recv(struct.unpack(">I", s.recv(4))[0]))
+      # we are supposed to have only one storage with name "root"
+      zeo_root_stats = zeo_stats.pop('root')
+      assert not zeo_stats
 
     self.logger.info(
       "Measurements for %s (after %s): "
@@ -255,16 +258,17 @@ class TestOrderBuildPackingListSimulation(
         self.take_measurements(f"iteration_{i+1:03}")
 
       # final measurements, take a "zodb analyze" snapshot
-      zodb_cmd = pathlib.Path(
-        self.computer_partition_root_path
-      ) / 'software_release' / 'bin' / 'zodb'
-      root_fs = pathlib.Path(
-        self.getComputerPartitionPath('zodb')) / 'srv' / 'zodb' / 'root.fs'
-      self.write_measurement(
-        {
-          'zodb analyze':
-          subprocess.check_output((zodb_cmd, 'analyze', root_fs), text=True)
-        })
+      if not self.isNEO():
+        zodb_cmd = pathlib.Path(
+          self.computer_partition_root_path
+        ) / 'software_release' / 'bin' / 'zodb'
+        root_fs = pathlib.Path(
+          self.getComputerPartitionPath('zodb')) / 'srv' / 'zodb' / 'root.fs'
+        self.write_measurement(
+          {
+            'zodb analyze':
+            subprocess.check_output((zodb_cmd, 'analyze', root_fs), text=True)
+          })
 
       # and a pt-query-digest for slow log
       pt_query_digest = pathlib.Path(
