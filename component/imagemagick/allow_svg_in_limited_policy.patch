@@ -1,0 +1,20 @@
+--- ImageMagick-7.1.1-20.orig/config/policy-limited.xml	2023-10-08 23:05:13.000000000 +0200
++++ ImageMagick-7.1.1-20/config/policy-limited.xml	2023-10-10 09:33:34.880236626 +0200
+@@ -20,7 +20,7 @@
+   The primary objective of the limited security policy is to find a
+   middle ground between convenience and security. This policy involves the
+   deactivation of potentially hazardous functionalities, like specific coders
+-  such as SVG or HTTP. Furthermore, it establishes several constraints on
++  such as HTTP. Furthermore, it establishes several constraints on
+   the utilization of resources like memory, storage, and processing duration,
+   all of which are adjustable. This policy proves advantageous in situations
+   where there's a need to mitigate the potential threat of handling possibly
+@@ -85,7 +85,7 @@
+   <!-- Indirect reads are not permitted. -->
+   <policy domain="path" rights="none" pattern="@*"/>
+   <!-- These image types are security risks on read, but write is fine -->
+-  <policy domain="module" rights="write" pattern="{MSL,MVG,PS,SVG,URL,XPS}"/>
++  <policy domain="module" rights="write" pattern="{MSL,MVG,PS,URL,XPS}"/>
+   <!-- This policy sets the number of times to replace content of certain
+        memory buffers and temporary files before they are freed or deleted. -->
+   <!-- <policy domain="system" name="shred" value="1"/> -->
