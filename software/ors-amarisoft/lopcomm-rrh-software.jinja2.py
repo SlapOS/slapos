@@ -1,6 +1,7 @@
 #!{{ python_path }}
 import time
 import xmltodict
+import json
 import sys
 import re
 import os
@@ -60,7 +61,7 @@ if __name__ == '__main__':
                       if download_reply_xml:
                           nc.logger.info("Download proceed.")
                           download_data = xmltodict.parse(download_reply_xml)
-                          nc.software_reply_json_logger.info('', extra={'data': download_data})
+                          nc.software_reply_json_logger.info('', extra={'data': json.dumps(download_data)})
 
                       install_rpc_xml = f"""
                           <software-install xmlns="urn:o-ran:software-management:1.0">
@@ -74,7 +75,7 @@ if __name__ == '__main__':
                       if install_reply_xml:
                           nc.logger.info("Installation proceed.")
                           install_data = xmltodict.parse(install_reply_xml)
-                          nc.software_reply_json_logger.info('', extra={'data': install_data})
+                          nc.software_reply_json_logger.info('', extra={'data': json.dumps(install_data)})
 
                       if nonrunning_slot_name_build_version in "{{firmware_name}}":
                           activate_rpc_xml = f"""
@@ -88,7 +89,7 @@ if __name__ == '__main__':
                           if activate_reply_xml:
                               nc.logger.info("Activation proceed.")
                               activate_data = xmltodict.parse(activate_reply_xml)
-                              nc.software_reply_json_logger.info('', extra={'data': activate_data})
+                              nc.software_reply_json_logger.info('', extra={'data': json.dumps(activate_data)})
 
                       nc.get_inventory()
                       if nonrunning_slot_name_build_version in "{{firmware_name}}" and active_nonrunning_slot_name:
