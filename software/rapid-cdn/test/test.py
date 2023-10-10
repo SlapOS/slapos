@@ -1654,6 +1654,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
+      'url-trailing-slash-absent': {
+        'url': cls.backend_url + 'index.html',
+      },
+      'url-trailing-slash-present': {
+        'url': cls.backend_url + 'index.html/',
+      },
       'url-netloc-list': {
         'url': cls.backend_url,
         'url-netloc-list': '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
@@ -2123,9 +2129,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '62',
+      'accepted-slave-amount': '64',
       'rejected-slave-amount': '0',
-      'slave-amount': '62',
+      'slave-amount': '64',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2461,6 +2467,30 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       SOURCE_IPV6,
       j['Incoming Headers']['x-forwarded-for']
     )
+
+  def test_url_trailing_slash_absent(self):
+    parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], '').json()['Path'],
+      '/index.html')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], 'path').json()['Path'],
+      '/index.html/path')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], 'path/').json()['Path'],
+      '/index.html/path/')
+
+  def test_url_trailing_slash_present(self):
+    parameter_dict = self.assertSlaveBase('url-trailing-slash-present')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], '').json()['Path'],
+      '/index.html')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], 'path').json()['Path'],
+      '/index.html/path')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], 'path/').json()['Path'],
+      '/index.html/path/')
 
   def test_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('url-netloc-list')
