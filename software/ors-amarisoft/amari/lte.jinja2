@@ -30,7 +30,7 @@
   {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_kind = cpri   #}
   {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
   {%- set rx_gainv = [] %}      {#- rx_gain by tx channel                     #}
-  {%- for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)              %}
+  {%- for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)              %}  XXX adjust
   {%-   set ru = iru['_']                                                     %}
       // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
   {%-   do ru.update({'_rf_port': rf_port})                                   %}

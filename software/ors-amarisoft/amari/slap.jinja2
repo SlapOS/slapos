@@ -167,6 +167,18 @@
 {%-       do error(icell, "referred RU %s does not exist" % ru_ref)   %}
 {%-     endif                                                         %}
 {%-   endfor                                                          %}
+
+{#-   assign rf_port and rf tx/rx indices to RUs                      #}
+{%-   set rf_idx = namespace(tx=0, rx=0)                              %}
+{%-   for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)      %}
+{%-     set ru = iru['_']                                             %}
+{%-     do ru.update({'_rf_port':   rf_port,
+                      '_rf_idx_tx': rf_idx.tx,
+                      '_rf_idx_rx': rf_idx.rx})                       %}
+{%-     set rf_idx.tx = rf_idx.tx + ru.n_antenna_dl                   %}
+{%-     set rf_idx.rx = rf_idx.rx + ru.n_antenna_ul                   %}
+{%-   endfor                                                          %}
+
 {%- endmacro                                                          %}
 
 {#- jcell_ru_ref returns RU reference linked from a cell.
