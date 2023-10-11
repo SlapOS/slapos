@@ -49,7 +49,7 @@ class enbWebSocket:
                 "rf_info": True
             })
             r = self.recv('rf')
-        self.logger.info('RF info', extra={'data': r})
+        self.logger.info('RF info', extra={'data': json.dumps(r)})
 
 if __name__ == '__main__':
     ws = enbWebSocket()
