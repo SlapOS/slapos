@@ -41,7 +41,7 @@ class enbWebSocket:
         if {{ testing }}:
             r = {
                 'message': 'rf',
-                'rf_info': "CPRI: x16 HW SW\n"
+                'rf_info': "CPRI: x16 HW SW\n"  # XXX update
             }
         else:
             self.send({
