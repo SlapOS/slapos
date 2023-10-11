@@ -1,5 +1,6 @@
 #!{{ python_path }}
 import time
+import json
 import xmltodict
 import sys
 import re
@@ -27,7 +28,7 @@ if __name__ == '__main__':
         if supervision_subscription_reply_xml:
             nc.logger.info("Subscription created")
             supervision_subscription_data = xmltodict.parse(supervision_subscription_reply_xml)
-            nc.supervision_reply_json_logger.info('', extra={'data': supervision_subscription_data})
+            nc.supervision_reply_json_logger.info('', extra={'data': json.dumps(supervision_subscription_data)})
             while True:
               supervision_watchdog_rpc_xml = """
                   <supervision-watchdog-reset xmlns="urn:o-ran:supervision:1.0">
@@ -43,7 +44,7 @@ if __name__ == '__main__':
                       nc.logger.info("NETCONF server replied")
                       
                       supervision_watchdog_data = xmltodict.parse(supervision_watchdog_reply_xml)
-                      nc.supervision_reply_json_logger.info('', extra={'data': supervision_watchdog_data})
+                      nc.supervision_reply_json_logger.info('', extra={'data': json.dumps(supervision_watchdog_data)})
                       # It must be the same interval as <supervision-notification-interval>
                       time.sleep(60)
                   else:
