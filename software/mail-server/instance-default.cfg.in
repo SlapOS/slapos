@@ -147,6 +147,10 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
   #!/bin/sh
+  # If master.pid contains PID of any running process
+  # dovecot will refuse to run. Only the pidfile provided
+  # by wrapper recipe should be used
+  rm -f var/run/dovecot/master.pid
   {{ dovecot_binary }} -F -c ${dovecot-conf:output}
 
 [dovecot-service]
@@ -170,6 +174,7 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
   #!/bin/sh
+  rm -f var/spool/postfix/pid/master.pid
   ${directory:usr-postfix}/libexec/postfix/master -c ${directory:etc-postfix}
 
 [postfix-service]

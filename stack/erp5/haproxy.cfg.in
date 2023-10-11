@@ -154,7 +154,7 @@ defaults
 {% for name, (port, _, certificate_authentication, timeout, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
 listen family_{{ name }}
 {%-  if parameter_dict.get('ca-cert') -%}
-{%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
+{%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional crt-ignore-err all' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
 {%-  else %}
 {%-    set ssl_auth = '' %}
 {%-  endif %}
@@ -173,11 +173,10 @@ listen family_{{ name }}
 {%-  endif %}
 
   # remove X-Forwarded-For unless client presented a verified certificate
-  acl client_cert_verified ssl_c_used ssl_c_verify 0
-  http-request del-header X-Forwarded-For unless client_cert_verified
+  http-request del-header X-Forwarded-For unless { ssl_c_verify 0 } { ssl_c_used 1 }
   # set Remote-User if client presented a verified certificate
   http-request del-header Remote-User
-  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if client_cert_verified
+  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if { ssl_c_verify 0 } { ssl_c_used 1 }
 
   # logs
   capture request header Referer len 512
