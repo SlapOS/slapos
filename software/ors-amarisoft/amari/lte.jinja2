@@ -115,7 +115,7 @@
 {%- macro nr_cell_tdd_config(cell) %}
 {%-   set _ = {'5ms 2UL 7DL 4/6 (default)':         1,
                '2.5ms 1UL 3DL 2/10':                2,
-               '5ms 8UL 3DL 2/10 (maximum uplink)': 3}  %}
+               '5ms 8UL 1DL 2/10 (maximum uplink)': 3}  %}
 {{-   _[cell.tdd_ul_dl_config] }}
 {%- endmacro -%}
 
