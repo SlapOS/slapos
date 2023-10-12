@@ -32,6 +32,7 @@ import glob
 import http.client
 import json
 import os
+import resource
 import shutil
 import socket
 import sqlite3
@@ -1100,3 +1101,36 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
           'var',
           'log',
           f))
+
+
+class TestWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test setting the with-max-rlimit-nofile parameter sets the open fd soft limit to the hard limit.
+  """
+  __partition_reference__ = 'with-max-rlimit-nofile'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'with-max-rlimit-nofile': True})}
+
+  def test_with_max_rlimit_nofile(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+    _, current_hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    process_info, = (p for p in all_process_info if p['name'].startswith('zope-'))
+    self.assertEqual(
+      resource.prlimit(process_info['pid'], resource.RLIMIT_NOFILE),
+      (current_hard_limit, current_hard_limit))
+
+
+class TestUnsetWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test not setting the with-max-rlimit-nofile parameter doesn't change the soft limit of erp5
+  """
+  __partition_reference__ = 'unset-with-max-rlimit-nofile'
+
+  def test_unset_with_max_rlimit_nofile(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+    limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    process_info, = (p for p in all_process_info if p['name'].startswith('zope-'))
+    self.assertEqual(
+      resource.prlimit(process_info['pid'], resource.RLIMIT_NOFILE), limit)
