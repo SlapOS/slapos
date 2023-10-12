@@ -4,7 +4,7 @@ set -e
 set -x
 
 php_cmd () {
-  {{ parameter_dict['php-bin'] }} -c {{ parameter_dict['php-ini'] }} $@
+  {{ parameter_dict['php-bin'] }} --define=apc.enable_cli=1 -c {{ parameter_dict['php-ini'] }} $@
 }
 
 status=$(php_cmd {{ parameter_dict['nextcloud'] }}/occ status | grep 'installed: true' || true)
@@ -52,7 +52,7 @@ cat <<EOF >> {{ parameter_dict['nextcloud'] }}/config/config.php
 'mail_smtppassword' => '{{ parameter_dict["mail.smtppassword"] }}',
 'activity_expire_days' => 14,
 'auth.bruteforce.protection.enabled' => true,
-'forwarded_for_headers' => 
+'forwarded_for_headers' =>
 array (
   0 => 'HTTP_X_FORWARDED',
 ),
@@ -67,13 +67,13 @@ array (
 {%   endfor -%}
 ),
 {% endif -%}
-'blacklisted_files' => 
+'blacklisted_files' =>
 array (
   0 => '.htaccess',
   1 => 'Thumbs.db',
   2 => 'thumbs.db',
 ),
-'csrf.optout' => 
+'csrf.optout' =>
 array (
   0 => '/^WebDAVFS/',
   1 => '/^Microsoft-WebDAV-MiniRedir/',
@@ -81,7 +81,7 @@ array (
 ),
 'cron_log' => true,
 'enable_previews' => true,
-'enabledPreviewProviders' => 
+'enabledPreviewProviders' =>
 array (
   0 => 'OC\\Preview\\PNG',
   1 => 'OC\\Preview\\JPEG',
@@ -110,7 +110,7 @@ array (
 'preview_max_x' => 1024,
 'preview_max_y' => 768,
 'preview_max_scale_factor' => 1,
-'redis' => 
+'redis' =>
 array (
   'host' => '{{ parameter_dict["redis-socket"] }}',
   'port' => 0,
@@ -134,7 +134,7 @@ EOF
 php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set richdocuments wopi_url --value="{{ parameter_dict.get('collabora-url', '') }}"
 php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set spreed stun_servers --value="[\"{{ parameter_dict['stun-server'] }}\"]"
 php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set spreed turn_servers --value="[{\"server\":\"{{ parameter_dict['turn-server'] }}\",\"secret\":\"{{ parameter_dict['turn-secret'] }}\",\"protocols\":\"udp,tcp\"}]"
-sed -i 's#useCronUpdates\s*=.*#useCronUpdates = false#g' {{ parameter_dict['data-dir'] }}/news/config/config.ini
+php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set news useCronUpdates --value=false
 
 if [ -f "{{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL" ]; then
   rm {{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL
