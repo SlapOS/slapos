@@ -34,6 +34,7 @@ extension=redis
 extension=imagick
 
 apc.enabled=1
+apc.enable_cli=1
 apc.file_update_protection=2
 apc.optimization=0
 apc.shm_size=256M

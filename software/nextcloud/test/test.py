@@ -227,6 +227,7 @@ class TestServices(NextCloudTestCase):
     php_bin = os.path.join(self.partition_dir, 'bin/php')
     nextcloud_status = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       os.path.join(self.nextcloud_path, 'occ'),
       'status',
       '--output',
@@ -257,6 +258,7 @@ class TestServices(NextCloudTestCase):
     self.assertEqual(config_dict, expected_dict)
     collabora_config = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       occ,
       "config:app:get",
       "richdocuments",
@@ -265,6 +267,7 @@ class TestServices(NextCloudTestCase):
     self.assertEqual(collabora_config.strip(), b'https://collabora.host.vifib.net/')
     stun_config = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       occ,
       "config:app:get",
       "spreed",
@@ -273,6 +276,7 @@ class TestServices(NextCloudTestCase):
     self.assertEqual(stun_config.strip(), b'["turn.vifib.com:5349"]')
     turn_config = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       occ,
       "config:app:get",
       "spreed",
@@ -354,6 +358,7 @@ class TestNextCloudParameters(NextCloudTestCase):
     self.assertEqual(config_dict, expected_dict)
     collabora_config = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       occ,
       "config:app:get",
       "richdocuments",
@@ -362,6 +367,7 @@ class TestNextCloudParameters(NextCloudTestCase):
     self.assertEqual(collabora_config.strip(), b'https://my-custom.collabora.net')
     stun_config = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       occ,
       "config:app:get",
       "spreed",
@@ -370,6 +376,7 @@ class TestNextCloudParameters(NextCloudTestCase):
     self.assertEqual(stun_config.strip(), b'["stun.example.net:5439"]')
     turn_config = subprocess.check_output([
       php_bin,
+      '--define=apc.enable_cli=1',
       occ,
       "config:app:get",
       "spreed",
