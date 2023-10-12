@@ -11,13 +11,12 @@
      if line.startswith('CKA_CLASS'):
 --- mozilla/Makefile	2015-12-20 10:49:23.000000000 +0100
 +++ mozilla/Makefile	2016-01-05 20:19:11.006874271 +0100
-@@ -3,7 +3,8 @@
+@@ -3,7 +3,7 @@
  #
  
  all:
 -	python3 certdata2pem.py
-+	for x in 3 '' 2; do type python$$x && break; done >/dev/null \
-+	&& python$$x certdata2pem.py
++	SLAPOS_BUILDOUT_PYTHON certdata2pem.py
  
  clean:
  	-rm -f *.crt
