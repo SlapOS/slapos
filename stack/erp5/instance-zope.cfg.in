@@ -1,5 +1,6 @@
 {% from "instance_zodb_base" import zodb_dict  with context %}
 {% set webdav = slapparameter_dict['webdav'] -%}
+{% set nofile = slapparameter_dict['nofile'] -%}
 {% set thread_amount = slapparameter_dict['thread-amount'] %}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set ports = itertools.count(slapparameter_dict['port-base']) -%}
@@ -345,6 +346,7 @@ wrapped-command-line =
     --access-log-file={{ '${' ~ conf_parameter_name ~ ':z2-log}' }}
     {% if longrequest_logger_interval > 0 %} --long-request-log-file={{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {% endif %}
     {% if webdav %}-w{% endif %}
+    {% if nofile %}--nofile{% endif %}
     {{ ipv4 }}:${:port}
     {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %}
     '${:configuration-file}'
