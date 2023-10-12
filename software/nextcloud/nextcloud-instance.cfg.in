@@ -105,6 +105,10 @@ input = inline:#!/bin/bash
     echo "Nextcloud is not installed.";
     exit 1;
   fi
+  if [ ! -f "${instance-parameter:nextcloud}/.slapos-install-done" ]; then
+    echo "Nextcloud is not configured.";
+    exit 1;
+  fi
 output = ${directory:bin}/check-nc-install
 mode = 744
 
