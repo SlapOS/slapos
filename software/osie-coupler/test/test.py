@@ -40,6 +40,5 @@ class OsieTestCase(SlapOSInstanceTestCase):
     return {"mode": 1}
 
   def test(self):
-    connexion_parameters = self.computer_partition.getConnectionParameterDict()
-    self.assertIn('opc_ua_port', connexion_parameters)
-    self.assertIn('interface', connexion_parameters)
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertIn('url-ipv6', parameter_dict)
