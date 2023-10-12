@@ -15,7 +15,9 @@ if __name__ == '__main__':
     )
   while True:
     try:
-        nc.connect("{{ netaddr.IPAddress(slap_configuration.get('tap-ipv6-gateway', '')) }}", 830, "oranuser", "oranpassword")
+        # XXX temp -> reenable
+        #nc.connect("{ { netaddr.IPAddress(slap_configuration.get('tap-ipv6-gateway', '')) } }", 830, "oranuser", "oranpassword")
+        nc.connect("{{ netaddr.IPAddress('::1') }}", 830, "oranuser", "oranpassword")
         nc.subscribe()
         while True:
           nc.get_notification()
