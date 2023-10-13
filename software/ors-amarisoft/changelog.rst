@@ -1,5 +1,12 @@
 Changelog
 =========
+Version 1.0.339 (2023-10-16)
+-------------
+* Lopcomm firmware update
+* RRH reset (reboot) function added
+* Fix cpri_tx_dbm parameter
+* Print RRH IPv6 and firmware information
+
 Version 1.0.336 (2023-09-25)
 -------------
 
