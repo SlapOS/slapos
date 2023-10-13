@@ -153,7 +153,8 @@ class LopcommNetconfClient:
         reset_reply_xml = self.custom_rpc_request(reset_rpc_xml)
         if reset_reply_xml:
             reset_data = xmltodict.parse(reset_reply_xml)
-            self.software_reply_json_logger.info('', extra={'data': json.dumps(reset_data)})
+            if self.software_reply_json_logger:
+              self.software_reply_json_logger.info('', extra={'data': json.dumps(reset_data)})
         self.logger.info('Wait 60 second then reboot!')
         time.sleep(60)
 
