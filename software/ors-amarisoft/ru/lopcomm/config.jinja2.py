@@ -10,7 +10,8 @@ if __name__ == '__main__':
       try:
           # XXX ::1 temp - kill
           nc.connect("{{ netaddr.IPAddress(slap_configuration.get('XXXtap-ipv6-gateway', '::1')) }}", 830, "oranuser", "oranpassword")
-          nc.edit_config(["{{ ru_lopcomm_CreateProcessingEle_template }}", "{{ ru_lopcomm_cu_config_template }}"])
+          # XXX CreateProcessingEle should be also RU-specific ?
+          nc.edit_config(["{{ ru_lopcomm_CreateProcessingEle_template }}", "{{ cu_config_template }}"])
           break
       except Exception as e:
           nc.logger.debug('Got exception, waiting 10 seconds before reconnecting...')
