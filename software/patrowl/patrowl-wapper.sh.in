@@ -75,4 +75,5 @@ fi
 
 # Start Gunicorn WSGI server
 echo "[+] Starting server"
+sleep 2
 exec {{ parameter_dict['gunicorn-wrapper'] }}

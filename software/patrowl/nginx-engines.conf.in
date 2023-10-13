@@ -1,0 +1,49 @@
+worker_processes {{ parameter_dict['nb-workers'] }};
+
+pid {{ parameter_dict['path-pid'] }};
+error_log {{ parameter_dict['access-log' ] }};
+
+daemon off;
+
+events {
+  worker_connections 1024;
+  accept_mutex off;
+}
+
+http {
+    include {{ parameter_dict['nginx-mime-types'] }};
+    default_type  application/octet-stream;
+    types_hash_bucket_size 64;
+    access_log {{ parameter_dict['access-log' ] }} combined;
+
+    server {
+        listen [{{ parameter_dict['nginx-ip' ] }}]:{{ parameter_dict['nginx-port' ] }} ssl http2;
+        autoindex off;
+        server_name _;
+
+        ssl_certificate {{ parameter_dict['cert-file'] }};
+        ssl_certificate_key {{ parameter_dict['key-file'] }};
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:MozSSL:10m;
+        ssl_session_tickets off;
+        ssl_protocols TLSv1.3;
+        ssl_prefer_server_ciphers off;
+
+        {% for name, value in parameter_dict.items() %}
+        {% if name.startswith('engine-') -%}
+        {%   set engine = name.split('-')[1] -%}
+          location /engines/{{ engine }}/ {
+              proxy_pass http://{{ parameter_dict['local-ipv4' ] }}:{{ value }}/engines/{{ engine }}/;
+
+              proxy_set_header                 X-Forwarded-Proto https;
+              proxy_set_header                 X-Forwarded-For   $proxy_add_x_forwarded_for;
+              proxy_set_header                 X-Forwarded-Host  $http_host;
+              proxy_set_header                 X-Real-IP         $remote_addr;
+              proxy_set_header                 Host              $http_host;
+              proxy_set_header                 X-Forwarded-Ssl   on;
+              proxy_redirect                   off;
+          }
+        {% endif %}
+        {% endfor %}
+    }
+}

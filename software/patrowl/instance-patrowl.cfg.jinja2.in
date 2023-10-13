@@ -12,12 +12,15 @@ scripts = ${:etc}/run
 services = ${:etc}/service
 plugins = ${:etc}/plugin
 ssl = ${:etc}/ssl
-www = ${:srv}/www
 tmp = ${:srv}/tmp
 rabbitmq = ${:srv}/rabbitmq
 mqlog = ${:log}/rabbitmq
 mqlib = ${:var}/lib/rabbitmq
 nginx = ${:srv}/nginx
+
+[rabbitmq-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.rabbitmq
 
 [service-rabbitmq]
 recipe = slapos.cookbook:wrapper
@@ -31,6 +34,8 @@ environment =
   RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit log_levels [{connection,error}]
   RABBITMQ_ADVANCED_CONFIG_FILE=${directory:rabbitmq}/advanced.config
   RABBITMQ_CONF_ENV_FILE=${directory:rabbitmq}/rabbitmq-env.conf
+  RABBITMQ_DEFAULT_USER=${:username}
+  RABBITMQ_DEFAULT_PASS=${:password}
   RABBITMQ_NODE_IP_ADDRESS={{ local_ipv4 }}
   RABBITMQ_NODE_PORT=${:port}
   ERL_EPMD_ADDRESS={{ local_ipv4 }}
@@ -41,6 +46,29 @@ environment =
   RABBITMQ_PLUGINS_DIR=${directory:mqlib}/plugins
   PATH={{ parameter_dict['erlang-location'] }}/bin:/usr/local/bin:/usr/bin:/bin
 port = 5672
+username = rabbitmq
+password = ${rabbitmq-password:passwd}
+
+[service-rabbitmqctl]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ parameter_dict['rabbitmq-location'] }}/sbin/rabbitmqctl
+wrapper-path = ${directory:bin}/rabbitmqctl
+environment =
+  ${service-rabbitmq:environment}
+
+[rabbimq-configure-script]
+recipe = slapos.recipe.template
+inline =#!/bin/bash -e
+  TEST_FILE=${directory:rabbitmq}/.user_created
+  [ -f "$TEST_FILE" ] && exit 0;
+  echo '${service-rabbitmq:password}' | ${service-rabbitmqctl:wrapper-path} add_user '${service-rabbitmq:username}'
+  # Grants a user permissions to all virtual hosts.
+  for v in $(${service-rabbitmqctl:wrapper-path} list_vhosts --silent); do
+    ${service-rabbitmqctl:wrapper-path} set_permissions -p $v "${service-rabbitmq:username}" ".*" ".*" ".*";
+  done
+  touch $TEST_FILE
+output = ${directory:scripts}/configure-rabbitmq
 
 [promise-rabbitmq]
 <= monitor-promise-base
@@ -77,7 +105,7 @@ config-command =
 [gunicorn-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ parameter_dict['gunicorn-bin'] }} -b {{ local_ipv4 }}:${:port} app.wsgi:application
+  {{ gunicorn_bin }} -b {{ local_ipv4 }}:${:port} app.wsgi:application
     --timeout 300 --log-level error
 wrapper-path = ${directory:bin}/gunicorn
 port = 8003
@@ -104,8 +132,8 @@ inline =
   export RABBITMQ_HOST={{ local_ipv4 }}
   export RABBITMQ_PORT=${service-rabbitmq:port}
   export RABBITMQ_HOSTNAME='{{ local_ipv4 }}:${service-rabbitmq:port}'
-  export RABBIT_ENV_USER='guest'
-  #export RABBIT_ENV_PASS='guest'
+  export RABBIT_ENV_USER='${service-rabbitmq:username}'
+  export RABBIT_ENV_PASS='${service-rabbitmq:password}'
   export BROKER_URL=
   export PE_INSTALL_PATH=
   export PATROWL_SU_USERNAME="admin"
@@ -198,7 +226,7 @@ access-log = ${directory:log}/nginx.patrowlmanager-access.log
 error-log = ${directory:log}/nginx.patrowlmanager-error.log
 gunicorn-url = http://{{ local_ipv4 }}:${gunicorn-wrapper:port}
 patrowl-directory = ${patrowl-parameters:patrowl-directory}
-nginx-mime-types = {{ parameter_dict['nginx-mime-types'] }}
+nginx-mime-types = {{ nginx_mime_types }}
 key-file = ${nginx-certificate:key-file}
 cert-file = ${nginx-certificate:cert-file}
 path-pid = ${directory:run}/nginx.pid
@@ -206,7 +234,7 @@ nb-workers = 4
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
-url = {{ parameter_dict['nginx-conf'] }}
+url = {{ nginx_conf }}
 context =
   section parameter_dict nginx-parameters
 output = ${directory:etc}/nginx.conf
@@ -226,7 +254,7 @@ update-command = ${:command}
 [service-nginx]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ parameter_dict['nginx-bin'] }} -p ${directory:nginx} -c ${nginx-conf:output}
+  {{ nginx_bin }} -p ${directory:nginx} -c ${nginx-conf:output}
 wrapper-path = ${directory:services}/nginx
 url = https://[${nginx-parameters:nginx-ip}]:${nginx-parameters:nginx-port}
 
@@ -241,10 +269,10 @@ config-url     = ${service-nginx:url}
 [patrowl-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Patrowl nginx Frontend
+name = Patrowl Manager Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
+shared = true
 config-url = ${service-nginx:url}
 config-https-only = true
 return = domain secure_access
@@ -274,6 +302,7 @@ parts =
   publish-connection-information
   promise-postgresql
   service-rabbitmq
+  rabbimq-configure-script
   promise-rabbitmq
   service-patrowl
   service-nginx

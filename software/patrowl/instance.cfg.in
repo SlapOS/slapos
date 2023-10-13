@@ -11,6 +11,7 @@ offline = true
 recipe = slapos.cookbook:switch-softwaretype
 default  = dynamic-template-patrowl:output
 RootSoftwareInstance = ${:default}
+engines = dynamic-template-patrowl-engines:output
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -35,6 +36,10 @@ context =
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
   key partition_id slap-configuration:partition
+  raw nginx_bin {{ nginx_bin }}
+  raw gunicorn_bin {{ bin_directory }}/gunicorn
+  raw nginx_conf {{ template_nginx_conf }}
+  raw nginx_mime_types {{ nginx_mime_types }}
   raw openssl_bin {{ openssl_location }}/bin/openssl
   raw python_bin {{ bin_directory }}/{{ python_with_eggs }}
   raw template_monitor {{ template_monitor_cfg }}
@@ -45,14 +50,10 @@ context =
 erlang-location = {{ erlang_location }}
 rabbitmq-location = {{ rabbitmq_location }}
 postgresql-location = {{ postgresql_location }}
-gunicorn-bin = {{ bin_directory }}/gunicorn
 celery-bin = {{ bin_directory }}/celery
 patrowl-wrapper = {{ template_patrowl_wrapper }}
 patrowl-location = {{ patrowl_location }}
 template-create-admin = {{ template_create_admin }}
-nginx-conf = {{ template_nginx_conf }}
-nginx-bin = {{ nginx_bin }}
-nginx-mime-types = {{ nginx_mime_types }}
 
 [dynamic-template-patrowl]
 <= jinja2-template-base
@@ -60,3 +61,15 @@ url = {{ template_patrowl }}
 filename = instance-patrowl.cfg
 extra-context =
   section   parameter_dict           dynamic-template-patrowl-parameters
+
+[dynamic-template-patrowl-engines-parameters]
+engines-location = {{ patrowl_engines_location }}
+nginx-engines-conf = {{ template_nginx_engines_conf }}
+sslscan-bin = {{ sslscan_bin }}
+
+[dynamic-template-patrowl-engines]
+<= jinja2-template-base
+url = {{ telplate_patrowl_engines }}
+filename = instance-patrowl-engines.cfg
+extra-context =
+  section   parameter_dict           dynamic-template-patrowl-engines-parameters

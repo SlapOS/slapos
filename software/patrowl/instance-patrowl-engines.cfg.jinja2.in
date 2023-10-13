@@ -1,0 +1,224 @@
+{% set local_ipv4 = (ipv4 | list)[0] -%}
+{% set local_ipv6 = (ipv6 | list)[0] -%}
+{% set engine_port_dict = {} -%}
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+run = ${:var}/run
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+plugins = ${:etc}/plugin
+ssl = ${:etc}/ssl
+tmp = ${:srv}/tmp
+nginx = ${:srv}/nginx
+
+[gunicorn]
+recipe = slapos.recipe.template
+engines-directory = ${directory:srv}/patrowl-engines
+inline =
+  #!/bin/sh -e
+  FOLDER=${:engines-directory}
+  [ ! -d "$FOLDER" ] && cp -ax {{ parameter_dict['engines-location'] }} $FOLDER
+  cd $FOLDER/engines/$ENGINE_FOLER_NAME
+  # export PYTHONPATH=$FOLDER:$PYTHONPATH
+  exec {{ gunicorn_bin }} "$@"
+output = ${directory:bin}/gunicorn
+
+{% if slapparameter_dict.get('apivoid-apikey') -%}
+# Deploy apivoid
+[service-apivoid]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${gunicorn:output} engine-apivoid:app -b {{ local_ipv4 }}:${:port}
+    --access-logfile ${directory:log}/apivoid.log --log-level error
+wrapper-path = ${directory:services}/gunicorn-apivoid
+port = 5022
+environment =
+  ENGINE_FOLER_NAME=apivoid
+  APP_MAXSCANS=${instance-parameters:app-maxscans}
+  APIVOID_APIKEY=${instance-parameters:apivoid-apikey}
+depends =
+  ${configure-engine-apivoid:recipe}
+
+[configure-engine-apivoid]
+recipe = plone.recipe.command
+stop-on-error = true
+update-command = ${:command}
+command =
+  BASE=${gunicorn:engines-directory}/engines/apivoid
+  mkdir -p $BASE/results
+  cp $BASE/apivoid.json.sample $BASE/apivoid.json
+
+[apivoid-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = apivoid_promise.py
+config-host = {{ local_ipv4 }}
+config-port = ${service-apivoid:port}
+depends =
+  ${apivoid-url-promise:recipe}
+
+[apivoid-url-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = apivoid_url_promise.py
+config-url = http://{{ local_ipv4 }}:${service-apivoid:port}/engines/apivoid/status
+
+{% do engine_port_dict.__setitem__('engine-apivoid', '${apivoid-promise:config-port}') -%}
+{% endif %}
+
+{% if slapparameter_dict.get('enable-sslscan', True) -%}
+[sslscan.json]
+recipe = slapos.recipe.template
+output = ${gunicorn:engines-directory}/engines/sslscan/sslscan.json
+inline ={
+    "name": "SSLScan",
+    "version": "2",
+    "description": "SSL Scanner based on SSLScan",
+    "allowed_asset_types": ["domain", "fqdn", "url", "ip"],
+    "options": {
+      "bin_path": "{{ parameter_dict['sslscan-bin'] }}",
+      "show-certificate": { "type": "optional", "value": "--show-certificate"},
+      "no-check-certificate": { "type": "optional", "value": "--no-check-certificate"},
+      "ssl2-only": { "type": "optional", "value": "--ssl2"},
+      "ssl3-only": { "type": "optional", "value": "--ssl3"},
+      "tls10-only": { "type": "optional", "value": "--tls10"},
+      "tls11-only": { "type": "optional", "value": "--tls11"},
+      "tls12-only": { "type": "optional", "value": "--tls12"},
+      "tlsall": { "type": "optional", "value": "--tlsall"},
+      "show_ocsp_status": { "type": "optional", "value": "--oscp"},
+      "no-ciphersuites": { "type": "optional", "value": "--no-ciphersuites"},
+      "no-renegociation": { "type": "optional", "value": "--no-renegociation"},
+      "no-fallback": { "type": "optional", "value": "--no-fallback"},
+      "no-compression": { "type": "optional", "value": "--no-compression"},
+      "no-heartbleed": { "type": "optional", "value": "--no-heartbleed"}
+    }
+  }
+[service-sslscan]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${gunicorn:output} engine-sslscan:app -b {{ local_ipv4 }}:${:port}
+    --access-logfile ${directory:log}/sslscan.log --log-level error
+wrapper-path = ${directory:services}/gunicorn-sslscan
+port = 5014
+environment =
+  ENGINE_FOLER_NAME=sslscan
+  APP_MAXSCANS=${instance-parameters:app-maxscans}
+depends =
+  ${directory-sslscan:recipe}
+  ${sslscan.json:recipe}
+
+[directory-sslscan]
+recipe = slapos.cookbook:mkdirectory
+results = ${gunicorn:engines-directory}/engines/sslscan/results
+
+[sslscan-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = sslscan_promise.py
+config-host = {{ local_ipv4 }}
+config-port = ${service-sslscan:port}
+depends =
+  ${sslscan-url-promise:recipe}
+
+[sslscan-url-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = sslscan_url_promise.py
+config-url = http://{{ local_ipv4 }}:${service-sslscan:port}/engines/sslscan/status
+
+{% do engine_port_dict.__setitem__('engine-sslscan', '${sslscan-promise:config-port}') -%}
+
+{% endif %}
+
+[nginx-parameters]
+nginx-ip = {{ local_ipv6 }}
+local-ipv4 = {{ local_ipv4 }}
+nginx-port = 8050
+access-log = ${directory:log}/nginx.patrowlengines-access.log
+error-log = ${directory:log}/nginx.patrowlengines-error.log
+nginx-mime-types = {{ nginx_mime_types }}
+key-file = ${nginx-certificate:key-file}
+cert-file = ${nginx-certificate:cert-file}
+path-pid = ${directory:run}/nginx-engines.pid
+nb-workers = 2
+{% for name, port in engine_port_dict.items() -%}
+{{ name }} = {{ port }}
+{% endfor %}
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['nginx-engines-conf'] }}
+context =
+  section parameter_dict nginx-parameters
+output = ${directory:etc}/nginx-engines.conf
+
+# self-signed certificate for https
+[nginx-certificate]
+recipe  = plone.recipe.command
+stop-on-error   = true
+cert-file   = ${directory:ssl}/nginx_backend.crt
+key-file    = ${directory:ssl}/nginx_backend.key
+command =
+    test -e ${:key-file} || \
+        {{ openssl_bin }} req -newkey rsa -batch -new -x509 -days 3650 -nodes   \
+        -keyout ${:key-file} -out ${:cert-file}
+update-command = ${:command}
+
+[service-nginx]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ nginx_bin }} -p ${directory:nginx} -c ${nginx-conf:output}
+wrapper-path = ${directory:services}/nginx
+url = https://[${nginx-parameters:nginx-ip}]:${nginx-parameters:nginx-port}
+
+[promise-nginx]
+<= monitor-promise-base
+promise = check_command_execute
+name   = promise_nginx_site.py
+promise = check_url_available
+config-http-code   = 404
+config-url     = ${service-nginx:url}
+
+[patrowl-engines-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Patrowl engines Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${service-nginx:url}
+config-https-only = true
+return = domain secure_access
+
+[patrowl-engines-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = check_engines_frontend.py
+config-url = ${patrowl-engines-frontend:connection-secure_access}
+config-http-code   = 404
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+engines-url = ${patrowl-engines-frontend:connection-secure_access}
+
+[instance-parameters]
+apivoid-apikey = {{ slapparameter_dict.get('apivoid-apikey', '')}}
+app-maxscans = {{ slapparameter_dict.get('app-maxscans', 25)}}
+enable-sslscan = true
+
+[buildout]
+extends = {{ template_monitor }}
+
+parts =
+  patrowl-engines-frontend-promise
+  publish-connection-information
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
