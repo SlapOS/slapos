@@ -151,33 +151,56 @@ includes =
    {{ include }}
 {% endfor%}
 
-[cloudooo-base]
-recipe = slapos.cookbook:generic.cloudooo
+[cloudooo-config-base]
+recipe = slapos.recipe.template:jinja2
+output = ${:configuration-file}
+url = {{ parameter_dict['template-cloudooo-cfg'] }}
+
+[cloudooo-config-parameters]
 ip = {{ ipv4 }}
-environment =
-  LD_LIBRARY_PATH = {{ parameter_dict['avahi'] }}/lib:{{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['nss'] }}/lib:{{ parameter_dict['nspr'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
-  FONTCONFIG_FILE = ${fontconfig-conf:output}
-  PATH = ${binary-link:target-directory}
-  LANG = C.UTF-8
-mimetype_entry_addition =
+mimetype-entry-addition =
 {% for entry in mimetype_entry_addition.splitlines() -%}
 {{ "  " ~ entry.strip() }}
 {% endfor -%}
 # Binary information
 # cloudooo specific configuration
 ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
-ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+
+[cloudooo-environment]
+LD_LIBRARY_PATH = {{ parameter_dict['avahi'] }}/lib:{{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['nss'] }}/lib:{{ parameter_dict['nspr'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+FONTCONFIG_FILE = ${fontconfig-conf:output}
+PATH = ${binary-link:target-directory}
+LANG = C.UTF-8
 
 {% for index in range(1, backend_count + 1) -%}
 {%   set name = 'cloudooo-' ~ index -%}
 [{{ cloudooo(name) }}]
-< = cloudooo-base
+<= cloudooo-config-base
+configuration-file = ${directory:etc}/{{ name }}.cfg
+context =
+  section cloudooo cloudoo-config-parameters-{{ index }}
+  section cloudooo_environment cloudooo-environment
+ip = {{ '${cloudoo-config-parameters-' ~ index ~ ':ip}' }}
+port = {{ '${cloudoo-config-parameters-' ~ index ~ ':port}' }}
+service = {{ '${cloudoo-service-' ~ index ~ ':wrapper-path}' }}
+
+[cloudoo-config-parameters-{{ index }}]
+<= cloudooo-config-parameters
+data-directory = ${directory:srv}/{{ name }}
 port = {{ next_port() }}
 openoffice-port = {{ next_port() }}
-configuration-file = ${directory:etc}/{{ name }}.cfg
-data-directory = ${directory:srv}/{{ name }}
-wrapper = ${directory:services}/{{ name }}
+
+[cloudoo-bin-{{ index }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/{{ name }}
+command-line = {{ bin_directory }}/cloudooo_paster serve ${:configuration-file}
+configuration-file = {{ '${' ~ name ~ ':configuration-file}'}}
+
+[cloudoo-service-{{ index }}]
+recipe = slapos.cookbook:signalwrapper
+wrapper-path = ${directory:services}/{{ name }}
+wrapped-path = {{ '${cloudoo-bin-' ~ index ~ ':wrapper-path}' }}
 
 {% endfor -%}
 
@@ -212,7 +235,7 @@ prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest
 run-test-suite = ${buildout:bin-directory}/runTestSuite
 
-ooo-paster = ${cloudooo-1:ooo-paster}
+ooo-paster = {{ bin_directory }}/cloudooo_paster
 configuration-file = ${cloudooo-1:configuration-file}
 
 run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
