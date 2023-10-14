@@ -1,0 +1,89 @@
+[app:main]
+use = egg:cloudooo
+#
+## System config
+#
+debug_mode = True
+# Folder where pid files, lock files and virtual frame buffer mappings
+# are stored. In this folder is necessary create a folder tmp, because this
+# folder is used to create all temporary documents.
+working_path = {{ cloudooo['data-directory'] }}
+# Folder where UNO library is installed
+uno_path = {{ cloudooo['ooo-uno-path'] }}
+# Folder where soffice.bin is installed
+office_binary_path = {{ cloudooo['ooo-binary-path'] }}
+#
+## Monitor Settings
+#
+# Limit to use the Openoffice Instance. if pass of the limit, the instance is
+# stopped and another is started.
+limit_number_request = 100
+# Interval to check the factory
+monitor_interval = 10
+timeout_response = 180
+enable_memory_monitor = True
+# Set the limit in MB
+# e.g 1000 = 1 GB, 100 = 100 MB
+limit_memory_used = 3000
+#
+## OOFactory Settings
+#
+# The pool consist of several OpenOffice.org instances
+application_hostname = {{ cloudooo['ip'] }}
+# OpenOffice Port
+openoffice_port = {{ cloudooo['openoffice-port'] }}
+
+# LD_LIBRARY_PATH and other environment variables
+# passed to OpenOffice
+{% for k, v in cloudooo_environment.items() %}
+env-{{ k }} = {{ v }}
+{%- endfor %}
+
+#
+# Mimetype Registry
+# It is used to select the handler that will be used in conversion.
+# Priority matters, first match take precedence on next lines.
+mimetype_registry =
+  {{ cloudooo['mimetype-entry-addition'] }}
+  application/csv * ooo
+  application/emf * ooo
+  application/msword * ooo
+  application/octet* * ooo
+  application/ogg * ffmpeg
+  application/ogv * ffmpeg
+  application/pdf text/* pdf
+  application/pdf * ooo
+  application/postscript * ooo
+  application/vnd.oasis.opendocument.presentation application/x-asc-presentation x2t
+  application/vnd.oasis.opendocument.spreadsheet application/x-asc-spreadsheet x2t
+  application/vnd.oasis.opendocument.text application/x-asc-text x2t
+  application/vnd.oasis.opendocument* * ooo
+  application/vnd.openxmlformats-officedocument.presentationml.presentation application/x-asc-presentation x2t
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/x-asc-spreadsheet x2t
+  application/vnd.openxmlformats-officedocument.wordprocessingml.document application/x-asc-text x2t
+  application/vnd.sun.xml* * ooo
+  application/vnd* * ooo
+  application/wmf * ooo
+  application/x-asc-presentation application/vnd.oasis.opendocument.presentation x2t
+  application/x-asc-presentation application/vnd.openxmlformats-officedocument.presentationml.presentation x2t
+  application/x-asc-spreadsheet application/vnd.oasis.opendocument.spreadsheet x2t
+  application/x-asc-spreadsheet application/vnd.openxmlformats-officedocument.spreadsheetml.sheet x2t
+  application/x-asc-text application/vnd.oasis.opendocument.text x2t
+  application/x-asc-text application/vnd.openxmlformats-officedocument.wordprocessingml.document x2t
+  application/x-emf * ooo
+  application/x-openoffice-gdimetafile * ooo
+  application/x-shockwave-flash * ffmpeg
+  application/x-vnd* * ooo
+  application/zip * ooo
+  audio/* * ffmpeg
+  image/png image/jpeg imagemagick
+  image/png * ooo
+  image/* image/* imagemagick
+  text/* * ooo
+  video/* * ffmpeg
+  * application/vnd.oasis.opendocument* ooo
+
+[server:main]
+use = egg:PasteScript#wsgiutils
+host = {{ cloudooo['ip'] }}
+port = {{ cloudooo['port'] }}
