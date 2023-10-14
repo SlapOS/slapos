@@ -46,7 +46,7 @@ from slapos.testing.testcase import (
   makeModuleSetUpAndTestCaseClass,
 )
 
-old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.167.8/software/erp5/software.cfg'
+old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.167.9/software/erp5/software.cfg'
 new_software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
