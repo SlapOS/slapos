@@ -17,17 +17,6 @@
     "slap_software_type": "RootSoftwareInstance",
     "slave_instance_list": [
       {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_empty",
-        "slave_title": "_empty"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_bad-backend",
-        "slave_title": "_bad-backend",
-        "url": "http://bad.backend/"
-      },
-      {
         "authenticate-to-backend": true,
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_Url",
@@ -35,23 +24,10 @@
         "url": " http://@@_ipv4_address@@:@@_server_http_port@@//?a=b&c= "
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_url-netloc-list",
-        "slave_title": "_url-netloc-list",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-        "url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@"
-      },
-      {
         "authenticate-to-backend": true,
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_auth-to-backend",
         "slave_title": "_auth-to-backend",
-        "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_auth-to-backend-not-configured",
-        "slave_title": "_auth-to-backend-not-configured",
         "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
       },
       {
@@ -62,109 +38,34 @@
         "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
       },
       {
-        "backend-connect-retries": 5,
-        "backend-connect-timeout": 10,
-        "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
-        "request-timeout": 15,
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_url_https-url",
-        "slave_title": "_url_https-url",
-        "strict-transport-security": "200",
-        "strict-transport-security-preload": true,
-        "strict-transport-security-sub-domains": true,
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
-      },
-      {
-        "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
-        "https-url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_https-url-netloc-list",
-        "slave_title": "_https-url-netloc-list",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
-      },
-      {
-        "server-alias": "alias1.example.com alias2.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_server-alias",
-        "slave_title": "_server-alias",
-        "strict-transport-security": "200",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "server-alias": "",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_server-alias-empty",
-        "slave_title": "_server-alias-empty",
-        "strict-transport-security": "200",
-        "strict-transport-security-sub-domains": true,
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "server-alias": "*.alias1.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_server-alias-wildcard",
-        "slave_title": "_server-alias-wildcard",
-        "strict-transport-security": "200",
-        "strict-transport-security-preload": true,
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "server-alias": "alias3.example.com alias3.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_server-alias-duplicated",
-        "slave_title": "_server-alias-duplicated",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "custom_domain": "alias4.example.com",
-        "server-alias": "alias4.example.com alias4.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_server-alias_custom_domain-duplicated",
-        "slave_title": "_server-alias_custom_domain-duplicated",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        "slave_reference": "_auth-to-backend-not-configured",
+        "slave_title": "_auth-to-backend-not-configured",
+        "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
       },
       {
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt",
-        "slave_title": "_ssl-proxy-verify_ssl_proxy_ca_crt",
-        "ssl-proxy-verify": true,
-        "ssl_proxy_ca_crt": "@@test_server_ca.certificate_pem@@",
-        "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        "slave_reference": "_bad-backend",
+        "slave_title": "_bad-backend",
+        "url": "http://bad.backend/"
       },
       {
+        "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
-        "slave_title": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
-        "ssl-proxy-verify": true,
-        "ssl_proxy_ca_crt": "@@another_server_ca.certificate_pem@@",
-        "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        "slave_reference": "_ciphers",
+        "slave_title": "_ciphers"
       },
       {
+        "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA",
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl-proxy-verify-unverified",
-        "slave_title": "_ssl-proxy-verify-unverified",
-        "ssl-proxy-verify": true,
-        "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
-      },
-      {
-        "https-only": false,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_https-only",
-        "slave_title": "_https-only",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        "slave_reference": "_ciphers-translation-all",
+        "slave_title": "_ciphers-translation-all"
       },
       {
         "custom_domain": "mycustomdomain.example.com",
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_custom_domain",
         "slave_title": "_custom_domain",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "custom_domain": "*.customdomain.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_custom_domain_wildcard",
-        "slave_title": "_custom_domain_wildcard",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
@@ -190,9 +91,231 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
+        "custom_domain": "*.customdomain.example.com",
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl_ca_crt_only",
-        "slave_title": "_ssl_ca_crt_only",
+        "slave_reference": "_custom_domain_wildcard",
+        "slave_title": "_custom_domain_wildcard",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "disabled-cookie-list": "Coconut Chocolate Vanilia",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_disabled-cookie-list",
+        "slave_title": "_disabled-cookie-list",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "disabled-cookie-list": "Chocolate",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_disabled-cookie-list-simple",
+        "slave_title": "_disabled-cookie-list-simple",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_empty",
+        "slave_title": "_empty"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http2-default",
+        "slave_title": "_enable-http2-default",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http2": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http2-false",
+        "slave_title": "_enable-http2-false",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http2": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http2-true",
+        "slave_title": "_enable-http2-true",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http3-default",
+        "slave_title": "_enable-http3-default",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http2": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http3-default-enable-http2-false",
+        "slave_title": "_enable-http3-default-enable-http2-false",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http3": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http3-false",
+        "slave_title": "_enable-http3-false",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http3": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http3-true",
+        "slave_title": "_enable-http3-true",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable-http2": false,
+        "enable-http3": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable-http3-true-enable-http2-false",
+        "slave_title": "_enable-http3-true-enable-http2-false",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache",
+        "slave_title": "_enable_cache",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "disable-no-cache-request": true,
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache-disable-no-cache-request",
+        "slave_title": "_enable_cache-disable-no-cache-request",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "disable-via-header": true,
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache-disable-via-header",
+        "slave_title": "_enable_cache-disable-via-header",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable_cache": true,
+        "https-only": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache-https-only-false",
+        "slave_title": "_enable_cache-https-only-false",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "custom_domain": "customdomainenablecache.example.com",
+        "enable_cache": true,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache_custom_domain",
+        "slave_title": "_enable_cache_custom_domain",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "enable_cache": true,
+        "server-alias": "enablecacheserveralias1.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_enable_cache_server_alias",
+        "slave_title": "_enable_cache_server_alias",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "https-only": false,
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_https-only",
+        "slave_title": "_https-only",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
+        "https-url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_https-url-netloc-list",
+        "slave_title": "_https-url-netloc-list",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
+      },
+      {
+        "prefer-gzip-encoding-to-backend": "true",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_prefer-gzip-encoding-to-backend",
+        "slave_title": "_prefer-gzip-encoding-to-backend",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "https-only": "false",
+        "prefer-gzip-encoding-to-backend": "true",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_prefer-gzip-encoding-to-backend-https-only",
+        "slave_title": "_prefer-gzip-encoding-to-backend-https-only",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "server-alias": "alias1.example.com alias2.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias",
+        "slave_title": "_server-alias",
+        "strict-transport-security": "200",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "server-alias": "alias3.example.com alias3.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias-duplicated",
+        "slave_title": "_server-alias-duplicated",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "server-alias": "",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias-empty",
+        "slave_title": "_server-alias-empty",
+        "strict-transport-security": "200",
+        "strict-transport-security-sub-domains": true,
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "server-alias": "*.alias1.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias-wildcard",
+        "slave_title": "_server-alias-wildcard",
+        "strict-transport-security": "200",
+        "strict-transport-security-preload": true,
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "custom_domain": "alias4.example.com",
+        "server-alias": "alias4.example.com alias4.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_server-alias_custom_domain-duplicated",
+        "slave_title": "_server-alias_custom_domain-duplicated",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl-proxy-verify-unverified",
+        "slave_title": "_ssl-proxy-verify-unverified",
+        "ssl-proxy-verify": true,
+        "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt",
+        "slave_title": "_ssl-proxy-verify_ssl_proxy_ca_crt",
+        "ssl-proxy-verify": true,
+        "ssl_proxy_ca_crt": "@@test_server_ca.certificate_pem@@",
+        "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
+        "slave_title": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
+        "ssl-proxy-verify": true,
+        "ssl_proxy_ca_crt": "@@another_server_ca.certificate_pem@@",
+        "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_ssl_ca_crt_does_not_match",
+        "slave_title": "_ssl_ca_crt_does_not_match",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
@@ -203,14 +326,102 @@
       },
       {
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ssl_ca_crt_does_not_match",
-        "slave_title": "_ssl_ca_crt_does_not_match",
+        "slave_reference": "_ssl_ca_crt_only",
+        "slave_title": "_ssl_ca_crt_only",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-notebook",
+        "slave_title": "_type-notebook",
+        "type": "notebook",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "https-only": false,
+        "https-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-redirect",
+        "slave_title": "_type-redirect",
+        "type": "redirect",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "custom_domain": "customdomaintyperedirect.example.com",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-redirect-custom_domain",
+        "slave_title": "_type-redirect-custom_domain",
+        "type": "redirect",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket",
+        "slave_title": "_type-websocket",
+        "type": "websocket",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-path-list",
+        "slave_title": "_type-websocket-websocket-path-list",
+        "type": "websocket",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+        "websocket-path-list": "////ws//// /with%20space/"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-path-list-empty",
+        "slave_title": "_type-websocket-websocket-path-list-empty",
+        "type": "websocket",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+        "websocket-path-list": ""
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-path-list-none",
+        "slave_title": "_type-websocket-websocket-path-list-none",
+        "type": "websocket",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+        "websocket-path-list": null
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-path-list-websocket-transparent-false",
+        "slave_title": "_type-websocket-websocket-path-list-websocket-transparent-false",
+        "type": "websocket",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+        "websocket-path-list": "////ws//// /with%20space/",
+        "websocket-transparent": "false"
+      },
+      {
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-websocket-websocket-transparent-false",
+        "slave_title": "_type-websocket-websocket-transparent-false",
+        "type": "websocket",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+        "websocket-transparent": "false"
       },
       {
         "slap_software_type": "RootSoftwareInstance",
         "slave_reference": "_type-zope",
         "slave_title": "_type-zope",
+        "type": "zope",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "default-path": "///default-path/to/some/resource///",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-default-path",
+        "slave_title": "_type-zope-default-path",
+        "type": "zope",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+      },
+      {
+        "path": "///path/to/some/resource///",
+        "slap_software_type": "RootSoftwareInstance",
+        "slave_reference": "_type-zope-path",
+        "slave_title": "_type-zope-path",
         "type": "zope",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
@@ -249,235 +460,24 @@
         "virtualhostroot-https-port": "12345"
       },
       {
-        "path": "///path/to/some/resource///",
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-zope-path",
-        "slave_title": "_type-zope-path",
-        "type": "zope",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "default-path": "///default-path/to/some/resource///",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-zope-default-path",
-        "slave_title": "_type-zope-default-path",
-        "type": "zope",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-notebook",
-        "slave_title": "_type-notebook",
-        "type": "notebook",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-websocket",
-        "slave_title": "_type-websocket",
-        "type": "websocket",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-websocket-websocket-path-list",
-        "slave_title": "_type-websocket-websocket-path-list",
-        "type": "websocket",
+        "slave_reference": "_url-netloc-list",
+        "slave_title": "_url-netloc-list",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-        "websocket-path-list": "////ws//// /with%20space/"
+        "url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@"
       },
       {
+        "backend-connect-retries": 5,
+        "backend-connect-timeout": 10,
+        "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
+        "request-timeout": 15,
         "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-websocket-websocket-path-list-none",
-        "slave_title": "_type-websocket-websocket-path-list-none",
-        "type": "websocket",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-        "websocket-path-list": null
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-websocket-websocket-path-list-empty",
-        "slave_title": "_type-websocket-websocket-path-list-empty",
-        "type": "websocket",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-        "websocket-path-list": ""
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-websocket-websocket-transparent-false",
-        "slave_title": "_type-websocket-websocket-transparent-false",
-        "type": "websocket",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-        "websocket-transparent": "false"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-websocket-websocket-path-list-websocket-transparent-false",
-        "slave_title": "_type-websocket-websocket-path-list-websocket-transparent-false",
-        "type": "websocket",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-        "websocket-path-list": "////ws//// /with%20space/",
-        "websocket-transparent": "false"
-      },
-      {
-        "https-only": false,
-        "https-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-redirect",
-        "slave_title": "_type-redirect",
-        "type": "redirect",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "custom_domain": "customdomaintyperedirect.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_type-redirect-custom_domain",
-        "slave_title": "_type-redirect-custom_domain",
-        "type": "redirect",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable_cache": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache",
-        "slave_title": "_enable_cache",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "custom_domain": "customdomainenablecache.example.com",
-        "enable_cache": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache_custom_domain",
-        "slave_title": "_enable_cache_custom_domain",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable_cache": true,
-        "server-alias": "enablecacheserveralias1.example.com",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache_server_alias",
-        "slave_title": "_enable_cache_server_alias",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "disable-no-cache-request": true,
-        "enable_cache": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache-disable-no-cache-request",
-        "slave_title": "_enable_cache-disable-no-cache-request",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "disable-via-header": true,
-        "enable_cache": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache-disable-via-header",
-        "slave_title": "_enable_cache-disable-via-header",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable_cache": true,
-        "https-only": false,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable_cache-https-only-false",
-        "slave_title": "_enable_cache-https-only-false",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable-http2": false,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http2-false",
-        "slave_title": "_enable-http2-false",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable-http2": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http2-true",
-        "slave_title": "_enable-http2-true",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http2-default",
-        "slave_title": "_enable-http2-default",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable-http3": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http3-true",
-        "slave_title": "_enable-http3-true",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable-http3": false,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http3-false",
-        "slave_title": "_enable-http3-false",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http3-default",
-        "slave_title": "_enable-http3-default",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable-http2": false,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http3-default-enable-http2-false",
-        "slave_title": "_enable-http3-default-enable-http2-false",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "enable-http2": false,
-        "enable-http3": true,
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_enable-http3-true-enable-http2-false",
-        "slave_title": "_enable-http3-true-enable-http2-false",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "prefer-gzip-encoding-to-backend": "true",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_prefer-gzip-encoding-to-backend",
-        "slave_title": "_prefer-gzip-encoding-to-backend",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "https-only": "false",
-        "prefer-gzip-encoding-to-backend": "true",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_prefer-gzip-encoding-to-backend-https-only",
-        "slave_title": "_prefer-gzip-encoding-to-backend-https-only",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "disabled-cookie-list": "Coconut Chocolate Vanilia",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_disabled-cookie-list",
-        "slave_title": "_disabled-cookie-list",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "disabled-cookie-list": "Chocolate",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_disabled-cookie-list-simple",
-        "slave_title": "_disabled-cookie-list-simple",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      },
-      {
-        "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ciphers",
-        "slave_title": "_ciphers"
-      },
-      {
-        "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA",
-        "slap_software_type": "RootSoftwareInstance",
-        "slave_reference": "_ciphers-translation-all",
-        "slave_title": "_ciphers-translation-all"
+        "slave_reference": "_url_https-url",
+        "slave_title": "_url_https-url",
+        "strict-transport-security": "200",
+        "strict-transport-security-preload": true,
+        "strict-transport-security-sub-domains": true,
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
       }
     ],
     "timestamp": "@@TIMESTAMP@@"

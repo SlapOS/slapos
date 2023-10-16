@@ -215,7 +215,6 @@ php.post_max_size = 10240M
 php.session.cookie_secure = True
 php.max_execution_time = 1800
 php.max_input_time = 3600
-php.output_buffering = 'Off'
 php.max_file_uploads = 100
 
 [php-bin]

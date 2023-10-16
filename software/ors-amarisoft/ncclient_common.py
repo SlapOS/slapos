@@ -1,5 +1,6 @@
 import time
 import logging
+import json
 import xmltodict
 from logging.handlers import RotatingFileHandler
 from ncclient import manager
@@ -111,15 +112,15 @@ class LopcommNetconfClient:
               result_in_xml = result._raw
               data_dict = xmltodict.parse(result_in_xml)
               if 'alarm-notif' in data_dict['notification']:
-                self.json_logger.info('', extra={'data': data_dict})
+                self.json_logger.info('', extra={'data': json.dumps(data_dict)})
               elif 'supervision-notification' in data_dict['notification']:
-                self.supervision_json_logger.info('', extra={'data': data_dict})
+                self.supervision_json_logger.info('', extra={'data': json.dumps(data_dict)})
               elif 'netconf-session-start' in data_dict['notification'] or 'netconf-session-end' in data_dict['notification']:
-                self.ncsession_json_logger.info('', extra={'data': data_dict})
+                self.ncsession_json_logger.info('', extra={'data': json.dumps(data_dict)})
               elif any(event in data_dict['notification'] for event in ['install-event', 'activation-event', 'download-event']):
-                  self.software_json_logger.info('', extra={'data': data_dict})
+                  self.software_json_logger.info('', extra={'data': json.dumps(data_dict)})
               else:
-                self.cfg_json_logger.info('', extra={'data': data_dict})
+                self.cfg_json_logger.info('', extra={'data': json.dumps(data_dict)})
     def edit_config(self, config_files):
         for config_file in config_files:
             with open(config_file) as f:
@@ -152,7 +153,7 @@ class LopcommNetconfClient:
         reset_reply_xml = self.custom_rpc_request(reset_rpc_xml)
         if reset_reply_xml:
             reset_data = xmltodict.parse(reset_reply_xml)
-            self.software_reply_json_logger.info('', extra={'data': reset_data})
+            self.software_reply_json_logger.info('', extra={'data': json.dumps(reset_data)})
         self.logger.info('Wait 60 second then reboot!')
         time.sleep(60)
 
@@ -169,7 +170,7 @@ class LopcommNetconfClient:
         if inventory_reply_xml:
             self.logger.info('Finish fetching software inventory.')
             inventory_data = xmltodict.parse(inventory_reply_xml)
-            self.software_reply_json_logger.info('', extra={'data': inventory_data})
+            self.software_reply_json_logger.info('', extra={'data': json.dumps(inventory_data)})
 
         nonrunning_slot_name = None
         running_slot_name = None

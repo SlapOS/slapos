@@ -82,4 +82,4 @@ LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule deflate_module modules/mod_deflate.so
 LoadModule filter_module modules/mod_filter.so
-LoadModule php7_module modules/libphp7.so
+LoadModule php_module modules/libphp.so
