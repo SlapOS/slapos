@@ -59,7 +59,7 @@ class MatomoTestCase(SlapOSInstanceTestCase):
   #Check if matomo root directory is empty
   def test_matomo_dir(self):
     self.assertEqual(os.path.isfile(self.matomo_path),False)
-    
+
   #Check deployement matomo works
   def test_matomo_url_get(self):
     resp = requests.get(self.connection_parameters['backend-url'], verify=False)

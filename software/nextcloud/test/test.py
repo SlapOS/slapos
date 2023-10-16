@@ -279,10 +279,15 @@ class TestServices(NextCloudTestCase):
       "turn_servers"
     ])
     self.assertEqual(turn_config.strip(), b'[{"server":"","secret":"","protocols":"udp,tcp"}]')
-    news_config_file = os.path.join(self.partition_dir, 'srv/data/news/config/config.ini')
-    with open(news_config_file) as f:
-      config = f.read()
-    self.assertRegex(config, r"(useCronUpdates\s+=\s+false)")
+
+    news_config = subprocess.check_output([
+      php_bin,
+      occ,
+      "config:app:get",
+      "news",
+      "useCronUpdates"
+    ])
+    self.assertEqual(news_config.strip(), b'false')
 
 
 class TestNextCloudParameters(NextCloudTestCase):
