@@ -1,7 +1,13 @@
-import pathlib
 import sys
 
+# Because ca-certificate is used very early in the bootstrap process,
+# even before python is built, we can not use the software release python
+# yet, because it would loop forever in slapos.rebootstrap.
+# By using sys.executable in a hook like this, we can use python without
+# buildout recording a dependency to python in the part options.
 def pre_make_hook(options, buildout, environ):
-  makefile = pathlib.Path('mozilla/Makefile')
-  txt = makefile.read_text().replace('SLAPOS_BUILDOUT_PYTHON', sys.executable)
-  makefile.write_text(txt)
+  with open('mozilla/Makefile') as f:
+    makefile = f.read()
+  makefile = makefile.replace('python3 certdata2pem.py', '%s certdata2pem.py' % sys.executable)
+  with open('mozilla/Makefile', 'w') as f:
+    f.write(makefile)
