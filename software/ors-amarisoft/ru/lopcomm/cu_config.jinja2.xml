@@ -8,6 +8,7 @@
 
                  (static TxEndpoint, TxArray and their association are defined by RU itself)
             -->
+{%- set TxCarrier = 'TXA0CC00'  %}
 {%- for ant in range(ru.n_antenna_dl)  %}
 {%-   set port = ant // 2  %}
 {%-   set chan = ant %  2  %}
@@ -27,7 +28,7 @@
             <tx-links>
               <name>{{ txep }}</name>
                <processing-element>PE0</processing-element>
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>
+               <tx-array-carrier>{{ TxCarrier }}</tx-array-carrier>
                <tx-endpoint>{{ txep }}</tx-endpoint>
             </tx-links>
 {%- endfor %}
@@ -43,6 +44,7 @@
 
                  (static RxEndpoint, RxArray and their association are defined by RU itself)
             -->
+{%- set RxCarrier = 'RXA0CC00'  %}
 {%- for ant in range(ru.n_antenna_ul)  %}
 {%-   set port = ant // 2  %}
 {%-   set chan = ant %  2  %}
@@ -73,40 +75,42 @@
             <rx-links>
                <name>{{ rxep }}</name>
                <processing-element>PE0</processing-element>
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-array-carrier>{{ RxCarrier }}</rx-array-carrier>
                <rx-endpoint>{{ rxep }}</rx-endpoint>
             </rx-links>
             <rx-links>
                <name>{{ prachep }}</name>
                <processing-element>PE0</processing-element>
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-array-carrier>{{ RxCarrier }}</rx-array-carrier>
                <rx-endpoint>{{ prachep }}</rx-endpoint>
             </rx-links>
 {%- endfor %}
 
 
             <!-- TX/RX carriers -->
+            <!-- XXX error with "TODO" do not support multiple cells over 1 RU -->
 
             <tx-array-carriers>
-               <name>TXA0CC00</name>
+              <name>{{ TxCarrier }}</name>
 	           <absolute-frequency-center>{{ slapparameter_dict.get('dl_earfcn', 300) }}</absolute-frequency-center>
                <center-of-channel-bandwidth>{{ 1000000*slapparameter_dict.get('txa0cc00_center_frequency', 2140) }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ {'1.4 MHz': 1400000, '3 MHz': 3000000, '5 MHz': 5000000, '10 MHz': 10000000, '15 MHz': 15000000, '20 MHz': 20000000}.get(slapparameter_dict.get('bandwidth'), '20 MHz') }}</channel-bandwidth>	
                <active>{{ slapparameter_dict.get('txa0cc00_active', 'INACTIVE') }}</active>
                <rw-type>LTE</rw-type>
                <rw-duplex-scheme>FDD</rw-duplex-scheme>
-               <gain>{{ slapparameter_dict.get('txa0cc00_gain  XXX -> global tx_gain', '-20') }}</gain>
+               <gain>{{ ru.tx_gain }}</gain>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
             </tx-array-carriers>
             <rx-array-carriers>
-               <name>RXA0CC00</name>
+               <name>{{ RxCarrier }}</name>
                <absolute-frequency-center>{{ slapparameter_dict.get('rxa0cc00_center_frequency_earfcn', 18300) }}</absolute-frequency-center>	
                <center-of-channel-bandwidth>{{ 1000000*slapparameter_dict.get('rxa0cc00_center_frequency', 1950) }}</center-of-channel-bandwidth>	
                <channel-bandwidth>{{ {'1.4 MHz': 1400000, '3 MHz': 3000000, '5 MHz': 5000000, '10 MHz': 10000000, '15 MHz': 15000000, '20 MHz': 20000000}.get(slapparameter_dict.get('bandwidth'), '20 MHz') }}</channel-bandwidth>	
                <active>{{ slapparameter_dict.get('rxa0cc00_active', 'INACTIVE') }}</active>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
+               <!-- <gain>{{ ru.rx_gain }}</gain> -->
                <gain-correction>0.0</gain-correction>
                <n-ta-offset>0</n-ta-offset>
             </rx-array-carriers>
