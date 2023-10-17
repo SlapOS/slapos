@@ -7,14 +7,6 @@
                <tx-array-carrier>TXA0CC00</tx-array-carrier>
                <tx-endpoint>TXA0P00C00</tx-endpoint>
             </tx-links>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-links>	
-               <name>TXA0P01C00</name>	
-               <processing-element>PE0</processing-element>	
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>	
-               <tx-endpoint>TXA0P01C00</tx-endpoint>	
-            </tx-links>
-{% endif %}
             <tx-links>
                <name>TXA0P00C01</name>
                <processing-element>PE0</processing-element>
@@ -22,11 +14,17 @@
                <tx-endpoint>TXA0P00C01</tx-endpoint>
             </tx-links>
 {% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-links>	
-               <name>TXA0P01C01</name>	
-               <processing-element>PE0</processing-element>	
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>	
-               <tx-endpoint>TXA0P01C01</tx-endpoint>	
+            <tx-links>
+               <name>TXA0P01C00</name>
+               <processing-element>PE0</processing-element>
+               <tx-array-carrier>TXA0CC00</tx-array-carrier>
+               <tx-endpoint>TXA0P01C00</tx-endpoint>
+            </tx-links>
+            <tx-links>
+               <name>TXA0P01C01</name>
+               <processing-element>PE0</processing-element>
+               <tx-array-carrier>TXA0CC00</tx-array-carrier>
+               <tx-endpoint>TXA0P01C01</tx-endpoint>
             </tx-links>
 {% endif %}
             <rx-links>
@@ -42,17 +40,17 @@
                <rx-endpoint>PRACH0P00C00</rx-endpoint>
             </rx-links>
 {% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-links>	
-               <name>RXA0P01C00</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>RXA0P01C00</rx-endpoint>	
-            </rx-links>	
-            <rx-links>	
-               <name>PRACH0P01C00</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>PRACH0P01C00</rx-endpoint>	
+            <rx-links>
+               <name>RXA0P01C00</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>RXA0P01C00</rx-endpoint>
+            </rx-links>
+            <rx-links>
+               <name>PRACH0P01C00</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>PRACH0P01C00</rx-endpoint>
             </rx-links>
 {% endif %}
             <rx-links>
@@ -68,17 +66,17 @@
                <rx-endpoint>PRACH0P00C01</rx-endpoint>
             </rx-links>
 {% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-links>	
-               <name>RXA0P01C01</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>RXA0P01C01</rx-endpoint>	
-            </rx-links>	
-            <rx-links>	
-               <name>PRACH0P01C01</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>PRACH0P01C01</rx-endpoint>	
+            <rx-links>
+               <name>RXA0P01C01</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>RXA0P01C01</rx-endpoint>
+            </rx-links>
+            <rx-links>
+               <name>PRACH0P01C01</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>PRACH0P01C01</rx-endpoint>
             </rx-links>
 {% endif %}
             <tx-endpoints>
@@ -91,18 +89,6 @@
                   <eaxc-id>0</eaxc-id>
                </e-axcid>
             </tx-endpoints>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-endpoints>	
-               <name>TXA0P01C00</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>2</eaxc-id>	
-               </e-axcid>	
-            </tx-endpoints>
-{% endif %}
             <tx-endpoints>
                <name>TXA0P00C01</name>
                <e-axcid>
@@ -114,15 +100,25 @@
                </e-axcid>
             </tx-endpoints>
 {% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-endpoints>	
-               <name>TXA0P01C01</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>3</eaxc-id>	
-               </e-axcid>	
+            <tx-endpoints>
+               <name>TXA0P01C00</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>2</eaxc-id>
+               </e-axcid>
+            </tx-endpoints>
+            <tx-endpoints>
+               <name>TXA0P01C01</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>3</eaxc-id>
+               </e-axcid>
             </tx-endpoints>
 {% endif %}
             <rx-endpoints>
@@ -146,15 +142,15 @@
                </e-axcid>
             </rx-endpoints>
 {% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-endpoints>	
-               <name>RXA0P01C00</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>2</eaxc-id>	
-               </e-axcid>	
+            <rx-endpoints>
+               <name>RXA0P01C00</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>2</eaxc-id>
+               </e-axcid>
             </rx-endpoints>	
             <rx-endpoints>	
                <name>PRACH0P01C00</name>	
