@@ -1,5 +1,91 @@
 <xc:config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
          <user-plane-configuration xc:operation="replace" xmlns="urn:o-ran:uplane-conf-option8:1.0">
+            <!-- TX path: eaxcid → TxEndpoint
+                                             ↘
+                                               mod  → static TxEndpoint → TxArray
+                                             ↗
+                                   TxCarrier
+
+                 (static TxEndpoint, TxArray and their association are defined by RU itself)
+            -->
+{%- for ant in range(ru.n_antenna_dl)  %}
+{%-   set port = ant // 2  %}
+{%-   set chan = ant %  2  %}
+{%-   set txep = 'TXA0P%02dC%02d' % (port, chan)  %}
+
+            <!-- TxAntenna{{ ant }} -->
+            <tx-endpoints>
+               <name>{{ txep }}</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>{{ ant }}</eaxc-id>
+               </e-axcid>
+            </tx-endpoints>
+            <tx-links>
+              <name>{{ txep }}</name>
+               <processing-element>PE0</processing-element>
+               <tx-array-carrier>TXA0CC00</tx-array-carrier>
+               <tx-endpoint>{{ txep }}</tx-endpoint>
+            </tx-links>
+{%- endfor %}
+
+
+            <!--
+                  RX path: eaxcid ← RxEndpoint
+                                  (data ∪ prach)
+                                             ↖
+                                               demod  ← static RxEndpoint ← RxArray
+                                             ↗
+                                   RxCarrier
+
+                 (static RxEndpoint, RxArray and their association are defined by RU itself)
+            -->
+{%- for ant in range(ru.n_antenna_ul)  %}
+{%-   set port = ant // 2  %}
+{%-   set chan = ant %  2  %}
+{%-   set rxep    = 'RXA0P%02dC%02d'   % (port, chan)  %}
+{%-   set prachep = 'PRACH0P%02dC%02d' % (port, chan)  %}
+
+            <!-- RxAntenna{{ ant }} -->
+            <rx-endpoints>
+               <name>{{ rxep }}</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>{{ ant }}</eaxc-id>
+               </e-axcid>
+            </rx-endpoints>
+            <rx-endpoints>
+               <name>{{ prachep }}</name>
+               <e-axcid>
+                  <o-du-port-bitmask>61440</o-du-port-bitmask>
+                  <band-sector-bitmask>3968</band-sector-bitmask>
+                  <ccid-bitmask>112</ccid-bitmask>
+                  <ru-port-bitmask>15</ru-port-bitmask>
+                  <eaxc-id>{{ 16*chan + 8 + port }}</eaxc-id>
+               </e-axcid>
+            </rx-endpoints>
+            <rx-links>
+               <name>{{ rxep }}</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>{{ rxep }}</rx-endpoint>
+            </rx-links>
+            <rx-links>
+               <name>{{ prachep }}</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>RXA0CC00</rx-array-carrier>
+               <rx-endpoint>{{ prachep }}</rx-endpoint>
+            </rx-links>
+{%- endfor %}
+
+
+            <!-- XXX Tx/Rx carriers -->
 
             <!-- low-level-t[r]x-links -->
             <tx-links>
