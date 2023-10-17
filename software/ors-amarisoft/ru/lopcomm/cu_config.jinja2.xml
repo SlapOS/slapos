@@ -1,5 +1,6 @@
 <xc:config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
          <user-plane-configuration xc:operation="replace" xmlns="urn:o-ran:uplane-conf-option8:1.0">
+
             <!-- low-level-t[r]x-links -->
             <tx-links>
                <name>TXA0P00C00</name>
@@ -173,7 +174,7 @@
                   <eaxc-id>2</eaxc-id>
                </e-axcid>
             </rx-endpoints>	
-            <rx-endpoints>	
+            <rx-endpoints>
                <name>PRACH0P01C00</name>	
                <e-axcid>	
                   <o-du-port-bitmask>61440</o-du-port-bitmask>	
