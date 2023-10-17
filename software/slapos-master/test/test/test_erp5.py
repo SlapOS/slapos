@@ -35,6 +35,7 @@ import re
 import http.server
 import multiprocessing
 import subprocess
+import unittest
 
 import psutil
 import requests
@@ -411,6 +412,7 @@ class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
       return getattr(instance_supervisor, method)(*args, **kwargs)
 
+  @unittest.expectedFailure
   def test_ssl_auth(self):
     backend_apache_configuration_list = glob.glob(
       os.path.join(

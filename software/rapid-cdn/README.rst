@@ -18,10 +18,10 @@ Slaves of the root instance are sent as a parameter to requested frontends which
 
 These parameters are:
 
-  * ``-frontend-type`` : the type to deploy frontends with. (default to "default")
-  * ``-frontend-quantity`` : The quantity of frontends to request (default to "1")
+  * ``-frontend-type`` : the type to deploy frontends with. (defaults to "default")
+  * ``-frontend-quantity`` : The quantity of frontends to request (defaults to "1")
   * ``-frontend-i-state``: The state of frontend i
-  * ``-frontend-i-software-release-url``: Software release to be used for frontends, default to the current software release
+  * ``-frontend-i-software-release-url``: Software release to be used for frontends, defaults to the current software release
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo, supported parameters are:
     * ``ram-cache-size``
     * ``disk-cache-size``
@@ -451,8 +451,8 @@ There are two ways to achieve it:
 
 The issues during automatic bootstrap are:
 
- * rouge or hacked SlapOS Master can result with adding rouge frontend nodes to the cluster, which will be trusted, so it will be possible to fetch all certificates and keys from Kedifa or to login to backends
- * when new node is added there is short window, when rouge person is able to trick automatic signing, and have it's own node added
+ * rogue or hacked SlapOS Master can result with adding rogue frontend nodes to the cluster, which will be trusted, so it will be possible to fetch all certificates and keys from Kedifa or to login to backends
+ * when new node is added there is a short window during which rogue person is able to trick automatic signing, and have it's own node added
 
 In both cases promises will fail on node which is not able to get signed, but in case of Kedifa the damage already happened (certificates and keys are compromised). So in case if cluster administrator wants to stay on the safe side, both automatic bootstraps shall be turned off.
 
