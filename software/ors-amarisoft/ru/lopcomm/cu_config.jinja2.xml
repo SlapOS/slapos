@@ -89,28 +89,26 @@
 
             <!-- TX/RX carriers -->
             <!-- XXX error with "TODO" do not support multiple cells over 1 RU -->
-{%- if cell.cell_type == 'lte' %}
-{%-   set dl_arfcn = cell.dl_earfcn %}
-{%-   set dl_freq  = XXX            %}
-{%-   set ul_arfcn = XXX            %}
-{%-   set ul_freq  = XXX            %}
-{%-   set bw       = int(float(cell.bandwidth.removesuffix(' MHz')) * 1E6)   %}
-{%- elif cell.cell_type == 'nr' %}
-{%-   set dl_arfcn = cell.dl_nr_arfcn %}
-{%-   set dl_freq  = nrarfcn.get_frequency(dl_arfcn)  %}
-{%-   set ul_arfcn = XXX            %}
-{%-   set ul_freq  = XXX            %}
-{%-   set bw       = int(cell.bandwidth * 1E6)   %}
-{%- else %}
-{%-   do bug('unreachable') %}
-{%- endif %}
-
-
+{%- if cell.cell_type == 'lte'                                                %}
+{%-   set dl_arfcn = cell.dl_earfcn                                           %}
+{%-   set ul_arfcn = cell.ul_earfcb                                           %}
+{%-   set dl_freq  = earfcn.frequency(dl_arfcn) * 1e6                         %}
+{%-   set ul_freq  = earfcn.frequency(ul_arfcn) * 1e6                         %}
+{%-   set bw       = int(float(cell.bandwidth.removesuffix(' MHz')) * 1e6)    %}
+{%- elif cell.cell_type == 'nr'                                               %}
+{%-   set dl_arfcn = cell.dl_nr_arfcn                                         %}
+{%-   set ul_arfcn = cell.ul_nr_arfcn                                         %}
+{%-   set dl_freq  = nrarfcn.get_frequency(dl_arfcn) * 1e6                    %}
+{%-   set ul_freq  = nrarfcn.get_frequency(ul_arfcn) * 1e6                    %}
+{%-   set bw       = int(cell.bandwidth * 1e6)                                %}
+{%- else                                                                      %}
+{%-   do bug('unreachable')                                                   %}
+{%- endif                                                                     %}
             <tx-array-carriers>
                <name>{{ TxCarrier }}</name>
 	       <absolute-frequency-center>{{ dl_arfcn }}</absolute-frequency-center>
-               <center-of-channel-bandwidth>{{ 1000000*slapparameter_dict.get('txa0cc00_center_frequency', 2140) }}</center-of-channel-bandwidth>
-               <channel-bandwidth>{{ bw }}</channel-bandwidth>	
+               <center-of-channel-bandwidth>{{ dl_freq }}</center-of-channel-bandwidth>
+               <channel-bandwidth>{{ bw }}</channel-bandwidth>
                <active>{{ slapparameter_dict.get('txa0cc00_active', 'INACTIVE') }}</active>
                <rw-type>{{ cell.cell_type | upper }}</rw-type>
                <rw-duplex-scheme>{{ cell.rf_mode | upper }}</rw-duplex-scheme>
@@ -120,9 +118,9 @@
             </tx-array-carriers>
             <rx-array-carriers>
                <name>{{ RxCarrier }}</name>
-               <absolute-frequency-center>{{ slapparameter_dict.get('rxa0cc00_center_frequency_earfcn', 18300) }}</absolute-frequency-center>	
-               <center-of-channel-bandwidth>{{ 1000000*slapparameter_dict.get('rxa0cc00_center_frequency', 1950) }}</center-of-channel-bandwidth>	
-               <channel-bandwidth>{{ bw }}</channel-bandwidth>	
+               <absolute-frequency-center>{{ ul_arfcn }}</absolute-frequency-center>
+               <center-of-channel-bandwidth>{{ ul_freq }}</center-of-channel-bandwidth>
+               <channel-bandwidth>{{ bw }}</channel-bandwidth>
                <active>{{ slapparameter_dict.get('rxa0cc00_active', 'INACTIVE') }}</active>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
