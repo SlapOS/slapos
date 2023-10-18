@@ -33,6 +33,10 @@ def runTestSuite(args, d):
     env['OPENSSL_BINARY'] = d['openssl_binary']
   if 'test_ca_path' in d:
     env['TEST_CA_PATH'] = d['test_ca_path']
+  if 'slapos_test_ipv6' in d:
+    env['SLAPOS_TEST_IPV6'] = d['slapos_test_ipv6']
+  if 'slapos_test_ipv4' in d:
+    env['SLAPOS_TEST_IPV4'] = d['slapos_test_ipv4']
   if 'prepend_path' in d:
     try:
       env['PATH'] = d['prepend_path'] + ':' + env['PATH']

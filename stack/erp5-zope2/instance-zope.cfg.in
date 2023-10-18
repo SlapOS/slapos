@@ -491,6 +491,8 @@ environment-extra =
   REAL_INSTANCE_HOME=${:instance-home}
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
+  SLAPOS_TEST_IPV6={{ (ipv6_set | list)[0] }}
+  SLAPOS_TEST_IPV4={{ ipv4 }}
   ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:output}
 {%- if wsgi %}
   erp5_wsgi=1
