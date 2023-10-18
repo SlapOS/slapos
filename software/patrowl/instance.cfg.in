@@ -25,6 +25,9 @@ cert = ${slap-connection:cert-file}
 recipe = slapos.recipe.template:jinja2
 output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
+supervisord-lib = {{ supervisord_lib }}
+import-list =
+  file supervisord :supervisord-lib
 extra-context =
 context =
   key develop_eggs_directory buildout:develop-eggs-directory
@@ -36,12 +39,15 @@ context =
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
   key partition_id slap-configuration:partition
+  raw buildout_bin_directory {{ bin_directory }}
   raw nginx_bin {{ nginx_bin }}
   raw gunicorn_bin {{ bin_directory }}/gunicorn
+  raw celery_bin {{ bin_directory }}/celery
   raw nginx_conf {{ template_nginx_conf }}
   raw nginx_mime_types {{ nginx_mime_types }}
   raw openssl_bin {{ openssl_location }}/bin/openssl
   raw python_bin {{ bin_directory }}/{{ python_with_eggs }}
+  raw supervisord_conf {{ supervisord_conf }}
   raw template_monitor {{ template_monitor_cfg }}
   raw logrotate_cfg {{ logrotate_cfg }}
   ${:extra-context}

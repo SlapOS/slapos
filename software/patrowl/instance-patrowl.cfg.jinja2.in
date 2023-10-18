@@ -18,6 +18,65 @@ mqlog = ${:log}/rabbitmq
 mqlib = ${:var}/lib/rabbitmq
 nginx = ${:srv}/nginx
 
+{% import "supervisord" as supervisord with context %}
+{{ supervisord.supervisord("patrowl-controller", buildout_bin_directory, supervisord_conf, use_service_hash=False, ipv4=local_ipv4, port='${instance-parameters:supervisord-port}') }}
+
+# add celery program to supervisord
+[celery-parameters]
+flow-port = 5555
+flow-log = ${directory:log}/celeryd.flower.log
+flow-errlog = ${directory:log}/celeryderr.flower.log
+beat-pid = ${directory:run}/celerybeat.pid
+beat-log = ${directory:log}/celeryd.beat.log
+beat-errlog = ${directory:log}/celeryderr.beat.log
+default-log = ${directory:log}/celeryd.default.log
+default-errlog = ${directory:log}/celeryderr.default.log
+scan-log = ${directory:log}/celeryd.scan.log
+scan-errlog = ${directory:log}/celeryderr.scan.log
+scanmgt-log = ${directory:log}/celeryd.scanmgt.log
+scanmgt-errlog = ${directory:log}/celeryderr.scanmgt.log
+
+[celery-bin]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/bash -e
+  cd ${configure-service:patrowl-directory}
+  source ${patrowl-env.sh:output}
+  export PYTHONPATH=${configure-service:patrowl-directory}:$PYTHONPATH
+  exec {{ celery_bin }} "$@"
+output = ${directory:bin}/celery
+
+# celery-flow
+{% set celery_flow_dict = {"name": "celery-flow", "command": "${celery-bin:output} flower --app=app --port=${celery-parameters:flow-port} --address=" ~ local_ipv4,
+  "stdout_logfile": "${celery-parameters:flow-log}", "stderr_logfile": "${celery-parameters:flow-errlog}",
+  "stopwaitsecs": 60, "startsecs": 5, "autorestart": True, "environment": []} %}
+{{ supervisord.supervisord_program("celery-flow", celery_flow_dict) }}
+
+# celery-beat
+{% set celery_beat_dict = {"name": "celery-beat", "command": "${celery-bin:output} beat --app=app -l info -S django --pidfile=${celery-parameters:beat-pid}",
+  "stdout_logfile": "${celery-parameters:beat-log}", "stderr_logfile": "${celery-parameters:beat-errlog}",
+  "stopwaitsecs": 60, "startsecs": 5, "autorestart": True, "environment": []} %}
+{{ supervisord.supervisord_program("celery-beat", celery_beat_dict) }}
+
+# celery-default
+{% set celery_default_dict = {"name": "celery-default", "command": "${celery-bin:output} worker --hostname=default-node@%%n --app=app -l info -Q default --purge --without-mingle --without-gossip --without-heartbeat -Ofair",
+  "stdout_logfile": "${celery-parameters:default-log}", "stderr_logfile": "${celery-parameters:default-errlog}",
+  "stopwaitsecs": 60, "startsecs": 5, "autorestart": True, "environment": []} %}
+{{ supervisord.supervisord_program("celery-default", celery_default_dict) }}
+
+# celery-scan
+{% set celery_scan_dict = {"name": "celery-scan", "command": "${celery-bin:output} worker --hostname=scan-node@%%n --app=app -l info -Q scan --purge --without-mingle --without-gossip --without-heartbeat -Ofair",
+  "stdout_logfile": "${celery-parameters:scan-log}", "stderr_logfile": "${celery-parameters:scan-errlog}",
+  "stopwaitsecs": 60, "startsecs": 5, "autorestart": True, "environment": []} %}
+{{ supervisord.supervisord_program("celery-scan", celery_scan_dict) }}
+
+# celery-scanmgt
+{% set celery_scanmgt_dict = {"name": "celery-scanmgt", "command": "${celery-bin:output} worker --hostname=scanmgt-node@%%n --app=app -l info -Q scanmgt --purge --without-mingle --without-gossip --without-heartbeat -Ofair",
+  "stdout_logfile": "${celery-parameters:scanmgt-log}", "stderr_logfile": "${celery-parameters:scanmgt-errlog}",
+  "stopwaitsecs": 60, "startsecs": 5, "autorestart": True, "environment": []} %}
+{{ supervisord.supervisord_program("celery-scanmgt", celery_scanmgt_dict) }}
+
+
 [rabbitmq-password]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.rabbitmq
@@ -173,6 +232,7 @@ inline =
   export ALERTS_AUTO_MISSING_ENABLED=true
   export ASSET_DETECTION_RULES_FILENAME="app/assets_detection_rules.py"
   export ASSET_AUTOTAG_CPE=true
+  export SUPERVISORD_API_URL=http://{{ local_ipv4 }}:${instance-parameters:supervisord-port}
 
 output = ${directory:etc}/.env.sh
 
@@ -293,6 +353,7 @@ admin-password = ${admin-password:passwd}
 
 [instance-parameters]
 admin-email = admin@dev.patrowl.io
+supervisord-port = 9001
 
 
 [buildout]
@@ -300,6 +361,12 @@ extends = {{ template_monitor }}
 
 parts =
   publish-connection-information
+  supervisord-patrowl-controller
+  supervisord-celery-flow
+  supervisord-celery-beat
+  supervisord-celery-default
+  supervisord-celery-scan
+  supervisord-celery-scanmgt
   promise-postgresql
   service-rabbitmq
   rabbimq-configure-script
