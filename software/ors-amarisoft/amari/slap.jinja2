@@ -45,18 +45,18 @@
     }
 %}
 
-{%- macro default_ul_earfcn(dl_earfcn)  %}
-{{-   earfcn_module.dl2ul(dl_earfcn)    }}
+{%- macro jdefault_ul_earfcn(dl_earfcn)  %}
+{{-   earfcn_module.dl2ul(dl_earfcn) | tojson    }}
 {%- endmacro %}
 
-{%- macro default_ul_nr_arfcn(dl_nr_arfcn, nr_band)             %}
+{%- macro jdefault_ul_nr_arfcn(dl_nr_arfcn, nr_band)            %}
 {%-   set nr = nrarfcn_module                                   %}
 {%-   set dl_lo, dl_hi = nr.get_nrarfcn_range(nr_band, 'dl')    %}
 {%-   set ul_lo, ul_hi = nr.get_nrarfcn_range(nr_band, 'ul')    %}
-{{-   ul_lo + (dl_nr_arfcn - dl_lo)                             }}
+{{-   (ul_lo + (dl_nr_arfcn - dl_lo)) | tojson                  }}
 {%- endmacro %}
 
-{%- macro default_ssb_nr_arfcn(dl_nr_arfcn) %}
+{%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
 {%-   set nr = nrarfcn_module                       %}
 {%-   set f = nr.get_frequency(nrarfcn=dl_nr_arfcn) %}
@@ -66,7 +66,7 @@
 {%-   endif                                         %}
 {%-   set fg = nr.get_frequency_by_gscn(gscn)       %}
 {%-   set fg_arfcn = nr.get_nrarfcn(fg)             %}
-{{- fg_arfcn }}
+{{- fg_arfcn | tojson }}
 {%- endmacro %}
 
 
@@ -139,55 +139,55 @@
 
     XXX defaults ?
 #}
-{%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)                              %}
-{%-   set qother = []                                                                       %}
-{%-   for ishared in qshared_instance_list                                                  %}
-{%-     set ref = J(jref_of_shared(ishared))                                                %}
-{%-     set _ = ishared['_']                                                                %}
-{%-     if   'ru_type'   in _                                                               %}
-{%-       set iru = ishared                                                                 %}
-{%-       if _.ru_link_type == 'cpri'                                                       %}
-{%-         set link = _.cpri_link                                                          %}
-{%-         for k, v in defaults['cpri_link'].items()                                       %}
-{%-           do link.setdefault(k, v)                                                      %}
-{%-         endfor                                                                          %}
-{%-       endif                                                                             %}
-{%-       do iru_dict.update({ref: iru})                                                    %}
+{%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)                                  %}
+{%-   set qother = []                                                                           %}
+{%-   for ishared in qshared_instance_list                                                      %}
+{%-     set ref = J(jref_of_shared(ishared))                                                    %}
+{%-     set _ = ishared['_']                                                                    %}
+{%-     if   'ru_type'   in _                                                                   %}
+{%-       set iru = ishared                                                                     %}
+{%-       if _.ru_link_type == 'cpri'                                                           %}
+{%-         set link = _.cpri_link                                                              %}
+{%-         for k, v in defaults['cpri_link'].items()                                           %}
+{%-           do link.setdefault(k, v)                                                          %}
+{%-         endfor                                                                              %}
+{%-       endif                                                                                 %}
+{%-       do iru_dict.update({ref: iru})                                                        %}
 {%-     elif (icell_kind == 'enb' and 'cell_type' in _)    or
-             (icell_kind == 'ue'  and 'ue_cell_type' in _)                                  %}
-{%-       set icell = ishared                                                               %}
-{%-       if icell_kind == 'enb'                                                            %}
-{%-         for k, v in defaults['cell/' + _.cell_type].items()                             %}
-{%-           do _.setdefault(k, v)                                                         %}
-{%-         endfor                                                                          %}
-{%-         set xcell_type = _.cell_type                                                    %}
-{%-       else                                                                              %}
-{%-         set xcell_type = _.ue_cell_type                                                 %}
-{%-       endif                                                                             %}
-{%-       if xcell_type == 'lte'                                                            %}
-{%-         do _.setdefault('ul_earfcn',    default_ul_earfcn(_.dl_earfcn))                 %}
-{%-       elif xcell_type == 'nr'                                                           %}
-{%-         do _.setdefault('ul_nr_arfcn',  default_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band))  %}
-{%-         do _.setdefault('ssb_nr_arfcn', default_ssb_nr_arfcn(_.dl_nr_arfcn))            %}
-{%-       else                                                                              %}
-{%-         do bug('unreachable')                                                           %}
-{%-       endif                                                                             %}
-{%-       do icell_dict.update({ref: icell})                                                %}
-{%-       set ru = _['ru']                                                                  %}
-{%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref')                                   %}
-{#-         embedded ru definition -> expose it as `_<cell_ref>_ru`                         #}
+             (icell_kind == 'ue'  and 'ue_cell_type' in _)                                      %}
+{%-       set icell = ishared                                                                   %}
+{%-       if icell_kind == 'enb'                                                                %}
+{%-         for k, v in defaults['cell/' + _.cell_type].items()                                 %}
+{%-           do _.setdefault(k, v)                                                             %}
+{%-         endfor                                                                              %}
+{%-         set xcell_type = _.cell_type                                                        %}
+{%-       else                                                                                  %}
+{%-         set xcell_type = _.ue_cell_type                                                     %}
+{%-       endif                                                                                 %}
+{%-       if xcell_type == 'lte'                                                                %}
+{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn)))                 %}
+{%-       elif xcell_type == 'nr'                                                               %}
+{%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))            %}
+{%-       else                                                                                  %}
+{%-         do bug('unreachable')                                                               %}
+{%-       endif                                                                                 %}
+{%-       do icell_dict.update({ref: icell})                                                    %}
+{%-       set ru = _['ru']                                                                      %}
+{%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref')                                       %}
+{#-         embedded ru definition -> expose it as `_<cell_ref>_ru`                             #}
 {%-         do iru_dict.update({'_%s_ru' % ref: {
                   '_':                ru,
                   'slave_title':      '%s. RU' % icell.slave_title,
                   'slave_reference':  icell.slave_reference,
-               }})                                                                          %}
-{%-       endif                                                                             %}
-{%-     else                                                                                %}
-{%-       do qother.append(ishared)                                                         %}
-{%-     endif                                                                               %}
-{%-   endfor                                                                                %}
-{%-   do qshared_instance_list.clear()                                                      %}
-{%-   do qshared_instance_list.extend(qother)                                               %}
+               }})                                                                              %}
+{%-       endif                                                                                 %}
+{%-     else                                                                                    %}
+{%-       do qother.append(ishared)                                                             %}
+{%-     endif                                                                                   %}
+{%-   endfor                                                                                    %}
+{%-   do qshared_instance_list.clear()                                                          %}
+{%-   do qshared_instance_list.extend(qother)                                                   %}
 
 {#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
 {#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
