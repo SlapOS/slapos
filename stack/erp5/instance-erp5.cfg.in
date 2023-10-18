@@ -11,6 +11,10 @@
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set wcfs_dict = slapparameter_dict.get('wcfs', {}) -%}
 {% set wcfs_enable = wcfs_dict.get('enable', wcfs_enable_default.lower() in ('true', 'yes')) -%}
+{% set with_max_rlimit_nofile_enable = slapparameter_dict.get(
+    'with-max-rlimit-nofile',
+    with_max_rlimit_nofile_enable_default.lower() in ('true', 'yes'))
+%}
 {% set test_runner_enabled = slapparameter_dict.get('test-runner', {}).get('enabled', True) -%}
 {% set test_runner_node_count = slapparameter_dict.get('test-runner', {}).get('node-count', 3) -%}
 {% set test_runner_extra_database_count = slapparameter_dict.get('test-runner', {}).get('extra-database-count', 3) -%}
@@ -311,7 +315,7 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
-config-with-max-rlimit-nofile = {{ dumps(slapparameter_dict.get('with-max-rlimit-nofile', false)) }}
+config-with-max-rlimit-nofile = {{ dumps(with_max_rlimit_nofile_enable) }}
 {# BBB: zope_parameter_dict used to contain 'webdav', so fallback to it -#}
 config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_parameter_dict.get('webdav', False))) }}
 config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
