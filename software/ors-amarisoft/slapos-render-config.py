@@ -17,7 +17,8 @@ def j2render(config, jcfg):
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
-    textctx += 'import json_module json\n'
+    textctx += 'import json_module    json\n'
+    textctx += 'import earfcn_module  xlte.earfcn\n'
     textctx += 'import nrarfcn_module nrarfcn\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
