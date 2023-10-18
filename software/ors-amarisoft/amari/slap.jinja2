@@ -45,6 +45,30 @@
     }
 %}
 
+{%- macro default_ul_earfcn(dl_earfcn)  %}
+{{-   earfcn_module.dl2ul(dl_earfcn)    }}
+{%- endmacro %}
+
+{%- macro default_ul_nr_arfcn(dl_nr_arfcn, nr_band)             %}
+{%-   set nr = nrarfcn_module                                   %}
+{%-   set dl_lo, dl_hi = nr.get_nrarfcn_range(nr_band, 'dl')    %}
+{%-   set ul_lo, ul_hi = nr.get_nrarfcn_range(nr_band, 'ul')    %}
+{{-   ul_lo + (dl_nr_arfcn - dl_lo)                             }}
+{%- endmacro %}
+
+{%- macro default_ssb_nr_arfcn(dl_nr_arfcn) %}
+{#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
+{%-   set nr = nrarfcn_module                       %}
+{%-   set f = nr.get_frequency(nrarfcn=dl_nr_arfcn) %}
+{%-   set gscn = nr.get_gscn_by_frequency(f)        %}
+{%-   if nr.get_frequency_by_gscn(gscn) > f         %}{# nrarfcn rounds up, amari down #}
+{%-     set gscn = gscn - 1                         %}
+{%-   endif                                         %}
+{%-   set fg = nr.get_frequency_by_gscn(gscn)       %}
+{%-   set fg_arfcn = nr.get_nrarfcn(fg)             %}
+{{- fg_arfcn }}
+{%- endmacro %}
+
 
 {#- cfg returns value of configuration parameter name #}
 {%- macro cfg(name)     %}
@@ -137,10 +161,10 @@
 {%-           do _.setdefault(k, v)                                                     %}
 {%-         endfor                                                                      %}
 {%-         if _.cell_type == 'lte'                                                     %}
-{%-           do _.setdefault('ul_earfcn',    lte.default_ul_earfcn(_.dl_earfcn))       %}
+{%-           do _.setdefault('ul_earfcn',    default_ul_earfcn(_.dl_earfcn))           %}
 {%-         elif _.cell_type == 'nr'                                                    %}
-{%-           do _.setdefault('ul_nr_arfcn',  lte.default_ul_nr_arfcn(_.dl_nr_arfcn))   %}
-{%-           do _.setdefault('ssb_nr_arfcn', lte.default_ssb_nr_arfcn(_.dl_nr_arfcn))  %}
+{%-           do _.setdefault('ul_nr_arfcn',  default_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band))       %}
+{%-           do _.setdefault('ssb_nr_arfcn', default_ssb_nr_arfcn(_.dl_nr_arfcn))      %}
 {%-         else                                                                        %}
 {%-           do bug('unreachable')                                                     %}
 {%-         endif                                                                       %}

@@ -49,7 +49,7 @@
     },
     "ul_nr_arfcn": {
       "title": "UL NR ARFCN",
-      "description": "Uplink NR Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_nr_arfcn is chosen.",
+      "description": "Uplink NR Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_nr_arfcn and nr_band is chosen.",
       "type": "integer"
     },
     "ssb_nr_arfcn": {

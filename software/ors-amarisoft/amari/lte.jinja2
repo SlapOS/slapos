@@ -89,20 +89,6 @@
 {%- endmacro  %}
 
 
-{#- XXX -> nr ? #}
-{%- macro default_ssb_nr_arfcn(dl_nr_arfcn) %}
-{#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
-{%-   set nr = nrarfcn_module                       %}
-{%-   set f = nr.get_frequency(nrarfcn=dl_nr_arfcn) %}
-{%-   set gscn = nr.get_gscn_by_frequency(f)        %}
-{%-   if nr.get_frequency_by_gscn(gscn) > f         %}{# nrarfcn rounds up, amari down #}
-{%-     set gscn = gscn - 1                         %}
-{%-   endif                                         %}
-{%-   set fg = nr.get_frequency_by_gscn(gscn)       %}
-{%-   set fg_arfcn = nr.get_nrarfcn(fg)             %}
-{{- fg_arfcn }}
-{%- endmacro %}
-
 {#- cell_tdd_config returns tdd_config for an LTE cell. #}
 {%- macro cell_tdd_config(cell) %}
 {%-   set _ = {'[Configuration 2] 5ms 2UL 6DL (default)':        2,
