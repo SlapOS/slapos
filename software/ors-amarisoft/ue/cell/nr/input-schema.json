@@ -21,6 +21,7 @@
     "dl_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/properties/dl_nr_arfcn" },
     "bandwidth":    { "$ref": "../../../cell/nr/input-schema.json#/properties/bandwidth" },
     "nr_band":      { "$ref": "../../../cell/nr/input-schema.json#/properties/nr_band" },
+    "ul_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/properties/ul_nr_arfcn" },
     "ssb_nr_arfcn": { "$ref": "../../../cell/nr/input-schema.json#/properties/ssb_nr_arfcn" }
   }
 }
