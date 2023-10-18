@@ -49,6 +49,11 @@
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
       "type": "integer"
     },
+    "ul_earfcn": {
+      "title": "UL EARFCN",
+      "description": "Uplink E-UTRA Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_earfcn is chosen.",
+      "type": "integer"
+    },
     "pci": {
       "default": 1
     },

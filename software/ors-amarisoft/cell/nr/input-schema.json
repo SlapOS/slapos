@@ -47,6 +47,11 @@
       "description": "NR band number",
       "type": "integer"
     },
+    "ul_nr_arfcn": {
+      "title": "UL NR ARFCN",
+      "description": "Uplink NR Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_nr_arfcn is chosen.",
+      "type": "integer"
+    },
     "ssb_nr_arfcn": {
       "title": "SSB NR ARFCN",
       "description": "SSB NR Absolute Radio Frequency Channel Number of the cell. If set it must be an element of global synchronization raster. By default a valid frequency nearby dl_nr_arfcn is chosen.",
