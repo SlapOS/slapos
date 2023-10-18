@@ -2,7 +2,9 @@
   name,
   buildout_bin_directory,
   supervisord_conf,
-  use_service_hash=False
+  use_service_hash=False,
+  ipv4='',
+  port=''
 ) -%}
 
 [controller-directory]
@@ -19,6 +21,8 @@ include-dir = ${controller-directory:supervisord}
 log-file    = ${controller-directory:log}/supervisord-{{ name }}.log
 log-level   = info
 pid-file    = ${controller-directory:run}/supervisord-{{ name }}.pid
+ipv4 = {{ ipv4 }}
+port = {{ port }}
 
 [supervisord-controller-conf]
 recipe = slapos.recipe.template:jinja2

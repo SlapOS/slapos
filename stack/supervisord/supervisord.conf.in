@@ -1,12 +1,19 @@
+{% set server_url = "unix://" ~ parameter_dict['socket-path'] -%}
+{% if parameter_dict['ipv4'] and parameter_dict['port'] -%}
+{% set server_url = "http://" ~ parameter_dict['ipv4'] ~ ":" ~ parameter_dict['port'] -%}
+[inet_http_server]
+port={{ parameter_dict['ipv4'] }}:{{ parameter_dict['port'] }}
+{% else-%}
 [unix_http_server]
 file = {{ parameter_dict['socket-path'] }}
 chmod=0700
+{% endif %}
 
 [include]
 files = {{ parameter_dict['include-dir'] }}/*.conf
 
 [supervisorctl]
-serverurl = unix://{{ parameter_dict['socket-path'] }}
+serverurl = {{ server_url }}
 
 [supervisord]
 loglevel = {{ parameter_dict['log-level'] }}
