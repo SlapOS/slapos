@@ -69,3 +69,19 @@ RU1 = {
 
 iru1 = iENB('RU1', RU1)     # XXX -> eref('RU1') ?
 print(kslap.ref_of_instance(iru1), iru1)
+
+CELL1 = {
+    'cell_type':    'lte',
+    'rf_mode':      'fdd',
+    'bandwidth':    '20 MHz',
+    'dl_earfcn':    100,      # 2120 @ B1
+    'pci':          1,
+    'cell_id':      '0x01',
+    'ru':           {
+        'ru_type':      'ru_ref',
+        'ruincell_ref': 'RU1'
+    }
+}
+
+icell1 = iENB('CELL1', CELL1)
+print(kslap.ref_of_instance(icell1), icell1)
