@@ -114,6 +114,7 @@
 {#- qshared_instance_list queues not yet loaded shared instances.
     load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
 {%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
+{#- XXX add protection wrt duplicate slave_title  -- see jref_of_shared for details #}
 
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
 {%- macro check_loaded_everything() %}
@@ -244,10 +245,15 @@
 {%- endmacro %}
 
 {#- jref_of_shared returns original reference used to request shared instance.
-    it is extracted from slave_reference which is composed as <partition_id>_<reference>. #}
+
+    slapproxy puts the reference into slave_reference and slave_title as <partition_id>_<reference>.
+    slapos master puts the reference into slave_title as-is and assigns to slave_reference SOFTINST-XXX.
+
+    -> we extract the reference from slave_title.
+#}
 {%- macro jref_of_shared(ishared) %}
 {#- do  print('jref_of_shared %r' % (ishared,)) #}
-{%-   set ref = ishared['slave_reference']                                  %}
+{%-   set ref = ishared['slave_title']                                      %}
 {%-   set partition_id = slap_configuration['slap-computer-partition-id']   %}
 {%-   if ref.startswith(partition_id)                                       %}
 {%-     set ref = ref[len(partition_id):]                                   %}

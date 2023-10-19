@@ -54,10 +54,12 @@ class Instance:
         self.slap_software_type = slap_software_type
 
     # ishared appends new shared instance with specified configuration to .shared_instance_list .
-    def ishared(self, title, slave_reference, cfg):
+    def ishared(self, slave_reference, cfg):
         ishared = {
-            'slave_title':          title,
-            'slave_reference':      slave_reference,
+            # see comments in jref_of_shared about where and how slapproxy and
+            # slapos master put partition_reference of a shared instance.
+            'slave_title':          '_%s' % slave_reference,
+            'slave_reference':      'SOFTINST-%03d' % (len(self.shared_instance_list)+1),
             'slap_software_type':   self.slap_software_type,
             '_': json.dumps(cfg)
         }
@@ -80,7 +82,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'rx_gain':      52,
     }
 
-    ienb.ishared('Cell 1a', '_CELL1_a', {
+    ienb.ishared('CELL1_a', {
         'cell_type':    'lte',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
@@ -90,7 +92,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'ru':           RU1,        # RU definition embedded into CELL
     })
 
-    ienb.ishared('Cell 1b', '_CELL1_b', {
+    ienb.ishared('CELL1_b', {
         'cell_type':    'lte',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
@@ -103,7 +105,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         }
     })
 
-    ienb.ishared('Cell 1c', '_CELL1_c', {
+    ienb.ishared('CELL1_c', {
         'cell_type':    'nr',
         'rf_mode':      'tdd',
         'bandwidth':    5,
@@ -146,10 +148,10 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
     RU2_b['tx_gain'] += 10
     RU2_b['rx_gain'] += 10
 
-    ienb.ishared('Radio Unit 2a', '_RU2_a', RU2_a)
-    ienb.ishared('Radio Unit 2b', '_RU2_b', RU2_b)
+    ienb.ishared('RU2_a', RU2_a)
+    ienb.ishared('RU2_b', RU2_b)
 
-    ienb.ishared('Cell 2a', '_CELL2_a', {
+    ienb.ishared('CELL2_a', {
         'cell_type':    'lte',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
@@ -162,7 +164,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         }
     })
 
-    ienb.ishared('Cell 2b', '_CELL2_b', {
+    ienb.ishared('CELL2_b', {
         'cell_type':    'nr',
         'rf_mode':      'fdd',
         'bandwidth':    5,
@@ -191,7 +193,7 @@ def iRU3_SDR1_fLTE2(ienb):
         'rx_gain':      61,
     }
 
-    ienb.ishared('Cell 3a', '_CELL3_a', {
+    ienb.ishared('CELL3_a', {
         'cell_type':    'lte',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
@@ -201,7 +203,7 @@ def iRU3_SDR1_fLTE2(ienb):
         'ru':           RU,
     })
 
-    ienb.ishared('Cell 3b', '_CELL3_b', {
+    ienb.ishared('CELL3_b', {
         'cell_type':    'lte',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
@@ -241,8 +243,8 @@ def iRU2_LOPCOMM_fLTE2(ienb):
     RU_0004['cpri_link']['sfp_port'] = 1
 
     if 1:
-        ienb.ishared('Radio Unit 2a', '_RU_0002', RU_0002)
-        ienb.ishared('Cell 2', '_CELL2', {
+        ienb.ishared('RU_0002', RU_0002)
+        ienb.ishared('CELL2', {
             'cell_type':    'lte',
             'rf_mode':      'fdd',
             'bandwidth':    '20 MHz',
@@ -256,8 +258,8 @@ def iRU2_LOPCOMM_fLTE2(ienb):
         })
 
     if 1:
-        ienb.ishared('Radio Unit 2b', '_RU_0004', RU_0004)
-        ienb.ishared('Cell 4', '_CELL4', {
+        ienb.ishared('RU_0004', RU_0004)
+        ienb.ishared('CELL4', {
             'cell_type':    'lte',
             'rf_mode':      'fdd',
             'bandwidth':    '20 MHz',
@@ -303,7 +305,7 @@ def do_enb():
 
 def do_ue():
     iue = Instance('ue')
-    iue.ishared('Cell 1', '_UCELL1', {
+    iue.ishared('UCELL1', {
         'ue_cell_type': 'lte',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
@@ -318,7 +320,7 @@ def do_ue():
             'rx_gain':      42,
         }
     })
-    iue.ishared('Cell 2b', '_UCELL2', {
+    iue.ishared('UCELL2', {
         'ue_cell_type': 'nr',
         'rf_mode':      'fdd',
         'bandwidth':    5,
@@ -335,11 +337,11 @@ def do_ue():
         }
     })
 
-    iue.ishared('UE 1', '_UE1', {
+    iue.ishared('UE1', {
         'ue_type':      'lte',
         'rue_addr':     'host1'
     })
-    iue.ishared('UE 2', '_UE2', {
+    iue.ishared('UE2', {
         'ue_type':      'nr',
         'rue_addr':     'host2'
     })
