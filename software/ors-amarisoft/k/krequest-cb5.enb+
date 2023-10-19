@@ -65,6 +65,7 @@ RU1 = {
     'n_antenna_ul': 1,
     'tx_gain':      -20,
     'rx_gain':      -20,
+    'txrx_active':  'INACTIVE',
 }
 
 iru1 = iENB('RU1', RU1)     # XXX -> eref('RU1') ?
