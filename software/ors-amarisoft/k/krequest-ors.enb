@@ -49,18 +49,6 @@ pprint(enb_part.getInstanceParameterDict())
 
 
 
-# iENB adds to enb a shared instance with specified reference and parameters.
-def iENB(enb, ref, kw):
-    enb_ref  = kslap.ref_of_instance(slap, enb)
-    enb_guid = enb.getInstanceGuid()
-    cell = request(ors,
-        software_type="enb",
-        partition_reference=ref,
-        shared=True,
-        filter_kw={"instance_guid": enb_guid},
-        partition_parameter_kw={"_": json.dumps(kw)})
-    return cell
-
 
 RU1 = {
     'ru_type':      'sdr',
@@ -82,7 +70,7 @@ CELL1_a = {
     'ru':           RU1,        # RU definition embedded into CELL
 }
 
-iCELL1_a = iENB(enb1, 'CELL1_a', CELL1_a)
+iCELL1_a = kslap.iENB(enb1, 'CELL1_a', CELL1_a)
 
 
 CELL1_b = {
@@ -98,7 +86,7 @@ CELL1_b = {
     }
 }
 
-iCELL1_b = iENB(enb1, 'CELL1_b', CELL1_b)
+iCELL1_b = kslap.iENB(enb1, 'CELL1_b', CELL1_b)
 
 
 RU2_a = {
@@ -126,10 +114,10 @@ RU2_b['cpri_link']['sfp_port'] = 1
 RU2_b['tx_gain'] += 10
 RU2_b['rx_gain'] += 10
 
-iRU2_a = iENB(enb1, 'RU2_a', RU2_a)
-iRU2_b = iENB(enb1, 'RU2_b', RU2_b)
+iRU2_a = kslap.iENB(enb1, 'RU2_a', RU2_a)
+iRU2_b = kslap.iENB(enb1, 'RU2_b', RU2_b)
 
-iENB(enb1, 'CELL2_a', {
+kslap.iENB(enb1, 'CELL2_a', {
     'cell_type':    'lte',
     'rf_mode':      'fdd',
     'bandwidth':    '5 MHz',
@@ -142,7 +130,7 @@ iENB(enb1, 'CELL2_a', {
     }
 })
 
-iENB(enb1, 'CELL2_b', {
+kslap.iENB(enb1, 'CELL2_b', {
     'cell_type':    'nr',
     'rf_mode':      'fdd',
     'bandwidth':    5,

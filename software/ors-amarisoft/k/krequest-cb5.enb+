@@ -1,0 +1,63 @@
+#!/usr/bin/env -S slapos console
+"""request mme/enb/... on callbox-005"""
+
+# XXX workaround for `slapos console` not setting up sys.path the same way as std python does
+import sys
+from os.path import dirname
+sys.path.insert(0, dirname(__file__))
+import kslap
+
+import json, copy
+from pprint import pprint
+
+
+kamari = "https://lab.nexedi.com/kirr/slapos/raw/x/lte-multiru/software/ors-amarisoft/software.cfg"
+CB5    = "COMP-4020"
+
+supply(kamari, computer_guid=CB5)
+
+icore = request(kamari,
+        software_type="core-network",
+        partition_reference="CB5-CORE",
+        filter_kw={"computer_guid": CB5},
+        partition_parameter_kw={"_": json.dumps({
+            'core_network_plmn': '31415',
+        })})
+
+ienb = request(kamari,
+        software_type="enb",
+        partition_reference="CB5-ENB",
+        filter_kw={"computer_guid": CB5},
+        partition_parameter_kw={"_": json.dumps({
+        })})
+
+isim1 = kslap.iSIM(icore, 1)
+
+# eref returns full reference for a enb subreference ref.
+def eref(ref):
+    enb_ref = kslap.ref_of_instance(slap, ienb)
+    return '%s/%s' % (enb_ref, ref)
+
+# XXX shorthand
+def iENB(ref, kw):
+    return kslap.iENB(ienb, ref, kw)
+
+RU1 = {
+    'ru_type':      'lopcomm',
+    'ru_link_type': 'cpri',
+    'cpri_link':    {
+        'sdr_dev':  0,
+        'sfp_port': 1,
+        'mult':     4,
+        'mapping':  'hw',
+        'rx_delay': 25.11,
+        'tx_delay': 14.71,
+        'tx_dbm':   63
+    },
+    'n_antenna_dl': 1,
+    'n_antenna_ul': 1,
+    'tx_gain':      -20,
+    'rx_gain':      -20,
+}
+
+iru1 = iENB('RU1', RU1)     # XXX -> eref('RU1') ?
