@@ -68,3 +68,4 @@ RU1 = {
 }
 
 iru1 = iENB('RU1', RU1)     # XXX -> eref('RU1') ?
+print(kslap.ref_of_instance(iru1), iru1)
