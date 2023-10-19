@@ -93,6 +93,8 @@ RU2['cpri_link']['sfp_port'] = 2
 
 CELL2 = copy.deepcopy(CELL1)
 CELL2['dl_earfcn'] = 500    # 2160 @ B1
+CELL2['pci'] = 2
+CELL2['cell_id'] = '0x02'
 CELL2['ru']['ru_ref'] = eref('RU2')
 
 iru2   = iENB(eref('RU2'), RU2)
