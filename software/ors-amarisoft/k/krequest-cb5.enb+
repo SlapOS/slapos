@@ -79,8 +79,8 @@ CELL1 = {
     'pci':          1,
     'cell_id':      '0x01',
     'ru':           {
-        'ru_type':      'ru_ref',
-        'ruincell_ref': 'RU1'
+        'ru_type':  'ru_ref',
+        'ru_ref':   'RU1'
     }
 }
 
