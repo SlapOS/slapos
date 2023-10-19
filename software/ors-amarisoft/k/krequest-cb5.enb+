@@ -25,14 +25,10 @@ icore = kslap.request(kamari,
             'core_network_plmn': '31415',
         })})
 
-print(icore)
-#iicore = slap.registerComputerPartition(icore.slap_computer_id, icore.slap_computer_partition_id)
-#print(iicore)
-print()
 isim1 = kslap.iSIM(icore, 1)
 
-print(isim1)
-sys.exit(1)
+print(kslap.ref_of_instance(icore), icore)
+print(kslap.ref_of_instance(isim1), isim1)
 
 ienb = kslap.request(kamari,
         software_type="enb",
@@ -40,6 +36,8 @@ ienb = kslap.request(kamari,
         filter_kw={"computer_guid": CB5},
         partition_parameter_kw={"_": json.dumps({
         })})
+
+print(kslap.ref_of_instance(ienb), ienb)
 
 
 # eref returns full reference for a enb subreference ref.
