@@ -42,7 +42,7 @@ print(kslap.ref_of_instance(ienb), ienb)
 
 # eref returns full reference for a enb subreference ref.
 def eref(ref):
-    enb_ref = kslap.ref_of_instance(slap, ienb)
+    enb_ref = kslap.ref_of_instance(ienb)
     return '%s/%s' % (enb_ref, ref)
 
 # XXX shorthand
@@ -68,7 +68,7 @@ RU1 = {
     'txrx_active':  'INACTIVE',
 }
 
-iru1 = iENB('RU1', RU1)     # XXX -> eref('RU1') ?
+iru1 = iENB('RU1', RU1)     # XXX -> eref('RU1')
 print(kslap.ref_of_instance(iru1), iru1)
 
 CELL1 = {
@@ -80,9 +80,20 @@ CELL1 = {
     'cell_id':      '0x01',
     'ru':           {
         'ru_type':  'ru_ref',
-        'ru_ref':   'RU1'
+        'ru_ref':   'RU1'   # XXX eref
     }
 }
 
-icell1 = iENB('CELL1', CELL1)
+icell1 = iENB('CELL1', CELL1)       # XXX -> eref
 print(kslap.ref_of_instance(icell1), icell1)
+
+
+RU2 = copy.deepcopy(RU1)
+RU2['cpri_link']['sfp_port'] = 2
+
+CELL2 = copy.deepcopy(CELL1)
+CELL2['dl_earfcn'] = 500    # 2160 @ B1
+CELL2['ru']['ru_ref'] = eref('RU2')
+
+iru2   = iENB(eref('RU2'), RU2)
+icell2 = iENB(eref('CELL2'), CELL2)
