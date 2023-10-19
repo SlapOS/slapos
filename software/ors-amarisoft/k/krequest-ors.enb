@@ -6,6 +6,7 @@ import sys
 from os.path import dirname
 sys.path.insert(0, dirname(__file__))
 import kslap
+kslap.init(slap)
 
 import json, copy
 from pprint import pprint
@@ -34,7 +35,7 @@ enb2.destroyed()
 
 
 print('enb1:', enb1)
-print('ref(enb1):', kslap.ref_of_instance(slap, enb1))
+print('ref(enb1):', kslap.ref_of_instance(enb1))
 print('enb1.slap_computer_partition_i:', enb1.slap_computer_partition_id)
 
 #""" (not needed for now)
@@ -152,7 +153,7 @@ kslap.iENB(enb1, 'CELL2_b', {
 # whether it is possible (lookup of instance by reference is currently only
 # possible with linear search and Rafael said that the lookup will also be
 # constrained to work only in the same instance tree).
-kenb_ = kslap.instance_by_ref(slap, 'kenb')
+kenb_ = kslap.instance_by_ref('kenb')
 """
 print()
 print(kenb_)

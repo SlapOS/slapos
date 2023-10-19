@@ -6,6 +6,7 @@ import sys
 from os.path import dirname
 sys.path.insert(0, dirname(__file__))
 import kslap
+kslap.init(slap)
 
 import json
 from pprint import pprint
@@ -34,7 +35,7 @@ core = request(ors,
         })})
 
 print("core:", core)
-print("ref(core):", kslap.ref_of_instance(slap, core))
+print("ref(core):", kslap.ref_of_instance(core))
 print("core.getInstanceParameterDict:")
 pprint(core.getInstanceParameterDict())
 print()

@@ -1,7 +1,13 @@
 # Module kslap provides utility routines for dealing with SlapOS.
 
+# after importing users should do kslap.init(slap)
+slap = None
+def init(slap_):
+    global slap
+    slap = slap_
+
 # ref_of_instance returns reference an instance was requested with.
-def ref_of_instance(slap, inst):
+def ref_of_instance(inst):
     i_comp_id = inst.slap_computer_id
     i_part_id = inst.slap_computer_partition_id
     for x in slap.getOpenOrderDict().values():      # XXX linear search
@@ -12,7 +18,7 @@ def ref_of_instance(slap, inst):
 
 
 # instance_by_ref returns instance corresponding to specified reference.
-def instance_by_ref(slap, ref):
+def instance_by_ref(ref):
     for x in slap.getOpenOrderDict().values():      # XXX linear search
         if x._partition_reference == ref:
             return x
@@ -29,7 +35,7 @@ def instance_by_ref(slap, ref):
 
 # iSIM adds to core a shared SIM instance with specified number.
 def iSIM(core, sim_n):
-    core_ref  = ref_of_instance(slap, core)
+    core_ref  = ref_of_instance(core)
     core_guid = core.getInstanceGuid()
     core_sr   = core.getSoftwareRelease()
     sim = request(core_sr,
@@ -51,7 +57,7 @@ def iSIM(core, sim_n):
 
 # iENB adds to enb a shared instance with specified reference and parameters.
 def iENB(enb, ref, kw):
-    enb_ref  = ref_of_instance(slap, enb)
+    enb_ref  = ref_of_instance(enb)
     enb_guid = enb.getInstanceGuid()
     enb_sr   = enb.getSoftwareRelease()
     ishared = request(enb_sr,

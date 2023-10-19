@@ -6,6 +6,7 @@ import sys
 from os.path import dirname
 sys.path.insert(0, dirname(__file__))
 import kslap
+kslap.init(slap)
 
 import json, copy
 from pprint import pprint
@@ -24,6 +25,12 @@ icore = request(kamari,
             'core_network_plmn': '31415',
         })})
 
+isim1 = kslap.iSIM(icore, 1)
+
+print(icore)
+print(isim1)
+sys.exit(1)
+
 ienb = request(kamari,
         software_type="enb",
         partition_reference="CB5-ENB",
@@ -31,7 +38,6 @@ ienb = request(kamari,
         partition_parameter_kw={"_": json.dumps({
         })})
 
-isim1 = kslap.iSIM(icore, 1)
 
 # eref returns full reference for a enb subreference ref.
 def eref(ref):
