@@ -1,16 +1,54 @@
 # Module kslap provides utility routines for dealing with SlapOS.
 
+import json
+
 # after importing users should do kslap.init(slap)
 slap = None
 def init(slap_):
     global slap
     slap = slap_
 
+
+# XXX
+def request(software_release, **kw):
+    i = slap.registerOpenOrder().request(software_release, **kw)
+    ref = kw['partition_reference']
+    #assert i.instance_title == ref, (ref, i.instance_title)
+    # request does not always initialize .instance_title
+    i._kkk_ref = ref
+    # request does not initialize ._software_release_url
+    sr_attr = '_software_release_document'
+    if not hasattr(i, sr_attr):
+        setattr(i, sr_attr, software_release)
+    return i
+
 # ref_of_instance returns reference an instance was requested with.
 def ref_of_instance(inst):
+    return inst._kkk_ref
+    return inst.instance_title  # XXX ok? (master seems to be putting reference to title)
+    print('\n\n\n', dir(inst), '\n\n\n')
+    print('id:', inst.getId())
+    print('guid:', inst.getInstanceGuid())
+    print('part_id:', inst._partition_id)
+    print('instance_title:', inst.instance_title)
+    print('root_short_title:', inst.root_instance_short_title)
+    print('root_title:', inst.root_instance_title)
+    print('slave_list:', inst.slave_instance_list)
+    print('\n\n\n')
     i_comp_id = inst.slap_computer_id
     i_part_id = inst.slap_computer_partition_id
     for x in slap.getOpenOrderDict().values():      # XXX linear search
+        """
+        # XXX slave instances don't have ._computer_reference / ._reference
+        #     e.g. Wendelin.Kirr.Development.Frontend
+        if not (hasattr(x, '_computer_reference') and hasattr(x, '_reference')):
+            print('skip %s  %s' % (x._title, x._software_release_url))
+            continue
+        """
+        print()
+        print(x, x._title, x._software_release_url)
+        print(dir(x))
+        continue
         if x._computer_reference == i_comp_id  and  \
            x._reference          == i_part_id:
             return x._partition_reference

@@ -17,7 +17,7 @@ CB5    = "COMP-4020"
 
 supply(kamari, computer_guid=CB5)
 
-icore = request(kamari,
+icore = kslap.request(kamari,
         software_type="core-network",
         partition_reference="CB5-CORE",
         filter_kw={"computer_guid": CB5},
@@ -25,13 +25,16 @@ icore = request(kamari,
             'core_network_plmn': '31415',
         })})
 
+print(icore)
+#iicore = slap.registerComputerPartition(icore.slap_computer_id, icore.slap_computer_partition_id)
+#print(iicore)
+print()
 isim1 = kslap.iSIM(icore, 1)
 
-print(icore)
 print(isim1)
 sys.exit(1)
 
-ienb = request(kamari,
+ienb = kslap.request(kamari,
         software_type="enb",
         partition_reference="CB5-ENB",
         filter_kw={"computer_guid": CB5},
