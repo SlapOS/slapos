@@ -88,7 +88,7 @@
 
 
             <!-- TX/RX carriers -->
-            <!-- XXX error with "TODO" do not support multiple cells over 1 RU -->
+            <!-- TODO support multiple cells over 1 RU -->
 {%- if cell.cell_type == 'lte'                                                %}
 {%-   set dl_arfcn = cell.dl_earfcn                                           %}
 {%-   set ul_arfcn = cell.ul_earfcn                                           %}
