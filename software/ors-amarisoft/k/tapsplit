@@ -72,9 +72,8 @@ def sysnet(ifname, subpath=None):
         path += '/'+subpath
     return path
 
-
 def run(*argv):
-    print('# %s' % ' '.join(argv))
+    print(' # %s' % ' '.join(argv))
     subprocess.check_call(argv)
 
 def readfile(path):
