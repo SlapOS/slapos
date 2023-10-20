@@ -1,4 +1,5 @@
-{% set bbu = "zzz" %}{# XXX temp hack #}
+// SIB2 and SIB3 configurations for {{ cell.cell_type | upper }} cell {{ cell_ref }}.
+{%- set bbu = "zzz" %}{# XXX temp hack #}
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
