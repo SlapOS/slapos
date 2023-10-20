@@ -16,6 +16,8 @@ CB5    = "COMP-4020"
 
 supply(kamari, computer_guid=CB5)
 
+
+# Core Network + SIM
 icore = kslap.request(kamari,
         software_type="core-network",
         partition_reference="CB5-CORE",
@@ -27,14 +29,14 @@ icore = kslap.request(kamari,
 isim1 = kslap.iSIM(icore, 1)
 
 
+# eNB
 ienb = kslap.request(kamari,
         software_type="enb",
         partition_reference="CB5-ENB",
         filter_kw={"computer_guid": CB5},
         partition_parameter_kw={"_": json.dumps({
-            mme_list: {'1': {'mme_addr': icore['core-network-ipv6']}},
+            'mme_list': {'1': {'mme_addr': kslap.conn(icore)['core-network-ipv6']}},
         })})
-
 
 # eref returns full reference for ienb's shared instance with given ref.
 def eref(ref):
@@ -71,6 +73,7 @@ RU2['cpri_link']['sfp_port'] = 2
 
 iru1 = iENB(eref('RU1'), RU1)
 iru2   = iENB(eref('RU2'), RU2)
+
 
 # Cells
 CELL1 = {

@@ -71,6 +71,12 @@ def instance_by_ref(ref):
     return inst
     """
 
+
+# conn returns connection parameters of an instance.
+def conn(inst):
+    return json.loads(inst.getConnectionParameterDict()['_'])
+
+
 # iSIM adds to core a shared SIM instance with specified number.
 def iSIM(core, sim_n):
     core_ref  = ref_of_instance(core)
