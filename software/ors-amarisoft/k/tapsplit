@@ -5,6 +5,7 @@ import netifaces
 import netaddr
 from socket import AF_INET6
 from math import log2, ceil
+from os.path import exists
 
 import sys
 import subprocess
@@ -16,7 +17,7 @@ def main():
     assert n > 0, n
 
     # determine tap's address, network and owner
-    owner = readfile('/sys/devices/virtual/net/%s/owner' % tap) .strip()
+    owner = readfile(sysnet(tap, 'owner')) .strip()
     addr  = None
     net   = None
     prefixlen = None
@@ -55,8 +56,18 @@ def main():
             continue    # leave this range for original tap
         subtap = '%s-%d' % (tap, i)
         print('-> %s   %s' % (subtap, subnet))
+        if exists(sysnet(subtap)):
+            run('ip', 'link', 'del', subtap)
         run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
         run('ip', 'link', 'set', subtap, 'up')
+
+
+# sysnet returns path on /sys corresponding to given interface.
+def sysnet(ifname, subpath=None):
+    path = '/sys/devices/virtual/net/%s' % ifname
+    if subpath is not None:
+        path += '/'+subpath
+    return path
 
 
 def run(*argv):
