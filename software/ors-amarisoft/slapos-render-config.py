@@ -9,7 +9,7 @@ from slapos.recipe.template import jinja2_template
 import json, copy, sys, pprint
 
 
-# j2render renders config/<src> into config/<out> with provided json parameters.
+# j2render renders config/<src> into config/out/<out> with provided json parameters.
 def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
@@ -24,7 +24,7 @@ def j2render(src, out, jcfg):
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
       'url': 'config/{}'.format(src),
-      'output': 'config/{}'.format(out),
+      'output': 'config/out/{}'.format(out),
       'context': textctx,
       'import-list': '''
         rawfile amari_lte.jinja2  amari/lte.jinja2
@@ -43,7 +43,7 @@ def j2render(src, out, jcfg):
         'pprint': lambda obj:    pprint.pprint(obj, sys.stderr),
     })
 
-    with open('config/{}'.format(out), 'w+') as f:
+    with open('config/out/{}'.format(out), 'w+') as f:
       f.write(r._render().decode())
 
 
