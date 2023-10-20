@@ -9,8 +9,8 @@ from slapos.recipe.template import jinja2_template
 import json, copy, sys, pprint
 
 
-# j2render renders config/<config>.jinja2.cfg into config/<config>.cfg with provided json parameters.
-def j2render(config, jcfg):
+# j2render renders config/<src> into config/<out> with provided json parameters.
+def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
     ctx['_standalone'] = True
@@ -23,8 +23,8 @@ def j2render(config, jcfg):
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
-      'url': 'config/{}.jinja2.cfg'.format(config),
-      'output': 'config/{}.cfg'.format(config),
+      'url': 'config/{}'.format(src),
+      'output': 'config/{}'.format(out),
       'context': textctx,
       'import-list': '''
         rawfile amari_lte.jinja2  amari/lte.jinja2
@@ -43,7 +43,7 @@ def j2render(config, jcfg):
         'pprint': lambda obj:    pprint.pprint(obj, sys.stderr),
     })
 
-    with open('config/{}.cfg'.format(config), 'w+') as f:
+    with open('config/{}'.format(out), 'w+') as f:
       f.write(r._render().decode())
 
 
@@ -65,6 +65,12 @@ class Instance:
         }
         self.shared_instance_list.append(ishared)
         return ishared
+
+# py version of jref_of_shared.
+def ref_of_shared(ishared):
+    ref = ishared['slave_title']
+    ref = ref.removeprefix('_')
+    return ref
 
 
 # ---- eNB ----
@@ -298,7 +304,20 @@ def do_enb():
         }
     }""" % locals()
 
-    j2render('enb', json_params)
+    j2render('enb.jinja2.cfg', 'enb.cfg', json_params)
+
+    # drb.cfg for all cells
+    for ishared in ienb.shared_instance_list:
+        ref = ref_of_shared(ishared)
+        _   = json.loads(ishared['_'])
+        if 'cell_type' in _:
+            cell = _
+            j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
+                     '%s-drb.cfg' % ref,
+                     json.dumps({
+                         'cell_ref': ref,
+                         'cell':     cell
+                     }))
 
 
 # ---- UE ----
@@ -366,7 +385,7 @@ def do_ue():
         }
     }""" % locals()
 
-    j2render('ue', json_params)
+    j2render('ue.jinja2.cfg', 'ue.cfg', json_params)
 
 
 def main():

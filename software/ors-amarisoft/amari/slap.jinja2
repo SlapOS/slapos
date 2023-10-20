@@ -272,9 +272,7 @@
 {%-   if ref.startswith(partition_id)                                       %}
 {%-     set ref = ref[len(partition_id):]                                   %}
 {%-   endif                                                                 %}
-{%-   if ref.startswith('_')                                                %}
-{%-     set ref = ref[1:]                                                   %}
-{%-   endif                                                                 %}
+{%-   set ref = ref.removeprefix('_')                                       %}
 {{-   ref | tojson                                                          }}
 {%- endmacro                                                                %}
 
