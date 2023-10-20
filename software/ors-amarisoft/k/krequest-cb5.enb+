@@ -1,5 +1,5 @@
 #!/usr/bin/env -S slapos console
-"""request mme/enb/... on callbox-005"""
+"""request mme/enb and configure radio units and cells"""
 
 # XXX workaround for `slapos console` not setting up sys.path the same way as std python does
 import sys
@@ -9,7 +9,6 @@ import kslap
 kslap.init(slap)
 
 import json, copy
-from pprint import pprint
 
 
 kamari = "https://lab.nexedi.com/kirr/slapos/raw/x/lte-multiru/software/ors-amarisoft/software.cfg"
@@ -27,28 +26,27 @@ icore = kslap.request(kamari,
 
 isim1 = kslap.iSIM(icore, 1)
 
-print(kslap.ref_of_instance(icore), icore)
-print(kslap.ref_of_instance(isim1), isim1)
 
 ienb = kslap.request(kamari,
         software_type="enb",
         partition_reference="CB5-ENB",
         filter_kw={"computer_guid": CB5},
         partition_parameter_kw={"_": json.dumps({
+            mme_list: {'1': {'mme_addr': icore['core-network-ipv6']}},
         })})
 
-print(kslap.ref_of_instance(ienb), ienb)
 
-
-# eref returns full reference for a enb subreference ref.
+# eref returns full reference for ienb's shared instance with given ref.
 def eref(ref):
     enb_ref = kslap.ref_of_instance(ienb)
     return '%s.%s' % (enb_ref, ref)
 
-# XXX shorthand
+# iENB is shorthand to request shared instance on ienb.
 def iENB(ref, kw):
     return kslap.iENB(ienb, ref, kw)
 
+
+# Radio Units
 RU1 = {
     'ru_type':      'lopcomm',
     'ru_link_type': 'cpri',
@@ -68,14 +66,18 @@ RU1 = {
     'txrx_active':  'INACTIVE',
 }
 
-iru1 = iENB(eref('RU1'), RU1)
-print(kslap.ref_of_instance(iru1), iru1)
+RU2 = copy.deepcopy(RU1)
+RU2['cpri_link']['sfp_port'] = 2
 
+iru1 = iENB(eref('RU1'), RU1)
+iru2   = iENB(eref('RU2'), RU2)
+
+# Cells
 CELL1 = {
     'cell_type':    'lte',
     'rf_mode':      'fdd',
     'bandwidth':    '20 MHz',
-    'dl_earfcn':    100,      # 2120 @ B1
+    'dl_earfcn':    100,        # 2120 @ B1
     'pci':          1,
     'cell_id':      '0x01',
     'ru':           {
@@ -84,18 +86,11 @@ CELL1 = {
     }
 }
 
-icell1 = iENB(eref('CELL1'), CELL1)
-print(kslap.ref_of_instance(icell1), icell1)
-
-
-RU2 = copy.deepcopy(RU1)
-RU2['cpri_link']['sfp_port'] = 2
-
 CELL2 = copy.deepcopy(CELL1)
-CELL2['dl_earfcn'] = 500    # 2160 @ B1
+CELL2['dl_earfcn'] = 500        # 2160 @ B1
 CELL2['pci'] = 2
 CELL2['cell_id'] = '0x02'
 CELL2['ru']['ru_ref'] = eref('RU2')
 
-iru2   = iENB(eref('RU2'), RU2)
+icell1 = iENB(eref('CELL1'), CELL1)
 icell2 = iENB(eref('CELL2'), CELL2)
