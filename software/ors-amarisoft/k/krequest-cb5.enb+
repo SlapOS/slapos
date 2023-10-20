@@ -72,7 +72,7 @@ RU2 = copy.deepcopy(RU1)
 RU2['cpri_link']['sfp_port'] = 2
 
 iru1 = iENB(eref('RU1'), RU1)
-iru2   = iENB(eref('RU2'), RU2)
+iru2 = iENB(eref('RU2'), RU2)
 
 
 # Cells
