@@ -70,17 +70,7 @@
         cpri_rx_delay: "{{ vcpri | map(attribute='rx_delay') | map('default', '') | join(',') }}",
         cpri_tx_delay: "{{ vcpri | map(attribute='tx_delay') | map('default', '') | join(',') }}",
         cpri_tx_dbm:   "{{ vcpri | map(attribute='tx_dbm')   | map('default', '') | join(',') }}",
-  {%-   set tap_base = slap_configuration.get('tap-name', '')   %}
-  {%-   set vtap = ['']*len(dev_argv)                           %}
-  {%-   for i, (dev, _) in enumerate(ru_cpri_dict|dictsort)     %}
-  {%-     if len(ru_cpri_dict) > 1                              %}
-  {%-       set tap = "%s-%d" % (tap_base, i+1)                 %}
-  {%-     else                                                  %}
-  {%-       set tap = tap_base                                  %}
-  {%-     endif                                                 %}
-  {%-     do vtap.__setitem__(dev, tap)                         %}
-  {%-   endfor                                                  %}
-        ifname:        "{{ vtap | join(',') }}",
+        ifname:        "{{ vcpri | map(attribute='_tap')     | map('default', '') | join(',') }}",
   {%- endif                                                     %}
   },
 
