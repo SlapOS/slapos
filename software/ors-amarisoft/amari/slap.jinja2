@@ -232,6 +232,10 @@
 {%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul                 %}
 {%-   endfor                                                          %}
 
+{#-   assign TAP interfaces to cpri RUs                                         #}
+{%-   set iru_vcpri = list(iru_dict.values() | selectattr('_.ru_link_type', '==', 'cpri')) %}
+{%-   do print('ncpri:'), pprint(len(iru_vcpri)) %}
+
 {%- endmacro                                                          %}
 
 {#- jcell_ru_ref returns RU reference linked from a cell.

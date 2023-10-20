@@ -28,7 +28,7 @@
 
   {%- set dev_argv = []                                                       %}
   {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
-  {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_kind = cpri   #}
+  {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
   {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
   {%- set rx_gainv = [] %}      {#- rx_gain by tx channel                     #}
   {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
@@ -74,7 +74,7 @@
   {%-   set vtap = ['']*len(dev_argv)                           %}
   {%-   for i, (dev, _) in enumerate(ru_cpri_dict|dictsort)     %}
   {%-     if len(ru_cpri_dict) > 1                              %}
-  {%-       set tap = "%s-%d" % (tap_base, i)                   %}
+  {%-       set tap = "%s-%d" % (tap_base, i+1)                 %}
   {%-     else                                                  %}
   {%-       set tap = tap_base                                  %}
   {%-     endif                                                 %}
