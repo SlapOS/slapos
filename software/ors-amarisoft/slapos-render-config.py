@@ -313,7 +313,6 @@ def do_enb():
         ref = ref_of_shared(ishared)
         _   = json.loads(ishared['_'])
         ishared['_'] = _
-        print(ref)
         if 'ru_type' in _:
             iru_dict[ref] = ishared
         elif 'cell_type' in _:
@@ -321,12 +320,7 @@ def do_enb():
         else:
             raise AssertionError('enb: unknown shared instance %r' % (ishared,))
 
-    print()
-    print(iru_dict)
-    print(icell_dict)
-
-    # ~ jcell_ru_ref (simplified).
-    def ru_of_cell(icell):
+    def ru_of_cell(icell):  # ~ jcell_ru_ref
         cell_ref = ref_of_shared(icell)
         ru = icell['_']['ru']
         if ru['ru_type'] == 'ru_ref':
@@ -334,8 +328,7 @@ def do_enb():
         elif ru['ru_type'] == 'ruincell_ref':
             return ru_of_cell(icell_dict[ru['ruincell_ref']])
         else:
-            # embedded ru definition
-            return ru
+            return ru  # embedded ru definition
 
     for cell_ref, icell in icell_dict.items():
         ru = ru_of_cell(icell)
