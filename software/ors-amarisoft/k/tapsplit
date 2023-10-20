@@ -59,7 +59,10 @@ def main():
         if exists(sysnet(subtap)):
             run('ip', 'link', 'del', subtap)
         run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
-        run('ip', 'link', 'set', subtap, 'up')
+        run('ip', 'link',   'set', subtap, 'up')
+        run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
+        run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
+        run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
 
 
 # sysnet returns path on /sys corresponding to given interface.
