@@ -6,7 +6,7 @@
 import zc.buildout.buildout # XXX workaround import bug in vvv
 from slapos.recipe.template import jinja2_template
 
-import json, copy, sys, pprint
+import json, copy, sys, os, pprint, glob
 
 
 # j2render renders config/<src> into config/out/<out> with provided json parameters.
@@ -66,7 +66,7 @@ class Instance:
         self.shared_instance_list.append(ishared)
         return ishared
 
-# py version of jref_of_shared.
+# py version of jref_of_shared (simplified).
 def ref_of_shared(ishared):
     ref = ishared['slave_title']
     ref = ref.removeprefix('_')
@@ -306,18 +306,55 @@ def do_enb():
 
     j2render('enb.jinja2.cfg', 'enb.cfg', json_params)
 
-    # drb.cfg for all cells
+    # drb.cfg + sib.asn for all cells
+    iru_dict   = {}
+    icell_dict = {}
     for ishared in ienb.shared_instance_list:
         ref = ref_of_shared(ishared)
         _   = json.loads(ishared['_'])
-        if 'cell_type' in _:
-            cell = _
-            j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
-                     '%s-drb.cfg' % ref,
-                     json.dumps({
-                         'cell_ref': ref,
-                         'cell':     cell
-                     }))
+        ishared['_'] = _
+        print(ref)
+        if 'ru_type' in _:
+            iru_dict[ref] = ishared
+        elif 'cell_type' in _:
+            icell_dict[ref] = ishared
+        else:
+            raise AssertionError('enb: unknown shared instance %r' % (ishared,))
+
+    print()
+    print(iru_dict)
+    print(icell_dict)
+
+    # ~ jcell_ru_ref (simplified).
+    def ru_of_cell(icell):
+        cell_ref = ref_of_shared(icell)
+        ru = icell['_']['ru']
+        if ru['ru_type'] == 'ru_ref':
+            return iru_dict[ru.ru_ref]
+        elif ru['ru_type'] == 'ruincell_ref':
+            return ru_of_cell(icell_dict[ru['ruincell_ref']])
+        else:
+            # embedded ru definition
+            return ru
+
+    for cell_ref, icell in icell_dict.items():
+        ru = ru_of_cell(icell)
+        cell = icell['_']
+        j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
+                 '%s-drb.cfg' % cell_ref,
+                 json.dumps({
+                     'cell_ref': cell_ref,
+                     'cell':     cell,
+                 }))
+
+        j2render('sib23.jinja2.asn',
+                 '%s-sib23.asn' % cell_ref,
+                 json.dumps({
+                     'cell_ref': cell_ref,
+                     'cell':     cell,
+                     'ru':       ru,
+                 }))
+
 
 
 # ---- UE ----
@@ -389,6 +426,8 @@ def do_ue():
 
 
 def main():
+    for f in glob.glob('config/out/*'):
+        os.remove(f)
     do_enb()
     do_ue()
 
