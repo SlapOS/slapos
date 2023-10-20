@@ -10,6 +10,7 @@
 {%- macro ru_config(iru_dict, slapparameter_dict) %}
   // Radio Units
   rf_driver: {
+  // XXX vvv <- ru.txrx_active
   {%- if slapparameter_dict.get('disable_sdr', False) %}
       name: "dummy",
   {%- else %}

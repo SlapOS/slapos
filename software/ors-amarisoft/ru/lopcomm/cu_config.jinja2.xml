@@ -109,7 +109,7 @@
 	       <absolute-frequency-center>{{ dl_arfcn }}</absolute-frequency-center>
                <center-of-channel-bandwidth>{{ dl_freq }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ bw }}</channel-bandwidth>
-               <active>{{ slapparameter_dict.get('txa0cc00_active', 'INACTIVE') }}</active>
+               <active>{{ ru.txrx_active }}</active>
                <rw-type>{{ cell.cell_type | upper }}</rw-type>
                <rw-duplex-scheme>{{ cell.rf_mode | upper }}</rw-duplex-scheme>
                <gain>{{ ru.tx_gain }}</gain>
@@ -121,7 +121,7 @@
                <absolute-frequency-center>{{ ul_arfcn }}</absolute-frequency-center>
                <center-of-channel-bandwidth>{{ ul_freq }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ bw }}</channel-bandwidth>
-               <active>{{ slapparameter_dict.get('rxa0cc00_active', 'INACTIVE') }}</active>
+               <active>{{ ru.txrx_active }}</active>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
                <!-- <gain>{{ ru.rx_gain }}</gain> -->

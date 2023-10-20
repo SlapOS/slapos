@@ -5,14 +5,7 @@
   "type": "object",
   "$ref": "../../ru/input-schema.json#/$defs/ru-common",
 
-  "required": [
-    "mac_addr",
-    "txa0cc00_active",
-    "rxa0cc00_active",
-    "txa0cc00_center_frequency",
-    "rxa0cc00_center_frequency_earfcn",
-    "rxa0cc00_center_frequency"
-  ],
+  "required": [],
   "properties": {
     "ru_type": {
       "const":    "lopcomm",
@@ -41,26 +34,6 @@
       "title": "RU MAC address",
       "description": "RU MAC address used for DNSMASQ",
       "type": "string"
-    },
-    "txa0cc00_active": {
-      "title": "TX array carriers (TXA0CC00)",
-      "description": "Activate or inactivate TX array carriers (TXA0CC00)",
-      "type": "string",
-      "default": "INACTIVE",
-      "enum": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
-    },
-    "rxa0cc00_active": {
-      "title": "RX array carriers (RXA0CC00)",
-      "description": "Activate or inactivate RX array carriers (RXA0CC00)",
-      "type": "string",
-      "default": "INACTIVE",
-      "enum": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
     },
     "reset_schedule": {
       "title": "Cron schedule for RRH reset",

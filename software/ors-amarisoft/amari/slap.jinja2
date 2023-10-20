@@ -9,10 +9,18 @@
     it should be kept in sync with "default" in json schemas  #}
 {#- XXX ssb_pos_bitmap=10000000 is for TDD only; FDD -> "1000"  #}
 {#- XXX opc='milenage' is not meaningful ?  #}
+{#- XXX txrx_active=ACTIVE for sdr - needed ? (bwcompat for ORS) - if yes -> update ru/sdr/input-schema.json #}
 {%- set defaults = {
       'enb_id': '0x1A2D0',
       'gnb_id': '0x12345',
       'gnb_id_bits': 28,
+
+      'ru': {
+        'txrx_active': 'INACTIVE',
+      },
+      'ru/sdr': {
+        'txrx_active': 'ACTIVE',
+      },
 
       'cell/lte': {
         'pci':  1,
@@ -147,6 +155,12 @@
 {%-     set _ = ishared['_']                                                                    %}
 {%-     if   'ru_type'   in _                                                                   %}
 {%-       set iru = ishared                                                                     %}
+{%-       for k, v in defaults['ru'].items()                                                    %}
+{%-         do _.setdefault(k, v)                                                               %}
+{%-       endfor                                                                                %}
+{%-       for k, v in defaults.get('ru/'+_.ru_type, {}).items()                                 %}
+{%-         do _.setdefault(k, v)                                                               %}
+{%-       endfor                                                                                %}
 {%-       if _.ru_link_type == 'cpri'                                                           %}
 {%-         set link = _.cpri_link                                                              %}
 {%-         for k, v in defaults['cpri_link'].items()                                           %}

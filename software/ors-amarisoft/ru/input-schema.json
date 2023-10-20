@@ -52,6 +52,14 @@
           "type": "number"
         },
 
+        "txrx_active": {
+          "title": "Activate Tx/Rx",
+          "description": "Activate or inactivate Tx transmission and Rx reception. When inactive RU does no radio.",
+          "type": "string",
+          "enum": ["ACTIVE", "INACTIVE"],
+          "default": "INACTIVE"
+        },
+
         "cpri_link": {
           "title": "CPRI link settings",
 
