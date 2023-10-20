@@ -234,7 +234,6 @@
 
 {#-   assign TAP interfaces to cpri RUs                                         #}
 {%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
-{%-   do print('ncpri:'), pprint(len(iru_vcpri))          %}
 {%-   set tap_base = slap_configuration.get('tap-name', '')   %}
 {%-   for i, (ru_ref, iru) in enumerate(iru_vcpri)            %}
 {%-     if len(iru_vcpri) > 1                                 %}
