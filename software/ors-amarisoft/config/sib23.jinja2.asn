@@ -1,4 +1,4 @@
-// SIB2 and SIB3 configurations for {{ cell.cell_type | upper }} cell {{ cell_ref }}.
+// SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ cell_ref }} @ {{ ru_ref }}.
 {%- set bbu = "zzz" %}{# XXX temp hack #}
 {
   message c1: systemInformation: {

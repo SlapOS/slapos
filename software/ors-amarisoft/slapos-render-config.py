@@ -320,22 +320,24 @@ def do_enb():
         else:
             raise AssertionError('enb: unknown shared instance %r' % (ishared,))
 
-    def ru_of_cell(icell):  # ~ jcell_ru_ref
+    def ru_of_cell(icell): # -> (ru_ref, ru)
         cell_ref = ref_of_shared(icell)
         ru = icell['_']['ru']
         if ru['ru_type'] == 'ru_ref':
-            return iru_dict[ru.ru_ref]
+            ru_ref = ru['ru_ref']
+            return ru_ref, iru_dict[ru_ref]
         elif ru['ru_type'] == 'ruincell_ref':
             return ru_of_cell(icell_dict[ru['ruincell_ref']])
         else:
-            return ru  # embedded ru definition
+            return ('_%s_ru' % cell_ref), ru  # embedded ru definition
 
     for cell_ref, icell in icell_dict.items():
-        ru = ru_of_cell(icell)
+        ru_ref, ru = ru_of_cell(icell)
         cell = icell['_']
         jctx = json.dumps({
                     'cell_ref': cell_ref,
                     'cell':     cell,
+                    'ru_ref':   ru_ref,
                     'ru':       ru,
                })
         j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
