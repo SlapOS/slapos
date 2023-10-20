@@ -333,21 +333,18 @@ def do_enb():
     for cell_ref, icell in icell_dict.items():
         ru = ru_of_cell(icell)
         cell = icell['_']
+        jctx = json.dumps({
+                    'cell_ref': cell_ref,
+                    'cell':     cell,
+                    'ru':       ru,
+               })
         j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
                  '%s-drb.cfg' % cell_ref,
-                 json.dumps({
-                     'cell_ref': cell_ref,
-                     'cell':     cell,
-                 }))
+                 jctx)
 
         j2render('sib23.jinja2.asn',
                  '%s-sib23.asn' % cell_ref,
-                 json.dumps({
-                     'cell_ref': cell_ref,
-                     'cell':     cell,
-                     'ru':       ru,
-                 }))
-
+                 jctx)
 
 
 # ---- UE ----

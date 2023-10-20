@@ -39,9 +39,9 @@
             pdsch-ConfigCommon {
 {% if bbu == "ors" %}
 {%- if one_watt == "True" %}
-              referenceSignalPower {{ (tx_gain | int) - 54 }}, /* patched by eNB */
+              referenceSignalPower {{ (ru.tx_gain | int) - 54 }}, /* patched by eNB */
 {%- else %}
-              referenceSignalPower {{ (tx_gain | int) - 35 }}, /* patched by eNB */
+              referenceSignalPower {{ (ru.tx_gain | int) - 35 }}, /* patched by eNB */
 {%- endif %}
 {% else %}
               referenceSignalPower -8, /* patched by eNB */
