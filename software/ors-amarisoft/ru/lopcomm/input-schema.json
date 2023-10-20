@@ -33,7 +33,8 @@
     "mac_addr": {
       "title": "RU MAC address",
       "description": "RU MAC address used for DNSMASQ",
-      "type": "string"
+      "type": "string",
+      "default": "00:0a:00:00:10:20"
     },
     "reset_schedule": {
       "title": "Cron schedule for RRH reset",
