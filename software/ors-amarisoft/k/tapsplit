@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+"""XXX doc"""
+
+import netifaces
+import netaddr
+from socket import AF_INET6
+from math import log2, ceil
+
+import sys
+import subprocess
+
+
+def main():
+    tap = sys.argv[1]
+    n   = int(sys.argv[2])
+    assert n > 0, n
+
+    # determine tap's address, network and owner
+    owner = readfile('/sys/devices/virtual/net/%s/owner' % tap) .strip()
+    addr  = None
+    net   = None
+    prefixlen = None
+    for iaddr in netifaces.ifaddresses(tap)[AF_INET6]:
+        a = iaddr['addr']
+        if '%' in a: # link-local
+            a = a.split('%')[0]
+            a = netaddr.IPAddress(a)
+            assert a.is_link_local(), a
+            continue
+
+        if addr is not None:
+            raise RuntimeError('%s: multiple addresses:  %s and %s' % (tap, addr, a))
+
+        addr = netaddr.IPAddress(a)
+        netmask, plen = iaddr['netmask'].split('/')
+        prefixlen = int(plen)
+        net = netaddr.IPNetwork('%s/%d' % (a, prefixlen))
+
+    if addr is None:
+        raise RuntimeError('%s: no non link-local addresses' % tap)
+
+    # normalize network
+    # ex 2401:5180:0:66:a7ff:ffff:ffff:ffff/71  ->  2401:5180:0:66:a600::/71
+    net = net.cidr
+
+    print('%s: split %s by %d' % (tap, net, n))
+
+    # see how much prefix bits we need to take to divide by n
+    n += 1  # also leaving first range for the original tap
+    ptake = ceil(log2(n))
+
+    for i, subnet in enumerate(net.subnet(prefixlen + ptake)):
+        if i == 0:
+            print('preserve         %s' % subnet)
+            continue    # leave this range for original tap
+        subtap = '%s-%d' % (tap, i)
+        print('-> %s   %s' % (subtap, subnet))
+        run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
+        run('ip', 'link', 'set', subtap, 'up')
+
+
+def run(*argv):
+    print('# %s' % ' '.join(argv))
+    subprocess.check_call(argv)
+
+def readfile(path):
+    with open(path) as f:
+        return f.read()
+
+
+if __name__ == '__main__':
+    main()
