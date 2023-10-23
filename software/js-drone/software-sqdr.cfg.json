@@ -1,0 +1,23 @@
+{
+  "name": "JS Drone Squadrone",
+  "description": "JS Drone with Squadrone's autopilot",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Drone Swarm",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 0
+    },
+    "drone": {
+      "title": "Peer",
+      "software-type": "peer",
+      "description": "Peer Instance",
+      "request": "instance-peer-input-schema.json",
+      "response": "instance-peer-output-schema.json",
+      "index": 1
+    }
+  }
+}
