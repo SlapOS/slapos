@@ -251,8 +251,8 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
       {
         'autopilotIp': '192.168.27.1',
         'autopilotPort': 7909,
-        'numberOfDrone': 1,
-        'numberOfSubscriber': 1,
+        'numberOfDrones': 1,
+        'numberOfSubscribers': 1,
         'id': 1,
         'isASimulation': False,
         'isADrone': False,
