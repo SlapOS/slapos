@@ -46,7 +46,11 @@ int main(int argc, const char *argv[]) {
     if (!caps)
         die("cap_get_proc failed");
     for (cap = 0; cap < CAP_LAST_CAP; cap++) {
-        cap_get_flag(caps, cap, CAP_PERMITTED, &flag)       && die_err("cap_get_flag");
+        if (cap_get_flag(caps, cap, CAP_PERMITTED, &flag)) {
+            if (errno = EINVAL)
+                continue; // this cap is not supported by running kernel
+            die_err("cap_get_flag");
+        }
         if (flag) {
             cap_set_flag(caps, CAP_INHERITABLE, 1, &cap, flag)  && die_err("cap_set_flag");
             capbits |= (1ULL << cap);
