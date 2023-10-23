@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-"""XXX doc"""
+"""Program tapsplit brings tap interface into state with several children
+interfaces each covering part of original interface address space.
+
+Usage: tapsplit <interface> <nchildren>
+"""
 
 import netifaces
 import netaddr
@@ -14,10 +18,10 @@ import subprocess
 def main():
     tap = sys.argv[1]
     n   = int(sys.argv[2])
-    assert n > 0, n
+    assert n >= 0, n
 
     # determine tap's address, network and owner
-    owner = readfile(sysnet(tap, 'owner')) .strip()
+    owner = readfile(sysnet(tap) + '/owner') .strip()
     addr  = None
     net   = None
     prefixlen = None
@@ -46,6 +50,11 @@ def main():
 
     print('%s: split %s by %d' % (tap, net, n))
 
+    # cleanup existing children
+    for ifname in netifaces.interfaces():
+        if ifname.startswith('%s-' % tap):
+            run('ip', 'link', 'del', ifname)
+
     # see how much prefix bits we need to take to divide by n
     n += 1  # also leaving first range for the original tap
     ptake = ceil(log2(n))
@@ -56,8 +65,6 @@ def main():
             continue    # leave this range for original tap
         subtap = '%s-%d' % (tap, i)
         print('-> %s   %s' % (subtap, subnet))
-        if exists(sysnet(subtap)):
-            run('ip', 'link', 'del', subtap)
         run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
         run('ip', 'link',   'set', subtap, 'up')
         run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
@@ -66,11 +73,8 @@ def main():
 
 
 # sysnet returns path on /sys corresponding to given interface.
-def sysnet(ifname, subpath=None):
-    path = '/sys/devices/virtual/net/%s' % ifname
-    if subpath is not None:
-        path += '/'+subpath
-    return path
+def sysnet(ifname):
+    return '/sys/devices/virtual/net/%s' % ifname
 
 def run(*argv):
     print(' # %s' % ' '.join(argv))
