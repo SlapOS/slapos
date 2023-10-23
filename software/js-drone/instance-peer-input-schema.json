@@ -14,14 +14,14 @@
       "description": "Port on which autopilot service is running.",
       "type": "integer"
     },
-    "numberOfDrone": {
-      "title": "Number of drone",
-      "description": "Number of drone in the swarm",
+    "numberOfDrones": {
+      "title": "Number of drones",
+      "description": "Number of drones in the swarm",
       "type": "integer"
     },
-    "numberOfSubscriber": {
-      "title": "Number of subscriber",
-      "description": "Number of subscriber of the swarm",
+    "numberOfSubscribers": {
+      "title": "Number of subscribers",
+      "description": "Number of subscribers of the swarm (entities able to listen/send OPC-UA messages from/to the swarm)",
       "type": "integer"
     },
     "id": {
