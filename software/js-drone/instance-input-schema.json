@@ -48,7 +48,7 @@
     },
     "subscriberGuidList": {
       "title": "List of subscribers computer ID",
-      "description": "List of computer ID of swarms subscribers",
+      "description": "List of computer ID of swarms subscribers (entities able to listen/send OPC-UA messages from/to the swarm)",
       "type": "array",
       "default": []
     },
