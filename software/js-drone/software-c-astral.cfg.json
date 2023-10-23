@@ -1,6 +1,6 @@
 {
-  "name": "JS Drone",
-  "description": "JS Drone",
+  "name": "JS Drone C-Astral",
+  "description": "JS Drone with C-Astral's autopilot",
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {

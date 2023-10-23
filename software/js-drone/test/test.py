@@ -110,7 +110,7 @@ TEST_MESSAGE = b'{"content":"' + MESSAGE_CONTENT + b'","dest_id":-1}'
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software-c-astral.cfg')))
 
 
 class SubscriberTestCase(SlapOSInstanceTestCase):
