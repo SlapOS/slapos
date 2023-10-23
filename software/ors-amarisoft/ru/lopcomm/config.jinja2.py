@@ -8,8 +8,7 @@ if __name__ == '__main__':
   nc = LopcommNetconfClient(log_file="{{ log_file }}")
   while True:
       try:
-          # XXX ::1 temp - kill
-          nc.connect("{{ netaddr.IPAddress(slap_configuration.get('XXXtap-ipv6-gateway', '::1')) }}", 830, "oranuser", "oranpassword")
+          nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
           # XXX CreateProcessingEle should be also RU-specific ?
           nc.edit_config(["{{ ru_lopcomm_CreateProcessingEle_template }}", "{{ cu_config_template }}"])
           break
