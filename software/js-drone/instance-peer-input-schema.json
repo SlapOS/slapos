@@ -21,7 +21,7 @@
     },
     "numberOfSubscriber": {
       "title": "Number of subscriber",
-      "description": "Number of subscriber of the swarm",
+      "description": "Number of subscriber of the swarm (entity able to listen/send OPC-UA messages from/to the swarm)",
       "type": "integer"
     },
     "id": {
