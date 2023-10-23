@@ -36,8 +36,37 @@ def main():
     n   = int(sys.argv[2])
     assert n >= 0, n
 
-    # determine tap's address, network and owner
+    # determine tap's network address and owner
     owner = readfile(sysnet(tap) + '/owner') .strip()
+    net   = ifnet6(tap)
+
+    print('%s: split %s by %d' % (tap, net, n))
+
+    # cleanup existing children
+    for ifname in netifaces.interfaces():
+        if ifname.startswith('%s-' % tap):
+            run('ip', 'link', 'del', ifname)
+
+    # see how much prefix bits we need to take to divide by n
+    n += 1  # also leaving first range for the original tap
+    ptake = ceil(log2(n))
+
+    # do the split
+    for i, subnet in enumerate(net.subnet(net.prefixlen + ptake)):
+        if i == 0:
+            print('preserve         %s' % subnet)
+            continue    # leave this range for original tap
+        subtap = '%s-%d' % (tap, i)
+        print('-> %s   %s' % (subtap, subnet))
+        run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
+        run('ip', 'link',   'set', subtap, 'up')
+        run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
+        run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
+        run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
+
+
+# ifnet6 returns IPv6 network address associated with given interface.
+def ifnet6(ifname):
     addr  = None
     net   = None
     prefixlen = None
@@ -63,31 +92,7 @@ def main():
     # normalize network
     # ex 2401:5180:0:66:a7ff:ffff:ffff:ffff/71  ->  2401:5180:0:66:a600::/71
     net = net.cidr
-
-    print('%s: split %s by %d' % (tap, net, n))
-
-    # cleanup existing children
-    for ifname in netifaces.interfaces():
-        if ifname.startswith('%s-' % tap):
-            run('ip', 'link', 'del', ifname)
-
-    # see how much prefix bits we need to take to divide by n
-    n += 1  # also leaving first range for the original tap
-    ptake = ceil(log2(n))
-
-    # do the split
-    for i, subnet in enumerate(net.subnet(prefixlen + ptake)):
-        if i == 0:
-            print('preserve         %s' % subnet)
-            continue    # leave this range for original tap
-        subtap = '%s-%d' % (tap, i)
-        print('-> %s   %s' % (subtap, subnet))
-        run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
-        run('ip', 'link',   'set', subtap, 'up')
-        run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
-        run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
-        run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
-
+    return net
 
 # sysnet returns path on /sys corresponding to given interface.
 def sysnet(ifname):
