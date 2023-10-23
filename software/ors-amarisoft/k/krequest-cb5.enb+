@@ -61,6 +61,7 @@ RU1 = {
         'tx_delay': 14.71,
         'tx_dbm':   63
     },
+    'mac_addr':     '00:0A:45:00:00:00',
     'n_antenna_dl': 1,
     'n_antenna_ul': 1,
     'tx_gain':      -20,
@@ -70,6 +71,7 @@ RU1 = {
 
 RU2 = copy.deepcopy(RU1)
 RU2['cpri_link']['sfp_port'] = 2
+RU2['mac_addr'] = '90:A9:F7:C0:00:03',
 
 iru1 = iENB(eref('RU1'), RU1)
 iru2 = iENB(eref('RU2'), RU2)
