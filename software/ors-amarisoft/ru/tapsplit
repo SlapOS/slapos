@@ -70,7 +70,7 @@ def ifnet6(ifname):
     addr  = None
     net   = None
     prefixlen = None
-    for iaddr in netifaces.ifaddresses(tap)[AF_INET6]:
+    for iaddr in netifaces.ifaddresses(ifname)[AF_INET6]:
         a = iaddr['addr']
         if '%' in a: # link-local
             a = a.split('%')[0]
@@ -79,7 +79,7 @@ def ifnet6(ifname):
             continue
 
         if addr is not None:
-            raise RuntimeError('%s: multiple addresses:  %s and %s' % (tap, addr, a))
+            raise RuntimeError('%s: multiple addresses:  %s and %s' % (ifname, addr, a))
 
         addr = netaddr.IPAddress(a)
         netmask, plen = iaddr['netmask'].split('/')
@@ -87,7 +87,7 @@ def ifnet6(ifname):
         net = netaddr.IPNetwork('%s/%d' % (a, prefixlen))
 
     if addr is None:
-        raise RuntimeError('%s: no non link-local addresses' % tap)
+        raise RuntimeError('%s: no non link-local addresses' % ifname)
 
     # normalize network
     # ex 2401:5180:0:66:a7ff:ffff:ffff:ffff/71  ->  2401:5180:0:66:a600::/71
