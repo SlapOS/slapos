@@ -83,6 +83,13 @@
 {{-   slapparameter_dict.get(name, defaults.get(name)) }}
 {%- endmacro %}
 
+{#- tap indicates tap interface that slapos told us to use.
+    or 'xxx-notap-xxx' if slapos provided us nothing or empty string. #}
+{%- set tap = slap_configuration.get('tap-name', '')   %}
+{%- if tap == '' %}
+{%-   set tap = 'xxx-notap-xxx'   %}
+{%- endif %}
+
 
 {#- J is used around macro calls to retrieve returned objects.
 
@@ -231,14 +238,13 @@
 
 {#-   assign TAP interfaces to cpri RUs                                         #}
 {%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
-{%-   set tap_base = slap_configuration.get('tap-name', '')   %}
 {%-   for i, (ru_ref, iru) in enumerate(iru_vcpri)            %}
 {%-     if len(iru_vcpri) > 1                                 %}
-{%-       set tap = "%s-%d" % (tap_base, i+1)                 %}
+{%-       set ru_tap = "%s-%d" % (tap, i+1)                   %}
 {%-     else                                                  %}
-{%-       set tap = tap_base                                  %}
+{%-       set ru_tap = tap                                    %}
 {%-     endif                                                 %}
-{%-     do iru._.cpri_link.update({'_tap': tap})              %}
+{%-     do iru._.cpri_link.update({'_tap': ru_tap})           %}
 {%-   endfor %}
 
 {%- endmacro                                                          %}
