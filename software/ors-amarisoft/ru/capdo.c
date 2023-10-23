@@ -16,8 +16,8 @@
 // See COPYING file for full licensing terms.
 // See https://www.nexedi.com/licensing for rationale and options.
 
-// `capdo prog ...` executes prog with inherited capabilities.
-// It is used as trampoline to run script under setcap environment.
+// Program `capdo prog ...` executes prog with inherited capabilities.
+// It is used as trampoline to run scripts under setcap environment.
 
 #include <errno.h>
 #include <stdarg.h>
@@ -58,7 +58,7 @@ int main(int argc, const char *argv[]) {
     }
     cap_set_proc(caps) && die_err("cap_set_proc");
 
-    // raise ambient capabities to what is permitted/inheritable
+    // raise ambient capabilities to what is permitted/inheritable
     for (cap = 0; cap <= CAP_LAST_CAP; cap++) {
         if (capbits & (1ULL << cap))
             prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, cap, 0, 0)  && die_err("prctl ambient raise");
