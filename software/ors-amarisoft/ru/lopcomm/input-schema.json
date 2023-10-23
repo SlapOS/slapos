@@ -5,7 +5,7 @@
   "type": "object",
   "$ref": "../../ru/input-schema.json#/$defs/ru-common",
 
-  "required": [],
+  "required": ["mac_addr"],
   "properties": {
     "ru_type": {
       "const":    "lopcomm",
@@ -32,9 +32,8 @@
 
     "mac_addr": {
       "title": "RU MAC address",
-      "description": "RU MAC address used for DNSMASQ",
-      "type": "string",
-      "default": "00:0a:00:00:10:20"
+      "description": "RU MAC address used for NETCONF",
+      "type": "string"
     },
     "reset_schedule": {
       "title": "Cron schedule for RRH reset",
