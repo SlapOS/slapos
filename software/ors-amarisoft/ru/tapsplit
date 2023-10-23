@@ -9,7 +9,6 @@ import netifaces
 import netaddr
 from socket import AF_INET6
 from math import log2, ceil
-from os.path import exists
 
 import sys
 import subprocess
@@ -59,6 +58,7 @@ def main():
     n += 1  # also leaving first range for the original tap
     ptake = ceil(log2(n))
 
+    # do the split
     for i, subnet in enumerate(net.subnet(prefixlen + ptake)):
         if i == 0:
             print('preserve         %s' % subnet)
