@@ -17,8 +17,8 @@ return = instance-path
 sla-computer_guid = {{ guid }}
 config-autopilotIp = {{ parameter_dict['autopilotIp'] }}
 config-autopilotPort = {{ dumps(parameter_dict['autopilotPort']) }}
-config-numberOfDrone = {{ dumps(len(parameter_dict['droneGuidList'])) }}
-config-numberOfSubscriber = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
+config-numberOfDrones = {{ dumps(len(parameter_dict['droneGuidList'])) }}
+config-numberOfSubscribers = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
 config-id = {{ dumps(id) }}
 config-isASimulation = {{ dumps(parameter_dict['isASimulation']) }}
 {% if id < len(parameter_dict['droneGuidList']) -%}
