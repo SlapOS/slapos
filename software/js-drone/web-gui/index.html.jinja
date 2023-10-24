@@ -124,6 +124,12 @@
         <td id="climb_rate_{{ i }}"></td>
         {% endfor %}
       </tr>
+      <tr>
+        <th>Timestamp (h:m:s)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="timestamp_{{ i }}"></td>
+        {% endfor %}
+      </tr>
     </table>
   </div>
 

@@ -19,6 +19,7 @@
     QUIT_BTN_ID = "quit-btn",
     RED_BTN_CLASS_NAME = "red-button",
     SWITCH_BTN_ID = "switch-btn",
+    TIMESTAMP_BASE_ID = "timestamp_",
     WEB_SOCKET_STATUS_OUTPUT_ID = "web-socket-status",
     YAW_BASE_ID = "yaw_",
     socket;
@@ -62,6 +63,7 @@
 
   socket.onmessage = function (event) {
     var color_array,
+      date,
       flight_state_cell,
       i,
       message = JSON.parse(event.data),
@@ -78,6 +80,8 @@
         document.getElementById(YAW_BASE_ID + id).innerHTML = drone["yaw"];
         document.getElementById(AIRSPEED_BASE_ID + id).innerHTML = drone["speed"];
         document.getElementById(CLIMB_RATE_BASE_ID + id).innerHTML = drone["climbRate"];
+        date = new Date(drone["timestamp"]);
+        document.getElementById(TIMESTAMP_BASE_ID + id).innerHTML = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
       });
     } else if (message.hasOwnProperty("state") && message.hasOwnProperty("id")) {
       flight_state_cell = document.getElementById(FLIGHT_STATUS_BASE_ID + message['id']);
