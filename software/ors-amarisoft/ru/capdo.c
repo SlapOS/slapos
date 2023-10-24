@@ -41,7 +41,7 @@ int main(int argc, const char *argv[]) {
     if (argc < 2)
         die("usage: capdo prog arguments...");
 
-    // permitted -> inheritable  (so that we can raise ambient)
+    // permitted -> inheritable  (so that we can raise ambient below)
     caps = cap_get_proc();
     if (!caps)
         die("cap_get_proc failed");
@@ -59,6 +59,7 @@ int main(int argc, const char *argv[]) {
     cap_set_proc(caps) && die_err("cap_set_proc");
 
     // raise ambient capabilities to what is permitted/inheritable
+    // this way executed program will have the same capabilities that we have
     for (cap = 0; cap <= CAP_LAST_CAP; cap++) {
         if (capbits & (1ULL << cap))
             prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, cap, 0, 0)  && die_err("prctl ambient raise");
