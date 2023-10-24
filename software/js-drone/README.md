@@ -47,6 +47,7 @@ For each drone is displayed:
 * the yaw angle in degrees
 * the speed (ground speed for multicopters, airspeed for fixed wings) in meters per second
 * the climb rate in meters per second
+* the timestamp of the position in format hh:mm:ss
 
 
 ### Buttons
