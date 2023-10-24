@@ -13,6 +13,7 @@ if __name__ == '__main__':
         log_file="{{ log_file }}",
         supervision_reply_json_log_file="{{ supervision_reply_json_log_file }}"
     )
+    # XXX no while True?
     try:
         netconf_check_file = '{{ is_netconf_connected }}'
         nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
