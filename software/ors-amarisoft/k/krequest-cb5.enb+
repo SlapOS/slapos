@@ -36,7 +36,8 @@ ienb = kslap.request(kamari,
         partition_reference="CB5-ENB",
         filter_kw={"computer_guid": CB5},
         partition_parameter_kw={"_": json.dumps({
-            'mme_list': {'1': {'mme_addr': kslap.conn(icore)['core-network-ipv6']}},
+            'mme_list':  {'1': {'mme_addr': kslap.conn(icore)['core-network-ipv6']}},
+            'plmn_list': {'1': {'plmn': '31415'}},  # XXX get from icore
         })})
 
 # eref returns full reference for ienb's shared instance with given ref.
