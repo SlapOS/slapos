@@ -279,81 +279,56 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
   def test_pubsub_subscription(self):
     ws = websocket.WebSocket()
     ws.connect(self.websocket_server_address, timeout=5)
-    # on new connection, the first message is the ip of the client
-    self.assertIn(
-      b'Unknown instruction %s' % ws.sock.getsockname()[0].encode(),
-      ws.recv_frame().data,
-    )
-    self.assertIn(
-      b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 3\\n"}',
-      ws.recv_frame().data,
-    )
-    self.assertEqual(
-      ws.recv_frame().data,
-      b''.join((
-        b'{"drone_dict":{"0":{"latitude":',
-        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
-        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
-        b'"timestamp":%d}}}' % 0,
-      )),
-    )
-    self.assertIn(
-      b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % (0, 0 , 0, 0),
-      ws.recv_frame().data,
-    )
-    self.assertEqual(
-      ws.recv_frame().data,
-      b''.join((
-        b'{"drone_dict":{"0":{"latitude":',
-        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
-        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
-        b'"timestamp":%d}}}' % 0,
-      )),
-    )
-    self.assertIn(
-      b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % (0, 0 , 0),
-      ws.recv_frame().data,
-    )
-    self.assertEqual(
-      ws.recv_frame().data,
-      b''.join((
-        b'{"drone_dict":{"0":{"latitude":',
-        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
-        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
-        b'"timestamp":%d}}}' % 0,
-      )),
-    )
-    self.assertIn(
-      b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 1\\n"}',
-      ws.recv_frame().data,
-    )
-    self.assertEqual(
-      ws.recv_frame().data,
-      b''.join((
-        b'{"drone_dict":{"0":{"latitude":',
-        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
-        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
-        b'"timestamp":%d}}}' % 0,
-      )),
-    )
-    self.send_ua_networkMessage()
-    time.sleep(0.1)
-    self.assertEqual(ws.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
-    self.assertIn(
-      b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % POSITION_ARRAY_OUTPUT_VALUES,
-      ws.recv_frame().data,
-    )
-    self.assertEqual(
-      ws.recv_frame().data,
-      b''.join((
-        b'{"drone_dict":{"0":{"latitude":',
-        b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % POSITION_ARRAY_OUTPUT_VALUES[:-1],
-        b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % SPEED_ARRAY_VALUES,
-        b'"timestamp":%d}}}' % POSITION_ARRAY_INPUT_VALUES[-1],
-      )),
-    )
-    self.assertIn(
-      b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % SPEED_ARRAY_VALUES,
-      ws.recv_frame().data,
-    )
-    ws.close()
+    try:
+      # on new connection, the first message is the ip of the client
+      self.assertIn(
+        b'Unknown instruction %s' % ws.sock.getsockname()[0].encode(),
+        ws.recv_frame().data,
+      )
+      self.assertIn(
+        b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 3\\n"}',
+        ws.recv_frame().data,
+      )
+      self.assertIn(
+        b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % (0, 0 , 0, 0),
+        ws.recv_frame().data,
+      )
+      self.assertIn(
+        b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % (0, 0 , 0),
+        ws.recv_frame().data,
+      )
+      self.assertIn(
+        b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 1\\n"}',
+        ws.recv_frame().data,
+      )
+      self.assertEqual(
+        ws.recv_frame().data,
+        b''.join((
+          b'{"drone_dict":{"0":{"latitude":',
+          b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
+          b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
+          b'"timestamp":%d}}}' % 0,
+        )),
+      )
+      self.send_ua_networkMessage()
+      time.sleep(0.1)
+      self.assertEqual(ws.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
+      self.assertIn(
+        b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % POSITION_ARRAY_OUTPUT_VALUES,
+        ws.recv_frame().data,
+      )
+      self.assertIn(
+        b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % SPEED_ARRAY_VALUES,
+        ws.recv_frame().data,
+      )
+      self.assertEqual(
+        ws.recv_frame().data,
+        b''.join((
+          b'{"drone_dict":{"0":{"latitude":',
+          b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % POSITION_ARRAY_OUTPUT_VALUES[:-1],
+          b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % SPEED_ARRAY_VALUES,
+          b'"timestamp":%d}}}' % POSITION_ARRAY_INPUT_VALUES[-1],
+        )),
+      )
+    finally:
+      ws.close()
