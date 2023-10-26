@@ -149,9 +149,6 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     handleWebSocketMessage = function () {
       var message = readMessage(gwsocket_r_pipe_fd).data;
-      if (message.includes(configuration.websocketIp)) {
-        return;
-      }
       onMessage(message);
     };
     user_me.writeWebsocketMessage = function (message) {
