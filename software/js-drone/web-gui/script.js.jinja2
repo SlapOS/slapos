@@ -133,9 +133,13 @@
       }
 
       if (prompt.children.length === PROMPT_MAX_MSG) {
-        prompt.removeChild(prompt.firstElementChild);
+        setTimeout(function() {
+          prompt.removeChild(prompt.firstElementChild);
+        }, 0);
       }
-      prompt.appendChild(new_div);
+      setTimeout(function() {
+        prompt.appendChild(new_div);
+      }, 0);
     } else {
       console.info(message);
     }
