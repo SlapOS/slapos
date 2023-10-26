@@ -1,0 +1,21 @@
+add a version to make this package compatible with buildout's easy_install
+
+Fixes this issue:
+
+    Installing statsmodels 0.13.5
+    Caused installation of a distribution:
+    statsmodels 0.0.0
+    with a different version.
+
+
+diff '--color=auto' -ru statsmodels-0.13.5.orig/setup.py statsmodels-0.13.5/setup.py
+--- statsmodels-0.13.5.orig/setup.py	2022-11-02 01:54:20.000000000 +0900
++++ statsmodels-0.13.5/setup.py	2023-10-26 14:12:35.157708043 +0900
+@@ -387,6 +387,7 @@
+ 
+ setup(
+     name=DISTNAME,
++    version='0.13.5',
+     maintainer=MAINTAINER,
+     ext_modules=extensions,
+     maintainer_email=MAINTAINER_EMAIL,
