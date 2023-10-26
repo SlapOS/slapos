@@ -234,8 +234,9 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
       if (clientId !== undefined) {
         log = getLog();
-        if (log.length > 0) {
+        while (log.length > 0) {
           user_me.writeWebsocketMessage(JSON.stringify({log: log}));
+          log = getLog();
         }
       }
 
