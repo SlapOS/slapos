@@ -1,3 +1,8 @@
+# Program slapos-render-config is handy during config/ templates development.
+#
+# It mimics the way config files are generated during the build but runs much
+# faster compared to full `slapos node software` + `slapos node instance` runs.
+
 config = "gnb"
 json_params_empty = """{
     "rf_mode": 'fdd',
