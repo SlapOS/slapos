@@ -3,7 +3,7 @@
 # It mimics the way config files are generated during the build but runs much
 # faster compared to full `slapos node software` + `slapos node instance` runs.
 
-import zc.buildout.buildout # XXX workaround import bug in vvv
+import zc.buildout.buildout # XXX workaround for https://lab.nexedi.com/nexedi/slapos.recipe.template/merge_requests/9
 from slapos.recipe.template import jinja2_template
 
 import json, copy, sys, os, pprint, glob
