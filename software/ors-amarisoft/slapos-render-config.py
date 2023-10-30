@@ -32,7 +32,11 @@ json_params = """{
         "configuration.default_nr_ssb_pos_bitmap": "10000000",
         "configuration.default_n_antenna_dl": 2,
         "configuration.default_n_antenna_ul": 2,
-        "configuration.default_nr_inactivity_timer": 10000
+        "configuration.default_nr_inactivity_timer": 10000,
+        "configuration.com_ws_port": 9001,
+        "configuration.com_addr": "127.0.1.2",
+        "configuration.amf_addr": "127.0.1.100",
+        "configuration.gtp_addr": "127.0.1.1"
     },
     "directory": {
         "log": "log",
