@@ -12,6 +12,7 @@ import json, copy
 
 
 kamari = "https://lab.nexedi.com/kirr/slapos/raw/x/lte-multiru/software/ors-amarisoft/software.cfg"
+#kamari = "/home/kirr/slapos/software/ors-amarisoft/software.cfg"
 CB5    = "COMP-4020"
 
 supply(kamari, computer_guid=CB5)
