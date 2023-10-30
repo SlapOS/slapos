@@ -1,7 +1,7 @@
 #!{{ python_path }}
 import time
-import xmltodict
 import json
+import xmltodict
 import sys
 import re
 import os
