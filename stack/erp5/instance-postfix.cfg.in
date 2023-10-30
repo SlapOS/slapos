@@ -104,7 +104,7 @@ output = ${directory:etc-postfix}/sasl_passwd
 {% if relay -%}
 inline = {{ "{{ host }} {{ sasl_credential }}" }}
 {%- else -%}
-inline =
+inline = {{ dumps("# empty") }}
 {%- endif %}
 context =
     key host configuration:relayhost
