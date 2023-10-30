@@ -293,6 +293,11 @@ def do_enb():
             "slap-computer-partition-id": "slappart9",
             "configuration.default_lte_inactivity_timer": 10000,
             "configuration.default_nr_inactivity_timer": 10000,
+            "configuration.com_ws_port": 9001,
+            "configuration.com_addr": "127.0.1.2",
+            "configuration.mme_addr": "127.0.1.100",
+            "configuration.amf_addr": "127.0.1.100",
+            "configuration.gtp_addr": "127.0.1.1",
             "slave-instance-list": %(jshared_instance_list)s
         },
         "directory": {
