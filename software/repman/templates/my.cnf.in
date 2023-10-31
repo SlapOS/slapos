@@ -23,11 +23,6 @@ pid_file = {{ parameter_dict['pid-file'] }}
 {% set innodb_log_buffer_size = parameter_dict['innodb-log-buffer-size'] -%}
 {% if innodb_log_buffer_size %} innodb_log_buffer_size = {{ innodb_log_buffer_size }}{% endif %}
 
-# very important to allow parallel indexing
-# Note: this is compatible with binlog-based incremental backups, because ERP5
-# doesn't use "insert ... select" (in any number of queries) pattern.
-# innodb_locks_unsafe_for_binlog = 1
-
 #plugin_load = ha_mroonga
 plugin-dir = {{ parameter_dict['plugin-directory'] }}
 
