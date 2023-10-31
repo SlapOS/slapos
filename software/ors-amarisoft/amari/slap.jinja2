@@ -24,7 +24,7 @@
 
       'cell/lte': {
         'pci':  1,
-        'tac':  "0x0001",
+        'tac':  '0x0001',
         'tdd_ul_dl_config': '[Configuration 2] 5ms 2UL 6DL (default)',
       },
       'cell/nr': {
@@ -32,6 +32,16 @@
         'ssb_pos_bitmap':   '10000000',
         'tdd_ul_dl_config': '5ms 2UL 7DL 4/6 (default)',
       },
+
+      'peercell/lte': {
+        'pci':  1,
+        'tac':  '0x0001',
+      },
+      'peercell/nr': {
+        'pci':  500,
+        'tac':  '0x0001',
+      },
+
       'cpri_link': {
         'mapping': 'hw',
         'mult':     16,
@@ -302,7 +312,30 @@
     ipeercell_dict keeps peer cell shared instances:  reference -> ipeercell
 #}
 {%- macro load_ipeercell(ipeercell_dict)      %}
-// XXX TODO
+{%-   set qother = []                                                                           %}
+{%-   for ishared in qshared_instance_list                                                      %}
+{%-     set ref = J(jref_of_shared(ishared))                                                    %}
+{%-     set _ = ishared['_']                                                                    %}
+{%-     if 'peer_cell_type'   in _                                                              %}
+{%-       set ipeercell = ishared                                                               %}
+{%-       for k, v in defaults['peercell/' + _.peer_cell_type].items()                          %}
+{%-         do _.setdefault(k, v)                                                               %}
+{%-       endfor                                                                                %}
+{%-       if _.peer_cell_type == 'lte'                                                          %}
+{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn)))                 %}
+{%-       elif _.peer_cell_type == 'nr'                                                         %}
+{%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))            %}
+{%-       else                                                                                  %}
+{%-         do bug('unreachable')                                                               %}
+{%-       endif                                                                                 %}
+{%-       do ipeercell_dict.update({ref: ipeercell})                                            %}
+{%-     else                                                                                    %}
+{%-       do qother.append(ishared)                                                             %}
+{%-     endif                                                                                   %}
+{%-   endfor                                                                                    %}
+{%-   do qshared_instance_list.clear()                                                          %}
+{%-   do qshared_instance_list.extend(qother)                                                   %}
 {%- endmacro                %}
 
 

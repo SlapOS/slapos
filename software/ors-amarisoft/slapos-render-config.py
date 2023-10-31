@@ -285,6 +285,25 @@ def do_enb():
     #iRU3_SDR1_fLTE2(ienb)
     #iRU2_LOPCOMM_fLTE2(ienb)
 
+    # add 2 peer cells
+    if 1:
+        ienb.ishared('PEER1', {
+            'peer_cell_type':   'lte',
+            'e_cell_id':        '0x12345',
+            'pci':              35,
+            'dl_earfcn':        700,
+            'tac':              123,
+        })
+        ienb.ishared('PEER2', {
+            'peer_cell_type':   'nr',
+            'nr_cell_id':       '0x77712',
+            'gnb_id_bits':      22,
+            'dl_nr_arfcn':      520000,
+            'nr_band':          38,
+            'pci':              75,
+            'tac':              321,
+        })
+
     jshared_instance_list = json.dumps(ienb.shared_instance_list)
     json_params = """{
         "sib23_file": "sib2_3.asn",
@@ -312,8 +331,9 @@ def do_enb():
     j2render('enb.jinja2.cfg', 'enb.cfg', json_params)
 
     # drb.cfg + sib.asn for all cells
-    iru_dict   = {}
-    icell_dict = {}
+    iru_dict       = {}
+    icell_dict     = {}
+    ipeercell_dict = {}
     for ishared in ienb.shared_instance_list:
         ref = ref_of_shared(ishared)
         _   = json.loads(ishared['_'])
@@ -322,6 +342,8 @@ def do_enb():
             iru_dict[ref] = ishared
         elif 'cell_type' in _:
             icell_dict[ref] = ishared
+        elif 'peer_cell_type' in _:
+            ipeercell_dict[ref] = ishared
         else:
             raise AssertionError('enb: unknown shared instance %r' % (ishared,))
 

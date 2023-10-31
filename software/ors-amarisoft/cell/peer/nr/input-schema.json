@@ -40,6 +40,6 @@
       "type": "integer"
     },
     "pci":          { "$ref": "../../../cell/nr/input-schema.json#/properties/pci" },
-    "tac":          { "$ref": "../../../cell/nr/input-schema.json#/properties/tac" }
+    "tac":          { "$ref": "../../../cell/lte/input-schema.json#/properties/tac" }
   }
 }
