@@ -53,10 +53,27 @@
     }
 %}
 
+{#- J is used around macro calls to retrieve returned objects.
+
+    It is needed to workaround jinja2 limitation that macro can return only
+    strings - not arbitrary objects: we return objects as JSON-encoded string
+    and J decodes them.
+
+    By convention macros that return JSON-encoded objects start with "j" prefix.
+
+    Usage example:
+
+      set obj = J(jmymacro(...))
+#}
+
+{%- set J = json_module.loads %}
+
+{#- jdefault_ul_earfcn returns default UL EARFCN corresponding to DL EARFCN #}
 {%- macro jdefault_ul_earfcn(dl_earfcn)  %}
 {{-   earfcn_module.dl2ul(dl_earfcn) | tojson    }}
 {%- endmacro %}
 
+{#- jdefault_ul_nr_arfcn returns default UL NR ARFCN corresponding to DL NR ARFCN #}
 {%- macro jdefault_ul_nr_arfcn(dl_nr_arfcn, nr_band)            %}
 {%-   set nr = nrarfcn_module                                   %}
 {%-   set dl_lo, dl_hi = nr.get_nrarfcn_range(nr_band, 'dl')    %}
@@ -64,6 +81,7 @@
 {{-   (ul_lo + (dl_nr_arfcn - dl_lo)) | tojson                  }}
 {%- endmacro %}
 
+{#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN #}
 {%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
 {%-   set nr = nrarfcn_module                       %}
@@ -83,27 +101,12 @@
 {{-   slapparameter_dict.get(name, defaults.get(name)) }}
 {%- endmacro %}
 
-{#- tap indicates tap interface that slapos told us to use.
-    or 'xxx-notap-xxx' if slapos provided us nothing or empty string. #}
+{#- tap indicates tap interface, that slapos told us to use,
+    or 'xxx-notap-xxx' if slapos provided us either nothing or empty string. #}
 {%- set tap = slap_configuration.get('tap-name', '')   %}
 {%- if tap == '' %}
 {%-   set tap = 'xxx-notap-xxx'   %}
 {%- endif %}
-
-
-{#- J is used around macro calls to retrieve returned objects.
-
-    It is needed to workaround jinja2 limitation that macro can return only
-    strings - not arbitrary objects: we return objects as JSON-encoded string
-    and J decodes them.
-
-    By convention macros that return JSON-encoded objects start with "j" prefix.
-
-    Usage example:
-
-      set obj = J(jmymacro(...))
-#}
-{%- set J = json_module.loads %}
 
 
 {#- bug indicates an error in template logic.
@@ -132,16 +135,16 @@
 {#- XXX add protection wrt duplicate slave_title  -- see jref_of_shared for details #}
 
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
-{%- macro check_loaded_everything() %}
-{%-   for ishared in qshared_instance_list  %}
+{%- macro check_loaded_everything()                               %}
+{%-   for ishared in qshared_instance_list                        %}
 {%-     do error(ishared, "shared instance of unsupported type")  %}
-{%-   endfor  %}
-{%- endmacro %}
+{%-   endfor                                                      %}
+{%- endmacro                                                      %}
 
-{#- json-decode _ in all shared instances #}
-{%- for ishared in qshared_instance_list %}
-{%-   do ishared.update({'_': J(ishared['_'])})                   %}
-{%- endfor %}
+{#- json-decode _ in all shared instances         #}
+{%- for ishared in qshared_instance_list          %}
+{%-   do ishared.update({'_': J(ishared['_'])})   %}
+{%- endfor                                        %}
 
 
 {#- load_iru_and_icell initializes RU and cell registries.
@@ -214,7 +217,6 @@
 {#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
 {#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
 
-{#-   XXX verify cell_type = lte|nr   XXX no - this should be verified by json-schema #}
 
 {#-   verify that there is no dangling cell->ru references #}
 {#-   XXX also verify that there is no dangling cell -> cell refs in ruincell_ref #}
@@ -245,9 +247,9 @@
 {%-       set ru_tap = tap                                    %}
 {%-     endif                                                 %}
 {%-     do iru._.cpri_link.update({'_tap': ru_tap})           %}
-{%-   endfor %}
+{%-   endfor                                                  %}
 
-{%- endmacro                                                          %}
+{%- endmacro  %}
 
 {#- jcell_ru_ref returns RU reference linked from a cell.
     if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
@@ -316,7 +318,6 @@
 {%-     set _ = ishared['_']                        %}
 {%-     if   'ue_type'   in _                       %}
 {%-       set iue = ishared                         %}
-{#- XXX verify ue.ue_type in lte|nr  #}
 {%-       for k, v in defaults['ue'].items()        %}
 {%-         do _.setdefault(k, v)                   %}
 {%-       endfor                                    %}
