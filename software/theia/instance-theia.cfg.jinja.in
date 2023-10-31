@@ -454,20 +454,26 @@ inline =
   export EDITOR="${theia-open:output} --wait"
   export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
   . $${common-environment:output}
-  exec ${theia-wrapper:output} "$@"
+  exec ${theia-wrapper:output} --hostname=$${:ip} --port=$${:port} $${directory:project} "$@"
 ip =  $${theia-service-port:ip}
 port = $${theia-service-port:port}
 base-url = http://$${:ip}:$${:port}/
 
+[theia-service-signal-wrapper]
+recipe = slapos.cookbook:signalwrapper
+wrapped-path = $${theia-service:output}
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+
 [theia-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${theia-service:output}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
+command-line = $${theia-service-signal-wrapper:wrapper-path}
 hash-existing-files =
   ${yarn.lock:target}
   ${theia-wrapper:output}
-ip =  {{ ipv4_random }}
-hostname = $${:ip}
+hash-files =
+  $${theia-service:output}
+ip =  $${theia-service:ip}
 port = $${theia-service:port}
 
 [theia-shell]
