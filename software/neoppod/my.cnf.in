@@ -34,7 +34,7 @@ plugin-load = {{ ';'.join(plugins) }}
 
 max_allowed_packet = 128M
 query_cache_size = 32M
-innodb_locks_unsafe_for_binlog = 1
+transaction-isolation = READ-COMMITTED
 
 # Some dangerous settings you may want to uncomment temporarily
 # if you only want performance or less disk access.

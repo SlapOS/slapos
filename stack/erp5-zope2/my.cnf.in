@@ -48,7 +48,7 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 # very important to allow parallel indexing
 # Note: this is compatible with binlog-based incremental backups, because ERP5
 # doesn't use "insert ... select" (in any number of queries) pattern.
-innodb_locks_unsafe_for_binlog = 1
+transaction-isolation = READ-COMMITTED
 
 # disable innodb_change_buffering to prevent potential risk of crash or data corruption,
 # that is default from 10.5.14.
