@@ -45,11 +45,6 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 {% set innodb_log_buffer_size = parameter_dict['innodb-log-buffer-size'] -%}
 {% if innodb_log_buffer_size %} innodb_log_buffer_size = {{ innodb_log_buffer_size }}{% endif %}
 
-# very important to allow parallel indexing
-# Note: this is compatible with binlog-based incremental backups, because ERP5
-# doesn't use "insert ... select" (in any number of queries) pattern.
-innodb_locks_unsafe_for_binlog = 1
-
 # disable innodb_change_buffering to prevent potential risk of crash or data corruption,
 # that is default from 10.5.14.
 innodb_change_buffering = none
