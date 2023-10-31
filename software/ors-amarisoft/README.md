@@ -11,6 +11,10 @@ How to deploy from scratch
 
 ## Generated buildout configurations and json input schemas
 
+XXX update
+
+ * instance-ue-input-schema.json
+
 Since there are multiple ors-amarisoft softwares releases and software types, the following files are
 generated with jinja2 templates with the render-templates script before being pushed to gitlab:
 
@@ -18,16 +22,12 @@ generated with jinja2 templates with the render-templates script before being pu
  * instance-fdd-enb-input-schema.json
  * software-fdd.cfg
  * software-tdd.cfg.json
- * instance-fdd-ue-nr-input-schema.json     XXX kill x-ue
  * instance-tdd-gnb-input-schema.json
- * instance-tdd-ue-nr-input-schema.json
  * test/testFDD.py
  * test/testTDD.py
  * software-tdd.cfg
- * instance-tdd-ue-lte-input-schema.json
  * instance-fdd-gnb-input-schema.json
  * software-fdd.cfg.json
- * instance-fdd-ue-lte-input-schema.json
 
 These files should not be modified directly, and the render-templates scripts should be run along
 with update-hash before each commit.

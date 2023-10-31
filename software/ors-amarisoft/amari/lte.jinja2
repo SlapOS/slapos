@@ -1,6 +1,10 @@
-{#- Package amari/lte provides helpers for configuring Amarisoft LTE services in SlapOS. XXX ...
+{#- Package amari/lte provides helpers for configuring Amarisoft LTE services.
 
-    XXX overview
+    - ru_config emits RF driver configutation for specified Radio Units.
+    - cell_tdd_config and nr_cell_tdd_config return TDD configutation for LTE
+      and NR cells correspondingly.
+    - cell_n_rb_dl returns #(resource-blocks) for an LTE cell.
+
     XXX amari/slap is assumed to be loaded and `import with context`
 -#}
 
@@ -10,7 +14,8 @@
 {%- macro ru_config(iru_dict, slapparameter_dict) %}
   // Radio Units
   rf_driver: {
-  // XXX vvv <- ru.txrx_active
+  // XXX vvv <- ru.txrx_active ?  XXX how to handle txrx_active for SDR ?
+  // (tx_gain=-1000 does not work - it still sets tx_gain to min.possible value 14)
   {%- if slapparameter_dict.get('disable_sdr', False) %}
       name: "dummy",
   {%- else %}
@@ -30,13 +35,12 @@
   {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
   {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
   {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
-  {%- set rx_gainv = [] %}      {#- rx_gain by tx channel                     #}
+  {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
   {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
   {%-   set ru = iru['_']                                                     %}
       // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
   {%-   if ru.ru_type == 'sdr'                                                %}
   {%-     do ru_sdr_dict.update({len(dev_argv): ru})                          %}
-      {#- XXX move to ru/sdr ?  #}
   {%-     for n in ru.sdr_dev_list                                            %}
   {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n))       %}
   {%-     endfor                                                              %}
@@ -54,7 +58,7 @@
 
   {#- emit sdr-related options if an sdr ru is present #}
   {%- if len(ru_sdr_dict) > 0               %}
-      rx_antenna:"tx_rx",   {#- XXX -> ru/sdr ? #}
+      rx_antenna:"tx_rx",
       tdd_tx_mod: 1,
   {%- endif                                 %}
 
