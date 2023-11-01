@@ -1,0 +1,41 @@
+From f0913cee83b897a58c150911ab9e8ed8c605c472 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Wed, 1 Nov 2023 09:44:23 +0100
+Subject: [PATCH] fix pdf reader getting stuck when trying to read large files
+ wihhout xref marker #808
+
+Backport of a PyPDF commit
+---
+ PyPDF2/pdf.py | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/PyPDF2/pdf.py b/PyPDF2/pdf.py
+index 7bba1c6..0034c90 100644
+--- a/PyPDF2/pdf.py
++++ b/PyPDF2/pdf.py
+@@ -1919,7 +1919,7 @@ class PdfFileReader(object):
+     def readNextEndLine(self, stream):
+         debug = False
+         if debug: print(">>readNextEndLine")
+-        line = b_("")
++        line_parts = []
+         while True:
+             # Prevent infinite loops in malformed PDFs
+             if stream.tell() == 0:
+@@ -1946,10 +1946,11 @@ class PdfFileReader(object):
+                 break
+             else:
+                 if debug: print("  x is neither")
+-                line = x + line
++                line_parts.append(x)
+                 if debug: print(("  RNEL line:", line))
+         if debug: print("leaving RNEL")
+-        return line
++        line_parts.reverse()
++        return b"".join(line_parts)
+ 
+     def decrypt(self, password):
+         """
+-- 
+2.39.2
+
