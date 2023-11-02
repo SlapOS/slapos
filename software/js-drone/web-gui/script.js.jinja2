@@ -132,12 +132,10 @@
         new_div.appendChild(new_span);
       }
 
-      if (prompt.children.length === PROMPT_MAX_MSG) {
-        setTimeout(function() {
-          prompt.removeChild(prompt.firstElementChild);
-        }, 0);
-      }
       setTimeout(function() {
+        if (prompt.children.length === PROMPT_MAX_MSG) {
+          prompt.removeChild(prompt.firstElementChild);
+        }
         prompt.appendChild(new_div);
       }, 0);
     } else {
