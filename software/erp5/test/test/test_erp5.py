@@ -32,7 +32,6 @@ import glob
 import http.client
 import json
 import os
-import resource
 import shutil
 import socket
 import sqlite3
@@ -1101,36 +1100,3 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
           'var',
           'log',
           f))
-
-
-class TestNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test setting the nofile parameter sets the open fd soft limit to the hard limit.
-  """
-  __partition_reference__ = 'nofile'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'nofile': True})}
-
-  def test_nofile(self):
-    with self.slap.instance_supervisor_rpc as supervisor:
-      all_process_info = supervisor.getAllProcessInfo()
-    _, current_hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    process_info, = (p for p in all_process_info if p['name'].startswith('zope-'))
-    self.assertEqual(
-      resource.prlimit(process_info['pid'], resource.RLIMIT_NOFILE),
-      (current_hard_limit, current_hard_limit))
-
-
-class TestUnsetNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test not setting the nofile parameter doesn't change the soft limit of erp5
-  """
-  __partition_reference__ = 'unsetnofile'
-
-  def test_unset_nofile(self):
-    with self.slap.instance_supervisor_rpc as supervisor:
-      all_process_info = supervisor.getAllProcessInfo()
-    limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    process_info, = (p for p in all_process_info if p['name'].startswith('zope-'))
-    self.assertEqual(
-      resource.prlimit(process_info['pid'], resource.RLIMIT_NOFILE), limit)

@@ -103,10 +103,6 @@
         "null"
       ]
     },
-    "nofile": {
-      "description": "Set open file descriptors soft limit to hard limit",
-      "type": "boolean"
-    },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
       "default": {},
