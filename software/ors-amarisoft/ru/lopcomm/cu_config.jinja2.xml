@@ -106,7 +106,7 @@
 {%- endif                                                                     %}
             <tx-array-carriers>
                <name>{{ TxCarrier }}</name>
-	       <absolute-frequency-center>{{ dl_arfcn }}</absolute-frequency-center>
+               <absolute-frequency-center>{{ dl_arfcn }}</absolute-frequency-center>
                <center-of-channel-bandwidth>{{ dl_freq }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ bw }}</channel-bandwidth>
                <active>{{ ru.txrx_active }}</active>
