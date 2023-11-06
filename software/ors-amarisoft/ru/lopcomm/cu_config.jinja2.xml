@@ -1,216 +1,97 @@
 <xc:config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+{%- set n_antenna_dl = slapparameter_dict.get('n_antenna_dl', int(slap_configuration['configuration.default_n_antenna_dl'])) %}
+{%- set n_antenna_ul = slapparameter_dict.get('n_antenna_ul', int(slap_configuration['configuration.default_n_antenna_ul'])) %}
          <user-plane-configuration xc:operation="replace" xmlns="urn:o-ran:uplane-conf-option8:1.0">
-            <!-- low-level-t[r]x-links -->
-            <tx-links>
-               <name>TXA0P00C00</name>
-               <processing-element>PE0</processing-element>
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>
-               <tx-endpoint>TXA0P00C00</tx-endpoint>
-            </tx-links>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-links>	
-               <name>TXA0P01C00</name>	
-               <processing-element>PE0</processing-element>	
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>	
-               <tx-endpoint>TXA0P01C00</tx-endpoint>	
-            </tx-links>
-{% endif %}
-            <tx-links>
-               <name>TXA0P00C01</name>
-               <processing-element>PE0</processing-element>
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>
-               <tx-endpoint>TXA0P00C01</tx-endpoint>
-            </tx-links>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-links>	
-               <name>TXA0P01C01</name>	
-               <processing-element>PE0</processing-element>	
-               <tx-array-carrier>TXA0CC00</tx-array-carrier>	
-               <tx-endpoint>TXA0P01C01</tx-endpoint>	
-            </tx-links>
-{% endif %}
-            <rx-links>
-               <name>RXA0P00C00</name>
-               <processing-element>PE0</processing-element>
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>
-               <rx-endpoint>RXA0P00C00</rx-endpoint>
-            </rx-links>
-            <rx-links>
-               <name>PRACH0P00C00</name>
-               <processing-element>PE0</processing-element>
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>
-               <rx-endpoint>PRACH0P00C00</rx-endpoint>
-            </rx-links>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-links>	
-               <name>RXA0P01C00</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>RXA0P01C00</rx-endpoint>	
-            </rx-links>	
-            <rx-links>	
-               <name>PRACH0P01C00</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>PRACH0P01C00</rx-endpoint>	
-            </rx-links>
-{% endif %}
-            <rx-links>
-               <name>RXA0P00C01</name>
-               <processing-element>PE0</processing-element>
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>
-               <rx-endpoint>RXA0P00C01</rx-endpoint>
-            </rx-links>
-            <rx-links>
-               <name>PRACH0P00C01</name>
-               <processing-element>PE0</processing-element>
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>
-               <rx-endpoint>PRACH0P00C01</rx-endpoint>
-            </rx-links>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-links>	
-               <name>RXA0P01C01</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>RXA0P01C01</rx-endpoint>	
-            </rx-links>	
-            <rx-links>	
-               <name>PRACH0P01C01</name>	
-               <processing-element>PE0</processing-element>	
-               <rx-array-carrier>RXA0CC00</rx-array-carrier>	
-               <rx-endpoint>PRACH0P01C01</rx-endpoint>	
-            </rx-links>
-{% endif %}
+            <!-- TX path: eaxcid → TxEndpoint
+                                             ↘
+                                               mod  → static TxEndpoint → TxArray
+                                             ↗
+                                   TxCarrier
+
+                 (static TxEndpoint, TxArray and their association are defined by RU itself)
+            -->
+{%- set TxCarrier = 'TXA0CC00'  %}
+{%- for ant in range(n_antenna_dl)  %}
+{%-   set port = ant // 2  %}
+{%-   set chan = ant %  2  %}
+{%-   set txep = 'TXA0P%02dC%02d' % (port, chan)  %}
+
+            <!-- TxAntenna{{ ant }} -->
             <tx-endpoints>
-               <name>TXA0P00C00</name>
+               <name>{{ txep }}</name>
                <e-axcid>
                   <o-du-port-bitmask>61440</o-du-port-bitmask>
                   <band-sector-bitmask>3968</band-sector-bitmask>
                   <ccid-bitmask>112</ccid-bitmask>
                   <ru-port-bitmask>15</ru-port-bitmask>
-                  <eaxc-id>0</eaxc-id>
+                  <eaxc-id>{{ ant }}</eaxc-id>
                </e-axcid>
             </tx-endpoints>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-endpoints>	
-               <name>TXA0P01C00</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>2</eaxc-id>	
-               </e-axcid>	
-            </tx-endpoints>
-{% endif %}
-            <tx-endpoints>
-               <name>TXA0P00C01</name>
-               <e-axcid>
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>
-                  <band-sector-bitmask>3968</band-sector-bitmask>
-                  <ccid-bitmask>112</ccid-bitmask>
-                  <ru-port-bitmask>15</ru-port-bitmask>
-                  <eaxc-id>1</eaxc-id>
-               </e-axcid>
-            </tx-endpoints>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <tx-endpoints>	
-               <name>TXA0P01C01</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>3</eaxc-id>	
-               </e-axcid>	
-            </tx-endpoints>
-{% endif %}
+            <tx-links>
+              <name>{{ txep }}</name>
+               <processing-element>PE0</processing-element>
+               <tx-array-carrier>{{ TxCarrier }}</tx-array-carrier>
+               <tx-endpoint>{{ txep }}</tx-endpoint>
+            </tx-links>
+{%- endfor %}
+
+
+            <!--
+                  RX path: eaxcid ← RxEndpoint
+                                  (data ∪ prach)
+                                             ↖
+                                               demod  ← static RxEndpoint ← RxArray
+                                             ↗
+                                   RxCarrier
+
+                 (static RxEndpoint, RxArray and their association are defined by RU itself)
+            -->
+{%- set RxCarrier = 'RXA0CC00'  %}
+{%- for ant in range(n_antenna_ul)  %}
+{%-   set port = ant // 2  %}
+{%-   set chan = ant %  2  %}
+{%-   set rxep    = 'RXA0P%02dC%02d'   % (port, chan)  %}
+{%-   set prachep = 'PRACH0P%02dC%02d' % (port, chan)  %}
+
+            <!-- RxAntenna{{ ant }} -->
             <rx-endpoints>
-               <name>RXA0P00C00</name>
+               <name>{{ rxep }}</name>
                <e-axcid>
                   <o-du-port-bitmask>61440</o-du-port-bitmask>
                   <band-sector-bitmask>3968</band-sector-bitmask>
                   <ccid-bitmask>112</ccid-bitmask>
                   <ru-port-bitmask>15</ru-port-bitmask>
-                  <eaxc-id>0</eaxc-id>
+                  <eaxc-id>{{ ant }}</eaxc-id>
                </e-axcid>
             </rx-endpoints>
             <rx-endpoints>
-               <name>PRACH0P00C00</name>
+               <name>{{ prachep }}</name>
                <e-axcid>
                   <o-du-port-bitmask>61440</o-du-port-bitmask>
                   <band-sector-bitmask>3968</band-sector-bitmask>
                   <ccid-bitmask>112</ccid-bitmask>
                   <ru-port-bitmask>15</ru-port-bitmask>
-                  <eaxc-id>8</eaxc-id>
+                  <eaxc-id>{{ 16*chan + 8 + port }}</eaxc-id>
                </e-axcid>
             </rx-endpoints>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-endpoints>	
-               <name>RXA0P01C00</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>2</eaxc-id>	
-               </e-axcid>	
-            </rx-endpoints>	
-            <rx-endpoints>	
-               <name>PRACH0P01C00</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>9</eaxc-id>	
-               </e-axcid>	
-            </rx-endpoints>
-{% endif %}
-            <rx-endpoints>
-               <name>RXA0P00C01</name>
-               <e-axcid>
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>
-                  <band-sector-bitmask>3968</band-sector-bitmask>
-                  <ccid-bitmask>112</ccid-bitmask>
-                  <ru-port-bitmask>15</ru-port-bitmask>
-                  <eaxc-id>1</eaxc-id>
-               </e-axcid>
-            </rx-endpoints>
-            <rx-endpoints>
-               <name>PRACH0P00C01</name>
-               <e-axcid>
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>
-                  <band-sector-bitmask>3968</band-sector-bitmask>
-                  <ccid-bitmask>112</ccid-bitmask>
-                  <ru-port-bitmask>15</ru-port-bitmask>
-                  <eaxc-id>24</eaxc-id>
-               </e-axcid>
-            </rx-endpoints>
-{% if slapparameter_dict.get('n_antenna_dl') == 4 %}
-            <rx-endpoints>	
-               <name>RXA0P01C01</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>3</eaxc-id>	
-               </e-axcid>	
-            </rx-endpoints>	
-            <rx-endpoints>	
-               <name>PRACH0P01C01</name>	
-               <e-axcid>	
-                  <o-du-port-bitmask>61440</o-du-port-bitmask>	
-                  <band-sector-bitmask>3968</band-sector-bitmask>	
-                  <ccid-bitmask>112</ccid-bitmask>	
-                  <ru-port-bitmask>15</ru-port-bitmask>	
-                  <eaxc-id>25</eaxc-id>	
-               </e-axcid>	
-            </rx-endpoints>
-{% endif %}
+            <rx-links>
+               <name>{{ rxep }}</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>{{ RxCarrier }}</rx-array-carrier>
+               <rx-endpoint>{{ rxep }}</rx-endpoint>
+            </rx-links>
+            <rx-links>
+               <name>{{ prachep }}</name>
+               <processing-element>PE0</processing-element>
+               <rx-array-carrier>{{ RxCarrier }}</rx-array-carrier>
+               <rx-endpoint>{{ prachep }}</rx-endpoint>
+            </rx-links>
+{%- endfor %}
+
+
+            <!-- TX/RX carriers -->
             <tx-array-carriers>
-               <name>TXA0CC00</name>
+               <name>{{ TxCarrier }}</name>
 	           <absolute-frequency-center>{{ slapparameter_dict.get('dl_earfcn', 300) }}</absolute-frequency-center>
                <center-of-channel-bandwidth>{{ 1000000*slapparameter_dict.get('txa0cc00_center_frequency', 2140) }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ {'1.4 MHz': 1400000, '3 MHz': 3000000, '5 MHz': 5000000, '10 MHz': 10000000, '15 MHz': 15000000, '20 MHz': 20000000}.get(slapparameter_dict.get('bandwidth'), '20 MHz') }}</channel-bandwidth>	
@@ -222,7 +103,7 @@
                <downlink-sfn-offset>0</downlink-sfn-offset>
             </tx-array-carriers>
             <rx-array-carriers>
-               <name>RXA0CC00</name>
+               <name>{{ RxCarrier }}</name>
                <absolute-frequency-center>{{ slapparameter_dict.get('rxa0cc00_center_frequency_earfcn', 18300) }}</absolute-frequency-center>	
                <center-of-channel-bandwidth>{{ 1000000*slapparameter_dict.get('rxa0cc00_center_frequency', 1950) }}</center-of-channel-bandwidth>	
                <channel-bandwidth>{{ {'1.4 MHz': 1400000, '3 MHz': 3000000, '5 MHz': 5000000, '10 MHz': 10000000, '15 MHz': 15000000, '20 MHz': 20000000}.get(slapparameter_dict.get('bandwidth'), '20 MHz') }}</channel-bandwidth>	
