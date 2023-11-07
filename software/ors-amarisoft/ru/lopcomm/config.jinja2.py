@@ -8,7 +8,7 @@ if __name__ == '__main__':
   nc = LopcommNetconfClient(log_file="{{ log_file }}")
   while True:
       try:
-          nc.connect("{{ netaddr.IPAddress(slap_configuration.get('tap-ipv6-gateway', '')) }}", 830, "oranuser", "oranpassword")
+          nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
           nc.edit_config(["{{ CreateProcessingEle_template }}", "{{ cu_config_template }}"])
           break
       except Exception as e:
