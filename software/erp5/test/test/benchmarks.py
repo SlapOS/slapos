@@ -37,6 +37,7 @@ import urllib.parse
 
 import psutil
 import requests
+import MySQLdb
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
 from .test_erp5 import ZopeSkinsMixin
@@ -141,6 +142,24 @@ class TestOrderBuildPackingListSimulation(
           text=True),
     })
 
+  def getDatabaseConnection(self):
+    connection_parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['mariadb-database-list'][0])
+    self.assertEqual('mysql', db_url.scheme)
+
+    self.assertTrue(db_url.path.startswith('/'))
+    database_name = db_url.path[1:]
+    return MySQLdb.connect(
+      user=db_url.username,
+      passwd=db_url.password,
+      host=db_url.hostname,
+      port=db_url.port,
+      db=database_name,
+      use_unicode=True,
+      charset='utf8mb4',
+    )
+
   def write_measurement(
       self, measurement: dict[str, typing.Union[str, float]]) -> None:
     json.dump(
@@ -184,6 +203,15 @@ class TestOrderBuildPackingListSimulation(
       zeo_root_stats = zeo_stats.pop('root')
       assert not zeo_stats
 
+    # InnoDB/MariaDB metrics
+    with contextlib.closing(self.getDatabaseConnection()) as cnx:
+      cursor = cnx.cursor(MySQLdb.cursors.DictCursor)
+      cursor.execute('SELECT * FROM information_schema.INNODB_METRICS')
+      innodb_metrics = {r['NAME']: r['COUNT'] for r in cursor.fetchall()
+                        if r.get('ENABLED') or r.get('STATUS') == 'enabled'}
+      cursor.execute('SHOW GLOBAL STATUS')
+      mariadb_metrics = {r['Variable_name']: r['Value'] for r in cursor.fetchall()}
+
     self.logger.info(
       "Measurements for %s (after %s): "
       "elapsed=%s zope_total_rss=%s / %s root_fs_size=%s",
@@ -203,6 +231,8 @@ class TestOrderBuildPackingListSimulation(
         'zope_count': zope_count,
         'root_fs_size': root_fs_size,
         'zeo_stats': zeo_root_stats,
+        'innodb_metrics': innodb_metrics,
+        'mariadb_metrics': mariadb_metrics,
         'now': str(now),
       })
 
