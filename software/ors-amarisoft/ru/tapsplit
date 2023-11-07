@@ -47,12 +47,9 @@ def main():
         if ifname.startswith('%s-' % tap):
             run('ip', 'link', 'del', ifname)
 
-    # see how much prefix bits we need to take to divide by n
-    n += 1  # also leaving first range for the original tap
-    ptake = ceil(log2(n))
-
     # do the split
-    for i, subnet in enumerate(net.subnet(net.prefixlen + ptake)):
+    # with leaving first range for the original tap
+    for i, subnet in enumerate(netsplit(net, 1+n)):
         if i == 0:
             print('preserve         %s' % subnet)
             continue    # leave this range for original tap
@@ -64,6 +61,12 @@ def main():
         run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
         run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
 
+
+# netsplit splits network into n subnetworks.
+def netsplit(net, n): # -> []subnet
+    # see how much prefix bits we need to take to be able to divide by n
+    ptake = ceil(log2(n))
+    return list( net.subnet(net.prefixlen + ptake) )[:n]
 
 # ifnet6 returns IPv6 network address associated with given interface.
 def ifnet6(ifname):
