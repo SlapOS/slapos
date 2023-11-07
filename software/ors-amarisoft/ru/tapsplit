@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+# Copyright (C) 2023  Nexedi SA and Contributors.
+#
+# This program is free software: you can Use, Study, Modify and Redistribute
+# it under the terms of the GNU General Public License version 3, or (at your
+# option) any later version, as published by the Free Software Foundation.
+#
+# You can also Link and Combine this program with other software covered by
+# the terms of any of the Free Software licenses or any of the Open Source
+# Initiative approved licenses and Convey the resulting work. Corresponding
+# source of such a combination shall include the source code for all other
+# software used.
+#
+# This program is distributed WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See COPYING file for full licensing terms.
+# See https://www.nexedi.com/licensing for rationale and options.
+"""Program tapsplit brings tap interface into state with several children
+interfaces each covering part of original interface address space.
+
+Usage: tapsplit <interface> <nchildren>
+"""
+
+import netifaces
+import netaddr
+from socket import AF_INET6
+from math import log2, ceil
+
+import sys
+import subprocess
+
+
+def main():
+    tap = sys.argv[1]
+    n   = int(sys.argv[2])
+    assert n >= 0, n
+
+    # determine tap's network address and owner
+    owner = readfile(sysnet(tap) + '/owner') .strip()
+    net   = ifnet6(tap)
+
+    print('%s: split %s by %d' % (tap, net, n))
+
+    # cleanup existing children
+    for ifname in netifaces.interfaces():
+        if ifname.startswith('%s-' % tap):
+            run('ip', 'link', 'del', ifname)
+
+    # do the split
+    # with leaving first range for the original tap
+    for i, subnet in enumerate(netsplit(net, 1+n)):
+        if i == 0:
+            print('preserve         %s' % subnet)
+            continue    # leave this range for original tap
+        subtap = '%s-%d' % (tap, i)
+        print('-> %s   %s' % (subtap, subnet))
+        run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
+        run('ip', 'link',   'set', subtap, 'up')
+        run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
+        run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
+        run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
+
+
+# netsplit splits network into n subnetworks.
+def netsplit(net, n): # -> []subnet
+    # see how much prefix bits we need to take to be able to divide by n
+    ptake = ceil(log2(n))
+    return list( net.subnet(net.prefixlen + ptake) )[:n]
+
+# ifnet6 returns IPv6 network address associated with given interface.
+def ifnet6(ifname):
+    addr  = None
+    net   = None
+    prefixlen = None
+    for iaddr in netifaces.ifaddresses(ifname)[AF_INET6]:
+        a = iaddr['addr']
+        if '%' in a: # link-local
+            a = a.split('%')[0]
+            a = netaddr.IPAddress(a)
+            assert a.is_link_local(), a
+            continue
+
+        if addr is not None:
+            raise RuntimeError('%s: multiple addresses:  %s and %s' % (ifname, addr, a))
+
+        addr = netaddr.IPAddress(a)
+        netmask, plen = iaddr['netmask'].split('/')
+        prefixlen = int(plen)
+        net = netaddr.IPNetwork('%s/%d' % (a, prefixlen))
+
+    if addr is None:
+        raise RuntimeError('%s: no non link-local addresses' % ifname)
+
+    # normalize network
+    # ex 2401:5180:0:66:a7ff:ffff:ffff:ffff/71  ->  2401:5180:0:66:a600::/71
+    net = net.cidr
+    return net
+
+# sysnet returns path on /sys corresponding to given interface.
+def sysnet(ifname):
+    return '/sys/devices/virtual/net/%s' % ifname
+
+def run(*argv):
+    print(' # %s' % ' '.join(argv))
+    subprocess.check_call(argv)
+
+def readfile(path):
+    with open(path) as f:
+        return f.read()
+
+
+if __name__ == '__main__':
+    main()
