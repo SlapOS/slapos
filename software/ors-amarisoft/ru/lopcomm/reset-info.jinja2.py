@@ -19,7 +19,7 @@ def get_uptime(hostname, username, password):
         client.close()
 
 # Usage
-hostname = "{{ netaddr.IPAddress(slap_configuration.get('tap-ipv6-gateway', '')) }}"
+hostname = "{{ netaddr.IPAddress(vtap.gateway) }}"
 username = "oranuser"
 password = "oranpassword"
 
