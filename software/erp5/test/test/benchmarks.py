@@ -37,6 +37,7 @@ import urllib.parse
 
 import psutil
 import requests
+import MySQLdb
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
 from .test_erp5 import ZopeSkinsMixin
@@ -141,6 +142,24 @@ class TestOrderBuildPackingListSimulation(
           text=True),
     })
 
+  def getDatabaseConnection(self) -> MySQLdb.connections.Connection:
+    connection_parameter_dict = json.loads(
+        self.computer_partition.getConnectionParameterDict()['_'])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['mariadb-database-list'][0])
+    self.assertEqual('mysql', db_url.scheme)
+
+    self.assertTrue(db_url.path.startswith('/'))
+    database_name = db_url.path[1:]
+    return MySQLdb.connect(
+        user=db_url.username,
+        passwd=db_url.password,
+        host=db_url.hostname,
+        port=db_url.port,
+        db=database_name,
+        use_unicode=True,
+        charset='utf8mb4'
+    )
+
   def write_measurement(
       self, measurement: dict[str, typing.Union[str, float]]) -> None:
     json.dump(
@@ -184,6 +203,14 @@ class TestOrderBuildPackingListSimulation(
       zeo_root_stats = zeo_stats.pop('root')
       assert not zeo_stats
 
+    # Deadlocks
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query(
+        "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE name='lock_deadlocks'"
+      )
+      deadlock_total_count = cnx.store_result().fetch_row()[0][0]
+
     self.logger.info(
       "Measurements for %s (after %s): "
       "elapsed=%s zope_total_rss=%s / %s root_fs_size=%s",
@@ -203,6 +230,7 @@ class TestOrderBuildPackingListSimulation(
         'zope_count': zope_count,
         'root_fs_size': root_fs_size,
         'zeo_stats': zeo_root_stats,
+        'deadlock_total_count': deadlock_total_count,
         'now': str(now),
       })
 
