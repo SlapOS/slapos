@@ -397,19 +397,6 @@ class TestSSHServer(SeleniumServerTestCase):
       self.assertIn(b"Welcome to SlapOS Selenium Server.", received)
 
 
-class TestFirefox52(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='52.9.0esr')
-  user_agent = 'Gecko/20100101 Firefox/52.0'
-  # resizing window is not supported on firefox 52 geckodriver
-  @unittest.expectedFailure
-  def test_resize_window(self):
-    super().test_resize_window()
-
-
 class TestFirefox60(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
@@ -427,6 +414,7 @@ class TestFirefox68(
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/68.0'
 
+
 class TestFirefox78(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
@@ -434,6 +422,20 @@ class TestFirefox78(
 ):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='78.1.0esr')
   user_agent = 'Gecko/20100101 Firefox/78.0'
+
+
+class TestFirefox115(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='115.3.1esr')
+  user_agent = 'Gecko/20100101 Firefox/115.0'
+
+  # resizing window does not work, but we don't really depend on it
+  @unittest.expectedFailure
+  def test_resize_window(self):
+    super().test_resize_window()
 
 
 class TestChrome69(
