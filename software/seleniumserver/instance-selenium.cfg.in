@@ -137,12 +137,10 @@ port = 7782
 [selenium-server-admin-password]
 recipe = slapos.cookbook:generate.password
 username = admin
-bytes = 12
 
 [selenium-server-selenium-password]
 recipe = slapos.cookbook:generate.password
 username = selenium
-bytes = 12
 
 
 [selenium-server-frontnend-certificate]
