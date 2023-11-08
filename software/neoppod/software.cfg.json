@@ -1,0 +1,14 @@
+{
+  "name": "NEO",
+  "description": "Distributed, redundant and transactional storage for ZODB",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "request": "instance-neo-input-schema.json",
+      "response": "instance-neo-output-schema.json",
+      "index": 0
+    }
+  }
+}
