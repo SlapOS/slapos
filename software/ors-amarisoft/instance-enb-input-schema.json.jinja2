@@ -139,6 +139,11 @@
               "type": "number",
               "default": 0
             },
+            "ru_mac_addr": {
+              "title": "RU MAC address",
+              "description": "RU MAC address used for NETCONF",
+              "type": "string"
+            },
 {%- endif %}
             "dl_earfcn": {
               "title": "DL EARFCN",
@@ -181,12 +186,6 @@
       "title": "dnsmasq",
       "description": "dnsmasq",
       "type": "boolean"
-    },
-    "rrh_mac_addr": {
-      "default": "00:0a:00:00:10:20",
-      "title": "RRH MAC address",
-      "description": "RRH MAC address used for DNSMASQ",
-      "type": "string"
     },
 {%- endif %}
 {%- if ru == 'lopcomm' %}
