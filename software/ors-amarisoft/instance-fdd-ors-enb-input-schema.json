@@ -245,17 +245,11 @@
       "type": "number",
       "default": 0
     },
-    "min_txrx_delay": {
+    "min_rxtx_delay": {
       "title": "Minimum available time for radio front end processing (ms)",
-      "description": "Baseband latency promise will fail if minimum TX/RX diff reaches threshold (higher than this value)",
+      "description": "Baseband latency promise will fail if minimum TX/RX diff reaches threshold (lower than this value)",
       "type": "number",
-      "default": 5
-    },
-    "avg_txrx_delay": {
-      "title": "Average available time for radio front end processing (ms)",
-      "description": "Baseband latency promise will fail if average TX/RX diff reaches threshold (higher than this value)",
-      "type": "number",
-      "default": 7
+      "default": 0
     },
     "xlog_fluentbit_forward_host": {
       "title": "Address to Forward Xlog by Fluenbit",
