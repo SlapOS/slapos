@@ -1,5 +1,9 @@
 {%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
 {%- set additional_frontend = parameter_dict['additional-frontend-guid'] -%}
+{%- set namebase = parameter_dict['namebase'] -%}
+{%- set theia_number = parameter_dict['number'] -%}
+{%- set theia_id = '%s%s' % (namebase, theia_number) -%}
+{%- set frontend_name = parameter_dict['frontend-name'] -%}
 
 [buildout]
 extends = {{ theia_instance_cfg }}
@@ -16,16 +20,16 @@ parts +=
 # The import template then expects to receive it in
 # slap-parameter:namebase
 [slap-parameter]
-namebase = {{ parameter_dict['namebase'] }}
+namebase = {{ namebase }}
 
 
 # Change frontend name to avoid conflicts
 [remote-frontend]
-name = Import {{ parameter_dict['frontend-name'] }}
+name = {{ frontend_name }} for {{ theia_id }}
 
 {% if additional_frontend -%}
 [remote-additional-frontend]
-name = Import {{ parameter_dict['additional-frontend-name'] }}
+name = {{ parameter_dict['additional-frontend-name'] }} for {{ theia-id }}
 {%- endif %}
 
 
