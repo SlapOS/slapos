@@ -1,0 +1,52 @@
+[buildout]
+parts = switch-softwaretype
+
+eggs-directory = {{ buildout_egg_directory }}
+develop-eggs-directory = {{ buildout_develop_directory }}
+offline = true
+
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = template-instance-sozu.cfg:output
+RootSoftwareInstance = ${:default}
+
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+
+[jinja2-template-base]
+recipe  = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+output= ${buildout:directory}/${:_buildout_section_name_}
+context =
+    key slapparameter_dict      slap-configuration:configuration
+    key computer_id             slap-configuration:computer
+    key ipv4_set                slap-configuration:ipv4
+    key ipv6_set                slap-configuration:ipv6
+    raw buildout_directory      {{ buildout_directory }}
+    raw buildout_bin_directory  {{ buildout_bin_directory }}
+    raw eggs_directory          {{ buildout_egg_directory }}
+    raw develop_eggs_directory  {{ buildout_develop_directory }}
+    raw template_monitor        {{ template_monitor_cfg }}
+    raw openssl_bin             {{ openssl_location }}/bin/openssl
+    ${:extra-context}
+extra-context =
+
+[template-instance-sozu.cfg]
+<= jinja2-template-base
+url = {{ template_sozu_cfg }}
+extra-context =
+    key slave_instance_list         slap-configuration:slave-instance-list
+    raw sozu_bin                    {{ sozu_location }}/bin/sozu
+
+# config files
+    raw config_toml_in             {{ config_toml }}
+    raw template_publish_slave     {{ template_publish_slave }}
+
