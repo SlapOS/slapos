@@ -1,0 +1,225 @@
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set cluster_definition_dict = {} -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+run = ${:var}/run
+scripts = ${:etc}/run
+service = ${:etc}/service
+promise = ${:etc}/promise
+log = ${:var}/log
+nginx-prefix = ${:var}/nginx
+tmp = ${:home}/tmp
+ssl = ${:etc}/ssl
+dssl = ${:etc}/ssl-downloaded
+
+[createfile]
+recipe = slapos.recipe.template:jinja2
+inline =
+  {{ '{{ content }}' }}
+
+{% macro createfile(section_name, file_path, content, mode='') -%}
+[{{  section_name }}]
+< = createfile
+output = {{ file_path }}
+context = key content :content
+mode = {{ mode }}
+content = {{ dumps(content) }}
+{%- endmacro %}
+
+[ca-certificate-base]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${ca-directory:certs}/${:name}.crt
+cert-file = ${ca-directory:certs}/${:name}.key
+executable = echo "request certificate"
+wrapper = ${directory:tmp}/ca-${:name}
+
+{% for instance_dict in slave_instance_list -%}
+{% set name = instance_dict['slave_reference'] -%}
+{% set cert_section_name = '${' ~ name ~ '-ssl:cert-file}' -%}
+{% set key_section_name = '${' ~ name ~ '-ssl:key-file}' -%}
+{% set slave_dict = {
+  'name': name.replace('-', '_').lower(),
+  'protocol': instance_dict.get('protocol', 'http'),
+  'load-balancing': instance_dict.get('load-balancing', 'ROUND_ROBIN'),
+  'load-metric': instance_dict.get('load-metric', 'connections'),
+  'frontend-dict': instance_dict['frontend-dict'],
+  'backend-dict': instance_dict['backend-dict']
+  } -%}
+
+[{{ name }}-ssl]
+<= ca-certificate-base
+name = {{ name }}
+
+{%  for cluster_name, cluster_dict in slave_dict['frontend-dict'].items() %}
+{%    if cluster_dict.get('deploy-certificate') -%}
+{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate', '${' ~ name ~ '-ssl:cert-file}') -%}
+{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('key', '${' ~ name ~ '-ssl:key-file}') -%}
+{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ '-ssl:chain-file}') -%}
+
+{%    elif cluster_dict.get('certificate') and cluster_dict.get('key') and cluster_dict.get('certificate-chain') -%}
+{{ createfile(name ~ cluster_name ~ "-crt", "${directory:dssl}/" ~ name ~ cluster_name ~ ".crt", cluster_dict['certificate']) }}
+{{ createfile(name ~ cluster_name ~ "-key", "${directory:dssl}/" ~ name ~ cluster_name ~ ".key", cluster_dict['key']) }}
+{{ createfile(name ~ cluster_name ~ "-chain", "${directory:dssl}/" ~ name ~ cluster_name ~ "-chain.crt", cluster_dict['certificate-chain']) }}
+
+{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate', '${' ~ name ~ cluster_name~ '-crt:output}') -%}
+{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('key', '${' ~ name ~ cluster_name~ '-key:output}') -%}
+{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ cluster_name~ '-chain:output}') -%}
+{%    endif -%}
+{%  endfor -%}
+{%  do cluster_definition_dict.__setitem__(slave_dict['name'], slave_dict) -%}
+{% endfor -%}
+
+[sozu-parameters]
+#warn, info, debug, trace
+log-level = info
+log-file = ${directory:log}/sozu.log
+access-log-file = ${directory:log}/sozu-access.log
+socket-file = ${directory:run}/sozu.sock
+max-buffer-size = 163840
+worker-count = 2
+max-connections = 500
+# wait for a command to complete timeout
+ctl-timeout = 1000
+pid-file = ${directory:run}/sozu.pid
+# maximum time (seconds) of inactivity for a frontend socket
+front-timeout = 60
+# maximum time of inactivity for a backend socket, in seconds
+back-timeout = 30
+# maximum time to connect to a backend server, in seconds
+connect-timeout = 3
+# maximum time to receive a request since the connection started
+request-timeout = 10
+ip = {{ ipv6 }}
+port = 8090
+https-port = 4453
+cert-file = ${ca-directory:certs}/sozu-cert.crt
+key-file = ${ca-directory:certs}/sozu.key
+cert-chain-file = ${ca-directory:root}/cacert.pem
+
+[sozu-config.toml]
+recipe = slapos.recipe.template:jinja2
+url = {{ config_toml_in }}
+extensions = jinja2.ext.do
+output = ${directory:etc}/config.toml
+context =
+  section parameter_dict              sozu-parameters
+  section cluster_definition_dict     sozu-slave-information
+
+[sozu-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ sozu_bin }} start -c ${sozu-config.toml:output}
+wrapper-path = ${directory:bin}/sozu
+
+[ca-sozu-wrapper]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${sozu-parameters:key-file}
+cert-file = ${sozu-parameters:cert-file}
+executable = ${sozu-wrapper:wrapper-path}
+wrapper = ${directory:bin}/ca-sozu
+
+[sozu-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-sozu-wrapper:wrapper}
+wrapper-path = ${directory:services}/sozu
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${sozu-config.toml:output}
+url = http://[${sozu-parameters:ip}]:${sozu-parameters:port}
+https-url = https://[${sozu-parameters:ip}]:${sozu-parameters:https-port}
+wait-for-files =
+  ${ca-directory:certs}/sozu-cert.crt
+
+[sozu-https-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = sozu-https-backend-port-listening.py
+config-port = ${sozu-parameters:https-port}
+config-host = ${sozu-parameters:ip}
+
+[sozu-http-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = sozu-http-backend-port-listening.py
+config-port = ${sozu-parameters:port}
+config-host = ${sozu-parameters:ip}
+
+[sozu-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Sozu Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${sozu-service:url}
+config-https-url = ${sozu-service:https-url}
+config-https-only = true
+return = domain secure_access
+
+[sozu-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = check_sozu_secure_frontend.py
+config-url = ${sozu-frontend:connection-secure_access}
+
+[sozu-http-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = check_sozu_frontend.py
+config-url = http://${sozu-frontend:connection-domain}
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+backend-url = ${sozu-service:url}
+url = ${sozu-frontend:connection-secure_access}
+
+[sozu-publish-slave-information]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-sozu-publish-slave-information:output
+RootSoftwareInstance = ${:default}
+
+[dynamic-sozu-publish-slave-information]
+recipe = slapos.recipe.template:jinja2
+output = ${buildout:directory}/sozu-publish-slave-information.cfg
+extensions = jinja2.ext.do
+url = {{ template_publish_slave }}
+context =
+    import json_module          json
+    raw eggs_directory          {{ eggs_directory }}
+    raw develop_eggs_directory  {{ develop_eggs_directory }}
+    raw ipv6                    {{ ipv6 }}
+    raw ipv4                    {{ ipv4 }}
+    section slave_dict          sozu-slave-information
+
+[sozu-slave-information]
+{% for name, cluster_dict in cluster_definition_dict.items() -%}
+{{ name }} = {{ dumps(cluster_dict) }}
+{% endfor -%}
+
+[buildout]
+extends = {{ template_monitor }}
+
+parts =
+  sozu-https-promise
+  sozu-http-promise
+  sozu-frontend-promise
+  sozu-http-frontend-promise
+  sozu-service
+  publish-connection-information
+  sozu-publish-slave-information
+
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

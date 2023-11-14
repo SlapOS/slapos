@@ -1,0 +1,165 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "protocol": {
+      "title": "Protocol for cluster",
+      "description": "The protocol option indicates if we will use HTTP or TCP proxying",
+      "type": "string",
+      "default": "http",
+      "enum": [
+        "http",
+        "tcp"
+      ]
+    },
+    "load-balancing": {
+      "title": "Load balancing algorithm",
+      "description": "The possible values are ROUND_ROBIN, RANDOM, LEAST_LOADED and POWER_OF_TWO. Defaults to ROUND_ROBIN",
+      "type": "string",
+      "default": "ROUND_ROBIN",
+      "enum": [
+        "ROUND_ROBIN",
+        "RANDOM",
+        "LEAST_LOADED",
+        "POWER_OF_TWO"
+      ]
+    },
+    "load-metric": {
+      "title": "Load metric",
+      "description": "Metric evaluating the load on the backend. available options: connections, requests, connection_time.",
+      "type": "string",
+      "default": "connections",
+      "enum": [
+        "connections",
+        "requests",
+        "connection_time"
+      ]
+    },
+    "frontend-dict": {
+      "title": "Sozu frontends configuration",
+      "description": "A cluster is a set of frontends, routing rules, and backends.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "address": {
+              "title": "TCP listener",
+              "description": "TCP address listener (ip and port). Something like: 0.0.0.0:8080",
+              "type": "string"
+            },
+            "hostname": {
+              "title": "Hostname",
+              "description": "host name of the cluster.",
+              "type": "string"
+            },
+            "path": {
+              "title": "Path",
+              "description": "A routing rule for incoming requests. The path of the request must match it. Can be a prefix (default), a regex, or a strictly equal path.",
+              "type": "string",
+              "default": ""
+            },
+            "path-type": {
+              "title": "Path type",
+              "description": "This is useful if \"path\" is set. Values are PREFIX | REGEX | EQUALS # defaults to PREFIX.",
+              "type": "string",
+              "default": "PREFIX",
+              "enum": [
+                "PREFIX",
+                "REGEX",
+                "EQUALS"
+              ]
+            },
+            "sticky-session": {
+              "title": "Sticky session",
+              "description": "Activates sticky sessions for this cluster.",
+              "type": "boolean",
+              "default": false
+            },
+            "https-redirect": {
+              "title": "https redirect",
+              "description": "Activates automatic redirection to HTTPS for this cluster.",
+              "type": "boolean",
+              "default": false
+            },
+            "tag-list": {
+              "title": "Custom tags",
+              "description": "Key=value list of custom tag to retrieve a frontend with the CLI or in the logs.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "tls-versions": {
+              "title": "Supported TLS versions",
+              "description": "Possible values are SSL_V2, SSL_V3, TLSv1, TLS_V11, TLS_V12, TLS_V13. Ex: [\"TLS_V12\", \"TLS_V13\"].",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "deploy-certificate": {
+              "title": "Deploy self-signed certificate",
+              "description": "Use a self-signed certificate with this frontend. If set to true, frontend listen on https, certificate and key are ignored.",
+              "type": "boolean",
+              "default": true
+            },
+            "certificate": {
+              "title": "Certificate for HTTPS frontend",
+              "description": "Enable HTTPS frontend and use this certificate.",
+              "textarea": true,
+              "type": "string"
+            },
+            "key": {
+              "title": "SSL key for HTTPS frontend",
+              "description": "Enable HTTPS frontend and use this SSL key.",
+              "textarea": true,
+              "type": "string"
+            },
+            "certificate-chain": {
+              "title": "Certificate chain for HTTPS frontend",
+              "description": "Certificate chain for HTTPS frontend.",
+              "textarea": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "backend-dict": {
+      "title": "Sozu backends configuration",
+      "description": "Indicates the backend servers used by the cluster.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "address": {
+              "title": "TCP listener",
+              "description": "TCP address listener (ip and port). Something like: 0.0.0.0:8080",
+              "type": "string"
+            },
+            "backend-id": {
+              "title": "Backend ID",
+              "description": "Backend unique identifier, ex: my-app-backend.",
+              "type": "string"
+            },
+            "weight": {
+              "title": "Weight",
+              "description": "Optional: weight used by the load balancing algorithm.",
+              "type": "integer"
+            },
+            "sticky-id": {
+              "title": "Sticky-id",
+              "description": "Optional: sticky session identifier.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

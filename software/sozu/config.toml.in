@@ -1,0 +1,288 @@
+# sozu proxy test config file
+
+# top level options
+
+# path to a file sozu can use to load an initial configuration state for its
+# routing. You can generate this file from sozu's current routing by running
+# the command `sozu state save -f state.json`
+# this must be RELATIVE to config.toml
+# saved_state = "./state.json"
+
+# save the configuration to the saved_state file every time we receive a
+# configuration message on the configuration socket
+# defaults to false, and will not work if the 'saved_state' option is not set
+# automatic_state_save = false
+
+# logging verbosity. Possible values are "error", "warn", "info", "debug" and
+# "trace". For performance reasons, the logs at "debug" or "trace" level are
+# not compiled by default. To activate them, pass the "logs-debug" and
+# "logs-trace" compilation options to cargo
+log_level = "{{ parameter_dict.get('log-level', 'info') }}"
+
+# where the logs will be sent. It defaults to sending the logs on standard output,
+# but they could be written to a UDP address:
+# log_target     = "udp://127.0.0.1:9876"
+# to a TCP address:
+# log_target     = "tcp://127.0.0.1:9876"
+# to a unix socket
+# log_target = "unix:///var/sozu/logs
+# to a file
+# log_target = "file:///var/log/sozu.log"
+# to_stdout
+log_target = "file://{{ parameter_dict['log-file'] }}"
+
+# optional different target for access logs (IP addresses, domains, URI, HTTP status, etc)
+# It supports the same options as log_target
+log_access_target = "file://{{ parameter_dict['access-log-file'] }}"
+
+# path to the unix socket file used to send commands to sozu
+# default value points to "sozu.sock" file in the current directory
+command_socket = "{{ parameter_dict['socket-file'] }}"
+
+# size in bytes of the buffer used by the command socket protocol. If the message
+# sent to sozu is too large, or the data that sozu must return is too large, the
+# buffer will grow up to max_command_buffer_size. If the buffer is still not large
+# enough sozu will close the connection
+# defaults to 1000000
+command_buffer_size = 16384
+# defaults to command_buffer_size * 2
+max_command_buffer_size = {{ parameter_dict["max-buffer-size"] }}
+
+# the number of worker processes that will handle traffic
+# defaults to 2 workers
+worker_count = {{ parameter_dict["worker-count"] }}
+
+# indicates if workers should be automatically restarted if they crash / hang
+# should be true for production and false for development
+# defaults to true
+worker_automatic_restart = true
+
+# indicates if worker process will be pinned on a core. If you activate this, be sure
+# that you do not have more workers than CPU cores (and leave at least one core for
+# the kernel and the main process)
+handle_process_affinity = false
+
+# maximum number of connections to a worker. If it reached that number and
+# there are new connections available, the worker will accept and close them
+# immediately to indicate it is too busy to handle traffic
+# defaults to 10000 maximum connections
+max_connections = {{ parameter_dict["max-connections"] }}
+
+# maximum number of buffers in the pool used by the protocol implementations
+# for active connections (ie currently serving a request). For now, you should
+# estimate that max_buffers = number of concurrent requests * 2
+# defaults to 1000
+# max_buffers = 1000
+
+# minimum number of buffers preallocated in the pool
+# cannot be larger than max_buffers
+# defaults to 1
+# min_buffers = 1
+
+# size of the buffers used by the protocol implementations. Each worker will
+# preallocate max_buffers * 2 * buffer_size bytes, so you should plan for this
+# memory usage. If you plan to use sozu's runtime upgrade feature, you should
+# leave enough memory for one more worker (also for the kernel, etc), so total
+# RAM should be larger than (worker count + 1) * max_buffers * 2 * buffer_size bytes
+# defaults to 16393 (minimum size for HTTP/2 is a 16384 bytes frame + 9 bytes of header
+buffer_size = 16393
+
+# how much time (in milliseconds) sozu command line will wait for a command to complete.
+# Defaults to 1000 milliseconds
+ctl_command_timeout = {{ parameter_dict["ctl-timeout"] }}
+
+# PID file is a file containing the PID of the main process of sozu.
+# It can be helpful to help systemd or any other service system to keep track
+# of the main process across upgrades. PID file is not created unless this option
+# is set or if SOZU_PID_FILE_PATH environment variable was defined at build time.
+pid_file_path = "{{ parameter_dict['pid-file'] }}"
+
+# maximum time of inactivity for a frontend socket, in seconds
+# defaults to 60 seconds, can be specified at the listener level
+front_timeout = {{ parameter_dict["front-timeout"] }}
+
+# maximum time of inactivity for a backend socket, in seconds
+# defaults to 30 seconds, can be specified at the listener level
+back_timeout = {{ parameter_dict["back-timeout"] }}
+
+# maximum time to connect to a backend server, in seconds
+# defaults to 3 seconds, can be specified at the listener level
+connect_timeout = {{ parameter_dict["connect-timeout"] }}
+
+# maximum time to receive a request since the connection started
+# defaults to 10 seconds, can be specified at the listener level
+request_timeout = {{ parameter_dict["request-timeout"] }}
+#
+# duration between zombie checks, in seconds
+# defaults to 30 minutes
+# in case of bugs in sozu's event loop and protocol implementations, some client
+# sessions could be stuck, not receiving any more event, and consuming resources.
+# sozu verifies regularly if there are such zombie sessions, logs their state
+# and removes them
+# zombie_check_interval = 1800
+
+# by default, all listeners start a TCP listen socket o startup
+# if set to false, this option will prevent them from listening. You can then add
+# the complete configuration, and send an ActivateListener message afterwards
+activate_listeners = true
+
+# various statistics can be sent to a server that supports the statsd protocol
+# You can see those statistics with the command line, like this: `sozu metrics get` or
+# `sozu metrics get --json` for machine consumption
+#
+#[metrics]
+# address = "127.0.0.1:8125"
+# use InfluxDB's statsd protocol flavor to add tags
+# tagged_metrics = false
+# metrics key prefix
+# prefix = "sozu"
+
+# Listeners
+# configuration options specific to a TCP listen socket
+
+# Example for a HTTP (plaintext) listener
+[[listeners]]
+protocol = "http"
+
+# listening address
+address = "[{{ parameter_dict['ip'] }}]:{{ parameter_dict['port'] }}"
+
+# specify a different IP than the one the socket sees, for logs and forwarded headers
+# this option is incompatible with expect_proxy
+# public_address = "1.2.3.4:80"
+
+# path to custom 404 and 503 answers
+# a 404 response is sent when sozu does not know about the requested domain or path
+# a 503 response is sent if there are no backend servers available
+#answer_404 = "../lib/assets/404.html"
+#answer_503 = "../lib/assets/503.html"
+
+# defines the sticky session cookie's name, if `sticky_session` is activated for
+# a cluster. Defaults to "SOZUBALANCEID"
+# sticky_name = "SOZUBALANCEID"
+#
+# Configures the client socket to receive a PROXY protocol header
+# this option is incompatible with public_address
+# expect_proxy = false
+
+# Example for a HTTPS listener
+[[listeners]]
+protocol = "https"
+
+# listening address
+address = "[{{ parameter_dict['ip'] }}]:{{ parameter_dict['https-port'] }}"
+
+# specify a different IP than the one the socket sees, for logs and forwarded headers
+# this option is incompatible with expect_proxy
+# public_address = "1.2.3.4:80"
+
+# answer_404 = "../lib/assets/404.html"
+# answer_503 = "../lib/assets/503.html"
+# sticky_name = "SOZUBALANCEID"
+
+# Configures the client socket to receive a PROXY protocol header
+# this option is incompatible with public_address
+# expect_proxy = false
+
+# Supported TLS versions. Possible values are "SSL_V2", "SSL_V3", "TLSv1", "TLS_V11", "TLS_V12", "TLS_V13".
+# Defaults to `["TLS_V12", "TLS_V13"]`. Besides, `rustls` tls provider only support "TLS_V12" and "TLS_V13" values.
+tls_versions = ["TLS_V12", "TLS_V13"]
+
+# TLS ciphers considered as secure can be retrieved on the ANSSI document located here:
+# https://www.ssi.gouv.fr/uploads/2020/03/anssi-guide-recommandations_de_securite_relatives_a_tls-v1.2.pdf
+#
+# When using `Rustls` TLS provider:
+# * Sets the lists of availables ciphers (TLSv1.2 and TLSv1.3). Supported ciphers names are specified at
+#   https://docs.rs/rustls/latest/rustls/static.ALL_CIPHER_SUITES.html
+#
+cipher_list = [
+    # TLS 1.3 cipher suites
+    "TLS13_AES_256_GCM_SHA384",
+    "TLS13_AES_128_GCM_SHA256",
+    "TLS13_CHACHA20_POLY1305_SHA256",
+    # TLS 1.2 cipher suites
+    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+]
+
+# default certificate and key
+# in case you want to set up TLS without SNI, you can define the default
+# certificate here
+certificate = "{{ parameter_dict['cert-file'] }}"
+key = "{{ parameter_dict['key-file'] }}"
+certificate_chain = "{{ parameter_dict['cert-chain-file'] }}"
+
+# options specific to a TCP proxy listener
+#[[listeners]]
+# protocol = "tcp"
+# address = "127.0.0.1:8081"
+#
+# specify a different IP than the one the socket sees, for logs and forwarded headers
+# this option is incompatible with expect_proxy
+# public_address = "1.2.3.4:81"
+#
+# Configures the client socket to receive a PROXY protocol header
+# this option is incompatible with public_address
+# expect_proxy = false
+
+# static configuration for cluster
+#
+# A cluster is a set of frontends, routing rules, and backends.
+# These clusters will be routed by sozu directly from start
+[clusters]
+
+{% for name, cluster_dict in cluster_definition_dict.items() %}
+# every cluster has a "cluster id", here it is "MyCluster"
+# this is an example of a routing configuration for the HTTP and HTTPS proxies
+[clusters.{{ name }}]
+
+# the protocol option indicates if we will use HTTP or TCP proxying
+# possible options are "http" or "tcp"
+protocol = "{{ cluster_dict['protocol'] }}"
+
+# per cluster load balancing algorithm. The possible values are
+# "ROUND_ROBIN", "RANDOM", "LEAST_LOADED" and "POWER_OF_TWO". Defaults to "ROUND_ROBIN"
+load_balancing = "{{ cluster_dict['load-balancing'] }}"
+# metric evaluating the load on the backend. available options: connections, requests, connection_time
+load_metric = "{{ cluster_dict['load-metric'] }}"
+
+# frontends configuration
+# this specifies which listeners; domains, certificates that will be configured for a cluster
+# each element of the array must be specified on one line (toml format limitation)
+# possible frontend options:
+# - address: TCP listener
+# - hostname: host name of the cluster
+# - path = "/api" # optional. A routing rule for incoming requests. The path of the request must match it. Can be a prefix (default), a regex, or a strictly equal path.
+# - path_type = PREFIX | REGEX | EQUALS # defaults to PREFIX
+# - sticky_session = false # activates sticky sessions for this cluster
+# - https_redirect = false #  activates automatic redirection to HTTPS for this cluster
+# - custom_tag: a tag to retrieve a frontend with the CLI or in the logs
+frontends = [
+{%  for _, frontend_dict in cluster_dict['frontend-dict'].items() -%}
+{%    set enable_https = frontend_dict.get("certificate") and frontend_dict.get("key") and frontend_dict.get("chain") -%}
+{%    set tag_dict = {} -%}
+{%    for tag in frontend_dict['tag-list'] -%}
+{%      set k, v = tag.split('=') -%}
+        do tag_dict.__setitem__(k.strip(), v.strip()) -%}
+{%    endfor -%}
+    { address = "{{ frontend_dict['address'] }}", hostname = "{{ frontend_dict.get('hostname') }}", tags = tag_dict, path = "{{ frontend_dict.get('path', '') }}", path_type = {{ frontend_dict.get("path-type", "PREFIX") }}, sticky_session = {{ frontend_dict.get("sticky-session", "false") }}, https_redirect = {{ frontend_dict.get("https-redirect", "false") }}{% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", []) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['chain'] }}" {% endif -%} },
+{%  endfor -%}
+]
+
+# backends configuration
+# this indicates the backend servers used by the cluster
+# possible options:
+# - address: IP and port of the backend server
+# - weight: weight used by the load balancing algorithm
+# - sticky-id: sticky session identifier
+backends = [
+{%  for _, backend_dict in cluster_dict['backend-dict'].items() -%}
+    { address = "{{ backend_dict['address'] }}", backend_id = "{{ backend_dict['backend-id'] }}"{% if backend_dict.get("weight") %}, weight = {{ backend_dict["weight"] }} {% endif -%}{% if backend_dict.get("sticky-id") %}, sticky-id = {{ backend_dict["sticky-id"] }} {% endif -%} }
+{%  endfor -%}
+]
+
+{% endfor -%}
