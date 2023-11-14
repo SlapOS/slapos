@@ -71,7 +71,7 @@ trusted-proxy 0.0.0.0
   id {{ parameter_dict['site-id'] }}
   owner {{ parameter_dict['inituser'] }}
   erp5_sql_connection_string {{ sql_connection_string }}
-  cmf_activity_sql_connection_string {{ sql_connection_string }}
+  cmf_activity_sql_connection_string !READ-COMMITTED {{ sql_connection_string }}
   bt5_repository_url {{ ' '.join(bt5_repository_url) }}
   bt5 {{ parameter_dict['bt5'] }}
 {%- if parameter_dict['id-store-interval'] != None %}
