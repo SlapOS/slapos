@@ -262,7 +262,9 @@ mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
 inituser = {{ slapparameter_dict['inituser-login'] }}
 {%  set mysql = urllib_parse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
 {%  set mysql_db = mysql.path.split('/')[1] -%}
-sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
+sql-connection-string = {{ '!REPEATABLE-READ %s@erp5-catalog-0:%s %s %s' % (
+    mysql_db, mysql.port, mysql.username, mysql.password) }}
+sql-isolated-connection-string = {{ '!READ-COMMITTED %s@erp5-catalog-0:%s %s %s' % (
     mysql_db, mysql.port, mysql.username, mysql.password) }}
 bt5 = {{ slapparameter_dict['bt5'] }}
 bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
@@ -518,7 +520,8 @@ inline =
 < = run-test-common
 command-name = runUnitTest
 command-line-extra =
-  --erp5_sql_connection_string '{{ connection_string_list[0] }}'
+  --erp5_sql_connection_string '!REPEATABLE-READ {{ connection_string_list[0] }}'
+  --erp5_sql_isolated_connection_string '!READ-COMMITTED {{ connection_string_list[0] }}'
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
   --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
   --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
