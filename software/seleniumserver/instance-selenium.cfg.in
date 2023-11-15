@@ -97,28 +97,28 @@ environment =
 hostname = $${slap-configuration:ipv4-random}
 
 
-[selenium-server-node-instance-firefox-52]
-<= selenium-server-node-instance
-capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-52:version},firefox_binary=${firefox-wrapper-52:location}
-java-args = -Dwebdriver.gecko.driver=${geckodriver-0.16.1:location}
-port = 7777
-
 [selenium-server-node-instance-firefox-60]
 <= selenium-server-node-instance
 capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-60:version},firefox_binary=${firefox-wrapper-60:location}
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.22.0:location}
-port = 7778
+port = 7777
 
 [selenium-server-node-instance-firefox-68]
 <= selenium-server-node-instance
 capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-68:version},firefox_binary=${firefox-wrapper-68:location}
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
-port = 7779
+port = 7778
 
 [selenium-server-node-instance-firefox-78]
 <= selenium-server-node-instance
 capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-78:version},firefox_binary=${firefox-wrapper-78:location}
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
+port = 7779
+
+[selenium-server-node-instance-firefox-115]
+<= selenium-server-node-instance
+capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-115:version},firefox_binary=${firefox-wrapper-115:location}
+java-args = -Dwebdriver.gecko.driver=${geckodriver-0.33.0:location}
 port = 7780
 
 [selenium-server-node-instance-chromium-69]
@@ -137,12 +137,10 @@ port = 7782
 [selenium-server-admin-password]
 recipe = slapos.cookbook:generate.password
 username = admin
-bytes = 12
 
 [selenium-server-selenium-password]
 recipe = slapos.cookbook:generate.password
 username = selenium
-bytes = 12
 
 
 [selenium-server-frontnend-certificate]
@@ -303,10 +301,10 @@ instance-promises =
   $${selenium-server-frontend-listen-promise:name}
   $${selenium-server-hub-listen-promise:name}
   $${selenium-server-hub-nodes-registered-promise:name}
-  $${selenium-server-node-firefox-52-listen-promise:name}
   $${selenium-server-node-firefox-60-listen-promise:name}
   $${selenium-server-node-firefox-68-listen-promise:name}
   $${selenium-server-node-firefox-78-listen-promise:name}
+  $${selenium-server-node-firefox-115-listen-promise:name}
   $${selenium-server-node-instance-chromium-69-listen-promise:name}
   $${selenium-server-node-instance-chromium-91-listen-promise:name}
 
@@ -353,11 +351,6 @@ inline =
   sys.exit(0 if expected_node_count == actual_node_count else 1)
 
 
-[selenium-server-node-firefox-52-listen-promise]
-<= check-port-listening-promise
-config-host = $${selenium-server-node-instance-firefox-52:hostname}
-config-port = $${selenium-server-node-instance-firefox-52:port}
-
 [selenium-server-node-firefox-60-listen-promise]
 <= check-port-listening-promise
 config-host = $${selenium-server-node-instance-firefox-60:hostname}
@@ -372,6 +365,11 @@ config-port = $${selenium-server-node-instance-firefox-68:port}
 <= check-port-listening-promise
 config-host = $${selenium-server-node-instance-firefox-78:hostname}
 config-port = $${selenium-server-node-instance-firefox-78:port}
+
+[selenium-server-node-firefox-115-listen-promise]
+<= check-port-listening-promise
+config-host = $${selenium-server-node-instance-firefox-115:hostname}
+config-port = $${selenium-server-node-instance-firefox-115:port}
 
 [selenium-server-node-instance-chromium-69-listen-promise]
 <= check-port-listening-promise
