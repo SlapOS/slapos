@@ -48,25 +48,25 @@ config-{{ parameter_name }} = {{ dumps(parameter_value) }}
 {% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
-{% if sla_parameter_dict == {} -%}
+{% set sla_key_main = "-sla-%s%s-" % (namebase, 0) -%}
+{% set sla_key_secondary = "-sla-%s-" % (0) -%}
+{% set sla_key_main_length = sla_key_main | length -%}
+{% set sla_key_secondary_length = sla_key_secondary | length -%}
+{% set sla_dict = {} -%}
+{% for key in sla_parameter_dict.keys() -%}
+{%   if key.startswith(sla_key_main) -%}
+{%     do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%   elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
+{%       do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%   endif -%}
+{% endfor -%}
+{% if sla_dict == {} %}
 sla-mode = unique_by_network
 {% else %}
-{%   set sla_key_main = "-sla-%s%s-" % (namebase, 0) -%}
-{%   set sla_key_secondary = "-sla-%s-" % (0) -%}
-{%   set sla_key_main_length = sla_key_main | length -%}
-{%   set sla_key_secondary_length = sla_key_secondary | length -%}
-{%   set sla_dict = {} -%}
-{%   for key in sla_parameter_dict.keys() -%}
-{%     if key.startswith(sla_key_main) -%}
-{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
-{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
-{%     endif -%}
-{%   endfor -%}
 {%   for key, value in six.iteritems(sla_dict) -%}
 sla-{{ key }} = {{ value }}
-{%   endfor -%}
-{% endif -%}
+{%   endfor %}
+{% endif %}
 
 {% if 'monitor-base-url' in monitor_return and not monitor_parameter_dict.get('set-monitor-url', False) -%}
 {% do monitor_url_list.append('${request-' ~ namebase ~ ':connection-monitor-base-url}') -%}
@@ -100,24 +100,24 @@ config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}
 {% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
-{% if sla_parameter_dict == {} -%}
+{% set sla_key_main = "-sla-%s%s-" % (namebase, id) -%}
+{% set sla_key_secondary = "-sla-%s-" % (id) -%}
+{% set sla_key_main_length = sla_key_main | length -%}
+{% set sla_key_secondary_length = sla_key_secondary | length -%}
+{% set sla_dict = {} -%}
+{% for key in sla_parameter_dict.keys() -%}
+{%   if key.startswith(sla_key_main) -%}
+{%     do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%   elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
+{%       do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%   endif -%}
+{% endfor -%}
+{% if sla_dict == {} %}
 sla-mode = unique_by_network
 {% else %}
-{%   set sla_key_main = "-sla-%s%s-" % (namebase, id) -%}
-{%   set sla_key_secondary = "-sla-%s-" % (id) -%}
-{%   set sla_key_main_length = sla_key_main | length -%}
-{%   set sla_key_secondary_length = sla_key_secondary | length -%}
-{%   set sla_dict = {} -%}
-{%   for key in sla_parameter_dict.keys() -%}
-{%     if key.startswith(sla_key_main) -%}
-{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
-{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
-{%     endif -%}
-{%   endfor -%}
 {%   for key, value in six.iteritems(sla_dict) -%}
 sla-{{ key }} = {{ value }}
-{%   endfor -%}
+{%   endfor %}
 {% endif %}
 
 [publish-connection-information]
@@ -202,21 +202,21 @@ config-{{ key }} = {{ value }}
 {% endfor -%}
 return = ssh-key notification-url feeds-url  {{ monitor_return }}
 shared = false
-{% if sla_parameter_dict == {} -%}
+{% set sla_key_main = "-sla-%s%s-" % ("pbs", id) -%}
+{% set sla_key_secondary = "-sla-%s-" % (id) -%}
+{% set sla_key_main_length = sla_key_main | length -%}
+{% set sla_key_secondary_length = sla_key_secondary | length -%}
+{% set sla_dict = {} -%}
+{% for key in sla_parameter_dict.keys() -%}
+{%   if key.startswith(sla_key_main) -%}
+{%     do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%   elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
+{%       do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%   endif -%}
+{% endfor -%}
+{% if sla_dict == {} %}
 sla-mode = unique_by_network
 {% else %}
-{%   set sla_key_main = "-sla-%s%s-" % ("pbs", id) -%}
-{%   set sla_key_secondary = "-sla-%s-" % (id) -%}
-{%   set sla_key_main_length = sla_key_main | length -%}
-{%   set sla_key_secondary_length = sla_key_secondary | length -%}
-{%   set sla_dict = {} -%}
-{%   for key in sla_parameter_dict.keys() -%}
-{%     if key.startswith(sla_key_main) -%}
-{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
-{%     elif key.startswith(sla_key_secondary) and key[sla_key_secondary_length:] not in sla_dict -%}
-{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
-{%     endif -%}
-{%   endfor -%}
 {%   for key, value in six.iteritems(sla_dict) -%}
 sla-{{ key }} = {{ value }}
 {%   endfor %}
