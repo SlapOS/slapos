@@ -103,24 +103,24 @@ class LopcommNetconfClient:
         sub = self.conn.create_subscription()
         self.logger.info('Subscription to %s successful' % (self.address,))
     def get_notification(self):
-        result = None
-        while result == None:
-            self.logger.debug('Waiting for notification from %s...' % (self.address,))
-            result = self.conn.take_notification(block=True)
-            if result:
-              self.logger.debug('Got new notification from %s...' % (self.address,))
-              result_in_xml = result._raw
-              data_dict = xmltodict.parse(result_in_xml)
-              if 'alarm-notif' in data_dict['notification']:
-                self.json_logger.info('', extra={'data': json.dumps(data_dict)})
-              elif 'supervision-notification' in data_dict['notification']:
-                self.supervision_json_logger.info('', extra={'data': json.dumps(data_dict)})
-              elif 'netconf-session-start' in data_dict['notification'] or 'netconf-session-end' in data_dict['notification']:
-                self.ncsession_json_logger.info('', extra={'data': json.dumps(data_dict)})
-              elif any(event in data_dict['notification'] for event in ['install-event', 'activation-event', 'download-event']):
-                  self.software_json_logger.info('', extra={'data': json.dumps(data_dict)})
-              else:
-                self.cfg_json_logger.info('', extra={'data': json.dumps(data_dict)})
+        self.logger.debug('Waiting for notification from %s...' % (self.address,))
+        result = self.conn.take_notification(block=True, timeout=120)
+        if result:
+          self.logger.debug('Got new notification from %s...' % (self.address,))
+          result_in_xml = result._raw
+          data_dict = xmltodict.parse(result_in_xml)
+          if 'alarm-notif' in data_dict['notification']:
+            self.json_logger.info('', extra={'data': json.dumps(data_dict)})
+          elif 'supervision-notification' in data_dict['notification']:
+            self.supervision_json_logger.info('', extra={'data': json.dumps(data_dict)})
+          elif 'netconf-session-start' in data_dict['notification'] or 'netconf-session-end' in data_dict['notification']:
+            self.ncsession_json_logger.info('', extra={'data': json.dumps(data_dict)})
+          elif any(event in data_dict['notification'] for event in ['install-event', 'activation-event', 'download-event']):
+              self.software_json_logger.info('', extra={'data': json.dumps(data_dict)})
+          else:
+            self.cfg_json_logger.info('', extra={'data': json.dumps(data_dict)})
+        else:
+            raise TimeoutError
     def edit_config(self, config_files):
         for config_file in config_files:
             with open(config_file) as f:
