@@ -10,7 +10,11 @@
 [{{ request_peer_section_title }}]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
-name = Peer{{ id }}
+{% if id < len(parameter_dict['droneGuidList']) -%}
+name = Drone{{ id }}_{{ guid }}
+{% else -%}
+name = Subscriber{{ len(parameter_dict['droneGuidList']) - id }}_{{ guid }}
+{% endif -%}
 software-url = ${:software-release-url}
 software-type = peer
 return = instance-path
