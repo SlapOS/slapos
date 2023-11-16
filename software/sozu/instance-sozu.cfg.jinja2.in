@@ -45,36 +45,28 @@ wrapper = ${directory:tmp}/ca-${:name}
 {% set name = instance_dict['slave_reference'] -%}
 {% set cert_section_name = '${' ~ name ~ '-ssl:cert-file}' -%}
 {% set key_section_name = '${' ~ name ~ '-ssl:key-file}' -%}
-{% set slave_dict = {
-  'name': name.replace('-', '_').lower(),
-  'protocol': instance_dict.get('protocol', 'http'),
-  'load-balancing': instance_dict.get('load-balancing', 'ROUND_ROBIN'),
-  'load-metric': instance_dict.get('load-metric', 'connections'),
-  'frontend-dict': instance_dict['frontend-dict'],
-  'backend-dict': instance_dict['backend-dict']
-  } -%}
 
 [{{ name }}-ssl]
 <= ca-certificate-base
 name = {{ name }}
 
-{%  for cluster_name, cluster_dict in slave_dict['frontend-dict'].items() %}
+{%  for cluster_name, cluster_dict in instance_dict['frontend-dict'].items() %}
 {%    if cluster_dict.get('deploy-certificate') -%}
-{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate', '${' ~ name ~ '-ssl:cert-file}') -%}
-{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('key', '${' ~ name ~ '-ssl:key-file}') -%}
-{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ '-ssl:chain-file}') -%}
+{%      do instance_dict['frontend-dict'][cluster_name].__setitem__('certificate', '${' ~ name ~ '-ssl:cert-file}') -%}
+{%      do instance_dict['frontend-dict'][cluster_name].__setitem__('key', '${' ~ name ~ '-ssl:key-file}') -%}
+{%      do instance_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ '-ssl:chain-file}') -%}
 
 {%    elif cluster_dict.get('certificate') and cluster_dict.get('key') and cluster_dict.get('certificate-chain') -%}
 {{ createfile(name ~ cluster_name ~ "-crt", "${directory:dssl}/" ~ name ~ cluster_name ~ ".crt", cluster_dict['certificate']) }}
 {{ createfile(name ~ cluster_name ~ "-key", "${directory:dssl}/" ~ name ~ cluster_name ~ ".key", cluster_dict['key']) }}
 {{ createfile(name ~ cluster_name ~ "-chain", "${directory:dssl}/" ~ name ~ cluster_name ~ "-chain.crt", cluster_dict['certificate-chain']) }}
 
-{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate', '${' ~ name ~ cluster_name~ '-crt:output}') -%}
-{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('key', '${' ~ name ~ cluster_name~ '-key:output}') -%}
-{%      do slave_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ cluster_name~ '-chain:output}') -%}
+{%      do instance_dict['frontend-dict'][cluster_name].__setitem__('certificate', '${' ~ name ~ cluster_name~ '-crt:output}') -%}
+{%      do instance_dict['frontend-dict'][cluster_name].__setitem__('key', '${' ~ name ~ cluster_name~ '-key:output}') -%}
+{%      do instance_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ cluster_name~ '-chain:output}') -%}
 {%    endif -%}
 {%  endfor -%}
-{%  do cluster_definition_dict.__setitem__(slave_dict['name'], slave_dict) -%}
+{%  do cluster_definition_dict.__setitem__(instance_dict['name'], instance_dict) -%}
 {% endfor -%}
 
 [sozu-parameters]

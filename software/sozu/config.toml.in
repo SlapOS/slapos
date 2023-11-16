@@ -242,13 +242,13 @@ certificate_chain = "{{ parameter_dict['cert-chain-file'] }}"
 
 # the protocol option indicates if we will use HTTP or TCP proxying
 # possible options are "http" or "tcp"
-protocol = "{{ cluster_dict['protocol'] }}"
+protocol = "{{ cluster_dict.get('protocol', 'http') }}"
 
 # per cluster load balancing algorithm. The possible values are
 # "ROUND_ROBIN", "RANDOM", "LEAST_LOADED" and "POWER_OF_TWO". Defaults to "ROUND_ROBIN"
-load_balancing = "{{ cluster_dict['load-balancing'] }}"
+load_balancing = "{{ cluster_dict.get('load-balancing', 'ROUND_ROBIN') }}"
 # metric evaluating the load on the backend. available options: connections, requests, connection_time
-load_metric = "{{ cluster_dict['load-metric'] }}"
+load_metric = "{{ cluster_dict.get('load-metric', 'connections') }}"
 
 # frontends configuration
 # this specifies which listeners; domains, certificates that will be configured for a cluster
