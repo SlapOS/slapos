@@ -199,6 +199,20 @@ class LopcommNetconfClient:
             "running_slot_name_build_version": running_slot_name_build_version
         }
 
+    def supervision_reset(self, interval=60, margin=10):
+      self.logger.info("NETCONF server supervision replying...")
+      supervision_watchdog_rpc_xml = f"""
+          <supervision-watchdog-reset xmlns="urn:o-ran:supervision:1.0">
+              <supervision-notification-interval>{interval}</supervision-notification-interval>
+              <guard-timer-overhead>{margin}</guard-timer-overhead>
+          </supervision-watchdog-reset>
+      """
+      supervision_watchdog_reply_xml = self.custom_rpc_request(supervision_watchdog_rpc_xml)
+      if supervision_watchdog_reply_xml:
+        self.logger.info("NETCONF server supervision replied")
+        supervision_watchdog_data = xmltodict.parse(supervision_watchdog_reply_xml)
+        self.supervision_reply_json_logger.info('', extra={'data': json.dumps(supervision_watchdog_data)})
+
     def close(self):
         # Close not compatible between ncclient and netconf server
         #self.conn.close()
