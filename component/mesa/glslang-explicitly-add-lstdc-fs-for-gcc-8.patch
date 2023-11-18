@@ -1,0 +1,24 @@
+From a5d9cd935ddc49c0ac4cefe8e9dec8b137684c29 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Fri, 17 Nov 2023 18:29:59 +0900
+Subject: [PATCH] explicitly add -lstdc++fs for gcc 8
+
+---
+ CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a734ad1f..e1ce3149 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -181,6 +181,7 @@ endif()
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_CXX_EXTENSIONS OFF)
++link_libraries(stdc++fs)
+ 
+ function(glslang_set_link_args TARGET)
+     # For MinGW compiles, statically link against the GCC and C++ runtimes.
+-- 
+2.40.1
+
