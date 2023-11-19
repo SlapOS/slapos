@@ -25,9 +25,8 @@ fonts =
     ${liberation-fonts:location}
     ${ocrb-fonts:location}
     $${directory:fonts}
-# XXX we don't include conf.d for now, to keep compatibility with current font selection problems.
 includes =
-#    ${fontconfig:location}/etc/fonts/conf.d
+    ${fontconfig:location}/etc/fonts/conf.d
 
 [xvfb-instance]
 recipe = slapos.cookbook:wrapper
