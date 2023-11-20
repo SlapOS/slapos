@@ -29,11 +29,11 @@
       "title": "Load metric",
       "description": "Metric evaluating the load on the backend. available options: connections, requests, connection_time.",
       "type": "string",
-      "default": "connections",
+      "default": "CONNECTIONS",
       "enum": [
-        "connections",
-        "requests",
-        "connection_time"
+        "CONNECTIONS",
+        "REQUESTS",
+        "CONNECTION_TIME"
       ]
     },
     "frontend-dict": {

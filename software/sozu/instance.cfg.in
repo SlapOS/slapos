@@ -43,6 +43,7 @@ extra-context =
 <= jinja2-template-base
 url = {{ template_sozu_cfg }}
 extra-context =
+    import json_module              json
     key slave_instance_list         slap-configuration:slave-instance-list
     raw sozu_bin                    {{ sozu_location }}/bin/sozu
 
@@ -50,3 +51,8 @@ extra-context =
     raw config_toml_in             {{ config_toml }}
     raw template_publish_slave     {{ template_publish_slave }}
 
+[slave-output.cfg]
+recipe = slapos.recipe.template:jinja2
+output= ${buildout:directory}/${:_buildout_section_name_}
+inline =
+  ${slap-configuration:configuration}

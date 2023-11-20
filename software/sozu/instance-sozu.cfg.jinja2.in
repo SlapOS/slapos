@@ -41,8 +41,10 @@ cert-file = ${ca-directory:certs}/${:name}.key
 executable = echo "request certificate"
 wrapper = ${directory:tmp}/ca-${:name}
 
-{% for instance_dict in slave_instance_list -%}
-{% set name = instance_dict['slave_reference'] -%}
+{% for slave_dict in slave_instance_list %}
+{% set instance_dict = json_module.loads(slave_dict['_']) -%}
+{% set name = slave_dict['slave_reference'] -%}
+{% set slave_title = slave_dict['slave_title'] -%}
 {% set cert_section_name = '${' ~ name ~ '-ssl:cert-file}' -%}
 {% set key_section_name = '${' ~ name ~ '-ssl:key-file}' -%}
 
@@ -66,7 +68,7 @@ name = {{ name }}
 {%      do instance_dict['frontend-dict'][cluster_name].__setitem__('certificate-chain', '${' ~ name ~ cluster_name~ '-chain:output}') -%}
 {%    endif -%}
 {%  endfor -%}
-{%  do cluster_definition_dict.__setitem__(instance_dict['name'], instance_dict) -%}
+{%  do cluster_definition_dict.__setitem__(name, instance_dict) -%}
 {% endfor -%}
 
 [sozu-parameters]

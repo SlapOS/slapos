@@ -248,7 +248,7 @@ protocol = "{{ cluster_dict.get('protocol', 'http') }}"
 # "ROUND_ROBIN", "RANDOM", "LEAST_LOADED" and "POWER_OF_TWO". Defaults to "ROUND_ROBIN"
 load_balancing = "{{ cluster_dict.get('load-balancing', 'ROUND_ROBIN') }}"
 # metric evaluating the load on the backend. available options: connections, requests, connection_time
-load_metric = "{{ cluster_dict.get('load-metric', 'connections') }}"
+load_metric = "{{ cluster_dict.get('load-metric', 'CONNECTIONS') }}"
 
 # frontends configuration
 # this specifies which listeners; domains, certificates that will be configured for a cluster
@@ -264,12 +264,13 @@ load_metric = "{{ cluster_dict.get('load-metric', 'connections') }}"
 frontends = [
 {%  for _, frontend_dict in cluster_dict['frontend-dict'].items() -%}
 {%    set enable_https = frontend_dict.get("certificate") and frontend_dict.get("key") and frontend_dict.get("chain") -%}
-{%    set tag_dict = {} -%}
-{%    for tag in frontend_dict['tag-list'] -%}
-{%      set k, v = tag.split('=') -%}
-        do tag_dict.__setitem__(k.strip(), v.strip()) -%}
+{%    set tag_list = [] -%}
+{%    set user_tag_list = frontend_dict.get('tag-list', []) -%}
+{%    for tag in user_tag_list -%}
+{%        set k, v = tag.split('=') -%}
+{%        do tag_list.append(k.strip() ~ '="' ~ v.strip() ~ '"') -%}
 {%    endfor -%}
-    { address = "{{ frontend_dict['address'] }}", hostname = "{{ frontend_dict.get('hostname') }}", tags = tag_dict, path = "{{ frontend_dict.get('path', '') }}", path_type = {{ frontend_dict.get("path-type", "PREFIX") }}, sticky_session = {{ frontend_dict.get("sticky-session", "false") }}, https_redirect = {{ frontend_dict.get("https-redirect", "false") }}{% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", []) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['chain'] }}" {% endif -%} },
+    { address = "{{ frontend_dict['address'] }}", hostname = "{{ frontend_dict.get('hostname') }}", {% if user_tag_list -%} tags = {{ tag_list | join(',') }}, {%- endif %} path = "{{ frontend_dict.get('path', '') }}", path_type = "{{ frontend_dict.get("path-type", "PREFIX") }}", sticky_session = {{ frontend_dict.get("sticky-session", "false") }}, https_redirect = {{ frontend_dict.get("https-redirect", "false") }}{% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", []) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['chain'] }}" {% endif -%} },
 {%  endfor -%}
 ]
 
