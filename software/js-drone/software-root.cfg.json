@@ -1,0 +1,15 @@
+{
+  "name": "JS Drone Root",
+  "description": "Root instance requesting drones and subscribers",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Drone Swarm",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 0
+    }
+  }
+}

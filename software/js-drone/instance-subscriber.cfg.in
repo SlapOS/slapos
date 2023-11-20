@@ -1,0 +1,58 @@
+[buildout]
+extends =
+  ${instance-peer-base:output}
+
+[worker]
+gwsocket_bin = ${gwsocket:location}/bin/gwsocket
+
+[gwsocket-port]
+recipe = slapos.cookbook:free_port
+minimum = 6789
+maximum = 6799
+ip = $${slap-configuration:ipv6-random}
+
+[peer-configuration]
+extra-context =
+  key websocket_ip gwsocket-port:ip
+  key websocket_port gwsocket-port:port
+inline =
+  {% do parameter_dict.__setitem__('websocketIp', websocket_ip) -%}
+  {% do parameter_dict.__setitem__('websocketPort', websocket_port) -%}
+  {{ json_module.dumps(parameter_dict) }}
+
+[script-js]
+recipe = slapos.recipe.template:jinja2
+template = ${script-js:target}
+rendered = $${directory:public}/script.js
+websocket-url = [$${gwsocket-port:ip}]:$${gwsocket-port:port}
+context =
+  key debug slap-configuration:configuration.debug
+  key websocket_url :websocket-url
+
+[index-html]
+recipe = slapos.recipe.template:jinja2
+template = ${index-html:target}
+rendered = $${directory:public}/index.html
+context =
+  key debug slap-configuration:configuration.debug
+  key nb_drones slap-configuration:configuration.numberOfDrones
+
+[httpd-port]
+recipe = slapos.cookbook:free_port
+minimum = 8080
+maximum = 8090
+ip = $${slap-configuration:ipv6-random}
+
+[httpd]
+recipe = slapos.cookbook:simplehttpserver
+host = $${slap-configuration:ipv6-random}
+port = $${httpd-port:port}
+base-path = $${directory:public}
+wrapper = $${directory:service}/http-server
+log-file = $${directory:log}/httpd.log
+use-hash-url = false
+depends = $${index-html:rendered}
+
+[publish-connection-information]
+httpd-url = [$${httpd:host}]:$${httpd:port}
+websocket-url = ws://$${script-js:websocket-url}

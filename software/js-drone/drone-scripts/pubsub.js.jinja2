@@ -1,13 +1,13 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 /*global console, open, runPubsub, Worker*/
-import {runPubsub} from {{ json_module.dumps(qjs_wrapper) }};
+import {runPubsub} from "{{ qjs_wrapper }}";
 import {Worker} from "os";
 import {open} from "std";
 
 (function (console, open, runPubsub, Worker) {
   "use strict";
 
-  var CONF_PATH = {{ json_module.dumps(configuration) }},
+  var CONF_PATH = "{{ configuration }}",
     PORT = "4840",
     parent = Worker.parent,
     conf_file = open(CONF_PATH, "r"),
