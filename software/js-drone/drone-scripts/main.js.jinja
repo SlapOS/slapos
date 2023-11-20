@@ -28,8 +28,10 @@ import { err, exit, open, out } from "std";
     AUTOPILOT_CONNECTION_TIMEOUT = 5,
     MAVSDK_LOG_FILE_PATH =
       "{{ log_dir }}/mavsdk_" + new Date().toISOString() + ".log",
-    LOG_FILE =
-      open("{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log", "w"),
+    QUICKJS_LOG_FILE_PATH =
+      "{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log",
+    QUICKJS_LOG_FILE =
+      open(QUICKJS_LOG_FILE_PATH, "w"),
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
@@ -40,8 +42,8 @@ import { err, exit, open, out } from "std";
   conf_file.close();
 
   // redirect stdout and stderr
-  dup2(LOG_FILE.fileno(), out.fileno());
-  dup2(LOG_FILE.fileno(), err.fileno());
+  dup2(QUICKJS_LOG_FILE.fileno(), out.fileno());
+  dup2(QUICKJS_LOG_FILE.fileno(), err.fileno());
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -57,7 +59,7 @@ import { err, exit, open, out } from "std";
     if (is_a_drone) {
       stop();
     }
-    LOG_FILE.close();
+    QUICKJS_LOG_FILE.close();
     exit(exit_code);
   }
 
@@ -86,7 +88,8 @@ import { err, exit, open, out } from "std";
         configuration.autopilotIp,
         configuration.autopilotPort,
         MAVSDK_LOG_FILE_PATH,
-        AUTOPILOT_CONNECTION_TIMEOUT
+        AUTOPILOT_CONNECTION_TIMEOUT,
+        configuration.debug
       ),
       "Failed to connect to " + address
     );

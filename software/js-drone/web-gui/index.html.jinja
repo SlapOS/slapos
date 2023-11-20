@@ -26,10 +26,14 @@
       min-width: 1028px;
       height: max-content;
     }
+    textarea {
+      resize: none;
+    }
     th, td{
       padding: 1%;
       text-align: center;
       vertical-align: middle;
+      white-space: nowrap;
     }
     .blue-text {color: blue}
     .connected {color: green}  
@@ -52,27 +56,27 @@
     .white-text {color: white}
     .yellow-text {color: yellow}
     #drones-status {height: 50vh}
-    #prompt {
-      background-color: rgb(18, 19, 20);
-      max-width: 1028px;
-      height: 20vh;
-      margin: auto;
-    }
-    #prompt-div {
-      height: max-content;
-    }
   </style>
 
 </head>
 <body>
-
-  <div id="prompt-div">
-    <div class="container">
-      <label for="web-socket-status">web socket status:</label>
-      <output class="disconnected" id="web-socket-status">Disconnected</output>
-    </div>
-    <pre id="prompt"></pre>
+  <div class="container">
+    <label for="web-socket-status">web socket status:</label>
+    <output class="disconnected" id="web-socket-status">Disconnected</output>
   </div>
+
+  {% if debug == 'True' -%}
+  <div class="container">
+    <table>
+      {% for i in range(int(nb_drones)) -%}
+      <tr>
+        <th>Drone {{ i }}</th>
+        <td><textarea id="log_{{ i }}" rows="4" cols="100" readonly></textarea><td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif -%}
 
   <div class="container" id="drones-status">
     <table>

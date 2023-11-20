@@ -25,6 +25,7 @@ config-numberOfDrones = {{ dumps(len(parameter_dict['droneGuidList'])) }}
 config-numberOfSubscribers = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
 config-id = {{ dumps(id) }}
 config-isASimulation = {{ dumps(parameter_dict['isASimulation']) }}
+config-debug = {{ dumps(parameter_dict['debug']) }}
 {% if id < len(parameter_dict['droneGuidList']) -%}
 {%   do drone_id_list.append(id) %}
 config-isADrone = {{ dumps(True) }}

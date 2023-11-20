@@ -34,6 +34,12 @@
       "type": "boolean",
       "default": false
     },
+    "debug": {
+      "title": "Set debug mode",
+      "description": "When debug mode is enabled, drone are publishing the script logs through OPC-UA.",
+      "type": "boolean",
+      "default": false
+    },
     "multicastIpv6": {
       "title": "IP of the multicast group",
       "description": "IP address used to communicate with the other drones.",

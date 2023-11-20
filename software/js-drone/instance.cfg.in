@@ -32,6 +32,7 @@ default-parameters =
   {
     "autopilotIp": "192.168.27.1",
     "autopilotPort": 7909,
+    "debug": false,
     "droneNetIf": "eth0",
     "flightScript": "https://lab.nexedi.com/nexedi/flight-scripts/raw/master/default.js",
     "isASimulation": false,

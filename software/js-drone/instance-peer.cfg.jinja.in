@@ -60,6 +60,7 @@ template = ${script-js:target}
 rendered = $${directory:public}/script.js
 websocket-url = [{{ ipv6 }}]:{{ websocket_port }}
 context =
+  raw debug {{ parameter_dict['debug'] }}
   raw websocket_url $${:websocket-url}
 
 [index-html]
@@ -67,6 +68,7 @@ recipe = slapos.recipe.template:jinja2
 template = ${index-html:target}
 rendered = $${directory:public}/index.html
 context =
+  raw debug {{ parameter_dict['debug'] }}
   raw nb_drones {{ parameter_dict['numberOfDrones'] }}
 
 [httpd-port]

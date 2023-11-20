@@ -11,7 +11,6 @@ import {
   getClimbRate,
   getInitialAltitude,
   gpsIsOk,
-  getLog,
   getPosition,
   getYaw,
   initPubsub,
@@ -37,7 +36,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition,
-           getLog, getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
+           getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
            pipe, setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
            triggerParachute, updateLogAndProjection, waitpid) {
   // Every script is evaluated per drone
@@ -232,14 +231,6 @@ import { evalScript, fdopen, loadFile, open } from "std";
         }
       });
 
-      if (clientId !== undefined) {
-        log = getLog();
-        while (log.length > 0) {
-          user_me.writeWebsocketMessage(JSON.stringify({log: log}));
-          log = getLog();
-        }
-      }
-
       // Call the drone onUpdate function
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
@@ -273,7 +264,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     }
   };
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getLog, getYaw,
+  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getYaw,
   initPubsub, isLanding, kill, loadFile, loiter, open, pipe, setAirSpeed,
   setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
   updateLogAndProjection, waitpid));
