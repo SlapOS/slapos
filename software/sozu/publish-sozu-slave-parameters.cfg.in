@@ -10,13 +10,19 @@ key_file = ${slap-connection:key-file}
 cert_file = ${slap-connection:cert-file}
 
 
-{% for _, cluster in slave_dict.items() -%}
-{% set slave_reference = cluster['slave_reference'] -%}
-{% do part_list.append('publish-slave-' ~ slave_reference) -%}
-
-[publish-slave-{{ slave_reference }}]
+{% for reference, cluster_dict in slave_dict.items() -%}
+{% do part_list.append('publish-slave-' ~ reference) -%}
+{% set protocol = cluster_dict['protocol'] -%}
+[publish-slave-{{ reference }}]
 recipe = slapos.cookbook:publish
--slave-reference = {{ slave_reference }}
+-slave-reference = {{ reference }}
+
+{%  for _, backend_dict in cluster_dict['backend-dict'].items() -%}
+backend-url-{{ backend_dict['backend-id'] }} = https://{{ backend_dict['address'] }}
+{%  endfor %}
+{%  for _, frontend_dict in cluster_dict['frontend-dict'].items() -%}
+frontend-url-{{ loop.index }} = {% if protocol == 'http' -%} https://{% endif %}{{ frontend_dict['address'] }}
+{%  endfor %}
 {% endfor %}
 
 [buildout]
