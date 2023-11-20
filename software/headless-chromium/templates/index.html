@@ -1,0 +1,5 @@
+<script>
+    fetch("/json")
+        .then(r => r.json())
+        .then(pages => window.location.replace(new URL(pages[0].devtoolsFrontendUrl, window.location)))
+</script>

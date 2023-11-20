@@ -44,6 +44,7 @@ setup(
         'slapos.core',
         'slapos.libnetworkcache',
         'requests',
+        'websocket-client',
     ],
     zip_safe=True,
     test_suite='test',
