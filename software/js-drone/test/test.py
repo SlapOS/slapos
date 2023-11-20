@@ -35,7 +35,7 @@ import time
 from contextlib import closing
 from websocket import create_connection
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import installSoftwareUrlList, makeModuleSetUpAndTestCaseClass
 
 '''
   0. positionArray
@@ -48,8 +48,9 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
     1.2 air speed
     1.3 climb rate
   2. message
+  3. log
 '''
-MONITORED_ITEM_NB = 3
+MONITORED_ITEM_NB = 4
 OPC_UA_PORT = 4840
 OPC_UA_NET_IF = 'lo'
 MCAST_GRP = 'ff15::1111'
@@ -109,10 +110,27 @@ SPEED_ARRAY_VALUES = (-72.419998, 15.93, -0.015)
 STRING_TYPE = 12
 MESSAGE_CONTENT = b'{\\"next_checkpoint\\":1}'
 TEST_MESSAGE = b'{"content":"' + MESSAGE_CONTENT + b'","dest_id":-1}'
+LOG = b''
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software-c-astral.cfg')))
+root_software_release_url = os.path.abspath(
+  os.path.join(os.path.dirname(__file__), '..', 'software-root.cfg'))
+subscriber_software_release_url = os.path.abspath(
+  os.path.join(os.path.dirname(__file__), '..', 'software-subscriber.cfg'))
+c_astral_software_release_url = os.path.abspath(
+  os.path.join(os.path.dirname(__file__), '..', 'software-c-astral.cfg'))
+
+
+_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(root_software_release_url))
+
+
+def setUpModule():
+  installSoftwareUrlList(
+    SlapOSInstanceTestCase,
+    [root_software_release_url, subscriber_software_release_url,
+     c_astral_software_release_url],
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+  )
 
 
 class SubscriberTestCase(SlapOSInstanceTestCase):
@@ -203,6 +221,12 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
       ua_array += struct.pack(struct_type, value)
     return ua_array
 
+  def ua_string_encode(self, string):
+    ua_string = struct.pack('B', STRING_TYPE)
+    ua_string += struct.pack('I', len(string))
+    ua_string += string
+    return ua_string
+
   def ua_dataSetMessage_encode(self):
     data_set_message = self.ua_dataSetMessageHeader_encode()
     data_set_message += struct.pack('H', MONITORED_ITEM_NB)
@@ -216,9 +240,8 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
       'f',
       SPEED_ARRAY_VALUES,
     )
-    data_set_message += struct.pack('B', STRING_TYPE)
-    data_set_message += struct.pack('I', len(TEST_MESSAGE))
-    data_set_message += TEST_MESSAGE
+    data_set_message += self.ua_string_encode(TEST_MESSAGE)
+    data_set_message += self.ua_string_encode(LOG)
     return data_set_message
 
   def send_ua_networkMessage(self):
@@ -240,7 +263,6 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
     for expected_process_name in expected_process_name_list:
       self.assertIn(expected_process_name, process_names)
 
-
   def test_requested_instances(self):
     connection_parameter_dict = json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
@@ -256,6 +278,7 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
         'numberOfDrones': 1,
         'numberOfSubscribers': 1,
         'id': 1,
+        'debug': False,
         'isASimulation': False,
         'isADrone': False,
         'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/subscribe.js',
@@ -285,48 +308,26 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
         b'Unknown instruction %s' % conn.sock.getsockname()[0].encode(),
         conn.recv_frame().data,
       )
-      self.assertIn(
-        b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 3\\n"}',
-        ws.recv_frame().data,
-      )
-      self.assertIn(
-        b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % (0, 0 , 0, 0),
-        ws.recv_frame().data,
-      )
-      self.assertIn(
-        b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % (0, 0 , 0),
-        ws.recv_frame().data,
-      )
-      self.assertIn(
-        b'\\u001b[32minfo/userland\\u001b[0m\\tfieldsSize 1\\n"}',
-        ws.recv_frame().data,
-      )
       self.assertEqual(
         conn.recv_frame().data,
         b''.join((
           b'{"drone_dict":{"0":{"latitude":',
           b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % (0, 0, 0),
           b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % (0, 0, 0),
-          b'"timestamp":%d}}}' % 0,
+          b'"timestamp":%d,' % 0,
+          b'"log":""}}}',
         )),
       )
       self.send_ua_networkMessage()
       time.sleep(0.1)
       self.assertEqual(conn.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
-      self.assertIn(
-        b'\\u001b[32minfo/client\\u001b[0m\\tReceived position of drone 0: %.6f ? %.6f ? %.2f m %.2f m\\n"}' % POSITION_ARRAY_OUTPUT_VALUES,
-        conn.recv_frame().data,
-      )
-      self.assertIn(
-        b'\\u001b[32minfo/client\\u001b[0m\\tReceived speed of drone 0: %.2f ? %.2f m/s %.2f m/s\\n"}' % SPEED_ARRAY_VALUES,
-        conn.recv_frame().data,
-      )
       self.assertEqual(
         conn.recv_frame().data,
         b''.join((
           b'{"drone_dict":{"0":{"latitude":',
           b'"%.6f","longitude":"%.6f","altitude":"%.2f",' % POSITION_ARRAY_OUTPUT_VALUES[:-1],
           b'"yaw":"%.2f","speed":"%.2f","climbRate":"%.2f",' % SPEED_ARRAY_VALUES,
-          b'"timestamp":%d}}}' % POSITION_ARRAY_INPUT_VALUES[-1],
+          b'"timestamp":%d,' % POSITION_ARRAY_INPUT_VALUES[-1],
+          b'"log":""}}}',
         )),
       )

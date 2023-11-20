@@ -1,13 +1,22 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
+{% if isADrone -%}
 /*global arm, console, close, dup2, exit, open, scriptArgs, setTimeout, start,
   stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM*/
+{% else -%}
+/*global console, close, dup2, exit, open, scriptArgs, setTimeout, stopPubsub,
+  Worker, SIGINT, SIGTERM*/
+{% endif -%}
 import {
+{% if isADrone -%}
   arm,
   start,
   stop,
+{% endif -%}
   stopPubsub,
+{% if isADrone -%}
   takeOffAndWait
-} from {{ json_module.dumps(qjs_wrapper) }};
+{% endif -%}
+} from "{{ qjs_wrapper }}";
 import {
   Worker,
   SIGINT,
@@ -18,18 +27,25 @@ import {
 } from "os";
 import { err, exit, open, out } from "std";
 
+{% if isADrone -%}
 (function (arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout,
            start, stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM) {
+{% else -%}
+(function (console, dup2, err, exit, open, out, scriptArgs, setTimeout,
+           stopPubsub, Worker, SIGINT, SIGTERM) {
+{% endif -%}
   "use strict";
 
-  var CONF_PATH = {{ json_module.dumps(configuration) }},
+  var CONF_PATH = "{{ configuration }}",
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
     AUTOPILOT_CONNECTION_TIMEOUT = 5,
     MAVSDK_LOG_FILE_PATH =
       "{{ log_dir }}/mavsdk_" + new Date().toISOString() + ".log",
-    LOG_FILE =
-      open("{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log", "w"),
+    QUICKJS_LOG_FILE_PATH =
+      "{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log",
+    QUICKJS_LOG_FILE =
+      open(QUICKJS_LOG_FILE_PATH, "w"),
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
@@ -40,8 +56,8 @@ import { err, exit, open, out } from "std";
   conf_file.close();
 
   // redirect stdout and stderr
-  dup2(LOG_FILE.fileno(), out.fileno());
-  dup2(LOG_FILE.fileno(), err.fileno());
+  dup2(QUICKJS_LOG_FILE.fileno(), out.fileno());
+  dup2(QUICKJS_LOG_FILE.fileno(), err.fileno());
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -51,13 +67,13 @@ import { err, exit, open, out } from "std";
   // to prevent it to finish (and so, exit the quickjs process)
   worker = new Worker("{{ worker_script }}");
 
-  function quit(is_a_drone, exit_code) {
+  function quit(exit_code) {
     worker.onmessage = null;
     stopPubsub();
-    if (is_a_drone) {
-      stop();
-    }
-    LOG_FILE.close();
+{% if isADrone -%}
+    stop();
+{% endif -%}
+    QUICKJS_LOG_FILE.close();
     exit(exit_code);
   }
 
@@ -78,6 +94,7 @@ import { err, exit, open, out } from "std";
     }
   }
 
+{% if isADrone -%}
   function connect() {
     var address = configuration.autopilotIp + ":" + configuration.autopilotPort;
     console.log("Will connect to", address);
@@ -86,16 +103,17 @@ import { err, exit, open, out } from "std";
         configuration.autopilotIp,
         configuration.autopilotPort,
         MAVSDK_LOG_FILE_PATH,
-        AUTOPILOT_CONNECTION_TIMEOUT
+        QUICKJS_LOG_FILE_PATH,
+        AUTOPILOT_CONNECTION_TIMEOUT,
+        configuration.debug
       ),
       "Failed to connect to " + address
     );
   }
 
-  if (configuration.isADrone) {
-    console.log("Connecting to aupilot\n");
-    connect();
-  }
+  console.log("Connecting to aupilot\n");
+  connect();
+{% endif -%}
 
   pubsubWorker = new Worker("{{ pubsub_script }}");
   pubsubWorker.onmessage = function (e) {
@@ -106,15 +124,19 @@ import { err, exit, open, out } from "std";
 
   worker.postMessage({type: "initPubsub"});
 
+{% if isADrone -%}
   function takeOff() {
     exitOnFail(arm(), "Failed to arm");
     takeOffAndWait();
   }
+{% endif -%}
 
   function load() {
-    if (configuration.isADrone && configuration.isASimulation) {
+{% if isADrone -%}
+    if (configuration.isASimulation) {
       takeOff();
     }
+{% endif -%}
 
     // First argument must provide the user script path
     if (user_script === undefined) {
@@ -175,11 +197,16 @@ import { err, exit, open, out } from "std";
       can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
-      quit(configuration.isADrone, e.data.exit);
+      quit(e.data.exit);
     } else {
       console.log('Unsupported message type', type);
       exitWorker(1);
     }
   };
+{% if isADrone -%}
 }(arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout, start, stop,
   stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM));
+{% else -%}
+}(console, dup2, err, exit, open, out, scriptArgs, setTimeout, stopPubsub,
+  Worker, SIGINT, SIGTERM));
+{% endif -%}

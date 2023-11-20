@@ -11,12 +11,13 @@
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
 {% if id < len(parameter_dict['droneGuidList']) -%}
+{%  set sr_name = parameter_dict['autopilotType'] -%}
 name = Drone{{ id }}_{{ guid }}
 {% else -%}
+{%  set sr_name = 'subscriber' -%}
 name = Subscriber{{ len(parameter_dict['droneGuidList']) - id }}_{{ guid }}
 {% endif -%}
-software-url = ${:software-release-url}
-software-type = peer
+software-url = {{ '/'.join(software_url.split('/')[:-1]) + '/software-%s.cfg' % sr_name }}
 return = instance-path
 sla-computer_guid = {{ guid }}
 config-autopilotIp = {{ parameter_dict['autopilotIp'] }}
@@ -25,6 +26,7 @@ config-numberOfDrones = {{ dumps(len(parameter_dict['droneGuidList'])) }}
 config-numberOfSubscribers = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
 config-id = {{ dumps(id) }}
 config-isASimulation = {{ dumps(parameter_dict['isASimulation']) }}
+config-debug = {{ dumps(parameter_dict['debug']) }}
 {% if id < len(parameter_dict['droneGuidList']) -%}
 {%   do drone_id_list.append(id) %}
 config-isADrone = {{ dumps(True) }}
