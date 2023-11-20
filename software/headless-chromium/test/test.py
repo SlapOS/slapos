@@ -25,8 +25,13 @@
 #
 ##############################################################################
 
+import base64
 import os
+import ssl
+import urllib.parse
+
 import requests
+import websocket
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -35,16 +40,17 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../software.cfg')))
 
+
 class TestHeadlessChromium(SlapOSInstanceTestCase):
   def setUp(self):
-    self.connection_parameters = self.requestDefaultInstance().getConnectionParameterDict()
+    self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
   def test_remote_debugging_port(self):
     # The headless browser should respond at /json with a nonempty list
     # of available pages, each of which has a webSocketDebuggerUrl and a
     # devtoolsFrontendUrl.
     url = self.connection_parameters['remote-debug-url']
-    response = requests.get('%s/json' % url)
+    response = requests.get(urllib.parse.urljoin(url, '/json'))
 
     # Check that request was successful and the response was a nonempty
     # list.
@@ -53,27 +59,72 @@ class TestHeadlessChromium(SlapOSInstanceTestCase):
 
     # Check that the first page has the correct fields.
     first_page = response.json()[0]
-    self.assertIn('webSocketDebuggerUrl', first_page)
     self.assertIn('devtoolsFrontendUrl', first_page)
+    websocket.create_connection(first_page['webSocketDebuggerUrl'], sslopt={"cert_reqs": ssl.CERT_NONE}).close()
 
   def test_devtools_frontend_ok(self):
-    # The proxy should serve the DevTools frontend from
-    # /serve_file/@{hash}/inspector.html, where {hash} is a 5-32 digit
-    # hash.
-    proxyURL = self.connection_parameters['proxy-url']
-    username = self.connection_parameters['username']
-    password = self.connection_parameters['password']
-    frontend = '/serve_file/@aaaaa/inspector.html'
+    param = self.computer_partition.getConnectionParameterDict()
 
-    response = requests.get(proxyURL + frontend, verify=False,
-                            auth=(username, password))
-    self.assertEqual(requests.codes['ok'], response.status_code)
+    # when accessed through RapidCDN, frontend rewrite WSS URLs with the host header but without port.
+    page, = requests.get(
+      urllib.parse.urljoin(param['proxy-url'], '/json'),
+      auth=(param['username'], param['password']),
+      headers={
+        'Host': 'hostname'
+      },
+      verify=False).json()
+    ws_debug_url = urllib.parse.urlparse(page['webSocketDebuggerUrl'])
+    self.assertEqual(
+      (ws_debug_url.scheme, ws_debug_url.netloc), ('wss', 'hostname'))
+
+    devtools_frontend_url = dict(
+      urllib.parse.parse_qsl(page['devtoolsFrontendUrl'].split('?')[1]))
+    # devtoolsFrontendUrl is a relative URL, like this:
+    # 'devtoolsFrontendUrl': '/devtools/inspector.html?wss=[::1]:9442/devtools/page/22C91CF307002BFA22DF0B4E34D2D026'
+    # and the query string argument wss must also have been rewritten:
+    self.assertTrue(
+      devtools_frontend_url['wss'].startswith('hostname/devtools/page/'))
+
+    requests.get(
+        urllib.parse.urljoin(param['proxy-url'], page['devtoolsFrontendUrl']),
+        auth=(param['username'], param['password']),
+        headers={
+          'Host': 'hostname'
+        },
+        verify=False).raise_for_status()
+
+    # when accessed directly, the :port is kept, as a consequence the debugger interface can
+    # be accessed directly from the nginx ipv6
+    page, = requests.get(
+      urllib.parse.urljoin(param['proxy-url'], '/json'),
+      auth=(param['username'], param['password']),
+      verify=False).json()
+    ws_debug_url = urllib.parse.urlparse(page['webSocketDebuggerUrl'])
+    self.assertEqual(ws_debug_url.port, 9224)
+
+    devtools_frontend_url = dict(urllib.parse.parse_qsl(page['devtoolsFrontendUrl'].split('?')[1]))
+    # devtoolsFrontendUrl is not rewritten
+    self.assertEqual(f"wss://{devtools_frontend_url['wss']}", page['webSocketDebuggerUrl'])
+
+    requests.get(
+        urllib.parse.urljoin(param['proxy-url'], page['devtoolsFrontendUrl']),
+        auth=(param['username'], param['password']),
+        verify=False).raise_for_status()
+
+    # the websocket is usable
+    websocket.create_connection(
+      page['webSocketDebuggerUrl'],
+      sslopt={"cert_reqs": ssl.CERT_NONE},
+      header={'Authorization': 'Basic ' + base64.b64encode(
+        f"{param['username']}:{param['password']}".encode()).strip().decode()}).close()
+
 
 class TestHeadlessChromiumParameters(SlapOSInstanceTestCase):
 
   instance_parameter_dict = {
     # this website echoes the get request for debugging purposes
     'target-url': 'https://httpbin.org/get?a=6&b=4',
+    # TODO: this does not work, this software uses 'xml' serialisation and only support strings
     'incognito': True,
     "block-new-web-contents": False,
     "window-size": "900,600"

@@ -17,6 +17,7 @@ template-nginx-config = {{ template_nginx_config_target }}
 template-fonts-conf = {{ template_fonts_conf_target }}
 template-monitor = {{ template_monitor }}
 template-mime-types = {{ template_mime_types_target }}
+template-index-html = {{ template_index_html_target }}
 
 [instance-headless-chromium]
 recipe = slapos.recipe.template:jinja2
