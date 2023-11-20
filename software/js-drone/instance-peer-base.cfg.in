@@ -3,6 +3,18 @@ parts =
   qjs-launcher
   publish-connection-information
 
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 
@@ -16,15 +28,26 @@ log = $${:var}/log
 public = $${:srv}/public
 service = $${:etc}/service
 
+[peer-configuration]
+recipe = slapos.recipe.template:jinja2
+output = $${directory:etc}/configuration.json
+extensions = jinja2.ext.do
+extra-context =
+context =
+  import json_module json
+  key parameter_dict slap-configuration:configuration
+  $${:extra-context}
+inline =
+  {{ json_module.dumps(parameter_dict) }}
+
 [js-dynamic-template]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}.js
 extra-context =
 context =
-  import json_module json
-  raw gwsocket_bin ${gwsocket:location}/bin/gwsocket
+  key configuration peer-configuration:output
+  key isADrone slap-configuration:configuration.isADrone
   raw qjs_wrapper ${qjs-wrapper:location}/lib/libqjswrapper.so
-  raw configuration {{ configuration }}
   $${:extra-context}
 
 [main]
@@ -42,10 +65,13 @@ template = ${pubsub:target}
 [worker]
 <= js-dynamic-template
 template = ${worker:target}
+gwsocket_bin =
+extra-context =
+  key gwsocket_bin :gwsocket_bin
 
 [user]
 recipe = slapos.recipe.build:download
-url = {{ parameter_dict['flightScript'] }}
+url = $${slap-configuration:configuration.flightScript}
 destination = $${directory:etc}/user.js
 offline = false
 
@@ -54,41 +80,6 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/qjs-launcher
 command-line = ${quickjs:location}/bin/qjs $${main:rendered} $${user:target}
 
-[script-js]
-recipe = slapos.recipe.template:jinja2
-template = ${script-js:target}
-rendered = $${directory:public}/script.js
-websocket-url = [{{ ipv6 }}]:{{ websocket_port }}
-context =
-  raw websocket_url $${:websocket-url}
-
-[index-html]
-recipe = slapos.recipe.template:jinja2
-template = ${index-html:target}
-rendered = $${directory:public}/index.html
-context =
-  raw nb_drones {{ parameter_dict['numberOfDrones'] }}
-
-[httpd-port]
-recipe = slapos.cookbook:free_port
-minimum = 8080
-maximum = 8090
-ip = {{ ipv6 }}
-
-[httpd]
-recipe = slapos.cookbook:simplehttpserver
-host = {{ ipv6 }}
-port = $${httpd-port:port}
-base-path = $${directory:public}
-wrapper = $${directory:service}/http-server
-log-file = $${directory:log}/httpd.log
-use-hash-url = false
-depends = $${index-html:rendered}
-
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 instance-path = $${directory:home}
-{% if not parameter_dict['isADrone'] -%}
-httpd-url = [$${httpd:host}]:$${httpd:port}
-websocket-url = ws://$${script-js:websocket-url}
-{% endif -%}
