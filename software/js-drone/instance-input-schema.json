@@ -4,6 +4,16 @@
   "description": "Parameters to instantiate JS drone",
   "additionalProperties": false,
   "properties": {
+    "autopilotType": {
+      "title": "Type of the drone's autopilot",
+      "description": "Model of the autopilot used in the drones.",
+      "type": "string",
+      "default": "c-astral",
+      "enum": [
+        "c-astral",
+        "sqdr"
+      ]
+    },
     "autopilotIp": {
       "title": "IP address of the drone's autopilot",
       "description": "IP used to create a connection with the autopilot.",
@@ -31,6 +41,12 @@
     "isASimulation": {
       "title": "Set the flight as a simulation",
       "description": "The option used to determine if the flight is real or if it is a simulation. This affects the context of the flight (e.g. if the take off is manual or automatic).",
+      "type": "boolean",
+      "default": false
+    },
+    "debug": {
+      "title": "Set debug mode",
+      "description": "When debug mode is enabled, drone are publishing the script logs through OPC-UA.",
       "type": "boolean",
       "default": false
     },
