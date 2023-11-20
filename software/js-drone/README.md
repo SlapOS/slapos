@@ -10,10 +10,12 @@
 
 ## Parameters ##
 
+* autopilotType: Select which autopilot wrapper should be used
 * autopilotIp: IPv4 address to identify the autopilot from the companion board
 * droneGuidList: List of computer id on which flight script must be deployed
 * droneNetIf: Drone network interface used for multicast traffic
 * isASimulation: Must be set to 'true' to automatically take off during simulation
+* debug: Must be set to 'true' to send drone logs through OPC-UA
 * multicastIp: IPv6 of the multicast group of the swarm
 * flightScript: URL of user's script to execute to fly drone swarm
 * subscriberGuidList: List of computer id on which a GUI must be deployed
