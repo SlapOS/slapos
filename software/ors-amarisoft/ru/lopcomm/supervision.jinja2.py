@@ -14,8 +14,8 @@ if __name__ == '__main__':
         supervision_reply_json_log_file="{{ supervision_reply_json_log_file }}"
     )
     try:
-        netconf_check_file = os.path.join('{{etc_path}}', 'is_netconf_connected')
-        nc.connect("{{ netaddr.IPAddress(slap_configuration.get('tap-ipv6-gateway', '')) }}", 830, "oranuser", "oranpassword")
+        netconf_check_file = '{{ is_netconf_connected }}'
+        nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
 
         supervision_subscription_rpc_xml = """
             <create-subscription xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">

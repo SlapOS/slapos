@@ -15,8 +15,8 @@ if __name__ == '__main__':
     )
   while True:
       try:
-          firmware_check_file= os.path.join('{{etc_path}}','is_firmware_updated')
-          nc.connect("{{ netaddr.IPAddress(slap_configuration.get('tap-ipv6-gateway', '')) }}", 830, "oranuser", "oranpassword")
+          firmware_check_file= '{{ is_firmware_updated }}'
+          nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
           # Fetch software inventory
 
           inventory_vars = nc.get_inventory()
