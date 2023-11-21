@@ -250,16 +250,16 @@
 {%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul                 %}
 {%-   endfor                                                          %}
 
-{#-   assign TAP interfaces to cpri RUs                                         #}
+{#-   assign TAP interfaces to cpri RUs #}
 {%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
-{%-   for i, (ru_ref, iru) in enumerate(iru_vcpri)            %}
-{%-     if len(iru_vcpri) > 1                                 %}
-{%-       set ru_tap = "%s-%d" % (tap, i+1)                   %}
-{%-     else                                                  %}
-{%-       set ru_tap = tap                                    %}
-{%-     endif                                                 %}
-{%-     do iru._.cpri_link.update({'_tap': ru_tap})           %}
-{%-   endfor                                                  %}
+{%-   for i, (ru_ref, iru) in enumerate(iru_vcpri)  %}
+{%-     if len(iru_vcpri) > 1 %}
+{%-       set ru_tap = "%s-%d" % (tap, i+1) %}
+{%-     else  %}
+{%-       set ru_tap = tap  %}
+{%-     endif %}
+{%-     do iru._.cpri_link.update({'_tap': ru_tap}) %}
+{%-   endfor  %}
 
 {%- endmacro  %}
 
