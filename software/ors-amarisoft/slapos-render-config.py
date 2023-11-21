@@ -85,4 +85,5 @@ def do(cfg, slapparameter_dict):
 
     j2render(cfg, json_params % locals())
 
+do('enb', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
 do('gnb', {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
