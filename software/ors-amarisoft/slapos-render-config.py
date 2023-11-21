@@ -56,6 +56,7 @@ json_params = """{
     "tx_gain": 62,
     "rx_gain": 43,
     "sib23_file": "sib",
+    "drb_file": "drb",
     "slap_configuration": {
         "tap-name": "slaptap9",
         "configuration.default_lte_bandwidth": "10 MHz",
