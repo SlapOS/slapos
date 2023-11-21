@@ -29,6 +29,7 @@ def j2render(src, out, jcfg):
       'import-list': '''
         rawfile slaplte.jinja2 slaplte.jinja2''',
       })
+    #print(r.context)
 
     # avoid dependency on zc.buildout.download and the need to use non-stub buildout section
     def _read(url, *args):
