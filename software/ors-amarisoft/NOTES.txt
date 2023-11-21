@@ -1,8 +1,0 @@
-NOTE: lte_cell -> forces enb_id to be defined
-NOTE: nr cell  -> ----//---- gnb_id + gnb_id_bits
-
-JSONEditor:
-
-    use_default_values: false,          // important
-    no_additional_properties: true,     // important
-    keep_oneof_values: false            // important
