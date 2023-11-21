@@ -12,6 +12,8 @@ import json
 # j2render renders config/<cfg>.jinja2.cfg into config/<cfg>.cfg with provided json parameters.
 def j2render(cfg, jcfg):
     ctx = json.loads(jcfg)
+    assert '_standalone' not in ctx
+    ctx['_standalone'] = True
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
@@ -21,6 +23,8 @@ def j2render(cfg, jcfg):
       'url': 'config/{}.jinja2.cfg'.format(cfg),
       'output': 'config/{}.cfg'.format(cfg),
       'context': textctx,
+      'import-list': '''
+        rawfile slaplte.jinja2 slaplte.jinja2''',
       })
     #print(r.context)
 
