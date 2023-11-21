@@ -27,7 +27,7 @@ def j2render(src, out, jcfg):
       'output': 'config/out/{}'.format(out),
       'context': textctx,
       'import-list': '''
-        rawfile amari_slap.jinja2 amari/slap.jinja2''',
+        rawfile slaplte.jinja2 slaplte.jinja2''',
       })
 
     # avoid dependency on zc.buildout.download and the need to use non-stub buildout section
