@@ -77,6 +77,7 @@ def do(cfg, slapparameter_dict):
             "configuration.com_ws_port": 9001,
             "configuration.com_addr": "127.0.1.2",
             "configuration.amf_addr": "127.0.1.100",
+            "configuration.mme_addr": "127.0.1.100",
             "configuration.gtp_addr": "127.0.1.1"
         },
         "directory": {
