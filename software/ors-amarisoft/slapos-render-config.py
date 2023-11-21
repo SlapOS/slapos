@@ -27,7 +27,6 @@ def j2render(src, out, jcfg):
       'output': 'config/out/{}'.format(out),
       'context': textctx,
       'import-list': '''
-        rawfile amari_lte.jinja2  amari/lte.jinja2
         rawfile amari_slap.jinja2 amari/slap.jinja2''',
       })
 
