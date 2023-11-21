@@ -1,7 +1,9 @@
 {#- Package slaplte provides helpers for configuring Amarisoft LTE services in SlapOS.
 
-    XXX overview
-    - ru_config emits RF driver configutation for specified Radio Units.
+    - load_iru_and_icell initializes RU and cell registries.
+    - load_ipeercell initializes peer-cell registry.
+    - load_iue initializes UE registry.
+    - ru_config emits RF driver configuration for specified Radio Units.
 -#}
 
 
@@ -382,10 +384,10 @@
   {%- endif %}
 
   {#- XXX emit big warning if both cpri and sdr are present
-        to protect users from unclear eNB failues
+        to protect users from unclear eNB failures
         see https://support.amarisoft.com/issues/26021 for details
 
-    XXX belowe we continue as if sdr and cpri are both supported by enb simultaneously #}
+    XXX below we continue as if sdr and cpri are both supported by enb simultaneously #}
 
   {%- set dev_argv = []                                                       %}
   {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
@@ -418,7 +420,7 @@
       tdd_tx_mod: 1,
   {%- endif                                 %}
 
-  {#- emit cpri_* optins if a cpri ru is present #}
+  {#- emit cpri_* options if a cpri ru is present #}
   {#- NOTE values for non-cpri links come as empty   XXX recheck this is ok #}
   {%- if len(ru_cpri_dict) > 0              %}
   {%-   set vcpri = [None]*len(dev_argv)    %}
