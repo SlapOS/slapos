@@ -22,6 +22,11 @@ interfaces each covering part of original interface address space.
 Usage: tapsplit <interface> <nchildren>
 """
 
+# TODO Relying on tapsplit should be removed once SlapOS is improved to provide
+#      several TAP interfaces to instances. See discussion at
+#      https://lab.nexedi.com/nexedi/slapos/merge_requests/1471#note_194356
+#      for details.
+
 import netifaces
 import netaddr
 from socket import AF_INET6

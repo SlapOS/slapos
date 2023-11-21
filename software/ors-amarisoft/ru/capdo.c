@@ -18,6 +18,11 @@
 
 // Program `capdo prog ...` executes prog with inherited capabilities.
 // It is used as trampoline to run scripts under setcap environment.
+//
+// TODO Relying on setcap should be removed once SlapOS is improved to provide
+//      several TAP interfaces to instances. See discussion at
+//      https://lab.nexedi.com/nexedi/slapos/merge_requests/1471#note_194356
+//      for details.
 
 #include <errno.h>
 #include <stdarg.h>
