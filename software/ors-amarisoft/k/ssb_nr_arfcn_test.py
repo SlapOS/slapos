@@ -11,6 +11,7 @@ def default_ssb_nr_arfcn(dl_nr_arfcn, scs_khz):
     if nr.get_frequency_by_gscn(gscn) > f:
         gscn -= 1
     scs = scs_khz * khz
+    # align fb to be multiple of scs
     while 1:
         fg = nr.get_frequency_by_gscn(gscn)
         if fg % scs < 1e-5*scs: # == 0 with tolerating fp
