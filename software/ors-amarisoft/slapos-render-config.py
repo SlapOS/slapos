@@ -22,7 +22,7 @@ def j2render(src, out, jcfg):
     textctx += 'import nrarfcn_module nrarfcn\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
-      'extensions': 'jinja2.ext.do',
+      'extensions': 'jinja2.ext.do jinja2.ext.loopcontrols',
       'url': 'config/{}'.format(src),
       'output': 'config/out/{}'.format(out),
       'context': textctx,

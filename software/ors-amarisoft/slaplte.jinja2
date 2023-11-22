@@ -106,17 +106,27 @@
 {{-   (ul_lo + (dl_nr_arfcn - dl_lo)) | tojson                  }}
 {%- endmacro %}
 
-{#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN #}
-{%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn) %}
+{#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
+    and subcarrier spacing #}
+{%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, scs_khz) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
-{%-   set nr = nrarfcn_module                       %}
-{%-   set f = nr.get_frequency(nrarfcn=dl_nr_arfcn) %}
-{%-   set gscn = nr.get_gscn_by_frequency(f)        %}
-{%-   if nr.get_frequency_by_gscn(gscn) > f         %}{# nrarfcn rounds up, amari down #}
-{%-     set gscn = gscn - 1                         %}
-{%-   endif                                         %}
-{%-   set fg = nr.get_frequency_by_gscn(gscn)       %}
-{%-   set fg_arfcn = nr.get_nrarfcn(fg)             %}
+{%-   set nr = nrarfcn_module %}
+{%-   set _ = namespace() %}
+{%-   set _.f = nr.get_frequency(nrarfcn=dl_nr_arfcn) %}
+{%-   set _.gscn = nr.get_gscn_by_frequency(_.f)  %}
+{%-   if nr.get_frequency_by_gscn(_.gscn) > _.f %}{# nrarfcn rounds up, amari down #}
+{%-     set _.gscn = _.gscn - 1 %}
+{%-   endif %}
+{#-   align fg to be multiple of scs  #}
+{%-   set scs = scs_khz * 1e-3  %}
+{%-   for i in range(10000) %}{# = `while 1` #}
+{%-     set _.fg = nr.get_frequency_by_gscn(_.gscn) %}
+{%-     if _.fg % scs < 1e-5*scs  %}{# == 0 with tolerating fp #}
+{%-       break %}
+{%-     endif %}
+{%-     set _.gscn = _.gscn - 1 %}
+{%-   endfor %}
+{%-   set fg_arfcn = nr.get_nrarfcn(_.fg) %}
 {{- fg_arfcn | tojson }}
 {%- endmacro %}
 
@@ -222,7 +232,8 @@
 {%-       elif xcell_type == 'nr' %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-         do _.setdefault('subcarrier_spacing', 30  if _.rf_mode == 'tdd'  else 15)  %}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn,
+                                                  _.subcarrier_spacing)))  %}
 {%-       else  %}
 {%-         do bug('unreachable') %}
 {%-       endif %}
@@ -347,7 +358,8 @@
 {%-         do _.setdefault('subcarrier_spacing',
                     30  if nrarfcn_module.get_duplex_mode(_.nr_band).lower() == 'tdd'  else
                     15) %}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn,
+                                                  _.subcarrier_spacing)))  %}
 {%-       else  %}
 {%-         do bug('unreachable') %}
 {%-       endif %}
