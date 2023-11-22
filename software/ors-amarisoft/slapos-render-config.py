@@ -114,9 +114,9 @@ def iRU1_SDR_tLTE2_tNR(ienb):
     ienb.ishared('CELL1_c', {
         'cell_type':    'nr',
         'rf_mode':      'tdd',
-        'bandwidth':    5,
-        'dl_nr_arfcn':  522000,     # 2610 MHz
-        'nr_band':      38,
+        'bandwidth':    10,
+        'dl_nr_arfcn':  523020,     # 2615.1 MHz
+        'nr_band':      41,
         'pci':          3,
         'cell_id':      '0x03',
         'ru':           {
