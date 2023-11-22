@@ -342,6 +342,7 @@ def do_enb():
             'e_cell_id':        '0x12345',
             'pci':              35,
             'dl_earfcn':        700,
+            'bandwidth':        '10 MHz',
             'tac':              123,
         })
         ienb.ishared('PEER2', {
