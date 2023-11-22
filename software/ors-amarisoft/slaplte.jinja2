@@ -13,7 +13,6 @@
 
 {#- defaults provide default values for lte parameters.
     it should be kept in sync with "default" in json schemas  #}
-{#- XXX ssb_pos_bitmap=10000000 is for TDD only; FDD -> "1000"  #}
 {#- XXX opc='milenage' is not meaningful ?  #}
 {#- XXX txrx_active=ACTIVE for sdr - needed ? (bwcompat for ORS) - if yes -> update ru/sdr/input-schema.json #}
 {%- set defaults = {
@@ -31,10 +30,20 @@
       'cell/lte': {
         'pci':  1,
         'tac':  '0x0001',
+      },
+      'cell/lte/fdd': {
+      },
+      'cell/lte/tdd': {
         'tdd_ul_dl_config': '[Configuration 2] 5ms 2UL 6DL (default)',
       },
+
       'cell/nr': {
         'pci':  500,
+      },
+      'cell/nr/fdd': {
+        'ssb_pos_bitmap':   '1000',
+      },
+      'cell/nr/tdd': {
         'ssb_pos_bitmap':   '10000000',
         'tdd_ul_dl_config': '5ms 2UL 7DL 4/6 (default)',
       },
@@ -198,7 +207,10 @@
              (icell_kind == 'ue'  and 'ue_cell_type' in _)                                      %}
 {%-       set icell = ishared                                                                   %}
 {%-       if icell_kind == 'enb'                                                                %}
-{%-         for k, v in defaults['cell/' + _.cell_type].items()                                 %}
+{%-         for k, v in defaults['cell/%s' % _.cell_type].items() %}
+{%-           do _.setdefault(k, v)                                                             %}
+{%-         endfor                                                                              %}
+{%-         for k, v in defaults['cell/%s/%s' % (_.cell_type, _.rf_mode)].items() %}
 {%-           do _.setdefault(k, v)                                                             %}
 {%-         endfor                                                                              %}
 {%-         set xcell_type = _.cell_type                                                        %}
