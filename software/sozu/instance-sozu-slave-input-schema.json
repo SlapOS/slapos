@@ -42,14 +42,9 @@
       "patternProperties": {
         ".*": {
           "properties": {
-            "address": {
-              "title": "TCP listener",
-              "description": "TCP address listener (ip and port). Something like: 0.0.0.0:8080",
-              "type": "string"
-            },
             "hostname": {
-              "title": "Hostname",
-              "description": "host name of the cluster.",
+              "title": "Hostname for frontend",
+              "description": "Frontend hostname, this need to resolve frontend IP address. Default is empty.",
               "type": "string"
             },
             "path": {
@@ -97,7 +92,7 @@
               "items": {
                 "type": "string"
               },
-              "default": []
+              "default": ["TLS_V12", "TLS_V13"]
             },
             "deploy-certificate": {
               "title": "Deploy self-signed certificate",
