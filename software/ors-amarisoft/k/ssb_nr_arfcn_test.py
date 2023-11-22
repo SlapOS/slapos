@@ -28,7 +28,6 @@ def _(dl_nr_arfcn, scs_khz):
     f = nr.get_frequency(dl_nr_arfcn)
     fssb = nr.get_frequency(ssb_nr_arfcn)
     gssb = nr.get_gscn_by_frequency(fssb)
-#   print('%d  ->  %d\t;  %g MHz\t->  %g Mhz' % (dl_nr_arfcn, ssb_nr_arfcn, f, fssb))
 
     scs = scs_khz * khz  # subcarrier spacing
     fssb_div_scs = fssb / scs
