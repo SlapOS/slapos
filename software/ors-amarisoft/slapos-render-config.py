@@ -325,8 +325,8 @@ def do_enb():
             "var": "var"
         },
         "slapparameter_dict": {
-          "x2_peers": {"1": {"x2_addr": "2_abc"}, "2": {"x2_addr": "2_def"}},
-          "xn_peers": {"1": {"xn_addr": "n_abc"}, "2": {"xn_addr": "n_def"}}
+          "x2_peers": {"1": {"x2_addr": "44.1.1.1"}, "2": {"x2_addr": "44.1.1.2"}},
+          "xn_peers": {"1": {"xn_addr": "55.1.1.1"}, "2": {"xn_addr": "55.1.1.2"}}
         }
     }""" % locals()
 
