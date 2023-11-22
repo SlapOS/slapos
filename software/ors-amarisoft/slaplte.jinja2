@@ -344,6 +344,9 @@
 {%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn)))                 %}
 {%-       elif _.peer_cell_type == 'nr'                                                         %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
+{%-         do _.setdefault('subcarrier_spacing',
+                    30  if nrarfcn_module.get_duplex_mode(_.nr_band).lower() == 'tdd'  else
+                    15) %}
 {%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))            %}
 {%-       else                                                                                  %}
 {%-         do bug('unreachable')                                                               %}
