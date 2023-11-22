@@ -6,12 +6,12 @@
 # routing. You can generate this file from sozu's current routing by running
 # the command `sozu state save -f state.json`
 # this must be RELATIVE to config.toml
-# saved_state = "./state.json"
+saved_state = "{{ parameter_dict['state-file'] }}"
 
 # save the configuration to the saved_state file every time we receive a
 # configuration message on the configuration socket
 # defaults to false, and will not work if the 'saved_state' option is not set
-# automatic_state_save = false
+automatic_state_save = false
 
 # logging verbosity. Possible values are "error", "warn", "info", "debug" and
 # "trace". For performance reasons, the logs at "debug" or "trace" level are
@@ -44,9 +44,9 @@ command_socket = "{{ parameter_dict['socket-file'] }}"
 # buffer will grow up to max_command_buffer_size. If the buffer is still not large
 # enough sozu will close the connection
 # defaults to 1000000
-command_buffer_size = 16384
+command_buffer_size = {{ parameter_dict["cmd-buffer-size"] }}
 # defaults to command_buffer_size * 2
-max_command_buffer_size = {{ parameter_dict["max-buffer-size"] }}
+max_command_buffer_size = {{ parameter_dict["max-cmd-buffer-size"] }}
 
 # the number of worker processes that will handle traffic
 # defaults to 2 workers
@@ -85,7 +85,7 @@ max_connections = {{ parameter_dict["max-connections"] }}
 # leave enough memory for one more worker (also for the kernel, etc), so total
 # RAM should be larger than (worker count + 1) * max_buffers * 2 * buffer_size bytes
 # defaults to 16393 (minimum size for HTTP/2 is a 16384 bytes frame + 9 bytes of header
-buffer_size = 16393
+buffer_size = {{ parameter_dict["buffer-size"] }}
 
 # how much time (in milliseconds) sozu command line will wait for a command to complete.
 # Defaults to 1000 milliseconds
@@ -154,8 +154,8 @@ address = "[{{ parameter_dict['ip'] }}]:{{ parameter_dict['port'] }}"
 # path to custom 404 and 503 answers
 # a 404 response is sent when sozu does not know about the requested domain or path
 # a 503 response is sent if there are no backend servers available
-#answer_404 = "../lib/assets/404.html"
-#answer_503 = "../lib/assets/503.html"
+answer_404 = "{{ parameter_dict['404-html'] }}"
+answer_503 = "{{ parameter_dict['503-html'] }}"
 
 # defines the sticky session cookie's name, if `sticky_session` is activated for
 # a cluster. Defaults to "SOZUBALANCEID"
@@ -176,8 +176,8 @@ address = "[{{ parameter_dict['ip'] }}]:{{ parameter_dict['https-port'] }}"
 # this option is incompatible with expect_proxy
 # public_address = "1.2.3.4:80"
 
-# answer_404 = "../lib/assets/404.html"
-# answer_503 = "../lib/assets/503.html"
+answer_404 = "{{ parameter_dict['404-html'] }}"
+answer_503 = "{{ parameter_dict['503-html'] }}"
 # sticky_name = "SOZUBALANCEID"
 
 # Configures the client socket to receive a PROXY protocol header
@@ -212,9 +212,9 @@ cipher_list = [
 # default certificate and key
 # in case you want to set up TLS without SNI, you can define the default
 # certificate here
-certificate = "{{ parameter_dict['cert-file'] }}"
-key = "{{ parameter_dict['key-file'] }}"
-certificate_chain = "{{ parameter_dict['cert-chain-file'] }}"
+# certificate = "{{ parameter_dict['cert-file'] }}"
+# key = "{{ parameter_dict['key-file'] }}"
+# certificate_chain = "{{ parameter_dict['cert-chain-file'] }}"
 
 # options specific to a TCP proxy listener
 #[[listeners]]
@@ -258,19 +258,21 @@ load_metric = "{{ cluster_dict.get('load-metric', 'CONNECTIONS') }}"
 # - hostname: host name of the cluster
 # - path = "/api" # optional. A routing rule for incoming requests. The path of the request must match it. Can be a prefix (default), a regex, or a strictly equal path.
 # - path_type = PREFIX | REGEX | EQUALS # defaults to PREFIX
-# - sticky_session = false # activates sticky sessions for this cluster
+# - sticky_session = false # activates sticky sessions for this cluster (not working!)
 # - https_redirect = false #  activates automatic redirection to HTTPS for this cluster
 # - custom_tag: a tag to retrieve a frontend with the CLI or in the logs
+# - method
+# - position
 frontends = [
 {%  for _, frontend_dict in cluster_dict['frontend-dict'].items() -%}
-{%    set enable_https = frontend_dict.get("certificate") and frontend_dict.get("key") and frontend_dict.get("chain") -%}
+{%    set enable_https = frontend_dict.get("certificate") and frontend_dict.get("key") and frontend_dict.get("certificate-chain") -%}
 {%    set tag_list = [] -%}
 {%    set user_tag_list = frontend_dict.get('tag-list', []) -%}
 {%    for tag in user_tag_list -%}
 {%        set k, v = tag.split('=') -%}
 {%        do tag_list.append(k.strip() ~ '="' ~ v.strip() ~ '"') -%}
 {%    endfor -%}
-    { address = "{{ frontend_dict['address'] }}", hostname = "{{ frontend_dict.get('hostname') }}", {% if user_tag_list -%} tags = {{ tag_list | join(',') }}, {%- endif %} path = "{{ frontend_dict.get('path', '') }}", path_type = "{{ frontend_dict.get("path-type", "PREFIX") }}", sticky_session = {{ frontend_dict.get("sticky-session", "false") }}, https_redirect = {{ frontend_dict.get("https-redirect", "false") }}{% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", []) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['chain'] }}" {% endif -%} },
+    { address = "{{ frontend_dict['address'] }}", hostname = "{{ frontend_dict.get('hostname') }}", {% if user_tag_list -%} tags = {{ tag_list | join(',') }}, {%- endif %} path = "{{ frontend_dict.get('path', '') }}", path_type = "{{ frontend_dict.get("path-type", "PREFIX") }}" {% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", ["TLS_V12", "TLS_V13"]) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['certificate-chain'] }}" {% endif -%} },
 {%  endfor -%}
 ]
 

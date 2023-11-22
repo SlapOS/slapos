@@ -50,6 +50,8 @@ extra-context =
 # config files
     raw config_toml_in             {{ config_toml }}
     raw template_publish_slave     {{ template_publish_slave }}
+    raw response_404_html          {{ template_404_html }}
+    raw response_503_html          {{ template_503_html }}
 
 [slave-output.cfg]
 recipe = slapos.recipe.template:jinja2
