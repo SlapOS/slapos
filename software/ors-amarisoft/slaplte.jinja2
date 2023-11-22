@@ -121,7 +121,9 @@
 {%-   set scs = scs_khz * 1e-3  %}
 {%-   for i in range(10000) %}{# = `while 1` #}
 {%-     set _.fg = nr.get_frequency_by_gscn(_.gscn) %}
-{%-     if _.fg % scs < 1e-5*scs  %}{# == 0 with tolerating fp #}
+{#-     check `fg % scs == 0` with tolerating fp rounding #}
+{%-     set r = (_.fg % scs) / scs  %}
+{%-     if abs(r - round(r)) < 1e-5 %}
 {%-       break %}
 {%-     endif %}
 {%-     set _.gscn = _.gscn - 1 %}
