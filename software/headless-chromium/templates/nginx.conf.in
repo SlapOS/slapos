@@ -12,6 +12,7 @@ http {
 
   include {{ param_headless_chromium['nginx-mime-types'] }};
   default_type application/octet-stream;
+  root {{ param_headless_chromium['nginx-root'] }};
 
   server {
     listen {{ param_headless_chromium['proxy-address'] }} ssl;
@@ -30,8 +31,13 @@ http {
     uwsgi_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
     scgi_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
 
-    # All websocket connections are served from /devtools.
-    location /devtools {
+    # A minimal page to bootstrap the DevTools frontend
+    location = / {
+      try_files $uri $uri/index.html =404;
+    }
+
+    # All websocket connections are served from /devtools/page.
+    location /devtools/page {
       proxy_http_version 1.1;
       proxy_set_header Host {{ param_headless_chromium['remote-debugging-address'] }};
       proxy_pass http://{{ param_headless_chromium['remote-debugging-address'] }};
@@ -39,9 +45,9 @@ http {
       proxy_set_header Connection "Upgrade";
     }
 
-    # The DevTools frontend is served from /serve_file/@{version_hash}.
-    location ~ "^\/serve_file\/@[0-9a-f]{5,40}\/(.*)" {
-      alias {{ param_headless_chromium['devtools-frontend-root'] }}/$1;
+    # Static content from DevTools frontend
+    location /devtools {
+      alias {{ param_headless_chromium['devtools-frontend-root'] }};
     }
 
     location / {
@@ -59,11 +65,11 @@ http {
       # frontend CDN URL. The tricky thing is that the frontend URL is
       # not available yet when this file is built; what we do instead is
       # use the given Host header.
-      sub_filter "ws={{ param_headless_chromium['remote-debugging-address'] }}" "wss=$host";
+      sub_filter "ws={{ param_headless_chromium['remote-debugging-address'] }}" "wss=$http_host";
       sub_filter_once on;
       sub_filter_types application/json;
 
-      sub_filter "ws://{{ param_headless_chromium['remote-debugging-address'] }}" "wss://$host";
+      sub_filter "ws://{{ param_headless_chromium['remote-debugging-address'] }}" "wss://$http_host";
       sub_filter_types application/json;
 
       # We want to use our own DevTools frontend rather than
