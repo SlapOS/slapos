@@ -14,7 +14,10 @@ def default_ssb_nr_arfcn(dl_nr_arfcn, scs_khz):
     scs = scs_khz * khz
     while 1:
         fg = nr.get_frequency_by_gscn(gscn)
-        if fg % scs < 1e-5*scs: # == 0 with tolerating fp
+        # check `fg % scs == 0` with tolerating fp rounding
+        r = (fg % scs) / scs
+        #print('gscn %d\tfg %.16g  %%scs  %.16g·scs' % (gscn, fg, r))
+        if abs(r - round(r)) < 1e-5:
             break
         gscn -= 1
     fg_arfcn = nr.get_nrarfcn(fg)
@@ -30,12 +33,10 @@ def _(dl_nr_arfcn, scs_khz):
     scs = scs_khz * khz  # subcarrier spacing
     fssb_div_scs = fssb / scs
     fssb_mod_scs = fssb % scs
-    if abs(fssb_mod_scs) < 1e-10*scs:
-       fssb_mod_scs = 0
     print("%d %d  ->  %d\t;  %.16g MHz\t->  %.16g Mhz\t gscn %d\t/scs %.16g  %%scs %.16g·scs" %
         (dl_nr_arfcn, scs_khz, ssb_nr_arfcn, f, fssb, gssb, fssb_div_scs, fssb_mod_scs/scs))
 
-print('# dl_nr_arfcn  ->  ssb_nr_arfcn')
+print('# dl_nr_arfcn scs ->  ssb_nr_arfcn')
 _(633300, 30)
 _(632628, 30)
 _(630336, 30)
