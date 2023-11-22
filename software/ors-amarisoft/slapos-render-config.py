@@ -280,8 +280,8 @@ def iRU2_LOPCOMM_fLTE2(ienb):
 
 def do_enb():
     ienb = Instance('enb')
-    #iRU1_SDR_tLTE2_tNR(ienb)
-    iRU2_LOPCOMM_fLTE_fNR(ienb)
+    iRU1_SDR_tLTE2_tNR(ienb)
+    #iRU2_LOPCOMM_fLTE_fNR(ienb)
     #iRU3_SDR1_fLTE2(ienb)
     #iRU2_LOPCOMM_fLTE2(ienb)
 
