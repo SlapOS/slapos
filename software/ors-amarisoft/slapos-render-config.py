@@ -78,7 +78,7 @@ def ref_of_shared(ishared):
 # 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
 # RU definition is embedded into cell for simplicity of management
 def iRU1_SDR_tLTE2_tNR(ienb):
-    RU1 = {
+    RU = {
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
         'sdr_dev_list': [0, 1],
@@ -88,30 +88,30 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'rx_gain':      52,
     }
 
-    ienb.ishared('CELL1_a', {
+    ienb.ishared('CELL_a', {
         'cell_type':    'lte',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    38050,      # 2600 MHz
         'pci':          1,
         'cell_id':      '0x01',
-        'ru':           RU1,        # RU definition embedded into CELL
+        'ru':           RU,         # RU definition embedded into CELL
     })
 
-    ienb.ishared('CELL1_b', {
+    ienb.ishared('CELL_b', {
         'cell_type':    'lte',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    38100,      # 2605 MHz
         'pci':          2,
         'cell_id':      '0x02',
-        'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
+        'ru':           {           # CELL_b shares RU with CELL_a referring to it via cell
             'ru_type':      'ruincell_ref',
-            'ruincell_ref': 'CELL1_a'
+            'ruincell_ref': 'CELL_a'
         }
     })
 
-    ienb.ishared('CELL1_c', {
+    ienb.ishared('CELL_c', {
         'cell_type':    'nr',
         'rf_mode':      'tdd',
         'bandwidth':    10,
@@ -120,16 +120,16 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'pci':          3,
         'cell_id':      '0x03',
         'ru':           {
-            'ru_type':      'ruincell_ref',     # CELL1_c shares RU with CELL1_a and CELL1_b
-            'ruincell_ref': 'CELL1_b'           # referring to RU via CELL1_b -> CELL1_a
+            'ru_type':      'ruincell_ref',     # CELL_c shares RU with CELL_a and CELL_b
+            'ruincell_ref': 'CELL_b'            # referring to RU via CELL_b -> CELL_a
         }
     })
 
 
 # LTE + NR cells that use CPRI-based Lopcomm radio units
-# here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL1_a above
+# here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL_a above
 def iRU2_LOPCOMM_fLTE_fNR(ienb):
-    RU2_a = {
+    RU1 = {
         'ru_type':      'lopcomm',
         'ru_link_type': 'cpri',
         'mac_addr':     'XXX',
@@ -148,29 +148,29 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'rx_gain':      -22,
     }
 
-    RU2_b = copy.deepcopy(RU2_a)
-    RU2_b['mac_addr'] = 'YYY'
-    RU2_b['cpri_link']['sfp_port'] = 1
-    RU2_b['tx_gain'] += 10
-    RU2_b['rx_gain'] += 10
+    RU2 = copy.deepcopy(RU1)
+    RU2['mac_addr'] = 'YYY'
+    RU2['cpri_link']['sfp_port'] = 1
+    RU2['tx_gain'] += 10
+    RU2['rx_gain'] += 10
 
-    ienb.ishared('RU2_a', RU2_a)
-    ienb.ishared('RU2_b', RU2_b)
+    ienb.ishared('RU1', RU1)
+    ienb.ishared('RU2', RU2)
 
-    ienb.ishared('CELL2_a', {
+    ienb.ishared('CELL_a', {
         'cell_type':    'lte',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    3350,       # 2680 MHz
         'pci':          21,
         'cell_id':      '0x21',
-        'ru':           {           # CELL2_a links to RU2_a by its reference
+        'ru':           {           # CELL_a links to RU1 by its reference
             'ru_type':  'ru_ref',
-            'ru_ref':   'RU2_a'
+            'ru_ref':   'RU1'
         }
     })
 
-    ienb.ishared('CELL2_b', {
+    ienb.ishared('CELL_b', {
         'cell_type':    'nr',
         'rf_mode':      'fdd',
         'bandwidth':    5,
@@ -180,7 +180,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'cell_id':      '0x22',
         'ru':           {
             'ru_type':  'ru_ref',
-            'ru_ref':   'RU2_b'
+            'ru_ref':   'RU2'
         }
     })
 
@@ -199,7 +199,7 @@ def iRU3_SDR1_fLTE2(ienb):
         'rx_gain':      61,
     }
 
-    ienb.ishared('CELL3_a', {
+    ienb.ishared('CELL_a', {
         'cell_type':    'lte',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
@@ -209,7 +209,7 @@ def iRU3_SDR1_fLTE2(ienb):
         'ru':           RU,
     })
 
-    ienb.ishared('CELL3_b', {
+    ienb.ishared('CELL_b', {
         'cell_type':    'lte',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
@@ -218,7 +218,7 @@ def iRU3_SDR1_fLTE2(ienb):
         'cell_id':      '0x02',
         'ru':           {
             'ru_type':      'ruincell_ref',
-            'ruincell_ref': 'CELL3_a'
+            'ruincell_ref': 'CELL_a'
         }
     })
 
