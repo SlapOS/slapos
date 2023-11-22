@@ -135,7 +135,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
     RU1 = {
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
-        'sdr_dev_list': [0],
+        'sdr_dev_list': [1],
         'n_antenna_dl': 2,
         'n_antenna_ul': 1,
         'tx_gain':      51,
@@ -143,7 +143,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
     }
 
     RU2 = copy.deepcopy(RU1)
-    RU2['sdr_dev_list'] = [1]
+    RU2['sdr_dev_list'] = [2]
 
     ienb.ishared('RU1', RU1)
     ienb.ishared('RU2', RU2)
@@ -167,8 +167,8 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'bandwidth':    10,
         'dl_nr_arfcn':  523020,     # 2615.1 MHz
         'nr_band':      41,
-        'pci':          3,
-        'cell_id':      '0x03',
+        'pci':          2,
+        'cell_id':      '0x02',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU2'
