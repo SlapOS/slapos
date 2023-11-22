@@ -183,64 +183,64 @@
 
     XXX defaults ?
 #}
-{%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)                                  %}
-{%-   set qother = []                                                                           %}
-{%-   for ishared in qshared_instance_list                                                      %}
-{%-     set ref = J(jref_of_shared(ishared))                                                    %}
-{%-     set _ = ishared['_']                                                                    %}
-{%-     if   'ru_type'   in _                                                                   %}
-{%-       set iru = ishared                                                                     %}
-{%-       for k, v in defaults['ru'].items()                                                    %}
-{%-         do _.setdefault(k, v)                                                               %}
-{%-       endfor                                                                                %}
-{%-       for k, v in defaults.get('ru/'+_.ru_type, {}).items()                                 %}
-{%-         do _.setdefault(k, v)                                                               %}
-{%-       endfor                                                                                %}
-{%-       if _.ru_link_type == 'cpri'                                                           %}
-{%-         set link = _.cpri_link                                                              %}
-{%-         for k, v in defaults['cpri_link'].items()                                           %}
-{%-           do link.setdefault(k, v)                                                          %}
-{%-         endfor                                                                              %}
-{%-       endif                                                                                 %}
-{%-       do iru_dict.update({ref: iru})                                                        %}
+{%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ru_type'   in _ %}
+{%-       set iru = ishared %}
+{%-       for k, v in defaults['ru'].items()  %}
+{%-         do _.setdefault(k, v) %}
+{%-       endfor  %}
+{%-       for k, v in defaults.get('ru/'+_.ru_type, {}).items() %}
+{%-         do _.setdefault(k, v) %}
+{%-       endfor  %}
+{%-       if _.ru_link_type == 'cpri' %}
+{%-         set link = _.cpri_link  %}
+{%-         for k, v in defaults['cpri_link'].items() %}
+{%-           do link.setdefault(k, v)  %}
+{%-         endfor  %}
+{%-       endif %}
+{%-       do iru_dict.update({ref: iru})  %}
 {%-     elif (icell_kind == 'enb' and 'cell_type' in _)    or
-             (icell_kind == 'ue'  and 'ue_cell_type' in _)                                      %}
-{%-       set icell = ishared                                                                   %}
-{%-       if icell_kind == 'enb'                                                                %}
+             (icell_kind == 'ue'  and 'ue_cell_type' in _)  %}
+{%-       set icell = ishared %}
+{%-       if icell_kind == 'enb'  %}
 {%-         for k, v in defaults['cell/%s' % _.cell_type].items() %}
-{%-           do _.setdefault(k, v)                                                             %}
-{%-         endfor                                                                              %}
+{%-           do _.setdefault(k, v) %}
+{%-         endfor  %}
 {%-         for k, v in defaults['cell/%s/%s' % (_.cell_type, _.rf_mode)].items() %}
-{%-           do _.setdefault(k, v)                                                             %}
-{%-         endfor                                                                              %}
-{%-         set xcell_type = _.cell_type                                                        %}
-{%-       else                                                                                  %}
-{%-         set xcell_type = _.ue_cell_type                                                     %}
-{%-       endif                                                                                 %}
-{%-       if xcell_type == 'lte'                                                                %}
-{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn)))                 %}
-{%-       elif xcell_type == 'nr'                                                               %}
+{%-           do _.setdefault(k, v) %}
+{%-         endfor  %}
+{%-         set xcell_type = _.cell_type  %}
+{%-       else  %}
+{%-         set xcell_type = _.ue_cell_type %}
+{%-       endif %}
+{%-       if xcell_type == 'lte'  %}
+{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
+{%-       elif xcell_type == 'nr' %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))            %}
-{%-       else                                                                                  %}
-{%-         do bug('unreachable')                                                               %}
-{%-       endif                                                                                 %}
-{%-       do icell_dict.update({ref: icell})                                                    %}
-{%-       set ru = _['ru']                                                                      %}
-{%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref')                                       %}
-{#-         embedded ru definition -> expose it as `_<cell_ref>_ru`                             #}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn)))  %}
+{%-       else  %}
+{%-         do bug('unreachable') %}
+{%-       endif %}
+{%-       do icell_dict.update({ref: icell})  %}
+{%-       set ru = _['ru']  %}
+{%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
+{#-         embedded ru definition -> expose it as `_<cell_ref>_ru` #}
 {%-         do iru_dict.update({'_%s_ru' % ref: {
                   '_':                ru,
                   'slave_title':      '%s. RU' % icell.slave_title,
                   'slave_reference':  icell.slave_reference,
-               }})                                                                              %}
-{%-       endif                                                                                 %}
-{%-     else                                                                                    %}
-{%-       do qother.append(ishared)                                                             %}
-{%-     endif                                                                                   %}
-{%-   endfor                                                                                    %}
-{%-   do qshared_instance_list.clear()                                                          %}
-{%-   do qshared_instance_list.extend(qother)                                                   %}
+               }})  %}
+{%-       endif %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
 
 {#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
 {#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
