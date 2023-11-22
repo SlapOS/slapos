@@ -28,6 +28,7 @@
 import contextlib
 import datetime
 import json
+import os
 import pathlib
 import socket
 import struct
@@ -289,9 +290,21 @@ class TestOrderBuildPackingListSimulation(
       mariadb_slowquery_log = pathlib.Path(
         self.getComputerPartitionPath(
           'mariadb')) / 'var' / 'log' / 'mariadb_slowquery.log'
+      mariadb_data = pathlib.Path(
+        self.getComputerPartitionPath(
+          'mariadb')) / 'srv' / 'mariadb'
+      mariadb_data_size = sum(sum(os.path.getsize(os.path.join(root, f)) for f in files) \
+        for root, dirs, files in os.walk(mariadb_data))
+      mariadb_binlog_data = pathlib.Path(
+        self.getComputerPartitionPath(
+          'mariadb')) / 'srv' / 'backup' / 'mariadb-incremental'
+      mariadb_binlog_data_size = sum(sum(os.path.getsize(os.path.join(root, f)) for f in files) \
+        for root, dirs, files in os.walk(mariadb_binlog_data))
       self.write_measurement(
         {
           'pt-query-digest':
           subprocess.check_output(
-            (pt_query_digest, mariadb_slowquery_log), text=True)
+            (pt_query_digest, mariadb_slowquery_log), text=True),
+          'data-size': mariadb_data_size,
+          'binlog-data-size': mariadb_binlog_data_size,
         })
