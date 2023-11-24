@@ -1,0 +1,38 @@
+{#- Package slaplte provides helpers for configuring Amarisoft LTE services in SlapOS.
+
+    - load_cell initializes cell registry.
+-#}
+
+
+{#- tap indicates tap interface, that slapos told us to use,
+    or 'xxx-notap-xxx' if slapos provided us either nothing or empty string. #}
+{%- set tap = slap_configuration.get('tap-name', '')   %}
+{%- if tap == '' %}
+{%-   set tap = 'xxx-notap-xxx'   %}
+{%- endif %}
+
+
+{#- ---- loading ---- #}
+
+{#- load_cell initializes cell registry.
+
+    cell_list keeps configured cells: {} cell reference -> cell parameters
+#}
+{%- macro load_cell(cell_list)	%}
+{%-   do cell_list.update( slapparameter_dict.get('cell_list', {'default': {}}) )  %}
+{%-   for i, k in enumerate(cell_list) %}
+{%-     set cell = cell_list[k] %}
+{%-     do cell.setdefault('cpri_port_number', i) %}
+{%-   endfor %}
+
+{#-   assign TAP interfaces to RUs  #}
+{%-   for i, (cell_ref, cell) in enumerate(cell_list|dictsort)  %}
+{%-     if len(cell_list) > 1 %}
+{%-       set ru_tap = "%s-%d" % (tap, i+1) %}
+{%-     else  %}
+{%-       set ru_tap = tap  %}
+{%-     endif %}
+{%-     do cell.update({'_tap': ru_tap})  %}
+{%-   endfor  %}
+
+{%- endmacro  %}

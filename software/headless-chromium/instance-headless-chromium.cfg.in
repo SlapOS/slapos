@@ -9,6 +9,8 @@ log = ${:home}/log
 etc = ${:home}/etc
 ssl = ${:etc}/ssl
 service = ${:etc}/service
+srv = ${:home}/srv
+nginx-root = ${:srv}/nginx-root
 
 # Options for instance configuration. See README.md for a list of
 # options that can be configured when requesting an instance.
@@ -17,9 +19,7 @@ ipv4 = {{ partition_ipv4 }}
 ipv6 = {{ partition_ipv6 }}
 remote-debugging-port = {{ parameter_dict['remote-debugging-port'] }}
 target-url = {{ parameter_dict['target-url'] }}
-incognito = {{ parameter_dict['incognito'] }}
 window-size = {{ parameter_dict['window-size'] }}
-block-new-web-contents = {{ parameter_dict['block-new-web-contents'] }}
 remote-debugging-address = ${:ipv4}:${:remote-debugging-port}
 devtools-frontend-root = {{ parameter_list['devtools-frontend'] }}
 
@@ -34,7 +34,8 @@ nginx-htpasswd-file = ${directory:etc}/.htpasswd
 nginx-key-file = ${frontend-instance-certificate:key-file}
 nginx-cert-file = ${frontend-instance-certificate:cert-file}
 nginx-mime-types = ${directory:etc}/mime-types
-
+nginx-root = ${directory:nginx-root}
+nginx-index-html = ${:nginx-root}/index.html
 
 # Create a wrapper script in /bin/chromium for the headless shell
 # executable.
@@ -45,10 +46,11 @@ command-line =
   {{ parameter_list['chromium-wrapper'] }}
   --remote-debugging-address=${headless-chromium:ipv4}
   --remote-debugging-port=${headless-chromium:remote-debugging-port}
+  --remote-allow-origins=*
   --user-data-dir=${directory:tmp}
   --window-size="${headless-chromium:window-size}"
-  {% if parameter_dict['incognito'] %}--incognito{% endif -%}
-  {% if parameter_dict['block-new-web-contents'] %}--block-new-web-contents{% endif -%}
+  {% if parameter_dict['incognito'] %} --incognito{% endif -%}
+  {% if parameter_dict['block-new-web-contents'] %} --block-new-web-contents{% endif -%}
 {{ '\n  "${headless-chromium:target-url}"' }}
 environment =
   FONTCONFIG_FILE=${font-config:output}
@@ -73,6 +75,11 @@ context =
 recipe = slapos.recipe.template
 url = {{ parameter_list['template-mime-types'] }}
 output = ${headless-chromium:nginx-mime-types}
+
+[nginx-index-html]
+recipe = slapos.recipe.template
+url = {{ parameter_list['template-index-html'] }}
+output = ${headless-chromium:nginx-index-html}
 
 [nginx-launcher]
 recipe = slapos.cookbook:wrapper
@@ -195,6 +202,7 @@ parts =
   generate-passwd-file
   nginx-config
   nginx-mime-types
+  nginx-index-html
   nginx-launcher
   logrotate-entry-nginx
   remote-debugging-frontend

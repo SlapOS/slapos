@@ -5,7 +5,7 @@ exposes an interface to connect to it remotely from another browser.
 After deployment, the instance is configured like this:
 
 ```
-   Caddy frontend
+   Rapid CDN Frontend
      |
    (HTTPS, IPv6)
      |
@@ -27,7 +27,7 @@ The following instance parameters can be configured:
 - nginx-proxy-port:       Port for Ningx proxy to listen on.
 - monitor-httpd-port:     Port for monitor.
 - incognito:              Force Incognito mode
-- window-size:            Initial windo size
+- window-size:            Initial window size
 - block-new-web-contents: Block new web contents
 
 See `instance-headless-chromium-input-schema.json` for default values.
