@@ -1,13 +1,13 @@
---- a/lib/ii.c
-+++ b/lib/ii.c
-@@ -10874,7 +10874,9 @@
-     ? ((uint32_t)(data->optarg->similarity_threshold) > GRN_HASH_SIZE(h)
-        ? GRN_HASH_SIZE(h)
-        :(uint32_t)(data->optarg->similarity_threshold))
--    : (GRN_HASH_SIZE(h) >> 3) + 1;
-+    : (GRN_HASH_SIZE(h) < 8
-+       ? GRN_HASH_SIZE(h)
-+       : ((GRN_HASH_SIZE(h) - 8) >> 3) + 8);
+diff -ur groonga-13.0.9.orig/lib/ii.c groonga-13.0.9/lib/ii.c
+--- groonga-13.0.9.orig/lib/ii.c	2023-10-31 02:29:55.456449897 +0000
++++ groonga-13.0.9/lib/ii.c	2023-11-27 18:30:18.279938482 +0000
+@@ -12761,7 +12761,8 @@
+             ? ((uint32_t)(data->optarg->similarity_threshold) > GRN_HASH_SIZE(h)
+                  ? GRN_HASH_SIZE(h)
+                  : (uint32_t)(data->optarg->similarity_threshold))
+-            : (GRN_HASH_SIZE(h) >> 3) + 1;
++            : (GRN_HASH_SIZE(h) < 8 ? GRN_HASH_SIZE(h)
++                                    : ((GRN_HASH_SIZE(h) - 8) >> 3) + 8);
    if (GRN_HASH_SIZE(h)) {
      grn_id j, id;
      float w2;
