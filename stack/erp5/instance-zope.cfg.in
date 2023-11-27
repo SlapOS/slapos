@@ -521,7 +521,7 @@ inline =
 command-name = runUnitTest
 command-line-extra =
   --erp5_sql_connection_string '{{ connection_string_list[0] }}'
-  --erp5_sql_isolated_connection_string '!READ-COMMITTED {{ connection_string_list[0] }}'
+  --erp5_sql_read_committed_connection_string '!READ-COMMITTED {{ connection_string_list[0] }}'
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
   --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
   --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}

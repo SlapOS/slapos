@@ -58,7 +58,7 @@ trusted-proxy 0.0.0.0
 
 
 {% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
-{% set sql_isolated_connection_string = parameter_dict.get('sql-isolated-connection-string') -%}
+{% set sql_read_committed_connection_string = parameter_dict.get('sql-isolated-connection-string') -%}
 {% if sql_connection_string -%}
 {%   set bt5_repository_url = [] -%}
 {%   set sr_path = os.path.realpath(parameter_dict['home'] + '/software_release') + '/' -%}
@@ -72,8 +72,8 @@ trusted-proxy 0.0.0.0
   id {{ parameter_dict['site-id'] }}
   owner {{ parameter_dict['inituser'] }}
   erp5_sql_connection_string {{ sql_connection_string }}
-  erp5_sql_isolated_connection_string {{ sql_isolated_connection_string }}
-  cmf_activity_sql_connection_string {{ sql_isolated_connection_string }}
+  erp5_sql_read_committed_connection_string {{ sql_read_committed_connection_string }}
+  cmf_activity_sql_connection_string {{ sql_read_committed_connection_string }}
   bt5_repository_url {{ ' '.join(bt5_repository_url) }}
   bt5 {{ parameter_dict['bt5'] }}
 {%- if parameter_dict['id-store-interval'] != None %}
