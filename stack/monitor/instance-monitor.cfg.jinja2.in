@@ -423,9 +423,7 @@ depends =
   ${ca-monitor-httpd-service:wrapper-path}
   ${monitor-httpd-promise:name}
   ${monitor-frontend-promise:name}
-# XXX this is not enabled yet because this conflicts with testnode's own
-# monitoring.
-#  ${check-monitor-password-promise:name}
+  ${check-monitor-password-promise:name}
   ${monitor-bootstrap-promise:name}
   ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}
