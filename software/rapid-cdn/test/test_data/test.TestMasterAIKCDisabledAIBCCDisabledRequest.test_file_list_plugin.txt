@@ -3,6 +3,7 @@ T-0/etc/plugin/buildout-T-0-status.py
 T-0/etc/plugin/caucased-backend-client.py
 T-0/etc/plugin/check-backend-haproxy-statistic-url-frontend-node-1.py
 T-0/etc/plugin/check-free-disk-space.py
+T-0/etc/plugin/check-monitor-frontend-password.py
 T-0/etc/plugin/master-introspection-server-ip-port-listening.py
 T-0/etc/plugin/master-key-download-url-ready-promise.py
 T-0/etc/plugin/master-key-generate-auth-url-ready-promise.py
@@ -16,6 +17,7 @@ T-1/etc/plugin/__init__.py
 T-1/etc/plugin/buildout-T-1-status.py
 T-1/etc/plugin/caucased.py
 T-1/etc/plugin/check-free-disk-space.py
+T-1/etc/plugin/check-monitor-frontend-password.py
 T-1/etc/plugin/expose-csr-ip-port-listening.py
 T-1/etc/plugin/kedifa-http-reply.py
 T-1/etc/plugin/monitor-bootstrap-status.py
@@ -32,6 +34,7 @@ T-2/etc/plugin/backend_haproxy_https.py
 T-2/etc/plugin/buildout-T-2-status.py
 T-2/etc/plugin/caucase-updater.py
 T-2/etc/plugin/check-free-disk-space.py
+T-2/etc/plugin/check-monitor-frontend-password.py
 T-2/etc/plugin/expose-csr-ip-port-listening.py
 T-2/etc/plugin/frontend-frontend-haproxy-configuration-promise.py
 T-2/etc/plugin/frontend_haproxy_ipv4_http.py
