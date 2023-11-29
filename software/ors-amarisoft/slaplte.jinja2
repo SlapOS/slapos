@@ -93,43 +93,21 @@
 
 {%- set J = json_module.loads %}
 
-{#- jdefault_ul_earfcn returns default UL EARFCN corresponding to DL EARFCN #}
-{%- macro jdefault_ul_earfcn(dl_earfcn)  %}
-{{-   earfcn_module.dl2ul(dl_earfcn) | tojson    }}
+{#- jdefault_ul_earfcn returns default UL EARFCN corresponding to DL EARFCN. #}
+{%- macro jdefault_ul_earfcn(dl_earfcn) %}
+{{-   earfcn_module.dl2ul(dl_earfcn) | tojson }}
 {%- endmacro %}
 
-{#- jdefault_ul_nr_arfcn returns default UL NR ARFCN corresponding to DL NR ARFCN #}
-{%- macro jdefault_ul_nr_arfcn(dl_nr_arfcn, nr_band)            %}
-{%-   set nr = nrarfcn_module                                   %}
-{%-   set dl_lo, dl_hi = nr.get_nrarfcn_range(nr_band, 'dl')    %}
-{%-   set ul_lo, ul_hi = nr.get_nrarfcn_range(nr_band, 'ul')    %}
-{{-   (ul_lo + (dl_nr_arfcn - dl_lo)) | tojson                  }}
+{#- jdefault_ul_nr_arfcn returns default UL NR ARFCN corresponding to DL NR ARFCN and band. #}
+{%- macro jdefault_ul_nr_arfcn(dl_nr_arfcn, nr_band)  %}
+{%-   xnrarfcn_moule.dl2ul(dl_nr_arfcn, nr_band) | tojson  %}
 {%- endmacro %}
 
 {#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
     and subcarrier spacing #}
 {%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, scs_khz) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
-{%-   set nr = nrarfcn_module %}
-{%-   set _ = namespace() %}
-{%-   set _.f = nr.get_frequency(nrarfcn=dl_nr_arfcn) %}
-{%-   set _.gscn = nr.get_gscn_by_frequency(_.f)  %}
-{%-   if nr.get_frequency_by_gscn(_.gscn) > _.f %}{# nrarfcn rounds up, amari down #}
-{%-     set _.gscn = _.gscn - 1 %}
-{%-   endif %}
-{#-   align fg to be multiple of scs  #}
-{%-   set scs = scs_khz * 1e-3  %}
-{%-   for i in range(10000) %}{# = `while 1` #}
-{%-     set _.fg = nr.get_frequency_by_gscn(_.gscn) %}
-{#-     check `fg % scs == 0` with tolerating fp rounding #}
-{%-     set r = (_.fg % scs) / scs  %}
-{%-     if abs(r - round(r)) < 1e-5 %}
-{%-       break %}
-{%-     endif %}
-{%-     set _.gscn = _.gscn - 1 %}
-{%-   endfor %}
-{%-   set fg_arfcn = nr.get_nrarfcn(_.fg) %}
-{{- fg_arfcn | tojson }}
+{%-   xnrarfcn_module.dl2ssb(dl_nr_arfcn, nr_band, scs_khz, ....) | tojson %}
 {%- endmacro %}
 
 
