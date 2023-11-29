@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Values returned by End to End Testing instanciation",
+  "additionalProperties": false,
+  "properties": {},
+  "type": "object"
+}
