@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "client.crt": {
+      "type": "string",
+      "pattern": "^Certificate:.+\\n-----END CERTIFICATE-----\\n$",
+      "default": "Certificate:\ndefault-client-crt\n-----END CERTIFICATE-----\n"
+    },
+    "client.key": {
+      "type": "string",
+      "pattern": "^-----BEGIN PRIVATE KEY-----.+\\n-----END PRIVATE KEY-----\\n$",
+      "default":"-----BEGIN PRIVATE KEY-----\ndefault-client-key\n-----END PRIVATE KEY-----\n"
+    },
+    "master-url": {
+      "type": "string",
+      "format": "uri",
+      "default": "https://slap.vifib.com"
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "md5sum": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["client.crt", "client.key", "master-url", "tests"],
+  "additionalProperties": false
+}
