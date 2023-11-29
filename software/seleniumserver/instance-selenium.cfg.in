@@ -92,26 +92,15 @@ environment =
   PATH=${buildout:bin-directory}
   XORG_LOCK_DIR=$${directory:tmp}
   DISPLAY=$${xvfb-instance:display}
+  LC_ALL=C.UTF8
   FONTCONFIG_FILE=$${fontconfig-conf:output}
 hostname = $${slap-configuration:ipv4-random}
 
 
-[selenium-server-node-instance-firefox-60]
+[selenium-server-node-instance-firefox-102]
 <= selenium-server-node-instance
-capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-60:version},firefox_binary=${firefox-wrapper-60:location}
-java-args = -Dwebdriver.gecko.driver=${geckodriver-0.22.0:location}
-port = 7777
-
-[selenium-server-node-instance-firefox-68]
-<= selenium-server-node-instance
-capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-68:version},firefox_binary=${firefox-wrapper-68:location}
-java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
-port = 7778
-
-[selenium-server-node-instance-firefox-78]
-<= selenium-server-node-instance
-capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-78:version},firefox_binary=${firefox-wrapper-78:location}
-java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
+capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-102:version},firefox_binary=${firefox-wrapper-102:location}
+java-args = -Dwebdriver.gecko.driver=${geckodriver-0.33.0:location}
 port = 7779
 
 [selenium-server-node-instance-firefox-115]
@@ -120,18 +109,17 @@ capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.33.0:location}
 port = 7780
 
-[selenium-server-node-instance-chromium-69]
-<= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-69:version},chrome_binary=${chromium-wrapper-69:location}
-java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-2.41:location}
-port = 7781
-
 [selenium-server-node-instance-chromium-91]
 <= selenium-server-node-instance
 capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-91:version},chrome_binary=${chromium-wrapper-91:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
-port = 7782
+port = 7781
 
+[selenium-server-node-instance-chromium-120]
+<= selenium-server-node-instance
+capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
+java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-120:location}
+port = 7782
 
 [selenium-server-admin-password]
 recipe = slapos.cookbook:generate.password
@@ -300,12 +288,10 @@ instance-promises =
   $${selenium-server-frontend-listen-promise:name}
   $${selenium-server-hub-listen-promise:name}
   $${selenium-server-hub-nodes-registered-promise:name}
-  $${selenium-server-node-firefox-60-listen-promise:name}
-  $${selenium-server-node-firefox-68-listen-promise:name}
-  $${selenium-server-node-firefox-78-listen-promise:name}
+  $${selenium-server-node-firefox-102-listen-promise:name}
   $${selenium-server-node-firefox-115-listen-promise:name}
-  $${selenium-server-node-instance-chromium-69-listen-promise:name}
   $${selenium-server-node-instance-chromium-91-listen-promise:name}
+  $${selenium-server-node-instance-chromium-120-listen-promise:name}
 
 
 [check-port-listening-promise]
@@ -335,8 +321,8 @@ promise = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
   $${selenium-server-check-nodes-registered:output} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
-# We have 6 nodes with 3 slots each
-expected-node-count = 18
+# We have 4 nodes with 3 slots each
+expected-node-count = 12
 
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template
@@ -350,36 +336,25 @@ inline =
   sys.exit(0 if expected_node_count == actual_node_count else 1)
 
 
-[selenium-server-node-firefox-60-listen-promise]
+[selenium-server-node-firefox-102-listen-promise]
 <= check-port-listening-promise
-config-host = $${selenium-server-node-instance-firefox-60:hostname}
-config-port = $${selenium-server-node-instance-firefox-60:port}
-
-[selenium-server-node-firefox-68-listen-promise]
-<= check-port-listening-promise
-config-host = $${selenium-server-node-instance-firefox-68:hostname}
-config-port = $${selenium-server-node-instance-firefox-68:port}
-
-[selenium-server-node-firefox-78-listen-promise]
-<= check-port-listening-promise
-config-host = $${selenium-server-node-instance-firefox-78:hostname}
-config-port = $${selenium-server-node-instance-firefox-78:port}
+config-host = $${selenium-server-node-instance-firefox-102:hostname}
+config-port = $${selenium-server-node-instance-firefox-102:port}
 
 [selenium-server-node-firefox-115-listen-promise]
 <= check-port-listening-promise
 config-host = $${selenium-server-node-instance-firefox-115:hostname}
 config-port = $${selenium-server-node-instance-firefox-115:port}
 
-[selenium-server-node-instance-chromium-69-listen-promise]
-<= check-port-listening-promise
-config-host = $${selenium-server-node-instance-chromium-69:hostname}
-config-port = $${selenium-server-node-instance-chromium-69:port}
-
 [selenium-server-node-instance-chromium-91-listen-promise]
 <= check-port-listening-promise
 config-host = $${selenium-server-node-instance-chromium-91:hostname}
 config-port = $${selenium-server-node-instance-chromium-91:port}
 
+[selenium-server-node-instance-chromium-120-listen-promise]
+<= check-port-listening-promise
+config-host = $${selenium-server-node-instance-chromium-120:hostname}
+config-port = $${selenium-server-node-instance-chromium-120:port}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish

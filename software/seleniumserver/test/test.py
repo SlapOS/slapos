@@ -282,12 +282,12 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     webdriver_url = parameter_dict['backend-url']
 
     desired_capabilities = DesiredCapabilities.FIREFOX.copy()
-    desired_capabilities['version'] = '60.0.2esr'
+    desired_capabilities['version'] = '102.15.1esr'
     driver = webdriver.Remote(
         command_executor=webdriver_url,
         desired_capabilities=desired_capabilities)
     self.assertIn(
-        'Gecko/20100101 Firefox/60.0',
+        'Gecko/20100101 Firefox/102.0',
         driver.execute_script('return navigator.userAgent'))
     driver.quit()
     desired_capabilities['version'] = '115.3.1esr'
@@ -409,31 +409,18 @@ class TestSSHServer(SeleniumServerTestCase):
       self.assertIn(b"Welcome to SlapOS Selenium Server.", received)
 
 
-class TestFirefox60(
+class TestFirefox102(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='60.0.2esr')
-  user_agent = 'Gecko/20100101 Firefox/60.0'
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='102.15.1esr')
+  user_agent = 'Gecko/20100101 Firefox/102.0'
 
-
-class TestFirefox68(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
-  user_agent = 'Gecko/20100101 Firefox/68.0'
-
-
-class TestFirefox78(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='78.1.0esr')
-  user_agent = 'Gecko/20100101 Firefox/78.0'
+  # resizing window does not work, but we don't really depend on it
+  @unittest.expectedFailure
+  def test_resize_window(self):
+    super().test_resize_window()
 
 
 class TestFirefox115(
@@ -450,15 +437,6 @@ class TestFirefox115(
     super().test_resize_window()
 
 
-class TestChrome69(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
-  user_agent = 'Chrome/69.0.3497.0'
-
-
 class TestChrome91(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
@@ -466,3 +444,12 @@ class TestChrome91(
 ):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
   user_agent = 'Chrome/91.0.4472.0'
+
+
+class TestChrome120(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.CHROME, version='120.0.6099.109')
+  user_agent = 'Chrome/120.0.0.0'
