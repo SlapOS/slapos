@@ -37,9 +37,12 @@ import base64
 import io
 
 import requests
+import PIL.Image
 import PyPDF2
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import ImageComparisonTestCase
+
 
 setUpModule, _CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -244,6 +247,27 @@ class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
             'html',
             'pdf',
         ).encode())
+
+
+class TestLibreofficeDrawToPNGConversion(CloudOooTestCase, ImageComparisonTestCase):
+  __partition_reference__ = 'l'
+  def test(self):
+    reference_png = PIL.Image.open(os.path.join('data', f'{self.id()}.png'))
+    with open(os.path.join('data', f'{self.id()}.odg'), 'rb') as f:
+      breakpoint()
+      actual_png_data = base64.decodebytes(
+        self.server.convertFile(
+          base64.encodebytes(f.read()).decode(),
+          'odg',
+          'png',
+        ).encode())
+      actual_png = PIL.Image.open(io.BytesIO(actual_png_data))
+
+    # save a snapshot
+    with open(os.path.join(self.computer_partition_root_path, self.id() + '.png'), 'wb') as f:
+      f.write(actual_png_data)
+
+    self.assertImagesSame(actual_png, reference_png)
 
 
 class TestLibreOfficeTextConversion(CloudOooTestCase):
