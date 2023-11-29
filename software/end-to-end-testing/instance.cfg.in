@@ -1,0 +1,119 @@
+[buildout]
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+
+extends =
+  ${nxdtest-instance.cfg:output}
+
+parts =
+  .nxdtest
+
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+cfg = $${buildout:directory}/.slapos
+testdir = $${:var}/tests
+nxdtestdir = $${:var}/nxdtest
+
+
+[client.crt]
+recipe = slapos.recipe.template
+output = $${directory:cfg}/client.crt
+inline = $${slap-configuration:configuration.client.crt}
+
+
+[client.key]
+recipe = slapos.recipe.template
+output = $${directory:cfg}/client.key
+inline = $${slap-configuration:configuration.client.key}
+
+
+[slapos-client.cfg]
+recipe = slapos.recipe.template
+output = $${directory:cfg}/slapos-client.cfg
+inline =
+  [slapos]
+  master_url = $${slap-configuration:configuration.master-url}
+
+  [slapconsole]
+  cert_file = $${client.crt:output}
+  key_file = $${client.key:output}
+
+
+[env.sh]
+recipe = slapos.recipe.template:jinja2
+output = $${directory:cfg}/env.sh
+inline =
+  export HOME=$${directory:home}
+
+
+[runTestSuite]
+# extended from stack/nxdtest
+env.sh = $${env.sh:output}
+workdir = $${directory:nxdtestdir}
+
+
+[.nxdtest]
+recipe = slapos.recipe.template:jinja2
+output = $${runTestSuite:workdir}/.nxdtest
+python_for_test = ${python_for_test:executable}
+tests =
+  $${e2e.py:output}
+  $${test_ors.py:output}
+#  $${test_health.py:output}
+#  $${test_kvm.py:output}
+context =
+  key tests :tests
+  key python_for_test :python_for_test
+inline =
+  import os
+  tests = {{ repr(tests) }}
+  for test in tests.splitlines():
+    directory, filename = os.path.split(test)
+    name, _ = os.path.splitext(filename)
+    TestCase(
+      name,
+      [{{ repr(python_for_test) }} , '-m', 'unittest',  '-v', name],
+      cwd=directory,
+      summaryf=UnitTest.summary,
+    )
+
+[e2e.py]
+recipe = slapos.recipe.template
+output = $${directory:testdir}/e2e.py
+url = ${e2e.py:target}
+
+[test_test.py]
+recipe = slapos.recipe.template
+output = $${directory:testdir}/test_test.py
+url = ${test_test.py:target}
+
+[test_kvm.py]
+recipe = slapos.recipe.template
+output = $${directory:testdir}/test_kvm.py
+url = ${test_kvm.py:target}
+
+[test_ors.py]
+recipe = slapos.recipe.template
+output = $${directory:testdir}/test_ors.py
+url = ${test_ors.py:target}
+context = raw buildout_directory_path ${buildout:directory}
+
+[test_health.py]
+recipe = slapos.recipe.template
+output = $${directory:testdir}/test_health.py
+url = ${test_health.py:target}
+
