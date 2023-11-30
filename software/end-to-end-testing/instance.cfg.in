@@ -7,6 +7,7 @@ extends =
 
 parts =
   .nxdtest
+  e2e.py
 
 
 [slap-configuration]
@@ -25,7 +26,6 @@ bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
 var = $${buildout:directory}/var
 cfg = $${buildout:directory}/.slapos
-testdir = $${:var}/tests
 nxdtestdir = $${:var}/nxdtest
 
 
@@ -70,50 +70,49 @@ workdir = $${directory:nxdtestdir}
 recipe = slapos.recipe.template:jinja2
 output = $${runTestSuite:workdir}/.nxdtest
 python_for_test = ${python_for_test:executable}
-tests =
-  $${e2e.py:output}
-  $${test_ors.py:output}
-#  $${test_health.py:output}
-#  $${test_kvm.py:output}
+testdir = $${tests:location}
 context =
-  key tests :tests
   key python_for_test :python_for_test
+  key testdir :testdir
 inline =
   import os
-  tests = {{ repr(tests) }}
-  for test in tests.splitlines():
-    directory, filename = os.path.split(test)
-    name, _ = os.path.splitext(filename)
-    TestCase(
-      name,
-      [{{ repr(python_for_test) }} , '-m', 'unittest',  '-v', name],
-      cwd=directory,
-      summaryf=UnitTest.summary,
-    )
+  directory = "{{ testdir }}"
+  dir_list = os.listdir(directory)
+  for filename in dir_list:
+    name, ext = os.path.splitext(filename)
+    if name.startswith('test') and ext == '.py':
+      TestCase(
+        name,
+        [{{ repr(python_for_test) }} , '-m', 'unittest',  '-v', name],
+        cwd=directory,
+        summaryf=UnitTest.summary,
+      )
 
 [e2e.py]
 recipe = slapos.recipe.template
-output = $${directory:testdir}/e2e.py
+output = $${tests:location}/e2e.py
 url = ${e2e.py:target}
 
-[test_test.py]
-recipe = slapos.recipe.template
-output = $${directory:testdir}/test_test.py
-url = ${test_test.py:target}
+[tests]
+recipe = slapos.recipe.build
+tests = $${slap-configuration:configuration.tests}
+location = $${directory:var}/tests
+install =
+  import os
+  os.mkdir(location)
+  buildout_offline = self.buildout['buildout']['offline']
+  try:
+    # Allow to do self.download() which can only be used in "online" mode
+    self.buildout['buildout']['offline'] = 'false'
+    for i, test in enumerate(options['tests']):
+      tmp = self.download(test['url'], test['md5sum'])
+      path = os.path.join(location, 'test%s.py' % i)
+      os.rename(tmp, path)
+  finally:
+    # reset the parameter
+    self.buildout['buildout']['offline'] = buildout_offline
 
-[test_kvm.py]
-recipe = slapos.recipe.template
-output = $${directory:testdir}/test_kvm.py
-url = ${test_kvm.py:target}
-
-[test_ors.py]
-recipe = slapos.recipe.template
-output = $${directory:testdir}/test_ors.py
-url = ${test_ors.py:target}
-context = raw buildout_directory_path ${buildout:directory}
-
-[test_health.py]
-recipe = slapos.recipe.template
-output = $${directory:testdir}/test_health.py
-url = ${test_health.py:target}
-
+# [test.py]
+# recipe = slapos.recipe.build:download
+# output = $${directory:testdir}/test.py
+# url = $${slap-configuration:configuration.test_url}
