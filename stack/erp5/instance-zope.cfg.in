@@ -264,8 +264,6 @@ inituser = {{ slapparameter_dict['inituser-login'] }}
 {%  set mysql_db = mysql.path.split('/')[1] -%}
 sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
     mysql_db, mysql.port, mysql.username, mysql.password) }}
-sql-read-committed-connection-string = {{ '!READ-COMMITTED %s@erp5-catalog-0:%s %s %s' % (
-    mysql_db, mysql.port, mysql.username, mysql.password) }}
 bt5 = {{ slapparameter_dict['bt5'] }}
 bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
