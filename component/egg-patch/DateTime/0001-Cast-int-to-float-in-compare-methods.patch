@@ -1,0 +1,120 @@
+From a02c80e17f794dc5eaea1c4edd3a2a3277a13638 Mon Sep 17 00:00:00 2001
+From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
+Date: Tue, 18 Jul 2023 10:26:54 +0200
+Subject: [PATCH 1/4] Cast int to float in compare methods.
+
+---
+ src/DateTime/DateTime.py            | 30 ++++++++++-------------------
+ src/DateTime/tests/test_datetime.py | 17 ++++++++++++++++
+ 2 files changed, 27 insertions(+), 20 deletions(-)
+
+diff --git a/src/DateTime/DateTime.py b/src/DateTime/DateTime.py
+index 2d2d97f..c141306 100644
+--- a/src/DateTime/DateTime.py
++++ b/src/DateTime/DateTime.py
+@@ -1256,12 +1256,10 @@ class DateTime(object):
+         """
+         if t is None:
+             t = 0
+-        if isinstance(t, float):
++        if isinstance(t, (float, int)):
+             return self._micros > long(t * 1000000)
+-        try:
++        else:
+             return self._micros > t._micros
+-        except AttributeError:
+-            return self._micros > t
+ 
+     __gt__ = greaterThan
+ 
+@@ -1279,12 +1277,10 @@ class DateTime(object):
+         """
+         if t is None:
+             t = 0
+-        if isinstance(t, float):
++        if isinstance(t, (float, int)):
+             return self._micros >= long(t * 1000000)
+-        try:
++        else:
+             return self._micros >= t._micros
+-        except AttributeError:
+-            return self._micros >= t
+ 
+     __ge__ = greaterThanEqualTo
+ 
+@@ -1301,12 +1297,10 @@ class DateTime(object):
+         """
+         if t is None:
+             t = 0
+-        if isinstance(t, float):
++        if isinstance(t, (float, int)):
+             return self._micros == long(t * 1000000)
+-        try:
++        else:
+             return self._micros == t._micros
+-        except AttributeError:
+-            return self._micros == t
+ 
+     def notEqualTo(self, t):
+         """Compare this DateTime object to another DateTime object
+@@ -1348,12 +1342,10 @@ class DateTime(object):
+         """
+         if t is None:
+             t = 0
+-        if isinstance(t, float):
++        if isinstance(t, (float, int)):
+             return self._micros < long(t * 1000000)
+-        try:
++        else:
+             return self._micros < t._micros
+-        except AttributeError:
+-            return self._micros < t
+ 
+     __lt__ = lessThan
+ 
+@@ -1370,12 +1362,10 @@ class DateTime(object):
+         """
+         if t is None:
+             t = 0
+-        if isinstance(t, float):
++        if isinstance(t, (float, int)):
+             return self._micros <= long(t * 1000000)
+-        try:
++        else:
+             return self._micros <= t._micros
+-        except AttributeError:
+-            return self._micros <= t
+ 
+     __le__ = lessThanEqualTo
+ 
+diff --git a/src/DateTime/tests/test_datetime.py b/src/DateTime/tests/test_datetime.py
+index 249e79a..e6b3f93 100644
+--- a/src/DateTime/tests/test_datetime.py
++++ b/src/DateTime/tests/test_datetime.py
+@@ -228,6 +228,23 @@ class DateTimeTests(unittest.TestCase):
+         self.assertTrue(dt.lessThanEqualTo(dt1))
+         self.assertTrue(dt.notEqualTo(dt1))
+         self.assertFalse(dt.equalTo(dt1))
++        # Compare a date to float
++        dt = DateTime(1.0)
++        self.assertFalse(dt.greaterThan(1.0))
++        self.assertTrue(dt.greaterThanEqualTo(1.0))
++        self.assertFalse(dt.lessThan(1.0))
++        self.assertTrue(dt.lessThanEqualTo(1.0))
++        self.assertFalse(dt.notEqualTo(1.0))
++        self.assertTrue(dt.equalTo(1.0))
++        # Compare a date to int
++        dt = DateTime(1)
++        self.assertEqual(dt, DateTime(1.0))
++        self.assertFalse(dt.greaterThan(1))
++        self.assertTrue(dt.greaterThanEqualTo(1))
++        self.assertFalse(dt.lessThan(1))
++        self.assertTrue(dt.lessThanEqualTo(1))
++        self.assertFalse(dt.notEqualTo(1))
++        self.assertTrue(dt.equalTo(1))
+ 
+     def test_compare_methods_none(self):
+         # Compare a date to None
+-- 
+2.40.1
+

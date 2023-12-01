@@ -1,0 +1,52 @@
+From 4a9798072c87d2fe53b2e1e15b004ff982f9686a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Thu, 30 Nov 2023 06:19:54 +0100
+Subject: [PATCH 3/4] Make it possible to pickle datetimes returned by
+ asdatetime
+
+Fixes #58
+---
+ src/DateTime/pytz_support.py        | 5 +++++
+ src/DateTime/tests/test_datetime.py | 7 +++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/src/DateTime/pytz_support.py b/src/DateTime/pytz_support.py
+index 9ebf3db..e0746ea 100644
+--- a/src/DateTime/pytz_support.py
++++ b/src/DateTime/pytz_support.py
+@@ -199,9 +199,14 @@ for hour in range(0, 13):
+     _old_zmap['+%s00' % fhour] = 'GMT+%i' % hour
+ 
+ 
++def _p(zone):
++    return _numeric_timezones[zone]
++
++
+ def _static_timezone_factory(data):
+     zone = data[0]
+     cls = type(zone, (StaticTzInfo,), dict(
++        __reduce__=lambda _: (_p, (zone, )),
+         zone=zone,
+         _utcoffset=memorized_timedelta(data[5][0][0]),
+         _tzname=data[6][:-1]))  # strip the trailing null
+diff --git a/src/DateTime/tests/test_datetime.py b/src/DateTime/tests/test_datetime.py
+index 1dd6c32..b9eeea9 100644
+--- a/src/DateTime/tests/test_datetime.py
++++ b/src/DateTime/tests/test_datetime.py
+@@ -270,6 +270,13 @@ class DateTimeTests(unittest.TestCase):
+         for key in DateTime.__slots__:
+             self.assertEqual(getattr(dt, key), getattr(new, key))
+ 
++    def test_pickle_asdatetime_with_tz(self):
++        dt = DateTime('2002/5/2 8:00am GMT+8')
++        data = pickle.dumps(dt.asdatetime(), 1)
++        new = DateTime(pickle.loads(data))
++        for key in DateTime.__slots__:
++            self.assertEqual(getattr(dt, key), getattr(new, key))
++
+     def test_pickle_with_numerical_tz(self):
+         for dt_str in ('2007/01/02 12:34:56.789 +0300',
+                        '2007/01/02 12:34:56.789 +0430',
+-- 
+2.40.1
+
