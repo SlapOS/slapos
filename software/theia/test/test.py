@@ -67,7 +67,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
     try:
       return cls._theia_slapos
     except AttributeError:
-      cls._theia_slapos = slapos = cls.getPath('srv', 'runner', 'bin', 'slapos')
+      cls._theia_slapos = slapos = cls.getPath('bin', 'slapos')
       return slapos
 
   @classmethod
