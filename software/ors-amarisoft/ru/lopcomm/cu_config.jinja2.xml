@@ -92,14 +92,14 @@
 {%- if cell.cell_type == 'lte'                                                %}
 {%-   set dl_arfcn = cell.dl_earfcn                                           %}
 {%-   set ul_arfcn = cell.ul_earfcn                                           %}
-{%-   set dl_freq  = int(earfcn_module.frequency(dl_arfcn) * 1e6)             %}
-{%-   set ul_freq  = int(earfcn_module.frequency(ul_arfcn) * 1e6)             %}
+{%-   set dl_freq  = int(xearfcn_module.frequency(dl_arfcn) * 1e6)            %}
+{%-   set ul_freq  = int(xearfcn_module.frequency(ul_arfcn) * 1e6)            %}
 {%-   set bw       = int(float(cell.bandwidth.removesuffix(' MHz')) * 1e6)    %}
 {%- elif cell.cell_type == 'nr'                                               %}
 {%-   set dl_arfcn = cell.dl_nr_arfcn                                         %}
 {%-   set ul_arfcn = cell.ul_nr_arfcn                                         %}
-{%-   set dl_freq  = int(nrarfcn_module.get_frequency(dl_arfcn) * 1e6)        %}
-{%-   set ul_freq  = int(nrarfcn_module.get_frequency(ul_arfcn) * 1e6)        %}
+{%-   set dl_freq  = int(xnrarfcn_module.frequency(dl_arfcn) * 1e6)           %}
+{%-   set ul_freq  = int(xnrarfcn_module.frequency(ul_arfcn) * 1e6)           %}
 {%-   set bw       = int(cell.bandwidth * 1e6)                                %}
 {%- else                                                                      %}
 {%-   do bug('unreachable')                                                   %}

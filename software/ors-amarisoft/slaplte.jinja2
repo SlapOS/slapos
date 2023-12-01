@@ -95,19 +95,19 @@
 
 {#- jdefault_ul_earfcn returns default UL EARFCN corresponding to DL EARFCN. #}
 {%- macro jdefault_ul_earfcn(dl_earfcn) %}
-{{-   earfcn_module.dl2ul(dl_earfcn) | tojson }}
+{{-   xearfcn_module.dl2ul(dl_earfcn) | tojson }}
 {%- endmacro %}
 
 {#- jdefault_ul_nr_arfcn returns default UL NR ARFCN corresponding to DL NR ARFCN and band. #}
 {%- macro jdefault_ul_nr_arfcn(dl_nr_arfcn, nr_band)  %}
-{%-   xnrarfcn_moule.dl2ul(dl_nr_arfcn, nr_band) | tojson  %}
+{{-   xnrarfcn_module.dl2ul(dl_nr_arfcn, nr_band) | tojson  }}
 {%- endmacro %}
 
 {#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
     and subcarrier spacing #}
 {%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, scs_khz) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
-{%-   xnrarfcn_module.dl2ssb(dl_nr_arfcn, nr_band, scs_khz, ....) | tojson %}
+{{-   xnrarfcn_module.dl2ssb(dl_nr_arfcn, scs_khz) | tojson }}
 {%- endmacro %}
 
 
