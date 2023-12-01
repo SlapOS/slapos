@@ -1,0 +1,119 @@
+From 8300d3ebe47e831ff75fece6862c893a8c5fc09f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sun, 3 Dec 2023 15:57:01 +0100
+Subject: [PATCH 4/4] Repair equality comparison between DateTime instances and
+ other types
+
+Fixes #60
+---
+ src/DateTime/DateTime.py            | 20 +++++++++++++++-----
+ src/DateTime/tests/test_datetime.py | 16 ++++++++++++++++
+ 2 files changed, 31 insertions(+), 5 deletions(-)
+
+diff --git a/src/DateTime/DateTime.py b/src/DateTime/DateTime.py
+index caf67e1..84570b9 100644
+--- a/src/DateTime/DateTime.py
++++ b/src/DateTime/DateTime.py
+@@ -1258,8 +1258,10 @@ class DateTime(object):
+             return True
+         if isinstance(t, (float, int)):
+             return self._micros > long(t * 1000000)
+-        else:
++        try:
+             return self._micros > t._micros
++        except AttributeError:
++            return self._micros > t
+ 
+     __gt__ = greaterThan
+ 
+@@ -1279,8 +1281,10 @@ class DateTime(object):
+             return True
+         if isinstance(t, (float, int)):
+             return self._micros >= long(t * 1000000)
+-        else:
++        try:
+             return self._micros >= t._micros
++        except AttributeError:
++            return self._micros >= t
+ 
+     __ge__ = greaterThanEqualTo
+ 
+@@ -1299,8 +1303,10 @@ class DateTime(object):
+             return False
+         if isinstance(t, (float, int)):
+             return self._micros == long(t * 1000000)
+-        else:
++        try:
+             return self._micros == t._micros
++        except AttributeError:
++            return self._micros == t
+ 
+     def notEqualTo(self, t):
+         """Compare this DateTime object to another DateTime object
+@@ -1344,8 +1350,10 @@ class DateTime(object):
+             return False
+         if isinstance(t, (float, int)):
+             return self._micros < long(t * 1000000)
+-        else:
++        try:
+             return self._micros < t._micros
++        except AttributeError:
++            return self._micros < t
+ 
+     __lt__ = lessThan
+ 
+@@ -1364,8 +1372,10 @@ class DateTime(object):
+             return False
+         if isinstance(t, (float, int)):
+             return self._micros <= long(t * 1000000)
+-        else:
++        try:
+             return self._micros <= t._micros
++        except AttributeError:
++            return self._micros <= t
+ 
+     __le__ = lessThanEqualTo
+ 
+diff --git a/src/DateTime/tests/test_datetime.py b/src/DateTime/tests/test_datetime.py
+index b9eeea9..9d2759a 100644
+--- a/src/DateTime/tests/test_datetime.py
++++ b/src/DateTime/tests/test_datetime.py
+@@ -230,6 +230,8 @@ class DateTimeTests(unittest.TestCase):
+         self.assertFalse(dt.equalTo(dt1))
+         # Compare a date to float
+         dt = DateTime(1.0)
++        self.assertTrue(dt == DateTime(1.0))  # testing __eq__
++        self.assertFalse(dt != DateTime(1.0))  # testing __ne__
+         self.assertFalse(dt.greaterThan(1.0))
+         self.assertTrue(dt.greaterThanEqualTo(1.0))
+         self.assertFalse(dt.lessThan(1.0))
+@@ -239,12 +241,26 @@ class DateTimeTests(unittest.TestCase):
+         # Compare a date to int
+         dt = DateTime(1)
+         self.assertEqual(dt, DateTime(1.0))
++        self.assertTrue(dt == DateTime(1))  # testing __eq__
++        self.assertFalse(dt != DateTime(1))  # testing __ne__
+         self.assertFalse(dt.greaterThan(1))
+         self.assertTrue(dt.greaterThanEqualTo(1))
+         self.assertFalse(dt.lessThan(1))
+         self.assertTrue(dt.lessThanEqualTo(1))
+         self.assertFalse(dt.notEqualTo(1))
+         self.assertTrue(dt.equalTo(1))
++        # Compare a date to string; there is no implicit type conversion
++        # but behavior if consistent as when comparing, for example, an int
++        # and a string.
++        dt = DateTime("2023")
++        self.assertFalse(dt == "2023")  # testing __eq__
++        self.assertTrue(dt != "2023")  # testing __ne__
++        self.assertRaises(TypeError, dt.greaterThan, "2023")
++        self.assertRaises(TypeError, dt.greaterThanEqualTo, "2023")
++        self.assertRaises(TypeError, dt.lessThan, "2023")
++        self.assertRaises(TypeError, dt.lessThanEqualTo, "2023")
++        self.assertTrue(dt.notEqualTo("2023"))
++        self.assertFalse(dt.equalTo("2023"))
+ 
+     def test_compare_methods_none(self):
+         # Compare a date to None
+-- 
+2.40.1
+
