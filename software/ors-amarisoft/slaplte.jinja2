@@ -105,9 +105,9 @@
 
 {#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
     and subcarrier spacing #}
-{%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, scs_khz) %}
+{%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, nr_band) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
-{{-   xnrarfcn_module.dl2ssb(dl_nr_arfcn, scs_khz) | tojson }}
+{{-   xnrarfcn_module.dl2ssb(dl_nr_arfcn, nr_band) | tojson }}
 {%- endmacro %}
 
 
@@ -212,8 +212,7 @@
 {%-       elif xcell_type == 'nr' %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-         do _.setdefault('subcarrier_spacing', 30  if _.rf_mode == 'tdd'  else 15)  %}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn,
-                                                  _.subcarrier_spacing)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-       else  %}
 {%-         do bug('unreachable') %}
 {%-       endif %}
@@ -338,8 +337,7 @@
 {%-         do _.setdefault('subcarrier_spacing',
                     30  if nrarfcn_module.get_duplex_mode(_.nr_band).lower() == 'tdd'  else
                     15) %}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn,
-                                                  _.subcarrier_spacing)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-       else  %}
 {%-         do bug('unreachable') %}
 {%-       endif %}
