@@ -14,6 +14,7 @@ theia-environment-parts =
 
 theia-parts =
   frontend-instance
+  slapos-standalone-bin-wrapper
   promises
 
 parts =
@@ -628,6 +629,11 @@ hash-files =
   $${slapos-standalone-script:output}
 hostname = $${slapos-standalone-config:ipv4}
 port = $${slapos-standalone-config:port}
+
+[slapos-standalone-bin-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/slapos
+command-line = $${slapos-standalone-config:base-directory}/bin/slapos
 
 
 # Slapos Standalone Autoprocessing

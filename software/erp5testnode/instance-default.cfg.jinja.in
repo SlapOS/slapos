@@ -291,15 +291,13 @@ name = $${:_buildout_section_name_}.py
 config-host = $${shellinabox-frontend:hostname}
 config-port = $${shellinabox-frontend:port}
 
-## This promise fails in a test suite
-## due to ports conflict with the testnode of the test suite
-# [shellinabox-frontend-available-promise]
-# <= monitor-promise-base
-# module = check_url_available
-# name = $${:_buildout_section_name_}.py
-# config-url = https://$${shellinabox-frontend-config:hostname}:$${shellinabox-frontend-config:port}
-# config-username = $${shellinabox-frontend-config:username}
-# config-password = $${shellinabox-frontend-config:passwd}
+[shellinabox-frontend-available-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = https://$${shellinabox-frontend-config:hostname}:$${shellinabox-frontend-config:port}
+config-username = $${shellinabox-frontend-config:username}
+config-password = $${shellinabox-frontend-config:passwd}
 
 [testnode-log-frontend-promise]
 <= monitor-promise-base
