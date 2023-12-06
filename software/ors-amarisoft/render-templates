@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# XXX kill completely
+
 from jinja2 import Template
 import argparse
 import os
@@ -24,19 +26,19 @@ global_context = {
 }
 
 software_list = [
-        {
-            'software_name'                : 'tdd-ors',
-            'rf_mode'                      : 'tdd',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'ors',
-            'ru'                           : 'ors',
-        }, {
-            'software_name'                : 'fdd-ors',
-            'rf_mode'                      : 'fdd',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'ors',
-            'ru'                           : 'ors',
-        }
+#        {
+#            'software_name'                : 'tdd-ors',
+#            'rf_mode'                      : 'tdd',
+#            'trx'                          : 'sdr',
+#            'bbu'                          : 'ors',
+#            'ru'                           : 'ors',
+#        }, {
+#            'software_name'                : 'fdd-ors',
+#            'rf_mode'                      : 'fdd',
+#            'trx'                          : 'sdr',
+#            'bbu'                          : 'ors',
+#            'ru'                           : 'ors',
+#        }
 ]
 
 for i in range (len(software_list)):
