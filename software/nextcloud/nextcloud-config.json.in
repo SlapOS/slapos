@@ -35,6 +35,19 @@
       "timeout": 0
     },
     "logfile": "{{ parameter_dict['data-dir'] }}/nextcloud.log",
-    "datadirectory": "{{ parameter_dict['data-dir'] }}"
+    "loglevel" => 2,
+    "datadirectory": "{{ parameter_dict['data-dir'] }}",
+    "preview_ffmpeg_path": "{{ parameter_dict['ffmpeg-path'] }}",
+    "tempdirectory": "{{ parameter_dict['tmp-dir'] }}",
+    "apps_paths": [
+      {
+        "path": "{{ parameter_dict['nextcloud'] }}/apps",
+        "url": "/apps",
+        "writable": true
+      }
+    ],
+    "default_phone_region": "FR",
+    "default_locale": "fr_FR",
+    "default_timezone": "Europe/Paris"
   }
 }
