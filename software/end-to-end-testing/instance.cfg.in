@@ -7,8 +7,6 @@ extends =
 
 parts =
   .nxdtest
-  e2e.py
-
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -71,12 +69,15 @@ recipe = slapos.recipe.template:jinja2
 output = $${runTestSuite:workdir}/.nxdtest
 python_for_test = ${python_for_test:executable}
 testdir = $${tests:location}
+cfgdir = $${slapos-client.cfg:output}
 context =
   key python_for_test :python_for_test
   key testdir :testdir
+  key cfgdir :cfgdir
 inline =
   import os
   directory = "{{ testdir }}"
+  cfgdir = "{{ cfgdir }}"
   dir_list = os.listdir(directory)
   for filename in dir_list:
     name, ext = os.path.splitext(filename)
@@ -85,13 +86,9 @@ inline =
         name,
         [{{ repr(python_for_test) }} , '-m', 'unittest',  '-v', name],
         cwd=directory,
+        env={'SLAPOS_TEST_CLIENT_CFG': cfgdir},
         summaryf=UnitTest.summary,
       )
-
-[e2e.py]
-recipe = slapos.recipe.template
-output = $${tests:location}/e2e.py
-url = ${e2e.py:target}
 
 [tests]
 recipe = slapos.recipe.build
@@ -111,8 +108,3 @@ install =
   finally:
     # reset the parameter
     self.buildout['buildout']['offline'] = buildout_offline
-
-# [test.py]
-# recipe = slapos.recipe.build:download
-# output = $${directory:testdir}/test.py
-# url = $${slap-configuration:configuration.test_url}
