@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# XXX kill completely
+# XXX goes away completely
 
 from jinja2 import Template
 import argparse
