@@ -115,19 +115,9 @@
       "type": "string",
       "format": "uri"
     },
-    "instance.trusted-domain-1": {
-      "title": "Authorized domain on nextcloud",
-      "description": "Trusted domain used to connect to Nextcloud instance.",
-      "type": "string"
-    },
-    "instance.trusted-domain-2": {
-      "title": "Second authorized domain on nextcloud",
-      "description": "Trusted domain used to connect to Nextcloud instance.",
-      "type": "string"
-    },
-    "instance.trusted-domain-3": {
-      "title": "Third authorized domain on nextcloud",
-      "description": "Trusted domain used to connect to Nextcloud instance.",
+    "instance.trusted-domain-list": {
+      "title": "Authorized domain(s) on nextcloud",
+      "description": "Trusted domain(s) used to connect to Nextcloud instance. Space separated.",
       "type": "string"
     },
     "instance.trusted-proxy-list": {
