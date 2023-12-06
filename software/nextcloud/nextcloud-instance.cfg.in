@@ -8,6 +8,7 @@ redis     = ${directory:srv}/redis
 redis-log = ${directory:log}/redis
 data      = ${directory:srv}/data
 backup   = ${directory:backup}/nextcloud
+tmp       = ${buildout:directory}/tmp
 
 [service-redis]
 recipe  = slapos.cookbook:redis.server
@@ -42,13 +43,15 @@ rotate-num = 30
 
 [instance-parameter]
 nextcloud = ${:document-root}
+installed-file = ${directory:etc}/.nextcloud-install-done
 admin-user = admin
 admin-password = admin
+ffmpeg-path = {{ ffmpeg_location }}/bin/ffmpeg
+tmp-dir = ${nc-directory:tmp}
 trusted-domain-list =
   [${apache-php-configuration:ip}]:${apache-php-configuration:port}
-  ${slap-parameter:instance.trusted-domain-1}
-  ${slap-parameter:instance.trusted-domain-2}
-  ${slap-parameter:instance.trusted-domain-3}
+  ${request-frontend:connection-domain}
+  ${slap-parameter:instance.trusted-domain-list}
 
 trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 cli-url = ${slap-parameter:instance.cli-url}
@@ -69,6 +72,9 @@ collabora-url = ${slap-parameter:instance.collabora-url}
 stun-server = ${slap-parameter:instance.stun-server}
 turn-server = ${slap-parameter:instance.turn-server}
 turn-secret = ${slap-parameter:instance.turn-secret}
+# php.ini
+php.opcache.revalidate-freq = 60
+php.opcache.interned-strings-buffer = 24
 
 [nextcloud-install.sh]
 recipe = slapos.recipe.template:jinja2
@@ -105,7 +111,7 @@ input = inline:#!/bin/bash
     echo "Nextcloud is not installed.";
     exit 1;
   fi
-  if [ ! -f "${instance-parameter:nextcloud}/.slapos-install-done" ]; then
+  if [ ! -f "${instance-parameter:installed-file}" ]; then
     echo "Nextcloud is not configured.";
     exit 1;
   fi
@@ -203,7 +209,5 @@ instance.turn-server =
 instance.turn-secret =
 
 instance.cli-url = ${apache-php-configuration:url}
-instance.trusted-domain-1 =
-instance.trusted-domain-2 =
-instance.trusted-domain-3 =
 instance.trusted-proxy-list =
+instance.trusted-domain-list =
