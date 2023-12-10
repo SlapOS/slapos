@@ -30,7 +30,7 @@
       "default": 2
     },
     "tdd_ul_dl_config": {
-      "title": "TDD	XXX depend on rf_mode=tdd",
+      "title": "TDD   XXX depend on rf_mode=tdd",
       "description": "TDD",
       "type": "string",
       "enum": [
