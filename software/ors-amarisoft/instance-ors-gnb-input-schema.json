@@ -29,7 +29,7 @@
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
     "pci": {
-      "$ref": "cell/nr/input-schema.json#/properties/pci",
+      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/pci",
       "default": 500
     },
     "cell_id": {
