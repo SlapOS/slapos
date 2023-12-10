@@ -210,9 +210,7 @@
       "default": {}
     },
     "websocket_password": {
-      "title": "Websocket password",
-      "description": "Activates websocket for remote control and sets password",
-      "type": "string"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/websocket_password"
     },
     "inactivity_timer": {
       "title": "Inactivity Timer",
