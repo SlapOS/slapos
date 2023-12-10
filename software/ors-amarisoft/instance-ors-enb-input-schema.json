@@ -60,35 +60,7 @@
       "$ref": "instance-enb-input-schema.json#/properties/mme_list"
     },
     "plmn_list": {
-      "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "plmn": {
-              "default": "00101",
-              "title": "Public Land Mobile Network",
-              "description": "Public Land Mobile Network",
-              "type": "string"
-            },
-            "attach_without_pdn": {
-              "default": false,
-              "title": "Attach Without PDN",
-              "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
-              "type": "boolean"
-            },
-            "reserved": {
-              "default": false,
-              "title": "Reserved",
-              "description": "True if the cell is reserved for operator use.",
-              "type": "boolean"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list"
     },
     "lte_handover_a3_offset": {
       "title": "A3 offset for LTE handover",
