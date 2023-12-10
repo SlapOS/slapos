@@ -33,6 +33,36 @@
       "type": "object",
       "default": {}
     },
+    "gnb_id": {
+      "title": "gNB ID",
+      "description": "gNB ID",
+      "type": "string",
+      "default": "0x12345"
+    },
+    "gnb_id_bits": {
+      "title": "gNB ID bits",
+      "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
+      "type": "number",
+      "default": 28
+    },
+    "amf_list": {
+      "title": "AMF list",
+      "description": "Optionnal. List of AMF to which the gNodeB is connected",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "amf_addr": {
+              "title": "AMF Address",
+              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
     "plmn_list": {
       "title": "PLMN list",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",

@@ -42,34 +42,15 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
     },
     "gnb_id": {
-      "title": "gNB ID",
-      "description": "gNB ID",
-      "type": "string",
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
       "default": "0x12345"
     },
     "gnb_id_bits": {
-      "title": "gNB ID bits",
-      "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
-      "type": "number",
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
       "default": 28
     },
     "amf_list": {
-      "title": "AMF list",
-      "description": "Optionnal. List of AMF to which the gNodeB is connected",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "amf_addr": {
-              "title": "AMF Address",
-              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
+      "$ref": "instance-enb-input-schema.json#/properties/amf_list"
     },
     "plmn_list": {
       "title": "PLMN list",
