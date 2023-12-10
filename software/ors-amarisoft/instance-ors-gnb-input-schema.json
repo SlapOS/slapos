@@ -20,9 +20,7 @@
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
     "dl_nr_arfcn": {
-      "title": "DL NR ARFCN",
-      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
+      "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
     "nr_band": {
       "title": "NR band",
