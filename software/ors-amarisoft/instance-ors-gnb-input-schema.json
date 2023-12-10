@@ -23,20 +23,13 @@
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
     "nr_band": {
-      "title": "NR band",
-      "description": "NR band number",
-      "type": "number"
+      "$ref": "cell/nr/input-schema.json#/properties/nr_band"
     },
     "ssb_pos_bitmap": {
-      "title": "SSB Position Bitmap",
-      "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
-      "type": "string",
-      "default": "10000000"
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
     "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "number",
+      "$ref": "cell/nr/input-schema.json#/properties/pci",
       "default": 500
     },
     "cell_id": {
