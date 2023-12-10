@@ -119,7 +119,7 @@
     },
     "disable_sdr": {
       "default": false,
-      "title": "Disable SDR",
+      "title": "Disable SDR  XXX kill ?",
       "description": "Disables radio",
       "type": "boolean"
     },
@@ -130,8 +130,8 @@
       "type": "boolean"
     },
     "enb_stats_fetch_period": {
-      "title": "eNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get eNB statistics",
+      "title": "eNB/gNB statistics fetch period (seconds)",
+      "description": "Describes how often a call to Amarisoft remote API is made to get eNB/gNB statistics",
       "type": "number",
       "default": 60
     },
