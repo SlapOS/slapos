@@ -145,20 +145,8 @@
     "enb_drb_stats_enabled": { "$ref": "instance-enb-input-schema.json#/properties/enb_drb_stats_enabled" },
     "max_rx_sample_db": { "$ref": "instance-enb-input-schema.json#/properties/max_rx_sample_db" },
     "min_rxtx_delay": { "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay" },
-    "xlog_fluentbit_forward_host": {
-      "title": "Address to Forward Xlog by Fluenbit",
-      "description": "Address of Remote Fluentd or Fluentbit Server to Forward Xlog",
-      "type": "string"
-    },
-    "xlog_fluentbit_forward_port": {
-      "title": "Port to Forward Xlog by Fluentbit",
-      "description": "Optional Port of Remote Fluentd or Fluentbit Server to Forward Xlog",
-      "type": "string"
-    },
-    "xlog_fluentbit_forward_shared_key": {
-      "title": "Shared Key to Forward Xlog by Fluentbit",
-      "description": "Secret Key Shared with Remote Fluentd or Fluentbit Server for Authentication when Forwarding Xlog",
-      "type": "string"
-    }
+    "xlog_fluentbit_forward_host": { "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_host" },
+    "xlog_fluentbit_forward_port": { "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_port" },
+    "xlog_fluentbit_forward_shared_key": { "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key" }
   }
 }
