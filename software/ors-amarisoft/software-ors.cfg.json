@@ -9,7 +9,7 @@
       "description": "eNodeB Configuration",
       "request": "instance-ors-enb-input-schema.json",
       "response": "instance-ors-enb-schema.json",
-      "index": 10
+      "index": 0
     },
     "gnb": {
       "title": "gNB",
