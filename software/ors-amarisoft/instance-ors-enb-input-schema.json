@@ -24,7 +24,9 @@
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
     },
-    "dl_earfcn": { "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn" },
+    "dl_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
+    },
     "pci": {
       "$ref": "cell/input-schema.json#/$defs/cell-common/properties/pci",
       "default": 1
@@ -41,8 +43,12 @@
       "$ref": "cell/input-schema.json#/$defs/cell-common/properties/root_sequence_index",
       "default": 204
     },
-    "tx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
-    "rx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
+    "tx_gain": {
+      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/tx_gain"
+    },
+    "rx_gain": {
+      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/rx_gain"
+    },
     "enb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/enb_id",
       "default": "0x1A2D0"
@@ -120,7 +126,9 @@
       "type": "object",
       "default": {}
     },
-    "websocket_password": { "$ref": "instance-enb-input-schema.json#/properties/websocket_password" },
+    "websocket_password": {
+      "$ref": "instance-enb-input-schema.json#/properties/websocket_password"
+    },
     "inactivity_timer": {
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
