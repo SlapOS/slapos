@@ -31,7 +31,12 @@
         "[Configuration 2] 5ms 2UL 6DL (default)",
         "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
       ],
-      "default": "5ms 2UL 7DL 4/6 (default)"
+      "default": "5ms 2UL 7DL 4/6 (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
     },
     "dl_earfcn": { "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn" },
     "pci": {
