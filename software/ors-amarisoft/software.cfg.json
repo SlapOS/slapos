@@ -7,8 +7,8 @@
       "title": "eNB/gNB XXX +ru/cell/peer/...",
       "software-type": "enb",
       "description": "eNodeB/gNodeB Configuration",
-      "request": "instance-{{ software_name }}-enb-input-schema.json",
-      "response": "instance-{{ software_name }}-enb-schema.json",
+      "request": "instance-enb-input-schema.json",
+      "response": "instance-enb-schema.json",
       "index": 0
     },
     "core-network": {
