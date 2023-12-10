@@ -4,9 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "nr_bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth (in MHz)",
-      "type": "number",
+      "$ref": "cell/nr/input-schema.json#/properties/bandwidth",
       "default": 40
     },
     "n_antenna_dl": {
