@@ -4,7 +4,7 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "enb": {
-      "title": "eNB/gNB XXX +peer/...",
+      "title": "eNB/gNB XXX ...",
       "software-type": "enb",
       "description": "eNodeB/gNodeB Configuration",
       "request": "instance-enb-input-schema.json",
@@ -24,6 +24,13 @@
       "software-type": "enb",
       "shared": true,
       "request": "cell/input-schema.json"
+    },
+    "peer_cell": {
+      "title": "Peer Ceel",
+      "description": "Handover information about Peer Cell served by nearby eNB/gNB",
+      "software-type": "enb",
+      "shared": true,
+      "request": "cell/peer/input-schema.json"
     },
     "core-network": {
       "title": "Core Network",
