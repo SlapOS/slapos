@@ -209,12 +209,7 @@
       "type": "number",
       "default": 10000
     },
-    "log_phy_debug": {
-      "title": "Physical layer log debug",
-      "description": "Enable debug mode for physical layer logs",
-      "type": "boolean",
-      "default": false
-    },
+    "log_phy_debug": { "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug" },
     "gps_sync": {
       "default": false,
       "title": "GPS synchronisation",
