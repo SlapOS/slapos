@@ -35,9 +35,7 @@
       "default": 1
     },
     "cell_id": {
-      "title": "Cell ID",
-      "description": "Cell ID",
-      "type": "string",
+      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/cell_id",
       "default": "0x01"
     },
     "tac": {
