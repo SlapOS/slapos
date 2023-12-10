@@ -19,6 +19,10 @@
       "type": "number",
       "default": 2
     },
+    "rf_mode": {
+      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/rf_mode",
+      "default": "tdd"
+    },
     "tdd_ul_dl_config": {
       "title": "TDD   XXX depend on rf_mode=tdd",
       "description": "TDD",
