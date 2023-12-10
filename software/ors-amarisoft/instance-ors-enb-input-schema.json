@@ -133,48 +133,18 @@
       "default": 10000
     },
     "log_phy_debug": { "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug" },
-    "gps_sync": {
-      "default": false,
-      "title": "GPS synchronisation",
-      "description": "True if GPS should be used for synchronisation",
-      "type": "boolean"
-    },
+    "gps_sync": { "$ref": "instance-enb-input-schema.json#/properties/gps_sync" },
     "disable_sdr": {
       "default": false,
       "title": "Disable SDR",
       "description": "Disables radio",
       "type": "boolean"
     },
-    "use_ipv4": {
-      "default": false,
-      "title": "Use IPv4",
-      "description": "Set to true to use IPv4 for AMF / MME addresses",
-      "type": "boolean"
-    },
-    "enb_stats_fetch_period": {
-      "title": "eNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get eNB statistics",
-      "type": "number",
-      "default": 60
-    },
-    "enb_drb_stats_enabled": {
-      "title": "Enable eNB drb statistics",
-      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
-      "type": "boolean",
-      "default": true
-    },
-    "max_rx_sample_db": {
-      "title": "Maximum RX sample value (dB)",
-      "description": "Maximum RX sample threshold above which RX saturated promise will fail",
-      "type": "number",
-      "default": 0
-    },
-    "min_rxtx_delay": {
-      "title": "Minimum available time for radio front end processing (ms)",
-      "description": "Baseband latency promise will fail if minimum TX/RX diff reaches threshold (lower than this value)",
-      "type": "number",
-      "default": 0
-    },
+    "use_ipv4": { "$ref": "instance-enb-input-schema.json#/properties/use_ipv4" },
+    "enb_stats_fetch_period": { "$ref": "instance-enb-input-schema.json#/properties/enb_stats_fetch_period" },
+    "enb_drb_stats_enabled": { "$ref": "instance-enb-input-schema.json#/properties/enb_drb_stats_enabled" },
+    "max_rx_sample_db": { "$ref": "instance-enb-input-schema.json#/properties/max_rx_sample_db" },
+    "min_rxtx_delay": { "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay" },
     "xlog_fluentbit_forward_host": {
       "title": "Address to Forward Xlog by Fluenbit",
       "description": "Address of Remote Fluentd or Fluentbit Server to Forward Xlog",
