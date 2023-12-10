@@ -4,12 +4,19 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "enb": {
-      "title": "eNB/gNB XXX +ru/cell/peer/...",
+      "title": "eNB/gNB XXX +cell/peer/...",
       "software-type": "enb",
       "description": "eNodeB/gNodeB Configuration",
       "request": "instance-enb-input-schema.json",
       "response": "instance-enb-schema.json",
       "index": 0
+    },
+    "ru": {
+      "title": "Radio Unit",
+      "description": "Configuration of Radio Unit attached to eNB/gNB",
+      "software-type": "enb",
+      "shared": true,
+      "request": "ru/input-schema.json"
     },
     "core-network": {
       "title": "Core Network",
