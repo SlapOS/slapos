@@ -46,16 +46,8 @@
       "$ref": "cell/input-schema.json#/$defs/cell-common/properties/root_sequence_index",
       "default": 204
     },
-    "tx_gain": {
-      "title": "Tx gain",
-      "description": "Tx gain (in dB)",
-      "type": "number"
-    },
-    "rx_gain": {
-      "title": "Rx gain",
-      "description": "Rx gain (in dB)",
-      "type": "number"
-    },
+    "tx_gain": { "$ref": "ru/input-schema.json#$defs/ru-common/properties/tx_gain" },
+    "rx_gain": { "$ref": "ru/input-schema.json#$defs/ru-common/properties/rx_gain" },
     "enb_id": {
       "title": "eNB ID",
       "description": "eNB ID",
