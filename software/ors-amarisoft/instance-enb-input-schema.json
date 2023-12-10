@@ -166,8 +166,8 @@
       "default": 60
     },
     "enb_drb_stats_enabled": {
-      "title": "Enable eNB drb statistics",
-      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
+      "title": "Enable eNB/gNB drb statistics",
+      "description": "Enable eNB/gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
       "type": "boolean",
       "default": true
     },
