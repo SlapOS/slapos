@@ -202,11 +202,7 @@
       "type": "object",
       "default": {}
     },
-    "websocket_password": {
-      "title": "Websocket password ZZZ",
-      "description": "Activates websocket for remote control and sets password",
-      "type": "string"
-    },
+    "websocket_password": { "$ref": "instance-enb-input-schema.json#/properties/password" },
     "inactivity_timer": {
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
