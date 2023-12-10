@@ -29,9 +29,6 @@
           "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
           "type": "string",
           "enum": ["fdd", "tdd"],
-          "optionszzz": {
-            "enum_titles": ["FDD aaa", "TDD bbb"]
-          },
           "propertyOrder": 101
         },
         "pci": {
