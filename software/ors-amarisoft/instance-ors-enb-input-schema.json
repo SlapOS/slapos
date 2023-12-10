@@ -31,7 +31,7 @@
     },
     "dl_earfcn": { "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn" },
     "pci": {
-      "$ref": "cell/lte/input-schema.json#/properties/pci",
+      "$ref": "cell/input-schema.json#/$defs/pci",
       "default": 1
     },
     "cell_id": {
