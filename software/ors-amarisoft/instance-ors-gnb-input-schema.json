@@ -213,22 +213,13 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/websocket_password"
     },
     "inactivity_timer": {
-      "title": "Inactivity Timer",
-      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
-      "type": "number",
-      "default": 10000
+      "$ref": "instance-ors-enb-input-schema.json#/properties/inactivity_timer"
     },
     "log_phy_debug": {
-      "title": "Physical layer log debug",
-      "description": "Enable debug mode for physical layer logs",
-      "type": "boolean",
-      "default": false
+      "$ref": "instance-ors-enb-input-schema.json#/properties/log_phy_debug"
     },
     "gps_sync": {
-      "default": false,
-      "title": "GPS synchronisation",
-      "description": "True if GPS should be used for synchronisation",
-      "type": "boolean"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/gps_sync"
     },
     "disable_sdr": {
       "default": false,
