@@ -30,7 +30,7 @@
           "type": "string",
           "enum": ["fdd", "tdd"],
           "options": {
-            "enum_titles": ["FDD", "TDD"]
+            "enum_titles": ["FDD aaa", "TDD bbb"]
           },
           "propertyOrder": 101
         },
