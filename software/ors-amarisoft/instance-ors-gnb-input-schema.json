@@ -33,10 +33,7 @@
       "default": 500
     },
     "cell_id": {
-      "title": "Cell ID",
-      "description": "Cell ID",
-      "type": "string",
-      "default": "0x01"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
     "tx_gain": {
       "title": "Tx gain",
