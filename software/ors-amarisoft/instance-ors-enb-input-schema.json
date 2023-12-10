@@ -4,7 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "bandwidth": {
-      "$ref": "cell/lte/input-schema.json#properties/bandwidth",
+      "$ref": "cell/lte/input-schema.json#/properties/bandwidth",
       "default": "20 MHz"
     },
     "n_antenna_dl": {
