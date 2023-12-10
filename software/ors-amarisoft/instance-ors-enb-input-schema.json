@@ -46,8 +46,8 @@
       "$ref": "cell/input-schema.json#/$defs/cell-common/properties/root_sequence_index",
       "default": 204
     },
-    "tx_gain": { "$ref": "ru/input-schema.json#$defs/ru-common/properties/tx_gain" },
-    "rx_gain": { "$ref": "ru/input-schema.json#$defs/ru-common/properties/rx_gain" },
+    "tx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
+    "rx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
     "enb_id": {
       "title": "eNB ID",
       "description": "eNB ID",
