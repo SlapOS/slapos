@@ -4,17 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
-      "type": "string",
-      "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
-      ],
+      "$ref": "cell/lte/input-schema.json#properties/bandwidth",
       "default": "20 MHz"
     },
     "n_antenna_dl": {
