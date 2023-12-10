@@ -4,7 +4,7 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "enb": {
-      "title": "eNB/gNB XXX + neigh ...",
+      "title": "eNB/gNB XXX + neigh  ...",
       "software-type": "enb",
       "description": "eNodeB/gNodeB Configuration",
       "request": "instance-enb-input-schema.json",
