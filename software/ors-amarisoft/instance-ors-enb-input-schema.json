@@ -48,30 +48,16 @@
     },
     "tx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
     "rx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
-    "enb_id": { "$ref": "instance-enb-input-schema.json#/properties/enb_id" },
+    "enb_id": {
+      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
+      "default": "0x1A2D0"
+    },
     "gtp_addr": {
-      "title": "GTP Address",
-      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
-      "type": "string",
+      "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
       "default": "127.0.1.1"
     },
     "mme_list": {
-      "title": "MME list",
-      "description": "Optionnal. List of MME to which the gNodeB is connected",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "mme_addr": {
-              "title": "MME Address",
-              "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
+      "$ref": "instance-enb-input-schema.json#/properties/mme_list"
     },
     "plmn_list": {
       "title": "PLMN list",
