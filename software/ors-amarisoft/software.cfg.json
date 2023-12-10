@@ -4,7 +4,7 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "enb": {
-      "title": "eNB/gNB XXX ...",
+      "title": "eNB/gNB XXX + neigh ...",
       "software-type": "enb",
       "description": "eNodeB/gNodeB Configuration",
       "request": "instance-enb-input-schema.json",
@@ -13,7 +13,7 @@
     },
     "ru": {
       "title": "Radio Unit",
-      "description": "Configuration of Radio Unit attached to eNB/gNB",
+      "description": "Configuration of Radio Unit attached to eNB/gNB or UEsim",
       "software-type": "enb",
       "shared": true,
       "request": "ru/input-schema.json"
@@ -25,7 +25,7 @@
       "shared": true,
       "request": "cell/input-schema.json"
     },
-    "peer_cell": {
+    "cell/peer": {
       "title": "Peer Cell",
       "description": "Handover information about Peer Cell served by nearby eNB/gNB",
       "software-type": "enb",
@@ -49,13 +49,27 @@
       "shared": true,
       "index": 3
     },
-    "ue": {
-      "title": "UE XXX +ru/cell/ue/...",
-      "description": "UE Configuration",
+    "uesim": {
+      "title": "UEsim",
+      "description": "UEsim Configuration",
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
       "index": 4
+    },
+    "ue": {
+      "title": "UE",
+      "description": "Configuration of UE simulated by UEsim",
+      "software-type": "ue",
+      "shared": true,
+      "request": "ue/input-schema.json"
+    },
+    "ue/cell": {
+      "title": "UE Cell",
+      "description": "Information about Cell to which UEsim attaches",
+      "software-type": "ue",
+      "shared": true,
+      "request": "ue/cell/input-schema.json"
     }
   }
 }
