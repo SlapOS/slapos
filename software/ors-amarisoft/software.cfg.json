@@ -1,33 +1,15 @@
 {
-  "name": "ORS Amarisoft",
-  "description": "4G and 5G amarisoft stack for ORS",
+  "name": "Amarisoft",
+  "description": "4G and 5G amarisoft stack",
   "serialisation": "json-in-xml",
   "software-type": {
-{% if bbu != 'ors' %}
-    "ue": {
-      "title": "UE",
-      "description": "UE Configuration",
-      "software-type": "ue",
-      "request": "instance-ue-input-schema.json",
-      "response": "instance-ue-schema.json",
-      "index": 4
-    },
-{% endif %}
     "enb": {
-      "title": "eNB",
+      "title": "eNB/gNB XXX +ru/cell/peer/...",
       "software-type": "enb",
-      "description": "eNodeB Configuration",
+      "description": "eNodeB/gNodeB Configuration",
       "request": "instance-{{ software_name }}-enb-input-schema.json",
       "response": "instance-{{ software_name }}-enb-schema.json",
       "index": 0
-    },
-    "gnb": {
-      "title": "gNB",
-      "software-type": "gnb",
-      "description": "gNodeB Configuration",
-      "request": "instance-{{ software_name }}-gnb-input-schema.json",
-      "response": "instance-{{ software_name }}-gnb-schema.json",
-      "index": 1
     },
     "core-network": {
       "title": "Core Network",
@@ -45,7 +27,14 @@
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
       "index": 3
+    },
+    "ue": {
+      "title": "UE XXX +ru/cell/ue/...",
+      "description": "UE Configuration",
+      "software-type": "ue",
+      "request": "instance-ue-input-schema.json",
+      "response": "instance-ue-schema.json",
+      "index": 4
     }
-    // XXX enb-slave, ue-slave
   }
 }
