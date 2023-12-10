@@ -203,7 +203,7 @@
       "default": {}
     },
     "websocket_password": {
-      "title": "Websocket password",
+      "title": "Websocket password ZZZ",
       "description": "Activates websocket for remote control and sets password",
       "type": "string"
     },
