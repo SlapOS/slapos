@@ -36,14 +36,10 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
     "tx_gain": {
-      "title": "Tx gain",
-      "description": "Tx gain (in dB)",
-      "type": "number"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/tx_gain"
     },
     "rx_gain": {
-      "title": "Rx gain",
-      "description": "Rx gain (in dB)",
-      "type": "number"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
     },
     "gnb_id": {
       "title": "gNB ID",
