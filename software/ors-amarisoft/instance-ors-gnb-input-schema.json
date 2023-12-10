@@ -7,29 +7,20 @@
       "title": "Bandwidth",
       "description": "Downlink Bandwidth (in MHz)",
       "type": "number",
-      "default": {{ default_nr_bandwidth }}
+      "default": 40
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
-{%- if bbu == 'ors' %}
       "description": "1 or 2. Number of DL antennas.",
-{%- else %}
-      "description": "1, 2, 4 or 8. Number of DL antennas.",
-{%- endif %}
       "type": "number",
-      "default": {{ default_n_antenna_dl }}
+      "default": 2
     },
     "n_antenna_ul": {
       "title": "Number of UL antennas",
-{%- if bbu == 'ors' %}
       "description": "1 or 2. Number of UL antennas.",
-{%- else %}
-      "description": "1, 2, 4 or 8. Number of UL antennas.",
-{%- endif %}
       "type": "number",
-      "default": {{ default_n_antenna_ul }}
+      "default": 2
     },
-{%- if rf_mode == 'tdd' %}
     "tdd_ul_dl_config": {
       "title": "TDD",
       "description": "TDD",
@@ -41,7 +32,6 @@
       ],
       "default": "5ms 2UL 7DL 4/6 (default)"
     },
-{%- endif %}
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
@@ -56,7 +46,7 @@
       "title": "SSB Position Bitmap",
       "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
       "type": "string",
-      "default": {{ default_nr_ssb_pos_bitmap }}
+      "default": "10000000"
     },
     "pci": {
       "title": "Physical Cell ID",
@@ -276,7 +266,7 @@
       "title": "Inactivity Timer",
       "description": "Send RRC connection release after this time (in ms) of network inactivity.",
       "type": "number",
-      "default": {{ default_nr_inactivity_timer }}
+      "default": 10000
     },
     "log_phy_debug": {
       "title": "Physical layer log debug",
