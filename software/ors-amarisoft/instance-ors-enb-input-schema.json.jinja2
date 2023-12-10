@@ -29,9 +29,8 @@
       "type": "number",
       "default": 2
     },
-{%- if rf_mode == 'tdd' %}
     "tdd_ul_dl_config": {
-      "title": "TDD",
+      "title": "TDD	XXX depend on rf_mode=tdd",
       "description": "TDD",
       "type": "string",
       "enum": [
@@ -40,7 +39,6 @@
       ],
       "default": "5ms 2UL 7DL 4/6 (default)"
     },
-{%- endif %}
     "dl_earfcn": {
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
