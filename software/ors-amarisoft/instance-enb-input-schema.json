@@ -17,7 +17,7 @@
     },
     "mme_list": {
       "title": "MME list",
-      "description": "Optionnal. List of MME to which the gNodeB is connected",
+      "description": "Optional. List of MME to which the gNodeB is connected",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -47,7 +47,7 @@
     },
     "amf_list": {
       "title": "AMF list",
-      "description": "Optionnal. List of AMF to which the gNodeB is connected",
+      "description": "Optional. List of AMF to which the gNodeB is connected",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -102,7 +102,7 @@
     },
     "lte_handover_time_to_trigger": {
       "title": "Time to Trigger for LTE handover",
-      "description": "Time to triger after which LTE handover will be triggered if A3 offset is reached",
+      "description": "Time to trigger after which LTE handover will be triggered if A3 offset is reached",
       "type": "number",
       "enum": [
         0,

@@ -72,7 +72,7 @@
     },
     "nr_handover_time_to_trigger": {
       "title": "Time to Trigger for NR handover",
-      "description": "Time to triger after which NR handover will be triggerd if A3 offset is reached",
+      "description": "Time to trigger after which NR handover will be triggered if A3 offset is reached",
       "type": "number",
       "enum": [
         0,

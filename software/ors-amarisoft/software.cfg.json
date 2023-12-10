@@ -26,7 +26,7 @@
       "request": "cell/input-schema.json"
     },
     "peer_cell": {
-      "title": "Peer Ceel",
+      "title": "Peer Cell",
       "description": "Handover information about Peer Cell served by nearby eNB/gNB",
       "software-type": "enb",
       "shared": true,
