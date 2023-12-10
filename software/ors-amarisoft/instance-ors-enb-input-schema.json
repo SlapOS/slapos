@@ -48,12 +48,7 @@
     },
     "tx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
     "rx_gain": { "$ref": "ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
-    "enb_id": {
-      "title": "eNB ID",
-      "description": "eNB ID",
-      "type": "string",
-      "default": "0x1A2D0"
-    },
+    "enb_id": { "$ref": "instance-enb-input-schema.json#/properties/enb_id" },
     "gtp_addr": {
       "title": "GTP Address",
       "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
