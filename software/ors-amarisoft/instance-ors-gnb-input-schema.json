@@ -222,40 +222,22 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/gps_sync"
     },
     "disable_sdr": {
-      "default": false,
-      "title": "Disable SDR",
-      "description": "Disables radio",
-      "type": "boolean"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/disable_sdr"
     },
     "use_ipv4": {
-      "default": false,
-      "title": "Use IPv4",
-      "description": "Set to true to use IPv4 for AMF / MME addresses",
-      "type": "boolean"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/use_ipv4"
     },
-    "gnb_stats_fetch_period": {
-      "title": "gNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get gNB statistics",
-      "type": "number",
-      "default": 60
+    "enb_stats_fetch_period": {
+      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_stats_fetch_period"
     },
-    "gnb_drb_stats_enabled": {
-      "title": "Enable gNB drb statistics",
-      "description": "Enable gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
-      "type": "boolean",
-      "default": true
+    "enb_drb_stats_enabled": {
+      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_drb_stats_enabled"
     },
     "max_rx_sample_db": {
-      "title": "Maximum RX sample value (dB)",
-      "description": "Maximum RX sample threshold above which RX saturated promise will fail",
-      "type": "number",
-      "default": 0
+      "$ref": "instance-ors-enb-input-schema.json#/properties/max_rx_sample_db"
     },
     "min_rxtx_delay": {
-      "title": "Minimum available time for radio front end processing (ms)",
-      "description": "Baseband latency promise will fail if minimum TX/RX diff reaches threshold (lower than this value)",
-      "type": "number",
-      "default": 0
+      "$ref": "instance-ors-enb-input-schema.json#/properties/min_rxtx_delay"
     },
     "xlog_fluentbit_forward_host": {
       "title": "Address to Forward Xlog by Fluenbit",
