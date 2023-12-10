@@ -8,9 +8,8 @@
       "default": "20 MHz"
     },
     "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "description": "1 or 2. Number of DL antennas.",
-      "type": "number",
+      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/n_antenna_dl",
+      "enum": [2, 1],
       "default": 2
     },
     "n_antenna_ul": {
