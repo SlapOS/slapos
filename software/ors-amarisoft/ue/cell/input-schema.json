@@ -23,7 +23,7 @@
           "options":  { "hidden": true }
         },
 
-        "rf_mode": { "$ref": "../../cell/input-schema.json#/properties/rf_mode" },
+        "rf_mode": { "$ref": "../../cell/input-schema.json#/$defs/cell-common/properties/rf_mode" },
 
         "ru": {
           "$ref": "../../cell/input-schema.json#/$defs/ru-of-cell",
