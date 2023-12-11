@@ -1,0 +1,330 @@
+diff --git src/_cffi_src/build_openssl.py src/_cffi_src/build_openssl.py
+index 4380c3396..928f5fe4f 100644
+--- src/_cffi_src/build_openssl.py
++++ src/_cffi_src/build_openssl.py
+@@ -105,6 +105,7 @@ ffi = build_ffi_for_binding(
+         "osrandom_engine",
+         "pem",
+         "pkcs12",
++        "provider",
+         "rand",
+         "rsa",
+         "ssl",
+diff --git src/_cffi_src/openssl/cryptography.py src/_cffi_src/openssl/cryptography.py
+index f24bee5a4..920a86dea 100644
+--- src/_cffi_src/openssl/cryptography.py
++++ src/_cffi_src/openssl/cryptography.py
+@@ -35,6 +35,8 @@ INCLUDES = """
+ 
+ #define CRYPTOGRAPHY_OPENSSL_110F_OR_GREATER \
+     (OPENSSL_VERSION_NUMBER >= 0x1010006f && !CRYPTOGRAPHY_IS_LIBRESSL)
++#define CRYPTOGRAPHY_OPENSSL_300_OR_GREATER \
++    (OPENSSL_VERSION_NUMBER >= 0x30000000 && !CRYPTOGRAPHY_IS_LIBRESSL)
+ 
+ #define CRYPTOGRAPHY_OPENSSL_LESS_THAN_110J \
+     (OPENSSL_VERSION_NUMBER < 0x101000af || CRYPTOGRAPHY_IS_LIBRESSL)
+@@ -54,6 +56,7 @@ INCLUDES = """
+ 
+ TYPES = """
+ static const int CRYPTOGRAPHY_OPENSSL_110F_OR_GREATER;
++static const int CRYPTOGRAPHY_OPENSSL_300_OR_GREATER;
+ 
+ static const int CRYPTOGRAPHY_OPENSSL_LESS_THAN_111;
+ static const int CRYPTOGRAPHY_OPENSSL_LESS_THAN_111B;
+diff --git src/_cffi_src/openssl/err.py src/_cffi_src/openssl/err.py
+index 0dd741467..c2486953d 100644
+--- src/_cffi_src/openssl/err.py
++++ src/_cffi_src/openssl/err.py
+@@ -19,6 +19,7 @@ static const int EVP_R_UNKNOWN_PBE_ALGORITHM;
+ 
+ static const int ERR_LIB_EVP;
+ static const int ERR_LIB_PEM;
++static const int ERR_LIB_PROV;
+ static const int ERR_LIB_ASN1;
+ static const int ERR_LIB_PKCS12;
+ 
+@@ -40,10 +41,14 @@ void ERR_clear_error(void);
+ void ERR_put_error(int, int, int, const char *, int);
+ 
+ int ERR_GET_LIB(unsigned long);
+-int ERR_GET_FUNC(unsigned long);
+ int ERR_GET_REASON(unsigned long);
+ 
+ """
+ 
+ CUSTOMIZATIONS = """
++/* This define is tied to provider support and is conditionally
++   removed if Cryptography_HAS_PROVIDERS is false */
++#ifndef ERR_LIB_PROV
++#define ERR_LIB_PROV 0
++#endif
+ """
+diff --git src/_cffi_src/openssl/fips.py src/_cffi_src/openssl/fips.py
+index c92bca494..38bfa231f 100644
+--- src/_cffi_src/openssl/fips.py
++++ src/_cffi_src/openssl/fips.py
+@@ -18,7 +18,7 @@ int FIPS_mode(void);
+ """
+ 
+ CUSTOMIZATIONS = """
+-#if CRYPTOGRAPHY_IS_LIBRESSL
++#if CRYPTOGRAPHY_IS_LIBRESSL || CRYPTOGRAPHY_OPENSSL_300_OR_GREATER
+ static const long Cryptography_HAS_FIPS = 0;
+ int (*FIPS_mode_set)(int) = NULL;
+ int (*FIPS_mode)(void) = NULL;
+diff --git src/_cffi_src/openssl/provider.py src/_cffi_src/openssl/provider.py
+new file mode 100644
+index 000000000..d7d659ea5
+--- /dev/null
++++ src/_cffi_src/openssl/provider.py
+@@ -0,0 +1,40 @@
++# This file is dual licensed under the terms of the Apache License, Version
++# 2.0, and the BSD License. See the LICENSE file in the root of this repository
++# for complete details.
++
++
++INCLUDES = """
++#if CRYPTOGRAPHY_OPENSSL_300_OR_GREATER
++#include <openssl/provider.h>
++#include <openssl/proverr.h>
++#endif
++"""
++
++TYPES = """
++static const long Cryptography_HAS_PROVIDERS;
++
++typedef ... OSSL_PROVIDER;
++typedef ... OSSL_LIB_CTX;
++
++static const long PROV_R_BAD_DECRYPT;
++static const long PROV_R_WRONG_FINAL_BLOCK_LENGTH;
++"""
++
++FUNCTIONS = """
++OSSL_PROVIDER *OSSL_PROVIDER_load(OSSL_LIB_CTX *, const char *);
++int OSSL_PROVIDER_unload(OSSL_PROVIDER *prov);
++"""
++
++CUSTOMIZATIONS = """
++#if CRYPTOGRAPHY_OPENSSL_300_OR_GREATER
++static const long Cryptography_HAS_PROVIDERS = 1;
++#else
++static const long Cryptography_HAS_PROVIDERS = 0;
++typedef void OSSL_PROVIDER;
++typedef void OSSL_LIB_CTX;
++static const long PROV_R_BAD_DECRYPT = 0;
++static const long PROV_R_WRONG_FINAL_BLOCK_LENGTH = 0;
++OSSL_PROVIDER *(*OSSL_PROVIDER_load)(OSSL_LIB_CTX *, const char *) = NULL;
++int (*OSSL_PROVIDER_unload)(OSSL_PROVIDER *) = NULL;
++#endif
++"""
+diff --git src/cryptography/hazmat/backends/openssl/backend.py src/cryptography/hazmat/backends/openssl/backend.py
+index 45d4a1a1e..1b48355da 100644
+--- src/cryptography/hazmat/backends/openssl/backend.py
++++ src/cryptography/hazmat/backends/openssl/backend.py
+@@ -1307,6 +1307,11 @@ class Backend(object):
+     def _evp_pkey_from_der_traditional_key(self, bio_data, password):
+         key = self._lib.d2i_PrivateKey_bio(bio_data.bio, self._ffi.NULL)
+         if key != self._ffi.NULL:
++            # In OpenSSL 3.0.0-alpha15 there exist scenarios where the key will
++            # successfully load but errors are still put on the stack. Tracked
++            # as https://github.com/openssl/openssl/issues/14996
++            self._consume_errors()
++
+             key = self._ffi.gc(key, self._lib.EVP_PKEY_free)
+             if password is not None:
+                 raise TypeError(
+@@ -1474,6 +1479,11 @@ class Backend(object):
+             else:
+                 self._handle_key_loading_error()
+ 
++        # In OpenSSL 3.0.0-alpha15 there exist scenarios where the key will
++        # successfully load but errors are still put on the stack. Tracked
++        # as https://github.com/openssl/openssl/issues/14996
++        self._consume_errors()
++
+         evp_pkey = self._ffi.gc(evp_pkey, self._lib.EVP_PKEY_free)
+ 
+         if password is not None and userdata.called == 0:
+@@ -1496,11 +1506,22 @@ class Backend(object):
+                 "incorrect format or it may be encrypted with an unsupported "
+                 "algorithm."
+             )
+-        elif errors[0]._lib_reason_match(
+-            self._lib.ERR_LIB_EVP, self._lib.EVP_R_BAD_DECRYPT
+-        ) or errors[0]._lib_reason_match(
+-            self._lib.ERR_LIB_PKCS12,
+-            self._lib.PKCS12_R_PKCS12_CIPHERFINAL_ERROR,
++
++        elif (
++            errors[0]._lib_reason_match(
++                self._lib.ERR_LIB_EVP, self._lib.EVP_R_BAD_DECRYPT
++            )
++            or errors[0]._lib_reason_match(
++                self._lib.ERR_LIB_PKCS12,
++                self._lib.PKCS12_R_PKCS12_CIPHERFINAL_ERROR,
++            )
++            or (
++                self._lib.Cryptography_HAS_PROVIDERS
++                and errors[0]._lib_reason_match(
++                    self._lib.ERR_LIB_PROV,
++                    self._lib.PROV_R_BAD_DECRYPT,
++                )
++            )
+         ):
+             raise ValueError("Bad decrypt. Incorrect password?")
+ 
+@@ -2546,7 +2567,15 @@ class Backend(object):
+         if sk_x509_ptr[0] != self._ffi.NULL:
+             sk_x509 = self._ffi.gc(sk_x509_ptr[0], self._lib.sk_X509_free)
+             num = self._lib.sk_X509_num(sk_x509_ptr[0])
+-            for i in range(num):
++
++            # In OpenSSL < 3.0.0 PKCS12 parsing reverses the order of the
++            # certificates.
++            if self._lib.CRYPTOGRAPHY_OPENSSL_300_OR_GREATER:
++                indices = range(num)
++            else:
++                indices = reversed(range(num))
++
++            for i in indices:
+                 x509 = self._lib.sk_X509_value(sk_x509, i)
+                 self.openssl_assert(x509 != self._ffi.NULL)
+                 x509 = self._ffi.gc(x509, self._lib.X509_free)
+diff --git src/cryptography/hazmat/backends/openssl/ciphers.py src/cryptography/hazmat/backends/openssl/ciphers.py
+index ad5dad3f7..f4c869a40 100644
+--- src/cryptography/hazmat/backends/openssl/ciphers.py
++++ src/cryptography/hazmat/backends/openssl/ciphers.py
+@@ -146,7 +146,14 @@ class _CipherContext(object):
+             res = self._backend._lib.EVP_CipherUpdate(
+                 self._ctx, outbuf, outlen, inbuf, inlen
+             )
+-            self._backend.openssl_assert(res != 0)
++            if res == 0 and isinstance(self._mode, modes.XTS):
++                self._backend._consume_errors()
++                raise ValueError(
++                    "In XTS mode you must supply at least a full block in the "
++                    "first update call. For AES this is 16 bytes."
++                )
++            else:
++                self._backend.openssl_assert(res != 0)
+             data_processed += inlen
+             total_out += outlen[0]
+ 
+@@ -175,6 +182,13 @@ class _CipherContext(object):
+                 errors[0]._lib_reason_match(
+                     self._backend._lib.ERR_LIB_EVP,
+                     self._backend._lib.EVP_R_DATA_NOT_MULTIPLE_OF_BLOCK_LENGTH,
++                )
++                or (
++                    self._backend._lib.Cryptography_HAS_PROVIDERS
++                    and errors[0]._lib_reason_match(
++                        self._backend._lib.ERR_LIB_PROV,
++                        self._backend._lib.PROV_R_WRONG_FINAL_BLOCK_LENGTH,
++                    )
+                 ),
+                 errors=errors,
+             )
+diff --git src/cryptography/hazmat/bindings/openssl/_conditional.py src/cryptography/hazmat/bindings/openssl/_conditional.py
+index ca50fed13..fdcead1a5 100644
+--- src/cryptography/hazmat/bindings/openssl/_conditional.py
++++ src/cryptography/hazmat/bindings/openssl/_conditional.py
+@@ -271,6 +271,16 @@ def cryptography_has_get_proto_version():
+     ]
+ 
+ 
++def cryptography_has_providers():
++    return [
++        "OSSL_PROVIDER_load",
++        "OSSL_PROVIDER_unload",
++        "ERR_LIB_PROV",
++        "PROV_R_WRONG_FINAL_BLOCK_LENGTH",
++        "PROV_R_BAD_DECRYPT",
++    ]
++
++
+ # This is a mapping of
+ # {condition: function-returning-names-dependent-on-that-condition} so we can
+ # loop over them and delete unsupported names at runtime. It will be removed
+@@ -319,4 +329,5 @@ CONDITIONAL_NAMES = {
+     "Cryptography_HAS_VERIFIED_CHAIN": cryptography_has_verified_chain,
+     "Cryptography_HAS_SRTP": cryptography_has_srtp,
+     "Cryptography_HAS_GET_PROTO_VERSION": cryptography_has_get_proto_version,
++    "Cryptography_HAS_PROVIDERS": cryptography_has_providers,
+ }
+diff --git src/cryptography/hazmat/bindings/openssl/binding.py src/cryptography/hazmat/bindings/openssl/binding.py
+index 7a84a340e..c0b0d8238 100644
+--- src/cryptography/hazmat/bindings/openssl/binding.py
++++ src/cryptography/hazmat/bindings/openssl/binding.py
+@@ -15,15 +15,14 @@ from cryptography.hazmat.bindings._openssl import ffi, lib
+ from cryptography.hazmat.bindings.openssl._conditional import CONDITIONAL_NAMES
+ 
+ _OpenSSLErrorWithText = collections.namedtuple(
+-    "_OpenSSLErrorWithText", ["code", "lib", "func", "reason", "reason_text"]
++    "_OpenSSLErrorWithText", ["code", "lib", "reason", "reason_text"]
+ )
+ 
+ 
+ class _OpenSSLError(object):
+-    def __init__(self, code, lib, func, reason):
++    def __init__(self, code, lib, reason):
+         self._code = code
+         self._lib = lib
+-        self._func = func
+         self._reason = reason
+ 
+     def _lib_reason_match(self, lib, reason):
+@@ -31,7 +30,6 @@ class _OpenSSLError(object):
+ 
+     code = utils.read_only_property("_code")
+     lib = utils.read_only_property("_lib")
+-    func = utils.read_only_property("_func")
+     reason = utils.read_only_property("_reason")
+ 
+ 
+@@ -43,10 +41,9 @@ def _consume_errors(lib):
+             break
+ 
+         err_lib = lib.ERR_GET_LIB(code)
+-        err_func = lib.ERR_GET_FUNC(code)
+         err_reason = lib.ERR_GET_REASON(code)
+ 
+-        errors.append(_OpenSSLError(code, err_lib, err_func, err_reason))
++        errors.append(_OpenSSLError(code, err_lib, err_reason))
+ 
+     return errors
+ 
+@@ -60,7 +57,7 @@ def _errors_with_text(errors):
+ 
+         errors_with_text.append(
+             _OpenSSLErrorWithText(
+-                err.code, err.lib, err.func, err.reason, err_text_reason
++                err.code, err.lib, err.reason, err_text_reason
+             )
+         )
+ 
+@@ -140,6 +137,24 @@ class Binding(object):
+                 # adds all ciphers/digests for EVP
+                 cls.lib.OpenSSL_add_all_algorithms()
+                 cls._register_osrandom_engine()
++                # As of OpenSSL 3.0.0 we must register a legacy cipher provider
++                # to get RC2 (needed for junk asymmetric private key
++                # serialization), RC4, Blowfish, IDEA, SEED, etc. These things
++                # are ugly legacy, but we aren't going to get rid of them
++                # any time soon.
++                if cls.lib.CRYPTOGRAPHY_OPENSSL_300_OR_GREATER:
++                    cls._legacy_provider = cls.lib.OSSL_PROVIDER_load(
++                        cls.ffi.NULL, b"legacy"
++                    )
++                    _openssl_assert(
++                        cls.lib, cls._legacy_provider != cls.ffi.NULL
++                    )
++                    cls._default_provider = cls.lib.OSSL_PROVIDER_load(
++                        cls.ffi.NULL, b"default"
++                    )
++                    _openssl_assert(
++                        cls.lib, cls._default_provider != cls.ffi.NULL
++                    )
+ 
+     @classmethod
+     def init_static_locks(cls):
