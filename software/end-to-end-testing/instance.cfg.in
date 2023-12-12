@@ -25,6 +25,7 @@ etc = $${buildout:directory}/etc
 var = $${buildout:directory}/var
 cfg = $${buildout:directory}/.slapos
 nxdtestdir = $${:var}/nxdtest
+log = $${:var}/log
 
 
 [client.crt]
@@ -69,15 +70,17 @@ recipe = slapos.recipe.template:jinja2
 output = $${runTestSuite:workdir}/.nxdtest
 python_for_test = ${python_for_test:executable}
 testdir = $${tests:location}
-cfgdir = $${slapos-client.cfg:output}
+log-output = $${directory:log}/e2e-testing.log
 context =
   key python_for_test :python_for_test
   key testdir :testdir
-  key cfgdir :cfgdir
+  key slapos_cfg slapos-client.cfg:output
+  key log_file :log-output
 inline =
   import os
   directory = "{{ testdir }}"
-  cfgdir = "{{ cfgdir }}"
+  slapos_cfg = {{ repr(slapos_cfg) }}
+  log_file = {{ repr(log_file) }}
   dir_list = os.listdir(directory)
   for filename in dir_list:
     name, ext = os.path.splitext(filename)
@@ -86,7 +89,8 @@ inline =
         name,
         [{{ repr(python_for_test) }} , '-m', 'unittest',  '-v', name],
         cwd=directory,
-        env={'SLAPOS_TEST_CLIENT_CFG': cfgdir},
+        env={'SLAPOS_E2E_TEST_CLIENT_CFG': slapos_cfg,
+             'SLAPOS_E2E_TEST_LOG_FILE': log_file},
         summaryf=UnitTest.summary,
       )
 
