@@ -1,0 +1,15 @@
+https://github.com/golang/go/commit/092671423cd95eaa6df93eb29442fef41504d097 breaks
+TestUnshareMountNameSpace test on SlapOS.
+---
+diff --git a/src/syscall/exec_linux_test.go b/src/syscall/exec_linux_test.go
+index f4ff7bf81b..bc8bdb0a35 100644
+--- a/src/syscall/exec_linux_test.go
++++ b/src/syscall/exec_linux_test.go
+@@ -206,6 +206,7 @@ func TestGroupCleanupUserNamespace(t *testing.T) {
+ // Test for https://go.dev/issue/19661: unshare fails because systemd
+ // has forced / to be shared
+ func TestUnshareMountNameSpace(t *testing.T) {
++    t.Skip("skipping: not supported in SlapOS")
+ 	testenv.MustHaveExec(t)
+ 
+ 	if os.Getenv("GO_WANT_HELPER_PROCESS") == "1" {
