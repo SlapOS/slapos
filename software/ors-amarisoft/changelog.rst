@@ -1,7 +1,25 @@
 Changelog
 =========
+
+Version 1.0.344 (2023-11-03)
+-------------
+
+* Set dpc_snr_target to 25 for PUSCH also
+
+Version 1.0.341 (2023-10-20)
+-------------
+
+* Publish amarisoft version and license expiration information
+* Add network name parameter
+
+Version 1.0.340 (2023-10-20)
+-------------
+
+* Update RRH firmware and reset
+
 Version 1.0.339 (2023-10-16)
 -------------
+
 * Lopcomm firmware update
 * RRH reset (reboot) function added
 * Fix cpri_tx_dbm parameter
