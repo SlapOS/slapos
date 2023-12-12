@@ -1,0 +1,78 @@
+From 9f03e8367d85d75675b2f2e90873e3293799d8aa Mon Sep 17 00:00:00 2001
+From: "Bryan C. Mills" <bcmills@google.com>
+Date: Tue, 15 Aug 2023 18:01:16 -0400
+Subject: [PATCH] os: skip Chown tests for auxiliary groups that fail due to
+ permission errors
+
+This addresses the failure mode described in
+https://git.alpinelinux.org/aports/commit/community/go/tests-filter-overflow-gid.patch?id=9851dde0f5d2a5a50f7f3b5323d1b2ff22e1d028,
+but without special-casing an implementation-specific group ID.
+
+For #62053.
+
+Change-Id: I70b1046837b8146889fff7085497213349cd2bf0
+Reviewed-on: https://go-review.googlesource.com/c/go/+/520055
+Reviewed-by: Ian Lance Taylor <iant@google.com>
+TryBot-Result: Gopher Robot <gobot@golang.org>
+Run-TryBot: Bryan Mills <bcmills@google.com>
+Auto-Submit: Bryan Mills <bcmills@google.com>
+---
+ src/os/os_unix_test.go | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/src/os/os_unix_test.go b/src/os/os_unix_test.go
+index 9041b25471..e4271ff905 100644
+--- a/src/os/os_unix_test.go
++++ b/src/os/os_unix_test.go
+@@ -75,6 +75,12 @@ func TestChown(t *testing.T) {
+ 	t.Log("groups: ", groups)
+ 	for _, g := range groups {
+ 		if err = Chown(f.Name(), -1, g); err != nil {
++			if testenv.SyscallIsNotSupported(err) {
++				t.Logf("chown %s -1 %d: %s (error ignored)", f.Name(), g, err)
++				// Since the Chown call failed, the file should be unmodified.
++				checkUidGid(t, f.Name(), int(sys.Uid), gid)
++				continue
++			}
+ 			t.Fatalf("chown %s -1 %d: %s", f.Name(), g, err)
+ 		}
+ 		checkUidGid(t, f.Name(), int(sys.Uid), g)
+@@ -123,6 +129,12 @@ func TestFileChown(t *testing.T) {
+ 	t.Log("groups: ", groups)
+ 	for _, g := range groups {
+ 		if err = f.Chown(-1, g); err != nil {
++			if testenv.SyscallIsNotSupported(err) {
++				t.Logf("chown %s -1 %d: %s (error ignored)", f.Name(), g, err)
++				// Since the Chown call failed, the file should be unmodified.
++				checkUidGid(t, f.Name(), int(sys.Uid), gid)
++				continue
++			}
+ 			t.Fatalf("fchown %s -1 %d: %s", f.Name(), g, err)
+ 		}
+ 		checkUidGid(t, f.Name(), int(sys.Uid), g)
+@@ -181,12 +193,22 @@ func TestLchown(t *testing.T) {
+ 	t.Log("groups: ", groups)
+ 	for _, g := range groups {
+ 		if err = Lchown(linkname, -1, g); err != nil {
++			if testenv.SyscallIsNotSupported(err) {
++				t.Logf("lchown %s -1 %d: %s (error ignored)", f.Name(), g, err)
++				// Since the Lchown call failed, the file should be unmodified.
++				checkUidGid(t, f.Name(), int(sys.Uid), gid)
++				continue
++			}
+ 			t.Fatalf("lchown %s -1 %d: %s", linkname, g, err)
+ 		}
+ 		checkUidGid(t, linkname, int(sys.Uid), g)
+ 
+ 		// Check that link target's gid is unchanged.
+ 		checkUidGid(t, f.Name(), int(sys.Uid), int(sys.Gid))
++
++		if err = Lchown(linkname, -1, gid); err != nil {
++			t.Fatalf("lchown %s -1 %d: %s", f.Name(), gid, err)
++		}
+ 	}
+ }
+ 
+-- 
+2.36.0
+
