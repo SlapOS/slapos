@@ -6,7 +6,9 @@
     "default": {
       "title": "default",
       "software-type": "default",
-      "description": "default"
+      "description": "default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json"
     }
   }
 }
