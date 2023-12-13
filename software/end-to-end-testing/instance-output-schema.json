@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Output schema",
-  "additionalProperties": False,
+  "additionalProperties": false,
   "properties": {},
   "type": "object"
 }
