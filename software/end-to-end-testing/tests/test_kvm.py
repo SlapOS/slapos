@@ -1,6 +1,8 @@
 import slapos.testing.e2e as e2e
 
+
 class KvmTest(e2e.EndToEndTestCase):
+
   def test(self):
 
     instance_name = e2e.time.strftime('e2e-test-kvm-%Y-%B-%d-%H:%M:%S')

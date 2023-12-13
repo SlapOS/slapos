@@ -21,11 +21,12 @@ def main():
   url = configp.get('slapos', 'master_url')
 
   with open(args.output, 'w') as f:
-    json.dump({
-      'client.crt': crt,
-      'client.key': key,
-      'master-url': url
-    }, f, indent=2)
+    json.dump(
+      {
+        'client.crt': crt,
+        'client.key': key,
+        'master-url': url
+      }, f, indent=2)
 
 
 if __name__ == '__main__':
