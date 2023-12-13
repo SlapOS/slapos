@@ -1,3 +1,9 @@
+Minimal changes to support OpenSSL 3.0 based on the following commits :
+
+* f08a7de651f9e6475c8c0a67d2a61ed8b669ddf6 [WIP] 3.0.0 support (#5250)
+* 50ec692749b7e2e62685b443f5e629627b03987e remove unneeded binding (#6150)
+* 77fb53c75e47f50e09b1b3be3a4d10c7e4e34dc2 3.0.0 deprecated func and it isn't useful to us in general (#6148)
+
 diff --git src/_cffi_src/build_openssl.py src/_cffi_src/build_openssl.py
 index 4380c3396..928f5fe4f 100644
 --- src/_cffi_src/build_openssl.py
