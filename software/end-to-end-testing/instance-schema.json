@@ -3,7 +3,5 @@
   "title": "Instance Schema for end-to-end-testing",
   "type": "object",
   "properties": {
-
-  },
-  "required": []
+  }
 }
