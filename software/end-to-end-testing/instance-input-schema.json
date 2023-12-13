@@ -25,11 +25,9 @@
             "type": "string"
           }
         },
-        "required": ["url", "md5sum"],
         "additionalProperties": false
       }
     }
   },
-  "required": ["client.crt", "client.key", "master-url", "tests"],
   "additionalProperties": false
 }
