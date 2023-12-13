@@ -3,12 +3,10 @@
   "type": "object",
   "properties": {
     "client.crt": {
-      "type": "string",
-      "pattern": "^Certificate:.+\\n-----END CERTIFICATE-----\\n$"
+      "type": "string"
     },
     "client.key": {
-      "type": "string",
-      "pattern": "^-----BEGIN PRIVATE KEY-----.+\\n-----END PRIVATE KEY-----\\n$"
+      "type": "string"
     },
     "master-url": {
       "type": "string",
@@ -24,8 +22,7 @@
             "format": "uri"
           },
           "md5sum": {
-            "type": "string",
-            "pattern": "^[a-f0-9]{32}$"
+            "type": "string"
           }
         },
         "required": ["url", "md5sum"],
