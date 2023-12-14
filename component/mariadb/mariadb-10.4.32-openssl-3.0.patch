@@ -2,11 +2,13 @@ Changes to support OpenSSL 3.0 based on the following commits :
 
 * 8a9c1e9ccf227e5f8ee9a4716a9b64665a8489e3 MDEV-25785 Add support for OpenSSL 3.0
 * 1dc09ce0fdcf556dfc57de3f012a455c6d54a951 Revert "don't build with OpenSSL 3.0, it doesn't work before MDEV-25785"
+* ef655669816d73a1d92fbf459b768abcc7cac296 MDEV-27778 md5 in FIPS crashes with OpenSSL 3.0.0
 
-diff -ur mariadb-10.4.32.orig/cmake/ssl.cmake mariadb-10.4.32/cmake/ssl.cmake
---- mariadb-10.4.32.orig/cmake/ssl.cmake	2023-10-30 13:36:19.000000000 +0100
-+++ mariadb-10.4.32/cmake/ssl.cmake	2023-12-14 22:10:13.397922000 +0100
-@@ -118,7 +118,7 @@
+diff --git a/cmake/ssl.cmake b/cmake/ssl.cmake
+index a6793cf3c55..1bd46bc0f39 100644
+--- a/cmake/ssl.cmake
++++ b/cmake/ssl.cmake
+@@ -118,7 +118,7 @@ MACRO (MYSQL_CHECK_SSL)
      ENDIF()
      FIND_PACKAGE(OpenSSL)
      SET_PACKAGE_PROPERTIES(OpenSSL PROPERTIES TYPE RECOMMENDED)
@@ -15,7 +17,7 @@ diff -ur mariadb-10.4.32.orig/cmake/ssl.cmake mariadb-10.4.32/cmake/ssl.cmake
        SET(OPENSSL_LIBRARY ${OPENSSL_SSL_LIBRARY})
        INCLUDE(CheckSymbolExists)
        SET(SSL_SOURCES "")
-@@ -139,6 +139,13 @@
+@@ -139,6 +139,13 @@ MACRO (MYSQL_CHECK_SSL)
        SET(SSL_INTERNAL_INCLUDE_DIRS "")
        SET(SSL_DEFINES "-DHAVE_OPENSSL")
  
@@ -29,7 +31,7 @@ diff -ur mariadb-10.4.32.orig/cmake/ssl.cmake mariadb-10.4.32/cmake/ssl.cmake
        SET(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
        SET(CMAKE_REQUIRED_LIBRARIES ${SSL_LIBRARIES})
        SET(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
-@@ -152,6 +159,7 @@
+@@ -152,6 +159,7 @@ MACRO (MYSQL_CHECK_SSL)
                            HAVE_X509_check_host)
        SET(CMAKE_REQUIRED_INCLUDES)
        SET(CMAKE_REQUIRED_LIBRARIES)
@@ -37,9 +39,10 @@ diff -ur mariadb-10.4.32.orig/cmake/ssl.cmake mariadb-10.4.32/cmake/ssl.cmake
      ELSE()
        IF(WITH_SSL STREQUAL "system")
          MESSAGE(FATAL_ERROR "Cannot find appropriate system libraries for SSL. Use WITH_SSL=bundled to enable SSL support")
-diff -ur mariadb-10.4.32.orig/include/ssl_compat.h mariadb-10.4.32/include/ssl_compat.h
---- mariadb-10.4.32.orig/include/ssl_compat.h	2023-10-30 13:36:19.000000000 +0100
-+++ mariadb-10.4.32/include/ssl_compat.h	2023-12-14 22:00:26.607591689 +0100
+diff --git a/include/ssl_compat.h b/include/ssl_compat.h
+index 7b4a828a4d9..7a652d46121 100644
+--- a/include/ssl_compat.h
++++ b/include/ssl_compat.h
 @@ -78,7 +78,6 @@
  #define DH_set0_pqg(D,P,Q,G)            ((D)->p= (P), (D)->g= (G))
  #endif
@@ -48,19 +51,21 @@ diff -ur mariadb-10.4.32.orig/include/ssl_compat.h mariadb-10.4.32/include/ssl_c
  #define EVP_CIPHER_CTX_encrypting(ctx)  ((ctx)->encrypt)
  #define EVP_CIPHER_CTX_SIZE             sizeof(EVP_CIPHER_CTX)
  
-diff -ur mariadb-10.4.32.orig/mysql-test/lib/openssl.cnf mariadb-10.4.32/mysql-test/lib/openssl.cnf
---- mariadb-10.4.32.orig/mysql-test/lib/openssl.cnf	2023-10-30 13:36:19.000000000 +0100
-+++ mariadb-10.4.32/mysql-test/lib/openssl.cnf	2023-12-14 22:00:26.607591689 +0100
-@@ -9,4 +9,4 @@
+diff --git a/mysql-test/lib/openssl.cnf b/mysql-test/lib/openssl.cnf
+index b9ab37ac3a1..7cd6f748af2 100644
+--- a/mysql-test/lib/openssl.cnf
++++ b/mysql-test/lib/openssl.cnf
+@@ -9,4 +9,4 @@ ssl_conf = ssl_section
  system_default = system_default_section
  
  [system_default_section]
 -CipherString = ALL:@SECLEVEL=1
 +CipherString = ALL:@SECLEVEL=0
-diff -ur mariadb-10.4.32.orig/mysql-test/main/ssl_cipher.result mariadb-10.4.32/mysql-test/main/ssl_cipher.result
---- mariadb-10.4.32.orig/mysql-test/main/ssl_cipher.result	2023-10-30 13:36:19.000000000 +0100
-+++ mariadb-10.4.32/mysql-test/main/ssl_cipher.result	2023-12-14 22:00:26.607591689 +0100
-@@ -61,9 +61,9 @@
+diff --git a/mysql-test/main/ssl_cipher.result b/mysql-test/main/ssl_cipher.result
+index 9308f0f9833..d549ec7d2b4 100644
+--- a/mysql-test/main/ssl_cipher.result
++++ b/mysql-test/main/ssl_cipher.result
+@@ -61,9 +61,9 @@ connect  ssl_con,localhost,root,,,,,SSL;
  SHOW STATUS LIKE 'Ssl_cipher';
  Variable_name	Value
  Ssl_cipher	AES128-SHA
@@ -73,10 +78,11 @@ diff -ur mariadb-10.4.32.orig/mysql-test/main/ssl_cipher.result mariadb-10.4.32/
  disconnect ssl_con;
  connection default;
  call mtr.add_suppression("TLSv1.0 and TLSv1.1 are insecure");
-diff -ur mariadb-10.4.32.orig/mysql-test/main/ssl_cipher.test mariadb-10.4.32/mysql-test/main/ssl_cipher.test
---- mariadb-10.4.32.orig/mysql-test/main/ssl_cipher.test	2023-10-30 13:36:19.000000000 +0100
-+++ mariadb-10.4.32/mysql-test/main/ssl_cipher.test	2023-12-14 22:00:26.607591689 +0100
-@@ -98,7 +98,7 @@
+diff --git a/mysql-test/main/ssl_cipher.test b/mysql-test/main/ssl_cipher.test
+index 3a54aca5145..7150e19809e 100644
+--- a/mysql-test/main/ssl_cipher.test
++++ b/mysql-test/main/ssl_cipher.test
+@@ -98,7 +98,7 @@ let $restart_parameters=--ssl-cipher=AES128-SHA;
  source include/restart_mysqld.inc;
  connect (ssl_con,localhost,root,,,,,SSL);
  SHOW STATUS LIKE 'Ssl_cipher';
@@ -85,9 +91,10 @@ diff -ur mariadb-10.4.32.orig/mysql-test/main/ssl_cipher.test mariadb-10.4.32/my
  disconnect ssl_con;
  connection default;
  
-diff -ur mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc mariadb-10.4.32/mysys_ssl/my_crypt.cc
---- mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc	2023-10-30 13:36:20.000000000 +0100
-+++ mariadb-10.4.32/mysys_ssl/my_crypt.cc	2023-12-14 22:00:26.607591689 +0100
+diff --git a/mysys_ssl/my_crypt.cc b/mysys_ssl/my_crypt.cc
+index a8643f6e5b6..00447e73d79 100644
+--- a/mysys_ssl/my_crypt.cc
++++ b/mysys_ssl/my_crypt.cc
 @@ -29,11 +29,7 @@
  #include <ssl_compat.h>
  #include <cstdint>
@@ -100,7 +107,7 @@ diff -ur mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc mariadb-10.4.32/mysys_ssl/my
  
  class MyCTX
  {
-@@ -100,8 +96,9 @@
+@@ -100,8 +96,9 @@ class MyCTX_nopad : public MyCTX
  {
  public:
    const uchar *key;
@@ -111,7 +118,7 @@ diff -ur mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc mariadb-10.4.32/mysys_ssl/my
  
    MyCTX_nopad() : MyCTX() { }
    ~MyCTX_nopad() = default;
-@@ -112,7 +109,7 @@
+@@ -112,7 +109,7 @@ class MyCTX_nopad : public MyCTX
      compile_time_assert(MY_AES_CTX_SIZE >= sizeof(MyCTX_nopad));
      this->key= key;
      this->klen= klen;
@@ -120,7 +127,7 @@ diff -ur mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc mariadb-10.4.32/mysys_ssl/my
      if (ivlen)
        memcpy(oiv, iv, ivlen);
      DBUG_ASSERT(ivlen == 0 || ivlen == sizeof(oiv));
-@@ -123,26 +120,41 @@
+@@ -123,26 +120,41 @@ class MyCTX_nopad : public MyCTX
      return res;
    }
  
@@ -170,7 +177,7 @@ diff -ur mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc mariadb-10.4.32/mysys_ssl/my
        */
        uchar mask[MY_AES_BLOCK_SIZE];
        uint mlen;
-@@ -154,10 +166,10 @@
+@@ -154,10 +166,10 @@ class MyCTX_nopad : public MyCTX
          return rc;
        DBUG_ASSERT(mlen == sizeof(mask));
  
@@ -184,9 +191,38 @@ diff -ur mariadb-10.4.32.orig/mysys_ssl/my_crypt.cc mariadb-10.4.32/mysys_ssl/my
      return MY_AES_OK;
    }
  };
-diff -ur mariadb-10.4.32.orig/unittest/mysys/aes-t.c mariadb-10.4.32/unittest/mysys/aes-t.c
---- mariadb-10.4.32.orig/unittest/mysys/aes-t.c	2023-10-30 13:36:22.000000000 +0100
-+++ mariadb-10.4.32/unittest/mysys/aes-t.c	2023-12-14 22:00:26.607591689 +0100
+diff --git a/mysys_ssl/my_md5.cc b/mysys_ssl/my_md5.cc
+index 407dee3bc69..75995bccf90 100644
+--- a/mysys_ssl/my_md5.cc
++++ b/mysys_ssl/my_md5.cc
+@@ -52,12 +52,23 @@ static void md5_result(EVP_MD_CTX *context, uchar digest[MD5_HASH_SIZE])
+ 
+ static void md5_init(EVP_MD_CTX *context)
+ {
++#if OPENSSL_VERSION_NUMBER >= 0x30000000L
++  EVP_MD *md5;
++  EVP_MD_CTX_init(context);
++  /* Ok to ignore FIPS: MD5 is not used for crypto here */
++  /* In OpenSSL 3.0.0+ it is a different EVP_MD provider */
++  md5 = EVP_MD_fetch(NULL, "MD5", "fips=no");
++  EVP_DigestInit_ex(context, md5, NULL);
++  EVP_MD_free(md5);
++#else
+   EVP_MD_CTX_init(context);
+ #ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
+   /* Ok to ignore FIPS: MD5 is not used for crypto here */
++  /* In OpenSSL 1.1.1 the non FIPS allowed flag is context specific */
+   EVP_MD_CTX_set_flags(context, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+ #endif
+   EVP_DigestInit_ex(context, EVP_md5(), NULL);
++#endif
+ }
+ 
+ static void md5_input(EVP_MD_CTX *context, const uchar *buf, unsigned len)
+diff --git a/unittest/mysys/aes-t.c b/unittest/mysys/aes-t.c
+index 34704e06749..cbec2760941 100644
+--- a/unittest/mysys/aes-t.c
++++ b/unittest/mysys/aes-t.c
 @@ -21,27 +21,96 @@
  #include <string.h>
  #include <ctype.h>
@@ -279,12 +315,12 @@ diff -ur mariadb-10.4.32.orig/unittest/mysys/aes-t.c mariadb-10.4.32/unittest/my
 +    /* Compare with non-bytewise encryption result*/
 +    ok(dst_len == dst_len2 && memcmp(dst, dst2, dst_len) == 0,
 +       "memcmp bytewise  %s %u", mode_str, src_len);
-   }
++  }
 +  else
 +  {
 +    int dst_len_real= my_aes_get_size(mode, src_len);
 +    ok(dst_len_real= dst_len, "my_aes_get_size");
-+  }
+   }
 +  my_md5(md5, (char *) dst, dst_len);
 +  ok(dst_len == dlen, "md5 len");
 +  ok(memcmp(md5, hash, sizeof(md5)) == 0, "md5");
