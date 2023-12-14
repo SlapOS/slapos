@@ -51,7 +51,7 @@ python3 generate_parameters.py --cfg <absolute path to slapos-client.cfg> -o <ou
 
 ## Adding tests
 
-There are 2 example tests available in end-to-end testing SR:
+There are 3 example tests available in end-to-end testing SR:
 - test_test.py
   Simple successful test and failed test
 - test_kvm.py
