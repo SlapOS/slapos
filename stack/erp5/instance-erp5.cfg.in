@@ -79,35 +79,30 @@ bin = ${buildout:directory}/bin
 service-on-watch = ${buildout:directory}/etc/service
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
-backup-caucased = ${:srv}/backup/caucased
 
-{% if not caucase_url -%}
-{%   if use_ipv6 -%}
-{%     set caucase_host = '[' ~ (ipv6_set | list)[0] ~ ']' %}
-{%-  else -%}
-{%     set caucase_host = (ipv4_set | list)[0] %}
-{%-  endif %}
-{%   set caucase_port = caucase_dict.get('base-port', 8890) -%}
-{%   set caucase_netloc = caucase_host ~ ':' ~ caucase_port -%}
-{%   set caucase_url = 'http://' ~ caucase_netloc -%}
-{{   caucase.caucased(
-       prefix='caucased',
-       buildout_bin_directory=bin_directory,
-       caucased_path='${directory:service-on-watch}/caucased',
-       backup_dir='${directory:backup-caucased}',
-       data_dir='${directory:srv}/caucased',
-       netloc=caucase_netloc,
-       tmp='${directory:tmp}',
-       service_auto_approve_count=caucase_dict.get('service-auto-approve-amount', 1),
-       user_auto_approve_count=caucase_dict.get('user-auto-approve-amount', 0),
-       key_len=caucase_dict.get('key-length', 2048),
-)}}
-{% do root_common.section('caucased') -%}
-{% do root_common.section('caucased-promise') -%}
-{% endif -%}
-{% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
 {% set balancer_dict = slapparameter_dict.setdefault('balancer', {}) -%}
-{% do balancer_dict.setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
+{% do balancer_dict.setdefault('ssl', {}) %}
+{% if caucase_url %}
+{%   do balancer_dict['ssl'].setdefault('caucase-url', caucase_url) -%}
+
+[balancer-updated-caucase-url]
+# Promise to wait for balancer partition to use the provided URL, for cases where the
+# caucase URL is changed
+recipe = slapos.cookbook:check_parameter
+value = ${publish:caucase-http-url}
+expected-not-value =
+expected-value = {{ caucase_url }}
+path = ${directory:bin}/${:_buildout_section_name_}
+
+[balancer-updated-caucase-url-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = ${balancer-updated-caucase-url:path}
+{% do root_common.section("balancer-updated-caucase-url-promise") -%}
+
+{% endif %}
+
 {% do balancer_dict.setdefault('tcpv4-port', 2150) -%}
 {% do balancer_dict.__setitem__('haproxy-server-check-path', balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) -%}
 {% set routing_path_template_field_dict = {"site-id": site_id} -%}
@@ -241,7 +236,6 @@ return =
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', ' '.join(bt5_default_list))) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url-list = {{ dumps(slapparameter_dict.get('cloudooo-url-list', default_cloudooo_url_list)) }}
-config-caucase-url = {{ dumps(caucase_url) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-selenium-server-configuration-dict = {{ dumps(slapparameter_dict.get('selenium-server-configuration-dict', {})) }}
@@ -444,7 +438,7 @@ config-allow-redirects = 0
 
 {%- endif %}
 
-{% set balancer_ret_dict = {'monitor-base-url': False} -%}
+{% set balancer_ret_dict = {'monitor-base-url': False, 'caucase-http-url': False} -%}
 {% for family in zope_family_dict -%}
 {%   do balancer_ret_dict.__setitem__(family, False) -%}
 {%   do balancer_ret_dict.__setitem__(family + '-v6', False) -%}
@@ -492,7 +486,7 @@ config-allow-redirects = 0
   ret=balancer_ret_dict,
   key_config=balancer_key_config_dict,
 ) }}
-
+{% do publish_dict.__setitem__('caucase-http-url', '${request-balancer:connection-caucase-http-url}' ) -%}
 
 {% endif -%}{# if zope_partition_dict -#}
 

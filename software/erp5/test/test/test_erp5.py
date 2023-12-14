@@ -51,7 +51,7 @@ import urllib3
 from slapos.testing.utils import CrontabMixin
 import zc.buildout.configparser
 
-from . import ERP5InstanceTestCase, default, matrix, neo, setUpModule
+from . import CaucaseService, ERP5InstanceTestCase, default, matrix, neo, setUpModule
 
 setUpModule # pyflakes
 
@@ -99,6 +99,22 @@ class TestPublishedURLIsReachableMixin:
       self.assertEqual(r.status_code, requests.codes.ok)
       self.assertIn("ERP5", r.text)
 
+  def _getCaucaseServiceCACertificate(self):
+    ca_cert = tempfile.NamedTemporaryFile(
+      prefix="ca.crt.pem",
+      mode="w",
+      delete=False,
+    )
+    ca_cert.write(
+      requests.get(
+        urllib.parse.urljoin(
+          self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
+          '/cas/crt/ca.crt.pem',
+        )).text)
+    ca_cert.flush()
+    self.addCleanup(os.unlink, ca_cert.name)
+    return ca_cert.name
+
   def test_published_family_default_v6_is_reachable(self):
     """Tests the IPv6 URL published by the root partition is reachable.
     """
@@ -106,7 +122,7 @@ class TestPublishedURLIsReachableMixin:
     self._checkERP5IsReachable(
       param_dict['family-default-v6'],
       param_dict['site-id'],
-      verify=False,
+      self._getCaucaseServiceCACertificate(),
     )
 
   def test_published_family_default_v4_is_reachable(self):
@@ -116,7 +132,7 @@ class TestPublishedURLIsReachableMixin:
     self._checkERP5IsReachable(
       param_dict['family-default'],
       param_dict['site-id'],
-      verify=False,
+      self._getCaucaseServiceCACertificate(),
     )
 
   def test_published_frontend_default_is_reachable(self):
@@ -126,7 +142,7 @@ class TestPublishedURLIsReachableMixin:
     self._checkERP5IsReachable(
       param_dict['url-frontend-default'],
       param_dict['site-id'],
-      verify=False,
+      self._getCaucaseServiceCACertificate(),
     )
 
 
@@ -157,6 +173,70 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     self.assertEqual(
       installed['request-frontend-default']['connection-secure_access'],
       self.getRootPartitionConnectionParameterDict()['url-frontend-default'])
+
+
+class TestExternalCaucase(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test providing the URL of an external caucase in parameters.
+  """
+  __partition_reference__ = 'ec'
+
+  @classmethod
+  def getInstanceParameterDict(cls) -> dict:
+    caucase_url = cls.getManagedResource("caucase", CaucaseService).url
+    return {'_': json.dumps({'caucase': {'url': caucase_url}})}
+
+  def test_published_caucase_http_url_parameter(self) -> None:
+    self.assertEqual(
+      self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
+      self.getManagedResource("caucase", CaucaseService).url,
+    )
+
+
+class TestReinstantiateWithExternalCaucase(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test providing the URL of an external caucase in parameters after
+  the initial instantiation.
+  """
+  __partition_reference__ = 'sc'
+
+  def test_switch_to_external_caucase(self) -> None:
+    # this also waits that ERP5 is fully ready
+    self.test_published_frontend_default_is_reachable()
+
+    external_caucase_url = self.getManagedResource("caucase", CaucaseService).url
+    partition_parameter_kw = {
+      '_':
+      json.dumps(
+        dict(
+          json.loads(self.getInstanceParameterDict()['_']),
+          caucase={'url': external_caucase_url}))
+    }
+    def rerequest():
+      return self.slap.request(
+        software_release=self.getSoftwareURL(),
+        software_type=self.getInstanceSoftwareType(),
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        state='started')
+
+    rerequest()
+    self.slap.waitForInstance(max_retry=10)
+
+    self.assertEqual(
+      json.loads(rerequest().getConnectionParameterDict()['_'])['caucase-http-url'],
+      external_caucase_url)
+
+    with tempfile.NamedTemporaryFile(mode="w") as ca_cert:
+      ca_cert.write(
+        requests.get(
+          urllib.parse.urljoin(
+            external_caucase_url,
+            '/cas/crt/ca.crt.pem',
+          )).text)
+      ca_cert.flush()
+
+      requests.get(
+        self.getRootPartitionConnectionParameterDict()['url-frontend-default'],
+        verify=ca_cert.name).raise_for_status()
 
 
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):

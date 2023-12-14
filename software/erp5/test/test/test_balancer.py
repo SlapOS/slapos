@@ -1,18 +1,29 @@
 import glob
+import ipaddress
 import json
 import logging
 import os
 import re
+import socket
 import subprocess
+import sqlite3
+import tempfile
 import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 from unittest import mock
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+import OpenSSL.SSL
 import pexpect
 import psutil
 import requests
 
+from slapos.proxy.db_version import DB_VERSION
 from slapos.testing.utils import CrontabMixin, ManagedHTTPServer
 
 from . import CaucaseCertificate, CaucaseService, ERP5InstanceTestCase, default, matrix, setUpModule
@@ -100,9 +111,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
         },
         'dummy_http_server': [[cls.getManagedResource("backend_web_server", EchoHTTPServer).netloc, 1, False]],
         'ssl-authentication-dict': {'default': False},
-        'ssl': {
-            'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
-        },
+        'ssl': {},
         'timeout-dict': {'default': None},
         'family-path-routing-dict': {},
         'path-routing-list': [],
@@ -492,6 +501,155 @@ class TestHTTP(BalancerTestCase):
       ])
 
 
+class TestServerTLSEmbeddedCaucase(BalancerTestCase):
+  """Check Server TLS with embedded caucase
+  """
+  __partition_reference__ = 's'
+  def _getCaucaseCACertificatePath(self) -> str:
+    """Returns the path of the caucase certificate on file system.
+    """
+    ca_cert = tempfile.NamedTemporaryFile(
+      prefix="ca.crt.pem",
+      mode="w",
+      delete=False,
+    )
+    ca_cert.write(
+      requests.get(
+        urllib.parse.urljoin(
+          self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
+          '/cas/crt/ca.crt.pem',
+        )).text)
+    ca_cert.flush()
+    self.addCleanup(os.unlink, ca_cert.name)
+    return ca_cert.name
+
+  def _getServerCertificate(self, hostname: str, port: int) -> x509.base.Certificate:
+    sock = socket.socket(socket.AF_INET6 if ':' in hostname else socket.AF_INET)
+    sock.connect((hostname, port))
+    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+    sock_ssl = OpenSSL.SSL.Connection(ctx, sock)
+    sock_ssl.set_connect_state()
+    sock_ssl.set_tlsext_host_name(hostname.encode())
+    sock_ssl.do_handshake()
+    cert = sock_ssl.get_peer_certificate()
+    crypto_cert = cert.to_cryptography()
+    sock_ssl.close()
+    sock.close()
+    return crypto_cert
+
+  def test_certificate_validates_with_caucase_ca(self) -> None:
+    requests.get(self.default_balancer_url, verify=self._getCaucaseCACertificatePath())
+
+  def test_certificate_renewal(self) -> None:
+    balancer_parsed_url = urllib.parse.urlparse(self.default_balancer_url)
+    certificate_before_renewal = self._getServerCertificate(
+      balancer_parsed_url.hostname,
+      balancer_parsed_url.port)
+
+    # run caucase updater in the future, so that certificate is renewed
+    caucase_updater, = glob.glob(
+      os.path.join(
+        self.computer_partition_root_path,
+        'etc',
+        'service',
+        'caucase-updater-haproxy-certificate-*',
+      ))
+    process = pexpect.spawnu("faketime +90days " + caucase_updater)
+    logger = self.logger
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from caucase_updater: %s", msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+    process.expect("Renewing .*\nNext wake-up.*")
+    process.terminate()
+    process.wait()
+
+    # wait for server to use new certificate
+    for _ in range(30):
+      certificate_after_renewal = self._getServerCertificate(
+        balancer_parsed_url.hostname,
+        balancer_parsed_url.port)
+      if certificate_after_renewal.not_valid_before > certificate_before_renewal.not_valid_before:
+        break
+      time.sleep(.5)
+
+    self.assertGreater(
+      certificate_after_renewal.not_valid_before,
+      certificate_before_renewal.not_valid_before,
+    )
+
+    # requests are served properly after certificate renewal
+    self.test_certificate_validates_with_caucase_ca()
+
+
+class TestServerTLSExternalCaucase(TestServerTLSEmbeddedCaucase):
+  """Check Server TLS with external caucase
+  """
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict['ssl']['caucase-url'] = cls.getManagedResource(
+      "caucase", CaucaseService).url
+    return parameter_dict
+
+  def test_published_caucase_http_url_parameter(self) -> None:
+    self.assertEqual(
+      self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
+      self.getManagedResource("caucase", CaucaseService).url,
+    )
+
+
+class TestServerTLSCSRTemplateParameter(TestServerTLSExternalCaucase):
+  """Check Server TLS with a CSR template passed as parameter
+  """
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    # use a CSR template with this subject, we'll assert that the
+    # certificate used by haproxy has same subject.
+    cls.csr_subject = subject = x509.Name(
+      [x509.NameAttribute(NameOID.COMMON_NAME, cls.__name__)])
+
+    # Add all IPs of the computer in SubjectAlternativeName, we don't
+    # know what will be the IP of the balancer partition.
+    with sqlite3.connect(cls.slap._proxy_database) as db:
+      ip_address_list = [
+        x509.IPAddress(ipaddress.ip_address(r)) for (r, ) in db.execute(
+          f"SELECT address FROM partition_network{DB_VERSION}").fetchall()
+      ]
+    assert ip_address_list
+
+    csr = x509.CertificateSigningRequestBuilder().subject_name(
+      subject).add_extension(
+        x509.SubjectAlternativeName(ip_address_list),
+        critical=True,
+      ).sign(
+        rsa.generate_private_key(
+          public_exponent=65537,
+          key_size=2048,
+          backend=default_backend(),
+        ),
+        hashes.SHA256(),
+        default_backend(),
+      )
+
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict['ssl']['csr'] = csr.public_bytes(serialization.Encoding.PEM).decode()
+    return parameter_dict
+
+  def test_certificate_validates_with_caucase_ca(self) -> None:
+    super().test_certificate_validates_with_caucase_ca()
+    balancer_parsed_url = urllib.parse.urlparse(self.default_balancer_url)
+    cert = self._getServerCertificate(
+      balancer_parsed_url.hostname,
+      balancer_parsed_url.port,
+    )
+    self.assertEqual(
+      cert.subject.rfc4514_string(),
+      self.csr_subject.rfc4514_string())
+
+
 class ContentTypeHTTPServer(ManagedHTTPServer):
   """An HTTP/1.1 Server which reply with content type from path.
 
@@ -722,8 +880,8 @@ class TestClientTLS(BalancerTestCase):
       self.assertEqual(_make_request()['Incoming Headers'].get('remote-user'),
                        client_certificate_name)
 
-      # We have two services, in charge of updating CRL and CA certificates for
-      # each frontend CA
+      # We have two services in charge of updating CRL and CA certificates for
+      # each frontend CA, plus the one for the balancer's own certificate
       caucase_updater_list = glob.glob(
           os.path.join(
               self.computer_partition_root_path,
@@ -731,7 +889,7 @@ class TestClientTLS(BalancerTestCase):
               'service',
               'caucase-updater-*',
           ))
-      self.assertEqual(len(caucase_updater_list), 2)
+      self.assertEqual(len(caucase_updater_list), 3)
 
       # find the one corresponding to this caucase
       for caucase_updater_candidate in caucase_updater_list:

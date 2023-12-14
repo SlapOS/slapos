@@ -514,7 +514,7 @@
           "properties": {
             "url": {
               "title": "Caucase URL",
-              "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+              "description": "URL of existing caucase instance to use. If empty, caucase instances will be deployed inside partitions.",
               "default": "",
               "type": "string",
               "format": "uri"
@@ -721,15 +721,9 @@
               },
               "uniqueItems": true
             },
-            "caucase-url": {
-              "title": "Caucase URL",
-              "description": "URL of caucase service to use. If not set, global setting will be used.",
-              "type": "string",
-              "format": "uri"
-            },
             "csr": {
               "title": "csr",
-              "description": "PEM-encoded certificate signature request to request server certificate with. If not provided, HTTPS will be disabled.",
+              "description": "PEM-encoded certificate signature request to request server certificate with.",
               "type": "string"
             },
             "max-crl-update-delay": {
