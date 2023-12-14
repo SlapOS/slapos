@@ -81,7 +81,6 @@ environment +=
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
   PYTHONUNBUFFERED=1
   INSTANCE_HOME=${:instance-home}
-  CAUCASE={{ slapparameter_dict['caucase-url'] }}
   FONTCONFIG_FILE=${fontconfig-conf:output}
   JUPYTER_PATH=${directory:jupyter-dir}
   JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
