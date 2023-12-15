@@ -13,7 +13,7 @@
     },
     "ru": {
       "title": "→  Radio Unit",
-      "description": "Configuration of Radio Unit attached to eNB/gNB or UEsim",
+      "description": "Configuration of Radio Unit attached to eNB/gNB",
       "software-type": "enb",
       "shared": true,
       "request": "ru/input-schema.json",
@@ -61,7 +61,11 @@
       "index": 7
     },
     "ue/ru": {
-      "$ref": "#/software-type/ru",
+      "title": "→  Radio Unit",
+      "description": "Configuration of Radio Unit attached to UEsim",
+      "software-type": "ue",
+      "shared": true,
+      "request": "ru/input-schema.json",
       "index": 8
     },
     "ue": {
