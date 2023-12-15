@@ -9,7 +9,7 @@
       "description": "eNodeB Configuration",
       "request": "instance-ors-enb-input-schema.json",
       "response": "instance-ors-enb-schema.json",
-      "index": 0
+      "index": 1
     },
     "gnb": {
       "title": "gNB",
@@ -17,7 +17,7 @@
       "description": "gNodeB Configuration",
       "request": "instance-ors-gnb-input-schema.json",
       "response": "instance-ors-gnb-schema.json",
-      "index": 1
+      "index": 2
     },
     "core-network": {
       "title": "Core Network",
@@ -25,7 +25,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 2
+      "index": 3
     },
     "core-network-slave": {
       "title": "Core Network Sim Card",
@@ -34,7 +34,7 @@
       "request": "sim/input-schema.json",
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
-      "index": 3
+      "index": 4
     }
   }
 }
