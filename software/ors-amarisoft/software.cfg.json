@@ -12,7 +12,7 @@
       "index": 0
     },
     "ru": {
-      "title": "  Radio Unit  (eNB/gNB, UEsim)",
+      "title": "_  Radio Unit  (eNB/gNB, UEsim)",
       "description": "Configuration of Radio Unit attached to eNB/gNB or UEsim",
       "software-type": "enb",
       "shared": true,
