@@ -1,5 +1,5 @@
 {
-  "name": "Amarisoft",
+  "name": "Amarisoft stack",
   "description": "4G and 5G amarisoft stack",
   "serialisation": "json-in-xml",
   "software-type": {
@@ -12,7 +12,7 @@
       "index": 1
     },
     "ru": {
-      "title": "→  Radio Unit",
+      "title": "→  eNB/gNB | Radio Unit",
       "description": "Configuration of Radio Unit attached to eNB/gNB",
       "software-type": "enb",
       "shared": true,
@@ -20,7 +20,7 @@
       "index": 2
     },
     "cell": {
-      "title": "→ Cell",
+      "title": "→ eNB/gNB | Cell",
       "description": "Configuration of Cell served by eNB/gNB",
       "software-type": "enb",
       "shared": true,
@@ -28,7 +28,7 @@
       "index": 3
     },
     "cell/peer": {
-      "title": "→ Peer Cell",
+      "title": "→ eNB/gNB | Peer Cell",
       "description": "Handover information about Peer Cell served by nearby eNB/gNB",
       "software-type": "enb",
       "shared": true,
@@ -44,7 +44,7 @@
       "index": 5
     },
     "core-network-slave": {
-      "title": "→ Sim Card",
+      "title": "→ Core Network | Sim Card",
       "description": "Core Network Sim Card Configuration",
       "software-type": "core-network",
       "request": "sim/input-schema.json",
@@ -61,7 +61,7 @@
       "index": 7
     },
     "ue/ru": {
-      "title": "→  Radio Unit",
+      "title": "→ UEsim | Radio Unit",
       "description": "Configuration of Radio Unit attached to UEsim",
       "software-type": "ue",
       "shared": true,
@@ -69,7 +69,7 @@
       "index": 8
     },
     "ue": {
-      "title": "→ UE",
+      "title": "→ UEsim | UE",
       "description": "Configuration of UE simulated by UEsim",
       "software-type": "ue",
       "shared": true,
@@ -77,7 +77,7 @@
       "index": 9
     },
     "ue/cell": {
-      "title": "→ UE Cell",
+      "title": "→ UEsim | UE Cell",
       "description": "Information about Cell to which UEsim attaches",
       "software-type": "ue",
       "shared": true,
