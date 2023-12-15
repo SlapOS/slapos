@@ -12,25 +12,28 @@
       "index": 0
     },
     "ru": {
-      "title": "_  Radio Unit  (eNB/gNB, UEsim)",
+      "title": "→  Radio Unit",
       "description": "Configuration of Radio Unit attached to eNB/gNB or UEsim",
       "software-type": "enb",
       "shared": true,
-      "request": "ru/input-schema.json"
+      "request": "ru/input-schema.json",
+      "index": 1
     },
     "cell": {
-      "title": "_ Cell  (eNB/gNB)",
+      "title": "→ Cell",
       "description": "Configuration of Cell served by eNB/gNB",
       "software-type": "enb",
       "shared": true,
-      "request": "cell/input-schema.json"
+      "request": "cell/input-schema.json",
+      "index": 2
     },
     "cell/peer": {
-      "title": "_ Peer Cell  (eNB/gNB)",
+      "title": "→ Peer Cell",
       "description": "Handover information about Peer Cell served by nearby eNB/gNB",
       "software-type": "enb",
       "shared": true,
-      "request": "cell/peer/input-schema.json"
+      "request": "cell/peer/input-schema.json",
+      "index": 3
     },
     "core-network": {
       "title": "Core Network",
@@ -38,16 +41,16 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 2
+      "index": 4
     },
     "core-network-slave": {
-      "title": "_ Sim Card (Core Network)",
+      "title": "→ Sim Card",
       "description": "Core Network Sim Card Configuration",
       "software-type": "core-network",
       "request": "sim/input-schema.json",
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
-      "index": 3
+      "index": 5
     },
     "uesim": {
       "title": "UEsim",
@@ -55,21 +58,27 @@
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
-      "index": 4
+      "index": 6
+    },
+    "ue/ru": {
+      "$ref": "#/software-type/ru",
+      "index": 7
     },
     "ue": {
-      "title": "_ UE  (UEsim)",
+      "title": "→ UE",
       "description": "Configuration of UE simulated by UEsim",
       "software-type": "ue",
       "shared": true,
-      "request": "ue/input-schema.json"
+      "request": "ue/input-schema.json",
+      "index": 8
     },
     "ue/cell": {
-      "title": "_ UE Cell  (UEsim)",
+      "title": "→ UE Cell",
       "description": "Information about Cell to which UEsim attaches",
       "software-type": "ue",
       "shared": true,
-      "request": "ue/cell/input-schema.json"
+      "request": "ue/cell/input-schema.json",
+      "index": 9
     }
   }
 }
