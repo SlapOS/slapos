@@ -19,14 +19,14 @@
       "request": "ru/input-schema.json"
     },
     "cell": {
-      "title": "Cell",
+      "title": "_ Cell  (eNB/gNB)",
       "description": "Configuration of Cell served by eNB/gNB",
       "software-type": "enb",
       "shared": true,
       "request": "cell/input-schema.json"
     },
     "cell/peer": {
-      "title": "Peer Cell",
+      "title": "_ Peer Cell  (eNB/gNB)",
       "description": "Handover information about Peer Cell served by nearby eNB/gNB",
       "software-type": "enb",
       "shared": true,
@@ -58,14 +58,14 @@
       "index": 4
     },
     "ue": {
-      "title": "UE",
+      "title": "_ UE  (UEsim)",
       "description": "Configuration of UE simulated by UEsim",
       "software-type": "ue",
       "shared": true,
       "request": "ue/input-schema.json"
     },
     "ue/cell": {
-      "title": "UE Cell",
+      "title": "_ UE Cell  (UEsim)",
       "description": "Information about Cell to which UEsim attaches",
       "software-type": "ue",
       "shared": true,
