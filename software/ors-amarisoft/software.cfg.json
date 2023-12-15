@@ -25,7 +25,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "cell/input-schema.json",
-      "index": 2
+      "index": 3
     },
     "cell/peer": {
       "title": "→ Peer Cell",
@@ -33,7 +33,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "cell/peer/input-schema.json",
-      "index": 3
+      "index": 4
     },
     "core-network": {
       "title": "Core Network",
@@ -41,7 +41,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 4
+      "index": 5
     },
     "core-network-slave": {
       "title": "→ Sim Card",
@@ -50,7 +50,7 @@
       "request": "sim/input-schema.json",
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
-      "index": 5
+      "index": 6
     },
     "uesim": {
       "title": "UEsim",
@@ -58,11 +58,11 @@
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
-      "index": 6
+      "index": 7
     },
     "ue/ru": {
       "$ref": "#/software-type/ru",
-      "index": 7
+      "index": 8
     },
     "ue": {
       "title": "→ UE",
@@ -70,7 +70,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ue/input-schema.json",
-      "index": 8
+      "index": 9
     },
     "ue/cell": {
       "title": "→ UE Cell",
@@ -78,7 +78,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ue/cell/input-schema.json",
-      "index": 9
+      "index": 10
     }
   }
 }
