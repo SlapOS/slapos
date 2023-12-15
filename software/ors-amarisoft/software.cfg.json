@@ -4,7 +4,7 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "enb": {
-      "title": "eNB/gNB XXX + neigh  ...",
+      "title": "eNB/gNB",
       "software-type": "enb",
       "description": "eNodeB/gNodeB Configuration",
       "request": "instance-enb-input-schema.json",
@@ -12,7 +12,7 @@
       "index": 0
     },
     "enb-slave": {
-      "title": "eNB/gNB shared instance ...",
+      "title": "eNB/gNB | Shared Instance",
       "software-type": "core-network",
       "description": "XXX",
       "request": "instance-enb-slave-input-schema.json"
