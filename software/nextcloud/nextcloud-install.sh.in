@@ -140,4 +140,4 @@ if [ -f "{{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL" ]; then
   rm {{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL
 fi
 
-date > {{ parameter_dict['nextcloud'] }}/.slapos-install-done
+date > {{ parameter_dict['installed-file'] }}
