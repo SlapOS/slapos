@@ -11,14 +11,8 @@
       "response": "instance-enb-schema.json",
       "index": 0
     },
-    "enb-slave": {
-      "title": "eNB/gNB | Shared Instance",
-      "software-type": "core-network",
-      "description": "XXX",
-      "request": "instance-enb-slave-input-schema.json"
-    },
     "ru": {
-      "title": "Radio Unit",
+      "title": "  Radio Unit  (eNB/gNB, UEsim)",
       "description": "Configuration of Radio Unit attached to eNB/gNB or UEsim",
       "software-type": "enb",
       "shared": true,
