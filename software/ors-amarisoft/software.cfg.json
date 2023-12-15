@@ -41,10 +41,10 @@
       "index": 2
     },
     "core-network-slave": {
-      "title": "Core Network Sim Card",
+      "title": "_ Sim Card (Core Network)",
       "description": "Core Network Sim Card Configuration",
       "software-type": "core-network",
-      "request": "instance-core-network-slave-input-schema.json",
+      "request": "sim/input-schema.json",
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
       "index": 3
