@@ -9,7 +9,7 @@
       "description": "eNodeB/gNodeB Configuration",
       "request": "instance-enb-input-schema.json",
       "response": "instance-enb-schema.json",
-      "index": 0
+      "index": 1
     },
     "ru": {
       "title": "→  Radio Unit",
@@ -17,7 +17,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "ru/input-schema.json",
-      "index": 1
+      "index": 2
     },
     "cell": {
       "title": "→ Cell",
