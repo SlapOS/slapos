@@ -12,7 +12,7 @@
 
   "properties": {
     "ru_type": {
-      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properies/ru_type",
+      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_type",
       "const":    "sdr",
       "template": "sdr"
     },
