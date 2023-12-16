@@ -31,8 +31,8 @@
         "$ref": "#/$defs/ru-common/properties/cpri_link/properties",
         "mapping": {
           "$ref": "#/$defs/ru-common/properties/cpri_link/properties/mapping",
-          "const":   "hw",
-          "enum":   ["hw"],
+          "const":    "hw",
+          "template": "hw",
           "options":  { "hidden": true }
         }
       }
