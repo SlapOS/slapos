@@ -30,7 +30,7 @@
       "properties": {
         "$ref": "#/$defs/ru-common/properties/cpri_link/properties",
         "mapping": {
-          "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link/properties/mapping",
+          "$ref": "#/$defs/ru-common/properties/cpri_link/properties/mapping",
           "const":   "hw",
           "enum":   ["hw"],
           "options":  { "hidden": true }
