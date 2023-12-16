@@ -18,22 +18,24 @@
     },
 
     "n_antenna_dl": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_dl",
-                      "default": 2
+      "default": 2
     },
     "n_antenna_ul": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_ul",
-                      "default": 2
+      "default": 2
     },
     "tx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
     "rx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
     "txrx_active":  { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/txrx_active" },
     "cpri_link":    { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link",
-                      "properties": {
-                        "mapping": {
-                          "const":   "hw",
-                          "enum":   ["hw"],
-                          "options":  { "hidden": true }
-                        }
-                      }
+      "properties": {
+        "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link/properties",
+        "mapping": {
+          "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link/properties/mapping",
+          "const":   "hw",
+          "enum":   ["hw"],
+          "options":  { "hidden": true }
+        }
+      }
     },
 
     "mac_addr": {
