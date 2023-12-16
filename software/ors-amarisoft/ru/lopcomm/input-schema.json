@@ -26,17 +26,14 @@
     "tx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
     "rx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
     "txrx_active":  { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/txrx_active" },
-    "cpri_link":    { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link" },
-
-    "cpri_link": {
-      "type": "object",
-      "properties": {
-        "mapping": {
-          "const":   "hw",
-          "enum":   ["hw"],
-          "options":  { "hidden": true }
-        }
-      }
+    "cpri_link":    { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link",
+                      "properties": {
+                        "mapping": {
+                          "const":   "hw",
+                          "enum":   ["hw"],
+                          "options":  { "hidden": true }
+                        }
+                      }
     },
 
     "mac_addr": {
