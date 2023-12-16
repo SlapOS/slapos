@@ -9,34 +9,36 @@
   ],
 
   "properties": {
+    "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties",
+
     "ru_type": {
-      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_type",
+      "$ref": "#/$defs/ru-common/properties/ru_type",
       "const":    "sunwave",
       "template": "sunwave"
     },
     "ru_link_type": {
-      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_link_type",
+      "$ref": "#/$defs/ru-common/properties/ru_link_type",
       "const":    "cpri",
       "template": "cpri"
     },
 
-    "n_antenna_dl": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_dl",
+    "n_antenna_dl": {
+      "$ref": "#/$defs/ru-common/properties/n_antenna_dl",
       "default": 4
     },
-    "n_antenna_ul": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_ul",
+    "n_antenna_ul": {
+      "$ref": "#/$defs/ru-common/properties/n_antenna_ul",
       "default": 4
     },
-    "tx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
-    "rx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
-    "txrx_active":  { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/txrx_active" },
-    "cpri_link":    { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link",
+    "cpri_link": {
+      "$ref": "#/$defs/ru-common/properties/cpri_link",
       "properties": {
         "$ref": "#/$defs/ru-common/properties/cpri_link/properties",
         "mapping": {
           "$ref": "#/$defs/ru-common/properties/cpri_link/properties/mapping",
           "const":    "bf1",
           "enum":     ["bf1"],
-          "options":  { "hidden": true }
+          "options":  { "hidden": false }
         }
       }
     }
