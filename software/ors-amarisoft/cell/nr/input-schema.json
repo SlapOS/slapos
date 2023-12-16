@@ -3,7 +3,6 @@
 
   "title": "NR Cell",
   "type": "object",
-  "$ref": "../../cell/input-schema.json#/$defs/cell-common",
 
   "required": [
     "bandwidth",
@@ -11,7 +10,10 @@
     "nr_band"
   ],
   "properties": {
+    "$ref": "../../cell/input-schema.json#/$defs/cell-common/properties",
+
     "cell_type": {
+      "$ref": "#/$defs/cell-common/properties",
       "const":    "nr",
       "template": "nr"
     },
@@ -64,6 +66,7 @@
       "default": "10000000"
     },
     "pci": {
+      "$ref": "#/$defs/cell-common/properties/pci",
       "default": 500
     }
   }
