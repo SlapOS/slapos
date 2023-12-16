@@ -3,7 +3,6 @@
 
   "title": "Sunwave M2RU",
   "type": "object",
-  "$ref": "../../ru/input-schema.json#/$defs/ru-common",
 
   "required": [
   ],
@@ -38,7 +37,7 @@
           "$ref": "#/$defs/ru-common/properties/cpri_link/properties/mapping",
           "const":    "bf1",
           "enum":     ["bf1"],
-          "options":  { "hidden": false }
+          "options":  { "hidden": true }
         }
       }
     }
