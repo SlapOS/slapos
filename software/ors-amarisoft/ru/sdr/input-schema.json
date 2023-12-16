@@ -23,7 +23,7 @@
       "template": "sdr"
     },
 
-    "n_antenna_dl": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_dl" },
+    "n_antenna_dl": { "$ref": "#/$defs/ru-common/properties/n_antenna_dl" },
     "n_antenna_ul": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_ul" },
     "tx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
     "rx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
