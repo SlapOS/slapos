@@ -159,6 +159,7 @@ environment =
   FONTCONFIG_FILE = ${fontconfig-conf:output}
   PATH = ${binary-link:target-directory}
   LANG = C.UTF-8
+  XDG_DATA_DIRS = disabled
 mimetype_entry_addition =
 {% for entry in mimetype_entry_addition.splitlines() -%}
 {{ "  " ~ entry.strip() }}
