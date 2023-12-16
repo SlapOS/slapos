@@ -57,6 +57,7 @@
       "type": "integer"
     },
     "pci": {
+      "$ref": "#/$defs/cell-common/properties/pci",
       "default": 1
     },
     "tac": {
