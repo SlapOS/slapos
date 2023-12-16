@@ -28,7 +28,7 @@
     "txrx_active":  { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/txrx_active" },
     "cpri_link":    { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link",
       "properties": {
-        "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link/properties",
+        "$ref": "#/$defs/ru-common/properties/cpri_link/properties",
         "mapping": {
           "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link/properties/mapping",
           "const":   "hw",
