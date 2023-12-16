@@ -24,11 +24,11 @@
     },
 
     "n_antenna_dl": { "$ref": "#/$defs/ru-common/properties/n_antenna_dl" },
-    "n_antenna_ul": { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/n_antenna_ul" },
-    "tx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/tx_gain" },
-    "rx_gain":      { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/rx_gain" },
-    "txrx_active":  { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/txrx_active" },
-    "cpri_link":    { "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/cpri_link" },
+    "n_antenna_ul": { "$ref": "#/$defs/ru-common/properties/n_antenna_ul" },
+    "tx_gain":      { "$ref": "#/$defs/ru-common/properties/tx_gain" },
+    "rx_gain":      { "$ref": "#/$defs/ru-common/properties/rx_gain" },
+    "txrx_active":  { "$ref": "#/$defs/ru-common/properties/txrx_active" },
+    "cpri_link":    { "$ref": "#/$defs/ru-common/properties/cpri_link" },
 
     "sdr_dev_list": {
       "title": "SDR boards",
