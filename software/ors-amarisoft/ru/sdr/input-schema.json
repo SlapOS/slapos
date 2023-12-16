@@ -10,13 +10,15 @@
   ],
 
   "properties": {
+    "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties",
+
     "ru_type": {
-      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_type",
+      "$ref": "#/$defs/ru-common/properties/ru_type",
       "const":    "sdr",
       "template": "sdr"
     },
     "ru_link_type": {
-      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_link_type",
+      "$ref": "#/$defs/ru-common/properties/ru_link_type",
       "const":    "sdr",
       "template": "sdr"
     },
