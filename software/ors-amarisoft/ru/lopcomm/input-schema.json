@@ -3,15 +3,16 @@
 
   "title": "Loopcom ORAN",
   "type": "object",
-  "$ref": "../../ru/input-schema.json#/$defs/ru-common",
 
   "required": ["mac_addr"],
   "properties": {
     "ru_type": {
+      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_type",
       "const":    "lopcomm",
       "template": "lopcomm"
     },
     "ru_link_type": {
+      "$ref": "../../ru/input-schema.json#/$defs/ru-common/properties/ru_link_type",
       "const":    "cpri",
       "template": "cpri"
     },
