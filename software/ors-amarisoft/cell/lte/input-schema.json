@@ -3,7 +3,6 @@
 
   "title": "LTE Cell",
   "type": "object",
-  "$ref": "../../cell/input-schema.json#/$defs/cell-common",
 
   "required": [
     "bandwidth",
@@ -11,7 +10,10 @@
     "tac"
   ],
   "properties": {
+    "$ref": "../../cell/input-schema.json#/$defs/cell-common/properties",
+
     "cell_type": {
+      "$ref": "#/$defs/cell-common/properties/cell_type",
       "const":    "lte",
       "template": "lte"
     },
