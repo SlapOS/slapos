@@ -23,13 +23,6 @@
       "template": "sdr"
     },
 
-    "n_antenna_dl": { "$ref": "#/$defs/ru-common/properties/n_antenna_dl" },
-    "n_antenna_ul": { "$ref": "#/$defs/ru-common/properties/n_antenna_ul" },
-    "tx_gain":      { "$ref": "#/$defs/ru-common/properties/tx_gain" },
-    "rx_gain":      { "$ref": "#/$defs/ru-common/properties/rx_gain" },
-    "txrx_active":  { "$ref": "#/$defs/ru-common/properties/txrx_active" },
-    "cpri_link":    { "$ref": "#/$defs/ru-common/properties/cpri_link" },
-
     "sdr_dev_list": {
       "title": "SDR boards",
       "description": "Which SDR boards to use as combined RF port",
