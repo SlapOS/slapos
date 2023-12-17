@@ -10,10 +10,10 @@
     "nr_band"
   ],
   "properties": {
-    "$ref": "../../cell/input-schema.json#/$defs/cell-common/properties",
+    "$ref": "../../cell/common.json#/properties",
 
     "cell_type": {
-      "$ref": "#/$defs/cell-common/properties",
+      "$ref": "#/properties/cell_type",
       "const":    "nr",
       "template": "nr"
     },
@@ -66,7 +66,7 @@
       "default": "10000000"
     },
     "pci": {
-      "$ref": "#/$defs/cell-common/properties/pci",
+      "$ref": "#/properties/pci",
       "default": 500
     }
   }
