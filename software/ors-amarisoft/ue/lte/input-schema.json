@@ -3,10 +3,12 @@
 
   "title": "LTE UE",
   "type": "object",
-  "$ref": "../../ue/input-schema.json#/$defs/ue-common",
 
   "properties": {
+    "$ref": "../../ue/common.json#/properties",
+
     "ue_type": {
+      "$ref": "#/properties/ue_type",
       "const":    "lte",
       "template": "lte"
     }
