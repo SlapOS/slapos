@@ -1,35 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "title": "Cell",
+  "title": "UE Cell",
   "type": "object",
   "oneOf": [
     { "$ref": "../../ue/cell/lte/input-schema.json" },
     { "$ref": "../../ue/cell/nr/input-schema.json" }
-  ],
-
-  "$defs": {
-    "ue-cell-common": {
-
-    "required": [
-      "ue_cell_type",
-      "rf_mode",
-      "ru"
-    ],
-
-    "properties": {
-        "ue_cell_type": {
-          "type": "string",
-          "options":  { "hidden": true }
-        },
-
-        "rf_mode": { "$ref": "../../cell/input-schema.json#/$defs/cell-common/properties/rf_mode" },
-
-        "ru": {
-          "$ref": "../../cell/input-schema.json#/$defs/ru-of-cell",
-          "propertyOrder": 9999
-        }
-      }
-    }
-  }
+  ]
 }
