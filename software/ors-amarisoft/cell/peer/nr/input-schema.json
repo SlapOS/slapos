@@ -3,7 +3,6 @@
 
   "title": "NR Peer Cell",
   "type": "object",
-  "$ref": "../../../cell/peer/input-schema.json#/$defs/peer-cell-common",
 
   "required": [
     "nr_cell_id",
@@ -17,6 +16,7 @@
 
   "properties": {
     "peer_cell_type": {
+      "$ref": "../../../cell/peer/common.json#/properties/peer_cell_type",
       "const":    "nr",
       "template": "nr"
     },
