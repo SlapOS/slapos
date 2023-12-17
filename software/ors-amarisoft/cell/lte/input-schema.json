@@ -10,10 +10,10 @@
     "tac"
   ],
   "properties": {
-    "$ref": "../../cell/input-schema.json#/$defs/cell-common/properties",
+    "$ref": "../../cell/common.json#/properties",
 
     "cell_type": {
-      "$ref": "#/$defs/cell-common/properties/cell_type",
+      "$ref": "#/properties/cell_type",
       "const":    "lte",
       "template": "lte"
     },
@@ -57,7 +57,7 @@
       "type": "integer"
     },
     "pci": {
-      "$ref": "#/$defs/cell-common/properties/pci",
+      "$ref": "#/properties/pci",
       "default": 1
     },
     "tac": {

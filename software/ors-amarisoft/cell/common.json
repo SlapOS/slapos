@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Cell. Common properties",
+  "type": "object",
+
+  "required": [
+    "cell_type",
+    "rf_mode",
+    "pci",
+    "cell_id",
+    "ru"
+  ],
+
+  "properties": {
+    "cell_type": {
+      "type": "string",
+      "options":  { "hidden": true }
+    },
+
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
+      "enum": ["fdd", "tdd"],
+      "propertyOrder": 101
+    },
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "integer"
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string",
+      "default": "0x01"
+    },
+    "root_sequence_index": {
+      "title": "Root Sequence Index",
+      "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+      "type": "integer",
+      "default": 204
+    },
+    "ru": {
+      "$ref": "#/$defs/ru-of-cell",
+      "propertyOrder": 9999
+    }
+  },
+
+  "$defs": {
+    "ru-of-cell": {
+      "title": "Radio Unit",
+      "oneOf": [
+        {
+          "title": "Shared Radio Unit",
+          "description": "Use radio unit defined in separate shared instance",
+          "type": "object",
+          "required": ["ru_type", "ru_ref"],
+          "properties": {
+            "ru_type": {
+                "const":    "ru_ref",
+                "template": "ru_ref",
+                "options":  { "hidden": true }
+            },
+            "ru_ref": {
+              "title": "RU Reference",
+              "description": "Reference of shared radio unit instance",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Shared Radio Unit of a Cell",
+          "description": "Use the same radio unit as referenced cell instance does",
+          "type": "object",
+          "required": ["ru_type", "ruincell_ref"],
+          "properties": {
+            "ru_type": {
+                "const":    "ruincell_ref",
+                "template": "ruincell_ref",
+                "options":  { "hidden": true }
+            },
+            "ruincell_ref": {
+              "title": "Cell Reference",
+              "description": "Reference of cell instance whose radio unit to share",
+              "type": "string"
+            }
+          }
+        },
+        { "$ref": "../ru/input-schema.json" }
+      ]
+    }
+  }
+}

@@ -6,22 +6,5 @@
   "oneOf": [
     { "$ref": "../../cell/peer/lte/input-schema.json" },
     { "$ref": "../../cell/peer/nr/input-schema.json" }
-  ],
-
-  "$defs": {
-    "peer-cell-common": {
-      "required": [
-        "peer_cell_type",
-        "pci",
-        "tac"
-      ],
-
-      "properties": {
-        "peer_cell_type": {
-          "type": "string",
-          "options":  { "hidden": true }
-        }
-      }
-    }
-  }
+  ]
 }
