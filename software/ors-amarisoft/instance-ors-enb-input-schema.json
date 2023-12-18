@@ -8,17 +8,17 @@
       "default": "20 MHz"
     },
     "n_antenna_dl": {
-      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/n_antenna_dl",
+      "$ref": "ru/common.json#/properties/n_antenna_dl",
       "enum": [1, 2],
       "default": 2
     },
     "n_antenna_ul": {
-      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/n_antenna_ul",
+      "$ref": "ru/common.json#/properties/n_antenna_ul",
       "enum": [1, 2],
       "default": 2
     },
     "rf_mode": {
-      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/rf_mode",
+      "$ref": "cell/common.json#/properties/rf_mode",
       "default": "tdd"
     },
     "tdd_ul_dl_config": {
@@ -28,11 +28,11 @@
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
     },
     "pci": {
-      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/pci",
+      "$ref": "cell/common.json#/properties/pci",
       "default": 1
     },
     "cell_id": {
-      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/cell_id",
+      "$ref": "cell/common.json#/properties/cell_id",
       "default": "0x01"
     },
     "tac": {
@@ -40,14 +40,14 @@
       "default": "0x0001"
     },
     "root_sequence_index": {
-      "$ref": "cell/input-schema.json#/$defs/cell-common/properties/root_sequence_index",
+      "$ref": "cell/common.json#/properties/root_sequence_index",
       "default": 204
     },
     "tx_gain": {
-      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/tx_gain"
+      "$ref": "ru/common.json#/properties/tx_gain"
     },
     "rx_gain": {
-      "$ref": "ru/input-schema.json#/$defs/ru-common/properties/rx_gain"
+      "$ref": "ru/common.json#/properties/rx_gain"
     },
     "enb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/enb_id",
