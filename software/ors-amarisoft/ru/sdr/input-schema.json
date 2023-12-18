@@ -6,6 +6,13 @@
   "type": "object",
 
   "required": [
+    "ru_type",
+    "ru_link_type",
+    "n_antenna_dl",
+    "n_antenna_ul",
+    "tx_gain",
+    "rx_gain",
+
     "sdr_dev_list"
   ],
 
