@@ -5,6 +5,12 @@
   "type": "object",
 
   "required": [
+    "cell_type",
+    "rf_mode",
+    "pci",
+    "cell_id",
+    "ru",
+
     "bandwidth",
     "dl_nr_arfcn",
     "nr_band"
