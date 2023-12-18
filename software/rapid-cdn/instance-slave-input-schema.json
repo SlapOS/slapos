@@ -1,9 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "properties": {
     "custom_domain": {
       "description": "Custom Domain to use for the website. Shall contain only letters, numbers and -, and can look like example.com, first2.example.com special-site.example.com.",
-      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "format": "idn-hostname",
       "title": "Custom Domain",
       "type": "string"
     },
