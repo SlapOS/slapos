@@ -3,7 +3,6 @@
 
   "title": "NR Cell",
   "type": "object",
-  "$ref": "../../../ue/cell/input-schema.json#/$defs/ue-cell-common",
 
   "required": [
     "dl_nr_arfcn",
@@ -14,8 +13,14 @@
 
   "properties": {
     "ue_cell_type": {
+      "$ref": "../../../ue/cell/common.json#/properties/ue_cell_type",
       "const":    "nr",
       "template": "nr"
+    },
+
+    "rf_mode": { "$ref": "../../../ue/cell/common.json#/properties/rf_mode" },
+    "ru":      { "$ref": "../../../ue/cell/common.json#/properties/ru",
+                  "propertyOrder": 9999"
     },
 
     "dl_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/properties/dl_nr_arfcn" },

@@ -17,7 +17,9 @@
     },
 
     "rf_mode": { "$ref": "../../../ue/cell/common.json#/properties/rf_mode" },
-    "ru":      { "$ref": "../../../ue/cell/common.json#/properties/ru" },
+    "ru":      { "$ref": "../../../ue/cell/common.json#/properties/ru",
+                  "propertyOrder": 9999"
+    },
 
     "dl_earfcn": { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
     "ul_earfcn": { "$ref": "../../../cell/lte/input-schema.json#/properties/ul_earfcn" },

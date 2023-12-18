@@ -17,10 +17,6 @@
     },
 
     "rf_mode": { "$ref": "../../cell/common.json#/properties/rf_mode" },
-
-    "ru": {
-      "$ref": "../../cell/common.json#/$defs/ru-of-cell",
-      "propertyOrder": 9999
-    }
+    "ru":      { "$ref": "../../cell/common.json#/$defs/ru-of-cell"   }
   }
 }
