@@ -5,6 +5,10 @@
   "type": "object",
 
   "required": [
+    "peer_cell_type",
+    "pci",
+    "tac",
+
     "nr_cell_id",
     "gnb_id_bits",
     "dl_nr_arfcn",
