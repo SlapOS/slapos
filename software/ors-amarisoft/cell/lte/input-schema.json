@@ -62,10 +62,6 @@
       "description": "Uplink E-UTRA Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_earfcn is chosen.",
       "type": "integer"
     },
-    "pci": {
-      "$ref": "#/properties/pci",
-      "default": 1
-    },
     "tac": {
       "title": "Tracking Area Code",
       "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",

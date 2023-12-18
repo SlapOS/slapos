@@ -70,10 +70,6 @@
       "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
       "type": "string",
       "default": "10000000"
-    },
-    "pci": {
-      "$ref": "#/properties/pci",
-      "default": 500
     }
   }
 }

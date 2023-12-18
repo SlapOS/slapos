@@ -15,6 +15,7 @@
     it should be kept in sync with "default" in json schemas  #}
 {#- XXX opc='milenage' is not meaningful ?  #}
 {#- XXX txrx_active=ACTIVE for sdr - needed ? (bwcompat for ORS) - if yes -> update ru/sdr/input-schema.json #}
+{#- XXX pci/tac -> move defaults to ORS (cell/* + peercell/*) #}
 {%- set defaults = {
       'enb_id': '0x1A2D0',
       'gnb_id': '0x12345',
@@ -31,6 +32,7 @@
         'pci':  1,
         'tac':  '0x0001',
       },
+
       'cell/lte/fdd': {
       },
       'cell/lte/tdd': {

@@ -12,10 +12,8 @@
     "nr_cell_id",
     "gnb_id_bits",
     "dl_nr_arfcn",
-    "ul_nr_arfcn",
-    "pci",
-    "tac",
-    "nr_band"
+    "nr_band",
+    "ul_nr_arfcn"
   ],
 
   "properties": {

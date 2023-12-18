@@ -10,10 +10,8 @@
     "tac",
 
     "e_cell_id",
-    "pci",
     "dl_earfcn",
-    "bandwidth",
-    "tac"
+    "bandwidth"
   ],
 
   "properties": {
