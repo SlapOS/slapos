@@ -92,7 +92,7 @@ class NextCloudTestCase(InstanceTestCase):
       mail_smtpname="",
       cli_url="https://[%s]:9988/" % self.nextcloud_ipv6,
       partition_dir=self.partition_dir,
-      trusted_domain_list=json.dumps(["[%s]:9988" % self.nextcloud_ipv6]),
+      trusted_domain_list=json.dumps(["[%s]:9988" % self.nextcloud_ipv6] * 2),
       trusted_proxy_list=[],
     )
     data_dict.update(config_dict)
@@ -309,8 +309,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       'instance.turn-server': 'turn.example.net:5439',
       'instance.turn-secret': 'c4f0ead40a49bbbac3c58f7b9b43990f78ebd96900757ae67e10190a3a6b6053',
       'instance.cli-url': 'nextcloud.example.com',
-      'instance.trusted-domain-1': 'nextcloud.example.com',
-      'instance.trusted-domain-2': 'nextcloud.proxy.com',
+      'instance.trusted-domain-list': 'nextcloud.example.com nextcloud.proxy.com',
       'instance.trusted-proxy-list': '2001:67c:1254:e:89::5df3 127.0.0.1 10.23.1.3',
     }
 
@@ -345,6 +344,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       cli_url="nextcloud.example.com",
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps([
+        "[%s]:9988" % self.nextcloud_ipv6,
         "[%s]:9988" % self.nextcloud_ipv6,
         "nextcloud.example.com",
         "nextcloud.proxy.com"
