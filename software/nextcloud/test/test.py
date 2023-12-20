@@ -33,6 +33,7 @@ import re
 
 from six.moves.urllib.parse import urlparse
 
+from slapos.grid.utils import md5digest
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -47,10 +48,14 @@ class NextCloudTestCase(InstanceTestCase):
   # calculated in setUp
   partition_dir = None
   nextcloud_path = None
+  software_release_path = None
 
   def setUp(self):
     # we want full diff when assertions fail
     self.maxDiff = None
+    self.software_release_path = os.path.join(
+      cls.slap.software_directory,
+      md5digest(self.getSoftwareURL()))
 
     # lookup the partition in which nextcloud was installed
     partition_path_list = glob.glob(os.path.join(
@@ -94,6 +99,7 @@ class NextCloudTestCase(InstanceTestCase):
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps(["[%s]:9988" % self.nextcloud_ipv6]),
       trusted_proxy_list=[],
+      software_release_path=os.path.join(self.software_release_path, "parts/ffmpeg/bin/ffmpeg"),
     )
     data_dict.update(config_dict)
 
@@ -177,7 +183,12 @@ class NextCloudTestCase(InstanceTestCase):
   "trashbin_retention_obligation": "auto, 7",
   "trusted_domains": %(trusted_domain_list)s,
   "trusted_proxies": %(trusted_proxy_list)s,
-  "updater.release.channel": "stable"
+  "updater.release.channel": "stable",
+  "preview_ffmpeg_path": "%(software_release_path)s",
+  "tempdirectory": "%(partition_dir)s/tmp",
+  "default_phone_region": "FR",
+  "default_locale": "en_US",
+  "default_timezone": "Europe/Paris"
 }"""
 
     return json.loads(template % data_dict)
@@ -309,8 +320,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       'instance.turn-server': 'turn.example.net:5439',
       'instance.turn-secret': 'c4f0ead40a49bbbac3c58f7b9b43990f78ebd96900757ae67e10190a3a6b6053',
       'instance.cli-url': 'nextcloud.example.com',
-      'instance.trusted-domain-1': 'nextcloud.example.com',
-      'instance.trusted-domain-2': 'nextcloud.proxy.com',
+      'instance.trusted-domain-list': 'nextcloud.example.com nextcloud.example.cn nextcloud.proxy.com',
       'instance.trusted-proxy-list': '2001:67c:1254:e:89::5df3 127.0.0.1 10.23.1.3',
     }
 
@@ -347,6 +357,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       trusted_domain_list=json.dumps([
         "[%s]:9988" % self.nextcloud_ipv6,
         "nextcloud.example.com",
+        "nextcloud.example.cn",
         "nextcloud.proxy.com"
       ]),
       trusted_proxy_list=json.dumps([
