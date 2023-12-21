@@ -2,8 +2,9 @@
 """request ors/enb for kirr"""
 
 import os
+import json
 
-ors = "%(HOME)s/srv/project/slapos/software/ors-amarisoft/software-ors.cfg" % os.eviron
+ors = "%(HOME)s/srv/project/slapos/software/ors-amarisoft/software-ors.cfg" % os.environ
 
 enb = request(ors,
         software_type="enb",
