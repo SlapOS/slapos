@@ -138,7 +138,6 @@
 {#- XXX error(ishared, msg)  vvv is debug stub -#}
 {%- macro error(ishared, msg)   %}
 {%-   set msg = 'E: %s: %s\n' % (J(jref_of_shared(ishared)), msg)   %}
-{%-   do print('\n%s' % msg)                                        %}
 {%-   do assert(False, msg)                                         %}
 {%- endmacro  %}
 
