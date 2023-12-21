@@ -54,7 +54,7 @@ class NextCloudTestCase(InstanceTestCase):
     # we want full diff when assertions fail
     self.maxDiff = None
     self.software_release_path = os.path.join(
-      cls.slap.software_directory,
+      self.slap.software_directory,
       md5digest(self.getSoftwareURL()))
 
     # lookup the partition in which nextcloud was installed
