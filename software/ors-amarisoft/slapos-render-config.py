@@ -362,8 +362,6 @@ def do_enb():
         "slap_configuration": {
             "tap-name": "slaptap9",
             "slap-computer-partition-id": "slappart9",
-            "configuration.default_lte_inactivity_timer": 10000,
-            "configuration.default_nr_inactivity_timer": 10000,
             "configuration.com_ws_port": 9001,
             "configuration.com_addr": "127.0.1.2",
             "configuration.mme_addr": "127.0.1.100",
