@@ -14,6 +14,8 @@ def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
     ctx['_standalone'] = True
+    assert 'ors' not in ctx
+    ctx['ors'] = False
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
