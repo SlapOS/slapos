@@ -48,7 +48,7 @@ def eref(ref):
 
 # iENB is shorthand to request shared instance on ienb.
 def iENB(ref, kw):
-    return kslap.iENB(ienb, ref, kw)
+    return kslap.iSHARED(ienb, ref, kw)
 
 
 # Radio Units
@@ -118,3 +118,34 @@ if 0:   # to test 5G
 
 icell1 = iENB(eref('CELL1'), CELL1)
 icell2 = iENB(eref('CELL2'), CELL2)
+
+
+# --------
+
+# UEsim
+iuesim = kslap.request(kamari,
+        software_type="ue",
+        partition_reference="CB5-UE",
+        filter_kw={"computer_guid": CB5},
+        partition_parameter_kw={"_": json.dumps({
+        })})
+
+uRU = copy.deepcopy(RU1)
+uRU['cpri_link']['sfp_port'] = 3
+uRU['mac_addr'] = '90:A9:F7:C0:00:04'
+
+uCELL = {
+    'ue_cell_type': 'lte',
+    'rf_mode':      'fdd',
+
+    'dl_earfcn':    300,
+    'bandwidth':    '10 MHz',
+
+    'ru': {
+        'ru_type':  'ru_ref',
+        'ru_ref':   'CB5-UE.RU',
+    }
+}
+
+kslap.iSHARED(iuesim, 'CB5-UE.RU',   uRU)
+kslap.iSHARED(iuesim, 'CB5-UE.CELL', uCELL)

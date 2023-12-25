@@ -72,7 +72,7 @@ CELL1_a = {
     'ru':           RU1,        # RU definition embedded into CELL
 }
 
-iCELL1_a = kslap.iENB(enb1, 'CELL1_a', CELL1_a)
+iCELL1_a = kslap.iSHARED(enb1, 'CELL1_a', CELL1_a)
 
 
 CELL1_b = {
@@ -88,7 +88,7 @@ CELL1_b = {
     }
 }
 
-iCELL1_b = kslap.iENB(enb1, 'CELL1_b', CELL1_b)
+iCELL1_b = kslap.iSHARED(enb1, 'CELL1_b', CELL1_b)
 
 
 RU2_a = {
@@ -116,10 +116,10 @@ RU2_b['cpri_link']['sfp_port'] = 1
 RU2_b['tx_gain'] += 10
 RU2_b['rx_gain'] += 10
 
-iRU2_a = kslap.iENB(enb1, 'RU2_a', RU2_a)
-iRU2_b = kslap.iENB(enb1, 'RU2_b', RU2_b)
+iRU2_a = kslap.iSHARED(enb1, 'RU2_a', RU2_a)
+iRU2_b = kslap.iSHARED(enb1, 'RU2_b', RU2_b)
 
-kslap.iENB(enb1, 'CELL2_a', {
+kslap.iSHARED(enb1, 'CELL2_a', {
     'cell_type':    'lte',
     'rf_mode':      'fdd',
     'bandwidth':    '5 MHz',
@@ -132,7 +132,7 @@ kslap.iENB(enb1, 'CELL2_a', {
     }
 })
 
-kslap.iENB(enb1, 'CELL2_b', {
+kslap.iSHARED(enb1, 'CELL2_b', {
     'cell_type':    'nr',
     'rf_mode':      'fdd',
     'bandwidth':    5,

@@ -99,15 +99,16 @@ def iSIM(core, sim_n):
         })})
     return sim
 
-# iENB adds to enb a shared instance with specified reference and parameters.
-def iENB(enb, ref, kw):
-    enb_ref  = ref_of_instance(enb)
-    enb_guid = enb.getInstanceGuid()
-    enb_sr   = enb.getSoftwareRelease()
-    ishared = request(enb_sr,
-        software_type="enb",
+# iSHARED adds to parent instance a shared instance with specified reference and parameters.
+def iSHARED(iparent, ref, kw):
+    i_ref  = ref_of_instance(iparent)
+    i_guid = iparent.getInstanceGuid()
+    i_sr   = iparent.getSoftwareRelease()
+    i_type = iparent.slap_software_type
+    ishared = request(i_sr,
+        software_type=i_type,
         partition_reference=ref,
         shared=True,
-        filter_kw={"instance_guid": enb_guid},
+        filter_kw={"instance_guid": i_guid},
         partition_parameter_kw={"_": json.dumps(kw)})
     return ishared
