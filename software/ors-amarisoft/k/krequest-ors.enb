@@ -14,7 +14,6 @@ enb = request(ors,
             'testing': True,
         })})
 
-"""
 gnb = request(ors,
         software_type="gnb",
         partition_reference="kors_gnb",
@@ -22,4 +21,3 @@ gnb = request(ors,
         partition_parameter_kw={"_": json.dumps({
             'testing': True,
         })})
-"""
