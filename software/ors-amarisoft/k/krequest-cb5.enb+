@@ -101,5 +101,20 @@ CELL2['pci'] = 2
 CELL2['cell_id'] = '0x02'
 CELL2['ru']['ru_ref'] = eref('RU2')
 
+if 0:   # to test 5G
+    CELL2 = {
+        'cell_type':    'nr',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'pci':          22,
+        'cell_id':      '0x22',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   eref('RU2')
+        }
+    }
+
 icell1 = iENB(eref('CELL1'), CELL1)
 icell2 = iENB(eref('CELL2'), CELL2)
