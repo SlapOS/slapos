@@ -27,13 +27,21 @@
       "request": "cell/input-schema.json",
       "index": 3
     },
-    "cell/peer": {
+    "peer": {
+      "title": "→ eNB/gNB | Peer",
+      "description": "Handover information about nearby eNB/gNB",
+      "software-type": "enb",
+      "shared": true,
+      "request": "peer/input-schema.json",
+      "index": 4
+    },
+    "peer/cell": {
       "title": "→ eNB/gNB | Peer Cell",
       "description": "Handover information about Peer Cell served by nearby eNB/gNB",
       "software-type": "enb",
       "shared": true,
-      "request": "cell/peer/input-schema.json",
-      "index": 4
+      "request": "peer/cell/input-schema.json",
+      "index": 5
     },
     "core-network": {
       "title": "Core Network",
@@ -41,7 +49,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 5
+      "index": 6
     },
     "core-network-slave": {
       "title": "→ Core Network | Sim Card",
@@ -50,7 +58,7 @@
       "request": "sim/input-schema.json",
       "response": "instance-core-network-slave-schema.json",
       "shared": true,
-      "index": 6
+      "index": 7
     },
     "uesim": {
       "title": "UEsim",
@@ -58,7 +66,7 @@
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
-      "index": 7
+      "index": 8
     },
     "ue/ru": {
       "title": "→ UEsim | Radio Unit",
@@ -66,7 +74,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ru/input-schema.json",
-      "index": 8
+      "index": 9
     },
     "ue": {
       "title": "→ UEsim | UE",
@@ -74,7 +82,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ue/input-schema.json",
-      "index": 9
+      "index": 10
     },
     "ue/cell": {
       "title": "→ UEsim | UE Cell",
@@ -82,7 +90,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ue/cell/input-schema.json",
-      "index": 10
+      "index": 11
     }
   }
 }

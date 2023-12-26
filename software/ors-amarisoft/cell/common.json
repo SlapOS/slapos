@@ -17,6 +17,12 @@
       "type": "string",
       "options":  { "hidden": true }
     },
+    "cell_kind": {
+      "type": "string",
+      "const":    "enb",
+      "template": "enb",
+      "options":  { "hidden": true }
+    },
 
     "rf_mode": {
       "title": "RF mode",
