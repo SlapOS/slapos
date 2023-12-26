@@ -182,7 +182,8 @@
             "tac": {
               "title": "Tracking Area Code",
               "description": "Integer (range 0 to 16777215)",
-              "type": "number"
+              "type": "number",
+              "default": "0x0001"
             }
           },
           "type": "object"
