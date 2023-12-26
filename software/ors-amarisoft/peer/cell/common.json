@@ -4,14 +4,21 @@
   "title": "Peer Cell. Common properties",
   "type": "object",
   "required": [
-    "peer_cell_type",
+    "cell_type",
+    "cell_kind",
     "pci",
     "tac"
   ],
 
   "properties": {
-    "peer_cell_type": {
+    "cell_type": {
       "type": "string",
+      "options":  { "hidden": true }
+    },
+    "cell_kind": {
+      "type": "string",
+      "const":    "enb_peer",
+      "template": "enb_peer",
       "options":  { "hidden": true }
     }
   }
