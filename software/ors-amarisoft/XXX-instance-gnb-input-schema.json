@@ -93,24 +93,6 @@
         5120
       ],
       "default": 100
-    },
-    "xn_peers": {
-      "title": "XN Peers",
-      "description": "XN Peers",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "xn_addr": {
-              "title": "XN Address",
-              "description": "XN Address of the neighbour cell (gNB Address)",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
     }
   }
 }
