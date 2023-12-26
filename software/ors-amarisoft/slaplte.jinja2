@@ -317,6 +317,28 @@
 {%- endmacro                                                                %}
 
 
+{#- load_ipeer initializes peer registry.
+
+    ipeer_dict keeps peer shared instances:  reference -> ipeer
+#}
+{%- macro load_ipeer(ipeer_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if 'peer_type' in _ %}
+{%-       set ipeer = ishared %}
+{%-       do assert(_.peer_type in ('lte', 'nr')) %}
+{%-       do ipeer_dict.update({ref: ipeer})  %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
+{%- endmacro  %}
+
+
 {#- load_ipeercell initializes peer-cell registry.
 
     ipeercell_dict keeps peer cell shared instances:  reference -> ipeercell

@@ -349,9 +349,28 @@ def do_enb():
     #iRU1_SDR1_fLTE2(ienb)
     #iRU2_LOPCOMM_fLTE2(ienb)
 
+    # add 4 peer nodes
+    if 1:
+        ienb.ishared('PEER11', {
+            'peer_type':    'lte',
+            'x2_addr':      '44.1.1.1',
+        })
+        ienb.ishared('PEER12', {
+            'peer_type':    'lte',
+            'x2_addr':      '44.1.1.2',
+        })
+        ienb.ishared('PEER21', {
+            'peer_type':    'nr',
+            'xn_addr':      '55.1.1.1',
+        })
+        ienb.ishared('PEER22', {
+            'peer_type':    'nr',
+            'xn_addr':      '55.1.1.2',
+        })
+
     # add 2 peer cells
     if 1:
-        ienb.ishared('PEER1', {
+        ienb.ishared('PEERCELL1', {
             'cell_type':        'lte',
             'cell_kind':        'enb_peer',
             'e_cell_id':        '0x12345',
@@ -360,7 +379,7 @@ def do_enb():
             'bandwidth':        '10 MHz',
             'tac':              123,
         })
-        ienb.ishared('PEER2', {
+        ienb.ishared('PEERCELL2', {
             'cell_type':        'nr',
             'cell_kind':        'enb_peer',
             'nr_cell_id':       '0x77712',
@@ -389,10 +408,7 @@ def do_enb():
             "etc": "etc",
             "var": "var"
         },
-        "slapparameter_dict": {
-          "x2_peers": {"1": {"x2_addr": "44.1.1.1"}, "2": {"x2_addr": "44.1.1.2"}},
-          "xn_peers": {"1": {"xn_addr": "55.1.1.1"}, "2": {"xn_addr": "55.1.1.2"}}
-        }
+        "slapparameter_dict": {}
     }""" % locals()
 
     j2render('enb.jinja2.cfg', 'enb.cfg', json_params)
@@ -400,6 +416,7 @@ def do_enb():
     # drb.cfg + sib.asn for all cells
     iru_dict       = {}
     icell_dict     = {}
+    ipeer_dict     = {}
     ipeercell_dict = {}
     for ishared in ienb.shared_instance_list:
         ref = ref_of_shared(ishared)
@@ -410,6 +427,8 @@ def do_enb():
         elif 'cell_type' in _  and  _.get('cell_kind') in {'enb', 'enb_peer'}:
             idict = {'enb': icell_dict, 'enb_peer': ipeercell_dict} [_['cell_kind']]
             idict[ref] = ishared
+        elif 'peer_type' in _:
+            ipeer_dict[ref] = ishared
         else:
             raise AssertionError('enb: unknown shared instance %r' % (ishared,))
 
