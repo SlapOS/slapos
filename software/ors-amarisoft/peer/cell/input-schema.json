@@ -4,7 +4,7 @@
   "title": "Peer Cell",
   "type": "object",
   "oneOf": [
-    { "$ref": "../../cell/peer/lte/input-schema.json" },
-    { "$ref": "../../cell/peer/nr/input-schema.json" }
+    { "$ref": "../../peer/cell/lte/input-schema.json" },
+    { "$ref": "../../peer/cell/nr/input-schema.json" }
   ]
 }
