@@ -198,8 +198,7 @@
 {%-         endfor  %}
 {%-       endif %}
 {%-       do iru_dict.update({ref: iru})  %}
-{%-     elif (icell_kind == 'enb' and 'cell_type' in _)    or
-             (icell_kind == 'ue'  and 'ue_cell_type' in _)  %}
+{%-     elif 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
 {%-       set icell = ishared %}
 {%-       if icell_kind == 'enb'  %}
 {%-         for k, v in defaults['cell/%s' % _.cell_type].items() %}
@@ -208,13 +207,10 @@
 {%-         for k, v in defaults['cell/%s/%s' % (_.cell_type, _.rf_mode)].items() %}
 {%-           do _.setdefault(k, v) %}
 {%-         endfor  %}
-{%-         set xcell_type = _.cell_type  %}
-{%-       else  %}
-{%-         set xcell_type = _.ue_cell_type %}
 {%-       endif %}
-{%-       if xcell_type == 'lte'  %}
+{%-       if _.cell_type == 'lte'  %}
 {%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
-{%-       elif xcell_type == 'nr' %}
+{%-       elif _.cell_type == 'nr' %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-         do _.setdefault('subcarrier_spacing', 30  if _.rf_mode == 'tdd'  else 15)  %}           {# XXX just leave at 30 ? #}
 {%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
@@ -330,14 +326,14 @@
 {%-   for ishared in qshared_instance_list  %}
 {%-     set ref = J(jref_of_shared(ishared))  %}
 {%-     set _ = ishared['_']  %}
-{%-     if 'peer_cell_type'   in _  %}
+{%-     if 'cell_type' in _  and  _.get('cell_kind') == 'enb_peer'  %}
 {%-       set ipeercell = ishared %}
-{%-       for k, v in defaults['peercell/' + _.peer_cell_type].items()  %}
+{%-       for k, v in defaults['peercell/' + _.cell_type].items()  %}
 {%-         do _.setdefault(k, v) %}
 {%-       endfor  %}
-{%-       if _.peer_cell_type == 'lte'  %}
+{%-       if _.cell_type == 'lte'  %}
 {%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
-{%-       elif _.peer_cell_type == 'nr' %}
+{%-       elif _.cell_type == 'nr' %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-         do _.setdefault('subcarrier_spacing',
                     30  if nrarfcn_module.get_duplex_mode(_.nr_band).lower() == 'tdd'  else

@@ -64,6 +64,7 @@ RU1 = {
 
 CELL1_a = {
     'cell_type':    'lte',
+    'cell_kind':    'enb',
     'rf_mode':      'tdd',
     'bandwidth':    '5 MHz',
     'dl_earfcn':    38050,      # 2600 MHz
@@ -77,6 +78,7 @@ iCELL1_a = kslap.iSHARED(enb1, 'CELL1_a', CELL1_a)
 
 CELL1_b = {
     'cell_type':    'lte',
+    'cell_kind':    'enb',
     'rf_mode':      'tdd',
     'bandwidth':    '5 MHz',
     'dl_earfcn':    38100,      # 2605 MHz
@@ -121,6 +123,7 @@ iRU2_b = kslap.iSHARED(enb1, 'RU2_b', RU2_b)
 
 kslap.iSHARED(enb1, 'CELL2_a', {
     'cell_type':    'lte',
+    'cell_kind':    'enb',
     'rf_mode':      'fdd',
     'bandwidth':    '5 MHz',
     'dl_earfcn':    3350,       # 2680 MHz
@@ -134,6 +137,7 @@ kslap.iSHARED(enb1, 'CELL2_a', {
 
 kslap.iSHARED(enb1, 'CELL2_b', {
     'cell_type':    'nr',
+    'cell_kind':    'enb',
     'rf_mode':      'fdd',
     'bandwidth':    5,
     'dl_nr_arfcn':  537200,     # 2686 MHz

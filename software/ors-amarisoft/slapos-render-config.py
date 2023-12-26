@@ -93,6 +93,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
 
     ienb.ishared('CELL_a', {
         'cell_type':    'lte',
+        'cell_kind':    'enb',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    38050,      # 2600 MHz
@@ -103,6 +104,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
 
     ienb.ishared('CELL_b', {
         'cell_type':    'lte',
+        'cell_kind':    'enb',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    38100,      # 2605 MHz
@@ -116,6 +118,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
 
     ienb.ishared('CELL_c', {
         'cell_type':    'nr',
+        'cell_kind':    'enb',
         'rf_mode':      'tdd',
         'bandwidth':    10,
         'dl_nr_arfcn':  523020,     # 2615.1 MHz
@@ -153,6 +156,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
 
     ienb.ishared('CELL_a', {
         'cell_type':    'lte',
+        'cell_kind':    'enb',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    38050,      # 2600 MHz
@@ -166,6 +170,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
 
     ienb.ishared('CELL_b', {
         'cell_type':    'nr',
+        'cell_kind':    'enb',
         'rf_mode':      'tdd',
         'bandwidth':    10,
         'dl_nr_arfcn':  523020,     # 2615.1 MHz
@@ -211,6 +216,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
 
     ienb.ishared('CELL_a', {
         'cell_type':    'lte',
+        'cell_kind':    'enb',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    3350,       # 2680 MHz
@@ -224,6 +230,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
 
     ienb.ishared('CELL_b', {
         'cell_type':    'nr',
+        'cell_kind':    'enb',
         'rf_mode':      'fdd',
         'bandwidth':    5,
         'dl_nr_arfcn':  537200,     # 2686 MHz
@@ -253,6 +260,7 @@ def iRU1_SDR1_fLTE2(ienb):
 
     ienb.ishared('CELL_a', {
         'cell_type':    'lte',
+        'cell_kind':    'enb',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    3350,      # 2680 MHz (Band 7)
@@ -263,6 +271,7 @@ def iRU1_SDR1_fLTE2(ienb):
 
     ienb.ishared('CELL_b', {
         'cell_type':    'lte',
+        'cell_kind':    'enb',
         'rf_mode':      'fdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    3050,      # 2650 MHz (Band 7)
@@ -304,6 +313,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
         ienb.ishared('RU_0002', RU_0002)
         ienb.ishared('CELL2', {
             'cell_type':    'lte',
+            'cell_kind':    'enb',
             'rf_mode':      'fdd',
             'bandwidth':    '20 MHz',
             'dl_earfcn':    100,        # 2120 MHz   @ B1
@@ -319,6 +329,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
         ienb.ishared('RU_0004', RU_0004)
         ienb.ishared('CELL4', {
             'cell_type':    'lte',
+            'cell_kind':    'enb',
             'rf_mode':      'fdd',
             'bandwidth':    '20 MHz',
             'dl_earfcn':    500,        # 2160 MHz  @ B1
@@ -341,7 +352,8 @@ def do_enb():
     # add 2 peer cells
     if 1:
         ienb.ishared('PEER1', {
-            'peer_cell_type':   'lte',
+            'cell_type':        'lte',
+            'cell_kind':        'enb_peer',
             'e_cell_id':        '0x12345',
             'pci':              35,
             'dl_earfcn':        700,
@@ -349,7 +361,8 @@ def do_enb():
             'tac':              123,
         })
         ienb.ishared('PEER2', {
-            'peer_cell_type':   'nr',
+            'cell_type':        'nr',
+            'cell_kind':        'enb_peer',
             'nr_cell_id':       '0x77712',
             'gnb_id_bits':      22,
             'dl_nr_arfcn':      520000,
@@ -394,10 +407,9 @@ def do_enb():
         ishared['_'] = _
         if 'ru_type' in _:
             iru_dict[ref] = ishared
-        elif 'cell_type' in _:
-            icell_dict[ref] = ishared
-        elif 'peer_cell_type' in _:
-            ipeercell_dict[ref] = ishared
+        elif 'cell_type' in _  and  _.get('cell_kind') in {'enb', 'enb_peer'}:
+            idict = {'enb': icell_dict, 'enb_peer': ipeercell_dict} [_['cell_kind']]
+            idict[ref] = ishared
         else:
             raise AssertionError('enb: unknown shared instance %r' % (ishared,))
 
@@ -435,7 +447,8 @@ def do_enb():
 def do_ue():
     iue = Instance('ue')
     iue.ishared('UCELL1', {
-        'ue_cell_type': 'lte',
+        'cell_type':    'lte',
+        'cell_kind':    'ue',
         'rf_mode':      'tdd',
         'bandwidth':    '5 MHz',
         'dl_earfcn':    38050,      # 2600 MHz
@@ -450,7 +463,8 @@ def do_ue():
         }
     })
     iue.ishared('UCELL2', {
-        'ue_cell_type': 'nr',
+        'cell_type':    'nr',
+        'cell_kind':    'ue',
         'rf_mode':      'fdd',
         'bandwidth':    5,
         'dl_nr_arfcn':  537200,     # 2686 MHz
