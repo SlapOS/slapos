@@ -5,14 +5,21 @@
   "type": "object",
 
   "required": [
-    "ue_cell_type",
+    "cell_type",
+    "cell_kind",
     "rf_mode",
     "ru"
   ],
 
   "properties": {
-    "ue_cell_type": {
+    "cell_type": {
       "type": "string",
+      "options":  { "hidden": true }
+    },
+    "cell_kind": {
+      "type": "string",
+      "const":    "ue",
+      "template": "ue",
       "options":  { "hidden": true }
     },
 
