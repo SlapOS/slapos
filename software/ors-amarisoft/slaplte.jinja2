@@ -309,10 +309,9 @@
 {#- do  print('jref_of_shared %r' % (ishared,)) #}
 {%-   set ref = ishared['slave_title']                                      %}
 {%-   set partition_id = slap_configuration['slap-computer-partition-id']   %}
-{%-   if ref.startswith(partition_id)                                       %}
-{%-     set ref = ref[len(partition_id):]                                   %}
+{%-   if ref.startswith(partition_id+'_')                                   %}
+{%-     set ref = ref[len(partition_id)+1:]                                 %}
 {%-   endif                                                                 %}
-{%-   set ref = ref.removeprefix('_')                                       %}
 {{-   ref | tojson                                                          }}
 {%- endmacro                                                                %}
 
