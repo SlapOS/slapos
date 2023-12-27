@@ -52,24 +52,38 @@ def encode(s: str): # -> str
 
 
 # decode provides reverse operation for encode.
-def decode(s: str): # -> str | ValueError | UnicodeDecodeError
+def decode(s: str): # -> str | ValueError
+    try:
+        return _decode(s)
+    except Exception as e:
+        raise ValueError("decoding %r" % s) from e
+
+def _decode(s):
     s = s.encode('utf-8')
     outv = []
     emit = outv.append
-    def bad(reason):
-        raise ValueError(reason)
     while len(s) > 0:
-        c = s[0:1]
+        c = s[:1]
         s = s[1:]
 
         if c != b'_':
             emit(c)
             continue
 
-        if len(s) < 2:
-            bad("truncated escape sequence")
-        x = s[:2]
-        s = s[2:]
+        if len(s) < 1:
+            raise ValueError("truncated escape sequence")
+        x = s[:1]
+        s = s[1:]
+
+        if x == b'_':
+            emit(b'_')
+            continue
+
+        if len(s) < 1:
+            raise ValueError("truncated escape sequence")
+        x += s[:1]
+        s = s[1:]
+
         i = int(x, 16)  # raises ValueError if not ok
         c = bytes([i])
         emit(c)
@@ -106,7 +120,7 @@ def test_encode():
         ('_',       '__'),
         (' ',       '_20'),
         ('αβγ',     '_ce_b1_ce_b2_ce_b3'),
-        ('a b+c_d'  'a_20b_43c__d'),
+        ('a b+c_d', 'a_20b_2bc__d'),
     ]
 
     for (s, encok) in testv:
