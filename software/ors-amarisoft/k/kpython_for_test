@@ -27,6 +27,7 @@ sys.path[0:0] = [
   '/srv/slapgrid/slappart91/srv/project/slapos',
   '/srv/slapgrid/slappart91/srv/project/slapos/software/ors-amarisoft/test',
 
+  '/srv/slapgrid/slappart91/srv/runner/software/45a1e838784afb18daf420009d925c78/eggs/pcpp-1.30-py3.9.egg',
   '/srv/slapgrid/slappart91/srv/runner/software/45a1e838784afb18daf420009d925c78/eggs/requests-2.31.0-py3.9.egg',
   '/srv/slapgrid/slappart91/srv/runner/software/45a1e838784afb18daf420009d925c78/eggs/testfixtures-6.11.0-py3.9.egg',
   '/srv/slapgrid/slappart91/srv/runner/software/45a1e838784afb18daf420009d925c78/eggs/mock-3.0.5-py3.9.egg',
