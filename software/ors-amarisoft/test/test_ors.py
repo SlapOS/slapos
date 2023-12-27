@@ -159,12 +159,14 @@ def test_enb_conf(self):
 
     conf = yload(conf_file)
     if 'tx_gain' in conf and 'rx_gain' in conf:
-      self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
-      self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
-    self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
-    self.assertEqual(conf['cell_default']['uldl_config'], 6)
-    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
-    # XXX + ul_earfcn
+      self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
+      self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
+    self.assertEqual(len(conf['cell_list']), 1)
+    cell = conf['cell_list'][0]
+    self.assertEqual(cell['inactivity_timer'], enb_param_dict['inactivity_timer'])
+    self.assertEqual(cell['uldl_config'], 6)
+    self.assertEqual(cell['dl_earfcn'], enb_param_dict['dl_earfcn'])
+    # XXX + ul_earfcn ?
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
