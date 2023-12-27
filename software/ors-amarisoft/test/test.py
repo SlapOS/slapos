@@ -16,6 +16,8 @@
 # See COPYING file for full licensing terms.
 # See https://www.nexedi.com/licensing for rationale and options.
 
+import os
+
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
