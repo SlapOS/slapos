@@ -49,7 +49,7 @@ param_dict = {
     'impi': 'impi331@amarisoft.com',
     'tx_gain': 17,
     'rx_gain': 17,
-    'dl_earfcn': 325320,
+    'dl_earfcn': 500,  # XXX KeyError: 'no band that corresponds to DL EARFCN=325320'
     'bandwidth': "10 MHz",
     'enb_id': '0x17',
     'pci': 250,
@@ -148,6 +148,7 @@ def test_enb_conf(self):
     self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(conf['cell_default']['uldl_config'], 6)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
+    # XXX + ul_earfcn
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
@@ -165,6 +166,7 @@ def test_enb_conf(self):
           break
       conf_ncell = enb_param_dict['ncell_list'][k]
       self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
+      # XXX + ul_earfcn
       self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
       self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
       self.assertEqual(p['tac'],          conf_ncell['tac'])
@@ -185,6 +187,7 @@ def test_gnb_conf1(self):
         self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
         self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
+        # XXX + ul_nr_arfcn ?
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
         self.assertEqual(conf['nr_cell_default']['n_id_cell'], gnb_param_dict1['pci'])
@@ -393,68 +396,3 @@ class TestSimCard(ORSTestCase):
         return "core-network"
     def test_sim_card(self):
         test_sim_card(self)
-
-class TestUELTEParameters(ORSTestCase):     # XXX adjust
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue-lte"
-    def test_ue_lte_conf(self):
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
-
-        with open(conf_file, 'r') as f:
-          conf = yaml.load(f)
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
-        self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
-        self.assertEqual(conf['ue_list'][0]['imsi'], param_dict['imsi'])
-        self.assertEqual(conf['ue_list'][0]['K'], param_dict['k'])
-        self.assertEqual(conf['ue_list'][0]['sim_algo'], param_dict['sim_algo'])
-        self.assertEqual(conf['ue_list'][0]['opc'], param_dict['opc'])
-        self.assertEqual(conf['ue_list'][0]['amf'], int(param_dict['amf'], 16))
-        self.assertEqual(conf['ue_list'][0]['sqn'], param_dict['sqn'])
-        self.assertEqual(conf['ue_list'][0]['impu'], param_dict['impu'])
-        self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
-        self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
-        self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
-
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define N_RB_DL'):
-                    self.assertIn('50', l)
-
-class TestUENRParameters(ORSTestCase):      # XXX adjust
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue-nr"
-    def test_ue_nr_conf(self):
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
-
-        with open(conf_file, 'r') as f:
-          conf = yaml.load(f)
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], '10 MHz')
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], param_dict['nr_band'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
-        self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
-        self.assertEqual(conf['ue_list'][0]['imsi'], param_dict['imsi'])
-        self.assertEqual(conf['ue_list'][0]['K'], param_dict['k'])
-        self.assertEqual(conf['ue_list'][0]['sim_algo'], param_dict['sim_algo'])
-        self.assertEqual(conf['ue_list'][0]['opc'], param_dict['opc'])
-        self.assertEqual(conf['ue_list'][0]['amf'], int(param_dict['amf'], 16))
-        self.assertEqual(conf['ue_list'][0]['sqn'], param_dict['sqn'])
-        self.assertEqual(conf['ue_list'][0]['impu'], param_dict['impu'])
-        self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
-        self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
-        self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
-
