@@ -24,6 +24,17 @@
 
 # encode converts string s into form suitable to be used in names of buildout sections.
 #
+# Such encoding is needed because buildout forbids to use spaces and many other
+# characters in section names, which, in turn, leads to inability to use
+# arbitrary strings for sections generated based on e.g. instance references
+# retrieved from SlapOS Master.
+#
+# With encoding it becomes possible to use arbitrary names for references
+# without leading to instantiation failures like
+#
+#   zc.buildout.configparser.ParsingError: File contains parsing errors: .../instance-enb.cfg
+#       [line 45]: '[promise-testing partition 0.RU-sdr-busy]\n'
+#
 # The encoding never fails, does not loose information and can be reversed back via decode.
 def encode(s: str): # -> str
     s = s.encode('utf-8')
@@ -114,13 +125,13 @@ def test_encode():
     # also explicitly test several example cases, including unicode
     testv = [
         #  s    encoded
-        ('',     ''),
-        ('a',      'a'),
+        ('',            ''),
+        ('a',           'a'),
         ('ayzAYZ09.-',  'ayzAYZ09.-'),
-        ('_',       '__'),
-        (' ',       '_20'),
-        ('αβγ',     '_ce_b1_ce_b2_ce_b3'),
-        ('a b+c_d', 'a_20b_2bc__d'),
+        ('_',           '__'),
+        (' ',           '_20'),
+        ('αβγ',         '_ce_b1_ce_b2_ce_b3'),
+        ('a b+c_d',     'a_20b_2bc__d'),
     ]
 
     for (s, encok) in testv:
