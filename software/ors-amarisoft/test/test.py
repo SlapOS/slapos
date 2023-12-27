@@ -25,3 +25,8 @@ setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 # XXX
+
+# XXX enb   - {sdr,lopcomm,sunwave}·2 - {cell_lte1fdd,2tdd, cell_nr1fdd,2tdd}  + peer·2 + peercell·2
+# XXX uesim - {sdr,lopcomm,sunwave}·2
+
+# XXX core-network - skip - verified by ors
