@@ -49,7 +49,7 @@ param_dict = {
     'impi': 'impi331@amarisoft.com',
     'tx_gain': 17,
     'rx_gain': 17,
-    'dl_earfcn': 500,  # XXX KeyError: 'no band that corresponds to DL EARFCN=325320'
+    'dl_earfcn': 36100,  # XXX KeyError: 'no band that corresponds to DL EARFCN=325320'
     'bandwidth': "10 MHz",
     'enb_id': '0x17',
     'pci': 250,
@@ -79,7 +79,7 @@ param_dict = {
     'nr_handover_a3_offset': 10,
     'ncell_list': {
         'ORS1': {
-            'dl_earfcn': 100000,
+            'dl_earfcn': 40000,
             'dl_nr_arfcn': 100000,
             'ssb_nr_arfcn': 100000,
             'pci': 1,
@@ -90,7 +90,7 @@ param_dict = {
             'tac': 1
         },
         'ORS2': {
-            'dl_earfcn': 200000,
+            'dl_earfcn': 50000,
             'dl_nr_arfcn': 200000,
             'ssb_nr_arfcn': 200000,
             'pci': 2,
