@@ -26,7 +26,9 @@
 ##############################################################################
 
 import os
+import io
 import yaml
+import pcpp
 import json
 import glob
 import requests
@@ -135,13 +137,27 @@ enb_param_dict.update(param_dict)
 gnb_param_dict1.update(param_dict)
 gnb_param_dict2.update(param_dict)
 
+
+# yload loads yaml config file after preprocessing it.
+#
+# preprocessing is needed to e.g. remove // and /* comments.
+def yload(path):
+    with open(path, 'r') as f:
+        data = f.read()     # original input
+    p = pcpp.Preprocessor()
+    p.parse(data)
+    f = io.StringIO()
+    p.write(f)
+    data_ = f.getvalue()    # preprocessed input
+    return yaml.load(data_, Loader=yaml.Loader)
+
+
 def test_enb_conf(self):
 
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yload(conf_file)
     if 'tx_gain' in conf and 'rx_gain' in conf:
       self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
       self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
@@ -181,8 +197,7 @@ def test_gnb_conf1(self):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
+        conf = yload(conf_file)
         self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
         self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
         self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
@@ -230,8 +245,7 @@ def test_gnb_conf2(self):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
+        conf = yload(conf_file)
 
         for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
           sd = hex(p['sd'])
@@ -243,8 +257,7 @@ def test_mme_conf(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yload(conf_file)
     self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_sim_card(self):
@@ -252,8 +265,7 @@ def test_sim_card(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yload(conf_file)
     for n in "sim_algo imsi opc sqn impu impi".split():
         self.assertEqual(conf['ue_db'][0][n], param_dict[n])
     self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
