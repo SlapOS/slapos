@@ -133,14 +133,12 @@ def test_encode():
         ('αβγ',         '_ce_b1_ce_b2_ce_b3'),
         ('a b+c_d',     'a_20b_2bc__d'),
     ]
-
     for (s, encok) in testv:
         assert encode(s) == encok
         assert decode(encok) == s
 
     # decode errors
     from pytest import raises
-
     def checkbad(x, f):
         with raises(ValueError, match="invalid encoding") as exci:
             decode(x)
