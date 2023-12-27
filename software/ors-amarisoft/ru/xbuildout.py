@@ -56,7 +56,7 @@ def decode(s: str): # -> str | ValueError
     try:
         return _decode(s)
     except Exception as e:
-        raise ValueError("decoding %r" % s) from e
+        raise ValueError("invalid encoding: %r" % s) from e
 
 def _decode(s):
     s = s.encode('utf-8')
@@ -127,7 +127,29 @@ def test_encode():
         assert encode(s) == encok
         assert decode(encok) == s
 
+    # decode errors
+    from pytest import raises
 
-    # XXX decode error
+    def checkbad(x, f):
+        with raises(ValueError, match="invalid encoding") as exci:
+            decode(x)
+        cause = exci.value.__cause__
+        f(cause)
 
-    # XXX UTF-8 error
+    for x in ('_', '_1', 'a_2'):
+        def _(cause):
+            assert isinstance(cause, ValueError)
+            assert cause.args == ("truncated escape sequence",)
+        checkbad(x, _)
+
+    for x in ('_1r', '_r1', 'a_xy'):
+        def _(cause):
+            assert isinstance(cause, ValueError)
+            assert len(cause.args) == 1
+            assert cause.args[0] .startswith("invalid literal for int() with base 16:")
+        checkbad(x, _)
+
+    for x in ('_c3_28', '_e2_28_a1'):
+        def _(cause):
+            assert isinstance(cause, UnicodeDecodeError)
+        checkbad(x, _)
