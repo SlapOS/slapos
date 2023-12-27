@@ -25,9 +25,9 @@
 # encode converts string s into form suitable to be used in names of buildout sections.
 #
 # Such encoding is needed because buildout forbids to use spaces and many other
-# characters in section names, which, in turn, leads to inability to use
-# arbitrary strings for sections generated based on e.g. instance references
-# retrieved from SlapOS Master.
+# characters in section names, which, in turn, leads to inability to directly
+# use arbitrary strings for sections generated based on e.g. instance
+# references retrieved from SlapOS Master.
 #
 # With encoding it becomes possible to use arbitrary names for references
 # without leading to instantiation failures like
