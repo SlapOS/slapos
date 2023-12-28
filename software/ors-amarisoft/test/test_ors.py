@@ -168,8 +168,8 @@ def test_enb_conf(self):
     self.assertEqual(cell['uldl_config'], 6)
     self.assertEqual(cell['dl_earfcn'], enb_param_dict['dl_earfcn'])
     self.assertEqual(cell['n_rb_dl'], 50)
-    # XXX gnb_id not in conf
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
+    self.assertNotIn('gnb_id', conf)
     self.assertEqual(cell['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(cell['tac'], int(enb_param_dict['tac'], 16))
     self.assertEqual(cell['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
@@ -205,6 +205,7 @@ def test_gnb_conf1(self):
         self.assertEqual(nr_cell['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(nr_cell['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(nr_cell['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
+        self.assertEqual(nr_cell['bandwidth'], gnb_param_dict1['nr_bandwidth'])
         self.assertEqual(nr_cell['n_id_cell'], gnb_param_dict1['pci'])
         self.assertNotIn('enb_id', conf)
         self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
@@ -235,12 +236,6 @@ def test_gnb_conf1(self):
         self.assertEqual(int(tdd_config['dl_symbols']), 10)
         self.assertEqual(int(tdd_config['ul_slots']), 1)
         self.assertEqual(int(tdd_config['ul_symbols']), 2)
-
-        1/0 # XXX
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define NR_BANDWIDTH'):
-                    self.assertIn(str(gnb_param_dict1['nr_bandwidth']), l)
 
 def test_gnb_conf2(self):
 
