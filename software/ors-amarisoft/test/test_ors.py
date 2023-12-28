@@ -82,24 +82,24 @@ param_dict = {
     'ncell_list': {
         'ORS1': {
             'dl_earfcn': 40000,
-            'dl_nr_arfcn': 428000,
-            'ssb_nr_arfcn': 428000,
+            'dl_nr_arfcn': 403500,
+            'ssb_nr_arfcn': 403500,
             'pci': 1,
             'nr_cell_id': '0x0000001',
             'cell_id': '0x0000001',
             'gnb_id_bits': 28,
-            'nr_band': 1,
+            'nr_band': 34,
             'tac': 1
         },
         'ORS2': {
             'dl_earfcn': 50000,
-            'dl_nr_arfcn': 392000,
-            'ssb_nr_arfcn': 392000,
+            'dl_nr_arfcn': 519000,
+            'ssb_nr_arfcn': 519000,
             'pci': 2,
             'nr_cell_id': '0x0000002',
             'cell_id': '0x0000001',
             'gnb_id_bits': 30,
-            'nr_band': 2,
+            'nr_band': 38,
             'tac': 2
         },
     },
@@ -223,7 +223,7 @@ def test_gnb_conf1(self):
           conf_ncell = gnb_param_dict1['ncell_list'][k]
           self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
           self.assertEqual(p['ssb_nr_arfcn'], conf_ncell['ssb_nr_arfcn'])
-          self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
+          self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])    # assumes nr_band is TDD
           self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
           self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
           self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
