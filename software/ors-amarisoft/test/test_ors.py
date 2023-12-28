@@ -229,7 +229,7 @@ def test_gnb_conf1(self):
           self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
           self.assertEqual(p['tac'],          conf_ncell['tac'])
           self.assertEqual(p['band'],         conf_ncell['nr_band'])
-        tdd_config = conf['nr_cell_default']['tdd_ul_dl_config']['pattern1']
+        tdd_config = nr_cell['tdd_ul_dl_config']['pattern1']
         self.assertEqual(float(tdd_config['period']), 2.5)
         self.assertEqual(int(tdd_config['dl_slots']), 3)
         self.assertEqual(int(tdd_config['dl_symbols']), 10)
