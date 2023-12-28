@@ -162,6 +162,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'dl_earfcn':    38050,      # 2600 MHz
         'pci':          1,
         'cell_id':      '0x01',
+        'tac':          '0x1234',
         'ru':           {           # CELL_a links to RU1 by its reference
             'ru_type':  'ru_ref',
             'ru_ref':   'RU1'
@@ -177,6 +178,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'nr_band':      41,
         'pci':          2,
         'cell_id':      '0x02',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU2'
