@@ -15,7 +15,7 @@
     it should be kept in sync with "default" in json schemas  #}
 {#- XXX opc='milenage' is not meaningful ?  #}
 {#- XXX txrx_active=ACTIVE for sdr - needed ? (bwcompat for ORS) - if yes -> update ru/sdr/input-schema.json #}
-{#- XXX pci/tac -> move defaults to ORS (cell/* + peercell/*) #}
+{#- XXX pci -> move defaults to ORS (cell/* + peercell/*) #}
 {#- XXX add inactivity timer to cell schemas #}
 {%- set defaults = {
       'enb_id': '0x1A2D0',
@@ -31,7 +31,6 @@
 
       'cell/lte': {
         'pci':  1,
-        'tac':  '0x0001',
         'inactivity_timer': 10000,
       },
 
@@ -55,11 +54,9 @@
 
       'peercell/lte': {
         'pci':  1,
-        'tac':  '0x0001',
       },
       'peercell/nr': {
         'pci':  500,
-        'tac':  '0x0001',
       },
 
       'cpri_link': {

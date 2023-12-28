@@ -65,7 +65,6 @@
     "tac": {
       "title": "Tracking Area Code",
       "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-      "default": "0x0001",
       "type": "string"
     }
   }
