@@ -375,18 +375,6 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 
-class TestUEMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue"
-
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
-
 class TestSimCard(ORSTestCase):
     @classmethod
     def requestDefaultInstance(cls, state='started'):

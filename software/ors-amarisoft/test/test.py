@@ -96,4 +96,16 @@ class TestUENRParameters(ORSTestCase):      # XXX adjust
         self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
         self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
+
+class TestUEMonitorGadgetUrl(ORSTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({'testing': True})}
+
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue"
+
+    def test_monitor_gadget_url(self):
+      test_monitor_gadget_url(self)
 """
