@@ -419,7 +419,10 @@ def do_enb():
             "etc": "etc",
             "var": "var"
         },
-        "slapparameter_dict": {}
+        "slapparameter_dict": {
+            "enb_id": "0x10012",
+            "gnb_id": "0x54321"
+        }
     }""" % locals()
 
     j2render('enb.jinja2.cfg', 'enb.cfg', json_params)

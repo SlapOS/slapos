@@ -17,9 +17,6 @@
 {#- XXX txrx_active=ACTIVE for sdr - needed ? (bwcompat for ORS) - if yes -> update ru/sdr/input-schema.json #}
 {#- XXX add inactivity timer to cell schemas #}
 {%- set defaults = {
-      'gnb_id': '0x12345',
-      'gnb_id_bits': 28,
-
       'ru': {
         'txrx_active': 'INACTIVE',
       },
@@ -107,11 +104,6 @@
 {{-   ssb_nr_arfcn | tojson }}
 {%- endmacro %}
 
-
-{#- cfg returns value of configuration parameter name #}
-{%- macro cfg(name)     %}
-{{-   slapparameter_dict.get(name, defaults.get(name)) }}
-{%- endmacro %}
 
 {#- tap indicates tap interface, that slapos told us to use,
     or 'xxx-notap-xxx' if slapos provided us either nothing or empty string. #}
