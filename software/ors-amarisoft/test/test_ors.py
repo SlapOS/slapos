@@ -82,8 +82,8 @@ param_dict = {
     'ncell_list': {
         'ORS1': {
             'dl_earfcn': 40000,
-            'dl_nr_arfcn': 100000,
-            'ssb_nr_arfcn': 100000,
+            'dl_nr_arfcn': 428000,
+            'ssb_nr_arfcn': 428000,
             'pci': 1,
             'nr_cell_id': '0x0000001',
             'cell_id': '0x0000001',
@@ -93,8 +93,8 @@ param_dict = {
         },
         'ORS2': {
             'dl_earfcn': 50000,
-            'dl_nr_arfcn': 200000,
-            'ssb_nr_arfcn': 200000,
+            'dl_nr_arfcn': 392000,
+            'ssb_nr_arfcn': 392000,
             'pci': 2,
             'nr_cell_id': '0x0000002',
             'cell_id': '0x0000001',
