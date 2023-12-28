@@ -202,7 +202,6 @@ def test_gnb_conf1(self):
         nr_cell = conf['nr_cell_list'][0]
         self.assertEqual(nr_cell['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
-        # XXX + ul_nr_arfcn ?
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
         self.assertEqual(conf['nr_cell_default']['n_id_cell'], gnb_param_dict1['pci'])
