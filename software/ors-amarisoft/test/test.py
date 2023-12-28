@@ -60,6 +60,7 @@ class TestUELTEParameters(ORSTestCase):     # XXX adjust
         self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
 
+        1/0 # XXX self.assertEqual(cell['n_rb_dl'], 50)
         with open(conf_file, 'r') as f:
             for l in f:
                 if l.startswith('#define N_RB_DL'):

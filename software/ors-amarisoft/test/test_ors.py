@@ -166,33 +166,27 @@ def test_enb_conf(self):
     self.assertEqual(cell['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(cell['uldl_config'], 6)
     self.assertEqual(cell['dl_earfcn'], enb_param_dict['dl_earfcn'])
-    # XXX + ul_earfcn ?
+    self.assertEqual(cell['n_rb_dl'], 50)
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
-    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
-    self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
-    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
-#   self.assertEqual(conf['cell_list'][0]['cell_id'], 0)  XXX reenable + -> 1 + remove defaults from g
+    self.assertEqual(cell['n_id_cell'], enb_param_dict['pci'])
+    self.assertEqual(cell['tac'], int(enb_param_dict['tac'], 16))
+    self.assertEqual(cell['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
+    self.assertEqual(cell['cell_id'], 1)
     for p in conf['cell_default']['plmn_list']:
       for n in "plmn attach_without_pdn reserved".split():
           self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
     for p in conf['mme_list']:
       self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
 
-    for p in conf['cell_list'][0]['ncell_list']:
+    for p in cell['ncell_list']:
       for k in enb_param_dict['ncell_list']:
         if p['dl_earfcn'] == gnb_param_dict1['ncell_list'][k]['dl_earfcn']:
           break
       conf_ncell = enb_param_dict['ncell_list'][k]
       self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
-      # XXX + ul_earfcn
       self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
       self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
       self.assertEqual(p['tac'],          conf_ncell['tac'])
-
-    with open(conf_file, 'r') as f:
-        for l in f:
-            if l.startswith('#define N_RB_DL'):
-                self.assertIn('50', l)
 
 def test_gnb_conf1(self):
 
@@ -237,6 +231,7 @@ def test_gnb_conf1(self):
         self.assertEqual(int(tdd_config['ul_slots']), 1)
         self.assertEqual(int(tdd_config['ul_symbols']), 2)
 
+        1/0 # XXX
         with open(conf_file, 'r') as f:
             for l in f:
                 if l.startswith('#define NR_BANDWIDTH'):

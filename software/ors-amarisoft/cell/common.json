@@ -39,8 +39,7 @@
     "cell_id": {
       "title": "Cell ID",
       "description": "Cell ID",
-      "type": "string",
-      "default": "0x01"
+      "type": "string"
     },
     "root_sequence_index": {
       "title": "Root Sequence Index",
