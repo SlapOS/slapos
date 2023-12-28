@@ -12,4 +12,4 @@ mkdir snapshot
 export SLAPOS_TEST_LOG_DIRECTORY=`pwd`/snapshot
 
 #time ../k/kpython_for_test -m unittest discover -vf -k TestENBParameters
-time ../k/kpython_for_test -m unittest discover -vf -k TestGNBParameters
+time ../k/kpython_for_test -m unittest discover -vf -k NBParameters
