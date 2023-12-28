@@ -99,6 +99,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'dl_earfcn':    38050,      # 2600 MHz
         'pci':          1,
         'cell_id':      '0x01',
+        'tac':          '0x1234',
         'ru':           RU,         # RU definition embedded into CELL
     })
 
@@ -110,6 +111,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'dl_earfcn':    38100,      # 2605 MHz
         'pci':          2,
         'cell_id':      '0x02',
+        'tac':          '0x1234',
         'ru':           {           # CELL_b shares RU with CELL_a referring to it via cell
             'ru_type':      'ruincell_ref',
             'ruincell_ref': 'CELL_a'
@@ -125,6 +127,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'nr_band':      41,
         'pci':          3,
         'cell_id':      '0x03',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':      'ruincell_ref',     # CELL_c shares RU with CELL_a and CELL_b
             'ruincell_ref': 'CELL_b'            # referring to RU via CELL_b -> CELL_a
@@ -224,6 +227,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'dl_earfcn':    3350,       # 2680 MHz
         'pci':          21,
         'cell_id':      '0x21',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU1'
@@ -239,6 +243,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'nr_band':      7,
         'pci':          22,
         'cell_id':      '0x22',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU2'
@@ -268,6 +273,7 @@ def iRU1_SDR1_fLTE2(ienb):
         'dl_earfcn':    3350,      # 2680 MHz (Band 7)
         'pci':          1,
         'cell_id':      '0x01',
+        'tac':          '0x1234',
         'ru':           RU,
     })
 
@@ -279,6 +285,7 @@ def iRU1_SDR1_fLTE2(ienb):
         'dl_earfcn':    3050,      # 2650 MHz (Band 7)
         'pci':          1,
         'cell_id':      '0x02',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':      'ruincell_ref',
             'ruincell_ref': 'CELL_a'
@@ -321,6 +328,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
             'dl_earfcn':    100,        # 2120 MHz   @ B1
             'pci':          21,
             'cell_id':      '0x21',
+            'tac':          '0x1234',
             'ru':           {
                 'ru_type':  'ru_ref',
                 'ru_ref':   'RU_0002'
@@ -337,6 +345,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
             'dl_earfcn':    500,        # 2160 MHz  @ B1
             'pci':          22,
             'cell_id':      '0x22',
+            'tac':          '0x1234',
             'ru':           {
                 'ru_type':  'ru_ref',
                 'ru_ref':   'RU_0004'
@@ -345,7 +354,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
 
 def do_enb():
     ienb = Instance('enb')
-    #iRU1_SDR_fLTE2_fNR(ienb)
+    #iRU1_SDR_tLTE2_tNR(ienb)
     iRU2_SDR_tLTE_tNR(ienb)
     #iRU2_LOPCOMM_fLTE_fNR(ienb)
     #iRU1_SDR1_fLTE2(ienb)
