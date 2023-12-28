@@ -162,6 +162,7 @@ def test_enb_conf(self):
       self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
       self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
     self.assertEqual(len(conf['cell_list']), 1)
+    self.assertEqual(len(conf['nr_cell_list']), 0)
     cell = conf['cell_list'][0]
     self.assertEqual(cell['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(cell['uldl_config'], 6)
@@ -191,12 +192,15 @@ def test_enb_conf(self):
 def test_gnb_conf1(self):
 
         conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
+          self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
         conf = yload(conf_file)
-        self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
-        self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
-        self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
+        self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
+        self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
+        self.assertEqual(len(conf['cell_list']), 0)
+        self.assertEqual(len(conf['nr_cell_list']), 1)
+        nr_cell = conf['nr_cell_list'][0]
+        self.assertEqual(nr_cell['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         # XXX + ul_nr_arfcn ?
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
