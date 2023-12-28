@@ -240,7 +240,7 @@ def test_gnb_conf1(self):
 def test_gnb_conf2(self):
 
         conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
+          self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
         conf = yload(conf_file)
 
