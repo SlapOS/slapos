@@ -6,8 +6,7 @@
     "enb_id": {
       "title": "eNB ID",
       "description": "eNB ID",
-      "type": "string",
-      "default": "0x1A2D0"
+      "type": "string"
     },
     "gtp_addr": {
       "title": "GTP Address",
