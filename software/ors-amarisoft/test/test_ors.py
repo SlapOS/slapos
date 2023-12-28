@@ -26,12 +26,11 @@
 ##############################################################################
 
 import os
-import io
-import yaml
-import pcpp
 import json
 import glob
 import requests
+
+from test import yload
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -51,7 +50,7 @@ param_dict = {
     'impi': 'impi331@amarisoft.com',
     'tx_gain': 17,
     'rx_gain': 17,
-    'dl_earfcn': 36100,  # XXX KeyError: 'no band that corresponds to DL EARFCN=325320'
+    'dl_earfcn': 36100,
     'bandwidth': "10 MHz",
     'enb_id': '0x17',
     'pci': 250,
@@ -136,20 +135,6 @@ gnb_param_dict2 = {
 enb_param_dict.update(param_dict)
 gnb_param_dict1.update(param_dict)
 gnb_param_dict2.update(param_dict)
-
-
-# yload loads yaml config file after preprocessing it.
-#
-# preprocessing is needed to e.g. remove // and /* comments.
-def yload(path):
-    with open(path, 'r') as f:
-        data = f.read()     # original input
-    p = pcpp.Preprocessor()
-    p.parse(data)
-    f = io.StringIO()
-    p.write(f)
-    data_ = f.getvalue()    # preprocessed input
-    return yaml.load(data_, Loader=yaml.Loader)
 
 
 def test_enb_conf(self):

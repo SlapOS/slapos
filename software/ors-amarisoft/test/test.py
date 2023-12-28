@@ -17,12 +17,30 @@
 # See https://www.nexedi.com/licensing for rationale and options.
 
 import os
+import io
+import yaml
+import pcpp
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
+
+# yload loads yaml config file after preprocessing it.
+#
+# preprocessing is needed to e.g. remove // and /* comments.
+def yload(path):
+    with open(path, 'r') as f:
+        data = f.read()     # original input
+    p = pcpp.Preprocessor()
+    p.parse(data)
+    f = io.StringIO()
+    p.write(f)
+    data_ = f.getvalue()    # preprocessed input
+    return yaml.load(data_, Loader=yaml.Loader)
+
 
 # XXX
 
