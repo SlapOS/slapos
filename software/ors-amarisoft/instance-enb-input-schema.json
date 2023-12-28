@@ -2,14 +2,10 @@
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
-  "required": [
-    "enb_id",
-    "gnb_id"
-  ],
   "properties": {
     "enb_id": {
       "title": "eNB ID",
-      "description": "eNB ID",
+      "description": "eNB ID. (must be set if there are LTE cells)",
       "type": "string"
     },
     "gtp_addr": {
@@ -38,7 +34,7 @@
     },
     "gnb_id": {
       "title": "gNB ID",
-      "description": "gNB ID",
+      "description": "gNB ID. (must set if there are NR cells)",
       "type": "string"
     },
     "gnb_id_bits": {
