@@ -28,7 +28,7 @@ def main():
         print(e, file=sys.stderr)
       else:
         with open(f, 'w') as outfile:
-          json.dump(obj, outfile, sort_keys=False, indent=2, separators=(',', ': '))
+          json.dump(obj, outfile, ensure_ascii=False, sort_keys=False, indent=2, separators=(',', ': '))
           outfile.write('\n')
   sys.exit(exit_code)
 

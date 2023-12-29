@@ -85,6 +85,7 @@ def createFormatTest(path):
       self.assertEqual(
           (json.dumps(
               json.loads(content, object_pairs_hook=collections.OrderedDict),
+              ensure_ascii=False,
               sort_keys=False,
               indent=2,
               separators=(',', ': ')) + "\n").splitlines(),
