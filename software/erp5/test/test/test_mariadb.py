@@ -36,6 +36,7 @@ import subprocess
 import urllib.parse
 
 import MySQLdb
+import MySQLdb.connections
 
 from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
 
@@ -60,8 +61,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     return "mariadb"
 
   @classmethod
-  def _getInstanceParameterDict(cls):
-    # type: () -> dict
+  def _getInstanceParameterDict(cls) -> dict:
     return {
         'tcpv4-port': 3306,
         'max-connection-count': 5,
@@ -76,12 +76,10 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     }
 
   @classmethod
-  def getInstanceParameterDict(cls):
-    # type: () -> dict
+  def getInstanceParameterDict(cls) -> dict:
     return {'_': json.dumps(cls._getInstanceParameterDict())}
 
-  def getDatabaseConnection(self):
-    # type: () -> MySQLdb.connections.Connection
+  def getDatabaseConnection(self) -> MySQLdb.connections.Connection:
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
@@ -106,8 +104,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       '*/srv/backup/*',
     )
 
-  def test_full_backup(self):
-    # type: () -> None
+  def test_full_backup(self) -> None:
     self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
     full_backup_file, = glob.glob(
       os.path.join(
@@ -121,8 +118,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
     with gzip.open(full_backup_file, 'rt') as dump:
       self.assertIn('CREATE TABLE', dump.read())
 
-  def test_logrotate_and_slow_query_digest(self):
-    # type: () -> None
+  def test_logrotate_and_slow_query_digest(self) -> None:
     # slow query digest needs to run after logrotate, since it operates on the rotated
     # file, so this tests both logrotate and slow query digest.
 
@@ -193,8 +189,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
 
 class TestMariaDB(MariaDBTestCase):
-  def test_utf8_collation(self):
-    # type: () -> None
+  def test_utf8_collation(self) -> None:
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query(
@@ -219,8 +214,7 @@ class TestMariaDB(MariaDBTestCase):
 
 
 class TestMroonga(MariaDBTestCase):
-  def test_mroonga_plugin_loaded(self):
-    # type: () -> None
+  def test_mroonga_plugin_loaded(self) -> None:
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query("show plugins")
@@ -229,8 +223,7 @@ class TestMroonga(MariaDBTestCase):
           ('Mroonga', 'ACTIVE', 'STORAGE ENGINE', 'ha_mroonga.so', 'GPL'),
           plugins)
 
-  def test_mroonga_normalize_udf(self):
-    # type: () -> None
+  def test_mroonga_normalize_udf(self) -> None:
     # example from https://mroonga.org/docs/reference/udf/mroonga_normalize.html#usage
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
@@ -255,8 +248,7 @@ class TestMroonga(MariaDBTestCase):
         self.assertEqual((('ABCDあぃうぇ㍑'.encode(),),),
                          cnx.store_result().fetch_row(maxrows=2))
 
-  def test_mroonga_full_text_normalizer(self):
-    # type: () -> None
+  def test_mroonga_full_text_normalizer(self) -> None:
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-normalizer
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
@@ -293,8 +285,7 @@ class TestMroonga(MariaDBTestCase):
           cnx.store_result().fetch_row(maxrows=2),
       )
 
-  def test_mroonga_full_text_normalizer_TokenBigramSplitSymbolAlphaDigit(self):
-    # type: () -> None
+  def test_mroonga_full_text_normalizer_TokenBigramSplitSymbolAlphaDigit(self) -> None:
     # Similar to as ERP5's testI18NSearch with erp5_full_text_mroonga_catalog
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
@@ -337,8 +328,7 @@ class TestMroonga(MariaDBTestCase):
           """)
       self.assertEqual(((1,),), cnx.store_result().fetch_row(maxrows=2))
 
-  def test_mroonga_full_text_stem(self):
-    # type: () -> None
+  def test_mroonga_full_text_stem(self) -> None:
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-token-filters
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):

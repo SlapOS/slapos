@@ -634,8 +634,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
         )):
       os.unlink(logfile)
 
-  def _getCrontabCommand(self, crontab_name):
-    # type: (str) -> str
+  def _getCrontabCommand(self, crontab_name: str) -> str:
     """Read a crontab and return the command that is executed.
 
     overloaded to use crontab from zope partition
@@ -1046,8 +1045,7 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
   __partition_reference__ = 'n'
   __test_matrix__ = matrix((neo,))
 
-  def _getCrontabCommand(self, crontab_name):
-    # type: (str) -> str
+  def _getCrontabCommand(self, crontab_name: str) -> str:
     """Read a crontab and return the command that is executed.
 
     overloaded to use crontab from neo partition
@@ -1127,7 +1125,7 @@ class TestUnsetWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedU
   """
   __partition_reference__ = 'unset-with-max-rlimit-nofile'
 
-  def test_unset_with_max_rlimit_nofile(self):
+  def test_unset_with_max_rlimit_nofile(self) -> None:
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
     limit = resource.getrlimit(resource.RLIMIT_NOFILE)
