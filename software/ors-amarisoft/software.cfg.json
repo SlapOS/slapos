@@ -17,6 +17,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "ru/input-schema.json",
+      "response": "ru/schema.json",
       "index": 2
     },
     "cell": {
@@ -25,6 +26,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "cell/input-schema.json",
+      "response": "cell/schema.json",
       "index": 3
     },
     "peer": {
@@ -33,6 +35,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "peer/input-schema.json",
+      "response": "peer/schema.json",
       "index": 4
     },
     "peer/cell": {
@@ -41,6 +44,7 @@
       "software-type": "enb",
       "shared": true,
       "request": "peer/cell/input-schema.json",
+      "response": "peer/cell/schema.json",
       "index": 5
     },
     "core-network": {
@@ -56,7 +60,7 @@
       "description": "Core Network Sim Card Configuration",
       "software-type": "core-network",
       "request": "sim/input-schema.json",
-      "response": "instance-core-network-slave-schema.json",
+      "response": "sim/schema.json",
       "shared": true,
       "index": 7
     },
@@ -74,6 +78,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ru/input-schema.json",
+      "response": "ru/schema.json",
       "index": 9
     },
     "ue": {
@@ -82,6 +87,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ue/input-schema.json",
+      "response": "ue/schema.json",
       "index": 10
     },
     "ue/cell": {
@@ -90,6 +96,7 @@
       "software-type": "ue",
       "shared": true,
       "request": "ue/cell/input-schema.json",
+      "response": "ue/cell/schema.json",
       "index": 11
     }
   }
