@@ -38,6 +38,27 @@
 # and without being vulnerable to buildout code injection.
 #
 # The encoding never fails, does not loose information and can be reversed back via decode.
+#
+# It also leaves all characters allowed by buildout except "_" as is, which
+# make encoding to be identity for 99% of the practical cases in existing
+# SlapOS profiles. In other words it is safe to use encode for both generated
+# and static buildout sections, without the need to also use encode when
+# referring to those static sections.
+#
+# Recommended usage of encode in buildout profiles is via B as illustrated below:
+#
+#   {#-   B(name) returns buildout-encoded form of name #}
+#   {%-   set B = xbuildout.encode  %}
+#
+#   ...
+#
+#   [{{ B('%s-stats' % ru_ref) }}]
+#   # code for <ru_ref>-stats section
+#
+#   ...
+#
+#   # referring to <ru_ref>-stats
+#   ${ {{-B('%s-stats' % ru_ref)}}:output}
 def encode(s: str): # -> str
     s = s.encode('utf-8')
     outv = []
