@@ -14,14 +14,10 @@
 {#- defaults provide default values for lte parameters.
     it should be kept in sync with "default" in json schemas  #}
 {#- XXX opc='milenage' is not meaningful ?  #}
-{#- XXX txrx_active=ACTIVE for sdr - needed ? (bwcompat for ORS) - if yes -> update ru/sdr/input-schema.json #}
 {#- XXX add inactivity timer to cell schemas #}
 {%- set defaults = {
       'ru': {
         'txrx_active': 'INACTIVE',
-      },
-      'ru/sdr': {
-        'txrx_active': 'ACTIVE',
       },
 
       'cell/lte': {
