@@ -35,6 +35,8 @@
 #   zc.buildout.configparser.ParsingError: File contains parsing errors: .../instance-enb.cfg
 #       [line 45]: '[promise-testing partition 0.RU-sdr-busy]\n'
 #
+# and without being vulnerable to buildout code injection.
+#
 # The encoding never fails, does not loose information and can be reversed back via decode.
 def encode(s: str): # -> str
     s = s.encode('utf-8')
