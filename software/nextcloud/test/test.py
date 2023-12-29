@@ -80,6 +80,7 @@ class NextCloudTestCase(InstanceTestCase):
     self._db_info = urlparse(db_url)
 
   def getNextcloudConfig(self, config_dict={}):
+    nextcloud_url = "[%s]:9988" % self.nextcloud_ipv6
     data_dict = dict(
       datadirectory=self.partition_dir + "/srv/data",
       dbhost="%s:2099" % self._ipv4_address,
@@ -95,9 +96,9 @@ class NextCloudTestCase(InstanceTestCase):
       mail_smtpport="587",
       mail_smtppassword="",
       mail_smtpname="",
-      cli_url="https://[%s]:9988/" % self.nextcloud_ipv6,
+      cli_url="https://%s/" % nextcloud_url,
       partition_dir=self.partition_dir,
-      trusted_domain_list=json.dumps(["[%s]:9988" % self.nextcloud_ipv6]),
+      trusted_domain_list=json.dumps([nextcloud_url, nextcloud_url]),
       trusted_proxy_list=[],
       software_release_path=os.path.join(self.software_release_path, "parts/ffmpeg/bin/ffmpeg"),
     )
@@ -355,6 +356,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       cli_url="nextcloud.example.com",
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps([
+        "[%s]:9988" % self.nextcloud_ipv6,
         "[%s]:9988" % self.nextcloud_ipv6,
         "nextcloud.example.com",
         "nextcloud.example.cn",
