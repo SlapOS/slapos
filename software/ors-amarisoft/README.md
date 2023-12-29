@@ -9,29 +9,6 @@ How to deploy from scratch
   2. Install ors playbook
   3. Deploy this SR
 
-## Generated buildout configurations and json input schemas
-
-XXX update
-
- * instance-ue-input-schema.json
-
-Since there are multiple ors-amarisoft softwares releases and software types, the following files are
-generated with jinja2 templates with the render-templates script before being pushed to gitlab:
-
- * instance-tdd-enb-input-schema.json
- * instance-fdd-enb-input-schema.json
- * software-fdd.cfg
- * software-tdd.cfg.json
- * instance-tdd-gnb-input-schema.json
- * test/testFDD.py
- * test/testTDD.py
- * software-tdd.cfg
- * instance-fdd-gnb-input-schema.json
- * software-fdd.cfg.json
-
-These files should not be modified directly, and the render-templates scripts should be run along
-with update-hash before each commit.
-
 ## Services
 
 We run 2 binaries from Amarisoft LTE stack:
