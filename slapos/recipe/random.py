@@ -40,6 +40,9 @@ from .librecipe import GenericBaseRecipe
 from .publish_early import volatileOptions
 from slapos.util import str2bytes
 
+import passlib.hash
+
+
 class Integer(object):
   """
   Generate a random integer (see standard random.randint documentation).
@@ -128,6 +131,11 @@ class Password(object):
     - create-once: boolean value which set if storage-path won't be modified
                    as soon the file is created with the password (not empty).
       (default: True)
+    - passwd: the generated password. Can also be set, to reuse the password
+              hashing capabilities.
+    - passwd-*: the hashed password, using schemes supported by passlib.
+                for example, passwd-sha256-crypt will expose the password hashed
+                with sha256 crypt algorithm.
 
     If storage-path is empty, the recipe does not save the password, which is
     fine it is saved by other means, e.g. using the publish-early recipe.
@@ -154,6 +162,19 @@ class Password(object):
         passwd = self.generatePassword(int(options.get('bytes', '16')))
         self.update = self.install
       options['passwd'] = passwd
+
+    class HashedPasswordDict(dict):
+      def __missing__(self, key):
+        if not key.startswith('passwd-'):
+          raise KeyError(key)
+        handler = getattr(
+          passlib.hash, key[len('passwd-'):].replace('-', '_'), None)
+        if handler is None:
+          raise KeyError(key)
+        return handler.hash(passwd)
+
+    options._data = HashedPasswordDict(options._data)
+
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
     # publish_early already does it, but this recipe may also be used alone.
