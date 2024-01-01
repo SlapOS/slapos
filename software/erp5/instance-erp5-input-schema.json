@@ -111,7 +111,7 @@
       "description": "Family-wide options, possibly overriding global options",
       "default": {},
       "patternProperties": {
-        ".*": {
+        "^[a-zA-Z0-9_-]+$": {
           "default": {},
           "properties": {
             "webdav": {
@@ -164,7 +164,7 @@
         "default": {}
       },
       "patternProperties": {
-        ".*": {
+        "^[a-zA-Z0-9_-]+$": {
           "required": [
             "zope-family"
           ],
@@ -204,13 +204,14 @@
         "1": {}
       },
       "patternProperties": {
-        ".*": {
+        "^[a-zA-Z0-9_-]+$": {
           "additionalProperties": false,
           "properties": {
             "family": {
               "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own balancer entry. It has no special meaning for the system.",
               "default": "default",
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+$"
             },
             "instance-count": {
               "description": "Number of Zopes to setup on this partition",
