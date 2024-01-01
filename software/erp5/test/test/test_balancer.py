@@ -99,9 +99,6 @@ class BalancerTestCase(ERP5InstanceTestCase):
             'default': ['dummy_http_server'],
         },
         'dummy_http_server': [[cls.getManagedResource("backend_web_server", EchoHTTPServer).netloc, 1, False]],
-        'backend-path-dict': {
-            'default': '',
-        },
         'ssl-authentication-dict': {'default': False},
         'ssl': {
             'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
@@ -579,7 +576,6 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     parameter_dict = super()._getInstanceParameterDict()
     # add another "-auth" backend, that will have ssl-authentication enabled
     parameter_dict['zope-family-dict']['default-auth'] = ['dummy_http_server']
-    parameter_dict['backend-path-dict']['default-auth'] = '/'
     parameter_dict['ssl-authentication-dict'] = {
         'default': False,
         'default-auth': True,
