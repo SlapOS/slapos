@@ -171,7 +171,6 @@ update-command = ${:command}
 {%   set _ = next_port() -%}
 
 {%   set haproxy_port = next_port() -%}
-{%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
 {%   if has_webdav -%}
 {%     set external_scheme = 'webdavs' -%}
 {%   else %}
