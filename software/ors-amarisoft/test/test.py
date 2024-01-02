@@ -132,6 +132,16 @@ class ENBTestCase(AmariTestCase):
     def getInstanceSoftwareType(cls):
         return "enb"
 
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return json.dumps({...} )    # XXX + testing=True
+
+    @classmethod
+    def requestDefaultInstance(cls, state='started'):
+        inst = super().requestDefaultInstance(state=state)
+        cls.addShared(inst)
+        return inst
+
     # ref returns full reference of shared instance with given subreference.
     #
     # for example if refrence of main isntance is 'MAIN-INSTANCE'
@@ -140,12 +150,6 @@ class ENBTestCase(AmariTestCase):
     @classmethod
     def ref(cls, subref):
         return '%s.%s' % (cls.default_partition_reference, subref)
-
-    @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        inst = super().requestDefaultInstance(state=state)
-        cls.addShared(inst)
-        return inst
 
     # addShared adds all shared instances of the testcase over imain.
     @classmethod
@@ -173,7 +177,9 @@ class ENBTestCase(AmariTestCase):
 
 class TestENB_SDR(ENBTestCase):
     @classmethod
-    def getInstanceParameterDict(cls):
+    def addShared(cls, imain):
+        super().addShared(cls, imain)
+
         sdr0  x 4t
         sdr1  x 4f
         sdr2  x 5t
@@ -182,8 +188,6 @@ class TestENB_SDR(ENBTestCase):
 
 
 class TestENB_CPRI(ENBTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
         lo  x {4t,4f,5t,5f}
         sw  x {4t,4f,5t,5f}
 
