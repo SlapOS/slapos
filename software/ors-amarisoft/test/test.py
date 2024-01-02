@@ -233,10 +233,10 @@ class TestENB_CPRI(ENBTestCase):
             cell.update(kw)
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
-        LO_CELL(1, {'cell_type': 'lte', 'rf_mode'='tdd' , 'dl_earfcn'=..., 'bandwidth'=...})
         LO_CELL(1, LTE_TDD(100, 10))
-        LO_CELL(1, LTE_FDD(500, 20))
-        LO_CELL(1, NR_TDD (100, 10))
+        LO_CELL(2, LTE_FDD(500, 20))
+        LO_CELL(3,  NR_TDD(100, 10))
+        LO_CELL(4,  NR_FDD(500, 10))
 
 
         # XXX + sunwave
