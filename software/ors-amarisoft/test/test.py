@@ -23,7 +23,7 @@ import pcpp
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, AmariTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
@@ -58,7 +58,6 @@ CELL_5t = {
     'dl_nr_arfcn':  523020,     # 2615.1 MHz
     'nr_band':      41,
 }
-
 
 CELL_4f = {
     'cell_type':    'lte',
@@ -124,6 +123,59 @@ PEERCELL = {
 
 # XXX dl_earfcn     -> ul_earfcn
 # XXX dl_nr_arfcn   -> ul_nr_arfcn + ssb_nr_arfcn
+
+# XXX explain ENB does not support mixing SDR + CPRI
+
+# XXX doc
+class ENBTestCase(AmariTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "enb"
+
+    @classmethod
+    def requestDefaultInstance(cls, state='started'):
+        inst = super().requestDefaultInstance(state=state)
+        cls.requestShared(inst)
+        return inst
+
+    # requestShared requests shared instance over imain with specified subreference and parameters.
+    @classmethod
+    def requestShared(cls, imain, subref, ctx):
+        cls.slap.request(
+            software_release=cls.getSoftwareURL(),
+            software_type=cls.getInstanceSoftwareType(),
+            partition_reference=cls.ref(subref),
+            filter_kw = {'instance_guid': imain.getInstanceGuid()},
+            partition_parameter_kw={'_': json.dumps(ctx)}
+            shared=True,
+
+
+    # ref returns full reference of shared instance with given subreference.
+    #
+    # for example if refrence of main isntance is 'MAIN-INSTANCE'
+    #
+    #   ref('RU') = 'MAIN-INSTANCE.RU'
+    @classmethod
+    def ref(cls, subref):
+        return '%s.%s' % (cls.default_partition_reference, subref)
+
+
+
+class TestENB_SDR(ENBTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        sdr0  x 4t
+        sdr1  x 4f
+        sdr2  x 5t
+        sdr3  x 5f
+        return {'_': json.dumps(enb_param_dict)}
+
+
+class TestENB_CPRI(ENBTestCase):
+    @classmethod
+    def getInstanceParameterDict(cls):
+        lo  x {4t,4f,5t,5f}
+        sw  x {4t,4f,5t,5f}
 
 
 # XXX enb   - {sdr,lopcomm,sunwave}·2 - {cell_lte1fdd,2tdd, cell_nr1fdd,2tdd}  + peer·2 + peercell·2
