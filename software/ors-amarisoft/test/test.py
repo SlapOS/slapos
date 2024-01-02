@@ -44,35 +44,10 @@ def yload(path):
 
 
 # XXX explain CELL_xy ...
-CELL_4t = {
-    'cell_type':    'lte',
-    'rf_mode':      'tdd',
-    'bandwidth':    '5 MHz',
-    'dl_earfcn':    38050,      # 2600 MHz
-}
-
-CELL_5t = {
-    'cell_type':    'nr',
-    'rf_mode':      'tdd',
-    'bandwidth':    10,
-    'dl_nr_arfcn':  523020,     # 2615.1 MHz
-    'nr_band':      41,
-}
-
-CELL_4f = {
-    'cell_type':    'lte',
-    'rf_mode':      'fdd',
-    'bandwidth':    '5 MHz',
-    'dl_earfcn':    3350,       # 2680 MHz
-}
-
-CELL_5f = {
-    'cell_type':    'nr',
-    'rf_mode':      'fdd',
-    'bandwidth':    5,
-    'dl_nr_arfcn':  537200,     # 2686 MHz
-    'nr_band':      7,
-}
+CELL_4t = LTE_TDD(38050,      5)    # 2600 MHz
+CELL_5t =  NR_TDD(523020,41, 10)    # 2615.1 MHz
+CELL_4f = LTE_FDD(3350,       5)    # 2680 MHz
+CELL_5f =  NR_FDD(537200,7,   5)    # 2686 MHz
 
 
 # XXX common enb
