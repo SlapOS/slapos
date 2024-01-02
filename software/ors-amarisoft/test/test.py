@@ -90,6 +90,38 @@ _ = {
 }
 
 
+PEER = {
+    'peer_type':    'lte',
+    'x2_addr':      '44.1.1.1',
+}
+
+PEER = {
+    'peer_type':    'nr',
+    'xn_addr':      '55.1.1.1',
+}
+
+PEERCELL = {
+    'cell_type':        'lte',
+    'cell_kind':        'enb_peer',
+    'e_cell_id':        '0x12345',
+    'pci':              35,
+    'dl_earfcn':        700,
+    'bandwidth':        '10 MHz',
+    'tac':              123,
+}
+
+
+PEERCELL = {
+    'cell_type':        'nr',
+    'cell_kind':        'enb_peer',
+    'nr_cell_id':       '0x77712',
+    'gnb_id_bits':      22,
+    'dl_nr_arfcn':      520000,
+    'nr_band':          38,
+    'pci':              75,
+    'tac':              321,
+}
+
 # XXX dl_earfcn     -> ul_earfcn
 # XXX dl_nr_arfcn   -> ul_nr_arfcn + ssb_nr_arfcn
 
