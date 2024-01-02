@@ -89,17 +89,17 @@ _ = {
 }
 
 
-PEER = {
+PEER4 = {
     'peer_type':    'lte',
     'x2_addr':      '44.1.1.1',
 }
 
-PEER = {
+PEER4 = {
     'peer_type':    'nr',
     'xn_addr':      '55.1.1.1',
 }
 
-PEERCELL = {
+PEERCELL4 = {
     'cell_type':        'lte',
     'cell_kind':        'enb_peer',
     'e_cell_id':        '0x12345',
@@ -110,7 +110,7 @@ PEERCELL = {
 }
 
 
-PEERCELL = {
+PEERCELL5 = {
     'cell_type':        'nr',
     'cell_kind':        'enb_peer',
     'nr_cell_id':       '0x77712',
@@ -132,11 +132,31 @@ class ENBTestCase(AmariTestCase):
     def getInstanceSoftwareType(cls):
         return "enb"
 
+    # ref returns full reference of shared instance with given subreference.
+    #
+    # for example if refrence of main isntance is 'MAIN-INSTANCE'
+    #
+    #   ref('RU') = 'MAIN-INSTANCE.RU'
+    @classmethod
+    def ref(cls, subref):
+        return '%s.%s' % (cls.default_partition_reference, subref)
+
     @classmethod
     def requestDefaultInstance(cls, state='started'):
         inst = super().requestDefaultInstance(state=state)
-        cls.requestShared(inst)
+        cls.addShared(inst)
         return inst
+
+    # addShared adds all shared instances of the testcase over imain.
+    @classmethod
+    def addShared(cls, imain):
+        def _(subref, ctx):
+            return cls.requestShared(imain, subref, ctx)
+        _('PEER4',      PEER4)
+        _('PEER5',      PEER4)
+        _('PEERCELL4',  PEERCELL4)
+        _('PEERCELL5',  PEERCELL5)
+
 
     # requestShared requests shared instance over imain with specified subreference and parameters.
     @classmethod
@@ -147,17 +167,7 @@ class ENBTestCase(AmariTestCase):
             partition_reference=cls.ref(subref),
             filter_kw = {'instance_guid': imain.getInstanceGuid()},
             partition_parameter_kw={'_': json.dumps(ctx)}
-            shared=True,
-
-
-    # ref returns full reference of shared instance with given subreference.
-    #
-    # for example if refrence of main isntance is 'MAIN-INSTANCE'
-    #
-    #   ref('RU') = 'MAIN-INSTANCE.RU'
-    @classmethod
-    def ref(cls, subref):
-        return '%s.%s' % (cls.default_partition_reference, subref)
+            shared=True)
 
 
 
