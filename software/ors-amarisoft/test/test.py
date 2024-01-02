@@ -175,7 +175,7 @@ class ENBTestCase(AmariTestCase):
             software_type=cls.getInstanceSoftwareType(),
             partition_reference=cls.ref(subref),
             filter_kw = {'instance_guid': imain.getInstanceGuid()},
-            partition_parameter_kw={'_': json.dumps(ctx)}
+            partition_parameter_kw={'_': json.dumps(ctx)},
             shared=True)
 
 
@@ -185,15 +185,15 @@ class TestENB_SDR(ENBTestCase):
     def requestAllShared(cls, imain):
         super().requestAllShared(cls, imain)
 
-        sdr0  x 4t
-        sdr1  x 4f
-        sdr2  x 5t
-        sdr3  x 5f
+        # sdr0  x 4t
+        # sdr1  x 4f
+        # sdr2  x 5t
+        # sdr3  x 5f
 
 
 class TestENB_CPRI(ENBTestCase):
-        lo  x {4t,4f,5t,5f}
-        sw  x {4t,4f,5t,5f}
+    #   lo  x {4t,4f,5t,5f}
+    #   sw  x {4t,4f,5t,5f}
 
     @classmethod
     def requestAllShared(cls, imain):
