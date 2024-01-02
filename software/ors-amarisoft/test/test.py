@@ -126,6 +126,31 @@ PEERCELL5 = {
 
 # XXX explain ENB does not support mixing SDR + CPRI
 
+
+# {LTE,NR}_{TDD,FDD} return basic parameters for an LTE/NR cell given downlink frequency and bandwidth.
+def LTE_TDD(dl_earfcn, bandwidth):
+    return {
+        'cell_type': 'lte',
+        'rf_mode':   'tdd',
+        'dl_earfcn': dl_earfcn,
+        'bandwidth': '%g MHz' % bandwidth,
+    }
+def LTE_FDD(dl_earfcn, bandwidth):
+    _ = LTE_TDD(dl_earfcn, bandwidth);  _['rf_mode'] = 'fdd'
+    return _
+
+def NR_TDD(dl_nr_arfcn, nr_band, bandwidth):
+    return {
+        'cell_type':    'nr',
+        'rf_mode':      'tdd',
+        'dl_nr_arfcn':  dl_nr_arfcn,
+        'nr_band':      nr_band,
+        'bandwidth':    bandwidth,
+    }
+def NR_FDD(dl_nr_arfcn, nr_band, bandwidth):
+    _ = NR_TDD(dl_nr_arfcn, nr_band, bandwidth);  _['rf_mode'] = 'fdd'
+    return _
+
 # XXX doc
 class ENBTestCase(AmariTestCase):
     @classmethod
@@ -134,12 +159,14 @@ class ENBTestCase(AmariTestCase):
 
     @classmethod
     def getInstanceParameterDict(cls):
-        return json.dumps({...} )    # XXX + testing=True
+        return json.dumps({...} )    # XXX + testing=True enb_id, gnb_id
+
+    # XXX + generic test that verifies ^^^ to be rendered into enb.cfg
 
     @classmethod
     def requestDefaultInstance(cls, state='started'):
         inst = super().requestDefaultInstance(state=state)
-        cls.addShared(inst)
+        cls.requestAllShared(inst)
         return inst
 
     # ref returns full reference of shared instance with given subreference.
@@ -151,9 +178,9 @@ class ENBTestCase(AmariTestCase):
     def ref(cls, subref):
         return '%s.%s' % (cls.default_partition_reference, subref)
 
-    # addShared adds all shared instances of the testcase over imain.
+    # requestAllShared adds all shared instances of the testcase over imain.
     @classmethod
-    def addShared(cls, imain):
+    def requestAllShared(cls, imain):
         def _(subref, ctx):
             return cls.requestShared(imain, subref, ctx)
         _('PEER4',      PEER4)
@@ -162,7 +189,7 @@ class ENBTestCase(AmariTestCase):
         _('PEERCELL5',  PEERCELL5)
 
 
-    # requestShared requests shared instance over imain with specified subreference and parameters.
+    # requestShared requests one shared instance over imain with specified subreference and parameters.
     @classmethod
     def requestShared(cls, imain, subref, ctx):
         cls.slap.request(
@@ -177,19 +204,69 @@ class ENBTestCase(AmariTestCase):
 
 class TestENB_SDR(ENBTestCase):
     @classmethod
-    def addShared(cls, imain):
-        super().addShared(cls, imain)
+    def requestAllShared(cls, imain):
+        super().requestAllShared(cls, imain)
 
         sdr0  x 4t
         sdr1  x 4f
         sdr2  x 5t
         sdr3  x 5f
-        return {'_': json.dumps(enb_param_dict)}
 
 
 class TestENB_CPRI(ENBTestCase):
         lo  x {4t,4f,5t,5f}
         sw  x {4t,4f,5t,5f}
+
+    @classmethod
+    def requestAllShared(cls, imain):
+        super().requestAllShared(imain)
+
+        # Lopcomm x {4t,4f,5t,5f}
+        def LO(i):
+            return {
+                'ru_type':      'lopcomm',
+                'ru_link_type': 'cpri',
+                'cpri_link':    {
+                    'sdr_dev':  0,
+                    'sfp_port': 1 + i,
+                    'mult':     4,
+                    'mapping':  'hw',
+                    'rx_delay': 25.11,
+                    'tx_delay': 14.71,
+                    'tx_dbm':   63
+                },
+                'mac_addr':     '00:0A:45:00:00:%02x' % i,
+                'tx_gain':      -11,
+                'rx_gain':      -12,
+                'txrx_active':  'INACTIVE',
+            }
+        cls.requestShared(imain, 'LO1', LO(1))
+        cls.requestShared(imain, 'LO2', LO(2))
+        cls.requestShared(imain, 'LO3', LO(3))
+        cls.requestShared(imain, 'LO4', LO(4))
+
+        def LO_CELL(i, **kw):
+            cell = {
+                'cell_kind':    'enb',
+                'pci':          i,
+                'cell_id':      '%x' % (0x00 + i),
+                'ru': {
+                    'ru_type': 'ru_ref',
+                    'ru_ref':   cls.ref('LO%d' % i),
+                }
+            }
+            cell.update(kw)
+            cls.requestShared(imain, 'LO%d.CELL' % i, cell)
+
+        LO_CELL(1, {'cell_type': 'lte', 'rf_mode'='tdd' , 'dl_earfcn'=..., 'bandwidth'=...})
+        LO_CELL(1, LTE_TDD(100, 10))
+        LO_CELL(1, LTE_FDD(500, 20))
+        LO_CELL(1, NR_TDD (100, 10))
+
+
+        # XXX + sunwave
+
+
 
 
 # XXX enb   - {sdr,lopcomm,sunwave}·2 - {cell_lte1fdd,2tdd, cell_nr1fdd,2tdd}  + peer·2 + peercell·2
