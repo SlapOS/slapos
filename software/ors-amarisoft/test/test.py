@@ -103,13 +103,16 @@ PEERCELL5 = {
 
 
 # {LTE,NR}_{TDD,FDD} return basic parameters for an LTE/NR cell given downlink frequency and bandwidth.
-def LTE_TDD(dl_earfcn, bandwidth):
+def LTE(dl_earfcn, bandwidth):
     return {
         'cell_type': 'lte',
-        'rf_mode':   'tdd',
         'dl_earfcn': dl_earfcn,
         'bandwidth': '%g MHz' % bandwidth,
     }
+def LTE_TDD(dl_earfcn, bandwidth):
+    _ = LTE(dl_earfcn, bandwidth)
+    _['rf_mode'] = 'tdd'
+    return _
 def LTE_FDD(dl_earfcn, bandwidth):
     _ = LTE_TDD(dl_earfcn, bandwidth);  _['rf_mode'] = 'fdd'
     return _
@@ -233,13 +236,30 @@ class TestENB_CPRI(ENBTestCase):
             cell.update(kw)
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
-        LO_CELL(1, LTE_TDD(100, 10))
-        LO_CELL(2, LTE_FDD(500, 20))
-        LO_CELL(3,  NR_TDD(100, 10))
-        LO_CELL(4,  NR_FDD(500, 10))
-
+        LO_CELL(1, tLTE(100, 10))
+        LO_CELL(2, fLTE(500, 20))
+        LO_CELL(3, tNR (100, 10))
+        LO_CELL(4, fNR (500, 10))
 
         # XXX + sunwave
+
+    def test_enb_conf(self):
+        super().test_enb_conf()
+
+        conf = ...yload('etc/enb.cfg')
+
+        self.assertEqual(conf['rf_driver']['args'],
+                'dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4' + # Lopcomm
+                '')                                                                     # XXX Sunwave
+        self.assertEqual(len(conf['cell_list']),    2*2)
+        self.assertEqual(len(conf['nr_cell_list']), 2*2)
+
+
+
+        # XXX RU
+        # XXX CELLs
+        # XXX CA
+
 
 
 
