@@ -42,7 +42,57 @@ def yload(path):
     return yaml.load(data_, Loader=yaml.Loader)
 
 
-# XXX
+
+# XXX explain CELL_xy ...
+CELL_4t = {
+    'cell_type':    'lte',
+    'rf_mode':      'tdd',
+    'bandwidth':    '5 MHz',
+    'dl_earfcn':    38050,      # 2600 MHz
+}
+
+CELL_5t = {
+    'cell_type':    'nr',
+    'rf_mode':      'tdd',
+    'bandwidth':    10,
+    'dl_nr_arfcn':  523020,     # 2615.1 MHz
+    'nr_band':      41,
+}
+
+
+CELL_4f = {
+    'cell_type':    'lte',
+    'rf_mode':      'fdd',
+    'bandwidth':    '5 MHz',
+    'dl_earfcn':    3350,       # 2680 MHz
+}
+
+CELL_5f = {
+    'cell_type':    'nr',
+    'rf_mode':      'fdd',
+    'bandwidth':    5,
+    'dl_nr_arfcn':  537200,     # 2686 MHz
+    'nr_band':      7,
+}
+
+
+# XXX common enb
+_ = {
+    'cell_kind':    'enb',
+    'pci':          1,          # XXX
+    'cell_id':      '0x01',     # XXX
+    'tac':          '0x1234',
+}
+
+# XXX common uesim
+_ = {
+    'cell_kind':    'ue',
+}
+
+
+# XXX dl_earfcn     -> ul_earfcn
+# XXX dl_nr_arfcn   -> ul_nr_arfcn + ssb_nr_arfcn
+
 
 # XXX enb   - {sdr,lopcomm,sunwave}·2 - {cell_lte1fdd,2tdd, cell_nr1fdd,2tdd}  + peer·2 + peercell·2
 # XXX uesim - {sdr,lopcomm,sunwave}·2
