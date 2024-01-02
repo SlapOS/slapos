@@ -209,8 +209,8 @@ class TestENB_CPRI(ENBTestCase):
                     'sfp_port': 1 + i,
                     'mult':     4,
                     'mapping':  'hw',
-                    'rx_delay': 25.11,
-                    'tx_delay': 14.71,
+                    'rx_delay': 25,
+                    'tx_delay': 14,
                     'tx_dbm':   63
                 },
                 'mac_addr':     '00:0A:45:00:00:%02x' % i,
@@ -248,9 +248,19 @@ class TestENB_CPRI(ENBTestCase):
 
         conf = ...yload('etc/enb.cfg')
 
-        self.assertEqual(conf['rf_driver']['args'],
+        rf_driver = conf['rf_driver']
+        self.assertEqual(rf_driver['args'],
                 'dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4' + # Lopcomm
                 '')                                                                     # XXX Sunwave
+        self.assertEqual(rf_driver['cpri_mapping'], ','.join(['hw']*4 + ['bf1']*4))
+        self.assertEqual(rf_driver['cpri_mult'],    ','.join([ '4']*4 +   ['8']*4))
+        self.assertEqual(rf_driver['rx_delay'],     ','.join(['25']*4 +  ['XX']*4))
+        self.assertEqual(rf_driver['tx_delay'],     ','.join(['14']*4 +  ['XX']*4))
+        self.assertEqual(rf_driver['tx_dbm'],       ','.join(['63']*4 +  ['XX']*4))
+        self.assertEqual(rf_driver['ifname'],       ','.join(['XXXX']*4 +  ['YYYY']*4))
+
+        # XXX tx_gain / rx_gain
+
         self.assertEqual(len(conf['cell_list']),    2*2)
         self.assertEqual(len(conf['nr_cell_list']), 2*2)
 
