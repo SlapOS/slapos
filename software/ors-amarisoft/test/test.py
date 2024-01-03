@@ -42,19 +42,42 @@ def yload(path):
     return yaml.load(data_, Loader=yaml.Loader)
 
 
+# ---- building blocks to construct a cell ----
 
-# XXX common enb
-_ = {
-    'cell_kind':    'enb',
-    'pci':          1,          # XXX
-    'cell_id':      '0x01',     # XXX
-    'tac':          '0x1234',
-}
+# TDD/FDD are basic parameters to indicate TDD/FDD mode.
+TDD = {'rf_mode': 'tdd'}
+FDD = {'rf_mode': 'fdd'}
 
-# XXX common uesim
-_ = {
-    'cell_kind':    'ue',
-}
+# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency and bandwidth.
+def LTE(dl_earfcn, bandwidth):
+    return {
+        'cell_type': 'lte',
+        'dl_earfcn': dl_earfcn,
+        'bandwidth': '%g MHz' % bandwidth,
+    }
+def NR(dl_nr_arfcn, nr_band, bandwidth):
+    return {
+        'cell_type':    'nr',
+        'dl_nr_arfcn':  dl_nr_arfcn,
+        'nr_band':      nr_band,
+        'bandwidth':    bandwidth,
+    }
+
+
+# CENB returns basic parameters to indicate a ENB-kind cell.
+def CENB(cell_id, pci=1, tac=0x1234):
+    return {
+        'cell_kind':    'enb',
+        'cell_id':      '0x%02x' % cell_id,
+        'pci':          pci,
+        'tac':          '0x%x' % tac,
+    }
+
+# CUE indicates a UE-kind cell.
+CUE = {'cell_kind': 'ue'}
+
+
+# ----
 
 
 PEER4 = {
@@ -95,25 +118,6 @@ PEERCELL5 = {
 # XXX explain ENB does not support mixing SDR + CPRI
 
 
-# TDD/FDD are basic parameters to indicate a TDD/FDD mode.
-TDD = {'rf_mode': 'tdd'}
-FDD = {'rf_mode': 'fdd'}
-
-# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency and bandwidth.
-def LTE(dl_earfcn, bandwidth):
-    return {
-        'cell_type': 'lte',
-        'dl_earfcn': dl_earfcn,
-        'bandwidth': '%g MHz' % bandwidth,
-    }
-def NR(dl_nr_arfcn, nr_band, bandwidth):
-    return {
-        'cell_type':    'nr',
-        'dl_nr_arfcn':  dl_nr_arfcn,
-        'nr_band':      nr_band,
-        'bandwidth':    bandwidth,
-    }
-
 # XXX explain CELL_xy ...   XXX goes away
 CELL_4t = LTE(38050,      5) | TDD  # 2600 MHz
 CELL_5t =  NR(523020,41, 10) | TDD  # 2615.1 MHz
@@ -141,7 +145,7 @@ class ENBTestCase(AmariTestCase):
 
     # ref returns full reference of shared instance with given subreference.
     #
-    # for example if refrence of main isntance is 'MAIN-INSTANCE'
+    # for example if reference of main instance is 'MAIN-INSTANCE'
     #
     #   ref('RU') = 'MAIN-INSTANCE.RU'
     @classmethod
