@@ -50,14 +50,15 @@ def yload(path):
 # - CENB returns basic parameters to indicate a ENB-kind cell.
 # - CUE indicates an UE-kind cell.
 # - LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
+# - X2_PEER/XN_PEER indicate an LTE/NR ENB peer.
 
 TDD = {'rf_mode': 'tdd'}
 FDD = {'rf_mode': 'fdd'}
 
 def LTE(dl_earfcn):
     return {
-        'cell_type': 'lte',
-        'dl_earfcn': dl_earfcn,
+        'cell_type':    'lte',
+        'dl_earfcn':    dl_earfcn,
     }
 def NR(dl_nr_arfcn, nr_band):
     return {
@@ -83,28 +84,26 @@ CUE = {'cell_kind': 'ue'}
 
 def LTE_PEER(e_cell_id, pci, tac):
     return {
-        'cell_kind': 'enb_peer',
-        'e_cell_id': '0x%05x' % e_cell_id,
-        'pci':       pci,
-        'tac':       '0x%x' % tac,
+        'cell_kind':    'enb_peer',
+        'e_cell_id':    '0x%07x' % e_cell_id,
+        'pci':          pci,
+        'tac':          '0x%x' % tac,
     }
 def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac):
     return {
-        'cell_kind': 'enb_peer',
-        'nr_cell_id':       '0x77712',
-        'gnb_id_bits':      22,
-        'pci':              75,
-        'tac':              321,
+        'cell_kind':    'enb_peer',
+        'nr_cell_id':   '0x%09x' % nr_cell_id,
+        'gnb_id_bits':  gnb_id_bits,
+        'pci':          pci,
+        'tac':          tac,
     }
-
-
 
 def X2_PEER(x2_addr):
     return {
         'peer_type':    'lte',
         'x2_addr':      x2_addr,
     }
-def Xn_PEER(xn_addr):
+def XN_PEER(xn_addr):
     return {
         'peer_type':    'nr',
         'xn_addr':      xn_addr,
@@ -163,7 +162,7 @@ class ENBTestCase(AmariTestCase):
         def _(subref, ctx):
             return cls.requestShared(imain, subref, ctx)
         _('PEER4',      X2_PEER('44.1.1.1'))
-        _('PEER5',      Xn_PEER('55.1.1.1'))
+        _('PEER5',      XN_PEER('55.1.1.1'))
         _('PEERCELL4',  PEERCELL4)
         _('PEERCELL5',  PEERCELL5)
 
