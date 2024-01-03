@@ -11,8 +11,7 @@
     "tac",
 
     "e_cell_id",
-    "dl_earfcn",
-    "bandwidth"
+    "dl_earfcn"
   ],
 
   "properties": {
@@ -29,7 +28,6 @@
     },
     "pci":        { "$ref": "../../../cell/lte/input-schema.json#/properties/pci" },
     "dl_earfcn":  { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
-    "bandwidth":  { "$ref": "../../../cell/lte/input-schema.json#/properties/bandwidth" },
     "tac":        { "$ref": "../../../cell/lte/input-schema.json#/properties/tac" }
   }
 }

@@ -106,7 +106,7 @@ PEER4 = {
     'xn_addr':      '55.1.1.1',
 }
 
-PEERCELL4 = LTE(700, 10) | LTE_PEER(0x12345, 35, 0x123)
+PEERCELL4 = LTE(700, XXXbandwidth)      | LTE_PEER(0x12345, 35, 0x123)
 PEERCELL5 = NR(520000,38, XXXbandwidth) | NR_PEER(0x77712, 75, 0x321)
 
 PEERCELL5 = {
