@@ -17,6 +17,7 @@
 # See https://www.nexedi.com/licensing for rationale and options.
 
 import os
+import json
 import io
 import yaml
 import pcpp
@@ -137,7 +138,9 @@ class ENBTestCase(AmariTestCase):
 
     @classmethod
     def getInstanceParameterDict(cls):
-        return json.dumps({...} )    # XXX + testing=True enb_id, gnb_id
+        return {'_': json.dumps({
+            'testing': True,
+        })}    # XXX + enb_id, gnb_id
 
     # XXX + generic test that verifies ^^^ to be rendered into enb.cfg
 
@@ -174,7 +177,7 @@ class ENBTestCase(AmariTestCase):
             software_release=cls.getSoftwareURL(),
             software_type=cls.getInstanceSoftwareType(),
             partition_reference=cls.ref(subref),
-            filter_kw = {'instance_guid': imain.getInstanceGuid()},
+            #filter_kw = {'instance_guid': imain.getInstanceGuid()},    XXX "Can only request on embedded computer"
             partition_parameter_kw={'_': json.dumps(ctx)},
             shared=True)
 
