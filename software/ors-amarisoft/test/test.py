@@ -163,6 +163,7 @@ class ENBTestCase(AmariTestCase):
         return '%s.%s' % (cls.default_partition_reference, subref)
 
     # requestAllShared adds all shared instances of the testcase over imain.
+    # XXX -> addShared? initShared?
     @classmethod
     def requestAllShared(cls, imain):
         def _(subref, ctx):
@@ -189,12 +190,56 @@ class ENBTestCase(AmariTestCase):
 class TestENB_SDR(ENBTestCase):
     @classmethod
     def requestAllShared(cls, imain):
-        super().requestAllShared(cls, imain)
+        super().requestAllShared(imain)
 
-        # sdr0  x 4t
-        # sdr1  x 4f
-        # sdr2  x 5t
-        # sdr3  x 5f
+        # SDR x {4f,4t,5f,5t}
+        def SDR(i):
+            return {
+                'ru_type':      'sdr',
+                'ru_link_type': 'sdr',
+                'sdr_dev_list': [2*i,2*i+1],
+                'n_antenna_dl': 4,
+                'n_antenna_ul': 2,
+                'tx_gain':      10+i,
+                'rx_gain':      20+i,
+                'txrx_active':  'INACTIVE',
+            }
+        cls.requestShared(imain, 'SDR1', SDR(1))
+        cls.requestShared(imain, 'SDR2', SDR(2))
+        cls.requestShared(imain, 'SDR3', SDR(3))
+        cls.requestShared(imain, 'SDR4', SDR(4))
+
+        def CELL(i, ctx):
+            cell = {
+                'ru': {
+                    'ru_type': 'ru_ref',
+                    'ru_ref':   cls.ref('SDR%d' % i),
+                }
+            }
+            cell.update(CENB(i, i, 0x1234))
+            cell.update(ctx)
+            cls.requestShared(imain, 'SDR%d.CELL' % i, cell)
+
+        CELL(1, FDD | LTE(   100)    | BW( 5))
+        CELL(2, TDD | LTE( 36100)    | BW(10))
+        CELL(3, FDD | NR (430100, 1) | BW(15))
+        CELL(4, TDD | NR (510100,41) | BW(20))
+
+    def test_enb_conf(self):
+        #super().test_enb_conf()
+
+        conf = yload('%s/etc/enb.cfg' % self.computer_partition_root_path)
+
+        rf_driver = conf['rf_driver']
+        self.assertEqual(rf_driver['args'],
+                'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
+                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9')
+
+        self.assertEqual(conf['tx_gain'], [11,11, 12,12, 13,13, 14,14])
+        self.assertEqual(conf['rx_gain'], [   21,    22,    23,    24])
+
+        self.assertEqual(len(conf['cell_list']),    2)
+        self.assertEqual(len(conf['nr_cell_list']), 2)
 
 
 # XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
