@@ -12,12 +12,32 @@
 
 
 {#- defaults provide default values for lte parameters.
-    it should be kept in sync with "default" in json schemas  #}
+    it should be kept in sync with "default" in json schemas
+
+    TODO automatically load defaults from JSON schemas  #}
 {#- XXX opc='milenage' is not meaningful ?  #}
 {#- XXX add inactivity timer to cell schemas #}
 {%- set defaults = {
       'ru': {
         'txrx_active': 'INACTIVE',
+      },
+
+      'ru/lopcomm': {
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 2,
+      }
+
+      'ru/sunwave': {
+        'n_antenna_dl': 4,
+        'n_antenna_ul': 4,
+      }
+
+      'ru/cpri_link': {
+        'mapping': 'hw',
+        'mult':     16,
+        'rx_delay':  0,
+        'tx_delay':  0,
+        'tx_dbm':    0,
       },
 
       'cell/lte': {
@@ -44,14 +64,6 @@
       'peercell/lte': {
       },
       'peercell/nr': {
-      },
-
-      'cpri_link': {
-        'mapping': 'hw',
-        'mult':     16,
-        'rx_delay':  0,
-        'tx_delay':  0,
-        'tx_dbm':    0,
       },
 
       'ue': {
@@ -172,7 +184,7 @@
 {%-       endfor  %}
 {%-       if _.ru_link_type == 'cpri' %}
 {%-         set link = _.cpri_link  %}
-{%-         for k, v in defaults['cpri_link'].items() %}
+{%-         for k, v in defaults['ru/cpri_link'].items() %}
 {%-           do link.setdefault(k, v)  %}
 {%-         endfor  %}
 {%-       endif %}

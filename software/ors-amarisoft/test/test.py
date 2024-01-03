@@ -226,23 +226,21 @@ class TestENB_CPRI(ENBTestCase):
         cls.requestShared(imain, 'LO3', LO(3))
         cls.requestShared(imain, 'LO4', LO(4))
 
-        def LO_CELL(i, **kw):
+        def LO_CELL(i, ctx):
             cell = {
-                'cell_kind':    'enb',
-                'pci':          i,
-                'cell_id':      '%x' % (0x00 + i),
                 'ru': {
                     'ru_type': 'ru_ref',
                     'ru_ref':   cls.ref('LO%d' % i),
                 }
             }
-            cell.update(kw)
+            cell.update(CENB(i, i, 0x1234))
+            cell.update(ctx)
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
-        LO_CELL(1, TDD | LTE(100) | BW(10))
-        LO_CELL(2, FDD | LTE(500) | BW(20))
-        LO_CELL(3, TDD | NR (100) | BW(10))
-        LO_CELL(4, FDD | NR (500) | BW(10))
+        LO_CELL(1, FDD | LTE(   100)    | BW(10))
+        LO_CELL(2, TDD | LTE( 36100)    | BW(10))
+        LO_CELL(3, FDD | NR (430100, 1) | BW(10))
+        LO_CELL(3, TDD | NR (510100,41) | BW(10))
 
         # XXX + sunwave
 
