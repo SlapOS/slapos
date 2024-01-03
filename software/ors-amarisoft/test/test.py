@@ -43,13 +43,6 @@ def yload(path):
 
 
 
-# XXX explain CELL_xy ...
-CELL_4t = LTE_TDD(38050,      5)    # 2600 MHz
-CELL_5t =  NR_TDD(523020,41, 10)    # 2615.1 MHz
-CELL_4f = LTE_FDD(3350,       5)    # 2680 MHz
-CELL_5f =  NR_FDD(537200,7,   5)    # 2686 MHz
-
-
 # XXX common enb
 _ = {
     'cell_kind':    'enb',
@@ -102,32 +95,31 @@ PEERCELL5 = {
 # XXX explain ENB does not support mixing SDR + CPRI
 
 
-# {LTE,NR}_{TDD,FDD} return basic parameters for an LTE/NR cell given downlink frequency and bandwidth.
+# TDD/FDD are basic parameters to indicate a TDD/FDD mode.
+TDD = {'rf_mode': 'tdd'}
+FDD = {'rf_mode': 'fdd'}
+
+# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency and bandwidth.
 def LTE(dl_earfcn, bandwidth):
     return {
         'cell_type': 'lte',
         'dl_earfcn': dl_earfcn,
         'bandwidth': '%g MHz' % bandwidth,
     }
-def LTE_TDD(dl_earfcn, bandwidth):
-    _ = LTE(dl_earfcn, bandwidth)
-    _['rf_mode'] = 'tdd'
-    return _
-def LTE_FDD(dl_earfcn, bandwidth):
-    _ = LTE_TDD(dl_earfcn, bandwidth);  _['rf_mode'] = 'fdd'
-    return _
-
-def NR_TDD(dl_nr_arfcn, nr_band, bandwidth):
+def NR(dl_nr_arfcn, nr_band, bandwidth):
     return {
         'cell_type':    'nr',
-        'rf_mode':      'tdd',
         'dl_nr_arfcn':  dl_nr_arfcn,
         'nr_band':      nr_band,
         'bandwidth':    bandwidth,
     }
-def NR_FDD(dl_nr_arfcn, nr_band, bandwidth):
-    _ = NR_TDD(dl_nr_arfcn, nr_band, bandwidth);  _['rf_mode'] = 'fdd'
-    return _
+
+# XXX explain CELL_xy ...   XXX goes away
+CELL_4t = LTE(38050,      5) | TDD  # 2600 MHz
+CELL_5t =  NR(523020,41, 10) | TDD  # 2615.1 MHz
+CELL_4f = LTE(3350,       5) | FDD  # 2680 MHz
+CELL_5f =  NR(537200,7,   5) | FDD  # 2686 MHz
+
 
 # XXX doc
 class ENBTestCase(AmariTestCase):
