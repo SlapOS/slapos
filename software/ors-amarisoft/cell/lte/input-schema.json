@@ -38,6 +38,7 @@
         }
       }
     },
+
     "bandwidth": {
       "$ref": "#/properties/bandwidth",
       "enum": [
