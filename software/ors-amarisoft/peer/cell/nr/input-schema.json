@@ -25,7 +25,7 @@
 
     "nr_cell_id": {
       "title": "NR Cell ID",
-      "description": "Concatenation of gnb_id and cell_id of the cell",
+      "description": "Concatenation of gnb_id and cell_id of the neighbour cell",
       "type": "string"
     },
     "gnb_id_bits": {

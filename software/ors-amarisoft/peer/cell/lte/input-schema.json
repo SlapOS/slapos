@@ -22,12 +22,12 @@
     },
 
     "e_cell_id": {
-      "title": "Cell ID",
+      "title": "E-UTRAN Cell ID",
       "description": "28 bit E-UTRAN cell identity. Concatenation of enb_id and cell_id of the neighbour cell.",
       "type": "string"
     },
-    "pci":        { "$ref": "../../../cell/lte/input-schema.json#/properties/pci" },
     "dl_earfcn":  { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
+    "pci":        { "$ref": "../../../cell/lte/input-schema.json#/properties/pci" },
     "tac":        { "$ref": "../../../cell/lte/input-schema.json#/properties/tac" }
   }
 }
