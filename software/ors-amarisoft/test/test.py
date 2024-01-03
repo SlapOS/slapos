@@ -197,7 +197,8 @@ class TestENB_SDR(ENBTestCase):
         # sdr3  x 5f
 
 
-class TestENB_CPRI(ENBTestCase):
+# XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
+class _TestENB_CPRI(ENBTestCase):
     #   lo  x {4t,4f,5t,5f}
     #   sw  x {4t,4f,5t,5f}
 
