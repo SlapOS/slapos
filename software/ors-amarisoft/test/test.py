@@ -228,10 +228,10 @@ class TestENB_CPRI(ENBTestCase):
             cell.update(kw)
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
-        LO_CELL(1, tLTE(100, 10))
-        LO_CELL(2, fLTE(500, 20))
-        LO_CELL(3, tNR (100, 10))
-        LO_CELL(4, fNR (500, 10))
+        LO_CELL(1, TDD | LTE(100, 10))
+        LO_CELL(2, FDD | LTE(500, 20))
+        LO_CELL(3, TDD | NR (100, 10))
+        LO_CELL(4, FDD | NR (500, 10))
 
         # XXX + sunwave
 
