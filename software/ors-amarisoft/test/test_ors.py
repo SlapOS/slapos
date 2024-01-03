@@ -65,7 +65,7 @@ param_dict = {
     'nr_band': 34,
     'nr_bandwidth': 50,
     'ssb_nr_arfcn': 403520,
-    'rue_addr': '192.168.99.88',
+#   'rue_addr': '192.168.99.88',
     'n_antenna_dl': 2,
     'n_antenna_ul': 2,
     'inactivity_timer': 17,

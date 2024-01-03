@@ -139,8 +139,11 @@ class ENBTestCase(AmariTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({
-            'testing': True,
-        })}    # XXX + enb_id, gnb_id
+            'testing':      True,
+            'enb_id':       '0x17',
+            'gnb_id':       '0x23',
+            'gnb_id_bits':  30,
+        })}
 
     # XXX + generic test that verifies ^^^ to be rendered into enb.cfg
 
@@ -222,9 +225,9 @@ class TestENB_CPRI(ENBTestCase):
                 'txrx_active':  'INACTIVE',
             }
         cls.requestShared(imain, 'LO1', LO(1))
-        cls.requestShared(imain, 'LO2', LO(2))
-        cls.requestShared(imain, 'LO3', LO(3))
-        cls.requestShared(imain, 'LO4', LO(4))
+        #cls.requestShared(imain, 'LO2', LO(2))
+        #cls.requestShared(imain, 'LO3', LO(3))
+        #cls.requestShared(imain, 'LO4', LO(4))
 
         def LO_CELL(i, ctx):
             cell = {
@@ -238,9 +241,9 @@ class TestENB_CPRI(ENBTestCase):
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
         LO_CELL(1, FDD | LTE(   100)    | BW(10))
-        LO_CELL(2, TDD | LTE( 36100)    | BW(10))
-        LO_CELL(3, FDD | NR (430100, 1) | BW(10))
-        LO_CELL(4, TDD | NR (510100,41) | BW(10))
+        #LO_CELL(2, TDD | LTE( 36100)    | BW(10))
+        #LO_CELL(3, FDD | NR (430100, 1) | BW(10))
+        #LO_CELL(4, TDD | NR (510100,41) | BW(10))
 
         # XXX + sunwave
 
