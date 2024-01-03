@@ -240,7 +240,7 @@ class TestENB_CPRI(ENBTestCase):
         LO_CELL(1, FDD | LTE(   100)    | BW(10))
         LO_CELL(2, TDD | LTE( 36100)    | BW(10))
         LO_CELL(3, FDD | NR (430100, 1) | BW(10))
-        LO_CELL(3, TDD | NR (510100,41) | BW(10))
+        LO_CELL(4, TDD | NR (510100,41) | BW(10))
 
         # XXX + sunwave
 
