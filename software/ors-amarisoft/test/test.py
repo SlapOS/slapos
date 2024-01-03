@@ -235,8 +235,8 @@ class TestENB_SDR(ENBTestCase):
                 'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                 'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9')
 
-        self.assertEqual(conf['tx_gain'], [11,11, 12,12, 13,13, 14,14])
-        self.assertEqual(conf['rx_gain'], [   21,    22,    23,    24])
+        self.assertEqual(conf['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        self.assertEqual(conf['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
         self.assertEqual(len(conf['cell_list']),    2)
         self.assertEqual(len(conf['nr_cell_list']), 2)
