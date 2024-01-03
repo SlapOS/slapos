@@ -48,18 +48,22 @@ def yload(path):
 TDD = {'rf_mode': 'tdd'}
 FDD = {'rf_mode': 'fdd'}
 
-# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency and bandwidth.
-def LTE(dl_earfcn, bandwidth):
+# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency.
+def LTE(dl_earfcn):
     return {
         'cell_type': 'lte',
         'dl_earfcn': dl_earfcn,
-        'bandwidth': bandwidth,
     }
-def NR(dl_nr_arfcn, nr_band, bandwidth):
+def NR(dl_nr_arfcn, nr_band):
     return {
         'cell_type':    'nr',
         'dl_nr_arfcn':  dl_nr_arfcn,
         'nr_band':      nr_band,
+    }
+
+# BW returns basic parameters to indicate specified bandwidth.
+def BW(bandwidth):
+    return {
         'bandwidth':    bandwidth,
     }
 
@@ -75,14 +79,14 @@ def CENB(cell_id, pci, tac):
 # LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
 def LTE_PEER(e_cell_id, pci, tac):
     return {
-        'cell_kind': 'enb_peer'
+        'cell_kind': 'enb_peer',
         'e_cell_id': '0x%05x' % e_cell_id,
         'pci':       pci,
         'tac':       '0x%x' % tac,
     }
 def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac):
     return {
-        'cell_kind': 'enb_peer'
+        'cell_kind': 'enb_peer',
         'nr_cell_id':       '0x77712',
         'gnb_id_bits':      22,
         'pci':              75,
@@ -106,8 +110,8 @@ PEER4 = {
     'xn_addr':      '55.1.1.1',
 }
 
-PEERCELL4 = LTE(700, XXXbandwidth)      | LTE_PEER(0x12345, 35, 0x123)
-PEERCELL5 = NR(520000,38, XXXbandwidth) | NR_PEER(0x77712, 75, 0x321)
+PEERCELL4 = LTE(700)      | LTE_PEER(0x12345, 35, 0x123)
+PEERCELL5 = NR(520000,38) | NR_PEER(0x77712,28, 75, 0x321)
 
 PEERCELL5 = {
     'cell_type':        'nr',
@@ -127,10 +131,10 @@ PEERCELL5 = {
 
 
 # XXX explain CELL_xy ...   XXX goes away
-CELL_4t = LTE(38050,      5) | TDD  # 2600 MHz
-CELL_5t =  NR(523020,41, 10) | TDD  # 2615.1 MHz
-CELL_4f = LTE(3350,       5) | FDD  # 2680 MHz
-CELL_5f =  NR(537200,7,   5) | FDD  # 2686 MHz
+CELL_4t = TDD | LTE(38050)    | BW( 5)  # 2600 MHz
+CELL_5t = TDD | NR(523020,41) | BW(10)  # 2615.1 MHz
+CELL_4f = FDD | LTE(3350)     | BW( 5)  # 2680 MHz
+CELL_5f = FDD |  NR(537200,7) | BW( 5)  # 2686 MHz
 
 
 # XXX doc
@@ -240,10 +244,10 @@ class TestENB_CPRI(ENBTestCase):
             cell.update(kw)
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
-        LO_CELL(1, TDD | LTE(100, 10))
-        LO_CELL(2, FDD | LTE(500, 20))
-        LO_CELL(3, TDD | NR (100, 10))
-        LO_CELL(4, FDD | NR (500, 10))
+        LO_CELL(1, TDD | LTE(100) | BW(10))
+        LO_CELL(2, FDD | LTE(500) | BW(20))
+        LO_CELL(3, TDD | NR (100) | BW(10))
+        LO_CELL(4, FDD | NR (500) | BW(10))
 
         # XXX + sunwave
 
