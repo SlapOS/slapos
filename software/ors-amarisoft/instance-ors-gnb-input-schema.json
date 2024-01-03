@@ -4,7 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "nr_bandwidth": {
-      "$ref": "cell/nr/input-schema.json#/properties/bandwidth",
+      "$ref": "cell/common.json#/properties/bandwidth",
       "default": 40
     },
     "n_antenna_dl": {

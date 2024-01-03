@@ -95,7 +95,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'cell_type':    'lte',
         'cell_kind':    'enb',
         'rf_mode':      'tdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    38050,      # 2600 MHz
         'pci':          1,
         'cell_id':      '0x01',
@@ -107,7 +107,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'cell_type':    'lte',
         'cell_kind':    'enb',
         'rf_mode':      'tdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    38100,      # 2605 MHz
         'pci':          2,
         'cell_id':      '0x02',
@@ -161,7 +161,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'cell_type':    'lte',
         'cell_kind':    'enb',
         'rf_mode':      'tdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    38050,      # 2600 MHz
         'pci':          1,
         'cell_id':      '0x01',
@@ -223,7 +223,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'cell_type':    'lte',
         'cell_kind':    'enb',
         'rf_mode':      'fdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    3350,       # 2680 MHz
         'pci':          21,
         'cell_id':      '0x21',
@@ -269,7 +269,7 @@ def iRU1_SDR1_fLTE2(ienb):
         'cell_type':    'lte',
         'cell_kind':    'enb',
         'rf_mode':      'fdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    3350,      # 2680 MHz (Band 7)
         'pci':          1,
         'cell_id':      '0x01',
@@ -281,7 +281,7 @@ def iRU1_SDR1_fLTE2(ienb):
         'cell_type':    'lte',
         'cell_kind':    'enb',
         'rf_mode':      'fdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    3050,      # 2650 MHz (Band 7)
         'pci':          1,
         'cell_id':      '0x02',
@@ -324,7 +324,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
             'cell_type':    'lte',
             'cell_kind':    'enb',
             'rf_mode':      'fdd',
-            'bandwidth':    '20 MHz',
+            'bandwidth':    20,
             'dl_earfcn':    100,        # 2120 MHz   @ B1
             'pci':          21,
             'cell_id':      '0x21',
@@ -341,7 +341,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
             'cell_type':    'lte',
             'cell_kind':    'enb',
             'rf_mode':      'fdd',
-            'bandwidth':    '20 MHz',
+            'bandwidth':    20,
             'dl_earfcn':    500,        # 2160 MHz  @ B1
             'pci':          22,
             'cell_id':      '0x22',
@@ -387,7 +387,6 @@ def do_enb():
             'e_cell_id':        '0x12345',
             'pci':              35,
             'dl_earfcn':        700,
-            'bandwidth':        '10 MHz',
             'tac':              123,
         })
         ienb.ishared('PEERCELL2', {
@@ -483,7 +482,7 @@ def do_ue():
         'cell_type':    'lte',
         'cell_kind':    'ue',
         'rf_mode':      'tdd',
-        'bandwidth':    '5 MHz',
+        'bandwidth':    5,
         'dl_earfcn':    38050,      # 2600 MHz
         'ru':           {
             'ru_type':      'sdr',

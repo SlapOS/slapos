@@ -66,7 +66,7 @@ CELL1_a = {
     'cell_type':    'lte',
     'cell_kind':    'enb',
     'rf_mode':      'tdd',
-    'bandwidth':    '5 MHz',
+    'bandwidth':    5,
     'dl_earfcn':    38050,      # 2600 MHz
     'pci':          1,
     'cell_id':      '0x01',
@@ -80,7 +80,7 @@ CELL1_b = {
     'cell_type':    'lte',
     'cell_kind':    'enb',
     'rf_mode':      'tdd',
-    'bandwidth':    '5 MHz',
+    'bandwidth':    5,
     'dl_earfcn':    38100,      # 2605 MHz
     'pci':          2,
     'cell_id':      '0x02',
@@ -125,7 +125,7 @@ kslap.iSHARED(enb1, 'CELL2_a', {
     'cell_type':    'lte',
     'cell_kind':    'enb',
     'rf_mode':      'fdd',
-    'bandwidth':    '5 MHz',
+    'bandwidth':    5,
     'dl_earfcn':    3350,       # 2680 MHz
     'pci':          21,
     'cell_id':      '0x21',

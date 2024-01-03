@@ -9,9 +9,9 @@
     "rf_mode",
     "pci",
     "cell_id",
+    "bandwidth",
     "ru",
 
-    "bandwidth",
     "dl_earfcn",
     "tac"
   ],
@@ -39,16 +39,13 @@
       }
     },
     "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
-      "type": "string",
       "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
+        1.4,
+        3,
+        5,
+        10,
+        15,
+        20
       ]
     },
 

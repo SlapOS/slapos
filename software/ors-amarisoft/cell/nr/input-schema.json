@@ -9,9 +9,9 @@
     "rf_mode",
     "pci",
     "cell_id",
+    "bandwidth",
     "ru",
 
-    "bandwidth",
     "dl_nr_arfcn",
     "nr_band"
   ],
@@ -38,11 +38,6 @@
           "rf_mode": "tdd"
         }
       }
-    },
-    "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth (in MHz)",
-      "type": "number"
     },
 
     "dl_nr_arfcn": {

@@ -53,7 +53,7 @@ def LTE(dl_earfcn, bandwidth):
     return {
         'cell_type': 'lte',
         'dl_earfcn': dl_earfcn,
-        'bandwidth': '%g MHz' % bandwidth,
+        'bandwidth': bandwidth,
     }
 def NR(dl_nr_arfcn, nr_band, bandwidth):
     return {
