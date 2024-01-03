@@ -42,13 +42,18 @@ def yload(path):
     return yaml.load(data_, Loader=yaml.Loader)
 
 
-# ---- building blocks to construct a cell ----
+# ---- building blocks to construct cells + peers ----
+#
+# - TDD/FDD are basic parameters to indicate TDD/FDD mode.
+# - LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency.
+# - BW returns basic parameters to indicate specified bandwidth.
+# - CENB returns basic parameters to indicate a ENB-kind cell.
+# - CUE indicates an UE-kind cell.
+# - LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
 
-# TDD/FDD are basic parameters to indicate TDD/FDD mode.
 TDD = {'rf_mode': 'tdd'}
 FDD = {'rf_mode': 'fdd'}
 
-# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency.
 def LTE(dl_earfcn):
     return {
         'cell_type': 'lte',
@@ -61,13 +66,11 @@ def NR(dl_nr_arfcn, nr_band):
         'nr_band':      nr_band,
     }
 
-# BW returns basic parameters to indicate specified bandwidth.
 def BW(bandwidth):
     return {
         'bandwidth':    bandwidth,
     }
 
-# CENB returns basic parameters to indicate a ENB-kind cell.
 def CENB(cell_id, pci, tac):
     return {
         'cell_kind':    'enb',
@@ -76,7 +79,8 @@ def CENB(cell_id, pci, tac):
         'tac':          '0x%x' % tac,
     }
 
-# LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
+CUE = {'cell_kind': 'ue'}
+
 def LTE_PEER(e_cell_id, pci, tac):
     return {
         'cell_kind': 'enb_peer',
@@ -93,36 +97,25 @@ def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac):
         'tac':              321,
     }
 
-# CUE indicates a UE-kind cell.
-CUE   = {'cell_kind': 'ue'}
 
+
+def X2_PEER(x2_addr):
+    return {
+        'peer_type':    'lte',
+        'x2_addr':      x2_addr,
+    }
+def Xn_PEER(xn_addr):
+    return {
+        'peer_type':    'nr',
+        'xn_addr':      xn_addr,
+    }
 
 # ----
 
 
-PEER4 = {
-    'peer_type':    'lte',
-    'x2_addr':      '44.1.1.1',
-}
+PEERCELL4 = LTE(700)       | LTE_PEER(0x12345,    35, 0x123)
+PEERCELL5 =  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321)
 
-PEER4 = {
-    'peer_type':    'nr',
-    'xn_addr':      '55.1.1.1',
-}
-
-PEERCELL4 = LTE(700)       | LTE_PEER(0x12345, 35, 0x123)
-PEERCELL5 =  NR(520000,38) | NR_PEER(0x77712,28, 75, 0x321)
-
-PEERCELL5 = {
-    'cell_type':        'nr',
-    'cell_kind':        'enb_peer',
-    'nr_cell_id':       '0x77712',
-    'gnb_id_bits':      22,
-    'dl_nr_arfcn':      520000,
-    'nr_band':          38,
-    'pci':              75,
-    'tac':              321,
-}
 
 # XXX dl_earfcn     -> ul_earfcn
 # XXX dl_nr_arfcn   -> ul_nr_arfcn + ssb_nr_arfcn
@@ -169,8 +162,8 @@ class ENBTestCase(AmariTestCase):
     def requestAllShared(cls, imain):
         def _(subref, ctx):
             return cls.requestShared(imain, subref, ctx)
-        _('PEER4',      PEER4)
-        _('PEER5',      PEER4)
+        _('PEER4',      X2_PEER('44.1.1.1'))
+        _('PEER5',      Xn_PEER('55.1.1.1'))
         _('PEERCELL4',  PEERCELL4)
         _('PEERCELL5',  PEERCELL5)
 
