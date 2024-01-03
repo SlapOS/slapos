@@ -63,9 +63,8 @@ def NR(dl_nr_arfcn, nr_band, bandwidth):
         'bandwidth':    bandwidth,
     }
 
-
 # CENB returns basic parameters to indicate a ENB-kind cell.
-def CENB(cell_id, pci=1, tac=0x1234):
+def CENB(cell_id, pci, tac):
     return {
         'cell_kind':    'enb',
         'cell_id':      '0x%02x' % cell_id,
@@ -73,8 +72,25 @@ def CENB(cell_id, pci=1, tac=0x1234):
         'tac':          '0x%x' % tac,
     }
 
+# LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
+def LTE_PEER(e_cell_id, pci, tac):
+    return {
+        'cell_kind': 'enb_peer'
+        'e_cell_id': '0x%05x' % e_cell_id,
+        'pci':       pci,
+        'tac':       '0x%x' % tac,
+    }
+def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac):
+    return {
+        'cell_kind': 'enb_peer'
+        'nr_cell_id':       '0x77712',
+        'gnb_id_bits':      22,
+        'pci':              75,
+        'tac':              321,
+    }
+
 # CUE indicates a UE-kind cell.
-CUE = {'cell_kind': 'ue'}
+CUE   = {'cell_kind': 'ue'}
 
 
 # ----
@@ -90,16 +106,8 @@ PEER4 = {
     'xn_addr':      '55.1.1.1',
 }
 
-PEERCELL4 = {
-    'cell_type':        'lte',
-    'cell_kind':        'enb_peer',
-    'e_cell_id':        '0x12345',
-    'pci':              35,
-    'dl_earfcn':        700,
-    'bandwidth':        '10 MHz',
-    'tac':              123,
-}
-
+PEERCELL4 = LTE(700, 10) | LTE_PEER(0x12345, 35, 0x123)
+PEERCELL5 = NR(520000,38, XXXbandwidth) | NR_PEER(0x77712, 75, 0x321)
 
 PEERCELL5 = {
     'cell_type':        'nr',
