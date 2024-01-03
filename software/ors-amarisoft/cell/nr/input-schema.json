@@ -40,6 +40,10 @@
       }
     },
 
+    "bandwidth": {
+      "$ref": "#/properties/bandwidth"
+    },
+
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
