@@ -246,7 +246,7 @@ class TestENB_CPRI(ENBTestCase):
     def test_enb_conf(self):
         super().test_enb_conf()
 
-        conf = ...yload('etc/enb.cfg')
+        conf = yload('%s/etc/enb.cfg' % self.computer_partition_root_path)
 
         rf_driver = conf['rf_driver']
         self.assertEqual(rf_driver['args'],
