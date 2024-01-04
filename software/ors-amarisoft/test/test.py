@@ -283,6 +283,14 @@ class TestENB_SDR(ENBTestCase):
             root_sequence_index=202,
         ))
 
+        assertDict(nr_cell_list[0],  dict(
+            uldl_config=NO,      rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
+            dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
+            bandwidth=15,
+            cell_id=0x3,         n_id_cell=0x13,      tac=0x103,
+            root_sequence_index=203,
+        ))
+
         # XXX CELLs
 
         # XXX CA
