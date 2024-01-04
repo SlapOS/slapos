@@ -256,7 +256,7 @@ class TestENB_SDR(ENBTestCase):
 
         # assertDict asserts that d slice with keys from dok == dok.
         # dok[k]=NO  means d[k] must be absent.
-        # XXX -> assertatch with support for {} and []
+        # XXX -> assertMatch with support for {} and []
         class NOClass:
             def __repr__(self):
                 return 'ø'
@@ -269,12 +269,14 @@ class TestENB_SDR(ENBTestCase):
 
         # assertMatch recursively matches data structure against specified pattern.
         #
-        # atomic types like int and str match by equality
-        # container types like dict and list match
+        # - atomic types like int and str match by equality
+        # - list match by matching all elements individually
+        # - dict match by verifying v[k] == vok[k] for keys from the pattern
+        #   vok[k]=NO means v[k] must be absent
         def assertMatch(v, vok):
             v_ = _matchCollect(v, vok)
             self.assertEqual(v_, vok)
-            
+
         def _matchCollect(v, vok):
             if type(v) is not type(vok):
                 return v
@@ -302,6 +304,7 @@ class TestENB_SDR(ENBTestCase):
                 return v_
 
             # other types, e.g. atomic int/str/... - return as is
+            assert type(v) is not tuple, v
             return v
 
         cell_list = conf['cell_list']
