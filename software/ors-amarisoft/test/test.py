@@ -123,11 +123,11 @@ PEERCELL5 =  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321)
 # XXX explain ENB does not support mixing SDR + CPRI
 
 
-# XXX explain CELL_xy ...   XXX goes away
-CELL_4t = TDD | LTE(38050)    | BW( 5)  # 2600 MHz
-CELL_5t = TDD | NR(523020,41) | BW(10)  # 2615.1 MHz
-CELL_4f = FDD | LTE(3350)     | BW( 5)  # 2680 MHz
-CELL_5f = FDD |  NR(537200,7) | BW( 5)  # 2686 MHz
+# # XXX explain CELL_xy ...   XXX goes away
+# CELL_4t = TDD | LTE(38050)    | BW( 5)  # 2600 MHz
+# CELL_5t = TDD | NR(523020,41) | BW(10)  # 2615.1 MHz
+# CELL_4f = FDD | LTE(3350)     | BW( 5)  # 2680 MHz
+# CELL_5f = FDD |  NR(537200,7) | BW( 5)  # 2686 MHz
 
 
 # XXX doc
@@ -185,6 +185,16 @@ class ENBTestCase(AmariTestCase):
             partition_parameter_kw={'_': json.dumps(ctx)},
             shared=True)
 
+    # ipath returns path for a file inside main instance.
+    def ipath(self, path):
+        assert path[:1] != '/', path
+        return '%s/%s' % (self.computer_partition_root_path, path)
+
+    def test_enb_conf(self):
+        conf = yload(self.ipath('etc/enb.cfg'))
+
+        # XXX assert about enb_id/gnb_id, PEER, PEERCELL + HO(inter)  ...
+
 
 
 class TestENB_SDR(ENBTestCase):
@@ -216,7 +226,7 @@ class TestENB_SDR(ENBTestCase):
                     'ru_ref':   cls.ref('SDR%d' % i),
                 }
             }
-            cell.update(CENB(i, i, 0x1234))
+            cell.update(CENB(i, 10+i, 0x1234))
             cell.update(ctx)
             cls.requestShared(imain, 'SDR%d.CELL' % i, cell)
 
@@ -226,9 +236,9 @@ class TestENB_SDR(ENBTestCase):
         CELL(4, TDD | NR (510100,41) | BW(20))
 
     def test_enb_conf(self):
-        #super().test_enb_conf()
+        super().test_enb_conf()
 
-        conf = yload('%s/etc/enb.cfg' % self.computer_partition_root_path)
+        conf = yload(self.ipath('etc/enb.cfg'))
 
         rf_driver = conf['rf_driver']
         self.assertEqual(rf_driver['args'],
@@ -238,11 +248,46 @@ class TestENB_SDR(ENBTestCase):
         self.assertEqual(conf['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
         self.assertEqual(conf['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
-        self.assertEqual(len(conf['cell_list']),    2)
-        self.assertEqual(len(conf['nr_cell_list']), 2)
+        cell_list = conf['cell_list']
+        nr_cell_list = conf['nr_cell_list']
+        self.assertEqual(len(cell_list),    2)
+        self.assertEqual(len(nr_cell_list), 2)
+
+        # assertDict asserts that d slice with keys from dok == dok.
+        # dok[k]=NO  means d[k] must be absent.
+        class NOClass:
+            def __repr__(self):
+                return 'ø'
+        NO = NOClass()
+        def assertDict(d, dok):
+            d_ = {}
+            for k in dok:
+                d_[k] = d.get(k, NO)
+            self.assertEqual(d_, dok)
+
+        assertDict(cell_list[0],  dict(
+            rf_port=0,
+            n_antenna_dl=4,
+            n_antenna_ul=2,
+            cell_id=0x01,
+            n_id_cell=11,
+            tac=0x1234,
+            dl_earfcn=100,
+            ul_earfcn=18100,
+            n_rb_dl=25,
+            uldl_config=NO,
+            root_sequence_index=204
+        ))
+        # XXX inactivity_timer
+
+        # XXX CELLs
+
+        # XXX CA
+        # XXX HO(intra)
 
 
 # XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
+# XXX -> possible  - adjust SR with testing=True workaround
 class _TestENB_CPRI(ENBTestCase):
     #   lo  x {4t,4f,5t,5f}
     #   sw  x {4t,4f,5t,5f}
