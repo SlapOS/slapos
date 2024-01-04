@@ -50,6 +50,7 @@ def yload(path):
 # - BW returns basic parameters to indicate specified bandwidth.
 # - CENB returns basic parameters to indicate a ENB-kind cell.
 # - CUE indicates an UE-kind cell.
+# - XXX TAC
 # - LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
 # - X2_PEER/XN_PEER indicate an LTE/NR ENB peer.
 
@@ -73,11 +74,15 @@ def BW(bandwidth):
         'bandwidth':    bandwidth,
     }
 
-def CENB(cell_id, pci, tac):
+def CENB(cell_id, pci):
     return {
         'cell_kind':    'enb',
         'cell_id':      '0x%02x' % cell_id,
         'pci':          pci,
+    }
+
+def TAC(tac):
+    return {
         'tac':          '0x%x' % tac,
     }
 
@@ -226,13 +231,13 @@ class TestENB_SDR(ENBTestCase):
                     'ru_ref':   cls.ref('SDR%d' % i),
                 }
             }
-            cell.update(CENB(i, 0x10+i, 0x100+i))
+            cell.update(CENB(i, 0x10+i))
             cell.update({'root_sequence_index': 200+i})
             cell.update(ctx)
             cls.requestShared(imain, 'SDR%d.CELL' % i, cell)
 
-        CELL(1, FDD | LTE(   100)    | BW( 5))
-        CELL(2, TDD | LTE( 36100)    | BW(10))
+        CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
+        CELL(2, TDD | LTE( 36100)    | BW(10) | TAC(0x102))
         CELL(3, FDD | NR (430100, 1) | BW(15))
         CELL(4, TDD | NR (510100,41) | BW(20))
 
@@ -287,7 +292,7 @@ class TestENB_SDR(ENBTestCase):
             uldl_config=NO,      rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
             dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
             bandwidth=15,
-            cell_id=0x3,         n_id_cell=0x13,      tac=0x103,
+            cell_id=0x3,         n_id_cell=0x13,      tac=NO,
             root_sequence_index=203,
         ))
 
@@ -338,7 +343,7 @@ class _TestENB_CPRI(ENBTestCase):
                     'ru_ref':   cls.ref('LO%d' % i),
                 }
             }
-            cell.update(CENB(i, i, 0x1234))
+            cell.update(CENB(i, i))
             cell.update(ctx)
             cls.requestShared(imain, 'LO%d.CELL' % i, cell)
 
