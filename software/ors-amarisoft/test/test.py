@@ -226,7 +226,8 @@ class TestENB_SDR(ENBTestCase):
                     'ru_ref':   cls.ref('SDR%d' % i),
                 }
             }
-            cell.update(CENB(i, 10+i, 0x1234))
+            cell.update(CENB(i, 0x10+i, 0x100+i))
+            cell.update({'root_sequence_index': 200+i})
             cell.update(ctx)
             cls.requestShared(imain, 'SDR%d.CELL' % i, cell)
 
@@ -248,13 +249,9 @@ class TestENB_SDR(ENBTestCase):
         self.assertEqual(conf['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
         self.assertEqual(conf['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
-        cell_list = conf['cell_list']
-        nr_cell_list = conf['nr_cell_list']
-        self.assertEqual(len(cell_list),    2)
-        self.assertEqual(len(nr_cell_list), 2)
-
         # assertDict asserts that d slice with keys from dok == dok.
         # dok[k]=NO  means d[k] must be absent.
+        # XXX -> assertDictMatch ?
         class NOClass:
             def __repr__(self):
                 return 'ø'
@@ -265,20 +262,26 @@ class TestENB_SDR(ENBTestCase):
                 d_[k] = d.get(k, NO)
             self.assertEqual(d_, dok)
 
+        cell_list = conf['cell_list']
+        nr_cell_list = conf['nr_cell_list']
+        self.assertEqual(len(cell_list),    2)
+        self.assertEqual(len(nr_cell_list), 2)
+
         assertDict(cell_list[0],  dict(
-            rf_port=0,
-            n_antenna_dl=4,
-            n_antenna_ul=2,
-            cell_id=0x01,
-            n_id_cell=11,
-            tac=0x1234,
-            dl_earfcn=100,
-            ul_earfcn=18100,
+            uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
+            dl_earfcn=100,    ul_earfcn=18100,
             n_rb_dl=25,
-            uldl_config=NO,
-            root_sequence_index=204
+            cell_id=0x1,      n_id_cell=0x11,   tac=0x101,
+            root_sequence_index=201,
         ))
-        # XXX inactivity_timer
+
+        assertDict(cell_list[1],  dict(
+            uldl_config=2,    rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
+            dl_earfcn=36100,  ul_earfcn=36100,
+            n_rb_dl=50,
+            cell_id=0x2,      n_id_cell=0x12,   tac=0x102,
+            root_sequence_index=202,
+        ))
 
         # XXX CELLs
 
