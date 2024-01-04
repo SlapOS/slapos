@@ -256,7 +256,7 @@ class TestENB_SDR(ENBTestCase):
 
         # assertDict asserts that d slice with keys from dok == dok.
         # dok[k]=NO  means d[k] must be absent.
-        # XXX -> assertDictMatch ?
+        # XXX -> assertatch with support for {} and []
         class NOClass:
             def __repr__(self):
                 return 'ø'
