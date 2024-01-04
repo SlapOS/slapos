@@ -267,6 +267,43 @@ class TestENB_SDR(ENBTestCase):
                 d_[k] = d.get(k, NO)
             self.assertEqual(d_, dok)
 
+        # assertMatch recursively matches data structure against specified pattern.
+        #
+        # atomic types like int and str match by equality
+        # container types like dict and list match
+        def assertMatch(v, vok):
+            v_ = _matchCollect(v, vok)
+            self.assertEqual(v_, vok)
+            
+        def _matchCollect(v, vok):
+            if type(v) is not type(vok):
+                return v
+            if type(v) is dict:
+                v_ = {}
+                for k in vok:
+                    #v_[k] = v.get(k, NO)
+                    v_[k] = _matchCollect(v.get(k, NO), vok[k])
+                return v_
+            if type(v) is list:
+                v_ = []
+                for i in range(max(len(v), len(vok))):
+                    e   = NO
+                    eok = NO
+                    if i < len(v):
+                        e = v[i]
+                    if i < len(vok):
+                        eok = vok[i]
+
+                    if e is not NO:
+                        if eok is not NO:
+                            v_.append(_matchCollect(e, eok))
+                        else:
+                            v_.append(e)
+                return v_
+
+            # other types, e.g. atomic int/str/... - return as is
+            return v
+
         cell_list = conf['cell_list']
         nr_cell_list = conf['nr_cell_list']
         self.assertEqual(len(cell_list),    2)
@@ -313,17 +350,16 @@ class TestENB_SDR(ENBTestCase):
         )})
 
         # Carrier Aggregation
-        self.assertEqual(len(cell_list[0]['scell_list']),           1)  # LTE + LTE
-        self.assertEqual(len(cell_list[1]['scell_list']),           1)  # LTE + LTE
-        assertDict(cell_list[0]['scell_list'][0],  {'cell_id': 0x2})
-        assertDict(cell_list[1]['scell_list'][0],  {'cell_id': 0x1})
-
-        self.assertEqual(len(cell_list[0]['en_dc_scg_cell_list']),  2)  # LTE + NR
-        self.assertEqual(len(cell_list[1]['en_dc_scg_cell_list']),  2)  # LTE + NR
-        assertDict(cell_list[0]['en_dc_scg_cell_list'][0],  {'cell_id': 0x3})
-        assertDict(cell_list[0]['en_dc_scg_cell_list'][1],  {'cell_id': 0x4})
-        assertDict(cell_list[1]['en_dc_scg_cell_list'][0],  {'cell_id': 0x3})
-        assertDict(cell_list[1]['en_dc_scg_cell_list'][1],  {'cell_id': 0x4})
+        assertMatch(cell_list, [
+            {
+                'scell_list':          [{'cell_id': 0x2}],                      # LTE + LTE
+                'en_dc_scg_cell_list': [{'cell_id': 0x3}, {'cell_id': 0x4}],    # LTE + NR
+            },
+            {
+                'scell_list':          [{'cell_id': 0x1}],                      # LTE + LTE
+                'en_dc_scg_cell_list': [{'cell_id': 0x3}, {'cell_id': 0x4}],    # LTE + NR
+            },
+        ])
 
 
         # XXX NR
