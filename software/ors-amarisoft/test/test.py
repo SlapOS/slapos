@@ -272,6 +272,7 @@ class TestENB_SDR(ENBTestCase):
         self.assertEqual(len(cell_list),    2)
         self.assertEqual(len(nr_cell_list), 2)
 
+        # basic cell parameters
         assertDict(cell_list[0],  dict(
             uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
             dl_earfcn=100,    ul_earfcn=18100,
@@ -311,9 +312,23 @@ class TestENB_SDR(ENBTestCase):
             ul_symbols=4,
         )})
 
-        # XXX CELLs
+        # Carrier Aggregation
+        self.assertEqual(len(cell_list[0]['scell_list']),           1)  # LTE + LTE
+        self.assertEqual(len(cell_list[1]['scell_list']),           1)  # LTE + LTE
+        assertDict(cell_list[0]['scell_list'][0],  {'cell_id': 0x2})
+        assertDict(cell_list[1]['scell_list'][0],  {'cell_id': 0x1})
 
-        # XXX CA
+        self.assertEqual(len(cell_list[0]['en_dc_scg_cell_list']),  2)  # LTE + NR
+        self.assertEqual(len(cell_list[1]['en_dc_scg_cell_list']),  2)  # LTE + NR
+        assertDict(cell_list[0]['en_dc_scg_cell_list'][0],  {'cell_id': 0x3})
+        assertDict(cell_list[0]['en_dc_scg_cell_list'][1],  {'cell_id': 0x4})
+        assertDict(cell_list[1]['en_dc_scg_cell_list'][0],  {'cell_id': 0x3})
+        assertDict(cell_list[1]['en_dc_scg_cell_list'][1],  {'cell_id': 0x4})
+
+
+        # XXX NR
+
+
         # XXX HO(intra)
 
 
