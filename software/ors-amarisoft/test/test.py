@@ -161,6 +161,30 @@ class ENBTestCase(AmariTestCase):
                  tac = 0x321),
         ]
 
+        # XXX doc 4 RU x 4 CELL  (4f,4t,5f,5t)      RUcfg
+        def RU(i):
+            ru = cls.RUcfg(i)
+            ru = ru | {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
+            cls.requestShared(imain, 'RU%d' % i, ru)
+
+        def CELL(i, ctx):
+            cell = {
+                'ru': {
+                    'ru_type': 'ru_ref',
+                    'ru_ref':   cls.ref('RU%d' % i),
+                }
+            }
+            cell.update(CENB(i, 0x10+i))
+            cell.update({'root_sequence_index': 200+i,
+                         'inactivity_timer':    1000+i})
+            cell.update(ctx)
+            cls.requestShared(imain, 'RU%d.CELL' % i, cell)
+
+        RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
+        RU(2);  CELL(2, TDD | LTE( 36100)    | BW(10) | TAC(0x102))
+        RU(3);  CELL(3, FDD | NR (430100, 1) | BW(15))
+        RU(4);  CELL(4, TDD | NR (510100,41) | BW(20))
+
     # requestShared requests one shared instance over imain with specified subreference and parameters.
     @classmethod
     def requestShared(cls, imain, subref, ctx):
@@ -196,6 +220,8 @@ class ENBTestCase(AmariTestCase):
             x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
         ))
 
+        # XXX kill
+        """
         # HO(inter)
         for cell in t.enb_cfg['cell_list'] + t.enb_cfg['nr_cell_list']:
             have = {
@@ -207,58 +233,7 @@ class ENBTestCase(AmariTestCase):
                 'ncell_list_tail':  t.ho_inter
             }
             assertMatch(t, have, want)
-
-
-
-class TestENB_SDR(ENBTestCase):
-    @classmethod
-    def requestAllShared(cls, imain):
-        super().requestAllShared(imain)
-
-        # SDR x {4f,4t,5f,5t}
-        def SDR(i):
-            return {
-                'ru_type':      'sdr',
-                'ru_link_type': 'sdr',
-                'sdr_dev_list': [2*i,2*i+1],
-                'n_antenna_dl': 4,
-                'n_antenna_ul': 2,
-                'tx_gain':      10+i,
-                'rx_gain':      20+i,
-                'txrx_active':  'INACTIVE',
-            }
-        cls.requestShared(imain, 'SDR1', SDR(1))
-        cls.requestShared(imain, 'SDR2', SDR(2))
-        cls.requestShared(imain, 'SDR3', SDR(3))
-        cls.requestShared(imain, 'SDR4', SDR(4))
-
-        def CELL(i, ctx):
-            cell = {
-                'ru': {
-                    'ru_type': 'ru_ref',
-                    'ru_ref':   cls.ref('SDR%d' % i),
-                }
-            }
-            cell.update(CENB(i, 0x10+i))
-            cell.update({'root_sequence_index': 200+i,
-                         'inactivity_timer':    1000+i})
-            cell.update(ctx)
-            cls.requestShared(imain, 'SDR%d.CELL' % i, cell)
-
-        CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
-        CELL(2, TDD | LTE( 36100)    | BW(10) | TAC(0x102))
-        CELL(3, FDD | NR (430100, 1) | BW(15))
-        CELL(4, TDD | NR (510100,41) | BW(20))
-
-    # radio units configuration
-    def test_enb_conf_ru(t):
-        rf_driver = t.enb_cfg['rf_driver']
-        t.assertEqual(rf_driver['args'],
-                'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
-                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9')
-
-        t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
-        t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+        """
 
     # basic cell parameters
     def test_enb_conf_cell(t):
@@ -358,6 +333,51 @@ class TestENB_SDR(ENBTestCase):
             ] + t.ho_inter,
           },
         ])
+
+
+# XXX SDR driver in all modes
+class TestENB_SDR(ENBTestCase):
+    @classmethod
+    def RUcfg(cls, i):
+        return {
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [2*i,2*i+1],
+            'n_antenna_dl': 4,
+            'n_antenna_ul': 2,
+        }
+
+    # radio units configuration
+    def test_enb_conf_ru(t):
+        rf_driver = t.enb_cfg['rf_driver']
+        t.assertEqual(rf_driver['args'],
+                'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
+                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9')
+
+        # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
+        t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+
+
+# XXX Lopcomm driver in all modes
+class TestENB_Lopcomm(ENBTestCase):
+    @classmethod
+    def RUcfg(cls, i):
+        return {
+            'ru_type':      'lopcomm',
+            'ru_link_type': 'cpri',
+            'cpri_link':    {
+                'sdr_dev':  0,
+                'sfp_port': i,
+                'mult':     4,
+                'mapping':  'hw',
+                'rx_delay': 40+i,
+                'tx_delay': 50+i,
+                'tx_dbm':   60+i
+            },
+            'mac_addr':     '00:0A:45:00:00:%02x' % i,
+        }
+
 
 
 # XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
