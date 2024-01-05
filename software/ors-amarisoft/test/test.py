@@ -115,13 +115,6 @@ def XN_PEER(xn_addr):
 # ----
 
 
-PEERCELL4 = LTE(700)       | LTE_PEER(0x12345,    35, 0x123)
-PEERCELL5 =  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321)
-
-
-# XXX explain ENB does not support mixing SDR + CPRI
-
-
 # XXX doc
 class ENBTestCase(AmariTestCase):
     maxDiff = None  # want to see full diff in test run log on an error
@@ -162,9 +155,15 @@ class ENBTestCase(AmariTestCase):
             return cls.requestShared(imain, subref, ctx)
         _('PEER4',      X2_PEER('44.1.1.1'))
         _('PEER5',      XN_PEER('55.1.1.1'))
-        _('PEERCELL4',  PEERCELL4)
-        _('PEERCELL5',  PEERCELL5)
 
+        _('PEERCELL4',  LTE(700)      | LTE_PEER(0x12345,    35, 0x123))
+        _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321))
+        cls.ho_inter = [
+            dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123),
+            dict(rat='nr',    nr_cell_id=0x77712, gnb_id_bits=22, n_id_cell=75,
+                 dl_nr_arfcn=520000, ul_nr_arfcn=520000, ssb_nr_arfcn=520090, band=38,
+                 tac = 0x321),
+        ]
 
     # requestShared requests one shared instance over imain with specified subreference and parameters.
     @classmethod
@@ -185,12 +184,23 @@ class ENBTestCase(AmariTestCase):
     def test_enb_conf(self):
         conf = yamlpp_load(self.ipath('etc/enb.cfg'))
 
-        # XXX assert about HO(inter)  ...
-
         assertMatch(self, conf, dict(
             enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
             x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
         ))
+
+        # HO(inter)
+        for cell in conf['cell_list'] + conf['nr_cell_list']:
+            have = {
+                'cell_id':          cell['cell_id'],
+                'ncell_list_tail':  cell['ncell_list'] [-len(self.ho_inter):]
+            }
+            want = {
+                'cell_id':          cell['cell_id'] + 1,
+                'ncell_list_tail':  self.ho_inter
+            }
+            assertMatch(self, have, want)
+
 
 
 class TestENB_SDR(ENBTestCase):
@@ -312,26 +322,20 @@ class TestENB_SDR(ENBTestCase):
 
 
         # Handover
-        ho_inter = [
-            dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123),   # PEERCELL4
-            dict(rat='nr',    nr_cell_id=0x77712, gnb_id_bits=22, n_id_cell=75,             # PEERCELL5
-                 dl_nr_arfcn=520000, ul_nr_arfcn=520000, ssb_nr_arfcn=520090, band=38,
-                 tac = 0x321),
-        ]
         assertMatch(self, cell_list, [
           { # CELL1
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
               dict(rat='nr',    cell_id=   0x03),                                             # CELL3
               dict(rat='nr',    cell_id=   0x04),                                             # CELL4
-            ] + ho_inter,
+            ] + self.ho_inter,
           },
           { # CELL2
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
               dict(rat='nr',    cell_id=   0x03),                                             # CELL3
               dict(rat='nr',    cell_id=   0x04),                                             # CELL4
-            ] + ho_inter,
+            ] + self.ho_inter,
           },
         ])
         assertMatch(self, nr_cell_list, [
@@ -340,20 +344,21 @@ class TestENB_SDR(ENBTestCase):
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
               dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
               dict(rat='nr',    cell_id=   0x04),                                             # CELL4
-            ] + ho_inter,
+            ] + self.ho_inter,
           },
           { # CELL4
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
               dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
               dict(rat='nr',    cell_id=   0x03),                                             # CELL3
-            ] + ho_inter,
+            ] + self.ho_inter,
           },
         ])
 
 
 # XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
 # XXX -> possible  - adjust SR with testing=True workaround
+# XXX explain ENB does not support mixing SDR + CPRI
 class _TestENB_CPRI(ENBTestCase):
     #   lo  x {4t,4f,5t,5f}
     #   sw  x {4t,4f,5t,5f}
