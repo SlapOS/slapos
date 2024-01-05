@@ -196,7 +196,7 @@ class ENBTestCase(AmariTestCase):
                 'ncell_list_tail':  cell['ncell_list'] [-len(self.ho_inter):]
             }
             want = {
-                'cell_id':          cell['cell_id'] + 1,
+                'cell_id':          cell['cell_id'],
                 'ncell_list_tail':  self.ho_inter
             }
             assertMatch(self, have, want)
