@@ -116,6 +116,7 @@ def XN_PEER(xn_addr):
 
 
 # XXX doc
+# XXX approach is to test generated enb.cfg
 class ENBTestCase(AmariTestCase):
     maxDiff = None  # want to see full diff in test run log on an error
 
@@ -138,17 +139,7 @@ class ENBTestCase(AmariTestCase):
         cls.requestAllShared(inst)
         return inst
 
-    # ref returns full reference of shared instance with given subreference.
-    #
-    # for example if reference of main instance is 'MAIN-INSTANCE'
-    #
-    #   ref('RU') = 'MAIN-INSTANCE.RU'
-    @classmethod
-    def ref(cls, subref):
-        return '%s.%s' % (cls.default_partition_reference, subref)
-
     # requestAllShared adds all shared instances of the testcase over imain.
-    # XXX -> addShared? initShared?
     @classmethod
     def requestAllShared(cls, imain):
         def _(subref, ctx):
@@ -172,16 +163,28 @@ class ENBTestCase(AmariTestCase):
             software_release=cls.getSoftwareURL(),
             software_type=cls.getInstanceSoftwareType(),
             partition_reference=cls.ref(subref),
-            #filter_kw = {'instance_guid': imain.getInstanceGuid()},    XXX "Can only request on embedded computer"
+            # XXX StandaloneSlapOS rejects filter_kw with "Can only request on embedded computer"
+            #filter_kw = {'instance_guid': imain.getInstanceGuid()},
             partition_parameter_kw={'_': json.dumps(ctx)},
             shared=True)
+
+    # ref returns full reference of shared instance with given subreference.
+    #
+    # for example if reference of main instance is 'MAIN-INSTANCE'
+    #
+    #   ref('RU') = 'MAIN-INSTANCE.RU'
+    @classmethod
+    def ref(cls, subref):
+        return '%s.%s' % (cls.default_partition_reference, subref)
 
     # ipath returns path for a file inside main instance.
     def ipath(self, path):
         assert path[:1] != '/', path
         return '%s/%s' % (self.computer_partition_root_path, path)
 
-    def test_enb_conf(self):
+    # --------
+
+    def test_enb_conf_basic(self):
         conf = yamlpp_load(self.ipath('etc/enb.cfg'))
 
         assertMatch(self, conf, dict(
@@ -243,9 +246,7 @@ class TestENB_SDR(ENBTestCase):
         CELL(3, FDD | NR (430100, 1) | BW(15))
         CELL(4, TDD | NR (510100,41) | BW(20))
 
-    def test_enb_conf(self):
-        super().test_enb_conf()
-
+    def test_enb_conf_ru(self):
         conf = yamlpp_load(self.ipath('etc/enb.cfg'))
 
         rf_driver = conf['rf_driver']
@@ -256,10 +257,11 @@ class TestENB_SDR(ENBTestCase):
         self.assertEqual(conf['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
         self.assertEqual(conf['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
+    # basic cell parameters
+    def test_enb_conf_cell(self):
         cell_list = conf['cell_list']
         nr_cell_list = conf['nr_cell_list']
 
-        # basic cell parameters
         assertMatch(self, cell_list,  [
           dict( # CELL1
             uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
@@ -299,7 +301,8 @@ class TestENB_SDR(ENBTestCase):
         ])
 
 
-        # Carrier Aggregation
+    # Carrier Aggregation
+    def test_enb_conf_ca(self):
         assertMatch(self, cell_list, [
           { # CELL1
             'scell_list':           [{'cell_id': 0x2}],                     # LTE + LTE
@@ -321,7 +324,8 @@ class TestENB_SDR(ENBTestCase):
         ])
 
 
-        # Handover
+    # Handover
+    def test_enb_conf_ho(self):
         assertMatch(self, cell_list, [
           { # CELL1
             'ncell_list':   [
