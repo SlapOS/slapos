@@ -323,7 +323,31 @@ class TestENB_SDR(ENBTestCase):
         ])
 
 
-        # XXX HO(intra)
+        # Handover
+        ho_inter = [
+            dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123),   # PEERCELL4
+            dict(rat='nr',    nr_cell_id=0x77712, gnb_id_bits=22, n_id_cell=75,             # PEERCELL5
+                 dl_nr_arfcn=520000, ul_nr_arfcn=520000, ssb_nr_arfcn=520090, band=38,
+                 tac = 0x321),
+        ]
+        assertMatch(self, cell_list, [
+          { # CELL1
+            'ncell_list':   [
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=2,  dl_earfcn=36100, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=   0x03),                                           # CELL3
+              dict(rat='nr',    cell_id=   0x04),                                           # CELL4
+            ] + ho_inter,
+          },
+          { # CELL2
+            'ncell_list':   [
+              dict(rat='eutra', cell_id= 0x1701, n_id_cell=1,  dl_earfcn=  100, tac=0x101), # CELL1
+              dict(rat='nr',    cell_id=   0x03),                                           # CELL3
+              dict(rat='nr',    cell_id=   0x04),                                           # CELL4
+            ] + ho_inter,
+          },
+        ])
+
+        # XXX + NR
 
 
 # XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
