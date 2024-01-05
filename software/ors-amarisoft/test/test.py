@@ -270,21 +270,23 @@ class TestENB_SDR(ENBTestCase):
         self.assertEqual(len(nr_cell_list), 2)
 
         # basic cell parameters
-        assertDict(cell_list[0],  dict(
+        assertMatch(self, cell_list,  [
+          dict( # CELL1
             uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
             dl_earfcn=100,    ul_earfcn=18100,
             n_rb_dl=25,
             cell_id=0x1,      n_id_cell=0x11,   tac=0x101,
             root_sequence_index=201,
-        ))
-
-        assertDict(cell_list[1],  dict(
+          ),
+          dict( # CELL2
             uldl_config=2,    rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
             dl_earfcn=36100,  ul_earfcn=36100,
             n_rb_dl=50,
             cell_id=0x2,      n_id_cell=0x12,   tac=0x102,
             root_sequence_index=202,
-        ))
+          ),
+        ])
+
 
         assertDict(nr_cell_list[0],  dict(
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
@@ -301,6 +303,32 @@ class TestENB_SDR(ENBTestCase):
             cell_id=0x4,         n_id_cell=0x14,      tac=NO,
             root_sequence_index=204,
         ))
+        assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1': dict(
+            period=5,
+            dl_slots=7,
+            dl_symbols=6,
+            ul_slots=2,
+            ul_symbols=4,
+        )})
+
+        assertMatch(self, nr_cell_list,  [
+          dict( # CELL3
+            tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
+            dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
+            bandwidth=15,
+            cell_id=0x3,         n_id_cell=0x13,      tac=NO,
+            root_sequence_index=203,
+          ),
+
+          dict( # CELL4
+                                 rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
+            dl_nr_arfcn=510100,  ul_nr_arfcn=510100,  ssb_nr_arfcn=510010,  band=41,
+            bandwidth=20,
+            cell_id=0x4,         n_id_cell=0x14,      tac=NO,
+            root_sequence_index=204,
+          ),
+        ])
+
         assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1': dict(
             period=5,
             dl_slots=7,
@@ -538,3 +566,6 @@ def _matchCollect(v, vok):
     # other types, e.g. atomic int/str/... - return as is
     assert type(v) is not tuple, v
     return v
+
+
+# XXX test for assertMatch
