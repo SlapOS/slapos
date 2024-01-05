@@ -235,7 +235,8 @@ class TestENB_SDR(ENBTestCase):
                 }
             }
             cell.update(CENB(i, 0x10+i))
-            cell.update({'root_sequence_index': 200+i})
+            cell.update({'root_sequence_index': 200+i,
+                         'inactivity_timer':    1000+i})
             cell.update(ctx)
             cls.requestShared(imain, 'SDR%d.CELL' % i, cell)
 
@@ -267,14 +268,14 @@ class TestENB_SDR(ENBTestCase):
             dl_earfcn=100,    ul_earfcn=18100,
             n_rb_dl=25,
             cell_id=0x1,      n_id_cell=0x11,   tac=0x101,
-            root_sequence_index=201,
+            root_sequence_index=201,  inactivity_timer=1001,
           ),
           dict( # CELL2
             uldl_config=2,    rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
             dl_earfcn=36100,  ul_earfcn=36100,
             n_rb_dl=50,
             cell_id=0x2,      n_id_cell=0x12,   tac=0x102,
-            root_sequence_index=202,
+            root_sequence_index=202,  inactivity_timer=1002,
           ),
         ])
 
@@ -284,7 +285,7 @@ class TestENB_SDR(ENBTestCase):
             dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
             bandwidth=15,
             cell_id=0x3,         n_id_cell=0x13,      tac=NO,
-            root_sequence_index=203,
+            root_sequence_index=203,  inactivity_timer=1003,
           ),
 
           dict( # CELL4
@@ -295,24 +296,31 @@ class TestENB_SDR(ENBTestCase):
             dl_nr_arfcn=510100,  ul_nr_arfcn=510100,  ssb_nr_arfcn=510010,  band=41,
             bandwidth=20,
             cell_id=0x4,         n_id_cell=0x14,      tac=NO,
-            root_sequence_index=204,
+            root_sequence_index=204,  inactivity_timer=1004,
           ),
         ])
 
 
         # Carrier Aggregation
         assertMatch(self, cell_list, [
-            {
-                'scell_list':          [{'cell_id': 0x2}],                      # LTE + LTE
-                'en_dc_scg_cell_list': [{'cell_id': 0x3}, {'cell_id': 0x4}],    # LTE + NR
-            },
-            {
-                'scell_list':          [{'cell_id': 0x1}],                      # LTE + LTE
-                'en_dc_scg_cell_list': [{'cell_id': 0x3}, {'cell_id': 0x4}],    # LTE + NR
-            },
+          { # CELL1
+            'scell_list':           [{'cell_id': 0x2}],                     # LTE + LTE
+            'en_dc_scg_cell_list':  [{'cell_id': 0x3}, {'cell_id': 0x4}],   # LTE + NR
+          },
+          { # CELL2
+            'scell_list':           [{'cell_id': 0x1}],                     # LTE + LTE
+            'en_dc_scg_cell_list':  [{'cell_id': 0x3}, {'cell_id': 0x4}],   # LTE + NR
+          },
         ])
 
-        # XXX NR
+        assertMatch(self, nr_cell_list, [
+          { # CELL3
+            'scell_list':           [{'cell_id': 0x4}],                     # NR  + NR
+          },
+          { # CELL4
+            'scell_list':           [{'cell_id': 0x3}],                     # NR  + NR
+          },
+        ])
 
 
         # XXX HO(intra)
