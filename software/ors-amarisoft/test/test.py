@@ -138,6 +138,8 @@ PEERCELL5 =  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321)
 
 # XXX doc
 class ENBTestCase(AmariTestCase):
+    maxDiff = None  # want to see full diff in test run log on an error
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb"
@@ -288,21 +290,6 @@ class TestENB_SDR(ENBTestCase):
         ])
 
 
-        assertDict(nr_cell_list[0],  dict(
-            tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
-            bandwidth=15,
-            cell_id=0x3,         n_id_cell=0x13,      tac=NO,
-            root_sequence_index=203,
-        ))
-
-        assertDict(nr_cell_list[1],  dict(
-                                 rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=510100,  ul_nr_arfcn=510100,  ssb_nr_arfcn=510010,  band=41,
-            bandwidth=20,
-            cell_id=0x4,         n_id_cell=0x14,      tac=NO,
-            root_sequence_index=204,
-        ))
         assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1': dict(
             period=5,
             dl_slots=7,
@@ -321,6 +308,9 @@ class TestENB_SDR(ENBTestCase):
           ),
 
           dict( # CELL4
+            tdd_ul_dl_config={'pattern1': dict(
+                period=5, dl_slots=7, dl_symbols=6, ul_slots=2, ul_symbols=4,
+            )},
                                  rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
             dl_nr_arfcn=510100,  ul_nr_arfcn=510100,  ssb_nr_arfcn=510010,  band=41,
             bandwidth=20,
@@ -329,7 +319,8 @@ class TestENB_SDR(ENBTestCase):
           ),
         ])
 
-        assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1': dict(
+        assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1':
+dict(
             period=5,
             dl_slots=7,
             dl_symbols=6,
