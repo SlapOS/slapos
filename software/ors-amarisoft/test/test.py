@@ -125,6 +125,11 @@ class ENBTestCase(AmariTestCase):
         return "enb"
 
     @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.enb_cfg = yamlpp_load(cls.ipath('etc/enb.cfg'))
+
+    @classmethod
     def getInstanceParameterDict(cls):
         return {'_': json.dumps({
             'testing':      True,
@@ -178,31 +183,30 @@ class ENBTestCase(AmariTestCase):
         return '%s.%s' % (cls.default_partition_reference, subref)
 
     # ipath returns path for a file inside main instance.
-    def ipath(self, path):
+    @classmethod
+    def ipath(cls, path):
         assert path[:1] != '/', path
-        return '%s/%s' % (self.computer_partition_root_path, path)
+        return '%s/%s' % (cls.computer_partition_root_path, path)
 
     # --------
 
-    def test_enb_conf_basic(self):
-        conf = yamlpp_load(self.ipath('etc/enb.cfg'))
-
-        assertMatch(self, conf, dict(
+    def test_enb_conf_basic(t):
+        assertMatch(t, t.enb_cfg, dict(
             enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
             x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
         ))
 
         # HO(inter)
-        for cell in conf['cell_list'] + conf['nr_cell_list']:
+        for cell in t.enb_cfg['cell_list'] + t.enb_cfg['nr_cell_list']:
             have = {
                 'cell_id':          cell['cell_id'],
-                'ncell_list_tail':  cell['ncell_list'] [-len(self.ho_inter):]
+                'ncell_list_tail':  cell['ncell_list'] [-len(t.ho_inter):]
             }
             want = {
                 'cell_id':          cell['cell_id'],
-                'ncell_list_tail':  self.ho_inter
+                'ncell_list_tail':  t.ho_inter
             }
-            assertMatch(self, have, want)
+            assertMatch(t, have, want)
 
 
 
@@ -246,23 +250,19 @@ class TestENB_SDR(ENBTestCase):
         CELL(3, FDD | NR (430100, 1) | BW(15))
         CELL(4, TDD | NR (510100,41) | BW(20))
 
-    def test_enb_conf_ru(self):
-        conf = yamlpp_load(self.ipath('etc/enb.cfg'))
-
-        rf_driver = conf['rf_driver']
-        self.assertEqual(rf_driver['args'],
+    # radio units configuration
+    def test_enb_conf_ru(t):
+        rf_driver = t.enb_cfg['rf_driver']
+        t.assertEqual(rf_driver['args'],
                 'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                 'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9')
 
-        self.assertEqual(conf['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
-        self.assertEqual(conf['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+        t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
     # basic cell parameters
-    def test_enb_conf_cell(self):
-        cell_list = conf['cell_list']
-        nr_cell_list = conf['nr_cell_list']
-
-        assertMatch(self, cell_list,  [
+    def test_enb_conf_cell(t):
+        assertMatch(t, t.enb_cfg['cell_list'],  [
           dict( # CELL1
             uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
             dl_earfcn=100,    ul_earfcn=18100,
@@ -279,7 +279,7 @@ class TestENB_SDR(ENBTestCase):
           ),
         ])
 
-        assertMatch(self, nr_cell_list,  [
+        assertMatch(t, t.enb_cfg['nr_cell_list'],  [
           dict( # CELL3
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
             dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
@@ -302,8 +302,8 @@ class TestENB_SDR(ENBTestCase):
 
 
     # Carrier Aggregation
-    def test_enb_conf_ca(self):
-        assertMatch(self, cell_list, [
+    def test_enb_conf_ca(t):
+        assertMatch(t, t.enb_cfg['cell_list'],  [
           { # CELL1
             'scell_list':           [{'cell_id': 0x2}],                     # LTE + LTE
             'en_dc_scg_cell_list':  [{'cell_id': 0x3}, {'cell_id': 0x4}],   # LTE + NR
@@ -314,7 +314,7 @@ class TestENB_SDR(ENBTestCase):
           },
         ])
 
-        assertMatch(self, nr_cell_list, [
+        assertMatch(t, t.enb_cfg['nr_cell_list'], [
           { # CELL3
             'scell_list':           [{'cell_id': 0x4}],                     # NR  + NR
           },
@@ -325,37 +325,37 @@ class TestENB_SDR(ENBTestCase):
 
 
     # Handover
-    def test_enb_conf_ho(self):
-        assertMatch(self, cell_list, [
+    def test_enb_conf_ho(t):
+        assertMatch(t, t.enb_cfg['cell_list'],  [
           { # CELL1
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
               dict(rat='nr',    cell_id=   0x03),                                             # CELL3
               dict(rat='nr',    cell_id=   0x04),                                             # CELL4
-            ] + self.ho_inter,
+            ] + t.ho_inter,
           },
           { # CELL2
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
               dict(rat='nr',    cell_id=   0x03),                                             # CELL3
               dict(rat='nr',    cell_id=   0x04),                                             # CELL4
-            ] + self.ho_inter,
+            ] + t.ho_inter,
           },
         ])
-        assertMatch(self, nr_cell_list, [
+        assertMatch(t, t.enb_cfg['nr_cell_list'], [
           { # CELL3
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
               dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
               dict(rat='nr',    cell_id=   0x04),                                             # CELL4
-            ] + self.ho_inter,
+            ] + t.ho_inter,
           },
           { # CELL4
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
               dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
               dict(rat='nr',    cell_id=   0x03),                                             # CELL3
-            ] + self.ho_inter,
+            ] + t.ho_inter,
           },
         ])
 
