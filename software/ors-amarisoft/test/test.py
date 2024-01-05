@@ -109,9 +109,6 @@ PEERCELL4 = LTE(700)       | LTE_PEER(0x12345,    35, 0x123)
 PEERCELL5 =  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321)
 
 
-# XXX dl_earfcn     -> ul_earfcn
-# XXX dl_nr_arfcn   -> ul_nr_arfcn + ssb_nr_arfcn
-
 # XXX explain ENB does not support mixing SDR + CPRI
 
 
