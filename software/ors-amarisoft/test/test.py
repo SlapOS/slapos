@@ -177,8 +177,12 @@ class ENBTestCase(AmariTestCase):
     def test_enb_conf(self):
         conf = yamlpp_load(self.ipath('etc/enb.cfg'))
 
-        # XXX assert about enb_id/gnb_id, PEER, PEERCELL + HO(inter)  ...
+        # XXX assert about HO(inter)  ...
 
+        assertMatch(self, conf, dict(
+            enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
+            x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
+        ))
 
 
 class TestENB_SDR(ENBTestCase):
