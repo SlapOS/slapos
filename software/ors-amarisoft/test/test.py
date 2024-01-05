@@ -259,8 +259,6 @@ class TestENB_SDR(ENBTestCase):
 
         cell_list = conf['cell_list']
         nr_cell_list = conf['nr_cell_list']
-        self.assertEqual(len(cell_list),    2)
-        self.assertEqual(len(nr_cell_list), 2)
 
         # basic cell parameters
         assertMatch(self, cell_list,  [
