@@ -314,7 +314,6 @@ class TestENB_SDR(ENBTestCase):
             },
         ])
 
-
         # XXX NR
 
 
