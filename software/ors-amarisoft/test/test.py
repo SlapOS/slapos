@@ -257,15 +257,6 @@ class TestENB_SDR(ENBTestCase):
         self.assertEqual(conf['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
         self.assertEqual(conf['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
-        # assertDict asserts that d slice with keys from dok == dok.
-        # dok[k]=NO  means d[k] must be absent.
-        # XXX -> assertMatch with support for {} and []
-        def assertDict(d, dok):
-            d_ = {}
-            for k in dok:
-                d_[k] = d.get(k, NO)
-            self.assertEqual(d_, dok)
-
         cell_list = conf['cell_list']
         nr_cell_list = conf['nr_cell_list']
         self.assertEqual(len(cell_list),    2)
