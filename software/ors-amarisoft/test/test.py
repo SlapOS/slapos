@@ -30,20 +30,22 @@ setUpModule, AmariTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-# ---- building blocks to construct cells + peers ----
+# ---- building blocks to construct cell/peer parameters ----
 #
-# - TDD/FDD are basic parameters to indicate TDD/FDD mode.
-# - LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency.
-# - BW returns basic parameters to indicate specified bandwidth.
-# - CENB returns basic parameters to indicate a ENB-kind cell.
-# - CUE indicates an UE-kind cell.
-# - XXX TAC
+# - TDD/FDD indicate TDD/FDD mode.
+# - LTE/NR  indicate LTE/NR cell with given downlink frequency.
+# - BW      indicates specified bandwidth.
+# - CENB    indicates a ENB-kind cell.
+# - CUE     indicates an UE-kind cell.
+# - TAC     indicates specified Traking Area Code.
 # - LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
-# - X2_PEER/XN_PEER indicate an LTE/NR ENB peer.
+# - X2_PEER/XN_PEER  indicate an LTE/NR ENB peer.
 
+# TDD/FDD are basic parameters to indicate TDD/FDD mode.
 TDD = {'rf_mode': 'tdd'}
 FDD = {'rf_mode': 'fdd'}
 
+# LTE/NR return basic parameters for an LTE/NR cell with given downlink frequency.
 def LTE(dl_earfcn):
     return {
         'cell_type':    'lte',
@@ -56,11 +58,13 @@ def NR(dl_nr_arfcn, nr_band):
         'nr_band':      nr_band,
     }
 
+# BW returns basic parameters to indicate specified bandwidth.
 def BW(bandwidth):
     return {
         'bandwidth':    bandwidth,
     }
 
+# CENB returns basic parameters to indicate a ENB-kind cell.
 def CENB(cell_id, pci):
     return {
         'cell_kind':    'enb',
@@ -68,6 +72,10 @@ def CENB(cell_id, pci):
         'pci':          pci,
     }
 
+# CUE indicates an UE-kind cell.
+def CUE(): ...  # XXX
+
+#  TAC returns basic parameters to indicate specified Traking Area Code.
 def TAC(tac):
     return {
         'tac':          '0x%x' % tac,
@@ -75,6 +83,7 @@ def TAC(tac):
 
 CUE = {'cell_kind': 'ue'}
 
+# LTE_PEER/NR_PEER return basic parameters to indicate an LTE/NR ENB-PEER-kind cell.
 def LTE_PEER(e_cell_id, pci, tac):
     return {
         'cell_kind':    'enb_peer',
@@ -91,6 +100,7 @@ def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac):
         'tac':          tac,
     }
 
+# X2_PEER/XN_PEER return basic parameters to indicate an LTE/NR ENB peer.
 def X2_PEER(x2_addr):
     return {
         'peer_type':    'lte',
@@ -128,8 +138,6 @@ class ENBTestCase(AmariTestCase):
             'gnb_id':       '0x23',
             'gnb_id_bits':  30,
         })}
-
-    # XXX + generic test that verifies ^^^ to be rendered into enb.cfg
 
     @classmethod
     def requestDefaultInstance(cls, state='started'):
