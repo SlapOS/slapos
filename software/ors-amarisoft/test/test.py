@@ -289,15 +289,6 @@ class TestENB_SDR(ENBTestCase):
           ),
         ])
 
-
-        assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1': dict(
-            period=5,
-            dl_slots=7,
-            dl_symbols=6,
-            ul_slots=2,
-            ul_symbols=4,
-        )})
-
         assertMatch(self, nr_cell_list,  [
           dict( # CELL3
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
@@ -319,14 +310,6 @@ class TestENB_SDR(ENBTestCase):
           ),
         ])
 
-        assertDict(nr_cell_list[1]['tdd_ul_dl_config'], {'pattern1':
-dict(
-            period=5,
-            dl_slots=7,
-            dl_symbols=6,
-            ul_slots=2,
-            ul_symbols=4,
-        )})
 
         # Carrier Aggregation
         assertMatch(self, cell_list, [
