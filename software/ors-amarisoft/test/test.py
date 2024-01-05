@@ -333,16 +333,16 @@ class TestENB_SDR(ENBTestCase):
         assertMatch(self, cell_list, [
           { # CELL1
             'ncell_list':   [
-              dict(rat='eutra', cell_id= 0x1702, n_id_cell=2,  dl_earfcn=36100, tac=0x102), # CELL2
-              dict(rat='nr',    cell_id=   0x03),                                           # CELL3
-              dict(rat='nr',    cell_id=   0x04),                                           # CELL4
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=   0x03),                                             # CELL3
+              dict(rat='nr',    cell_id=   0x04),                                             # CELL4
             ] + ho_inter,
           },
           { # CELL2
             'ncell_list':   [
-              dict(rat='eutra', cell_id= 0x1701, n_id_cell=1,  dl_earfcn=  100, tac=0x101), # CELL1
-              dict(rat='nr',    cell_id=   0x03),                                           # CELL3
-              dict(rat='nr',    cell_id=   0x04),                                           # CELL4
+              dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
+              dict(rat='nr',    cell_id=   0x03),                                             # CELL3
+              dict(rat='nr',    cell_id=   0x04),                                             # CELL4
             ] + ho_inter,
           },
         ])
