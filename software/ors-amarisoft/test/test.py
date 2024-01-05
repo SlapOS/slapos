@@ -120,6 +120,10 @@ def XN_PEER(xn_addr):
 class ENBTestCase(AmariTestCase):
     maxDiff = None  # want to see full diff in test run log on an error
 
+    # XXX temp
+    instance_max_retry = 1
+    report_max_retry = 1
+
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb"
@@ -359,7 +363,7 @@ class TestENB_SDR(ENBTestCase):
         t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
 
-# XXX Lopcomm driver in all modes
+# TestENB_Lopcomm verifies enb wrt Lopcomm driver in all LTE/NR x FDD/TDD modes
 class TestENB_Lopcomm(ENBTestCase):
     @classmethod
     def RUcfg(cls, i):
@@ -377,6 +381,8 @@ class TestENB_Lopcomm(ENBTestCase):
             },
             'mac_addr':     '00:0A:45:00:00:%02x' % i,
         }
+
+    # XXX verify cu_cfg
 
 
 
