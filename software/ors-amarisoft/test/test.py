@@ -30,20 +30,6 @@ setUpModule, AmariTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-# yload loads yaml config file after preprocessing it.
-#
-# preprocessing is needed to e.g. remove // and /* comments.
-def yload(path):
-    with open(path, 'r') as f:
-        data = f.read()     # original input
-    p = pcpp.Preprocessor()
-    p.parse(data)
-    f = io.StringIO()
-    p.write(f)
-    data_ = f.getvalue()    # preprocessed input
-    return yaml.load(data_, Loader=yaml.Loader)
-
-
 # ---- building blocks to construct cells + peers ----
 #
 # - TDD/FDD are basic parameters to indicate TDD/FDD mode.
@@ -129,13 +115,6 @@ PEERCELL5 =  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321)
 # XXX explain ENB does not support mixing SDR + CPRI
 
 
-# # XXX explain CELL_xy ...   XXX goes away
-# CELL_4t = TDD | LTE(38050)    | BW( 5)  # 2600 MHz
-# CELL_5t = TDD | NR(523020,41) | BW(10)  # 2615.1 MHz
-# CELL_4f = FDD | LTE(3350)     | BW( 5)  # 2680 MHz
-# CELL_5f = FDD |  NR(537200,7) | BW( 5)  # 2686 MHz
-
-
 # XXX doc
 class ENBTestCase(AmariTestCase):
     maxDiff = None  # want to see full diff in test run log on an error
@@ -199,7 +178,7 @@ class ENBTestCase(AmariTestCase):
         return '%s/%s' % (self.computer_partition_root_path, path)
 
     def test_enb_conf(self):
-        conf = yload(self.ipath('etc/enb.cfg'))
+        conf = yamlpp_load(self.ipath('etc/enb.cfg'))
 
         # XXX assert about enb_id/gnb_id, PEER, PEERCELL + HO(inter)  ...
 
@@ -248,7 +227,7 @@ class TestENB_SDR(ENBTestCase):
     def test_enb_conf(self):
         super().test_enb_conf()
 
-        conf = yload(self.ipath('etc/enb.cfg'))
+        conf = yamlpp_load(self.ipath('etc/enb.cfg'))
 
         rf_driver = conf['rf_driver']
         self.assertEqual(rf_driver['args'],
@@ -419,7 +398,7 @@ class _TestENB_CPRI(ENBTestCase):
     def test_enb_conf(self):
         super().test_enb_conf()
 
-        conf = yload('%s/etc/enb.cfg' % self.computer_partition_root_path)
+        conf = yamlpp_load('%s/etc/enb.cfg' % self.computer_partition_root_path)
 
         rf_driver = conf['rf_driver']
         self.assertEqual(rf_driver['args'],
@@ -530,6 +509,23 @@ class TestUEMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 """
+
+
+# ---- misc ----
+
+# yamlpp_load loads yaml config file after preprocessing it.
+#
+# preprocessing is needed to e.g. remove // and /* comments.
+def yamlpp_load(path):
+    with open(path, 'r') as f:
+        data = f.read()     # original input
+    p = pcpp.Preprocessor()
+    p.parse(data)
+    f = io.StringIO()
+    p.write(f)
+    data_ = f.getvalue()    # preprocessed input
+    return yaml.load(data_, Loader=yaml.Loader)
+
 
 # assertMatch recursively matches data structure against specified pattern.
 #
