@@ -120,6 +120,12 @@ def XN_PEER(xn_addr):
 class ENBTestCase(AmariTestCase):
     maxDiff = None  # want to see full diff in test run log on an error
 
+    # stress correctness of ru_ref/cell_ref/... usage throughout all places in
+    # buildout code - special characters should not lead to wrong templates or
+    # code injection.
+    default_partition_reference = AmariTestCase.default_partition_reference + \
+                                  '${aaa:bbb}\n[ccc];'
+
     # XXX temp
     instance_max_retry = 1
     report_max_retry = 1
