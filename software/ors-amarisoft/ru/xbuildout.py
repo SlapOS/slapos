@@ -19,6 +19,7 @@
 
 - encode/decode convert string to/from form, that is suitable to be used in
   names of buildout sections.
+- XXX quote
 """
 
 
@@ -59,7 +60,7 @@
 #
 #   # referring to <ru_ref>-stats
 #   ${ {{-B('%s-stats' % ru_ref)}}:output}
-def encode(s: str): # -> str
+def encode(s: str) -> str:
     s = s.encode('utf-8')
     outv = []
     emit = outv.append
@@ -86,7 +87,7 @@ def encode(s: str): # -> str
 
 
 # decode provides reverse operation for encode.
-def decode(s: str): # -> str | ValueError
+def decode(s: str) -> str | ValueError:
     try:
         return _decode(s)
     except Exception as e:
@@ -125,6 +126,15 @@ def _decode(s):
     out = b''.join(outv)
     out = out.decode('utf-8')   # raises UnicodeDecodeError if it was invalid UTF-8
     return out
+
+
+# quote converts string s into quoted form with all buildout control characters escaped...  XXX
+# XXX -> pyquote?
+def quote(s: str) -> str:
+    r = repr(s)
+    for c in '$[]{}\n':
+        r = r.replace(c, r'\x%02x' % ord(c))
+    return r
 
 
 # ----------------------------------------
@@ -185,3 +195,8 @@ def test_encode():
         def _(cause):
             assert isinstance(cause, UnicodeDecodeError)
         checkbad(x, _)
+
+
+def test_quote():
+    # XXX
+    pass
