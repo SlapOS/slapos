@@ -124,7 +124,7 @@ class ENBTestCase(AmariTestCase):
     # buildout code - special characters should not lead to wrong templates or
     # code injection.
     default_partition_reference = AmariTestCase.default_partition_reference + \
-                                  '${aaa:bbb}\n[ccc];'
+                                  ' ${a:b}\n[c]\n;'
 
     # XXX temp
     instance_max_retry = 1
