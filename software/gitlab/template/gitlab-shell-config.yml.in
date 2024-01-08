@@ -24,7 +24,7 @@ http_settings:
 # Give the canonicalized absolute pathname,
 # REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!
 # Check twice that none of the components is a symlink, including "/home".
-# repos_path: "{{ gitlab.repositories }}"
+repos_path: "{{ gitlab.repositories }}"
 
 # File used as authorized_keys for gitlab user
 # NOTE not used in slapos version (all access via https only)
