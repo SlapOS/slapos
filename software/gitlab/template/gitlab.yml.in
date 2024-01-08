@@ -171,6 +171,16 @@ production: &base
     storage_path: <%= @lfs_storage_path %>
   #}
 
+  ## Uploads
+  uploads:
+    # The location where uploads objects are stored (default: public/).
+    storage_path: "{{ gitlab.var }}"
+    # The location where uploads objects are stored (default: public/).
+    # storage_path: public/
+    # base_dir: uploads/-/system
+    object_store:
+      enabled: false
+      remote_directory: uploads # Bucket name
 
   {# we do not support container registry
   ## Container Registry
