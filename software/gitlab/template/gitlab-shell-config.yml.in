@@ -8,7 +8,7 @@
 user: {{ backend_info.user }}
 
 # Url to gitlab instance. Used for api calls. Should end with a slash.
-gitlab_url: "http+unix://{{ urllib.quote_plus(unicorn.socket) }}/"
+gitlab_url: "http+unix://{{ urllib.parse.quote_plus(unicorn.socket) }}/"
 
 http_settings:
 {# we don't need any
@@ -24,7 +24,7 @@ http_settings:
 # Give the canonicalized absolute pathname,
 # REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!
 # Check twice that none of the components is a symlink, including "/home".
-# repos_path: "{{ gitlab.repositories }}"
+repos_path: "{{ gitlab.repositories }}"
 
 # File used as authorized_keys for gitlab user
 # NOTE not used in slapos version (all access via https only)
