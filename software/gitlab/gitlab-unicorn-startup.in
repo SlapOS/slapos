@@ -39,13 +39,8 @@ echo "I: PostgreSQL ready." 1>&2
 psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
 
 if echo "$pgtables" | grep -q '^Did not find any relations' ; then
-    $RAKE db:schema:load db:seed_fu  || die "initial db setup failed"
+    $RAKE gitlab:setup RAILS_ENV=production force=yes || die "initial db setup failed"
 fi
-
-
-# re-build ssh keys
-# (we do not use them - just for cleannes)
-force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
 
 
 # 2. what to do when instance is upgraded
@@ -64,10 +59,15 @@ $RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
 # logs of actual migration run.
 test -s $migrate_log || rm $migrate_log
 
+touch {{ var_dir }}/gitlab_db_ok
 
 # clear cache
 $RAKE cache:clear   || die "cache:clear failed"
 
+# re-build ssh keys
+# (we do not use them - just for cleannes)
+# run before migration to avoir error on missing tables in db
+force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
 
 
 # 3. finally exec to unicorn

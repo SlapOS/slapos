@@ -74,7 +74,6 @@ server {
   {% if cfg_https %}
   ## Strong SSL Security
   ## https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html & https://cipherli.st/
-  ssl on;
   ssl_certificate {{ nginx.cert_file }};
   ssl_certificate_key {{ nginx.key_file }};
   {# we don't need - most root CA will be included by default
@@ -113,7 +112,7 @@ server {
 
   ## HSTS Config
   ## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
-  {% if cfg("nginx_hsts_max_age") > 0 -%}
+  {% if int(cfg("nginx_hsts_max_age")) > 0 -%}
   {%   if '{{ cfg("nginx_hsts_include_subdomains") }}' == 'true' -%}
   add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}; includeSubDomains"
   {%   else -%}
@@ -124,7 +123,7 @@ server {
   ## Individual nginx logs for this GitLab vhost
   access_log  {{ nginx.log }}/gitlab_access.log gitlab_access;
   error_log   {{ nginx.log }}/gitlab_error.log;
-  
+
   # Set CORS header
   add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
   add_header 'Access-Control-Allow-Credentials' true;
@@ -151,7 +150,7 @@ server {
 
   {# we do not support relative URL - path is always "/" #}
   {% set path = "/" %}
-  
+
   #if ($http_host = "") {
   #  set $http_host_with_default "<%= default_host %>";
   #}

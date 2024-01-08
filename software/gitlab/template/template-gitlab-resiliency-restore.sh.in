@@ -29,6 +29,7 @@ gitlab_work="{{ gitlab_work_location }}"
 promise_check="{{ promise_lab_location }}"
 unicorn_script="{{ unicorn_script }}"
 sidekiq_script="{{ sidekiq_script }}"
+var_location="{{ run_directory }}/.."
 
 # export GIT_EXEC_PATH=$git_location/libexec/git-core/
 
@@ -60,6 +61,12 @@ check_process $run_location/unicorn.pid "Unicorn"
 if [ -f "$postgres_pid_file" ]; then
   rm $postgres_pid_file
 fi
+
+# cleanup /var/backup and old repositories folders,
+# restoration will created them at every run
+echo "Cleanup gitlab backup and old repositories folders..."
+rm -rf $var_location/backup/*
+rm -rf $var_location/repositories*
 
 echo "Starting Postgres..."
 $postgres_executable &

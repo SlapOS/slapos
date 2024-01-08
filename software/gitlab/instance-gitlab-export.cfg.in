@@ -50,6 +50,8 @@ input = inline: gitlab-shell-work*
   var/repositories/**
   srv/postgresql/**
   srv/postgresql
+  srv/backup/logrotate
+  srv/backup/logrotate/**
   etc/service/postgres-start
   srv/redis/**
   srv/unicorn/unicorn.socket
