@@ -187,7 +187,7 @@ class ExportAndImportMixin(object):
     old_value = self.slap._force_slapos_node_instance_all
     self.slap._force_slapos_node_instance_all = True
     try:
-      self.slap.waitForInstance(error_lines=0)
+      self.slap.waitForInstance(max_retry=2, error_lines=0)
     except SlapOSNodeCommandError as e:
       s = str(e)
       self.assertNotIn("Promise 'resiliency-export-promise.py' failed", s)
