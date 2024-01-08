@@ -1104,7 +1104,7 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
 class TestWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test setting the with-max-rlimit-nofile parameter sets the open fd soft limit to the hard limit.
   """
-  __partition_reference__ = 'with-max-rlimit-nofile'
+  __partition_reference__ = 'nf'
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -1123,7 +1123,7 @@ class TestWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsR
 class TestUnsetWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test not setting the with-max-rlimit-nofile parameter doesn't change the soft limit of erp5
   """
-  __partition_reference__ = 'unset-with-max-rlimit-nofile'
+  __partition_reference__ = 'nnf'
 
   def test_unset_with_max_rlimit_nofile(self) -> None:
     with self.slap.instance_supervisor_rpc as supervisor:
