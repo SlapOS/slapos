@@ -87,7 +87,7 @@ def encode(s: str) -> str:
 
 
 # decode provides reverse operation for encode.
-def decode(s: str) -> str | ValueError:
+def decode(s: str): # -> str | ValueError
     try:
         return _decode(s)
     except Exception as e:
@@ -131,10 +131,13 @@ def _decode(s):
 # quote converts string s into quoted form with all buildout control characters escaped...  XXX
 # XXX -> pyquote?
 def quote(s: str) -> str:
-    r = repr(s)
-    for c in '$[]{}\n':
+    assert isinstance(s, str), type(s)
+    r = str.__repr__(s) # both str and markupsafe.Markup go as regular str
+    for c in '$[]\n':
         r = r.replace(c, r'\x%02x' % ord(c))
-    return r
+    if r[1:-1] == s:
+        return s    # original string
+    return '!py!' + r
 
 
 # ----------------------------------------
