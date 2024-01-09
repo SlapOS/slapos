@@ -435,18 +435,18 @@ class TestENB_Lopcomm(ENBTestCase):
               'tx-array-carriers': {
                 'rw-duplex-scheme':   'FDD',
                 'rw-type':            'LTE',
-                'absolute-frequency-center':    100,
-                'center-of-channel-bandwidth':  2120e6,
-                'channel-bandwidth':               5e6,
+                'absolute-frequency-center':    '100',
+                'center-of-channel-bandwidth':  '2120000000',
+                'channel-bandwidth':               '5000000',
                 'gain':   'XXX',
-                'active': 'XXX',
+                'active': 'INACTIVE',
               },
               'rx-array-carriers': {
-                'absolute-frequency-center':    18100,
-                'center-of-channel-bandwidth':    1930e6,
-                'channel-bandwidth':               5e6,
+                'absolute-frequency-center':      '18100',
+                'center-of-channel-bandwidth':    '1930000000',
+                'channel-bandwidth':                 '5000000',
                 # XXX no <gain>ru.rx_gain</gain>  TODO(lu.xu): clarify this with Lopcomm
-                'active': 'XXX',
+                'active': 'INACTIVE',
               },
             }
           }
