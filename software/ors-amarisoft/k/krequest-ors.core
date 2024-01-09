@@ -1,0 +1,86 @@
+#!/usr/bin/env -S slapos console
+"""request ors/core for kirr"""
+
+# XXX workaround for `slapos console` not setting up sys.path the same way as std python does
+import sys
+from os.path import dirname
+sys.path.insert(0, dirname(__file__))
+import kslap
+kslap.init(slap)
+
+import json
+from pprint import pprint
+
+
+"""
+x =slap.getOpenOrderDict()
+print(x)
+x = x['kcore']
+for _ in dir(x):
+    if not _.startswith('__'):
+        print('%s:\t%s' % (_, getattr(x, _)))
+print('\n\n\n')
+#sys.exit()
+"""
+
+ors="/srv/slapgrid/slappart91/srv/project/slapos/software/ors-amarisoft/k.cfg"
+
+core = request(ors,
+        software_type="core-network",
+        partition_reference="kcore",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+            'core_network_plmn': '31415',
+        })})
+
+print("core:", core)
+print("ref(core):", kslap.ref_of_instance(core))
+print("core.getInstanceParameterDict:")
+pprint(core.getInstanceParameterDict())
+print()
+
+# core -> core_part to retrieve all information about instance state
+# NOTE even though both core and core_part are ComputerPartition this is needed
+# because core.getInstanceParameterDict returns only what _we_ requested, while
+# core_part merge that with information from master (slave_instance_list + ...)
+core_part = slap.registerComputerPartition(core.slap_computer_id, core.slap_computer_partition_id)
+print('core_part:', core_part)
+print('core_part.getInstanceParameterDict:')
+pprint(core_part.getInstanceParameterDict())
+
+
+"""
+print()
+print("core:", core)
+print("  getId:", core.getId())
+print("  getInstanceGuid:", core.getInstanceGuid())
+print("  getState:", core.getState())
+#print("  getSoftwareRelease:", core.getSoftwareRelease())
+print("  getAccessStatus:", core.getAccessStatus())
+pprint(core.getInstanceParameterDict())
+pprint(core.getConnectionParameterDict())
+#print(core.getType())
+print("  getStatus:", core.getStatus())
+#print(core.getFullHostingIpAddressList())
+#print(core.getInformation())
+#print(core.request)
+print()
+#print(slap)
+#print(slap.getComputerDict())
+#print(slap.getOpenOrderDict())
+
+print('\n\n\n')
+print(dir(core))
+print('\n\n\n')
+
+for x in '_computer_id', '_instance_guid', '_parameter_dict', '_partition_id', '_requestComputerPartition', '_request_dict', 'slap_computer_id', 'slap_computer_partition_id', 'slap_server_url', 'slap_software_type':
+    print('%s:\t%s' % (x, getattr(core, x)))
+"""
+
+
+print()
+sim1 = kslap.request_sim(core, 1)
+sim2 = kslap.request_sim(core, 2)
+print('sim1:', sim1)
+print('sim2:', sim2)

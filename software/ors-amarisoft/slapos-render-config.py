@@ -6,22 +6,28 @@
 import zc.buildout.buildout # XXX workaround for https://lab.nexedi.com/nexedi/slapos.recipe.template/merge_requests/9
 from slapos.recipe.template import jinja2_template
 
-import json
+import json, copy, sys, os, pprint, glob
 
 
-# j2render renders config/<cfg>.jinja2.cfg into config/<cfg>.cfg with provided json parameters.
-def j2render(cfg, jcfg):
+# j2render renders config/<src> into config/out/<out> with provided json parameters.
+def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
     ctx['_standalone'] = True
+    assert 'ors' not in ctx
+    ctx['ors'] = False
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
+    textctx += 'import json_module    json\n'
+    textctx += 'import nrarfcn_module nrarfcn\n'
+    textctx += 'import xearfcn_module  xlte.earfcn\n'
+    textctx += 'import xnrarfcn_module xlte.nrarfcn\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
-      'extensions': 'jinja2.ext.do',
-      'url': 'config/{}.jinja2.cfg'.format(cfg),
-      'output': 'config/{}.cfg'.format(cfg),
+      'extensions': 'jinja2.ext.do jinja2.ext.loopcontrols',
+      'url': 'config/{}'.format(src),
+      'output': 'config/out/{}'.format(out),
       'context': textctx,
       'import-list': '''
         rawfile slaplte.jinja2 slaplte.jinja2''',
@@ -34,61 +40,516 @@ def j2render(cfg, jcfg):
             return f.read()
     r._read = _read
 
-    with open('config/{}.cfg'.format(cfg), 'w+') as f:
+    # for template debugging
+    r.context.update({
+        'print':  lambda *argv:  print(*argv, file=sys.stderr),
+        'pprint': lambda obj:    pprint.pprint(obj, sys.stderr),
+    })
+
+    with open('config/out/{}'.format(out), 'w+') as f:
       f.write(r._render().decode())
 
 
-def do(cfg, slapparameter_dict):
-    jslapparameter_dict = json.dumps(slapparameter_dict)
-    json_params_empty = """{
-        "rf_mode": 'fdd',
-        "slap_configuration": {
+# Instance simulates configuration for an instance on SlapOS Master.
+class Instance:
+    def __init__(self, slap_software_type):
+        self.shared_instance_list = []
+        self.slap_software_type = slap_software_type
+
+    # ishared appends new shared instance with specified configuration to .shared_instance_list .
+    def ishared(self, slave_reference, cfg):
+        ishared = {
+            # see comments in jref_of_shared about where and how slapproxy and
+            # slapos master put partition_reference of a shared instance.
+            'slave_title':          '_%s' % slave_reference,
+            'slave_reference':      'SOFTINST-%03d' % (len(self.shared_instance_list)+1),
+            'slap_software_type':   self.slap_software_type,
+            '_': json.dumps(cfg)
+        }
+        self.shared_instance_list.append(ishared)
+        return ishared
+
+# py version of jref_of_shared (simplified).
+def ref_of_shared(ishared):
+    ref = ishared['slave_title']
+    ref = ref.removeprefix('_')
+    return ref
+
+
+# ---- eNB ----
+
+# 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
+# RU definition is embedded into cell for simplicity of management
+def iRU1_SDR_tLTE2_tNR(ienb):
+    RU = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev_list': [0, 1],
+        'n_antenna_dl': 4,
+        'n_antenna_ul': 2,
+        'tx_gain':      51,
+        'rx_gain':      52,
+    }
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38050,      # 2600 MHz
+        'pci':          1,
+        'cell_id':      '0x01',
+        'tac':          '0x1234',
+        'ru':           RU,         # RU definition embedded into CELL
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38100,      # 2605 MHz
+        'pci':          2,
+        'cell_id':      '0x02',
+        'tac':          '0x1234',
+        'ru':           {           # CELL_b shares RU with CELL_a referring to it via cell
+            'ru_type':      'ruincell_ref',
+            'ruincell_ref': 'CELL_a'
+        }
+    })
+
+    ienb.ishared('CELL_c', {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    10,
+        'dl_nr_arfcn':  523020,     # 2615.1 MHz
+        'nr_band':      41,
+        'pci':          3,
+        'cell_id':      '0x03',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':      'ruincell_ref',     # CELL_c shares RU with CELL_a and CELL_b
+            'ruincell_ref': 'CELL_b'            # referring to RU via CELL_b -> CELL_a
+        }
+    })
+
+
+# LTE + NR cells using 2 RU each consisting of SDR.
+# here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL_a above
+#
+# NOTE: if we would want to share the RU by LTE/tdd and NR/tdd cells, we would
+#       need to bring their TDD configuration to match each other exactly.
+def iRU2_SDR_tLTE_tNR(ienb):
+    RU1 = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev_list': [1],
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 1,
+        'tx_gain':      51,
+        'rx_gain':      52,
+    }
+
+    RU2 = copy.deepcopy(RU1)
+    RU2['sdr_dev_list'] = [2]
+
+    ienb.ishared('RU1', RU1)
+    ienb.ishared('RU2', RU2)
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38050,      # 2600 MHz
+        'pci':          1,
+        'cell_id':      '0x01',
+        'tac':          '0x1234',
+        'ru':           {           # CELL_a links to RU1 by its reference
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU1'
+        }
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    10,
+        'dl_nr_arfcn':  523020,     # 2615.1 MHz
+        'nr_band':      41,
+        'pci':          2,
+        'cell_id':      '0x02',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU2'
+        }
+    })
+
+
+# LTE + NR cells that use CPRI-based Lopcomm radio units
+def iRU2_LOPCOMM_fLTE_fNR(ienb):
+    RU1 = {
+        'ru_type':      'lopcomm',
+        'ru_link_type': 'cpri',
+        'mac_addr':     'XXX',
+        'cpri_link':    {
+            'sdr_dev':  2,
+            'sfp_port': 0,
+            'mult':     8,
+            'mapping':  'standard',
+            'rx_delay': 10,
+            'tx_delay': 11,
+            'tx_dbm':   50
         },
-        "directory": {
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 1,
+        'tx_gain':      -21,
+        'rx_gain':      -22,
+    }
+
+    RU2 = copy.deepcopy(RU1)
+    RU2['mac_addr'] = 'YYY'
+    RU2['cpri_link']['sfp_port'] = 1
+    RU2['tx_gain'] += 10
+    RU2['rx_gain'] += 10
+
+    ienb.ishared('RU1', RU1)
+    ienb.ishared('RU2', RU2)
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_earfcn':    3350,       # 2680 MHz
+        'pci':          21,
+        'cell_id':      '0x21',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU1'
+        }
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'pci':          22,
+        'cell_id':      '0x22',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU2'
+        }
+    })
+
+
+# ---- for tests ----
+
+# 2 FDD cells working via shared SDR board
+def iRU1_SDR1_fLTE2(ienb):
+    RU = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev_list': [1],
+        'n_antenna_dl': 1,
+        'n_antenna_ul': 1,
+        'tx_gain':      67,
+        'rx_gain':      61,
+    }
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_earfcn':    3350,      # 2680 MHz (Band 7)
+        'pci':          1,
+        'cell_id':      '0x01',
+        'tac':          '0x1234',
+        'ru':           RU,
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_earfcn':    3050,      # 2650 MHz (Band 7)
+        'pci':          1,
+        'cell_id':      '0x02',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':      'ruincell_ref',
+            'ruincell_ref': 'CELL_a'
+        }
+    })
+
+def iRU2_LOPCOMM_fLTE2(ienb):
+    # supports: 2110 - 2170 MHz
+    RU_0002 = {
+        'ru_type':      'lopcomm',
+        'ru_link_type': 'cpri',
+#       'mac_addr':     'XXX',
+        'cpri_link':    {
+            'sdr_dev':  0,
+            'sfp_port': 0,
+            'mult':     8,
+            'mapping':  'hw',
+            'rx_delay': 25.11,
+            'tx_delay': 14.71,
+            'tx_dbm':   63
         },
-        "slapparameter_dict": %(jslapparameter_dict)s
-    }"""
+        'n_antenna_dl': 1,
+        'n_antenna_ul': 1,
+        'tx_gain':      0,
+        'rx_gain':      0,
+    }
+
+    # supports: 2110 - 2170 MHz
+    RU_0004 = copy.deepcopy(RU_0002)
+#   RU_0004['mac_addr'] = 'YYY'
+    RU_0004['cpri_link']['sfp_port'] = 1
+
+    if 1:
+        ienb.ishared('RU_0002', RU_0002)
+        ienb.ishared('CELL2', {
+            'cell_type':    'lte',
+            'cell_kind':    'enb',
+            'rf_mode':      'fdd',
+            'bandwidth':    20,
+            'dl_earfcn':    100,        # 2120 MHz   @ B1
+            'pci':          21,
+            'cell_id':      '0x21',
+            'tac':          '0x1234',
+            'ru':           {
+                'ru_type':  'ru_ref',
+                'ru_ref':   'RU_0002'
+            }
+        })
+
+    if 1:
+        ienb.ishared('RU_0004', RU_0004)
+        ienb.ishared('CELL4', {
+            'cell_type':    'lte',
+            'cell_kind':    'enb',
+            'rf_mode':      'fdd',
+            'bandwidth':    20,
+            'dl_earfcn':    500,        # 2160 MHz  @ B1
+            'pci':          22,
+            'cell_id':      '0x22',
+            'tac':          '0x1234',
+            'ru':           {
+                'ru_type':  'ru_ref',
+                'ru_ref':   'RU_0004'
+            }
+        })
+
+def do_enb():
+    ienb = Instance('enb')
+    #iRU1_SDR_tLTE2_tNR(ienb)
+    iRU2_SDR_tLTE_tNR(ienb)
+    #iRU2_LOPCOMM_fLTE_fNR(ienb)
+    #iRU1_SDR1_fLTE2(ienb)
+    #iRU2_LOPCOMM_fLTE2(ienb)
+
+    # add 4 peer nodes
+    if 1:
+        ienb.ishared('PEER11', {
+            'peer_type':    'lte',
+            'x2_addr':      '44.1.1.1',
+        })
+        ienb.ishared('PEER12', {
+            'peer_type':    'lte',
+            'x2_addr':      '44.1.1.2',
+        })
+        ienb.ishared('PEER21', {
+            'peer_type':    'nr',
+            'xn_addr':      '55.1.1.1',
+        })
+        ienb.ishared('PEER22', {
+            'peer_type':    'nr',
+            'xn_addr':      '55.1.1.2',
+        })
+
+    # add 2 peer cells
+    if 1:
+        ienb.ishared('PEERCELL1', {
+            'cell_type':        'lte',
+            'cell_kind':        'enb_peer',
+            'e_cell_id':        '0x12345',
+            'pci':              35,
+            'dl_earfcn':        700,
+            'tac':              123,
+        })
+        ienb.ishared('PEERCELL2', {
+            'cell_type':        'nr',
+            'cell_kind':        'enb_peer',
+            'nr_cell_id':       '0x77712',
+            'gnb_id_bits':      22,
+            'dl_nr_arfcn':      520000,
+            'nr_band':          38,
+            'pci':              75,
+            'tac':              321,
+        })
+
+    jshared_instance_list = json.dumps(ienb.shared_instance_list)
     json_params = """{
-        "rf_mode": "tdd",
-        "trx": "sdr",
-        "bbu": "ors",
-        "ru": "ors",
-        "one_watt": "True",
-        "earfcn": 646666,
-        "nr_arfcn": 646666,
-        "nr_band": 43,
-        "tx_gain": 62,
-        "rx_gain": 43,
-        "sib23_file": "sib",
-        "drb_file": "drb",
+        "sib23_file": "sib2_3.asn",
         "slap_configuration": {
             "tap-name": "slaptap9",
-            "configuration.default_lte_bandwidth": "10 MHz",
-            "configuration.default_lte_imsi": "001010123456789",
-            "configuration.default_lte_k": "00112233445566778899aabbccddeeff",
-            "configuration.default_lte_inactivity_timer": 10000,
-            "configuration.default_nr_bandwidth": 40,
-            "configuration.default_nr_imsi": "001010123456789",
-            "configuration.default_nr_k": "00112233445566778899aabbccddeeff",
-            "configuration.default_nr_ssb_pos_bitmap": "10000000",
-            "configuration.default_n_antenna_dl": 2,
-            "configuration.default_n_antenna_ul": 2,
-            "configuration.default_nr_inactivity_timer": 10000,
+            "slap-computer-partition-id": "slappart9",
             "configuration.com_ws_port": 9001,
             "configuration.com_addr": "127.0.1.2",
-            "configuration.amf_addr": "127.0.1.100",
             "configuration.mme_addr": "127.0.1.100",
-            "configuration.gtp_addr": "127.0.1.1"
+            "configuration.amf_addr": "127.0.1.100",
+            "configuration.gtp_addr": "127.0.1.1",
+            "slave-instance-list": %(jshared_instance_list)s
         },
         "directory": {
             "log": "log",
             "etc": "etc",
             "var": "var"
         },
-        "slapparameter_dict": %(jslapparameter_dict)s
-    }"""
+        "slapparameter_dict": {
+            "enb_id": "0x10012",
+            "gnb_id": "0x54321"
+        }
+    }""" % locals()
 
-    j2render(cfg, json_params % locals())
+    j2render('enb.jinja2.cfg', 'enb.cfg', json_params)
 
-do('enb', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
-do('gnb', {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
+    # drb.cfg + sib.asn for all cells
+    iru_dict       = {}
+    icell_dict     = {}
+    ipeer_dict     = {}
+    ipeercell_dict = {}
+    for ishared in ienb.shared_instance_list:
+        ref = ref_of_shared(ishared)
+        _   = json.loads(ishared['_'])
+        ishared['_'] = _
+        if 'ru_type' in _:
+            iru_dict[ref] = ishared
+        elif 'cell_type' in _  and  _.get('cell_kind') in {'enb', 'enb_peer'}:
+            idict = {'enb': icell_dict, 'enb_peer': ipeercell_dict} [_['cell_kind']]
+            idict[ref] = ishared
+        elif 'peer_type' in _:
+            ipeer_dict[ref] = ishared
+        else:
+            raise AssertionError('enb: unknown shared instance %r' % (ishared,))
+
+    def ru_of_cell(icell): # -> (ru_ref, ru)
+        cell_ref = ref_of_shared(icell)
+        ru = icell['_']['ru']
+        if ru['ru_type'] == 'ru_ref':
+            ru_ref = ru['ru_ref']
+            return ru_ref, iru_dict[ru_ref]
+        elif ru['ru_type'] == 'ruincell_ref':
+            return ru_of_cell(icell_dict[ru['ruincell_ref']])
+        else:
+            return ('_%s_ru' % cell_ref), ru  # embedded ru definition
+
+    for cell_ref, icell in icell_dict.items():
+        ru_ref, ru = ru_of_cell(icell)
+        cell = icell['_']
+        jctx = json.dumps({
+                    'cell_ref': cell_ref,
+                    'cell':     cell,
+                    'ru_ref':   ru_ref,
+                    'ru':       ru,
+               })
+        j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
+                 '%s-drb.cfg' % cell_ref,
+                 jctx)
+
+        j2render('sib23.jinja2.asn',
+                 '%s-sib23.asn' % cell_ref,
+                 jctx)
+
+
+# ---- UE ----
+
+def do_ue():
+    iue = Instance('ue')
+    iue.ishared('UCELL1', {
+        'cell_type':    'lte',
+        'cell_kind':    'ue',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38050,      # 2600 MHz
+        'ru':           {
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [0],
+            'n_antenna_dl': 2,
+            'n_antenna_ul': 1,
+            'tx_gain':      41,
+            'rx_gain':      42,
+        }
+    })
+    iue.ishared('UCELL2', {
+        'cell_type':    'nr',
+        'cell_kind':    'ue',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'ru':           {           # NOTE contrary to eNB UEsim cannot share one RU in between several cells
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [2],
+            'n_antenna_dl': 2,
+            'n_antenna_ul': 2,
+            'tx_gain':      31,
+            'rx_gain':      32,
+        }
+    })
+
+    iue.ishared('UE1', {
+        'ue_type':      'lte',
+        'rue_addr':     'host1'
+    })
+    iue.ishared('UE2', {
+        'ue_type':      'nr',
+        'rue_addr':     'host2'
+    })
+
+    jshared_instance_list = json.dumps(iue.shared_instance_list)
+    json_params = """{
+        "slap_configuration": {
+            "tap-name": "slaptap9",
+            "slap-computer-partition-id": "slappart9",
+            "slave-instance-list": %(jshared_instance_list)s
+        },
+        "pub_info": {
+            "rue_bind_addr": "::1",
+            "com_addr": "[::1]:9002"
+        },
+        "directory": {
+            "log": "log",
+            "etc": "etc",
+            "var": "var"
+        },
+        "slapparameter_dict": {
+        }
+    }""" % locals()
+
+    j2render('ue.jinja2.cfg', 'ue.cfg', json_params)
+
+
+def main():
+    for f in glob.glob('config/out/*'):
+        os.remove(f)
+    do_enb()
+    do_ue()
+
+
+if __name__ == '__main__':
+    main()

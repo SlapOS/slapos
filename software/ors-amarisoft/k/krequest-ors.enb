@@ -1,0 +1,23 @@
+#!/usr/bin/env -S slapos console
+"""request ors/enb for kirr"""
+
+import os
+import json
+
+ors = "%(HOME)s/srv/project/slapos/software/ors-amarisoft/software-ors.cfg" % os.environ
+
+enb = request(ors,
+        software_type="enb",
+        partition_reference="kors_enb",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+        })})
+
+gnb = request(ors,
+        software_type="gnb",
+        partition_reference="kors_gnb",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+        })})

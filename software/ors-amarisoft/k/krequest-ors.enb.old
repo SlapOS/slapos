@@ -1,0 +1,169 @@
+#!/usr/bin/env -S slapos console
+"""request ors/enb for kirr"""
+# XXX deprecated in favour of krequest-cb5.enb+
+
+# XXX workaround for `slapos console` not setting up sys.path the same way as std python does
+import sys
+from os.path import dirname
+sys.path.insert(0, dirname(__file__))
+import kslap
+kslap.init(slap)
+
+import json, copy
+from pprint import pprint
+
+
+ors = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
+
+enb1 = request(ors,
+        software_type="enb",
+        partition_reference="kenb",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+        })})
+
+"""
+enb2 = request(ors,
+        software_type="enb",
+        partition_reference="kenb2",
+        filter_kw={"computer_guid": "slaprunner"},
+        partition_parameter_kw={"_": json.dumps({
+            'testing': True,
+        })})
+enb2.destroyed()
+"""
+
+
+print('enb1:', enb1)
+print('ref(enb1):', kslap.ref_of_instance(enb1))
+print('enb1.slap_computer_partition_i:', enb1.slap_computer_partition_id)
+
+#""" (not needed for now)
+# enb -> enb_part to retrieve all information about instance state
+# (see about core_part in krequest_ors.core for details)
+enb_part = slap.registerComputerPartition(enb1.slap_computer_id, enb1.slap_computer_partition_id)
+
+print('enb_part:', enb_part)
+print('enb_part.getInstanceParameterDict:')
+pprint(enb_part.getInstanceParameterDict())
+#"""
+
+
+
+
+RU1 = {
+    'ru_type':      'sdr',
+    'ru_link_type': 'sdr',
+    'sdr_dev_list': [0, 1],
+    'n_antenna_dl': 4,
+    'n_antenna_ul': 2,
+    'tx_gain':      51,
+    'rx_gain':      52,
+}
+
+CELL1_a = {
+    'cell_type':    'lte',
+    'cell_kind':    'enb',
+    'rf_mode':      'tdd',
+    'bandwidth':    5,
+    'dl_earfcn':    38050,      # 2600 MHz
+    'pci':          1,
+    'cell_id':      '0x01',
+    'ru':           RU1,        # RU definition embedded into CELL
+}
+
+iCELL1_a = kslap.iSHARED(enb1, 'CELL1_a', CELL1_a)
+
+
+CELL1_b = {
+    'cell_type':    'lte',
+    'cell_kind':    'enb',
+    'rf_mode':      'tdd',
+    'bandwidth':    5,
+    'dl_earfcn':    38100,      # 2605 MHz
+    'pci':          2,
+    'cell_id':      '0x02',
+    'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
+        'ru_type':      'ruincell_ref',
+        'ruincell_ref': 'CELL1_a'
+    }
+}
+
+iCELL1_b = kslap.iSHARED(enb1, 'CELL1_b', CELL1_b)
+
+
+RU2_a = {
+    'ru_type':      'lopcomm',
+    'ru_link_type': 'cpri',
+    'mac_addr':     'XXX',
+    'cpri_link':    {
+        'sdr_dev':  2,
+        'sfp_port': 0,
+        'mult':     8,
+        'mapping':  'standard',
+        'rx_delay': 10,
+        'tx_delay': 11,
+        'tx_dbm':   50
+    },
+    'n_antenna_dl': 2,
+    'n_antenna_ul': 1,
+    'tx_gain':      -21,
+    'rx_gain':      -22,
+}
+
+RU2_b = copy.deepcopy(RU2_a)
+RU2_b['mac_addr'] = 'YYY'
+RU2_b['cpri_link']['sfp_port'] = 1
+RU2_b['tx_gain'] += 10
+RU2_b['rx_gain'] += 10
+
+iRU2_a = kslap.iSHARED(enb1, 'RU2_a', RU2_a)
+iRU2_b = kslap.iSHARED(enb1, 'RU2_b', RU2_b)
+
+kslap.iSHARED(enb1, 'CELL2_a', {
+    'cell_type':    'lte',
+    'cell_kind':    'enb',
+    'rf_mode':      'fdd',
+    'bandwidth':    5,
+    'dl_earfcn':    3350,       # 2680 MHz
+    'pci':          21,
+    'cell_id':      '0x21',
+    'ru':           {           # CELL2_a links to RU2_a by its reference
+        'ru_type':  'ru_ref',
+        'ru_ref':   'RU2_a'
+    }
+})
+
+kslap.iSHARED(enb1, 'CELL2_b', {
+    'cell_type':    'nr',
+    'cell_kind':    'enb',
+    'rf_mode':      'fdd',
+    'bandwidth':    5,
+    'dl_nr_arfcn':  537200,     # 2686 MHz
+    'nr_band':      7,
+    'pci':          22,
+    'cell_id':      '0x22',
+    'ru':           {
+        'ru_type':  'ru_ref',
+        'ru_ref':   'RU2_b'
+    }
+})
+
+
+
+
+# for HO my initial idea was for enb1 to refer to enb2 and retrieve information
+# about all cells configured a that enb2 automaically. The code below checks to see
+# whether it is possible (lookup of instance by reference is currently only
+# possible with linear search and Rafael said that the lookup will also be
+# constrained to work only in the same instance tree).
+kenb_ = kslap.instance_by_ref('kenb')
+"""
+print()
+print(kenb_)
+for _ in dir(kenb_):
+    y = getattr(kenb_, _)
+    print('%s:\t' % _, end='')
+    pprint(y)
+"""

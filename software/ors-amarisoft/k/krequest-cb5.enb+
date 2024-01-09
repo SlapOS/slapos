@@ -1,0 +1,158 @@
+#!/usr/bin/env -S slapos console
+"""request mme/enb and configure radio units and cells"""
+
+# XXX workaround for `slapos console` not setting up sys.path the same way as std python does
+import sys
+from os.path import dirname
+sys.path.insert(0, dirname(__file__))
+import kslap
+kslap.init(slap)
+
+import json, copy
+
+
+#kamari = "https://lab.nexedi.com/kirr/slapos/raw/x/lte-multiru/software/ors-amarisoft/software.cfg"
+kamari = "/home/kirr/slapos/software/ors-amarisoft/software.cfg"
+CB5    = "COMP-4020"
+
+supply(kamari, computer_guid=CB5)
+
+
+# Core Network + SIM
+icore = kslap.request(kamari,
+        software_type="core-network",
+        partition_reference="CB5-CORE",
+        filter_kw={"computer_guid": CB5},
+        partition_parameter_kw={"_": json.dumps({
+            'core_network_plmn': '31415',
+            'external_enb_gnb': True,
+        })})
+
+isim1 = kslap.iSIM(icore, 1)
+
+
+# eNB
+ienb = kslap.request(kamari,
+        software_type="enb",
+        partition_reference="CB5-ENB",
+        filter_kw={"computer_guid": CB5},
+        partition_parameter_kw={"_": json.dumps({
+            "enb_id": "0x10012",
+            "gnb_id": "0x54321",
+            'mme_list':  {'1': {'mme_addr': kslap.conn(icore)['core-network-ipv6']}},
+            'plmn_list': {'1': {'plmn': '31415'}},  # XXX get from icore
+        })})
+
+# eref returns full reference for ienb's shared instance with given ref.
+def eref(ref):
+    enb_ref = kslap.ref_of_instance(ienb)
+    return '%s.%s' % (enb_ref, ref)
+
+# iENB is shorthand to request shared instance on ienb.
+def iENB(ref, kw):
+    return kslap.iSHARED(ienb, ref, kw)
+
+
+# Radio Units
+RU1 = {
+    'ru_type':      'lopcomm',
+    'ru_link_type': 'cpri',
+    'cpri_link':    {
+        'sdr_dev':  0,
+        'sfp_port': 1,
+        'mult':     4,
+        'mapping':  'hw',
+        'rx_delay': 25.11,
+        'tx_delay': 14.71,
+        'tx_dbm':   63
+    },
+    'mac_addr':     '00:0A:45:00:00:00',
+    'n_antenna_dl': 1,
+    'n_antenna_ul': 1,
+    'tx_gain':      -20,
+    'rx_gain':      -20,
+    'txrx_active':  'INACTIVE',
+}
+
+RU2 = copy.deepcopy(RU1)
+RU2['cpri_link']['sfp_port'] = 2
+RU2['mac_addr'] = '90:A9:F7:C0:00:03'
+
+iru1 = iENB(eref('RU1'), RU1)
+iru2 = iENB(eref('RU2'), RU2)
+
+
+# Cells
+CELL1 = {
+    'cell_type':    'lte',
+    'cell_kind':    'enb',
+    'rf_mode':      'fdd',
+    'bandwidth':    20,
+    'dl_earfcn':    100,        # 2120 @ B1
+    'pci':          1,
+    'cell_id':      '0x01',
+    'tac':          '0x1234',
+    'ru':           {
+        'ru_type':  'ru_ref',
+        'ru_ref':   eref('RU1')
+    }
+}
+
+CELL2 = copy.deepcopy(CELL1)
+#CELL2['dl_earfcn'] = 500       # 2160 @ B1
+CELL2['dl_earfcn'] = 2850       # 2630 @ B7
+CELL2['pci'] = 2
+CELL2['cell_id'] = '0x02'
+CELL2['ru']['ru_ref'] = eref('RU2')
+
+if 0:   # to test 5G
+    CELL2 = {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'pci':          22,
+        'cell_id':      '0x22',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   eref('RU2')
+        }
+    }
+
+icell1 = iENB(eref('CELL1'), CELL1)
+icell2 = iENB(eref('CELL2'), CELL2)
+
+
+# --------
+
+# UEsim
+iuesim = kslap.request(kamari,
+        software_type="ue",
+        partition_reference="CB5-UE",
+        filter_kw={"computer_guid": CB5},
+        partition_parameter_kw={"_": json.dumps({
+        })})
+
+uRU = copy.deepcopy(RU1)
+uRU['cpri_link']['sfp_port'] = 3
+uRU['mac_addr'] = '90:A9:F7:C0:00:04'
+
+uCELL = {
+    'cell_type':    'lte',
+    'cell_kind':    'ue',
+    'rf_mode':      'fdd',
+
+    'dl_earfcn':    300,
+    'bandwidth':    10,
+
+    'ru': {
+        'ru_type':  'ru_ref',
+        'ru_ref':   'CB5-UE.RU',
+    }
+}
+
+kslap.iSHARED(iuesim, 'CB5-UE.RU',   uRU)
+kslap.iSHARED(iuesim, 'CB5-UE.CELL', uCELL)
