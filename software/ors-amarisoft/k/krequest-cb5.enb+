@@ -37,6 +37,8 @@ ienb = kslap.request(kamari,
         partition_reference="CB5-ENB",
         filter_kw={"computer_guid": CB5},
         partition_parameter_kw={"_": json.dumps({
+            "enb_id": "0x10012",
+            "gnb_id": "0x54321",
             'mme_list':  {'1': {'mme_addr': kslap.conn(icore)['core-network-ipv6']}},
             'plmn_list': {'1': {'plmn': '31415'}},  # XXX get from icore
         })})
@@ -79,6 +81,19 @@ RU2['mac_addr'] = '90:A9:F7:C0:00:03'
 iru1 = iENB(eref('RU1'), RU1)
 iru2 = iENB(eref('RU2'), RU2)
 
+# XXX to test wrt buildout code injection
+if 0:
+    RU3 = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev_list': [0, 1],
+        'n_antenna_dl': 4,
+        'n_antenna_ul': 2,
+        'tx_gain':      51,
+        'rx_gain':      52,
+    }
+    iENB(eref('RU3\nzzz ${aaa:bbb}\nccc'), RU3)
+
 
 # Cells
 CELL1 = {
@@ -89,6 +104,7 @@ CELL1 = {
     'dl_earfcn':    100,        # 2120 @ B1
     'pci':          1,
     'cell_id':      '0x01',
+    'tac':          '0x1234',
     'ru':           {
         'ru_type':  'ru_ref',
         'ru_ref':   eref('RU1')
@@ -112,6 +128,7 @@ if 0:   # to test 5G
         'nr_band':      7,
         'pci':          22,
         'cell_id':      '0x22',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   eref('RU2')
