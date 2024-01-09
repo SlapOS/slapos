@@ -9,14 +9,8 @@ from slapos.recipe.template import jinja2_template
 import json, copy, sys, os, pprint, glob, types
 
 
-# ~ import xbuildout  (see instance.cfg:activate-eggs)
-def readfile(path):
-  with open(path) as f:
-    return f.read()
-xbuildout = types.ModuleType('xbuildout')
-exec(readfile('ru/xbuildout.py'), xbuildout.__dict__)
-assert 'xbuildout' not in sys.modules
-sys.modules['xbuildout'] = xbuildout
+sys.path.insert(0, './ru')
+import xbuildout
 
 B = xbuildout.encode
 
