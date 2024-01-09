@@ -79,6 +79,10 @@
     }
 %}
 
+
+{#- XXX explain	#}
+{%- set B = xbuildout.encode  %}
+
 {#- J is used around macro calls to retrieve returned objects.
 
     It is needed to workaround jinja2 limitation that macro can return only
@@ -419,7 +423,7 @@
   {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
   {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
   {%-   set ru = iru['_']                                                     %}
-      // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
+      // {{ B(ru_ref) }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
   {%-   if ru.ru_type == 'sdr'                                                %}
   {%-     do ru_sdr_dict.update({len(dev_argv): ru})                          %}
   {%-     for n in ru.sdr_dev_list                                            %}
