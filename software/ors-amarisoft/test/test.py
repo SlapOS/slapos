@@ -397,19 +397,58 @@ class TestENB_Lopcomm(ENBTestCase):
     # XXX verify cu_cfg
     def test_ru_cu_cfg(t):
 
-        # cu_config.xml of RU i
-        def CU(i):
+        def CU(i): # -> cu_config.xml of RU i
             cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
-            return xmltodict.parse(cu_xml)
+            with open(cu_xml, 'r') as f:
+                cu = f.read()
+            return xmltodict.parse(cu)
 
         cu1 = CU(1)
+        print(cu1)
+        uplane = cu1['xc:config']['user-plane-configuration']
         assertMatch(t, cu1, {
           'user-plane-configuration': {
-            'tx-endpoints': 'aaa',
-            'tx-links':     'bbb',
-            'rx-endpoints': 'ccc',
-            'rx-links':     'ddd',
-            'tx-array-acarriers': 'qqq',
+            'tx-endpoints': [
+              {'name': 'TXA0P00C00', 'e-axcid': {'eaxc-id': 0}},
+              {'name': 'TXA0P00C01', 'e-axcid': {'eaxc-id': 1}},
+              {'name': 'TXA0P01C00', 'e-axcid': {'eaxc-id': 2}},
+              {'name': 'TXA0P01C01', 'e-axcid': {'eaxc-id': 3}},
+            ],
+            'tx-links': [
+              {'name': 'TXA0P00C00', 'tx-endpoint': 'TXA0P00C00'},
+              {'name': 'TXA0P00C01', 'tx-endpoint': 'TXA0P00C01'},
+              {'name': 'TXA0P01C00', 'tx-endpoint': 'TXA0P01C00'},
+              {'name': 'TXA0P01C01', 'tx-endpoint': 'TXA0P01C01'},
+            ],
+            'rx-endpoints': [
+              {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': 0x00}},
+              {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': 0x18}},
+              {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': 0x01}},
+              {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': 0x19}},
+            ],
+            'rx-links': [
+              {'name': 'RXA0P00C00',   'rx-endpoint': 'RXA0P00C00'},
+              {'name': 'PRACH0P00C00', 'rx-endpoint': 'PRACH0P00C00'},
+              {'name': 'RXA0P00C01',   'rx-endpoint': 'RXA0P00C01'},
+              {'name': 'PRACH0P00C01', 'rx-endpoint': 'PRACH0P00C01'},
+            ],
+            # CELL1  FDD LTE(100) BW(5)
+            'tx-array-carriers': {
+              'rw-duplex-scheme':   'FDD',
+              'rw-type':            'LTE',
+              'absolute-frequency-center':    100,
+              'center-of-channel-bandwidth':  2120e6,
+              'channel-bandwidth':               5e6,
+              'gain':   'XXX',
+              'active': 'XXX',
+            },
+            'rx-array-carriers': {
+              'absolute-frequency-center':    18100,
+              'center-of-channel-bandwidth':    1930e6,
+              'channel-bandwidth':               5e6,
+              # XXX no <gain>ru.rx_gain</gain>  TODO(lu): clarify this with Lopcomm
+              'active': 'XXX',
+            },
           }
         })
 
