@@ -21,6 +21,7 @@ import json
 import io
 import yaml
 import pcpp
+import xmltodict
 
 import unittest
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -390,6 +391,23 @@ class TestENB_Lopcomm(ENBTestCase):
         ))
 
     # XXX verify cu_cfg
+    def test_ru_cu_cfg(t):
+
+        # cu_config.xml of RU i
+        def CU(i):
+            cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
+            return xmltodict.parse(cu_xml)
+
+        cu1 = CU(1)
+        assertMatch(t, cu1, {
+          'user-plane-configuration': {
+            'tx-endpoints': 'aaa',
+            'tx-links':     'bbb',
+            'rx-endpoints': 'ccc',
+            'rx-links':     'ddd',
+            'tx-array-acarriers': 'qqq',
+          }
+        })
 
 
 
