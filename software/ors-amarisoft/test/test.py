@@ -23,6 +23,10 @@ import yaml
 import pcpp
 import xmltodict
 
+import sys
+sys.path.insert(0, '../ru')
+import xbuildout
+
 import unittest
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
