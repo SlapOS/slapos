@@ -421,9 +421,9 @@ class TestENB_Lopcomm(ENBTestCase):
               ],
               'rx-endpoints': [
                 {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': '0'}},
-                {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': '24'}},
+                {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': '8'}},
                 {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': '1'}},
-                {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': '25'}},
+                {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': '24'}},
               ],
               'rx-links': [
                 {'name': 'RXA0P00C00',   'rx-endpoint': 'RXA0P00C00'},
