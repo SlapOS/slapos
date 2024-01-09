@@ -408,10 +408,10 @@ class TestENB_Lopcomm(ENBTestCase):
           'xc:config': {
             'user-plane-configuration': {
               'tx-endpoints': [
-                {'name': 'TXA0P00C00', 'e-axcid': {'eaxc-id': 0}},
-                {'name': 'TXA0P00C01', 'e-axcid': {'eaxc-id': 1}},
-                {'name': 'TXA0P01C00', 'e-axcid': {'eaxc-id': 2}},
-                {'name': 'TXA0P01C01', 'e-axcid': {'eaxc-id': 3}},
+                {'name': 'TXA0P00C00', 'e-axcid': {'eaxc-id': '0'}},
+                {'name': 'TXA0P00C01', 'e-axcid': {'eaxc-id': '1'}},
+                {'name': 'TXA0P01C00', 'e-axcid': {'eaxc-id': '2'}},
+                {'name': 'TXA0P01C01', 'e-axcid': {'eaxc-id': '3'}},
               ],
               'tx-links': [
                 {'name': 'TXA0P00C00', 'tx-endpoint': 'TXA0P00C00'},
@@ -420,10 +420,10 @@ class TestENB_Lopcomm(ENBTestCase):
                 {'name': 'TXA0P01C01', 'tx-endpoint': 'TXA0P01C01'},
               ],
               'rx-endpoints': [
-                {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': 0x00}},
-                {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': 0x18}},
-                {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': 0x01}},
-                {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': 0x19}},
+                {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': '0'}},
+                {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': '24'}},
+                {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': '1'}},
+                {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': '25'}},
               ],
               'rx-links': [
                 {'name': 'RXA0P00C00',   'rx-endpoint': 'RXA0P00C00'},
