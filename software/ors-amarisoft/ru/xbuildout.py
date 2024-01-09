@@ -128,6 +128,7 @@ def _decode(s):
     return out
 
 
+"""
 # quote converts string s into quoted form with all buildout control characters escaped...  XXX
 # XXX -> pyquote?
 def quote(s: str) -> str:
@@ -138,6 +139,7 @@ def quote(s: str) -> str:
     if r[1:-1] == s:
         return s    # original string
     return '!py!' + r
+"""
 
 
 # ----------------------------------------
