@@ -332,7 +332,7 @@ class ENBTestCase(AmariTestCase):
         ])
 
 
-# XXX SDR driver in all modes
+# TestENB_SDR verifies eNB wrt SDR driver in all LTE/NR x FDD/TDD modes.
 class TestENB_SDR(ENBTestCase):
     @classmethod
     def RUcfg(cls, i):
@@ -344,17 +344,22 @@ class TestENB_SDR(ENBTestCase):
 
     # radio units configuration
     def test_enb_conf_ru(t):
-        assertMatch(t, t.enb_cfg['rf_driver'],  {
-          'args': 'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
-                  'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
-        })
+        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+          args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
+               'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
+          cpri_mapping=NO,
+          cpri_mult=NO,
+          cpri_rx_delay=NO,
+          cpri_tx_delay=NO,
+          cpri_tx_dbm=NO,
+        ))
 
         # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
         t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
         t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
 
-# TestENB_Lopcomm verifies enb wrt Lopcomm driver in all LTE/NR x FDD/TDD modes
+# TestENB_Lopcomm verifies eNB wrt Lopcomm driver in all LTE/NR x FDD/TDD modes.
 class TestENB_Lopcomm(ENBTestCase):
     @classmethod
     def RUcfg(cls, i):
@@ -372,6 +377,17 @@ class TestENB_Lopcomm(ENBTestCase):
             },
             'mac_addr':     '00:0A:45:00:00:%02x' % i,
         }
+
+    # radio units configuration
+    def test_enb_conf_ru(t):
+        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+          args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
+          cpri_mapping='hw,hw,hw,hw',
+          cpri_mult='4,4,4,4',
+          cpri_rx_delay='41,42,43,44',
+          cpri_tx_delay='51,52,53,54',
+          cpri_tx_dbm='61,62,63,64',
+        ))
 
     # XXX verify cu_cfg
 
