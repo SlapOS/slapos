@@ -128,18 +128,16 @@ def _decode(s):
     return out
 
 
-"""
-# quote converts string s into quoted form with all buildout control characters escaped...  XXX
-# XXX -> pyquote?
-def quote(s: str) -> str:
-    assert isinstance(s, str), type(s)
-    r = str.__repr__(s) # both str and markupsafe.Markup go as regular str
-    for c in '$[]\n':
-        r = r.replace(c, r'\x%02x' % ord(c))
-    if r[1:-1] == s:
-        return s    # original string
-    return '!py!' + r
-"""
+## quote converts string s into quoted form with all buildout control characters escaped...  XXX
+## XXX -> pyquote?
+#def quote(s: str) -> str:
+#    assert isinstance(s, str), type(s)
+#    r = str.__repr__(s) # both str and markupsafe.Markup go as regular str
+#    for c in '$[]\n':
+#        r = r.replace(c, r'\x%02x' % ord(c))
+#    if r[1:-1] == s:
+#        return s    # original string
+#    return '!py!' + r
 
 
 # ----------------------------------------
