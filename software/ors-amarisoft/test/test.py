@@ -174,7 +174,8 @@ class ENBTestCase(AmariTestCase):
         # XXX doc 4 RU x 4 CELL  (4f,4t,5f,5t)      RUcfg
         def RU(i):
             ru = cls.RUcfg(i)
-            ru = ru | {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
+            ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
+            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
             cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
@@ -224,26 +225,12 @@ class ENBTestCase(AmariTestCase):
 
     # --------
 
+    # basic enb parameters
     def test_enb_conf_basic(t):
         assertMatch(t, t.enb_cfg, dict(
             enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
             x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
         ))
-
-        # XXX kill
-        """
-        # HO(inter)
-        for cell in t.enb_cfg['cell_list'] + t.enb_cfg['nr_cell_list']:
-            have = {
-                'cell_id':          cell['cell_id'],
-                'ncell_list_tail':  cell['ncell_list'] [-len(t.ho_inter):]
-            }
-            want = {
-                'cell_id':          cell['cell_id'],
-                'ncell_list_tail':  t.ho_inter
-            }
-            assertMatch(t, have, want)
-        """
 
     # basic cell parameters
     def test_enb_conf_cell(t):
@@ -353,16 +340,14 @@ class TestENB_SDR(ENBTestCase):
             'ru_type':      'sdr',
             'ru_link_type': 'sdr',
             'sdr_dev_list': [2*i,2*i+1],
-            'n_antenna_dl': 4,
-            'n_antenna_ul': 2,
         }
 
     # radio units configuration
     def test_enb_conf_ru(t):
-        rf_driver = t.enb_cfg['rf_driver']
-        t.assertEqual(rf_driver['args'],
-                'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
-                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9')
+        assertMatch(t, t.enb_cfg['rf_driver'],  {
+          'args': 'dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
+                  'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
+        })
 
         # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
         t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
