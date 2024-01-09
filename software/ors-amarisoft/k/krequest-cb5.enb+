@@ -37,6 +37,8 @@ ienb = kslap.request(kamari,
         partition_reference="CB5-ENB",
         filter_kw={"computer_guid": CB5},
         partition_parameter_kw={"_": json.dumps({
+            "enb_id": "0x10012",
+            "gnb_id": "0x54321",
             'mme_list':  {'1': {'mme_addr': kslap.conn(icore)['core-network-ipv6']}},
             'plmn_list': {'1': {'plmn': '31415'}},  # XXX get from icore
         })})
@@ -89,6 +91,7 @@ CELL1 = {
     'dl_earfcn':    100,        # 2120 @ B1
     'pci':          1,
     'cell_id':      '0x01',
+    'tac':          '0x1234',
     'ru':           {
         'ru_type':  'ru_ref',
         'ru_ref':   eref('RU1')
@@ -112,6 +115,7 @@ if 0:   # to test 5G
         'nr_band':      7,
         'pci':          22,
         'cell_id':      '0x22',
+        'tac':          '0x1234',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   eref('RU2')
