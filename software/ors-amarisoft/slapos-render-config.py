@@ -8,7 +8,6 @@ from slapos.recipe.template import jinja2_template
 
 import json, copy, sys, os, pprint, glob, types
 
-
 sys.path.insert(0, './ru')
 import xbuildout
 
