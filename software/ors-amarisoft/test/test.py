@@ -119,8 +119,38 @@ def XN_PEER(xn_addr):
 # --------
 
 
-# XXX doc
-# XXX approach is to test generated enb.cfg
+# ENBTestCase provides base class for unit-testing eNB service.
+#
+# It instantiates enb with several Radio Units and Cells and verifies generated
+# enb.cfg to match what is expected(*).
+#
+# 4 RU x 4 CELL are requested to verify all {FDD,TDD}·{LTE,NR} combinations.
+#
+# In requested instances mostly non-overlapping range of numbers are
+# assigned to parameters according to the following scheme:
+#
+#   0+          cell_id
+#   0x10+       pci
+#   0x100+      tac
+#   10+         tx_gain
+#   20+         rx_gain
+#   100+        root_sequence_index
+#   1000+       inactivity_timer
+#   xxx+i·100   arfcn
+#   5,10,15,20  bandwidth
+#
+# this allows to quickly see offhand to which cell/ru and parameter a
+# particular number belongs to.
+#
+# Subclasses should define RUcfg(i) to return primary parameters
+# specific for i'th RU configuration like ru_type - to verify
+# particular RU driver, sdr_dev, sfp_port and so on.
+#
+# (*) here we verify only generated configuration because it is not possible to
+#     run Amarisoft software on the testnodes due to licensing restrictions.
+#
+#     end-to-end testing complements unit-testing by verifying how LTE works
+#     for real on dedicated hardware test setup.
 class ENBTestCase(AmariTestCase):
     maxDiff = None  # see full diff in test run log on an error
 
@@ -175,27 +205,6 @@ class ENBTestCase(AmariTestCase):
                  tac = 0x321),
         ]
 
-        # 4 RU x 4 CELL are requested to verify all {TDD,FDD}·{LTE,NR} combinations.
-        #
-        # In requested instances mostly non-overlapping range of numbers are
-        # assigned to parameters according to the following scheme:
-        #
-        #   0+          cell_id
-        #   0x10+       pci
-        #   0x100+      tac
-        #   10+         tx_gain
-        #   20+         rx_gain
-        #   100+        root_sequence_index
-        #   1000+       inactivity_timer
-        #   xxx+i·100   arfcn
-        #   5,10,15,20  bandwidth
-        #
-        # this allows to quickly see offhand to which cell/ru and parameter a
-        # particular number belongs to.
-        #
-        # Subclasses should define RUcfg(i) to return primary parameters
-        # specific for i'th RU configuration like ru_type - to verify
-        # particular RU driver, sdr_dev, sfp_port and so on.
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
