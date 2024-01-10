@@ -321,12 +321,12 @@ config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_pa
 config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}
-config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+config-test-runner-balancer-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
 [{{ check_test_runner_url_section_name }}]
 # Promise to wait for zope partition to receive the expected test-runner URL
 recipe = slapos.cookbook:check_parameter
-value = {{ '${' ~ section_name ~ ':config-test-runner-apache-url-list}' }}
+value = {{ '${' ~ section_name ~ ':config-test-runner-balancer-url-list}' }}
 expected-not-value = not-ready
 expected-value =
 path = ${directory:bin}/${:_buildout_section_name_}
