@@ -446,9 +446,10 @@ class TestENB_Lopcomm(ENBTestCase):
 
         _ = t._test_ru_cu_cfg
 
-        #       rf_mode  ctype  dl_arfcn ul_arfcn  bw      dl_freq     ul_freq     txg rxg
-        _(1, uctx('FDD', 'LTE',   100,    18100,  5000000, 2120000000, 1930000000, 11, 21))
-        _(2, uctx('TDD', 'LTE', 40200,    40200, 10000000, 2551000000, 2551000000, 12, 22))
+        #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
+        _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
+        _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
+        _(3, uctx('FDD',  'NR', 430300,  392300, 15000000, 2151500000, 1961500000, 13, 23))
 
 
     def _test_ru_cu_cfg(t, i, uctx):
