@@ -411,7 +411,7 @@ class TestENB_Lopcomm(ENBTestCase):
             'mac_addr':     '00:0A:45:00:00:%02x' % i,
         }
 
-    # radio units configuration
+    # radio units configuration in enb.cfg
     def test_enb_conf_ru(t):
         assertMatch(t, t.enb_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
@@ -422,7 +422,7 @@ class TestENB_Lopcomm(ENBTestCase):
           cpri_tx_dbm='61,62,63,64',
         ))
 
-    # XXX verify cu_cfg
+    # RU configuration in cu_config.xml
     def test_ru_cu_cfg(t):
 
         def CU(i): # -> cu_config.xml of RU i
