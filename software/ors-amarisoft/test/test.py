@@ -299,14 +299,14 @@ class ENBTestCase4(RFTestCase4):
                  'inactivity_timer':    1000+i}
 
     # basic enb parameters
-    def test_enb_conf_basic(t):
+    def test_enb_cfg_basic(t):
         assertMatch(t, t.enb_cfg, dict(
             enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
             x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
         ))
 
     # basic cell parameters
-    def test_enb_conf_cell(t):
+    def test_enb_cfg_cell(t):
         assertMatch(t, t.enb_cfg['cell_list'],  [
           dict( # CELL1
             uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
@@ -347,7 +347,7 @@ class ENBTestCase4(RFTestCase4):
 
 
     # Carrier Aggregation
-    def test_enb_conf_ca(t):
+    def test_enb_cfg_ca(t):
         assertMatch(t, t.enb_cfg['cell_list'],  [
           { # CELL1
             'scell_list':           [{'cell_id': 2}],                   # LTE + LTE
@@ -370,7 +370,7 @@ class ENBTestCase4(RFTestCase4):
 
 
     # Handover
-    def test_enb_conf_ho(t):
+    def test_enb_cfg_ho(t):
         assertMatch(t, t.enb_cfg['cell_list'],  [
           { # CELL1
             'ncell_list':   [
@@ -418,7 +418,7 @@ class SDR4:
         }
 
     # radio units configuration
-    def test_enb_conf_ru(t):    # XXX enb/ue ?
+    def test_enb_cfg_ru(t):    # XXX enb/ue ?
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
@@ -450,7 +450,7 @@ class Lopcomm4:
         }
 
     # radio units configuration in enb.cfg
-    def test_enb_conf_ru(t):
+    def test_enb_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
           cpri_mapping='hw,hw,hw,hw',
@@ -461,7 +461,7 @@ class Lopcomm4:
         ))
 
     # RU configuration in cu_config.xml
-    def test_ru_cu_cfg(t):
+    def test_ru_cu_config_xml(t):
         def uctx(rf_mode, cell_type, dl_arfcn, ul_arfcn, bw, dl_freq, ul_freq, tx_gain, rx_gain):
             return {
                 'tx-array-carriers': {
@@ -548,7 +548,7 @@ class Sunwave4:
         }
 
     # radio units configuration in enb.cfg
-    def test_enb_conf_ru(t):
+    def test_enb_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='bf1,bf1,bf1,bf1',
@@ -571,7 +571,7 @@ class RUMultiType4:
             return Sunwave4.RUcfg(i)
 
     # radio units configuration in enb.cfg
-    def test_enb_conf_ru(t):
+    def test_enb_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='hw,hw,bf1,bf1',
@@ -637,7 +637,7 @@ class UEsimTestCase4(RFTestCase4):
         UE(3)
 
     # ue parameters
-    def test_uesim_ue(t):
+    def test_ue_cfg_ue(t):
         assertMatch(t, t.ue_cfg['ue_list'], [
           dict(
             as_release=13,  ue_category=13,   rue_addr='host1',
@@ -666,7 +666,7 @@ class UEsimTestCase4(RFTestCase4):
         ])
 
     # cells
-    def test_uesim_conf_cell(t):
+    def test_ue_cfg_cell(t):
         assertMatch(t, t.ue_cfg['cell_groups'], [
           dict(
             group_type='lte',
