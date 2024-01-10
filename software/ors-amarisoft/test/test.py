@@ -287,7 +287,7 @@ class ENBTestCase(AmariTestCase):
         assertMatch(t, t.enb_cfg['nr_cell_list'],  [
           dict( # CELL3
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=1,
+            dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=74,
             bandwidth=15,
             cell_id=0x3,         n_id_cell=0x13,      tac=NO,
             root_sequence_index=103,  inactivity_timer=1003,
@@ -298,7 +298,7 @@ class ENBTestCase(AmariTestCase):
                 period=5, dl_slots=7, dl_symbols=6, ul_slots=2, ul_symbols=4,
             )},
                                  rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=41,
+            dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=40,
             bandwidth=20,
             cell_id=0x4,         n_id_cell=0x14,      tac=NO,
             root_sequence_index=104,  inactivity_timer=1004,
