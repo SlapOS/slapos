@@ -1,0 +1,86 @@
+From 8e7c9a6a86104e306aee2224ff5e517ee201b28f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 9 Jan 2024 17:15:11 +0900
+Subject: [PATCH] Fix redirections to URLS with host given as IP-litteral
+ (#1192)
+
+When redirecting to an URL with an IPv6 host with surrounding brackets,
+we should not escape the surrounding brackets.
+
+The patch updates referenced RFC from 2396 to 3986, which obsoletes it
+and change the safe characters for the netloc part to allow [ and ].
+The RFC specifies that [ and ] are only allowed when they are the first
+and last characters, but we don't need to be more specific here, because
+using [ or ] in other places of the host is rejected by urlparse above.
+
+Fixes #1191
+---
+ src/ZPublisher/HTTPResponse.py           | 14 +++++++-------
+ src/ZPublisher/tests/testHTTPResponse.py |  8 ++++++--
+ 2 files changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/src/ZPublisher/HTTPResponse.py b/src/ZPublisher/HTTPResponse.py
+index b0b4ca2b1..b1a824151 100644
+--- a/src/ZPublisher/HTTPResponse.py
++++ b/src/ZPublisher/HTTPResponse.py
+@@ -230,24 +230,24 @@ class HTTPBaseResponse(BaseResponse):
+         # To be entirely correct, we must make sure that all non-ASCII
+         # characters are quoted correctly.
+         parsed = list(urlparse(location))
+-        rfc2396_unreserved = "-_.!~*'()"  # RFC 2396 section 2.3
++        rfc3986_unreserved = "-_.!~*'()"  # RFC 3986 section 2.3
+         for idx, idx_safe in (
+                 # authority
+-                (1, ";:@?/&=+$,"),  # RFC 2396 section 3.2, 3.2.1, 3.2.3
++                (1, "[];:@?/&=+$,"),  # RFC 3986 section 3.2, 3.2.1, 3.2.3
+                 # path
+-                (2, "/;:@&=+$,"),  # RFC 2396 section 3.3
++                (2, "/;:@&=+$,"),  # RFC 3986 section 3.3
+                 # params - actually part of path; empty in Python 3
+-                (3, "/;:@&=+$,"),  # RFC 2396 section 3.3
++                (3, "/;:@&=+$,"),  # RFC 3986 section 3.3
+                 # query
+-                (4, ";/?:@&=+,$"),  # RFC 2396 section 3.4
++                (4, ";/?:@&=+,$"),  # RFC 3986 section 3.4
+                 # fragment
+-                (5, ";/?:@&=+$,"),  # RFC 2396 section 4
++                (5, ";/?:@&=+$,"),  # RFC 3986 section 4
+         ):
+             # Make a hacky guess whether the component is already
+             # URL-encoded by checking for %. If it is, we don't touch it.
+             if '%' not in parsed[idx]:
+                 parsed[idx] = quote(parsed[idx],
+-                                    safe=rfc2396_unreserved + idx_safe)
++                                    safe=rfc3986_unreserved + idx_safe)
+         location = urlunparse(parsed)
+ 
+         self.setStatus(status, lock=lock)
+diff --git a/src/ZPublisher/tests/testHTTPResponse.py b/src/ZPublisher/tests/testHTTPResponse.py
+index a7f816c04..08a1674ba 100644
+--- a/src/ZPublisher/tests/testHTTPResponse.py
++++ b/src/ZPublisher/tests/testHTTPResponse.py
+@@ -767,15 +767,19 @@ class HTTPResponseTests(unittest.TestCase):
+         self._redirectURLCheck(ENC_URL)
+ 
+     def test_redirect_unreserved_chars(self):
+-        # RFC 2396 section 2.3, characters that should not be encoded
++        # RFC 3986 section 2.3, characters that should not be encoded
+         url = "http://example.com/-_.!~*'()"
+         self._redirectURLCheck(url)
+ 
+     def test_redirect_reserved_chars(self):
+-        # RFC 2396 section 3.3, characters with reserved meaning in a path
++        # RFC 3986 section 3.3, characters with reserved meaning in a path
+         url = 'http://example.com/+/$/;/,/=/?/&/@@index.html'
+         self._redirectURLCheck(url)
+ 
++    def test_redirect_ipv6(self):
++        url = "http://[fe80::1ff:fe23:4567:890a]:1234"
++        self._redirectURLCheck(url)
++
+     def test__encode_unicode_no_content_type_uses_default_encoding(self):
+         UNICODE = u'<h1>Tr\u0039s Bien</h1>'
+         response = self._makeOne()
+-- 
+2.42.0
+
