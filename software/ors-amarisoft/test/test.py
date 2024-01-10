@@ -16,6 +16,9 @@
 # See COPYING file for full licensing terms.
 # See https://www.nexedi.com/licensing for rationale and options.
 
+# XXX core-network - skip - verified by ors
+
+
 import os
 import json
 import io
@@ -128,7 +131,7 @@ class AmariTestCase(_AmariTestCase):
                                   ' ${a:b}\n[c]\n;'
 
     # faster edit/try cycle during development
-    if 1:   # XXX disable yby default
+    if 1:   # XXX disable by default
         instance_max_retry = 1
         report_max_retry = 1
 
@@ -171,7 +174,7 @@ class AmariTestCase(_AmariTestCase):
         return '%s/%s' % (cls.computer_partition_root_path, path)
 
 
-# RFTestCase is base class for tests of all services that do radio.
+# RFTestCase4 is base class for tests of all services that do radio.
 #
 # It instantiates a service with several Radio Units and Cells attached.
 #
@@ -185,22 +188,20 @@ class AmariTestCase(_AmariTestCase):
 #   0x100+      tac
 #   10+         tx_gain
 #   20+         rx_gain
-#   100+        root_sequence_index
-#   1000+       inactivity_timer
 #   xxx+i·100   dl_arfcn
 #   5,10,15,20  bandwidth
-#   XXX +ue
+#   100+        root_sequence_index
+#   1000+       inactivity_timer
 #
 # this allows to quickly see offhand to which cell/ru and parameter a
 # particular number belongs to.
 #
-# Subclasses should define RUcfg(i) to return primary parameters
-# specific for i'th RU configuration like ru_type - to verify
-# particular RU driver, sdr_dev, sfp_port and so on.
+# Subclasses should define:
 #
-# Similarly subclasses should define CELLcfg(i) to tune parameters of i'th
-# cell, for example cell_kind.
-class RFTestCase(AmariTestCase):
+# - RUcfg(i) to return primary parameters specific for i'th RU configuration
+#   like ru_type - to verify particular RU driver, sdr_dev, sfp_port and so on.
+# - CELLcfg(i) to tune parameters of i'th cell, for example cell_kind.
+class RFTestCase4(AmariTestCase):
     @classmethod
     def requestAllShared(cls, imain):
         def RU(i):
@@ -225,21 +226,10 @@ class RFTestCase(AmariTestCase):
         RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
-    """
-    @classmethod
-    def RUcfg(cls, i):
-        raise NotImplementedError
 
-    @classmethod
-    def CELLcfg(cls, i):
-        raise NotImplementedError
-    """
-
-
-
-# ENBTestCase provides base class for unit-testing eNB service.
+# ENBTestCase4 provides base class for unit-testing eNB service.
 #
-# It instantiates enb with several Radio Units and Cells and verifies generated
+# It instantiates enb with 4 Radio Units x 4 Cells and verifies generated
 # enb.cfg to match what is expected(*).
 #
 # (*) here we verify only generated configuration because it is not possible to
@@ -247,7 +237,7 @@ class RFTestCase(AmariTestCase):
 #
 #     end-to-end testing complements unit-testing by verifying how LTE works
 #     for real on dedicated hardware test setup.
-class ENBTestCase(RFTestCase):
+class ENBTestCase4(RFTestCase4):
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb"
@@ -396,118 +386,7 @@ class ENBTestCase(RFTestCase):
         ])
 
 
-# UEsimTestCase provides base class for unit-testing UEsim service.
-#
-# It is similar to ENBTestCase but configures UE cells instead of eNB cells.
-class UEsimTestCase(RFTestCase):
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue"
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.ue_cfg = cls.rf_cfg = yamlpp_load(cls.ipath('etc/ue.cfg'))
-
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({
-            'testing':      True,
-        })}
-
-    @classmethod
-    def CELLcfg(cls, i):
-        return CUE
-
-    @classmethod
-    def requestAllShared(cls, imain):
-        super().requestAllShared(imain)
-
-        def UE(i):
-            ue = {
-                'ue_type':  ('lte', 'nr') [(i-1) % 2],
-                'rue_addr': 'host%d'    % i,
-                'sim_algo': ('xor', 'milenage', 'tuak') [i-1],
-                'imsi':     '%015d'     % i,
-                'opc':      '%032x'     % i,
-                'amf':      '0x%04x'    % (0x9000+i),
-                'sqn':      '%012x'     % i,
-                'k':        'FFFF%028x' % i,
-                'impi':     'impi%d@rapid.space' % i,
-            }
-            cls.requestShared(imain, 'UE%d' % i, ue)
-
-        UE(1)
-        UE(2)
-        UE(3)
-
-    # ue parameters
-    def test_uesim_ue(t):
-        assertMatch(t, t.ue_cfg['ue_list'], [
-          dict(
-            as_release=13,  ue_category=13,   rue_addr='host1',
-            sim_algo='xor', amf =0x9001,      impi='impi1@rapid.space',
-            sqn ='000000000001',
-            imsi='000000000000001',
-            opc ='00000000000000000000000000000001',
-            K   ='FFFF0000000000000000000000000001',
-          ),
-          dict(
-            as_release=15,  ue_category='nr', rue_addr='host2',
-            sim_algo='milenage', amf =0x9002, impi='impi2@rapid.space',
-            sqn ='000000000002',
-            imsi='000000000000002',
-            opc ='00000000000000000000000000000002',
-            K   ='FFFF0000000000000000000000000002',
-          ),
-          dict(
-            as_release=13,  ue_category=13,   rue_addr='host3',
-            sim_algo='tuak', amf =0x9003,     impi='impi3@rapid.space',
-            sqn ='000000000003',
-            imsi='000000000000003',
-            opc ='00000000000000000000000000000003',
-            K   ='FFFF0000000000000000000000000003',
-          ),
-        ])
-
-    # cells
-    def test_uesim_conf_cell(t):
-        assertMatch(t, t.ue_cfg['cell_groups'], [
-          dict(
-            group_type='lte',
-            cells=[
-              dict( # CELL1
-                rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
-                dl_earfcn=100,    ul_earfcn=18100,
-                bandwidth=5,
-              ),
-              dict( # CELL2
-                rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
-                dl_earfcn=40200,  ul_earfcn=40200,
-                bandwidth=10,
-              ),
-            ]
-          ),
-          dict(
-            group_type='nr',
-            cells=[
-              dict( # CELL3
-                rf_port=2,           n_antenna_dl=4,      n_antenna_ul=2,
-                dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=74,
-                bandwidth=15,
-              ),
-              dict( # CELL4
-                rf_port=3,           n_antenna_dl=4,      n_antenna_ul=2,
-                dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=40,
-                bandwidth=20,
-              ),
-            ]
-          )
-        ])
-
-
-
-# ---- RU mixins ----
+# ---- RU mixins to be used with RFTestCase4 ----
 
 # SDR4 is mixin to verify SDR driver wrt all LTE/NR x FDD/TDD modes.
 class SDR4:
@@ -664,8 +543,8 @@ class Sunwave4:
           cpri_tx_dbm='161,162,163,164',
         ))
 
-# RUMultiType is mixin to verify that different RU types can be used at the same time.
-class RUMultiType:
+# RUMultiType4 is mixin to verify that different RU types can be used at the same time.
+class RUMultiType4:
     # ENB does not support mixing SDR + CPRI - verify only with CPRI-based units
     # see https://support.amarisoft.com/issues/26021 for details
     @classmethod
@@ -688,18 +567,130 @@ class RUMultiType:
         ))
 
 
-# instantiate tests
-class TestENB_SDR4       (ENBTestCase, SDR4):           pass
-class TestENB_Lopcomm4   (ENBTestCase, Lopcomm4):       pass
-class TestENB_Sunwave4   (ENBTestCase, Sunwave4):       pass
-class TestENB_RUMultiType(ENBTestCase, RUMultiType):    pass
+# instantiate eNB tests
+class TestENB_SDR4        (ENBTestCase4, SDR4):         pass
+class TestENB_Lopcomm4    (ENBTestCase4, Lopcomm4):     pass
+class TestENB_Sunwave4    (ENBTestCase4, Sunwave4):     pass
+class TestENB_RUMultiType4(ENBTestCase4, RUMultiType4): pass
 
-class TestUEsim_SDR4       (UEsimTestCase, SDR4):           pass
-class TestUEsim_Lopcomm4   (UEsimTestCase, Lopcomm4):       pass
-class TestUEsim_Sunwave4   (UEsimTestCase, Sunwave4):       pass
-class TestUEsim_RUMultiType(UEsimTestCase, RUMultiType):    pass
 
-# XXX core-network - skip - verified by ors
+# ---- UEsim ----
+
+# UEsimTestCase4 provides base class for unit-testing UEsim service.
+#
+# It is similar to ENBTestCase4 but configures UE cells instead of eNB cells.
+class UEsimTestCase4(RFTestCase4):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.ue_cfg = cls.rf_cfg = yamlpp_load(cls.ipath('etc/ue.cfg'))
+
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({
+            'testing':      True,
+        })}
+
+    @classmethod
+    def CELLcfg(cls, i):
+        return CUE
+
+    @classmethod
+    def requestAllShared(cls, imain):
+        super().requestAllShared(imain)
+
+        def UE(i):
+            ue = {
+                'ue_type':  ('lte', 'nr') [(i-1) % 2],
+                'rue_addr': 'host%d'    % i,
+                'sim_algo': ('xor', 'milenage', 'tuak') [i-1],
+                'imsi':     '%015d'     % i,
+                'opc':      '%032x'     % i,
+                'amf':      '0x%04x'    % (0x9000+i),
+                'sqn':      '%012x'     % i,
+                'k':        'FFFF%028x' % i,
+                'impi':     'impi%d@rapid.space' % i,
+            }
+            cls.requestShared(imain, 'UE%d' % i, ue)
+
+        UE(1)
+        UE(2)
+        UE(3)
+
+    # ue parameters
+    def test_uesim_ue(t):
+        assertMatch(t, t.ue_cfg['ue_list'], [
+          dict(
+            as_release=13,  ue_category=13,   rue_addr='host1',
+            sim_algo='xor', amf =0x9001,      impi='impi1@rapid.space',
+            sqn ='000000000001',
+            imsi='000000000000001',
+            opc ='00000000000000000000000000000001',
+            K   ='FFFF0000000000000000000000000001',
+          ),
+          dict(
+            as_release=15,  ue_category='nr', rue_addr='host2',
+            sim_algo='milenage', amf =0x9002, impi='impi2@rapid.space',
+            sqn ='000000000002',
+            imsi='000000000000002',
+            opc ='00000000000000000000000000000002',
+            K   ='FFFF0000000000000000000000000002',
+          ),
+          dict(
+            as_release=13,  ue_category=13,   rue_addr='host3',
+            sim_algo='tuak', amf =0x9003,     impi='impi3@rapid.space',
+            sqn ='000000000003',
+            imsi='000000000000003',
+            opc ='00000000000000000000000000000003',
+            K   ='FFFF0000000000000000000000000003',
+          ),
+        ])
+
+    # cells
+    def test_uesim_conf_cell(t):
+        assertMatch(t, t.ue_cfg['cell_groups'], [
+          dict(
+            group_type='lte',
+            cells=[
+              dict( # CELL1
+                rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
+                dl_earfcn=100,    ul_earfcn=18100,
+                bandwidth=5,
+              ),
+              dict( # CELL2
+                rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
+                dl_earfcn=40200,  ul_earfcn=40200,
+                bandwidth=10,
+              ),
+            ]
+          ),
+          dict(
+            group_type='nr',
+            cells=[
+              dict( # CELL3
+                rf_port=2,           n_antenna_dl=4,      n_antenna_ul=2,
+                dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=74,
+                bandwidth=15,
+              ),
+              dict( # CELL4
+                rf_port=3,           n_antenna_dl=4,      n_antenna_ul=2,
+                dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=40,
+                bandwidth=20,
+              ),
+            ]
+          )
+        ])
+
+
+# instantiate UEsim tests
+class TestUEsim_SDR4        (UEsimTestCase4, SDR4):         pass
+class TestUEsim_Lopcomm4    (UEsimTestCase4, Lopcomm4):     pass
+class TestUEsim_Sunwave4    (UEsimTestCase4, Sunwave4):     pass
+class TestUEsim_RUMultiType4(UEsimTestCase4, RUMultiType4): pass
 
 
 
