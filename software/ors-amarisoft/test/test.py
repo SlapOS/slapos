@@ -438,6 +438,35 @@ class UEsimTestCase(AmariTestCase):
         UE(2)
         UE(3)
 
+    # ue parameters
+    def test_uesim_ue(t):
+        assertMatch(t, t.ue_cfg['ue_list'], [
+          dict(
+            as_release=13,  ue_category=13,   rue_addr='host1',
+            sim_algo='xor', amf =0x9001,      impi='impi1@rapid.space',
+            sqn ='000000000001',
+            imsi='000000000000001',
+            opc ='00000000000000000000000000000001',
+            K   ='FFFF0000000000000000000000000001',
+          ),
+          dict(
+            as_release=15,  ue_category='nr', rue_addr='host2',
+            sim_algo='milenage', amf =0x9002, impi='impi2@rapid.space',
+            sqn ='000000000002',
+            imsi='000000000000002',
+            opc ='00000000000000000000000000000002',
+            K   ='FFFF0000000000000000000000000002',
+          ),
+          dict(
+            as_release=13,  ue_category=13,   rue_addr='host3',
+            sim_algo='tuak', amf =0x9003,     impi='impi3@rapid.space',
+            sqn ='000000000003',
+            imsi='000000000000003',
+            opc ='00000000000000000000000000000003',
+            K   ='FFFF0000000000000000000000000003',
+          ),
+        ])
+
     # cells
     def test_uesim_conf_cell(t):
         assertMatch(t, t.ue_cfg['cell_groups'], [
@@ -473,8 +502,6 @@ class UEsimTestCase(AmariTestCase):
           )
         ])
 
-    # ue parameters
-    def test_uesim_ue(t):
 
 
 # ---- RU mixins ----
