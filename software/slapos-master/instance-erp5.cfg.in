@@ -309,7 +309,7 @@ config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_pa
 config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}
-config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+config-test-runner-balancer-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
 [{{ promise_software_url_section_name }}]
 # Promise to wait for zope partition to use the expected software URL,
