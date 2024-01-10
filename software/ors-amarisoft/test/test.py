@@ -800,10 +800,9 @@ class TestAssertMatch(unittest.TestCase):
         ]
 
         for mok, v, vok in testv:
-            if mok:
-                assertMatch(t, v, vok)
-            else:
-                t.assertRaises(t.failureException,
-                    assertMatch, t, v, vok)
-
-# XXX test for assertMatch
+            with t.subTest(mok=mok, v=v, vok=vok):
+                if mok:
+                    assertMatch(t, v, vok)
+                else:
+                    t.assertRaises(t.failureException,
+                        assertMatch, t, v, vok)
