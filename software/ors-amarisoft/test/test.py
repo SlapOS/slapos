@@ -243,7 +243,7 @@ class RFTestCase4(AmariTestCase):
         RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
-    def test_conf_txrx_gain(t):
+    def test_rf_cfg_txrx_gain(t):
         # NOTE even though setting tx_gain/rx_gain does not make any difference
         #      for CPRI case, we still do set it there for consistency. For the
         #      reference: for CPRI case the real tx/rx gain is set in RU
@@ -418,7 +418,7 @@ class SDR4:
         }
 
     # radio units configuration
-    def test_enb_cfg_ru(t):    # XXX enb/ue ?
+    def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
@@ -450,7 +450,7 @@ class Lopcomm4:
         }
 
     # radio units configuration in enb.cfg
-    def test_enb_cfg_ru(t):
+    def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
           cpri_mapping='hw,hw,hw,hw',
@@ -482,7 +482,7 @@ class Lopcomm4:
                 },
             }
 
-        _ = t._test_ru_cu_cfg
+        _ = t._test_ru_cu_config_xml
 
         #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
         _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
@@ -490,7 +490,7 @@ class Lopcomm4:
         _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
         _(4, uctx('TDD',  'NR', 470400,  470400, 20000000, 2352000000, 2352000000, 14, 24))
 
-    def _test_ru_cu_cfg(t, i, uctx):
+    def _test_ru_cu_config_xml(t, i, uctx):
         cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
         with open(cu_xml, 'r') as f:
             cu = f.read()
@@ -548,7 +548,7 @@ class Sunwave4:
         }
 
     # radio units configuration in enb.cfg
-    def test_enb_cfg_ru(t):
+    def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='bf1,bf1,bf1,bf1',
@@ -571,7 +571,7 @@ class RUMultiType4:
             return Sunwave4.RUcfg(i)
 
     # radio units configuration in enb.cfg
-    def test_enb_cfg_ru(t):
+    def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='hw,hw,bf1,bf1',
