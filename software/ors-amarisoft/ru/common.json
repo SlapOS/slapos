@@ -108,6 +108,18 @@
           "default": 0
         }
       }
+    },
+
+    "mac_addr": {
+      "title": "RU MAC address",
+      "description": "RU MAC address used for NETCONF",
+      "type": "string",
+
+      "options": {
+        "dependencies": {
+          "ru_link_type": "cpri"
+        }
+      }
     }
 
   }
