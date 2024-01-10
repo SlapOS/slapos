@@ -91,8 +91,9 @@ url = {{ template_balancer }}
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
-    import itertools itertools
     import hashlib hashlib
+# XXX: only used in software/slapos-master:
+    import itertools itertools
     import functools functools
 import-list =
     file caucase context:caucase-jinja2-library
