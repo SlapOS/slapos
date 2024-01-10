@@ -12,8 +12,7 @@
 
     "dl_nr_arfcn",
     "bandwidth",
-    "nr_band",
-    "ssb_nr_arfcn"
+    "nr_band"
   ],
 
   "properties": {
