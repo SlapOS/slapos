@@ -561,10 +561,7 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
     etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
-    try:
-      self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
-    except AssertionError:
-      breakpoint()
+    self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
   def _checkTakeover(self):
     # Check that there is an export, import and frozen instance and get their new partition IDs
