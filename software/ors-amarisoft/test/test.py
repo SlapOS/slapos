@@ -768,5 +768,42 @@ def _matchCollect(v, vok):
     assert type(v) is not tuple, v
     return v
 
+class TestAssertMatch(unittest.TestCase):
+    def test_assertMatch(t):
+        y, n = True, False
+        testv = [   # [](match, v, vok)
+            (y, 12,  12),
+            (n, 12,  13),
+            (n, 12,  '12'),
+            (y, 'a', 'a'),
+            (n, 'a', 'ab'),
+            (y, [],  []),
+            (n, [],  [1]),
+            (y, [1], [1]),
+            (n, [1,2], [1]),
+            (y, [1,2], [1,2]),
+            (n, [1,2], ['a',2]),
+            (y, {}, {}),
+            (y, {'a': 1}, {}),
+            (y, {'a': 1}, {'a': 1}),
+            (n, {'a': 1}, {'a': 2}),
+            (n, {'a': 1}, {'a': NO}),
+            (y, {},       {'a': NO}),
+            (y, {'b': 2}, {'a': NO}),
+            (n, {'a': 1, 'b': 2}, {'a': NO}),
+            (n, {'a': 1, 'b': 2}, {'a': NO, 'b': 2}),
+            (y, {'a': 1, 'b': 2}, {         'b': 2}),
+            (y, {'a': [1, 2, {'aa': 33, 'bb': 44}]},
+                {'a': [1, 2, {'aa': 33, 'cc': NO}]},
+            (n, {'a': [1, 2, {'aa': 33, 'bb': 44}]},
+                {'a': [1, 2, {'aa': 35, 'cc': NO}]},
+        ]
+
+        for mok, v, vok in testv:
+            if mok:
+                assertMatch(t, v, vok)
+            else:
+                t.assertRaises(t.failureException,
+                    assertMatch, t, v, vok)
 
 # XXX test for assertMatch
