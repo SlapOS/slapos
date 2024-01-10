@@ -16,13 +16,21 @@
 # See COPYING file for full licensing terms.
 # See https://www.nexedi.com/licensing for rationale and options.
 
-# XXX core-network - skip - verified by ors
-
-# (*) here we verify only generated configuration because it is not possible to
-#     run Amarisoft software on the testnodes due to licensing restrictions.
+# Unit-tests for generic software for Amarisoft 4G/5G stack.
 #
-#     end-to-end testing complements unit-testing by verifying how LTE works
-#     for real on dedicated hardware test setup.
+# Here we only verify generated configuration because it is not possible to run
+# Amarisoft software on testnodes due to licensing restrictions. End-to-end
+# testing complements unit-testing by verifying how LTE works for real on
+# dedicated hardware test setup.
+#
+# Here we test:
+#
+# - enb     (see TestENB_*)
+# - uesim   (see TestUEsim_*)
+#
+# Currently there is no tests for core-network here, because for core-network
+# there is no difference in between generic and ors modes and core-network is
+# already verified by test_ors.
 
 
 import os
@@ -51,7 +59,7 @@ setUpModule, _AmariTestCase = makeModuleSetUpAndTestCaseClass(
 # - BW      indicates specified bandwidth.
 # - CENB    indicates a ENB-kind cell.
 # - CUE     indicates an UE-kind cell.
-# - TAC     indicates specified Traking Area Code.
+# - TAC     indicates specified Tracking Area Code.
 # - LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
 # - X2_PEER/XN_PEER  indicate an LTE/NR ENB peer.
 
@@ -89,7 +97,7 @@ def CENB(cell_id, pci):
 # CUE indicates an UE-kind cell.
 CUE = {'cell_kind': 'ue'}
 
-#  TAC returns basic parameters to indicate specified Traking Area Code.
+#  TAC returns basic parameters to indicate specified Tracking Area Code.
 def TAC(tac):
     return {
         'tac':          '0x%x' % tac,
