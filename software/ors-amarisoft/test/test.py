@@ -29,7 +29,7 @@
 # - uesim   (see TestUEsim_*)
 #
 # Currently there is no tests for core-network here, because for core-network
-# there is no difference in between generic and ors modes and core-network is
+# there is no difference in between generic and ORS modes and core-network is
 # already verified by test_ors.
 
 
