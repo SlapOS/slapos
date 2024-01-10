@@ -365,8 +365,8 @@ class ENBTestCase(AmariTestCase):
         ])
 
 
-# TestENB_SDR verifies eNB wrt SDR driver in all LTE/NR x FDD/TDD modes.
-class TestENB_SDR(ENBTestCase):
+# SDR4 is mixin to verify SDR driver wrt all LTE/NR x FDD/TDD modes.
+class SDR4:
     @classmethod
     def RUcfg(cls, i):
         return {
@@ -392,8 +392,8 @@ class TestENB_SDR(ENBTestCase):
         t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
 
-# TestENB_Lopcomm verifies eNB wrt Lopcomm driver in all LTE/NR x FDD/TDD modes.
-class TestENB_Lopcomm(ENBTestCase):
+# Lopcomm4 is mixin to verify Lopcomm driver wrt all LTE/NR x FDD/TDD modes.
+class Lopcomm4:
     @classmethod
     def RUcfg(cls, i):
         return {
@@ -452,7 +452,6 @@ class TestENB_Lopcomm(ENBTestCase):
         _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
         _(4, uctx('TDD',  'NR', 470400,  470400, 20000000, 2352000000, 2352000000, 14, 24))
 
-
     def _test_ru_cu_cfg(t, i, uctx):
         cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
         with open(cu_xml, 'r') as f:
@@ -491,6 +490,39 @@ class TestENB_Lopcomm(ENBTestCase):
         })
 
 
+# Sunwave4 is mixin to verify Sunwave driver wrt all LTE/NR x FDD/TDD modes.
+class Sunwave4:
+    @classmethod
+    def RUcfg(cls, i):
+        return {
+            'ru_type':      'sunwave',
+            'ru_link_type': 'cpri',
+            'cpri_link':    {
+                'sdr_dev':  1,
+                'sfp_port': i,
+                'mult':     5,
+                'mapping':  'bf1',
+                'rx_delay': 40+i,
+                'tx_delay': 50+i,
+                'tx_dbm':   60+i
+            },
+        }
+
+    # radio units configuration in enb.cfg
+    def test_enb_conf_ru(t):
+        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+          args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
+          cpri_mapping='bf1,bg1,bf1,bf1',   # XXX
+          cpri_mult='5,5,5,5',
+          cpri_rx_delay='41,42,43,44',
+          cpri_tx_delay='51,52,53,54',
+          cpri_tx_dbm='61,62,63,64',
+        ))
+
+
+class TestENB_SDR    (ENBTestCase, SDR4):       pass
+class TestENB_Lopcomm(ENBTestCase, Lopcomm4):   pass
+class TestENB_Sunwave(ENBTestCase, Sunwave4):   pass
 
 # XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
 # XXX -> possible  - adjust SR with testing=True workaround
