@@ -435,6 +435,7 @@ return =
 {% endfor -%}
 {% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
+config-frontend-parameter-dict = {{ dumps({}) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
