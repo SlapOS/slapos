@@ -513,7 +513,7 @@ class Sunwave4:
     def test_enb_conf_ru(t):
         assertMatch(t, t.enb_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
-          cpri_mapping='bf1,bg1,bf1,bf1',   # XXX
+          cpri_mapping='bf1,bf1,bf1,bf1',
           cpri_mult='5,5,5,5',
           cpri_rx_delay='41,42,43,44',
           cpri_tx_delay='51,52,53,54',
