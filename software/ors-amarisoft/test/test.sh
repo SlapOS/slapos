@@ -17,7 +17,8 @@ export SLAPOS_TEST_LOG_DIRECTORY=`pwd`/snapshot
 #time ../k/kpython_for_test -m unittest discover -vf -k MonitorGadget
 #time ../k/kpython_for_test -m unittest discover -vf -k SimCard
 #time ../k/kpython_for_test -m unittest discover -vf
+time ../k/kpython_for_test -m unittest discover -vf -k TestENB_
 #time ../k/kpython_for_test -m unittest discover -vf -k TestENB_CPRI
 #time ../k/kpython_for_test -m unittest discover -vf -k TestENB_SDR
 #time ../k/kpython_for_test -m unittest discover -vf -k TestENB_Lopcomm
-time ../k/kpython_for_test -m unittest discover -vf -k TestENB_Sunwave
+#time ../k/kpython_for_test -m unittest discover -vf -k TestENB_Sunwave
