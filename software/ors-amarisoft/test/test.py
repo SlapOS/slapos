@@ -398,7 +398,7 @@ class ENBTestCase(RFTestCase):
 # UEsimTestCase provides base class for unit-testing UEsim service.
 #
 # It is similar to ENBTestCase but configures UE cells instead of eNB cells.
-class UEsimTestCase(AmariTestCase):
+class UEsimTestCase(RFTestCase):
     @classmethod
     def getInstanceSoftwareType(cls):
         return "ue"
