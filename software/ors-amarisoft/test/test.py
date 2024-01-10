@@ -466,7 +466,7 @@ class TestENB_Lopcomm(ENBTestCase):
                 'absolute-frequency-center':    '100',
                 'center-of-channel-bandwidth':  '2120000000',
                 'channel-bandwidth':               '5000000',
-                'gain':   'XXX',
+                'gain':   '11',
                 'active': 'INACTIVE',
               },
               'rx-array-carriers': {
