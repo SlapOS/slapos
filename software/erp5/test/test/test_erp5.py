@@ -302,6 +302,13 @@ class TestBalancerPorts(ERP5InstanceTestCase):
           param_dict[f'family-{family_name}'])
       self.checkValidHTTPSURL(
           param_dict[f'family-{family_name}-v6'])
+    # ports are allocated in alphabetical order and are "stable", ie. is not supposed
+    # to change after updating software release, because there is typically a rapid-cdn
+    # frontend pointing to this port.
+    self.assertEqual(urllib.parse.urlparse(param_dict['family-family1']).port, 2152)
+    self.assertEqual(urllib.parse.urlparse(param_dict['family-family1-v6']).port, 2152)
+    self.assertEqual(urllib.parse.urlparse(param_dict['family-family2']).port, 2154)
+    self.assertEqual(urllib.parse.urlparse(param_dict['family-family2-v6']).port, 2154)
 
   def test_published_test_runner_url(self):
     # each family's also a list of test test runner URLs, by default 3 per family
@@ -310,6 +317,7 @@ class TestBalancerPorts(ERP5InstanceTestCase):
       family_test_runner_url_list = param_dict[
           f'{family_name}-test-runner-url-list']
       self.assertEqual(3, len(family_test_runner_url_list))
+      self.assertEqual(3, len(set(family_test_runner_url_list)))
       for url in family_test_runner_url_list:
         self.checkValidHTTPSURL(url)
 
@@ -348,6 +356,79 @@ class TestBalancerPorts(ERP5InstanceTestCase):
         param for param in self.getRootPartitionConnectionParameterDict()
         if 'frontend' in param
       ])
+
+
+class TestBalancerPortsStable(ERP5InstanceTestCase):
+  """Instantiate with two one families and a frontend, then
+  re-request with one more family and one more frontend, the ports
+  should not change
+  """
+  __partition_reference__ = 'ap'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_':
+      json.dumps(
+        {
+          "frontend": {
+            "zzz": {
+              "zope-family": "zzz"
+            }
+          },
+          "zope-partition-dict": {
+            "zzz": {
+              "instance-count": 1,
+              "family": "zzz"
+            },
+          },
+        })
+    }
+
+  def getReRequestInstanceParameterDict(self):
+    return {
+      '_':
+      json.dumps(
+        {
+          "frontend": {
+            "aaa": {
+              "zope-family": "aaa"
+            },
+            "zzz": {
+              "zope-family": "zzz"
+            },
+          },
+          "zope-partition-dict": {
+            "aaa": {
+              "instance-count": 2,
+              "family": "aaa"
+            },
+            "zzz": {
+              "instance-count": 1,
+              "family": "zzz"
+            },
+          },
+        })
+    }
+
+  def test_same_balancer_ports_when_adding_zopes_or_frontends(self):
+    param_dict_before = self.getRootPartitionConnectionParameterDict()
+
+    def rerequest():
+      return self.slap.request(
+        software_release=self.getSoftwareURL(),
+        software_type=self.getInstanceSoftwareType(),
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=self.getReRequestInstanceParameterDict(),
+        state='started')
+
+    rerequest()
+    self.slap.waitForInstance(max_retry=10)
+    param_dict_after = json.loads(rerequest().getConnectionParameterDict()['_'])
+    self.assertEqual(param_dict_before['family-zzz-v6'], param_dict_after['family-zzz-v6'])
+    self.assertEqual(param_dict_before['url-frontend-zzz'], param_dict_after['url-frontend-zzz'])
+    self.assertNotEqual(param_dict_before['family-zzz-v6'], param_dict_after['family-aaa-v6'])
+    self.assertNotEqual(param_dict_before['url-frontend-zzz'], param_dict_after['url-frontend-aaa'])
 
 
 class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
