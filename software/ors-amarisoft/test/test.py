@@ -30,7 +30,7 @@ import xbuildout
 import unittest
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, AmariTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, _AmariTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
@@ -78,7 +78,6 @@ def CENB(cell_id, pci):
     }
 
 # CUE indicates an UE-kind cell.
-def CUE(): ...  # XXX
 CUE = {'cell_kind': 'ue'}
 
 #  TAC returns basic parameters to indicate specified Traking Area Code.
@@ -118,6 +117,98 @@ def XN_PEER(xn_addr):
 
 # --------
 
+# AmariTestCase is base class for all tests.
+class AmariTestCase(_AmariTestCase):
+    maxDiff = None  # show full diff in test run log on an error
+
+    # stress correctness of ru_ref/cell_ref/... usage throughout all places in
+    # buildout code - special characters should not lead to wrong templates or
+    # code injection.
+    default_partition_reference = AmariTestCase.default_partition_reference + \
+                                  ' ${a:b}\n[c]\n;'
+
+    # XXX temp (faster during develop)
+    instance_max_retry = 1
+    report_max_retry = 1
+
+    @classmethod
+    def requestDefaultInstance(cls, state='started'):
+        inst = super().requestDefaultInstance(state=state)
+        cls.requestAllShared(inst)
+        return inst
+
+    # requestAllShared should add all shared instances of the testcase over imain.
+    @classmethod
+    def requestAllShared(cls, imain):
+        raise NotImplementedError
+
+    # requestShared requests one shared instance over imain with specified subreference and parameters.
+    @classmethod
+    def requestShared(cls, imain, subref, ctx):
+        cls.slap.request(
+            software_release=cls.getSoftwareURL(),
+            software_type=cls.getInstanceSoftwareType(),
+            partition_reference=cls.ref(subref),
+            # XXX StandaloneSlapOS rejects filter_kw with "Can only request on embedded computer"
+            #filter_kw = {'instance_guid': imain.getInstanceGuid()},
+            partition_parameter_kw={'_': json.dumps(ctx)},
+            shared=True)
+
+    # ref returns full reference of shared instance with given subreference.
+    #
+    # for example if reference of main instance is 'MAIN-INSTANCE'
+    #
+    #   ref('RU') = 'MAIN-INSTANCE.RU'
+    @classmethod
+    def ref(cls, subref):
+        return '%s.%s' % (cls.default_partition_reference, subref)
+
+    # ipath returns path for a file inside main instance.
+    @classmethod
+    def ipath(cls, path):
+        assert path[:1] != '/', path
+        return '%s/%s' % (cls.computer_partition_root_path, path)
+
+
+# RFTestCase is base class for tests of all services that do radio.
+#
+# Subclasses/mixins should define RUcfg and CELLcfg to tune parameters for instantiated RU/CELL.
+class RFTestCase(AmariTestCase):
+    @classmethod
+    def requestAllShared(cls, imain):
+        @classmethod
+        def RU(i):
+            ru = cls.RUcfg(i)
+            ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
+            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
+            cls.requestShared(imain, 'RU%d' % i, ru)
+
+        @classmethod
+        def CELL(i, ctx):
+            cell = {
+                'ru': {
+                    'ru_type': 'ru_ref',
+                    'ru_ref':   cls.ref('RU%d' % i),
+                }
+            }
+            cell += cls.CELLcfg(i)
+            cell |= ctx
+            cls.requestShared(imain, 'RU%d.CELL' % i, cell)
+
+        RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5))
+        RU(2);  CELL(2, TDD | LTE( 40200)    | BW(10))
+        RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
+        RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
+
+    @classmethod
+    def RUcfg(i):
+        raise NotImplementedError
+
+    @classmethod
+    def CELLcfg(i):
+        raise NotImplementedError
+
+
 
 # ENBTestCase provides base class for unit-testing eNB service.
 #
@@ -151,19 +242,7 @@ def XN_PEER(xn_addr):
 #
 #     end-to-end testing complements unit-testing by verifying how LTE works
 #     for real on dedicated hardware test setup.
-class ENBTestCase(AmariTestCase):
-    maxDiff = None  # show full diff in test run log on an error
-
-    # stress correctness of ru_ref/cell_ref/... usage throughout all places in
-    # buildout code - special characters should not lead to wrong templates or
-    # code injection.
-    default_partition_reference = AmariTestCase.default_partition_reference + \
-                                  ' ${a:b}\n[c]\n;'
-
-    # XXX temp (faster during develop)
-    instance_max_retry = 1
-    report_max_retry = 1
-
+class ENBTestCase(RFTestCase):
     @classmethod
     def getInstanceSoftwareType(cls):
         return "enb"
@@ -183,14 +262,9 @@ class ENBTestCase(AmariTestCase):
         })}
 
     @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        inst = super().requestDefaultInstance(state=state)
-        cls.requestAllShared(inst)
-        return inst
-
-    # requestAllShared adds all shared instances of the testcase over imain.
-    @classmethod
     def requestAllShared(cls, imain):
+        super().requestAllShared(imain)
+
         def _(subref, ctx):
             return cls.requestShared(imain, subref, ctx)
         _('PEER4',      X2_PEER('44.1.1.1'))
@@ -205,58 +279,10 @@ class ENBTestCase(AmariTestCase):
                  tac = 0x321),
         ]
 
-        def RU(i):
-            ru = cls.RUcfg(i)
-            ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
-            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
-            cls.requestShared(imain, 'RU%d' % i, ru)
-
-        def CELL(i, ctx):
-            cell = {
-                'ru': {
-                    'ru_type': 'ru_ref',
-                    'ru_ref':   cls.ref('RU%d' % i),
-                }
-            }
-            cell.update(CENB(i, 0x10+i))
-            cell.update({'root_sequence_index': 100+i,
-                         'inactivity_timer':    1000+i})
-            cell.update(ctx)
-            cls.requestShared(imain, 'RU%d.CELL' % i, cell)
-
-        RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
-        RU(2);  CELL(2, TDD | LTE( 40200)    | BW(10) | TAC(0x102))
-        RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
-        RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
-
-    # requestShared requests one shared instance over imain with specified subreference and parameters.
-    @classmethod
-    def requestShared(cls, imain, subref, ctx):
-        cls.slap.request(
-            software_release=cls.getSoftwareURL(),
-            software_type=cls.getInstanceSoftwareType(),
-            partition_reference=cls.ref(subref),
-            # XXX StandaloneSlapOS rejects filter_kw with "Can only request on embedded computer"
-            #filter_kw = {'instance_guid': imain.getInstanceGuid()},
-            partition_parameter_kw={'_': json.dumps(ctx)},
-            shared=True)
-
-    # ref returns full reference of shared instance with given subreference.
-    #
-    # for example if reference of main instance is 'MAIN-INSTANCE'
-    #
-    #   ref('RU') = 'MAIN-INSTANCE.RU'
-    @classmethod
-    def ref(cls, subref):
-        return '%s.%s' % (cls.default_partition_reference, subref)
-
-    # ipath returns path for a file inside main instance.
-    @classmethod
-    def ipath(cls, path):
-        assert path[:1] != '/', path
-        return '%s/%s' % (cls.computer_partition_root_path, path)
-
-    # ---- tests ----
+    def CELLcfg(i):
+        return CENB(i, 0x10+i) | TAC(0x100+i) | {
+                 'root_sequence_index': 100+i,
+                 'inactivity_timer':    1000+i}
 
     # basic enb parameters
     def test_enb_conf_basic(t):
@@ -364,6 +390,42 @@ class ENBTestCase(AmariTestCase):
           },
         ])
 
+
+# UEsimTestCase provides base class for unit-testing UEsim service.
+#
+# It is similar to ENBTestCase but configures UE cells instead of eNB cells.
+class UEsimTestCase(AmariTestCase):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.ue_cfg = yamlpp_load(cls.ipath('etc/ue.cfg'))
+
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({
+            'testing':      True,
+        })}
+
+    @classmethod
+    def requestAllShared(cls, imain):
+        # XXX RU
+        # XXX CELL
+        # XXX UE
+
+        def CELL(i, ctx):
+            ucell = {}
+            ucell |= CUE
+            ucell |= ctx
+
+        RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
+
+
+
+# ---- RU mixins ----
 
 # SDR4 is mixin to verify SDR driver wrt all LTE/NR x FDD/TDD modes.
 class SDR4:
@@ -550,6 +612,10 @@ class TestENB_Lopcomm4   (ENBTestCase, Lopcomm4):       pass
 class TestENB_Sunwave4   (ENBTestCase, Sunwave4):       pass
 class TestENB_RUMultiType(ENBTestCase, RUMultiType):    pass
 
+class TestUEsim_SDR4       (UEsimTestCase, SDR4):           pass
+class TestUEsim_Lopcomm4   (UEsimTestCase, Lopcomm4):       pass
+class TestUEsim_Sunwave4   (UEsimTestCase, Sunwave4):       pass
+class TestUEsim_RUMultiType(UEsimTestCase, RUMultiType):    pass
 # XXX uesim - {sdr,lopcomm,sunwave}·2
 
 # XXX core-network - skip - verified by ors
