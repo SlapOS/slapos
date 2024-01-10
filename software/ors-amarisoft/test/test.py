@@ -152,7 +152,7 @@ def XN_PEER(xn_addr):
 #     end-to-end testing complements unit-testing by verifying how LTE works
 #     for real on dedicated hardware test setup.
 class ENBTestCase(AmariTestCase):
-    maxDiff = None  # see full diff in test run log on an error
+    maxDiff = None  # show full diff in test run log on an error
 
     # stress correctness of ru_ref/cell_ref/... usage throughout all places in
     # buildout code - special characters should not lead to wrong templates or
@@ -449,7 +449,7 @@ class TestENB_Lopcomm(ENBTestCase):
         #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
         _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
         _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
-        _(3, uctx('FDD',  'NR', 300300,  392300, 15000000, 2151500000, 1961500000, 13, 23))
+        _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
 #       _(4, uctx('TDD',  'NR', 470400,  470400, 20000000
 
 
