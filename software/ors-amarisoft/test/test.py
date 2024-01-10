@@ -144,8 +144,8 @@ class AmariTestCase(_AmariTestCase):
     default_partition_reference = _AmariTestCase.default_partition_reference + \
                                   ' ${a:b}\n[c]\n;'
 
-    # faster edit/try cycle during development
-    if 1:   # XXX disable by default
+    # faster edit/try cycle when enabled (handy during development)
+    if 0:
         instance_max_retry = 1
         report_max_retry = 1
 
