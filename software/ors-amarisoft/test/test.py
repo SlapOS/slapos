@@ -136,7 +136,7 @@ def XN_PEER(xn_addr):
 #   20+         rx_gain
 #   100+        root_sequence_index
 #   1000+       inactivity_timer
-#   xxx+i·100   arfcn
+#   xxx+i·100   dl_arfcn
 #   5,10,15,20  bandwidth
 #
 # this allows to quickly see offhand to which cell/ru and parameter a
@@ -544,6 +544,7 @@ class RUMultiType:
         ))
 
 
+# instantiate tests
 class TestENB_SDR4       (ENBTestCase, SDR4):           pass
 class TestENB_Lopcomm4   (ENBTestCase, Lopcomm4):       pass
 class TestENB_Sunwave4   (ENBTestCase, Sunwave4):       pass
