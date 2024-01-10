@@ -413,18 +413,68 @@ class UEsimTestCase(AmariTestCase):
         })}
 
     @classmethod
+    def CELLcfg(cls, i):
+        return CUE
+
+    @classmethod
     def requestAllShared(cls, imain):
-        # XXX RU
-        # XXX CELL
-        # XXX UE
+        super().requestAllShared(imain)
 
-        def CELL(i, ctx):
-            ucell = {}
-            ucell |= CUE
-            ucell |= ctx
+        def UE(i):
+            ue = {
+                'ue_type':  ('lte', 'nr') [(i-1) % 2],
+                'rue_addr': 'host%d'    % i,
+                'sim_algo': ('xor', 'milenage', 'tuak') [i-1],
+                'imsi':     '%015d'     % i,
+                'opc':      '%032x'     % i,
+                'amf':      '0x%04x'    % (0x9000+i),
+                'sqn':      '%012x'     % i
+                'k':        'FFFF%028x' % i,
+                'impi':     'impi%d@rapid.space' % i,
+            }
+            cls.requestShared(imain, 'UE%d' % i, ue)
 
-        RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
+        UE(1)
+        UE(2)
+        UE(3)
 
+    # cells
+    def test_uesim_conf_cell(t):
+        assertMatch(t, t.ue_cfg['cell_groups'], [
+          dict(
+            group_type='lte',
+            cells=[
+              dict( # CELL1
+                rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
+                dl_earfcn=100,    ul_earfcn=18100,
+                bandwidth=5,
+              ),
+              dict( # CELL2
+                rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
+                dl_earfcn=40200,  ul_earfcn=40200,
+                bandwidth=10,
+              ),
+            ]
+          ),
+          dict(
+            group_type='nr',
+            cells=[
+              dict( # CELL3
+                rf_port=2,           n_antenna_dl=4,      n_antenna_ul=2,
+                dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=74,
+                bandwidth=15,
+              ),
+              dict( # CELL4
+                rf_port=3,           n_antenna_dl=4,      n_antenna_ul=2,
+                dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=40,
+                bandwidth=20,
+              ),
+            ]
+          )
+        ])
+
+    # ue parameters
+    def test_uesim_ue(t):
 
 
 # ---- RU mixins ----
