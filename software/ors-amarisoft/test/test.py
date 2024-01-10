@@ -124,7 +124,7 @@ class AmariTestCase(_AmariTestCase):
     # stress correctness of ru_ref/cell_ref/... usage throughout all places in
     # buildout code - special characters should not lead to wrong templates or
     # code injection.
-    default_partition_reference = AmariTestCase.default_partition_reference + \
+    default_partition_reference = _AmariTestCase.default_partition_reference + \
                                   ' ${a:b}\n[c]\n;'
 
     # XXX temp (faster during develop)
@@ -428,7 +428,7 @@ class UEsimTestCase(AmariTestCase):
                 'imsi':     '%015d'     % i,
                 'opc':      '%032x'     % i,
                 'amf':      '0x%04x'    % (0x9000+i),
-                'sqn':      '%012x'     % i
+                'sqn':      '%012x'     % i,
                 'k':        'FFFF%028x' % i,
                 'impi':     'impi%d@rapid.space' % i,
             }
