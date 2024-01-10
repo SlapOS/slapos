@@ -226,8 +226,8 @@ class ENBTestCase(AmariTestCase):
 
         RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
         RU(2);  CELL(2, TDD | LTE( 40200)    | BW(10) | TAC(0x102))
-        RU(3);  CELL(3, FDD | NR (430300, 1) | BW(15))
-        RU(4);  CELL(4, TDD | NR (510400,41) | BW(20))
+        RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
+        RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
     # requestShared requests one shared instance over imain with specified subreference and parameters.
     @classmethod
@@ -287,7 +287,7 @@ class ENBTestCase(AmariTestCase):
         assertMatch(t, t.enb_cfg['nr_cell_list'],  [
           dict( # CELL3
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=430300,  ul_nr_arfcn=392300,  ssb_nr_arfcn=430330,  band=1,
+            dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=1,
             bandwidth=15,
             cell_id=0x3,         n_id_cell=0x13,      tac=NO,
             root_sequence_index=103,  inactivity_timer=1003,
@@ -298,7 +298,7 @@ class ENBTestCase(AmariTestCase):
                 period=5, dl_slots=7, dl_symbols=6, ul_slots=2, ul_symbols=4,
             )},
                                  rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=510400,  ul_nr_arfcn=510400,  ssb_nr_arfcn=510490,  band=41,
+            dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=41,
             bandwidth=20,
             cell_id=0x4,         n_id_cell=0x14,      tac=NO,
             root_sequence_index=104,  inactivity_timer=1004,
@@ -449,7 +449,8 @@ class TestENB_Lopcomm(ENBTestCase):
         #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
         _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
         _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
-        _(3, uctx('FDD',  'NR', 430300,  392300, 15000000, 2151500000, 1961500000, 13, 23))
+        _(3, uctx('FDD',  'NR', 300300,  392300, 15000000, 2151500000, 1961500000, 13, 23))
+#       _(4, uctx('TDD',  'NR', 470400,  470400, 20000000
 
 
     def _test_ru_cu_cfg(t, i, uctx):
