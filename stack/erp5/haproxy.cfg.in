@@ -18,11 +18,11 @@
  #       "stats-socket": "<file_path>",
  #
  #       #  IPv4 to listen on
- #       #  All backends from `backend-dict` will listen on this IP.
+ #       #  All frontends from `frontend-dict` will listen on this IP.
  #       "ipv4": "0.0.0.0",
  #
  #       #  IPv6 to listen on
- #       #  All backends from `backend-dict` will listen on this IP.
+ #       #  All frontends from `frontend-dict` will listen on this IP.
  #       "ipv6": "::1",
  #
  #       #  Certificate and key in PEM format. All ports will serve TLS using
@@ -41,34 +41,59 @@
  #       #  Path to use for HTTP health check on backends from `backend-dict`.
  #       "server-check-path": "/",
  #
+ #       #  The mapping of frontend, keyed by frontend name
+ #       "frontend-dict": {
+ #         "frontend-default": {
+ #            "port": 8080,
+ #            "client-cert-required": False,
+ #            "backend-name": "family-default",
+ #            "request-path-prepend": "/erp5",
+ #         }
+ #         "legacy-frontend-family-secure": {
+ #            "port": 8000,
+ #            "client-cert-required": False,
+ #            "backend-name": "family-secure",
+ #            "request-path-prepend": None, # None means do not rewrite the request path
+ #         }
+ #         "legacy-frontend-family-default": {
+ #            "port": 8002,
+ #            "client-cert-required": False,
+ #            "backend-name": "family-default",
+ #            "request-path-prepend": None, # None means do not rewrite the request path
+ #         }
+ #       }
  #       #  The mapping of backends, keyed by family name
  #       "backend-dict": {
- #          "family-secure": {
- #            (  8000, # port int
- #               True, # ssl_required bool
- #               None,  # timeout (in seconds) int | None
- #               [  # backends
- #                  '10.0.0.10:8001', # netloc str
- #                   1, # max_connection_count int
- #                   False, # is_web_dav bool
- #               ],
- #            ),
- #          },
- #          "family-default": {
- #            (  8002, # port int
- #               False, # ssl_required bool
- #               None,  # timeout (in seconds) int | None
- #               [  # backends
- #                  '10.0.0.10:8003', # netloc str
- #                   1, # max_connection_count int
- #                   False, # is_web_dav bool
- #               ],
- #            ),
+ #           "family-secure": {
+ #               "timeout": None,  # in seconds
+ #               "backend-list": [
+ #                   [
+ #                       '10.0.0.10:8001', # netloc str
+ #                        1, # max_connection_count int
+ #                        False, # is_web_dav bool
+ #                   ]
+ #               ]
+ #           },
+ #           "family-default": {
+ #               "timeout": None,  # in seconds
+ #               "backend-list": [
+ #                   [
+ #                      '10.0.0.10:8003', # netloc str
+ #                       1, # max_connection_count int
+ #                       False, # is_web_dav bool
+ #                   ],
+ #                   [
+ #                      '10.0.0.10:8004', # netloc str
+ #                       1, # max_connection_count int
+ #                       False, # is_web_dav bool
+ #                   ],
+ #               ]
  #          },
  #
  #       # The mapping of zope paths.
- #       # This is a Zope specific feature.
- #       # `enable_authentication` has same meaning as for `backend-list`.
+ #       # This is a Zope specific feature used only to provide https while running
+ #       # ERP5 "unit test" suite.
+ #       # `enable_authentication` has same meaning as for `backend-dict`.
  #       "zope-virtualhost-monster-backend-dict": {
  #          # {(ip, port): ( enable_authentication, {frontend_path: ( internal_url ) }, ) }
  #          ('[::1]', 8004): (
@@ -81,15 +106,20 @@
  #     }
  #
  #  This sample of `parameter_dict` will make haproxy listening to :
- #  From to `backend-list`:
- #  For "family-secure":
+ #  For "frontend-default":
+ #   - 0.0.0.0:8080 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #   - [::1]:8080 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #  accepting requests from any client and rewriting the path to add a Zope rewrite rule
+ #  so that the a request on https://0.0.0.0:8080/path is rewritten to serve a Zope object at
+ #  path /erp5/path , visible as /path.
+ #  For "legacy-frontend-family-secure":
  #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
  #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
  #  only accepting requests from clients providing a verified TLS certificate
  #  emitted by a CA from `ca-cert` and not revoked in `crl`.
- #  For "family-default":
- #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
- #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
+ #  For "legacy-frontend-family-default":
+ #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
  #  accepting requests from any client.
  #
  #  For both families, X-Forwarded-For header will be stripped unless
@@ -102,7 +132,7 @@
  #   with some VirtualHostMonster rewrite rules so zope writes URLs with
  #  [::1]:8004 as server name.
  #  For more details, refer to
- #  https://docs.zope.org/zope2/zope2book/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
+ #  https://zope.readthedocs.io/en/latest/zopebook/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
 -#}
 
 {% set server_check_path = parameter_dict['server-check-path'] -%}
@@ -148,26 +178,17 @@ defaults
 {% set family_path_routing_dict = parameter_dict['family-path-routing-dict'] %}
 {% set path_routing_list = parameter_dict['path-routing-list'] %}
 
-{% for name, (port, certificate_authentication, timeout, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
-listen family_{{ name }}
+
+{% for name, frontend in sorted(six.iteritems(parameter_dict['frontend-dict'])) %}
+listen {{ name }}
+
 {%-  if parameter_dict.get('ca-cert') -%}
-{%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional crt-ignore-err all' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
+{%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if frontend['client-cert-required'] else ' optional crt-ignore-err all' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
 {%-  else %}
 {%-    set ssl_auth = '' %}
 {%-  endif %}
-  bind {{ parameter_dict['ipv4'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
-  bind {{ parameter_dict['ipv6'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
-  cookie SERVERID rewrite
-  http-request set-header X-Balancer-Current-Cookie SERVERID
-
-{% if timeout %}
-  {#
-    Apply a slightly longer timeout than the zope timeout so that clients can see the
-    TimeoutReachedError from zope, that is a bit more informative than the 504 error
-    page from haproxy.
-  #}
-  timeout server {{ timeout + 3 }}s
-{%-  endif %}
+  bind {{ parameter_dict['ipv4'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
+  bind {{ parameter_dict['ipv6'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
 
   # remove X-Forwarded-For unless client presented a verified certificate
   http-request del-header X-Forwarded-For unless { ssl_c_verify 0 } { ssl_c_used 1 }
@@ -175,18 +196,43 @@ listen family_{{ name }}
   http-request del-header Remote-User
   http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if { ssl_c_verify 0 } { ssl_c_used 1 }
 
+  # reject invalid host header before using it in path
+  http-request deny deny_status 400 if { req.hdr(host) -m sub / }
+
   # logs
   capture request header Referer len 512
   capture request header User-Agent len 512
   log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta"
 
-{%   for outer_prefix, inner_prefix in family_path_routing_dict.get(name, []) + path_routing_list %}
+{% if frontend['request-path-prepend'] is not none %}
+  http-request replace-path ^/(.*) /VirtualHostBase/https/%[req.hdr(Host)]{{ frontend['request-path-prepend'] }}/VirtualHostRoot/\1
+{% endif %}
+
+{%   for outer_prefix, inner_prefix in family_path_routing_dict.get(frontend['backend-name'], []) + path_routing_list %}
   {%   set outer_prefix = outer_prefix.strip('/') -%}
   http-request replace-path ^(/+VirtualHostBase/+[^/]+/+[^/]+)/+VirtualHostRoot/+{% if outer_prefix %}{{ outer_prefix }}($|/.*){% else %}(.*){% endif %} \1/{{ inner_prefix.strip('/') }}/VirtualHostRoot/{% if outer_prefix %}_vh_{{ outer_prefix.replace('/', '/_vh_') }}{% endif %}\2
 {%  endfor %}
 
+  use_backend {{ frontend['backend-name'] }}
+{% endfor %}
+
+
+{% for name, backend in sorted(six.iteritems(parameter_dict['backend-dict'])) %}
+backend {{ name }}
+  cookie SERVERID rewrite
+  http-request set-header X-Balancer-Current-Cookie SERVERID
+
+{% if backend['timeout'] %}
+  {#
+    Apply a slightly longer timeout than the zope timeout so that clients can see the
+    TimeoutReachedError from zope, that is a bit more informative than the 504 error
+    page from haproxy.
+  #}
+  timeout server {{ backend['timeout'] + 3 }}s
+{%-  endif %}
+
 {%   set has_webdav = [] -%}
-{%   for address, connection_count, webdav in backend_list -%}
+{%   for address, connection_count, webdav in backend['backend-list'] -%}
 {%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
 {%     set server_name = name ~ '-' ~ loop.index0 %}
   server {{ server_name }} {{ address }} cookie {{ server_name }} check inter 3s rise 1 fall 2 maxqueue 5 maxconn {{ connection_count }}
