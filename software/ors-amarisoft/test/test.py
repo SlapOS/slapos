@@ -18,6 +18,12 @@
 
 # XXX core-network - skip - verified by ors
 
+# (*) here we verify only generated configuration because it is not possible to
+#     run Amarisoft software on the testnodes due to licensing restrictions.
+#
+#     end-to-end testing complements unit-testing by verifying how LTE works
+#     for real on dedicated hardware test setup.
+
 
 import os
 import json
@@ -174,6 +180,8 @@ class AmariTestCase(_AmariTestCase):
         return '%s/%s' % (cls.computer_partition_root_path, path)
 
 
+# ---- eNB + base class for similar services that do radio ----
+
 # RFTestCase4 is base class for tests of all services that do radio.
 #
 # It instantiates a service with several Radio Units and Cells attached.
@@ -201,6 +209,7 @@ class AmariTestCase(_AmariTestCase):
 # - RUcfg(i) to return primary parameters specific for i'th RU configuration
 #   like ru_type - to verify particular RU driver, sdr_dev, sfp_port and so on.
 # - CELLcfg(i) to tune parameters of i'th cell, for example cell_kind.
+# - .rf_cfg with loaded service config
 class RFTestCase4(AmariTestCase):
     @classmethod
     def requestAllShared(cls, imain):
@@ -226,17 +235,19 @@ class RFTestCase4(AmariTestCase):
         RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
+    def test_conf_txrx_gain(t):
+        # NOTE even though setting tx_gain/rx_gain does not make any difference
+        #      for CPRI case, we still do set it there for consistency. For the
+        #      reference: for CPRI case the real tx/rx gain is set in RU
+        #      configuration and is verified by RU tests.
+        t.assertEqual(t.rf_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        t.assertEqual(t.rf_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+
 
 # ENBTestCase4 provides base class for unit-testing eNB service.
 #
 # It instantiates enb with 4 Radio Units x 4 Cells and verifies generated
-# enb.cfg to match what is expected(*).
-#
-# (*) here we verify only generated configuration because it is not possible to
-#     run Amarisoft software on the testnodes due to licensing restrictions.
-#
-#     end-to-end testing complements unit-testing by verifying how LTE works
-#     for real on dedicated hardware test setup.
+# enb.cfg to match what is expected.
 class ENBTestCase4(RFTestCase4):
     @classmethod
     def getInstanceSoftwareType(cls):
@@ -399,7 +410,7 @@ class SDR4:
         }
 
     # radio units configuration
-    def test_enb_conf_ru(t):
+    def test_enb_conf_ru(t):    # XXX enb/ue ?
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
@@ -409,10 +420,6 @@ class SDR4:
           cpri_tx_delay=NO,
           cpri_tx_dbm=NO,
         ))
-
-        # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
-        t.assertEqual(t.rf_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
-        t.assertEqual(t.rf_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
 
 # Lopcomm4 is mixin to verify Lopcomm driver wrt all LTE/NR x FDD/TDD modes.
@@ -691,7 +698,6 @@ class TestUEsim_SDR4        (UEsimTestCase4, SDR4):         pass
 class TestUEsim_Lopcomm4    (UEsimTestCase4, Lopcomm4):     pass
 class TestUEsim_Sunwave4    (UEsimTestCase4, Sunwave4):     pass
 class TestUEsim_RUMultiType4(UEsimTestCase4, RUMultiType4): pass
-
 
 
 # ---- misc ----
