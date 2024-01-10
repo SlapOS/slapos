@@ -79,14 +79,13 @@ def CENB(cell_id, pci):
 
 # CUE indicates an UE-kind cell.
 def CUE(): ...  # XXX
+CUE = {'cell_kind': 'ue'}
 
 #  TAC returns basic parameters to indicate specified Traking Area Code.
 def TAC(tac):
     return {
         'tac':          '0x%x' % tac,
     }
-
-CUE = {'cell_kind': 'ue'}
 
 # LTE_PEER/NR_PEER return basic parameters to indicate an LTE/NR ENB-PEER-kind cell.
 def LTE_PEER(e_cell_id, pci, tac):
@@ -117,13 +116,13 @@ def XN_PEER(xn_addr):
         'xn_addr':      xn_addr,
     }
 
-# ----
+# --------
 
 
 # XXX doc
 # XXX approach is to test generated enb.cfg
 class ENBTestCase(AmariTestCase):
-    maxDiff = None  # want to see full diff in test run log on an error
+    maxDiff = None  # see full diff in test run log on an error
 
     # stress correctness of ru_ref/cell_ref/... usage throughout all places in
     # buildout code - special characters should not lead to wrong templates or
@@ -131,7 +130,7 @@ class ENBTestCase(AmariTestCase):
     default_partition_reference = AmariTestCase.default_partition_reference + \
                                   ' ${a:b}\n[c]\n;'
 
-    # XXX temp
+    # XXX temp (faster during develop)
     instance_max_retry = 1
     report_max_retry = 1
 
@@ -176,11 +175,29 @@ class ENBTestCase(AmariTestCase):
                  tac = 0x321),
         ]
 
-        # XXX doc 4 RU x 4 CELL  (4f,4t,5f,5t)      RUcfg
+        # 4 RU x 4 CELL are requested to cover all {TDD,FDD}·{LTE,NR}
+        #
+        # in requested instances mostly non-overlapping range of numbers are
+        # assigned to parameters according to the following scheme:
+        #
+        #   0+          cell_id
+        #   0x10+       pci
+        #   0x100+      tac
+        #   100+        root_sequence_index
+        #   1000+       inactivity_timer
+        #   -1+         tx_gain
+        #   -10+        rx_gain
+        #   xxx+i·100   arfcn
+        #   5,10,15,20  bandwidth
+        #
+        # this allows to quickly see offhand to which cell/ru and parameter a
+        # particular number belongs.
+        #
+        # XXX RUcfg
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
-            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
+            ru |= {'tx_gain': -(10+i), 'rx_gain':  -(20+i), 'txrx_active': 'INACTIVE'}
             cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
@@ -191,15 +208,15 @@ class ENBTestCase(AmariTestCase):
                 }
             }
             cell.update(CENB(i, 0x10+i))
-            cell.update({'root_sequence_index': 200+i,
+            cell.update({'root_sequence_index': 100+i,
                          'inactivity_timer':    1000+i})
             cell.update(ctx)
             cls.requestShared(imain, 'RU%d.CELL' % i, cell)
 
         RU(1);  CELL(1, FDD | LTE(   100)    | BW( 5) | TAC(0x101))
-        RU(2);  CELL(2, TDD | LTE( 36100)    | BW(10) | TAC(0x102))
-        RU(3);  CELL(3, FDD | NR (430100, 1) | BW(15))
-        RU(4);  CELL(4, TDD | NR (510100,41) | BW(20))
+        RU(2);  CELL(2, TDD | LTE( 40200)    | BW(10) | TAC(0x102))
+        RU(3);  CELL(3, FDD | NR (430300, 1) | BW(15))
+        RU(4);  CELL(4, TDD | NR (510400,41) | BW(20))
 
     # requestShared requests one shared instance over imain with specified subreference and parameters.
     @classmethod
@@ -228,7 +245,7 @@ class ENBTestCase(AmariTestCase):
         assert path[:1] != '/', path
         return '%s/%s' % (cls.computer_partition_root_path, path)
 
-    # --------
+    # ---- tests ----
 
     # basic enb parameters
     def test_enb_conf_basic(t):
@@ -245,24 +262,24 @@ class ENBTestCase(AmariTestCase):
             dl_earfcn=100,    ul_earfcn=18100,
             n_rb_dl=25,
             cell_id=0x1,      n_id_cell=0x11,   tac=0x101,
-            root_sequence_index=201,  inactivity_timer=1001,
+            root_sequence_index=101,  inactivity_timer=1001,
           ),
           dict( # CELL2
             uldl_config=2,    rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
-            dl_earfcn=36100,  ul_earfcn=36100,
+            dl_earfcn=40200,  ul_earfcn=40200,
             n_rb_dl=50,
             cell_id=0x2,      n_id_cell=0x12,   tac=0x102,
-            root_sequence_index=202,  inactivity_timer=1002,
+            root_sequence_index=102,  inactivity_timer=1002,
           ),
         ])
 
         assertMatch(t, t.enb_cfg['nr_cell_list'],  [
           dict( # CELL3
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=430100,  ul_nr_arfcn=392100,  ssb_nr_arfcn=429890,  band=1,
+            dl_nr_arfcn=430300,  ul_nr_arfcn=392300,  ssb_nr_arfcn=430330,  band=1,
             bandwidth=15,
             cell_id=0x3,         n_id_cell=0x13,      tac=NO,
-            root_sequence_index=203,  inactivity_timer=1003,
+            root_sequence_index=103,  inactivity_timer=1003,
           ),
 
           dict( # CELL4
@@ -270,10 +287,10 @@ class ENBTestCase(AmariTestCase):
                 period=5, dl_slots=7, dl_symbols=6, ul_slots=2, ul_symbols=4,
             )},
                                  rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=510100,  ul_nr_arfcn=510100,  ssb_nr_arfcn=510010,  band=41,
+            dl_nr_arfcn=510400,  ul_nr_arfcn=510400,  ssb_nr_arfcn=510490,  band=41,
             bandwidth=20,
             cell_id=0x4,         n_id_cell=0x14,      tac=NO,
-            root_sequence_index=204,  inactivity_timer=1004,
+            root_sequence_index=104,  inactivity_timer=1004,
           ),
         ])
 
@@ -282,21 +299,21 @@ class ENBTestCase(AmariTestCase):
     def test_enb_conf_ca(t):
         assertMatch(t, t.enb_cfg['cell_list'],  [
           { # CELL1
-            'scell_list':           [{'cell_id': 0x2}],                     # LTE + LTE
-            'en_dc_scg_cell_list':  [{'cell_id': 0x3}, {'cell_id': 0x4}],   # LTE + NR
+            'scell_list':           [{'cell_id': 2}],                   # LTE + LTE
+            'en_dc_scg_cell_list':  [{'cell_id': 3}, {'cell_id': 4}],   # LTE + NR
           },
           { # CELL2
-            'scell_list':           [{'cell_id': 0x1}],                     # LTE + LTE
-            'en_dc_scg_cell_list':  [{'cell_id': 0x3}, {'cell_id': 0x4}],   # LTE + NR
+            'scell_list':           [{'cell_id': 1}],                   # LTE + LTE
+            'en_dc_scg_cell_list':  [{'cell_id': 3}, {'cell_id': 4}],   # LTE + NR
           },
         ])
 
         assertMatch(t, t.enb_cfg['nr_cell_list'], [
           { # CELL3
-            'scell_list':           [{'cell_id': 0x4}],                     # NR  + NR
+            'scell_list':           [{'cell_id': 4}],                   # NR  + NR
           },
           { # CELL4
-            'scell_list':           [{'cell_id': 0x3}],                     # NR  + NR
+            'scell_list':           [{'cell_id': 3}],                   # NR  + NR
           },
         ])
 
@@ -306,16 +323,16 @@ class ENBTestCase(AmariTestCase):
         assertMatch(t, t.enb_cfg['cell_list'],  [
           { # CELL1
             'ncell_list':   [
-              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
-              dict(rat='nr',    cell_id=   0x03),                                             # CELL3
-              dict(rat='nr',    cell_id=   0x04),                                             # CELL4
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=40200, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=      3),                                             # CELL3
+              dict(rat='nr',    cell_id=      4),                                             # CELL4
             ] + t.ho_inter,
           },
           { # CELL2
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
-              dict(rat='nr',    cell_id=   0x03),                                             # CELL3
-              dict(rat='nr',    cell_id=   0x04),                                             # CELL4
+              dict(rat='nr',    cell_id=      3),                                             # CELL3
+              dict(rat='nr',    cell_id=      4),                                             # CELL4
             ] + t.ho_inter,
           },
         ])
@@ -323,15 +340,15 @@ class ENBTestCase(AmariTestCase):
           { # CELL3
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
-              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
-              dict(rat='nr',    cell_id=   0x04),                                             # CELL4
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=40200, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=      4),                                             # CELL4
             ] + t.ho_inter,
           },
           { # CELL4
             'ncell_list':   [
               dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
-              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=36100, tac=0x102), # CELL2
-              dict(rat='nr',    cell_id=   0x03),                                             # CELL3
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=40200, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=      3),                                             # CELL3
             ] + t.ho_inter,
           },
         ])
@@ -360,8 +377,8 @@ class TestENB_SDR(ENBTestCase):
         ))
 
         # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
-        t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
-        t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+        t.assertEqual(t.enb_cfg['tx_gain'], [ -1]*4 + [ -2]*4 + [ -3]*4 + [ -4]*4)
+        t.assertEqual(t.enb_cfg['rx_gain'], [-11]*2 + [-12]*2 + [-13]*2 + [-14]*2)
 
 
 # TestENB_Lopcomm verifies eNB wrt Lopcomm driver in all LTE/NR x FDD/TDD modes.
