@@ -172,18 +172,42 @@ class AmariTestCase(_AmariTestCase):
 
 # RFTestCase is base class for tests of all services that do radio.
 #
-# Subclasses/mixins should define RUcfg and CELLcfg to tune parameters for instantiated RU/CELL.
+# It instantiates a service with several Radio Units and Cells attached.
+#
+# 4 RU x 4 CELL are requested to verify all {FDD,TDD}·{LTE,NR} combinations.
+#
+# In requested instances mostly non-overlapping range of numbers are
+# assigned to parameters according to the following scheme:
+#
+#   0+          cell_id
+#   0x10+       pci
+#   0x100+      tac
+#   10+         tx_gain
+#   20+         rx_gain
+#   100+        root_sequence_index
+#   1000+       inactivity_timer
+#   xxx+i·100   dl_arfcn
+#   5,10,15,20  bandwidth
+#   XXX +ue
+#
+# this allows to quickly see offhand to which cell/ru and parameter a
+# particular number belongs to.
+#
+# Subclasses should define RUcfg(i) to return primary parameters
+# specific for i'th RU configuration like ru_type - to verify
+# particular RU driver, sdr_dev, sfp_port and so on.
+#
+# Similarly subclasses should define CELLcfg(i) to tune parameters of i'th
+# cell, for example cell_kind.
 class RFTestCase(AmariTestCase):
     @classmethod
     def requestAllShared(cls, imain):
-        @classmethod
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
             ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
             cls.requestShared(imain, 'RU%d' % i, ru)
 
-        @classmethod
         def CELL(i, ctx):
             cell = {
                 'ru': {
@@ -191,7 +215,7 @@ class RFTestCase(AmariTestCase):
                     'ru_ref':   cls.ref('RU%d' % i),
                 }
             }
-            cell += cls.CELLcfg(i)
+            cell |= cls.CELLcfg(i)
             cell |= ctx
             cls.requestShared(imain, 'RU%d.CELL' % i, cell)
 
@@ -214,28 +238,6 @@ class RFTestCase(AmariTestCase):
 #
 # It instantiates enb with several Radio Units and Cells and verifies generated
 # enb.cfg to match what is expected(*).
-#
-# 4 RU x 4 CELL are requested to verify all {FDD,TDD}·{LTE,NR} combinations.
-#
-# In requested instances mostly non-overlapping range of numbers are
-# assigned to parameters according to the following scheme:
-#
-#   0+          cell_id
-#   0x10+       pci
-#   0x100+      tac
-#   10+         tx_gain
-#   20+         rx_gain
-#   100+        root_sequence_index
-#   1000+       inactivity_timer
-#   xxx+i·100   dl_arfcn
-#   5,10,15,20  bandwidth
-#
-# this allows to quickly see offhand to which cell/ru and parameter a
-# particular number belongs to.
-#
-# Subclasses should define RUcfg(i) to return primary parameters
-# specific for i'th RU configuration like ru_type - to verify
-# particular RU driver, sdr_dev, sfp_port and so on.
 #
 # (*) here we verify only generated configuration because it is not possible to
 #     run Amarisoft software on the testnodes due to licensing restrictions.
