@@ -175,9 +175,9 @@ class ENBTestCase(AmariTestCase):
                  tac = 0x321),
         ]
 
-        # 4 RU x 4 CELL are requested to cover all {TDD,FDD}·{LTE,NR}
+        # 4 RU x 4 CELL are requested to verify all {TDD,FDD}·{LTE,NR} combinations.
         #
-        # in requested instances mostly non-overlapping range of numbers are
+        # In requested instances mostly non-overlapping range of numbers are
         # assigned to parameters according to the following scheme:
         #
         #   0+          cell_id
@@ -191,9 +191,11 @@ class ENBTestCase(AmariTestCase):
         #   5,10,15,20  bandwidth
         #
         # this allows to quickly see offhand to which cell/ru and parameter a
-        # particular number belongs.
+        # particular number belongs to.
         #
-        # XXX RUcfg
+        # Subclasses should define RUcfg(i) to return primary parameters
+        # specific for i'th RU configuration like ru_type - to verify
+        # particular RU driver, sdr_dev, sfp_port and so on.
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
