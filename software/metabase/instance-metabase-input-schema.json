@@ -3,7 +3,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "mb_password_complexity": {
+    "mb-password-complexity": {
       "title": "Password complexity",
       "description": "Check Metabase documentation for more details.",
       "type": "string",
@@ -14,7 +14,7 @@
         "strong"
       ]
     },
-    "mb_password_length": {
+    "mb-password-length": {
       "title": "Password length",
       "description": "Password length",
       "type": "integer",

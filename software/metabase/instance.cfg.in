@@ -31,8 +31,12 @@ slapparameter-dict = $${slap-configuration:configuration}
 home = $${buildout:directory}
 init =
   default_parameters = options.get('slapparameter-dict')
-  options['mb_password_complexity'] = default_parameters.get('mb_password_complexity', 'normal')
-  options['mb_password_length'] = default_parameters.get('mb_password_length', '6')
+  options['mb-password-complexity'] = default_parameters.get(
+    'mb-password-complexity',
+      default_parameters.get('mb_password_complexity', 'normal'))
+  options['mb-password-length'] = default_parameters.get(
+    'mb-password-length',
+      default_parameters.get('mb_password_length', '6'))
 
 [metabase-instance]
 recipe = slapos.cookbook:wrapper
@@ -51,8 +55,8 @@ environment =
   MB_DB_USER=$${postgresql:superuser}
   MB_DB_PASS=$${postgresql:password}
   MB_DB_HOST=$${postgresql:ipv4}
-  MB_PASSWORD_COMPLEXITY=$${slap-parameter:mb_password_complexity}
-  MB_PASSWORD_LENGTH=$${slap-parameter:mb_password_length}
+  MB_PASSWORD_COMPLEXITY=$${slap-parameter:mb-password-complexity}
+  MB_PASSWORD_LENGTH=$${slap-parameter:mb-password-length}
   FONTCONFIG_FILE=$${fontconfig-conf:output}
   JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id} -Djava.io.tmpdir="$${directory:tmp}"
 hash-existing-files =
