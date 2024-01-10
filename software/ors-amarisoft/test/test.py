@@ -794,9 +794,9 @@ class TestAssertMatch(unittest.TestCase):
             (n, {'a': 1, 'b': 2}, {'a': NO, 'b': 2}),
             (y, {'a': 1, 'b': 2}, {         'b': 2}),
             (y, {'a': [1, 2, {'aa': 33, 'bb': 44}]},
-                {'a': [1, 2, {'aa': 33, 'cc': NO}]},
+                {'a': [1, 2, {'aa': 33, 'cc': NO}]}),
             (n, {'a': [1, 2, {'aa': 33, 'bb': 44}]},
-                {'a': [1, 2, {'aa': 35, 'cc': NO}]},
+                {'a': [1, 2, {'aa': 35, 'cc': NO}]}),
         ]
 
         for mok, v, vok in testv:
