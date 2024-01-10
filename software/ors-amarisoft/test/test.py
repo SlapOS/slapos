@@ -224,13 +224,15 @@ class RFTestCase(AmariTestCase):
         RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
+    """
     @classmethod
-    def RUcfg(i):
+    def RUcfg(cls, i):
         raise NotImplementedError
 
     @classmethod
-    def CELLcfg(i):
+    def CELLcfg(cls, i):
         raise NotImplementedError
+    """
 
 
 
