@@ -314,7 +314,7 @@ class CaucaseCertificate(ManagedResource):
     )
     return os.path.join(software_release_root_path, 'bin', 'caucase')
 
-  def request(self, common_name: str, caucase: CaucaseService) -> None:
+  def request(self, common_name: str, caucase: CaucaseService, san: x509.SubjectAlternativeName=None) -> None:
     """Generate certificate and request signature to the caucase service.
 
     This overwrite any previously requested certificate for this instance.
@@ -345,11 +345,10 @@ class CaucaseCertificate(ManagedResource):
                 NameOID.COMMON_NAME,
                 common_name,
             ),
-        ])).sign(
-            key,
-            hashes.SHA256(),
-            default_backend(),
-        )
+        ]))
+    if san:
+      csr = csr.add_extension(san, critical=True)
+    csr = csr.sign(key, hashes.SHA256(), default_backend())
     with open(self.csr_file, 'wb') as f:
       f.write(csr.public_bytes(serialization.Encoding.PEM))
 

@@ -388,13 +388,13 @@ return =
 {%   set request_frontend_name = 'request-frontend-' ~ frontend_name -%}
 {%   set frontend_software_url = frontend_parameters.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
 {%   set frontend_software_type = frontend_parameters.get('software-type', '') -%}
+{%   do frontend_parameters.__setitem__('internal-path', frontend_parameters.get('internal-path', '/%(site-id)s') % {'site-id': site_id}) %}
 {%   set frontend_instance_parameters = frontend_parameters.get('instance-parameters', {}) -%}
-{%   if frontend_instance_parameters.setdefault('type', 'zope') == 'zope' -%}
+{%   if frontend_instance_parameters.setdefault('type', '') == '' -%}
 {%     do frontend_instance_parameters.setdefault('authenticate-to-backend', 'true') -%}
 {%     set zope_family_name = frontend_parameters['zope-family'] -%}
 {%     do assert(zope_family_name in zope_family_dict, 'Unknown family %s for frontend %s' % (zope_family_name, frontend_name)) -%}
-{%     do frontend_instance_parameters.setdefault('url', '${request-balancer:connection-' ~ zope_family_name ~ '-v6}') -%}
-{%     do frontend_instance_parameters.setdefault('path', frontend_parameters.get('internal-path', '/%(site-id)s') % {'site-id': site_id}) -%}
+{%     do frontend_instance_parameters.setdefault('url', '${request-balancer:connection-url-backend-' ~ frontend_name ~ '}') -%}
 {%   endif %}
 [{{ request_frontend_name }}]
 <= request-frontend-base
@@ -446,6 +446,9 @@ config-allow-redirects = 0
 {%     do balancer_ret_dict.__setitem__(family + '-test-runner-url-list', False) -%}
 {%   endif -%}
 {% endfor -%}
+{% for frontend_name in frontend_parameter_dict -%}
+{%   do balancer_ret_dict.__setitem__('url-backend-' ~ frontend_name, False) -%}
+{% endfor -%}
 {% set balancer_key_config_dict = {
   'monitor-passwd': 'monitor-htpasswd:passwd',
 } -%}
@@ -467,6 +470,7 @@ config-allow-redirects = 0
   config_key='balancer',
   config={
     'zope-family-dict': zope_family_parameter_dict,
+    'frontend-parameter-dict': frontend_parameter_dict,
     'ssl-authentication-dict': ssl_authentication_dict,
     'timeout-dict': balancer_timeout_dict,
     'apachedex-promise-threshold': monitor_dict.get('apachedex-promise-threshold', 70),

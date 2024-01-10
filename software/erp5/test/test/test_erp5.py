@@ -60,15 +60,8 @@ class TestPublishedURLIsReachableMixin:
   """Mixin that checks that default page of ERP5 is reachable.
   """
 
-  def _checkERP5IsReachable(self, base_url, site_id, verify):
-    # We access ERP5 trough a "virtual host", which should make
-    # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
-    # as base.
-    virtual_host_url = urllib.parse.urljoin(
-        base_url,
-        '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
-        .format(site_id))
-
+  @contextlib.contextmanager
+  def requestSession(self, base_url):
     # What happens is that instantiation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
     # instantiated, but zope is still busy creating the site and haproxy replies
@@ -84,7 +77,32 @@ class TestPublishedURLIsReachableMixin:
                   total=20,
                   backoff_factor=.5,
                   status_forcelist=(404, 500, 503))))
+      yield session
 
+  def _checkERP5IsReachableWithVirtualHost(self, url, verify):
+    with self.requestSession(urllib.parse.urljoin(url, '/')) as session:
+      r = session.get(url, verify=verify, allow_redirects=True)
+      # access on / are redirected to login form
+      self.assertTrue(r.url.endswith('/login_form'))
+      self.assertEqual(r.status_code, requests.codes.ok)
+      self.assertIn("ERP5", r.text)
+
+      # host header is used in redirected URL. The URL is always https
+      r = session.get(url, verify=verify, allow_redirects=False, headers={'Host': 'www.example.com'})
+      self.assertEqual(r.headers.get('Location'), 'https://www.example.com/login_form')
+      r = session.get(url, verify=verify, allow_redirects=False, headers={'Host': 'www.example.com:1234'})
+      self.assertEqual(r.headers.get('Location'), 'https://www.example.com:1234/login_form')
+
+  def _checkERP5IsReachableWithoutVirtualHost(self, base_url, site_id, verify):
+    # We access ERP5 trough a "virtual host", which should make
+    # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
+    # as base.
+    virtual_host_url = urllib.parse.urljoin(
+        base_url,
+        '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
+        .format(site_id))
+
+    with self.requestSession(base_url) as session:
       r = session.get(virtual_host_url, verify=verify, allow_redirects=False)
       self.assertEqual(r.status_code, requests.codes.found)
       # access on / are redirected to login form, with virtual host preserved
@@ -119,7 +137,7 @@ class TestPublishedURLIsReachableMixin:
     """Tests the IPv6 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
-    self._checkERP5IsReachable(
+    self._checkERP5IsReachableWithoutVirtualHost(
       param_dict['family-default-v6'],
       param_dict['site-id'],
       self._getCaucaseServiceCACertificate(),
@@ -129,7 +147,7 @@ class TestPublishedURLIsReachableMixin:
     """Tests the IPv4 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
-    self._checkERP5IsReachable(
+    self._checkERP5IsReachableWithoutVirtualHost(
       param_dict['family-default'],
       param_dict['site-id'],
       self._getCaucaseServiceCACertificate(),
@@ -139,9 +157,8 @@ class TestPublishedURLIsReachableMixin:
     """Tests the frontend URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
-    self._checkERP5IsReachable(
+    self._checkERP5IsReachableWithVirtualHost(
       param_dict['url-frontend-default'],
-      param_dict['site-id'],
       self._getCaucaseServiceCACertificate(),
     )
 
@@ -157,9 +174,8 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
                            '.installed-switch-softwaretype.cfg')) as f:
       installed = zc.buildout.configparser.parse(f, 'installed')
     self.assertEqual(
-      installed['request-frontend-default']['config-type'], 'zope')
-    self.assertEqual(
-      installed['request-frontend-default']['config-path'], '/erp5')
+      installed['request-frontend-default']['config-type'], '')
+    self.assertNotIn('config-path', installed['request-frontend-default'])
     self.assertEqual(
       installed['request-frontend-default']['config-authenticate-to-backend'], 'true')
     self.assertEqual(installed['request-frontend-default']['shared'], 'true')
@@ -310,8 +326,8 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     # frontend pointing to this port.
     self.assertEqual(urllib.parse.urlparse(param_dict['family-family1']).port, 2152)
     self.assertEqual(urllib.parse.urlparse(param_dict['family-family1-v6']).port, 2152)
-    self.assertEqual(urllib.parse.urlparse(param_dict['family-family2']).port, 2154)
-    self.assertEqual(urllib.parse.urlparse(param_dict['family-family2-v6']).port, 2154)
+    self.assertEqual(urllib.parse.urlparse(param_dict['family-family2']).port, 2155)
+    self.assertEqual(urllib.parse.urlparse(param_dict['family-family2-v6']).port, 2155)
 
   def test_published_test_runner_url(self):
     # each family's also a list of test test runner URLs, by default 3 per family
@@ -390,6 +406,8 @@ class TestBalancerPortsStable(ERP5InstanceTestCase):
 
   def test_same_balancer_ports_when_adding_zopes_or_frontends(self):
     param_dict_before = self.getRootPartitionConnectionParameterDict()
+    balancer_param_dict_before = json.loads(
+      self.getComputerPartition('balancer').getConnectionParameter('_'))
 
     # re-request with one more frontend and one more backend, that are before
     # the existing ones when sorting alphabetically
@@ -410,10 +428,15 @@ class TestBalancerPortsStable(ERP5InstanceTestCase):
     rerequest()
     self.slap.waitForInstance(max_retry=10)
     param_dict_after = json.loads(rerequest().getConnectionParameterDict()['_'])
+    balancer_param_dict_after = json.loads(
+      self.getComputerPartition('balancer').getConnectionParameter('_'))
+
     self.assertEqual(param_dict_before['family-zzz-v6'], param_dict_after['family-zzz-v6'])
     self.assertEqual(param_dict_before['url-frontend-zzz'], param_dict_after['url-frontend-zzz'])
+    self.assertEqual(balancer_param_dict_before['url-backend-zzz'], balancer_param_dict_after['url-backend-zzz'])
     self.assertNotEqual(param_dict_before['family-zzz-v6'], param_dict_after['family-aaa-v6'])
     self.assertNotEqual(param_dict_before['url-frontend-zzz'], param_dict_after['url-frontend-aaa'])
+    self.assertNotEqual(balancer_param_dict_before['url-backend-zzz'], balancer_param_dict_after['url-backend-aaa'])
 
 
 class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -476,14 +499,15 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     self.assertNotIn('runTestSuite', bin_programs)
 
   def test_no_haproxy_testrunner_port(self):
-    # Haproxy only listen on two ports, there is no haproxy ports allocated for test runner
+    # Haproxy only listen on two ports for frontend, two ports for legacy entry points
+    # and there is no haproxy ports allocated for test runner
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
     process_info, = (p for p in all_process_info if p['name'].startswith('haproxy'))
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
-        sorted([socket.AF_INET, socket.AF_INET6]),
+        sorted([socket.AF_INET, socket.AF_INET6, socket.AF_INET, socket.AF_INET6]),
         sorted(
             c.family
             for c in haproxy_worker_process.connections()
@@ -1356,10 +1380,13 @@ class TestFrontend(ERP5InstanceTestCase):
             },
             "web": {
               "family": "web",
+              "port-base": 2300,
             },
             "activities": {
               # this family will not have frontend
-              "family": "activities"
+              "family": "activities",
+              "port-base": 2400,
+
             },
           },
           "frontend": {
@@ -1368,7 +1395,7 @@ class TestFrontend(ERP5InstanceTestCase):
             },
             "website": {
               "zope-family": "web",
-              "internal-path": "/%(site-id)s/web_site_module/my_website/",
+              "internal-path": "/%(site-id)s/web_site_module/my_website",
               "instance-parameters": {
                 # some extra frontend parameters
                 "enable_cache": "true",
@@ -1396,19 +1423,20 @@ class TestFrontend(ERP5InstanceTestCase):
 
   def test_request_parameters(self):
     param_dict = self.getRootPartitionConnectionParameterDict()
+    balancer_param_dict = json.loads(
+      self.getComputerPartition('balancer').getConnectionParameter('_'))
 
     with open(os.path.join(self.computer_partition_root_path,
                            '.installed-switch-softwaretype.cfg')) as f:
       installed = zc.buildout.configparser.parse(f, 'installed')
     self.assertEqual(
-      installed['request-frontend-backoffice']['config-type'], 'zope')
+      installed['request-frontend-backoffice']['config-type'], '')
     self.assertEqual(
       installed['request-frontend-backoffice']['shared'], 'true')
     self.assertEqual(
       installed['request-frontend-backoffice']['config-url'],
-      param_dict['family-default-v6'])
-    self.assertEqual(
-      installed['request-frontend-backoffice']['config-path'], '/erp5')
+      balancer_param_dict['url-backend-backoffice'])
+    self.assertNotIn('config-path', installed['request-frontend-backoffice'])
     self.assertEqual(
       installed['request-frontend-backoffice']['sla-computer_guid'],
       'COMP-1234')
@@ -1421,7 +1449,7 @@ class TestFrontend(ERP5InstanceTestCase):
       param_dict['url-frontend-backoffice'])
 
     self.assertEqual(
-      installed['request-frontend-website']['config-type'], 'zope')
+      installed['request-frontend-website']['config-type'], '')
     # no SLA by default
     self.assertFalse([k for k in installed['request-frontend-website'] if k.startswith('sla-')])
     # instance parameters are propagated
@@ -1429,10 +1457,8 @@ class TestFrontend(ERP5InstanceTestCase):
       installed['request-frontend-website']['config-enable_cache'], 'true')
     self.assertEqual(
       installed['request-frontend-website']['config-url'],
-      param_dict['family-web-v6'])
-    self.assertEqual(
-      installed['request-frontend-website']['config-path'],
-      '/erp5/web_site_module/my_website/')
+      balancer_param_dict['url-backend-website'])
+    self.assertNotIn('config-path', installed['request-frontend-website'])
     self.assertEqual(
       installed['request-frontend-website']['connection-secure_access'],
       param_dict['url-frontend-website'])
@@ -1440,6 +1466,32 @@ class TestFrontend(ERP5InstanceTestCase):
     # no frontend was requested for activities family
     self.assertNotIn('request-frontend-activities', installed)
     self.assertNotIn('url-frontend-activities', param_dict)
+    self.assertNotIn('url-backend-activities', balancer_param_dict)
+
+  def test_path_virtualhost(self):
+    balancer_param_dict = json.loads(
+      self.getComputerPartition('balancer').getConnectionParameter('_'))
+    found_line = False
+    retries = 10
+    while retries:
+      requests.get(balancer_param_dict['url-backend-website'], verify=False)
+      for logfile in glob.glob(os.path.join(self.getComputerPartitionPath('zope-web'), 'var/log/*Z2.log')):
+        with open(logfile) as f:
+          for line in f:
+            if 'GET /VirtualHost' in line:
+              found_line = True
+              break
+      if found_line:
+        break
+      time.sleep(1)
+      retries = retries - 1
+    self.assertTrue(found_line)
+
+    percent_encoded_netloc = urllib.parse.quote(
+      urllib.parse.urlparse(
+        balancer_param_dict['url-backend-website']).netloc)
+    self.assertIn(
+      f'/VirtualHostBase/https/{percent_encoded_netloc}/erp5/web_site_module/my_website/VirtualHostRoot/ HTTP', line)
 
 
 class TestDefaultFrontendWithZopePartitionDict(ERP5InstanceTestCase):
@@ -1468,12 +1520,15 @@ class TestDefaultFrontendWithZopePartitionDict(ERP5InstanceTestCase):
 
   def test_frontend_requested(self):
     param_dict = self.getRootPartitionConnectionParameterDict()
+    balancer_param_dict = json.loads(
+      self.getComputerPartition('balancer').getConnectionParameter('_'))
+
     with open(os.path.join(self.computer_partition_root_path,
                            '.installed-switch-softwaretype.cfg')) as f:
       installed = zc.buildout.configparser.parse(f, 'installed')
     self.assertEqual(
       installed['request-frontend-default']['config-url'],
-      param_dict['family-backoffice-v6'])
+      balancer_param_dict['url-backend-default'])
 
     requests.get(
       param_dict['url-frontend-default'],

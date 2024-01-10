@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "definitions": {
     "routing-rule-list": {
-      "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given. This requires the path received from the outside world (typically: frontend) to have its root correspond to Zope's root (for frontend: 'path' parameter must be empty), with the customary VirtualHostMonster construct (for frontend: 'type' must be 'zope').",
+      "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given, after 'internal-path' from 'frontend' parameter. This also supports legacy frontends, using Rapid CDN with \"zope\" type.",
       "type": "array",
       "default": [
         [

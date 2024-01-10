@@ -257,7 +257,8 @@ init =
     port_dict[name] = port
     return port
 
-  haproxy_dict = {}
+  backend_dict = {}
+  frontend_dict = {}
   zope_virtualhost_monster_backend_dict = {}
   for family_name, parameter_id_list in sorted(
       six.iteritems(slapparameter_dict['zope-family-dict'])):
@@ -290,17 +291,33 @@ init =
     # a port for monitoring promise (which port is not important, the promise checks
     # that haproxy is healthy enough to listen on a port)
     options['haproxy-promise-port'] = legacy_port
-    haproxy_dict[family_name] = (
-      legacy_port,
-      ssl_authentication,
-      slapparameter_dict['timeout-dict'][family_name],
-      zope_family_address_list,
-    )
+    frontend_dict['legacy-frontend-' + family_name] = {
+      'port': legacy_port,
+      'client-cert-required': ssl_authentication,
+      'backend-name': family_name,
+      'request-path-prepend': None,
+    }
+    backend_dict[family_name] = {
+      'timeout': slapparameter_dict['timeout-dict'][family_name],
+      'backend-list': zope_family_address_list,
+    }
     external_scheme = 'webdavs' if any(a[2] for a in zope_family_address_list) else 'https'
     self.buildout['publish'][family_name] = "{external_scheme}://{ipv4}:{legacy_port}".format(**locals())
     self.buildout['publish'][family_name + "-v6"] = "{external_scheme}://[{ipv6}]:{legacy_port}".format(**locals())
 
-  options['backend-dict'] = haproxy_dict
+  for frontend_name, frontend in six.iteritems(slapparameter_dict['frontend-parameter-dict']):
+    frontend_port = get_port('frontend-' + frontend_name)
+    family_name = frontend['zope-family']
+    frontend_dict['frontend-' + frontend_name] = {
+      'port': frontend_port,
+      'client-cert-required': slapparameter_dict['ssl-authentication-dict'][family_name],
+      'backend-name': family_name,
+      'request-path-prepend': frontend['internal-path'],
+    }
+    self.buildout['publish']['url-backend-' + frontend_name] = "https://[{ipv6}]:{frontend_port}".format(**locals())
+
+  options['backend-dict'] = backend_dict
+  options['frontend-dict'] = frontend_dict
   options['zope-virtualhost-monster-backend-dict'] = zope_virtualhost_monster_backend_dict
 
   if port_dict != previous_port_dict:
