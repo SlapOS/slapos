@@ -127,9 +127,10 @@ class AmariTestCase(_AmariTestCase):
     default_partition_reference = _AmariTestCase.default_partition_reference + \
                                   ' ${a:b}\n[c]\n;'
 
-    # XXX temp (faster during develop)
-    instance_max_retry = 1
-    report_max_retry = 1
+    # faster edit/try cycle during development
+    if 1:   # XXX disable yby default
+        instance_max_retry = 1
+        report_max_retry = 1
 
     @classmethod
     def requestDefaultInstance(cls, state='started'):
