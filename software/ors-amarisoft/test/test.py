@@ -424,15 +424,40 @@ class TestENB_Lopcomm(ENBTestCase):
 
     # RU configuration in cu_config.xml
     def test_ru_cu_cfg(t):
+        def uctx(rf_mode, cell_type, dl_arfcn, ul_arfcn, bw, dl_freq, ul_freq, tx_gain, rx_gain):
+            return {
+                'tx-array-carriers': {
+                  'rw-duplex-scheme':              rf_mode,
+                  'rw-type':                       cell_type,
+                  'absolute-frequency-center':    '%d' % dl_arfcn,
+                  'center-of-channel-bandwidth':  '%d' % dl_freq,
+                  'channel-bandwidth':            '%d' % bw,
+                  'gain':                         '%d' % tx_gain,
+                  'active':                       'INACTIVE',
+                },
+                'rx-array-carriers': {
+                  'absolute-frequency-center':    '%d' % ul_arfcn,
+                  'center-of-channel-bandwidth':  '%d' % ul_freq,
+                  'channel-bandwidth':            '%d' % bw,
+                  # XXX no rx_gain
+                  'active':                       'INACTIVE',
+                },
+            }
 
-        def CU(i): # -> cu_config.xml of RU i
-            cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
-            with open(cu_xml, 'r') as f:
-                cu = f.read()
-            return xmltodict.parse(cu)
+        _ = t._test_ru_cu_cfg
 
-        cu1 = CU(1)
-        assertMatch(t, cu1, {
+        #       rf_mode  ctype  dl_arfcn ul_arfcn  bw      dl_freq     ul_freq     txg rxg
+        _(1, uctx('FDD', 'LTE',   100,    18100,  5000000, 2120000000, 1930000000, 11, 21))
+        _(2, uctx('TDD', 'LTE', 40200,    40200, 10000000, 2551000000, 2551000000, 12, 22))
+
+
+    def _test_ru_cu_cfg(t, i, uctx):
+        cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
+        with open(cu_xml, 'r') as f:
+            cu = f.read()
+        cu = xmltodict.parse(cu)
+
+        assertMatch(t, cu, {
           'xc:config': {
             'user-plane-configuration': {
               'tx-endpoints': [
@@ -459,24 +484,7 @@ class TestENB_Lopcomm(ENBTestCase):
                 {'name': 'RXA0P00C01',   'rx-endpoint': 'RXA0P00C01'},
                 {'name': 'PRACH0P00C01', 'rx-endpoint': 'PRACH0P00C01'},
               ],
-              # CELL1  FDD LTE(100) BW(5)
-              'tx-array-carriers': {
-                'rw-duplex-scheme':   'FDD',
-                'rw-type':            'LTE',
-                'absolute-frequency-center':    '100',
-                'center-of-channel-bandwidth':  '2120000000',
-                'channel-bandwidth':               '5000000',
-                'gain':   '11',
-                'active': 'INACTIVE',
-              },
-              'rx-array-carriers': {
-                'absolute-frequency-center':      '18100',
-                'center-of-channel-bandwidth':    '1930000000',
-                'channel-bandwidth':                 '5000000',
-                # XXX no <gain>ru.rx_gain</gain>  TODO(lu.xu): clarify this with Lopcomm
-                'active': 'INACTIVE',
-              },
-            }
+            } | uctx
           }
         })
 
