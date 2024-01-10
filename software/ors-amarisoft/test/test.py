@@ -808,7 +808,7 @@ class TestAssertMatch(unittest.TestCase):
 
 
 # hide base TestCases from unittest discovery so that their test_ methods are
-# run only on leaf TestCases.
+# run only on leaf test classes.
 def __dir__():
     d = list(sorted(globals().keys()))
     abstract = {'AmariTestCase', 'RFTestCase4', 'ENBTestCase4', 'UEsimTestCase4'}
