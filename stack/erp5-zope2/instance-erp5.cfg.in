@@ -440,7 +440,7 @@ software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstanc
 {{ root_common.sla('frontend', True) }}
 shared = true
 {% set config_dict = {
-  'type': 'zope',
+  'type': '',
 } -%}
 {%   if frontend_dict.get('domain') -%}
 {%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
