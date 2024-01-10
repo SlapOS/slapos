@@ -197,7 +197,7 @@ class ENBTestCase(AmariTestCase):
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
-            ru |= {'tx_gain': -(10+i), 'rx_gain':  -(20+i), 'txrx_active': 'INACTIVE'}
+            ru |= {'tx_gain': -(0+i), 'rx_gain':  -(10+i), 'txrx_active': 'INACTIVE'}
             cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
