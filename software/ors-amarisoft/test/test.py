@@ -744,7 +744,6 @@ def _matchCollect(v, vok):
     if type(v) is dict:
         v_ = {}
         for k in vok:
-            #v_[k] = v.get(k, NO)
             v_[k] = _matchCollect(v.get(k, NO), vok[k])
         return v_
     if type(v) is list:
