@@ -502,9 +502,9 @@ class Sunwave4:
                 'sfp_port': i,
                 'mult':     5,
                 'mapping':  'bf1',
-                'rx_delay': 40+i,
-                'tx_delay': 50+i,
-                'tx_dbm':   60+i
+                'rx_delay': 140+i,
+                'tx_delay': 150+i,
+                'tx_dbm':   160+i
             },
             'mac_addr':     '00:FA:FE:00:00:%02x' % i,
         }
@@ -515,101 +515,40 @@ class Sunwave4:
           args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='bf1,bf1,bf1,bf1',
           cpri_mult='5,5,5,5',
-          cpri_rx_delay='41,42,43,44',
-          cpri_tx_delay='51,52,53,54',
-          cpri_tx_dbm='61,62,63,64',
+          cpri_rx_delay='141,142,143,144',
+          cpri_tx_delay='151,152,153,154',
+          cpri_tx_dbm='161,162,163,164',
+        ))
+
+# RUMultiType is mixin to verify that different RU types can be used at the same time.
+class RUMultiType:
+    # ENB does not support mixing SDR + CPRI - verify only with CPRI-based units
+    # see https://support.amarisoft.com/issues/26021 for details
+    @classmethod
+    def RUcfg(cls, i):
+        assert 1 <= i <= 4, i
+        if i in (1,2):
+            return Lopcomm4.RUcfg(i)
+        else:
+            return Sunwave4.RUcfg(i)
+
+    # radio units configuration in enb.cfg
+    def test_enb_conf_ru(t):
+        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+          args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
+          cpri_mapping='hw,hw,bf1,bf1',
+          cpri_mult='4,4,5,5',
+          cpri_rx_delay='41,42,143,144',
+          cpri_tx_delay='51,52,153,154',
+          cpri_tx_dbm='61,62,163,164',
         ))
 
 
-class TestENB_SDR    (ENBTestCase, SDR4):       pass
-class TestENB_Lopcomm(ENBTestCase, Lopcomm4):   pass
-class TestENB_Sunwave(ENBTestCase, Sunwave4):   pass
+class TestENB_SDR4       (ENBTestCase, SDR4):           pass
+class TestENB_Lopcomm4   (ENBTestCase, Lopcomm4):       pass
+class TestENB_Sunwave4   (ENBTestCase, Sunwave4):       pass
+class TestENB_RUMultiType(ENBTestCase, RUMultiType):    pass
 
-# XXX not possible to test Lopcomm nor Sunwave because on "slapos standalone" there is no slaptap.
-# XXX -> possible  - adjust SR with testing=True workaround
-# XXX explain ENB does not support mixing SDR + CPRI
-class _TestENB_CPRI(ENBTestCase):
-    #   lo  x {4t,4f,5t,5f}
-    #   sw  x {4t,4f,5t,5f}
-
-    @classmethod
-    def requestAllShared(cls, imain):
-        super().requestAllShared(imain)
-
-        # Lopcomm x {4t,4f,5t,5f}
-        def LO(i):
-            return {
-                'ru_type':      'lopcomm',
-                'ru_link_type': 'cpri',
-                'cpri_link':    {
-                    'sdr_dev':  0,
-                    'sfp_port': 1 + i,
-                    'mult':     4,
-                    'mapping':  'hw',
-                    'rx_delay': 25,
-                    'tx_delay': 14,
-                    'tx_dbm':   63
-                },
-                'mac_addr':     '00:0A:45:00:00:%02x' % i,
-                'tx_gain':      -11,
-                'rx_gain':      -12,
-                'txrx_active':  'INACTIVE',
-            }
-        cls.requestShared(imain, 'LO1', LO(1))
-        #cls.requestShared(imain, 'LO2', LO(2))
-        #cls.requestShared(imain, 'LO3', LO(3))
-        #cls.requestShared(imain, 'LO4', LO(4))
-
-        def LO_CELL(i, ctx):
-            cell = {
-                'ru': {
-                    'ru_type': 'ru_ref',
-                    'ru_ref':   cls.ref('LO%d' % i),
-                }
-            }
-            cell.update(CENB(i, i))
-            cell.update(ctx)
-            cls.requestShared(imain, 'LO%d.CELL' % i, cell)
-
-        LO_CELL(1, FDD | LTE(   100)    | BW(10))
-        #LO_CELL(2, TDD | LTE( 36100)    | BW(10))
-        #LO_CELL(3, FDD | NR (430100, 1) | BW(10))
-        #LO_CELL(4, TDD | NR (510100,41) | BW(10))
-
-        # XXX + sunwave
-
-    def test_enb_conf(self):
-        super().test_enb_conf()
-
-        conf = yamlpp_load('%s/etc/enb.cfg' % self.computer_partition_root_path)
-
-        rf_driver = conf['rf_driver']
-        self.assertEqual(rf_driver['args'],
-                'dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4' + # Lopcomm
-                '')                                                                     # XXX Sunwave
-        self.assertEqual(rf_driver['cpri_mapping'], ','.join(['hw']*4 + ['bf1']*4))
-        self.assertEqual(rf_driver['cpri_mult'],    ','.join([ '4']*4 +   ['8']*4))
-        self.assertEqual(rf_driver['rx_delay'],     ','.join(['25']*4 +  ['XX']*4))
-        self.assertEqual(rf_driver['tx_delay'],     ','.join(['14']*4 +  ['XX']*4))
-        self.assertEqual(rf_driver['tx_dbm'],       ','.join(['63']*4 +  ['XX']*4))
-        self.assertEqual(rf_driver['ifname'],       ','.join(['XXXX']*4 +  ['YYYY']*4))
-
-        # XXX tx_gain / rx_gain
-
-        self.assertEqual(len(conf['cell_list']),    2*2)
-        self.assertEqual(len(conf['nr_cell_list']), 2*2)
-
-
-
-        # XXX RU
-        # XXX CELLs
-        # XXX CA
-
-
-
-
-
-# XXX enb   - {sdr,lopcomm,sunwave}·2 - {cell_lte1fdd,2tdd, cell_nr1fdd,2tdd}  + peer·2 + peercell·2
 # XXX uesim - {sdr,lopcomm,sunwave}·2
 
 # XXX core-network - skip - verified by ors
