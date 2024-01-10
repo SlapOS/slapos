@@ -805,3 +805,13 @@ class TestAssertMatch(unittest.TestCase):
                 else:
                     t.assertRaises(t.failureException,
                         assertMatch, t, v, vok)
+
+
+# hide base TestCases from unittest discovery so that their test_ methods are
+# run only on leaf TestCases.
+def __dir__():
+    d = list(sorted(globals().keys()))
+    abstract = {'AmariTestCase', 'RFTestCase4', 'ENBTestCase4', 'UEsimTestCase4'}
+    for _ in abstract:
+        d.remove(_)
+    return d
