@@ -254,7 +254,7 @@ class ENBTestCase(RFTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.enb_cfg = yamlpp_load(cls.ipath('etc/enb.cfg'))
+        cls.enb_cfg = cls.rf_cfg = yamlpp_load(cls.ipath('etc/enb.cfg'))
 
     @classmethod
     def getInstanceParameterDict(cls):
@@ -406,7 +406,7 @@ class UEsimTestCase(RFTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.ue_cfg = yamlpp_load(cls.ipath('etc/ue.cfg'))
+        cls.ue_cfg = cls.rf_cfg = yamlpp_load(cls.ipath('etc/ue.cfg'))
 
     @classmethod
     def getInstanceParameterDict(cls):
@@ -520,7 +520,7 @@ class SDR4:
 
     # radio units configuration
     def test_enb_conf_ru(t):
-        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+        assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
           cpri_mapping=NO,
@@ -531,8 +531,8 @@ class SDR4:
         ))
 
         # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
-        t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
-        t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+        t.assertEqual(t.rf_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        t.assertEqual(t.rf_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
 
 # Lopcomm4 is mixin to verify Lopcomm driver wrt all LTE/NR x FDD/TDD modes.
@@ -556,7 +556,7 @@ class Lopcomm4:
 
     # radio units configuration in enb.cfg
     def test_enb_conf_ru(t):
-        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+        assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
           cpri_mapping='hw,hw,hw,hw',
           cpri_mult='4,4,4,4',
@@ -654,7 +654,7 @@ class Sunwave4:
 
     # radio units configuration in enb.cfg
     def test_enb_conf_ru(t):
-        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+        assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='bf1,bf1,bf1,bf1',
           cpri_mult='5,5,5,5',
@@ -677,7 +677,7 @@ class RUMultiType:
 
     # radio units configuration in enb.cfg
     def test_enb_conf_ru(t):
-        assertMatch(t, t.enb_cfg['rf_driver'],  dict(
+        assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='hw,hw,bf1,bf1',
           cpri_mult='4,4,5,5',
