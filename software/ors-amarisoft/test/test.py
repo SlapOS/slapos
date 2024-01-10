@@ -183,10 +183,10 @@ class ENBTestCase(AmariTestCase):
         #   0+          cell_id
         #   0x10+       pci
         #   0x100+      tac
+        #   10+         tx_gain
+        #   20+         rx_gain
         #   100+        root_sequence_index
         #   1000+       inactivity_timer
-        #   -1+         tx_gain
-        #   -10+        rx_gain
         #   xxx+i·100   arfcn
         #   5,10,15,20  bandwidth
         #
@@ -197,7 +197,7 @@ class ENBTestCase(AmariTestCase):
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
-            ru |= {'tx_gain': -(0+i), 'rx_gain':  -(10+i), 'txrx_active': 'INACTIVE'}
+            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
             cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
@@ -377,8 +377,8 @@ class TestENB_SDR(ENBTestCase):
         ))
 
         # XXX -> generic ?      XXX no (for cpri case it is all 0 here)
-        t.assertEqual(t.enb_cfg['tx_gain'], [ -1]*4 + [ -2]*4 + [ -3]*4 + [ -4]*4)
-        t.assertEqual(t.enb_cfg['rx_gain'], [-11]*2 + [-12]*2 + [-13]*2 + [-14]*2)
+        t.assertEqual(t.enb_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        t.assertEqual(t.enb_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
 
 # TestENB_Lopcomm verifies eNB wrt Lopcomm driver in all LTE/NR x FDD/TDD modes.
