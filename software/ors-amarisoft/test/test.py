@@ -506,6 +506,7 @@ class Sunwave4:
                 'tx_delay': 50+i,
                 'tx_dbm':   60+i
             },
+            'mac_addr':     '00:FA:FE:00:00:%02x' % i,
         }
 
     # radio units configuration in enb.cfg
