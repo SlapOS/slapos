@@ -1,4 +1,3 @@
-
 {# This file configures haproxy to redirect requests from ports to specific urls.
  # It provides TLS support for server and optionnaly for client.
  #
@@ -45,8 +44,7 @@
  #       #  The mapping of backends, keyed by family name
  #       "backend-dict": {
  #          "family-secure": {
- #            ( 8000, # port int
- #              'https', # proto str
+ #            (  8000, # port int
  #               True, # ssl_required bool
  #               None,  # timeout (in seconds) int | None
  #               [  # backends
@@ -57,8 +55,7 @@
  #            ),
  #          },
  #          "family-default": {
- #            ( 8002, # port int
- #              'https', # proto str
+ #            (  8002, # port int
  #               False, # ssl_required bool
  #               None,  # timeout (in seconds) int | None
  #               [  # backends
@@ -151,7 +148,7 @@ defaults
 {% set family_path_routing_dict = parameter_dict['family-path-routing-dict'] %}
 {% set path_routing_list = parameter_dict['path-routing-list'] %}
 
-{% for name, (port, _, certificate_authentication, timeout, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
+{% for name, (port, certificate_authentication, timeout, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
 listen family_{{ name }}
 {%-  if parameter_dict.get('ca-cert') -%}
 {%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional crt-ignore-err all' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}

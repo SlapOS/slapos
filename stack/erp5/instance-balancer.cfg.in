@@ -208,70 +208,8 @@ command = ${caucase-updater-housekeeper:output}
 update-command = ${:command}
 {% endif -%}
 
-{% set haproxy_dict = {} -%}
-{% set zope_virtualhost_monster_backend_dict = {} %}
-{% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
-{% set next_port = functools.partial(next, itertools.count(slapparameter_dict['tcpv4-port'])) -%}
-{% for family_name, parameter_id_list in sorted(
-  six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
-{%   set zope_family_address_list = [] -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name] -%}
-{%   set has_webdav = [] -%}
-{%   for parameter_id in parameter_id_list -%}
-{%     set zope_address_list = slapparameter_dict[parameter_id] -%}
-{%     for zope_address, maxconn, webdav in zope_address_list -%}
-{%       if webdav -%}
-{%         do has_webdav.append(None) %}
-{%       endif -%}
-{%       set zope_effective_address = zope_address -%}
-{%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
-{%     endfor -%}
-
-{#     # Generate entries with rewrite rule for test runnners #}
-{%     set test_runner_address_list = slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', []) %}
-{%     if test_runner_address_list -%}
-{%       set test_runner_backend_mapping = {} %}
-{%       set test_runner_balancer_url_list = [] %}
-{%       set test_runner_external_port = next_port() %}
-{%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
-{%         do test_runner_backend_mapping.__setitem__(
-                'unit_test_' ~ i,
-                'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
-{%         do test_runner_balancer_url_list.append(
-                'https://' ~ ipv4 ~ ':' ~ test_runner_external_port ~ '/unit_test_' ~ i ~ '/' ) %}
-{%       endfor %}
-{%       do zope_virtualhost_monster_backend_dict.__setitem__(
-              (ipv4, test_runner_external_port),
-              ( ssl_authentication, test_runner_backend_mapping ) ) -%}
-{%       do test_runner_url_dict.__setitem__(family_name, test_runner_balancer_url_list) -%}
-{%     endif -%}
-{%   endfor -%}
-
-{# Make rendering fail artificially if any family has no known backend.
- # This is useful as haproxy's hot-reconfiguration mechanism is
- # supervisord-incompatible.
- # As jinja2 postpones KeyError until place-holder value is actually used,
- # do a no-op getitem.
--#}
-{%   do zope_family_address_list[0][0] -%}
-
-{#
- # We use to have haproxy then apache, now haproxy is playing apache's role
- # To keep port stable, we consume one port so that haproxy use the same port
- # that apache was using before.
--#}
-{%   set _ = next_port() -%}
-
-{%   set haproxy_port = next_port() -%}
-{%   if has_webdav -%}
-{%     set external_scheme = 'webdavs' -%}
-{%   else %}
-{%     set external_scheme = 'https' -%}
-{%   endif -%}
-{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'][family_name], slapparameter_dict['timeout-dict'][family_name], zope_family_address_list)) -%}
-{% endfor -%}
-
 [haproxy-cfg-parameter-dict]
+recipe = slapos.recipe.build
 ipv4 = {{ ipv4 }}
 ipv6 = {{ ipv6 }}
 cert = ${haproxy-conf-ssl:certificate}
@@ -285,9 +223,90 @@ family-path-routing-dict = {{ dumps(slapparameter_dict['family-path-routing-dict
 pidfile = ${directory:run}/haproxy.pid
 log-socket = ${rsyslogd-cfg-parameter-dict:log-socket}
 server-check-path = {{ dumps(slapparameter_dict['haproxy-server-check-path']) }}
-backend-dict = {{ dumps(haproxy_dict) }}
-zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
+slapparameter-dict = {{ dumps(slapparameter_dict) }}
+ports-state-file = ${buildout:directory}/.${:_buildout_section_name_}-ports.json
 
+init =
+  import functools
+  import itertools
+  import json
+  import os
+  import shutil
+  import six
+  from zc.buildout import UserError
+
+  slapparameter_dict = options['slapparameter-dict']
+  ipv4 = options['ipv4']
+  ipv6 = options['ipv6']
+
+  # read port state file
+  port_dict = {}
+  previous_port_dict = None
+  if os.path.exists(options['ports-state-file']):
+    with open(options['ports-state-file']) as f:
+      port_dict = json.load(f)
+      previous_port_dict = dict(port_dict)
+
+  _next_port = functools.partial(next, itertools.count(slapparameter_dict['tcpv4-port']))
+  def get_port(name):
+    if name in port_dict:
+      return port_dict[name]
+    port = _next_port()
+    while port in port_dict.values():
+      port = _next_port()
+    port_dict[name] = port
+    return port
+
+  haproxy_dict = {}
+  zope_virtualhost_monster_backend_dict = {}
+  for family_name, parameter_id_list in sorted(
+      six.iteritems(slapparameter_dict['zope-family-dict'])):
+    zope_family_address_list = []
+    ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name]
+    for parameter_id in parameter_id_list:
+      zope_family_address_list.extend(slapparameter_dict[parameter_id])
+
+      # Generate entries with rewrite rule for test runnners
+      test_runner_address_list = slapparameter_dict.get(parameter_id + '-test-runner-address-list', [])
+      if test_runner_address_list:
+        test_runner_backend_mapping = {}
+        test_runner_balancer_url_list = []
+        for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list):
+          test_runner_backend_mapping['unit_test_%s' % i] = \
+            'http://%s:%s' % (test_runner_internal_ip, test_runner_internal_port)
+          test_runner_balancer_url_list.append(
+            'https://%s:%s/unit_test_%s/' % (ipv4, get_port('test-runner-' + family_name), i))
+        zope_virtualhost_monster_backend_dict[(ipv4, get_port('test-runner-' + family_name))] =\
+          ( ssl_authentication, test_runner_backend_mapping )
+        self.buildout['publish'][family_name + '-test-runner-url-list'] = test_runner_balancer_url_list
+
+    if not zope_family_address_list:
+      raise UserError('No zope defined for family %s (maybe not ready)' % family_name)
+
+    # consume a port for compatibility when were using apache + haproxy
+    get_port('apache-compatibility-' + family_name)
+
+    legacy_port = get_port('legacy-' + family_name)
+    # a port for monitoring promise (which port is not important, the promise checks
+    # that haproxy is healthy enough to listen on a port)
+    options['haproxy-promise-port'] = legacy_port
+    haproxy_dict[family_name] = (
+      legacy_port,
+      ssl_authentication,
+      slapparameter_dict['timeout-dict'][family_name],
+      zope_family_address_list,
+    )
+    external_scheme = 'webdavs' if any(a[2] for a in zope_family_address_list) else 'https'
+    self.buildout['publish'][family_name] = "{external_scheme}://{ipv4}:{legacy_port}".format(**locals())
+    self.buildout['publish'][family_name + "-v6"] = "{external_scheme}://[{ipv6}]:{legacy_port}".format(**locals())
+
+  options['backend-dict'] = haproxy_dict
+  options['zope-virtualhost-monster-backend-dict'] = zope_virtualhost_monster_backend_dict
+
+  if port_dict != previous_port_dict:
+    with open(options['ports-state-file'] + '.tmp', 'w') as f:
+      json.dump(port_dict, f, indent=True)
+    shutil.move(options['ports-state-file'] + '.tmp', options['ports-state-file'])
 
 [haproxy-cfg]
 < = jinja2-template-base
@@ -371,17 +390,11 @@ certificate = ${haproxy-conf-ssl-certificate-and-key-from-parameters:output}
 promise = check_socket_listening
 name = haproxy.py
 config-host = {{ ipv4 }}
-config-port = {{ next(six.itervalues(haproxy_dict))[0] }}
+config-port = ${haproxy-cfg-parameter-dict:haproxy-promise-port}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (port, scheme, _, _, _) in haproxy_dict.items() -%}
-{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ port }}{% endif %}
-{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ port }}
-{% endfor -%}
-{% for family_name, test_runner_url_list in test_runner_url_dict.items() -%}
-{{    family_name ~ '-test-runner-url-list' }} = {{ dumps(test_runner_url_list) }}
-{% endfor -%}
+# note: some values are pushed by haproxy-cfg-parameter-dict
 caucase-http-url = {{ caucase_url }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
@@ -466,7 +479,7 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port() }}
+monitor-httpd-port = 2197
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
