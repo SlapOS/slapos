@@ -560,7 +560,7 @@ command-line    = {{ gitlab_workhorse }}
     -documentRoot ${gitlab-work:location}/public
     -secretPath ${gitlab-workhorse:secret}
     -logFile ${gitlab-workhorse:log}
-#    -repoPath ${gitlab-repo-dir:repositories}
+    -repoPath ${gitlab-repo-dir:repositories}
 # NOTE for profiling
 #   -pprofListenAddr ...
 
