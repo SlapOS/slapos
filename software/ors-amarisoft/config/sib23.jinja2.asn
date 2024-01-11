@@ -1,4 +1,5 @@
-/* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ cell_ref }} @ {{ ru_ref }}. */
+{%- set B = xbuildout.encode -%}
+/* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ B(cell_ref) }} @ {{ B(ru_ref) }}. */
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {

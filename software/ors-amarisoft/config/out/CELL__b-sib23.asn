@@ -1,4 +1,4 @@
-/* SIB2/SIB3 for NR cell CELL_b @ RU2. */
+/* SIB2/SIB3 for NR cell CELL__b @ RU2. */
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
