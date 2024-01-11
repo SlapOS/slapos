@@ -45,10 +45,8 @@ class Recipe(GenericBaseRecipe):
     elif self.options.get('expected-type') == "ipv4":
       template = self.getTemplateFilename('check_ipv4.py.in')
     else:
-      config["expected-value"] = self.options.get('expected-value')
- 
-      config["expected-not-value"] = self.options.get('expected-not-value')
-
+      config["expected-value"] = str(self.options.get('expected-value', ''))
+      config["expected-not-value"] = str(self.options.get('expected-not-value', ''))
       template = self.getTemplateFilename('check_parameter.py.in')
 
     promise = self.createExecutable(

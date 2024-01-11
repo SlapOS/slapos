@@ -5,14 +5,14 @@ from __future__ import print_function
 import socket
 import sys
 
-value = "%(value)s"
-expected = "%(expected-value)s"
-not_expected = "%(expected-not-value)s"
+value = %(value)r
+expected = %(expected-value)r
+not_expected = %(expected-not-value)r
 
 if expected != "" and value != expected:
   print("FAIL: %%s != %%s" %% (value, expected))
   sys.exit(127)
 
-if not_expected != "" and value == not_expected: 
+if not_expected != "" and value == not_expected:
   print("FAIL: %%s == %%s" %% (value, not_expected))
   sys.exit(127)
