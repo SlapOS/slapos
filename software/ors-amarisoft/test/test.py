@@ -18,17 +18,17 @@
 
 # Unit-tests for generic software for Amarisoft 4G/5G stack.
 #
-# Here we only verify generated configuration because it is not possible to run
-# Amarisoft software on testnodes due to licensing restrictions. End-to-end
-# testing complements unit-testing by verifying how LTE works for real on
-# dedicated hardware test setup.
+# Here we verify only generated configurations because it is not possible to
+# run Amarisoft software on testnodes due to licensing restrictions. End-to-end
+# testing complements unit-testing by verifying how LTE works for real, but it
+# needs dedicated hardware test setup.
 #
 # Here we test:
 #
 # - enb     (see TestENB_*)
 # - uesim   (see TestUEsim_*)
 #
-# Currently there is no tests for core-network here, because for core-network
+# Currently there is no tests for core-network, because for core-network
 # there is no difference in between generic and ORS modes and core-network is
 # already verified by test_ors.
 
@@ -192,7 +192,7 @@ class AmariTestCase(_AmariTestCase):
 
 # RFTestCase4 is base class for tests of all services that do radio.
 #
-# It instantiates a service with several Radio Units and Cells attached.
+# It instantiates a service with several Radio Units and Cells attached:
 #
 # 4 RU x 4 CELL are requested to verify all {FDD,TDD}·{LTE,NR} combinations.
 #
@@ -217,7 +217,7 @@ class AmariTestCase(_AmariTestCase):
 # - RUcfg(i) to return primary parameters specific for i'th RU configuration
 #   like ru_type - to verify particular RU driver, sdr_dev, sfp_port and so on.
 # - CELLcfg(i) to tune parameters of i'th cell, for example cell_kind.
-# - .rf_cfg with loaded service config
+# - .rf_cfg with loaded service config.
 class RFTestCase4(AmariTestCase):
     @classmethod
     def requestAllShared(cls, imain):
@@ -244,10 +244,10 @@ class RFTestCase4(AmariTestCase):
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
     def test_rf_cfg_txrx_gain(t):
-        # NOTE even though setting tx_gain/rx_gain does not make any difference
-        #      for CPRI case, we still do set it there for consistency. For the
-        #      reference: for CPRI case the real tx/rx gain is set in RU
-        #      configuration and is verified by RU tests.
+        # NOTE even though setting tx_gain/rx_gain in enb.cfg does not make any
+        #      difference for CPRI case, we still do set it there for consistency.
+        #      For the reference: for CPRI case the real tx/rx gain is set in
+        #      RU configuration and is verified by RU tests.
         t.assertEqual(t.rf_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
         t.assertEqual(t.rf_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
 
