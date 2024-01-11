@@ -6,7 +6,12 @@
 import zc.buildout.buildout # XXX workaround for https://lab.nexedi.com/nexedi/slapos.recipe.template/merge_requests/9
 from slapos.recipe.template import jinja2_template
 
-import json, copy, sys, os, pprint, glob
+import json, copy, sys, os, pprint, glob, types
+
+sys.path.insert(0, './ru')
+import xbuildout
+
+B = xbuildout.encode
 
 
 # j2render renders config/<src> into config/out/<out> with provided json parameters.
@@ -19,6 +24,7 @@ def j2render(src, out, jcfg):
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
+    textctx += 'import xbuildout xbuildout\n'
     textctx += 'import json_module    json\n'
     textctx += 'import nrarfcn_module nrarfcn\n'
     textctx += 'import xearfcn_module  xlte.earfcn\n'
@@ -466,11 +472,11 @@ def do_enb():
                     'ru':       ru,
                })
         j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
-                 '%s-drb.cfg' % cell_ref,
+                 B('%s-drb.cfg' % cell_ref),
                  jctx)
 
         j2render('sib23.jinja2.asn',
-                 '%s-sib23.asn' % cell_ref,
+                 B('%s-sib23.asn' % cell_ref),
                  jctx)
 
 

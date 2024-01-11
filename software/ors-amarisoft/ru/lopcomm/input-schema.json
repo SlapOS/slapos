@@ -12,6 +12,7 @@
     "tx_gain",
     "rx_gain",
 
+    "cpri_link",
     "mac_addr"
   ],
 
@@ -50,11 +51,6 @@
       }
     },
 
-    "mac_addr": {
-      "title": "RU MAC address",
-      "description": "RU MAC address used for NETCONF",
-      "type": "string"
-    },
     "reset_schedule": {
       "title": "Cron schedule for RRH reset",
       "description": "Refer https://crontab.guru/ to make a reset schedule for RRH, for example, '0 1 * * *' means the RRH will reset every day at 1 am",

@@ -1,4 +1,4 @@
-# Copyright (C) 2023  Nexedi SA and Contributors.
+# Copyright (C) 2023-2024  Nexedi SA and Contributors.
 #
 # This program is free software: you can Use, Study, Modify and Redistribute
 # it under the terms of the GNU General Public License version 3, or (at your
@@ -19,7 +19,6 @@
 
 - encode/decode convert string to/from form, that is suitable to be used in
   names of buildout sections.
-- XXX quote
 """
 
 
@@ -60,6 +59,13 @@
 #
 #   # referring to <ru_ref>-stats
 #   ${ {{-B('%s-stats' % ru_ref)}}:output}
+#
+#
+# See also `dumps` in buildout for a way to serialize option values with
+# protection against code injection:
+#
+#   https://lab.nexedi.com/nexedi/slapos.buildout/commit/4e13dcb9
+#   https://lab.nexedi.com/nexedi/slapos.recipe.template/commit/84dc7957
 def encode(s: str) -> str:
     s = s.encode('utf-8')
     outv = []
@@ -128,18 +134,6 @@ def _decode(s):
     return out
 
 
-# quote converts string s into quoted form with all buildout control characters escaped...  XXX
-# XXX -> pyquote?
-def quote(s: str) -> str:
-    assert isinstance(s, str), type(s)
-    r = str.__repr__(s) # both str and markupsafe.Markup go as regular str
-    for c in '$[]\n':
-        r = r.replace(c, r'\x%02x' % ord(c))
-    if r[1:-1] == s:
-        return s    # original string
-    return '!py!' + r
-
-
 # ----------------------------------------
 
 import re
@@ -198,8 +192,3 @@ def test_encode():
         def _(cause):
             assert isinstance(cause, UnicodeDecodeError)
         checkbad(x, _)
-
-
-def test_quote():
-    # XXX
-    pass
