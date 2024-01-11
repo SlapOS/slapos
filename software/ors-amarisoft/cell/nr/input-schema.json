@@ -41,7 +41,7 @@
     },
 
     "bandwidth": {
-      "$ref": "../../cell/common.json#/properties/bandwidth"
+      "$ref": "#/properties/bandwidth"
     },
 
     "dl_nr_arfcn": {

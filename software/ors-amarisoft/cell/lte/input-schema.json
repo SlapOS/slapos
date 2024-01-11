@@ -40,7 +40,7 @@
     },
 
     "bandwidth": {
-      "$ref": "../../cell/common.json#/properties/bandwidth",
+      "$ref": "#/properties/bandwidth",
       "enum": [
         1.4,
         3,
