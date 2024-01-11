@@ -136,7 +136,6 @@ enb_param_dict.update(param_dict)
 gnb_param_dict1.update(param_dict)
 gnb_param_dict2.update(param_dict)
 
-
 def test_enb_conf(self):
 
     conf_file = glob.glob(os.path.join(
