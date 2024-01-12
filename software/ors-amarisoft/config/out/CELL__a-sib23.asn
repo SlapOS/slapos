@@ -1,4 +1,4 @@
-/* SIB2/SIB3 for LTE cell CELL_a @ RU1. */
+/* SIB2/SIB3 for LTE cell CELL__a @ RU1. */
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
