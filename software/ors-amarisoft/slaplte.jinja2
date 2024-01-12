@@ -250,7 +250,7 @@
   {%- endif %}
 
   {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
-      args: "{{dev_argv | join(',')}}",
+      args: "{{(dev_argv | join(',')) or '---'}}",
 
   {%- if ors %}
       rx_antenna:"tx_rx",
