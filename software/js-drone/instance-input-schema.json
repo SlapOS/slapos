@@ -38,12 +38,6 @@
       "type": "string",
       "default": "eth0"
     },
-    "isASimulation": {
-      "title": "Set the flight as a simulation",
-      "description": "The option used to determine if the flight is real or if it is a simulation. This affects the context of the flight (e.g. if the take off is manual or automatic).",
-      "type": "boolean",
-      "default": false
-    },
     "debug": {
       "title": "Set debug mode",
       "description": "When debug mode is enabled, drone are publishing the script logs through OPC-UA.",
