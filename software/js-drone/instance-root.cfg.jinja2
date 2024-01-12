@@ -25,7 +25,6 @@ config-autopilotPort = {{ dumps(parameter_dict['autopilotPort']) }}
 config-numberOfDrones = {{ dumps(len(parameter_dict['droneGuidList'])) }}
 config-numberOfSubscribers = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
 config-id = {{ dumps(id) }}
-config-isASimulation = {{ dumps(parameter_dict['isASimulation']) }}
 config-debug = {{ dumps(parameter_dict['debug']) }}
 config-loopPeriod = {{ dumps(parameter_dict['loopPeriod']) }}
 {% if id < len(parameter_dict['droneGuidList']) -%}
