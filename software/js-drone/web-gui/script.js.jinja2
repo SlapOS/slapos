@@ -64,6 +64,7 @@
       date,
       flight_state_cell,
       i,
+      log_textarea,
       message,
       new_div,
       new_span,
@@ -81,7 +82,9 @@
           document.getElementById(CLIMB_RATE_BASE_ID + id).innerHTML = drone["climbRate"];
           document.getElementById(TIMESTAMP_BASE_ID + id).innerHTML = new Date(drone["timestamp"]).toLocaleTimeString('fr-FR');
           {% if debug -%}
-          document.getElementById(LOG_BASE_ID + id).value += drone["log"];
+          log_textarea = document.getElementById(LOG_BASE_ID + id);
+          log_textarea.scrollTop = log_textarea.scrollHeight;
+          log_textarea.value += drone["log"];
           {% endif -%}
         });
       } else if (message.hasOwnProperty("state") && message.hasOwnProperty("id")) {

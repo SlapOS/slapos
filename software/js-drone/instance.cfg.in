@@ -37,7 +37,6 @@ default-parameters =
     "droneGuidList": [],
     "droneNetIf": "eth0",
     "flightScript": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js",
-    "isASimulation": false,
     "loopPeriod": 200,
     "multicastIp": "ff15::1111",
     "subscriberGuidList":[],

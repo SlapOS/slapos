@@ -1,29 +1,35 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
-/*global console, getAltitude, getAltitudeRel, getInitialAltitude, gpsIsOk,
-  getLatitude, getLongitude, getYaw, execUserScript, initPubsub, loiter,
-  setAirSpeed, setMessage, setTargetCoordinates, std, triggerParachute,
-  updateLogAndProjection, Drone, Worker*/
+{% if isADrone -%}
+/*global console, execUserScript, getAltitude, getClimbRate, getInitialAltitude,
+  gpsIsOk, getPosition, getSpeed, getYaw, initPubsub, isLanding, isReadyToFly,
+  land, loiter, setMessage, setTargetCoordinates, std, takeOff,
+  updateLogAndProjection, ArrayBuffer, Drone, Uint8Array, Worker*/
+{% else -%}
+/*global console, execUserScript, initPubsub, setMessage, setTargetCoordinates,
+  std, updateLogAndProjection, Drone, Worker*/
+{% endif -%}
 import {
   Drone,
 {% if isADrone -%}
-  triggerParachute,
-  getAirspeed,
   getAltitude,
   getClimbRate,
   getInitialAltitude,
   gpsIsOk,
   getPosition,
+  getSpeed,
   getYaw,
 {% endif -%}
   initPubsub,
 {% if isADrone -%}
   isLanding,
+  isReadyToFly,
+  land,
   loiter,
-  setAirSpeed,
 {% endif -%}
   setMessage,
 {% if isADrone -%}
   setTargetCoordinates,
+  takeOff,
   updateLogAndProjection
 {% endif -%}
 } from "{{ qjs_wrapper }}";
@@ -44,8 +50,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition,
            getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
-           pipe, setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
-           triggerParachute, updateLogAndProjection, waitpid) {
+           pipe, setMessage, setReadHandler, setTargetCoordinates,
+           land, updateLogAndProjection, waitpid) {
 {% else -%}
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, initPubsub, kill, loadFile, open, pipe, setMessage,
@@ -63,32 +69,30 @@ import { evalScript, fdopen, loadFile, open } from "std";
     gwsocket_r_pipe_fd,
     gwsocket_w_pipe_fd,
     handleWebSocketMessage,
-    last_message_timestamp = 0,
     last_log_timestamp = 0,
+    last_message_timestamp_list = [],
     parent = Worker.parent,
     peer_dict = {},
     user_me = {
-      //required to fly
-{% if isADrone -%}
-      triggerParachute: triggerParachute,
-{% endif -%}
       exit: exitWorker,
       getDroneDict: function () { return drone_dict; },
 {% if isADrone -%}
       getAltitudeAbs: getAltitude,
+      getClimbRate: getClimbRate,
       getCurrentPosition: getPosition,
       getInitialAltitude: getInitialAltitude,
       gpsIsOk: gpsIsOk,
+      getSpeed: getSpeed,
       getYaw: getYaw,
-      getSpeed: getAirspeed,
-      getClimbRate: getClimbRate,
 {% endif -%}
       id: configuration.id,
 {% if isADrone -%}
       isLanding: isLanding,
+      isReadyToFly: isReadyToFly,
+      land: land,
       loiter: loiter,
-      setAirSpeed: setAirSpeed,
       setTargetCoordinates: setTargetCoordinates,
+      takeOff: takeOff,
 {% endif -%}
       sendMsg: function (msg, id) {
         if (id === undefined) { id = -1; }
@@ -172,11 +176,11 @@ import { evalScript, fdopen, loadFile, open } from "std";
     user_me.writeWebsocketMessage = function (message) {
       var buf = new ArrayBuffer(message.length);
       var bufView = new Uint8Array(buf);
-      for (var i=0; i<message.length; i++) {
+      for (var i = 0; i < message.length; i++) {
         bufView[i] = message.charCodeAt(i);
       }
       writeMessage(gwsocket_w_pipe_fd, {client: clientId, type: 1, data: buf});
-    }
+    };
     setReadHandler(gwsocket_r_pipe[0], handleWebSocketMessage);
   }
 
@@ -215,18 +219,20 @@ import { evalScript, fdopen, loadFile, open } from "std";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, peer_id, log;
+    var type = evt.data.type, message, parsed_message, peer_id, log;
 
     switch (type) {
 
     case "initPubsub":
-      initPubsub(configuration.numberOfDrones, configuration.numberOfSubscribers);
+      initPubsub(configuration.numberOfDrones,
+                 configuration.numberOfSubscribers);
       for (peer_id = 0; peer_id < configuration.numberOfDrones + configuration.numberOfSubscribers; peer_id++) {
         peer_dict[peer_id] = new Drone(peer_id);
         peer_dict[peer_id].init(peer_id);
         if (peer_id < configuration.numberOfDrones) {
           drone_dict[peer_id] = peer_dict[peer_id];
         }
+        last_message_timestamp_list[peer_id] = 0;
       }
       parent.postMessage({type: "initialized"});
       break;
@@ -239,13 +245,17 @@ import { evalScript, fdopen, loadFile, open } from "std";
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         message = peer.message;
-        if (user_me.id !== Number(id) && message.length > 0) {
-          message = JSON.parse(message);
-          if (message.timestamp != last_message_timestamp &&
-              user_me.hasOwnProperty("onGetMsg") &&
-              [-1, user_me.id].includes(message.dest_id)) {
-            last_message_timestamp = message.timestamp;
-            user_me.onGetMsg(message.content);
+        if (message.length > 0) {
+          parsed_message = JSON.parse(message);
+          while (parsed_message.timestamp !== last_message_timestamp_list[id]) {
+            if (user_me.hasOwnProperty("onGetMsg")
+                && [-1, user_me.id].includes(parsed_message.dest_id)) {
+              console.log("running on getMsg");
+              user_me.onGetMsg(parsed_message.content);
+            }
+
+            last_message_timestamp_list[id] = parsed_message.timestamp;
+            parsed_message = JSON.parse(peer.message);
           }
         }
       });
@@ -259,7 +269,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
 {% if isADrone -%}
         updateLogAndProjection();
 {% endif -%}
-        last_log_timestamp = evt.data.timestamp; 
+        last_log_timestamp = evt.data.timestamp;
       }
 
       parent.postMessage({type: "updated"});
@@ -271,7 +281,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     default:
       throw new Error("Unsupported message type", type);
-    };
+    }
   }
 
   parent.onmessage = function (evt) {
@@ -287,8 +297,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
 {% if isADrone -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
   fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getYaw,
-  initPubsub, isLanding, kill, loadFile, loiter, open, pipe, setAirSpeed,
-  setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
+  initPubsub, isLanding, kill, loadFile, loiter, open, pipe, setMessage,
+  setReadHandler, setTargetCoordinates, land,
   updateLogAndProjection, waitpid));
 {% else -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
