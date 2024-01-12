@@ -439,7 +439,7 @@
   {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)        %}
   {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
   {%- endfor %}
-      args: "{{dev_argv | join(',')}}",
+      args: "{{(dev_argv | join(',')) or '---'}}",
 
   {#- emit sdr-related options if an sdr ru is present #}
   {%- if len(ru_sdr_dict) > 0               %}
