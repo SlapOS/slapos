@@ -32,6 +32,7 @@ import glob
 import http.client
 import json
 import os
+import pathlib
 import resource
 import shutil
 import socket
@@ -1099,6 +1100,22 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
           'var',
           'log',
           f))
+
+class TestPassword(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  __partition_reference__ = 'p'
+
+  def test_no_plain_text_password_in_files(self):
+    inituser_password = self.getRootPartitionConnectionParameterDict()[
+      'inituser-password'].encode()
+    self.assertFalse(
+      [f for f in pathlib.Path(self.slap._instance_root).glob('**/*')
+        if f.is_file() and inituser_password in f.read_bytes()])
+    # the hashed password is present in some files
+    inituser_password_hashed = self.getRootPartitionConnectionParameterDict()[
+      'inituser-password-hashed'].encode()
+    self.assertTrue(
+      [f for f in pathlib.Path(self.slap._instance_root).glob('**/*')
+        if f.is_file() and inituser_password_hashed in f.read_bytes()])
 
 
 class TestWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):

@@ -170,14 +170,14 @@ content =
     use_backend admin if { path_beg $${selenium-server-frontend-configuration:path-admin} }
 
   userlist hub
-    user $${selenium-server-selenium-password:username} insecure-password $${selenium-server-selenium-password:passwd}
+    user $${selenium-server-selenium-password:username} password $${selenium-server-selenium-password:passwd-sha256-crypt}
   backend hub
     acl auth_ok http_auth(hub)
     http-request auth realm "Selenium Server" unless auth_ok
     server hub $${selenium-server-hub-instance:hostname}:$${selenium-server-hub-instance:port}
 
   userlist admin
-    user $${selenium-server-admin-password:username} insecure-password $${selenium-server-admin-password:passwd}
+    user $${selenium-server-admin-password:username} password $${selenium-server-admin-password:passwd-sha256-crypt}
   backend admin
     acl auth_ok http_auth(admin)
     http-request auth realm "Grid Admin" unless auth_ok

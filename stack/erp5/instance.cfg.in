@@ -143,9 +143,7 @@ extra-context =
     key buildout_directory buildout:directory
     key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
-    import base64 base64
     import urllib_parse six.moves.urllib.parse
-    import hashlib hashlib
     import itertools itertools
     import json json
 import-list =

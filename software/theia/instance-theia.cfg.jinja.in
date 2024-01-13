@@ -255,7 +255,7 @@ context =
   key content :content
 content =
   userlist basic-auth-list
-    user $${frontend-instance-password:username} insecure-password $${frontend-instance-password:passwd}
+    user $${frontend-instance-password:username} password $${frontend-instance-password:passwd-sha256-crypt}
 
   frontend app
     log global
