@@ -157,7 +157,7 @@ storage-path = ${directory:etc}/.monitor_pwd
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
-password-file = ${directory:etc}/.monitor_pwd
+password-file = ${directory:etc}/.monitor_password
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 command =
   echo "${monitor-instance-parameter:password}" >${:password-file}
