@@ -109,10 +109,8 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
 parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
-  htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
   ${monitor-instance-parameter:instance-configuration}
-# htpasswd entry:  htpasswd key password-file username htpasswd-file
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
@@ -153,18 +151,19 @@ wrapper-path = ${directory:scripts}/${:name}
 [monitor-htpasswd]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.monitor_pwd
+passwd = ${monitor-instance-parameter:password}
 
 [httpd-monitor-htpasswd]
-recipe = plone.recipe.command
-stop-on-error = true
-password-file = ${directory:etc}/.monitor_pwd
+recipe = slapos.recipe.build
+install =
+  import subprocess
+  password = self.buildout['monitor-htpasswd']['passwd']
+  assert password
+  subprocess.check_call([options['htpasswd-bin'], '-cib', location, options['username'], password])
+htpasswd-bin = {{ apache_location }}/bin/htpasswd
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
-command =
-  echo "${monitor-instance-parameter:password}" >${:password-file}
-  [ -s "${:htpasswd-path}" ] ||
-    {{ apache_location }}/bin/htpasswd -ci ${:htpasswd-path} "${monitor-instance-parameter:username}" <${:password-file}
-update-command =
-  [ -s "${:password-file}" ] || ${:command}
+username = ${monitor-instance-parameter:username}
+location = ${:htpasswd-path}
 
 [monitor-symlink]
 recipe = cns.recipe.symlink
@@ -341,10 +340,9 @@ cors-domains = monitor.app.officejs.com
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
-password = ${monitor-htpasswd:passwd}
+# if password is left empty, a random password is generated
 username = admin
-# XXX: type key value
-# ex raw monitor-password resqdsdsd34
+password =
 instance-configuration =
 
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
@@ -372,7 +370,7 @@ name = check-monitor-frontend-password.py
 url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
 config-username = ${monitor-instance-parameter:username}
-config-password = ${monitor-instance-parameter:password}
+config-password = ${monitor-htpasswd:passwd}
 
 # Requests to the frontend URL should fail when no credentials are
 # supplied.
