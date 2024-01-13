@@ -32,6 +32,7 @@ import glob
 import http.client
 import json
 import os
+import pathlib
 import resource
 import shutil
 import socket
@@ -1118,6 +1119,17 @@ class TestWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsR
     self.assertEqual(
       resource.prlimit(process_info['pid'], resource.RLIMIT_NOFILE),
       (current_hard_limit, current_hard_limit))
+
+
+class TestPassword(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  __partition_reference__ = 'p'
+
+  def test_no_plain_text_password_in_files(self):
+    inituser_password = self.getRootPartitionConnectionParameterDict()[
+      'inituser-password'].encode()
+    self.assertFalse(
+      [f for f in pathlib.Path(self.slap._instance_root).glob('**/*')
+        if f.is_file() and inituser_password in f.read_bytes()])
 
 
 class TestUnsetWithMaxRlimitNofileParameter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
