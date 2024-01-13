@@ -62,6 +62,8 @@ extra-context =
     key with_max_rlimit_nofile_enable_default dynamic-template-erp5-parameters:with-max-rlimit-nofile-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
+    import base64 base64
+    import hashlib hashlib
     import re re
     import urllib_parse six.moves.urllib.parse
 import-list =
@@ -143,9 +145,7 @@ extra-context =
     key buildout_directory buildout:directory
     key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
-    import base64 base64
     import urllib_parse six.moves.urllib.parse
-    import hashlib hashlib
     import itertools itertools
     import json json
 import-list =
