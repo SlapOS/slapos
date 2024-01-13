@@ -147,18 +147,10 @@ recipe = slapos.cookbook:generate.password
 user = backup
 
 [rest-server-htpassword]
-recipe = plone.recipe.command
-command =
-  if [ ! -f '${:htpassword}' ] ; then
-    {{ htpasswd_bin }} \
-      -b \
-      -B \
-      -c ${:htpassword} \
-      ${rest-server-password:user} \
-      ${rest-server-password:passwd}
-  fi
-htpassword = ${directory:rest-server-data-dir}/.htpasswd
-stop-on-error = true
+recipe = slapos.recipe.template
+inline =
+  ${rest-server-password:user}:${rest-server-password:passwd-bcrypt}
+output = ${directory:rest-server-data-dir}/.htpasswd
 
 [rest-server]
 recipe = slapos.cookbook:wrapper
