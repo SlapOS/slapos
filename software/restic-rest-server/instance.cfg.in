@@ -163,7 +163,7 @@ stop-on-error = true
 [rest-server]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ gowork_bin }}/rest-server \
+  {{ gowork_bin }}/rest-server
     --listen [${:ip}]:${:port}
     --log ${directory:var-log}/${:_buildout_section_name_}-access.log
     --path ${directory:rest-server-data-dir}
