@@ -51,7 +51,8 @@
       "default": 28
     },
     "amf_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/amf_list"
+      "$ref": "instance-enb-input-schema.json#/properties/amf_list",
+      "default": {"1": {"amf_addr": "127.0.1.100"}}
     },
     "plmn_list": {
       "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",

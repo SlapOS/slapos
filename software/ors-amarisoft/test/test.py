@@ -273,6 +273,22 @@ class ENBTestCase4(RFTestCase4):
             'enb_id':       '0x17',
             'gnb_id':       '0x23',
             'gnb_id_bits':  30,
+            'mme_list':     {
+                '1': {'mme_addr': '1.2.3.4'},
+                '2': {'mme_addr': '[1234::1]:78'},
+            },
+            'amf_list':     {
+                '1': {'amf_addr': '4.3.2.1:77'},
+                '2': {'amf_addr': '4321::1'},
+            },
+            'plmn_list':    {
+                '1': {'plmn': '31415'},
+                '2': {'plmn': '44444', 'attach_without_pdn': True, 'reserved': True},
+            },
+            'plmn_list_5g':     {
+                '1': {'plmn': '51413', 'tac': 0x124},
+                '2': {'plmn': '55555', 'tac': 0x125, 'ranac': 210, 'reserved': True},
+            },
         })}
 
     @classmethod
@@ -301,8 +317,22 @@ class ENBTestCase4(RFTestCase4):
     # basic enb parameters
     def test_enb_cfg_basic(t):
         assertMatch(t, t.enb_cfg, dict(
-            enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
-            x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
+          enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
+          mme_list=[{'mme_addr': '1.2.3.4'}, {'mme_addr': '[1234::1]:78'}],
+          amf_list=[{'amf_addr': '4.3.2.1:77'}, {'amf_addr': '4321::1'}],
+          x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
+          cell_default={
+            'plmn_list': [
+              dict(plmn='31415', attach_without_pdn=False, reserved=False),
+              dict(plmn='44444', attach_without_pdn=True,  reserved=True),
+            ]
+          },
+          nr_cell_default={
+            'plmn_list': [
+              dict(plmn='51413', tac=0x124, ranac=NO,  reserved=False),
+              dict(plmn='55555', tac=0x125, ranac=210, reserved=True),
+            ]
+          },
         ))
 
     # basic cell parameters

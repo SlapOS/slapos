@@ -16,7 +16,7 @@
     },
     "mme_list": {
       "title": "MME list",
-      "description": "Optional. List of MME to which the gNodeB is connected",
+      "description": "List of MME to which the eNodeB is connected. (must be set if there are LTE cells)",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -29,12 +29,11 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "plmn_list": {
       "title": "PLMN list (4G)",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6. (must be set if there are LTE cells)",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -74,7 +73,7 @@
     },
     "amf_list": {
       "title": "AMF list",
-      "description": "Optional. List of AMF to which the gNodeB is connected",
+      "description": "List of AMF to which the gNodeB is connected. (must set if there are NR cells)",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -87,12 +86,11 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "plmn_list_5g": {
       "title": "PLMN list (5G)",
-      "description": "List of PLMNs broadcasted by the gNodeB, at most 12",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12. (must set if there are NR cells)",
       "patternProperties": {
         ".*": {
           "properties": {
