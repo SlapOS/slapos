@@ -211,7 +211,7 @@ init =
   frontend_url = urlparse(self.options['frontend-url'])
   admin_user = self.options['admin-user']
   admin_password = self.options['admin-password']
-  self.options['public-url'] = frontend_url._replace(path='/pub').geturl()
+  self.options['public-url'] = frontend_url._replace(path='/pub/').geturl()
   assert not frontend_url.username
   self.options['upload-url'] = frontend_url._replace(
     netloc=f'{admin_user}:{admin_password}@{frontend_url.netloc}').geturl()
