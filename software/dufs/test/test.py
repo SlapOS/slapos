@@ -91,6 +91,26 @@ class TestFileServer(SlapOSInstanceTestCase):
       self.assertNotIn('secret', resp.text)
       self.assertEqual(resp.status_code, requests.codes.ok)
 
+  def test_index(self):
+    pub = pathlib.Path(self.computer_partition_root_path) / 'srv' / 'www' / 'pub'
+    (pub / 'with-index').mkdir()
+    (pub / 'with-index' / 'index.html').write_text('<html>Hello !</html>')
+    self.assertEqual(
+      requests.get(
+        urllib.parse.urljoin(self.connection_parameters['public-url'], 'with-index/'),
+        verify=self.ca_cert,
+      ).text,
+      '<html>Hello !</html>')
+
+    (pub / 'without-index').mkdir()
+    (pub / 'without-index' / 'file.txt').write_text('Hello !')
+    self.assertIn(
+      'file.txt',
+      requests.get(
+        urllib.parse.urljoin(self.connection_parameters['public-url'], 'without-index/'),
+        verify=self.ca_cert,
+      ).text)
+
   def test_upload_file_refused_without_auth(self):
     parsed_upload_url = urllib.parse.urlparse(self.connection_parameters['upload-url'])
     # upload-url has username:password, remove it
