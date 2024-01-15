@@ -155,6 +155,7 @@ command-line =
     --enable-cors
     --bind ${:ip}
     --port ${:port}
+    --render-try-index
     --allow-all
     --auth-method basic
     --auth ${admin-password:user}:${admin-password:passwd}@/:rw
