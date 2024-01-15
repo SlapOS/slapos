@@ -3,67 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "plmn_list": {
-      "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "plmn": {
-              "default": "00101",
-              "title": "Public Land Mobile Network",
-              "description": "Public Land Mobile Network",
-              "type": "string"
-            },
-            "tac": {
-              "default": 100,
-              "title": "Tracking Area Code",
-              "description": "Integer (range 0 to 16777215)",
-              "type": "number"
-            },
-            "ranac": {
-              "title": "Optional integer (range 0 to 255)",
-              "description": "RAN Area Code",
-              "type": "number"
-            },
-            "reserved": {
-              "default": false,
-              "title": "Reserved",
-              "description": "True if the cell is reserved for operator use.",
-              "type": "boolean"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
-    },
-    "nssai": {
-      "title": "AMF slices configuration",
-      "description": "AMF slices configuration.",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "sst": {
-              "default": 1,
-              "title": "Slice Service Type",
-              "description": "Integer (range 1 to 255).",
-              "type": "number"
-            },
-            "sd": {
-              "default": "0x000032",
-              "title": "Slice Differentiator",
-              "description": "Optional integer (range 0 to 0xFFFFFE)",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
-    },
     "nr_handover_a3_offset": {
       "title": "A3 offset for NR handover",
       "description": "RSRP gain offset between gNBs which will trigger handover",

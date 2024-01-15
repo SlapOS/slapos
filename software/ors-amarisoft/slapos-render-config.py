@@ -426,7 +426,9 @@ def do_enb():
         },
         "slapparameter_dict": {
             "enb_id": "0x10012",
-            "gnb_id": "0x54321"
+            "gnb_id": "0x54321",
+            "plmn_list":    {"1": {"plmn": "31415"}},
+            "plmn_list_5g": {"1": {"plmn": "51413", "tac": 123}}
         }
     }""" % locals()
 

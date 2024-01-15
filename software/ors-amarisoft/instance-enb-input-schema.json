@@ -32,6 +32,35 @@
       "type": "object",
       "default": {}
     },
+    "plmn_list": {
+      "title": "PLMN list (4G)",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "plmn": {
+              "title": "Public Land Mobile Network",
+              "description": "Public Land Mobile Network",
+              "type": "string"
+            },
+            "attach_without_pdn": {
+              "default": false,
+              "title": "Attach Without PDN",
+              "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
+              "type": "boolean"
+            },
+            "reserved": {
+              "default": false,
+              "title": "Reserved",
+              "description": "True if the cell is reserved for operator use.",
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "gnb_id": {
       "title": "gNB ID",
       "description": "gNB ID. (must set if there are NR cells)",
@@ -61,29 +90,56 @@
       "type": "object",
       "default": {}
     },
-    "plmn_list": {
-      "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+    "plmn_list_5g": {
+      "title": "PLMN list (5G)",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12",
       "patternProperties": {
         ".*": {
           "properties": {
             "plmn": {
-              "default": "00101",
               "title": "Public Land Mobile Network",
               "description": "Public Land Mobile Network",
               "type": "string"
             },
-            "attach_without_pdn": {
-              "default": false,
-              "title": "Attach Without PDN",
-              "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
-              "type": "boolean"
+            "tac": {
+              "title": "Tracking Area Code",
+              "description": "Integer (range 0 to 16777215)",
+              "type": "number"
+            },
+            "ranac": {
+              "title": "Optional integer (range 0 to 255)",
+              "description": "RAN Area Code",
+              "type": "number"
             },
             "reserved": {
               "default": false,
               "title": "Reserved",
               "description": "True if the cell is reserved for operator use.",
               "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "nssai": {
+      "title": "AMF slices configuration",
+      "description": "AMF slices configuration.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "sst": {
+              "default": 1,
+              "title": "Slice Service Type",
+              "description": "Integer (range 1 to 255).",
+              "type": "number"
+            },
+            "sd": {
+              "default": "0x000032",
+              "title": "Slice Differentiator",
+              "description": "Optional integer (range 0 to 0xFFFFFE)",
+              "type": "string"
             }
           },
           "type": "object"
