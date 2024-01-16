@@ -275,11 +275,11 @@ class ENBTestCase4(RFTestCase4):
             'gnb_id_bits':  30,
             'mme_list':     {
                 '1': {'mme_addr': '1.2.3.4'},
-                '2': {'mme_addr': '[1234::1]:78'},
+                '2': {'mme_addr': '[abcd:5::1]:78'},
             },
             'amf_list':     {
                 '1': {'amf_addr': '4.3.2.1:77'},
-                '2': {'amf_addr': '4321::1'},
+                '2': {'amf_addr': 'dcba:5::1'},
             },
             'plmn_list':    {
                 '1': {'plmn': '31415'},
@@ -318,8 +318,8 @@ class ENBTestCase4(RFTestCase4):
     def test_enb_cfg_basic(t):
         assertMatch(t, t.enb_cfg, dict(
           enb_id=0x17, gnb_id=0x23, gnb_id_bits=30,
-          mme_list=[{'mme_addr': '1.2.3.4'}, {'mme_addr': '[1234::1]:78'}],
-          amf_list=[{'amf_addr': '4.3.2.1:77'}, {'amf_addr': '4321::1'}],
+          mme_list=[{'mme_addr': '1.2.3.4'}, {'mme_addr': '[abcd:5::1]:78'}],
+          amf_list=[{'amf_addr': '4.3.2.1:77'}, {'amf_addr': 'dcba:5::1'}],
           x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
           cell_default={
             'plmn_list': [
