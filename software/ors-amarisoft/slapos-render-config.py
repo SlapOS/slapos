@@ -29,7 +29,6 @@ def j2render(src, out, jcfg):
     textctx += 'import nrarfcn_module nrarfcn\n'
     textctx += 'import xearfcn_module  xlte.earfcn\n'
     textctx += 'import xnrarfcn_module xlte.nrarfcn\n'
-    textctx += 'import urllib urllib\n'
     textctx += 'import netaddr netaddr\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
