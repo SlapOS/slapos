@@ -428,7 +428,8 @@ tune-command =
 software = {{ gitlab_shell_repository_location }}
 
 tune-command =
-    cp ${:software}/bin/* bin &&
+    if [ -d "bin" ]; then rm -rf bin; fi &&
+    ln -sf ${:software}/bin bin &&
     ln -sf ${gitlab-shell-config.yml:output}   config.yml  &&
     true
 
@@ -836,7 +837,7 @@ command =
     ${:rake} gitlab:assets:clean  &&
     ${:rake} gettext:compile RAILS_ENV=production &&
     cd ${gitlab-work:location} &&
-    PATH={{ node_bin_location }}:$PATH {{ yarn_location }}/bin/yarn install --production --pure-lockfile &&
+    PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH yarn install --offline --production --pure-lockfile &&
     ${:rake} gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096" &&
     true
 
