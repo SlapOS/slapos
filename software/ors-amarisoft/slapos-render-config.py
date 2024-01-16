@@ -29,6 +29,8 @@ def j2render(src, out, jcfg):
     textctx += 'import nrarfcn_module nrarfcn\n'
     textctx += 'import xearfcn_module  xlte.earfcn\n'
     textctx += 'import xnrarfcn_module xlte.nrarfcn\n'
+    textctx += 'import urllib urllib\n'
+    textctx += 'import netaddr netaddr\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do jinja2.ext.loopcontrols',
@@ -412,11 +414,6 @@ def do_enb():
         "slap_configuration": {
             "tap-name": "slaptap9",
             "slap-computer-partition-id": "slappart9",
-            "configuration.com_ws_port": 9001,
-            "configuration.com_addr": "127.0.1.2",
-            "configuration.mme_addr": "127.0.1.100",
-            "configuration.amf_addr": "127.0.1.100",
-            "configuration.gtp_addr": "127.0.1.1",
             "slave-instance-list": %(jshared_instance_list)s
         },
         "directory": {
@@ -426,7 +423,14 @@ def do_enb():
         },
         "slapparameter_dict": {
             "enb_id": "0x10012",
-            "gnb_id": "0x54321"
+            "gnb_id": "0x54321",
+            "com_ws_port": 9001,
+            "com_addr": "127.0.1.2",
+            "mme_list":     {"1": {"mme_addr": "127.0.1.100"}},
+            "amf_list":     {"1": {"amf_addr": "127.0.1.100"}},
+            "plmn_list":    {"1": {"plmn": "31415"}},
+            "plmn_list_5g": {"1": {"plmn": "51413", "tac": 123}},
+            "nssai":        {"1": {"sst": 1}}
         }
     }""" % locals()
 

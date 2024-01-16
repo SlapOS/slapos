@@ -74,10 +74,15 @@
       "default": "127.0.1.1"
     },
     "mme_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/mme_list"
+      "$ref": "instance-enb-input-schema.json#/properties/mme_list",
+      "default": {"1": {"mme_addr": "127.0.1.100"}}
     },
     "plmn_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/plmn_list"
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+      "default": {
+        "1": {"plmn": "00101"}
+      }
     },
     "lte_handover_a3_offset": {
       "title": "A3 offset for LTE handover",

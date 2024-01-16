@@ -146,7 +146,8 @@ def test_enb_conf(self):
       self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
       self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
     self.assertEqual(len(conf['cell_list']), 1)
-    self.assertEqual(len(conf['nr_cell_list']), 0)
+    self.assertNotIn('nr_cell_list', conf)
+    self.assertNotIn('nr_cell_default', conf)
     cell = conf['cell_list'][0]
     self.assertEqual(cell['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(cell['uldl_config'], 6)
@@ -182,7 +183,8 @@ def test_gnb_conf1(self):
         conf = yamlpp_load(conf_file)
         self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
         self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
-        self.assertEqual(len(conf['cell_list']), 0)
+        self.assertNotIn('cell_list', conf)
+        self.assertNotIn('cell_default', conf)
         self.assertEqual(len(conf['nr_cell_list']), 1)
         nr_cell = conf['nr_cell_list'][0]
         self.assertEqual(nr_cell['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
