@@ -201,7 +201,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
     RU1 = {
         'ru_type':      'lopcomm',
         'ru_link_type': 'cpri',
-        'mac_addr':     'XXX',
+        'mac_addr':     '00:00:00:00:00:01',
         'cpri_link':    {
             'sdr_dev':  2,
             'sfp_port': 0,
@@ -218,7 +218,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
     }
 
     RU2 = copy.deepcopy(RU1)
-    RU2['mac_addr'] = 'YYY'
+    RU2['mac_addr'] = '00:00:00:00:00:02'
     RU2['cpri_link']['sfp_port'] = 1
     RU2['tx_gain'] += 10
     RU2['rx_gain'] += 10
@@ -304,7 +304,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
     RU_0002 = {
         'ru_type':      'lopcomm',
         'ru_link_type': 'cpri',
-#       'mac_addr':     'XXX',
+        'mac_addr':     '00:00:00:00:00:01',
         'cpri_link':    {
             'sdr_dev':  0,
             'sfp_port': 0,
@@ -322,7 +322,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
 
     # supports: 2110 - 2170 MHz
     RU_0004 = copy.deepcopy(RU_0002)
-#   RU_0004['mac_addr'] = 'YYY'
+    RU_0004['mac_addr'] = '00:00:00:00:00:04'
     RU_0004['cpri_link']['sfp_port'] = 1
 
     if 1:
