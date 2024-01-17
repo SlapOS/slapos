@@ -448,7 +448,7 @@
   {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
   {%- endfor %}
 
-  {#- emit big warning if both cpri and sdr are present
+  {#- emit big warning if both sdr and cpri are present
       to protect users from unclear eNB failures in such unsupported combination  #}
   {%- set do_sdr  = len(ru_sdr_dict)  > 0 %}
   {%- set do_cpri = len(ru_cpri_dict) > 0 %}
@@ -466,7 +466,7 @@
   {%- endif                                 %}
 
   {#- emit cpri_* options if a cpri ru is present #}
-  {#- NOTE values for non-cpri links come as empty   XXX recheck this is ok #}
+  {#- NOTE values for non-cpri links come as empty  #}
   {%- if len(ru_cpri_dict) > 0              %}
   {%-   set vcpri = [None]*len(dev_argv)    %}
   {%-   for dev, ru in ru_cpri_dict|dictsort  %}
