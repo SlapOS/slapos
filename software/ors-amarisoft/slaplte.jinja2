@@ -424,12 +424,6 @@
       sync: "gps",
   {%- endif %}
 
-  {#- XXX emit big warning if both cpri and sdr are present
-        to protect users from unclear eNB failures
-        see https://support.amarisoft.com/issues/26021 for details
-
-    XXX below we continue as if sdr and cpri are both supported by enb simultaneously #}
-
   {%- set dev_argv = []                                                       %}
   {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
   {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
@@ -453,6 +447,16 @@
   {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)        %}
   {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
   {%- endfor %}
+
+  {#- emit big warning if both cpri and sdr are present
+      to protect users from unclear eNB failures in such unsupported combination  #}
+  {%- set do_sdr  = len(ru_sdr_dict)  > 0 %}
+  {%- set do_cpri = len(ru_cpri_dict) > 0 %}
+  {%- if do_sdr and do_cpri %}
+      #error Mixing SDR and CPRI is not supported and breaks subtly. See https://support.amarisoft.com/issues/26021 for details.
+  {%- endif %}
+
+  {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
       args: "{{(dev_argv | join(',')) or '---'}}",
 
   {#- emit sdr-related options if an sdr ru is present #}
