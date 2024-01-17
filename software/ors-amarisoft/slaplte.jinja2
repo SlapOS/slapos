@@ -463,8 +463,8 @@
 
   {#- disable trx completely if all we have is only inactive sdr(s).
       do not disable if there is cpri, because for cpri whether to activate
-      radio or not is controlled via RU-specific config. See e.g.
-      ru/lopcomm/cu_config.jinja2.xml for details #}
+      radio or not is natively controlled via RU-specific config.
+      See e.g. ru/lopcomm/cu_config.jinja2.xml for details #}
   {%- if do_sdr  and  (not do_cpri)  and
          len(iru_dict|dictsort | selectattr('1._.txrx_active', '==', 'ACTIVE') | list) == 0 %}
       name: "dummy",
