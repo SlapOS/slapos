@@ -131,7 +131,9 @@ class Recipe(GenericSlapRecipe):
           new = {}
           for k, v in six.iteritems(init):
             try:
-              options[k] = publish_dict[k] = new[v] = init_section.pop(v)
+              init_section_value = init_section[v]
+              options[k] = publish_dict[k] = new[v] = init_section_value
+              del init_section[v]
             except KeyError:
               pass
           if new != override:

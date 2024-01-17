@@ -33,12 +33,16 @@ buildout Software Releases and Instances developments.
 from __future__ import absolute_import
 
 import errno
+import json
 import os
 import random
 import string
+import sys
 from .librecipe import GenericBaseRecipe
 from .publish_early import volatileOptions
-from slapos.util import str2bytes
+
+import passlib.hash
+
 
 class Integer(object):
   """
@@ -113,7 +117,7 @@ def generatePassword(length):
 
 
 class Password(object):
-  """Generate a password that is only composed of lowercase letters
+  """Generate a password.
 
     This recipe only makes sure that ${:passwd} does not end up in `.installed`
     file, which is world-readable by default. So be careful not to spread it
@@ -128,6 +132,11 @@ class Password(object):
     - create-once: boolean value which set if storage-path won't be modified
                    as soon the file is created with the password (not empty).
       (default: True)
+    - passwd: the generated password. Can also be set, to reuse the password
+              hashing capabilities.
+    - passwd-*: the hashed password, using schemes supported by passlib.
+                for example, passwd-sha256-crypt will expose the password hashed
+                with sha256 crypt algorithm.
 
     If storage-path is empty, the recipe does not save the password, which is
     fine it is saved by other means, e.g. using the publish-early recipe.
@@ -141,24 +150,53 @@ class Password(object):
     except KeyError:
       self.storage_path = options['storage-path'] = os.path.join(
         buildout['buildout']['parts-directory'], name)
-    passwd = options.get('passwd')
-    if not passwd:
+    passwd_dict = {
+      '': options.get('passwd')
+    }
+    if not passwd_dict['']:
       if self.storage_path:
+        self._needs_migration = False
         try:
           with open(self.storage_path) as f:
-            passwd = f.read().strip('\n')
+            content = f.read().strip('\n')
+            # new format: the file contains password and hashes in json format
+            try:
+              passwd_dict = json.loads(content)
+              if sys.version_info < (3, ):
+                passwd_dict = {k: v.encode() for k, v in passwd_dict.items()}
+            except ValueError:
+              # old format: the file only contains the password in plain text
+              passwd_dict[''] = content
+              self._needs_migration = True
         except IOError as e:
           if e.errno != errno.ENOENT:
             raise
-      if not passwd:
-        passwd = self.generatePassword(int(options.get('bytes', '16')))
+
+      if not passwd_dict['']:
+        passwd_dict[''] = self.generatePassword(int(options.get('bytes', '16')))
         self.update = self.install
-      options['passwd'] = passwd
+      options['passwd'] = passwd_dict['']
+
+    class HashedPasswordDict(dict):
+      def __missing__(self, key):
+        if not key.startswith('passwd-'):
+          raise KeyError(key)
+        if key in passwd_dict:
+          return passwd_dict[key]
+        handler = getattr(
+          passlib.hash, key[len('passwd-'):].replace('-', '_'), None)
+        if handler is None:
+          raise KeyError(key)
+        hashed = handler.hash(passwd_dict[''])
+        passwd_dict[key] = hashed
+        return hashed
+    options._data = HashedPasswordDict(options._data)
+
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
     # publish_early already does it, but this recipe may also be used alone.
     volatileOptions(options, ('passwd',))
-    self.passwd = passwd
+    self.passwd_dict = passwd_dict
 
   generatePassword = staticmethod(generatePassword)
 
@@ -167,19 +205,14 @@ class Password(object):
       try:
         # The following 2 lines are just an optimization to avoid recreating
         # the file with the same content.
-        if self.create_once and os.stat(self.storage_path).st_size:
+        if self.create_once and os.stat(self.storage_path).st_size and not self._needs_migration:
           return
         os.unlink(self.storage_path)
       except OSError as e:
         if e.errno != errno.ENOENT:
           raise
-
-      fd = os.open(self.storage_path,
-        os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0o600)
-      try:
-        os.write(fd, str2bytes(self.passwd))
-      finally:
-        os.close(fd)
+      with open(self.storage_path, 'w') as f:
+        json.dump(self.passwd_dict, f)
       if not self.create_once:
         return self.storage_path
 
