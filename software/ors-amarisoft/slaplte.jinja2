@@ -467,18 +467,18 @@
 
   {#- emit cpri_* options if a cpri ru is present #}
   {#- NOTE values for non-cpri links come as empty  #}
-  {%- if len(ru_cpri_dict) > 0              %}
-  {%-   set vcpri = [None]*len(dev_argv)    %}
+  {%- if len(ru_cpri_dict) > 0  %}
+  {%-   set vcpri = [None]*len(dev_argv)  %}
   {%-   for dev, ru in ru_cpri_dict|dictsort  %}
-  {%-     do vcpri.__setitem__(dev, ru.cpri_link)       %}
-  {%-   endfor                                %}
+  {%-     do vcpri.__setitem__(dev, ru.cpri_link) %}
+  {%-   endfor  %}
         cpri_mapping:  "{{ vcpri | map(attribute='mapping')  | map('default', '') | join(',') }}",
         cpri_mult:     "{{ vcpri | map(attribute='mult')     | map('default', '') | join(',') }}",
         cpri_rx_delay: "{{ vcpri | map(attribute='rx_delay') | map('default', '') | join(',') }}",
         cpri_tx_delay: "{{ vcpri | map(attribute='tx_delay') | map('default', '') | join(',') }}",
         cpri_tx_dbm:   "{{ vcpri | map(attribute='tx_dbm')   | map('default', '') | join(',') }}",
         ifname:        "{{ vcpri | map(attribute='_tap')     | map('default', '') | join(',') }}",
-  {%- endif                                                     %}
+  {%- endif %}
   },
 
   {#- emit tx/rx gain for all channels #}
