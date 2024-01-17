@@ -331,14 +331,14 @@
 #}
 {%- macro jref_of_shared(ishared) %}
 {#- do  print('jref_of_shared %r' % (ishared,)) #}
-{%-   set ref = ishared['slave_title']                                      %}
-{%-   set partition_id = slap_configuration['slap-computer-partition-id']   %}
-{%-   if ref.startswith(partition_id)                                       %}
-{%-     set ref = ref[len(partition_id):]                                   %}
-{%-   endif                                                                 %}
-{%-   set ref = ref.removeprefix('_')                                       %}
-{{-   ref | tojson                                                          }}
-{%- endmacro                                                                %}
+{%-   set ref = ishared['slave_title']  %}
+{%-   set partition_id = slap_configuration['slap-computer-partition-id'] %}
+{%-   if ref.startswith(partition_id) %}
+{%-     set ref = ref[len(partition_id):] %}
+{%-   endif %}
+{%-   set ref = ref.removeprefix('_') %}
+{{-   ref | tojson  }}
+{%- endmacro  %}
 
 
 {#- load_ipeer initializes peer registry.
@@ -402,24 +402,24 @@
 
     iue_dict keeps ue shared instance:  reference -> iue
 #}
-{%- macro load_iue(iue_dict)                        %}
-{%-   set qother = []                               %}
-{%-   for ishared in qshared_instance_list          %}
-{%-     set ref = J(jref_of_shared(ishared))        %}
-{%-     set _ = ishared['_']                        %}
-{%-     if   'ue_type'   in _                       %}
-{%-       set iue = ishared                         %}
-{%-       for k, v in defaults['ue'].items()        %}
-{%-         do _.setdefault(k, v)                   %}
-{%-       endfor                                    %}
-{%-       do iue_dict.update({ref: iue})            %}
-{%-     else                                        %}
-{%-       do qother.append(ishared)                 %}
-{%-     endif                                       %}
-{%-   endfor                                        %}
-{%-   do qshared_instance_list.clear()              %}
-{%-   do qshared_instance_list.extend(qother)       %}
-{%- endmacro                                        %}
+{%- macro load_iue(iue_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ue_type'   in _ %}
+{%-       set iue = ishared %}
+{%-       for k, v in defaults['ue'].items()  %}
+{%-         do _.setdefault(k, v) %}
+{%-       endfor  %}
+{%-       do iue_dict.update({ref: iue})  %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
+{%- endmacro  %}
 
 
 {#- ---- building configuration ---- #}
@@ -434,23 +434,23 @@
   {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
   {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
   {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
-  {%-   set ru = iru['_']                                                     %}
+  {%-   set ru = iru['_'] %}
       // {{ B(ru_ref) }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
-  {%-   if ru.ru_type == 'sdr'                                                %}
-  {%-     do ru_sdr_dict.update({len(dev_argv): ru})                          %}
-  {%-     for n in ru.sdr_dev_list                                            %}
-  {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n))       %}
-  {%-     endfor                                                              %}
-  {%-   elif ru.ru_link_type == 'cpri'                                        %}
-  {%-     do ru_cpri_dict.update({len(dev_argv): ru})                         %}
-  {%-     set link = ru.cpri_link                                             %}
-  {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))   %}
-  {%-   else        %}
-  {%-     do bug('unreachable')                                 %}
-  {%-   endif                                                   %}
+  {%-   if ru.ru_type == 'sdr'  %}
+  {%-     do ru_sdr_dict.update({len(dev_argv): ru})  %}
+  {%-     for n in ru.sdr_dev_list  %}
+  {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n)) %}
+  {%-     endfor  %}
+  {%-   elif ru.ru_link_type == 'cpri'  %}
+  {%-     do ru_cpri_dict.update({len(dev_argv): ru}) %}
+  {%-     set link = ru.cpri_link %}
+  {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))  %}
+  {%-   else  %}
+  {%-     do bug('unreachable') %}
+  {%-   endif %}
   {%-   set ru_tx_gain = ru.tx_gain  if ru.txrx_active == 'ACTIVE'  else -1000 %}
-  {%-   do tx_gainv.extend([ru_tx_gain]*ru.n_antenna_dl)        %}
-  {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
+  {%-   do tx_gainv.extend([ru_tx_gain]*ru.n_antenna_dl)  %}
+  {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)  %}
   {%- endfor %}
 
   {#- emit big error if both sdr and cpri are present
