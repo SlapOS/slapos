@@ -53,6 +53,12 @@
       "type": "integer",
       "default": 204
     },
+    "inactivity_timer": {
+      "title": "Inactivity Timer",
+      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
+      "type": "number",
+      "default": 10000
+    },
     "ru": {
       "$ref": "#/$defs/ru-of-cell",
       "propertyOrder": 9999
