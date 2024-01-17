@@ -229,23 +229,23 @@
 {%-   endfor %}
 
 {#-   verify that there is no dangling cell->ru references #}
-{%-   for _, icell in icell_dict|dictsort                             %}
-{%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict))               %}
-{%-     if ru_ref not in iru_dict                                     %}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict)) %}
+{%-     if ru_ref not in iru_dict %}
 {%-       do ierror(icell, "referred RU %s does not exist" % ru_ref)  %}
-{%-     endif                                                         %}
-{%-   endfor                                                          %}
+{%-     endif %}
+{%-   endfor  %}
 
-{#-   assign RUs rf_port and tx/rx channel indices                    #}
-{%-   set rf_chan = namespace(tx=0, rx=0)                             %}
-{%-   for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)      %}
-{%-     set ru = iru['_']                                             %}
+{#-   assign RUs rf_port and tx/rx channel indices  #}
+{%-   set rf_chan = namespace(tx=0, rx=0) %}
+{%-   for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)  %}
+{%-     set ru = iru['_'] %}
 {%-     do ru.update({'_rf_port':    rf_port,
                       '_rf_chan_tx': rf_chan.tx,
-                      '_rf_chan_rx': rf_chan.rx})                     %}
-{%-     set rf_chan.tx = rf_chan.tx + ru.n_antenna_dl                 %}
-{%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul                 %}
-{%-   endfor                                                          %}
+                      '_rf_chan_rx': rf_chan.rx}) %}
+{%-     set rf_chan.tx = rf_chan.tx + ru.n_antenna_dl %}
+{%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul %}
+{%-   endfor  %}
 
 {#-   assign TAP interfaces to cpri RUs #}
 {%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
