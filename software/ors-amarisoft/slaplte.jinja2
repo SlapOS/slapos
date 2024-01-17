@@ -194,42 +194,16 @@
 {%-     set _ = ishared['_']  %}
 {%-     if   'ru_type'   in _ %}
 {%-       set iru = ishared %}
-{%-       for k, v in defaults['ru'].items()  %}
-{%-         do _.setdefault(k, v) %}
-{%-       endfor  %}
-{%-       for k, v in defaults.get('ru/'+_.ru_type, {}).items() %}
-{%-         do _.setdefault(k, v) %}
-{%-       endfor  %}
-{%-       if _.ru_link_type == 'cpri' %}
-{%-         set link = _.cpri_link  %}
-{%-         for k, v in defaults['ru/cpri_link'].items() %}
-{%-           do link.setdefault(k, v)  %}
-{%-         endfor  %}
-{%-       endif %}
+{%-       do _ru_set_defaults(_)  %}
 {%-       do iru_dict.update({ref: iru})  %}
 {%-     elif 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
 {%-       set icell = ishared %}
-{%-       if icell_kind == 'enb'  %}
-{%-         for k, v in defaults['cell/%s' % _.cell_type].items() %}
-{%-           do _.setdefault(k, v) %}
-{%-         endfor  %}
-{%-         for k, v in defaults['cell/%s/%s' % (_.cell_type, _.rf_mode)].items() %}
-{%-           do _.setdefault(k, v) %}
-{%-         endfor  %}
-{%-       endif %}
-{%-       if _.cell_type == 'lte'  %}
-{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
-{%-       elif _.cell_type == 'nr' %}
-{%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
-{%-         do _.setdefault('subcarrier_spacing', 30  if _.rf_mode == 'tdd'  else 15)  %}           {# XXX just leave at 30 ? #}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
-{%-       else  %}
-{%-         do bug('unreachable') %}
-{%-       endif %}
+{%-       do _cell_set_defaults(_, icell_kind)  %}
 {%-       do icell_dict.update({ref: icell})  %}
 {%-       set ru = _['ru']  %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
 {#-         embedded ru definition -> expose it as `_<cell_ref>_ru` #}
+{%-         do _ru_set_defaults(ru) %}
 {%-         do iru_dict.update({'_%s_ru' % ref: {
                   '_':                ru,
                   'slave_title':      '%s. RU' % icell.slave_title,
@@ -245,7 +219,6 @@
 
 {#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
 {#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
-
 
 {#-   verify that there is no dangling cell->ru references #}
 {#-   XXX also verify that there is no dangling cell -> cell refs in ruincell_ref #}
@@ -279,6 +252,42 @@
 {%-   endfor  %}
 
 {%- endmacro  %}
+
+{%- macro _ru_set_defaults(ru)  %}
+{%-   for k, v in defaults['ru'].items()  %}
+{%-     do ru.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   for k, v in defaults.get('ru/'+ru.ru_type, {}).items() %}
+{%-     do ru.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   if ru.ru_link_type == 'cpri' %}
+{%-     set link = ru.cpri_link  %}
+{%-     for k, v in defaults['ru/cpri_link'].items() %}
+{%-       do link.setdefault(k, v)  %}
+{%-     endfor  %}
+{%-   endif %}
+{%- endmacro  %}
+
+{%- macro _cell_set_defaults(cell, icell_kind)  %}
+{%-   if icell_kind == 'enb'  %}
+{%-     for k, v in defaults['cell/%s' % cell.cell_type].items() %}
+{%-       do cell.setdefault(k, v) %}
+{%-     endfor  %}
+{%-     for k, v in defaults['cell/%s/%s' % (cell.cell_type, cell.rf_mode)].items() %}
+{%-       do cell.setdefault(k, v) %}
+{%-     endfor  %}
+{%-   endif %}
+{%-   if cell.cell_type == 'lte'  %}
+{%-     do cell.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(cell.dl_earfcn))) %}
+{%-   elif cell.cell_type == 'nr' %}
+{%-     do cell.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-     do cell.setdefault('subcarrier_spacing', 30  if cell.rf_mode == 'tdd'  else 15)  %}           {# XXX just leave at 30 ? #}
+{%-     do cell.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-   else  %}
+{%-     do bug('unreachable') %}
+{%-   endif %}
+{%- endmacro %}
+
 
 {#- jcell_ru_ref returns RU reference linked from a cell.
     if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
@@ -413,17 +422,6 @@
 {%- macro ru_config(iru_dict, slapparameter_dict) %}
   // Radio Units
   rf_driver: {
-  // XXX vvv <- ru.txrx_active ?  XXX how to handle txrx_active for SDR ?
-  // (tx_gain=-1000 does not work - it still sets tx_gain to min.possible value 14)
-  {%- if slapparameter_dict.get('disable_sdr', False) %}
-      name: "dummy",
-  {%- else %}
-      name: "sdr",
-  {%- endif %}
-  {%- if slapparameter_dict.get('gps_sync', False) %}
-      sync: "gps",
-  {%- endif %}
-
   {%- set dev_argv = []                                                       %}
   {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
   {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
@@ -444,11 +442,12 @@
   {%-   else        %}
   {%-     do bug('unreachable')                                 %}
   {%-   endif                                                   %}
-  {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)        %}
+  {%-   set ru_tx_gain = ru.tx_gain  if ru.txrx_active == 'ACTIVE'  else -1000 %}
+  {%-   do tx_gainv.extend([ru_tx_gain]*ru.n_antenna_dl)        %}
   {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
   {%- endfor %}
 
-  {#- emit big warning if both sdr and cpri are present
+  {#- emit big error if both sdr and cpri are present
       to protect users from unclear eNB failures in such unsupported combination  #}
   {%- set do_sdr  = len(ru_sdr_dict)  > 0 %}
   {%- set do_cpri = len(ru_cpri_dict) > 0 %}
@@ -456,18 +455,30 @@
       #error Mixing SDR and CPRI is not supported and breaks subtly. See https://support.amarisoft.com/issues/26021 for details.
   {%- endif %}
 
+  {#- disable trx completely if all we have is only inactive sdr(s) #}
+  {%- if do_sdr  and  (not do_cpri)  and
+         len(iru_dict|dictsort | selectattr('1._.txrx_active', '==', 'ACTIVE') | list) == 0 %}
+      name: "dummy",
+  {%- else %}
+      name: "sdr",
+  {%- endif %}
+
+  {%- if slapparameter_dict.get('gps_sync', False) %}
+      sync: "gps",
+  {%- endif %}
+
   {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
       args: "{{(dev_argv | join(',')) or '---'}}",
 
   {#- emit sdr-related options if an sdr ru is present #}
-  {%- if len(ru_sdr_dict) > 0               %}
+  {%- if do_sdr %}
       rx_antenna:"tx_rx",
       tdd_tx_mod: 1,
-  {%- endif                                 %}
+  {%- endif %}
 
   {#- emit cpri_* options if a cpri ru is present #}
   {#- NOTE values for non-cpri links come as empty  #}
-  {%- if len(ru_cpri_dict) > 0  %}
+  {%- if do_cpri  %}
   {%-   set vcpri = [None]*len(dev_argv)  %}
   {%-   for dev, ru in ru_cpri_dict|dictsort  %}
   {%-     do vcpri.__setitem__(dev, ru.cpri_link) %}

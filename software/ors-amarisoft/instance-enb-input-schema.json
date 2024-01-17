@@ -163,12 +163,6 @@
       "description": "True if GPS should be used for synchronisation",
       "type": "boolean"
     },
-    "disable_sdr": {
-      "default": false,
-      "title": "Disable SDR  XXX kill ?",
-      "description": "Disables radio",
-      "type": "boolean"
-    },
     "use_ipv4": {
       "default": false,
       "title": "Use IPv4",
