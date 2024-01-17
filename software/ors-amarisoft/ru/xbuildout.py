@@ -47,7 +47,7 @@
 #
 # Recommended usage of encode in buildout profiles is via B as illustrated below:
 #
-#   {#-   B(name) returns buildout-encoded form of name #}
+#   {#-   B(name) escapes name to be safe to use in buildout code. #}
 #   {%-   set B = xbuildout.encode  %}
 #
 #   ...

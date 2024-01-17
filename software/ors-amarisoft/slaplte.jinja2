@@ -8,6 +8,12 @@
     In the code iX denotes shared instance of type X, while X denotes
     parameters passed to iX. For example iru denotes Radio Unit shared
     instance, while ru denotes parameters of that Radio Unit instance.
+
+    The following utilities are also provided:
+
+    - B escapes string to be safe to use in buildout code.
+    - J should be used around macro calls to retrieve returned objects.
+    - ierror reports an error about shared instance.
 -#}
 
 
@@ -78,7 +84,18 @@
 %}
 
 
-{#- XXX explain	#}
+{#- B(name) escapes name to be safe to use in buildout code.
+
+    It escapes buildout control characters in the string so that the result
+    could be used in buildout code without the risk of buildout profile to
+    become broken and/or with injected code when handling string input from
+    outside.
+
+    The most often case when B needs to be used is when handling references of
+    shared instances in generated buildout code.
+
+    See xbuildout.encode documentation for details.
+#}
 {%- set B = xbuildout.encode  %}
 
 {#- J is used around macro calls to retrieve returned objects.
@@ -129,10 +146,9 @@
 {%-   do assert(False, msg)                                         %}
 {%- endmacro                                                        %}
 
-{#- error reports an error about shared instance #}
-{#- XXX -> ierror ?   #}
-{#- XXX error(ishared, msg)  vvv is debug stub -#}
-{%- macro error(ishared, msg)   %}
+{#- ierror reports an error about shared instance. #}
+{#- XXX ierror(ishared, msg)  vvv is debug stub -#}
+{%- macro ierror(ishared, msg)   %}
 {%-   set msg = 'E: %s: %s\n' % (J(jref_of_shared(ishared)), msg)   %}
 {%-   do assert(False, msg)                                         %}
 {%- endmacro  %}
@@ -150,7 +166,7 @@
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
 {%- macro check_loaded_everything()                               %}
 {%-   for ishared in qshared_instance_list                        %}
-{%-     do error(ishared, "shared instance of unsupported type")  %}
+{%-     do ierror(ishared, "shared instance of unsupported type") %}
 {%-   endfor                                                      %}
 {%- endmacro                                                      %}
 
@@ -236,7 +252,7 @@
 {%-   for _, icell in icell_dict|dictsort                             %}
 {%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict))               %}
 {%-     if ru_ref not in iru_dict                                     %}
-{%-       do error(icell, "referred RU %s does not exist" % ru_ref)   %}
+{%-       do ierror(icell, "referred RU %s does not exist" % ru_ref)  %}
 {%-     endif                                                         %}
 {%-   endfor                                                          %}
 
@@ -273,7 +289,7 @@
 {%-   set cell_ref = J(jref_of_shared(icell))                           %}
 {%-   if cell_ref in seen                                               %}
 {%-     for x in seen                                                   %}
-{%-       do error(x, "%s form a cycle via RU references" % seen)       %}
+{%-       do ierror(x, "%s form a cycle via RU references" % seen)      %}
 {%-     endfor                                                          %}
 {#-     XXX what to return ?                                            #}
 {%-   else                                                              %}
