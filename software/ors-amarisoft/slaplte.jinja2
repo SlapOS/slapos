@@ -158,10 +158,36 @@
 
 {#- ---- loading ---- #}
 
+{#- jref_of_shared returns original reference used to request shared instance.
+
+    slapproxy puts the reference into slave_reference and slave_title as <partition_id>_<reference>.
+    slapos master puts the reference into slave_title as-is and assigns to slave_reference SOFTINST-XXX.
+
+    -> we extract the reference from slave_title.
+#}
+{%- macro jref_of_shared(ishared) %}
+{#- do  print('jref_of_shared %r' % (ishared,)) #}
+{%-   set ref = ishared['slave_title']  %}
+{%-   set partition_id = slap_configuration['slap-computer-partition-id'] %}
+{%-   if ref.startswith(partition_id) %}
+{%-     set ref = ref[len(partition_id):] %}
+{%-   endif %}
+{%-   set ref = ref.removeprefix('_') %}
+{{-   ref | tojson  }}
+{%- endmacro  %}
+
 {#- qshared_instance_list queues not yet loaded shared instances.
     load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
 {%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
-{#- XXX add protection wrt duplicate slave_title  -- see jref_of_shared for details #}
+
+{#- protect against duplicate slave_title -- see jref_of_shared for why we need this #}
+{%- for i, ishared in enumerate(qshared_instance_list)  %}
+{%-   for j, jshared in enumerate(qshared_instance_list)  %}
+{%-     if i != j  and  ishared.slave_title == jshared.slave_title  %}
+{%-       do ierror(ishared, 'duplicate title wrt %s' % jshared.slave_reference)  %}
+{%-     endif %}
+{%-   endfor  %}
+{%- endfor  %}
 
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
 {%- macro check_loaded_everything() %}
@@ -320,24 +346,6 @@
 {{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson  }}
 {%-     endif %}
 {%-   endif %}
-{%- endmacro  %}
-
-{#- jref_of_shared returns original reference used to request shared instance.
-
-    slapproxy puts the reference into slave_reference and slave_title as <partition_id>_<reference>.
-    slapos master puts the reference into slave_title as-is and assigns to slave_reference SOFTINST-XXX.
-
-    -> we extract the reference from slave_title.
-#}
-{%- macro jref_of_shared(ishared) %}
-{#- do  print('jref_of_shared %r' % (ishared,)) #}
-{%-   set ref = ishared['slave_title']  %}
-{%-   set partition_id = slap_configuration['slap-computer-partition-id'] %}
-{%-   if ref.startswith(partition_id) %}
-{%-     set ref = ref[len(partition_id):] %}
-{%-   endif %}
-{%-   set ref = ref.removeprefix('_') %}
-{{-   ref | tojson  }}
 {%- endmacro  %}
 
 
