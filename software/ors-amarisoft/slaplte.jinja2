@@ -141,10 +141,10 @@
 
 
 {#- bug indicates an error in template logic.
-    it should not happen.                                           #}
-{%- macro bug(msg)                                                  %}
-{%-   do assert(False, msg)                                         %}
-{%- endmacro                                                        %}
+    it should not happen. #}
+{%- macro bug(msg)  %}
+{%-   do assert(False, msg) %}
+{%- endmacro  %}
 
 {#- ierror reports an error about shared instance. #}
 {#- XXX ierror(ishared, msg)  vvv is debug stub -#}
@@ -164,16 +164,16 @@
 {#- XXX add protection wrt duplicate slave_title  -- see jref_of_shared for details #}
 
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
-{%- macro check_loaded_everything()                               %}
-{%-   for ishared in qshared_instance_list                        %}
+{%- macro check_loaded_everything() %}
+{%-   for ishared in qshared_instance_list  %}
 {%-     do ierror(ishared, "shared instance of unsupported type") %}
-{%-   endfor                                                      %}
-{%- endmacro                                                      %}
+{%-   endfor  %}
+{%- endmacro  %}
 
-{#- json-decode _ in all shared instances         #}
-{%- for ishared in qshared_instance_list          %}
-{%-   do ishared.update({'_': J(ishared['_'])})   %}
-{%- endfor                                        %}
+{#- json-decode _ in all shared instances #}
+{%- for ishared in qshared_instance_list  %}
+{%-   do ishared.update({'_': J(ishared['_'])}) %}
+{%- endfor  %}
 
 
 {#- load_iru_and_icell initializes RU and cell registries.
