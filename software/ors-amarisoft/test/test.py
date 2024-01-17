@@ -503,14 +503,14 @@ class Lopcomm4:
                   'center-of-channel-bandwidth':  '%d' % dl_freq,
                   'channel-bandwidth':            '%d' % bw,
                   'gain':                         '%d' % tx_gain,
-                  'active':                       'INACTIVE',
+                  'active':                       'ACTIVE',
                 },
                 'rx-array-carriers': {
                   'absolute-frequency-center':    '%d' % ul_arfcn,
                   'center-of-channel-bandwidth':  '%d' % ul_freq,
                   'channel-bandwidth':            '%d' % bw,
                   # XXX no rx_gain
-                  'active':                       'INACTIVE',
+                  'active':                       'ACTIVE',
                 },
             }
 
