@@ -218,8 +218,17 @@
 {#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
 {#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
 
+{#-   verify that there is no dangling cell -> cell refs in ruincell_ref #}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     set ru = icell['_']['ru'] %}
+{%-     if ru.ru_type == 'ruincell_ref' %}
+{%-       if ru.ruincell_ref not in icell_dict  %}
+{%-         do ierror(icell, "referred CELL %s does not exist" % ru.ruincell_ref) %}
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
+
 {#-   verify that there is no dangling cell->ru references #}
-{#-   XXX also verify that there is no dangling cell -> cell refs in ruincell_ref #}
 {%-   for _, icell in icell_dict|dictsort                             %}
 {%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict))               %}
 {%-     if ru_ref not in iru_dict                                     %}
