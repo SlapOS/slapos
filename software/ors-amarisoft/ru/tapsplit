@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2023  Nexedi SA and Contributors.
+# Copyright (C) 2023-2024  Nexedi SA and Contributors.
 #
 # This program is free software: you can Use, Study, Modify and Redistribute
 # it under the terms of the GNU General Public License version 3, or (at your
@@ -34,7 +34,20 @@ from math import log2, ceil
 
 import sys
 import subprocess
+import json
 
+
+# LinkDB represents snapshot of state of all network interfaces.
+class LinkDB:
+    def __init__(db):
+        db.linkv = ip('link', 'show')
+
+    # ifget returns information about interface with specified name.
+    def ifget(db, ifname):
+        for link in db.linkv:
+            if link['ifname'] == ifname:
+                return link
+        raise KeyError('interface %r not found' % ifname)
 
 def main():
     tap = sys.argv[1]
@@ -42,29 +55,76 @@ def main():
     assert n >= 0, n
 
     # determine tap's network address and owner
-    owner = readfile(sysnet(tap) + '/owner') .strip()
+    ldb = LinkDB()
+    _ = ldb.ifget(tap)
+    owner = _['linkinfo']['info_data']['user']
     net   = ifnet6(tap)
 
     print('%s: split %s by %d' % (tap, net, n))
 
-    # cleanup existing children
-    for ifname in netifaces.interfaces():
-        if ifname.startswith('%s-' % tap):
-            run('ip', 'link', 'del', ifname)
-
     # do the split
     # with leaving first range for the original tap
+    subtap_set = set()
     for i, subnet in enumerate(netsplit(net, 1+n)):
         if i == 0:
             print('preserve         %s' % subnet)
             continue    # leave this range for original tap
+
         subtap = '%s-%d' % (tap, i)
+        subtap_set.add(subtap)
         print('-> %s   %s' % (subtap, subnet))
-        run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
-        run('ip', 'link',   'set', subtap, 'up')
-        run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
-        run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
-        run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
+        def note(msg):
+            print(' # %s: %s' % (subtap, msg))
+
+        # create subtap
+        try:
+            link = ldb.ifget(subtap)
+        except KeyError:
+            run('ip', 'tuntap', 'add', 'dev', subtap, 'mode', 'tap', 'user', owner)
+            link = ip('link', 'show', 'dev', subtap)[0]
+        else:
+            note('already exists')
+
+        # set it up
+        if 'UP' not in link['flags']:
+            run('ip', 'link',   'set', subtap, 'up')
+        else:
+            note('already up')
+
+        # add subnet address
+        addrv = []
+        for _ in ip('-6', 'addr', 'show', 'dev', subtap):
+            addrv.extend(_['addr_info'])
+        for addr in addrv:
+            _ = netaddr.IPNetwork('%s/%s' % (addr['local'], addr['prefixlen']))
+            if _ == subnet and addr['noprefixroute']:
+                note('already has %s addr' % str(subnet))
+                break
+        else:
+            run('ip', 'addr',   'add', str(subnet), 'dev', subtap, 'noprefixroute')
+
+        # add /128 route to subnet::1
+        rtv = ip('-6', 'route', 'show', 'dev', subtap)
+        for rt in rtv:
+            if rt['dst'] == str(subnet[1])  and  'gateway' not in rt:
+                note('already has %s route' % str(subnet[1]))
+                break
+        else:
+            run('ip', 'route',  'add', str(subnet[1]), 'dev', subtap)
+
+        # add route to subnet via subnet::1
+        for rt in rtv:
+            if rt['dst'] == str(subnet)  and  rt.get('gateway') == str(subnet[1]):
+                note('already has %s route' % str(subnet))
+                break
+        else:
+            run('ip', 'route',  'add', str(subnet), 'dev', subtap, 'via', str(subnet[1]))
+
+    # remove other existing children
+    for ifname in netifaces.interfaces():
+        if ifname.startswith('%s-' % tap) and (ifname not in subtap_set):
+            print('-> del %s' % ifname)
+            run('ip', 'link', 'del', ifname)
 
 
 # netsplit splits network into n subnetworks.
@@ -102,17 +162,15 @@ def ifnet6(ifname):
     net = net.cidr
     return net
 
-# sysnet returns path on /sys corresponding to given interface.
-def sysnet(ifname):
-    return '/sys/devices/virtual/net/%s' % ifname
-
+# run executes `*argv` as action.
 def run(*argv):
     print(' # %s' % ' '.join(argv))
     subprocess.check_call(argv)
 
-def readfile(path):
-    with open(path) as f:
-        return f.read()
+# ip returns decoded output of `ip -details *argv`
+def ip(*argv):
+    _ = subprocess.check_output(['ip', '-json', '-details'] + list(argv))
+    return json.loads(_)
 
 
 if __name__ == '__main__':
