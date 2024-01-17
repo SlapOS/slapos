@@ -81,20 +81,6 @@ RU2['mac_addr'] = '90:A9:F7:C0:00:03'
 iru1 = iENB(eref('RU1'), RU1)
 iru2 = iENB(eref('RU2'), RU2)
 
-# XXX to test wrt buildout code injection
-if 0:
-    RU3 = {
-        'ru_type':      'sdr',
-        'ru_link_type': 'sdr',
-        'sdr_dev_list': [0, 1],
-        'n_antenna_dl': 4,
-        'n_antenna_ul': 2,
-        'tx_gain':      51,
-        'rx_gain':      52,
-    }
-    iENB(eref('RU3\nzzz ${aaa:bbb}\nccc'), RU3)
-
-
 # Cells
 CELL1 = {
     'cell_type':    'lte',
