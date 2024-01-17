@@ -72,6 +72,8 @@ setup(name=name,
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
+        'passlib',
+        'bcrypt',
         ],
       zip_safe=True,
       entry_points={
