@@ -314,7 +314,7 @@
 {%-     do cell.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(cell.dl_earfcn))) %}
 {%-   elif cell.cell_type == 'nr' %}
 {%-     do cell.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
-{%-     do cell.setdefault('subcarrier_spacing', 30  if cell.rf_mode == 'tdd'  else 15)  %}           {# XXX just leave at 30 ? #}
+{%-     do cell.setdefault('subcarrier_spacing', 30  if cell.rf_mode == 'tdd'  else 15)  %}
 {%-     do cell.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
 {%-   else  %}
 {%-     do bug('unreachable') %}
