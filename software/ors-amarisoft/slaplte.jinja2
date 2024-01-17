@@ -314,7 +314,6 @@
 {%-     if ru.ru_type == 'ru_ref'                                       %}
 {{-       ru.ru_ref | tojson                                            }}
 {%-     elif ru.ru_type == 'ruincell_ref'                               %}
-{#-       XXX first check referred cell exist ? #}
 {{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], icell_dict, seen)  }}
 {%-     else                                                            %}
 {#-       ru definition is embedded into cell                           #}
