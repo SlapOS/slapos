@@ -420,7 +420,7 @@
   {%- else %}
       name: "sdr",
   {%- endif %}
-  {%- if slapparameter_dict.get('gps_sync', False) %}
+  {%- if slapparameter_dict.gps_sync %}
       sync: "gps",
   {%- endif %}
 
