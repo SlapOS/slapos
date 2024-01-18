@@ -15,7 +15,7 @@ from pprint import pprint
 
 kamari = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
 
-enb1 = request(kamari,
+enb1 = kslap.request(kamari,
         software_type="enb",
         partition_reference="kenb",
         filter_kw={"computer_guid": "slaprunner"},
@@ -24,7 +24,7 @@ enb1 = request(kamari,
         })})
 
 """
-enb2 = request(kamari,
+enb2 = kslap.request(kamari,
         software_type="enb",
         partition_reference="kenb2",
         filter_kw={"computer_guid": "slaprunner"},
