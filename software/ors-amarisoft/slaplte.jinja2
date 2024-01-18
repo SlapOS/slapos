@@ -144,7 +144,7 @@
 {#- bug indicates an error in template logic.
     it should not happen. #}
 {%- macro bug(msg)  %}
-{%-   do assert(False, msg) %}
+{%-   do assert(False, 'BUG: %s' % (msg,)) %}
 {%- endmacro  %}
 
 {#- error reports instantiation error. #}
