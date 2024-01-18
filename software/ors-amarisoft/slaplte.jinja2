@@ -13,7 +13,8 @@
 
     - B escapes string to be safe to use in buildout code.
     - J should be used around macro calls to retrieve returned objects.
-    - ierror reports an error about shared instance.
+    - error reports instantiation error.
+    - ierror reports instantiation error caused by shared instance configuration.
 -#}
 
 
@@ -146,11 +147,15 @@
 {%-   do assert(False, msg) %}
 {%- endmacro  %}
 
-{#- ierror reports an error about shared instance. #}
-{#- XXX ierror(ishared, msg)  vvv is debug stub -#}
-{%- macro ierror(ishared, msg)   %}
-{%-   set msg = 'E: %s: %s\n' % (J(jref_of_shared(ishared)), msg)   %}
-{%-   do assert(False, msg)                                         %}
+{#- error reports instantiation error. #}
+{%- macro error(msg)  %}
+{%-   set msg = 'Instantiation Error: %s\n' % msg %}
+{%-   do assert(False, msg) %}
+{%- endmacro  %}
+
+{#- ierror reports instantiation error caused by shared instance configuration. #}
+{%- macro ierror(ishared, msg)  %}
+{%-   do error('%s: %s' % (J(jref_of_shared(ishared)), msg)) %}
 {%- endmacro  %}
 
 
@@ -466,7 +471,15 @@
   {%- set do_sdr  = len(ru_sdr_dict)  > 0 %}
   {%- set do_cpri = len(ru_cpri_dict) > 0 %}
   {%- if do_sdr and do_cpri %}
-      #error Mixing SDR and CPRI is not supported and breaks subtly. See https://support.amarisoft.com/issues/26021 for details.
+  {%-   do error('Mixing SDR + CPRI is not supported and breaks subtly.
+
+    SDR  Radio Units: %r
+    CPRI Radio Units: %r
+
+    See https://support.amarisoft.com/issues/26021 for details' % (
+          iru_dict |dictsort |selectattr('1._.ru_type',      '==', 'sdr')  |map(attribute='0') |list,
+          iru_dict |dictsort |selectattr('1._.ru_link_type', '==', 'cpri') |map(attribute='0') |list
+        )) %}
   {%- endif %}
 
   {#- disable trx completely if all we have is only inactive sdr(s).
