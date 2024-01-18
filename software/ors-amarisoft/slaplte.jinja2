@@ -124,7 +124,7 @@
 {%- endmacro %}
 
 {#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
-    and subcarrier spacing #}
+    and band. #}
 {%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, nr_band) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
 {%-   set ssb_nr_arfcn, max_ssb_scs_khz = xnrarfcn_module.dl2ssb(dl_nr_arfcn, nr_band) %}
