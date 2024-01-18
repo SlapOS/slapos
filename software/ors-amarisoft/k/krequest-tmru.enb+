@@ -1,6 +1,6 @@
 #!/usr/bin/env -S slapos console
-"""request ors/enb for kirr"""
-# XXX deprecated in favour of krequest-cb5.enb+
+"""request enb under theia for development"""
+# NOTE see krequest-cb5.enb+ for requesting for real
 
 # XXX workaround for `slapos console` not setting up sys.path the same way as std python does
 import sys
@@ -13,9 +13,9 @@ import json, copy
 from pprint import pprint
 
 
-ors = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
+kamari = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
 
-enb1 = request(ors,
+enb1 = request(kamari,
         software_type="enb",
         partition_reference="kenb",
         filter_kw={"computer_guid": "slaprunner"},
@@ -24,7 +24,7 @@ enb1 = request(ors,
         })})
 
 """
-enb2 = request(ors,
+enb2 = request(kamari,
         software_type="enb",
         partition_reference="kenb2",
         filter_kw={"computer_guid": "slaprunner"},

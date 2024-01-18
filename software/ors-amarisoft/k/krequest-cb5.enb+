@@ -1,5 +1,5 @@
 #!/usr/bin/env -S slapos console
-"""request mme/enb and configure radio units and cells"""
+"""request mme/enb and configure radio units and cells on Callbox5 + real SlapOS Master"""
 
 # XXX workaround for `slapos console` not setting up sys.path the same way as std python does
 import sys
