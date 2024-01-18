@@ -254,7 +254,7 @@
 {%-     set ru = icell['_']['ru'] %}
 {%-     if ru.ru_type == 'ruincell_ref' %}
 {%-       if ru.ruincell_ref not in icell_dict  %}
-{%-         do ierror(icell, "referred CELL %s does not exist" % ru.ruincell_ref) %}
+{%-         do ierror(icell, "referred cell %r does not exist" % ru.ruincell_ref) %}
 {%-       endif %}
 {%-     endif %}
 {%-   endfor %}
@@ -263,7 +263,7 @@
 {%-   for _, icell in icell_dict|dictsort %}
 {%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict)) %}
 {%-     if ru_ref not in iru_dict %}
-{%-       do ierror(icell, "referred RU %s does not exist" % ru_ref)  %}
+{%-       do ierror(icell, "referred RU %r does not exist" % ru_ref)  %}
 {%-     endif %}
 {%-   endfor  %}
 
