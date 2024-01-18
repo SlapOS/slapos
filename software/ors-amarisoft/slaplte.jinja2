@@ -187,9 +187,9 @@
 
 {#- protect against duplicate slave_title -- see jref_of_shared for why we need this #}
 {%- for i, ishared in enumerate(qshared_instance_list)  %}
-{%-   for j, jshared in enumerate(qshared_instance_list)  %}
-{%-     if i != j  and  ishared.slave_title == jshared.slave_title  %}
-{%-       do ierror(ishared, 'duplicate title wrt %s' % jshared.slave_reference)  %}
+{%-   for k, kshared in enumerate(qshared_instance_list)  %}
+{%-     if i != k  and  ishared.slave_title == kshared.slave_title  %}
+{%-       do ierror(ishared, 'duplicate title wrt %s' % kshared.slave_reference)  %}
 {%-     endif %}
 {%-   endfor  %}
 {%- endfor  %}
