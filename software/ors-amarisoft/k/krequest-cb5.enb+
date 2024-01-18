@@ -1,5 +1,6 @@
 #!/usr/bin/env -S slapos console
 """request mme/enb and configure radio units and cells on Callbox5 + real SlapOS Master"""
+# NOTE see krequest-tmru.enb+ for requesting under theia
 
 # XXX workaround for `slapos console` not setting up sys.path the same way as std python does
 import sys
