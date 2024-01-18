@@ -1,6 +1,6 @@
 #!/bin/sh
 
-git diff $@ -C -C x/rrh --	\
+git diff $@ -C -C kirr/x/rrh --	\
 	':!config/out'		\
 	':!k/'			\
 	':!buildout.hash.cfg'	\
