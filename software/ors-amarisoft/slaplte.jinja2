@@ -231,12 +231,12 @@
 {%-       do icell_dict.update({ref: icell})  %}
 {%-       set ru = _['ru']  %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
-{#-         embedded ru definition -> expose it as `_<cell_ref>_ru` #}
+{#-         embedded ru definition -> expose it as synthethic `_<cell_ref>_ru` #}
 {%-         do _ru_set_defaults(ru) %}
 {%-         do iru_dict.update({'_%s_ru' % ref: {
                   '_':                ru,
                   'slave_title':      '%s. RU' % icell.slave_title,
-                  'slave_reference':  icell.slave_reference,
+                  'slave_reference':  False,
                }})  %}
 {%-       endif %}
 {%-     else  %}
