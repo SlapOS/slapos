@@ -1,6 +1,6 @@
 #!/usr/bin/env -S slapos console
-"""request ors/enb for kirr"""
-# XXX deprecated in favour of krequest-cb5.enb+
+"""request enb under theia for development"""
+# NOTE see krequest-cb5.enb+ for requesting for real
 
 # XXX workaround for `slapos console` not setting up sys.path the same way as std python does
 import sys
@@ -9,22 +9,28 @@ sys.path.insert(0, dirname(__file__))
 import kslap
 kslap.init(slap)
 
-import json, copy
+import os, json, copy
 from pprint import pprint
 
 
-ors = "/srv/slapgrid/slappart35/srv/project/slapos/software/ors-amarisoft/software.cfg"
+kamari = "%(HOME)s/srv/project/slapos/software/ors-amarisoft/software.cfg" % os.environ
 
-enb1 = request(ors,
+enb1 = kslap.request(kamari,
         software_type="enb",
         partition_reference="kenb",
         filter_kw={"computer_guid": "slaprunner"},
         partition_parameter_kw={"_": json.dumps({
             'testing': True,
+            "enb_id": "0x10012",
+            "gnb_id": "0x54321",
+            'mme_list':  {'1': {'mme_addr': '127.0.0.100'}},
+            'amf_list':  {'1': {'amf_addr': '127.0.0.200'}},
+            'plmn_list': {'1': {'plmn': '31415'}},
+            'plmn_list_5g': {'1': {'plmn': '51413', 'tac': 0x4321}},
         })})
 
 """
-enb2 = request(ors,
+enb2 = kslap.request(kamari,
         software_type="enb",
         partition_reference="kenb2",
         filter_kw={"computer_guid": "slaprunner"},
@@ -70,6 +76,7 @@ CELL1_a = {
     'dl_earfcn':    38050,      # 2600 MHz
     'pci':          1,
     'cell_id':      '0x01',
+    'tac':          '0x1234',
     'ru':           RU1,        # RU definition embedded into CELL
 }
 
@@ -84,6 +91,7 @@ CELL1_b = {
     'dl_earfcn':    38100,      # 2605 MHz
     'pci':          2,
     'cell_id':      '0x02',
+    'tac':          '0x1234',
     'ru':           {           # CELL1_b shares RU with CELL1_a referring to it via cell
         'ru_type':      'ruincell_ref',
         'ruincell_ref': 'CELL1_a'
@@ -129,6 +137,7 @@ kslap.iSHARED(enb1, 'CELL2_a', {
     'dl_earfcn':    3350,       # 2680 MHz
     'pci':          21,
     'cell_id':      '0x21',
+    'tac':          '0x1234',
     'ru':           {           # CELL2_a links to RU2_a by its reference
         'ru_type':  'ru_ref',
         'ru_ref':   'RU2_a'

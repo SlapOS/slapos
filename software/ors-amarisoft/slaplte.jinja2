@@ -8,6 +8,13 @@
     In the code iX denotes shared instance of type X, while X denotes
     parameters passed to iX. For example iru denotes Radio Unit shared
     instance, while ru denotes parameters of that Radio Unit instance.
+
+    The following utilities are also provided:
+
+    - B escapes string to be safe to use in buildout code.
+    - J should be used around macro calls to retrieve returned objects.
+    - error reports instantiation error.
+    - ierror reports instantiation error caused by shared instance configuration.
 -#}
 
 
@@ -15,7 +22,6 @@
     it should be kept in sync with "default" in json schemas
 
     TODO automatically load defaults from JSON schemas  #}
-{#- XXX add inactivity timer to cell schemas #}
 {%- set defaults = {
       'ru': {
         'txrx_active': 'INACTIVE',
@@ -79,7 +85,18 @@
 %}
 
 
-{#- XXX explain	#}
+{#- B(name) escapes name to be safe to use in buildout code.
+
+    It escapes buildout control characters in the string so that the result
+    could be used in buildout code without the risk of buildout profile to
+    become broken and/or with injected code when handling string input from
+    outside.
+
+    The most often case when B needs to be used is when handling references of
+    shared instances in generated buildout code.
+
+    See xbuildout.encode documentation for details.
+#}
 {%- set B = xbuildout.encode  %}
 
 {#- J is used around macro calls to retrieve returned objects.
@@ -108,7 +125,7 @@
 {%- endmacro %}
 
 {#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
-    and subcarrier spacing #}
+    and band. #}
 {%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, nr_band) %}
 {#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
 {%-   set ssb_nr_arfcn, max_ssb_scs_khz = xnrarfcn_module.dl2ssb(dl_nr_arfcn, nr_band) %}
@@ -125,17 +142,20 @@
 
 
 {#- bug indicates an error in template logic.
-    it should not happen.                                           #}
-{%- macro bug(msg)                                                  %}
-{%-   do assert(False, msg)                                         %}
-{%- endmacro                                                        %}
+    it should not happen. #}
+{%- macro bug(msg)  %}
+{%-   do assert(False, 'BUG: %s' % (msg,)) %}
+{%- endmacro  %}
 
-{#- error reports an error about shared instance #}
-{#- XXX -> ierror ?   #}
-{#- XXX error(ishared, msg)  vvv is debug stub -#}
-{%- macro error(ishared, msg)   %}
-{%-   set msg = 'E: %s: %s\n' % (J(jref_of_shared(ishared)), msg)   %}
-{%-   do assert(False, msg)                                         %}
+{#- error reports instantiation error. #}
+{%- macro error(msg)  %}
+{%-   set msg = 'Instantiation Error: %s\n' % msg %}
+{%-   do assert(False, msg) %}
+{%- endmacro  %}
+
+{#- ierror reports instantiation error caused by shared instance configuration. #}
+{%- macro ierror(ishared, msg)  %}
+{%-   do error('%s: %s' % (J(jref_of_shared(ishared)), msg)) %}
 {%- endmacro  %}
 
 
@@ -143,22 +163,48 @@
 
 {#- ---- loading ---- #}
 
+{#- jref_of_shared returns original reference used to request shared instance.
+
+    slapproxy puts the reference into slave_reference and slave_title as <partition_id>_<reference>.
+    slapos master puts the reference into slave_title as-is and assigns to slave_reference SOFTINST-XXX.
+
+    -> we extract the reference from slave_title.
+#}
+{%- macro jref_of_shared(ishared) %}
+{#- do  print('jref_of_shared %r' % (ishared,)) #}
+{%-   set ref = ishared['slave_title']  %}
+{%-   set partition_id = slap_configuration['slap-computer-partition-id'] %}
+{%-   if ref.startswith(partition_id) %}
+{%-     set ref = ref[len(partition_id):] %}
+{%-   endif %}
+{%-   set ref = ref.removeprefix('_') %}
+{{-   ref | tojson  }}
+{%- endmacro  %}
+
 {#- qshared_instance_list queues not yet loaded shared instances.
     load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
 {%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
-{#- XXX add protection wrt duplicate slave_title  -- see jref_of_shared for details #}
+
+{#- protect against duplicate slave_title -- see jref_of_shared for why we need this #}
+{%- for i, ishared in enumerate(qshared_instance_list)  %}
+{%-   for k, kshared in enumerate(qshared_instance_list)  %}
+{%-     if i != k  and  ishared.slave_title == kshared.slave_title  %}
+{%-       do ierror(ishared, 'duplicate title wrt %s' % kshared.slave_reference)  %}
+{%-     endif %}
+{%-   endfor  %}
+{%- endfor  %}
 
 {#- check_loaded_everything verifies that all shared instances were handling during the load. #}
-{%- macro check_loaded_everything()                               %}
-{%-   for ishared in qshared_instance_list                        %}
-{%-     do error(ishared, "shared instance of unsupported type")  %}
-{%-   endfor                                                      %}
-{%- endmacro                                                      %}
+{%- macro check_loaded_everything() %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     do ierror(ishared, "shared instance of unsupported type") %}
+{%-   endfor  %}
+{%- endmacro  %}
 
-{#- json-decode _ in all shared instances         #}
-{%- for ishared in qshared_instance_list          %}
-{%-   do ishared.update({'_': J(ishared['_'])})   %}
-{%- endfor                                        %}
+{#- json-decode _ in all shared instances #}
+{%- for ishared in qshared_instance_list  %}
+{%-   do ishared.update({'_': J(ishared['_'])}) %}
+{%- endfor  %}
 
 
 {#- load_iru_and_icell initializes RU and cell registries.
@@ -169,8 +215,6 @@
 
     icell_kind=enb  - load cells definition to serve them from enb
     icell_kind=ue   - load cells definition to connect to them
-
-    XXX defaults ?
 #}
 {%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)  %}
 {%-   set qother = [] %}
@@ -179,46 +223,20 @@
 {%-     set _ = ishared['_']  %}
 {%-     if   'ru_type'   in _ %}
 {%-       set iru = ishared %}
-{%-       for k, v in defaults['ru'].items()  %}
-{%-         do _.setdefault(k, v) %}
-{%-       endfor  %}
-{%-       for k, v in defaults.get('ru/'+_.ru_type, {}).items() %}
-{%-         do _.setdefault(k, v) %}
-{%-       endfor  %}
-{%-       if _.ru_link_type == 'cpri' %}
-{%-         set link = _.cpri_link  %}
-{%-         for k, v in defaults['ru/cpri_link'].items() %}
-{%-           do link.setdefault(k, v)  %}
-{%-         endfor  %}
-{%-       endif %}
+{%-       do _ru_set_defaults(_)  %}
 {%-       do iru_dict.update({ref: iru})  %}
 {%-     elif 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
 {%-       set icell = ishared %}
-{%-       if icell_kind == 'enb'  %}
-{%-         for k, v in defaults['cell/%s' % _.cell_type].items() %}
-{%-           do _.setdefault(k, v) %}
-{%-         endfor  %}
-{%-         for k, v in defaults['cell/%s/%s' % (_.cell_type, _.rf_mode)].items() %}
-{%-           do _.setdefault(k, v) %}
-{%-         endfor  %}
-{%-       endif %}
-{%-       if _.cell_type == 'lte'  %}
-{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
-{%-       elif _.cell_type == 'nr' %}
-{%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
-{%-         do _.setdefault('subcarrier_spacing', 30  if _.rf_mode == 'tdd'  else 15)  %}           {# XXX just leave at 30 ? #}
-{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
-{%-       else  %}
-{%-         do bug('unreachable') %}
-{%-       endif %}
+{%-       do _cell_set_defaults(_, icell_kind)  %}
 {%-       do icell_dict.update({ref: icell})  %}
 {%-       set ru = _['ru']  %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
-{#-         embedded ru definition -> expose it as `_<cell_ref>_ru` #}
+{#-         embedded ru definition -> expose it as synthethic `_<cell_ref>_ru` #}
+{%-         do _ru_set_defaults(ru) %}
 {%-         do iru_dict.update({'_%s_ru' % ref: {
                   '_':                ru,
                   'slave_title':      '%s. RU' % icell.slave_title,
-                  'slave_reference':  icell.slave_reference,
+                  'slave_reference':  False,
                }})  %}
 {%-       endif %}
 {%-     else  %}
@@ -231,26 +249,34 @@
 {#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
 {#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
 
+{#-   verify that there is no dangling cell -> cell refs in ruincell_ref #}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     set ru = icell['_']['ru'] %}
+{%-     if ru.ru_type == 'ruincell_ref' %}
+{%-       if ru.ruincell_ref not in icell_dict  %}
+{%-         do ierror(icell, "referred cell %r does not exist" % ru.ruincell_ref) %}
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
 
 {#-   verify that there is no dangling cell->ru references #}
-{#-   XXX also verify that there is no dangling cell -> cell refs in ruincell_ref #}
-{%-   for _, icell in icell_dict|dictsort                             %}
-{%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict))               %}
-{%-     if ru_ref not in iru_dict                                     %}
-{%-       do error(icell, "referred RU %s does not exist" % ru_ref)   %}
-{%-     endif                                                         %}
-{%-   endfor                                                          %}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict)) %}
+{%-     if ru_ref not in iru_dict %}
+{%-       do ierror(icell, "referred RU %r does not exist" % ru_ref)  %}
+{%-     endif %}
+{%-   endfor  %}
 
-{#-   assign RUs rf_port and tx/rx channel indices                    #}
-{%-   set rf_chan = namespace(tx=0, rx=0)                             %}
-{%-   for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)      %}
-{%-     set ru = iru['_']                                             %}
+{#-   assign RUs rf_port and tx/rx channel indices  #}
+{%-   set rf_chan = namespace(tx=0, rx=0) %}
+{%-   for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)  %}
+{%-     set ru = iru['_'] %}
 {%-     do ru.update({'_rf_port':    rf_port,
                       '_rf_chan_tx': rf_chan.tx,
-                      '_rf_chan_rx': rf_chan.rx})                     %}
-{%-     set rf_chan.tx = rf_chan.tx + ru.n_antenna_dl                 %}
-{%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul                 %}
-{%-   endfor                                                          %}
+                      '_rf_chan_rx': rf_chan.rx}) %}
+{%-     set rf_chan.tx = rf_chan.tx + ru.n_antenna_dl %}
+{%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul %}
+{%-   endfor  %}
 
 {#-   assign TAP interfaces to cpri RUs #}
 {%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
@@ -265,50 +291,67 @@
 
 {%- endmacro  %}
 
-{#- jcell_ru_ref returns RU reference linked from a cell.
-    if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
-{%- macro jcell_ru_ref(icell, icell_dict)                               %}
-{{-   _jcell_ru_ref(icell, icell_dict, [])                              }}
-{%- endmacro                                                            %}
-{%- macro _jcell_ru_ref(icell, icell_dict, seen)                        %}
-{%-   set cell_ref = J(jref_of_shared(icell))                           %}
-{%-   if cell_ref in seen                                               %}
-{%-     for x in seen                                                   %}
-{%-       do error(x, "%s form a cycle via RU references" % seen)       %}
-{%-     endfor                                                          %}
-{#-     XXX what to return ?                                            #}
-{%-   else                                                              %}
-{%-     do seen.append(cell_ref)                                        %}
-{%-     set ru = icell['_']['ru']                                       %}
-{%-     if ru.ru_type == 'ru_ref'                                       %}
-{{-       ru.ru_ref | tojson                                            }}
-{%-     elif ru.ru_type == 'ruincell_ref'                               %}
-{#-       XXX first check referred cell exist ? #}
-{{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], icell_dict, seen)  }}
-{%-     else                                                            %}
-{#-       ru definition is embedded into cell                           #}
-{{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson                }}
-{%-     endif                                                           %}
-{%-   endif                                                             %}
+{%- macro _ru_set_defaults(ru)  %}
+{%-   for k, v in defaults['ru'].items()  %}
+{%-     do ru.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   for k, v in defaults.get('ru/'+ru.ru_type, {}).items() %}
+{%-     do ru.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   if ru.ru_link_type == 'cpri' %}
+{%-     set link = ru.cpri_link  %}
+{%-     for k, v in defaults['ru/cpri_link'].items() %}
+{%-       do link.setdefault(k, v)  %}
+{%-     endfor  %}
+{%-   endif %}
+{%- endmacro  %}
+
+{%- macro _cell_set_defaults(cell, icell_kind)  %}
+{%-   if icell_kind == 'enb'  %}
+{%-     for k, v in defaults['cell/%s' % cell.cell_type].items() %}
+{%-       do cell.setdefault(k, v) %}
+{%-     endfor  %}
+{%-     for k, v in defaults['cell/%s/%s' % (cell.cell_type, cell.rf_mode)].items() %}
+{%-       do cell.setdefault(k, v) %}
+{%-     endfor  %}
+{%-   endif %}
+{%-   if cell.cell_type == 'lte'  %}
+{%-     do cell.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(cell.dl_earfcn))) %}
+{%-   elif cell.cell_type == 'nr' %}
+{%-     do cell.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-     do cell.setdefault('subcarrier_spacing', 30  if cell.rf_mode == 'tdd'  else 15)  %}
+{%-     do cell.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-   else  %}
+{%-     do bug('unreachable') %}
+{%-   endif %}
 {%- endmacro %}
 
-{#- jref_of_shared returns original reference used to request shared instance.
 
-    slapproxy puts the reference into slave_reference and slave_title as <partition_id>_<reference>.
-    slapos master puts the reference into slave_title as-is and assigns to slave_reference SOFTINST-XXX.
-
-    -> we extract the reference from slave_title.
-#}
-{%- macro jref_of_shared(ishared) %}
-{#- do  print('jref_of_shared %r' % (ishared,)) #}
-{%-   set ref = ishared['slave_title']                                      %}
-{%-   set partition_id = slap_configuration['slap-computer-partition-id']   %}
-{%-   if ref.startswith(partition_id)                                       %}
-{%-     set ref = ref[len(partition_id):]                                   %}
-{%-   endif                                                                 %}
-{%-   set ref = ref.removeprefix('_')                                       %}
-{{-   ref | tojson                                                          }}
-{%- endmacro                                                                %}
+{#- jcell_ru_ref returns RU reference linked from a cell.
+    if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
+{%- macro jcell_ru_ref(icell, icell_dict) %}
+{{-   _jcell_ru_ref(icell, icell_dict, [])  }}
+{%- endmacro  %}
+{%- macro _jcell_ru_ref(icell, icell_dict, seen)  %}
+{%-   set cell_ref = J(jref_of_shared(icell)) %}
+{%-   if cell_ref in seen %}
+{%-     for x in seen %}
+{%-       do ierror(x, "%s form a cycle via RU references" % seen)  %}
+{%-     endfor  %}
+{{-     None | tojson }}
+{%-   else  %}
+{%-     do seen.append(cell_ref)  %}
+{%-     set ru = icell['_']['ru'] %}
+{%-     if ru.ru_type == 'ru_ref' %}
+{{-       ru.ru_ref | tojson  }}
+{%-     elif ru.ru_type == 'ruincell_ref' %}
+{{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], icell_dict, seen)  }}
+{%-     else  %}
+{#-       ru definition is embedded into cell #}
+{{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson  }}
+{%-     endif %}
+{%-   endif %}
+{%- endmacro  %}
 
 
 {#- load_ipeer initializes peer registry.
@@ -372,24 +415,24 @@
 
     iue_dict keeps ue shared instance:  reference -> iue
 #}
-{%- macro load_iue(iue_dict)                        %}
-{%-   set qother = []                               %}
-{%-   for ishared in qshared_instance_list          %}
-{%-     set ref = J(jref_of_shared(ishared))        %}
-{%-     set _ = ishared['_']                        %}
-{%-     if   'ue_type'   in _                       %}
-{%-       set iue = ishared                         %}
-{%-       for k, v in defaults['ue'].items()        %}
-{%-         do _.setdefault(k, v)                   %}
-{%-       endfor                                    %}
-{%-       do iue_dict.update({ref: iue})            %}
-{%-     else                                        %}
-{%-       do qother.append(ishared)                 %}
-{%-     endif                                       %}
-{%-   endfor                                        %}
-{%-   do qshared_instance_list.clear()              %}
-{%-   do qshared_instance_list.extend(qother)       %}
-{%- endmacro                                        %}
+{%- macro load_iue(iue_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ue_type'   in _ %}
+{%-       set iue = ishared %}
+{%-       for k, v in defaults['ue'].items()  %}
+{%-         do _.setdefault(k, v) %}
+{%-       endfor  %}
+{%-       do iue_dict.update({ref: iue})  %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
+{%- endmacro  %}
 
 
 {#- ---- building configuration ---- #}
@@ -398,68 +441,85 @@
 {%- macro ru_config(iru_dict, slapparameter_dict) %}
   // Radio Units
   rf_driver: {
-  // XXX vvv <- ru.txrx_active ?  XXX how to handle txrx_active for SDR ?
-  // (tx_gain=-1000 does not work - it still sets tx_gain to min.possible value 14)
-  {%- if slapparameter_dict.get('disable_sdr', False) %}
-      name: "dummy",
-  {%- else %}
-      name: "sdr",
-  {%- endif %}
-  {%- if slapparameter_dict.get('gps_sync', False) %}
-      sync: "gps",
-  {%- endif %}
-
-  {#- XXX emit big warning if both cpri and sdr are present
-        to protect users from unclear eNB failures
-        see https://support.amarisoft.com/issues/26021 for details
-
-    XXX below we continue as if sdr and cpri are both supported by enb simultaneously #}
-
   {%- set dev_argv = []                                                       %}
   {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
   {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
   {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
   {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
   {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
-  {%-   set ru = iru['_']                                                     %}
+  {%-   set ru = iru['_'] %}
       // {{ B(ru_ref) }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
-  {%-   if ru.ru_type == 'sdr'                                                %}
-  {%-     do ru_sdr_dict.update({len(dev_argv): ru})                          %}
-  {%-     for n in ru.sdr_dev_list                                            %}
-  {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n))       %}
-  {%-     endfor                                                              %}
-  {%-   elif ru.ru_link_type == 'cpri'                                        %}
-  {%-     do ru_cpri_dict.update({len(dev_argv): ru})                         %}
-  {%-     set link = ru.cpri_link                                             %}
-  {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))   %}
-  {%-   else        %}
-  {%-     do bug('unreachable')                                 %}
-  {%-   endif                                                   %}
-  {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)        %}
-  {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)        %}
+  {%-   if ru.ru_type == 'sdr'  %}
+  {%-     do ru_sdr_dict.update({len(dev_argv): ru})  %}
+  {%-     for n in ru.sdr_dev_list  %}
+  {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n)) %}
+  {%-     endfor  %}
+  {%-   elif ru.ru_link_type == 'cpri'  %}
+  {%-     do ru_cpri_dict.update({len(dev_argv): ru}) %}
+  {%-     set link = ru.cpri_link %}
+  {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))  %}
+  {%-   else  %}
+  {%-     do bug('unreachable') %}
+  {%-   endif %}
+  {%-   set ru_tx_gain = ru.tx_gain  if ru.txrx_active == 'ACTIVE'  else -1000 %}
+  {%-   do tx_gainv.extend([ru_tx_gain]*ru.n_antenna_dl)  %}
+  {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)  %}
   {%- endfor %}
+
+  {#- emit big error if both sdr and cpri are present
+      to protect users from unclear eNB failures in such unsupported combination  #}
+  {%- set do_sdr  = len(ru_sdr_dict)  > 0 %}
+  {%- set do_cpri = len(ru_cpri_dict) > 0 %}
+  {%- if do_sdr and do_cpri %}
+  {%-   do error('Mixing SDR + CPRI is not supported and breaks subtly.
+
+    SDR  Radio Units: %r
+    CPRI Radio Units: %r
+
+    See https://support.amarisoft.com/issues/26021 for details' % (
+          iru_dict |dictsort |selectattr('1._.ru_type',      '==', 'sdr')  |map(attribute='0') |list,
+          iru_dict |dictsort |selectattr('1._.ru_link_type', '==', 'cpri') |map(attribute='0') |list
+        )) %}
+  {%- endif %}
+
+  {#- disable trx completely if all we have is only inactive sdr(s).
+      do not disable if there is cpri, because for cpri whether to activate
+      radio or not is natively controlled via RU-specific config.
+      See e.g. ru/lopcomm/cu_config.jinja2.xml for details #}
+  {%- if do_sdr  and  (not do_cpri)  and
+         len(iru_dict|dictsort | selectattr('1._.txrx_active', '==', 'ACTIVE') | list) == 0 %}
+      name: "dummy",
+  {%- else %}
+      name: "sdr",
+  {%- endif %}
+
+  {%- if slapparameter_dict.get('gps_sync', False) %}
+      sync: "gps",
+  {%- endif %}
+
+  {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
       args: "{{(dev_argv | join(',')) or '---'}}",
 
   {#- emit sdr-related options if an sdr ru is present #}
-  {%- if len(ru_sdr_dict) > 0               %}
+  {%- if do_sdr %}
       rx_antenna:"tx_rx",
       tdd_tx_mod: 1,
-  {%- endif                                 %}
+  {%- endif %}
 
   {#- emit cpri_* options if a cpri ru is present #}
-  {#- NOTE values for non-cpri links come as empty   XXX recheck this is ok #}
-  {%- if len(ru_cpri_dict) > 0              %}
-  {%-   set vcpri = [None]*len(dev_argv)    %}
+  {#- NOTE values for non-cpri links come as empty  #}
+  {%- if do_cpri  %}
+  {%-   set vcpri = [None]*len(dev_argv)  %}
   {%-   for dev, ru in ru_cpri_dict|dictsort  %}
-  {%-     do vcpri.__setitem__(dev, ru.cpri_link)       %}
-  {%-   endfor                                %}
+  {%-     do vcpri.__setitem__(dev, ru.cpri_link) %}
+  {%-   endfor  %}
         cpri_mapping:  "{{ vcpri | map(attribute='mapping')  | map('default', '') | join(',') }}",
         cpri_mult:     "{{ vcpri | map(attribute='mult')     | map('default', '') | join(',') }}",
         cpri_rx_delay: "{{ vcpri | map(attribute='rx_delay') | map('default', '') | join(',') }}",
         cpri_tx_delay: "{{ vcpri | map(attribute='tx_delay') | map('default', '') | join(',') }}",
         cpri_tx_dbm:   "{{ vcpri | map(attribute='tx_dbm')   | map('default', '') | join(',') }}",
         ifname:        "{{ vcpri | map(attribute='_tap')     | map('default', '') | join(',') }}",
-  {%- endif                                                     %}
+  {%- endif %}
   },
 
   {#- emit tx/rx gain for all channels #}

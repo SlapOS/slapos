@@ -224,7 +224,7 @@ class RFTestCase4(AmariTestCase):
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
-            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'INACTIVE'}
+            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'ACTIVE'}
             cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
@@ -450,6 +450,7 @@ class SDR4:
     # radio units configuration
     def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
+          name='sdr',
           args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
                'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
           cpri_mapping=NO,
@@ -482,6 +483,7 @@ class Lopcomm4:
     # radio units configuration in enb.cfg
     def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
+          name='sdr',
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
           cpri_mapping='hw,hw,hw,hw',
           cpri_mult='4,4,4,4',
@@ -501,14 +503,14 @@ class Lopcomm4:
                   'center-of-channel-bandwidth':  '%d' % dl_freq,
                   'channel-bandwidth':            '%d' % bw,
                   'gain':                         '%d' % tx_gain,
-                  'active':                       'INACTIVE',
+                  'active':                       'ACTIVE',
                 },
                 'rx-array-carriers': {
                   'absolute-frequency-center':    '%d' % ul_arfcn,
                   'center-of-channel-bandwidth':  '%d' % ul_freq,
                   'channel-bandwidth':            '%d' % bw,
                   # XXX no rx_gain
-                  'active':                       'INACTIVE',
+                  'active':                       'ACTIVE',
                 },
             }
 
@@ -580,6 +582,7 @@ class Sunwave4:
     # radio units configuration in enb.cfg
     def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
+          name='sdr',
           args='dev0=/dev/sdr1@1,dev1=/dev/sdr1@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='bf1,bf1,bf1,bf1',
           cpri_mult='5,5,5,5',
@@ -603,6 +606,7 @@ class RUMultiType4:
     # radio units configuration in enb.cfg
     def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
+          name='sdr',
           args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
           cpri_mapping='hw,hw,bf1,bf1',
           cpri_mult='4,4,5,5',
