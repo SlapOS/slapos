@@ -90,6 +90,10 @@ def do(src, out, rat, slapparameter_dict):
             "etc": "etc",
             "var": "var"
         },
+        "pub_info": {
+            "rue_bind_addr": "::1",
+            "com_addr": "[::1]:9002"
+        },
         "slapparameter_dict": %(jslapparameter_dict)s
     }"""
 
@@ -100,11 +104,17 @@ def do_enb():
     do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
 
 
+def do_ue():
+    do('ue-lte.jinja2.cfg', 'ue-lte.cfg', 'lte', {'rue_addr': 'host1'})
+    do('ue-nr.jinja2.cfg',  'ue-nr.cfg',  'nr',  {'rue_addr': 'host2'})
+
+
 def main():
     os.makedirs('config/out', exist_ok=True)
     for f in glob.glob('config/out/*'):
         os.remove(f)
     do_enb()
+    do_ue()
 
 
 if __name__ == '__main__':
