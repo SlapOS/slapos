@@ -9,8 +9,8 @@ from slapos.recipe.template import jinja2_template
 import json
 
 
-# j2render renders config/<cfg>.jinja2.cfg into config/<cfg>.cfg with provided json parameters.
-def j2render(cfg, jcfg):
+# j2render renders config/<src> into config/<out> with provided json parameters.
+def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
     ctx['_standalone'] = True
@@ -20,8 +20,8 @@ def j2render(cfg, jcfg):
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
-      'url': 'config/{}.jinja2.cfg'.format(cfg),
-      'output': 'config/{}.cfg'.format(cfg),
+      'url': 'config/{}'.format(src),
+      'output': 'config/{}'.format(out),
       'context': textctx,
       'import-list': '''
         rawfile slaplte.jinja2 slaplte.jinja2''',
@@ -34,11 +34,14 @@ def j2render(cfg, jcfg):
             return f.read()
     r._read = _read
 
-    with open('config/{}.cfg'.format(cfg), 'w+') as f:
+    with open('config/{}'.format(out), 'w+') as f:
       f.write(r._render().decode())
 
 
-def do(cfg, slapparameter_dict):
+def do(src, out, rat, slapparameter_dict):
+    assert rat in ('lte', 'nr')
+    jdo_lte = json.dumps(rat == 'lte')
+    jdo_nr  = json.dumps(rat == 'nr')
     jslapparameter_dict = json.dumps(slapparameter_dict)
     json_params_empty = """{
         "rf_mode": 'fdd',
@@ -50,6 +53,8 @@ def do(cfg, slapparameter_dict):
     }"""
     json_params = """{
         "rf_mode": "tdd",
+        "do_lte": %(jdo_lte)s,
+        "do_nr": %(jdo_nr)s,
         "trx": "sdr",
         "bbu": "ors",
         "ru": "ors",
@@ -88,7 +93,7 @@ def do(cfg, slapparameter_dict):
         "slapparameter_dict": %(jslapparameter_dict)s
     }"""
 
-    j2render(cfg, json_params % locals())
+    j2render(src, out, json_params % locals())
 
-do('enb', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
-do('gnb', {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
+do('enb.jinja2.cfg', 'enb.cfg', 'lte', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
+do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
