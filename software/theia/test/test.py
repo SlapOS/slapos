@@ -40,9 +40,8 @@ import netaddr
 import pexpect
 import psutil
 import requests
-import six
 
-from six.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, parse_qsl
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
@@ -621,7 +620,34 @@ class ResilientTheiaMixin(object):
 
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
-  pass
+
+  def test_all_monitor_url_use_same_password(self):
+    monitor_setup_params = dict(
+      parse_qsl(
+        urlparse(
+          self.computer_partition.getConnectionParameterDict()
+          ['monitor-setup-url']).fragment))
+
+    monitor_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-base-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    self.assertEqual(len(monitor_url_list), 4)
+
+    for url in monitor_url_list:
+      self.assertEqual(
+        requests.get(url, verify=False).status_code,
+        requests.codes.unauthorized)
+
+      requests.get(
+        url,
+        verify=False,
+        auth=(
+          monitor_setup_params['username'],
+          monitor_setup_params['password'],
+        )).raise_for_status()
 
 
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
