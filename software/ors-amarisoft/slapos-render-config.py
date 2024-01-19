@@ -105,8 +105,8 @@ def do_enb():
 
 
 def do_ue():
-    do('ue-lte.jinja2.cfg', 'ue-lte.cfg', 'lte', {'rue_addr': 'host1'})
-    do('ue-nr.jinja2.cfg',  'ue-nr.cfg',  'nr',  {'rue_addr': 'host2'})
+    do('ue.jinja2.cfg', 'ue-lte.cfg', 'lte', {'rue_addr': 'host1'})
+    do('ue.jinja2.cfg',  'ue-nr.cfg',  'nr', {'rue_addr': 'host2'})
 
 
 def main():
