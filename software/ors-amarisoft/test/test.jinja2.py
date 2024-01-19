@@ -184,11 +184,11 @@ def test_gnb_conf1(self):
         if 'tx_gain' in conf and 'rx_gain' in conf:
             self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
             self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
-        self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
+        self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
-        self.assertEqual(conf['nr_cell_default']['n_id_cell'], gnb_param_dict1['pci'])
+        self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
         self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
         self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
         for p in conf['nr_cell_default']['plmn_list']:
@@ -211,7 +211,7 @@ def test_gnb_conf1(self):
           self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
           self.assertEqual(p['tac'],          conf_ncell['tac'])
           self.assertEqual(p['band'],         conf_ncell['nr_band'])
-        tdd_config = conf['nr_cell_default']['tdd_ul_dl_config']['pattern1']
+        tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
         self.assertEqual(float(tdd_config['period']), 2.5)
         self.assertEqual(int(tdd_config['dl_slots']), 3)
         self.assertEqual(int(tdd_config['dl_symbols']), 10)
