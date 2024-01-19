@@ -6,10 +6,10 @@
 import zc.buildout.buildout # XXX workaround for https://lab.nexedi.com/nexedi/slapos.recipe.template/merge_requests/9
 from slapos.recipe.template import jinja2_template
 
-import json
+import json, os, glob
 
 
-# j2render renders config/<src> into config/<out> with provided json parameters.
+# j2render renders config/<src> into config/out/<out> with provided json parameters.
 def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
@@ -21,7 +21,7 @@ def j2render(src, out, jcfg):
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
       'url': 'config/{}'.format(src),
-      'output': 'config/{}'.format(out),
+      'output': 'config/out/{}'.format(out),
       'context': textctx,
       'import-list': '''
         rawfile slaplte.jinja2 slaplte.jinja2''',
@@ -34,7 +34,7 @@ def j2render(src, out, jcfg):
             return f.read()
     r._read = _read
 
-    with open('config/{}'.format(out), 'w+') as f:
+    with open('config/out/{}'.format(out), 'w+') as f:
       f.write(r._render().decode())
 
 
@@ -95,5 +95,17 @@ def do(src, out, rat, slapparameter_dict):
 
     j2render(src, out, json_params % locals())
 
-do('enb.jinja2.cfg', 'enb.cfg', 'lte', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
-do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
+def do_enb():
+    do('enb.jinja2.cfg', 'enb.cfg', 'lte', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
+    do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
+
+
+def main():
+    os.makedirs('config/out', exist_ok=True)
+    for f in glob.glob('config/out/*'):
+        os.remove(f)
+    do_enb()
+
+
+if __name__ == '__main__':
+    main()
