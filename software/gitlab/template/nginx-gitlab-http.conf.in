@@ -112,7 +112,7 @@ server {
 
   ## HSTS Config
   ## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
-  {% if cfg("nginx_hsts_max_age") > 0 -%}
+  {% if int(cfg("nginx_hsts_max_age")) > 0 -%}
   {%   if '{{ cfg("nginx_hsts_include_subdomains") }}' == 'true' -%}
   add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}; includeSubDomains"
   {%   else -%}

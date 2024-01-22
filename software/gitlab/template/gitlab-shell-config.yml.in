@@ -8,7 +8,7 @@
 user: {{ backend_info.user }}
 
 # Url to gitlab instance. Used for api calls. Should end with a slash.
-gitlab_url: "http+unix://{{ urllib.quote_plus(unicorn.socket) }}/"
+gitlab_url: "http+unix://{{ urllib.parse.quote_plus(unicorn.socket) }}/"
 
 http_settings:
 {# we don't need any

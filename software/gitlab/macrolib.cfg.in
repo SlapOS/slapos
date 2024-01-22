@@ -7,7 +7,6 @@
    NOTE macros can return only strings - that's why '' is used for false #}
 {% macro cfg_bool(name) %}{{ 'true' if (cfg(name).lower() in ('true', 'yes')) else '' }}{% endmacro %}
 
-
 {# deduce whether to use https from external url
    ( here - becasue we cannot use jinja2 logic in instance-gitlab.cfg.in to
      process instance parameters ) #}
