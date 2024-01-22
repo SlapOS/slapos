@@ -3,7 +3,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "mb_password_complexity": {
+    "mb-password-complexity": {
       "title": "Password complexity",
       "description": "Check Metabase documentation for more details.",
       "type": "string",
@@ -14,11 +14,25 @@
         "strong"
       ]
     },
-    "mb_password_length": {
+    "mb-password-length": {
       "title": "Password length",
       "description": "Password length",
       "type": "integer",
       "default": 6
+    },
+    "mb-aggregated-query-row-limit": {
+      "title": "Aggregated row limit",
+      "description": "Maximum number of rows to return for aggregated queries via the API.",
+      "type": "integer",
+      "default": 10000,
+      "maximum": 1048575
+    },
+    "mb-unaggregated-query-row-limit": {
+      "title": "Unaggregated row limit",
+      "description": "Maximum number of rows to return specifically on `:rows`-type queries via the API. Must be less than the number configured in `mb-aggregated-query-row-limit`",
+      "type": "integer",
+      "default": 2000,
+      "maximum": 1048575
     }
   }
 }
