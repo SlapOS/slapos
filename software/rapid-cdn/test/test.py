@@ -87,6 +87,9 @@ KEDIFA_PORT = '15080'
 SOURCE_IP = '127.0.0.1'
 SOURCE_IPV6 = '::1'
 
+# URL used to check for network connectivity
+RE6ST_URL = 'http://[2001:67c:1254:4::1]/index.html'
+
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
@@ -5034,6 +5037,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
+      're6st-verification-url': RE6ST_URL,
     }
 
   @classmethod
@@ -5064,7 +5068,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(
       getPromisePluginParameterDict(re6st_connectivity_promise_file),
       {
-        'url': 'http://[2001:67c:1254:4::1]/index.html',
+        'url': RE6ST_URL,
       }
     )
 
@@ -5077,6 +5081,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
+      're6st-verification-url': RE6ST_URL,
     }
 
   @classmethod
