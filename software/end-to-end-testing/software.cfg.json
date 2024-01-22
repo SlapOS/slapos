@@ -1,0 +1,14 @@
+{
+  "name": "End-To-End-Testing",
+  "description": "End-To-End Testing on SlapOS Cloud",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "default",
+      "software-type": "default",
+      "description": "default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json"
+    }
+  }
+}

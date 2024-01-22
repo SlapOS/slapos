@@ -24,8 +24,13 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import logging
 import os
+import time
+
 from inotify_simple import INotify, flags
+
+logger = logging.getLogger(__name__)
 
 def subfiles(directory):
   """Return the list of subfiles of a directory, and wait for the newly created
@@ -35,10 +40,19 @@ def subfiles(directory):
   ALWAYS ITERATE OVER IT !!!*"""
 
   with INotify() as inotify:
-    inotify.add_watch(directory, flags.CLOSE_WRITE | flags.MOVED_TO)
+    try:
+      inotify.add_watch(directory, flags.CLOSE_WRITE | flags.MOVED_TO)
+      inotify_available = True
+    except OSError:
+      logger.warning("Unable to add inotify watch, falling back to polling")
+      inotify_available = False
 
     names = os.listdir(directory)
     while True:
       for name in names:
         yield os.path.join(directory, name)
-      names = (event.name for event in inotify.read())
+      if inotify_available:
+        names = (event.name for event in inotify.read())
+      else:
+        time.sleep(5)
+        names = os.listdir(directory)

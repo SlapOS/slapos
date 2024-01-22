@@ -1,5 +1,6 @@
 {% from "instance_zodb_base" import zodb_dict  with context %}
 {% set webdav = slapparameter_dict['webdav'] -%}
+{% set with_max_rlimit_nofile = slapparameter_dict['with-max-rlimit-nofile'] -%}
 {% set thread_amount = slapparameter_dict['thread-amount'] %}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set ports = itertools.count(slapparameter_dict['port-base']) -%}
@@ -346,6 +347,7 @@ wrapped-command-line =
     --access-log-file={{ '${' ~ conf_parameter_name ~ ':z2-log}' }}
     {% if longrequest_logger_interval > 0 %} --long-request-log-file={{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {% endif %}
     {% if webdav %}-w{% endif %}
+    {% if with_max_rlimit_nofile %}--with-max-rlimit-nofile{% endif %}
     {{ ipv4 }}:${:port}
     {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %}
     '${:configuration-file}'
@@ -521,7 +523,7 @@ command-line-extra =
   --erp5_sql_connection_string '{{ connection_string_list[0] }}'
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
   --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
-  --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
+  --zserver_frontend_url {{ slapparameter_dict['test-runner-balancer-url-list'][0] }}
   {% if test_runner_random_activity_priority is not none %}
     --random_activity_priority={{ test_runner_random_activity_priority }}
   {%- endif %}
@@ -538,21 +540,21 @@ environment-extra +=
   {%   do zserver_address_list.append(ip ~ ':' ~ port) %}
   {% endfor -%}
   zserver_address_list={{ ','.join(zserver_address_list) }}
-  zserver_frontend_url_list={{ ','.join(slapparameter_dict['test-runner-apache-url-list']) }}
+  zserver_frontend_url_list={{ ','.join(slapparameter_dict['test-runner-balancer-url-list']) }}
 
-[promise-test-runner-apache-url-executable]
-# promise to wait for apache partition to have returned the parameter
+[promise-test-runner-balancer-url-executable]
+# promise to wait for balancer partition to have returned the parameter
 recipe = slapos.cookbook:check_parameter
-value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
+value = {{ slapparameter_dict['test-runner-balancer-url-list'] }}
 expected-not-value = not-ready
 path = ${directory:bin}/${:_buildout_section_name_}
 expected-value =
 
-[{{ section("promise-test-runner-apache-url") }}]
+[{{ section("promise-test-runner-balancer-url") }}]
 <= monitor-promise-base
 promise = check_command_execute
 name = ${:_buildout_section_name_}.py
-config-command = ${promise-test-runner-apache-url-executable:path}
+config-command = ${promise-test-runner-balancer-url-executable:path}
 
 {%-   endif %}
 {%- endif %}

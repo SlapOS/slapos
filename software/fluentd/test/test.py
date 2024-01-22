@@ -92,8 +92,8 @@ class WendelinTutorialTestCase(FluentdTestCase):
 
   @classmethod
   def measureDict(cls):
-    return {k: v.encode() for k, v in
-      zip((b'pressure', b'humidity', b'temperature'), cls._measurementList)}
+    return {k: v for k, v in
+      zip(('pressure', 'humidity', 'temperature'), cls._measurementList)}
 
   @classmethod
   def setUpClass(cls):

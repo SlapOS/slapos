@@ -37,9 +37,12 @@ import base64
 import io
 
 import requests
+import PIL.Image
 import PyPDF2
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import ImageComparisonTestCase
+
 
 setUpModule, _CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -148,7 +151,6 @@ class TestWkhtmlToPDF(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
       'Courier New': 'LiberationSans',
       'DejaVu Sans': 'DejaVuSans',
       'DejaVu Sans Condensed': 'LiberationSans',
-      'DejaVu Sans ExtraLight': 'LiberationSans',
       'DejaVu Sans Mono': 'DejaVuSansMono',
       'DejaVu Serif': 'DejaVuSerif',
       'DejaVu Serif Condensed': 'LiberationSans',
@@ -165,11 +167,11 @@ class TestWkhtmlToPDF(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
       'Liberation Sans Narrow': 'LiberationSansNarrow',
       'Liberation Serif': 'LiberationSerif',
       'Linux LibertineG': 'LiberationSans',
-      'OpenSymbol': {'DejaVuSans', 'OpenSymbol'},
+      'OpenSymbol': {'NotoSans-Regular', 'OpenSymbol'},
       'Palatino': 'LiberationSans',
       'Roboto Black': 'LiberationSans',
       'Roboto Condensed Light': 'LiberationSans',
-      'Roboto Condensed Regular': 'LiberationSans',
+      'Roboto Condensed': 'RobotoCondensed-Regular',
       'Roboto Light': 'LiberationSans',
       'Roboto Medium': 'LiberationSans',
       'Roboto Thin': 'LiberationSans',
@@ -198,43 +200,42 @@ class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
   pdf_producer = 'LibreOffice 7.5'
   expected_font_mapping = {
       'Arial': 'LiberationSans',
-      'Arial Black': 'DejaVuSans',
-      'Avant Garde': 'DejaVuSans',
-      'Bookman': 'DejaVuSans',
+      'Arial Black': 'NotoSans-Regular',
+      'Avant Garde': 'NotoSans-Regular',
+      'Bookman': 'NotoSans-Regular',
       'Carlito': 'Carlito',
-      'Comic Sans MS': 'DejaVuSans',
+      'Comic Sans MS': 'NotoSans-Regular',
       'Courier New': 'LiberationMono',
       'DejaVu Sans': 'DejaVuSans',
       'DejaVu Sans Condensed': 'DejaVuSansCondensed',
-      'DejaVu Sans ExtraLight': 'DejaVuSans',
       'DejaVu Sans Mono': 'DejaVuSansMono',
       'DejaVu Serif': 'DejaVuSerif',
       'DejaVu Serif Condensed': 'DejaVuSerifCondensed',
-      'Garamond': 'DejaVuSerif',
+      'Garamond': 'NotoSerif-Regular',
       'Gentium Basic': 'GentiumBasic',
       'Gentium Book Basic': 'GentiumBookBasic',
-      'Georgia': 'DejaVuSerif',
+      'Georgia': 'NotoSerif-Regular',
       'Helvetica': 'LiberationSans',
       'IPAex Gothic': 'IPAexGothic',
       'IPAex Mincho': 'IPAexMincho',
-      'Impact': 'DejaVuSans',
+      'Impact': 'NotoSans-Regular',
       'Liberation Mono': 'LiberationMono',
       'Liberation Sans': 'LiberationSans',
       'Liberation Sans Narrow': 'LiberationSansNarrow',
       'Liberation Serif': 'LiberationSerif',
       'Linux LibertineG': 'LinuxLibertineG',
       'OpenSymbol': {'OpenSymbol', 'IPAMincho'},
-      'Palatino': 'DejaVuSerif',
+      'Palatino': 'NotoSerif-Regular',
       'Roboto Black': 'Roboto-Black',
       'Roboto Condensed Light': 'RobotoCondensed-Light',
-      'Roboto Condensed Regular': 'DejaVuSans',
+      'Roboto Condensed': 'RobotoCondensed-Regular',
       'Roboto Light': 'Roboto-Light',
       'Roboto Medium': 'Roboto-Medium',
       'Roboto Thin': 'Roboto-Thin',
       'Times New Roman': 'LiberationSerif',
-      'Trebuchet MS': 'DejaVuSans',
-      'Verdana': 'DejaVuSans',
-      'ZZZdefault fonts when no match': 'DejaVuSans'
+      'Trebuchet MS': 'NotoSans-Regular',
+      'Verdana': 'NotoSans-Regular',
+      'ZZZdefault fonts when no match': 'NotoSans-Regular'
   }
 
   def _convert_html_to_pdf(self, src_html):
@@ -244,6 +245,27 @@ class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
             'html',
             'pdf',
         ).encode())
+
+
+class TestLibreofficeDrawToPNGConversion(CloudOooTestCase, ImageComparisonTestCase):
+  __partition_reference__ = 'l'
+
+  def test(self):
+    reference_png = PIL.Image.open(os.path.join('data', f'{self.id()}.png'))
+    with open(os.path.join('data', f'{self.id()}.odg'), 'rb') as f:
+      actual_png_data = base64.decodebytes(
+        self.server.convertFile(
+          base64.encodebytes(f.read()).decode(),
+          'odg',
+          'png',
+        ).encode())
+      actual_png = PIL.Image.open(io.BytesIO(actual_png_data))
+
+    # save a snapshot
+    with open(os.path.join(self.computer_partition_root_path, self.id() + '.png'), 'wb') as f:
+      f.write(actual_png_data)
+
+    self.assertImagesSame(actual_png, reference_png)
 
 
 class TestLibreOfficeTextConversion(CloudOooTestCase):
