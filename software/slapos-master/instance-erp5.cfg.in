@@ -247,7 +247,7 @@ config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval'))
 config-zope-longrequest-logger-error-threshold = {{ dumps(monitor_dict.get('zope-longrequest-logger-error-threshold', 20)) }}
 config-zope-longrequest-logger-maximum-delay = {{ dumps(monitor_dict.get('zope-longrequest-logger-maximum-delay', 0)) }}
 config-inituser-login = {{ dumps(inituser_login) }}
-config-inituser-password = ${publish-early:inituser-password}
+config-inituser-password-hashed = ${publish-early:inituser-password-hashed}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
 config-memcached-url = ${request-memcached-volatile:connection-url}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
@@ -515,6 +515,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 recipe = slapos.cookbook:publish-early
 -init =
   inituser-password gen-password:passwd
+  inituser-password-hashed gen-password:passwd-ldap-salted-sha1
   deadlock-debugger-password gen-deadlock-debugger-password:passwd
 {%- if has_posftix %}
   smtpd-sasl-password gen-smtpd-sasl-password:passwd
@@ -532,10 +533,6 @@ recipe = slapos.cookbook:publish-early
 neo-cluster = {{ dumps(neo[0]) }}
 {%-  endif %}
 {%- endif %}
-{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
-{%- if inituser_password %}
-inituser-password = {{ dumps(inituser_password) }}
-{%- endif %}
 {%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
 {%- if deadlock_debugger_password %}
 deadlock-debugger-password = {{ dumps(deadlock_debugger_password) }}
@@ -552,6 +549,10 @@ recipe =
 [gen-password]
 recipe = slapos.cookbook:generate.password
 storage-path =
+{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
+{%- if inituser_password %}
+passwd = {{ dumps(inituser_password) }}
+{%- endif %}
 
 [gen-deadlock-debugger-password]
 <= gen-password
