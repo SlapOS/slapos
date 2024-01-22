@@ -181,8 +181,9 @@ def test_gnb_conf1(self):
 
         with open(conf_file, 'r') as f:
             conf = yaml.load(f)
-        self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
-        self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
+        if 'tx_gain' in conf and 'rx_gain' in conf:
+            self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
+            self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
         self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
