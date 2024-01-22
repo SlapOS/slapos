@@ -44,7 +44,9 @@ parts =
   monitor-base
   monitor-ats-cache-stats-wrapper
   monitor-traffic-summary-last-stats-wrapper
+{%- if instance_parameter_dict.get('configuration.re6st-verification-url', None) %}
   monitor-verify-re6st-connectivity
+{%- endif %}
 
   frontend-haproxy-rsyslogd-configuration
   frontend-haproxy-rsyslogd
