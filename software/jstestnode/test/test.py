@@ -52,14 +52,14 @@ class TestJSTestNode(InstanceTestCase):
 
     self.assertEqual(
       {
-        'nginx': 'http://[%s]:9443/' % (self.computer_partition_ipv6_address, )
+        'nginx': 'https://[%s]:9443/' % (self.computer_partition_ipv6_address, )
       },
       connection_dict
     )
 
     # jio tests
     result = requests.get(
-      '%sjio/test/tests.html' % (connection_dict['nginx'], ), allow_redirects=False)
+      '%sjio/test/tests.html' % (connection_dict['nginx'], ), verify=False, allow_redirects=False)
     self.assertEqual(
       [requests.codes.ok, False],
       [result.status_code, result.is_redirect]
@@ -67,7 +67,7 @@ class TestJSTestNode(InstanceTestCase):
 
     # rjs tests
     result = requests.get(
-      '%srenderjs/test/' % (connection_dict['nginx'], ), allow_redirects=False)
+      '%srenderjs/test/' % (connection_dict['nginx'], ), verify=False, allow_redirects=False)
     self.assertEqual(
       [requests.codes.ok, False],
       [result.status_code, result.is_redirect]
@@ -75,7 +75,7 @@ class TestJSTestNode(InstanceTestCase):
 
     # rsvp tests
     result = requests.get(
-      '%srsvp/test/index.html' % (connection_dict['nginx'], ), allow_redirects=False)
+      '%srsvp/test/index.html' % (connection_dict['nginx'], ), verify=False, allow_redirects=False)
     self.assertEqual(
       [requests.codes.ok, False],
       [result.status_code, result.is_redirect]
@@ -83,7 +83,7 @@ class TestJSTestNode(InstanceTestCase):
 
     # Default access
     result = requests.get(
-      'http://[%s]:9443' % (self.computer_partition_ipv6_address, ), allow_redirects=False)
+      'https://[%s]:9443' % (self.computer_partition_ipv6_address, ), verify=False, allow_redirects=False)
     self.assertEqual(
       [requests.codes.forbidden, False],
       [result.status_code, result.is_redirect]

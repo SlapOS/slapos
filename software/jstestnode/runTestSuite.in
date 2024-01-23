@@ -22,7 +22,7 @@ os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
 os.environ['DISPLAY'] = '$${xvfb-instance:display}'
 os.environ['FONTCONFIG_FILE'] = '$${fontconfig-conf:output}'
 
-BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
+BASE_URL = 'https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 ETC_DIRECTORY = '$${directory:etc}'
 
 def main():
@@ -91,6 +91,7 @@ def main():
       if target == 'firefox':
         firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
         firefox_capabilities['marionette'] = True
+        firefox_capabilities['acceptInsecureCerts'] = True
         browser = webdriver.Firefox(
             capabilities=firefox_capabilities,
             firefox_binary='${firefox-wrapper:location}',

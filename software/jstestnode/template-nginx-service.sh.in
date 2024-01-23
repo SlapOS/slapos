@@ -2,16 +2,16 @@
 # BEWARE: This file is operated by slapos node
 # BEWARE: It will be overwritten automatically
 
-if [ ! -e $${nginx-configuration:ssl_crt} ]
+if [ ! -e $${nginx-configuration:ssl-crt} ]
 then
-  ${openssl-output:openssl} genrsa -out $${nginx-configuration:ssl_key} 2048
+  ${openssl-output:openssl} genrsa -out $${nginx-configuration:ssl-key} 2048
   ${openssl-output:openssl} req -new \
     -subj "/C=AA/ST=Denial/L=Nowhere/O=Dis/CN=$${nginx-configuration:ip}" \
-    -key $${nginx-configuration:ssl_key} -out $${nginx-configuration:ssl_csr}
+    -key $${nginx-configuration:ssl-key} -out $${nginx-configuration:ssl-csr}
   ${openssl-output:openssl} x509 -req -days 365 \
-    -in $${nginx-configuration:ssl_csr} \
-    -signkey $${nginx-configuration:ssl_key} \
-    -out $${nginx-configuration:ssl_crt}
+    -in $${nginx-configuration:ssl-csr} \
+    -signkey $${nginx-configuration:ssl-key} \
+    -out $${nginx-configuration:ssl-crt}
 fi
 
 exec ${nginx-output:nginx} \
