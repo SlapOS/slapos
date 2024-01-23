@@ -10,7 +10,7 @@ offline = true
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-nginx = http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/
+nginx = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -97,13 +97,13 @@ virtual-depends =
 recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
-access_log = $${directory:log}/nginx-access.log
-error_log = $${directory:log}/nginx-error.log
+access-log = $${directory:log}/nginx-access.log
+error-log = $${directory:log}/nginx-error.log
 ip = $${instance-parameter:ipv6-random}
 port = 9443
-ssl_key = $${directory:ssl}/nginx.key
-ssl_csr = $${directory:ssl}/nginx.csr
-ssl_crt = $${directory:ssl}/nginx.crt
+ssl-csr = $${directory:ssl}/nginx.csr
+ssl-key = $${directory:ssl}/nginx.key
+ssl-crt = $${directory:ssl}/nginx.crt
 
 [nginx-listen-promise]
 recipe = slapos.cookbook:check_port_listening
