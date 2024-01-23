@@ -171,6 +171,16 @@ production: &base
     storage_path: <%= @lfs_storage_path %>
   #}
 
+  ## Uploads
+  uploads:
+    # The location where uploads objects are stored (default: public/).
+    storage_path: "{{ gitlab.var }}"
+    # The location where uploads objects are stored (default: public/).
+    # storage_path: public/
+    # base_dir: uploads/-/system
+    object_store:
+      enabled: false
+      remote_directory: uploads # Bucket name
 
   {# we do not support container registry
   ## Container Registry
@@ -516,7 +526,7 @@ production: &base
     #   https://lab.nexedi.com/nexedi/slapos.core/commit/347d33d6
     # for now we have a lot of old slapos.core deployed...
     {% if cfg('icp_license') != '' -%}
-    ICP: {{ urllib.unquote_plus( str(cfg('icp_license')) ).decode('utf-8') }}
+    ICP: {{ urllib.parse.unquote_plus( str(cfg('icp_license')) ) }}
     {# ICP: '{{ cfg("icp_license") }}' #}
     {% endif %}
 
