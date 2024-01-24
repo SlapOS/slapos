@@ -58,7 +58,7 @@ def do(src, out, rat, slapparameter_dict):
         "trx": "sdr",
         "bbu": "ors",
         "ru": "ors",
-        "one_watt": "True",
+        "ors": {"one-watt": true},
         "earfcn": 36100,
         "nr_arfcn": 380000,
         "nr_band": 39,

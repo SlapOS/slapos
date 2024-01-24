@@ -36,8 +36,8 @@
               }
             },
             pdsch-ConfigCommon {
-{% if bbu == "ors" %}
-{%- if one_watt == "True" %}
+{% if ors %}
+{%- if ors['one-watt'] %}
               referenceSignalPower {{ (tx_gain | int) - 54 }}, /* patched by eNB */
 {%- else %}
               referenceSignalPower {{ (tx_gain | int) - 35 }}, /* patched by eNB */
