@@ -1,7 +1,27 @@
 {#- Package slaplte provides helpers for configuring Amarisoft LTE services in SlapOS.
 
     - load_cell initializes cell registry.
+
+    The following utilities are also provided:
+
+    - J should be used around macro calls to retrieve returned objects.
+    - error reports instantiation error.
 -#}
+
+
+{#- J is used around macro calls to retrieve returned objects.
+
+    It is needed to workaround jinja2 limitation that macro can return only
+    strings - not arbitrary objects: we return objects as JSON-encoded string
+    and J decodes them.
+
+    By convention macros that return JSON-encoded objects start with "j" prefix.
+
+    Usage example:
+
+      set obj = J(jmymacro(...))
+#}
+{%- set J = json_module.loads %}
 
 
 {#- tap indicates tap interface, that slapos told us to use,
@@ -10,6 +30,14 @@
 {%- if tap == '' %}
 {%-   set tap = 'xxx-notap-xxx'   %}
 {%- endif %}
+
+
+{#- error reports instantiation error. #}
+{%- macro error(msg)  %}
+{%-   set msg = 'Instantiation Error: %s\n' % msg %}
+{%-   do assert(False, msg) %}
+{%- endmacro  %}
+
 
 
 {#- ---- loading ---- #}
