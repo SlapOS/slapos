@@ -62,6 +62,12 @@
       "type": "string",
       "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js"
     },
+    "loopPeriod": {
+      "title": "Loop execution period",
+      "description": "Minimal period between 2 executions of flight script loop",
+      "type": "integer",
+      "default": 200
+    },
     "subscriberGuidList": {
       "title": "List of subscribers computer ID",
       "description": "List of computer ID of swarms subscribers (entities able to listen/send OPC-UA messages from/to the swarm)",
