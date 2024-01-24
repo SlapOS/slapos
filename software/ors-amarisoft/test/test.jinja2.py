@@ -417,6 +417,7 @@ class TestUELTEParameters(ORSTestCase):
         with open(conf_file, 'r') as f:
           conf = yaml.load(f)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], 10)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
         self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
@@ -430,11 +431,6 @@ class TestUELTEParameters(ORSTestCase):
         self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
         self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
-
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define N_RB_DL'):
-                    self.assertIn('50', l)
 
 class TestUENRParameters(ORSTestCase):
     @classmethod
