@@ -72,7 +72,7 @@ context =
     raw bzip2_location              ${bzip2:location}
     raw bundler_4gitlab             ${bundler-4gitlab:bundle}
     raw bundler_1_17_3_dir          ${bundler-4gitlab:bundle1.17.3}
-    raw coreutils_location          ${coreutils-9.1:location}
+    raw coreutils_location          ${coreutils:location}
     raw curl_bin                    ${curl:location}/bin/curl
     raw dcron_bin                   ${dcron-output:crond}
     raw git                         ${git:location}/bin/git
