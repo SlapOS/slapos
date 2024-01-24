@@ -171,7 +171,7 @@ mode    = 0700
 recipe  = slapos.cookbook:mkdirectory
 gitaly  = ${directory:var}/gitaly
 sockets = ${:gitaly}/sockets
-internal = ${:sockets}/internal
+internal = ${directory:var}/int
 log     = ${directory:log}/gitaly
 
 [gitaly]
