@@ -148,6 +148,7 @@ def test_enb_conf(self):
     self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
+    self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
@@ -169,11 +170,6 @@ def test_enb_conf(self):
       self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
       self.assertEqual(p['tac'],          conf_ncell['tac'])
 
-    with open(conf_file, 'r') as f:
-        for l in f:
-            if l.startswith('#define N_RB_DL'):
-                self.assertIn('50', l)
-
 def test_gnb_conf1(self):
 
         conf_file = glob.glob(os.path.join(
@@ -188,6 +184,7 @@ def test_gnb_conf1(self):
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
+        self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['nr_bandwidth'])
         self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
         self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
         self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
@@ -217,11 +214,6 @@ def test_gnb_conf1(self):
         self.assertEqual(int(tdd_config['dl_symbols']), 10)
         self.assertEqual(int(tdd_config['ul_slots']), 1)
         self.assertEqual(int(tdd_config['ul_symbols']), 2)
-
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define NR_BANDWIDTH'):
-                    self.assertIn(str(gnb_param_dict1['nr_bandwidth']), l)
 
 def test_gnb_conf2(self):
 
