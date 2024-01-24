@@ -54,6 +54,7 @@ MONITORED_ITEM_NB = 4
 OPC_UA_PORT = 4840
 OPC_UA_NET_IF = 'lo'
 MCAST_GRP = 'ff15::1111'
+LOOP_PERIOD = 200
 
 # OPC UA Pub/Sub related constants
 VERSION = 1
@@ -280,6 +281,7 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
         'id': 1,
         'debug': False,
         'isASimulation': False,
+        'loopPeriod': LOOP_PERIOD,
         'isADrone': False,
         'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/subscribe.js',
         'netIf': OPC_UA_NET_IF,

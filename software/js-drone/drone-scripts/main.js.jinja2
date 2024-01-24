@@ -49,7 +49,7 @@ import { err, exit, open, out } from "std";
     pubsubWorker,
     worker,
     user_script = scriptArgs[1],
-    FPS = 200, // Minimum value to not overflow radio network
+    LOOP_EXECUTION_PERIOD = configuration.loopPeriod,
     previous_timestamp,
     can_update = false;
 
@@ -154,23 +154,23 @@ import { err, exit, open, out } from "std";
     var timestamp = Date.now(),
       timeout;
     if (can_update) {
-      if (FPS <= (timestamp - previous_timestamp)) {
+      if (LOOP_EXECUTION_PERIOD <= (timestamp - previous_timestamp)) {
         // Expected timeout between every update
         can_update = false;
         worker.postMessage({
           type: "update",
           timestamp: timestamp
         });
-        // Try to stick to the expected FPS
-        timeout = FPS - (timestamp - previous_timestamp - FPS);
+        // Try to stick to the expected LOOP_EXECUTION_PERIOD
+        timeout = LOOP_EXECUTION_PERIOD - (timestamp - previous_timestamp - LOOP_EXECUTION_PERIOD);
         previous_timestamp = timestamp;
       } else {
-        timeout = FPS - (timestamp - previous_timestamp);
+        timeout = LOOP_EXECUTION_PERIOD - (timestamp - previous_timestamp);
       }
     } else {
       // If timeout occurs, but update is not yet finished
       // wait a bit
-      timeout = FPS / 4;
+      timeout = LOOP_EXECUTION_PERIOD / 4;
     }
     // Ensure loop is not done with timeout < 1ms
     setTimeout(loop, Math.max(1, timeout));
@@ -182,12 +182,12 @@ import { err, exit, open, out } from "std";
       pubsubWorker.postMessage({
         action: "run",
         id: configuration.id,
-        interval: FPS,
+        interval: LOOP_EXECUTION_PERIOD,
         publish: configuration.isADrone
       });
       load();
     } else if (type === 'loaded') {
-      previous_timestamp = -FPS;
+      previous_timestamp = -LOOP_EXECUTION_PERIOD;
       can_update = true;
       // Start the update loop
       loop();
