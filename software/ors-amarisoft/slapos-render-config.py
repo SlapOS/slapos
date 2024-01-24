@@ -57,7 +57,7 @@ def do(src, out, rat, slapparameter_dict):
         "do_nr": %(jdo_nr)s,
         "trx": "sdr",
         "bbu": "ors",
-        "ru": "ors",
+        "ru_type": "ors",
         "one_watt": "True",
         "earfcn": 36100,
         "nr_arfcn": 380000,
