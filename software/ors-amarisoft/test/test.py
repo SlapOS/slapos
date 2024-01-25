@@ -26,4 +26,4 @@ import yaml
 def yaml_load(path):
     with open(path, 'r') as f:
         data = f.read()
-    return yaml.load(data)
+    return yaml.load(data, loader=yaml.FullLoader)
