@@ -45,6 +45,7 @@ setup(
         'slapos.core',
         'slapos.libnetworkcache',
         'slapos.cookbook',
+        'pcpp',
     ],
     zip_safe=True,
     test_suite='test',

@@ -17,13 +17,22 @@
 # See https://www.nexedi.com/licensing for rationale and options.
 
 
+import io
 import yaml
+import pcpp
 
 
 # ---- misc ----
 
-# yaml_load loads yaml config file.
-def yaml_load(path):
+# yamlpp_load loads yaml config file after preprocessing it.
+#
+# preprocessing is needed to e.g. remove // and /* comments.
+def yamlpp_load(path):
     with open(path, 'r') as f:
-        data = f.read()
-    return yaml.load(data, loader=yaml.FullLoader)
+        data = f.read()     # original input
+    p = pcpp.Preprocessor()
+    p.parse(data)
+    f = io.StringIO()
+    p.write(f)
+    data_ = f.getvalue()    # preprocessed input
+    return yaml.load(data_, Loader=yaml.Loader)
