@@ -32,8 +32,8 @@ cert = ${slap-connection:cert-file}
 configuration.coupler_block_device = /dev/i2c-1
 configuration.coupler_i2c_slave_list = 0x58
 configuration.mode = 0
-configuration.username =
-configuration.password =
+configuration.username = ""
+configuration.password = ""
 configuration.interface = 0.0.0.0
 configuration.opc_ua_port = 4840
 configuration.id = 0
@@ -42,7 +42,7 @@ configuration.heart_beat_interval = 50
 configuration.heart_beat_id_list =
 configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
 configuration.heart_beat_timeout_interval = 100
-configuration.network_interface =
+configuration.network_interface = ""
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -51,7 +51,6 @@ etc = ${:home}/etc
 var = ${:home}/var
 script = ${:etc}/run/
 service = ${:etc}/service
-log = ${:var}/log
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
