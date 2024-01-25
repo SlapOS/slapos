@@ -49,16 +49,32 @@ offline = true
 #   GitLab instance parameters   #
 ##################################
 
+[worker-processes]
+recipe = slapos.recipe.build
+unicorn-worker-processes = {{ instance_parameter_dict['configuration.unicorn_worker_processes'] }}
+init =
+  import multiprocessing
+  worker_count = int(options['unicorn-worker-processes'])
+  if worker_count == 0:
+    # automatically load all available CPUs
+    worker_count = multiprocessing.cpu_count() + 1
+  worker_count = 2 if worker_count < 2 else worker_count
+  options['unicorn-worker-processes'] = worker_count
+  options['nginx-worker-processes'] = worker_count -1
+
 [instance-parameter]
 {#- There are dangerous keys like recipe, etc #}
 {#- XXX: Some other approach would be useful #}
-{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
+{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert',
+                         'configuration.unicorn_worker_processes', 'configuration.nginx_worker_processes'] %}
 {%- for key, value in instance_parameter_dict.items() -%}
 {%-   if key not in DROP_KEY_LIST %}
 {{ key }} = {{ value }}
 {%-   endif -%}
 {%- endfor %}
-
+# settings for worker processes:
+configuration.unicorn_worker_processes = ${worker-processes:unicorn-worker-processes}
+configuration.nginx_worker_processes   = ${worker-processes:nginx-worker-processes}
 
 
 # for convenience
