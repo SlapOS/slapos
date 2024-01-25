@@ -17,6 +17,7 @@ def j2render(src, out, jcfg):
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
+    textctx += 'import json_module    json\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
@@ -57,7 +58,7 @@ def do(src, out, rat, slapparameter_dict):
         "do_nr": %(jdo_nr)s,
         "trx": "sdr",
         "bbu": "ors",
-        "ru": "ors",
+        "ru_type": "ors",
         "one_watt": "True",
         "earfcn": 36100,
         "nr_arfcn": 380000,
