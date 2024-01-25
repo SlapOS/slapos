@@ -26,10 +26,11 @@
 ##############################################################################
 
 import os
-import yaml
 import json
 import glob
 import requests
+
+from test import yaml_load
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -140,8 +141,7 @@ def test_enb_conf(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yaml_load(conf_file)
     if 'tx_gain' in conf and 'rx_gain' in conf:
       self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
       self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
@@ -179,8 +179,7 @@ def test_gnb_conf1(self):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
+        conf = yaml_load(conf_file)
         if 'tx_gain' in conf and 'rx_gain' in conf:
             self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
             self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
@@ -224,8 +223,7 @@ def test_gnb_conf2(self):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
+        conf = yaml_load(conf_file)
 
         for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
           sd = hex(p['sd'])
@@ -237,8 +235,7 @@ def test_mme_conf(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yaml_load(conf_file)
     self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_sim_card(self):
@@ -246,8 +243,7 @@ def test_sim_card(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yaml_load(conf_file)
     for n in "sim_algo imsi opc sqn impu impi".split():
         self.assertEqual(conf['ue_db'][0][n], param_dict[n])
     self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
@@ -414,8 +410,7 @@ class TestUELTEParameters(ORSTestCase):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-          conf = yaml.load(f)
+        conf = yaml_load(conf_file)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], 10)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
@@ -443,8 +438,7 @@ class TestUENRParameters(ORSTestCase):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-          conf = yaml.load(f)
+        conf = yaml_load(conf_file)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], '10 MHz')
