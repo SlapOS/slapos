@@ -101,8 +101,29 @@ def do(src, out, rat, slapparameter_dict):
     j2render(src, out, json_params % locals())
 
 def do_enb():
-    do('enb.jinja2.cfg', 'enb.cfg', 'lte', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
-    do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
+    peer_lte = {
+        'cell_id':          '0x12345',
+        'pci':              35,
+        'dl_earfcn':        700,
+        'tac':              123,
+    }
+    peer_nr = {
+        'nr_cell_id':       '0x77712',
+        'gnb_id_bits':      22,
+        'dl_nr_arfcn':      520000,
+        'nr_band':          38,
+        'pci':              75,
+        'tac':              321,
+    }
+
+    do('enb.jinja2.cfg', 'enb.cfg', 'lte', {
+        "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
+        "ncell_list": {'1': peer_lte},
+    })
+    do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {
+        "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)",
+        "ncell_list": {'1': peer_nr},
+    })
 
 
 def do_ue():
