@@ -32,6 +32,12 @@
 {%- endif %}
 
 
+{#- bug indicates an error in template logic.
+    it should not happen. #}
+{%- macro bug(msg)  %}
+{%-   do assert(False, 'BUG: %s' % (msg,)) %}
+{%- endmacro  %}
+
 {#- error reports instantiation error. #}
 {%- macro error(msg)  %}
 {%-   set msg = 'Instantiation Error: %s\n' % msg %}
