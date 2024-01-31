@@ -1,6 +1,6 @@
 <xc:config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
-{%- set n_antenna_dl = slapparameter_dict.get('n_antenna_dl', int(slap_configuration['configuration.default_n_antenna_dl'])) %}
-{%- set n_antenna_ul = slapparameter_dict.get('n_antenna_ul', int(slap_configuration['configuration.default_n_antenna_ul'])) %}
+{%- set n_antenna_dl = slapparameter_dict.get('n_antenna_dl', int(default_n_antenna_dl)) %}
+{%- set n_antenna_ul = slapparameter_dict.get('n_antenna_ul', int(default_n_antenna_ul)) %}
          <user-plane-configuration xc:operation="replace" xmlns="urn:o-ran:uplane-conf-option8:1.0">
             <!-- TX path: eaxcid → TxEndpoint
                                              ↘
