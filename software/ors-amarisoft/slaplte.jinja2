@@ -130,7 +130,7 @@
   },
   tx_gain: 0,
   rx_gain: 0,
-{% elif ru.ru_type == "m2ru" %}
+{% elif ru.ru_type == "sunwave" %}
   rf_driver: {
 {%- if slapparameter_dict.get('disable_sdr', False) %}
       name: "dummy",
