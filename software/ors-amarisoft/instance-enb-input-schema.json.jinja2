@@ -49,15 +49,13 @@
       "default": "[Configuration 2] 5ms 2UL 6DL (default)"
     },
 {%- endif %}
-{%- if bbu != 'ors' %}
+{%- if trx == 'cpri' %}
     "sdr_number": {
       "title": "SDR Number",
       "description": "SDR Number",
       "type": "number",
       "default": 0
     },
-{%- endif %}
-{%- if trx == 'cpri' %}
     "cpri_mult": {
       "title": "CPRI Mult",
       "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",

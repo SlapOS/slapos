@@ -49,6 +49,19 @@
       "type": "string",
       "default": "0x01"
     },
+    "cell_list": {
+      "title": "Cell List",
+      "description": "Cell List",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",

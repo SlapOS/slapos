@@ -66,15 +66,15 @@ def do(src, out, rat, slapparameter_dict):
         "rf_mode": "tdd",
         "do_lte": %(jdo_lte)s,
         "do_nr": %(jdo_nr)s,
-        "trx": "sdr",
-        "bbu": "ors",
         "ru_type": "ors",
         "ors": {"one-watt": true},
         "earfcn": 36100,
         "nr_arfcn": 380000,
         "nr_band": 39,
-        "tx_gain": 62,
-        "rx_gain": 43,
+        "RF": {
+          "tx_gain": 62,
+          "rx_gain": 43
+        },
         "sib23_file": "sib",
         "drb_file": "drb",
         "slap_configuration": {

@@ -1,6 +1,6 @@
 {#- Package slaplte provides helpers for configuring Amarisoft LTE services in SlapOS.
 
-    - load_cell initializes cell registry.
+    - load_ru_and_cell initializes RU and cell registries.
     - ru_config emits RF driver configuration for specified Radio Units.
 
     The following utilities are also provided:
@@ -8,6 +8,38 @@
     - J should be used around macro calls to retrieve returned objects.
     - error reports instantiation error.
 -#}
+
+{#- defaults provide default values for lte parameters. #}
+{%- set defaults = {
+      'ru': {
+        'n_antenna_dl': int(default_n_antenna_dl),
+        'n_antenna_ul': int(default_n_antenna_ul),
+      },
+      'ru/cpri_link': {
+        'rx_delay':  0,
+        'tx_delay':  0,
+        'tx_dbm':    0,
+      },
+
+      'ru/lopcomm': {
+      },
+      'ru/lopcomm/cpri_link': {
+        'mapping': 'hw',
+        'rx_delay': 25.11,
+        'tx_delay': 14.71,
+        'tx_dbm':   63,
+      },
+
+      'ru/sunwave': {
+        'n_antenna_ul': 1,
+      },
+      'ru/sunwave/cpri_link': {
+        'mapping': 'bf1',
+        'rx_delay': 11.0,
+        'tx_dbm':   42.0,
+      },
+    }
+%}
 
 
 {#- J is used around macro calls to retrieve returned objects.
@@ -49,119 +81,184 @@
 
 {#- ---- loading ---- #}
 
-{#- load_cell initializes cell registry.
+{#- load_ru_and_cell initializes RU and cell registries.
 
     cell_dict keeps configured cells: {} cell reference -> cell parameters
+    ru_dict   keeps configured RU:    {} RU reference   -> RU parameters
 #}
-{%- macro load_cell(cell_dict)	%}
+{%- macro load_ru_and_cell(ru_dict, cell_dict)  %}
 {%-   do cell_dict.update( slapparameter_dict.get('cell_list', {'default': {}}) )  %}
-{%-   for i, k in enumerate(cell_dict) %}
-{%-     set cell = cell_dict[k] %}
-{%-     do cell.setdefault('cpri_port_number', i) %}
+{%-   for i, (cell_ref, cell) in enumerate(cell_dict|dictsort) %}
+{%-     set ru_ref = '%s-RU' % cell_ref %}
+{%-     set ru = {'ru_type': ru_type, 'cell_ref': cell_ref} %}
+{%-     if ru.ru_type == 'm2ru' %}
+{%-       do ru.update({'ru_type': 'sunwave'})  %}
+{%-     endif %}
+{%-     do cell.update({'ru_ref': ru_ref})  %}
+
+{%-     macro ru_set(name)  %}
+{%-       if name in slapparameter_dict %}
+{%-         do ru.update({name: slapparameter_dict[name]}) %}
+{%-       endif %}
+{%-     endmacro  %}
+{%-     do ru_set('n_antenna_dl')  %}
+{%-     do ru_set('n_antenna_ul')  %}
+
+{%-     do ru.update({'ru_link_type': 'cpri' if ru.ru_type in ('lopcomm', 'sunwave')  else 'sdr'}) %}
+{%-     if ru.ru_link_type == 'sdr' %}
+{%-       do ru.update({'sdr_dev': i,
+                        'tx_gain': RF.tx_gain,
+                        'rx_gain': RF.rx_gain,
+          })  %}
+{%-     elif ru.ru_link_type == 'cpri'  %}
+{#-       set 0 tx/rx gain to emit 0 in enb.cfg.
+          This will be changed later: .tx_gain and .rx_gain will be carrying real RU tx/rx gain #}
+{%-       do ru.update({'tx_gain': 0,
+                        'rx_gain': 0,
+          })  %}
+{%-       set link = {
+                'sdr_dev':  slapparameter_dict.get('sdr_number', 0),
+                'sfp_port': cell.get('cpri_port_number', i),
+                'mult':     slapparameter_dict.get('cpri_mult', 16),
+          }  %}
+{%-       macro link_set(name)  %}
+{%-         set cname = 'cpri_'+name  %}
+{%-         if cname in cell %}
+{%-           do link.update({name: cell[cname]}) %}
+{%-         endif %}
+{%-       endmacro  %}
+{%-       do link_set('rx_delay') %}
+{%-       do link_set('tx_delay') %}
+{%-       do link_set('tx_dbm') %}
+{%-       do ru.update({'cpri_link': link}) %}
+{%-       do ru.update({'mac_addr': cell.ru_mac_addr})  %}
+{%-     else  %}
+{%-       do bug('unreachable') %}
+{%-     endif %}
+
+{%-     do _ru_set_defaults(ru) %}
+{%-     do ru_dict.update({ru_ref: ru}) %}
 {%-   endfor %}
 
+{#-   assign RUs rf_port and tx/rx channel indices  #}
+{%-   set rf_chan = namespace(tx=0, rx=0) %}
+{%-   for rf_port, (ru_ref, ru) in enumerate(ru_dict|dictsort)  %}
+{%-     do ru.update({'_rf_port':    rf_port,
+                      '_rf_chan_tx': rf_chan.tx,
+                      '_rf_chan_rx': rf_chan.rx}) %}
+{%-     set rf_chan.tx = rf_chan.tx + ru.n_antenna_dl %}
+{%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul %}
+{%-   endfor  %}
+
 {#-   assign TAP interfaces to RUs  #}
-{%-   for i, (cell_ref, cell) in enumerate(cell_dict|dictsort)  %}
-{%-     if len(cell_dict) > 1 %}
+{%-   set ru_vcpri = list(ru_dict|dictsort | selectattr('1.ru_link_type', '==', 'cpri')) %}
+{%-   for i, (ru_ref, ru) in enumerate(ru_vcpri)  %}
+{%-     if len(ru_vcpri) > 1 %}
 {%-       set ru_tap = "%s-%d" % (tap, i+1) %}
 {%-     else  %}
 {%-       set ru_tap = tap  %}
 {%-     endif %}
-{%-     do cell.update({'_tap': ru_tap})  %}
+{%-     do ru.cpri_link.update({'_tap': ru_tap}) %}
 {%-   endfor  %}
+{%- endmacro  %}
+
+{%- macro _ru_set_defaults(ru)  %}
+{%-   for k, v in defaults['ru'].items()  %}
+{%-     do ru.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   for k, v in defaults.get('ru/'+ru.ru_type, {}).items() %}
+{%-     do ru.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   if ru.ru_link_type == 'cpri' %}
+{%-     set link = ru.cpri_link  %}
+{%-     for k, v in defaults['ru/cpri_link'].items() %}
+{%-       do link.setdefault(k, v)  %}
+{%-     endfor  %}
+{%-     for k, v in defaults['ru/%s/cpri_link' % ru.ru_type].items() %}
+{%-       do link.setdefault(k, v)  %}
+{%-     endfor  %}
+{%-   endif %}
 {%- endmacro  %}
 
 
 {#- ---- building configuration ---- #}
 
 {#- ru_config emits RF driver configuration for specified Radio Units. #}
-{%- macro ru_config(ru, cell_dict, slapparameter_dict) %}
-{% if ru.ru_type == "lopcomm" %}
+{%- macro ru_config(ru_dict, slapparameter_dict) %}
+  // Radio Units
   rf_driver: {
-{%- if slapparameter_dict.get('disable_sdr', False) %}
+  {%- set dev_argv = []                                                       %}
+  {%- set ru_sdr_dict = {}  %}  {#- dev -> ru  for ru with ru_type = sdr      #}
+  {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
+  {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
+  {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
+  {%- for (ru_ref, ru) in ru_dict.items() | sort(attribute="1._rf_port")  %}
+      // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
+  {%-   if ru.ru_link_type == 'sdr'  %}
+  {%-     do ru_sdr_dict.update({len(dev_argv): ru})  %}
+  {%-     do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), ru.sdr_dev)) %}
+  {%-   elif ru.ru_link_type == 'cpri'  %}
+  {%-     do ru_cpri_dict.update({len(dev_argv): ru}) %}
+  {%-     set link = ru.cpri_link %}
+  {%-     do dev_argv.append("dev%d=/dev/sdr%d@%d" % (len(dev_argv), link.sdr_dev, link.sfp_port))  %}
+  {%-   else  %}
+  {%-     do bug('unreachable') %}
+  {%-   endif %}
+  {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)  %}
+  {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)  %}
+  {%- endfor %}
+
+  {#- emit big error if both sdr and cpri are present
+      to protect users from unclear eNB failures in such unsupported combination  #}
+  {%- set do_sdr  = len(ru_sdr_dict)  > 0 %}
+  {%- set do_cpri = len(ru_cpri_dict) > 0 %}
+  {%- if do_sdr and do_cpri %}
+  {%-   do error('Mixing SDR + CPRI is not supported and breaks subtly.
+
+    SDR  Radio Units: %r
+    CPRI Radio Units: %r
+
+    See https://support.amarisoft.com/issues/26021 for details' % (
+          ru_dict |dictsort |selectattr('1.ru_type',      '==', 'sdr')  |map(attribute='0') |list,
+          ru_dict |dictsort |selectattr('1.ru_link_type', '==', 'cpri') |map(attribute='0') |list
+        )) %}
+  {%- endif %}
+
+  {%- if slapparameter_dict.get('disable_sdr', False) %}
       name: "dummy",
-{%- else %}
+  {%- else %}
       name: "sdr",
-{%- endif %}
-        args: "dev0=
-        {%- for i, k in enumerate(cell_dict) %}
-        {%- set cpri_port = cell_dict[k].cpri_port_number %}
-        {%- if i != 0 -%}
-        ,
-        {%- endif -%}
-          /dev/sdr{{ slapparameter_dict.get('sdr_number', 0) }}@{{ cpri_port }}
-        {%- endfor -%}
-        ",
-      cpri_mapping: "hw",
-      {%- set cpri_mult = slapparameter_dict.get('cpri_mult', 16) %}
-      cpri_mult: "
-        {%- for i, k in enumerate(cell_dict) %}
-        {%- if i != 0 -%}
-        ,
-        {%- endif -%}
-          {{ cpri_mult }}
-        {%- endfor -%}
-        ",
-      cpri_rx_delay: "
-        {%- for i, k in enumerate(cell_dict) %}
-        {%- if i != 0 -%}
-        ,
-        {%- endif -%}
-          {{ cell_dict[k].get('cpri_rx_delay', 0) }}
-        {%- endfor -%}
-        ",
-      cpri_tx_delay: "
-        {%- for i, k in enumerate(cell_dict) %}
-        {%- if i != 0 -%}
-        ,
-        {%- endif -%}
-          {{ cell_dict[k].get('cpri_tx_delay', 0) }}
-        {%- endfor -%}
-        ",
-      cpri_tx_dbm: "
-        {%- for i, k in enumerate(cell_dict) %}
-        {%- if i != 0 -%}
-        ,
-        {%- endif -%}
-          {{ cell_dict[k].get('cpri_tx_dbm', 0) }}
-        {%- endfor -%}
-        ",
-      ifname: "{{ cell_dict.values() | map(attribute='_tap') | join(',') }}",
-  },
-  tx_gain: 0,
-  rx_gain: 0,
-{% elif ru.ru_type == "sunwave" %}
-  rf_driver: {
-{%- if slapparameter_dict.get('disable_sdr', False) %}
-      name: "dummy",
-{%- else %}
-      name: "sdr",
-{%- endif %}
-      args: "dev0=/dev/sdr0@0",
-      cpri_mapping: "bf1",
-      cpri_mult: 16,
-      cpri_rx_delay: 11.0,
-      cpri_tx_delay: 0,
-      ifname: "cpri0",
-      cpri_tx_dbm: 42.0,
-  },
-  tx_gain: 0,
-  rx_gain: 0,
-{% elif ors %}
-  rf_driver: {
-{%- if slapparameter_dict.get('disable_sdr', False) %}
-      name: "dummy",
-{%- else %}
-      name: "sdr",
-{%- endif %}
-      args: "dev0=/dev/sdr0",
-{% if slapparameter_dict.get('gps_sync', False) %}
+  {%- endif %}
+
+  {%- if slapparameter_dict.get('gps_sync', False) %}
       sync: "gps",
-{% endif %}
+  {%- endif %}
+
+  {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
+      args: "{{dev_argv | join(',')}}",
+
+  {%- if ors %}
       rx_antenna:"tx_rx",
       tdd_tx_mod: 1,
+  {%- endif %}
+
+  {#- emit cpri_* options if a cpri ru is present #}
+  {#- NOTE values for non-cpri links come as empty  #}
+  {%- if do_cpri  %}
+  {%-   set vcpri = [None]*len(dev_argv)  %}
+  {%-   for dev, ru in ru_cpri_dict|dictsort  %}
+  {%-     do vcpri.__setitem__(dev, ru.cpri_link) %}
+  {%-   endfor  %}
+        cpri_mapping:  "{{ vcpri | map(attribute='mapping')  | map('default', '') | join(',') }}",
+        cpri_mult:     "{{ vcpri | map(attribute='mult')     | map('default', '') | join(',') }}",
+        cpri_rx_delay: "{{ vcpri | map(attribute='rx_delay') | map('default', '') | join(',') }}",
+        cpri_tx_delay: "{{ vcpri | map(attribute='tx_delay') | map('default', '') | join(',') }}",
+        cpri_tx_dbm:   "{{ vcpri | map(attribute='tx_dbm')   | map('default', '') | join(',') }}",
+        ifname:        "{{ vcpri | map(attribute='_tap')     | map('default', '') | join(',') }}",
+  {%- endif %}
   },
-  tx_gain: {{ tx_gain }},
-  rx_gain: {{ rx_gain }},
-{% endif %}
+
+  {#- emit tx/rx gain for all channels #}
+  tx_gain: {{ tx_gainv }},
+  rx_gain: {{ rx_gainv }},
 {%- endmacro  %}

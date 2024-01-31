@@ -1,6 +1,4 @@
 <xc:config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
-{%- set n_antenna_dl = slapparameter_dict.get('n_antenna_dl', int(default_n_antenna_dl)) %}
-{%- set n_antenna_ul = slapparameter_dict.get('n_antenna_ul', int(default_n_antenna_ul)) %}
          <user-plane-configuration xc:operation="replace" xmlns="urn:o-ran:uplane-conf-option8:1.0">
             <!-- TX path: eaxcid → TxEndpoint
                                              ↘
@@ -11,7 +9,7 @@
                  (static TxEndpoint, TxArray and their association are defined by RU itself)
             -->
 {%- set TxCarrier = 'TXA0CC00'  %}
-{%- for ant in range(n_antenna_dl)  %}
+{%- for ant in range(ru.n_antenna_dl)  %}
 {%-   set port = ant // 2  %}
 {%-   set chan = ant %  2  %}
 {%-   set txep = 'TXA0P%02dC%02d' % (port, chan)  %}
@@ -47,7 +45,7 @@
                  (static RxEndpoint, RxArray and their association are defined by RU itself)
             -->
 {%- set RxCarrier = 'RXA0CC00'  %}
-{%- for ant in range(n_antenna_ul)  %}
+{%- for ant in range(ru.n_antenna_ul)  %}
 {%-   set port = ant // 2  %}
 {%-   set chan = ant %  2  %}
 {%-   set rxep    = 'RXA0P%02dC%02d'   % (port, chan)  %}
