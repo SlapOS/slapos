@@ -39,12 +39,6 @@
       ],
       "default": "[Configuration 2] 5ms 2UL 6DL (default)"
     },
-    "sdr_number": {
-      "title": "SDR Number",
-      "description": "SDR Number",
-      "type": "number",
-      "default": 0
-    },
     "cell_list": {
       "title": "Cell List",
       "description": "Cell List",

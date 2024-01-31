@@ -18,13 +18,13 @@ software_list = [
             'rf_mode'                      : 'tdd',
             'trx'                          : 'sdr',
             'bbu'                          : 'ors',
-            'ru'                           : 'ors',
+            'ru'                           : 'sdr',
         }, {
             'software_name'                : 'fdd-ors',
             'rf_mode'                      : 'fdd',
             'trx'                          : 'sdr',
             'bbu'                          : 'ors',
-            'ru'                           : 'ors',
+            'ru'                           : 'sdr',
         }, {
             'software_name'                : 'tdd-m2ru',
             'rf_mode'                      : 'tdd',
@@ -42,13 +42,13 @@ software_list = [
             'rf_mode'                      : 'fdd',
             'trx'                          : 'sdr',
             'bbu'                          : 'server',
-            'ru'                           : 'any',
+            'ru'                           : 'sdr',
         }, {
             'software_name'                : 'tdd',
             'rf_mode'                      : 'tdd',
             'trx'                          : 'sdr',
             'bbu'                          : 'server',
-            'ru'                           : 'any',
+            'ru'                           : 'sdr',
         }
 ]
 
