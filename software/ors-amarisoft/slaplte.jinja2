@@ -51,18 +51,18 @@
 
 {#- load_cell initializes cell registry.
 
-    cell_list keeps configured cells: {} cell reference -> cell parameters
+    cell_dict keeps configured cells: {} cell reference -> cell parameters
 #}
-{%- macro load_cell(cell_list)	%}
-{%-   do cell_list.update( slapparameter_dict.get('cell_list', {'default': {}}) )  %}
-{%-   for i, k in enumerate(cell_list) %}
-{%-     set cell = cell_list[k] %}
+{%- macro load_cell(cell_dict)	%}
+{%-   do cell_dict.update( slapparameter_dict.get('cell_list', {'default': {}}) )  %}
+{%-   for i, k in enumerate(cell_dict) %}
+{%-     set cell = cell_dict[k] %}
 {%-     do cell.setdefault('cpri_port_number', i) %}
 {%-   endfor %}
 
 {#-   assign TAP interfaces to RUs  #}
-{%-   for i, (cell_ref, cell) in enumerate(cell_list|dictsort)  %}
-{%-     if len(cell_list) > 1 %}
+{%-   for i, (cell_ref, cell) in enumerate(cell_dict|dictsort)  %}
+{%-     if len(cell_dict) > 1 %}
 {%-       set ru_tap = "%s-%d" % (tap, i+1) %}
 {%-     else  %}
 {%-       set ru_tap = tap  %}
@@ -75,7 +75,7 @@
 {#- ---- building configuration ---- #}
 
 {#- ru_config emits RF driver configuration for specified Radio Units. #}
-{%- macro ru_config(ru, cell_list, slapparameter_dict) %}
+{%- macro ru_config(ru, cell_dict, slapparameter_dict) %}
 {% if ru.ru_type == "lopcomm" %}
   rf_driver: {
 {%- if slapparameter_dict.get('disable_sdr', False) %}
@@ -84,8 +84,8 @@
       name: "sdr",
 {%- endif %}
         args: "dev0=
-        {%- for i, k in enumerate(cell_list) %}
-        {%- set cpri_port = cell_list[k].cpri_port_number %}
+        {%- for i, k in enumerate(cell_dict) %}
+        {%- set cpri_port = cell_dict[k].cpri_port_number %}
         {%- if i != 0 -%}
         ,
         {%- endif -%}
@@ -95,7 +95,7 @@
       cpri_mapping: "hw",
       {%- set cpri_mult = slapparameter_dict.get('cpri_mult', 16) %}
       cpri_mult: "
-        {%- for i, k in enumerate(cell_list) %}
+        {%- for i, k in enumerate(cell_dict) %}
         {%- if i != 0 -%}
         ,
         {%- endif -%}
@@ -103,30 +103,30 @@
         {%- endfor -%}
         ",
       cpri_rx_delay: "
-        {%- for i, k in enumerate(cell_list) %}
+        {%- for i, k in enumerate(cell_dict) %}
         {%- if i != 0 -%}
         ,
         {%- endif -%}
-          {{ cell_list[k].get('cpri_rx_delay', 0) }}
+          {{ cell_dict[k].get('cpri_rx_delay', 0) }}
         {%- endfor -%}
         ",
       cpri_tx_delay: "
-        {%- for i, k in enumerate(cell_list) %}
+        {%- for i, k in enumerate(cell_dict) %}
         {%- if i != 0 -%}
         ,
         {%- endif -%}
-          {{ cell_list[k].get('cpri_tx_delay', 0) }}
+          {{ cell_dict[k].get('cpri_tx_delay', 0) }}
         {%- endfor -%}
         ",
       cpri_tx_dbm: "
-        {%- for i, k in enumerate(cell_list) %}
+        {%- for i, k in enumerate(cell_dict) %}
         {%- if i != 0 -%}
         ,
         {%- endif -%}
-          {{ cell_list[k].get('cpri_tx_dbm', 0) }}
+          {{ cell_dict[k].get('cpri_tx_dbm', 0) }}
         {%- endfor -%}
         ",
-      ifname: "{{ cell_list.values() | map(attribute='_tap') | join(',') }}",
+      ifname: "{{ cell_dict.values() | map(attribute='_tap') | join(',') }}",
   },
   tx_gain: 0,
   rx_gain: 0,
