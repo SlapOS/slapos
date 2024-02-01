@@ -338,6 +338,12 @@ class ENBTestCase4(RFTestCase4):
 
         _('PEERCELL4',  LTE(700)      | LTE_PEER(0x12345,    35, 0x123))
         _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321))
+        cls.ho_inter = [
+            dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123),
+            dict(rat='nr',    nr_cell_id=0x77712, gnb_id_bits=22, n_id_cell=75,
+                 dl_nr_arfcn=520000, ul_nr_arfcn=520000, ssb_nr_arfcn=520090, band=38,
+                 tac = 0x321),
+        ]
 
     def CELLcfg(i):
         return CENB(i, 0x10+i) | TAC(0x100+i) | {
@@ -425,6 +431,42 @@ class ENBTestCase4(RFTestCase4):
           },
           { # CELL4
             'scell_list':           [{'cell_id': 3}],                   # NR  + NR
+          },
+        ])
+
+
+    # Handover
+    def test_enb_cfg_ho(t):
+        assertMatch(t, t.enb_cfg['cell_list'],  [
+          { # CELL1
+            'ncell_list':   [
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=40200, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=      3),                                             # CELL3
+              dict(rat='nr',    cell_id=      4),                                             # CELL4
+            ] + t.ho_inter,
+          },
+          { # CELL2
+            'ncell_list':   [
+              dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
+              dict(rat='nr',    cell_id=      3),                                             # CELL3
+              dict(rat='nr',    cell_id=      4),                                             # CELL4
+            ] + t.ho_inter,
+          },
+        ])
+        assertMatch(t, t.enb_cfg['nr_cell_list'], [
+          { # CELL3
+            'ncell_list':   [
+              dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=40200, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=      4),                                             # CELL4
+            ] + t.ho_inter,
+          },
+          { # CELL4
+            'ncell_list':   [
+              dict(rat='eutra', cell_id= 0x1701, n_id_cell=0x11, dl_earfcn=  100, tac=0x101), # CELL1
+              dict(rat='eutra', cell_id= 0x1702, n_id_cell=0x12, dl_earfcn=40200, tac=0x102), # CELL2
+              dict(rat='nr',    cell_id=      3),                                             # CELL3
+            ] + t.ho_inter,
           },
         ])
 
