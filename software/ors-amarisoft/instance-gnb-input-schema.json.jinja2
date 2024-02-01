@@ -32,7 +32,16 @@
       "default": {{ default_n_antenna_ul }}
     },
 {%- if bbu == 'ors' %}
-{%- if rf_mode == 'tdd' %}
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
+      "enum": [
+        "fdd",
+        "tdd"
+      ],
+      "default": "tdd"
+    },
     "tdd_ul_dl_config": {
       "title": "TDD",
       "description": "TDD",
@@ -42,9 +51,13 @@
         "2.5ms 1UL 3DL 2/10",
         "5ms 8UL 1DL 2/10 (maximum uplink)"
       ],
-      "default": "5ms 2UL 7DL 4/6 (default)"
+      "default": "5ms 2UL 7DL 4/6 (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
     },
-{%- endif %}
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
@@ -80,7 +93,16 @@
       "patternProperties": {
         ".*": {
           "properties": {
-{%- if rf_mode == 'tdd' %}
+            "rf_mode": {
+              "title": "RF mode",
+              "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+              "type": "string",
+              "enum": [
+                "fdd",
+                "tdd"
+              ],
+              "default": "tdd"
+            },
             "tdd_ul_dl_config": {
               "title": "TDD",
               "description": "TDD",
@@ -90,9 +112,13 @@
                 "2.5ms 1UL 3DL 2/10",
                 "5ms 8UL 1DL 2/10 (maximum uplink)"
               ],
-              "default": "5ms 2UL 7DL 4/6 (default)"
+              "default": "5ms 2UL 7DL 4/6 (default)",
+              "options": {
+                "dependencies": {
+                  "rf_mode": "tdd"
+                }
+              }
             },
-{%- endif %}
 {%- if trx == 'cpri' %}
             "sdr_number": {
               "title": "SDR Number",

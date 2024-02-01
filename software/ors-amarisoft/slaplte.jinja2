@@ -141,7 +141,7 @@
 {%-     do ru_dict.update({ru_ref: ru}) %}
 
 {%-     do cell.update({'cell_type': 'lte' if do_lte  else 'nr'}) %}
-{%-     do cell.update({'rf_mode': rf_mode})  %}
+{%-     do cell.setdefault('rf_mode', slapparameter_dict.get('rf_mode', 'tdd')) %}
 {%-     if do_lte %}
 {%-       if cell.rf_mode == 'tdd'  %}
 {%-         do cell.setdefault('tdd_ul_dl_config', slapparameter_dict.get('tdd_ul_dl_config', '[Configuration 2] 5ms 2UL 6DL (default)')) %}

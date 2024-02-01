@@ -21,6 +21,16 @@
       "patternProperties": {
         ".*": {
           "properties": {
+            "rf_mode": {
+              "title": "RF mode",
+              "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+              "type": "string",
+              "enum": [
+                "fdd",
+                "tdd"
+              ],
+              "default": "tdd"
+            },
             "tdd_ul_dl_config": {
               "title": "TDD",
               "description": "TDD",
@@ -30,7 +40,12 @@
                 "2.5ms 1UL 3DL 2/10",
                 "5ms 8UL 1DL 2/10 (maximum uplink)"
               ],
-              "default": "5ms 2UL 7DL 4/6 (default)"
+              "default": "5ms 2UL 7DL 4/6 (default)",
+              "options": {
+                "dependencies": {
+                  "rf_mode": "tdd"
+                }
+              }
             },
             "sdr_number": {
               "title": "SDR Number",

@@ -36,7 +36,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software-tdd-m2ru.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software-lopcomm.cfg')))
 
 param_dict = {
     'testing': True,

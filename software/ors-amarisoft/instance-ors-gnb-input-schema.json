@@ -3,19 +3,11 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "bandwidth": {
+    "nr_bandwidth": {
       "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
-      "type": "string",
-      "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
-      ],
-      "default": "20 MHz"
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number",
+      "default": 40
     },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
@@ -29,34 +21,59 @@
       "type": "number",
       "default": 2
     },
-    "dl_earfcn": {
-      "title": "DL EARFCN",
-      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
+      "enum": [
+        "fdd",
+        "tdd"
+      ],
+      "default": "tdd"
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD",
+      "description": "TDD",
+      "type": "string",
+      "enum": [
+        "5ms 2UL 7DL 4/6 (default)",
+        "2.5ms 1UL 3DL 2/10",
+        "5ms 8UL 1DL 2/10 (maximum uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
+    },
+    "dl_nr_arfcn": {
+      "title": "DL NR ARFCN",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
       "type": "number"
+    },
+    "nr_band": {
+      "title": "NR band",
+      "description": "NR band number",
+      "type": "number"
+    },
+    "ssb_pos_bitmap": {
+      "title": "SSB Position Bitmap",
+      "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
+      "type": "string",
+      "default": 10000000
     },
     "pci": {
       "title": "Physical Cell ID",
       "description": "Physical Cell ID",
       "type": "number",
-      "default": 1
+      "default": 500
     },
     "cell_id": {
       "title": "Cell ID",
       "description": "Cell ID",
       "type": "string",
       "default": "0x01"
-    },
-    "tac": {
-      "title": "Tracking Area Code",
-      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-      "default": "0x0001",
-      "type": "string"
-    },
-    "root_sequence_index": {
-      "title": "Root Sequence Index",
-      "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
-      "type": "number",
-      "default": 204
     },
     "tx_gain": {
       "title": "Tx gain",
@@ -68,27 +85,27 @@
       "description": "Rx gain (in dB)",
       "type": "number"
     },
-    "enb_id": {
-      "title": "eNB ID",
-      "description": "eNB ID",
+    "gnb_id": {
+      "title": "gNB ID",
+      "description": "gNB ID",
       "type": "string",
-      "default": "0x1A2D0"
+      "default": "0x12345"
     },
-    "gtp_addr": {
-      "title": "GTP Address",
-      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
-      "type": "string",
-      "default": "127.0.1.1"
+    "gnb_id_bits": {
+      "title": "gNB ID bits",
+      "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
+      "type": "number",
+      "default": 28
     },
-    "mme_list": {
-      "title": "MME list",
-      "description": "Optionnal. List of MME to which the gNodeB is connected",
+    "amf_list": {
+      "title": "AMF list",
+      "description": "Optionnal. List of AMF to which the gNodeB is connected",
       "patternProperties": {
         ".*": {
           "properties": {
-            "mme_addr": {
-              "title": "MME Address",
-              "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
+            "amf_addr": {
+              "title": "AMF Address",
+              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
               "type": "string"
             }
           },
@@ -100,7 +117,7 @@
     },
     "plmn_list": {
       "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -110,11 +127,16 @@
               "description": "Public Land Mobile Network",
               "type": "string"
             },
-            "attach_without_pdn": {
-              "default": false,
-              "title": "Attach Without PDN",
-              "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
-              "type": "boolean"
+            "tac": {
+              "default": 100,
+              "title": "Tracking Area Code",
+              "description": "Integer (range 0 to 16777215)",
+              "type": "number"
+            },
+            "ranac": {
+              "title": "Optional integer (range 0 to 255)",
+              "description": "RAN Area Code",
+              "type": "number"
             },
             "reserved": {
               "default": false,
@@ -129,15 +151,40 @@
       "type": "object",
       "default": {}
     },
-    "lte_handover_a3_offset": {
-      "title": "A3 offset for LTE handover",
+    "nssai": {
+      "title": "AMF slices configuration",
+      "description": "AMF slices configuration.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "sst": {
+              "default": 1,
+              "title": "Slice Service Type",
+              "description": "Integer (range 1 to 255).",
+              "type": "number"
+            },
+            "sd": {
+              "default": "0x000032",
+              "title": "Slice Differentiator",
+              "description": "Optional integer (range 0 to 0xFFFFFE)",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "nr_handover_a3_offset": {
+      "title": "A3 offset for NR handover",
       "description": "RSRP gain offset between gNBs which will trigger handover",
       "type": "number",
       "default": 6
     },
-    "lte_handover_time_to_trigger": {
-      "title": "Time to Trigger for LTE handover",
-      "description": "Time to triger after which LTE handover will be triggered if A3 offset is reached",
+    "nr_handover_time_to_trigger": {
+      "title": "Time to Trigger for NR handover",
+      "description": "Time to triger after which NR handover will be triggerd if A3 offset is reached",
       "type": "number",
       "enum": [
         0,
@@ -157,7 +204,7 @@
         2560,
         5120
       ],
-      "default": 480
+      "default": 100
     },
     "ncell_list": {
       "title": "Neighbour Cell Info",
@@ -165,9 +212,14 @@
       "patternProperties": {
         ".*": {
           "properties": {
-            "dl_earfcn": {
-              "title": "DL EARFCN",
-              "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the neighbour cell",
+            "dl_nr_arfcn": {
+              "title": "DL NR ARFCN",
+              "description": "Downlink NR Absolute Radio Frequency Channel Number of the neighbour cell",
+              "type": "number"
+            },
+            "ssb_nr_arfcn": {
+              "title": "SSB NR ARFCN",
+              "description": "SSB NR Absolute Radio Frequency Channel Number of the neighbour cell",
               "type": "number"
             },
             "pci": {
@@ -175,15 +227,43 @@
               "description": "Physical Cell ID of the neighbour cell",
               "type": "number"
             },
-            "cell_id": {
-              "title": "Cell ID",
-              "description": "Concatenation of enb_id and cell_id of the neighbour cell",
+            "nr_cell_id": {
+              "title": "NR Cell ID",
+              "description": "Concatenation of gnb_id and cell_id of the neighbour cell",
               "type": "string"
+            },
+            "gnb_id_bits": {
+              "title": "gNB ID bits",
+              "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
+              "type": "number"
+            },
+            "nr_band": {
+              "title": "NR band",
+              "description": "NR band number",
+              "type": "number"
             },
             "tac": {
               "title": "Tracking Area Code",
               "description": "Integer (range 0 to 16777215)",
               "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "xn_peers": {
+      "title": "XN Peers",
+      "description": "XN Peers",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "xn_addr": {
+              "title": "XN Address",
+              "description": "XN Address of the neighbour cell (gNB Address)",
+              "type": "string"
             }
           },
           "type": "object"
@@ -227,15 +307,15 @@
       "description": "Set to true to use IPv4 for AMF / MME addresses",
       "type": "boolean"
     },
-    "enb_stats_fetch_period": {
-      "title": "eNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get eNB statistics",
+    "gnb_stats_fetch_period": {
+      "title": "gNB statistics fetch period (seconds)",
+      "description": "Describes how often a call to Amarisoft remote API is made to get gNB statistics",
       "type": "number",
       "default": 60
     },
-    "enb_drb_stats_enabled": {
-      "title": "Enable eNB drb statistics",
-      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
+    "gnb_drb_stats_enabled": {
+      "title": "Enable gNB drb statistics",
+      "description": "Enable gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
       "type": "boolean",
       "default": true
     },

@@ -14,38 +14,22 @@ global_context = {
 
 software_list = [
         {
-            'software_name'                : 'tdd-ors',
-            'rf_mode'                      : 'tdd',
+            'software_name'                : 'ors',
             'trx'                          : 'sdr',
             'bbu'                          : 'ors',
             'ru'                           : 'sdr',
         }, {
-            'software_name'                : 'fdd-ors',
-            'rf_mode'                      : 'fdd',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'ors',
-            'ru'                           : 'sdr',
-        }, {
-            'software_name'                : 'tdd-m2ru',
-            'rf_mode'                      : 'tdd',
+            'software_name'                : 'm2ru',
             'trx'                          : 'cpri',
             'bbu'                          : 'server',
             'ru'                           : 'm2ru',
         }, {
-            'software_name'                : 'fdd-lopcomm',
-            'rf_mode'                      : 'fdd',
+            'software_name'                : 'lopcomm',
             'trx'                          : 'cpri',
             'bbu'                          : 'server',
             'ru'                           : 'lopcomm',
         }, {
-            'software_name'                : 'fdd',
-            'rf_mode'                      : 'fdd',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'server',
-            'ru'                           : 'sdr',
-        }, {
-            'software_name'                : 'tdd',
-            'rf_mode'                      : 'tdd',
+            'software_name'                : 'any',
             'trx'                          : 'sdr',
             'bbu'                          : 'server',
             'ru'                           : 'sdr',

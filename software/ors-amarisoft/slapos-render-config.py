@@ -55,7 +55,6 @@ def do(src, out, rat, slapparameter_dict):
         slapparameter_dict.setdefault(k, v)
     jslapparameter_dict = json.dumps(slapparameter_dict)
     json_params_empty = """{
-        "rf_mode": 'fdd',
         "slap_configuration": {
         },
         "directory": {
@@ -63,7 +62,6 @@ def do(src, out, rat, slapparameter_dict):
         "slapparameter_dict": %(jslapparameter_dict)s
     }"""
     json_params = """{
-        "rf_mode": "tdd",
         "do_lte": %(jdo_lte)s,
         "do_nr": %(jdo_nr)s,
         "ru_type": "ors",
@@ -118,10 +116,12 @@ def do_enb():
     }
 
     do('enb.jinja2.cfg', 'enb.cfg', 'lte', {
+        "rf_mode": "tdd",
         "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
         "ncell_list": {'1': peer_lte},
     })
     do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {
+        "rf_mode": "tdd",
         "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)",
         "ncell_list": {'1': peer_nr},
     })
