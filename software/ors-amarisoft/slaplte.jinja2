@@ -163,6 +163,7 @@
 {%-       do cell.setdefault('dl_nr_arfcn', RF.dl_nr_arfcn) %}
 {%-       do cell.setdefault('bandwidth', slapparameter_dict.get('nr_bandwidth', default_nr_bandwidth)) %}
 {%-       do cell.setdefault('ssb_pos_bitmap', slapparameter_dict.get('ssb_pos_bitmap', default_nr_ssb_pos_bitmap)) %}
+{%-       do cell.setdefault('root_sequence_index', slapparameter_dict.get('root_sequence_index', 1 + i)) %}
 {%-       do cell.setdefault('inactivity_timer', slapparameter_dict.get('inactivity_timer', default_nr_inactivity_timer)) %}
 {%-     else  %}
 {%-       do bug('unreachable') %}
