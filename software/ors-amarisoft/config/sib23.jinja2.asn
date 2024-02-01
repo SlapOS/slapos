@@ -1,3 +1,4 @@
+/* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ cell_ref }} @ {{ ru_ref }}. */
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
@@ -38,9 +39,9 @@
             pdsch-ConfigCommon {
 {% if ors %}
 {%- if ors['one-watt'] %}
-              referenceSignalPower {{ (tx_gain | int) - 54 }}, /* patched by eNB */
+              referenceSignalPower {{ (ru.tx_gain | int) - 54 }}, /* patched by eNB */
 {%- else %}
-              referenceSignalPower {{ (tx_gain | int) - 35 }}, /* patched by eNB */
+              referenceSignalPower {{ (ru.tx_gain | int) - 35 }}, /* patched by eNB */
 {%- endif %}
 {% else %}
               referenceSignalPower -8, /* patched by eNB */
