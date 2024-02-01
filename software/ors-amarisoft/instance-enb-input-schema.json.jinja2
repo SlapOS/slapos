@@ -40,7 +40,16 @@
       "default": {{ default_n_antenna_ul }}
     },
 {%- if bbu == 'ors' %}
-{%- if rf_mode == 'tdd' %}
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
+      "enum": [
+        "fdd",
+        "tdd"
+      ],
+      "default": "tdd"
+    },
     "tdd_ul_dl_config": {
       "title": "TDD",
       "description": "TDD",
@@ -49,9 +58,13 @@
         "[Configuration 2] 5ms 2UL 6DL (default)",
         "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
       ],
-      "default": "[Configuration 2] 5ms 2UL 6DL (default)"
+      "default": "[Configuration 2] 5ms 2UL 6DL (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
     },
-{%- endif %}
     "dl_earfcn": {
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
@@ -88,7 +101,16 @@
       "patternProperties": {
         ".*": {
           "properties": {
-{%- if rf_mode == 'tdd' %}
+            "rf_mode": {
+              "title": "RF mode",
+              "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+              "type": "string",
+              "enum": [
+                "fdd",
+                "tdd"
+              ],
+              "default": "tdd"
+            },
             "tdd_ul_dl_config": {
               "title": "TDD",
               "description": "TDD",
@@ -97,9 +119,13 @@
                 "[Configuration 2] 5ms 2UL 6DL (default)",
                 "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
               ],
-              "default": "[Configuration 2] 5ms 2UL 6DL (default)"
+              "default": "[Configuration 2] 5ms 2UL 6DL (default)",
+              "options": {
+                "dependencies": {
+                  "rf_mode": "tdd"
+                }
+              }
             },
-{%- endif %}
 {%- if trx == 'cpri' %}
             "sdr_number": {
               "title": "SDR Number",

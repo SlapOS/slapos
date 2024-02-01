@@ -147,11 +147,7 @@ def test_enb_conf(self):
     self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
 {%- endif %}
     self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
-{%- if rf_mode == 'tdd' %}
     self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
-{%- else  %}
-    self.assertNotIn('uldl_config', conf['cell_list'][0])
-{%- endif %}
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
     self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
