@@ -406,6 +406,29 @@ class ENBTestCase4(RFTestCase4):
         ])
 
 
+    # Carrier Aggregation
+    def test_enb_cfg_ca(t):
+        assertMatch(t, t.enb_cfg['cell_list'],  [
+          { # CELL1
+            'scell_list':           [{'cell_id': 2}],                   # LTE + LTE
+            'en_dc_scg_cell_list':  [{'cell_id': 3}, {'cell_id': 4}],   # LTE + NR
+          },
+          { # CELL2
+            'scell_list':           [{'cell_id': 1}],                   # LTE + LTE
+            'en_dc_scg_cell_list':  [{'cell_id': 3}, {'cell_id': 4}],   # LTE + NR
+          },
+        ])
+
+        assertMatch(t, t.enb_cfg['nr_cell_list'], [
+          { # CELL3
+            'scell_list':           [{'cell_id': 4}],                   # NR  + NR
+          },
+          { # CELL4
+            'scell_list':           [{'cell_id': 3}],                   # NR  + NR
+          },
+        ])
+
+
 # ---- RU mixins to be used with RFTestCase4 ----
 
 # SDR4 is mixin to verify SDR driver wrt all LTE/NR x FDD/TDD modes.
