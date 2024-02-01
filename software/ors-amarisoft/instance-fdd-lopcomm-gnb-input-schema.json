@@ -151,6 +151,12 @@
               "type": "string",
               "default": "0x01"
             },
+            "root_sequence_index": {
+              "title": "Root Sequence Index",
+              "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+              "type": "number",
+              "default": 1
+            },
             "inactivity_timer": {
               "title": "Inactivity Timer",
               "description": "Send RRC connection release after this time (in ms) of network inactivity.",
