@@ -3,20 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
-      "type": "string",
-      "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
-      ],
-      "default": "20 MHz"
-    },
     "n_antenna_dl": {
       "title": "Number of DL antennas",
       "description": "1, 2, 4 or 8. Number of DL antennas.",
@@ -40,6 +26,20 @@
               "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
               "type": "number"
             },
+            "bandwidth": {
+              "title": "Bandwidth",
+              "description": "Downlink Bandwidth",
+              "type": "string",
+              "enum": [
+                "1.4 MHz",
+                "3 MHz",
+                "5 MHz",
+                "10 MHz",
+                "15 MHz",
+                "20 MHz"
+              ],
+              "default": "20 MHz"
+            },
             "pci": {
               "title": "Physical Cell ID",
               "description": "Physical Cell IDs",
@@ -49,6 +49,24 @@
               "title": "Cell ID",
               "description": "Cell IDs",
               "type": "string"
+            },
+            "tac": {
+              "title": "Tracking Area Code",
+              "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+              "default": "0x0001",
+              "type": "string"
+            },
+            "root_sequence_index": {
+              "title": "Root Sequence Index",
+              "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+              "type": "number",
+              "default": 204
+            },
+            "inactivity_timer": {
+              "title": "Inactivity Timer",
+              "description": "Send RRC connection release after this time (in ms) of network inactivity.",
+              "type": "number",
+              "default": 10000
             }
           },
           "type": "object"
@@ -201,12 +219,6 @@
       "title": "Websocket password",
       "description": "Activates websocket for remote control and sets password",
       "type": "string"
-    },
-    "inactivity_timer": {
-      "title": "Inactivity Timer",
-      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
-      "type": "number",
-      "default": 10000
     },
     "log_phy_debug": {
       "title": "Physical layer log debug",

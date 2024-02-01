@@ -68,15 +68,13 @@ def do(src, out, rat, slapparameter_dict):
         "do_nr": %(jdo_nr)s,
         "ru_type": "ors",
         "ors": {"one-watt": true},
-        "earfcn": 36100,
-        "nr_arfcn": 380000,
-        "nr_band": 39,
         "RF": {
+          "dl_earfcn": 36100,
+          "dl_nr_arfcn": 380000,
+          "nr_band": 39,
           "tx_gain": 62,
           "rx_gain": 43
         },
-        "sib23_file": "sib",
-        "drb_file": "drb",
         "slap_configuration": {
             "tap-name": "slaptap9"
         },
@@ -127,6 +125,8 @@ def do_enb():
         "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)",
         "ncell_list": {'1': peer_nr},
     })
+
+    # TODO render drb.cfg + sib.asn for all cells
 
 
 def do_ue():
