@@ -8,17 +8,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--delete', action='store_true')
 args = parser.parse_args()
 
-if args.delete:
-  directory = os.path.dirname(os.path.realpath(__file__))
-  test_directory = os.path.join(directory, 'test')
-  for f in os.listdir(directory):
-    if 'tdd' in f  or  'fdd' in f:
-      os.remove(os.path.join(directory, f))
-  for f in os.listdir(test_directory):
-    if 'testTDD' in f  or  'testFDD' in f:
-      os.remove(os.path.join(test_directory, f))
-  exit()
-
 global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
 }
@@ -91,19 +80,24 @@ with open('software.jinja2.cfg', 'r') as f:
 with open('test/test.jinja2.py', 'r') as f:
     test_template = Template(f.read())
 
+# emit updates file @ path with data on regular run and deletes it on --delete.
+def emit(path, data):
+    data += '\n'
+    if args.delete:
+        os.remove(path)
+    else:
+        with open(path, 'w+') as f:
+            f.write(data)
+
 for software in software_list:
-    with open('software-{}.cfg.json'.format(software['software_name']),
-              'w+') as f:
-        f.write(software_json_template.render(**software, **global_context) + '\n')
-    with open('test/test{}.py'.format(software['software_name'].upper()),
-              'w+') as f:
-        f.write(test_template.render(**software, **global_context) + '\n')
-    with open('software-{}.cfg'.format(software['software_name']),
-              'w+') as f:
-        f.write(software_template.render(**software, **global_context) + '\n')
+    emit('software-{}.cfg.json'.format(software['software_name']),
+         software_json_template.render(**software, **global_context))
+    emit('test/test{}.py'.format(software['software_name'].upper()),
+         test_template.render(**software, **global_context))
+    emit('software-{}.cfg'.format(software['software_name']),
+         software_template.render(**software, **global_context))
     for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
-        with open('instance-{}-{}-input-schema.json'.format(
-                    software['software_name'],
-                    software_type),
-                  'w+') as f:
-            f.write(instance_json_template_map[software_type].render(**software, **global_context) + '\n')
+        emit('instance-{}-{}-input-schema.json'.format(
+               software['software_name'],
+               software_type),
+             instance_json_template_map[software_type].render(**software, **global_context))
