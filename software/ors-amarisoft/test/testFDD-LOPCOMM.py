@@ -352,6 +352,7 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 
+
 class TestUELTEMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
@@ -376,6 +377,7 @@ class TestUENRMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 
+
 class TestSimCard(ORSTestCase):
     @classmethod
     def requestDefaultInstance(cls, state='started'):
@@ -394,6 +396,7 @@ class TestSimCard(ORSTestCase):
         return "core-network"
     def test_sim_card(self):
         test_sim_card(self)
+
 
 class TestUELTEParameters(ORSTestCase):
     @classmethod
