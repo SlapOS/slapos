@@ -3,6 +3,8 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
+    "$ref": "sim/input-schema.json#/properties",
+
     "rue_addr": {
       "title": "[Required] Remote UE address",
       "description": "[Required] Address of remote UE server. Default port is 2152.",
@@ -51,52 +53,20 @@
       "default": {{ default_n_antenna_ul }}
     },
     "imsi": {
-      "title": "IMSI",
-      "description": "IMSI",
-      "type": "string",
+      "$ref": "sim/input-schema.json#/properties/imsi",
       "default": "{{ default_imsi }}"
     },
     "k": {
-      "title": "K",
-      "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
-      "type": "string",
+      "$ref": "sim/input-schema.json#/properties/k",
       "default": "{{ default_k }}"
     },
     "sim_algo": {
-      "title": "sim_algo",
+      "$ref": "sim/input-schema.json#/properties/sim_algo",
       "description": "Optional enumeration. xor, milenage or tuak (default = milenage). Set the USIM authentication algorithm. Note: test USIM cards use the XOR algorithm.",
-      "type": "string",
-      "default": "milenage"
     },
     "opc": {
-      "title": "opc",
-      "description": "Optional string. Operator key preprocessed with the user secret key (as a 16 byte hexadecimal string). When the Milenage authentication algorithm is used, either op or opc must be set.",
-      "type": "string",
+      "$ref": "../sim/input-schema.json#/properties/opc",
       "default": "milenage"
-    },
-    "amf": {
-      "title": "amf",
-      "description": "Range: 0 to 65535. Set the Authentication Management Field.",
-      "type": "string",
-      "default": "0x9001"
-    },
-    "sqn": {
-      "title": "sqn",
-      "description": "Optional String (6 byte hexadecimal string). Default = '000000000000'. Set the initial sequence number. For the XOR algorithm, the actual value does not matter. For the Milenage or TUAK algorithm, a sequence number resynchronization is initiated if the sequence number does not match the one stored in the USIM.",
-      "type": "string",
-      "default": "000000000000"
-    },
-    "impu": {
-      "title": "impu",
-      "description": "Array of string or object. Each string represent an IMPU and can be a sip URI or a telephone number.",
-      "type": "string",
-      "default": ""
-    },
-    "impi": {
-      "title": "impi",
-      "description": "String. Defines user IMPI. Must be fully filled with hostname if necessary.",
-      "type": "string",
-      "default": ""
     }
   }
 }
