@@ -356,11 +356,11 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
 class TestUELTEMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
+        return {'_': json.dumps({'testing': True, 'ue_type': 'lte'})}
 
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "ue-lte"
+        return "ue"
 
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
@@ -368,11 +368,11 @@ class TestUELTEMonitorGadgetUrl(ORSTestCase):
 class TestUENRMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
+        return {'_': json.dumps({'testing': True, 'ue_type': 'nr'})}
 
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "ue-nr"
+        return "ue"
 
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
@@ -401,10 +401,10 @@ class TestSimCard(ORSTestCase):
 class TestUELTEParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict)}
+        return {'_': json.dumps(param_dict | {'ue_type': 'lte'})}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "ue-lte"
+        return "ue"
     def test_ue_lte_conf(self):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
@@ -429,10 +429,10 @@ class TestUELTEParameters(ORSTestCase):
 class TestUENRParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict)}
+        return {'_': json.dumps(param_dict | {'ue_type': 'nr'})}
     @classmethod
     def getInstanceSoftwareType(cls):
-        return "ue-nr"
+        return "ue"
     def test_ue_nr_conf(self):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]

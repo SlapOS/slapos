@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "LTE UE",
+  "type": "object",
+
+  "properties": {
+    "$ref": "../../ue/common.json#/properties",
+
+    "ue_type": {
+      "$ref": "#/properties/ue_type",
+      "const":    "lte",
+      "template": "lte"
+    },
+
+    "dl_earfcn": {
+      "title": "DL EARFCN",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "type": "number"
+    },
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "type": "string",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "default": "{{ default_lte_bandwidth }}"
+    }
+  }
+}

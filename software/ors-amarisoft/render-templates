@@ -52,8 +52,7 @@ software_list = [
         }
 ]
 
-for i in range (len(software_list)):
-    software_list[i].update({
+defaults = {
             'default_lte_bandwidth'        : "20 MHz",
             'default_lte_inactivity_timer' : 10000,
             'default_nr_bandwidth'         : 40,
@@ -63,13 +62,15 @@ for i in range (len(software_list)):
             'default_nr_inactivity_timer' : 10000,
             'default_imsi'                 : "001010123456789",
             'default_k'                    : "00112233445566778899aabbccddeeff",
-    })
+}
+for i in range (len(software_list)):
+    software_list[i].update(defaults)
 
 with open('software.cfg.json.jinja2', 'r') as f:
     software_json_template = Template(f.read())
 
 instance_json_template_map = {}
-for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
+for software_type in ['enb', 'gnb', 'ue']:
     with open('instance-{}-input-schema.json.jinja2'.format(software_type), 'r') as f:
         instance_json_template_map[software_type] = Template(f.read())
 
@@ -94,11 +95,20 @@ for software in software_list:
          test_template.render(**software, **global_context))
     emit('software-{}.cfg'.format(software['software_name']),
          software_template.render(**software, **global_context))
-    for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
+    for software_type in ['enb', 'gnb', 'ue']:
         # no ue for ors
-        if software['bbu'] == 'ors' and software_type.startswith('ue-'):
+        if software['bbu'] == 'ors' and software_type == 'ue':
             continue
         emit('instance-{}-{}-input-schema.json'.format(
                software['software_name'],
                software_type),
              instance_json_template_map[software_type].render(**software, **global_context))
+
+# render emits file @ path from path.jinja2
+def render(path):
+    with open('%s.jinja2' % path, 'r') as f:
+        template = Template(f.read())
+    emit(path, template.render(**defaults, **global_context))
+
+for path in ('ue/common.json', 'ue/lte/input-schema.json', 'ue/nr/input-schema.json'):
+    render(path)

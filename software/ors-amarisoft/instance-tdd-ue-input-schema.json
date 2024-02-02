@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "ue": {
+      "title": "UE",
+      "oneOf": [
+        {
+          "$ref": "ue/lte/input-schema.json"
+        },
+        {
+          "$ref": "ue/nr/input-schema.json"
+        }
+      ]
+    },
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number"
+    },
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number"
+    },
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of DL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "description": "Enumeration: 1, 2, 4 or 8. Number of UL antennas. It must be the same for all NB-IoT and LTE cells sharing the same RF port.",
+      "type": "number",
+      "default": 2
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "UE. Common properties",
+  "type": "object",
+
+  "required": [
+    "ue_type",
+    "rue_addr"
+  ],
+
+  "properties": {
+    "$ref": "../sim/input-schema.json#/properties",
+
+    "ue_type": {
+      "type": "string",
+      "options":  { "hidden": true }
+    },
+
+    "rue_addr": {
+      "title": "[Required] Remote UE address",
+      "description": "[Required] Address of remote UE server. Default port is 2152.",
+      "type": "string",
+      "default": ""
+    },
+
+    "imsi": {
+      "$ref": "../sim/input-schema.json#/properties/imsi",
+      "default": "{{ default_imsi }}"
+    },
+    "k": {
+      "$ref": "../sim/input-schema.json#/properties/k",
+      "default": "{{ default_k }}"
+    },
+    "sim_algo": {
+      "$ref": "../sim/input-schema.json#/properties/sim_algo",
+      "description": "Optional enumeration. xor, milenage or tuak (default = milenage). Set the USIM authentication algorithm. Note: test USIM cards use the XOR algorithm."
+    },
+    "opc": {
+      "$ref": "../sim/input-schema.json#/properties/opc",
+      "default": "milenage"
+    }
+  }
+}

@@ -4,21 +4,13 @@
   "serialisation": "json-in-xml",
   "software-type": {
 
-    "ue-lte": {
-      "title": "UE-LTE",
-      "description": "UE LTE Configuration",
-      "software-type": "ue-lte",
-      "request": "instance-fdd-ue-lte-input-schema.json",
-      "response": "instance-fdd-ue-lte-schema.json",
+    "ue": {
+      "title": "UE",
+      "description": "UE Configuration",
+      "software-type": "ue",
+      "request": "instance-fdd-ue-input-schema.json",
+      "response": "instance-fdd-ue-schema.json",
       "index": 4
-    },
-    "ue-nr": {
-      "title": "UE-NR",
-      "description": "UE NR Configuration",
-      "software-type": "ue-nr",
-      "request": "instance-fdd-ue-nr-input-schema.json",
-      "response": "instance-fdd-ue-nr-schema.json",
-      "index": 5
     },
 
     "enb": {
