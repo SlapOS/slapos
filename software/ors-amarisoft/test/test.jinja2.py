@@ -356,6 +356,7 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 
+{% if bbu != 'ors' %}
 class TestUELTEMonitorGadgetUrl(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
@@ -379,6 +380,7 @@ class TestUENRMonitorGadgetUrl(ORSTestCase):
 
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
+{% endif %}
 
 class TestSimCard(ORSTestCase):
     @classmethod
@@ -399,6 +401,7 @@ class TestSimCard(ORSTestCase):
     def test_sim_card(self):
         test_sim_card(self)
 
+{% if bbu != 'ors' %}
 class TestUELTEParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
@@ -456,4 +459,4 @@ class TestUENRParameters(ORSTestCase):
         self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
         self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
-
+{% endif %}
