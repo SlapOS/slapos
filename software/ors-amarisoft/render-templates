@@ -97,6 +97,9 @@ for software in software_list:
     emit('software-{}.cfg'.format(software['software_name']),
          software_template.render(**software, **global_context))
     for software_type in ['enb', 'gnb', 'ue-lte', 'ue-nr']:
+        # no ue for ors
+        if software['bbu'] == 'ors' and software_type.startswith('ue-'):
+            continue
         emit('instance-{}-{}-input-schema.json'.format(
                software['software_name'],
                software_type),
