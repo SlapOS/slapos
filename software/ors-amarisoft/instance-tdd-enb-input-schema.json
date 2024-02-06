@@ -45,12 +45,6 @@
       "type": "number",
       "default": 0
     },
-    "cpri_port": {
-      "title": "CPRI Port Number",
-      "description": "CPRI Port Number",
-      "type": "number",
-      "default": 0
-    },
     "cell_list": {
       "title": "Cell List",
       "description": "Cell List",
