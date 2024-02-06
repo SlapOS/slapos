@@ -16,6 +16,7 @@
         'n_antenna_ul': int(default_n_antenna_ul),
       },
       'ru/cpri_link': {
+        'mult':     16,
         'rx_delay':  0,
         'tx_delay':  0,
         'tx_dbm':    0,
@@ -117,9 +118,8 @@
                         'rx_gain': 0,
           })  %}
 {%-       set link = {
-                'sdr_dev':  slapparameter_dict.get('sdr_number', 0),
+                'sdr_dev':  cell.get('sdr_number', 0),
                 'sfp_port': cell.get('cpri_port_number', i),
-                'mult':     slapparameter_dict.get('cpri_mult', 16),
           }  %}
 {%-       macro link_set(name)  %}
 {%-         set cname = 'cpri_'+name  %}
@@ -127,6 +127,7 @@
 {%-           do link.update({name: cell[cname]}) %}
 {%-         endif %}
 {%-       endmacro  %}
+{%-       do link_set('mult') %}
 {%-       do link_set('rx_delay') %}
 {%-       do link_set('tx_delay') %}
 {%-       do link_set('tx_dbm') %}
