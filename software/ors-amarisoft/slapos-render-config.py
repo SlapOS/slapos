@@ -43,6 +43,16 @@ def do(src, out, rat, slapparameter_dict):
     assert rat in ('lte', 'nr')
     jdo_lte = json.dumps(rat == 'lte')
     jdo_nr  = json.dumps(rat == 'nr')
+    defaults = {
+        "com_ws_port": 9001,
+        "com_addr": "127.0.1.2",
+        "mme_list": {"1": {"mme_addr": "127.0.1.100"}},
+        "amf_list": {"1": {"amf_addr": "127.0.1.100"}},
+        "gtp_addr": "127.0.1.1",
+    }
+    slapparameter_dict = slapparameter_dict.copy()
+    for k, v in defaults.items():
+        slapparameter_dict.setdefault(k, v)
     jslapparameter_dict = json.dumps(slapparameter_dict)
     json_params_empty = """{
         "rf_mode": 'fdd',
@@ -68,12 +78,7 @@ def do(src, out, rat, slapparameter_dict):
         "sib23_file": "sib",
         "drb_file": "drb",
         "slap_configuration": {
-            "tap-name": "slaptap9",
-            "configuration.com_ws_port": 9001,
-            "configuration.com_addr": "127.0.1.2",
-            "configuration.amf_addr": "127.0.1.100",
-            "configuration.mme_addr": "127.0.1.100",
-            "configuration.gtp_addr": "127.0.1.1"
+            "tap-name": "slaptap9"
         },
         "default_lte_bandwidth": "10 MHz",
         "default_lte_imsi": "001010123456789",
