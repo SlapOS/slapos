@@ -120,6 +120,12 @@
       "type": "object",
       "default": {}
     },
+    "user-authorized-key": {
+      "title": "User Authorized Key",
+      "description": "SSH public key in order to connect to the SSH server of this instance.",
+      "textarea": true,
+      "type": "string"
+    },
     "gnb_id": {
       "title": "gNB ID",
       "description": "gNB ID",
