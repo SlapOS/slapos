@@ -42,26 +42,6 @@
       "default": "5ms 2UL 7DL 4/6 (default)"
     },
 {%- endif %}
-{%- if trx == 'cpri' %}
-    "sdr_number": {
-      "title": "SDR Number",
-      "description": "SDR Number",
-      "type": "number",
-      "default": 0
-    },
-    "cpri_mult": {
-      "title": "CPRI Mult",
-      "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
-      "type": "number",
-      "default": 16,
-      "enum": [
-        4,
-        5,
-        8,
-        16
-      ]
-    },
-{%- endif %}
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
@@ -98,6 +78,24 @@
         ".*": {
           "properties": {
 {%- if trx == 'cpri' %}
+            "sdr_number": {
+              "title": "SDR Number",
+              "description": "SDR Number",
+              "type": "number",
+              "default": 0
+            },
+            "cpri_mult": {
+              "title": "CPRI Mult",
+              "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7.",
+              "type": "number",
+              "default": 16,
+              "enum": [
+                4,
+                5,
+                8,
+                16
+              ]
+            },
             "cpri_rx_delay": {
               "title": "CPRI RX Delay",
               "description": "Delays between TX and RX position in CPRI frame. This should be set to the value of (T2a + T3a - Toffset) provided by the RRH specification.",
