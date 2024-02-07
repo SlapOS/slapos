@@ -64,7 +64,6 @@ def do(src, out, rat, slapparameter_dict):
     json_params = """{
         "do_lte": %(jdo_lte)s,
         "do_nr": %(jdo_nr)s,
-        "ru_type": "ors",
         "ors": {"one-watt": true},
         "RF": {
           "dl_earfcn": 36100,

@@ -12,29 +12,15 @@ global_context = {
         'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
 }
 
-software_list = [
-        {
+ors =   {
             'software_name'                : 'ors',
-            'trx'                          : 'sdr',
             'bbu'                          : 'ors',
-            'ru'                           : 'sdr',
-        }, {
-            'software_name'                : 'm2ru',
-            'trx'                          : 'cpri',
-            'bbu'                          : 'server',
-            'ru'                           : 'm2ru',
-        }, {
-            'software_name'                : 'lopcomm',
-            'trx'                          : 'cpri',
-            'bbu'                          : 'server',
-            'ru'                           : 'lopcomm',
-        }, {
-            'software_name'                : 'any',
-            'trx'                          : 'sdr',
-            'bbu'                          : 'server',
-            'ru'                           : 'sdr',
         }
-]
+
+generic = {
+            'software_name'                : 'generic',
+            'bbu'                          : 'server',
+        }
 
 defaults = {
             'default_lte_bandwidth'        : "20 MHz",
@@ -47,8 +33,6 @@ defaults = {
             'default_imsi'                 : "001010123456789",
             'default_k'                    : "00112233445566778899aabbccddeeff",
 }
-for i in range (len(software_list)):
-    software_list[i].update(defaults)
 
 with open('software.cfg.json.jinja2', 'r') as f:
     software_json_template = Template(f.read())
@@ -60,8 +44,6 @@ for software_type in ['enb', 'gnb', 'ue']:
 
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
-with open('test/test.jinja2.py', 'r') as f:
-    test_template = Template(f.read())
 
 # emit updates file @ path with data on regular run and deletes it on --delete.
 def emit(path, data):
@@ -72,21 +54,25 @@ def emit(path, data):
         with open(path, 'w+') as f:
             f.write(data)
 
-for software in software_list:
-    emit('software-{}.cfg.json'.format(software['software_name']),
-         software_json_template.render(**software, **global_context))
-    emit('test/test{}.py'.format(software['software_name'].upper()),
-         test_template.render(**software, **global_context))
-    emit('software-{}.cfg'.format(software['software_name']),
-         software_template.render(**software, **global_context))
+for software in (ors, generic):
+    ctx = software | defaults | global_context
+    if software is generic:
+        v = ''
+    else:
+        v = '-'+software['software_name']
+
+    emit('software{}.cfg.json'.format(v),
+         software_json_template.render(**ctx))
+    emit('software{}.cfg'.format(v),
+         software_template.render(**ctx))
     for software_type in ['enb', 'gnb', 'ue']:
         # no ue for ors
         if software['bbu'] == 'ors' and software_type == 'ue':
             continue
-        emit('instance-{}-{}-input-schema.json'.format(
-               software['software_name'],
+        emit('instance{}-{}-input-schema.json'.format(
+               v,
                software_type),
-             instance_json_template_map[software_type].render(**software, **global_context))
+             instance_json_template_map[software_type].render(**ctx))
 
 # render emits file @ path from path.jinja2
 def render(path):

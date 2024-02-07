@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Sunwave M2RU",
+  "type": "object",
+
+  "required": [
+    "ru_type",
+    "ru_link_type",
+    "n_antenna_dl",
+    "n_antenna_ul",
+
+    "cpri_link",
+    "mac_addr"
+  ],
+
+  "properties": {
+    "$ref": "../../ru/common.json#/properties",
+
+    "ru_type": {
+      "$ref": "#/properties/ru_type",
+      "const":    "sunwave",
+      "template": "sunwave"
+    },
+    "ru_link_type": {
+      "$ref": "#/properties/ru_link_type",
+      "const":    "cpri",
+      "template": "cpri"
+    },
+
+    "n_antenna_dl": {
+      "$ref": "#/properties/n_antenna_dl",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "$ref": "#/properties/n_antenna_ul",
+      "default": 1
+    },
+    "cpri_link": {
+      "$ref": "#/properties/cpri_link",
+      "properties": {
+        "$ref": "#/properties/cpri_link/properties",
+        "mapping": {
+          "$ref": "#/properties/cpri_link/properties/mapping",
+          "const":    "bf1",
+          "enum":     ["bf1"],
+          "options":  { "hidden": true }
+        },
+        "rx_delay": {
+          "$ref": "#/properties/cpri_link/properties/rx_delay",
+          "default": 11.0
+        },
+        "tx_dbm": {
+          "$ref": "#/properties/cpri_link/properties/tx_dbm",
+          "default": 42.0
+        }
+      }
+    }
+  }
+}
