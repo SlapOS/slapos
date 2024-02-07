@@ -188,36 +188,6 @@
       "type": "object",
       "default": {}
     },
-    "nr_handover_a3_offset": {
-      "title": "A3 offset for NR handover",
-      "description": "RSRP gain offset between gNBs which will trigger handover",
-      "type": "number",
-      "default": 6
-    },
-    "nr_handover_time_to_trigger": {
-      "title": "Time to Trigger for NR handover",
-      "description": "Time to triger after which NR handover will be triggerd if A3 offset is reached",
-      "type": "number",
-      "enum": [
-        0,
-        40,
-        64,
-        80,
-        100,
-        128,
-        160,
-        256,
-        320,
-        480,
-        512,
-        640,
-        1024,
-        1280,
-        2560,
-        5120
-      ],
-      "default": 100
-    },
     "ncell_list": {
       "title": "Neighbour Cell Info",
       "description": "Neighbour Cell Info",
