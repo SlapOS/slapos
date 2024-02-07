@@ -277,6 +277,7 @@
       "type": "object",
       "default": {}
     },
+{%- if bbu == 'ors' %}
     "nr_handover_a3_offset": {
       "title": "A3 offset for NR handover",
       "description": "RSRP gain offset between gNBs which will trigger handover",
@@ -307,6 +308,7 @@
       ],
       "default": 100
     },
+{%- endif %}
     "ncell_list": {
       "title": "Neighbour Cell Info",
       "description": "Neighbour Cell Info",

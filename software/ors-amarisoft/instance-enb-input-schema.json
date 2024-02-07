@@ -158,36 +158,6 @@
       "type": "object",
       "default": {}
     },
-    "lte_handover_a3_offset": {
-      "title": "A3 offset for LTE handover",
-      "description": "RSRP gain offset between gNBs which will trigger handover",
-      "type": "number",
-      "default": 6
-    },
-    "lte_handover_time_to_trigger": {
-      "title": "Time to Trigger for LTE handover",
-      "description": "Time to triger after which LTE handover will be triggered if A3 offset is reached",
-      "type": "number",
-      "enum": [
-        0,
-        40,
-        64,
-        80,
-        100,
-        128,
-        160,
-        256,
-        320,
-        480,
-        512,
-        640,
-        1024,
-        1280,
-        2560,
-        5120
-      ],
-      "default": 480
-    },
     "ncell_list": {
       "title": "Neighbour Cell Info",
       "description": "Neighbour Cell Info",
