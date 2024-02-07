@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Lopcomm ORAN",
+  "type": "object",
+
+  "required": [
+    "ru_type",
+    "ru_link_type",
+    "n_antenna_dl",
+    "n_antenna_ul",
+
+    "cpri_link",
+    "mac_addr"
+  ],
+
+  "properties": {
+    "$ref": "../../ru/common.json#/properties",
+
+    "ru_type": {
+      "$ref": "#/properties/ru_type",
+      "const":    "lopcomm",
+      "template": "lopcomm"
+    },
+    "ru_link_type": {
+      "$ref": "#/properties/ru_link_type",
+      "const":    "cpri",
+      "template": "cpri"
+    },
+
+    "n_antenna_dl": {
+      "$ref": "#/properties/n_antenna_dl",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "$ref": "#/properties/n_antenna_ul",
+      "default": 2
+    },
+    "cpri_link": {
+      "$ref": "#/properties/cpri_link",
+      "properties": {
+        "$ref": "#/properties/cpri_link/properties",
+        "mapping": {
+          "$ref": "#/properties/cpri_link/properties/mapping",
+          "const":    "hw",
+          "enum":     ["hw"],
+          "options":  { "hidden": true }
+        },
+        "rx_delay": {
+          "$ref": "#/properties/cpri_link/properties/rx_delay",
+          "default": 25.11
+        },
+        "tx_delay": {
+          "$ref": "#/properties/cpri_link/properties/tx_delay",
+          "default": 14.71
+        },
+        "tx_dbm": {
+          "$ref": "#/properties/cpri_link/properties/tx_dbm",
+          "default": 63
+        }
+      }
+    },
+
+    "txa0cc00_active": {
+      "title": "Lopcomm ORAN TX array carriers (TXA0CC00)",
+      "description": "Activate or inactivate Lopcomm ORAN TX array carriers (TXA0CC00)",
+      "type": "string",
+      "default": "INACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
+    },
+    "rxa0cc00_active": {
+      "title": "Lopcomm ORAN RX array carriers (RXA0CC00)",
+      "description": "Activate or inactivate Lopcomm ORAN RX array carriers (RXA0CC00)",
+      "type": "string",
+      "default": "INACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
+    },
+    "txa0cc00_center_frequency": {
+      "title": "Lopcomm ORAN DL Center Frequency in MHz (TXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency in MHz (TXA0CC00)",
+      "type": "number",
+      "default": 2140
+    },
+    "rxa0cc00_center_frequency_earfcn": {
+      "title": "Lopcomm ORAN UL Center Frequency EARFCN (RXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency EARFCN (RXA0CC00)",
+      "type": "number",
+      "default": 18300
+    },
+    "rxa0cc00_center_frequency": {
+      "title": "Lopcomm ORAN UL Center Frequency in MHz (RXA0CC00)",
+      "description": "Lopcomm ORAN Center Frequency in MHz (RXA0CC00)",
+      "type": "number",
+      "default": 1950
+    },
+    "txa0cc00_gain": {
+      "title": "ORAN Gain",
+      "description": "Lopcomm ORAN Gain (TXA0CC00)",
+      "type": "number",
+      "default": -20
+    },
+
+    "reset_schedule": {
+      "title": "Cron schedule for RRH reset",
+      "description": "Refer https://crontab.guru/ to make a reset schedule for RRH, for example, '0 1 * * *' means the RRH will reset every day at 1 am",
+      "type": "string"
+    }
+  }
+}

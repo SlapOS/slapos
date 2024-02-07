@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "SDR transiever",
+  "description": "Radio Unit constituted of single SDR board",
+  "type": "object",
+
+  "required": [
+    "ru_type",
+    "ru_link_type",
+    "n_antenna_dl",
+    "n_antenna_ul",
+
+    "sdr_dev",
+    "tx_gain",
+    "rx_gain"
+  ],
+
+  "properties": {
+    "$ref": "../../ru/common.json#/properties",
+
+    "ru_type": {
+      "$ref": "#/properties/ru_type",
+      "const":    "sdr",
+      "template": "sdr"
+    },
+    "ru_link_type": {
+      "$ref": "#/properties/ru_link_type",
+      "const":    "sdr",
+      "template": "sdr"
+    },
+
+    "sdr_dev": {
+      "title": "SDR board",
+      "description": "/dev/sdr # of SDR board",
+      "type": "integer"
+    },
+
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number"
+    },
+
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number"
+    }
+  }
+}

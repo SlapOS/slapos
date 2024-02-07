@@ -8,8 +8,8 @@
       "title": "UE",
       "description": "UE Configuration",
       "software-type": "ue",
-      "request": "instance-lopcomm-ue-input-schema.json",
-      "response": "instance-lopcomm-ue-schema.json",
+      "request": "instance-ue-input-schema.json",
+      "response": "instance-ue-schema.json",
       "index": 4
     },
 
@@ -17,16 +17,16 @@
       "title": "eNB",
       "software-type": "enb",
       "description": "eNodeB Configuration",
-      "request": "instance-lopcomm-enb-input-schema.json",
-      "response": "instance-lopcomm-enb-schema.json",
+      "request": "instance-enb-input-schema.json",
+      "response": "instance-enb-schema.json",
       "index": 0
     },
     "gnb": {
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
-      "request": "instance-lopcomm-gnb-input-schema.json",
-      "response": "instance-lopcomm-gnb-schema.json",
+      "request": "instance-gnb-input-schema.json",
+      "response": "instance-gnb-schema.json",
       "index": 1
     },
     "core-network": {

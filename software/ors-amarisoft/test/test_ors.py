@@ -36,7 +36,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software-lopcomm.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software-ors.cfg')))
 
 param_dict = {
     'testing': True,
@@ -142,6 +142,8 @@ def test_enb_conf(self):
       self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
     conf = yamlpp_load(conf_file)
+    self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
+    self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
     self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
     self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
@@ -173,6 +175,8 @@ def test_gnb_conf1(self):
           self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
         conf = yamlpp_load(conf_file)
+        self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
+        self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
         self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
@@ -346,32 +350,6 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     def test_monitor_gadget_url(self):
       test_monitor_gadget_url(self)
 
-
-class TestUELTEMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True, 'ue_type': 'lte'})}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue"
-
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
-
-class TestUENRMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True, 'ue_type': 'nr'})}
-
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue"
-
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
-
-
 class TestSimCard(ORSTestCase):
     @classmethod
     def requestDefaultInstance(cls, state='started'):
@@ -390,63 +368,3 @@ class TestSimCard(ORSTestCase):
         return "core-network"
     def test_sim_card(self):
         test_sim_card(self)
-
-
-class TestUELTEParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict | {'ue_type': 'lte'})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue"
-    def test_ue_lte_conf(self):
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
-
-        conf = yamlpp_load(conf_file)
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], 10)
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
-        self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
-        self.assertEqual(conf['ue_list'][0]['imsi'], param_dict['imsi'])
-        self.assertEqual(conf['ue_list'][0]['K'], param_dict['k'])
-        self.assertEqual(conf['ue_list'][0]['sim_algo'], param_dict['sim_algo'])
-        self.assertEqual(conf['ue_list'][0]['opc'], param_dict['opc'])
-        self.assertEqual(conf['ue_list'][0]['amf'], int(param_dict['amf'], 16))
-        self.assertEqual(conf['ue_list'][0]['sqn'], param_dict['sqn'])
-        self.assertEqual(conf['ue_list'][0]['impu'], param_dict['impu'])
-        self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
-        self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
-        self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
-
-class TestUENRParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict | {'ue_type': 'nr'})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "ue"
-    def test_ue_nr_conf(self):
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
-
-        conf = yamlpp_load(conf_file)
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], '10 MHz')
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['band'], param_dict['nr_band'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
-        self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
-        self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
-        self.assertEqual(conf['ue_list'][0]['imsi'], param_dict['imsi'])
-        self.assertEqual(conf['ue_list'][0]['K'], param_dict['k'])
-        self.assertEqual(conf['ue_list'][0]['sim_algo'], param_dict['sim_algo'])
-        self.assertEqual(conf['ue_list'][0]['opc'], param_dict['opc'])
-        self.assertEqual(conf['ue_list'][0]['amf'], int(param_dict['amf'], 16))
-        self.assertEqual(conf['ue_list'][0]['sqn'], param_dict['sqn'])
-        self.assertEqual(conf['ue_list'][0]['impu'], param_dict['impu'])
-        self.assertEqual(conf['ue_list'][0]['impi'], param_dict['impi'])
-        self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
-        self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
-

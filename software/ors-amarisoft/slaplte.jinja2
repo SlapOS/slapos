@@ -12,8 +12,6 @@
 {#- defaults provide default values for lte parameters. #}
 {%- set defaults = {
       'ru': {
-        'n_antenna_dl': int(default_n_antenna_dl),
-        'n_antenna_ul': int(default_n_antenna_ul),
       },
       'ru/cpri_link': {
         'mult':     16,
@@ -23,6 +21,8 @@
       },
 
       'ru/lopcomm': {
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 2,
       },
       'ru/lopcomm/cpri_link': {
         'mapping': 'hw',
@@ -32,6 +32,7 @@
       },
 
       'ru/sunwave': {
+        'n_antenna_dl': 2,
         'n_antenna_ul': 1,
       },
       'ru/sunwave/cpri_link': {
@@ -88,53 +89,37 @@
     ru_dict   keeps configured RU:    {} RU reference   -> RU parameters
 #}
 {%- macro load_ru_and_cell(ru_dict, cell_dict)  %}
-{%-   do cell_dict.update( slapparameter_dict.get('cell_list', {'default': {}}) )  %}
+{%-   set cell_list = slapparameter_dict.get('cell_list', {}) %}
+{%-   if ors  %}
+{%-     if len(cell_list) > 0 %}
+{%-       do error('ORS mode does not support cell_list parameter') %}
+{%-     endif %}
+{%-     do cell_list.update({'CELL': {
+          'ru': {
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev':      0,
+            'n_antenna_dl': int(slapparameter_dict.get('n_antenna_dl', default_n_antenna_dl)),
+            'n_antenna_ul': int(slapparameter_dict.get('n_antenna_ul', default_n_antenna_ul)),
+            'tx_gain':      RF.tx_gain,
+            'rx_gain':      RF.rx_gain,
+          }
+        }}) %}
+{%-   endif %}
+{%-   do cell_dict.update(cell_list)  %}
+
 {%-   for i, (cell_ref, cell) in enumerate(cell_dict|dictsort) %}
 {%-     set ru_ref = '%s-RU' % cell_ref %}
-{%-     set ru = {'ru_type': ru_type, 'cell_ref': cell_ref} %}
-{%-     if ru.ru_type == 'm2ru' %}
-{%-       do ru.update({'ru_type': 'sunwave'})  %}
-{%-     endif %}
+{%-     set ru = cell.ru  %}
+{%-     do ru.update({'cell_ref': cell_ref})  %}
 {%-     do cell.update({'ru_ref': ru_ref})  %}
 
-{%-     macro ru_set(name)  %}
-{%-       if name in slapparameter_dict %}
-{%-         do ru.update({name: slapparameter_dict[name]}) %}
-{%-       endif %}
-{%-     endmacro  %}
-{%-     do ru_set('n_antenna_dl')  %}
-{%-     do ru_set('n_antenna_ul')  %}
-
-{%-     do ru.update({'ru_link_type': 'cpri' if ru.ru_type in ('lopcomm', 'sunwave')  else 'sdr'}) %}
-{%-     if ru.ru_link_type == 'sdr' %}
-{%-       do ru.update({'sdr_dev': i,
-                        'tx_gain': RF.tx_gain,
-                        'rx_gain': RF.rx_gain,
-          })  %}
-{%-     elif ru.ru_link_type == 'cpri'  %}
+{%-     if ru.ru_link_type == 'cpri'  %}
 {#-       set 0 tx/rx gain to emit 0 in enb.cfg.
           This will be changed later: .tx_gain and .rx_gain will be carrying real RU tx/rx gain #}
 {%-       do ru.update({'tx_gain': 0,
                         'rx_gain': 0,
           })  %}
-{%-       set link = {
-                'sdr_dev':  cell.get('sdr_number', 0),
-                'sfp_port': cell.get('cpri_port_number', i),
-          }  %}
-{%-       macro link_set(name)  %}
-{%-         set cname = 'cpri_'+name  %}
-{%-         if cname in cell %}
-{%-           do link.update({name: cell[cname]}) %}
-{%-         endif %}
-{%-       endmacro  %}
-{%-       do link_set('mult') %}
-{%-       do link_set('rx_delay') %}
-{%-       do link_set('tx_delay') %}
-{%-       do link_set('tx_dbm') %}
-{%-       do ru.update({'cpri_link': link}) %}
-{%-       do ru.update({'mac_addr': cell.ru_mac_addr})  %}
-{%-     else  %}
-{%-       do bug('unreachable') %}
 {%-     endif %}
 
 {%-     do _ru_set_defaults(ru) %}
