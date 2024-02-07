@@ -1,0 +1,26 @@
+From bc9f332901be7398f17e66b021ff90d5b43b0e1d Mon Sep 17 00:00:00 2001
+From: Jens Vagelpohl <jens@plyp.com>
+Date: Wed, 7 Feb 2024 15:30:18 +0100
+Subject: [PATCH] - Remove doc string from the MailHost ``send`` method to
+ prevent publishing
+
+---
+ 
+diff --git a/src/Products/MailHost/MailHost.py b/src/Products/MailHost/MailHost.py
+index 1e226ae..db6f316 100644
+--- a/src/Products/MailHost/MailHost.py
++++ b/src/Products/MailHost/MailHost.py
+@@ -209,11 +209,8 @@ def send(self,
+              immediate=False,
+              charset=None,
+              msg_type=None):
+-        """send *messageText* modified by the other parameters.
+-
+-        *messageText* can either be an ``email.message.Message``
+-        or a string.
+-        """
++        # send *messageText* modified by the other parameters.
++        # *messageText* can be an ``email.message.Message`` or a string.
+         msg, mto, mfrom = _mungeHeaders(messageText, mto, mfrom,
+                                         subject, charset, msg_type,
+                                         encode)
