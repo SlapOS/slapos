@@ -16,8 +16,7 @@
               "enum": [
                 "fdd",
                 "tdd"
-              ],
-              "default": "tdd"
+              ]
             },
             "tdd_ul_dl_config": {
               "title": "TDD",
@@ -53,8 +52,7 @@
                 "10 MHz",
                 "15 MHz",
                 "20 MHz"
-              ],
-              "default": "20 MHz"
+              ]
             },
             "pci": {
               "title": "Physical Cell ID",
@@ -69,7 +67,6 @@
             "tac": {
               "title": "Tracking Area Code",
               "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-              "default": "0x0001",
               "type": "string"
             },
             "root_sequence_index": {
@@ -99,9 +96,8 @@
     },
     "enb_id": {
       "title": "eNB ID",
-      "description": "eNB ID",
-      "type": "string",
-      "default": "0x1A2D0"
+      "description": "eNB ID. (must be set if there are LTE cells)",
+      "type": "string"
     },
     "gtp_addr": {
       "title": "GTP Address",
@@ -111,7 +107,7 @@
     },
     "mme_list": {
       "title": "MME list",
-      "description": "Optionnal. List of MME to which the gNodeB is connected",
+      "description": "List of MME to which the eNodeB is connected. (must be set if there are LTE cells)",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -124,17 +120,15 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "plmn_list": {
       "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6. (must be set if there are LTE cells)",
       "patternProperties": {
         ".*": {
           "properties": {
             "plmn": {
-              "default": "00101",
               "title": "Public Land Mobile Network",
               "description": "Public Land Mobile Network",
               "type": "string"
@@ -155,8 +149,7 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "ncell_list": {
       "title": "Neighbour Cell Info",

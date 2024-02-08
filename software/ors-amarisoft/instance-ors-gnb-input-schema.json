@@ -113,7 +113,11 @@
         }
       },
       "type": "object",
-      "default": {}
+      "default": {
+        "1": {
+          "amf_addr": "127.0.1.100"
+        }
+      }
     },
     "plmn_list": {
       "title": "PLMN list",
@@ -149,7 +153,12 @@
         }
       },
       "type": "object",
-      "default": {}
+      "default": {
+        "1": {
+          "plmn": "00101",
+          "tac": 100
+        }
+      }
     },
     "nssai": {
       "title": "AMF slices configuration",

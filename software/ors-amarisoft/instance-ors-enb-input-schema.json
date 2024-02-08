@@ -121,7 +121,11 @@
         }
       },
       "type": "object",
-      "default": {}
+      "default": {
+        "1": {
+          "mme_addr": "127.0.1.100"
+        }
+      }
     },
     "plmn_list": {
       "title": "PLMN list",
@@ -152,7 +156,11 @@
         }
       },
       "type": "object",
-      "default": {}
+      "default": {
+        "1": {
+          "plmn": "00101"
+        }
+      }
     },
     "lte_handover_a3_offset": {
       "title": "A3 offset for LTE handover",

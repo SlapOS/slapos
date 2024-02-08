@@ -44,11 +44,14 @@ def do(src, out, rat, slapparameter_dict):
     jdo_lte = json.dumps(rat == 'lte')
     jdo_nr  = json.dumps(rat == 'nr')
     defaults = {
-        "com_ws_port": 9001,
-        "com_addr": "127.0.1.2",
-        "mme_list": {"1": {"mme_addr": "127.0.1.100"}},
-        "amf_list": {"1": {"amf_addr": "127.0.1.100"}},
-        "gtp_addr": "127.0.1.1",
+        "com_ws_port":  9001,
+        "com_addr":     "127.0.1.2",
+        "use_ipv4":     False,
+        "gnb_id_bits":  28,
+        "nssai":        {'1': {'sst': 1}},
+        "ncell_list":   {},
+        "xn_peers":     {},
+        "gtp_addr":     "127.0.1.1",
     }
     slapparameter_dict = slapparameter_dict.copy()
     for k, v in defaults.items():
@@ -65,25 +68,15 @@ def do(src, out, rat, slapparameter_dict):
         "do_lte": %(jdo_lte)s,
         "do_nr": %(jdo_nr)s,
         "ors": {"one-watt": true},
-        "RF": {
-          "dl_earfcn": 36100,
-          "dl_nr_arfcn": 380000,
-          "nr_band": 39,
-          "tx_gain": 62,
-          "rx_gain": 43
-        },
         "slap_configuration": {
             "tap-name": "slaptap9"
         },
         "default_lte_bandwidth": "10 MHz",
         "default_imsi": "001010123456789",
         "default_k": "00112233445566778899aabbccddeeff",
-        "default_lte_inactivity_timer": 10000,
         "default_nr_bandwidth": 40,
-        "default_nr_ssb_pos_bitmap": "10000000",
         "default_n_antenna_dl": 2,
         "default_n_antenna_ul": 2,
-        "default_nr_inactivity_timer": 10000,
         "directory": {
             "log": "log",
             "etc": "etc",
@@ -114,14 +107,52 @@ def do_enb():
         'tac':              321,
     }
 
+    ru = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev':      0,
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 2,
+        'tx_gain':      62,
+        'rx_gain':      43,
+    }
+
     do('enb.jinja2.cfg', 'enb.cfg', 'lte', {
-        "rf_mode": "tdd",
-        "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
+        'enb_id': "0x1A2D0",
+        'cell_list': {'CELL': {
+            'rf_mode':      'tdd',
+            'dl_earfcn':    36100,
+            'bandwidth':    '10 MHz',
+            'tac':          '0x0001',
+            'root_sequence_index': 204,
+            'pci':          1,
+            'cell_id':      '0x01',
+            "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
+            'inactivity_timer': 10000,
+            'ru': ru,
+        }},
+        "mme_list":   {"1": {"mme_addr": "127.0.1.100"}},
+        'plmn_list':  {"1": {'plmn': '00101'}},
         "ncell_list": {'1': peer_lte},
     })
     do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {
-        "rf_mode": "tdd",
-        "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)",
+        'gnb_id': "0x12345",
+        'gnb_id_bits':  28,
+        'cell_list': {'CELL': {
+            'rf_mode':      'tdd',
+            'dl_nr_arfcn':  380000,
+            'nr_band':      39,
+            'bandwidth':    40,
+            'ssb_pos_bitmap': "10000000",
+            'root_sequence_index':  1,
+            'pci':          500,
+            'cell_id':      '0x01',
+            "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)",
+            'inactivity_timer': 10000,
+            'ru': ru,
+        }},
+        "amf_list":   {"1": {"amf_addr": "127.0.1.100"}},
+        "plmn_list":  {'1': {'plmn': '00101', 'tac': 100}},
         "ncell_list": {'1': peer_nr},
     })
 
