@@ -4,7 +4,7 @@
   "description": "4G and 5G amarisoft stack for ORS",
   "serialisation": "json-in-xml",
   "software-type": {
-{% if bbu != 'ors' %}
+{%- if bbu != 'ors' %}
     "ue": {
       "title": "UE",
       "description": "UE Configuration",
@@ -13,7 +13,7 @@
       "response": "instance{{ v }}-ue-schema.json",
       "index": 4
     },
-{% endif %}
+{%- endif %}
     "enb": {
       "title": "eNB",
       "software-type": "enb",
