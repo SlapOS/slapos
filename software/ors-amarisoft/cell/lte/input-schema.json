@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "LTE Cell",
+  "type": "object",
+
+  "required": [
+    "cell_type",
+    "rf_mode",
+    "pci",
+    "cell_id",
+    "bandwidth",
+    "ru",
+
+    "dl_earfcn",
+    "tac"
+  ],
+  "properties": {
+    "$ref": "../../cell/common.json#/properties",
+
+    "tdd_ul_dl_config": {
+      "title": "TDD Configuration",
+      "type": "string",
+      "enum": [
+        "[Configuration 2] 5ms 2UL 6DL (default)",
+        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+      ],
+      "default": "[Configuration 2] 5ms 2UL 6DL (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
+    },
+
+    "bandwidth": {
+      "$ref": "#/properties/bandwidth",
+      "enum": [
+        1.4,
+        3,
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+
+    "dl_earfcn": {
+      "title": "DL EARFCN",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "type": "integer"
+    },
+    "ul_earfcn": {
+      "title": "UL EARFCN",
+      "description": "Uplink E-UTRA Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_earfcn is chosen.",
+      "type": "integer"
+    },
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+      "type": "string"
+    },
+    "root_sequence_index": {
+      "$ref": "#/properties/root_sequence_index",
+      "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+      "default": 204
+    }
+  }
+}
