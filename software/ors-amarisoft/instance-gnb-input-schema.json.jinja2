@@ -11,15 +11,19 @@
       "default": {{ default_nr_bandwidth }}
     },
     "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "description": "1 or 2. Number of DL antennas.",
-      "type": "number",
+      "$ref": "ru/common.json#/properties/n_antenna_dl",
+      "enum": [
+        1,
+        2
+      ],
       "default": {{ default_n_antenna_dl }}
     },
     "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "description": "1 or 2. Number of UL antennas.",
-      "type": "number",
+      "$ref": "ru/common.json#/properties/n_antenna_ul",
+      "enum": [
+        1,
+        2
+      ],
       "default": {{ default_n_antenna_ul }}
     },
     "rf_mode": {
@@ -164,14 +168,10 @@
 {%- endif %}
 {%- if bbu == 'ors' %}
     "tx_gain": {
-      "title": "Tx gain",
-      "description": "Tx gain (in dB)",
-      "type": "number"
+      "$ref": "ru/sdr/input-schema.json#/properties/tx_gain"
     },
     "rx_gain": {
-      "title": "Rx gain",
-      "description": "Rx gain (in dB)",
-      "type": "number"
+      "$ref": "ru/sdr/input-schema.json#/properties/rx_gain"
     },
 {%- endif %}
 {%- if bbu != 'ors' %}
