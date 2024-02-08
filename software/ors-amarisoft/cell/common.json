@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Cell. Common properties",
+  "type": "object",
+
+  "required": [
+    "rf_mode",
+    "pci",
+    "cell_id",
+    "bandwidth",
+    "ru"
+  ],
+
+  "properties": {
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
+      "enum": ["fdd", "tdd"],
+      "propertyOrder": 101
+    },
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "integer"
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string"
+    },
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number"
+    },
+    "root_sequence_index": {
+      "title": "Root Sequence Index",
+      "type": "integer"
+    },
+    "inactivity_timer": {
+      "title": "Inactivity Timer",
+      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
+      "type": "number",
+      "default": 10000
+    },
+    "ru": {
+      "$ref": "../ru/input-schema.json",
+      "propertyOrder": 9999
+    }
+  }
+}

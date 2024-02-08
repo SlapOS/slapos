@@ -35,57 +35,29 @@
       "default": {{ default_n_antenna_ul }}
     },
     "rf_mode": {
-      "title": "RF mode",
-      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
-      "type": "string",
-      "enum": [
-        "fdd",
-        "tdd"
-      ],
+      "$ref": "cell/common.json#/properties/rf_mode",
       "default": "tdd"
     },
     "tdd_ul_dl_config": {
-      "title": "TDD",
-      "description": "TDD",
-      "type": "string",
-      "enum": [
-        "[Configuration 2] 5ms 2UL 6DL (default)",
-        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-      ],
-      "default": "[Configuration 2] 5ms 2UL 6DL (default)",
-      "options": {
-        "dependencies": {
-          "rf_mode": "tdd"
-        }
-      }
+      "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
     },
     "dl_earfcn": {
-      "title": "DL EARFCN",
-      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
     },
     "pci": {
-      "title": "Physical Cell ID",
-      "description": "Physical Cell ID",
-      "type": "number",
+      "$ref": "cell/common.json#/properties/pci",
       "default": 1
     },
     "cell_id": {
-      "title": "Cell ID",
-      "description": "Cell ID",
-      "type": "string",
+      "$ref": "cell/common.json#/properties/cell_id",
       "default": "0x01"
     },
     "tac": {
-      "title": "Tracking Area Code",
-      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-      "default": "0x0001",
-      "type": "string"
+      "$ref": "cell/lte/input-schema.json#/properties/tac",
+      "default": "0x0001"
     },
     "root_sequence_index": {
-      "title": "Root Sequence Index",
-      "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
-      "type": "number",
+      "$ref": "cell/common.json#/properties/root_sequence_index",
       "default": 204
     },
 {%- else %}
@@ -94,81 +66,7 @@
       "description": "Cell List",
       "patternProperties": {
         ".*": {
-          "properties": {
-            "rf_mode": {
-              "title": "RF mode",
-              "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
-              "type": "string",
-              "enum": [
-                "fdd",
-                "tdd"
-              ]
-            },
-            "tdd_ul_dl_config": {
-              "title": "TDD",
-              "description": "TDD",
-              "type": "string",
-              "enum": [
-                "[Configuration 2] 5ms 2UL 6DL (default)",
-                "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
-              ],
-              "default": "[Configuration 2] 5ms 2UL 6DL (default)",
-              "options": {
-                "dependencies": {
-                  "rf_mode": "tdd"
-                }
-              }
-            },
-            "ru": {
-              "$ref": "ru/input-schema.json"
-            },
-            "dl_earfcn": {
-              "title": "DL EARFCN",
-              "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-              "type": "number"
-            },
-            "bandwidth": {
-              "title": "Bandwidth",
-              "description": "Downlink Bandwidth (in MHz)",
-              "type": "number"
-              "enum": [
-                1.4,
-                3,
-                5,
-                10,
-                15,
-                20
-              ]
-            },
-            "pci": {
-              "title": "Physical Cell ID",
-              "description": "Physical Cell IDs",
-              "type": "number"
-            },
-            "cell_id": {
-              "title": "Cell ID",
-              "description": "Cell IDs",
-              "type": "string"
-            },
-            "tac": {
-              "title": "Tracking Area Code",
-              "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-              "type": "string"
-            },
-            "root_sequence_index": {
-              "title": "Root Sequence Index",
-              "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
-              "type": "number",
-              "default": 204
-            },
-            "inactivity_timer": {
-              "title": "Inactivity Timer",
-              "description": "Send RRC connection release after this time (in ms) of network inactivity.",
-              "type": "number",
-              "default": {{ default_lte_inactivity_timer }}
-            }
-          },
-          "type": "object"
+          "$ref": "cell/lte/input-schema.json"
         }
       },
       "type": "object",
