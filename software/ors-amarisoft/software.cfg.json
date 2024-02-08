@@ -3,7 +3,6 @@
   "description": "4G and 5G amarisoft stack for ORS",
   "serialisation": "json-in-xml",
   "software-type": {
-
     "ue": {
       "title": "UE",
       "description": "UE Configuration",
@@ -12,7 +11,6 @@
       "response": "instance-ue-schema.json",
       "index": 4
     },
-
     "enb": {
       "title": "eNB",
       "software-type": "enb",

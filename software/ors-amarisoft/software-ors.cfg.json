@@ -3,7 +3,6 @@
   "description": "4G and 5G amarisoft stack for ORS",
   "serialisation": "json-in-xml",
   "software-type": {
-
     "enb": {
       "title": "eNB",
       "software-type": "enb",
