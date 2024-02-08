@@ -66,33 +66,15 @@
       "$ref": "ru/sdr/input-schema.json#/properties/rx_gain"
     },
     "enb_id": {
-      "title": "eNB ID",
-      "description": "eNB ID",
-      "type": "string",
+      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
       "default": "0x1A2D0"
     },
     "gtp_addr": {
-      "title": "GTP Address",
-      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
-      "type": "string",
+      "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
       "default": "127.0.1.1"
     },
     "mme_list": {
-      "title": "MME list",
-      "description": "Optionnal. List of MME to which the gNodeB is connected",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "mme_addr": {
-              "title": "MME Address",
-              "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
+      "$ref": "instance-enb-input-schema.json#/properties/mme_list",
       "default": {
         "1": {
           "mme_addr": "127.0.1.100"
@@ -100,34 +82,8 @@
       }
     },
     "plmn_list": {
-      "title": "PLMN list",
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "plmn": {
-              "default": "00101",
-              "title": "Public Land Mobile Network",
-              "description": "Public Land Mobile Network",
-              "type": "string"
-            },
-            "attach_without_pdn": {
-              "default": false,
-              "title": "Attach Without PDN",
-              "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
-              "type": "boolean"
-            },
-            "reserved": {
-              "default": false,
-              "title": "Reserved",
-              "description": "True if the cell is reserved for operator use.",
-              "type": "boolean"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
       "default": {
         "1": {
           "plmn": "00101"
@@ -198,27 +154,17 @@
       "default": {}
     },
     "websocket_password": {
-      "title": "Websocket password",
-      "description": "Activates websocket for remote control and sets password",
-      "type": "string"
+      "$ref": "instance-enb-input-schema.json#/properties/websocket_password"
     },
     "inactivity_timer": {
-      "title": "Inactivity Timer",
-      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
-      "type": "number",
+      "$ref": "cell/common.json#/properties/inactivity_timer",
       "default": 10000
     },
     "log_phy_debug": {
-      "title": "Physical layer log debug",
-      "description": "Enable debug mode for physical layer logs",
-      "type": "boolean",
-      "default": false
+      "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug"
     },
     "gps_sync": {
-      "default": false,
-      "title": "GPS synchronisation",
-      "description": "True if GPS should be used for synchronisation",
-      "type": "boolean"
+      "$ref": "instance-enb-input-schema.json#/properties/gps_sync"
     },
     "disable_sdr": {
       "default": false,
@@ -227,49 +173,28 @@
       "type": "boolean"
     },
     "use_ipv4": {
-      "default": false,
-      "title": "Use IPv4",
-      "description": "Set to true to use IPv4 for AMF / MME addresses",
-      "type": "boolean"
+      "$ref": "instance-enb-input-schema.json#/properties/use_ipv4"
     },
     "enb_stats_fetch_period": {
-      "title": "eNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get eNB statistics",
-      "type": "number",
-      "default": 60
+      "$ref": "instance-enb-input-schema.json#/properties/enb_stats_fetch_period"
     },
     "enb_drb_stats_enabled": {
-      "title": "Enable eNB drb statistics",
-      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
-      "type": "boolean",
-      "default": true
+      "$ref": "instance-enb-input-schema.json#/properties/enb_drb_stats_enabled"
     },
     "max_rx_sample_db": {
-      "title": "Maximum RX sample value (dB)",
-      "description": "Maximum RX sample threshold above which RX saturated promise will fail",
-      "type": "number",
-      "default": 0
+      "$ref": "instance-enb-input-schema.json#/properties/max_rx_sample_db"
     },
     "min_rxtx_delay": {
-      "title": "Minimum available time for radio front end processing (ms)",
-      "description": "Baseband latency promise will fail if minimum TX/RX diff reaches threshold (lower than this value)",
-      "type": "number",
-      "default": 0
+      "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
     },
     "xlog_fluentbit_forward_host": {
-      "title": "Address to Forward Xlog by Fluenbit",
-      "description": "Address of Remote Fluentd or Fluentbit Server to Forward Xlog",
-      "type": "string"
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_host"
     },
     "xlog_fluentbit_forward_port": {
-      "title": "Port to Forward Xlog by Fluentbit",
-      "description": "Optional Port of Remote Fluentd or Fluentbit Server to Forward Xlog",
-      "type": "string"
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_port"
     },
     "xlog_fluentbit_forward_shared_key": {
-      "title": "Shared Key to Forward Xlog by Fluentbit",
-      "description": "Secret Key Shared with Remote Fluentd or Fluentbit Server for Authentication when Forwarding Xlog",
-      "type": "string"
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key"
     }
   }
 }
