@@ -9,7 +9,11 @@
     - error reports instantiation error.
 -#}
 
-{#- defaults provide default values for lte parameters. #}
+
+{#- defaults provide default values for lte parameters.
+    it should be kept in sync with "default" in json schemas
+
+    TODO automatically load defaults from JSON schemas  #}
 {%- set defaults = {
       'ru': {
       },
@@ -42,7 +46,7 @@
       },
 
       'cell/lte': {
-        'inactivity_timer': default_lte_inactivity_timer,
+        'inactivity_timer': 10000,
       },
       'cell/lte/fdd': {
       },
@@ -51,8 +55,8 @@
       },
 
       'cell/nr': {
-        'inactivity_timer': default_nr_inactivity_timer,
-        'ssb_pos_bitmap':   default_nr_ssb_pos_bitmap,
+        'inactivity_timer': 10000,
+        'ssb_pos_bitmap':   '10000000',
       },
       'cell/nr/fdd': {
       },
