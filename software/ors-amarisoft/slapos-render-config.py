@@ -71,12 +71,6 @@ def do(src, out, rat, slapparameter_dict):
         "slap_configuration": {
             "tap-name": "slaptap9"
         },
-        "default_lte_bandwidth": "10 MHz",
-        "default_imsi": "001010123456789",
-        "default_k": "00112233445566778899aabbccddeeff",
-        "default_nr_bandwidth": 40,
-        "default_n_antenna_dl": 2,
-        "default_n_antenna_ul": 2,
         "directory": {
             "log": "log",
             "etc": "etc",

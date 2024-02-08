@@ -22,23 +22,6 @@ generic = {
             'bbu'                          : 'server',
         }
 
-defaults = {
-            'default_lte_bandwidth'        : "20 MHz",
-            'default_lte_inactivity_timer' : 10000,
-            'default_nr_bandwidth'         : 40,
-            'default_nr_ssb_pos_bitmap'    : "10000000",
-            'default_n_antenna_dl'         : 2,
-            'default_n_antenna_ul'         : 2,
-            'default_nr_inactivity_timer' : 10000,
-            'default_imsi'                 : "001010123456789",
-            'default_k'                    : "00112233445566778899aabbccddeeff",
-}
-
-instance_json_template_map = {}
-for software_type in ['enb', 'gnb', 'ue']:
-    with open('instance-{}-input-schema.json.jinja2'.format(software_type), 'r') as f:
-        instance_json_template_map[software_type] = Template(f.read())
-
 with open('software.jinja2.cfg', 'r') as f:
     software_template = Template(f.read())
 
@@ -52,7 +35,7 @@ def emit(path, data):
             f.write(data)
 
 for software in (ors, generic):
-    ctx = software | defaults | global_context
+    ctx = software | global_context
     if software is generic:
         v = ''
     else:
@@ -60,20 +43,3 @@ for software in (ors, generic):
 
     emit('software{}.cfg'.format(v),
          software_template.render(**ctx))
-    for software_type in ['enb', 'gnb', 'ue']:
-        # no ue for ors
-        if software['bbu'] == 'ors' and software_type == 'ue':
-            continue
-        emit('instance{}-{}-input-schema.json'.format(
-               v,
-               software_type),
-             instance_json_template_map[software_type].render(**ctx))
-
-# render emits file @ path from path.jinja2
-def render(path):
-    with open('%s.jinja2' % path, 'r') as f:
-        template = Template(f.read())
-    emit(path, template.render(**defaults, **global_context))
-
-for path in ('ue/common.json', 'ue/lte/input-schema.json', 'ue/nr/input-schema.json'):
-    render(path)
