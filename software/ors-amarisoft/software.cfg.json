@@ -9,7 +9,7 @@
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
-      "index": 4
+      "index": 5
     },
     "enb": {
       "title": "eNB",
@@ -17,7 +17,7 @@
       "description": "eNodeB Configuration",
       "request": "instance-enb-input-schema.json",
       "response": "instance-enb-schema.json",
-      "index": 0
+      "index": 1
     },
     "gnb": {
       "title": "gNB",
@@ -25,7 +25,7 @@
       "description": "gNodeB Configuration",
       "request": "instance-gnb-input-schema.json",
       "response": "instance-gnb-schema.json",
-      "index": 1
+      "index": 2
     },
     "core-network": {
       "title": "Core Network",
@@ -33,7 +33,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 2
+      "index": 3
     },
     "core-network-slave": {
       "title": "Core Network Sim Card",
@@ -42,7 +42,7 @@
       "request": "sim/input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
-      "index": 3
+      "index": 4
     }
   }
 }
