@@ -16,8 +16,7 @@
               "enum": [
                 "fdd",
                 "tdd"
-              ],
-              "default": "tdd"
+              ]
             },
             "tdd_ul_dl_config": {
               "title": "TDD",
@@ -51,8 +50,7 @@
             "bandwidth": {
               "title": "Bandwidth",
               "description": "Downlink Bandwidth (in MHz)",
-              "type": "number",
-              "default": 40
+              "type": "number"
             },
             "ssb_pos_bitmap": {
               "title": "SSB Position Bitmap",
@@ -63,14 +61,12 @@
             "pci": {
               "title": "Physical Cell ID",
               "description": "Physical Cell ID",
-              "type": "number",
-              "default": 500
+              "type": "number"
             },
             "cell_id": {
               "title": "Cell ID",
               "description": "Cell ID",
-              "type": "string",
-              "default": "0x01"
+              "type": "string"
             },
             "root_sequence_index": {
               "title": "Root Sequence Index",
@@ -99,9 +95,8 @@
     },
     "gnb_id": {
       "title": "gNB ID",
-      "description": "gNB ID",
-      "type": "string",
-      "default": "0x12345"
+      "description": "gNB ID. (must be set if there are NR cells)",
+      "type": "string"
     },
     "gnb_id_bits": {
       "title": "gNB ID bits",
@@ -111,7 +106,7 @@
     },
     "amf_list": {
       "title": "AMF list",
-      "description": "Optionnal. List of AMF to which the gNodeB is connected",
+      "description": "List of AMF to which the gNodeB is connected. (must set if there are NR cells)",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -124,23 +119,20 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "plmn_list": {
       "title": "PLMN list",
-      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12. (must set if there are NR cells)",
       "patternProperties": {
         ".*": {
           "properties": {
             "plmn": {
-              "default": "00101",
               "title": "Public Land Mobile Network",
               "description": "Public Land Mobile Network",
               "type": "string"
             },
             "tac": {
-              "default": 100,
               "title": "Tracking Area Code",
               "description": "Integer (range 0 to 16777215)",
               "type": "number"
@@ -160,8 +152,7 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "nssai": {
       "title": "AMF slices configuration",

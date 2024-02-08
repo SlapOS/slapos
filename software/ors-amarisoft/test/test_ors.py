@@ -152,7 +152,7 @@ def test_enb_conf(self):
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
     self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
-    self.assertEqual(conf['cell_list'][0]['cell_id'], 0)
+    self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
     for p in conf['cell_default']['plmn_list']:
       for n in "plmn attach_without_pdn reserved".split():
           self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])

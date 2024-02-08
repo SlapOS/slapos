@@ -90,8 +90,7 @@
               "enum": [
                 "fdd",
                 "tdd"
-              ],
-              "default": "tdd"
+              ]
             },
             "tdd_ul_dl_config": {
               "title": "TDD",
@@ -125,8 +124,7 @@
             "bandwidth": {
               "title": "Bandwidth",
               "description": "Downlink Bandwidth (in MHz)",
-              "type": "number",
-              "default": {{ default_nr_bandwidth }}
+              "type": "number"
             },
             "ssb_pos_bitmap": {
               "title": "SSB Position Bitmap",
@@ -137,14 +135,12 @@
             "pci": {
               "title": "Physical Cell ID",
               "description": "Physical Cell ID",
-              "type": "number",
-              "default": 500
+              "type": "number"
             },
             "cell_id": {
               "title": "Cell ID",
               "description": "Cell ID",
-              "type": "string",
-              "default": "0x01"
+              "type": "string"
             },
             "root_sequence_index": {
               "title": "Root Sequence Index",
@@ -188,9 +184,11 @@
 {%- endif %}
     "gnb_id": {
       "title": "gNB ID",
-      "description": "gNB ID",
-      "type": "string",
+      "description": "gNB ID{% if bbu != 'ors' %}. (must be set if there are NR cells){% endif %}",
+      "type": "string"
+{%- if bbu == 'ors' %},
       "default": "0x12345"
+{%- endif %}
     },
     "gnb_id_bits": {
       "title": "gNB ID bits",
@@ -200,7 +198,11 @@
     },
     "amf_list": {
       "title": "AMF list",
+{%- if bbu == 'ors' %}
       "description": "Optionnal. List of AMF to which the gNodeB is connected",
+{%- else %}
+      "description": "List of AMF to which the gNodeB is connected. (must set if there are NR cells)",
+{%- endif %}
       "patternProperties": {
         ".*": {
           "properties": {
@@ -213,23 +215,37 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
+{%- if bbu == 'ors' %},
+      "default": {
+        "1": {
+          "amf_addr": "127.0.1.100"
+        }
+      }
+{%- endif %}
     },
     "plmn_list": {
       "title": "PLMN list",
+{%- if bbu == 'ors' %}
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
+{%- else %}
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12. (must set if there are NR cells)",
+{%- endif %}
       "patternProperties": {
         ".*": {
           "properties": {
             "plmn": {
+{%- if bbu == 'ors' %}
               "default": "00101",
+{%- endif %}
               "title": "Public Land Mobile Network",
               "description": "Public Land Mobile Network",
               "type": "string"
             },
             "tac": {
+{%- if bbu == 'ors' %}
               "default": 100,
+{%- endif %}
               "title": "Tracking Area Code",
               "description": "Integer (range 0 to 16777215)",
               "type": "number"
@@ -249,8 +265,15 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
+{%- if bbu == 'ors' %},
+      "default": {
+        "1": {
+          "plmn": "00101",
+          "tac": 100
+        }
+      }
+{%- endif %}
     },
     "nssai": {
       "title": "AMF slices configuration",

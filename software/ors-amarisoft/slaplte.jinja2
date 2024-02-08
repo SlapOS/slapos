@@ -40,6 +40,25 @@
         'rx_delay': 11.0,
         'tx_dbm':   42.0,
       },
+
+      'cell/lte': {
+        'inactivity_timer': default_lte_inactivity_timer,
+      },
+      'cell/lte/fdd': {
+      },
+      'cell/lte/tdd': {
+        'tdd_ul_dl_config': '[Configuration 2] 5ms 2UL 6DL (default)',
+      },
+
+      'cell/nr': {
+        'inactivity_timer': default_nr_inactivity_timer,
+        'ssb_pos_bitmap':   default_nr_ssb_pos_bitmap,
+      },
+      'cell/nr/fdd': {
+      },
+      'cell/nr/tdd': {
+        'tdd_ul_dl_config': '5ms 2UL 7DL 4/6 (default)',
+      },
     }
 %}
 
@@ -90,22 +109,6 @@
 #}
 {%- macro load_ru_and_cell(ru_dict, cell_dict)  %}
 {%-   set cell_list = slapparameter_dict.get('cell_list', {}) %}
-{%-   if ors  %}
-{%-     if len(cell_list) > 0 %}
-{%-       do error('ORS mode does not support cell_list parameter') %}
-{%-     endif %}
-{%-     do cell_list.update({'CELL': {
-          'ru': {
-            'ru_type':      'sdr',
-            'ru_link_type': 'sdr',
-            'sdr_dev':      0,
-            'n_antenna_dl': int(slapparameter_dict.get('n_antenna_dl', default_n_antenna_dl)),
-            'n_antenna_ul': int(slapparameter_dict.get('n_antenna_ul', default_n_antenna_ul)),
-            'tx_gain':      RF.tx_gain,
-            'rx_gain':      RF.rx_gain,
-          }
-        }}) %}
-{%-   endif %}
 {%-   do cell_dict.update(cell_list)  %}
 
 {%-   for i, (cell_ref, cell) in enumerate(cell_dict|dictsort) %}
@@ -126,33 +129,7 @@
 {%-     do ru_dict.update({ru_ref: ru}) %}
 
 {%-     do cell.update({'cell_type': 'lte' if do_lte  else 'nr'}) %}
-{%-     do cell.setdefault('rf_mode', slapparameter_dict.get('rf_mode', 'tdd')) %}
-{%-     if do_lte %}
-{%-       if cell.rf_mode == 'tdd'  %}
-{%-         do cell.setdefault('tdd_ul_dl_config', slapparameter_dict.get('tdd_ul_dl_config', '[Configuration 2] 5ms 2UL 6DL (default)')) %}
-{%-       endif %}
-{%-       do cell.setdefault('cell_id', slapparameter_dict.get('cell_id', '0x0' + i|string))  %}
-{%-       do cell.setdefault('tac', slapparameter_dict.get('tac', '0x0001')) %}
-{%-       do cell.setdefault('pci', slapparameter_dict.get('pci', i)) %}
-{%-       do cell.setdefault('dl_earfcn', slapparameter_dict.get('dl_earfcn', RF.dl_earfcn)) %}
-{%-       do cell.setdefault('bandwidth', slapparameter_dict.get('bandwidth', default_lte_bandwidth)) %}
-{%-       do cell.setdefault('root_sequence_index', slapparameter_dict.get('root_sequence_index', 204 + i)) %}
-{%-       do cell.setdefault('inactivity_timer', slapparameter_dict.get('inactivity_timer', default_lte_inactivity_timer)) %}
-{%-     elif do_nr  %}
-{%-       if cell.rf_mode == 'tdd'  %}
-{%-         do cell.setdefault('tdd_ul_dl_config', slapparameter_dict.get('tdd_ul_dl_config', '5ms 2UL 7DL 4/6 (default)')) %}
-{%-       endif %}
-{%-       do cell.setdefault('cell_id', slapparameter_dict.get('cell_id', '0x01')) %}
-{%-       do cell.setdefault('pci', slapparameter_dict.get('pci', 500)) %}
-{%-       do cell.setdefault('nr_band', RF.nr_band)  %}
-{%-       do cell.setdefault('dl_nr_arfcn', RF.dl_nr_arfcn) %}
-{%-       do cell.setdefault('bandwidth', slapparameter_dict.get('nr_bandwidth', default_nr_bandwidth)) %}
-{%-       do cell.setdefault('ssb_pos_bitmap', slapparameter_dict.get('ssb_pos_bitmap', default_nr_ssb_pos_bitmap)) %}
-{%-       do cell.setdefault('root_sequence_index', slapparameter_dict.get('root_sequence_index', 1 + i)) %}
-{%-       do cell.setdefault('inactivity_timer', slapparameter_dict.get('inactivity_timer', default_nr_inactivity_timer)) %}
-{%-     else  %}
-{%-       do bug('unreachable') %}
-{%-     endif %}
+{%-     do _cell_set_defaults(cell, cell_dict)  %}
 {%-   endfor %}
 
 {#-   assign RUs rf_port and tx/rx channel indices  #}
@@ -194,6 +171,17 @@
 {%-     endfor  %}
 {%-   endif %}
 {%- endmacro  %}
+
+{%- macro _cell_set_defaults(cell, cell_dict)  %}
+{%-   for k, v in defaults['cell/%s' % cell.cell_type].items() %}
+{%-     do cell.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   for k, v in defaults['cell/%s/%s' % (cell.cell_type, cell.rf_mode)].items() %}
+{%-     do cell.setdefault(k, v) %}
+{%-   endfor  %}
+{%-   set n = len(list(cell_dict|dictsort | selectattr('1.cell_type', '==', cell.cell_type)))  %}
+{%-   do cell.setdefault('root_sequence_index', 1 + 203*(cell.cell_type == 'lte') + n)  %}
+{%- endmacro %}
 
 
 {#- ---- building configuration ---- #}

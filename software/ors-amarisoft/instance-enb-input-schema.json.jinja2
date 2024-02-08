@@ -98,8 +98,7 @@
               "enum": [
                 "fdd",
                 "tdd"
-              ],
-              "default": "tdd"
+              ]
             },
             "tdd_ul_dl_config": {
               "title": "TDD",
@@ -135,8 +134,7 @@
                 "10 MHz",
                 "15 MHz",
                 "20 MHz"
-              ],
-              "default": "{{ default_lte_bandwidth }}"
+              ]
             },
             "pci": {
               "title": "Physical Cell ID",
@@ -151,7 +149,6 @@
             "tac": {
               "title": "Tracking Area Code",
               "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
-              "default": "0x0001",
               "type": "string"
             },
             "root_sequence_index": {
@@ -196,9 +193,11 @@
 {%- endif %}
     "enb_id": {
       "title": "eNB ID",
-      "description": "eNB ID",
-      "type": "string",
+      "description": "eNB ID{% if bbu != 'ors' %}. (must be set if there are LTE cells){% endif %}",
+      "type": "string"
+{%- if bbu == 'ors' %},
       "default": "0x1A2D0"
+{%- endif %}
     },
     "gtp_addr": {
       "title": "GTP Address",
@@ -208,7 +207,11 @@
     },
     "mme_list": {
       "title": "MME list",
+{%- if bbu == 'ors' %}
       "description": "Optionnal. List of MME to which the gNodeB is connected",
+{%- else %}
+      "description": "List of MME to which the eNodeB is connected. (must be set if there are LTE cells)",
+{%- endif %}
       "patternProperties": {
         ".*": {
           "properties": {
@@ -221,17 +224,29 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
+{%- if bbu == 'ors' %},
+      "default": {
+        "1": {
+          "mme_addr": "127.0.1.100"
+        }
+      }
+{%- endif %}
     },
     "plmn_list": {
       "title": "PLMN list",
+{%- if bbu == 'ors' %}
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+{%- else %}
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6. (must be set if there are LTE cells)",
+{%- endif %}
       "patternProperties": {
         ".*": {
           "properties": {
             "plmn": {
+{%- if bbu == 'ors' %}
               "default": "00101",
+{%- endif %}
               "title": "Public Land Mobile Network",
               "description": "Public Land Mobile Network",
               "type": "string"
@@ -252,8 +267,14 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
+{%- if bbu == 'ors' %},
+      "default": {
+        "1": {
+          "plmn": "00101"
+        }
+      }
+{%- endif %}
     },
 {%- if bbu == 'ors' %}
     "lte_handover_a3_offset": {
