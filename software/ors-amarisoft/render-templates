@@ -34,9 +34,6 @@ defaults = {
             'default_k'                    : "00112233445566778899aabbccddeeff",
 }
 
-with open('software.cfg.json.jinja2', 'r') as f:
-    software_json_template = Template(f.read())
-
 instance_json_template_map = {}
 for software_type in ['enb', 'gnb', 'ue']:
     with open('instance-{}-input-schema.json.jinja2'.format(software_type), 'r') as f:
@@ -61,8 +58,6 @@ for software in (ors, generic):
     else:
         v = '-'+software['software_name']
 
-    emit('software{}.cfg.json'.format(v),
-         software_json_template.render(**ctx))
     emit('software{}.cfg'.format(v),
          software_template.render(**ctx))
     for software_type in ['enb', 'gnb', 'ue']:
