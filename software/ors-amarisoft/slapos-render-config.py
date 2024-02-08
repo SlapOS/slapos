@@ -122,7 +122,7 @@ def do_enb():
         'cell_list': {'CELL': {
             'rf_mode':      'tdd',
             'dl_earfcn':    36100,
-            'bandwidth':    '10 MHz',
+            'bandwidth':    10,
             'tac':          '0x0001',
             'root_sequence_index': 204,
             'pci':          1,
