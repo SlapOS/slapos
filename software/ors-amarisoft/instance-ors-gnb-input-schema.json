@@ -10,15 +10,19 @@
       "default": 40
     },
     "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "description": "1 or 2. Number of DL antennas.",
-      "type": "number",
+      "$ref": "ru/common.json#/properties/n_antenna_dl",
+      "enum": [
+        1,
+        2
+      ],
       "default": 2
     },
     "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "description": "1 or 2. Number of UL antennas.",
-      "type": "number",
+      "$ref": "ru/common.json#/properties/n_antenna_ul",
+      "enum": [
+        1,
+        2
+      ],
       "default": 2
     },
     "rf_mode": {
@@ -76,14 +80,10 @@
       "default": "0x01"
     },
     "tx_gain": {
-      "title": "Tx gain",
-      "description": "Tx gain (in dB)",
-      "type": "number"
+      "$ref": "ru/sdr/input-schema.json#/properties/tx_gain"
     },
     "rx_gain": {
-      "title": "Rx gain",
-      "description": "Rx gain (in dB)",
-      "type": "number"
+      "$ref": "ru/sdr/input-schema.json#/properties/rx_gain"
     },
     "gnb_id": {
       "title": "gNB ID",
