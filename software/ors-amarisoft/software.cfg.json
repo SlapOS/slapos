@@ -1,16 +1,8 @@
 {
-  "name": "ORS Amarisoft",
-  "description": "4G and 5G amarisoft stack for ORS",
+  "name": "Amarisoft stack",
+  "description": "4G and 5G amarisoft stack",
   "serialisation": "json-in-xml",
   "software-type": {
-    "ue": {
-      "title": "UE",
-      "description": "UE Configuration",
-      "software-type": "ue",
-      "request": "instance-ue-input-schema.json",
-      "response": "instance-ue-schema.json",
-      "index": 5
-    },
     "enb": {
       "title": "eNB",
       "software-type": "enb",
@@ -36,13 +28,21 @@
       "index": 3
     },
     "core-network-slave": {
-      "title": "Core Network Sim Card",
+      "title": "→ Core Network | Sim Card",
       "description": "Core Network Sim Card Configuration",
       "software-type": "core-network",
       "request": "sim/input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
       "index": 4
+    },
+    "ue": {
+      "title": "UE",
+      "description": "UE Configuration",
+      "software-type": "ue",
+      "request": "instance-ue-input-schema.json",
+      "response": "instance-ue-schema.json",
+      "index": 5
     }
   }
 }
