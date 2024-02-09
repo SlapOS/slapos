@@ -136,7 +136,8 @@
               "$ref": "peer/cell/lte/input-schema.json#/properties/e_cell_id"
             },
             "tac": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/tac"
+              "$ref": "peer/cell/lte/input-schema.json#/properties/tac",
+              "default": "0x0001"
             }
           },
           "type": "object"

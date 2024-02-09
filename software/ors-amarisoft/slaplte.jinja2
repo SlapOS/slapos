@@ -1,6 +1,7 @@
 {#- Package slaplte provides helpers for configuring Amarisoft LTE services in SlapOS.
 
     - load_ru_and_cell initializes RU and cell registries.
+    - load_peercell initializes peer-cell registry.
     - load_peer initializes peer registry.
     - ru_config emits RF driver configuration for specified Radio Units.
 
@@ -207,6 +208,24 @@
 {%-   else  %}
 {%-     do bug('unreachable') %}
 {%-   endif %}
+{%- endmacro  %}
+
+
+{#- load_peercell initializes peer-cell registry.
+
+    peercell_dict keeps configured peer cells: {} peer cell reference -> peercell
+#}
+{%- macro load_peercell(peercell_dict)  %}
+{%-   for ref, peercell in slapparameter_dict.ncell_list|dictsort  %}
+{%-     if do_lte %}
+{%-       do peercell.update({'cell_type': 'lte'}) %}
+{%-     elif do_nr  %}
+{%-       do peercell.update({'cell_type': 'nr'}) %}
+{%-     else  %}
+{%-       do bug('unreachable') %}
+{%-     endif %}
+{%-     do peercell_dict.update({ref: peercell})  %}
+{%-   endfor  %}
 {%- endmacro  %}
 
 

@@ -82,21 +82,7 @@
       "description": "Neighbour Cell Info",
       "patternProperties": {
         ".*": {
-          "properties": {
-            "dl_earfcn": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/dl_earfcn"
-            },
-            "pci": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/pci"
-            },
-            "cell_id": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/e_cell_id"
-            },
-            "tac": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/tac"
-            }
-          },
-          "type": "object"
+          "$ref": "peer/cell/lte/input-schema.json"
         }
       },
       "type": "object",

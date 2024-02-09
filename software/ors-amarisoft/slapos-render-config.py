@@ -88,7 +88,7 @@ def do(src, out, rat, slapparameter_dict):
 
 def do_enb():
     peer_lte = {
-        'cell_id':          '0x12345',
+        'e_cell_id':        '0x12345',
         'pci':              35,
         'dl_earfcn':        700,
         'tac':              123,
@@ -98,6 +98,7 @@ def do_enb():
         'gnb_id_bits':      22,
         'dl_nr_arfcn':      520000,
         'nr_band':          38,
+        'ssb_nr_arfcn':     520090,
         'pci':              75,
         'tac':              321,
     }
