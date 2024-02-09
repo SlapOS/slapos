@@ -110,6 +110,22 @@
       "type": "object",
       "default": {}
     },
+    "x2_peers": {
+      "title": "X2 Peers",
+      "description": "X2 Peers",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "x2_addr": {
+              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
     "websocket_password": {
       "title": "Websocket password",
       "description": "Activates websocket for remote control and sets password",
