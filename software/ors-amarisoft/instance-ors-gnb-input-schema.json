@@ -156,9 +156,7 @@
         ".*": {
           "properties": {
             "xn_addr": {
-              "title": "XN Address",
-              "description": "XN Address of the neighbour cell (gNB Address)",
-              "type": "string"
+              "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
             }
           },
           "type": "object"
