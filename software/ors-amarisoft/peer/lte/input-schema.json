@@ -5,10 +5,18 @@
   "type": "object",
 
   "required": [
+    "peer_type",
+
     "x2_addr"
   ],
 
   "properties": {
+    "peer_type": {
+      "$ref": "../../peer/common.json#/properties/peer_type",
+      "const":    "lte",
+      "template": "lte"
+    },
+
     "x2_addr": {
       "title": "X2 Address",
       "description": "X2 Address of the neighbour node (eNB Address)",

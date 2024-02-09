@@ -5,6 +5,7 @@
   "type": "object",
 
   "required": [
+    "cell_type",
     "rf_mode",
     "pci",
     "cell_id",
@@ -16,6 +17,12 @@
   ],
   "properties": {
     "$ref": "../../cell/common.json#/properties",
+
+    "cell_type": {
+      "$ref": "#/properties/cell_type",
+      "const":    "nr",
+      "template": "nr"
+    },
 
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",

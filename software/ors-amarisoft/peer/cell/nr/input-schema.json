@@ -5,6 +5,7 @@
   "type": "object",
 
   "required": [
+    "cell_type",
     "pci",
     "tac",
 
@@ -16,6 +17,12 @@
   ],
 
   "properties": {
+    "cell_type": {
+      "$ref": "../../../peer/cell/common.json#/properties/cell_type",
+      "const":    "nr",
+      "template": "nr"
+    },
+
     "nr_cell_id": {
       "title": "NR Cell ID",
       "description": "Concatenation of gnb_id and cell_id of the neighbour cell",

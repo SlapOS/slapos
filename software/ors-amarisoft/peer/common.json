@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Peer. Common properties",
+  "type": "object",
+
+  "required": [
+    "peer_type"
+  ],
+
+  "properties": {
+    "peer_type": {
+      "type": "string",
+      "options":  { "hidden": true }
+    }
+  }
+}

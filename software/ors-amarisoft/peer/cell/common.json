@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Peer Cell. Common properties",
+  "type": "object",
+  "required": [
+    "cell_type",
+    "pci",
+    "tac"
+  ],
+
+  "properties": {
+    "cell_type": {
+      "type": "string",
+      "options":  { "hidden": true }
+    }
+  }
+}
