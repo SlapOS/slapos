@@ -84,24 +84,16 @@
         ".*": {
           "properties": {
             "dl_earfcn": {
-              "title": "DL EARFCN",
-              "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the neighbour cell",
-              "type": "number"
+              "$ref": "peer/cell/lte/input-schema.json#/properties/dl_earfcn"
             },
             "pci": {
-              "title": "Physical Cell ID",
-              "description": "Physical Cell ID of the neighbour cell",
-              "type": "number"
+              "$ref": "peer/cell/lte/input-schema.json#/properties/pci"
             },
             "cell_id": {
-              "title": "Cell ID",
-              "description": "Concatenation of enb_id and cell_id of the neighbour cell",
-              "type": "string"
+              "$ref": "peer/cell/lte/input-schema.json#/properties/e_cell_id"
             },
             "tac": {
-              "title": "Tracking Area Code",
-              "description": "Integer (range 0 to 16777215)",
-              "type": "number"
+              "$ref": "peer/cell/lte/input-schema.json#/properties/tac"
             }
           },
           "type": "object"
