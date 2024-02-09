@@ -39,10 +39,7 @@ def j2render(src, out, jcfg):
       f.write(r._render().decode())
 
 
-def do(src, out, rat, slapparameter_dict):
-    assert rat in ('lte', 'nr')
-    jdo_lte = json.dumps(rat == 'lte')
-    jdo_nr  = json.dumps(rat == 'nr')
+def do(src, out, slapparameter_dict):
     defaults = {
         "com_ws_port":  9001,
         "com_addr":     "127.0.1.2",
@@ -50,8 +47,7 @@ def do(src, out, rat, slapparameter_dict):
         "gnb_id_bits":  28,
         "nssai":        {'1': {'sst': 1}},
         "ncell_list":   {},
-        "x2_peers":     {},
-        "xn_peers":     {},
+        "peers":        {},
         "gtp_addr":     "127.0.1.1",
     }
     slapparameter_dict = slapparameter_dict.copy()
@@ -66,8 +62,6 @@ def do(src, out, rat, slapparameter_dict):
         "slapparameter_dict": %(jslapparameter_dict)s
     }"""
     json_params = """{
-        "do_lte": %(jdo_lte)s,
-        "do_nr": %(jdo_nr)s,
         "ors": {"one-watt": true},
         "slap_configuration": {
             "tap-name": "slaptap9"
@@ -88,12 +82,14 @@ def do(src, out, rat, slapparameter_dict):
 
 def do_enb():
     peer_lte = {
+        'cell_type':        'lte',
         'e_cell_id':        '0x12345',
         'pci':              35,
         'dl_earfcn':        700,
         'tac':              123,
     }
     peer_nr = {
+        'cell_type':        'nr',
         'nr_cell_id':       '0x77712',
         'gnb_id_bits':      22,
         'dl_nr_arfcn':      520000,
@@ -113,9 +109,10 @@ def do_enb():
         'rx_gain':      43,
     }
 
-    do('enb.jinja2.cfg', 'enb.cfg', 'lte', {
+    do('enb.jinja2.cfg', 'enb.cfg', {
         'enb_id': "0x1A2D0",
         'cell_list': {'CELL': {
+            'cell_type':    'lte',
             'rf_mode':      'tdd',
             'dl_earfcn':    36100,
             'bandwidth':    10,
@@ -131,10 +128,11 @@ def do_enb():
         'plmn_list':  {"1": {'plmn': '00101'}},
         "ncell_list": {'1': peer_lte},
     })
-    do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {
+    do('enb.jinja2.cfg', 'gnb.cfg', {
         'gnb_id': "0x12345",
         'gnb_id_bits':  28,
         'cell_list': {'CELL': {
+            'cell_type':    'nr',
             'rf_mode':      'tdd',
             'dl_nr_arfcn':  380000,
             'nr_band':      39,
@@ -147,17 +145,17 @@ def do_enb():
             'inactivity_timer': 10000,
             'ru': ru,
         }},
-        "amf_list":   {"1": {"amf_addr": "127.0.1.100"}},
-        "plmn_list":  {'1': {'plmn': '00101', 'tac': 100}},
-        "ncell_list": {'1': peer_nr},
+        "amf_list":     {"1": {"amf_addr": "127.0.1.100"}},
+        "plmn_list_5g": {'1': {'plmn': '00101', 'tac': 100}},
+        "ncell_list":   {'1': peer_nr},
     })
 
     # TODO render drb.cfg + sib.asn for all cells
 
 
 def do_ue():
-    do('ue.jinja2.cfg', 'ue-lte.cfg', 'lte', {'ue_type': 'lte', 'rue_addr': 'host1'})
-    do('ue.jinja2.cfg',  'ue-nr.cfg',  'nr', {'ue_type':  'nr', 'rue_addr': 'host2'})
+    do('ue.jinja2.cfg', 'ue-lte.cfg', {'ue_type': 'lte', 'rue_addr': 'host1'})
+    do('ue.jinja2.cfg',  'ue-nr.cfg', {'ue_type':  'nr', 'rue_addr': 'host2'})
 
 
 def main():

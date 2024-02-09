@@ -134,7 +134,6 @@
 {%-     do _ru_set_defaults(ru) %}
 {%-     do ru_dict.update({ru_ref: ru}) %}
 
-{%-     do cell.update({'cell_type': 'lte' if do_lte  else 'nr'}) %}
 {%-     do _cell_set_defaults(cell, cell_dict)  %}
 {%-   endfor %}
 
@@ -195,19 +194,9 @@
     peer_dict keeps configured peers: {} peer reference -> peer
 #}
 {%- macro load_peer(peer_dict)  %}
-{%-   if do_lte %}
-{%-     for ref, peer in slapparameter_dict.x2_peers %}
-{%-       do peer.update({'peer_type': 'lte'})  %}
-{%-       do peer_dict.update({ref: peer})  %}
-{%-     endfor  %}
-{%-   elif do_nr  %}
-{%-     for ref, peer in slapparameter_dict.xn_peers %}
-{%-       do peer.update({'peer_type': 'nr'})  %}
-{%-       do peer_dict.update({ref: peer})  %}
-{%-     endfor  %}
-{%-   else  %}
-{%-     do bug('unreachable') %}
-{%-   endif %}
+{%-   for ref, peer in slapparameter_dict.peers|dictsort %}
+{%-     do peer_dict.update({ref: peer})  %}
+{%-   endfor  %}
 {%- endmacro  %}
 
 
@@ -217,13 +206,6 @@
 #}
 {%- macro load_peercell(peercell_dict)  %}
 {%-   for ref, peercell in slapparameter_dict.ncell_list|dictsort  %}
-{%-     if do_lte %}
-{%-       do peercell.update({'cell_type': 'lte'}) %}
-{%-     elif do_nr  %}
-{%-       do peercell.update({'cell_type': 'nr'}) %}
-{%-     else  %}
-{%-       do bug('unreachable') %}
-{%-     endif %}
 {%-     do peercell_dict.update({ref: peercell})  %}
 {%-   endfor  %}
 {%- endmacro  %}

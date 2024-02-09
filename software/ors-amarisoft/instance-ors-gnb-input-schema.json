@@ -43,15 +43,15 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
     },
     "gnb_id": {
-      "$ref": "instance-gnb-input-schema.json#/properties/gnb_id",
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
       "default": "0x12345"
     },
     "gnb_id_bits": {
-      "$ref": "instance-gnb-input-schema.json#/properties/gnb_id_bits",
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
       "default": 28
     },
     "amf_list": {
-      "$ref": "instance-gnb-input-schema.json#/properties/amf_list",
+      "$ref": "instance-enb-input-schema.json#/properties/amf_list",
       "default": {
         "1": {
           "amf_addr": "127.0.1.100"
@@ -59,7 +59,7 @@
       }
     },
     "plmn_list": {
-      "$ref": "instance-gnb-input-schema.json#/properties/plmn_list",
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
       "default": {
         "1": {
@@ -69,7 +69,7 @@
       }
     },
     "nssai": {
-      "$ref": "instance-gnb-input-schema.json#/properties/nssai"
+      "$ref": "instance-enb-input-schema.json#/properties/nssai"
     },
     "nr_handover_a3_offset": {
       "title": "A3 offset for NR handover",
@@ -170,11 +170,11 @@
     "use_ipv4": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/use_ipv4"
     },
-    "gnb_stats_fetch_period": {
-      "$ref": "instance-gnb-input-schema.json#/properties/gnb_stats_fetch_period"
+    "enb_stats_fetch_period": {
+      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_stats_fetch_period"
     },
-    "gnb_drb_stats_enabled": {
-      "$ref": "instance-gnb-input-schema.json#/properties/gnb_drb_stats_enabled"
+    "enb_drb_stats_enabled": {
+      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_drb_stats_enabled"
     },
     "max_rx_sample_db": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/max_rx_sample_db"

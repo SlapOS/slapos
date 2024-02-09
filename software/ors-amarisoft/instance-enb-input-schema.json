@@ -8,7 +8,7 @@
       "description": "Cell List",
       "patternProperties": {
         ".*": {
-          "$ref": "cell/lte/input-schema.json"
+          "$ref": "cell/input-schema.json"
         }
       },
       "type": "object",
@@ -49,7 +49,7 @@
       "type": "object"
     },
     "plmn_list": {
-      "title": "PLMN list",
+      "title": "PLMN list (4G)",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6. (must be set if there are LTE cells)",
       "patternProperties": {
         ".*": {
@@ -77,28 +77,107 @@
       },
       "type": "object"
     },
-    "ncell_list": {
-      "title": "Neighbour Cell Info",
-      "description": "Neighbour Cell Info",
+    "gnb_id": {
+      "title": "gNB ID",
+      "description": "gNB ID. (must be set if there are NR cells)",
+      "type": "string"
+    },
+    "gnb_id_bits": {
+      "title": "gNB ID bits",
+      "description": "Number of bits for the gNodeB global identifier. (range 22 to 32)",
+      "type": "number",
+      "default": 28
+    },
+    "amf_list": {
+      "title": "AMF list",
+      "description": "List of AMF to which the gNodeB is connected. (must be set if there are NR cells)",
       "patternProperties": {
         ".*": {
-          "$ref": "peer/cell/lte/input-schema.json"
+          "properties": {
+            "amf_addr": {
+              "title": "AMF Address",
+              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "plmn_list_5g": {
+      "title": "PLMN list (5G)",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12. (must be set if there are NR cells)",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "plmn": {
+              "title": "Public Land Mobile Network",
+              "description": "Public Land Mobile Network",
+              "type": "string"
+            },
+            "tac": {
+              "$ref": "cell/nr/input-schema.json#/$defs/tac"
+            },
+            "ranac": {
+              "title": "Optional integer (range 0 to 255)",
+              "description": "RAN Area Code",
+              "type": "number"
+            },
+            "reserved": {
+              "default": false,
+              "title": "Reserved",
+              "description": "True if the cell is reserved for operator use.",
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "nssai": {
+      "title": "AMF slices configuration",
+      "description": "AMF slices configuration.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "sst": {
+              "default": 1,
+              "title": "Slice Service Type",
+              "description": "Integer (range 1 to 255).",
+              "type": "number"
+            },
+            "sd": {
+              "default": "0x000032",
+              "title": "Slice Differentiator",
+              "description": "Optional integer (range 0 to 0xFFFFFE)",
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object",
       "default": {}
     },
-    "x2_peers": {
-      "title": "X2 Peers",
-      "description": "X2 Peers",
+    "ncell_list": {
+      "title": "Neighbour Cell Info",
+      "description": "Neighbour Cell Info",
       "patternProperties": {
         ".*": {
-          "properties": {
-            "x2_addr": {
-              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
-            }
-          },
-          "type": "object"
+          "$ref": "peer/cell/input-schema.json"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "peers": {
+      "title": "Peers",
+      "description": "Peers",
+      "patternProperties": {
+        ".*": {
+          "$ref": "peer/input-schema.json"
         }
       },
       "type": "object",
@@ -134,14 +213,14 @@
       "type": "boolean"
     },
     "enb_stats_fetch_period": {
-      "title": "eNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get eNB statistics",
+      "title": "eNB/gNB statistics fetch period (seconds)",
+      "description": "Describes how often a call to Amarisoft remote API is made to get eNB/gNB statistics",
       "type": "number",
       "default": 60
     },
     "enb_drb_stats_enabled": {
-      "title": "Enable eNB drb statistics",
-      "description": "Enable eNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
+      "title": "Enable eNB/gNB drb statistics",
+      "description": "Enable eNB/gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
       "type": "boolean",
       "default": true
     },

@@ -5,10 +5,18 @@
   "type": "object",
 
   "required": [
+    "peer_type",
+
     "xn_addr"
   ],
 
   "properties": {
+    "peer_type": {
+      "$ref": "../../peer/common.json#/properties/peer_type",
+      "const":    "nr",
+      "template": "nr"
+    },
+
     "xn_addr": {
       "title": "XN Address",
       "description": "XN Address of the neighbour node (gNB Address)",
