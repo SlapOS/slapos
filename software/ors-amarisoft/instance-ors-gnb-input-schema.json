@@ -126,7 +126,8 @@
               "$ref": "peer/cell/nr/input-schema.json#/properties/nr_band"
             },
             "tac": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/tac"
+              "$ref": "peer/cell/nr/input-schema.json#/properties/tac",
+              "default": 1
             }
           },
           "type": "object"

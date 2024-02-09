@@ -199,7 +199,7 @@ def test_gnb_conf1(self):
           conf_ncell = gnb_param_dict1['ncell_list'][k]
           self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
           self.assertEqual(p['ssb_nr_arfcn'], conf_ncell['ssb_nr_arfcn'])
-          self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
+          self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])    # assumes nr_band is TDD
           self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
           self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
           self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
