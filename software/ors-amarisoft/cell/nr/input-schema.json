@@ -58,5 +58,18 @@
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     }
+  },
+
+  "$defs": {
+    "ssb_nr_arfcn": {
+      "title": "SSB NR ARFCN",
+      "description": "SSB NR Absolute Radio Frequency Channel Number of the cell",
+      "type": "number"
+    },
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Integer (range 0 to 16777215)",
+      "type": "number"
+    }
   }
 }
