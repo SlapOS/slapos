@@ -153,6 +153,22 @@
       "type": "object",
       "default": {}
     },
+    "x2_peers": {
+      "title": "X2 Peers",
+      "description": "X2 Peers",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "x2_addr": {
+              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
     "websocket_password": {
       "$ref": "instance-enb-input-schema.json#/properties/websocket_password"
     },

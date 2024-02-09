@@ -50,6 +50,7 @@ def do(src, out, rat, slapparameter_dict):
         "gnb_id_bits":  28,
         "nssai":        {'1': {'sst': 1}},
         "ncell_list":   {},
+        "x2_peers":     {},
         "xn_peers":     {},
         "gtp_addr":     "127.0.1.1",
     }
