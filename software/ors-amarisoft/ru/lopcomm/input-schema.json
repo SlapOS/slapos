@@ -63,26 +63,6 @@
       }
     },
 
-    "txa0cc00_active": {
-      "title": "Lopcomm ORAN TX array carriers (TXA0CC00)",
-      "description": "Activate or inactivate Lopcomm ORAN TX array carriers (TXA0CC00)",
-      "type": "string",
-      "default": "INACTIVE",
-      "enum": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
-    },
-    "rxa0cc00_active": {
-      "title": "Lopcomm ORAN RX array carriers (RXA0CC00)",
-      "description": "Activate or inactivate Lopcomm ORAN RX array carriers (RXA0CC00)",
-      "type": "string",
-      "default": "INACTIVE",
-      "enum": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
-    },
     "txa0cc00_center_frequency": {
       "title": "Lopcomm ORAN DL Center Frequency in MHz (TXA0CC00)",
       "description": "Lopcomm ORAN Center Frequency in MHz (TXA0CC00)",

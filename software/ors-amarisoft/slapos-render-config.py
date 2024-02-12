@@ -155,6 +155,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'n_antenna_ul': 1,
         'tx_gain':      51,
         'rx_gain':      52,
+        'txrx_active':  'ACTIVE',
     }
 
     RU2 = copy.deepcopy(RU1)

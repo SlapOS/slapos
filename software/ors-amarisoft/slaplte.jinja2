@@ -24,6 +24,7 @@
     TODO automatically load defaults from JSON schemas  #}
 {%- set defaults = {
       'ru': {
+        'txrx_active': 'INACTIVE',
       },
       'ru/cpri_link': {
         'mult':     16,
@@ -382,7 +383,8 @@
   {%-   else  %}
   {%-     do bug('unreachable') %}
   {%-   endif %}
-  {%-   do tx_gainv.extend([ru.tx_gain]*ru.n_antenna_dl)  %}
+  {%-   set ru_tx_gain = ru.tx_gain  if ru.txrx_active == 'ACTIVE'  else -1000 %}
+  {%-   do tx_gainv.extend([ru_tx_gain]*ru.n_antenna_dl)  %}
   {%-   do rx_gainv.extend([ru.rx_gain]*ru.n_antenna_ul)  %}
   {%- endfor %}
 
@@ -402,7 +404,12 @@
         )) %}
   {%- endif %}
 
-  {%- if slapparameter_dict.get('disable_sdr', False) %}
+  {#- disable trx completely if all we have is only inactive sdr(s).
+      do not disable if there is cpri, because for cpri whether to activate
+      radio or not is natively controlled via RU-specific config.
+      See e.g. ru/lopcomm/cu_config.jinja2.xml for details #}
+  {%- if do_sdr  and  (not do_cpri)  and
+         len(iru_dict|dictsort | selectattr('1._.txrx_active', '==', 'ACTIVE') | list) == 0 %}
       name: "dummy",
   {%- else %}
       name: "sdr",
