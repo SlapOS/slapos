@@ -46,6 +46,7 @@ setup(
         'slapos.libnetworkcache',
         'slapos.cookbook',
         'pcpp',
+        'xmltodict',
     ],
     zip_safe=True,
     test_suite='test',
