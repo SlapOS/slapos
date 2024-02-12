@@ -81,14 +81,31 @@ def do_enb():
 
         j2render(src, out, json_params % locals())
 
-    peer_lte = {
+    peer_lte1 = {
+        'peer_type':    'lte',
+        'x2_addr':      '44.1.1.1',
+    }
+    peer_lte2 = {
+        'peer_type':    'lte',
+        'x2_addr':      '44.1.1.2',
+    }
+    peer_nr1 = {
+        'peer_type':    'nr',
+        'xn_addr':      '55.1.1.1',
+    }
+    peer_nr2 = {
+        'peer_type':    'nr',
+        'xn_addr':      '55.1.1.2',
+    }
+
+    peercell_lte = {
         'cell_type':        'lte',
         'e_cell_id':        '0x12345',
         'pci':              35,
         'dl_earfcn':        700,
         'tac':              123,
     }
-    peer_nr = {
+    peercell_nr = {
         'cell_type':        'nr',
         'nr_cell_id':       '0x77712',
         'gnb_id_bits':      22,
@@ -126,7 +143,8 @@ def do_enb():
         }},
         "mme_list":   {"1": {"mme_addr": "127.0.1.100"}},
         'plmn_list':  {"1": {'plmn': '00101'}},
-        "ncell_list": {'1': peer_lte},
+        "peers":      {"1": peer_lte1, "2": peer_lte2},
+        "ncell_list": {'1': peercell_lte},
     })
     do('enb.jinja2.cfg', 'ors/gnb/enb.cfg', {
         'gnb_id': "0x12345",
@@ -147,7 +165,8 @@ def do_enb():
         }},
         "amf_list":     {"1": {"amf_addr": "127.0.1.100"}},
         "plmn_list_5g": {'1': {'plmn': '00101', 'tac': 100}},
-        "ncell_list":   {'1': peer_nr},
+        "peers":        {"1": peer_nr1, "2": peer_nr2},
+        "ncell_list":   {'1': peercell_nr},
     })
 
     # TODO render drb.cfg + sib.asn for all cells
