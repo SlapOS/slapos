@@ -72,6 +72,274 @@ class Instance:
 
 # ---- eNB ----
 
+# 3 cells sharing SDR-based RU consisting of one SDR board (2tx + 2rx ports max)
+# RU definition is embedded into cell for simplicity of management
+def iRU1_SDR_tLTE2_tNR(ienb):
+    RU = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev':      0,
+        'n_antenna_dl': 4,
+        'n_antenna_ul': 2,
+        'tx_gain':      51,
+        'rx_gain':      52,
+    }
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38050,      # 2600 MHz
+        'pci':          1,
+        'cell_id':      '0x01',
+        'tac':          '0x1234',
+        'ru':           RU,         # RU definition embedded into CELL
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38100,      # 2605 MHz
+        'pci':          2,
+        'cell_id':      '0x02',
+        'tac':          '0x1234',
+        'ru':           {           # CELL_b shares RU with CELL_a referring to it via cell
+            'ru_type':      'ruincell_ref',
+            'ruincell_ref': 'CELL_a'
+        }
+    })
+
+    ienb.ishared('CELL_c', {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    10,
+        'dl_nr_arfcn':  523020,     # 2615.1 MHz
+        'nr_band':      41,
+        'pci':          3,
+        'cell_id':      '0x03',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':      'ruincell_ref',     # CELL_c shares RU with CELL_a and CELL_b
+            'ruincell_ref': 'CELL_b'            # referring to RU via CELL_b -> CELL_a
+        }
+    })
+
+
+# LTE + NR cells using 2 RU each consisting of SDR.
+# here we instantiate RUs separately since embedding RU into a cell is demonstrated by CELL_a above
+#
+# NOTE: if we would want to share the RU by LTE/tdd and NR/tdd cells, we would
+#       need to bring their TDD configuration to match each other exactly.
+def iRU2_SDR_tLTE_tNR(ienb):
+    RU1 = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev':      1,
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 1,
+        'tx_gain':      51,
+        'rx_gain':      52,
+    }
+
+    RU2 = copy.deepcopy(RU1)
+    RU2['sdr_dev'] = 2
+
+    ienb.ishared('RU1', RU1)
+    ienb.ishared('RU2', RU2)
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38050,      # 2600 MHz
+        'pci':          1,
+        'cell_id':      '0x01',
+        'tac':          '0x1234',
+        'ru':           {           # CELL_a links to RU1 by its reference
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU1'
+        }
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'tdd',
+        'bandwidth':    10,
+        'dl_nr_arfcn':  523020,     # 2615.1 MHz
+        'nr_band':      41,
+        'pci':          2,
+        'cell_id':      '0x02',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU2'
+        }
+    })
+
+
+# LTE + NR cells that use CPRI-based Lopcomm radio units
+def iRU2_LOPCOMM_fLTE_fNR(ienb):
+    RU1 = {
+        'ru_type':      'lopcomm',
+        'ru_link_type': 'cpri',
+        'mac_addr':     '00:00:00:00:00:01',
+        'cpri_link':    {
+            'sdr_dev':  2,
+            'sfp_port': 0,
+            'mult':     8,
+            'mapping':  'standard',
+            'rx_delay': 10,
+            'tx_delay': 11,
+            'tx_dbm':   50
+        },
+        'n_antenna_dl': 2,
+        'n_antenna_ul': 1,
+    }
+
+    RU2 = copy.deepcopy(RU1)
+    RU2['mac_addr'] = '00:00:00:00:00:02'
+    RU2['cpri_link']['sfp_port'] = 1
+
+    ienb.ishared('RU1', RU1)
+    ienb.ishared('RU2', RU2)
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_earfcn':    3350,       # 2680 MHz
+        'pci':          21,
+        'cell_id':      '0x21',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU1'
+        }
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'nr',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'pci':          22,
+        'cell_id':      '0x22',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':  'ru_ref',
+            'ru_ref':   'RU2'
+        }
+    })
+
+
+# ---- for tests ----
+
+# 2 FDD cells working via shared SDR board
+def iRU1_SDR1_fLTE2(ienb):
+    RU = {
+        'ru_type':      'sdr',
+        'ru_link_type': 'sdr',
+        'sdr_dev':      1,
+        'n_antenna_dl': 1,
+        'n_antenna_ul': 1,
+        'tx_gain':      67,
+        'rx_gain':      61,
+    }
+
+    ienb.ishared('CELL_a', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_earfcn':    3350,      # 2680 MHz (Band 7)
+        'pci':          1,
+        'cell_id':      '0x01',
+        'tac':          '0x1234',
+        'ru':           RU,
+    })
+
+    ienb.ishared('CELL_b', {
+        'cell_type':    'lte',
+        'cell_kind':    'enb',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_earfcn':    3050,      # 2650 MHz (Band 7)
+        'pci':          1,
+        'cell_id':      '0x02',
+        'tac':          '0x1234',
+        'ru':           {
+            'ru_type':      'ruincell_ref',
+            'ruincell_ref': 'CELL_a'
+        }
+    })
+
+def iRU2_LOPCOMM_fLTE2(ienb):
+    # supports: 2110 - 2170 MHz
+    RU_0002 = {
+        'ru_type':      'lopcomm',
+        'ru_link_type': 'cpri',
+        'mac_addr':     '00:00:00:00:00:01',
+        'cpri_link':    {
+            'sdr_dev':  0,
+            'sfp_port': 0,
+            'mult':     8,
+            'mapping':  'hw',
+            'rx_delay': 25.11,
+            'tx_delay': 14.71,
+            'tx_dbm':   63
+        },
+        'n_antenna_dl': 1,
+        'n_antenna_ul': 1,
+    }
+
+    # supports: 2110 - 2170 MHz
+    RU_0004 = copy.deepcopy(RU_0002)
+    RU_0004['mac_addr'] = '00:00:00:00:00:04'
+    RU_0004['cpri_link']['sfp_port'] = 1
+
+    if 1:
+        ienb.ishared('RU_0002', RU_0002)
+        ienb.ishared('CELL2', {
+            'cell_type':    'lte',
+            'cell_kind':    'enb',
+            'rf_mode':      'fdd',
+            'bandwidth':    20,
+            'dl_earfcn':    100,        # 2120 MHz   @ B1
+            'pci':          21,
+            'cell_id':      '0x21',
+            'tac':          '0x1234',
+            'ru':           {
+                'ru_type':  'ru_ref',
+                'ru_ref':   'RU_0002'
+            }
+        })
+
+    if 1:
+        ienb.ishared('RU_0004', RU_0004)
+        ienb.ishared('CELL4', {
+            'cell_type':    'lte',
+            'cell_kind':    'enb',
+            'rf_mode':      'fdd',
+            'bandwidth':    20,
+            'dl_earfcn':    500,        # 2160 MHz  @ B1
+            'pci':          22,
+            'cell_id':      '0x22',
+            'tac':          '0x1234',
+            'ru':           {
+                'ru_type':  'ru_ref',
+                'ru_ref':   'RU_0004'
+            }
+        })
+
 # ORS_eNB and ORS_gNB mimic what instance-ors-enb.jinja2.cfg does.
 ORS_ru = {
     'ru_type':      'sdr',
@@ -129,7 +397,12 @@ def ORS_gnb(ienb):
     return {'out': 'ors/gnb', 'jextra': ORS_json, 'want_lte': False}
 
 def do_enb():
-    for f in (ORS_enb,
+    for f in (iRU1_SDR_tLTE2_tNR,
+              iRU2_SDR_tLTE_tNR,
+              iRU2_LOPCOMM_fLTE_fNR,
+              iRU1_SDR1_fLTE2,
+              iRU2_LOPCOMM_fLTE2,
+              ORS_enb,
               ORS_gnb):
         _do_enb_with(f)
 
