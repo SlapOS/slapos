@@ -167,7 +167,25 @@ class AmariTestCase(_AmariTestCase):
             #filter_kw = {'instance_guid': imain.getInstanceGuid()},
             partition_parameter_kw={'_': json.dumps(ctx)},
             shared=True)
+        cls._requested[ref] = kw
         return cls.slap.request(**kw)
+
+    # XXX StandaloneSlapOS lacks getInformation - we remember the way instances are requested ourselves.
+    _requested = {} # ref -> kw used for slap.request
+
+    # queryPublished and querySharedPublished return information published by
+    # an instance / shared instance correspondingly.
+    @classmethod
+    def querySharedPublished(cls, subref):
+        return cls.queryPublished(cls.ref(subref))
+
+    @classmethod
+    def queryPublished(cls, ref):
+        # see ^^^ about lack of getInformation on StandaloneSlapOS
+        #inst = cls.slap.getInformation(computer_partition=ref)
+        inst = cls.slap.request(**cls._requested[ref])
+        iconn = inst.getConnectionParameterDict()
+        return json.loads(iconn['_'])
 
 
     # ref returns full reference of shared instance with given subreference.
@@ -237,6 +255,22 @@ class RFTestCase4(AmariTestCase):
         RU(2);  CELL(2, TDD | LTE( 40200)    | BW(10))
         RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
+
+    def test_published_cell(t):
+        q = t.querySharedPublished
+
+        assertMatch(t, q('RU1.CELL'), dict(
+                            dl_earfcn=  100,
+                            dl_nr_arfcn=NO))
+        assertMatch(t, q('RU2.CELL'), dict(
+                            dl_earfcn=40200,
+                            dl_nr_arfcn=NO))
+        assertMatch(t, q('RU3.CELL'), dict(band='n74',
+                            dl_earfcn=NO,
+                            dl_nr_arfcn=300300))
+        assertMatch(t, q('RU4.CELL'), dict(band='n40',
+                            dl_earfcn=NO,
+                            dl_nr_arfcn=470400))
 
 
 # ENBTestCase4 provides base class for unit-testing eNB service.
