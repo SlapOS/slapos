@@ -84,13 +84,13 @@ def ref_of_shared(ishared):
 
 # ---- eNB ----
 
-# 3 cells sharing SDR-based RU consisting of one SDR board (2tx + 2rx ports max)
+# 3 cells sharing SDR-based RU consisting of 2 SDR boards (4tx + 4rx ports max)
 # RU definition is embedded into cell for simplicity of management
 def iRU1_SDR_tLTE2_tNR(ienb):
     RU = {
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
-        'sdr_dev':      0,
+        'sdr_dev_list': [0, 1],
         'n_antenna_dl': 4,
         'n_antenna_ul': 2,
         'tx_gain':      51,
@@ -150,7 +150,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
     RU1 = {
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
-        'sdr_dev':      1,
+        'sdr_dev_list': [1],
         'n_antenna_dl': 2,
         'n_antenna_ul': 1,
         'tx_gain':      51,
@@ -158,7 +158,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
     }
 
     RU2 = copy.deepcopy(RU1)
-    RU2['sdr_dev'] = 2
+    RU2['sdr_dev_list'] = [2]
 
     ienb.ishared('RU1', RU1)
     ienb.ishared('RU2', RU2)
@@ -260,7 +260,7 @@ def iRU1_SDR1_fLTE2(ienb):
     RU = {
         'ru_type':      'sdr',
         'ru_link_type': 'sdr',
-        'sdr_dev':      1,
+        'sdr_dev_list': [1],
         'n_antenna_dl': 1,
         'n_antenna_ul': 1,
         'tx_gain':      67,
@@ -356,7 +356,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
 ORS_ru = {
     'ru_type':      'sdr',
     'ru_link_type': 'sdr',
-    'sdr_dev':      0,
+    'sdr_dev_list': [0],
     'n_antenna_dl': 2,
     'n_antenna_ul': 2,
     'tx_gain':      62,

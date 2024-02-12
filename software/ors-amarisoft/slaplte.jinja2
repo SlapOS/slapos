@@ -377,7 +377,9 @@
       // {{ B(ru_ref) }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
   {%-   if ru.ru_link_type == 'sdr'  %}
   {%-     do ru_sdr_dict.update({len(dev_argv): ru})  %}
-  {%-     do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), ru.sdr_dev)) %}
+  {%-     for n in ru.sdr_dev_list  %}
+  {%-       do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), n)) %}
+  {%-     endfor  %}
   {%-   elif ru.ru_link_type == 'cpri'  %}
   {%-     do ru_cpri_dict.update({len(dev_argv): ru}) %}
   {%-     set link = ru.cpri_link %}
