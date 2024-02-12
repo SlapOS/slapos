@@ -6,11 +6,14 @@
 import zc.buildout.buildout # XXX workaround for https://lab.nexedi.com/nexedi/slapos.recipe.template/merge_requests/9
 from slapos.recipe.template import jinja2_template
 
-import json, os, glob
+import json, os, shutil
 
 
 # j2render renders config/<src> into config/out/<out> with provided json parameters.
 def j2render(src, out, jcfg):
+    src = 'config/{}'.format(src)
+    out = 'config/out/{}'.format(out)
+
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
     ctx['_standalone'] = True
@@ -21,8 +24,8 @@ def j2render(src, out, jcfg):
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
-      'url': 'config/{}'.format(src),
-      'output': 'config/out/{}'.format(out),
+      'url': src,
+      'output': out,
       'context': textctx,
       'import-list': '''
         rawfile slaplte.jinja2 slaplte.jinja2''',
@@ -35,7 +38,8 @@ def j2render(src, out, jcfg):
             return f.read()
     r._read = _read
 
-    with open('config/out/{}'.format(out), 'w+') as f:
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, 'w+') as f:
       f.write(r._render().decode())
 
 
@@ -109,7 +113,7 @@ def do_enb():
         'rx_gain':      43,
     }
 
-    do('enb.jinja2.cfg', 'enb.cfg', {
+    do('enb.jinja2.cfg', 'ors/enb/enb.cfg', {
         'enb_id': "0x1A2D0",
         'cell_list': {'CELL': {
             'cell_type':    'lte',
@@ -128,7 +132,7 @@ def do_enb():
         'plmn_list':  {"1": {'plmn': '00101'}},
         "ncell_list": {'1': peer_lte},
     })
-    do('enb.jinja2.cfg', 'gnb.cfg', {
+    do('enb.jinja2.cfg', 'ors/gnb/enb.cfg', {
         'gnb_id': "0x12345",
         'gnb_id_bits':  28,
         'cell_list': {'CELL': {
@@ -159,9 +163,8 @@ def do_ue():
 
 
 def main():
-    os.makedirs('config/out', exist_ok=True)
-    for f in glob.glob('config/out/*'):
-        os.remove(f)
+    if os.path.exists('config/out'):
+        shutil.rmtree('config/out')
     do_enb()
     do_ue()
 
