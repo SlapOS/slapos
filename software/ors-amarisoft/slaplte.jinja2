@@ -11,6 +11,7 @@
 
     The following utilities are also provided:
 
+    - B escapes string to be safe to use in buildout code.
     - J should be used around macro calls to retrieve returned objects.
     - error reports instantiation error.
     - ierror reports instantiation error caused by shared instance configuration.
@@ -73,6 +74,20 @@
     }
 %}
 
+
+{#- B(name) escapes name to be safe to use in buildout code.
+
+    It escapes buildout control characters in the string so that the result
+    could be used in buildout code without the risk of buildout profile to
+    become broken and/or with injected code when handling string input from
+    outside.
+
+    The most often case when B needs to be used is when handling references of
+    shared instances in generated buildout code.
+
+    See xbuildout.encode documentation for details.
+#}
+{%- set B = xbuildout.encode  %}
 
 {#- J is used around macro calls to retrieve returned objects.
 
@@ -359,7 +374,7 @@
   {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
   {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
   {%-   set ru = iru['_'] %}
-      // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
+      // {{ B(ru_ref) }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
   {%-   if ru.ru_link_type == 'sdr'  %}
   {%-     do ru_sdr_dict.update({len(dev_argv): ru})  %}
   {%-     do dev_argv.append("dev%d=/dev/sdr%d" % (len(dev_argv), ru.sdr_dev)) %}

@@ -40,6 +40,8 @@ import pcpp
 import xmltodict
 
 import sys
+sys.path.insert(0, '../ru')
+import xbuildout
 
 import unittest
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -131,8 +133,11 @@ def XN_PEER(xn_addr):
 class AmariTestCase(_AmariTestCase):
     maxDiff = None  # show full diff in test run log on an error
 
-    # XXX temporary workaround for breakage when partition reference contains space.
-    default_partition_reference = _AmariTestCase.default_partition_reference.replace(' ','-')
+    # stress correctness of ru_ref/cell_ref/... usage throughout all places in
+    # buildout code - special characters should not lead to wrong templates or
+    # code injection.
+    default_partition_reference = _AmariTestCase.default_partition_reference + \
+                                  ' ${a:b}\n[c]\n;'
 
     # faster edit/try cycle when enabled (handy during development)
     if 0:
@@ -432,7 +437,7 @@ class Lopcomm4:
         _(4, uctx('TDD',  'NR', 470400, 20000000))
 
     def _test_ru_cu_config_xml(t, i, uctx):
-        cu_xml = t.ipath('etc/%s-cu_config.xml' % t.ref('RU%d' % i))
+        cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
         with open(cu_xml, 'r') as f:
             cu = f.read()
         cu = xmltodict.parse(cu)

@@ -38,9 +38,6 @@ setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software-ors.cfg')))
 
-# XXX temporary workaround for breakage when partition reference contains space.
-ORSTestCase.default_partition_reference = ORSTestCase.default_partition_reference.replace(' ','-')
-
 param_dict = {
     'testing': True,
     'sim_algo': 'milenage',
