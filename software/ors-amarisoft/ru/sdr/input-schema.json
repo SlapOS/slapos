@@ -10,10 +10,10 @@
     "ru_link_type",
     "n_antenna_dl",
     "n_antenna_ul",
-
-    "sdr_dev_list",
     "tx_gain",
-    "rx_gain"
+    "rx_gain",
+
+    "sdr_dev_list"
   ],
 
   "properties": {

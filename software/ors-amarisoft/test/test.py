@@ -218,6 +218,8 @@ class AmariTestCase(_AmariTestCase):
 #   0+          cell_id
 #   0x10+       pci
 #   0x100+      tac
+#   10+         tx_gain
+#   20+         rx_gain
 #   xxx+i·100   dl_arfcn
 #   5,10,15,20  bandwidth
 #   100+        root_sequence_index
@@ -238,6 +240,7 @@ class RFTestCase4(AmariTestCase):
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
+            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i}
             return cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
@@ -256,8 +259,20 @@ class RFTestCase4(AmariTestCase):
         RU(3);  CELL(3, FDD | NR (300300,74) | BW(15))
         RU(4);  CELL(4, TDD | NR (470400,40) | BW(20))
 
-    def test_published_cell(t):
+    def test_rf_cfg_txrx_gain(t):
+        # NOTE even though setting tx_gain/rx_gain in enb.cfg does not make any
+        #      difference for CPRI case, we still do set it there for consistency.
+        #      For the reference: for CPRI case the real tx/rx gain is set in
+        #      RU configuration and is verified by RU tests.
+        t.assertEqual(t.rf_cfg['tx_gain'], [11]*4 + [12]*4 + [13]*4 + [14]*4)
+        t.assertEqual(t.rf_cfg['rx_gain'], [21]*2 + [22]*2 + [23]*2 + [24]*2)
+
+    def test_published_ru_and_cell(t):
         q = t.querySharedPublished
+        assertMatch(t, q('RU1'), {'tx_gain': 11, 'rx_gain': 21})
+        assertMatch(t, q('RU2'), {'tx_gain': 12, 'rx_gain': 22})
+        assertMatch(t, q('RU3'), {'tx_gain': 13, 'rx_gain': 23})
+        assertMatch(t, q('RU4'), {'tx_gain': 14, 'rx_gain': 24})
 
         assertMatch(t, q('RU1.CELL'), dict(
                             dl_earfcn=  100,
@@ -450,26 +465,28 @@ class Lopcomm4:
 
     # RU configuration in cu_config.xml
     def test_ru_cu_config_xml(t):
-        def uctx(rf_mode, cell_type, dl_arfcn, bw):
+        def uctx(rf_mode, cell_type, dl_arfcn, bw, tx_gain, rx_gain):
             return {
                 'tx-array-carriers': {
                   'rw-duplex-scheme':              rf_mode,
                   'rw-type':                       cell_type,
                   'absolute-frequency-center':    '%d' % dl_arfcn,
                   'channel-bandwidth':            '%d' % bw,
+                  'gain':                         '%d' % tx_gain,
                 },
                 'rx-array-carriers': {
                   'channel-bandwidth':            '%d' % bw,
+                  # XXX no rx_gain
                 },
             }
 
         _ = t._test_ru_cu_config_xml
 
-        #       rf_mode  ctype dl_arfcn   bw
-        _(1, uctx('FDD', 'LTE',    100,  5000000))
-        _(2, uctx('TDD', 'LTE',  40200, 10000000))
-        _(3, uctx('FDD',  'NR', 300300, 15000000))
-        _(4, uctx('TDD',  'NR', 470400, 20000000))
+        #       rf_mode  ctype dl_arfcn   bw      txg rxg
+        _(1, uctx('FDD', 'LTE',    100,  5000000, 11, 21))
+        _(2, uctx('TDD', 'LTE',  40200, 10000000, 12, 22))
+        _(3, uctx('FDD',  'NR', 300300, 15000000, 13, 23))
+        _(4, uctx('TDD',  'NR', 470400, 20000000, 14, 24))
 
     def _test_ru_cu_config_xml(t, i, uctx):
         cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))

@@ -9,6 +9,8 @@
     "ru_link_type",
     "n_antenna_dl",
     "n_antenna_ul",
+    "tx_gain",
+    "rx_gain",
 
     "cpri_link",
     "mac_addr"
@@ -98,12 +100,6 @@
       "description": "Lopcomm ORAN Center Frequency in MHz (RXA0CC00)",
       "type": "number",
       "default": 1950
-    },
-    "txa0cc00_gain": {
-      "title": "ORAN Gain",
-      "description": "Lopcomm ORAN Gain (TXA0CC00)",
-      "type": "number",
-      "default": -20
     },
 
     "reset_schedule": {

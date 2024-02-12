@@ -271,11 +271,6 @@
 {%-     for k, v in defaults['ru/%s/cpri_link' % ru.ru_type].items() %}
 {%-       do link.setdefault(k, v)  %}
 {%-     endfor  %}
-{#-     set 0 tx/rx gain to emit 0 in enb.cfg.
-        This will be changed later: .tx_gain and .rx_gain will be carrying real RU tx/rx gain #}
-{%-     do ru.update({'tx_gain': 0,
-                      'rx_gain': 0,
-        })  %}
 {%-   endif %}
 {%- endmacro  %}
 
