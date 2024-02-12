@@ -417,6 +417,7 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
       'check-frontend-ip-list': ['127.0.0.1', '127.0.0.2'],
       "check-maximum-elapsed-time": 5,
       "check-certificate-expiration-days": 7,
+      "check-domain-expiration-days": 14,
       "check-status-code": 201,
       "failure-amount": 1,
       "check-dict": {
