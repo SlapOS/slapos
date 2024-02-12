@@ -8,6 +8,11 @@ from slapos.recipe.template import jinja2_template
 
 import json, copy, sys, os, pprint, shutil
 
+sys.path.insert(0, './ru')
+import xbuildout
+
+B = xbuildout.encode
+
 
 # j2render renders config/<src> into config/out/<out> with provided json parameters.
 def j2render(src, out, jcfg):
@@ -21,6 +26,7 @@ def j2render(src, out, jcfg):
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
+    textctx += 'import xbuildout xbuildout\n'
     textctx += 'import json_module    json\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
@@ -534,11 +540,11 @@ def _do_enb_with(iru_icell_func):
                     'ru':       ru,
                })
         j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
-                 '%s/%s-drb.cfg' % (out, cell_ref),
+                 '%s/%s-drb.cfg' % (out, B(cell_ref)),
                  jctx)
 
         j2render('sib23.jinja2.asn',
-                 '%s/%s-sib23.asn' % (out, cell_ref),
+                 '%s/%s-sib23.asn' % (out, B(cell_ref)),
                  jctx)
 
 
