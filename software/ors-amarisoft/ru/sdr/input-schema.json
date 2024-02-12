@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "title": "SDR transiever",
-  "description": "Radio Unit constituted of single SDR board",
+  "description": "Radio Unit constituted of several SDR boards",
   "type": "object",
 
   "required": [
@@ -11,7 +11,7 @@
     "n_antenna_dl",
     "n_antenna_ul",
 
-    "sdr_dev",
+    "sdr_dev_list",
     "tx_gain",
     "rx_gain"
   ],
@@ -30,22 +30,16 @@
       "template": "sdr"
     },
 
-    "sdr_dev": {
-      "title": "SDR board",
-      "description": "/dev/sdr # of SDR board",
-      "type": "integer"
-    },
-
-    "tx_gain": {
-      "title": "Tx gain",
-      "description": "Tx gain (in dB)",
-      "type": "number"
-    },
-
-    "rx_gain": {
-      "title": "Rx gain",
-      "description": "Rx gain (in dB)",
-      "type": "number"
+    "sdr_dev_list": {
+      "title": "SDR boards",
+      "description": "Which SDR boards to use as combined RF port",
+      "type": "array",
+      "items": {
+        "title": "/dev/sdr # of SDR board",
+        "type": "integer"
+      },
+      "minItems": 1,
+      "uniqueItems": true
     }
   }
 }

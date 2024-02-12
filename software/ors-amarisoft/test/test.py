@@ -366,14 +366,15 @@ class SDR4:
         return {
             'ru_type':      'sdr',
             'ru_link_type': 'sdr',
-            'sdr_dev':      i,
+            'sdr_dev_list': [2*i,2*i+1],
         }
 
     # radio units configuration
     def test_rf_cfg_ru(t):
         assertMatch(t, t.rf_cfg['rf_driver'],  dict(
           name='sdr',
-          args='dev0=/dev/sdr1,dev1=/dev/sdr2,dev2=/dev/sdr3,dev3=/dev/sdr4',
+          args='dev0=/dev/sdr2,dev1=/dev/sdr3,dev2=/dev/sdr4,dev3=/dev/sdr5,' +
+               'dev4=/dev/sdr6,dev5=/dev/sdr7,dev6=/dev/sdr8,dev7=/dev/sdr9',
           cpri_mapping=NO,
           cpri_mult=NO,
           cpri_rx_delay=NO,
