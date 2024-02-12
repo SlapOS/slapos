@@ -240,7 +240,7 @@ class RFTestCase4(AmariTestCase):
         def RU(i):
             ru = cls.RUcfg(i)
             ru |= {'n_antenna_dl': 4, 'n_antenna_ul': 2}
-            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i}
+            ru |= {'tx_gain': 10+i, 'rx_gain':  20+i, 'txrx_active': 'ACTIVE'}
             return cls.requestShared(imain, 'RU%d' % i, ru)
 
         def CELL(i, ctx):
@@ -269,10 +269,10 @@ class RFTestCase4(AmariTestCase):
 
     def test_published_ru_and_cell(t):
         q = t.querySharedPublished
-        assertMatch(t, q('RU1'), {'tx_gain': 11, 'rx_gain': 21})
-        assertMatch(t, q('RU2'), {'tx_gain': 12, 'rx_gain': 22})
-        assertMatch(t, q('RU3'), {'tx_gain': 13, 'rx_gain': 23})
-        assertMatch(t, q('RU4'), {'tx_gain': 14, 'rx_gain': 24})
+        assertMatch(t, q('RU1'), {'tx_gain': 11, 'rx_gain': 21, 'txrx_active': 'ACTIVE'})
+        assertMatch(t, q('RU2'), {'tx_gain': 12, 'rx_gain': 22, 'txrx_active': 'ACTIVE'})
+        assertMatch(t, q('RU3'), {'tx_gain': 13, 'rx_gain': 23, 'txrx_active': 'ACTIVE'})
+        assertMatch(t, q('RU4'), {'tx_gain': 14, 'rx_gain': 24, 'txrx_active': 'ACTIVE'})
 
         assertMatch(t, q('RU1.CELL'), dict(
                             dl_earfcn=  100,
@@ -473,10 +473,12 @@ class Lopcomm4:
                   'absolute-frequency-center':    '%d' % dl_arfcn,
                   'channel-bandwidth':            '%d' % bw,
                   'gain':                         '%d' % tx_gain,
+                  'active':                       'ACTIVE',
                 },
                 'rx-array-carriers': {
                   'channel-bandwidth':            '%d' % bw,
                   # XXX no rx_gain
+                  'active':                       'ACTIVE',
                 },
             }
 
