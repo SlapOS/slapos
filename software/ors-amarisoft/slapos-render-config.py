@@ -69,6 +69,12 @@ class Instance:
         self.shared_instance_list.append(ishared)
         return ishared
 
+# py version of jref_of_shared (simplified).
+def ref_of_shared(ishared):
+    ref = ishared['slave_title']
+    ref = ref.removeprefix('_')
+    return ref
+
 
 # ---- eNB ----
 
@@ -488,8 +494,55 @@ def _do_enb_with(iru_icell_func):
 
     j2render('enb.jinja2.cfg', '%s/enb.cfg' % out, json_params)
 
-    # TODO render drb.cfg + sib.asn for all cells
+    # drb.cfg + sib.asn for all cells
+    iru_dict       = {}
+    icell_dict     = {}
+    ipeer_dict     = {}
+    ipeercell_dict = {}
+    for ishared in ienb.shared_instance_list:
+        ref = ref_of_shared(ishared)
+        _   = json.loads(ishared['_'])
+        ishared['_'] = _
+        if 'ru_type' in _:
+            iru_dict[ref] = ishared
+        elif 'cell_type' in _  and  _.get('cell_kind') in {'enb', 'enb_peer'}:
+            idict = {'enb': icell_dict, 'enb_peer': ipeercell_dict} [_['cell_kind']]
+            idict[ref] = ishared
+        elif 'peer_type' in _:
+            ipeer_dict[ref] = ishared
+        else:
+            raise AssertionError('enb: unknown shared instance %r' % (ishared,))
 
+    def ru_of_cell(icell): # -> (ru_ref, ru)
+        cell_ref = ref_of_shared(icell)
+        ru = icell['_']['ru']
+        if ru['ru_type'] == 'ru_ref':
+            ru_ref = ru['ru_ref']
+            return ru_ref, iru_dict[ru_ref]
+        elif ru['ru_type'] == 'ruincell_ref':
+            return ru_of_cell(icell_dict[ru['ruincell_ref']])
+        else:
+            return ('_%s_ru' % cell_ref), ru  # embedded ru definition
+
+    for cell_ref, icell in icell_dict.items():
+        ru_ref, ru = ru_of_cell(icell)
+        cell = icell['_']
+        jctx = json.dumps({
+                    'cell_ref': cell_ref,
+                    'cell':     cell,
+                    'ru_ref':   ru_ref,
+                    'ru':       ru,
+               })
+        j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
+                 '%s/%s-drb.cfg' % (out, cell_ref),
+                 jctx)
+
+        j2render('sib23.jinja2.asn',
+                 '%s/%s-sib23.asn' % (out, cell_ref),
+                 jctx)
+
+
+# ---- UE ----
 
 def do_ue():
     def do(src, out, slapparameter_dict):
