@@ -43,48 +43,44 @@ def j2render(src, out, jcfg):
       f.write(r._render().decode())
 
 
-def do(src, out, slapparameter_dict):
-    defaults = {
-        "com_ws_port":  9001,
-        "com_addr":     "127.0.1.2",
-        "use_ipv4":     False,
-        "gnb_id_bits":  28,
-        "nssai":        {'1': {'sst': 1}},
-        "ncell_list":   {},
-        "peers":        {},
-        "gtp_addr":     "127.0.1.1",
-    }
-    slapparameter_dict = slapparameter_dict.copy()
-    for k, v in defaults.items():
-        slapparameter_dict.setdefault(k, v)
-    jslapparameter_dict = json.dumps(slapparameter_dict)
-    json_params_empty = """{
-        "slap_configuration": {
-        },
-        "directory": {
-        },
-        "slapparameter_dict": %(jslapparameter_dict)s
-    }"""
-    json_params = """{
-        "ors": {"one-watt": true},
-        "slap_configuration": {
-            "tap-name": "slaptap9"
-        },
-        "directory": {
-            "log": "log",
-            "etc": "etc",
-            "var": "var"
-        },
-        "pub_info": {
-            "rue_bind_addr": "::1",
-            "com_addr": "[::1]:9002"
-        },
-        "slapparameter_dict": %(jslapparameter_dict)s
-    }"""
-
-    j2render(src, out, json_params % locals())
-
 def do_enb():
+    def do(src, out, slapparameter_dict):
+        defaults = {
+            "com_ws_port":  9001,
+            "com_addr":     "127.0.1.2",
+            "use_ipv4":     False,
+            "gnb_id_bits":  28,
+            "nssai":        {'1': {'sst': 1}},
+            "ncell_list":   {},
+            "peers":        {},
+            "gtp_addr":     "127.0.1.1",
+        }
+        slapparameter_dict = slapparameter_dict.copy()
+        for k, v in defaults.items():
+            slapparameter_dict.setdefault(k, v)
+        jslapparameter_dict = json.dumps(slapparameter_dict)
+        json_params_empty = """{
+            "slap_configuration": {
+            },
+            "directory": {
+            },
+            "slapparameter_dict": %(jslapparameter_dict)s
+        }"""
+        json_params = """{
+            "ors": {"one-watt": true},
+            "slap_configuration": {
+                "tap-name": "slaptap9"
+            },
+            "directory": {
+                "log": "log",
+                "etc": "etc",
+                "var": "var"
+            },
+            "slapparameter_dict": %(jslapparameter_dict)s
+        }"""
+
+        j2render(src, out, json_params % locals())
+
     peer_lte = {
         'cell_type':        'lte',
         'e_cell_id':        '0x12345',
@@ -158,6 +154,25 @@ def do_enb():
 
 
 def do_ue():
+    def do(src, out, slapparameter_dict):
+        jslapparameter_dict = json.dumps(slapparameter_dict)
+        json_params = """{
+            "slap_configuration": {
+                "tap-name": "slaptap9"
+            },
+            "directory": {
+                "log": "log",
+                "etc": "etc",
+                "var": "var"
+            },
+            "pub_info": {
+                "rue_bind_addr": "::1",
+                "com_addr": "[::1]:9002"
+            },
+            "slapparameter_dict": %(jslapparameter_dict)s
+        }"""
+        j2render(src, out, json_params % locals())
+
     do('ue.jinja2.cfg', 'ue-lte.cfg', {'ue_type': 'lte', 'rue_addr': 'host1'})
     do('ue.jinja2.cfg',  'ue-nr.cfg', {'ue_type':  'nr', 'rue_addr': 'host2'})
 
