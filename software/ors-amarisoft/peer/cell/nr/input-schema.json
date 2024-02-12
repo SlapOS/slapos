@@ -13,7 +13,6 @@
     "nr_cell_id",
     "gnb_id_bits",
     "dl_nr_arfcn",
-    "ssb_nr_arfcn",
     "nr_band"
   ],
 
@@ -36,7 +35,8 @@
     },
     "dl_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/properties/dl_nr_arfcn" },
     "nr_band":      { "$ref": "../../../cell/nr/input-schema.json#/properties/nr_band" },
-    "ssb_nr_arfcn": { "$ref": "../../../cell/nr/input-schema.json#/$defs/ssb_nr_arfcn" },
+    "ssb_nr_arfcn": { "$ref": "../../../cell/nr/input-schema.json#/properties/ssb_nr_arfcn" },
+    "ul_nr_arfcn":  { "$ref": "../../../cell/nr/input-schema.json#/properties/ul_nr_arfcn" },
     "pci":          { "$ref": "../../../cell/nr/input-schema.json#/properties/pci" },
     "tac":          { "$ref": "../../../cell/nr/input-schema.json#/$defs/tac" }
   }

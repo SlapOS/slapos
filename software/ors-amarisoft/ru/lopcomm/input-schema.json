@@ -63,25 +63,6 @@
       }
     },
 
-    "txa0cc00_center_frequency": {
-      "title": "Lopcomm ORAN DL Center Frequency in MHz (TXA0CC00)",
-      "description": "Lopcomm ORAN Center Frequency in MHz (TXA0CC00)",
-      "type": "number",
-      "default": 2140
-    },
-    "rxa0cc00_center_frequency_earfcn": {
-      "title": "Lopcomm ORAN UL Center Frequency EARFCN (RXA0CC00)",
-      "description": "Lopcomm ORAN Center Frequency EARFCN (RXA0CC00)",
-      "type": "number",
-      "default": 18300
-    },
-    "rxa0cc00_center_frequency": {
-      "title": "Lopcomm ORAN UL Center Frequency in MHz (RXA0CC00)",
-      "description": "Lopcomm ORAN Center Frequency in MHz (RXA0CC00)",
-      "type": "number",
-      "default": 1950
-    },
-
     "reset_schedule": {
       "title": "Cron schedule for RRH reset",
       "description": "Refer https://crontab.guru/ to make a reset schedule for RRH, for example, '0 1 * * *' means the RRH will reset every day at 1 am",
