@@ -91,8 +91,14 @@
             <!-- TODO support multiple cells over 1 RU -->
 {%- if cell.cell_type == 'lte'                                                %}
 {%-   set dl_arfcn = cell.dl_earfcn                                           %}
+{%-   set ul_arfcn = cell.ul_earfcn                                           %}
+{%-   set dl_freq  = int(xearfcn_module.frequency(dl_arfcn) * 1e6)            %}
+{%-   set ul_freq  = int(xearfcn_module.frequency(ul_arfcn) * 1e6)            %}
 {%- elif cell.cell_type == 'nr'                                               %}
 {%-   set dl_arfcn = cell.dl_nr_arfcn                                         %}
+{%-   set ul_arfcn = cell.ul_nr_arfcn                                         %}
+{%-   set dl_freq  = int(xnrarfcn_module.frequency(dl_arfcn) * 1e6)           %}
+{%-   set ul_freq  = int(xnrarfcn_module.frequency(ul_arfcn) * 1e6)           %}
 {%- else                                                                      %}
 {%-   do bug('unreachable')                                                   %}
 {%- endif                                                                     %}
@@ -100,7 +106,7 @@
             <tx-array-carriers>
                <name>{{ TxCarrier }}</name>
                <absolute-frequency-center>{{ dl_arfcn }}</absolute-frequency-center>
-               <center-of-channel-bandwidth>{{ 1000000*ru.get('txa0cc00_center_frequency', 2140) }}</center-of-channel-bandwidth>
+               <center-of-channel-bandwidth>{{ dl_freq }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ bw }}</channel-bandwidth>
                <active>{{ ru.txrx_active }}</active>
                <rw-type>{{ cell.cell_type | upper }}</rw-type>
@@ -111,8 +117,8 @@
             </tx-array-carriers>
             <rx-array-carriers>
                <name>{{ RxCarrier }}</name>
-               <absolute-frequency-center>{{ ru.get('rxa0cc00_center_frequency_earfcn', 18300) }}</absolute-frequency-center>
-               <center-of-channel-bandwidth>{{ 1000000*ru.get('rxa0cc00_center_frequency', 1950) }}</center-of-channel-bandwidth>
+               <absolute-frequency-center>{{ ul_arfcn }}</absolute-frequency-center>
+               <center-of-channel-bandwidth>{{ ul_freq }}</center-of-channel-bandwidth>
                <channel-bandwidth>{{ bw }}</channel-bandwidth>
                <active>{{ ru.txrx_active }}</active>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>

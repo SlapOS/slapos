@@ -28,6 +28,9 @@ def j2render(src, out, jcfg):
         textctx += 'json %s %s\n' % (k, json.dumps(v))
     textctx += 'import xbuildout xbuildout\n'
     textctx += 'import json_module    json\n'
+    textctx += 'import nrarfcn_module nrarfcn\n'
+    textctx += 'import xearfcn_module  xlte.earfcn\n'
+    textctx += 'import xnrarfcn_module xlte.nrarfcn\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
@@ -469,7 +472,6 @@ def _do_enb_with(iru_icell_func):
             'nr_cell_id':       '0x77712',
             'gnb_id_bits':      22,
             'dl_nr_arfcn':      520000,
-            'ssb_nr_arfcn':     520090,
             'nr_band':          38,
             'pci':              75,
             'tac':              321,

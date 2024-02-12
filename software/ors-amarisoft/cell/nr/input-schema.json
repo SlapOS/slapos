@@ -54,6 +54,16 @@
       "description": "NR band number",
       "type": "integer"
     },
+    "ul_nr_arfcn": {
+      "title": "UL NR ARFCN",
+      "description": "Uplink NR Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_nr_arfcn and nr_band is chosen.",
+      "type": "integer"
+    },
+    "ssb_nr_arfcn": {
+      "title": "SSB NR ARFCN",
+      "description": "SSB NR Absolute Radio Frequency Channel Number of the cell. If set it must be an element of global synchronization raster and be at offset from center DL frequency that aligns with SSB subcarrier spacing of selected band. By default a valid frequency nearby dl_nr_arfcn is chosen.",
+      "type": "integer"
+    },
     "ssb_pos_bitmap": {
       "title": "SSB Position Bitmap",
       "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
@@ -68,11 +78,6 @@
   },
 
   "$defs": {
-    "ssb_nr_arfcn": {
-      "title": "SSB NR ARFCN",
-      "description": "SSB NR Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
-    },
     "tac": {
       "title": "Tracking Area Code",
       "description": "Integer (range 0 to 16777215)",

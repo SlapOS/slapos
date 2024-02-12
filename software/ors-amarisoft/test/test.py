@@ -274,18 +274,18 @@ class RFTestCase4(AmariTestCase):
         assertMatch(t, q('RU3'), {'tx_gain': 13, 'rx_gain': 23, 'txrx_active': 'ACTIVE'})
         assertMatch(t, q('RU4'), {'tx_gain': 14, 'rx_gain': 24, 'txrx_active': 'ACTIVE'})
 
-        assertMatch(t, q('RU1.CELL'), dict(
-                            dl_earfcn=  100,
-                            dl_nr_arfcn=NO))
-        assertMatch(t, q('RU2.CELL'), dict(
-                            dl_earfcn=40200,
-                            dl_nr_arfcn=NO))
+        assertMatch(t, q('RU1.CELL'), dict(band='b1',
+                            dl_earfcn=  100,    ul_earfcn=18100,
+                            dl_nr_arfcn=NO,     ul_nr_arfcn=NO,     ssb_nr_arfcn=NO))
+        assertMatch(t, q('RU2.CELL'), dict(band='b41',
+                            dl_earfcn=40200,    ul_earfcn=40200,
+                            dl_nr_arfcn=NO,     ul_nr_arfcn=NO,     ssb_nr_arfcn=NO))
         assertMatch(t, q('RU3.CELL'), dict(band='n74',
-                            dl_earfcn=NO,
-                            dl_nr_arfcn=300300))
+                            dl_earfcn=NO,       ul_earfcn=NO,
+                            dl_nr_arfcn=300300, ul_nr_arfcn=290700, ssb_nr_arfcn=300270))
         assertMatch(t, q('RU4.CELL'), dict(band='n40',
-                            dl_earfcn=NO,
-                            dl_nr_arfcn=470400))
+                            dl_earfcn=NO,       ul_earfcn=NO,
+                            dl_nr_arfcn=470400, ul_nr_arfcn=470400, ssb_nr_arfcn=470430))
 
 
 # ENBTestCase4 provides base class for unit-testing eNB service.
@@ -337,7 +337,7 @@ class ENBTestCase4(RFTestCase4):
         _('PEER5',      XN_PEER('55.1.1.1'))
 
         _('PEERCELL4',  LTE(700)      | LTE_PEER(0x12345,    35, 0x123))
-        _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321) | {'ssb_nr_arfcn': 520090})
+        _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321))
 
     def CELLcfg(i):
         return CENB(i, 0x10+i) | TAC(0x100+i) | {
@@ -370,14 +370,14 @@ class ENBTestCase4(RFTestCase4):
         assertMatch(t, t.enb_cfg['cell_list'],  [
           dict( # CELL1
             uldl_config=NO,   rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
-            dl_earfcn=100,
+            dl_earfcn=100,    ul_earfcn=18100,
             n_rb_dl=25,
             cell_id=0x1,      n_id_cell=0x11,   tac=0x101,
             root_sequence_index=101,  inactivity_timer=1001,
           ),
           dict( # CELL2
             uldl_config=2,    rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
-            dl_earfcn=40200,
+            dl_earfcn=40200,  ul_earfcn=40200,
             n_rb_dl=50,
             cell_id=0x2,      n_id_cell=0x12,   tac=0x102,
             root_sequence_index=102,  inactivity_timer=1002,
@@ -387,7 +387,7 @@ class ENBTestCase4(RFTestCase4):
         assertMatch(t, t.enb_cfg['nr_cell_list'],  [
           dict( # CELL3
             tdd_ul_dl_config=NO, rf_port=2,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=300300,  band=74,
+            dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=74,
             bandwidth=15,
             cell_id=0x3,         n_id_cell=0x13,      tac=NO,
             root_sequence_index=103,  inactivity_timer=1003,
@@ -398,7 +398,7 @@ class ENBTestCase4(RFTestCase4):
                 period=5, dl_slots=7, dl_symbols=6, ul_slots=2, ul_symbols=4,
             )},
                                  rf_port=3,           n_antenna_dl=4,       n_antenna_ul=2,
-            dl_nr_arfcn=470400,  band=40,
+            dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=40,
             bandwidth=20,
             cell_id=0x4,         n_id_cell=0x14,      tac=NO,
             root_sequence_index=104,  inactivity_timer=1004,
@@ -465,17 +465,20 @@ class Lopcomm4:
 
     # RU configuration in cu_config.xml
     def test_ru_cu_config_xml(t):
-        def uctx(rf_mode, cell_type, dl_arfcn, bw, tx_gain, rx_gain):
+        def uctx(rf_mode, cell_type, dl_arfcn, ul_arfcn, bw, dl_freq, ul_freq, tx_gain, rx_gain):
             return {
                 'tx-array-carriers': {
                   'rw-duplex-scheme':              rf_mode,
                   'rw-type':                       cell_type,
                   'absolute-frequency-center':    '%d' % dl_arfcn,
+                  'center-of-channel-bandwidth':  '%d' % dl_freq,
                   'channel-bandwidth':            '%d' % bw,
                   'gain':                         '%d' % tx_gain,
                   'active':                       'ACTIVE',
                 },
                 'rx-array-carriers': {
+                  'absolute-frequency-center':    '%d' % ul_arfcn,
+                  'center-of-channel-bandwidth':  '%d' % ul_freq,
                   'channel-bandwidth':            '%d' % bw,
                   # XXX no rx_gain
                   'active':                       'ACTIVE',
@@ -484,11 +487,11 @@ class Lopcomm4:
 
         _ = t._test_ru_cu_config_xml
 
-        #       rf_mode  ctype dl_arfcn   bw      txg rxg
-        _(1, uctx('FDD', 'LTE',    100,  5000000, 11, 21))
-        _(2, uctx('TDD', 'LTE',  40200, 10000000, 12, 22))
-        _(3, uctx('FDD',  'NR', 300300, 15000000, 13, 23))
-        _(4, uctx('TDD',  'NR', 470400, 20000000, 14, 24))
+        #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
+        _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
+        _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
+        _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
+        _(4, uctx('TDD',  'NR', 470400,  470400, 20000000, 2352000000, 2352000000, 14, 24))
 
     def _test_ru_cu_config_xml(t, i, uctx):
         cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))

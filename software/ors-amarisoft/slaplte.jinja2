@@ -104,6 +104,24 @@
 #}
 {%- set J = json_module.loads %}
 
+{#- jdefault_ul_earfcn returns default UL EARFCN corresponding to DL EARFCN. #}
+{%- macro jdefault_ul_earfcn(dl_earfcn) %}
+{{-   xearfcn_module.dl2ul(dl_earfcn) | tojson }}
+{%- endmacro %}
+
+{#- jdefault_ul_nr_arfcn returns default UL NR ARFCN corresponding to DL NR ARFCN and band. #}
+{%- macro jdefault_ul_nr_arfcn(dl_nr_arfcn, nr_band)  %}
+{{-   xnrarfcn_module.dl2ul(dl_nr_arfcn, nr_band) | tojson  }}
+{%- endmacro %}
+
+{#- jdefault_ssb_nr_arfcn returns default SSB NR ARFCN corresponding to DL NR ARFCN
+    and band. #}
+{%- macro jdefault_ssb_nr_arfcn(dl_nr_arfcn, nr_band) %}
+{#- NOTE: computations rechecked wrt https://tech-academy.amarisoft.com/OutOfBox_UEsim_SA.html#Tips_SSB_Frequency #}
+{%-   set ssb_nr_arfcn, max_ssb_scs_khz = xnrarfcn_module.dl2ssb(dl_nr_arfcn, nr_band) %}
+{{-   ssb_nr_arfcn | tojson }}
+{%- endmacro %}
+
 
 {#- tap indicates tap interface, that slapos told us to use,
     or 'xxx-notap-xxx' if slapos provided us either nothing or empty string. #}
@@ -284,6 +302,14 @@
 {%-   endfor  %}
 {%-   set n = len(list(icell_dict|dictsort | selectattr('1._.cell_type', '==', cell.cell_type)))  %}
 {%-   do cell.setdefault('root_sequence_index', 1 + 203*(cell.cell_type == 'lte') + n)  %}
+{%-   if cell.cell_type == 'lte'  %}
+{%-     do cell.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(cell.dl_earfcn))) %}
+{%-   elif cell.cell_type == 'nr' %}
+{%-     do cell.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-     do cell.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-   else  %}
+{%-     do bug('unreachable') %}
+{%-   endif %}
 {%- endmacro %}
 
 
@@ -347,6 +373,14 @@
 {%-     set _ = ishared['_']  %}
 {%-     if 'cell_type' in _  and  _.get('cell_kind') == 'enb_peer'  %}
 {%-       set ipeercell = ishared %}
+{%-       if _.cell_type == 'lte'  %}
+{%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
+{%-       elif _.cell_type == 'nr' %}
+{%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
+{%-         do _.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
+{%-       else  %}
+{%-         do bug('unreachable') %}
+{%-       endif %}
 {%-       do ipeercell_dict.update({ref: ipeercell})  %}
 {%-     else  %}
 {%-       do qother.append(ishared) %}
