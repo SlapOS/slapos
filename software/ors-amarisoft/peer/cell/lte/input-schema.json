@@ -6,6 +6,7 @@
 
   "required": [
     "cell_type",
+    "cell_kind",
     "pci",
     "tac",
 

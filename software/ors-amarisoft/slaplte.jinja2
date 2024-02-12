@@ -1,14 +1,19 @@
 {#- Package slaplte provides helpers for configuring Amarisoft LTE services in SlapOS.
 
-    - load_ru_and_cell initializes RU and cell registries.
-    - load_peercell initializes peer-cell registry.
-    - load_peer initializes peer registry.
+    - load_iru_and_icell initializes RU and cell registries.
+    - load_ipeercell initializes peer-cell registry.
+    - load_ipeer initializes peer registry.
     - ru_config emits RF driver configuration for specified Radio Units.
+
+    In the code iX denotes shared instance of type X, while X denotes
+    parameters passed to iX. For example iru denotes Radio Unit shared
+    instance, while ru denotes parameters of that Radio Unit instance.
 
     The following utilities are also provided:
 
     - J should be used around macro calls to retrieve returned objects.
     - error reports instantiation error.
+    - ierror reports instantiation error caused by shared instance configuration.
 -#}
 
 
@@ -104,42 +109,119 @@
 {%-   do assert(False, msg) %}
 {%- endmacro  %}
 
+{#- ierror reports instantiation error caused by shared instance configuration. #}
+{%- macro ierror(ishared, msg)  %}
+{%-   do error('%s: %s' % (J(jref_of_shared(ishared)), msg)) %}
+{%- endmacro  %}
 
 
 {#- ---- loading ---- #}
 
-{#- load_ru_and_cell initializes RU and cell registries.
+{#- jref_of_shared returns original reference used to request shared instance.
 
-    cell_dict keeps configured cells: {} cell reference -> cell parameters
-    ru_dict   keeps configured RU:    {} RU reference   -> RU parameters
+    slapproxy puts the reference into slave_reference and slave_title as <partition_id>_<reference>.
+    slapos master puts the reference into slave_title as-is and assigns to slave_reference SOFTINST-XXX.
+
+    -> we extract the reference from slave_title.
 #}
-{%- macro load_ru_and_cell(ru_dict, cell_dict)  %}
-{%-   set cell_list = slapparameter_dict.get('cell_list', {}) %}
-{%-   do cell_dict.update(cell_list)  %}
+{%- macro jref_of_shared(ishared) %}
+{#- do  print('jref_of_shared %r' % (ishared,)) #}
+{%-   set ref = ishared['slave_title']  %}
+{%-   set partition_id = slap_configuration['slap-computer-partition-id'] %}
+{%-   if ref.startswith(partition_id) %}
+{%-     set ref = ref[len(partition_id):] %}
+{%-   endif %}
+{%-   set ref = ref.removeprefix('_') %}
+{{-   ref | tojson  }}
+{%- endmacro  %}
 
-{%-   for i, (cell_ref, cell) in enumerate(cell_dict|dictsort) %}
-{%-     set ru_ref = '%s-RU' % cell_ref %}
-{%-     set ru = cell.ru  %}
-{%-     do ru.update({'cell_ref': cell_ref})  %}
-{%-     do cell.update({'ru_ref': ru_ref})  %}
+{#- qshared_instance_list queues not yet loaded shared instances.
+    load_* routines process this queue and move loaded instances to i<type>_dict registries. #}
+{%- set qshared_instance_list = slap_configuration.get('slave-instance-list', []) %}
 
-{%-     if ru.ru_link_type == 'cpri'  %}
-{#-       set 0 tx/rx gain to emit 0 in enb.cfg.
-          This will be changed later: .tx_gain and .rx_gain will be carrying real RU tx/rx gain #}
-{%-       do ru.update({'tx_gain': 0,
-                        'rx_gain': 0,
-          })  %}
+{#- protect against duplicate slave_title -- see jref_of_shared for why we need this #}
+{%- for i, ishared in enumerate(qshared_instance_list)  %}
+{%-   for k, kshared in enumerate(qshared_instance_list)  %}
+{%-     if i != k  and  ishared.slave_title == kshared.slave_title  %}
+{%-       do ierror(ishared, 'duplicate title wrt %s' % kshared.slave_reference)  %}
 {%-     endif %}
+{%-   endfor  %}
+{%- endfor  %}
 
-{%-     do _ru_set_defaults(ru) %}
-{%-     do ru_dict.update({ru_ref: ru}) %}
+{#- check_loaded_everything verifies that all shared instances were handling during the load. #}
+{%- macro check_loaded_everything() %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     do ierror(ishared, "shared instance of unsupported type") %}
+{%-   endfor  %}
+{%- endmacro  %}
 
-{%-     do _cell_set_defaults(cell, cell_dict)  %}
+{#- json-decode _ in all shared instances #}
+{%- for ishared in qshared_instance_list  %}
+{%-   do ishared.update({'_': J(ishared['_'])}) %}
+{%- endfor  %}
+
+
+{#- load_iru_and_icell initializes RU and cell registries.
+
+    icell_dict keeps cell shared instances:  reference -> icell
+    iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
+    in the kept instances _ is automatically json-decoded
+#}
+{%- macro load_iru_and_icell(iru_dict, icell_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ru_type'   in _ %}
+{%-       set iru = ishared %}
+{%-       do _ru_set_defaults(_)  %}
+{%-       do iru_dict.update({ref: iru})  %}
+{%-     elif 'cell_type' in _  and  _.get('cell_kind') == 'enb'  %}
+{%-       set icell = ishared %}
+{%-       do _cell_set_defaults(_, icell_dict)  %}
+{%-       do icell_dict.update({ref: icell})  %}
+{%-       set ru = _['ru']  %}
+{%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
+{#-         embedded ru definition -> expose it as synthethic `_<cell_ref>_ru` #}
+{%-         do _ru_set_defaults(ru) %}
+{%-         do iru_dict.update({'_%s_ru' % ref: {
+                  '_':                ru,
+                  'slave_title':      '%s. RU' % icell.slave_title,
+                  'slave_reference':  False,
+               }})  %}
+{%-       endif %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
+
+{#-   do print('\n>>> iru_dict:'),   pprint(iru_dict)   #}
+{#-   do print('\n>>> icell_dict:'), pprint(icell_dict) #}
+
+{#-   verify that there is no dangling cell -> cell refs in ruincell_ref #}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     set ru = icell['_']['ru'] %}
+{%-     if ru.ru_type == 'ruincell_ref' %}
+{%-       if ru.ruincell_ref not in icell_dict  %}
+{%-         do ierror(icell, "referred cell %r does not exist" % ru.ruincell_ref) %}
+{%-       endif %}
+{%-     endif %}
 {%-   endfor %}
+
+{#-   verify that there is no dangling cell->ru references #}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     set ru_ref = J(jcell_ru_ref(icell, icell_dict)) %}
+{%-     if ru_ref not in iru_dict %}
+{%-       do ierror(icell, "referred RU %r does not exist" % ru_ref)  %}
+{%-     endif %}
+{%-   endfor  %}
 
 {#-   assign RUs rf_port and tx/rx channel indices  #}
 {%-   set rf_chan = namespace(tx=0, rx=0) %}
-{%-   for rf_port, (ru_ref, ru) in enumerate(ru_dict|dictsort)  %}
+{%-   for rf_port, (ru_ref, iru) in enumerate(iru_dict|dictsort)  %}
+{%-     set ru = iru['_'] %}
 {%-     do ru.update({'_rf_port':    rf_port,
                       '_rf_chan_tx': rf_chan.tx,
                       '_rf_chan_rx': rf_chan.rx}) %}
@@ -148,14 +230,14 @@
 {%-   endfor  %}
 
 {#-   assign TAP interfaces to RUs  #}
-{%-   set ru_vcpri = list(ru_dict|dictsort | selectattr('1.ru_link_type', '==', 'cpri')) %}
-{%-   for i, (ru_ref, ru) in enumerate(ru_vcpri)  %}
-{%-     if len(ru_vcpri) > 1 %}
+{%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
+{%-   for i, (ru_ref, iru) in enumerate(iru_vcpri)  %}
+{%-     if len(iru_vcpri) > 1 %}
 {%-       set ru_tap = "%s-%d" % (tap, i+1) %}
 {%-     else  %}
 {%-       set ru_tap = tap  %}
 {%-     endif %}
-{%-     do ru.cpri_link.update({'_tap': ru_tap}) %}
+{%-     do iru._.cpri_link.update({'_tap': ru_tap}) %}
 {%-   endfor  %}
 {%- endmacro  %}
 
@@ -174,47 +256,100 @@
 {%-     for k, v in defaults['ru/%s/cpri_link' % ru.ru_type].items() %}
 {%-       do link.setdefault(k, v)  %}
 {%-     endfor  %}
+{#-     set 0 tx/rx gain to emit 0 in enb.cfg.
+        This will be changed later: .tx_gain and .rx_gain will be carrying real RU tx/rx gain #}
+{%-     do ru.update({'tx_gain': 0,
+                      'rx_gain': 0,
+        })  %}
 {%-   endif %}
 {%- endmacro  %}
 
-{%- macro _cell_set_defaults(cell, cell_dict)  %}
+{%- macro _cell_set_defaults(cell, icell_dict)  %}
 {%-   for k, v in defaults['cell/%s' % cell.cell_type].items() %}
 {%-     do cell.setdefault(k, v) %}
 {%-   endfor  %}
 {%-   for k, v in defaults['cell/%s/%s' % (cell.cell_type, cell.rf_mode)].items() %}
 {%-     do cell.setdefault(k, v) %}
 {%-   endfor  %}
-{%-   set n = len(list(cell_dict|dictsort | selectattr('1.cell_type', '==', cell.cell_type)))  %}
+{%-   set n = len(list(icell_dict|dictsort | selectattr('1._.cell_type', '==', cell.cell_type)))  %}
 {%-   do cell.setdefault('root_sequence_index', 1 + 203*(cell.cell_type == 'lte') + n)  %}
 {%- endmacro %}
 
 
-{#- load_peer initializes peer registry.
-
-    peer_dict keeps configured peers: {} peer reference -> peer
-#}
-{%- macro load_peer(peer_dict)  %}
-{%-   for ref, peer in slapparameter_dict.peers|dictsort %}
-{%-     do peer_dict.update({ref: peer})  %}
-{%-   endfor  %}
+{#- jcell_ru_ref returns RU reference linked from a cell.
+    if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}
+{%- macro jcell_ru_ref(icell, icell_dict) %}
+{{-   _jcell_ru_ref(icell, icell_dict, [])  }}
+{%- endmacro  %}
+{%- macro _jcell_ru_ref(icell, icell_dict, seen)  %}
+{%-   set cell_ref = J(jref_of_shared(icell)) %}
+{%-   if cell_ref in seen %}
+{%-     for x in seen %}
+{%-       do ierror(x, "%s form a cycle via RU references" % seen)  %}
+{%-     endfor  %}
+{{-     None | tojson }}
+{%-   else  %}
+{%-     do seen.append(cell_ref)  %}
+{%-     set ru = icell['_']['ru'] %}
+{%-     if ru.ru_type == 'ru_ref' %}
+{{-       ru.ru_ref | tojson  }}
+{%-     elif ru.ru_type == 'ruincell_ref' %}
+{{-       _jcell_ru_ref(icell_dict[ru.ruincell_ref], icell_dict, seen)  }}
+{%-     else  %}
+{#-       ru definition is embedded into cell #}
+{{-       ('_%s_ru' % J(jref_of_shared(icell))) | tojson  }}
+{%-     endif %}
+{%-   endif %}
 {%- endmacro  %}
 
 
-{#- load_peercell initializes peer-cell registry.
+{#- load_ipeer initializes peer registry.
 
-    peercell_dict keeps configured peer cells: {} peer cell reference -> peercell
+    ipeer_dict keeps peer shared instances:  reference -> ipeer
 #}
-{%- macro load_peercell(peercell_dict)  %}
-{%-   for ref, peercell in slapparameter_dict.ncell_list|dictsort  %}
-{%-     do peercell_dict.update({ref: peercell})  %}
+{%- macro load_ipeer(ipeer_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if 'peer_type' in _ %}
+{%-       set ipeer = ishared %}
+{%-       do assert(_.peer_type in ('lte', 'nr')) %}
+{%-       do ipeer_dict.update({ref: ipeer})  %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
 {%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
+{%- endmacro  %}
+
+
+{#- load_ipeercell initializes peer-cell registry.
+
+    ipeercell_dict keeps peer cell shared instances:  reference -> ipeercell
+#}
+{%- macro load_ipeercell(ipeercell_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if 'cell_type' in _  and  _.get('cell_kind') == 'enb_peer'  %}
+{%-       set ipeercell = ishared %}
+{%-       do ipeercell_dict.update({ref: ipeercell})  %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
 {%- endmacro  %}
 
 
 {#- ---- building configuration ---- #}
 
 {#- ru_config emits RF driver configuration for specified Radio Units. #}
-{%- macro ru_config(ru_dict, slapparameter_dict) %}
+{%- macro ru_config(iru_dict, slapparameter_dict) %}
   // Radio Units
   rf_driver: {
   {%- set dev_argv = []                                                       %}
@@ -222,7 +357,8 @@
   {%- set ru_cpri_dict = {} %}  {#- dev -> ru  for ru with link_type = cpri   #}
   {%- set tx_gainv = [] %}      {#- tx_gain by tx channel                     #}
   {%- set rx_gainv = [] %}      {#- rx_gain by rx channel                     #}
-  {%- for (ru_ref, ru) in ru_dict.items() | sort(attribute="1._rf_port")  %}
+  {%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
+  {%-   set ru = iru['_'] %}
       // {{ ru_ref }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
   {%-   if ru.ru_link_type == 'sdr'  %}
   {%-     do ru_sdr_dict.update({len(dev_argv): ru})  %}
@@ -249,8 +385,8 @@
     CPRI Radio Units: %r
 
     See https://support.amarisoft.com/issues/26021 for details' % (
-          ru_dict |dictsort |selectattr('1.ru_type',      '==', 'sdr')  |map(attribute='0') |list,
-          ru_dict |dictsort |selectattr('1.ru_link_type', '==', 'cpri') |map(attribute='0') |list
+          iru_dict |dictsort |selectattr('1._.ru_type',      '==', 'sdr')  |map(attribute='0') |list,
+          iru_dict |dictsort |selectattr('1._.ru_link_type', '==', 'cpri') |map(attribute='0') |list
         )) %}
   {%- endif %}
 

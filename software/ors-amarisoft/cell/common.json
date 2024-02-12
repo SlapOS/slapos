@@ -18,6 +18,12 @@
       "type": "string",
       "options":  { "hidden": true }
     },
+    "cell_kind": {
+      "type": "string",
+      "const":    "enb",
+      "template": "enb",
+      "options":  { "hidden": true }
+    },
 
     "rf_mode": {
       "title": "RF mode",
@@ -52,8 +58,53 @@
       "default": 10000
     },
     "ru": {
-      "$ref": "../ru/input-schema.json",
+      "$ref": "#/$defs/ru-of-cell",
       "propertyOrder": 9999
+    }
+  },
+
+  "$defs": {
+    "ru-of-cell": {
+      "title": "Radio Unit",
+      "oneOf": [
+        {
+          "title": "Shared Radio Unit",
+          "description": "Use radio unit defined in separate shared instance",
+          "type": "object",
+          "required": ["ru_type", "ru_ref"],
+          "properties": {
+            "ru_type": {
+                "const":    "ru_ref",
+                "template": "ru_ref",
+                "options":  { "hidden": true }
+            },
+            "ru_ref": {
+              "title": "RU Reference",
+              "description": "Reference of shared radio unit instance",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Shared Radio Unit of a Cell",
+          "description": "Use the same radio unit as referenced cell instance does",
+          "type": "object",
+          "required": ["ru_type", "ruincell_ref"],
+          "properties": {
+            "ru_type": {
+                "const":    "ruincell_ref",
+                "template": "ruincell_ref",
+                "options":  { "hidden": true }
+            },
+            "ruincell_ref": {
+              "title": "Cell Reference",
+              "description": "Reference of cell instance whose radio unit to share",
+              "type": "string"
+            }
+          }
+        },
+        { "$ref": "../ru/input-schema.json" }
+      ]
     }
   }
 }
