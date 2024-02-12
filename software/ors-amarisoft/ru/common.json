@@ -8,7 +8,9 @@
     "ru_type",
     "ru_link_type",
     "n_antenna_dl",
-    "n_antenna_ul"
+    "n_antenna_ul",
+    "tx_gain",
+    "rx_gain"
   ],
 
   "properties": {
@@ -29,6 +31,18 @@
     "n_antenna_ul": {
       "title": "Number of UL antennas",
       "type": "integer"
+    },
+
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number"
+    },
+
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number"
     },
 
     "cpri_link": {

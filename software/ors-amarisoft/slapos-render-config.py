@@ -212,11 +212,15 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         },
         'n_antenna_dl': 2,
         'n_antenna_ul': 1,
+        'tx_gain':      -21,
+        'rx_gain':      -22,
     }
 
     RU2 = copy.deepcopy(RU1)
     RU2['mac_addr'] = '00:00:00:00:00:02'
     RU2['cpri_link']['sfp_port'] = 1
+    RU2['tx_gain'] += 10
+    RU2['rx_gain'] += 10
 
     ienb.ishared('RU1', RU1)
     ienb.ishared('RU2', RU2)
@@ -311,6 +315,8 @@ def iRU2_LOPCOMM_fLTE2(ienb):
         },
         'n_antenna_dl': 1,
         'n_antenna_ul': 1,
+        'tx_gain':      0,
+        'rx_gain':      0,
     }
 
     # supports: 2110 - 2170 MHz

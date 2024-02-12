@@ -105,7 +105,7 @@
                <active>{{ ru.get('txa0cc00_active', 'INACTIVE') }}</active>
                <rw-type>{{ cell.cell_type | upper }}</rw-type>
                <rw-duplex-scheme>{{ cell.rf_mode | upper }}</rw-duplex-scheme>
-               <gain>{{ ru.get('txa0cc00_gain', '-20') }}</gain>
+               <gain>{{ ru.tx_gain }}</gain>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
             </tx-array-carriers>
@@ -117,6 +117,8 @@
                <active>{{ ru.get('rxa0cc00_active', 'INACTIVE') }}</active>
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
+               <!-- <gain>{{ ru.rx_gain }}</gain> -->
+               <!-- TODO(lu.xu): clarify with Lopcomm regaring rx gain -->
                <gain-correction>0.0</gain-correction>
                <n-ta-offset>0</n-ta-offset>
             </rx-array-carriers>

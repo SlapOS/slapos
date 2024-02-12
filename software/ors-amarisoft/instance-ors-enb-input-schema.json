@@ -60,10 +60,10 @@
       "default": 204
     },
     "tx_gain": {
-      "$ref": "ru/sdr/input-schema.json#/properties/tx_gain"
+      "$ref": "ru/common.json#/properties/tx_gain"
     },
     "rx_gain": {
-      "$ref": "ru/sdr/input-schema.json#/properties/rx_gain"
+      "$ref": "ru/common.json#/properties/rx_gain"
     },
     "enb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/enb_id",
