@@ -88,6 +88,7 @@
 
 
             <!-- TX/RX carriers -->
+            <!-- TODO support multiple cells over 1 RU -->
 {%- if cell.cell_type == 'lte'                                                %}
 {%-   set dl_arfcn = cell.dl_earfcn                                           %}
 {%- elif cell.cell_type == 'nr'                                               %}

@@ -5,6 +5,7 @@
   "type": "object",
   "required": [
     "cell_type",
+    "cell_kind",
     "pci",
     "tac"
   ],
@@ -12,6 +13,12 @@
   "properties": {
     "cell_type": {
       "type": "string",
+      "options":  { "hidden": true }
+    },
+    "cell_kind": {
+      "type": "string",
+      "const":    "enb_peer",
+      "template": "enb_peer",
       "options":  { "hidden": true }
     }
   }
