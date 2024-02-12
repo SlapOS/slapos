@@ -40,12 +40,11 @@ class enbWebSocket:
     def stats(self):
         if {{ testing }}:
             from random import randint
+            nrx = {{ iru_dict.values() | sum(attribute='_.n_antenna_ul') }}
+            rxv = [{'sat': 0, 'max': randint(-500,-100) / 10.0}  for _ in range(nrx)]
             r = {
                 'message': 'stats',
-                'samples': {'rx': [
-                    {'sat': 0, 'max': randint(-500,-100) / 10.0},
-                    {'sat': 0, 'max': randint(-500,-100) / 10.0},
-                ]}
+                'samples': {'rx': rxv}
             }
         else:
             self.send({
