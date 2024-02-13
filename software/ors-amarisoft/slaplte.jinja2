@@ -279,7 +279,7 @@
 {%-     set rf_chan.rx = rf_chan.rx + ru.n_antenna_ul %}
 {%-   endfor  %}
 
-{#-   assign TAP interfaces to RUs  #}
+{#-   assign TAP interfaces to cpri RUs #}
 {%-   set iru_vcpri = list(iru_dict|dictsort | selectattr('1._.ru_link_type', '==', 'cpri')) %}
 {%-   for i, (ru_ref, iru) in enumerate(iru_vcpri)  %}
 {%-     if len(iru_vcpri) > 1 %}
