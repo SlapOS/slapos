@@ -6,30 +6,37 @@ from websocket import create_connection
 class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
+        try:
+            super().setUpClass()
 
-        cls.enb_instance_name = time.strftime('e2e-ors84-enb-%Y-%B-%d-%H:%M:%S')
-        cls.cn_instance_name = time.strftime('e2e-ors84-core-network-%Y-%B-%d-%H:%M:%S')
-        cls.sim_instance_name = time.strftime('e2e-ors84-sim-%Y-%B-%d-%H:%M:%S')
-        cls.ue_instance_name = time.strftime('e2e-simbox005-ue-%Y-%B-%d-%H:%M:%S')
-        cls.product = cls.product.get('ors-tdd')
-        cls.ue_product = "/opt/e2e/slapos/software/ors-amarisoft/software-fdd-lopcomm.cfg"
+            cls.enb_instance_name = time.strftime('e2e-ors84-enb-%Y-%B-%d-%H:%M:%S')
+            cls.cn_instance_name = time.strftime('e2e-ors84-core-network-%Y-%B-%d-%H:%M:%S')
+            cls.sim_instance_name = time.strftime('e2e-ors84-sim-%Y-%B-%d-%H:%M:%S')
+            cls.ue_instance_name = time.strftime('e2e-simbox005-ue-%Y-%B-%d-%H:%M:%S')
+            cls.product = cls.product.get('ors-tdd')
+            cls.ue_product = "/opt/e2e/slapos/software/ors-amarisoft/software-fdd-lopcomm.cfg"
 
-        # Component GUIDs and configurations
-        cls.comp_enb = "COMP-4057"
-        cls.comp_cn = "COMP-4057"
-        cls.comp_ue = "COMP-3756"
-        cls.dl_earfcn = 38550
+            # Component GUIDs and configurations
+            cls.comp_enb = "COMP-4057"
+            cls.comp_cn = "COMP-4057"
+            cls.comp_ue = "COMP-3756"
+            cls.dl_earfcn = 38550
 
-        # Retry configurations
-        cls.max_retries = 10
-        cls.retry_delay = 180  # seconds
+            # Retry configurations
+            cls.max_retries = 10
+            cls.retry_delay = 180  # seconds
 
-        # Setup instances
-        cls.setup_instances()
+            # Setup instances
+            cls.setup_instances()
 
-        cls.waitUntilGreen(cls.enb_instance_name)
-        cls.waitUntilGreen(cls.cn_instance_name)
+            cls.waitUntilGreen(cls.enb_instance_name)
+            cls.waitUntilGreen(cls.cn_instance_name)
+
+        except Exception as e:
+            cls.logger.error("Error during setup: " + str(e))
+            # Ensure cleanup
+            cls.tearDownClass()
+            raise
 
     @classmethod
     def retry_request(cls, func, *args, **kwargs):
