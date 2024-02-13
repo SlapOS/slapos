@@ -27,7 +27,7 @@
     },
     "ssb_pos_bitmap": {
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
-      "default": 10000000
+      "default": "10000000"
     },
     "pci": {
       "$ref": "cell/common.json#/properties/pci",
