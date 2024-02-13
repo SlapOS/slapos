@@ -9,30 +9,8 @@
 
     "ue_type": {
       "$ref": "#/properties/ue_type",
-      "const":    "lte",
-      "template": "lte"
-    },
-
-    "dl_nr_arfcn": {
-      "title": "DL NR ARFCN",
-      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
-      "type": "number"
-    },
-    "band": {
-      "title": "NR band",
-      "description": "NR band number",
-      "type": "number"
-    },
-    "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth (in MHz)",
-      "type": "number",
-      "default": 40
-    },
-    "ssb_nr_arfcn": {
-      "title": "SSB NR ARFCN",
-      "description": "SSB NR ARFCN, you can retrieve from ENB/GNB side",
-      "type": "number"
+      "const":    "nr",
+      "template": "nr"
     }
   }
 }

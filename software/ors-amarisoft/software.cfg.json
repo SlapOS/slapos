@@ -65,12 +65,39 @@
       "index": 7
     },
     "ue": {
-      "title": "UE",
-      "description": "UE Configuration",
+      "title": "UEsim",
+      "description": "UEsim Configuration",
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
       "index": 8
+    },
+    "ue/ru": {
+      "title": "→ UEsim | Radio Unit",
+      "description": "Configuration of Radio Unit attached to UEsim",
+      "software-type": "ue",
+      "shared": true,
+      "request": "ru/input-schema.json",
+      "response": "ru/schema.json",
+      "index": 9
+    },
+    "ue/ue": {
+      "title": "→ UEsim | UE",
+      "description": "Configuration of UE simulated by UEsim",
+      "software-type": "ue",
+      "shared": true,
+      "request": "ue/input-schema.json",
+      "response": "ue/schema.json",
+      "index": 10
+    },
+    "ue/cell": {
+      "title": "→ UEsim | UE Cell",
+      "description": "Information about Cell to which UEsim attaches",
+      "software-type": "ue",
+      "shared": true,
+      "request": "ue/cell/input-schema.json",
+      "response": "ue/cell/schema.json",
+      "index": 11
     }
   }
 }

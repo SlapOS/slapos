@@ -3,6 +3,7 @@
     - load_iru_and_icell initializes RU and cell registries.
     - load_ipeercell initializes peer-cell registry.
     - load_ipeer initializes peer registry.
+    - load_iue initializes UE registry.
     - ru_config emits RF driver configuration for specified Radio Units.
 
     In the code iX denotes shared instance of type X, while X denotes
@@ -72,6 +73,17 @@
       'cell/nr/tdd': {
         'ssb_pos_bitmap':   '10000000',
         'tdd_ul_dl_config': '5ms 2UL 7DL 4/6 (default)',
+      },
+
+      'ue': {
+        'sim_algo': 'milenage',
+        'opc':      'milenage',
+        'amf':      '0x9001',
+        'sqn':      '000000000000',
+        'impu':     '',
+        'impi':     '',
+        'imsi':     '001010123456789',
+        'k':        '00112233445566778899aabbccddeeff',
       },
     }
 %}
@@ -201,8 +213,11 @@
     icell_dict keeps cell shared instances:  reference -> icell
     iru_dict   keeps RU   shared instances + RU whose definition is embedded into a cell:  reference -> iRU
     in the kept instances _ is automatically json-decoded
+
+    icell_kind=enb  - load cells definition to serve them from enb
+    icell_kind=ue   - load cells definition to connect to them
 #}
-{%- macro load_iru_and_icell(iru_dict, icell_dict)  %}
+{%- macro load_iru_and_icell(iru_dict, icell_dict, icell_kind)  %}
 {%-   set qother = [] %}
 {%-   for ishared in qshared_instance_list  %}
 {%-     set ref = J(jref_of_shared(ishared))  %}
@@ -211,9 +226,9 @@
 {%-       set iru = ishared %}
 {%-       do _ru_set_defaults(_)  %}
 {%-       do iru_dict.update({ref: iru})  %}
-{%-     elif 'cell_type' in _  and  _.get('cell_kind') == 'enb'  %}
+{%-     elif 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
 {%-       set icell = ishared %}
-{%-       do _cell_set_defaults(_, icell_dict)  %}
+{%-       do _cell_set_defaults(_, icell_kind, icell_dict)  %}
 {%-       do icell_dict.update({ref: icell})  %}
 {%-       set ru = _['ru']  %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
@@ -294,15 +309,17 @@
 {%-   endif %}
 {%- endmacro  %}
 
-{%- macro _cell_set_defaults(cell, icell_dict)  %}
-{%-   for k, v in defaults['cell/%s' % cell.cell_type].items() %}
-{%-     do cell.setdefault(k, v) %}
-{%-   endfor  %}
-{%-   for k, v in defaults['cell/%s/%s' % (cell.cell_type, cell.rf_mode)].items() %}
-{%-     do cell.setdefault(k, v) %}
-{%-   endfor  %}
-{%-   set n = len(list(icell_dict|dictsort | selectattr('1._.cell_type', '==', cell.cell_type)))  %}
-{%-   do cell.setdefault('root_sequence_index', 1 + 203*(cell.cell_type == 'lte') + n)  %}
+{%- macro _cell_set_defaults(cell, icell_kind, icell_dict)  %}
+{%-   if icell_kind == 'enb'  %}
+{%-     for k, v in defaults['cell/%s' % cell.cell_type].items() %}
+{%-       do cell.setdefault(k, v) %}
+{%-     endfor  %}
+{%-     for k, v in defaults['cell/%s/%s' % (cell.cell_type, cell.rf_mode)].items() %}
+{%-       do cell.setdefault(k, v) %}
+{%-     endfor  %}
+{%-     set n = len(list(icell_dict|dictsort | selectattr('1._.cell_type', '==', cell.cell_type)))  %}
+{%-     do cell.setdefault('root_sequence_index', 1 + 203*(cell.cell_type == 'lte') + n)  %}
+{%-   endif %}
 {%-   if cell.cell_type == 'lte'  %}
 {%-     do cell.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(cell.dl_earfcn))) %}
 {%-   elif cell.cell_type == 'nr' %}
@@ -387,6 +404,30 @@
 {%-         do bug('unreachable') %}
 {%-       endif %}
 {%-       do ipeercell_dict.update({ref: ipeercell})  %}
+{%-     else  %}
+{%-       do qother.append(ishared) %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   do qshared_instance_list.clear()  %}
+{%-   do qshared_instance_list.extend(qother) %}
+{%- endmacro  %}
+
+
+{#- load_iue initializes UE registry.
+
+    iue_dict keeps ue shared instance:  reference -> iue
+#}
+{%- macro load_iue(iue_dict)  %}
+{%-   set qother = [] %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ue_type'   in _ %}
+{%-       set iue = ishared %}
+{%-       for k, v in defaults['ue'].items()  %}
+{%-         do _.setdefault(k, v) %}
+{%-       endfor  %}
+{%-       do iue_dict.update({ref: iue})  %}
 {%-     else  %}
 {%-       do qother.append(ishared) %}
 {%-     endif %}
