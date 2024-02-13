@@ -560,27 +560,71 @@ def _do_enb_with(iru_icell_func):
 # ---- UE ----
 
 def do_ue():
-    def do(src, out, slapparameter_dict):
-        jslapparameter_dict = json.dumps(slapparameter_dict)
-        json_params = """{
-            "slap_configuration": {
-                "tap-name": "slaptap9"
-            },
-            "directory": {
-                "log": "log",
-                "etc": "etc",
-                "var": "var"
-            },
-            "pub_info": {
-                "rue_bind_addr": "::1",
-                "com_addr": "[::1]:9002"
-            },
-            "slapparameter_dict": %(jslapparameter_dict)s
-        }"""
-        j2render(src, out, json_params % locals())
+    iue = Instance('ue')
+    iue.ishared('UCELL1', {
+        'cell_type':    'lte',
+        'cell_kind':    'ue',
+        'rf_mode':      'tdd',
+        'bandwidth':    5,
+        'dl_earfcn':    38050,      # 2600 MHz
+        'ru':           {
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [0],
+            'n_antenna_dl': 2,
+            'n_antenna_ul': 1,
+            'tx_gain':      41,
+            'rx_gain':      42,
+        }
+    })
+    iue.ishared('UCELL2', {
+        'cell_type':    'nr',
+        'cell_kind':    'ue',
+        'rf_mode':      'fdd',
+        'bandwidth':    5,
+        'dl_nr_arfcn':  537200,     # 2686 MHz
+        'nr_band':      7,
+        'ru':           {           # NOTE contrary to eNB UEsim cannot share one RU in between several cells
+            'ru_type':      'sdr',
+            'ru_link_type': 'sdr',
+            'sdr_dev_list': [2],
+            'n_antenna_dl': 2,
+            'n_antenna_ul': 2,
+            'tx_gain':      31,
+            'rx_gain':      32,
+        }
+    })
 
-    do('ue.jinja2.cfg', 'ue-lte.cfg', {'ue_type': 'lte', 'rue_addr': 'host1'})
-    do('ue.jinja2.cfg',  'ue-nr.cfg', {'ue_type':  'nr', 'rue_addr': 'host2'})
+    iue.ishared('UE1', {
+        'ue_type':      'lte',
+        'rue_addr':     'host1'
+    })
+    iue.ishared('UE2', {
+        'ue_type':      'nr',
+        'rue_addr':     'host2'
+    })
+
+    jshared_instance_list = json.dumps(iue.shared_instance_list)
+    json_params = """{
+        "slap_configuration": {
+            "tap-name": "slaptap9",
+            "slap-computer-partition-id": "slappart9",
+            "slave-instance-list": %(jshared_instance_list)s
+        },
+        "pub_info": {
+            "rue_bind_addr": "::1",
+            "com_addr": "[::1]:9002"
+        },
+        "directory": {
+            "log": "log",
+            "etc": "etc",
+            "var": "var"
+        },
+        "slapparameter_dict": {
+        }
+    }""" % locals()
+
+    j2render('ue.jinja2.cfg', 'ue.cfg', json_params)
 
 
 def main():

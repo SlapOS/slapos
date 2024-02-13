@@ -26,6 +26,7 @@
 # Here we test:
 #
 # - enb     (see TestENB_*)
+# - uesim   (see TestUEsim_*)
 #
 # Currently there is no tests for core-network, because for core-network
 # there is no difference in between generic and ORS modes and core-network is
@@ -57,6 +58,7 @@ setUpModule, _AmariTestCase = makeModuleSetUpAndTestCaseClass(
 # - LTE/NR  indicate LTE/NR cell with given downlink frequency.
 # - BW      indicates specified bandwidth.
 # - CENB    indicates a ENB-kind cell.
+# - CUE     indicates an UE-kind cell.
 # - TAC     indicates specified Tracking Area Code.
 # - LTE_PEER/NR_PEER indicate an LTE/NR ENB-PEER-kind cell.
 # - X2_PEER/XN_PEER  indicate an LTE/NR ENB peer.
@@ -91,6 +93,9 @@ def CENB(cell_id, pci):
         'cell_id':      '0x%02x' % cell_id,
         'pci':          pci,
     }
+
+# CUE indicates an UE-kind cell.
+CUE = {'cell_kind': 'ue'}
 
 #  TAC returns basic parameters to indicate specified Tracking Area Code.
 def TAC(tac):
@@ -659,6 +664,125 @@ class TestENB_Sunwave4    (ENBTestCase4, Sunwave4):     pass
 class TestENB_RUMultiType4(ENBTestCase4, RUMultiType4): pass
 
 
+# ---- UEsim ----
+
+# UEsimTestCase4 provides base class for unit-testing UEsim service.
+#
+# It is similar to ENBTestCase4 but configures UE cells instead of eNB cells.
+class UEsimTestCase4(RFTestCase4):
+    @classmethod
+    def getInstanceSoftwareType(cls):
+        return "ue"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.ue_cfg = cls.rf_cfg = yamlpp_load(cls.ipath('etc/ue.cfg'))
+
+    @classmethod
+    def getInstanceParameterDict(cls):
+        return {'_': json.dumps({
+            'testing':      True,
+        })}
+
+    @classmethod
+    def CELLcfg(cls, i):
+        return CUE
+
+    @classmethod
+    def requestAllShared(cls, imain):
+        super().requestAllShared(imain)
+
+        def UE(i):
+            ue = {
+                'ue_type':  ('lte', 'nr') [(i-1) % 2],
+                'rue_addr': 'host%d'    % i,
+                'sim_algo': ('xor', 'milenage', 'tuak') [i-1],
+                'imsi':     '%015d'     % i,
+                'opc':      '%032x'     % i,
+                'amf':      '0x%04x'    % (0x9000+i),
+                'sqn':      '%012x'     % i,
+                'k':        'FFFF%028x' % i,
+                'impi':     'impi%d@rapid.space' % i,
+            }
+            return cls.requestShared(imain, 'UE%d' % i, ue)
+
+        UE(1)
+        UE(2)
+        UE(3)
+
+    # ue parameters
+    def test_ue_cfg_ue(t):
+        assertMatch(t, t.ue_cfg['ue_list'], [
+          dict(
+            as_release=13,  ue_category=13,   rue_addr='host1',
+            sim_algo='xor', amf =0x9001,      impi='impi1@rapid.space',
+            sqn ='000000000001',
+            imsi='000000000000001',
+            opc ='00000000000000000000000000000001',
+            K   ='FFFF0000000000000000000000000001',
+          ),
+          dict(
+            as_release=15,  ue_category='nr', rue_addr='host2',
+            sim_algo='milenage', amf =0x9002, impi='impi2@rapid.space',
+            sqn ='000000000002',
+            imsi='000000000000002',
+            opc ='00000000000000000000000000000002',
+            K   ='FFFF0000000000000000000000000002',
+          ),
+          dict(
+            as_release=13,  ue_category=13,   rue_addr='host3',
+            sim_algo='tuak', amf =0x9003,     impi='impi3@rapid.space',
+            sqn ='000000000003',
+            imsi='000000000000003',
+            opc ='00000000000000000000000000000003',
+            K   ='FFFF0000000000000000000000000003',
+          ),
+        ])
+
+    # cells
+    def test_ue_cfg_cell(t):
+        assertMatch(t, t.ue_cfg['cell_groups'], [
+          dict(
+            group_type='lte',
+            cells=[
+              dict( # CELL1
+                rf_port=0,        n_antenna_dl=4,  n_antenna_ul=2,
+                dl_earfcn=100,    ul_earfcn=18100,
+                bandwidth=5,
+              ),
+              dict( # CELL2
+                rf_port=1,        n_antenna_dl=4,  n_antenna_ul=2,
+                dl_earfcn=40200,  ul_earfcn=40200,
+                bandwidth=10,
+              ),
+            ]
+          ),
+          dict(
+            group_type='nr',
+            cells=[
+              dict( # CELL3
+                rf_port=2,           n_antenna_dl=4,      n_antenna_ul=2,
+                dl_nr_arfcn=300300,  ul_nr_arfcn=290700,  ssb_nr_arfcn=300270,  band=74,
+                bandwidth=15,
+              ),
+              dict( # CELL4
+                rf_port=3,           n_antenna_dl=4,      n_antenna_ul=2,
+                dl_nr_arfcn=470400,  ul_nr_arfcn=470400,  ssb_nr_arfcn=470430,  band=40,
+                bandwidth=20,
+              ),
+            ]
+          )
+        ])
+
+
+# instantiate UEsim tests
+class TestUEsim_SDR4        (UEsimTestCase4, SDR4):         pass
+class TestUEsim_Lopcomm4    (UEsimTestCase4, Lopcomm4):     pass
+class TestUEsim_Sunwave4    (UEsimTestCase4, Sunwave4):     pass
+class TestUEsim_RUMultiType4(UEsimTestCase4, RUMultiType4): pass
+
+
 # ---- misc ----
 
 # yamlpp_load loads yaml config file after preprocessing it.
@@ -762,7 +886,7 @@ class TestAssertMatch(unittest.TestCase):
 # run only on leaf test classes.
 def __dir__():
     d = list(sorted(globals().keys()))
-    abstract = {'AmariTestCase', 'RFTestCase4', 'ENBTestCase4'}
+    abstract = {'AmariTestCase', 'RFTestCase4', 'ENBTestCase4', 'UEsimTestCase4'}
     for _ in abstract:
         d.remove(_)
     return d
