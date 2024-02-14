@@ -1,0 +1,70 @@
+[buildout]
+parts =
+  textsynth-service
+  textsynth-promise
+  publish-connection-information
+
+extends = ${monitor2-template:output}
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+srv = $${:home}/srv
+service = $${:etc}/service
+
+[textsynth-config]
+ip = $${slap-configuration:public-ipv4}
+port = 12345
+url = $${:ip}:$${:port}
+
+[textsynth-service]
+recipe = slapos.cookbook:wrapper
+command-line = sh -c 'cd /srv/slapgrid/slappart9/srv/project/ts_server-2024-01-20; ./ts_server ts_server_rapidspace.cfg'
+hash-existing-files = $${buildout:directory}/buildout.cfg
+wrapper-path = $${directory:service}/textsynth
+
+[textsynth-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = textsynth.py
+config-host = $${textsynth-config:ip}
+config-port = $${textsynth-config:port}
+
+[textsynth-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = textsynth frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+# It is not a dedicated instance but an instance allocated on a shared instance
+shared = true
+config-url = $${textsynth-config:url}
+return = domain secure_access
+
+[textsynth-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = textsynth-http-frontend.py
+url = $${textsynth-frontend:connection-secure_access}
+config-url = $${:url}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+public-ipv4 = 85.236.52.77
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+backend-url = $${textsynth-config:url}
+url = $${textsynth-frontend-promise:url}
