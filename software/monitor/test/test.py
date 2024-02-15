@@ -472,6 +472,12 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
            ],
            'check-http-header-dict': {"A": "AAA"},
         },
+        "whois-check": {
+           "url-list": [
+             "https://whois.example.com",
+           ],
+           "check-domain-expiration-days": 16,
+        },
       }
     })}
 
@@ -496,6 +502,7 @@ URL =
   https://header.example.com
   https://path.example.com/path
   https://status.example.com
+  https://whois.example.com
 """},
       11: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
@@ -516,8 +523,9 @@ URL =
   def getInstanceSoftwareType(cls):
     return 'edgetest-basic'
 
-  enabled_sense_list = "'dns_query tcp_server http_query ssl_certificate '\n"\
-                       "                        'elapsed_time'"
+  enabled_sense_list = \
+      "'dns_query whois tcp_server http_query ssl_certificate '\n"\
+      "                        'elapsed_time'"
 
   def assertSurykatkaPromises(self):
     self.assertHttpQueryPromiseContent(
@@ -525,6 +533,7 @@ URL =
       'path-check',
       'https://path.example.com/path',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -542,6 +551,7 @@ URL =
       'domain-check',
       'https://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -559,6 +569,7 @@ URL =
       'domain-check',
       'http://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -576,6 +587,7 @@ URL =
       'frontend-check',
       'https://frontend.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -593,6 +605,7 @@ URL =
       'frontend-empty-check',
       'https://frontendempty.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -610,6 +623,7 @@ URL =
       'status-check',
       'https://status.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -627,6 +641,7 @@ URL =
       'certificate-check',
       'https://certificate.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '11',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -644,6 +659,7 @@ URL =
       'time-check',
       'https://time.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
@@ -661,6 +677,7 @@ URL =
       'failure-check',
       'https://failure.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '3',
   'http-header-dict': '{}',
@@ -678,6 +695,7 @@ URL =
       'header-check',
       'https://header.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '30',
   'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{"A": "AAA"}',
@@ -687,6 +705,24 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://header.example.com'}""" % (
+        self.enabled_sense_list,
+        self.surykatka_dict['edge0'][5]['json-file'],))
+
+    self.assertHttpQueryPromiseContent(
+      'edge0',
+      'whois-check',
+      'https://whois.example.com',
+      """extra_config_dict = { 'certificate-expiration-days': '7',
+  'domain-expiration-days': '16',
+  'enabled-sense-list': %s,
+  'failure-amount': '1',
+  'http-header-dict': '{}',
+  'ip-list': '127.0.0.1 127.0.0.2',
+  'json-file': '%s',
+  'maximum-elapsed-time': '5',
+  'report': 'http_query',
+  'status-code': '201',
+  'url': 'https://whois.example.com'}""" % (
         self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
