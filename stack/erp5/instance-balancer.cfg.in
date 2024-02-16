@@ -2,6 +2,20 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
+{% set caucase_url = ssl_parameter_dict.get('caucase-url') %}
+{% set with_embedded_caucased = caucase_url is none %}
+{% if not caucase_url -%}
+{%   if ipv6_set -%}
+{%     set caucase_host = '[' ~ (ipv6_set | list)[0] ~ ']' %}
+{%-  else -%}
+{%     set caucase_host = (ipv4_set | list)[0] %}
+{%-  endif %}
+{%   set caucase_http_port = 2198 -%}{# caucase_https_port is implicitly 2199 #}
+{%   set caucase_netloc = caucase_host ~ ':' ~ caucase_http_port -%}
+{%   set caucase_url = 'http://' ~ caucase_netloc %}
+{% endif %}
+{# Caucase related parts include a hash of the caucase_url, to make is possible to re-request with another caucase url. #}
+{% set caucase_haproxy_certificate_suffix = '-' + hashlib.md5(six.ensure_binary(caucase_url)).hexdigest()[:6] -%}
 {% set frontend_caucase_url_list = ssl_parameter_dict.get('frontend-caucase-url-list', []) -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
@@ -15,25 +29,103 @@ per partition. No more (undefined result), no less (IndexError).
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 
+[simplefile]
+< = jinja2-template-base
+inline = {{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+output = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+{% if with_embedded_caucased -%}
+{{   caucase.caucased(
+       prefix='caucased-haproxy-certificate',
+       buildout_bin_directory=bin_directory,
+       caucased_path='${directory:services-on-watch}/caucased' + caucase_haproxy_certificate_suffix,
+       backup_dir='${directory:backup-caucased-haproxy-certificate}',
+       data_dir='${directory:srv-caucased-haproxy-certificate}',
+       netloc=caucase_netloc,
+       tmp='${directory:tmp}',
+       service_auto_approve_count=ssl_parameter_dict.get('service-auto-approve-amount', 1),
+       user_auto_approve_count=ssl_parameter_dict.get('user-auto-approve-amount', 0),
+       key_len=ssl_parameter_dict.get('key-length', 2048),
+)}}
+{%   do section('caucased-haproxy-certificate') -%}
+{%   do section('caucased-haproxy-certificate-promise') -%}
+{% endif -%}
+
+[haproxy-certificate]
+cert-and-key-file = ${directory:etc}/${:_buildout_section_name_}{{ caucase_haproxy_certificate_suffix }}-cert-and-key.pem
+ca-file = ${directory:etc}/${:_buildout_section_name_}{{ caucase_haproxy_certificate_suffix }}.ca.crt
+crl-file = ${directory:etc}/${:_buildout_section_name_}{{ caucase_haproxy_certificate_suffix }}.crl
+
+[haproxy-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [ req ]
+  prompt = no
+  req_extensions = req_ext
+  distinguished_name = dn
+  [ dn ]
+  CN = haproxy
+  [ req_ext ]
+  subjectAltName = @alt_names
+  [ alt_names ]
+  IP.1 = {{ ipv4 }}
+{% if ipv6_set %}
+  IP.2 = {{ ipv6 }}
+{% endif %}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
+
+[haproxy-certificate-csr]
+recipe = plone.recipe.command
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ parameter_dict['openssl'] }}/bin/openssl req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -nodes \
+      -keyout /dev/null \
+      -config '${haproxy-certificate-csr-config:output}' \
+      -out '${:csr}'
+  fi
+stop-on-error = true
+csr = ${directory:srv}/${:_buildout_section_name_}{{ caucase_haproxy_certificate_suffix }}.csr.pem
+
+{% if ssl_parameter_dict.get('csr') %}
+{{ simplefile(
+    'haproxy-certificate-csr-from-parameters',
+    '${directory:etc}/haproxy-certificate-csr-from-parameters.pem',
+    ssl_parameter_dict['csr']) }}
+[haproxy-certificate-csr]
+csr = ${haproxy-certificate-csr-from-parameters:output}
+{% endif %}
+
 {{ caucase.updater(
-     prefix='caucase-updater',
+     prefix='caucase-updater-haproxy-certificate',
      buildout_bin_directory=parameter_dict['bin-directory'],
-     updater_path='${directory:services-on-watch}/caucase-updater',
-     url=ssl_parameter_dict['caucase-url'],
-     data_dir='${directory:srv}/caucase-updater',
-     crt_path='${apache-conf-ssl:caucase-cert}',
-     ca_path='${directory:srv}/caucase-updater/ca.crt',
-     crl_path='${directory:srv}/caucase-updater/crl.pem',
-     key_path='${apache-conf-ssl:caucase-key}',
+     updater_path='${directory:services-on-watch}/caucase-updater-haproxy-certificate' + caucase_haproxy_certificate_suffix,
+     url=caucase_url,
+     data_dir='${directory:caucase-updater-haproxy-certificate}',
+     crt_path='${haproxy-certificate:cert-and-key-file}',
+     ca_path='${haproxy-certificate:ca-file}',
+     crl_path='${haproxy-certificate:crl-file}',
+     key_path='${haproxy-certificate:cert-and-key-file}',
      on_renew='${haproxy-reload:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
-     template_csr_pem=ssl_parameter_dict.get('csr'),
+     template_csr='${haproxy-certificate-csr:csr}',
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
-{# XXX we don't use caucase yet.
-{% do section('caucase-updater') -%}
-{% do section('caucase-updater-promise') -%}
-#}
+{% do section('caucase-updater-haproxy-certificate') -%}
 
 {% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
@@ -116,71 +208,8 @@ command = ${caucase-updater-housekeeper:output}
 update-command = ${:command}
 {% endif -%}
 
-{% set haproxy_dict = {} -%}
-{% set zope_virtualhost_monster_backend_dict = {} %}
-{% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
-{% set next_port = functools.partial(next, itertools.count(slapparameter_dict['tcpv4-port'])) -%}
-{% for family_name, parameter_id_list in sorted(
-  six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
-{%   set zope_family_address_list = [] -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name] -%}
-{%   set has_webdav = [] -%}
-{%   for parameter_id in parameter_id_list -%}
-{%     set zope_address_list = slapparameter_dict[parameter_id] -%}
-{%     for zope_address, maxconn, webdav in zope_address_list -%}
-{%       if webdav -%}
-{%         do has_webdav.append(None) %}
-{%       endif -%}
-{%       set zope_effective_address = zope_address -%}
-{%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
-{%     endfor -%}
-
-{#     # Generate entries with rewrite rule for test runnners #}
-{%     set test_runner_address_list = slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', []) %}
-{%     if test_runner_address_list -%}
-{%       set test_runner_backend_mapping = {} %}
-{%       set test_runner_balancer_url_list = [] %}
-{%       set test_runner_external_port = next_port() %}
-{%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
-{%         do test_runner_backend_mapping.__setitem__(
-                'unit_test_' ~ i,
-                'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
-{%         do test_runner_balancer_url_list.append(
-                'https://' ~ ipv4 ~ ':' ~ test_runner_external_port ~ '/unit_test_' ~ i ~ '/' ) %}
-{%       endfor %}
-{%       do zope_virtualhost_monster_backend_dict.__setitem__(
-              (ipv4, test_runner_external_port),
-              ( ssl_authentication, test_runner_backend_mapping ) ) -%}
-{%       do test_runner_url_dict.__setitem__(family_name, test_runner_balancer_url_list) -%}
-{%     endif -%}
-{%   endfor -%}
-
-{# Make rendering fail artificially if any family has no known backend.
- # This is useful as haproxy's hot-reconfiguration mechanism is
- # supervisord-incompatible.
- # As jinja2 postpones KeyError until place-holder value is actually used,
- # do a no-op getitem.
--#}
-{%   do zope_family_address_list[0][0] -%}
-
-{#
- # We use to have haproxy then apache, now haproxy is playing apache's role
- # To keep port stable, we consume one port so that haproxy use the same port
- # that apache was using before.
--#}
-{%   set _ = next_port() -%}
-
-{%   set haproxy_port = next_port() -%}
-{%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
-{%   if has_webdav -%}
-{%     set external_scheme = 'webdavs' -%}
-{%   else %}
-{%     set external_scheme = 'https' -%}
-{%   endif -%}
-{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'][family_name], slapparameter_dict['timeout-dict'][family_name], zope_family_address_list)) -%}
-{% endfor -%}
-
 [haproxy-cfg-parameter-dict]
+recipe = slapos.recipe.build
 ipv4 = {{ ipv4 }}
 ipv6 = {{ ipv6 }}
 cert = ${haproxy-conf-ssl:certificate}
@@ -194,9 +223,107 @@ family-path-routing-dict = {{ dumps(slapparameter_dict['family-path-routing-dict
 pidfile = ${directory:run}/haproxy.pid
 log-socket = ${rsyslogd-cfg-parameter-dict:log-socket}
 server-check-path = {{ dumps(slapparameter_dict['haproxy-server-check-path']) }}
-backend-dict = {{ dumps(haproxy_dict) }}
-zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
+slapparameter-dict = {{ dumps(slapparameter_dict) }}
+ports-state-file = ${buildout:directory}/.${:_buildout_section_name_}-ports.json
 
+init =
+  import functools
+  import itertools
+  import json
+  import os
+  import shutil
+  import six
+  from zc.buildout import UserError
+
+  slapparameter_dict = options['slapparameter-dict']
+  ipv4 = options['ipv4']
+  ipv6 = options['ipv6']
+
+  # read port state file
+  port_dict = {}
+  previous_port_dict = None
+  if os.path.exists(options['ports-state-file']):
+    with open(options['ports-state-file']) as f:
+      port_dict = json.load(f)
+      previous_port_dict = dict(port_dict)
+
+  _next_port = functools.partial(next, itertools.count(slapparameter_dict['tcpv4-port']))
+  def get_port(name):
+    if name in port_dict:
+      return port_dict[name]
+    port = _next_port()
+    while port in port_dict.values():
+      port = _next_port()
+    port_dict[name] = port
+    return port
+
+  backend_dict = {}
+  frontend_dict = {}
+  zope_virtualhost_monster_backend_dict = {}
+  for family_name, parameter_id_list in sorted(
+      six.iteritems(slapparameter_dict['zope-family-dict'])):
+    zope_family_address_list = []
+    ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name]
+    for parameter_id in parameter_id_list:
+      zope_family_address_list.extend(slapparameter_dict[parameter_id])
+
+      # Generate entries with rewrite rule for test runnners
+      test_runner_address_list = slapparameter_dict.get(parameter_id + '-test-runner-address-list', [])
+      if test_runner_address_list:
+        test_runner_backend_mapping = {}
+        test_runner_balancer_url_list = []
+        for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list):
+          test_runner_backend_mapping['unit_test_%s' % i] = \
+            'http://%s:%s' % (test_runner_internal_ip, test_runner_internal_port)
+          test_runner_balancer_url_list.append(
+            'https://%s:%s/unit_test_%s/' % (ipv4, get_port('test-runner-' + family_name), i))
+        zope_virtualhost_monster_backend_dict[(ipv4, get_port('test-runner-' + family_name))] =\
+          ( ssl_authentication, test_runner_backend_mapping )
+        self.buildout['publish'][family_name + '-test-runner-url-list'] = test_runner_balancer_url_list
+
+    if not zope_family_address_list:
+      raise UserError('No zope defined for family %s (maybe not ready)' % family_name)
+
+    # consume a port for compatibility when were using apache + haproxy
+    get_port('apache-compatibility-' + family_name)
+
+    legacy_port = get_port('legacy-' + family_name)
+    # a port for monitoring promise (which port is not important, the promise checks
+    # that haproxy is healthy enough to listen on a port)
+    options['haproxy-promise-port'] = legacy_port
+    frontend_dict['legacy-frontend-' + family_name] = {
+      'port': legacy_port,
+      'client-cert-required': ssl_authentication,
+      'backend-name': family_name,
+      'request-path-prepend': None,
+    }
+    backend_dict[family_name] = {
+      'timeout': slapparameter_dict['timeout-dict'][family_name],
+      'backend-list': zope_family_address_list,
+    }
+    external_scheme = 'webdavs' if any(a[2] for a in zope_family_address_list) else 'https'
+    self.buildout['publish'][family_name] = "{external_scheme}://{ipv4}:{legacy_port}".format(**locals())
+    self.buildout['publish'][family_name + "-v6"] = "{external_scheme}://[{ipv6}]:{legacy_port}".format(**locals())
+
+  for frontend_name, frontend in six.iteritems(slapparameter_dict['frontend-parameter-dict']):
+    frontend_port = get_port('frontend-' + frontend_name)
+    family_name = frontend['zope-family']
+    frontend_dict['frontend-' + frontend_name] = {
+      'port': frontend_port,
+      'client-cert-required': slapparameter_dict['ssl-authentication-dict'][family_name],
+      'backend-name': family_name,
+      'request-path-prepend': frontend['internal-path'],
+    }
+    self.buildout['publish']['url-backend-' + frontend_name] = "https://[{ipv6}]:{frontend_port}".format(**locals())
+
+  options['backend-dict'] = backend_dict
+  options['frontend-dict'] = frontend_dict
+  options['zope-virtualhost-monster-backend-dict'] = zope_virtualhost_monster_backend_dict
+
+  if port_dict != previous_port_dict:
+    with open(options['ports-state-file'] + '.tmp', 'w') as f:
+      json.dump(port_dict, f, indent=True)
+    shutil.move(options['ports-state-file'] + '.tmp', options['ports-state-file'])
 
 [haproxy-cfg]
 < = jinja2-template-base
@@ -221,28 +348,6 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services-on-watch}/haproxy
 command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
-
-[apache-conf-ssl]
-# XXX caucase is/was buggy and this certificate does not match key for instances
-# that were updated, so don't use it yet.
-caucase-cert = ${directory:apache-conf}/apache-caucase.crt
-caucase-key = ${directory:apache-conf}/apache-caucase.pem
-
-[simplefile]
-< = jinja2-template-base
-inline = {{ '{{ content }}' }}
-
-{% macro simplefile(section_name, file_path, content, mode='') -%}
-{%   set content_section_name = section_name ~ '-content' -%}
-[{{  content_section_name }}]
-content = {{ dumps(content) }}
-
-[{{  section(section_name) }}]
-< = simplefile
-output = {{ file_path }}
-context = key content {{content_section_name}}:content
-mode = {{ mode }}
-{%- endmacro %}
 
 [{{ section('haproxy-socat-stats')}}]
 recipe = slapos.cookbook:wrapper
@@ -277,7 +382,7 @@ config-command = test -S ${rsyslogd-cfg-parameter-dict:log-socket}
 
 
 [haproxy-conf-ssl]
-certificate = ${build-certificate-and-key:certificate-and-key}
+certificate = ${haproxy-certificate:cert-and-key-file}
 {% if frontend_caucase_url_list -%}
 ca-cert = ${directory:etc}/frontend-ca.pem
 ca-cert-dir = ${directory:ca-cert}
@@ -286,18 +391,15 @@ crl-dir = ${directory:crl}
 depends = ${caucase-updater-housekeeper-run:recipe}
 {%- endif %}
 
-[build-certificate-and-key]
+# BBB cert and key as ssl parameters. Use caucase instead.
 {% if ssl_parameter_dict.get('key') -%}
-certificate-and-key = ${tls-certificate-and-key-from-parameters:output}
 {{ simplefile(
-    'tls-certificate-and-key-from-parameters',
+    'haproxy-conf-ssl-certificate-and-key-from-parameters',
     '${directory:etc}/certificate-and-key-from-parameters.pem',
     ssl_parameter_dict['cert'] ~ "\n" ~ ssl_parameter_dict['key']) }}
-{% else %}
-recipe = plone.recipe.command
-command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:certificate-and-key}" -out "${:certificate-and-key}"
-certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
-{%- endif %}
+[haproxy-conf-ssl]
+certificate = ${haproxy-conf-ssl-certificate-and-key-from-parameters:output}
+{% endif %}
 
 [{{ section('haproxy-promise') }}]
 <= monitor-promise-base
@@ -305,17 +407,12 @@ certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 promise = check_socket_listening
 name = haproxy.py
 config-host = {{ ipv4 }}
-config-port = {{ next(six.itervalues(haproxy_dict))[0] }}
+config-port = ${haproxy-cfg-parameter-dict:haproxy-promise-port}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (port, scheme, _, _, _) in haproxy_dict.items() -%}
-{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ port }}{% endif %}
-{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ port }}
-{% endfor -%}
-{% for family_name, test_runner_url_list in test_runner_url_dict.items() -%}
-{{    family_name ~ '-test-runner-url-list' }} = {{ dumps(test_runner_url_list) }}
-{% endfor -%}
+# note: some values are pushed by haproxy-cfg-parameter-dict
+caucase-http-url = {{ caucase_url }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [{{ section('logrotate-rsyslogd') }}]
@@ -335,6 +432,12 @@ var = ${buildout:directory}/var
 run = ${:var}/run
 log = ${:var}/log
 srv = ${buildout:directory}/srv
+{% if with_embedded_caucased %}
+srv-caucased-haproxy-certificate = ${:srv}/caucased-haproxy-certificate{{ caucase_haproxy_certificate_suffix }}/
+backup-caucased-haproxy-certificate = ${:srv}/backup/caucased{{ caucase_haproxy_certificate_suffix }}
+{% endif %}
+caucase-updater-haproxy-certificate = ${:srv}/caucase-updater-haproxy-certificate
+tmp = ${buildout:directory}/tmp
 apachedex = ${monitor-directory:private}/apachedex
 rsyslogd-spool = ${:run}/rsyslogd-spool
 {% if frontend_caucase_url_list -%}
@@ -393,7 +496,7 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port() }}
+monitor-httpd-port = 2197
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
