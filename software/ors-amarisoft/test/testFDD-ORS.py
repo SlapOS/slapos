@@ -26,10 +26,11 @@
 ##############################################################################
 
 import os
-import yaml
 import json
 import glob
 import requests
+
+from test import yamlpp_load
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -140,14 +141,14 @@ def test_enb_conf(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yamlpp_load(conf_file)
     if 'tx_gain' in conf and 'rx_gain' in conf:
       self.assertEqual(conf['tx_gain'], enb_param_dict['tx_gain'])
       self.assertEqual(conf['rx_gain'], enb_param_dict['rx_gain'])
-    self.assertEqual(conf['cell_default']['inactivity_timer'], enb_param_dict['inactivity_timer'])
-    self.assertEqual(conf['cell_default']['uldl_config'], 6)
+    self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
+    self.assertNotIn('uldl_config', conf['cell_list'][0])
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
+    self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
     self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
@@ -169,26 +170,21 @@ def test_enb_conf(self):
       self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
       self.assertEqual(p['tac'],          conf_ncell['tac'])
 
-    with open(conf_file, 'r') as f:
-        for l in f:
-            if l.startswith('#define N_RB_DL'):
-                self.assertIn('50', l)
-
 def test_gnb_conf1(self):
 
         conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
+          self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
+        conf = yamlpp_load(conf_file)
         if 'tx_gain' in conf and 'rx_gain' in conf:
             self.assertEqual(conf['tx_gain'], gnb_param_dict1['tx_gain'])
             self.assertEqual(conf['rx_gain'], gnb_param_dict1['rx_gain'])
-        self.assertEqual(conf['nr_cell_default']['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
+        self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
         self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
         self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
         self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
-        self.assertEqual(conf['nr_cell_default']['n_id_cell'], gnb_param_dict1['pci'])
+        self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['nr_bandwidth'])
+        self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
         self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
         self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
         for p in conf['nr_cell_default']['plmn_list']:
@@ -211,25 +207,19 @@ def test_gnb_conf1(self):
           self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
           self.assertEqual(p['tac'],          conf_ncell['tac'])
           self.assertEqual(p['band'],         conf_ncell['nr_band'])
-        tdd_config = conf['nr_cell_default']['tdd_ul_dl_config']['pattern1']
+        tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
         self.assertEqual(float(tdd_config['period']), 2.5)
         self.assertEqual(int(tdd_config['dl_slots']), 3)
         self.assertEqual(int(tdd_config['dl_symbols']), 10)
         self.assertEqual(int(tdd_config['ul_slots']), 1)
         self.assertEqual(int(tdd_config['ul_symbols']), 2)
 
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define NR_BANDWIDTH'):
-                    self.assertIn(str(gnb_param_dict1['nr_bandwidth']), l)
-
 def test_gnb_conf2(self):
 
         conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'gnb.cfg'))[0]
+          self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-            conf = yaml.load(f)
+        conf = yamlpp_load(conf_file)
 
         for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
           sd = hex(p['sd'])
@@ -241,8 +231,7 @@ def test_mme_conf(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yamlpp_load(conf_file)
     self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_sim_card(self):
@@ -250,8 +239,7 @@ def test_sim_card(self):
     conf_file = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
 
-    with open(conf_file, 'r') as f:
-        conf = yaml.load(f)
+    conf = yamlpp_load(conf_file)
     for n in "sim_algo imsi opc sqn impu impi".split():
         self.assertEqual(conf['ue_db'][0][n], param_dict[n])
     self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
@@ -418,9 +406,9 @@ class TestUELTEParameters(ORSTestCase):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-          conf = yaml.load(f)
+        conf = yamlpp_load(conf_file)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_earfcn'], param_dict['dl_earfcn'])
+        self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], 10)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_dl'], param_dict['n_antenna_dl'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['n_antenna_ul'], param_dict['n_antenna_ul'])
         self.assertEqual(conf['ue_list'][0]['rue_addr'], param_dict['rue_addr'])
@@ -435,11 +423,6 @@ class TestUELTEParameters(ORSTestCase):
         self.assertEqual(conf['tx_gain'], param_dict['tx_gain'])
         self.assertEqual(conf['rx_gain'], param_dict['rx_gain'])
 
-        with open(conf_file, 'r') as f:
-            for l in f:
-                if l.startswith('#define N_RB_DL'):
-                    self.assertIn('50', l)
-
 class TestUENRParameters(ORSTestCase):
     @classmethod
     def getInstanceParameterDict(cls):
@@ -451,8 +434,7 @@ class TestUENRParameters(ORSTestCase):
         conf_file = glob.glob(os.path.join(
           self.slap.instance_directory, '*', 'etc', 'ue.cfg'))[0]
 
-        with open(conf_file, 'r') as f:
-          conf = yaml.load(f)
+        conf = yamlpp_load(conf_file)
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['ssb_nr_arfcn'], param_dict['ssb_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['dl_nr_arfcn'], param_dict['dl_nr_arfcn'])
         self.assertEqual(conf['cell_groups'][0]['cells'][0]['bandwidth'], '10 MHz')

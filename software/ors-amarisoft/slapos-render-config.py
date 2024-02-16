@@ -6,10 +6,10 @@
 import zc.buildout.buildout # XXX workaround for https://lab.nexedi.com/nexedi/slapos.recipe.template/merge_requests/9
 from slapos.recipe.template import jinja2_template
 
-import json
+import json, os, glob
 
 
-# j2render renders config/<src> into config/<out> with provided json parameters.
+# j2render renders config/<src> into config/out/<out> with provided json parameters.
 def j2render(src, out, jcfg):
     ctx = json.loads(jcfg)
     assert '_standalone' not in ctx
@@ -17,11 +17,12 @@ def j2render(src, out, jcfg):
     textctx = ''
     for k, v in ctx.items():
         textctx += 'json %s %s\n' % (k, json.dumps(v))
+    textctx += 'import json_module    json\n'
     buildout = None # stub
     r = jinja2_template.Recipe(buildout, "recipe", {
       'extensions': 'jinja2.ext.do',
       'url': 'config/{}'.format(src),
-      'output': 'config/{}'.format(out),
+      'output': 'config/out/{}'.format(out),
       'context': textctx,
       'import-list': '''
         rawfile slaplte.jinja2 slaplte.jinja2''',
@@ -34,7 +35,7 @@ def j2render(src, out, jcfg):
             return f.read()
     r._read = _read
 
-    with open('config/{}'.format(out), 'w+') as f:
+    with open('config/out/{}'.format(out), 'w+') as f:
       f.write(r._render().decode())
 
 
@@ -57,11 +58,11 @@ def do(src, out, rat, slapparameter_dict):
         "do_nr": %(jdo_nr)s,
         "trx": "sdr",
         "bbu": "ors",
-        "ru": "ors",
-        "one_watt": "True",
-        "earfcn": 646666,
-        "nr_arfcn": 646666,
-        "nr_band": 43,
+        "ru_type": "ors",
+        "ors": {"one-watt": true},
+        "earfcn": 36100,
+        "nr_arfcn": 380000,
+        "nr_band": 39,
         "tx_gain": 62,
         "rx_gain": 43,
         "sib23_file": "sib",
@@ -90,10 +91,53 @@ def do(src, out, rat, slapparameter_dict):
             "etc": "etc",
             "var": "var"
         },
+        "pub_info": {
+            "rue_bind_addr": "::1",
+            "com_addr": "[::1]:9002"
+        },
         "slapparameter_dict": %(jslapparameter_dict)s
     }"""
 
     j2render(src, out, json_params % locals())
 
-do('enb.jinja2.cfg', 'enb.cfg', 'lte', {"tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"})
-do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {"tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)"})
+def do_enb():
+    peer_lte = {
+        'cell_id':          '0x12345',
+        'pci':              35,
+        'dl_earfcn':        700,
+        'tac':              123,
+    }
+    peer_nr = {
+        'nr_cell_id':       '0x77712',
+        'gnb_id_bits':      22,
+        'dl_nr_arfcn':      520000,
+        'nr_band':          38,
+        'pci':              75,
+        'tac':              321,
+    }
+
+    do('enb.jinja2.cfg', 'enb.cfg', 'lte', {
+        "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
+        "ncell_list": {'1': peer_lte},
+    })
+    do('enb.jinja2.cfg', 'gnb.cfg', 'nr',  {
+        "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (maximum uplink)",
+        "ncell_list": {'1': peer_nr},
+    })
+
+
+def do_ue():
+    do('ue.jinja2.cfg', 'ue-lte.cfg', 'lte', {'rue_addr': 'host1'})
+    do('ue.jinja2.cfg',  'ue-nr.cfg',  'nr', {'rue_addr': 'host2'})
+
+
+def main():
+    os.makedirs('config/out', exist_ok=True)
+    for f in glob.glob('config/out/*'):
+        os.remove(f)
+    do_enb()
+    do_ue()
+
+
+if __name__ == '__main__':
+    main()
