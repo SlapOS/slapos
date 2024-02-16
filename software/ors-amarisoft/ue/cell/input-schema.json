@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "UE Cell",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "../../ue/cell/lte/input-schema.json" },
+    { "$ref": "../../ue/cell/nr/input-schema.json" }
+  ]
+}
