@@ -107,6 +107,18 @@
       "description": "Set open file descriptors soft limit to hard limit",
       "type": "boolean"
     },
+    "python-hash-seed": {
+      "description": "Sets the value of `PYTHONHASHSEED` environment variable for zope processes and test runner. If not provided, zope processes use python default (`0` for python2, `random` for python3) and test runner choose a different `PYTHONHASHSEED` for each execution.",
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "const": "random",
+          "type": "string"
+        }
+      ]
+    },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
       "default": {},

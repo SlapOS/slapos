@@ -247,6 +247,7 @@ config-memcached-url = ${request-memcached-volatile:connection-url}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
+config-python-hash-seed = {{ dumps(slapparameter_dict.get('python-hash-seed', '')) }}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
