@@ -85,6 +85,9 @@ environment +=
   JUPYTER_PATH=${directory:jupyter-dir}
   JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
   JUPYTER_RUNTIME_DIR=${directory:jupyter-runtime-dir}
+{% if slapparameter_dict.get('python-hash-seed') %}
+  PYTHONHASHSEED={{ slapparameter_dict['python-hash-seed'] }}
+{% endif %}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
@@ -469,8 +472,25 @@ context =
 {% else -%}
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
-wrapped-command-line = ${runUnitTest:wrapper-path}
+wrapped-command-line = ${run-unit-test-python-hash-seed-wrapper:output}
 wrapper-path = ${buildout:bin-directory}/runUnitTest
+
+[{{ section('run-unit-test-python-hash-seed-wrapper') }}]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  {% if slapparameter_dict.get('python-hash-seed') %}
+  PYTHONHASHSEED={{ slapparameter_dict['python-hash-seed'] }}
+  {% endif %}
+  if [ -z "$PYTHONHASHSEED" ]; then
+    PYTHONHASHSEED=$(${buildout:bin-directory}/shuf -i 1-1024 -n 1)
+    echo "Generated PYTHONHASHSEED: $PYTHONHASHSEED"
+  else
+    echo "Using PYTHONHASHSEED: $PYTHONHASHSEED"
+  fi
+  export PYTHONHASHSEED
+  exec ${runUnitTest:wrapper-path} "$@"
+output = ${buildout:bin-directory}/runUnitTest.python-hash-seed
 
 [{{ section('run-test-suite-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
