@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "LTE Cell",
+  "type": "object",
+
+  "required": [
+    "cell_type",
+    "cell_kind",
+    "rf_mode",
+    "ru",
+
+    "dl_earfcn",
+    "bandwidth"
+  ],
+
+  "properties": {
+    "cell_type": {
+      "$ref": "../../../ue/cell/common.json#/properties/cell_type",
+      "const":    "lte",
+      "template": "lte"
+    },
+    "cell_kind": { "$ref": "../../../ue/cell/common.json#/properties/cell_kind" },
+
+    "rf_mode": { "$ref": "../../../ue/cell/common.json#/properties/rf_mode" },
+    "ru":      { "$ref": "../../../ue/cell/common.json#/properties/ru",
+                  "propertyOrder": 9999"
+    },
+
+    "dl_earfcn": { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
+    "ul_earfcn": { "$ref": "../../../cell/lte/input-schema.json#/properties/ul_earfcn" },
+    "bandwidth": {
+      "$ref": "../../../cell/common.json#/properties/bandwidth",
+      "enum": [
+        1.4,
+        3,
+        5,
+        10,
+        15,
+        20
+      ]
+    }
+  }
+}
