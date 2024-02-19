@@ -192,9 +192,6 @@ listen {{ name }}
 
   # remove X-Forwarded-For unless client presented a verified certificate
   http-request del-header X-Forwarded-For unless { ssl_c_verify 0 } { ssl_c_used 1 }
-  # set Remote-User if client presented a verified certificate
-  http-request del-header Remote-User
-  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if { ssl_c_verify 0 } { ssl_c_used 1 }
 
   # reject invalid host header before using it in path
   http-request deny deny_status 400 if { req.hdr(host) -m sub / }
