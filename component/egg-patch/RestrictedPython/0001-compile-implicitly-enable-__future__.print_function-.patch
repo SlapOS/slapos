@@ -1,0 +1,57 @@
+From 4c132f622f33575aca8da1d0450caa3a33b8c0a0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Thu, 4 Jan 2024 00:13:08 +0900
+Subject: [PATCH] compile: implicitly enable __future__.print_function when
+ compiling functions
+
+---
+ src/RestrictedPython/compile.py           | 5 +++--
+ tests/test_compile_restricted_function.py | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/RestrictedPython/compile.py b/src/RestrictedPython/compile.py
+index 3fc2881..98f3026 100644
+--- a/src/RestrictedPython/compile.py
++++ b/src/RestrictedPython/compile.py
+@@ -3,6 +3,7 @@ from RestrictedPython._compat import IS_CPYTHON
+ from RestrictedPython._compat import IS_PY2
+ from RestrictedPython.transformer import RestrictingNodeTransformer
+ 
++import __future__
+ import ast
+ import warnings
+ 
+@@ -134,7 +135,7 @@ def compile_restricted_function(
+         name,
+         filename='<string>',
+         globalize=None,  # List of globals (e.g. ['here', 'context', ...])
+-        flags=0,
++        flags=__future__.print_function.compiler_flag,
+         dont_inherit=False,
+         policy=RestrictingNodeTransformer):
+     """Compile a restricted code object for a function.
+@@ -144,7 +145,7 @@ def compile_restricted_function(
+     """
+     # Parse the parameters and body, then combine them.
+     try:
+-        body_ast = ast.parse(body, '<func code>', 'exec')
++        body_ast = compile(body, '<func code>', 'exec', ast.PyCF_ONLY_AST | flags, dont_inherit)
+     except SyntaxError as v:
+         error = syntax_error_template.format(
+             lineno=v.lineno,
+diff --git a/tests/test_compile_restricted_function.py b/tests/test_compile_restricted_function.py
+index 5c81f86..a49e475 100644
+--- a/tests/test_compile_restricted_function.py
++++ b/tests/test_compile_restricted_function.py
+@@ -9,7 +9,7 @@ from types import FunctionType
+ def test_compile_restricted_function():
+     p = ''
+     body = """
+-print("Hello World!")
++print("Hello", "World!")
+ return printed
+ """
+     name = "hello_world"
+-- 
+2.42.0
+
