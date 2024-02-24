@@ -29,6 +29,7 @@ import os
 import json
 import glob
 import requests
+import netaddr
 
 from test import yamlpp_load
 
@@ -40,14 +41,6 @@ setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
 
 param_dict = {
     'testing': True,
-    'sim_algo': 'milenage',
-    'imsi': '001010000000331',
-    'opc': '000102030405060708090A0B0C0D0E0F',
-    'amf': '0x9001',
-    'sqn': '000000000000',
-    'k': '00112233445566778899AABBCCDDEEFF',
-    'impu': 'impu331',
-    'impi': 'impi331@amarisoft.com',
     'tx_gain': 17,
     'rx_gain': 17,
     'dl_earfcn': 36100,
@@ -232,20 +225,47 @@ def test_mme_conf(self):
   conf = yamlpp_load(conf_file)
   self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
-def test_sim_card(self):
+def getSimParam(id=0):
+  return {
+    'sim_algo': 'milenage',
+    'imsi': '{0:015}'.format(1010000000000 + id),
+    'opc': '000102030405060708090A0B0C0D0E0F',
+    'amf': '0x9001',
+    'sqn': '000000000000',
+    'k': '00112233445566778899AABBCCDDEEFF',
+    'impu': 'impu%s' % '{0:03}'.format(id),
+    'impi': 'impi%s@amarisoft.com' % '{0:03}'.format(id)
+  }
+
+
+def test_sim_card(self, nb_sim_cards, fixed_ips, tun_network):
 
   conf_file = glob.glob(os.path.join(
     self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
 
   conf = yamlpp_load(conf_file)
-  for n in "sim_algo imsi opc sqn impu impi".split():
-    self.assertEqual(conf['ue_db'][0][n], param_dict[n])
-  self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
-  self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
+  first_ip = netaddr.IPAddress(tun_network.first)
+  for i in range(nb_sim_cards):
+    params = getSimParam(i)
+    for n in "sim_algo imsi opc sqn impu impi".split():
+      self.assertEqual(conf['ue_db'][i][n], params[n], "%s doesn't match" % n)
+    self.assertEqual(conf['ue_db'][i]['K'], params['k'])
+    self.assertEqual(conf['ue_db'][i]['amf'], int(params['amf'], 16))
 
-  p = self.requestSlaveInstance().getConnectionParameterDict()
-  p = p['_'] if '_' in p else p
-  self.assertIn('info', p)
+    p = self.requestSlaveInstanceWithId(i).getConnectionParameterDict()
+    p = json.loads(p['_'])
+    self.assertIn('info', p)
+    if fixed_ips:
+      self.assertIn('ipv4', p)
+      if nb_sim_cards + 2 > tun_network.size:
+        self.assertEqual(p['ipv4'], "Too many SIM for the IPv4 network")
+      else:
+        ip = str(first_ip + 2 + i)
+        self.assertEqual(p['ipv4'], ip)
+        self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['access_point_name'], "internet")
+        self.assertTrue(conf['ue_db'][i]['pdn_list'][0]['default'])
+        self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['ipv4_addr'], ip)
+
 
 def test_monitor_gadget_url(self):
   parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
@@ -304,16 +324,6 @@ class TestCoreNetworkParameters(ORSTestCase):
   def test_mme_conf(self):
     test_mme_conf(self)
 
-def requestSlaveInstance(cls):
-  software_url = cls.getSoftwareURL()
-  return cls.slap.request(
-      software_release=software_url,
-      partition_reference="SIM-CARD",
-      partition_parameter_kw={'_': json.dumps(param_dict)},
-      shared=True,
-      software_type='core-network',
-  )
-
 class TestENBMonitorGadgetUrl(ORSTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -351,20 +361,66 @@ class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
     test_monitor_gadget_url(self)
 
 class TestSimCard(ORSTestCase):
+  nb_sim_cards = 1
+  fixed_ips = False
+  tun_network = netaddr.IPNetwork('192.168.10.0/24')
   @classmethod
   def requestDefaultInstance(cls, state='started'):
+
     default_instance = super(
         ORSTestCase, cls).requestDefaultInstance(state=state)
+    cls._updateSlaposResource(
+      os.path.join(
+        cls.slap._instance_root, default_instance.getId()),
+      tun={"ipv4_network": str(cls.tun_network)}
+    )
     cls.requestSlaveInstance()
     return default_instance
   @classmethod
   def requestSlaveInstance(cls):
-    return requestSlaveInstance(cls)
+    for i in range(cls.nb_sim_cards):
+      cls.requestSlaveInstanceWithId(i)
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'testing': True})}
+    return {'_': json.dumps({'testing': True, 'fixed_ips': cls.fixed_ips})}
   @classmethod
   def getInstanceSoftwareType(cls):
     return "core-network"
-  def test_sim_card(self):
-    test_sim_card(self)
+  @classmethod
+  def requestSlaveInstanceWithId(cls, id=0):
+    software_url = cls.getSoftwareURL()
+    param_dict = getSimParam(id)
+    return cls.slap.request(
+        software_release=software_url,
+        partition_reference="SIM-CARD-%s" % id,
+        partition_parameter_kw={'_': json.dumps(param_dict)},
+        shared=True,
+        software_type='core-network',
+    )
+  @classmethod
+  def _updateSlaposResource(cls, partition_path, **kw):
+    # we can update the .slapos-resourcefile from top partition because buildout
+    # will search for a .slapos-resource in upper directories until it finds one
+    with open(os.path.join(partition_path, '.slapos-resource'), 'r+') as f:
+      resource = json.load(f)
+      resource.update(kw)
+      f.seek(0)
+      f.truncate()
+      json.dump(resource, f, indent=2)
+  def test_sim_card(cls):
+    test_sim_card(cls, cls.nb_sim_cards, cls.fixed_ips, cls.tun_network)
+
+class TestSimCardManySim(TestSimCard):
+  nb_sim_cards = 10
+
+class TestSimCardFixedIps(TestSimCard):
+  fixed_ips = True
+
+class TestSimCardManySimFixedIps(TestSimCard):
+  nb_sim_cards = 10
+  fixed_ips = True
+
+class TestSimCardTooManySimFixedIps(TestSimCard):
+  nb_sim_cards = 10
+  fixed_ips = True
+  tun_network = netaddr.IPNetwork("192.168.10.0/29")
