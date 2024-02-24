@@ -44,6 +44,12 @@
       "title": "Use IPv4",
       "description": "Set to true to use IPv4 for AMF / MME addresses",
       "type": "boolean"
+    },
+    "fixed_ips": {
+      "default": false,
+      "title": "Fixed IP for the UE",
+      "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
+      "type": "boolean"
     }
   }
 }

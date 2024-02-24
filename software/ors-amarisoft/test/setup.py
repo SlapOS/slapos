@@ -47,6 +47,7 @@ setup(
         'slapos.cookbook',
         'pcpp',
         'xmltodict',
+        'netaddr'
     ],
     zip_safe=True,
     test_suite='test',
