@@ -138,233 +138,233 @@ gnb_param_dict2.update(param_dict)
 
 def test_enb_conf(self):
 
-    conf_file = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
+  conf_file = glob.glob(os.path.join(
+    self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-    conf = yamlpp_load(conf_file)
-    self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
-    self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
-    self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
-    self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
-    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
-    self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
-    self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
-    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
-    self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
-    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
-    self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
-    for p in conf['cell_default']['plmn_list']:
-      for n in "plmn attach_without_pdn reserved".split():
-          self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
-    for p in conf['mme_list']:
-      self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
+  conf = yamlpp_load(conf_file)
+  self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
+  self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
+  self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
+  self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
+  self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
+  self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
+  self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
+  self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
+  self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
+  self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
+  self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
+  for p in conf['cell_default']['plmn_list']:
+    for n in "plmn attach_without_pdn reserved".split():
+      self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
+  for p in conf['mme_list']:
+    self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
 
-    for p in conf['cell_list'][0]['ncell_list']:
-      for k in enb_param_dict['ncell_list']:
-        if p['dl_earfcn'] == gnb_param_dict1['ncell_list'][k]['dl_earfcn']:
-          break
-      conf_ncell = enb_param_dict['ncell_list'][k]
-      self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
-      self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
-      self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
-      self.assertEqual(p['tac'],          conf_ncell['tac'])
+  for p in conf['cell_list'][0]['ncell_list']:
+    for k in enb_param_dict['ncell_list']:
+      if p['dl_earfcn'] == gnb_param_dict1['ncell_list'][k]['dl_earfcn']:
+        break
+    conf_ncell = enb_param_dict['ncell_list'][k]
+    self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
+    self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
+    self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
+    self.assertEqual(p['tac'],          conf_ncell['tac'])
 
 def test_gnb_conf1(self):
 
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
+  conf_file = glob.glob(os.path.join(
+    self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-        conf = yamlpp_load(conf_file)
-        self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
-        self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
-        self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
-        self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
-        self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
-        self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
-        self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['nr_bandwidth'])
-        self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
-        self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
-        self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
-        for p in conf['nr_cell_default']['plmn_list']:
-          for n in "plmn ranac reserved tac".split():
-              self.assertEqual(p[n], gnb_param_dict1['plmn_list'][p['plmn']][n])
-        for p in conf['amf_list']:
-          self.assertEqual(p['amf_addr'], gnb_param_dict1['amf_list'][p['amf_addr']]['amf_addr'])
-        for p in conf['xn_peers']:
-          self.assertEqual(p, gnb_param_dict1['xn_peers'][p]['xn_addr'])
-        for p in conf['nr_cell_list'][0]['ncell_list']:
-          for k in gnb_param_dict1['ncell_list']:
-            if p['dl_nr_arfcn'] == gnb_param_dict1['ncell_list'][k]['dl_nr_arfcn']:
-              break
-          conf_ncell = gnb_param_dict1['ncell_list'][k]
-          self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
-          self.assertEqual(p['ssb_nr_arfcn'], conf_ncell['ssb_nr_arfcn'])
-          self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])    # assumes nr_band is TDD
-          self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
-          self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
-          self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
-          self.assertEqual(p['tac'],          conf_ncell['tac'])
-          self.assertEqual(p['band'],         conf_ncell['nr_band'])
-        tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
-        self.assertEqual(float(tdd_config['period']), 2.5)
-        self.assertEqual(int(tdd_config['dl_slots']), 3)
-        self.assertEqual(int(tdd_config['dl_symbols']), 10)
-        self.assertEqual(int(tdd_config['ul_slots']), 1)
-        self.assertEqual(int(tdd_config['ul_symbols']), 2)
+  conf = yamlpp_load(conf_file)
+  self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
+  self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
+  self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
+  self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
+  self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
+  self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
+  self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['nr_bandwidth'])
+  self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
+  self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
+  self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
+  for p in conf['nr_cell_default']['plmn_list']:
+    for n in "plmn ranac reserved tac".split():
+      self.assertEqual(p[n], gnb_param_dict1['plmn_list'][p['plmn']][n])
+  for p in conf['amf_list']:
+    self.assertEqual(p['amf_addr'], gnb_param_dict1['amf_list'][p['amf_addr']]['amf_addr'])
+  for p in conf['xn_peers']:
+    self.assertEqual(p, gnb_param_dict1['xn_peers'][p]['xn_addr'])
+  for p in conf['nr_cell_list'][0]['ncell_list']:
+    for k in gnb_param_dict1['ncell_list']:
+      if p['dl_nr_arfcn'] == gnb_param_dict1['ncell_list'][k]['dl_nr_arfcn']:
+        break
+    conf_ncell = gnb_param_dict1['ncell_list'][k]
+    self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
+    self.assertEqual(p['ssb_nr_arfcn'], conf_ncell['ssb_nr_arfcn'])
+    self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])    # assumes nr_band is TDD
+    self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
+    self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
+    self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
+    self.assertEqual(p['tac'],          conf_ncell['tac'])
+    self.assertEqual(p['band'],         conf_ncell['nr_band'])
+  tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
+  self.assertEqual(float(tdd_config['period']), 2.5)
+  self.assertEqual(int(tdd_config['dl_slots']), 3)
+  self.assertEqual(int(tdd_config['dl_symbols']), 10)
+  self.assertEqual(int(tdd_config['ul_slots']), 1)
+  self.assertEqual(int(tdd_config['ul_symbols']), 2)
 
 def test_gnb_conf2(self):
 
-        conf_file = glob.glob(os.path.join(
-          self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
+  conf_file = glob.glob(os.path.join(
+    self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
 
-        conf = yamlpp_load(conf_file)
+  conf = yamlpp_load(conf_file)
 
-        for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
-          sd = hex(p['sd'])
-          self.assertEqual(sd, gnb_param_dict2['nssai'][sd]['sd'], 16)
-          self.assertEqual(p['sst'], gnb_param_dict2['nssai'][sd]['sst'])
+  for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
+    sd = hex(p['sd'])
+    self.assertEqual(sd, gnb_param_dict2['nssai'][sd]['sd'], 16)
+    self.assertEqual(p['sst'], gnb_param_dict2['nssai'][sd]['sst'])
 
 def test_mme_conf(self):
 
-    conf_file = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
+  conf_file = glob.glob(os.path.join(
+    self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
 
-    conf = yamlpp_load(conf_file)
-    self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
+  conf = yamlpp_load(conf_file)
+  self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_sim_card(self):
 
-    conf_file = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
+  conf_file = glob.glob(os.path.join(
+    self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
 
-    conf = yamlpp_load(conf_file)
-    for n in "sim_algo imsi opc sqn impu impi".split():
-        self.assertEqual(conf['ue_db'][0][n], param_dict[n])
-    self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
-    self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
+  conf = yamlpp_load(conf_file)
+  for n in "sim_algo imsi opc sqn impu impi".split():
+    self.assertEqual(conf['ue_db'][0][n], param_dict[n])
+  self.assertEqual(conf['ue_db'][0]['K'], param_dict['k'])
+  self.assertEqual(conf['ue_db'][0]['amf'], int(param_dict['amf'], 16))
 
-    p = self.requestSlaveInstance().getConnectionParameterDict()
-    p = p['_'] if '_' in p else p
-    self.assertIn('info', p)
+  p = self.requestSlaveInstance().getConnectionParameterDict()
+  p = p['_'] if '_' in p else p
+  self.assertIn('info', p)
 
 def test_monitor_gadget_url(self):
-    parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
-    self.assertIn('monitor-gadget-url', parameters)
-    monitor_setup_url = parameters['monitor-setup-url']
-    monitor_gadget_url = parameters['monitor-gadget-url']
-    monitor_base_url = parameters['monitor-base-url']
-    public_url = monitor_base_url + '/public'
-    response = requests.get(public_url, verify=False)
-    self.assertEqual(requests.codes['OK'], response.status_code)
-    self.assertIn('software.cfg.html', monitor_gadget_url)
-    response = requests.get(monitor_gadget_url, verify=False)
-    self.assertEqual(requests.codes['OK'], response.status_code)
-    self.assertIn('<script src="rsvp.js"></script>', response.text)
-    self.assertIn('<script src="renderjs.js"></script>', response.text)
-    self.assertIn('<script src="g-chart.line.js"></script>', response.text)
-    self.assertIn('<script src="promise.gadget.js"></script>', response.text)
+  parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
+  self.assertIn('monitor-gadget-url', parameters)
+  monitor_setup_url = parameters['monitor-setup-url']
+  monitor_gadget_url = parameters['monitor-gadget-url']
+  monitor_base_url = parameters['monitor-base-url']
+  public_url = monitor_base_url + '/public'
+  response = requests.get(public_url, verify=False)
+  self.assertEqual(requests.codes['OK'], response.status_code)
+  self.assertIn('software.cfg.html', monitor_gadget_url)
+  response = requests.get(monitor_gadget_url, verify=False)
+  self.assertEqual(requests.codes['OK'], response.status_code)
+  self.assertIn('<script src="rsvp.js"></script>', response.text)
+  self.assertIn('<script src="renderjs.js"></script>', response.text)
+  self.assertIn('<script src="g-chart.line.js"></script>', response.text)
+  self.assertIn('<script src="promise.gadget.js"></script>', response.text)
 
 class TestENBParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb"
-    def test_enb_conf(self):
-        test_enb_conf(self)
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(enb_param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb"
+  def test_enb_conf(self):
+    test_enb_conf(self)
 
 class TestGNBParameters1(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb"
-    def test_gnb_conf(self):
-        test_gnb_conf1(self)
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(gnb_param_dict1)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "gnb"
+  def test_gnb_conf(self):
+    test_gnb_conf1(self)
 
 class TestGNBParameters2(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict2)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb"
-    def test_gnb_conf(self):
-        test_gnb_conf2(self)
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(gnb_param_dict2)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "gnb"
+  def test_gnb_conf(self):
+    test_gnb_conf2(self)
 
 class TestCoreNetworkParameters(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(param_dict)}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "core-network"
-    def test_mme_conf(self):
-        test_mme_conf(self)
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "core-network"
+  def test_mme_conf(self):
+    test_mme_conf(self)
 
 def requestSlaveInstance(cls):
-    software_url = cls.getSoftwareURL()
-    return cls.slap.request(
-        software_release=software_url,
-        partition_reference="SIM-CARD",
-        partition_parameter_kw={'_': json.dumps(param_dict)},
-        shared=True,
-        software_type='core-network',
-    )
+  software_url = cls.getSoftwareURL()
+  return cls.slap.request(
+      software_release=software_url,
+      partition_reference="SIM-CARD",
+      partition_parameter_kw={'_': json.dumps(param_dict)},
+      shared=True,
+      software_type='core-network',
+  )
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(enb_param_dict)}
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(enb_param_dict)}
 
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "enb"
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb"
 
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
+  def test_monitor_gadget_url(self):
+    test_monitor_gadget_url(self)
 
 class TestGNBMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps(gnb_param_dict1)}
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(gnb_param_dict1)}
 
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "gnb"
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "gnb"
 
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
+  def test_monitor_gadget_url(self):
+    test_monitor_gadget_url(self)
 
 class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True, 'slave-list': []})}
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'testing': True, 'slave-list': []})}
 
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "core-network"
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "core-network"
 
-    def test_monitor_gadget_url(self):
-      test_monitor_gadget_url(self)
+  def test_monitor_gadget_url(self):
+    test_monitor_gadget_url(self)
 
 class TestSimCard(ORSTestCase):
-    @classmethod
-    def requestDefaultInstance(cls, state='started'):
-        default_instance = super(
-            ORSTestCase, cls).requestDefaultInstance(state=state)
-        cls.requestSlaveInstance()
-        return default_instance
-    @classmethod
-    def requestSlaveInstance(cls):
-        return requestSlaveInstance(cls)
-    @classmethod
-    def getInstanceParameterDict(cls):
-        return {'_': json.dumps({'testing': True})}
-    @classmethod
-    def getInstanceSoftwareType(cls):
-        return "core-network"
-    def test_sim_card(self):
-        test_sim_card(self)
+  @classmethod
+  def requestDefaultInstance(cls, state='started'):
+    default_instance = super(
+        ORSTestCase, cls).requestDefaultInstance(state=state)
+    cls.requestSlaveInstance()
+    return default_instance
+  @classmethod
+  def requestSlaveInstance(cls):
+    return requestSlaveInstance(cls)
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'testing': True})}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "core-network"
+  def test_sim_card(self):
+    test_sim_card(self)
