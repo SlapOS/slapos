@@ -448,6 +448,7 @@ config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-ssl = {{ dumps(balancer_dict['ssl']) }}
 config-name = ${:name}
 config-shared-certificate-authority-path = ${directory:ca-dir}
+config-check-crl = {{ dumps(slapparameter_dict.get('check-crl', True)) }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
