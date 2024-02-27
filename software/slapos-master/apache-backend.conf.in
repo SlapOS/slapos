@@ -168,7 +168,7 @@ Listen {{ ip }}:{{ port }}
   # Custom block we use for now different parameters.
   RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
   SSLCACertificateFile {{ parameter_dict['shared-ca-cert'] }}
-{% if parameter_dict['shared-crl'] -%}
+{% if 'shared-crl' in parameter_dict -%}
   SSLCARevocationCheck chain
   SSLCARevocationPath {{ parameter_dict['shared-crl'] }}
 {% endif -%}
