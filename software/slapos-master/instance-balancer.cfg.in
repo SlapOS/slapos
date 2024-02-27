@@ -4,7 +4,6 @@
 {% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
 {% set frontend_caucase_url_list = ssl_parameter_dict.get('frontend-caucase-url-list', []) -%}
 {% set shared_ca_path = slapparameter_dict.get('shared-certificate-authority-path') -%}
-{% set check_crl = slapparameter_dict.get('check-crl', True) -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
@@ -175,7 +174,7 @@ crl = ${apache-conf-ssl:crl}
 
 {% if shared_ca_path -%}
 shared-ca-cert = {{ shared_ca_path }}/cacert.pem
-{% if check_crl -%}
+{% if slapparameter_dict.get('check-crl') -%}
 shared-crl = {{ shared_ca_path }}/crl
 {%- endif %}
 {%- endif %}
