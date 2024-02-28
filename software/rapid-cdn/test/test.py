@@ -1867,6 +1867,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'type': 'redirect',
         'custom_domain': 'customdomaintyperedirect.example.com',
       },
+      'type-redirect-to-normal-port': {
+        'url': 'http://example.com/',
+        'https-url': 'https://example.com/',
+        'type': 'redirect',
+        'https-only': False,
+      },
       'enable_cache': {
         'url': cls.backend_url,
         'enable_cache': True,
