@@ -139,6 +139,8 @@ T-2/var/log/httpd/_type-notebook_backend_log
 T-2/var/log/httpd/_type-notebook_frontend_log
 T-2/var/log/httpd/_type-redirect-custom_domain_access_log
 T-2/var/log/httpd/_type-redirect-custom_domain_frontend_log
+T-2/var/log/httpd/_type-redirect-to-standard-port_access_log
+T-2/var/log/httpd/_type-redirect-to-standard-port_frontend_log
 T-2/var/log/httpd/_type-redirect_access_log
 T-2/var/log/httpd/_type-redirect_frontend_log
 T-2/var/log/httpd/_type-websocket-websocket-path-list-empty_access_log
