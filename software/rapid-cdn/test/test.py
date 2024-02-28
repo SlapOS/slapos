@@ -1868,6 +1868,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'type': 'redirect',
         'custom_domain': 'customdomaintyperedirect.example.com',
       },
+      'type-redirect-to-standard-port': {
+        'url': 'http://example.com/',
+        'https-url': 'https://example.com/',
+        'type': 'redirect',
+        'https-only': False,
+      },
       'enable_cache': {
         'url': cls.backend_url,
         'enable_cache': True,
@@ -3640,6 +3646,47 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertResponseHeaders(
       result, via=False, backend_reached=False)
+
+  def test_type_redirect_to_standard_port(self):
+    parameter_dict = self.assertSlaveBase('type-redirect-to-standard-port')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://example.com/test-path/deeper',
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'http://example.com/test-path/deeper',
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False, alt_svc=False)
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
     parameter_dict = self.assertSlaveBase(
