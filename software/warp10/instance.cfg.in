@@ -1,0 +1,138 @@
+[buildout]
+parts =
+  publish-connection-parameter
+  warp10-wrapper
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+etc = $${:home}/etc
+opt = $${:home}/opt
+plugin = $${:etc}/plugin
+run = $${:etc}/run
+services = $${:etc}/service
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[warp10-ip]
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+
+[warp10-port]
+recipe = slapos.cookbook:free_port
+minimum = 8000
+maximum = 9000
+ip = $${instance-parameter:ipv4-random}
+
+[warp10-extract]
+recipe = slapos.recipe.build:download-unpacked
+url = ${warp10-download:destination}
+md5sum = 5e16392e5718b88002251cebf13c8cc4
+destination = $${directory:opt}/warp10
+
+[install-warp10.sh]
+recipe = slapos.recipe.template:jinja2
+url = ${install-warp10.sh:destination}
+output = $${directory:opt}/$${:_buildout_section_name_}
+context =
+  key warp10_home warp10-extract:destination
+  key warp10_host warp10-ip:ipv4
+  key warp10_port warp10-port:port
+  raw java_home ${java:location}
+
+[warp10-install]
+recipe = slapos.recipe.build
+warp10_home = $${warp10-extract:destination}
+init =
+  options['location'] = ''
+install =
+  import subprocess
+  subprocess.run("$${install-warp10.sh:output}", capture_output=True)
+update=
+
+[warp10-read-tokengen]
+recipe = slapos.recipe.build
+init =
+  options['location'] = ''
+  options['read-token'] = ''
+  options['write-token'] = ''
+  options['sensision-read-token'] = ''
+  options['sensision-write-token'] = ''
+  import os
+  if os.path.isfile("$${warp10-install:warp10_home}/tokens/tokens.txt"):
+    f = open("$${warp10-install:warp10_home}/tokens/tokens.txt", "r")
+    options['read-token'] = f.readline()
+    options['write-token'] = f.readline()
+    options['sensision-read-token'] = f.readline()
+    options['sensision-write-token'] = f.readline()
+
+[warp10-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = $${warp10-install:warp10_home}/bin/warp10.sh start
+wrapper-path = $${directory:services}/warp10
+
+
+[warp10-frontend-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:cert-file} ]
+  then
+    ${openssl-output:openssl} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
+      -newkey rsa -keyout $${:cert-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+cert-file = $${directory:etc}/$${:_buildout_section_name_}.pem
+common-name = $${warp10-frontend-config:ip}
+location =
+  $${:cert-file}
+
+[warp10-frontend-config]
+recipe = slapos.recipe.template:jinja2
+url = ${stack-haproxy-default-backend-config:target}
+output = $${directory:etc}/$${:_buildout_section_name_}
+context =
+  key pidfile :pidfile
+  key content :content
+content =
+  listen app
+  log global
+  bind $${:ip}:$${:port} ssl crt $${warp10-frontend-certificate:cert-file} alpn h2,http/1.1
+  server app $${warp10-ip:ipv4}:$${warp10-port:port}
+
+pidfile = $${directory:run}/$${:_buildout_section_name_}.pid
+ip = $${instance-parameter:ipv6-random}
+port = 8443
+
+[warp10-frontend]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  ${haproxy:location}/sbin/haproxy -f $${warp10-frontend-config:output}
+
+url = https://[$${warp10-frontend-config:ip}]:$${warp10-frontend-config:port}
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+backend-url = $${warp10-frontend:url}
+ipv4 = $${warp10-ip:ipv4}
+ipv6 = $${warp10-ip:ipv6}
+read-token = $${warp10-read-tokengen:read-token}
+write-token = $${warp10-read-tokengen:write-token}
+sensision-read-token = $${warp10-read-tokengen:sensision-read-token}
+sensision-write-token = $${warp10-read-tokengen:sensision-write-token}
+
