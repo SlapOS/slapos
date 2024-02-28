@@ -87,7 +87,12 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     else %}
 {%-       if 'hostname' in info_dict and 'port' in info_dict %}
 {%-         if slave_instance['type'] == 'redirect' %}
-  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}:{{ info_dict['port'] }} code 302
+{%-           if (info_dict['scheme'] == 'https' and info_dict['port'] == 443) or (info_dict['scheme'] == 'http' and info_dict['port'] == 80) %}
+{%-             set port_suffix = '' %}
+{%-           else %}
+{%-             set port_suffix = ':%s' % (info_dict['port'],) %}
+{%-           endif %}
+  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}{{ port_suffix }} code 302
 {%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
 {%-           if slave_instance['disable-via-header'] %}
