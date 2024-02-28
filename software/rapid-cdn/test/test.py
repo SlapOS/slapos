@@ -832,7 +832,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         % server_https_auth.server_address
 
     self.server_https_auth_process = multiprocessing.Process(
-      target=server_https_auth.serve_forever, name='HTTPSServerAuth', daemon=True)
+      target=server_https_auth.serve_forever, name='HTTPSServerAuth',
+      daemon=True)
     self.server_https_auth_process.start()
     server_https_auth.socket.close()
     self.logger.debug('Started process %s' % (self.server_https_auth_process,))
@@ -1866,6 +1867,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'type': 'redirect',
         'custom_domain': 'customdomaintyperedirect.example.com',
+      },
+      'type-redirect-to-standard-port': {
+        'url': 'http://example.com/',
+        'https-url': 'https://example.com/',
+        'type': 'redirect',
+        'https-only': False,
       },
       'enable_cache': {
         'url': cls.backend_url,
@@ -3640,6 +3647,47 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertResponseHeaders(
       result, via=False, backend_reached=False)
 
+  def test_type_redirect_to_standard_port(self):
+    parameter_dict = self.assertSlaveBase('type-redirect-to-standard-port')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://example.com/test-path/deeper',
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'http://example.com/test-path/deeper',
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False, alt_svc=False)
+
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
     parameter_dict = self.assertSlaveBase(
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified')
@@ -4854,7 +4902,6 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   test_enable_http3_false_http_version = '1'
 
 
-
 class ReplicateSlaveMixin(object):
   def frontends1And2HaveDifferentIPv6(self):
     _, *prefixlen = self._ipv6_address.split('/')
@@ -4894,7 +4941,8 @@ class ReplicateSlaveMixin(object):
           # for now, accept failing promise due to stopped frontend
 
 
-class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, ReplicateSlaveMixin):
+class TestReplicateSlave(
+  SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, ReplicateSlaveMixin):
   instance_parameter_dict = {
       'domain': 'example.com',
       'port': HTTPS_PORT,
@@ -4988,7 +5036,8 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, Rep
     )
 
 
-class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase, ReplicateSlaveMixin):
+class TestReplicateSlaveOtherDestroyed(
+  SlaveHttpFrontendTestCase, ReplicateSlaveMixin):
   instance_parameter_dict = {
       'domain': 'example.com',
       'port': HTTPS_PORT,
