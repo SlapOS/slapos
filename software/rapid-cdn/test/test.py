@@ -832,7 +832,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         % server_https_auth.server_address
 
     self.server_https_auth_process = multiprocessing.Process(
-      target=server_https_auth.serve_forever, name='HTTPSServerAuth', daemon=True)
+      target=server_https_auth.serve_forever, name='HTTPSServerAuth',
+      daemon=True)
     self.server_https_auth_process.start()
     server_https_auth.socket.close()
     self.logger.debug('Started process %s' % (self.server_https_auth_process,))
@@ -4854,7 +4855,6 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   test_enable_http3_false_http_version = '1'
 
 
-
 class ReplicateSlaveMixin(object):
   def frontends1And2HaveDifferentIPv6(self):
     _, *prefixlen = self._ipv6_address.split('/')
@@ -4894,7 +4894,8 @@ class ReplicateSlaveMixin(object):
           # for now, accept failing promise due to stopped frontend
 
 
-class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, ReplicateSlaveMixin):
+class TestReplicateSlave(
+  SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, ReplicateSlaveMixin):
   instance_parameter_dict = {
       'domain': 'example.com',
       'port': HTTPS_PORT,
@@ -4988,7 +4989,8 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin, Rep
     )
 
 
-class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase, ReplicateSlaveMixin):
+class TestReplicateSlaveOtherDestroyed(
+  SlaveHttpFrontendTestCase, ReplicateSlaveMixin):
   instance_parameter_dict = {
       'domain': 'example.com',
       'port': HTTPS_PORT,
