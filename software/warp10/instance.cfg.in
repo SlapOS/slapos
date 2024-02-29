@@ -3,6 +3,12 @@ parts =
   publish-connection-parameter
   warp10-wrapper
 
+  promise-warp10-listening
+  promise-haproxy-listening
+  promise-token-published
+
+
+
 extends = ${monitor2-template:output}
 
 # Define egg directories to be the one from Software Release
@@ -156,7 +162,7 @@ config-port = $${warp10-instance:port}
 promise = check_url_available
 name = $${:_buildout_section_name_}.py
 config-verify = 0
-config-url =$${warp10-frontend:url}
+config-url =$${warp10-frontend:url}/api/v0/exec
 
 
 # Check if token is correctly published
@@ -164,8 +170,7 @@ config-url =$${warp10-frontend:url}
 <= monitor-promise-base
 promise = check_command_execute
 name = $${:_buildout_section_name_}.py
-config-command = [[ "None" == "$${publish-connection-parameter:read-token}" ]]
-# config-command = test -n ""
+config-command = test -n "$${publish-connection-parameter:read-token}"
 
 ##
 ## Publish parameters
