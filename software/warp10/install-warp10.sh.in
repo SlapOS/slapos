@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 WARP10_HOME={{ warp10_home }}
 WARP10_CONFIG_DIR=${WARP10_HOME}/etc/conf.d
 JAVA_HOME={{ java_home }}
@@ -23,7 +25,7 @@ sed -i -e "s@^#JAVA_HOME=.*@JAVA_HOME=${JAVA_HOME}@" "${WARP10_HOME}/etc/warp10-
 sed -i -e 's/\&$//g' "${WARP10_HOME}/bin/warp10.sh"
 
 ##
-## Listen to all interface, enable SensisionWarpScriptExtension and TokenWarpScriptExtension
+## Configure host and port, enable TokenWarpScriptExtension
 ##
 sed -i -e 's|^#warpscript.extension.sensision|warpscript.extension.sensision|g' "${WARP10_CONFIG_DIR}/99-init.conf"
 {

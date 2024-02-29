@@ -3,11 +3,17 @@ parts =
   publish-connection-parameter
   warp10-wrapper
 
+extends = ${monitor2-template:output}
+
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
+
+##
+## Configure instance
+##
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -26,42 +32,44 @@ url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
-[warp10-ip]
-ipv4 = $${instance-parameter:ipv4-random}
-ipv6 = $${instance-parameter:ipv6-random}
-
-[warp10-port]
+[warp10-instance]
 recipe = slapos.cookbook:free_port
 minimum = 8000
 maximum = 9000
 ip = $${instance-parameter:ipv4-random}
+ipv4 =$${:ip}
+ipv6 = $${instance-parameter:ipv6-random}
 
+##
+## Instal Warp 10
+##
+
+# Extract the Warp 10 archive in the instance
 [warp10-extract]
 recipe = slapos.recipe.build:download-unpacked
 url = ${warp10-download:destination}
 md5sum = 5e16392e5718b88002251cebf13c8cc4
 destination = $${directory:opt}/warp10
 
+# Configure Warp 10 installation script
 [install-warp10.sh]
 recipe = slapos.recipe.template:jinja2
 url = ${install-warp10.sh:destination}
 output = $${directory:opt}/$${:_buildout_section_name_}
 context =
   key warp10_home warp10-extract:destination
-  key warp10_host warp10-ip:ipv4
-  key warp10_port warp10-port:port
+  key warp10_host warp10-instance:ipv4
+  key warp10_port warp10-instance:port
   raw java_home ${java:location}
 
+# Bootstrap Warp 10 and apply some configurations
 [warp10-install]
-recipe = slapos.recipe.build
+recipe = plone.recipe.command
 warp10_home = $${warp10-extract:destination}
-init =
-  options['location'] = ''
-install =
-  import subprocess
-  subprocess.run("$${install-warp10.sh:output}", capture_output=True)
-update=
+command = $${install-warp10.sh:output}
+stop-on-error = true
 
+# Read tokens that are generated during the installation step
 [warp10-read-tokengen]
 recipe = slapos.recipe.build
 init =
@@ -73,16 +81,19 @@ init =
   import os
   if os.path.isfile("$${warp10-install:warp10_home}/tokens/tokens.txt"):
     f = open("$${warp10-install:warp10_home}/tokens/tokens.txt", "r")
-    options['read-token'] = f.readline()
-    options['write-token'] = f.readline()
-    options['sensision-read-token'] = f.readline()
-    options['sensision-write-token'] = f.readline()
+    options['read-token'] = f.readline().rstrip()
+    options['write-token'] = f.readline().rstrip()
+    options['sensision-read-token'] = f.readline().rstrip()
+    options['sensision-write-token'] = f.readline().rstrip()
 
 [warp10-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = $${warp10-install:warp10_home}/bin/warp10.sh start
 wrapper-path = $${directory:services}/warp10
 
+##
+## Configure HAProxy
+##
 
 [warp10-frontend-certificate]
 recipe = plone.recipe.command
@@ -110,12 +121,13 @@ context =
 content =
   listen app
   log global
-  bind $${:ip}:$${:port} ssl crt $${warp10-frontend-certificate:cert-file} alpn h2,http/1.1
-  server app $${warp10-ip:ipv4}:$${warp10-port:port}
+#  bind $${:ip}:$${:port} ssl crt $${warp10-frontend-certificate:cert-file} alpn h2,http/1.1
+  bind $${:ip}:$${:port} alpn h2,http/1.1
+  server app $${warp10-instance:ipv4}:$${warp10-instance:port}
 
 pidfile = $${directory:run}/$${:_buildout_section_name_}.pid
-ip = $${instance-parameter:ipv6-random}
-port = 8443
+ip = $${warp10-instance:ipv6}
+port = 9001
 
 [warp10-frontend]
 recipe = slapos.cookbook:wrapper
@@ -123,14 +135,46 @@ wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
   ${haproxy:location}/sbin/haproxy -f $${warp10-frontend-config:output}
 
-url = https://[$${warp10-frontend-config:ip}]:$${warp10-frontend-config:port}
+# url = https://[$${warp10-frontend-config:ip}]:$${warp10-frontend-config:port}
+url = http://[$${warp10-frontend-config:ip}]:$${warp10-frontend-config:port}
+
+##
+## Promises
+##
+
+# Check if Warp 10 is listening
+[promise-warp10-listening]
+<= monitor-promise-base
+promise = check_socket_listening
+name = $${:_buildout_section_name_}.py
+config-host = $${warp10-instance:ipv4}
+config-port = $${warp10-instance:port}
+
+# Check if HAProxy is listening
+[promise-haproxy-listening]
+<= monitor-promise-base
+promise = check_url_available
+name = $${:_buildout_section_name_}.py
+config-verify = 0
+config-url =$${warp10-frontend:url}
 
 
+# Check if token is correctly published
+[promise-token-published]
+<= monitor-promise-base
+promise = check_command_execute
+name = $${:_buildout_section_name_}.py
+config-command = [[ "None" == "$${publish-connection-parameter:read-token}" ]]
+# config-command = test -n ""
+
+##
+## Publish parameters
+##
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 backend-url = $${warp10-frontend:url}
-ipv4 = $${warp10-ip:ipv4}
-ipv6 = $${warp10-ip:ipv6}
+ipv4 = $${warp10-instance:ipv4}
+ipv6 = $${warp10-instance:ipv6}
 read-token = $${warp10-read-tokengen:read-token}
 write-token = $${warp10-read-tokengen:write-token}
 sensision-read-token = $${warp10-read-tokengen:sensision-read-token}
