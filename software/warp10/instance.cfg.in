@@ -54,7 +54,7 @@ ipv6 = $${instance-parameter:ipv6-random}
 [warp10-extract]
 recipe = slapos.recipe.build:download-unpacked
 url = ${warp10-download:destination}
-md5sum = 5e16392e5718b88002251cebf13c8cc4
+md5sum = ${warp10-download:md5sum}
 destination = $${directory:opt}/warp10
 
 # Configure Warp 10 installation script
