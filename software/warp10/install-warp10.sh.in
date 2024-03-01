@@ -39,16 +39,15 @@ sed -i -e 's|^#warpscript.extension.sensision|warpscript.extension.sensision|g' 
 ## Generate demo tokens
 ##
 tokens=$("${WARP10_HOME}"/bin/warp10.sh tokengen "${WARP10_HOME}/tokens/demo-tokengen.mc2" 2>/dev/null)
-READ_TOKEN=$(echo "${tokens}" | grep DemoReadToken -A1 | tail -1 | sed -e 's/.*" : "//' -e 's/"//')
-WRITE_TOKEN=$(echo "${tokens}" | grep DemoWriteToken -A1 | tail -1 | sed -e 's/.*" : "//' -e 's/"//')
-
+READ_TOKEN=$(echo "${tokens}" | grep '"token"' | tail -1 | sed -e 's/.*" : "//' -e 's/".*//')
+WRITE_TOKEN=$(echo "${tokens}" | grep '"token"' | head -1 | sed -e 's/.*" : "//' -e 's/".*//')
 ##
 ## Generate read/write token for sensision for a period of 100 years. We use 'sensision' as application name.
 ## Define token as MACROCONFIG key for runner script
 ##
 tokens=$("${WARP10_HOME}"/bin/warp10.sh tokengen "${WARP10_HOME}/tokens/sensision-tokengen.mc2" 2>/dev/null)
-SENSISION_READ_TOKEN=$(echo "${tokens}" | grep SensisionReadToken -A1 | tail -1 | sed -e 's/.*" : "//' -e 's/"//')
-SENSISION_WRITE_TOKEN=$(echo "${tokens}" | grep SensisionWriteToken -A1 | tail -1 | sed -e 's/.*" : "//' -e 's/"//')
+SENSISION_READ_TOKEN=$(echo "${tokens}" | grep '"token"' | tail -1 | sed -e 's/.*" : "//' -e 's/".*//')
+SENSISION_WRITE_TOKEN=$(echo "${tokens}" | grep '"token"' | head -1 | sed -e 's/.*" : "//' -e 's/".*//')
 echo "sensisionReadToken@/sensision=${SENSISION_READ_TOKEN}" >> "${WARP10_CONFIG_DIR}"/99-sensision-secrets.conf
 echo "sensisionWriteToken@/sensision=${SENSISION_WRITE_TOKEN}" >> "${WARP10_CONFIG_DIR}"/99-sensision-secrets.conf
 
