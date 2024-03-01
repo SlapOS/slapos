@@ -1,3 +1,4 @@
+import os
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
