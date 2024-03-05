@@ -1,7 +1,5 @@
 {% import "root_common" as root_common with context -%}
 {% import "caucase" as caucase with context %}
-{% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
-{% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
 {% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
@@ -81,35 +79,30 @@ bin = ${buildout:directory}/bin
 service-on-watch = ${buildout:directory}/etc/service
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
-backup-caucased = ${:srv}/backup/caucased
 
-{% if not caucase_url -%}
-{%   if use_ipv6 -%}
-{%     set caucase_host = '[' ~ (ipv6_set | list)[0] ~ ']' %}
-{%-  else -%}
-{%     set caucase_host = (ipv4_set | list)[0] %}
-{%-  endif %}
-{%   set caucase_port = caucase_dict.get('base-port', 8890) -%}
-{%   set caucase_netloc = caucase_host ~ ':' ~ caucase_port -%}
-{%   set caucase_url = 'http://' ~ caucase_netloc -%}
-{{   caucase.caucased(
-       prefix='caucased',
-       buildout_bin_directory=bin_directory,
-       caucased_path='${directory:service-on-watch}/caucased',
-       backup_dir='${directory:backup-caucased}',
-       data_dir='${directory:srv}/caucased',
-       netloc=caucase_netloc,
-       tmp='${directory:tmp}',
-       service_auto_approve_count=caucase_dict.get('service-auto-approve-amount', 1),
-       user_auto_approve_count=caucase_dict.get('user-auto-approve-amount', 0),
-       key_len=caucase_dict.get('key-length', 2048),
-)}}
-{% do root_common.section('caucased') -%}
-{% do root_common.section('caucased-promise') -%}
-{% endif -%}
-{% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
 {% set balancer_dict = slapparameter_dict.setdefault('balancer', {}) -%}
-{% do balancer_dict.setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
+{% do balancer_dict.setdefault('ssl', {}) %}
+{% if caucase_url %}
+{%   do balancer_dict['ssl'].setdefault('caucase-url', caucase_url) -%}
+
+[balancer-updated-caucase-url]
+# Promise to wait for balancer partition to use the provided URL, for cases where the
+# caucase URL is changed
+recipe = slapos.cookbook:check_parameter
+value = ${publish:caucase-http-url}
+expected-not-value =
+expected-value = {{ caucase_url }}
+path = ${directory:bin}/${:_buildout_section_name_}
+
+[balancer-updated-caucase-url-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = ${balancer-updated-caucase-url:path}
+{% do root_common.section("balancer-updated-caucase-url-promise") -%}
+
+{% endif %}
+
 {% do balancer_dict.setdefault('tcpv4-port', 2150) -%}
 {% do balancer_dict.__setitem__('haproxy-server-check-path', balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) -%}
 {% set routing_path_template_field_dict = {"site-id": site_id} -%}
@@ -231,19 +224,13 @@ return =
 {%- if test_runner_enabled %}
   test-runner-address-list
 {% endif %}
-{% set bt5_default_list = [
-  'erp5_full_text_mroonga_catalog',
-  'erp5_configurator_standard',
-  'erp5_configurator_maxma_demo',
-  'erp5_configurator_run_my_doc',
-] -%}
+{% set bt5_default_list = default_bt5.split() -%}
 {% if has_jupyter -%}
 {%   do bt5_default_list.append('erp5_data_notebook') -%}
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', ' '.join(bt5_default_list))) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url-list = {{ dumps(slapparameter_dict.get('cloudooo-url-list', default_cloudooo_url_list)) }}
-config-caucase-url = {{ dumps(caucase_url) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-selenium-server-configuration-dict = {{ dumps(slapparameter_dict.get('selenium-server-configuration-dict', {})) }}
@@ -265,7 +252,6 @@ config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
-config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 config-test-runner-random-activity-priority = {{ dumps(test_runner_random_activity_priority) }}
@@ -277,7 +263,6 @@ software-type = zope
 {% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
-{% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
 {% set balancer_timeout_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
@@ -290,14 +275,12 @@ software-type = zope
 {%   set promise_test_runner_url_section_name = 'promise-test-runner-url' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
 {%   do zope_family_name_list.append(zope_family) %}
-{%   set backend_path = zope_parameter_dict.get('backend-path', '') % {'site-id': site_id} %}
 {#   # default jupyter zope family is first zope family. -#}
 {#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
 {%   if not jupyter_zope_family_default -%}
 {%     do jupyter_zope_family_default.append(zope_family) -%}
 {%   endif -%}
 {%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
-{%   do zope_backend_path_dict.__setitem__(zope_family, backend_path) -%}
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
 {%   set current_zope_family_override_dict = zope_family_override_dict.get(zope_family, {}) -%}
 {%   do balancer_timeout_dict.__setitem__(zope_family, current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) -%}
@@ -375,31 +358,67 @@ config-command = {{ '${' ~ check_software_url_section_name ~ ':path}' }}
 {%     do zope_address_list_id_dict.__setitem__(zope_section_id, parameter_name) -%}
 {%     do zope_family_parameter_dict.setdefault(family_name, []).append(parameter_name) -%}
 {%   endfor -%}
-{%   if has_frontend -%}
-{%     set frontend_name = 'frontend-' ~ family_name -%}
-{%     do publish_dict.__setitem__('family-' ~ family_name, '${' ~ frontend_name ~ ':connection-site_url}' ) -%}
-[{{ frontend_name }}]
-<= request-frontend-base
-name = {{ frontend_name }}
-config-url = ${request-balancer:connection-{{ family_name }}-v6}
-{%   else -%}
-{%     do publish_dict.__setitem__('family-' ~ family_name, '${request-balancer:connection-' ~ family_name ~ '}' ) -%}
-{%     do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
-{%   endif -%}
+{%   do publish_dict.__setitem__('family-' ~ family_name, '${request-balancer:connection-' ~ family_name ~ '}' ) -%}
+{%   do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
 {% endfor -%}
+
+
+{# We request a default frontend when exactly only one zope family exists #}
+{% set frontend_parameter_dict = slapparameter_dict.get(
+  'frontend',
+  {'default': { 'zope-family': list(zope_family_dict)[0] }} if len(zope_family_dict) == 1 else {}
+) -%}
+
+[request-frontend-base]
+<= request-common
+recipe = slapos.cookbook:request
+shared = true
+return =
+  secure_access
+{{ root_common.sla('frontend', default_to_same_computer=False) }}
+
+{% for frontend_name, frontend_parameters in frontend_parameter_dict.items() -%}
+{%   set frontend_full_name = 'frontend-' ~ frontend_name -%}
+{%   set request_frontend_name = 'request-frontend-' ~ frontend_name -%}
+{%   set frontend_software_url = frontend_parameters.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
+{%   set frontend_software_type = frontend_parameters.get('software-type', '') -%}
+{%   do frontend_parameters.__setitem__('internal-path', frontend_parameters.get('internal-path', '/%(site-id)s') % {'site-id': site_id}) %}
+{%   set frontend_instance_parameters = frontend_parameters.get('instance-parameters', {}) -%}
+{%   if frontend_instance_parameters.setdefault('type', '') == '' -%}
+{%     do frontend_instance_parameters.setdefault('authenticate-to-backend', 'true') -%}
+{%     set zope_family_name = frontend_parameters['zope-family'] -%}
+{%     do assert(zope_family_name in zope_family_dict, 'Unknown family %s for frontend %s' % (zope_family_name, frontend_name)) -%}
+{%     do frontend_instance_parameters.setdefault('url', '${request-balancer:connection-url-backend-' ~ frontend_name ~ '}') -%}
+{%   endif %}
+[{{ request_frontend_name }}]
+<= request-frontend-base
+name = {{ frontend_full_name }}
+software-url = {{ frontend_software_url }}
+{%   if frontend_software_type %}
+software-type = {{ frontend_software_type }}
+{%   endif %}
+{{ root_common.sla(frontend_full_name, default_to_same_computer=False) }}
+{%   for name, value in frontend_instance_parameters.items() -%}
+config-{{ name }} = {{ value }}
+{%   endfor -%}
+
+{%   set promise_frontend_section_name = 'promise-' ~ request_frontend_name %}
+[{{ promise_frontend_section_name }}]
+<= monitor-promise-base
+promise = check_url_available
+name = ${:_buildout_section_name_}.py
+config-url = {{ "${" }}{{ request_frontend_name }}:connection-secure_access}
+config-ignore-code = 1
+config-allow-redirects = 0
+
+{%   do root_common.section(promise_frontend_section_name) -%}
+{%   do publish_dict.__setitem__('url-frontend-' ~ frontend_name, '${' ~ request_frontend_name ~ ':connection-secure_access}' ) -%}
+{% endfor -%}
+
 
 {% if has_jupyter -%}
 {# request jupyter connected to balancer of proper zope family -#}
 {{   request('jupyter', 'jupyter', 'jupyter', {}, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family}) }}
-
-{%   if has_frontend -%}
-[frontend-jupyter]
-<= request-frontend-base
-name = frontend-jupyter
-config-url = ${request-jupyter:connection-url}
-{#     # override jupyter-url in publish_dict with frontend address -#}
-{%     do publish_dict.__setitem__('jupyter-url', '${frontend-jupyter:connection-site_url}') -%}
-{%   endif -%}
 {%- endif %}
 
 {% if wcfs_enable -%}
@@ -413,13 +432,16 @@ config-url = ${request-jupyter:connection-url}
 
 {%- endif %}
 
-{% set balancer_ret_dict = {'monitor-base-url': False} -%}
+{% set balancer_ret_dict = {'monitor-base-url': False, 'caucase-http-url': False} -%}
 {% for family in zope_family_dict -%}
 {%   do balancer_ret_dict.__setitem__(family, False) -%}
 {%   do balancer_ret_dict.__setitem__(family + '-v6', False) -%}
 {%   if test_runner_enabled -%}
 {%     do balancer_ret_dict.__setitem__(family + '-test-runner-url-list', False) -%}
 {%   endif -%}
+{% endfor -%}
+{% for frontend_name in frontend_parameter_dict -%}
+{%   do balancer_ret_dict.__setitem__('url-backend-' ~ frontend_name, False) -%}
 {% endfor -%}
 {% set balancer_key_config_dict = {
   'monitor-passwd': 'monitor-htpasswd:passwd',
@@ -442,7 +464,7 @@ config-url = ${request-jupyter:connection-url}
   config_key='balancer',
   config={
     'zope-family-dict': zope_family_parameter_dict,
-    'backend-path-dict': zope_backend_path_dict,
+    'frontend-parameter-dict': frontend_parameter_dict,
     'ssl-authentication-dict': ssl_authentication_dict,
     'timeout-dict': balancer_timeout_dict,
     'apachedex-promise-threshold': monitor_dict.get('apachedex-promise-threshold', 70),
@@ -462,32 +484,7 @@ config-url = ${request-jupyter:connection-url}
   ret=balancer_ret_dict,
   key_config=balancer_key_config_dict,
 ) }}
-
-[request-frontend-base]
-{% if has_frontend -%}
-<= request-common
-recipe = slapos.cookbook:request
-software-url = {{ dumps(frontend_dict['software-url']) }}
-software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
-{{ root_common.sla('frontend', True) }}
-shared = true
-{% set config_dict = {
-  'type': 'zope',
-} -%}
-{%   if frontend_dict.get('domain') -%}
-{%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
-{%   endif -%}
-{%   if frontend_dict.get('virtualhostroot-http-port') -%}
-{%     do config_dict.__setitem__('virtualhostroot-http-port', frontend_dict['virtualhostroot-http-port']) -%}
-{%   endif -%}
-{%   if frontend_dict.get('virtualhostroot-https-port') -%}
-{%     do config_dict.__setitem__('virtualhostroot-https-port', frontend_dict['virtualhostroot-https-port']) -%}
-{%   endif -%}
-{%   for name, value in config_dict.items() -%}
-config-{{ name }} = {{ value }}
-{%   endfor -%}
-return = site_url
-{% endif -%}
+{% do publish_dict.__setitem__('caucase-http-url', '${request-balancer:connection-caucase-http-url}' ) -%}
 
 {% endif -%}{# if zope_partition_dict -#}
 

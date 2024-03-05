@@ -258,7 +258,6 @@ config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
-config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 config-test-runner-random-activity-priority = {{ dumps(test_runner_random_activity_priority) }}
@@ -435,6 +434,7 @@ return =
 {% endfor -%}
 {% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
+config-frontend-parameter-dict = {{ dumps({}) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
@@ -448,6 +448,7 @@ config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-ssl = {{ dumps(balancer_dict['ssl']) }}
 config-name = ${:name}
 config-shared-certificate-authority-path = ${directory:ca-dir}
+config-check-crl = {{ dumps(slapparameter_dict.get('check-crl', True)) }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}

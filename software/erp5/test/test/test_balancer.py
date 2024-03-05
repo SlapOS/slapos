@@ -1,18 +1,29 @@
 import glob
+import ipaddress
 import json
 import logging
 import os
 import re
+import socket
 import subprocess
+import sqlite3
+import tempfile
 import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
 from unittest import mock
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+import OpenSSL.SSL
 import pexpect
 import psutil
 import requests
 
+from slapos.proxy.db_version import DB_VERSION
 from slapos.testing.utils import CrontabMixin, ManagedHTTPServer
 
 from . import CaucaseCertificate, CaucaseService, ERP5InstanceTestCase, default, matrix, setUpModule
@@ -99,14 +110,15 @@ class BalancerTestCase(ERP5InstanceTestCase):
             'default': ['dummy_http_server'],
         },
         'dummy_http_server': [[cls.getManagedResource("backend_web_server", EchoHTTPServer).netloc, 1, False]],
-        'backend-path-dict': {
-            'default': '',
-        },
         'ssl-authentication-dict': {'default': False},
-        'ssl': {
-            'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
-        },
+        'ssl': {},
         'timeout-dict': {'default': None},
+        'frontend-parameter-dict': {
+          'default': {
+            'internal-path': '',
+            'zope-family': 'default',
+          },
+        },
         'family-path-routing-dict': {},
         'path-routing-list': [],
       }
@@ -116,24 +128,72 @@ class BalancerTestCase(ERP5InstanceTestCase):
     return {'_': json.dumps(cls._getInstanceParameterDict())}
 
   def setUp(self) -> None:
-    self.default_balancer_url = json.loads(
+    self.default_balancer_direct_url = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])['default']
+    self.default_balancer_zope_url = json.loads(
+        self.computer_partition.getConnectionParameterDict()['_'])['url-backend-default']
+
+
+class TestURLRewrite(BalancerTestCase):
+  __partition_reference__ = 'ur'
+  def test_direct(self):
+    self.assertEqual(requests.get(self.default_balancer_direct_url, verify=False).json()['Path'], '/')
+    self.assertEqual(
+      requests.get(
+        urllib.parse.urljoin(
+          self.default_balancer_direct_url,
+          '/VirtualHostBase/https/example.com:443/VirtualHostRoot/path'),
+        verify=False
+      ).json()['Path'],
+      '/VirtualHostBase/https/example.com:443/VirtualHostRoot/path')
+
+  def test_zope(self):
+    netloc = urllib.parse.urlparse(self.default_balancer_zope_url).netloc
+    self.assertEqual(
+      requests.get(self.default_balancer_zope_url, verify=False).json()['Path'],
+      f'/VirtualHostBase/https/{netloc}/VirtualHostRoot/')
+    self.assertEqual(
+      requests.get(urllib.parse.urljoin(
+        self.default_balancer_zope_url, 'path'), verify=False).json()['Path'],
+      f'/VirtualHostBase/https/{netloc}/VirtualHostRoot/path')
+    self.assertEqual(
+      requests.get(
+        urllib.parse.urljoin(
+          self.default_balancer_zope_url,
+          '/VirtualHostBase/https/example.com:443/VirtualHostRoot/path'),
+        verify=False
+      ).json()['Path'],
+      f'/VirtualHostBase/https/{netloc}/VirtualHostRoot/VirtualHostBase/https/example.com:443/VirtualHostRoot/path')
+
+  def test_bad_host(self):
+    self.assertEqual(
+      requests.get(self.default_balancer_zope_url, headers={'Host': 'a/b'}, verify=False).status_code,
+      requests.codes.bad_request)
 
 
 class SlowHTTPServer(ManagedHTTPServer):
   """An HTTP Server which reply after a timeout.
 
-  Timeout is 2 seconds by default, and can be specified in the path of the URL
+  Timeout is 2 seconds by default, and can be specified in the path of the URL:
+
+    GET /{timeout}
+
+  but because balancer rewrites the URL, the actual URL used by this server is:
+
+    GET /VirtualHostBase/https/{host}/VirtualHostRoot/{timeout}
+
   """
   class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
+      timeout = 2
+      if self.path == '/':  # for health checks
+        timeout = 0
+      try:
+        timeout = int(self.path.split('/')[5])
+      except (ValueError, IndexError):
+        pass
       self.send_response(200)
       self.send_header("Content-Type", "text/plain")
-      timeout = 2
-      try:
-        timeout = int(self.path[1:])
-      except ValueError:
-        pass
       time.sleep(timeout)
       self.end_headers()
       self.wfile.write(b"OK\n")
@@ -155,12 +215,12 @@ class TestTimeout(BalancerTestCase, CrontabMixin):
   def test_timeout(self) -> None:
     self.assertEqual(
       requests.get(
-          urllib.parse.urljoin(self.default_balancer_url, '/1'),
+          urllib.parse.urljoin(self.default_balancer_zope_url, '/1'),
           verify=False).status_code,
       requests.codes.ok)
     self.assertEqual(
       requests.get(
-          urllib.parse.urljoin(self.default_balancer_url, '/5'),
+          urllib.parse.urljoin(self.default_balancer_zope_url, '/5'),
           verify=False).status_code,
       requests.codes.gateway_timeout)
 
@@ -172,13 +232,13 @@ class TestLog(BalancerTestCase, CrontabMixin):
   @classmethod
   def _getInstanceParameterDict(cls) -> dict:
     parameter_dict = super()._getInstanceParameterDict()
-    # use a slow server instead
+    # use a slow server instead, so that we can test logs with slow requests
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     return parameter_dict
 
   def test_access_log_format(self) -> None:
     requests.get(
-        urllib.parse.urljoin(self.default_balancer_url, '/url_path'),
+        urllib.parse.urljoin(self.default_balancer_zope_url, '/url_path'),
         verify=False,
     )
     time.sleep(.5) # wait a bit more until access is logged
@@ -191,7 +251,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     # the request - but our test machines can be slow sometimes, so we tolerate
     # it can take up to 20 seconds.
     match = re.match(
-        r'([(\d\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)" (\d+)',
+        r'([(\da-fA-F:\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)" (\d+)',
         access_line
     )
     self.assertTrue(match)
@@ -202,7 +262,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
 
   def test_access_log_apachedex_report(self) -> None:
     # make a request so that we have something in the logs
-    requests.get(self.default_balancer_url, verify=False)
+    requests.get(self.default_balancer_zope_url, verify=False)
 
     # crontab for apachedex is executed
     self._executeCrontabAtDate('generate-apachedex-report', '23:59')
@@ -227,7 +287,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     self._executeCrontabAtDate('logrotate', '2000-01-01')
 
     # make a request so that we have something in the logs
-    requests.get(self.default_balancer_url, verify=False).raise_for_status()
+    requests.get(self.default_balancer_zope_url, verify=False).raise_for_status()
 
     # slow query crontab depends on crontab for log rotation
     # to be executed first.
@@ -242,7 +302,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     )
     self.assertTrue(os.path.exists(rotated_log_file))
 
-    requests.get(self.default_balancer_url, verify=False).raise_for_status()
+    requests.get(self.default_balancer_zope_url, verify=False).raise_for_status()
     # on next day execution of logrotate, log files are compressed
     self._executeCrontabAtDate('logrotate', '2050-01-02')
     self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
@@ -256,11 +316,11 @@ class TestLog(BalancerTestCase, CrontabMixin):
     # after a while, balancer should detect and log this event in error log
     time.sleep(5)
     self.assertEqual(
-        requests.get(self.default_balancer_url, verify=False).status_code,
+        requests.get(self.default_balancer_zope_url, verify=False).status_code,
         requests.codes.service_unavailable)
     with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-error.log')) as error_log_file:
       error_line = error_log_file.read().splitlines()[-1]
-    self.assertIn('proxy family_default has no server available!', error_line)
+    self.assertIn('backend default has no server available!', error_line)
     # this log also include a timestamp
     self.assertRegex(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
@@ -268,7 +328,9 @@ class TestLog(BalancerTestCase, CrontabMixin):
 class BalancerCookieHTTPServer(ManagedHTTPServer):
   """An HTTP Server which can set balancer cookie.
 
-  This server set cookie when requested /set-cookie path.
+  This server set cookie when requested /set-cookie path (actually
+  /VirtualHostBase/https/{host}/VirtualHostRoot/set-cookie , which is
+  added by balancer proxy)
 
   The reply body is the name used when registering this resource
   using getManagedResource. This way we can assert which
@@ -282,7 +344,8 @@ class BalancerCookieHTTPServer(ManagedHTTPServer):
       def do_GET(self) -> None:
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
-        if self.path == '/set_cookie':
+
+        if self.path != '/' and self.path.split('/')[5] == 'set_cookie':
           # the balancer tells the backend what's the name of the balancer cookie with
           # the X-Balancer-Current-Cookie header.
           self.send_header('Set-Cookie', '%s=anything' % self.headers['X-Balancer-Current-Cookie'])
@@ -313,7 +376,7 @@ class TestBalancer(BalancerTestCase):
   def test_balancer_round_robin(self) -> None:
     # requests are by default balanced to both servers
     self.assertEqual(
-        {requests.get(self.default_balancer_url, verify=False).text for _ in range(10)},
+        {requests.get(self.default_balancer_zope_url, verify=False).text for _ in range(10)},
         {'backend_web_server1', 'backend_web_server2'}
     )
 
@@ -322,7 +385,7 @@ class TestBalancer(BalancerTestCase):
     self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).close()
     self.addCleanup(self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).open)
     self.assertEqual(
-        {requests.get(self.default_balancer_url, verify=False).text for _ in range(10)},
+        {requests.get(self.default_balancer_zope_url, verify=False).text for _ in range(10)},
         {'backend_web_server1',}
     )
 
@@ -330,7 +393,7 @@ class TestBalancer(BalancerTestCase):
     # if backend provides a "SERVERID" cookie, balancer will overwrite it with the
     # backend selected by balancing algorithm
     self.assertIn(
-        requests.get(urllib.parse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
+        requests.get(urllib.parse.urljoin(self.default_balancer_zope_url, '/set_cookie'), verify=False).cookies['SERVERID'],
         ('default-0', 'default-1'),
     )
 
@@ -338,7 +401,7 @@ class TestBalancer(BalancerTestCase):
     # if request is made with the sticky cookie, the client stick on one balancer
     cookies = dict(SERVERID='default-1')
     self.assertEqual(
-        {requests.get(self.default_balancer_url, verify=False, cookies=cookies).text for _ in range(10)},
+        {requests.get(self.default_balancer_zope_url, verify=False, cookies=cookies).text for _ in range(10)},
         {'backend_web_server2',}
     )
 
@@ -346,7 +409,7 @@ class TestBalancer(BalancerTestCase):
     self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).close()
     self.addCleanup(self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).open)
     self.assertEqual(
-        requests.get(self.default_balancer_url, verify=False, cookies=cookies).text,
+        requests.get(self.default_balancer_zope_url, verify=False, cookies=cookies).text,
         'backend_web_server1')
 
   def test_balancer_stats_socket(self) -> None:
@@ -366,7 +429,7 @@ class TestBalancer(BalancerTestCase):
       raise
     self.assertEqual(socat_process.poll(), 0)
     # output is a csv
-    self.assertIn(b'family_default,FRONTEND,', output)
+    self.assertIn(b'\ndefault,BACKEND,', output)
 
 
 class TestTestRunnerEntryPoints(BalancerTestCase):
@@ -465,7 +528,7 @@ class TestHTTP(BalancerTestCase):
             '--insecure',
             '--write-out',
             '%{http_version}',
-            self.default_balancer_url,
+            self.default_balancer_zope_url,
         ]),
         b'2',
     )
@@ -476,16 +539,16 @@ class TestHTTP(BalancerTestCase):
       session.verify = False
 
       # do a first request, which establish a first connection
-      session.get(self.default_balancer_url).raise_for_status()
+      session.get(self.default_balancer_zope_url).raise_for_status()
 
       # "break" new connection method and check we can make another request
       with mock.patch(
           "requests.packages.urllib3.connectionpool.HTTPSConnectionPool._new_conn",
       ) as new_conn:
-        session.get(self.default_balancer_url).raise_for_status()
+        session.get(self.default_balancer_zope_url).raise_for_status()
       new_conn.assert_not_called()
 
-      parsed_url = urllib.parse.urlparse(self.default_balancer_url)
+      parsed_url = urllib.parse.urlparse(self.default_balancer_zope_url)
 
       # check that we have an open file for the ip connection
       self.assertTrue([
@@ -495,11 +558,162 @@ class TestHTTP(BalancerTestCase):
       ])
 
 
+class TestServerTLSEmbeddedCaucase(BalancerTestCase):
+  """Check Server TLS with embedded caucase
+  """
+  __partition_reference__ = 's'
+  def _getCaucaseCACertificatePath(self) -> str:
+    """Returns the path of the caucase certificate on file system.
+    """
+    ca_cert = tempfile.NamedTemporaryFile(
+      prefix="ca.crt.pem",
+      mode="w",
+      delete=False,
+    )
+    ca_cert.write(
+      requests.get(
+        urllib.parse.urljoin(
+          self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
+          '/cas/crt/ca.crt.pem',
+        )).text)
+    ca_cert.flush()
+    self.addCleanup(os.unlink, ca_cert.name)
+    return ca_cert.name
+
+  def _getServerCertificate(self, hostname: str, port: int) -> x509.base.Certificate:
+    sock = socket.socket(socket.AF_INET6 if ':' in hostname else socket.AF_INET)
+    sock.connect((hostname, port))
+    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+    sock_ssl = OpenSSL.SSL.Connection(ctx, sock)
+    sock_ssl.set_connect_state()
+    sock_ssl.set_tlsext_host_name(hostname.encode())
+    sock_ssl.do_handshake()
+    cert = sock_ssl.get_peer_certificate()
+    crypto_cert = cert.to_cryptography()
+    sock_ssl.close()
+    sock.close()
+    return crypto_cert
+
+  def test_certificate_validates_with_caucase_ca(self) -> None:
+    requests.get(self.default_balancer_zope_url, verify=self._getCaucaseCACertificatePath())
+
+  def test_certificate_renewal(self) -> None:
+    balancer_parsed_url = urllib.parse.urlparse(self.default_balancer_zope_url)
+    certificate_before_renewal = self._getServerCertificate(
+      balancer_parsed_url.hostname,
+      balancer_parsed_url.port)
+
+    # run caucase updater in the future, so that certificate is renewed
+    caucase_updater, = glob.glob(
+      os.path.join(
+        self.computer_partition_root_path,
+        'etc',
+        'service',
+        'caucase-updater-haproxy-certificate-*',
+      ))
+    process = pexpect.spawnu("faketime +90days " + caucase_updater)
+    logger = self.logger
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from caucase_updater: %s", msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+    process.expect("Renewing .*\nNext wake-up.*")
+    process.terminate()
+    process.wait()
+
+    # wait for server to use new certificate
+    for _ in range(30):
+      certificate_after_renewal = self._getServerCertificate(
+        balancer_parsed_url.hostname,
+        balancer_parsed_url.port)
+      if certificate_after_renewal.not_valid_before > certificate_before_renewal.not_valid_before:
+        break
+      time.sleep(.5)
+
+    self.assertGreater(
+      certificate_after_renewal.not_valid_before,
+      certificate_before_renewal.not_valid_before,
+    )
+
+    # requests are served properly after certificate renewal
+    self.test_certificate_validates_with_caucase_ca()
+
+
+class TestServerTLSExternalCaucase(TestServerTLSEmbeddedCaucase):
+  """Check Server TLS with external caucase
+  """
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict['ssl']['caucase-url'] = cls.getManagedResource(
+      "caucase", CaucaseService).url
+    return parameter_dict
+
+  def test_published_caucase_http_url_parameter(self) -> None:
+    self.assertEqual(
+      self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
+      self.getManagedResource("caucase", CaucaseService).url,
+    )
+
+
+class TestServerTLSCSRTemplateParameter(TestServerTLSExternalCaucase):
+  """Check Server TLS with a CSR template passed as parameter
+  """
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    # use a CSR template with this subject, we'll assert that the
+    # certificate used by haproxy has same subject.
+    cls.csr_subject = subject = x509.Name(
+      [x509.NameAttribute(NameOID.COMMON_NAME, cls.__name__)])
+
+    # Add all IPs of the computer in SubjectAlternativeName, we don't
+    # know what will be the IP of the balancer partition.
+    with sqlite3.connect(cls.slap._proxy_database) as db:
+      ip_address_list = [
+        x509.IPAddress(ipaddress.ip_address(r)) for (r, ) in db.execute(
+          f"SELECT address FROM partition_network{DB_VERSION}").fetchall()
+      ]
+    assert ip_address_list
+
+    csr = x509.CertificateSigningRequestBuilder().subject_name(
+      subject).add_extension(
+        x509.SubjectAlternativeName(ip_address_list),
+        critical=True,
+      ).sign(
+        rsa.generate_private_key(
+          public_exponent=65537,
+          key_size=2048,
+          backend=default_backend(),
+        ),
+        hashes.SHA256(),
+        default_backend(),
+      )
+
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict['ssl']['csr'] = csr.public_bytes(serialization.Encoding.PEM).decode()
+    return parameter_dict
+
+  def test_certificate_validates_with_caucase_ca(self) -> None:
+    super().test_certificate_validates_with_caucase_ca()
+    balancer_parsed_url = urllib.parse.urlparse(self.default_balancer_zope_url)
+    cert = self._getServerCertificate(
+      balancer_parsed_url.hostname,
+      balancer_parsed_url.port,
+    )
+    self.assertEqual(
+      cert.subject.rfc4514_string(),
+      self.csr_subject.rfc4514_string())
+
+
 class ContentTypeHTTPServer(ManagedHTTPServer):
   """An HTTP/1.1 Server which reply with content type from path.
 
   For example when requested http://host/text/plain it will reply
   with Content-Type: text/plain header.
+  This actually uses a URL like this to support zope style virtual host:
+  GET /VirtualHostBase/https/{host}/VirtualHostRoot/text/plain
 
   The body is always "OK"
   """
@@ -510,7 +724,7 @@ class ContentTypeHTTPServer(ManagedHTTPServer):
       if self.path == '/':
         self.send_header("Content-Length", '0')
         return self.end_headers()
-      content_type = self.path[1:]
+      content_type = '/'.join(self.path.split('/')[5:])
       body = b"OK"
       self.send_header("Content-Type", content_type)
       self.send_header("Content-Length", str(len(body)))
@@ -552,7 +766,7 @@ class TestContentEncoding(BalancerTestCase):
         'application/font-woff2',
         'application/x-font-opentype',
         'application/wasm',):
-      resp = requests.get(urllib.parse.urljoin(self.default_balancer_url, content_type), verify=False)
+      resp = requests.get(urllib.parse.urljoin(self.default_balancer_zope_url, content_type), verify=False)
       self.assertEqual(resp.headers['Content-Type'], content_type)
       self.assertEqual(
           resp.headers.get('Content-Encoding'),
@@ -561,7 +775,7 @@ class TestContentEncoding(BalancerTestCase):
       self.assertEqual(resp.text, 'OK')
 
   def test_no_gzip_encoding(self) -> None:
-    resp = requests.get(urllib.parse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
+    resp = requests.get(urllib.parse.urljoin(self.default_balancer_zope_url, '/image/png'), verify=False)
     self.assertNotIn('Content-Encoding', resp.headers)
     self.assertEqual(resp.text, 'OK')
 
@@ -579,7 +793,6 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     parameter_dict = super()._getInstanceParameterDict()
     # add another "-auth" backend, that will have ssl-authentication enabled
     parameter_dict['zope-family-dict']['default-auth'] = ['dummy_http_server']
-    parameter_dict['backend-path-dict']['default-auth'] = '/'
     parameter_dict['ssl-authentication-dict'] = {
         'default': False,
         'default-auth': True,
@@ -652,7 +865,19 @@ class TestServerTLSProvidedCertificate(BalancerTestCase):
   def _getInstanceParameterDict(cls) -> dict:
     server_caucase = cls.getManagedResource('server_caucase', CaucaseService)
     server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
-    server_certificate.request(cls._ipv4_address, server_caucase)
+    # Add all IPs of the computer in SubjectAlternativeName, we don't
+    # know what will be the IP of the balancer partition.
+    with sqlite3.connect(cls.slap._proxy_database) as db:
+      ip_address_list = [
+        x509.IPAddress(ipaddress.ip_address(r)) for (r, ) in db.execute(
+          f"SELECT address FROM partition_network{DB_VERSION}").fetchall()
+      ]
+    assert ip_address_list
+    server_certificate.request(
+      cls.__name__,
+      server_caucase,
+      x509.SubjectAlternativeName(ip_address_list))
+
     parameter_dict = super()._getInstanceParameterDict()
     with open(server_certificate.cert_file) as f:
       parameter_dict['ssl']['cert'] = f.read()
@@ -662,7 +887,7 @@ class TestServerTLSProvidedCertificate(BalancerTestCase):
 
   def test_certificate_validates_with_provided_ca(self) -> None:
     server_certificate = self.getManagedResource("server_certificate", CaucaseCertificate)
-    requests.get(self.default_balancer_url, verify=server_certificate.ca_crt_file)
+    requests.get(self.default_balancer_zope_url, verify=server_certificate.ca_crt_file)
 
 
 class TestClientTLS(BalancerTestCase):
@@ -708,7 +933,7 @@ class TestClientTLS(BalancerTestCase):
       # the client certificate in "remote-user" header
       def _make_request() -> dict:
         return requests.get(
-            self.default_balancer_url,
+            self.default_balancer_zope_url,
             cert=(client_certificate.cert_file, client_certificate.key_file),
             verify=False,
         ).json()
@@ -726,8 +951,8 @@ class TestClientTLS(BalancerTestCase):
       self.assertEqual(_make_request()['Incoming Headers'].get('remote-user'),
                        client_certificate_name)
 
-      # We have two services, in charge of updating CRL and CA certificates for
-      # each frontend CA
+      # We have two services in charge of updating CRL and CA certificates for
+      # each frontend CA, plus the one for the balancer's own certificate
       caucase_updater_list = glob.glob(
           os.path.join(
               self.computer_partition_root_path,
@@ -735,7 +960,7 @@ class TestClientTLS(BalancerTestCase):
               'service',
               'caucase-updater-*',
           ))
-      self.assertEqual(len(caucase_updater_list), 2)
+      self.assertEqual(len(caucase_updater_list), 3)
 
       # find the one corresponding to this caucase
       for caucase_updater_candidate in caucase_updater_list:

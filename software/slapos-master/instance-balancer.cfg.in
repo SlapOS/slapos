@@ -174,7 +174,9 @@ crl = ${apache-conf-ssl:crl}
 
 {% if shared_ca_path -%}
 shared-ca-cert = {{ shared_ca_path }}/cacert.pem
+{% if slapparameter_dict.get('check-crl') -%}
 shared-crl = {{ shared_ca_path }}/crl
+{%- endif %}
 {%- endif %}
 
 [apache-conf]
