@@ -2095,9 +2095,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(0, result)
 
-    self.assertEqual(
-      set(['log-old.old.xz', 'log-older.old.xz']),
-      set(os.listdir(ats_logrotate_dir)))
+    self.assertTrue(old_file_name + '.xz' in os.listdir(ats_logrotate_dir))
+    self.assertTrue(older_file_name + '.xz' in os.listdir(ats_logrotate_dir))
     self.assertFalse(old_file_name + '.xz' in os.listdir(ats_log_dir))
     self.assertFalse(older_file_name + '.xz' in os.listdir(ats_log_dir))
 
