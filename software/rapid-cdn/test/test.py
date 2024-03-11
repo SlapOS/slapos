@@ -87,9 +87,6 @@ KEDIFA_PORT = '15080'
 SOURCE_IP = '127.0.0.1'
 SOURCE_IPV6 = '::1'
 
-# URL used to check for network connectivity
-RE6ST_URL = 'http://[2001:67c:1254:4::1]/index.html'
-
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
@@ -5075,17 +5072,17 @@ class TestReplicateSlaveOtherDestroyed(
     self.assertFalse(node_2_present)
 
 
-class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
-                                           TestDataMixin):
+class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
+    cls.re6st_test_url = '%sre6st.html' % (cls.backend_url,)
     return {
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      're6st-verification-url': RE6ST_URL,
+      're6st-verification-url': cls.re6st_test_url,
     }
 
   @classmethod
@@ -5116,61 +5113,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(
       getPromisePluginParameterDict(re6st_connectivity_promise_file),
       {
-        'url': RE6ST_URL,
-      }
-    )
-
-
-class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
-                                    TestDataMixin):
-  instance_parameter_dict = {
-      'port': HTTPS_PORT,
-      'domain': 'example.com',
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      're6st-verification-url': RE6ST_URL,
-    }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return cls.instance_parameter_dict
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'default': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      },
-    }
-
-  def test_default(self):
-    self.instance_parameter_dict[
-      're6st-verification-url'] = 'some-re6st-verification-url'
-    # re-request instance with updated parameters
-    self.requestDefaultInstance()
-
-    # run once instance, it's only needed for later checks
-    try:
-      self.slap.waitForInstance()
-    except Exception:
-      pass
-
-    self.assertSlaveBase('default')
-
-    re6st_connectivity_promise_list = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        're6st-connectivity.py'))
-
-    self.assertEqual(1, len(re6st_connectivity_promise_list))
-    re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
-
-    self.assertEqual(
-      getPromisePluginParameterDict(re6st_connectivity_promise_file),
-      {
-        'url': 'some-re6st-verification-url',
+        'url': self.re6st_test_url,
       }
     )
 
