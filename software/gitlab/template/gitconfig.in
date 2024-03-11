@@ -12,15 +12,24 @@
 [pack]
         threads = 1
 
+# Enable packfile bitmaps
+[repack]
+        writeBitmaps = true
+
 # don't allow corrupt/broken objects to go in
+# Enable push (advertisePushOptions) options
 [receive]
         fsckObjects = true
-
+        advertisePushOptions = true
 
 [user]
         name = {{ cfg('email_display_name') }}
         email = {{ cfg('email_from') }}
+
+# Enable fsyncObjectFiles to reduce risk of repository corruption if the server crashes
 [core]
         autocrlf = input
+        fsyncObjectFiles = true
 [gc]
         auto = 0
+
