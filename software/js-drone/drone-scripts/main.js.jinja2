@@ -39,11 +39,11 @@ import { err, exit, open, out } from "std";
 (function (arm, console, dup2, err, exec, exit, kill, open, out, pipe, read,
            scriptArgs, setLog, setReadHandler, setTimeout, signal, start, stop,
            stopPubsub, waitpid, Worker, SIGINT, SIGTERM, WNOHANG) {
-{% else %}
+{% else -%}
 (function (console, dup2, err, exec, exit, kill, open, out, pipe, read,
            scriptArgs, setReadHandler, setTimeout, signal, stopPubsub, waitpid,
            Worker, SIGINT, SIGTERM, WNOHANG) {
-{% endif %}
+{% endif -%}
   "use strict";
 
   var CONF_PATH = "{{ configuration }}",
@@ -61,6 +61,10 @@ import { err, exit, open, out } from "std";
     tail_pid,
     worker,
     user_script = scriptArgs[1],
+{% if not isADrone -%}
+    operator_script = scriptArgs[2],
+    map_json = scriptArgs[3],
+{% endif -%}
     LOOP_EXECUTION_PERIOD = configuration.loopPeriod,
     previous_timestamp,
     can_update = false;
@@ -99,9 +103,9 @@ import { err, exit, open, out } from "std";
   function quit(exit_code) {
     worker.onmessage = null;
     stopPubsub();
-{% if isADrone %}
+{% if isADrone -%}
     stop();
-{% endif %}
+{% endif -%}
     QUICKJS_LOG_FILE.close();
     if (log_r_pipe) {
       setReadHandler(log_r_pipe[0], null);
@@ -128,7 +132,7 @@ import { err, exit, open, out } from "std";
     }
   }
 
-{% if isADrone %}
+{% if isADrone -%}
   function connect() {
     var address = configuration.autopilotIp + ":" + configuration.autopilotPort;
     console.log("Will connect to", address);
@@ -145,7 +149,7 @@ import { err, exit, open, out } from "std";
 
   console.log("Connecting to aupilot\n");
   connect();
-{% endif %}
+{% endif -%}
 
   pubsubWorker = new Worker("{{ pubsub_script }}");
   pubsubWorker.onmessage = function (e) {
@@ -157,9 +161,9 @@ import { err, exit, open, out } from "std";
   worker.postMessage({type: "initPubsub"});
 
   function load() {
-{% if isADrone %}
+{% if isADrone -%}
     exitOnFail(arm(), "Failed to arm");
-{% endif %}
+{% endif -%}
 
     // First argument must provide the user script path
     if (user_script === undefined) {
@@ -169,7 +173,11 @@ import { err, exit, open, out } from "std";
 
     worker.postMessage({
       type: "load",
-      path: user_script
+{% if not isADrone -%}
+      operator_path: operator_script,
+      map_path: map_json,
+{% endif -%}
+      user_path: user_script
     });
   }
 
