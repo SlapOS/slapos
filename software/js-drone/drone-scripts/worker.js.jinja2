@@ -94,16 +94,18 @@ import { evalScript, fdopen, loadFile, open } from "std";
       setTargetCoordinates: setTargetCoordinates,
       takeOff: takeOff,
 {% endif -%}
-      sendMsg: function (msg, id) {
-        if (id === undefined) { id = -1; }
-        setMessage(JSON.stringify({
-          content: msg,
-          timestamp: Date.now(),
-          dest_id: id
-        }));
-      }
+      sendMsg: sendMsg
     };
   conf_file.close();
+
+  function sendMsg(msg, id) {
+    if (id === undefined) { id = -1; }
+    setMessage(JSON.stringify({
+      content: msg,
+      timestamp: Date.now(),
+      dest_id: id
+    }));
+  }
 
   function exitWorker(exit_code) {
     if (user_me.hasOwnProperty("onWebSocketMessage")) {
@@ -192,12 +194,17 @@ import { evalScript, fdopen, loadFile, open } from "std";
     waitpid(gwsocket_pid, WNOHANG);
   }
 
-  function loadUserScript(path) {
+  function getFileContent(path) {
     var script_content = loadFile(path);
     if (script_content === null) {
-      console.log("Failed to load user script " + path);
+      console.log("Failed to load script", path);
       exitWorker(1);
     }
+    return script_content;
+  }
+
+  function loadUserScript(path) {
+    var script_content = getFileContent(path);
     try {
       evalScript(
         "function execUserScript(from, me) {" + script_content + "};"
@@ -215,6 +222,22 @@ import { evalScript, fdopen, loadFile, open } from "std";
     // Call the drone onStart function
     if (user_me.hasOwnProperty("onStart")) {
       user_me.onStart();
+    }
+  }
+
+  function loadOperatorScript(operator_path, map_path) {
+    var script_content = getFileContent(operator_path),
+      operator = {
+        getMapJSON: function () { return JSON.parse(getFileContent(map_path)); },
+        sendMsg: sendMsg
+      };
+    try {
+      evalScript(
+        "function execOperatorScript(operator) {" + script_content + "};"
+      );
+      user_me.execOperatorScript = execOperatorScript.bind(null, operator);
+    } catch (e) {
+      console.log("Failed to evaluate operator script", e);
     }
   }
 
@@ -238,7 +261,10 @@ import { evalScript, fdopen, loadFile, open } from "std";
       break;
 
     case "load":
-      loadUserScript(evt.data.path);
+      loadUserScript(evt.data.user_path);
+      if (evt.data.hasOwnProperty("operator_path") && evt.data.hasOwnProperty("map_path")) {
+        loadOperatorScript(evt.data.operator_path, evt.data.map_path);
+      }
       parent.postMessage({type: "loaded"});
       break;
 
