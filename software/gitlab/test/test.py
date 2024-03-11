@@ -27,9 +27,9 @@
 
 import os
 import logging
-from urllib.parse import urlparse
-
+import urllib
 import requests
+import functools
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -54,3 +54,15 @@ class TestGitlab(SlapOSInstanceTestCase):
     resp = requests.get(self.backend_url, verify=False)
     self.assertTrue(
       resp.status_code in [requests.codes.ok, requests.codes.found])
+
+  def test_rack_attack_sign_in_rate_limiting(self):
+    sign_in = functools.partial(
+       requests.post,
+       urllib.parse.urljoin(self.backend_url, '/users/sign_in'),
+       verify=False)
+    for _ in range(10):
+      sign_in(headers={'X_FORWARDED_FOR': '1.2.3.4'})
+    # after 10 authentication failures, this client is rate limited
+    self.assertEqual(sign_in(headers={'X_FORWARDED_FOR': '1.2.3.4'}).status_code, 429)
+    # but other clients are not
+    self.assertNotEqual(sign_in(headers={'X_FORWARDED_FOR': '5.6.7.8'}).status_code, 429)
