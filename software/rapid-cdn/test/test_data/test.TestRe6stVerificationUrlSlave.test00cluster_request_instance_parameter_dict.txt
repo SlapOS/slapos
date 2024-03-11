@@ -7,7 +7,7 @@
     "kedifa_port": "15080",
     "plain_http_port": "11080",
     "port": "11443",
-    "re6st-verification-url": "http://[2001:67c:1254:4::1]/index.html",
+    "re6st-verification-url": "http://@@_ipv4_address@@:@@_server_http_port@@/re6st.html",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-0",
@@ -68,7 +68,7 @@
       "monitor-username": "admin",
       "plain_http_port": "11080",
       "port": "11443",
-      "re6st-verification-url": "http://[2001:67c:1254:4::1]/index.html",
+      "re6st-verification-url": "http://@@_ipv4_address@@:@@_server_http_port@@/re6st.html",
       "slave-kedifa-information": "{\"_default\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@/@@default_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
