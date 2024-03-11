@@ -12,10 +12,22 @@
 listen "{{ unicorn.socket }}", :backlog => {{ cfg('unicorn_backlog_socket') }}
 #listen "127.0.0.1:8888", :tcp_nopush => true
 
+# Where to drop a pidfile
+pid '{{ directory.run }}/unicorn.pid'
+
+# Where stderr gets logged
+stderr_path '{{ unicorn.log }}/unicorn_stderr.log'
+
+# Where stdout gets logged
+stdout_path '{{ unicorn.log }}/unicorn_stdout.log'
+
 working_directory '{{ gitlab_work.location }}'
 
 # What the timeout for killing busy workers is, in seconds
 timeout {{ cfg('unicorn_worker_timeout') }}
+
+# How many worker processes
+worker_processes {{ cfg('unicorn_worker_processes') }}
 
 # combine Ruby 2.0.0dev or REE with "preload_app true" for memory savings
 # http://rubyenterpriseedition.com/faq.html#adapt_apps_for_cow
@@ -37,8 +49,7 @@ before_exec do |server|
   Gitlab::Cluster::LifecycleEvents.do_before_master_restart
 end
 
-# How many worker processes
-worker_processes {{ cfg('unicorn_worker_processes') }}
+run_once = true
 
 # about before_fork / after_fork - see:
 #   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/definitions/unicorn_service.rb
@@ -46,8 +57,18 @@ worker_processes {{ cfg('unicorn_worker_processes') }}
 
 # What to do before we fork a worker
 before_fork do |server, worker|
-  # Signal application hooks that we're about to fork
-  Gitlab::Cluster::LifecycleEvents.do_before_fork
+  if run_once
+    # There is a difference between Puma and Unicorn:
+    # - Puma calls before_fork once when booting up master process
+    # - Unicorn runs before_fork whenever new work is spawned
+    # To unify this behavior we call before_fork only once (we use
+    # this callback for deleting Prometheus files so for our purposes
+    # it makes sense to align behavior with Puma)
+    run_once = false
+
+    # Signal application hooks that we're about to fork
+    Gitlab::Cluster::LifecycleEvents.do_before_fork
+  end
 
   # The following is only recommended for memory/DB-constrained
   # installations.  It is not needed if your system can house
@@ -74,8 +95,6 @@ before_fork do |server, worker|
   # sleep 1
 end
 
-
-# What to do after we fork a worker
 after_fork do |server, worker|
   # Signal application hooks of worker start
   Gitlab::Cluster::LifecycleEvents.do_worker_start
@@ -83,18 +102,11 @@ after_fork do |server, worker|
   # per-process listener ports for debugging/admin/migrations
   # addr = "127.0.0.1:#{9293 + worker.nr}"
   # server.listen(addr, :tries => -1, :delay => 5, :tcp_nopush => true)
-
 end
 
-
-# Where to drop a pidfile
-pid '{{ directory.run }}/unicorn.pid'
-
-# Where stderr gets logged
-stderr_path '{{ unicorn.log }}/unicorn_stderr.log'
-
-# Where stdout gets logged
-stdout_path '{{ unicorn.log }}/unicorn_stdout.log'
+# Configure the default logger to use a custom formatter that formats the
+# timestamps to be in UTC and in ISO8601.3 format
+Configurator::DEFAULTS[:logger].formatter = Gitlab::LogTimestampFormatter.new
 
 {# we do not support Relative url
 <%- if @relative_url %>
