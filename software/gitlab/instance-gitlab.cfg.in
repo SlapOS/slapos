@@ -288,6 +288,7 @@ context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
     section gitlab_shell_work       gitlab-shell-work
+    section gitlab_workhorse        gitlab_workhorse
     section gitaly                  gitaly
 
 [rack_attack.rb]

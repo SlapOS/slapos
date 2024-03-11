@@ -18,6 +18,9 @@ production: &base
     host: {{ external_url.hostname }}
     port: {{ external_url.port or default_port[external_url.scheme] }}
     https: {{ cfg_https }}
+    # The maximum time unicorn/puma can spend on the request. This needs to be smaller than the worker timeout.
+    # Default is 95% of the worker timeout
+    max_request_duration_seconds: 57
 
     {# ssh is disabled completely in slapos version
     # Uncommment this line below if your ssh host is different from HTTP/HTTPS one
@@ -54,6 +57,8 @@ production: &base
         style_src: "'self' 'unsafe-inline'"
         worker_src: "'self' blob:"
         report_uri:
+
+    allowed_hosts: []
 
     # Trusted Proxies
     # Customize if you have GitLab behind a reverse proxy which is running on a different machine.
@@ -121,6 +126,15 @@ production: &base
     # repository_downloads_path: shared/cache/archive/
     repository_downloads_path: <%= @gitlab_repository_downloads_path %>
     #}
+
+    ## Impersonation settings
+    impersonation_enabled: true
+
+    ## Disable jQuery and CSS animations
+    # disable_animations: true
+
+    ## Application settings cache expiry in seconds (default: 60)
+    # application_settings_cache_seconds: 60
 
   {# we do not support reply by email
   ## Reply by email
@@ -414,7 +428,9 @@ production: &base
 
   # Gitaly settings
   gitaly:
-    # Default Gitaly authentication token. Can be overriden per storage. Can
+    # Path to the directory containing Gitaly client executables.
+    client_path: {{ gitaly.location }}
+    # Default Gitaly authentication token. Can be overridden per storage. Can
     # be left blank when Gitaly is running locally on a Unix socket, which
     # is the normal way to deploy Gitaly.
     token:
@@ -462,8 +478,6 @@ production: &base
     path: {{ gitlab_shell_work.location }}
     authorized_keys_file: {{ gitlab.var }}/sshkeys-notused
 
-    repos_path: {{ gitlab.repositories }}
-    hooks_path: {{ gitlab_shell_work.location }}/hooks/
     secret_file: {{ gitlab_shell.secret }}
 
     # Git over HTTP
@@ -488,12 +502,6 @@ production: &base
   # Use the default values unless you really know what you are doing
   git:
     bin_path: {{ git }}
-    # The next value is the maximum memory size grit can use
-    # Given in number of bytes per git object (e.g. a commit)
-    # This value can be increased if you have very large commits
-    max_size: {{ cfg('git_max_size') }}
-    # Git timeout to read a commit, in seconds
-    timeout: {{ cfg('git_timeout') }}
 
   #
   # 5. Extra customization
