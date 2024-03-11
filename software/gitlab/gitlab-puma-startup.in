@@ -38,6 +38,8 @@ echo "I: PostgreSQL ready." 1>&2
 # make sure pg_trgm extension is enabled for gitlab db
 psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
 
+psql -c 'CREATE EXTENSION IF NOT EXISTS btree_gist;'  || die "btree_gist setup failed"
+
 if echo "$pgtables" | grep -q '^Did not find any relations' ; then
     $RAKE gitlab:setup RAILS_ENV=production force=yes || die "initial db setup failed"
 fi
@@ -70,8 +72,7 @@ $RAKE cache:clear   || die "cache:clear failed"
 force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
 
 
-# 3. finally exec to unicorn
-exec {{ gitlab_unicorn }}   \
-    -E production   \
-    -c {{ unicorn_rb.output }}    \
-    {{ gitlab_work.location }}/config.ru
+# 3. finally exec to puma
+exec {{ gitlab_puma }}   \
+    -e production \
+    -C {{ puma_rb.output }}
