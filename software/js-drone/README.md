@@ -16,6 +16,8 @@
 * droneNetIf: Drone network interface used for multicast traffic
 * debug: Must be set to 'true' to send drone logs through OPC-UA
 * multicastIp: IPv6 of the multicast group of the swarm
+* operatorScript: URL of operator's script to prepare the flight
+* mapJson: URL of terrain's map used by the operator script
 * flightScript: URL of user's script to execute to fly drone swarm
 * loopPeriod: Minimal period (in milliseconds) between 2 executions of the flight script loop
 * subscriberGuidList: List of computer id on which a GUI must be deployed
@@ -54,7 +56,7 @@ For each drone is displayed:
 
 ### Buttons
 
-* Start: sends a "start" message to the swarm and changes into a stop button
+* Start: loads operator script and changes into a stop button
 * Stop: sends a "stop" message to the swarm
 * Switch leader: sends a "switch" message to the swarm, it is usually used to change the leader
 * Quit: exits (closes websocket and stops pub/sub)
