@@ -54,7 +54,8 @@ input = inline: gitlab-shell-work*
   srv/backup/logrotate/**
   etc/service/postgres-start
   srv/redis/**
-  srv/unicorn/unicorn.socket
+  srv/puma/puma.socket
+  .cache
 output = ${directory:srv}/exporter.exclude
 
 [gitlab-resiliency-restore-script]
@@ -70,13 +71,14 @@ context =
   raw     git_location            {{ git_location }}
   raw     bin_directory           ${directory:bin}
   raw     etc_directory           ${directory:etc}
-  raw     run_directory           ${directory:run}
+  raw     var_directory           ${directory:var}
   raw     postgress_script        ${service-postgresql:services}/postgres-start
   raw     redis_script            ${service-redis:wrapper}
-  raw     unicorn_script          ${service-unicorn:wrapper-path}
+  raw     puma_script             ${service-puma:wrapper-path}
   raw     sidekiq_script          ${service-sidekiq:wrapper-path}
   raw     gitlab_backup_dir       ${gitlab-backup-directory:backup-gitlab.git}
   raw     redis_pid_file          ${service-redis:pid-file}
   raw     postgres_pid_file       ${service-postgresql:pgdata-directory}/postmaster.pid
+  raw     puma_pid_file           ${puma:pid}/puma.pid
   raw     gitlab_work_location    ${gitlab-work:location}
   raw     promise_lab_location    ${directory:promise.slow}

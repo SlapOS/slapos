@@ -21,15 +21,15 @@ redis_pid_file="{{ redis_pid_file }}"
 postgres_pid_file="{{ postgres_pid_file }}"
 
 bin_location="{{ bin_directory }}"
-run_location="{{ run_directory }}"
 git_location="{{ git_location }}"
 go_work_bin="{{ go_work_bin }}"
 etc_location="{{ etc_directory }}"
 gitlab_work="{{ gitlab_work_location }}"
 promise_check="{{ promise_lab_location }}"
-unicorn_script="{{ unicorn_script }}"
+puma_script="{{ puma_script }}"
+puma_pid_file="{{ puma_pid_file }}"
 sidekiq_script="{{ sidekiq_script }}"
-var_location="{{ run_directory }}/.."
+var_location="{{ var_directory }}"
 
 # export GIT_EXEC_PATH=$git_location/libexec/git-core/
 
@@ -56,7 +56,7 @@ kill_process () {
 
 check_process $postgres_pid_file "Postgres"
 check_process $redis_pid_file "Redis"
-check_process $run_location/unicorn.pid "Unicorn"
+check_process $puma_pid_file "Puma"
 
 if [ -f "$postgres_pid_file" ]; then
   rm $postgres_pid_file
@@ -90,14 +90,14 @@ echo "Checking gitlab promises..."
 echo "[info] Not all promises are checked!"
 $promise_check/gitlab-app
 
-echo "Starting Unicorn to check gitlab-shell promise..."
-$unicorn_script &
-unicorn_pid=$!
-trap "kill $postgres_pid $redis_pid $unicorn_pid" EXIT TERM INT
+echo "Starting Puma to check gitlab-shell promise..."
+$puma_script &
+puma_pid=$!
+trap "kill $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
 sleep 60
-if [ -s "$run_location/unicorn.pid" ]; then
-  unicorn_ppid=$(head -n 1 $run_location/unicorn.pid) > /dev/null 2>&1
-  trap "kill $postgres_pid $redis_pid $unicorn_ppid" EXIT TERM INT
+if [ -s "$puma_pid_file" ]; then
+  puma_pid=$(head -n 1 $puma_pid_file) > /dev/null 2>&1
+  trap "kill $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
 fi
 $promise_check/gitlab-shell
 
@@ -109,7 +109,7 @@ $promise_check/gitlab-shell
 
 kill_process $postgres_pid
 kill_process $redis_pid
-kill_process $unicorn_pid
+kill_process $puma_pid
 
 RESTORE_EXIT_CODE=$?
 
