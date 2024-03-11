@@ -20,6 +20,21 @@ inline =
   {% do parameter_dict.__setitem__('websocketPort', websocket_port) -%}
   {{ json_module.dumps(parameter_dict) }}
 
+[operator]
+recipe = slapos.recipe.build:download
+url = $${slap-configuration:configuration.operatorScript}
+destination = $${directory:etc}/operator.js
+offline = false
+
+[map]
+recipe = slapos.recipe.build:download
+url = $${slap-configuration:configuration.mapJson}
+destination = $${directory:etc}/map.json
+offline = false
+
+[qjs-launcher]
+command-line += $${operator:target} $${map:target}
+
 [script-js]
 recipe = slapos.recipe.template:jinja2
 template = ${script-js:target}
