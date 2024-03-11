@@ -50,11 +50,23 @@
       "type": "string",
       "default": "ff15::1111"
     },
+    "operatorScript": {
+      "title": "Script's URL to prepare the flight",
+      "description": "URL of the operator script. The operator script is used to send a first message to the swarm.\nThis can be useful to determine some path planning depending on map informations.\nThis URL must be publicly accesible so that the drone can fetch the script.",
+      "type": "string",
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/operator.js"
+    },
+    "mapJson": {
+      "title": "Map's URL",
+      "description": "URL of the terrain's map. It is used as a data source by the operator script.",
+      "type": "string",
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/map.json"
+    },
     "flightScript": {
       "title": "Script's URL of the flight",
       "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that the drone can fetch the script.",
       "type": "string",
-      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js"
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/default.js"
     },
     "loopPeriod": {
       "title": "Loop execution period",
