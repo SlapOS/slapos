@@ -21,8 +21,6 @@ if Rails.env.production?
     enable_starttls_auto:   {{ cfg('smtp_enable_starttls_auto') }},
     # ssl:
     openssl_verify_mode:    '{{ cfg("smtp_openssl_verify_mode") }}'
-    # ca_path:
-    # ca_file:
   }
 end
 {% else %}
