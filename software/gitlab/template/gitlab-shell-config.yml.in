@@ -7,13 +7,15 @@
 # GitLab user. git by default
 user: {{ backend_info.user }}
 
-# Url to gitlab instance. Used for api calls. Should end with a slash.
-gitlab_url: "http+unix://{{ urllib.parse.quote_plus(unicorn.socket) }}/"
+# URL to GitLab instance, used for API calls. Default: http://localhost:8080.
+# For relative URL support read http://doc.gitlab.com/ce/install/relative_url.html
+gitlab_url: "http+unix://{{ urllib.parse.quote_plus(puma.socket) }}/"
 
 http_settings:
 {# we don't need any
   <%= @http_settings.to_json if @http_settings %>
 #}
+#  read_timeout: 300
 #  user: someone
 #  password: somepass
 #  ca_file: /etc/ssl/cert.pem
@@ -34,35 +36,17 @@ auth_file: "{{ gitlab.var }}/sshkeys-notused"
 # Default is .gitlab_shell_secret in the root directory.
 secret_file: "{{ gitlab_shell.secret }}"
 
-# Parent directory for global custom hook directories (pre-receive.d, update.d, post-receive.d)
-# Default is hooks in the gitlab-shell directory.
-custom_hooks_dir: "{{ gitlab_shell_work.location }}/hooks/"
-
-# Redis settings used for pushing commit notices to gitlab
-redis:
-  bin: {{ redis_binprefix }}/redis-cli
-  host: {# <%= @redis_host %> #}
-  port: {# <%= @redis_port %> #}
-  socket: {{ service_redis.unixsocket }}
-  database: {# <%= @redis_database %> #}
-  namespace: resque:gitlab
-
 # Log file.
 # Default is gitlab-shell.log in the root directory.
 log_file: "{{ gitlab_shell.log }}/gitlab-shell.log"
 
 # Log level. INFO by default
-log_level:
+log_level: INFO
+
+# Log format. 'text' by default
+log_format: text
 
 # Audit usernames.
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
 # incurs an extra API call on every gitlab-shell command.
-audit_usernames:
-
-# Enable git-annex support
-# git-annex allows managing files with git, without checking the file contents into git
-# See https://git-annex.branchable.com/ for documentation
-# If enabled, git-annex needs to be installed on the server where gitlab-shell is setup
-# For Debian and Ubuntu systems this can be done with: sudo apt-get install git-annex
-# For CentOS: sudo yum install epel-release && sudo yum install git-annex
-git_annex_enabled:
+audit_usernames: false
