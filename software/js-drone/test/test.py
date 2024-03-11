@@ -282,7 +282,9 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
         'debug': False,
         'loopPeriod': LOOP_PERIOD,
         'isADrone': False,
-        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/subscribe.js',
+        'operatorScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/operator.js',
+        'mapJson': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/map.json',
+        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/subscribe.js',
         'netIf': OPC_UA_NET_IF,
         'multicastIp': MCAST_GRP
       }
