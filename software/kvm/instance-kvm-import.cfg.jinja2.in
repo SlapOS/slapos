@@ -6,6 +6,7 @@ offline = true
 
 parts +=
   kvm-disk-image-corruption-promise
+  check-backup-directory-promise
 
 # Here, we don't need KVM to run to import data, so we don't
 # even extend the kvm instance profile.
@@ -48,6 +49,7 @@ bin = ${buildout:directory}/bin
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
 log = ${:var}/log
+tmp = ${buildout:directory}/tmp
 scripts = ${:etc}/run
 services = ${:etc}/service
 novnc-conf = ${:etc}/novnc
@@ -57,6 +59,17 @@ cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
 
+[device]
+{%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
+{%- if disk_type == "virtio" %}
+device = virtio0
+{%- elif disk_type == "ide" %}
+{#-   Manually found device name in case of disk-type == ide #}
+device = ide0-hd0
+{%- else %}
+# unsupported disk-type {{ disk_type }}
+{%- endif %}
+
 [importer]
 recipe = slapos.recipe.template:jinja2
 url = {{ template_kvm_import }}
@@ -65,8 +78,8 @@ output = ${directory:bin}/${slap-parameter:namebase}-importer
 wrapper = ${:output}
 context =
     section directory directory
-    raw zcat_binary {{ zcat_binary }}
-    raw gzip_binary {{ gzip_binary }}
+    key device device:device
+    raw qmprebase {{ qmprebase }}
 
 backup-disk-path = ${directory:backup}/virtual.qcow2
 
@@ -93,3 +106,10 @@ mode = 700
 promise = check_command_execute
 name = kvm-disk-image-corruption.py
 config-command = ${kvm-disk-image-corruption-bin:output}
+
+[check-backup-directory-promise]
+# Check that disk image is not corrupted
+<= monitor-promise-base
+promise = check_command_execute
+name = check-backup-directory.py
+config-command = {{ check_backup_directory }} ${directory:backup}/${device:device} ${directory:tmp}
