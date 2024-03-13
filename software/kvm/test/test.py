@@ -669,14 +669,12 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm1'))
 
   def test_kvm_exporter(self):
-    exporter_partition = os.path.join(
-      self.slap.instance_directory,
-      self.__partition_reference__ + '2')
-    backup_path = os.path.join(
-      exporter_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2.gz')
+    exporter_partition = os.path.dirname(os.path.join(
+      self.slap.instance_directory, 'template-kvm-export.cfg'
+    ))
+    backup_directory = os.path.join(
+      exporter_partition, 'srv', 'backup', 'kvm')
     exporter = os.path.join(exporter_partition, 'bin', 'exporter')
-    if os.path.exists(backup_path):
-      os.unlink(backup_path)
 
     def call_exporter():
       try:
@@ -686,6 +684,15 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
         return (e.returncode, e.output.decode('utf-8'))
     status_code, status_text = call_exporter()
     self.assertEqual(0, status_code, status_text)
+    self.fail('assert more in %r' % (backup_directory,))
+
+  def test_exporter_partial_recovery(self):
+    # cover .partial file in the backup directory with fallback to full
+    self.fail()
+
+  def test_exporter_fullneed_recovery(self):
+    # cover obsolete dirty bitmap with fallback to full
+    self.fail()
 
   def test(self):
     connection_parameter_dict = self\
