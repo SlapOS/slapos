@@ -45,10 +45,11 @@ class CertificateAuthority:
         os.unlink(f)
     try:
       # no CA, let us create new one
-      popenCommunicate([self.openssl_binary, 'req', '-nodes', '-config',
-          self.openssl_configuration, '-new', '-x509', '-extensions',
-          'v3_ca', '-keyout', self.key, '-out', self.certificate,
-          '-days', '10950'], 'Certificate Authority %s\n' % uuid.uuid1())
+      popenCommunicate([self.openssl_binary, 'req', '-utf8', '-nodes',
+          '-config', self.openssl_configuration, '-new', '-x509',
+          '-extensions', 'v3_ca', '-keyout', self.key, '-out',
+          self.certificate, '-days', '10950'],
+          'Certificate Authority %s\n' % uuid.uuid1())
     except:
       try:
         for f in file_list:
