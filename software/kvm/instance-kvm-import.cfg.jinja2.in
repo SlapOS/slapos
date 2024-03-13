@@ -63,10 +63,19 @@ url = {{ template_kvm_import }}
 output = ${directory:bin}/${slap-parameter:namebase}-importer
 # Resilient stack wants a "wrapper" parameter
 wrapper = ${:output}
+{%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
+{%- if disk_type == "virtio" %}
+device = virtio0
+{%- elif disk_type == "ide" %}
+{#-   Manually found device name in case of disk-type == ide #}
+device = ide0-hd0
+{%- else %}
+# unsupported disk-type {{ disk_type }}
+{%- endif %}
 context =
     section directory directory
-    raw zcat_binary {{ zcat_binary }}
-    raw gzip_binary {{ gzip_binary }}
+    key device :device
+    raw qmprebase {{ qmprebase }}
 
 backup-disk-path = ${directory:backup}/virtual.qcow2
 

@@ -2,7 +2,6 @@
 
 VM_DIR={{ directory['srv'] }}
 BACKUP_DIR={{ directory['backup'] }}
-VM_FILE=virtual.qcow2
 LC_ALL=C
 export LC_ALL
 umask 077
@@ -16,11 +15,10 @@ write_backup_proof () {
 # For now we just make the diff before 
 write_backup_proof
 
-if [ -f "$BACKUP_DIR/${VM_FILE}.gz" ]; then
-    {{ gzip_binary }} -t "$BACKUP_DIR/${VM_FILE}.gz" || exit 10
-    {{ zcat_binary }} "$BACKUP_DIR/${VM_FILE}.gz" > $VM_DIR/$VM_FILE
-else
-    rm $VM_DIR/$VM_FILE
-    cp $BACKUP_DIR/$VM_FILE $VM_DIR/$VM_FILE
-fi
-
+tmpdir=$(mktemp -d)
+trap "rm -fr $tmpdir" EXIT TERM INT
+cp -a $BACKUP_DIR $tmpdir
+{{ qmprebase }} --dir $tmpdir/{{ device }}
+# assert that restore went well and there is only one file
+[ $(find $tmpdir/{{ device }} -type f -name 'FULL*qcow' | wc -l) -eq 1 ]
+cp $tmpdir/{{ device }}/* $VM_DIR/virtual.qcow2
