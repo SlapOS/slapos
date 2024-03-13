@@ -668,24 +668,83 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm0'))
     cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm1'))
 
-  def test_kvm_exporter(self):
-    exporter_partition = os.path.join(
-      self.slap.instance_directory,
-      self.__partition_reference__ + '2')
-    backup_path = os.path.join(
-      exporter_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2.gz')
-    exporter = os.path.join(exporter_partition, 'bin', 'exporter')
-    if os.path.exists(backup_path):
-      os.unlink(backup_path)
+  def _setupKnowledge(self):
+    exporter_partition = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'template-kvm-export.cfg'))
+    self.assertEqual(1, len(exporter_partition))
+    exporter_partition = os.path.dirname(exporter_partition[0])
+    self.exporter = os.path.join(exporter_partition, 'bin', 'exporter')
+    self.backup_directory = os.path.join(
+      exporter_partition, 'srv', 'backup', 'kvm', 'virtio0')
 
-    def call_exporter():
-      try:
-        return (0, subprocess.check_output(
-          [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
-      except subprocess.CalledProcessError as e:
-        return (e.returncode, e.output.decode('utf-8'))
-    status_code, status_text = call_exporter()
+  def call_exporter(self):
+    try:
+      return (0, subprocess.check_output(
+        [self.exporter], stderr=subprocess.STDOUT).decode('utf-8'))
+    except subprocess.CalledProcessError as e:
+      return (e.returncode, e.output.decode('utf-8'))
+
+  def test_kvm_importer(self):
+    self.fail()
+
+  def test_kvm_importer_only_full(self):
+    self.fail()
+
+  def test_01_kvm_exporter(self):
+    self._setupKnowledge()
+    status_code, status_text = self.call_exporter()
     self.assertEqual(0, status_code, status_text)
+    self.assertEqual(
+      len(glob.glob(os.path.join(self.backup_directory, 'FULL-*'))),
+      1)
+    self.assertNotIn(
+      'Recovered from existing bitmap by full backup',
+      status_text
+    )
+    self.assertNotIn(
+      'Recovered from partial backup by full backup',
+      status_text
+    )
+
+  def test_99_exporter_partial_recovery(self):
+    self.test_01_kvm_exporter()
+    # cover .partial file in the backup directory with fallback to full
+    current_backup = glob.glob(
+      os.path.join(self.backup_directory, 'FULL-*'))[0]
+    with open(current_backup + '.partial', 'w') as fh:
+      fh.write('')
+    status_code, status_text = self.call_exporter()
+    self.assertEqual(0, status_code, status_text)
+    self.assertEqual(
+      len(glob.glob(os.path.join(self.backup_directory, 'FULL-*'))),
+      1)
+    self.assertNotIn(
+      'Recovered from existing bitmap by full backup',
+      status_text
+    )
+    self.assertIn(
+      'Recovered from partial backup by full backup',
+      status_text
+    )
+
+  def test_99_exporter_fullneed_recovery(self):
+    self.test_01_kvm_exporter()
+    # cover obsolete dirty bitmap with fallback to full
+    for f in os.listdir(self.backup_directory):
+      os.unlink(os.path.join(self.backup_directory, f))
+    status_code, status_text = self.call_exporter()
+    self.assertEqual(0, status_code, status_text)
+    self.assertEqual(
+      len(glob.glob(os.path.join(self.backup_directory, 'FULL-*'))),
+      1)
+    self.assertIn(
+      'Recovered from existing bitmap by full backup',
+      status_text
+    )
+    self.assertNotIn(
+      'Recovered from partial backup by full backup',
+      status_text
+    )
 
   def test(self):
     connection_parameter_dict = self\
