@@ -122,6 +122,15 @@ template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
               file replicated :template-replicated-destination
 
+[qmpbackup-binary]
+recipe = slapos.cookbook:wrapper
+environment =
+  PATH=${qemu:location}/bin
+wrapper-path =
+  $${buildout:bin-directory}/qmpbackup
+command-line =
+  ${buildout:bin-directory}/qmpbackup
+
 [dynamic-template-kvm-export]
 recipe = slapos.recipe.template:jinja2
 url = ${template-kvm-export:location}/instance-kvm-export.cfg.jinja2
@@ -133,8 +142,18 @@ context =
     raw kvm_template $${dynamic-template-kvm:output}
     raw template_kvm_export ${template-kvm-export-script:target}
     key pbsready_export_template template-pbsready-export:output
-    raw gzip_binary ${gzip:location}/bin/gzip
     key slapparameter_dict slap-configuration:configuration
+    key qmpbackup qmpbackup-binary:wrapper-path
+    raw check_backup_directory ${check-backup-directory.sh:output}
+
+[qmprestore-binary]
+recipe = slapos.cookbook:wrapper
+environment =
+  PATH=${qemu:location}/bin
+wrapper-path =
+  $${buildout:bin-directory}/qmprestore
+command-line =
+  ${buildout:bin-directory}/qmprestore
 
 [dynamic-template-kvm-import]
 recipe = slapos.recipe.template:jinja2
@@ -148,5 +167,4 @@ context =
     raw template_kvm_import ${template-kvm-import-script:target}
     key pbsready_import_template template-pbsready-import:output
     key slapparameter_dict slap-configuration:configuration
-    raw zcat_binary ${gzip:location}/bin/zcat
-    raw gzip_binary ${gzip:location}/bin/gzip
+    key qmprestore qmprestore-binary:wrapper-path

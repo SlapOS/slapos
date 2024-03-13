@@ -48,6 +48,7 @@ bin = ${buildout:directory}/bin
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
 log = ${:var}/log
+tmp = ${buildout:directory}/tmp
 scripts = ${:etc}/run
 services = ${:etc}/service
 novnc-conf = ${:etc}/novnc
@@ -65,10 +66,7 @@ output = ${directory:bin}/${slap-parameter:namebase}-importer
 wrapper = ${:output}
 context =
     section directory directory
-    raw zcat_binary {{ zcat_binary }}
-    raw gzip_binary {{ gzip_binary }}
-
-backup-disk-path = ${directory:backup}/virtual.qcow2
+    raw qmprestore {{ qmprestore }}
 
 [kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
