@@ -37,7 +37,7 @@ context =
     section buildout buildout
     key socket_path kvm-instance:socket-path
     key device :device
-    raw gzip_binary {{ gzip_binary }}
+    raw qmpbackup {{ qmpbackup }}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]
