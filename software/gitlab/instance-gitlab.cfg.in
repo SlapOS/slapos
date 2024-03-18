@@ -186,16 +186,18 @@ mode    = 0700
 [gitaly-dir]
 recipe  = slapos.cookbook:mkdirectory
 gitaly  = ${directory:var}/gitaly
-sockets = ${:gitaly}/sockets
-internal = ${directory:var}/int
+sockets = ${:gitaly}/s
+internal = ${:sockets}/int
 log     = ${directory:log}/gitaly
 
 [gitaly]
-socket  = ${directory:var}/gitaly.socket
-log     = ${gitaly-dir:log}
+socket  = ${gitaly-dir:sockets}/gitaly.socket
+logdir     = ${gitaly-dir:log}
 location = {{ gitaly_location }}
 pid     = ${directory:run}/gitaly.pid
 internal_socket = ${gitaly-dir:internal}
+basedir = ${gitaly-dir:gitaly}
+num_workers = 2
 
 [gitaly-socket-listening-promise]
 <= monitor-promise-base
@@ -288,7 +290,8 @@ context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
     section gitlab_shell_work       gitlab-shell-work
-    section gitlab_workhorse        gitlab_workhorse
+    section gitlab_shell            gitlab-shell
+    section gitlab_workhorse        gitlab-workhorse
     section gitaly                  gitaly
 
 [rack_attack.rb]
@@ -429,7 +432,8 @@ tune-command =
     ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
 # config/initializers/
     cd initializers  &&
-    ln -sf ${rack_attack.rb:output} rack_attack.rb  &&
+#    rack_attack.rb is not present in gitlab13 config
+#    ln -sf ${rack_attack.rb:output} rack_attack.rb  &&
     ln -sf ${smtp_settings.rb:output} smtp_settings.rb  &&
 # public/
     cd ../../public  &&
@@ -683,8 +687,8 @@ copytruncate = true
 
 [logrotate-entry-gitlab-workhorse]
 <= logrotate-entry-base
-log     = ${gitlab-workhorse-dir:log}//*.log
-name    = gitlab-shell
+log     = ${gitlab-workhorse-dir:log}/*.log
+name    = gitlab-workhorse
 copytruncate = true
 
 #######################################
@@ -833,7 +837,8 @@ wrapper-path    = ${directory:service}/gitaly
 command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
 
 environment =
-    PATH={{ bundler_1_17_3_dir }}:{{ ruby_location }}/bin:/bin:/usr/bin
+    PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
+#    PATH={{ bundler_1_17_3_dir }}:{{ ruby_location }}/bin:/bin:/usr/bin
 
 
 # 6. on-reinstantiate actions

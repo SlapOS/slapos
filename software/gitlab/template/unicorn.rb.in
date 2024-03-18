@@ -43,6 +43,9 @@ preload_app true
 check_client_connection false
 
 require_relative '{{ gitlab_work.location }}/lib/gitlab/cluster/lifecycle_events'
+require_relative '{{ gitlab_work.location }}/lib/gitlab/log_timestamp_formatter.rb'
+
+
 
 before_exec do |server|
   # Signal application hooks that we're about to restart
