@@ -67,13 +67,20 @@ def createSoftwareCfgValidatorTest(path, software_cfg_schema):
       schema = json.load(json_file)
       jsonschema.validate(schema, software_cfg_schema)
 
+      _viewed_software_type = []
       # also make sure request and response schemas can be resolved
       schema.setdefault('$id', 'file://' + path)
       resolver = jsonschema.RefResolver.from_schema(schema)
-      for software_type_definition in six.itervalues(schema['software-type']):
+      for key, software_type_definition in six.iteritems(schema['software-type']):
         resolver.resolve(software_type_definition['request'])
         resolver.resolve(software_type_definition['response'])
-
+        # Ensure there inst a duplicated entry.
+        _software_type_tuple = (
+          software_type_definition.get("software-type", key),
+          software_type_definition.get("shared", False))
+        assert _software_type_tuple not in _viewed_software_type, \
+                "Duplicated software release on %s, shared: %s" % _software_type_tuple
+        _viewed_software_type.append(_software_type_tuple)
   return run
 
 
