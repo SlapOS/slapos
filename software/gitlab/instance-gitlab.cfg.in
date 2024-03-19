@@ -687,8 +687,8 @@ copytruncate = true
 
 [logrotate-entry-gitlab-workhorse]
 <= logrotate-entry-base
-log     = ${gitlab-workhorse-dir:log}//*.log
-name    = gitlab-shell
+log     = ${gitlab-workhorse-dir:log}/*.log
+name    = gitlab-workhorse
 copytruncate = true
 
 #######################################
