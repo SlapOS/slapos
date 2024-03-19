@@ -45,6 +45,10 @@ def createInstanceParameterSchemaValidatorTest(path):
     "http://json-schema.org/draft-04/schema#": jsonschema.Draft4Validator,
     "http://json-schema.org/draft-06/schema#": jsonschema.Draft6Validator,
     "http://json-schema.org/draft-07/schema#": jsonschema.Draft7Validator,
+    "http://json-schema.org/draft/2019-09/schema": jsonschema.Draft201909Validator,
+    "http://json-schema.org/draft/2019-09/schema#": jsonschema.Draft201909Validator,
+    "http://json-schema.org/draft/2020-12/schema": jsonschema.Draft202012Validator,
+    "http://json-schema.org/draft/2020-12/schema#": jsonschema.Draft202012Validator,
   }
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
@@ -55,7 +59,6 @@ def createInstanceParameterSchemaValidatorTest(path):
       validator.check_schema(json_dict)
   return run
 
-
 def createSoftwareCfgValidatorTest(path, software_cfg_schema):
   # Test that software json follows the schema for softwares json,
   # which is defined in schema.json in this directory
@@ -64,13 +67,20 @@ def createSoftwareCfgValidatorTest(path, software_cfg_schema):
       schema = json.load(json_file)
       jsonschema.validate(schema, software_cfg_schema)
 
+      _viewed_software_type = []
       # also make sure request and response schemas can be resolved
       schema.setdefault('$id', 'file://' + path)
       resolver = jsonschema.RefResolver.from_schema(schema)
-      for software_type_definition in six.itervalues(schema['software-type']):
+      for key, software_type_definition in six.iteritems(schema['software-type']):
         resolver.resolve(software_type_definition['request'])
         resolver.resolve(software_type_definition['response'])
-
+        # Ensure there inst a duplicated entry.
+        _software_type_tuple = (
+          software_type_definition.get("software-type", key),
+          software_type_definition.get("shared", False))
+        assert _software_type_tuple not in _viewed_software_type, \
+                "Duplicated software release on %s, shared: %s" % _software_type_tuple
+        _viewed_software_type.append(_software_type_tuple)
   return run
 
 
