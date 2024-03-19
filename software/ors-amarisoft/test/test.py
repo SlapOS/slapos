@@ -600,6 +600,72 @@ class Lopcomm4:
       }
     })
 
+  # RU configuration in cu_inactive_config.xml
+  def test_ru_cu_inactive_config_xml(t):
+    def uctx(rf_mode, cell_type, dl_arfcn, ul_arfcn, bw, dl_freq, ul_freq, tx_gain, rx_gain):
+      return {
+          'tx-array-carriers': {
+            'rw-duplex-scheme':              rf_mode,
+            'rw-type':                       cell_type,
+            'absolute-frequency-center':    '%d' % dl_arfcn,
+            'center-of-channel-bandwidth':  '%d' % dl_freq,
+            'channel-bandwidth':            '%d' % bw,
+            'gain':                         '%d' % tx_gain,
+            'active':                       'INACTIVE',
+          },
+          'rx-array-carriers': {
+            'absolute-frequency-center':    '%d' % ul_arfcn,
+            'center-of-channel-bandwidth':  '%d' % ul_freq,
+            'channel-bandwidth':            '%d' % bw,
+            # XXX no rx_gain
+            'active':                       'INACTIVE',
+          },
+      }
+
+    _ = t._test_ru_cu_inactive_config_xml
+
+    #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
+    _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
+    _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
+    _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
+    _(4, uctx('TDD',  'NR', 470400,  470400, 20000000, 2352000000, 2352000000, 14, 24))
+
+  def _test_ru_cu_inactive_config_xml(t, i, uctx):
+    cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_inactive_config.xml' % t.ref('RU%d' % i)))
+    with open(cu_xml, 'r') as f:
+      cu = f.read()
+    cu = xmltodict.parse(cu)
+
+    assertMatch(t, cu, {
+      'xc:config': {
+        'user-plane-configuration': {
+          'tx-endpoints': [
+            {'name': 'TXA0P00C00', 'e-axcid': {'eaxc-id': '0'}},
+            {'name': 'TXA0P00C01', 'e-axcid': {'eaxc-id': '1'}},
+            {'name': 'TXA0P01C00', 'e-axcid': {'eaxc-id': '2'}},
+            {'name': 'TXA0P01C01', 'e-axcid': {'eaxc-id': '3'}},
+          ],
+          'tx-links': [
+            {'name': 'TXA0P00C00', 'tx-endpoint': 'TXA0P00C00'},
+            {'name': 'TXA0P00C01', 'tx-endpoint': 'TXA0P00C01'},
+            {'name': 'TXA0P01C00', 'tx-endpoint': 'TXA0P01C00'},
+            {'name': 'TXA0P01C01', 'tx-endpoint': 'TXA0P01C01'},
+          ],
+          'rx-endpoints': [
+            {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': '0'}},
+            {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': '8'}},
+            {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': '1'}},
+            {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': '24'}},
+          ],
+          'rx-links': [
+            {'name': 'RXA0P00C00',   'rx-endpoint': 'RXA0P00C00'},
+            {'name': 'PRACH0P00C00', 'rx-endpoint': 'PRACH0P00C00'},
+            {'name': 'RXA0P00C01',   'rx-endpoint': 'RXA0P00C01'},
+            {'name': 'PRACH0P00C01', 'rx-endpoint': 'PRACH0P00C01'},
+          ],
+        } | uctx
+      }
+    })
 
 # Sunwave4 is mixin to verify Sunwave driver wrt all LTE/NR x FDD/TDD modes.
 class Sunwave4:
