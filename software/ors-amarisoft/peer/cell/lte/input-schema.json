@@ -27,6 +27,7 @@
     },
     "dl_earfcn":  { "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn" },
     "pci":        { "$ref": "../../../cell/lte/input-schema.json#/properties/pci" },
-    "tac":        { "$ref": "../../../cell/lte/input-schema.json#/properties/tac" }
+    "tac":        { "$ref": "../../../cell/lte/input-schema.json#/properties/tac" },
+    "allowed_meas_bandwidth":        { "$ref": "../../../cell/lte/input-schema.json#/properties/bandwidth" }
   }
 }

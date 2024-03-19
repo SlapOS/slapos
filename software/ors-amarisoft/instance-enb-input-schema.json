@@ -30,12 +30,42 @@
               "title": "MME Address",
               "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
               "type": "string"
+            },
+            "qci_dscp_mapping":{
+              "title": "QCI DSCP Mapping",
+              "description": "Optional array of objects. Allows to define a specific IP differentiated services code point for a given QCI. QCI not explicitly configured use the default DSCP value 0.",
+              "type": "array",
+              "items": {
+                "title": "QCI DSCP Mapping",
+                "type":"object",
+                "properties": {
+                  "qci": {
+                    "title": "QCI",
+                    "description": "Integer (range 1 to 254). QCI value.",
+                    "type":"integer"
+                  },
+                  "dscp": {
+                    "title": "DSCP",
+                    "description": "Integer (range 0 to 63). DSCP value.",
+                    "type":"integer"
+                  }
+                }
+              }
             }
           },
           "type": "object"
         }
       },
       "type": "object"
+    },
+    "x2_peers": {
+      "title": "X2 Peers",
+      "description": "Optional array of strings. IP addresses and optional port of other eNodeBs to establish X2 connections. The default port is 36422.",
+      "type": "array",
+      "items": {
+        "title": "X2 Peers",
+        "type": "string"
+      }
     },
     "plmn_list": {
       "title": "PLMN list (4G)",
