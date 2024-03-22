@@ -10,7 +10,7 @@ offline = true
 nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
-template_mime_types = {{ template_mime_types_target }} 
+template_mime_types = {{ template_mime_types_target }}
 template_launcher = {{ template_launcher_target }}
 template_index_html = {{ template_index_html_target }}
 template_graceful  = {{ template_graceful_target }}
@@ -37,6 +37,7 @@ default-parameters =
     "monitor-httpd-port": 8197
   }
 
+
 [instance-replicate]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
@@ -48,6 +49,7 @@ context =
   section parameter_list profile-common
   key slapparameter_dict slap-configuration:configuration
   jsonkey default_parameter_dict :default-parameters
+# User can specify parameter for any of the two instances
 default-parameters =
   {
     "download_url": null,
@@ -60,8 +62,9 @@ RootSoftwareInstance = ${:default}
 default = instance-html5as:output
 replicate = instance-replicate:output
 
+
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
+recipe = slapos.cookbook:slapconfiguration
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}

@@ -7,7 +7,6 @@
 {%- do parameter_dict.setdefault("monitor-httpd-port-%d" % i, 8197 + i) %}
 {%- endfor %}
 
-# Standard buildout section
 [buildout]
 parts =
     publish-connection-information
@@ -23,7 +22,7 @@ offline = true
 # Macro section sharing request parameters
 [instance-request-base]
 <= slap-connection
-recipe = slapos.cookbook:request.serialised
+recipe = slapos.cookbook:request
 # It is the same software as the current one
 software-url = ${slap-connection:software-release-url}
 # We want the default behaviour
@@ -33,6 +32,9 @@ return = server_url server-cdn-url monitor-setup-url
 # Provided parameters
 # We add: or '', otherwise jinja2 will render a 'None' string
 config-download_url = {{ parameter_dict['download_url'] or '' }}
+
+
+
 
 # Create request section in a loop.
 {% for i in range(1, replicate_quantity + 1) %}
@@ -49,9 +51,10 @@ sla-computer_guid = {{ parameter_dict["sla-%s-computer-guid" % i] }}
 {%   endif -%}
 {% endfor %}
 
+
 # Publish information to connect to the two instances
 [publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 {% for i in range(1, replicate_quantity + 1) %}
 instance-{{ i }}-server_url = ${instance-{{ i }}:connection-server_url}
 instance-{{ i }}-server-cdn-url = ${instance-{{ i }}:connection-server-cdn-url}
