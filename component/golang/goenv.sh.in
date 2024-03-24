@@ -25,6 +25,7 @@ export GOBIN=$X/bin
 export GOCACHE=$X/cache
 export GOMODCACHE=$X/pkg/mod
 export GOENV=$X/goenv
+export GOPROXY=https://goproxy.cn,direct
 
 export PATH=$GOBIN:$PATH
 export PS1="(`basename $X`) $PS1"
