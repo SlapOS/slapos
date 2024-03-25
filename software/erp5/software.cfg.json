@@ -1,6 +1,6 @@
 {
   "name": "ERP5",
-  "description": "ERP5, Open-Source ERP",
+  "description": "ERP5, Open-Source ERP, using python3",
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
