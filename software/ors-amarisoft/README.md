@@ -3,22 +3,23 @@
 How to deploy from scratch
 
   1. Install Amarisoft binaries in /opt/amarisoft/v20XX-XX-XX with folders:
-     * enb: needs to containt libraries from trx_sdr
+     * enb: needs to contain libraries from trx_sdr
      * trx_sdr
-     * mme
+     * mme: needs to contain libraries from libs folder
   2. Install ors playbook
   3. Deploy this SR
 
 ## Services
 
-We run 2 binaries from Amarisoft LTE stack:
+We run 3 binaries from Amarisoft LTE stack:
 
  * **lteenb** - eNodeB software is the server accepting connection from UI (user interfaces)
  * **ltemme** - Mobile Management Entity in other words core network which handles orchestration of 
    eNodeBs in case UI switches from one to another
+ * **lteims** - IP Multimedia Subsystem, for support of VoNR / VoLTE (only for amarisoft > 2024-05-02)
  
 Those binaries are started in foreground, originaly in screen. We don't want the binaries inside one
-screen because then we cannot easily control their resource usage. Thus we make 2 on-watch services.
+screen because then we cannot easily control their resource usage. Thus we make 3 on-watch services.
 
 ### ENB / GNB
 
