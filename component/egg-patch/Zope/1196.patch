@@ -1,0 +1,88 @@
+From c8c52a14d481403f1db252631d3cc4b8e86e1798 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <perrinjerome@gmail.com>
+Date: Sat, 17 Feb 2024 05:32:46 +0000
+Subject: [PATCH] Fix authentication error viewing ZMI with a user defined
+ outside of zope root.
+
+Fixes https://github.com/zopefoundation/Zope/issues/1195
+
+ 
+ 5.9 (2023-11-24)
+ ----------------
+diff --git a/src/App/dtml/manage_page_header.dtml b/src/App/dtml/manage_page_header.dtml
+index 2dcb047552..e8b8659e10 100644
+--- a/src/App/dtml/manage_page_header.dtml
++++ b/src/App/dtml/manage_page_header.dtml
+@@ -10,24 +10,27 @@
+ </dtml-let>
+ 
+ <title><dtml-if title_or_id><dtml-var title_or_id><dtml-else>Zope</dtml-if></title>
++<dtml-let basepath="'/'.join([''] + [p for p in (REQUEST['BASEPATH1'], REQUEST.get('AUTHENTICATION_PATH')) if p])">
++
+ <dtml-in css_urls>
+-	<link rel="stylesheet" type="text/css" href="&dtml-BASEPATH1;&dtml-sequence-item;" />
++	<link rel="stylesheet" type="text/css" href="&dtml-basepath;&dtml-sequence-item;" />
+ </dtml-in>
+ <dtml-in js_urls>
+-	<script src="&dtml-BASEPATH1;&dtml-sequence-item;"></script>
++	<script src="&dtml-basepath;&dtml-sequence-item;"></script>
+ </dtml-in>
+ 
+-<link rel="shortcut icon" type="image/x-icon" href="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/favicon.ico" />
+-<link rel="apple-touch-icon" sizes="180x180" href="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/apple-touch-icon.png" />
+-<link rel="icon" type="image/png" sizes="32x32" href="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/favicon-32x32.png" />
+-<link rel="icon" type="image/png" sizes="16x16" href="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/favicon-16x16.png" />
+-<link rel="manifest" href="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/site.webmanifest" />
+-<link rel="mask-icon" href="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/safari-pinned-tab.svg" color="#5bbad5" />
+-<meta name="msapplication-config" content="&dtml-BASEPATH1;/++resource++zmi/logo/favicon/browserconfig.xml"/>
++<link rel="shortcut icon" type="image/x-icon" href="&dtml-basepath;/++resource++zmi/logo/favicon/favicon.ico" />
++<link rel="apple-touch-icon" sizes="180x180" href="&dtml-basepath;/++resource++zmi/logo/favicon/apple-touch-icon.png" />
++<link rel="icon" type="image/png" sizes="32x32" href="&dtml-basepath;/++resource++zmi/logo/favicon/favicon-32x32.png" />
++<link rel="icon" type="image/png" sizes="16x16" href="&dtml-basepath;/++resource++zmi/logo/favicon/favicon-16x16.png" />
++<link rel="manifest" href="&dtml-basepath;/++resource++zmi/logo/favicon/site.webmanifest" />
++<link rel="mask-icon" href="&dtml-basepath;/++resource++zmi/logo/favicon/safari-pinned-tab.svg" color="#5bbad5" />
++<meta name="msapplication-config" content="&dtml-basepath;/++resource++zmi/logo/favicon/browserconfig.xml"/>
+ <meta name="msapplication-TileColor" content="#2d89ef" />
+ <meta name="theme-color" content="#ffffff" />
+ 
+ </head>
++</dtml-let>
+ <!-- REFACT what is a better way to get the last part of the current URL? -->
+ <body id="nodeid-<dtml-var "getId()">" class="zmi zmi-<dtml-var "this().meta_type.replace(' ', '-').replace('(', '').replace(')', '')"> zmi-<dtml-var "URL0[_.len(URL1)+1:]">">
+ </dtml-unless>
+diff --git a/src/zmi/styles/tests.py b/src/zmi/styles/tests.py
+index 256edfa74b..36c7b65bec 100644
+--- a/src/zmi/styles/tests.py
++++ b/src/zmi/styles/tests.py
+@@ -21,6 +21,8 @@ def setupZCML():
+ class SubscriberTests(Testing.ZopeTestCase.FunctionalTestCase):
+     """Testing .subscriber.*"""
+ 
++    base_path = f'/{Testing.ZopeTestCase.folder_name}'
++
+     def call_manage_main(self):
+         """Call /folder/manage_main and return the HTML text."""
+         def _call_manage_main(self):
+@@ -29,7 +31,7 @@ def _call_manage_main(self):
+             # which the WSGI publisher does not expect.
+             endInteraction()
+             response = self.publish(
+-                f'/{Testing.ZopeTestCase.folder_name}/manage_main',
++                f'{self.base_path}/manage_main',
+                 basic=basic_auth)
+             return str(response)
+         return temporaryPlacelessSetUp(
+@@ -40,11 +42,11 @@ def test_subscriber__css_paths__1(self):
+         from .subscriber import css_paths
+         body = self.call_manage_main()
+         for path in css_paths(None):
+-            self.assertIn(path, body)
++            self.assertIn(f'href="{self.base_path}{path}"', body)
+ 
+     def test_subscriber__js_paths__1(self):
+         """The paths it returns are rendered in the ZMI."""
+         from .subscriber import js_paths
+         body = self.call_manage_main()
+         for path in js_paths(None):
+-            self.assertIn(path, body)
++            self.assertIn(f'src="{self.base_path}{path}"', body)
