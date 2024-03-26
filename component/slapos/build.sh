@@ -43,7 +43,7 @@ eggs =
 
 [versions]
 setuptools = 44.1.1
-zc.buildout = 2.7.1+slapos019
+zc.buildout = 2.7.1+slapos020
 zc.recipe.egg = 2.0.3+slapos003
 EOF
 

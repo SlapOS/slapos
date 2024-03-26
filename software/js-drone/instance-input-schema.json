@@ -14,7 +14,7 @@
       "title": "Port of the drone's autopilot",
       "description": "Port on which autopilot service is running.",
       "type": "integer",
-      "default": "7909"
+      "default": 7909
     },
     "droneGuidList": {
       "title": "List of drones computer ID",
@@ -44,7 +44,7 @@
       "title": "Script's URL of the flight",
       "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that the drone can fetch the script.",
       "type": "string",
-      "default": "https://lab.nexedi.com/nexedi/flight-scripts/raw/master/default.js"
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js"
     },
     "subscriberGuidList": {
       "title": "List of subscribers computer ID",
