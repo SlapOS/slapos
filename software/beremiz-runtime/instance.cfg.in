@@ -53,9 +53,8 @@ recipe = slapos.cookbook:wrapper
 # needed libraries and tools inside SlapOS context
 environment =
   BEREMIZPYTHONPATH = {{ buildout['bin-directory'] }}/pythonwitheggs
-  PATH=$PATH:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
-  LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/9/:/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu/:/lib:/usr/lib/x86_64-linux-gnu/:{{ openssl_location }}/lib
-  COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/9/:/usr/lib/gcc/x86_64-linux-gnu/
+  PATH={{ gcc_location }}/bin
+  LIBRARY_PATH={{ openssl_location }}/lib
 
 command-line =
  {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_cli.py -k --project-home ${directory:home}/parts/download-plc/ build transfer run
