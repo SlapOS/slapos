@@ -4,6 +4,16 @@
   "description": "Parameters to instantiate JS drone",
   "additionalProperties": false,
   "properties": {
+    "autopilotType": {
+      "title": "Type of the drone's autopilot",
+      "description": "Model of the autopilot used in the drones.",
+      "type": "string",
+      "default": "c-astral",
+      "enum": [
+        "c-astral",
+        "sqdr"
+      ]
+    },
     "autopilotIp": {
       "title": "IP address of the drone's autopilot",
       "description": "IP used to create a connection with the autopilot.",
@@ -22,9 +32,21 @@
       "type": "array",
       "default": []
     },
+    "droneNetIf": {
+      "title": "Drones Network interface",
+      "description": "Interface used for multicast traffic.",
+      "type": "string",
+      "default": "eth0"
+    },
     "isASimulation": {
       "title": "Set the flight as a simulation",
       "description": "The option used to determine if the flight is real or if it is a simulation. This affects the context of the flight (e.g. if the take off is manual or automatic).",
+      "type": "boolean",
+      "default": false
+    },
+    "debug": {
+      "title": "Set debug mode",
+      "description": "When debug mode is enabled, drone are publishing the script logs through OPC-UA.",
       "type": "boolean",
       "default": false
     },
@@ -34,23 +56,29 @@
       "type": "string",
       "default": "ff15::1111"
     },
-    "netIf": {
-      "title": "Network interface",
-      "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
-    },
     "flightScript": {
       "title": "Script's URL of the flight",
       "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that the drone can fetch the script.",
       "type": "string",
       "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js"
     },
+    "loopPeriod": {
+      "title": "Loop execution period",
+      "description": "Minimal period between 2 executions of flight script loop",
+      "type": "integer",
+      "default": 200
+    },
     "subscriberGuidList": {
       "title": "List of subscribers computer ID",
-      "description": "List of computer ID of swarms subscribers",
+      "description": "List of computer ID of swarms subscribers (entities able to listen/send OPC-UA messages from/to the swarm)",
       "type": "array",
       "default": []
+    },
+    "subscriberNetIf": {
+      "title": "Subscribers Network interface",
+      "description": "Interface used for multicast traffic.",
+      "type": "string",
+      "default": "eth0"
     }
   }
 }

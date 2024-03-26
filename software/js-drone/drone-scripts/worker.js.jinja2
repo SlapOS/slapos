@@ -5,6 +5,7 @@
   updateLogAndProjection, Drone, Worker*/
 import {
   Drone,
+{% if isADrone -%}
   triggerParachute,
   getAirspeed,
   getAltitude,
@@ -13,14 +14,19 @@ import {
   gpsIsOk,
   getPosition,
   getYaw,
+{% endif -%}
   initPubsub,
+{% if isADrone -%}
   isLanding,
   loiter,
   setAirSpeed,
+{% endif -%}
   setMessage,
+{% if isADrone -%}
   setTargetCoordinates,
   updateLogAndProjection
-} from {{ json_module.dumps(qjs_wrapper) }};
+{% endif -%}
+} from "{{ qjs_wrapper }}";
 import {
   SIGTERM,
   WNOHANG,
@@ -34,15 +40,21 @@ import {
 } from "os";
 import { evalScript, fdopen, loadFile, open } from "std";
 
+{% if isADrone -%}
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition,
-           getYaw, initPubsub, kill, isLanding, loadFile, loiter, open, pipe,
-           setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
+           getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
+           pipe, setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
            triggerParachute, updateLogAndProjection, waitpid) {
+{% else -%}
+(function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
+           fdopen, initPubsub, kill, loadFile, open, pipe, setMessage,
+           setReadHandler, waitpid) {
+{% endif -%}
   // Every script is evaluated per drone
   "use strict";
 
-  var CONF_PATH = {{ json_module.dumps(configuration) }},
+  var CONF_PATH = "{{ configuration }}",
     conf_file = open(CONF_PATH, "r"),
     configuration = JSON.parse(conf_file.readAsString()),
     clientId,
@@ -57,9 +69,12 @@ import { evalScript, fdopen, loadFile, open } from "std";
     peer_dict = {},
     user_me = {
       //required to fly
+{% if isADrone -%}
       triggerParachute: triggerParachute,
+{% endif -%}
       exit: exitWorker,
       getDroneDict: function () { return drone_dict; },
+{% if isADrone -%}
       getAltitudeAbs: getAltitude,
       getCurrentPosition: getPosition,
       getInitialAltitude: getInitialAltitude,
@@ -67,9 +82,14 @@ import { evalScript, fdopen, loadFile, open } from "std";
       getYaw: getYaw,
       getSpeed: getAirspeed,
       getClimbRate: getClimbRate,
+{% endif -%}
       id: configuration.id,
+{% if isADrone -%}
       isLanding: isLanding,
       loiter: loiter,
+      setAirSpeed: setAirSpeed,
+      setTargetCoordinates: setTargetCoordinates,
+{% endif -%}
       sendMsg: function (msg, id) {
         if (id === undefined) { id = -1; }
         setMessage(JSON.stringify({
@@ -77,9 +97,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
           timestamp: Date.now(),
           dest_id: id
         }));
-      },
-      setAirSpeed: setAirSpeed,
-      setTargetCoordinates: setTargetCoordinates
+      }
     };
   conf_file.close();
 
@@ -139,7 +157,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       ], {
         block:   false,
         usePath: false,
-        file:    {{ json_module.dumps(gwsocket_bin) }},
+        file:    "{{ gwsocket_bin }}",
         stdin:   gwsocket_w_pipe[0],
         stdout:  gwsocket_r_pipe[1]
       });
@@ -149,9 +167,6 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     handleWebSocketMessage = function () {
       var message = readMessage(gwsocket_r_pipe_fd).data;
-      if (message.includes(configuration.websocketIp)) {
-        return;
-      }
       onMessage(message);
     };
     user_me.writeWebsocketMessage = function (message) {
@@ -200,16 +215,16 @@ import { evalScript, fdopen, loadFile, open } from "std";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, peer_id;
+    var type = evt.data.type, message, peer_id, log;
 
     switch (type) {
 
     case "initPubsub":
-      initPubsub(configuration.numberOfDrone, configuration.numberOfSubscriber);
-      for (peer_id = 0; peer_id < configuration.numberOfDrone + configuration.numberOfSubscriber; peer_id++) {
+      initPubsub(configuration.numberOfDrones, configuration.numberOfSubscribers);
+      for (peer_id = 0; peer_id < configuration.numberOfDrones + configuration.numberOfSubscribers; peer_id++) {
         peer_dict[peer_id] = new Drone(peer_id);
         peer_dict[peer_id].init(peer_id);
-        if (peer_id < configuration.numberOfDrone) {
+        if (peer_id < configuration.numberOfDrones) {
           drone_dict[peer_id] = peer_dict[peer_id];
         }
       }
@@ -234,13 +249,16 @@ import { evalScript, fdopen, loadFile, open } from "std";
           }
         }
       });
-      // Call the drone onStart function
+
+      // Call the drone onUpdate function
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
 
       if (evt.data.timestamp - last_log_timestamp >= 1000) {
+{% if isADrone -%}
         updateLogAndProjection();
+{% endif -%}
         last_log_timestamp = evt.data.timestamp; 
       }
 
@@ -266,8 +284,14 @@ import { evalScript, fdopen, loadFile, open } from "std";
       exitWorker(1);
     }
   };
+{% if isADrone -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
   fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getYaw,
   initPubsub, isLanding, kill, loadFile, loiter, open, pipe, setAirSpeed,
   setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
   updateLogAndProjection, waitpid));
+{% else -%}
+}(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
+  fdopen, initPubsub, kill, loadFile, open, pipe, setMessage, setReadHandler,
+  waitpid));
+{% endif -%}
