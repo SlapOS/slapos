@@ -1,11 +1,6 @@
 {% import "caucase" as caucase with context %}
-{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{%- set HTTP3_PORT = instance_parameter_dict.get('configuration.http3-port', '443') %}
-{%- if instance_parameter_dict.get('configuration.enable-http3', 'false').lower() in TRUE_VALUES %}
-{%-   set FRONTEND_HTTP3 = True %}
-{%- else %}
-{%-   set FRONTEND_HTTP3 = False %}
-{%- endif %}
+{%- set HTTP3_PORT = instance_parameter_dict['configuration']['http3-port'] %}
+{%- set FRONTEND_HTTP3 = instance_parameter_dict['configuration']['enable-http3'] %}
 {%- if FRONTEND_HTTP3 %}
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_quic_executable'] %}
 {%- else %}
@@ -236,7 +231,7 @@ command =
      -new -newkey rsa:2048 -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
-     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
+     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration']['frontend-name'] }}" \
      -out ${:certificate}'
 
 [jinja2-template-base]
@@ -244,7 +239,6 @@ recipe = slapos.recipe.template:jinja2
 output = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
-slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
@@ -252,7 +246,6 @@ context =
     raw profile_logrotate_base {{ software_parameter_dict['profile_logrotate_base'] }}
     raw profile_monitor {{ software_parameter_dict['profile_monitor'] }}
     key slap_software_type :slap_software_type
-    key slapparameter_dict :slapparameter_dict
     section directory directory
     ${:extra-context}
 
@@ -276,10 +269,10 @@ crl = ${:d}/kedifa-login-crl.pem
 
 [kedifa-login-csr]
 recipe = plone.recipe.command
-organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 command =
-{% if slapparameter_dict['kedifa-caucase-url'] %}
+{% if instance_parameter_dict['configuration']['kedifa-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
@@ -298,7 +291,7 @@ stop-on-error = True
      prefix='caucase-updater',
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/kedifa-login-certificate-caucase-updater',
-     url=slapparameter_dict['kedifa-caucase-url'],
+     url=instance_parameter_dict['configuration']['kedifa-caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
      crt_path='${kedifa-login-config:certificate}',
      ca_path='${kedifa-login-config:ca-certificate}',
@@ -308,7 +301,7 @@ stop-on-error = True
 )}}
 
 [kedifa-configuration]
-caucase-url = {{ slapparameter_dict['kedifa-caucase-url'] }}
+caucase-url = {{ instance_parameter_dict['configuration']['kedifa-caucase-url'] }}
 ca-certificate = ${kedifa-login-config:ca-certificate}
 certificate = ${kedifa-login-config:certificate}
 cas-ca-certificate = ${kedifa-login-config:cas-ca-certificate}
@@ -316,7 +309,7 @@ csr = ${caucase-updater-csr:csr}
 crl = ${kedifa-login-config:crl}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
-slave_kedifa_information = {{ dumps(slapparameter_dict['slave-kedifa-information']) }}
+slave_kedifa_information = {{ dumps(instance_parameter_dict['configuration']['slave-kedifa-information']) }}
 
 [backend-client-login-config]
 d = ${directory:backend-client-dir}
@@ -329,10 +322,10 @@ crl = ${:d}/crl.pem
 
 [backend-client-login-csr]
 recipe = plone.recipe.command
-organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
 command =
-{% if slapparameter_dict['backend-client-caucase-url'] %}
+{% if instance_parameter_dict['configuration']['backend-client-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
@@ -351,7 +344,7 @@ stop-on-error = True
      prefix='backend-client-caucase-updater',
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/backend-client-login-certificate-caucase-updater',
-     url=slapparameter_dict['backend-client-caucase-url'],
+     url=instance_parameter_dict['configuration']['backend-client-caucase-url'],
      data_dir='${directory:srv}/backend-client-caucase-updater',
      crt_path='${backend-client-login-config:certificate}',
      ca_path='${backend-client-login-config:ca-certificate}',
@@ -365,18 +358,20 @@ stop-on-error = True
 depends = ${software-py:recipe}
 url = {{ software_parameter_dict['profile_slave_list'] }}
 filename = instance-slave-list.cfg
-master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
+master_key_download_url = {{ dumps(instance_parameter_dict['configuration']['master-key-download-url']) }}
 software_type = single-custom-personal
-organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
-backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+organization = {{ instance_parameter_dict['configuration']['cluster-identification'] }}
+organizational-unit = {{ instance_parameter_dict['configuration']['frontend-name'] }}
+backend-client-caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 url-ready-file = ${directory:var}/url-ready.txt
-http3-enable = {{ FRONTEND_HTTP3 }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+SLAVE_DEFAULTS = {{ dumps(SLAVE_DEFAULTS) }}
 extra-context =
     key backend_client_caucase_url :backend-client-caucase-url
     import furl_module furl
     import urllib_module urllib
     import operator_module operator
+    key SLAVE_DEFAULTS :SLAVE_DEFAULTS
     key master_key_download_url :master_key_download_url
     key url_ready_file :url-ready-file
     key expose_csr_organization :organization
@@ -486,8 +481,8 @@ slave-introspection-graceful-command = ${slave-introspection-validate:output} &&
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
-http3-enable = {{ FRONTEND_HTTP3 }}
-http3-port = {{ HTTP3_PORT }}
+http3-enable = {{ dumps(FRONTEND_HTTP3) }}
+http3-port = {{ dumps(HTTP3_PORT) }}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -808,7 +803,7 @@ graceful-command = ${backend-haproxy-validate:output} && kill -USR2 $(cat ${:pid
 http-port = ${configuration:backend-haproxy-http-port}
 https-port = ${configuration:backend-haproxy-https-port}
 # Caucase related configuration
-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+caucase-url = {{ instance_parameter_dict['configuration']['backend-client-caucase-url'] }}
 ca-certificate = ${backend-client-login-config:ca-certificate}
 certificate = ${backend-client-login-config:certificate}
 cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
@@ -819,7 +814,7 @@ statistic-certificate = ${self-signed-ip-access:certificate}
 statistic-port = ${configuration:backend-haproxy-statistic-port}
 statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
-statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
+statistic-identification = {{ instance_parameter_dict['configuration']['frontend-name'] + ' @ ' + instance_parameter_dict['configuration']['cluster-identification'] }}
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
@@ -961,8 +956,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration']['monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration']['monitor-password'] | string }}
 
 [monitor-conf-parameters]
 private-path-list +=
@@ -1002,20 +997,20 @@ config-url = ${configuration:re6st-verification-url}
 [slave-introspection-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+name = Slave Introspection Frontend {{ instance_parameter_dict['configuration']['frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration']['slave-introspection-https-port'] }}/
 config-https-only = true
 return = secure_access
 
 [backend-haproxy-statistic-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration']['frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration']['backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
 
@@ -1126,10 +1121,8 @@ config-filename = ${logrotate-setup-validate:state-file}
 config-state = empty
 
 [configuration]
-{%- for key, value in instance_parameter_dict.items() -%}
-{%-   if key.startswith('configuration.') %}
-{{ key.replace('configuration.', '') }} = {{ dumps(value) }}
-{%-   endif -%}
+{% for key, value in instance_parameter_dict['configuration'].items() %}
+{{ key }} = {{ dumps(value) }}
 {%- endfor %}
 
 [instance-parameter-section]
@@ -1137,7 +1130,7 @@ config-state = empty
 {#- XXX: Some other approach would be useful #}
 {%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
 {%- for key, value in instance_parameter_dict.items() -%}
-{%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
+{%-   if not key.startswith('configuration') and key not in DROP_KEY_LIST %}
 {{ key }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor %}
