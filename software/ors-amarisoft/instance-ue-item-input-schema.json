@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Configuration of a shared instance attached to UEsim",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "ru/input-schema.json"
+    },
+    {
+      "$ref": "ue/input-schema.json"
+    },
+    {
+      "$ref": "ue/cell/input-schema.json"
+    }
+  ]
+}

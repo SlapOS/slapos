@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Configuration of a shared instance attached to eNB/gNB",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "ru/input-schema.json"
+    },
+    {
+      "$ref": "cell/input-schema.json"
+    },
+    {
+      "$ref": "peer/input-schema.json"
+    },
+    {
+      "$ref": "peer/cell/input-schema.json"
+    }
+  ]
+}

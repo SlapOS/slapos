@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Values returned by instantiation of a shared instance attached to UEsim",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "ru/schema.json"
+    },
+    {
+      "$ref": "ue/schema.json"
+    },
+    {
+      "$ref": "ue/cell/schema.json"
+    }
+  ]
+}

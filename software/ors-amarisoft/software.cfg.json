@@ -11,41 +11,14 @@
       "response": "instance-enb-schema.json",
       "index": 1
     },
-    "ru": {
-      "title": "→  eNB/gNB | Radio Unit",
-      "description": "Configuration of Radio Unit attached to eNB/gNB",
+    "enb/*": {
+      "title": "→  eNB/gNB | Radio Unit / Cell / Peer / Peer Cell",
+      "description": "Configuration of a shared instance attached to eNB/gNB",
       "software-type": "enb",
       "shared": true,
-      "request": "ru/input-schema.json",
-      "response": "ru/schema.json",
+      "request": "instance-enb-item-input-schema.json",
+      "response": "instance-enb-item-schema.json",
       "index": 2
-    },
-    "cell": {
-      "title": "→ eNB/gNB | Cell",
-      "description": "Configuration of Cell served by eNB/gNB",
-      "software-type": "enb",
-      "shared": true,
-      "request": "cell/input-schema.json",
-      "response": "cell/schema.json",
-      "index": 3
-    },
-    "peer": {
-      "title": "→ eNB/gNB | Peer",
-      "description": "Handover information about nearby eNB/gNB",
-      "software-type": "enb",
-      "shared": true,
-      "request": "peer/input-schema.json",
-      "response": "peer/schema.json",
-      "index": 4
-    },
-    "peer/cell": {
-      "title": "→ eNB/gNB | Peer Cell",
-      "description": "Handover information about Peer Cell served by nearby eNB/gNB",
-      "software-type": "enb",
-      "shared": true,
-      "request": "peer/cell/input-schema.json",
-      "response": "peer/cell/schema.json",
-      "index": 5
     },
     "core-network": {
       "title": "Core Network",
@@ -53,7 +26,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 6
+      "index": 3
     },
     "core-network-slave": {
       "title": "→ Core Network | Sim Card",
@@ -62,7 +35,7 @@
       "request": "sim/input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
-      "index": 7
+      "index": 4
     },
     "ue": {
       "title": "UEsim",
@@ -70,34 +43,16 @@
       "software-type": "ue",
       "request": "instance-ue-input-schema.json",
       "response": "instance-ue-schema.json",
-      "index": 8
+      "index": 5
     },
-    "ue/ru": {
-      "title": "→ UEsim | Radio Unit",
-      "description": "Configuration of Radio Unit attached to UEsim",
+    "ue/*": {
+      "title": "→ UEsim | Radio Unit / UE / UE Cell",
+      "description": "Configuration of a shared instance attached to UEsim",
       "software-type": "ue",
       "shared": true,
-      "request": "ru/input-schema.json",
-      "response": "ru/schema.json",
-      "index": 9
-    },
-    "ue/ue": {
-      "title": "→ UEsim | UE",
-      "description": "Configuration of UE simulated by UEsim",
-      "software-type": "ue",
-      "shared": true,
-      "request": "ue/input-schema.json",
-      "response": "ue/schema.json",
-      "index": 10
-    },
-    "ue/cell": {
-      "title": "→ UEsim | UE Cell",
-      "description": "Information about Cell to which UEsim attaches",
-      "software-type": "ue",
-      "shared": true,
-      "request": "ue/cell/input-schema.json",
-      "response": "ue/cell/schema.json",
-      "index": 11
+      "request": "instance-ue-item-input-schema.json",
+      "response": "instance-ue-item-schema.json",
+      "index": 6
     }
   }
 }

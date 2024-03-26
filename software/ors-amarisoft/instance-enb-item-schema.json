@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Values returned by instantiation of a shared instance attached to eNB/gNB",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "ru/schema.json"
+    },
+    {
+      "$ref": "cell/schema.json"
+    },
+    {
+      "$ref": "peer/schema.json"
+    },
+    {
+      "$ref": "peer/cell/schema.json"
+    }
+  ]
+}
