@@ -45,7 +45,7 @@ innodb_locks_unsafe_for_binlog = 1
 {{x}}sync_frm = 0
 
 # Extra parameters.
-{%- for k, v in extra_dict.iteritems() %}
+{%- for k, v in six.iteritems(extra_dict) %}
 {%- do assert('-' not in k) %}
 {{ k }} = {{ v }}
 {%- endfor %}

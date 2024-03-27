@@ -1,0 +1,49 @@
+From 21a91db138cca3ada0e4dff475b061066362410c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sat, 17 Feb 2024 23:25:43 +0900
+Subject: [PATCH] backport changes from 0.52.29
+
+We can not use 0.52.29 directly because it does not have a setup.py
+and our buildout / setuptools tooling is too old.
+---
+ src/SOAPpy/Client.py | 3 ++-
+ src/SOAPpy/Types.py  | 2 ++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/SOAPpy/Client.py b/src/SOAPpy/Client.py
+index e86c5ec..d2bbefb 100644
+--- a/src/SOAPpy/Client.py
++++ b/src/SOAPpy/Client.py
+@@ -45,6 +45,7 @@
+ ident = '$Id: Client.py 1496 2010-03-04 23:46:17Z pooryorick $'
+ 
+ from .version import __version__
++from io import StringIO
+ 
+ #import xml.sax
+ import urllib.request, urllib.parse, urllib.error
+@@ -152,7 +153,7 @@ class HTTP:
+             return -1, e.line, None
+ 
+         self.headers = response.msg
+-        self.file = response.fp
++        self.file = StringIO(response.fp.read().decode('utf-8'))
+         return response.status, response.reason, response.msg
+ 
+     def close(self):
+diff --git a/src/SOAPpy/Types.py b/src/SOAPpy/Types.py
+index de9dcac..cf08d17 100644
+--- a/src/SOAPpy/Types.py
++++ b/src/SOAPpy/Types.py
+@@ -1451,6 +1451,8 @@ class arrayType(collections.UserList, compoundType):
+     def __getitem__(self, item):
+         try:
+             return self.data[int(item)]
++        except TypeError:
++            return self.data[item]
+         except ValueError:
+             return getattr(self, item)
+ 
+-- 
+2.42.0
+
