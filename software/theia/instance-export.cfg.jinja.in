@@ -10,6 +10,10 @@ parts +=
   $${:theia-environment-parts}
   resilient-publish-connection-parameter
 
+# Avoid publication conflicts
+parts -=
+  publish-connection-parameter
+
 
 # The resilient stack makes the 'resilient' instance
 # request the 'export' instance with a 'namebase' parameter.

@@ -263,7 +263,8 @@ class TestTheia(TheiaTestCase):
     ipv6, *prefixlen = self._ipv6_address.split('/')
     if not prefixlen:
       raise unittest.SkipTest('No IPv6 range')
-    elif int(prefixlen[0]) >= 123:
+    elif int(prefixlen[0]) + 16 >= 123:
+      # Note: prefixlen-theia = prefixlen-sr-testing + 16
       raise unittest.SkipTest('IPv6 range too small: %s' % self._ipv6_address)
 
     with sqlite3.connect(proxy_path) as db:

@@ -11,7 +11,7 @@ import test
 import test_resiliency
 
 
-stable_software_url = "https://lab.nexedi.com/nexedi/slapos/raw/1.0.324/software/theia/software.cfg"
+stable_software_url = "https://lab.nexedi.com/nexedi/slapos/raw/1.0.349/software/theia/software.cfg"
 dev_software_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
@@ -102,87 +102,3 @@ class TestTheiaResilienceWithInitialInstance(
   def beforeUpgrade(cls):
     # Check initial embedded instance
     test.TestTheiaWithEmbeddedInstance.test(cls())
-
-
-class TestResilientTheiaUpgradeWithInitialInstance(
-    UpgradeTestCase,
-    test_resiliency.ResilientTheiaTestCase,
-    test_resiliency.TheiaSyncMixin):
-
-  backup_max_tries = 70
-  backup_wait_interval = 10
-
-  old_flag_file = os.path.join('etc', 'embedded-instance-config.json.done')
-  old_exitcode_file = os.path.join('etc', 'embedded-request-exitcode')
-
-  flag_file = os.path.join('var', 'state', 'standalone-ran-before.flag')
-  exitcode_file = os.path.join('var', 'state', 'embedded-request.exitcode')
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'initial-embedded-instance': json.dumps({
-        'software-url': test_resiliency.dummy_software_url
-      }),
-    }
-
-  def assertExists(self, path):
-    self.assertTrue(os.path.exists(path))
-
-  def assertNotFound(self, path):
-    self.assertFalse(os.path.exists(path))
-
-  @classmethod
-  def beforeUpgrade(cls):
-    self = cls()
-    self.assertExists(cls.getPartitionPath('export', self.old_flag_file))
-    self.assertExists(cls.getPartitionPath('export', self.old_exitcode_file))
-    self.assertExists(self.getPartitionPath('import', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_exitcode_file))
-
-  def _prepareExport(self): # after upgrade
-    self.assertNotFound(self.getPartitionPath('export', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('export', self.old_exitcode_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_exitcode_file))
-
-    self.assertExists(self.getPartitionPath('export', self.flag_file))
-    self.assertExists(self.getPartitionPath('export', self.exitcode_file))
-    self.assertExists(self.getPartitionPath('import', self.flag_file))
-    self.assertNotFound(self.getPartitionPath('import', self.exitcode_file))
-
-  def _checkSync(self):
-    self.assertExists(self.getPartitionPath('export', self.flag_file))
-    self.assertExists(self.getPartitionPath('export', self.exitcode_file))
-    self.assertExists(self.getPartitionPath('import', self.flag_file))
-    self.assertExists(self.getPartitionPath('import', self.exitcode_file))
-
-  def _checkTakeover(self):
-    self.assertNotFound(self.getPartitionPath('export', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('export', self.old_exitcode_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_exitcode_file))
-
-    self.assertExists(self.getPartitionPath('export', self.flag_file))
-    self.assertExists(self.getPartitionPath('export', self.exitcode_file))
-    self.assertExists(self.getPartitionPath('import', self.flag_file))
-    self.assertNotFound(self.getPartitionPath('import', self.exitcode_file))
-
-
-class TestResilientTheiaUpgradeWithInitialInstanceAndSync(
-    TestResilientTheiaUpgradeWithInitialInstance):
-
-  @classmethod
-  def beforeUpgrade(cls):
-    cls()._doSync()
-
-  def _prepareExport(self): # after upgrade
-    self.assertNotFound(self.getPartitionPath('export', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('export', self.old_exitcode_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_flag_file))
-    self.assertNotFound(self.getPartitionPath('import', self.old_exitcode_file))
-
-    self.assertExists(self.getPartitionPath('export', self.flag_file))
-    self.assertExists(self.getPartitionPath('export', self.exitcode_file))
-    self.assertExists(self.getPartitionPath('import', self.flag_file))
-    self.assertExists(self.getPartitionPath('import', self.exitcode_file))
