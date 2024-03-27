@@ -20,7 +20,16 @@
 {% set virtual_hard_drive_url_enabled = 'virtual-hard-drive-url' in slapparameter_dict %}
 {% set virtual_hard_drive_url_gzipped = slapparameter_dict.get('virtual-hard-drive-gzipped', False) %}
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
-{% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
+{% if 'boot-image-url-select' in slapparameter_dict %}
+{%   set boot_image_url_select_enabled = True %}
+{% else %}
+{%   if boot_image_url_list_enabled or 'nbd-host' in slapparameter_dict or 'nbd2-host' in slapparameter_dict or virtual_hard_drive_url_enabled %}
+{%     set boot_image_url_select_enabled = False %}
+{%   else %}
+{#     Become default if no other way is used to provide the boot image #}
+{%     set boot_image_url_select_enabled = True %}
+{%   endif %}
+{% endif %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
 {% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 2)) + 1)) %}
 {% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 4096)) + 512)) %}
@@ -99,11 +108,8 @@ config-url = ${monitor-base:base-url}/private/boot-image-url-select/${:filename}
 
 [boot-image-url-select-source-config]
 recipe = slapos.recipe.template:jinja2
-inline =
-{%- raw %}
-  {{ boot_image_url_select }}
-{% endraw -%}
-boot-image-url-select = {{ dumps(slapparameter_dict['boot-image-url-select']) }}
+url = {{ boot_image_select_source_config }}
+boot-image-url-select = {{ dumps(slapparameter_dict.get('boot-image-url-select', 'Debian Bullseye 11 netinst x86_64')) }}
 context =
   key boot_image_url_select :boot-image-url-select
 output = ${directory:etc}/boot-image-url-select.json
@@ -399,7 +405,6 @@ ipv6 = ${slap-network-information:global-ipv6}
 vnc-ip = ${:ipv4}
 vnc-websocket-port = 5701
 
-default-cdrom-iso = {{ debian_amd64_netinst_location }}
 {% if virtual_hard_drive_url_enabled %}
 virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:output}
 {% else %}
