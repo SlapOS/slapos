@@ -9,40 +9,43 @@ Date:   Sun Dec 6 14:54:52 2015 +0200
     which isn't used enough to merit its existence.
     Closes issue #721.
 
---- a/pylint/checkers/newstyle.py	2019-12-25 13:51:01.611586402 +0900
-+++ b/pylint/checkers/newstyle.py	2019-12-25 13:50:31.861542768 +0900
-@@ -127,12 +127,9 @@
-             if isinstance(call, astroid.CallFunc) and \
-                isinstance(call.func, astroid.Name) and \
-                call.func.name == 'super':
--                confidence = (INFERENCE if has_known_bases(klass)
--                              else INFERENCE_FAILURE)
--                if not klass.newstyle:
-+                if not klass.newstyle and has_known_bases(klass):
-                     # super should not be used on an old style class
--                    self.add_message('super-on-old-class', node=node,
+diff --git a/pylint/checkers/newstyle.py b/pylint/checkers/newstyle.py
+index 489c22fe..5cc8f13c 100644
+--- a/pylint/checkers/newstyle.py
++++ b/pylint/checkers/newstyle.py
+@@ -128,12 +128,10 @@ class NewStyleConflictChecker(BaseChecker):
+                     isinstance(call.func, astroid.Name) and
+                     call.func.name == 'super'):
+                 continue
+-            confidence = (INFERENCE if has_known_bases(klass)
+-                          else INFERENCE_FAILURE)
+-            if not klass.newstyle:
++
++            if not klass.newstyle and has_known_bases(klass):                
+                 # super should not be used on an old style class
+-                self.add_message('super-on-old-class', node=node,
+-                                 confidence=confidence)
++                self.add_message('super-on-old-class', node=node)
+             else:
+                 # super first arg should be the class
+                 if not call.args and sys.version_info[0] == 3:
+@@ -147,8 +145,7 @@ class NewStyleConflictChecker(BaseChecker):
+                     continue
+ 
+                 if supcls is None:
+-                    self.add_message('missing-super-argument', node=call,
 -                                     confidence=confidence)
-+                    self.add_message('super-on-old-class', node=node)
-                 else:
-                     # super first arg should be the class
-                     if not call.args and sys.version_info[0] == 3:
-@@ -146,8 +143,7 @@
-                         continue
++                    self.add_message('missing-super-argument', node=call)
+                     continue
  
-                     if supcls is None:
--                        self.add_message('missing-super-argument', node=call,
+                 if klass is not supcls:
+@@ -162,8 +159,7 @@ class NewStyleConflictChecker(BaseChecker):
+                         if hasattr(call.args[0], 'name'):
+                             name = call.args[0].name
+                     if name is not None:
+-                        self.add_message('bad-super-call', node=call, args=(name, ),
 -                                         confidence=confidence)
-+                        self.add_message('missing-super-argument', node=call)
-                         continue
- 
-                     if klass is not supcls:
-@@ -163,8 +159,7 @@
-                         if name is not None:
-                             self.add_message('bad-super-call',
-                                              node=call,
--                                             args=(name, ),
--                                             confidence=confidence)
-+                                             args=(name, ))
++                        self.add_message('bad-super-call', node=call, args=(name, ))
  
  
  def register(linter):
