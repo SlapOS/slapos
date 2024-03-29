@@ -11,7 +11,7 @@
       "response": "instance-enb-schema.json",
       "index": 1
     },
-    "enb/*": {
+    "enb-shared": {
       "title": "→  eNB/gNB | Radio Unit / Cell / Peer / Peer Cell",
       "description": "Configuration of a shared instance attached to eNB/gNB",
       "software-type": "enb",
@@ -45,7 +45,7 @@
       "response": "instance-ue-schema.json",
       "index": 5
     },
-    "ue/*": {
+    "ue-shared": {
       "title": "→ UEsim | Radio Unit / UE / UE Cell",
       "description": "Configuration of a shared instance attached to UEsim",
       "software-type": "ue",
