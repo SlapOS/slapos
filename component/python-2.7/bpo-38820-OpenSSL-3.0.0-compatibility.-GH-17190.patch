@@ -1,0 +1,151 @@
+From b3ede9f9ef7fb20affe955c6d35bc3f2991df7e8 Mon Sep 17 00:00:00 2001
+From: Christian Heimes <christian@python.org>
+Date: Sat, 7 Dec 2019 17:59:36 +0100
+Subject: [PATCH] bpo-38820: OpenSSL 3.0.0 compatibility. (GH-17190)
+
+test_openssl_version now accepts version 3.0.0.
+
+getpeercert() no longer returns IPv6 addresses with a trailing new line.
+
+Signed-off-by: Christian Heimes <christian@python.org>
+
+https://bugs.python.org/issue38820
+(cherry picked from commit 2b7de6696bf2f924cd2cd9ff0a539c8aa37c6244)
+---
+ Doc/library/ssl.rst                           |  3 ++
+ Lib/test/test_ssl.py                          | 12 ++---
+ .../2019-11-16-16-09-07.bpo-38820.ivhUSV.rst  |  2 +
+ Modules/_ssl.c                                | 49 ++++++++++++++++++-
+ 4 files changed, 59 insertions(+), 7 deletions(-)
+ create mode 100644 Misc/NEWS.d/next/Library/2019-11-16-16-09-07.bpo-38820.ivhUSV.rst
+
+diff --git a/Doc/library/ssl.rst b/Doc/library/ssl.rst
+index 8e9049238c..a043b976ff 100644
+--- a/Doc/library/ssl.rst
++++ b/Doc/library/ssl.rst
+@@ -970,6 +970,9 @@ SSL sockets also have the following additional methods and attributes:
+       isn't done. The returned dictionary includes additional X509v3 extension
+       items such as ``crlDistributionPoints``, ``caIssuers`` and ``OCSP`` URIs.
+ 
++   .. versionchanged:: 3.9
++      IPv6 address strings no longer have a trailing new line.
++
+ .. method:: SSLSocket.cipher()
+ 
+    Returns a three-value tuple containing the name of the cipher being used, the
+diff --git a/Lib/test/test_ssl.py b/Lib/test/test_ssl.py
+index ef2e59c1d1..36d32cec60 100644
+--- a/Lib/test/test_ssl.py
++++ b/Lib/test/test_ssl.py
+@@ -305,7 +305,7 @@ class BasicSocketTests(unittest.TestCase):
+                    ('email', 'null@python.org\x00user@example.org'),
+                    ('URI', 'http://null.python.org\x00http://example.org'),
+                    ('IP Address', '192.0.2.1'),
+-                   ('IP Address', '2001:DB8:0:0:0:0:0:1\n'))
++                   ('IP Address', '2001:DB8:0:0:0:0:0:1'))
+         else:
+             # OpenSSL 0.9.7 doesn't support IPv6 addresses in subjectAltName
+             san = (('DNS', 'altnull.python.org\x00example.com'),
+@@ -332,7 +332,7 @@ class BasicSocketTests(unittest.TestCase):
+                     (('commonName', 'dirname example'),))),
+                 ('URI', 'https://www.python.org/'),
+                 ('IP Address', '127.0.0.1'),
+-                ('IP Address', '0:0:0:0:0:0:0:1\n'),
++                ('IP Address', '0:0:0:0:0:0:0:1'),
+                 ('Registered ID', '1.2.3.4.5')
+             )
+         )
+@@ -359,11 +359,11 @@ class BasicSocketTests(unittest.TestCase):
+         # Some sanity checks follow
+         # >= 0.9
+         self.assertGreaterEqual(n, 0x900000)
+-        # < 3.0
+-        self.assertLess(n, 0x30000000)
++        # < 4.0
++        self.assertLess(n, 0x40000000)
+         major, minor, fix, patch, status = t
+-        self.assertGreaterEqual(major, 0)
+-        self.assertLess(major, 3)
++        self.assertGreaterEqual(major, 1)
++        self.assertLess(major, 4)
+         self.assertGreaterEqual(minor, 0)
+         self.assertLess(minor, 256)
+         self.assertGreaterEqual(fix, 0)
+diff --git a/Misc/NEWS.d/next/Library/2019-11-16-16-09-07.bpo-38820.ivhUSV.rst b/Misc/NEWS.d/next/Library/2019-11-16-16-09-07.bpo-38820.ivhUSV.rst
+new file mode 100644
+index 0000000000..2c6a6e853c
+--- /dev/null
++++ b/Misc/NEWS.d/next/Library/2019-11-16-16-09-07.bpo-38820.ivhUSV.rst
+@@ -0,0 +1,2 @@
++Make Python compatible with OpenSSL 3.0.0. :func:`ssl.SSLSocket.getpeercert`
++no longer returns IPv6 addresses with a trailing new line.
+diff --git a/Modules/_ssl.c b/Modules/_ssl.c
+index 98c8a5a4a9..448f501302 100644
+--- a/Modules/_ssl.c
++++ b/Modules/_ssl.c
+@@ -1066,6 +1066,54 @@ _get_peer_alt_names (X509 *certificate) {
+                 PyTuple_SET_ITEM(t, 1, v);
+                 break;
+ 
++            case GEN_IPADD:
++                /* OpenSSL < 3.0.0 adds a trailing \n to IPv6. 3.0.0 removed
++                 * the trailing newline. Remove it in all versions
++                 */
++                t = PyTuple_New(2);
++                if (t == NULL)
++                    goto fail;
++
++                v = PyUnicode_FromString("IP Address");
++                if (v == NULL) {
++                    Py_DECREF(t);
++                    goto fail;
++                }
++                PyTuple_SET_ITEM(t, 0, v);
++
++                if (name->d.ip->length == 4) {
++                    unsigned char *p = name->d.ip->data;
++                    v = PyUnicode_FromFormat(
++                        "%d.%d.%d.%d",
++                        p[0], p[1], p[2], p[3]
++                    );
++                } else if (name->d.ip->length == 16) {
++                    /* PyUnicode_FromFormat() does not support %X */
++                    unsigned char *p = name->d.ip->data;
++                    len = sprintf(
++                        buf,
++                        "%X:%X:%X:%X:%X:%X:%X:%X",
++                        p[0] << 8 | p[1],
++                        p[2] << 8 | p[3],
++                        p[4] << 8 | p[5],
++                        p[6] << 8 | p[7],
++                        p[8] << 8 | p[9],
++                        p[10] << 8 | p[11],
++                        p[12] << 8 | p[13],
++                        p[14] << 8 | p[15]
++                    );
++                    v = PyUnicode_FromStringAndSize(buf, len);
++                } else {
++                    v = PyUnicode_FromString("<invalid>");
++                }
++
++                if (v == NULL) {
++                    Py_DECREF(t);
++                    goto fail;
++                }
++                PyTuple_SET_ITEM(t, 1, v);
++                break;
++
+             default:
+                 /* for everything else, we use the OpenSSL print form */
+                 switch (gntype) {
+@@ -1073,7 +1121,6 @@ _get_peer_alt_names (X509 *certificate) {
+                     case GEN_OTHERNAME:
+                     case GEN_X400:
+                     case GEN_EDIPARTY:
+-                    case GEN_IPADD:
+                     case GEN_RID:
+                         break;
+                     default:
+-- 
+2.42.0
+
