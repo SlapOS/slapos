@@ -65,7 +65,7 @@ context =
     raw git_location                ${git:location}
     raw gitaly_location             ${gitaly-repository:location}
     raw gitlab_export               ${gitlab-export:output}
-    raw gitlab_workhorse            ${gowork:bin}/gitlab-workhorse
+    raw gitlab_workhorse            ${gitlab-workhorse:binary}
     raw gopath_bin                  ${gowork:bin}
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
     raw grep_location               ${grep:location}
