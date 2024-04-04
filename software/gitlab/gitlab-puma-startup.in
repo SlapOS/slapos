@@ -54,6 +54,11 @@ fi
 #
 # Assets compilation is handled at instance deployment time. We do everything else here.
 
+# XXX - this is a fix for migration from gitlab 13 to 14, can be removed in next release
+$RAKE db:migrate:up VERSION=20211123135255
+$RAKE db:migrate:up VERSION=20220203123333
+$RAKE gitlab:background_migrations:finalize[CopyColumnUsingBackgroundMigrationJob,ci_builds,id,'[["id"\, "stage_id"]\, ["id_convert_to_bigint"\, "stage_id_convert_to_bigint"]]']
+
 # make sure all migrations are up
 migrate_log="{{ log_dir }}/db-migrate-`date +%s`.log"
 $RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
