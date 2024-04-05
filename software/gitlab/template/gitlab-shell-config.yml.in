@@ -7,8 +7,9 @@
 # GitLab user. git by default
 user: {{ backend_info.user }}
 
-# Url to gitlab instance. Used for api calls. Should end with a slash.
-gitlab_url: "http+unix://{{ urllib.parse.quote_plus(unicorn.socket) }}/"
+# URL to GitLab instance, used for API calls. Default: http://localhost:8080.
+# For relative URL support read http://doc.gitlab.com/ce/install/relative_url.html
+gitlab_url: "http+unix://{{ urllib.parse.quote_plus(puma.socket) }}/"
 
 http_settings:
 {# we don't need any

@@ -36,15 +36,11 @@ internal_socket_dir = "{{ gitaly.internal_socket }}"
 # # Git settings
 [git]
 bin_path = "{{ git }}"
-# # Maximum number of cached 'cat-file' processes, which constitute a pair of 'git cat-file --batch' and
-# # 'git cat-file --batch-check' processes. Defaults to '100'.
 # catfile_cache_size = 100
 
 # [[git.config]]
 # key = fetch.fsckObjects
 # value = true
-# # Storages are the directories where Gitaly stores its data such as the repositories and runtime state.
-# # Each storage must have a unique name.
 
 [[storage]]
 name = "default"
@@ -70,8 +66,8 @@ level = "warn"
 #
 # # Additionally exceptions from the Go server can be reported to Sentry
 # sentry_dsn = "https://<key>:<secret>@sentry.io/<project>"
-# # Sentry Environment for exception monitoring.
-sentry_environment = ""
+# # Exceptions from gitaly-ruby can also be reported to Sentry
+# ruby_sentry_dsn = "https://<key>:<secret>@sentry.io/<project>"
 
 
 # # You can optionally configure Gitaly to record histogram latencies on GRPC method calls
@@ -133,3 +129,16 @@ url = "http+unix://{{ urllib.parse.unquote_plus(gitlab_workhorse.socket) }}"
 # duration = "45m"
 # storages = ["default"]
 # disabled = false
+
+# [cgroups]
+# count = 10
+# mountpoint = "/sys/fs/cgroup"
+# hierarchy_root = "gitaly"
+
+# [cgroups.memory]
+# enabled = true
+# limit = 1048576
+
+# [cgroups.cpu]
+# enabled = true
+# shares = 512
