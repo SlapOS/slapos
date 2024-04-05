@@ -1,0 +1,250 @@
+diff -ur inkscape-0.92.5.orig/share/filters/CMakeLists.txt inkscape-0.92.5/share/filters/CMakeLists.txt
+--- inkscape-0.92.5.orig/share/filters/CMakeLists.txt	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/filters/CMakeLists.txt	2024-04-05 12:44:16.628062522 +0000
+@@ -1,6 +1,6 @@
+ add_custom_command(
+   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg.h
+-  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg > ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg.h
++  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg > ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg.h
+   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg
+   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py
+ )
+diff -ur inkscape-0.92.5.orig/share/filters/i18n.py inkscape-0.92.5/share/filters/i18n.py
+--- inkscape-0.92.5.orig/share/filters/i18n.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/filters/i18n.py	2024-04-05 12:44:16.628062522 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ from xml.dom import minidom
+ import sys
+diff -ur inkscape-0.92.5.orig/share/filters/samplify.py inkscape-0.92.5/share/filters/samplify.py
+--- inkscape-0.92.5.orig/share/filters/samplify.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/filters/samplify.py	2024-04-05 13:02:54.033210445 +0000
+@@ -5,33 +5,33 @@
+ #
+ # Run it thus:
+ #
+-#    python samplify.py sample.svg filters.svg > out.svg
++#    python3 samplify.py sample.svg filters.svg > out.svg
+ #
+ # It requires 'inkscape' in executable path for dimension queries.
+ 
+-import sys, os, string
++import sys, os, string, subprocess
+ from lxml import etree
+ 
+ if len(sys.argv) < 3:
+-    sys.stderr.write ("Usage: python samplify.py sample.svg filters.svg > out.svg\n")
++    sys.stderr.write ("Usage: python3 samplify.py sample.svg filters.svg > out.svg\n")
+     sys.exit(1)
+ 
+ # namespaces we need to be aware of
+ NSS = {
+-u'sodipodi' :u'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
+-u'cc'       :u'http://web.resource.org/cc/',
+-u'svg'      :u'http://www.w3.org/2000/svg',
+-u'dc'       :u'http://purl.org/dc/elements/1.1/',
+-u'rdf'      :u'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+-u'inkscape' :u'http://www.inkscape.org/namespaces/inkscape',
+-u'xlink'    :u'http://www.w3.org/1999/xlink',
+-u'xml'      :u'http://www.w3.org/XML/1998/namespace'
++'sodipodi' :'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
++'cc'       :'http://web.resource.org/cc/',
++'svg'      :'http://www.w3.org/2000/svg',
++'dc'       :'http://purl.org/dc/elements/1.1/',
++'rdf'      :'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
++'inkscape' :'http://www.inkscape.org/namespaces/inkscape',
++'xlink'    :'http://www.w3.org/1999/xlink',
++'xml'      :'http://www.w3.org/XML/1998/namespace'
+ }
+ 
+ # helper function to add namespace URI to a name
+ def addNS(tag, ns=None):
+     val = tag
+-    if ns!=None and len(ns)>0 and NSS.has_key(ns) and len(tag)>0 and tag[0]!='{':
++    if ns!=None and len(ns)>0 and ns in NSS and len(tag)>0 and tag[0]!='{':
+         val = "{%s}%s" % (NSS[ns], tag)
+     return val
+ 
+@@ -88,10 +88,8 @@
+ file = sys.argv[1]
+ id = tdoc.getroot().attrib["id"]
+ for query in q.keys():
+-    f,err = os.popen3('inkscape --query-%s --query-id=%s "%s"' % (query,id,file))[1:]
+-    q[query] = float(f.read())
+-    f.close()
+-    err.close()
++    f = subprocess.Popen(["inkscape", "--query-%s"%query, "--query-id=%s"%id, "%s"%file], stdout=subprocess.PIPE)
++    q[query] = float(f.stdout.read())
+ 
+ # add some margins
+ q['width'] = q['width'] * 1.3
+@@ -138,7 +136,7 @@
+                 newroot.append(text)
+ 
+                 if a_tooltip not in fi.keys():
+-                    print "no menu-tooltip for", fi.attrib["id"]
++                    print("no menu-tooltip for", fi.attrib["id"])
+                     sys.exit()
+ 
+                 text = etree.Element(e_text, nsmap=NSS)
+@@ -156,5 +154,5 @@
+ tout.getroot().attrib['width'] = str(total_width)
+ tout.getroot().attrib['height'] = str(total_height)
+ 
+-print etree.tostring(tout, encoding='UTF-8')
++print(etree.tostring(tout, encoding='UTF-8'))
+ 
+diff -ur inkscape-0.92.5.orig/share/palettes/CMakeLists.txt inkscape-0.92.5/share/palettes/CMakeLists.txt
+--- inkscape-0.92.5.orig/share/palettes/CMakeLists.txt	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/palettes/CMakeLists.txt	2024-04-05 12:44:16.628062522 +0000
+@@ -2,7 +2,7 @@
+ 
+ add_custom_command(
+   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/palettes.h
+-  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${I18N_FILES} > ${CMAKE_CURRENT_SOURCE_DIR}/palettes.h
++  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${I18N_FILES} > ${CMAKE_CURRENT_SOURCE_DIR}/palettes.h
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${I18N_FILES}
+ )
+diff -ur inkscape-0.92.5.orig/share/palettes/PaletteGen.py inkscape-0.92.5/share/palettes/PaletteGen.py
+--- inkscape-0.92.5.orig/share/palettes/PaletteGen.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/palettes/PaletteGen.py	2024-04-05 13:02:54.033210445 +0000
+@@ -1,9 +1,9 @@
+ import colorsys
+ 
+-print '''GIMP Palette
++print('''GIMP Palette
+ Name: Inkscape default
+ Columns: 3
+-# generated by PaletteGen.py'''
++# generated by PaletteGen.py''')
+ 
+ 
+ # grays
+@@ -25,7 +25,7 @@
+         line = "%3s %3s %3s  White" % (rval, gval, bval)
+     else:
+         line = "%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - int(level * 100))
+-    print line
++    print(line)
+ 
+     # add three more steps near white
+     if i == g_steps - 1:
+@@ -34,25 +34,25 @@
+         rval = int(round(r * 255))
+         gval = int(round(g * 255))
+         bval = int(round(b * 255))
+-        print "%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - (level_m * 100))
++        print("%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - (level_m * 100)))
+ 
+         level_m = level + 0.5 * g_step_size
+         r, g, b = colorsys.hls_to_rgb(0, level_m, 0)
+         rval = int(round(r * 255))
+         gval = int(round(g * 255))
+         bval = int(round(b * 255))
+-        print "%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - int(level_m * 100))
++        print("%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - int(level_m * 100)))
+ 
+         level_mm = level + 0.75 * g_step_size
+         r, g, b = colorsys.hls_to_rgb(0, level_mm, 0)
+         rval = int(round(r * 255))
+         gval = int(round(g * 255))
+         bval = int(round(b * 255))
+-        print "%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - (level_mm * 100))
++        print("%3s %3s %3s  %s%% Gray" % (rval, gval, bval, 100 - (level_mm * 100)))
+ 
+ 
+ # standard HTML colors
+-print '''128   0   0  Maroon (#800000)
++print('''128   0   0  Maroon (#800000)
+ 255   0   0  Red (#FF0000)
+ 128 128   0  Olive (#808000)
+ 255 255   0  Yellow (#FFFF00)
+@@ -63,7 +63,7 @@
+   0   0 128  Navy (#000080)
+   0   0 255  Blue (#0000FF)
+ 128   0 128  Purple (#800080)
+-255   0 255  Fuchsia (#FF00FF)'''
++255   0 255  Fuchsia (#FF00FF)''')
+ 
+ # HSL palette
+ h_steps = 15
+@@ -88,4 +88,4 @@
+             bval = int(round(b * 255))
+             
+             line = "%3s %3s %3s  #%02X%02X%02X" % (rval, gval, bval, rval, gval, bval)
+-            print line
++            print(line)
+diff -ur inkscape-0.92.5.orig/share/palettes/i18n.py inkscape-0.92.5/share/palettes/i18n.py
+--- inkscape-0.92.5.orig/share/palettes/i18n.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/palettes/i18n.py	2024-04-05 12:44:16.628062522 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ import sys
+ import glob
+diff -ur inkscape-0.92.5.orig/share/patterns/CMakeLists.txt inkscape-0.92.5/share/patterns/CMakeLists.txt
+--- inkscape-0.92.5.orig/share/patterns/CMakeLists.txt	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/patterns/CMakeLists.txt	2024-04-05 12:44:16.628062522 +0000
+@@ -1,6 +1,6 @@
+ add_custom_command(
+   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg.h
+-  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg > ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg.h
++  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg > ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg.h
+   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg
+   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py
+ )
+diff -ur inkscape-0.92.5.orig/share/patterns/i18n.py inkscape-0.92.5/share/patterns/i18n.py
+--- inkscape-0.92.5.orig/share/patterns/i18n.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/patterns/i18n.py	2024-04-05 12:47:06.522276571 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ from xml.dom import minidom
+ import sys
+diff -ur inkscape-0.92.5.orig/share/symbols/CMakeLists.txt inkscape-0.92.5/share/symbols/CMakeLists.txt
+--- inkscape-0.92.5.orig/share/symbols/CMakeLists.txt	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/symbols/CMakeLists.txt	2024-04-05 12:44:16.628062522 +0000
+@@ -2,7 +2,7 @@
+ 
+ add_custom_command(
+   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/symbols.h
+-  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${_FILES} > ${CMAKE_CURRENT_SOURCE_DIR}/symbols.h
++  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${_FILES} > ${CMAKE_CURRENT_SOURCE_DIR}/symbols.h
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${_FILES}
+ )
+diff -ur inkscape-0.92.5.orig/share/symbols/i18n.py inkscape-0.92.5/share/symbols/i18n.py
+--- inkscape-0.92.5.orig/share/symbols/i18n.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/symbols/i18n.py	2024-04-05 12:44:16.628062522 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ from xml.dom import minidom
+ import sys
+diff -ur inkscape-0.92.5.orig/share/templates/CMakeLists.txt inkscape-0.92.5/share/templates/CMakeLists.txt
+--- inkscape-0.92.5.orig/share/templates/CMakeLists.txt	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/templates/CMakeLists.txt	2024-04-05 12:44:16.628062522 +0000
+@@ -2,7 +2,7 @@
+ 
+ add_custom_command(
+   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/templates.h
+-  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${_FILES} > ${CMAKE_CURRENT_SOURCE_DIR}/templates.h
++  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${_FILES} > ${CMAKE_CURRENT_SOURCE_DIR}/templates.h
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/i18n.py ${_FILES}
+ )
+diff -ur inkscape-0.92.5.orig/share/templates/i18n.py inkscape-0.92.5/share/templates/i18n.py
+--- inkscape-0.92.5.orig/share/templates/i18n.py	2020-04-09 21:37:16.000000000 +0000
++++ inkscape-0.92.5/share/templates/i18n.py	2024-04-05 12:44:16.628062522 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ from xml.dom import minidom
+ import sys
