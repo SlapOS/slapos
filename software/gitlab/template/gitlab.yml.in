@@ -521,7 +521,7 @@ production: &base
 
 workhorse:
     # File that contains the secret key for verifying access for gitlab-workhorse.
-    # secret_file: {{ gitlab_workhorse.secret }}
+    secret_file: {{ gitlab_workhorse.secret }}
 
 
   ## Git settings
