@@ -1,0 +1,24 @@
+From 67abf302360eab857fb02d1e83a97aff86f31aa5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 9 Apr 2024 11:04:38 +0900
+Subject: [PATCH] fix "import six.moves.urllib.request" on astroid 1.3.8
+
+---
+ astroid/brain/pysix_moves.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/astroid/brain/pysix_moves.py b/astroid/brain/pysix_moves.py
+index 4a82b499..9bf31146 100644
+--- a/astroid/brain/pysix_moves.py
++++ b/astroid/brain/pysix_moves.py
+@@ -164,6 +164,7 @@ if sys.version_info[0] == 2:
+ 
+     urllib_parse = UrllibParse()
+     urllib_error = UrllibError()
++    urllib_request = UrllibRequest()
+     urllib = DummyModule()
+     urllib.request = UrllibRequest()
+     urllib.parse = UrllibParse()
+-- 
+2.42.0
+
