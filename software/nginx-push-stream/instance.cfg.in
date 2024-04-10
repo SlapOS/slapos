@@ -60,9 +60,9 @@ recipe = plone.recipe.command
 command =
   if [ ! -e $${:key-file} ]
   then
-    ${openssl:location}/bin/openssl req -x509 -nodes -days 3650 \
+    ${openssl:location}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${nginx-configuration:ip}" \
-      -newkey rsa:1024 -keyout $${:key-file} \
+      -newkey rsa -keyout $${:key-file} \
       -out $${:cert-file}
   fi
 update-command = $${:command}

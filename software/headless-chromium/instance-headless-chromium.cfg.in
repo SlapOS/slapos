@@ -50,7 +50,7 @@ command-line =
   --user-data-dir=${directory:tmp}
   --window-size="${headless-chromium:window-size}"
   {% if parameter_dict['incognito'] %} --incognito{% endif -%}
-  {% if parameter_dict['block-new-web-contents'] %} --block-new-web-contents{% endif -%}
+  {% if parameter_dict['block-new -sha256-web-contents'] %} --block-new-web-contents{% endif -%}
 {{ '\n  "${headless-chromium:target-url}"' }}
 environment =
   FONTCONFIG_FILE=${font-config:output}
@@ -114,7 +114,7 @@ command =
   then
     openssl req -x509 -nodes -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
-      -newkey rsa:1024 -keyout ${:key-file} \
+      -newkey rsa -keyout ${:key-file} \
       -out ${:cert-file}
     openssl x509 -addtrust serverAuth \
       -in ${:cert-file} \

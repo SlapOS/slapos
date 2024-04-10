@@ -446,7 +446,7 @@ class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
     cert = os.path.join(self.ca_path, 'certs', 'test.crt')
     common_name = 'TEST-SSL-AUTH'
     popenCommunicate([
-      'openssl', 'req', '-utf8', '-nodes', '-config', openssl_config, '-new',
+      'openssl', 'req', '-utf8', '-nodes', '-config', openssl_config, '-new', '-sha256',
       '-keyout', key, '-out', csr, '-days', '3650'], f'{common_name}\n'.encode(),
       stdin=subprocess.PIPE)
     popenCommunicate([
