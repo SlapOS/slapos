@@ -631,7 +631,7 @@ organizational_unit = Automatic Internal Kedifa Caucase CSR
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
-      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -newkey rsa -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:csr}
   fi
@@ -752,7 +752,7 @@ organizational_unit = Automatic Sign Backend Client Caucase CSR
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
-      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -newkey rsa -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:csr}
   fi
@@ -927,7 +927,7 @@ update-command = ${:command}
 command =
   [ -f ${:certificate} ] && {{ software_parameter_dict['findutils'] }}/bin/find ${:certificate} -type f -mtime +3 -delete
   if ! [ -f ${:certificate} ] ; then
-    openssl req -new -newkey rsa:2048 -sha256 -subj \
+    openssl req -new -newkey rsa -sha256 -subj \
       "/CN=${master-introspection-server-configuration:ip}" \
       -days 5 -nodes -x509 -keyout ${:certificate} -out ${:certificate}
   fi

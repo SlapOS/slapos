@@ -111,9 +111,10 @@ recipe = plone.recipe.command
 command =
   if [ ! -f '${:csr}' ] ; then
    {{ openssl_bin }} req \
-      -newkey rsa:2048 \
+      -newkey rsa \
       -batch \
       -new \
+      -sha256 \
       -nodes \
       -keyout /dev/null \
       -config '${rest-server-certificate-csr-config:output}' \

@@ -93,6 +93,7 @@ command =
       -newkey rsa \
       -batch \
       -new \
+      -sha256 \
       -nodes \
       -keyout /dev/null \
       -config '${haproxy-certificate-csr-config:output}' \

@@ -78,7 +78,7 @@ class Recipe(GenericBaseRecipe):
                             '%s' % key_file, self.options['key-size']]
 
       #'-config', openssl_configuration
-      cert_command = [self.options['openssl-bin'], 'req', '-nodes', '-new',
+      cert_command = [self.options['openssl-bin'], 'req', '-nodes', '-new', '-sha256',
                   '-x509', '-batch', '-key', '%s' % key_file, '-set_serial',
                   '%s' % serial, '-days', '3650', '-out', '%s' % cert_file]
 

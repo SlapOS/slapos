@@ -39,7 +39,7 @@ mode = {{ mode }}
 {%  do part_list.append('gen-certificate') -%}
 [gen-certificate]
 recipe = plone.recipe.command
-command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${turnserver-ssl:key}" -out "${turnserver-ssl:certificate}"
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes -keyout "${turnserver-ssl:key}" -out "${turnserver-ssl:certificate}"
 {% endif -%}
 
 [turnserver-ssl]

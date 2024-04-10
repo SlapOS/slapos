@@ -89,7 +89,7 @@ organizational_unit = Kedifa Partition
 command =
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     /bin/bash -c '{{ software_parameter_dict['openssl'] }} req -new -sha256 \
-      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -newkey rsa -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -reqexts SAN \
       -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
@@ -135,7 +135,7 @@ stop-on-error = True
 update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
-    {{ software_parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
+    {{ software_parameter_dict['openssl'] }} req -new -newkey rsa -sha256 -subj \
       "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter_dict['ipv6-random'] }}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi

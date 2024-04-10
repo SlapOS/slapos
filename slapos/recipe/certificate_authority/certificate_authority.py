@@ -46,7 +46,7 @@ class CertificateAuthority:
     try:
       # no CA, let us create new one
       popenCommunicate([self.openssl_binary, 'req', '-utf8', '-nodes',
-          '-config', self.openssl_configuration, '-new', '-x509',
+          '-config', self.openssl_configuration, '-new', '-sha256', '-x509',
           '-extensions', 'v3_ca', '-keyout', self.key, '-out',
           self.certificate, '-days', '10950'],
           'Certificate Authority %s\n' % uuid.uuid1())
@@ -75,7 +75,7 @@ class CertificateAuthority:
     csr = certificate + '.csr'
     try:
       popenCommunicate([self.openssl_binary, 'req', '-config',
-        self.openssl_configuration, '-nodes', '-new', '-keyout',
+        self.openssl_configuration, '-nodes', '-new', '-sha256', '-keyout',
         key, '-out', csr, '-days', '3650'],
         common_name + '\n')
       try:

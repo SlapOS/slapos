@@ -19,7 +19,7 @@ tmp = ${:srv}/tmp
 #################################
 [gen-certificate]
 recipe = plone.recipe.command
-command = "{{ parameter_dict['openssl'] }}" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:ssl_key}" -out "${:ssl_crt}"
+command = "{{ parameter_dict['openssl'] }}" req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes -keyout "${:ssl_key}" -out "${:ssl_crt}"
 stop-on-error = true
 ssl_crt = ${directory:ssl}/httpd.crt
 ssl_key = ${directory:ssl}/httpd.key

@@ -209,7 +209,7 @@ command =
   rm -f ${:certificate}
   /bin/bash -c ' \
   {{ software_parameter_dict['openssl'] }} req \
-     -new -newkey rsa:2048 -sha256 \
+     -new -newkey rsa -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
      -subj "/CN=Self Signed IP Access" \
@@ -233,7 +233,7 @@ command =
   rm -f ${:certificate}
   /bin/bash -c ' \
   {{ software_parameter_dict['openssl'] }} req \
-     -new -newkey rsa:2048 -sha256 \
+     -new -newkey rsa -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
      -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
@@ -282,7 +282,7 @@ command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
-      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -newkey rsa -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:template-csr}
   fi
@@ -335,7 +335,7 @@ command =
 {% if slapparameter_dict['backend-client-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
-      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -newkey rsa -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:template-csr}
   fi

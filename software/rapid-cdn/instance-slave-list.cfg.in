@@ -611,7 +611,7 @@ stop-on-error = True
 update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
-    openssl req -new -newkey rsa:2048 -sha256 -subj \
+    openssl req -new -newkey rsa -sha256 -subj \
       "/O={{ expose_csr_organization }}/OU={{ expose_csr_organizational_unit }}/CN=${slap-configuration:ipv6-random}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi

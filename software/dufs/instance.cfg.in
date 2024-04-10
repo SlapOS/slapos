@@ -115,6 +115,7 @@ command =
       -newkey rsa \
       -batch \
       -new \
+      -sha256 \
       -nodes \
       -keyout /dev/null \
       -config '${dufs-certificate-csr-config:output}' \

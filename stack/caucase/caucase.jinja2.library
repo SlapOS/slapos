@@ -96,7 +96,7 @@ output = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
 recipe = plone.recipe.command
 command =
   if [ ! -f '{{ key_path or crt_path }}' ] && [ ! -f '${:csr}' ] ; then
-    '{{ openssl }}' req -newkey rsa:2048 -batch -new -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+    '{{ openssl }}' req -newkey rsa -batch -new -sha256 -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
   fi
 {%-   endif %}
 csr = ${ {{- prefix }}-directory:data-dir}/good.csr.pem

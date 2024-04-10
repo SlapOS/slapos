@@ -174,9 +174,9 @@ recipe = plone.recipe.command
 command =
   if [ ! -e ${:key-file} ]
   then
-    {{ parameter_list['openssl_location'] }}/bin/openssl req -x509 -nodes -days 3650 \
+    {{ parameter_list['openssl_location'] }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=${hugo:ip}" \
-      -newkey rsa:1024 -keyout ${:key-file} \
+      -newkey rsa -keyout ${:key-file} \
       -out ${:cert-file}
   fi
 update-command = ${:command}
