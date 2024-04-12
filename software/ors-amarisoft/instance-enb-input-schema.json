@@ -106,7 +106,7 @@
               "type": "string"
             },
             "tac": {
-              "$ref": "cell/nr/input-schema.json#/$defs/tac"
+              "$ref": "cell/nr/input-schema.json#/properties/nr/properties/enb/$defs/tac"
             },
             "ranac": {
               "title": "Optional integer (range 0 to 255)",
