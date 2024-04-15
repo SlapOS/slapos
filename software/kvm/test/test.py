@@ -738,7 +738,7 @@ class TestInstanceResilientBackupImporter(
     # clean up equeue file for precise assertion
     with open(equeue_file, 'w') as fh:
       fh.write('')
-    # drop backup destination to assert it's recreation
+    # drop backup destination to assert its recreation
     os.unlink(destination_qcow2)
     status_code, status_text = self.call_exporter()
     self.assertEqual(0, status_code, status_text)
