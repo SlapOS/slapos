@@ -19,7 +19,7 @@ tmpfile=$(mktemp --tmpdir={{ directory['tmp'] }})
 # use temporary space inside of the partition, as it can be quite big
 tmpdir=$(mktemp -d --tmpdir={{ directory['tmp'] }})
 # assure the temporary directory is cleaned up
-trap "rm -fr $tmpdir $tmpfile" EXIT TERM INT
+trap "rm -rf $tmpdir $tmpfile" EXIT TERM INT
 cp -a $BACKUP_DIR/* $tmpdir
 
 if [ -d $tmpdir/ide0-hd0 ] ; then
