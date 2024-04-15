@@ -13,14 +13,11 @@
 
   "properties": {
     "cell_type": {
-      "type": "string",
-      "options":  { "hidden": true }
+      "type": "string"
     },
     "cell_kind": {
       "type": "string",
-      "const":    "ue",
-      "template": "ue",
-      "options":  { "hidden": true }
+      "const":    "ue"
     },
 
     "rf_mode": { "$ref": "../../cell/common.json#/properties/rf_mode" },

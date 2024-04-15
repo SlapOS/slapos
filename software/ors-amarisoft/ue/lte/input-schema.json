@@ -9,8 +9,7 @@
 
     "ue_type": {
       "$ref": "#/properties/ue_type",
-      "const":    "lte",
-      "template": "lte"
+      "const":    "lte"
     }
   }
 }

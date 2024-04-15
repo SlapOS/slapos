@@ -21,13 +21,11 @@
 
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "sunwave",
-      "template": "sunwave"
+      "const":    "sunwave"
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "cpri",
-      "template": "cpri"
+      "const":    "cpri"
     },
 
     "n_antenna_dl": {
@@ -45,8 +43,7 @@
         "mapping": {
           "$ref": "#/properties/cpri_link/properties/mapping",
           "const":    "bf1",
-          "enum":     ["bf1"],
-          "options":  { "hidden": true }
+          "enum":     ["bf1"]
         },
         "rx_delay": {
           "$ref": "#/properties/cpri_link/properties/rx_delay",

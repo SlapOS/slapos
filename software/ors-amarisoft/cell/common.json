@@ -15,14 +15,11 @@
 
   "properties": {
     "cell_type": {
-      "type": "string",
-      "options":  { "hidden": true }
+      "type": "string"
     },
     "cell_kind": {
       "type": "string",
-      "const":    "enb",
-      "template": "enb",
-      "options":  { "hidden": true }
+      "const":    "enb"
     },
 
     "rf_mode": {
@@ -74,9 +71,8 @@
           "required": ["ru_type", "ru_ref"],
           "properties": {
             "ru_type": {
-                "const":    "ru_ref",
-                "template": "ru_ref",
-                "options":  { "hidden": true }
+                "type": "string",
+                "const": "ru_ref"
             },
             "ru_ref": {
               "title": "RU Reference",
@@ -92,9 +88,8 @@
           "required": ["ru_type", "ruincell_ref"],
           "properties": {
             "ru_type": {
-                "const":    "ruincell_ref",
-                "template": "ruincell_ref",
-                "options":  { "hidden": true }
+                "type": "string",
+                "const":    "ruincell_ref"
             },
             "ruincell_ref": {
               "title": "Cell Reference",

@@ -15,12 +15,10 @@
 
   "properties": {
     "ru_type": {
-      "type": "string",
-      "options":  { "hidden": true }
+      "type": "string"
     },
     "ru_link_type": {
-      "type": "string",
-      "options":  { "hidden": true }
+      "type": "string"
     },
 
     "n_antenna_dl": {

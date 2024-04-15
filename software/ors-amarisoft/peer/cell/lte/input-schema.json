@@ -17,8 +17,7 @@
   "properties": {
     "cell_type": {
       "$ref": "../../../peer/cell/common.json#/properties/cell_type",
-      "const":    "lte",
-      "template": "lte"
+      "const":    "lte"
     },
 
     "e_cell_id": {

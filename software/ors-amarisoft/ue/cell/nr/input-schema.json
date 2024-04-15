@@ -18,8 +18,7 @@
   "properties": {
     "cell_type": {
       "$ref": "../../../ue/cell/common.json#/properties/cell_type",
-      "const":    "nr",
-      "template": "nr"
+      "const":    "nr"
     },
     "cell_kind": { "$ref": "../../../ue/cell/common.json#/properties/cell_kind" },
 
