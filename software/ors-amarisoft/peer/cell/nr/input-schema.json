@@ -19,8 +19,7 @@
   "properties": {
     "cell_type": {
       "$ref": "../../../peer/cell/common.json#/properties/cell_type",
-      "const":    "nr",
-      "template": "nr"
+      "const":    "nr"
     },
 
     "nr_cell_id": {

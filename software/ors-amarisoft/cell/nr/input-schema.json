@@ -20,8 +20,7 @@
 
     "cell_type": {
       "$ref": "#/properties/cell_type",
-      "const":    "nr",
-      "template": "nr"
+      "const":    "nr"
     },
 
     "tdd_ul_dl_config": {

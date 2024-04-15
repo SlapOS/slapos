@@ -13,8 +13,7 @@
   "properties": {
     "peer_type": {
       "$ref": "../../peer/common.json#/properties/peer_type",
-      "const":    "lte",
-      "template": "lte"
+      "const":    "lte"
     },
 
     "x2_addr": {

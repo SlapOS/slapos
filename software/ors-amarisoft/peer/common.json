@@ -10,8 +10,7 @@
 
   "properties": {
     "peer_type": {
-      "type": "string",
-      "options":  { "hidden": true }
+      "type": "string"
     }
   }
 }
