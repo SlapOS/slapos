@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Configuration of a shared instance attached to eNB/gNB",
+  "title": "Type of the shared instance attached to eNB/gNB",
   "type": "object",
   "oneOf": [
     {
