@@ -19,7 +19,8 @@
     },
     "cell_kind": {
       "type": "string",
-      "const":    "enb"
+      "const": "enb",
+      "enum": ["enb"]
     },
 
     "rf_mode": {
@@ -72,7 +73,8 @@
           "properties": {
             "ru_type": {
                 "type": "string",
-                "const": "ru_ref"
+                "const": "ru_ref",
+                "enum": ["ru_ref"]
             },
             "ru_ref": {
               "title": "RU Reference",
@@ -89,7 +91,8 @@
           "properties": {
             "ru_type": {
                 "type": "string",
-                "const":    "ruincell_ref"
+                "const": "ruincell_ref",
+                "enum": ["ruincell_ref"]
             },
             "ruincell_ref": {
               "title": "Cell Reference",

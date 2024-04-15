@@ -16,7 +16,8 @@
     },
     "cell_kind": {
       "type": "string",
-      "const":    "enb_peer"
+      "const": "enb_peer",
+      "enum": ["enb_peer"]
     }
   }
 }

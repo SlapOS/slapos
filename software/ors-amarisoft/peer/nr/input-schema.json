@@ -13,7 +13,8 @@
   "properties": {
     "peer_type": {
       "$ref": "../../peer/common.json#/properties/peer_type",
-      "const":    "nr"
+      "const": "nr",
+      "enum": ["nr"]
     },
 
     "xn_addr": {

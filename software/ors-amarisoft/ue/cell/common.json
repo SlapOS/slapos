@@ -17,7 +17,8 @@
     },
     "cell_kind": {
       "type": "string",
-      "const":    "ue"
+      "const":    "ue",
+      "enum": ["ue"]
     },
 
     "rf_mode": { "$ref": "../../cell/common.json#/properties/rf_mode" },

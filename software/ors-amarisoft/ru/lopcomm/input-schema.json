@@ -21,11 +21,13 @@
 
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "lopcomm"
+      "const":    "lopcomm",
+      "enum": ["lopcomm"]
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "cpri"
+      "const":    "cpri",
+      "enum": ["cpri"]
     },
 
     "n_antenna_dl": {

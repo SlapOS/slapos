@@ -9,7 +9,8 @@
 
     "ue_type": {
       "$ref": "#/properties/ue_type",
-      "const":    "nr"
+      "const":    "nr",
+      "enum": ["nr"]
     }
   }
 }
