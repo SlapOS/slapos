@@ -27,7 +27,7 @@ if [ $RESULT -ne 0 ] ; then
 fi
 set -e
 
-# as new style backup went find delete eventual old style backup
+# as new style backup went fine delete potential old style backup
 rm -f $BACKUP_DIR/virtual.qcow2{,.gz}
 
 # cleanup the backup directory from too old backups, especially important after take-over
