@@ -14,7 +14,7 @@ trap "rm -fr $tmpfile" EXIT TERM INT
 
 find $directory -type f -name 'FULL*qcow2' -printf '%f\n' > $tmpfile
 full_amount=$(wc -l $tmpfile | cut -d ' ' -f 1)
-if [ $full_amount -ne 1 ] && [ $full_amount -ne 0 ]; then
+if [ $full_amount -gt 1 ]; then
   echo "Too many FULL backups"
   cat $tmpfile
   exit 1
