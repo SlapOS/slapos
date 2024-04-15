@@ -5,8 +5,6 @@
   "type": "object",
 
   "required": [
-    "ru_type",
-    "ru_link_type",
     "n_antenna_dl",
     "n_antenna_ul",
     "tx_gain",
@@ -14,15 +12,6 @@
   ],
 
   "properties": {
-    "ru_type": {
-      "type": "string",
-      "options":  { "hidden": true }
-    },
-    "ru_link_type": {
-      "type": "string",
-      "options":  { "hidden": true }
-    },
-
     "n_antenna_dl": {
       "title": "Number of DL antennas",
       "type": "integer"
