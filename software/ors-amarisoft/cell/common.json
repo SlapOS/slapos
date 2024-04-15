@@ -103,7 +103,9 @@
             }
           }
         },
-        { "$ref": "../ru/input-schema.json" }
+        { "$ref": "../ru/sdr/input-schema.json" },
+        { "$ref": "../ru/lopcomm/input-schema.json" },
+        { "$ref": "../ru/sunwave/input-schema.json" }
       ]
     }
   }
