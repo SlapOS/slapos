@@ -2,9 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "LTE Cell",
   "type": "object",
+  "additionalProperties": false,
+  "required": ["lte"],
   "properties": {
     "lte": {
       "title": "LTE Cell",
+      "additionalProperties": false,
+      "required": ["enb"],
       "type": "object",
       "properties" : {
         "enb": {
