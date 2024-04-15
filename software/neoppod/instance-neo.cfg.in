@@ -1,13 +1,35 @@
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set part_list = [] -%}
 {% set init_list = [] -%}
+{% set directory_dict = {} -%}
 
 {% set private_tmpfs = slapparameter_dict.get('private-tmpfs') -%}
 {% set storage_count = slapparameter_dict.get('storage-count', 1) -%}
-{% set storage_type = slapparameter_dict.get('storage-type') or (
-     'MySQL' if mariadb_location is defined else 'SQLite') -%}
-{% set mysql = storage_count and storage_type != 'SQLite' -%}
+{# When mixing different storage types via node specialisation
+   ('node!' parameter), it can be convenient to configure all types in the
+   common 'node' parameter and then switch between the 2 with 'storage-type'.
+   So we must be quite tolerant. -#}
+{% if storage_count -%}
+{%   if 'mysql' in slapparameter_dict -%}
+{%     if 'sqlite' in slapparameter_dict -%}
+{%       set storage_type = slapparameter_dict['storage-type'] -%}
+{%     else -%}
+{%       set storage_type = 'MySQL' -%}
+{%     endif -%}
+{%   elif 'sqlite' in slapparameter_dict -%}
+{%     set storage_type = 'SQLite' -%}
+{%   else -%}
+{%     set storage_type = slapparameter_dict.get('storage-type') or (
+         'MySQL' if mariadb_location is defined else 'SQLite') -%}
+{%   endif -%}
+{%   do assert(slapparameter_dict.get('storage-type', storage_type) == storage_type) -%}
+{% else -%}
+{%   set storage_type = '' -%}
+{% endif -%}
+
+{% set mysql = storage_type == 'MySQL' -%}
 {% if mysql -%}
+{%   set extra_dict = slapparameter_dict.get('mysql') or {} -%}
 
 [{{ section('mysqld') }}]
 {% if private_tmpfs -%}
@@ -37,7 +59,7 @@ tmp-directory = ${directory:tmp}
 pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
-extra-dict = {{ dumps(slapparameter_dict.get('mysql', {})) }}
+extra-dict = {{ dumps(extra_dict) }}
 init-file = ${init-script:output}
 engine = {{ slapparameter_dict.get('engine', '') }}
 
@@ -53,6 +75,18 @@ recipe = slapos.cookbook:wrapper
 command-line = '{{ mariadb_location }}/bin/${:command}' --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
 command = mysql
+
+{% elif storage_type == 'SQLite' -%}
+{%   set extra_dict = slapparameter_dict.get('sqlite') or {} -%}
+
+{%   if extra_dict.pop('relaxed-writes', False) -%}
+{%     do extra_dict.setdefault('synchronous', 'OFF') -%}
+{%     do extra_dict.setdefault('journal_mode', 'MEMORY') -%}
+{%   endif -%}
+{%   set query_string = urllib.urlencode(extra_dict) -%}
+
+{% else -%}
+{% do assert(not storage_count) -%}
 
 {% endif -%}
 
@@ -123,14 +157,19 @@ logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
 {%- if mysql %}
 {%-   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') %}
 database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
-{%- elif private_tmpfs %}
-private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
-database-parameters = ${directory:tmp}/db.sqlite
 {%- else %}
-database-parameters = ${directory:db-{{i}}}/db.sqlite
-
-[directory]
-db-{{i}} = ${:srv}/{{ storage_id }}
+{%-   if private_tmpfs %}
+private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
+{%-     set path = '${directory:tmp}/db.sqlite' %}
+{%-   else %}
+{%-     set path = '${directory:db-' ~ i ~ '}/db.sqlite' %}
+{%-     do directory_dict.__setitem__('db-' ~ i, '${:srv}/' + storage_id) %}
+{%-   endif %}
+{%-   if query_string %}
+database-parameters = file:{{ path }}?{{ query_string }}
+{%-   else %}
+database-parameters = {{ path }}
+{%-   endif -%}
 {%- endif %}
 
 [{{ section('logrotate-storage-' ~ i) }}]
@@ -140,17 +179,6 @@ log = {{ '${' +  storage_id + ':logfile}' }}
 post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostorage -l ${:log}
 
 {% endfor -%}
-
-[directory]
-recipe = slapos.cookbook:mkdirectory
-bin = ${buildout:directory}/bin
-etc = ${buildout:directory}/etc
-var = ${buildout:directory}/var
-etc_run =  ${:etc}/run
-var_run =  ${:var}/run
-log = ${buildout:directory}/var/log
-tmp = ${buildout:directory}/tmp
-srv = ${buildout:directory}/srv
 
 {% if mysql -%}
 [init-script]
@@ -196,12 +224,25 @@ context =
     key     datadir           my-cnf-parameters:data-directory
     key     results_directory directory:results
 
-[directory]
-results = ${directory:srv}/tests
+{%-    do directory_dict.__setitem__('results', '${directory:srv}/tests') %}
 {%-  endif %}
 {%- endif %}
 
 {%- endif %}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+etc_run =  ${:etc}/run
+var_run =  ${:var}/run
+log = ${buildout:directory}/var/log
+tmp = ${buildout:directory}/tmp
+srv = ${buildout:directory}/srv
+{%- for k, v in directory_dict.iteritems() %}
+{{ k }} = {{ v }}
+{%- endfor %}
 
 [buildout]
 extends =
