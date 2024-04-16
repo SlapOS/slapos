@@ -177,6 +177,7 @@ import { err, exit, open, out } from "std";
       operator_path: operator_script,
       map_path: map_json,
 {% endif -%}
+      timestamp: Date.now(),
       user_path: user_script
     });
   }
