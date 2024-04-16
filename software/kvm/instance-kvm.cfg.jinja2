@@ -23,13 +23,15 @@
 {% if 'boot-image-url-select' in slapparameter_dict %}
 {%   set boot_image_url_select_enabled = True %}
 {% else %}
-{%   if boot_image_url_list_enabled or 'nbd-host' in slapparameter_dict or 'nbd2-host' in slapparameter_dict or virtual_hard_drive_url_enabled %}
+{%   if boot_image_url_list_enabled or 'nbd-host' in slapparameter_dict or 'nbd2-host' in slapparameter_dict or boot_image_url_list_enabled or virtual_hard_drive_url_enabled %}
 {%     set boot_image_url_select_enabled = False %}
 {%   else %}
 {#     Become default if no other way is used to provide the boot image #}
 {%     set boot_image_url_select_enabled = True %}
 {%   endif %}
 {% endif %}
+# boot_image_url_list_enabled = {{ boot_image_url_list_enabled }}
+# boot_image_url_select_enabled = {{ boot_image_url_select_enabled }}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
 {% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 2)) + 1)) %}
 {% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 4096)) + 512)) %}
