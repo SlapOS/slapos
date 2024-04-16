@@ -405,12 +405,13 @@ for nbd_ip, nbd_port in nbd_list:
 else:
   # Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
   #       Debian installation CDs, rendering it uninstallable
-  if boot_image_url_select_json_config:
-    # Support boot-image-url-select
-    handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
+  # Note: boot-image-url-list has precedence over boot-image-url-select
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
     handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
+  if boot_image_url_select_json_config:
+    # Support boot-image-url-select
+    handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 os.execv(qemu_path, kvm_argument_list)
