@@ -55,3 +55,5 @@ service = ${:etc}/service
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url-ipv6 = opc.tcp://[${instance-parameter:ipv6-random}]:${instance-parameter:configuration.opc_ua_port}
+username = ${instance-parameter:configuration.username}
+password = ${instance-parameter:configuration.password}
