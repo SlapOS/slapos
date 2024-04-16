@@ -270,7 +270,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         message = peer.message;
-        if (user_me.id !== Number(id) && message.length > 0) {
+        if (message.length > 0) {
           message = JSON.parse(message);
           if (message.timestamp != last_message_timestamp &&
               user_me.hasOwnProperty("onGetMsg") &&
