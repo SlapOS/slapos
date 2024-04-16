@@ -176,6 +176,7 @@ import { err, exit, open, out } from "std";
 {% if not isADrone -%}
       operator_path: operator_script,
       map_path: map_json,
+      timestamp: Date.now(),
 {% endif -%}
       user_path: user_script
     });
