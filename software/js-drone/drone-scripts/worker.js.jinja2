@@ -203,7 +203,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     return script_content;
   }
 
-  function loadUserScript(path) {
+  function loadUserScript(path, timestamp) {
     var script_content = getFileContent(path);
     try {
       evalScript(
@@ -221,7 +221,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     // Call the drone onStart function
     if (user_me.hasOwnProperty("onStart")) {
-      user_me.onStart();
+      user_me.onStart(timestamp);
     }
   }
 
@@ -261,7 +261,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       break;
 
     case "load":
-      loadUserScript(evt.data.user_path);
+      loadUserScript(evt.data.user_path, evt.data.timestamp);
       if (evt.data.hasOwnProperty("operator_path") && evt.data.hasOwnProperty("map_path")) {
         loadOperatorScript(evt.data.operator_path, evt.data.map_path);
       }
