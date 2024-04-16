@@ -20,7 +20,6 @@
 
     "cell_type": {
       "$ref": "#/properties/cell_type",
-      "const":  "nr",
       "enum" : ["nr"]
     },
 

@@ -19,7 +19,6 @@
     },
     "cell_kind": {
       "type": "string",
-      "const": "enb",
       "enum": ["enb"]
     },
 
@@ -73,7 +72,6 @@
           "properties": {
             "ru_type": {
                 "type": "string",
-                "const": "ru_ref",
                 "enum": ["ru_ref"]
             },
             "ru_ref": {
@@ -91,7 +89,6 @@
           "properties": {
             "ru_type": {
                 "type": "string",
-                "const": "ruincell_ref",
                 "enum": ["ruincell_ref"]
             },
             "ruincell_ref": {

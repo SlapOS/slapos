@@ -21,12 +21,10 @@
 
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "lopcomm",
       "enum": ["lopcomm"]
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "cpri",
       "enum": ["cpri"]
     },
 
@@ -44,7 +42,6 @@
         "$ref": "#/properties/cpri_link/properties",
         "mapping": {
           "$ref": "#/properties/cpri_link/properties/mapping",
-          "const":    "hw",
           "enum":     ["hw"]
         },
         "rx_delay": {

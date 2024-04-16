@@ -17,7 +17,6 @@
     },
     "cell_kind": {
       "type": "string",
-      "const":    "ue",
       "enum": ["ue"]
     },
 

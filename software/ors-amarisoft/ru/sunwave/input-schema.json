@@ -21,12 +21,10 @@
 
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "sunwave",
       "enum": ["sunwave"]
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "cpri",
       "enum": ["cpri"]
     },
 
@@ -44,7 +42,6 @@
         "$ref": "#/properties/cpri_link/properties",
         "mapping": {
           "$ref": "#/properties/cpri_link/properties/mapping",
-          "const":    "bf1",
           "enum":     ["bf1"]
         },
         "rx_delay": {
