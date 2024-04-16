@@ -500,6 +500,7 @@ production: &base
     path: {{ gitlab_shell_work.location }}
     authorized_keys_file: {{ gitlab.var }}/sshkeys-notused
 
+    repos_path: {{ gitlab.repositories }}
     secret_file: {{ gitlab_shell.secret }}
 
     # Git over HTTP
@@ -519,7 +520,7 @@ production: &base
     # gitlab-shell needs to be set to true
     git_annex_enabled: <%= @git_annex_enabled %>
 
-workhorse:
+  workhorse:
     # File that contains the secret key for verifying access for gitlab-workhorse.
     secret_file: {{ gitlab_workhorse.secret }}
 
