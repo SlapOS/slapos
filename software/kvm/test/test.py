@@ -156,6 +156,24 @@ class KVMTestCase(InstanceTestCase):
 
 
 class KvmMixin:
+  def assertPromiseFails(self, promise):
+    partition_directory = os.path.join(
+      self.slap.instance_directory,
+      self.kvm_instance_partition_reference)
+    monitor_run_promise = os.path.join(
+      partition_directory, 'software_release', 'bin',
+      'monitor.runpromise'
+    )
+    monitor_configuration = os.path.join(
+      partition_directory, 'etc', 'monitor.conf')
+
+    self.assertNotEqual(
+      0,
+      subprocess.call([
+        monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+        '--run-only', promise])
+    )
+
   def getRunningImageList(
       self, kvm_instance_partition,
       _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
@@ -1101,24 +1119,6 @@ class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
       self.getRunningImageList(kvm_instance_partition)
     )
 
-  def assertPromiseFails(self, promise):
-    partition_directory = os.path.join(
-      self.slap.instance_directory,
-      self.kvm_instance_partition_reference)
-    monitor_run_promise = os.path.join(
-      partition_directory, 'software_release', 'bin',
-      'monitor.runpromise'
-    )
-    monitor_configuration = os.path.join(
-      partition_directory, 'etc', 'monitor.conf')
-
-    self.assertNotEqual(
-      0,
-      subprocess.call([
-        monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
-        '--run-only', promise])
-    )
-
   def test_bad_parameter(self):
     self.rerequestInstance({
       self.key: self.bad_value
@@ -1189,23 +1189,10 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'bius'
   kvm_instance_partition_reference = 'bius0'
 
-  # variations
-  key = 'boot-image-url-select'
-  test_input = '"%s#%s"'
-  empty_input = ''
-  image_directory = 'boot-image-url-select-repository'
   config_state_promise = 'boot-image-url-select-config-state-promise.py'
-  download_md5sum_promise = 'boot-image-url-select-download-md5sum-promise.py'
-  download_state_promise = 'boot-image-url-select-download-state-promise.py'
-
-  bad_value = 'jsutbad'
-  incorrect_md5sum_value_image = '%s#'
-  incorrect_md5sum_value = '"url#asdasd"'
-  single_image_value = '%s#%s'
-  unreachable_host_value = 'evennotahost#%s'
 
   def test(self):
-    # check default image
+    # check the default image
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
@@ -1249,9 +1236,9 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       self.getRunningImageList(self.computer_partition_root_path)
     )
 
-  def test_not_json(self):
+  def test_bad_image(self):
     self.rerequestInstance({
-      self.key: 'notjson#notjson'
+      'boot-image-url-select': 'DOESNOTEXISTS'
     })
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
@@ -1326,12 +1313,11 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
     self.assertEqual(image_md5sum, self.fake_image_md5sum)
 
-    image_repository = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition_reference,
-      'srv', 'boot-image-url-select-repository')
     self.assertEqual(
-      ['b710c178eb434d79ce40ce703d30a5f0'],  # XXX: No cleanup after deselecting it
-      os.listdir(image_repository)
+      [],
+      os.listdir(os.path.join(
+        self.slap.instance_directory, self.kvm_instance_partition_reference,
+        'srv', 'boot-image-url-select-repository'))
     )
 
     kvm_instance_partition = os.path.join(
@@ -1369,7 +1355,6 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       ],
       self.getRunningImageList(kvm_instance_partition)
     )
-    self.fail('XXX: No cleanup after deselecting it')
 
 
 @skipUnlessKvm
