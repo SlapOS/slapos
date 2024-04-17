@@ -242,7 +242,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, peer_id, log;
+    var type = evt.data.type, message, parsed_message, peer_id, log;
 
     switch (type) {
 
@@ -269,16 +269,18 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
-        message = peer.message;
-        if (message.length > 0) {
-          message = JSON.parse(message);
-          if (message.timestamp != last_message_timestamp &&
-              user_me.hasOwnProperty("onGetMsg") &&
-              [-1, user_me.id].includes(message.dest_id)) {
-            last_message_timestamp = message.timestamp;
-            user_me.onGetMsg(message.content);
+        do {
+          message = peer.message;
+          if (message.length > 0) {
+            parsed_message = JSON.parse(message);
+            if (parsed_message.timestamp != last_message_timestamp &&
+                user_me.hasOwnProperty("onGetMsg") &&
+                [-1, user_me.id].includes(parsed_message.dest_id)) {
+              last_message_timestamp = parsed_message.timestamp;
+              user_me.onGetMsg(parsed_message.content);
+            }
           }
-        }
+        } while (message.length > 0);
       });
 
       // Call the drone onUpdate function
