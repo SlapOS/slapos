@@ -12,14 +12,11 @@
 
   "properties": {
     "cell_type": {
-      "type": "string",
-      "options":  { "hidden": true }
+      "type": "string"
     },
     "cell_kind": {
       "type": "string",
-      "const":    "enb_peer",
-      "template": "enb_peer",
-      "options":  { "hidden": true }
+      "const":    "enb_peer"
     }
   }
 }
