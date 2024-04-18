@@ -88,8 +88,8 @@
     }
 %}
 
-{#- Custom configuration request by one of our clients #}
-{%- set custom_defaults = {
+{#- Custom configuration requested for TOP project #}
+{%- set top_config = {
       3200: {
         'ru/lopcomm': {
           'n_antenna_dl': 4,
@@ -102,9 +102,6 @@
           },
           'bandwidth': 10,
           'initial_cqi': 1,
-        },
-        'cell/lte/sib_sched_list': {
-          'sib5_filename': 'sib5_3200.asn',
         },
         'sib5': {
           'q-RxLevMin': -61,
@@ -128,9 +125,6 @@
           },
           'bandwidth': 5,
           'initial_cqi': 3,
-        },
-        'cell/lte/sib_sched_list': {
-          'sib5_filename': 'sib5_6275.asn',
         },
         'sib5': {
           'q-RxLevMin': -61,
@@ -157,9 +151,6 @@
           'bandwidth': 20,
           'initial_cqi': 1,
         },
-        'cell/lte/sib_sched_list': {
-          'sib5_filename': 'sib5_1802.asn',
-        },
         'sib5': {
           'q-RxLevMin': -61,
           't-ReselectionEUTRA': 1,
@@ -183,9 +174,6 @@
           'bandwidth': 0,
           'initial_cqi': 0,
         },
-        'cell/lte/sib_sched_list': {
-          'sib5_filename': 'xxx',
-        },
         'sib5': {
           'q-RxLevMin': -53,
           't-ReselectionEUTRA': 1,
@@ -208,9 +196,6 @@
           },
           'bandwidth': 0,
           'initial_cqi': 0,
-        },
-        'cell/lte/sib_sched_list': {
-          'sib5_filename': 'xxx',
         },
         'sib5': {
           'q-RxLevMin': -61,
@@ -345,10 +330,6 @@
 {%-   do ishared.update({'_': J(ishared['_'])}) %}
 {%- endfor  %}
 
-{%- macro load_custom_config(cc)  %}
-{%-   do cc.update(custom_config) %}
-{%- endmacro %}
-
 {#- load_iru_and_icell initializes RU and cell registries.
 
     icell_dict keeps cell shared instances:  reference -> icell
@@ -363,15 +344,11 @@
 {%-   for ishared in qshared_instance_list  %}
 {%-     set ref = J(jref_of_shared(ishared))  %}
 {%-     set _ = ishared['_']  %}
-{%-     if   'ru_type'   in _ %}
-{%-       set iru = ishared %}
-{%-       do _ru_set_defaults(_)  %}
-{%-       do iru_dict.update({ref: iru})  %}
-{%-     elif 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
+{%-     if 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
 {%-       set icell = ishared %}
 {%-       do _cell_set_defaults(_, icell_kind, icell_dict)  %}
 {%-       do icell_dict.update({ref: icell})  %}
-{%-       do _cell_set_custom_defaults(_, icell_kind)  %}
+{%-       do _cell_set_top_config(_, icell_kind)  %}
 {%-       set ru = _['ru']  %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
 {#-         embedded ru definition -> expose it as synthethic `_<cell_ref>_ru` #}
@@ -382,13 +359,20 @@
                   'slave_reference':  False,
                }})  %}
 {%-       endif %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ru_type'   in _ %}
+{%-       set iru = ishared %}
+{%-       do _ru_set_defaults(_)  %}
+{%-       do iru_dict.update({ref: iru})  %}
+{%-       do _ru_set_top_config(ref, iru, icell_dict)  %}
 {%-     else  %}
 {%-       do qother.append(ishared) %}
 {%-     endif %}
 {%-   endfor  %}
-{%-   for ref, iru in iru_dict|dictsort %}
-{%-     do _ru_set_custom_defaults(ref, iru, icell_dict)  %}
-{%-   endfor %}
 {%-   do qshared_instance_list.clear()  %}
 {%-   do qshared_instance_list.extend(qother) %}
 
@@ -476,32 +460,25 @@
 {%-   endif %}
 {%- endmacro %}
 
-{%- macro _cell_set_custom_defaults(cell, icell_kind)  %}
-{%-   do cell.setdefault('custom_config', False) %}
+{%- macro _cell_set_top_config(cell, icell_kind)  %}
+{%-   do cell.setdefault('top_config', False) %}
 {%-   if icell_kind == 'enb'  %}
-{%-     if cell.custom_config %}
-{%-       if cell.dl_earfcn in custom_defaults %}
-{%-         for k, v in custom_defaults[cell.dl_earfcn]['cell/%s' % (cell.cell_type,)].items() %}
-{%-           do cell.setdefault(k, v) %}
-{%-         endfor  %}
-{%-         do cell.setdefault('sib5_filename', custom_defaults[cell.dl_earfcn]['cell/lte/sib_sched_list']['sib5_filename']) %}
-{%-         do cell.setdefault('sib5', {}) %}
-{%-         for k, v in custom_defaults[cell.dl_earfcn]['sib5'].items() %}
-{%-           do cell['sib5'].setdefault(k, v) %}
-{%-         endfor %}
-{%-       endif  %}
+{%-     if cell.top_config and cell.dl_earfcn in top_config %}
+{%-       for k, v in top_config[cell.dl_earfcn]['cell/%s' % (cell.cell_type,)].items() %}
+{%-         do cell.setdefault(k, v) %}
+{%-       endfor  %}
 {%-     endif  %}
 {%-   endif  %}
 {%- endmacro %}
 
-{%- macro _ru_set_custom_defaults(ru_ref, ru, icell_dict)  %}
+{%- macro _ru_set_top_config(ru_ref, ru, icell_dict)  %}
 {%-   set earfcn = {'_': 0} %}
 {%-   for _, icell in icell_dict|dictsort %}
 {%-     if icell['_'].ru.ru_ref == ru_ref %}
 {%-       do earfcn.update({'_':  icell['_'].dl_earfcn}) %}
 {%-     endif %}
 {%-   endfor %}
-{%-   for k, v in custom_defaults[earfcn['_']]['ru/lopcomm'].items()  %}
+{%-   for k, v in top_config[earfcn['_']]['ru/lopcomm'].items()  %}
 {%-     do ru['_'].update({k: v}) %}
 {%-   endfor  %}
 {%- endmacro  %}
