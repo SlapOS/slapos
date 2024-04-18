@@ -1,4 +1,4 @@
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
 {
   message c1: systemInformation: {
     criticalExtensions systemInformation-r8: {
@@ -9,20 +9,20 @@
 {%-   if cell.dl_earfcn != earfcn %}
             {
               dl-CarrierFreq {{ earfcn }},
-              q-RxLevMin {{ custom_config[earfcn]['sib5']['q-RxLevMin'] }},
+              q-RxLevMin {{ top_config[earfcn]['sib5']['q-RxLevMin'] }},
               p-Max 23,
-              t-ReselectionEUTRA {{ custom_config[earfcn]['sib5']['t-ReselectionEUTRA'] }},
+              t-ReselectionEUTRA {{ top_config[earfcn]['sib5']['t-ReselectionEUTRA'] }},
               t-ReselectionEUTRA-SF {
                 sf-Medium oDot25,
                 sf-High oDot25
               },
-              threshX-High {{ custom_config[earfcn]['sib5']['threshX-High'] }},
-              threshX-Low {{ custom_config[earfcn]['sib5']['threshX-Low'] }},
-              allowedMeasBandwidth {{ custom_config[earfcn]['sib5']['allowedMeasBandwidth'] }},
+              threshX-High {{ top_config[earfcn]['sib5']['threshX-High'] }},
+              threshX-Low {{ top_config[earfcn]['sib5']['threshX-Low'] }},
+              allowedMeasBandwidth {{ top_config[earfcn]['sib5']['allowedMeasBandwidth'] }},
               presenceAntennaPort1 TRUE,
-              cellReselectionPriority {{ custom_config[earfcn]['sib5']['cellReselectionPriority'] }},
+              cellReselectionPriority {{ top_config[earfcn]['sib5']['cellReselectionPriority'] }},
               neighCellConfig '01'B,
-              q-OffsetFreq {{ custom_config[earfcn]['sib5']['q-OffsetFreq'] }}
+              q-OffsetFreq {{ top_config[earfcn]['sib5']['q-OffsetFreq'] }}
             },
 {%-   endif %}
 {%- endfor %}

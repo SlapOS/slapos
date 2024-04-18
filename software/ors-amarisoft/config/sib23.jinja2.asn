@@ -9,7 +9,7 @@
             rach-ConfigCommon {
               preambleInfo {
                 numberOfRA-Preambles n52,
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
                 preamblesGroupAConfig{
                   sizeOfRA-PreamblesGroupA n28,
                   messageSizeGroupA b56,
@@ -24,21 +24,21 @@
               ra-SupervisionInfo {
                 preambleTransMax n10,
                 ra-ResponseWindowSize sf10,
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
                 mac-ContentionResolutionTimer sf64
 {%- endif %}
               },
               maxHARQ-Msg3Tx 5
             },
             bcch-Config {
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
               modificationPeriodCoeff n2
 {%- else %}
               modificationPeriodCoeff n4
 {%- endif %}
             },
             pcch-Config {
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
               defaultPagingCycle rf64,
 {%- else %}
               defaultPagingCycle rf128,
@@ -48,7 +48,7 @@
             prach-Config {
               rootSequenceIndex 0, /* patched by eNB */
               prach-ConfigInfo {
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
                 prach-ConfigIndex 3, /* patched by eNB */
                 zeroCorrelationZoneConfig 12,
                 prach-FreqOffset 17 /* patched by eNB */
@@ -113,7 +113,7 @@
             ul-CyclicPrefixLength len1
           },
           ue-TimersAndConstants {
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
             t300 ms600,
             t301 ms600,
             t310 ms2000,
@@ -139,7 +139,7 @@
             q-Hyst dB2
           },
           cellReselectionServingFreqInfo {
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
             s-NonIntraSearch 21,
             threshServingLow 4,
 {%- else %}
@@ -151,7 +151,7 @@
           intraFreqCellReselectionInfo {
             q-RxLevMin -61,
             p-Max 23,
-{%- if cell.custom_config %}
+{%- if cell.top_config %}
             s-IntraSearch 26,
 {%- else %}
             s-IntraSearch 5,
