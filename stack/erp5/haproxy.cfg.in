@@ -261,7 +261,7 @@ frontend frontend_{{ group_name }}
 
 {%   for name, url in sorted(backend_dict.items()) %}
 backend backend_{{ group_name }}_{{ name }}
-  http-request replace-path ^/{{ name }}(.*) /VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ name }}\1
+  http-request replace-path ^/{{ name }}(.*) /VirtualHostBase/https/%[req.hdr(Host)]/VirtualHostRoot/_vh_{{ name }}\1
   timeout server 8h
   server {{ name }} {{ urllib_parse.urlparse(url).netloc }}
 {%-  endfor %}
