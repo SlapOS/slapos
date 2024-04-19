@@ -175,10 +175,12 @@ class KvmMixin:
     )
 
   def getRunningImageList(
-      self, kvm_instance_partition,
+      self,
       _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
       _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
     ):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
                      if 'kvm-' in q['name'])['pid']
@@ -202,27 +204,24 @@ class KvmMixin:
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
 
-  def getProcessInfo(self):
+  def getProcessInfo(self, kvm_additional_hash_file_list=None):
+    if kvm_additional_hash_file_list is None:
+      kvm_additional_hash_file_list = []
     hash_value = generateHashFromFiles([
       os.path.join(self.computer_partition_root_path, hash_file)
       for hash_file in [
         'software_release/buildout.cfg',
       ]
     ])
-    # find bin/kvm_raw
-    kvm_raw_list = glob.glob(
-      os.path.join(self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
-    self.assertEqual(1, len(kvm_raw_list))  # allow to work only with one
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
     hash_file_list = [
-      # Note: order is important:
-      #  * shall follow generated order in the hash_files
-      #  * last shall be hash_existsing_files (software_release/buildout.cfg)
-      kvm_raw_list[0],
-      'var/boot-image-url-select/boot-image-url-select.json',
-      'software_release/buildout.cfg'
-    ]
+       os.path.join(kvm_partition, 'bin', 'kvm_raw')
+    ] + kvm_additional_hash_file_list + [
+      'software_release/buildout.cfg']
+
     kvm_hash_value = generateHashFromFiles([
-      os.path.join(self.computer_partition_root_path, hash_file)
+      os.path.join(kvm_partition, hash_file)
       for hash_file in hash_file_list
     ])
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -268,6 +267,7 @@ class KvmMixinJson:
 @skipUnlessKvm
 class TestInstance(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
+  kvm_instance_partition_reference = 'i0'
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
@@ -299,6 +299,7 @@ class TestInstance(KVMTestCase, KvmMixin):
       """i0:6tunnel-10022-{hash}-on-watch RUNNING
 i0:6tunnel-10080-{hash}-on-watch RUNNING
 i0:6tunnel-10443-{hash}-on-watch RUNNING
+i0:boot-image-url-list-updater-{hash} EXITED
 i0:boot-image-url-select-updater-{hash} EXITED
 i0:bootstrap-monitor EXITED
 i0:certificate_authority-{hash}-on-watch RUNNING
@@ -311,7 +312,10 @@ i0:nginx-graceful EXITED
 i0:nginx-on-watch RUNNING
 i0:whitelist-domains-download-{hash} RUNNING
 i0:whitelist-firewall-{hash} RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
 
     # assure that the default image is used
@@ -320,7 +324,7 @@ i0:whitelist-firewall-{hash} RUNNING""",
         '${inst}/srv/boot-image-url-select-repository/'
         '326b7737c4262e8eb09cd26773f3356a'
       ],
-      self.getRunningImageList(self.computer_partition_root_path)
+      self.getRunningImageList()
     )
 
 
@@ -333,6 +337,7 @@ class TestInstanceJson(
 @skipUnlessKvm
 class TestMemoryManagement(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
+  kvm_instance_partition_reference = 'i0'
 
   def getKvmProcessInfo(self, switch_list):
     return_list = []
@@ -501,6 +506,7 @@ class MonitorAccessMixin(KvmMixin):
 @skipUnlessKvm
 class TestAccessDefault(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ad'
+  kvm_instance_partition_reference = 'ad0'
   expected_partition_with_monitor_base_url_count = 1
 
   def test(self):
@@ -522,6 +528,7 @@ class TestAccessDefaultJson(KvmMixinJson, TestAccessDefault):
 @skipUnlessKvm
 class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ada'
+  kvm_instance_partition_reference = 'ada0'
   expected_partition_with_monitor_base_url_count = 1
 
   @classmethod
@@ -558,6 +565,7 @@ class TestAccessDefaultAdditionalJson(
 @skipUnlessKvm
 class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'adb'
+  kvm_instance_partition_reference = 'adb0'
   expected_partition_with_monitor_base_url_count = 1
 
   @classmethod
@@ -606,6 +614,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akc'
+  kvm_instance_partition_reference = 'akc0'
   expected_partition_with_monitor_base_url_count = 2
 
   @classmethod
@@ -636,6 +645,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akca'
+  kvm_instance_partition_reference = 'akca0'
   expected_partition_with_monitor_base_url_count = 2
 
   @classmethod
@@ -676,6 +686,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akcb'
+  kvm_instance_partition_reference = 'akcb0'
   expected_partition_with_monitor_base_url_count = 3
 
   @classmethod
@@ -719,6 +730,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestInstanceResilient(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ir'
+  kvm_instance_partition_reference = 'ir0'
   instance_max_retry = 20
 
   @classmethod
@@ -802,6 +814,8 @@ ir1:pbs_sshkeys_authority-on-watch RUNNING
 ir2:6tunnel-10022-{hash}-on-watch RUNNING
 ir2:6tunnel-10080-{hash}-on-watch RUNNING
 ir2:6tunnel-10443-{hash}-on-watch RUNNING
+ir2:boot-image-url-list-updater-{hash} EXITED
+ir2:boot-image-url-select-updater-{hash} EXITED
 ir2:bootstrap-monitor EXITED
 ir2:certificate_authority-{hash}-on-watch RUNNING
 ir2:crond-{hash}-on-watch RUNNING
@@ -829,7 +843,10 @@ ir3:resilient-web-takeover-httpd-on-watch RUNNING
 ir3:resilient_sshkeys_authority-on-watch RUNNING
 ir3:sshd-graceful EXITED
 ir3:sshd-on-watch RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
 
 
@@ -857,6 +874,7 @@ class TestInstanceResilientDiskTypeIdeJson(
 @skipUnlessKvm
 class TestAccessResilientAdditional(KVMTestCase):
   __partition_reference__ = 'ara'
+  kvm_instance_partition_reference = 'ara0'
   expected_partition_with_monitor_base_url_count = 1
 
   @classmethod
@@ -1079,7 +1097,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image2_md5sum}',
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
     # Switch image
@@ -1099,7 +1117,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image3_md5sum}',
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image2_md5sum}',
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
     # cleanup of images works, also asserts that configuration changes are
@@ -1117,7 +1135,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         '${inst}/srv/boot-image-url-select-repository/'
         '326b7737c4262e8eb09cd26773f3356a'
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
   def test_bad_parameter(self):
@@ -1211,7 +1229,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         '${inst}/srv/boot-image-url-select-repository/'
         '326b7737c4262e8eb09cd26773f3356a'
       ],
-      self.getRunningImageList(self.computer_partition_root_path)
+      self.getRunningImageList()
     )
     # switch the image
     self.rerequestInstance({
@@ -1234,7 +1252,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         '${inst}/srv/boot-image-url-select-repository/'
         'b710c178eb434d79ce40ce703d30a5f0'
       ],
-      self.getRunningImageList(self.computer_partition_root_path)
+      self.getRunningImageList()
     )
 
   def test_bad_image(self):
@@ -1289,7 +1307,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         '${inst}/srv/boot-image-url-select-repository/'
         'b710c178eb434d79ce40ce703d30a5f0'
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
     # check that using only boot-image-url-list results with not having
@@ -1329,7 +1347,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         '${{inst}}/srv/boot-image-url-list-repository/{}'.format(
           self.fake_image_md5sum),
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
     # cleanup of images works, also asserts that configuration changes are
@@ -1354,7 +1372,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         '${inst}/srv/boot-image-url-select-repository/'
         '326b7737c4262e8eb09cd26773f3356a'
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
 
@@ -2377,6 +2395,7 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
 @skipUnlessKvm
 class TestInstanceHttpServer(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ihs'
+  kvm_instance_partition_reference = 'ihs0'
 
   @classmethod
   def startHttpServer(cls):
@@ -2470,6 +2489,8 @@ vm""",
       """ihs0:6tunnel-10022-{hash}-on-watch RUNNING
 ihs0:6tunnel-10080-{hash}-on-watch RUNNING
 ihs0:6tunnel-10443-{hash}-on-watch RUNNING
+ihs0:boot-image-url-list-updater-{hash} EXITED
+ihs0:boot-image-url-select-updater-{hash} EXITED
 ihs0:bootstrap-monitor EXITED
 ihs0:certificate_authority-{hash}-on-watch RUNNING
 ihs0:crond-{hash}-on-watch RUNNING
@@ -2482,7 +2503,10 @@ ihs0:nginx-graceful EXITED
 ihs0:nginx-on-watch RUNNING
 ihs0:whitelist-domains-download-{hash} RUNNING
 ihs0:whitelist-firewall-{hash} RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
     public_dir = os.path.join(
       self.computer_partition_root_path, 'srv', 'public')
