@@ -496,7 +496,6 @@ def _do_enb_with(iru_icell_func):
             "etc": "etc",
             "var": "var"
         },
-        "top_config": "False",
         "slapparameter_dict": {
             "enb_id": "0x1A2D0",
             "gnb_id": "0x12345",
@@ -519,7 +518,6 @@ def _do_enb_with(iru_icell_func):
     icell_dict     = {}
     ipeer_dict     = {}
     ipeercell_dict = {}
-    top_config = False
     for ishared in ienb.shared_instance_list:
         ref = ref_of_shared(ishared)
         _   = json.loads(ishared['_'])
@@ -553,7 +551,6 @@ def _do_enb_with(iru_icell_func):
                     'cell':     cell,
                     'ru_ref':   ru_ref,
                     'ru':       ru,
-                    'top_config':       top_config,
                })
         j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
                  '%s/%s-drb.cfg' % (out, B(cell_ref)),
@@ -562,23 +559,6 @@ def _do_enb_with(iru_icell_func):
         j2render('sib23.jinja2.asn',
                  '%s/%s-sib23.asn' % (out, B(cell_ref)),
                  jctx)
-
-        if top_config:
-            j2render('sib4.jinja2.asn',
-                     '%s/%s-sib4.asn' % (out, B(cell_ref)),
-                     jctx)
-
-            j2render('sib5.jinja2.asn',
-                     '%s/%s-sib5.asn' % (out, B(cell_ref)),
-                     jctx)
-
-            j2render('sib6.jinja2.asn',
-                     '%s/%s-sib6.asn' % (out, B(cell_ref)),
-                     jctx)
-
-            j2render('sib7.jinja2.asn',
-                     '%s/%s-sib7.asn' % (out, B(cell_ref)),
-                     jctx)
 
 
 # ---- UE ----

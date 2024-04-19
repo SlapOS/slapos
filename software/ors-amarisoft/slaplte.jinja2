@@ -369,7 +369,7 @@
 {%-       do _ru_set_defaults(_)  %}
 {%-       do iru_dict.update({ref: iru})  %}
 {%-       do _ru_set_top_config(ref, iru, icell_dict)  %}
-{%-     else  %}
+{%-     elif not ('cell_type' in _  and  _.get('cell_kind') == icell_kind)  %}
 {%-       do qother.append(ishared) %}
 {%-     endif %}
 {%-   endfor  %}
@@ -472,15 +472,15 @@
 {%- endmacro %}
 
 {%- macro _ru_set_top_config(ru_ref, ru, icell_dict)  %}
-{%-   set earfcn = {'_': 0} %}
 {%-   for _, icell in icell_dict|dictsort %}
 {%-     if icell['_'].ru.ru_ref == ru_ref %}
-{%-       do earfcn.update({'_':  icell['_'].dl_earfcn}) %}
+{%-       if icell['_'].get('top_config', False) %}
+{%-         for k, v in top_config[icell['_'].dl_earfcn]['ru/lopcomm'].items()  %}
+{%-           do ru['_'].update({k: v}) %}
+{%-         endfor  %}
+{%-       endif %}
 {%-     endif %}
 {%-   endfor %}
-{%-   for k, v in top_config[earfcn['_']]['ru/lopcomm'].items()  %}
-{%-     do ru['_'].update({k: v}) %}
-{%-   endfor  %}
 {%- endmacro  %}
 
 {#- jcell_ru_ref returns RU reference linked from a cell.
