@@ -202,7 +202,9 @@ class KvmMixin:
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
 
-  def getProcessInfo(self):
+  def getProcessInfo(self, kvm_additional_hash_file_list=None):
+    if kvm_additional_hash_file_list is None:
+      kvm_additional_hash_file_list = []
     hash_value = generateHashFromFiles([
       os.path.join(self.computer_partition_root_path, hash_file)
       for hash_file in [
@@ -214,15 +216,12 @@ class KvmMixin:
       os.path.join(self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
     self.assertEqual(1, len(kvm_raw_list))  # allow to work only with one
     hash_file_list = [
-      # Note: order is important:
-      #  * shall follow generated order in the hash_files
-      #  * last shall be hash_existsing_files (software_release/buildout.cfg)
-      kvm_raw_list[0],
-      'var/boot-image-url-select/boot-image-url-select.json',
+      kvm_raw_list[0]] + kvm_additional_hash_file_list + [
       'software_release/buildout.cfg'
     ]
+    kvm_partition = '/'.join(kvm_raw_list[0].split('/')[:-2])
     kvm_hash_value = generateHashFromFiles([
-      os.path.join(self.computer_partition_root_path, hash_file)
+      os.path.join(kvm_partition, hash_file)
       for hash_file in hash_file_list
     ])
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -299,6 +298,7 @@ class TestInstance(KVMTestCase, KvmMixin):
       """i0:6tunnel-10022-{hash}-on-watch RUNNING
 i0:6tunnel-10080-{hash}-on-watch RUNNING
 i0:6tunnel-10443-{hash}-on-watch RUNNING
+i0:boot-image-url-list-updater-{hash} EXITED
 i0:boot-image-url-select-updater-{hash} EXITED
 i0:bootstrap-monitor EXITED
 i0:certificate_authority-{hash}-on-watch RUNNING
@@ -311,7 +311,10 @@ i0:nginx-graceful EXITED
 i0:nginx-on-watch RUNNING
 i0:whitelist-domains-download-{hash} RUNNING
 i0:whitelist-firewall-{hash} RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
 
     # assure that the default image is used
@@ -802,6 +805,8 @@ ir1:pbs_sshkeys_authority-on-watch RUNNING
 ir2:6tunnel-10022-{hash}-on-watch RUNNING
 ir2:6tunnel-10080-{hash}-on-watch RUNNING
 ir2:6tunnel-10443-{hash}-on-watch RUNNING
+ir2:boot-image-url-list-updater-{hash} EXITED
+ir2:boot-image-url-select-updater-{hash} EXITED
 ir2:bootstrap-monitor EXITED
 ir2:certificate_authority-{hash}-on-watch RUNNING
 ir2:crond-{hash}-on-watch RUNNING
@@ -829,7 +834,10 @@ ir3:resilient-web-takeover-httpd-on-watch RUNNING
 ir3:resilient_sshkeys_authority-on-watch RUNNING
 ir3:sshd-graceful EXITED
 ir3:sshd-on-watch RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
 
 
