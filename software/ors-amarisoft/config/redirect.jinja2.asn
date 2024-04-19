@@ -1,0 +1,6 @@
+geran: {
+    startingARFCN  10,
+    bandIndicator  dcs1800,
+    followingARFCNs explicitListOfARFCNs: {99, 116, 879, 862, 859, 872, 84, 86, 864, 865, 123, 882, 884, 866, 765, 871, 80, 875, 881, 763, 874, 863, 98, 81, 85}
+},
+utra-FDD: 10762

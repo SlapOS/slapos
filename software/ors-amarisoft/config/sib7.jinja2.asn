@@ -1,0 +1,39 @@
+{
+  message c1: systemInformation: {
+    criticalExtensions systemInformation-r8: {
+      sib-TypeAndInfo {
+        sib7: {
+          t-ReselectionGERAN 1,
+          carrierFreqsInfoList {
+            {
+              carrierFreqs {
+                startingARFCN 763,
+                bandIndicator dcs1800,
+                followingARFCNs explicitListOfARFCNs: {763,765,859,862,863,864,865,866,871,872,874,875,879,881,882,884}
+              },
+              commonInfo {
+                ncc-Permitted  '11111111'B,
+                q-RxLevMin 11,
+                threshX-High 0,
+                threshX-Low  2
+              }
+            },
+			{
+              carrierFreqs {
+                startingARFCN 80,
+                bandIndicator dcs1800,
+				followingARFCNs explicitListOfARFCNs: {80, 81, 84, 85, 86, 98, 99, 116, 123}
+              },
+              commonInfo {
+                ncc-Permitted  '11111111'B,
+                q-RxLevMin 11,
+                threshX-High 0,
+                threshX-Low  2
+              }
+            }
+          }
+        }
+      }
+    }
+  } 
+}

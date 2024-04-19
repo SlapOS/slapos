@@ -1,0 +1,147 @@
+{
+  message c1: systemInformation: {
+    criticalExtensions systemInformation-r8: {
+      sib-TypeAndInfo {
+        sib5: {
+          interFreqCarrierFreqList {
+            {
+              dl-CarrierFreq 6275,
+              q-RxLevMin -61,
+              p-Max 23,
+              t-ReselectionEUTRA 2,
+              t-ReselectionEUTRA-SF {
+                sf-Medium oDot25,
+                sf-High oDot25
+              },
+              threshX-High 0,
+              threshX-Low 13,
+              allowedMeasBandwidth mbw25,
+              presenceAntennaPort1 TRUE,
+              cellReselectionPriority 2,
+              neighCellConfig '01'B,
+			  q-OffsetFreq dB0
+            },
+			{
+              dl-CarrierFreq 3200,
+              q-RxLevMin -61,
+              p-Max 23,
+              t-ReselectionEUTRA 1,
+              t-ReselectionEUTRA-SF {
+                sf-Medium oDot25,
+                sf-High oDot25
+              },
+              threshX-High 6,
+              threshX-Low 0,
+              allowedMeasBandwidth mbw50,
+              presenceAntennaPort1 TRUE,
+              cellReselectionPriority 5,
+              neighCellConfig '01'B,
+			  q-OffsetFreq dB0
+            },
+			{
+              dl-CarrierFreq 1802,
+              q-RxLevMin -61,
+              p-Max 23,
+              t-ReselectionEUTRA 1,
+              t-ReselectionEUTRA-SF {
+                sf-Medium oDot25,
+                sf-High oDot25
+              },
+              threshX-High 6,
+              threshX-Low 6,
+              allowedMeasBandwidth mbw100,
+              presenceAntennaPort1 TRUE,
+              cellReselectionPriority 5,
+              neighCellConfig '01'B,
+			  q-OffsetFreq dB0
+            },
+			{
+              dl-CarrierFreq 38100,
+              q-RxLevMin -53,
+              p-Max 23,
+              t-ReselectionEUTRA 1,
+              t-ReselectionEUTRA-SF {
+                sf-Medium oDot25,
+                sf-High oDot25
+              },
+              threshX-High 6,
+              threshX-Low 0,
+              allowedMeasBandwidth mbw100,
+              presenceAntennaPort1 TRUE,
+              cellReselectionPriority 5,
+              neighCellConfig '01'B,
+			  q-OffsetFreq dB-10
+            },
+			{
+              dl-CarrierFreq 375,
+              q-RxLevMin -61,
+              p-Max 23,
+              t-ReselectionEUTRA 1,
+              t-ReselectionEUTRA-SF {
+                sf-Medium oDot25,
+                sf-High oDot25
+              },
+              threshX-High 6,
+              threshX-Low 0,
+              allowedMeasBandwidth mbw75,
+              presenceAntennaPort1 TRUE,
+              cellReselectionPriority 5,
+              neighCellConfig '01'B,
+			  q-OffsetFreq dB-3
+            }
+          }
+		},
+		sib6: {
+		  t-ReselectionUTRA 2,
+          carrierFreqListUTRA-FDD {
+				{
+                carrierFreq 10714,
+		        cellReselectionPriority 7,
+                threshX-High 5,
+                threshX-Low 5,
+                q-RxLevMin -53,
+                p-MaxUTRA 24,
+                q-QualMin -22
+              },
+  		      {
+                carrierFreq 10762,
+  		        cellReselectionPriority 3,
+                threshX-High 5,
+                threshX-Low 5,
+                q-RxLevMin -53,
+                p-MaxUTRA 24,
+                q-QualMin -22
+			  },
+  		      {
+				carrierFreq 10738,
+  		        cellReselectionPriority 3,
+                threshX-High 5,
+                threshX-Low 5,
+                q-RxLevMin -53,
+                p-MaxUTRA 24,
+                q-QualMin -22
+              },
+  		      {
+                carrierFreq 10713,
+  		        cellReselectionPriority 3,
+                threshX-High 5,
+                threshX-Low 5,
+                q-RxLevMin -53,
+                p-MaxUTRA 24,
+                q-QualMin -22
+              },
+  		      {
+                carrierFreq 2987,
+  		        cellReselectionPriority 3,
+                threshX-High 5,
+                threshX-Low 5,
+                q-RxLevMin -53,
+                p-MaxUTRA 24,
+                q-QualMin -22
+              }
+            }
+          }
+        }
+      }
+    }
+}
