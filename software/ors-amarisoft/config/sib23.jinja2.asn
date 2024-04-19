@@ -1,3 +1,6 @@
+{%- if _standalone is defined %}
+{%-   do cell.setdefault('top_config', False) %}
+{%- endif %}
 {%- set B = xbuildout.encode -%}
 /* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ B(cell_ref) }} @ {{ B(ru_ref) }}. */
 {
