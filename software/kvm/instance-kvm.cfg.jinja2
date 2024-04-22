@@ -385,6 +385,7 @@ python-path = {{ python_eggs_executable }}
 vnc-passwd = ${gen-passwd:passwd}
 socket-path = ${directory:var}/qmp_socket
 pid-file = ${directory:run}/pid_file
+virtual-hard-drive-state-file = ${directory:var}/virtual-hard-drive-state-file.txt
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
 cpu-model = ${slap-parameter:cpu-model}
@@ -432,6 +433,7 @@ disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 network-adapter = ${slap-parameter:network-adapter}
 
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
+virtual-hard-drive-state-file = ${kvm-controller-parameter-dict:virtual-hard-drive-state-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 
 {%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', False) %}

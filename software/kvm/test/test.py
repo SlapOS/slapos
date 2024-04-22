@@ -271,6 +271,64 @@ class TestInstanceJson(
 
 
 @skipUnlessKvm
+class TestVirtualHardDriveUrl(KVMTestCase, KvmMixin):
+  __partition_reference__ = 'vhdu'
+  kvm_instance_partition_reference = 'vhdu0'
+
+  instance_parameter_dict = {
+    "virtual-hard-drive-url":
+    "http://shacache.org/shacache/a869d906fcd0af5091d5104451a2b86736485ae38e5"
+    "c4388657bb957c25593b98378ed125f593683e7fda7e0dd485a376a0ce29dcbaa8d60766"
+    "e1f67a7ef7b96",
+    "virtual-hard-drive-md5sum": "9ffd690a5fcb4fa56702f2b99183e493",
+    "virtual-hard-drive-gzipped": True,
+    "boot-image-url-select": "Debian Bookworm 12 netinst x86_64"
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
+
+  def test(self):
+    # default image is present
+    self.assertEqual(
+      [
+        '${inst}/srv/boot-image-url-select-repository/'
+        '326b7737c4262e8eb09cd26773f3356a'
+      ],
+      self.getRunningImageList()
+    )
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    image_repository = os.path.join(
+      kvm_partition,
+      'srv', 'virtual-hard-drive-url-repository')
+    self.assertEqual(
+      ['9ffd690a5fcb4fa56702f2b99183e493'],
+      os.listdir(image_repository)
+    )
+    virtual_state_file = os.path.join(
+      kvm_partition, 'var', 'virtual-hard-drive-state-file.txt')
+    self.assertTrue(os.path.exists(virtual_state_file))
+    with open(virtual_state_file, 'r') as fh:
+      self.assertEqual(
+        f"Copied '{kvm_partition}/srv/virtual-hard-drive-url-repository/"
+        f"9ffd690a5fcb4fa56702f2b99183e493' to "
+        f"'{kvm_partition}/srv/virtual.qcow2'\n",
+        fh.read()
+      )
+    instance_parameter_dict = self.instance_parameter_dict.copy()
+    instance_parameter_dict.pop('boot-image-url-select')
+    self.rerequestInstance(instance_parameter_dict)
+    self.slap.waitForInstance(max_retry=10)
+    # no default image is present
+    self.assertEqual(
+      [],
+      self.getRunningImageList()
+    )
+
+
+@skipUnlessKvm
 class TestMemoryManagement(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
 
