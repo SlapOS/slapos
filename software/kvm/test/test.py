@@ -30,6 +30,7 @@ import http.server
 import json
 import os
 import glob
+import gzip
 import hashlib
 import psutil
 import re
@@ -879,6 +880,20 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
 
 class FakeImageServerMixin(KvmMixin):
   @classmethod
+  def setUpClass(cls):
+    try:
+      cls.startImageHttpServer()
+      super().setUpClass()
+    except BaseException:
+      cls.stopImageHttpServer()
+      raise
+
+  @classmethod
+  def tearDownClass(cls):
+    super().tearDownClass()
+    cls.stopImageHttpServer()
+
+  @classmethod
   def startImageHttpServer(cls):
     cls.image_source_directory = tempfile.mkdtemp()
     server = SocketServer.TCPServer(
@@ -908,10 +923,27 @@ class FakeImageServerMixin(KvmMixin):
       cls.image_source_directory, cls.fake_image3_md5sum), 'wb') as fh:
       fh.write(fake_image3_content)
 
+    # real fake image
+    with open(os.path.join(
+      os.path.dirname(__file__), 'dummy-qcow.img.gz'), 'rb') as fh:
+      real_gzip_content = fh.read()
+    real_image_content = gzip.decompress(real_gzip_content)
+    cls.real_image_md5sum = hashlib.md5(real_image_content).hexdigest()
+    with open(os.path.join(
+      cls.image_source_directory, cls.real_image_md5sum), 'wb') as fh:
+      fh.write(real_image_content)
+
+    cls.real_gzip_md5sum = hashlib.md5(real_gzip_content).hexdigest()
+    with open(os.path.join(
+      cls.image_source_directory, cls.real_gzip_md5sum), 'wb') as fh:
+      fh.write(real_gzip_content)
+
     url = 'http://%s:%s' % server.server_address
     cls.fake_image = '/'.join([url, cls.fake_image_md5sum])
     cls.fake_image2 = '/'.join([url, cls.fake_image2_md5sum])
     cls.fake_image3 = '/'.join([url, cls.fake_image3_md5sum])
+    cls.real_image = '/'.join([url, cls.real_image_md5sum])
+    cls.real_gzip = '/'.join([url, cls.real_gzip_md5sum])
 
     old_dir = os.path.realpath(os.curdir)
     os.chdir(cls.image_source_directory)
@@ -934,6 +966,65 @@ class FakeImageServerMixin(KvmMixin):
         'Process %s still alive', cls.server_process)
 
     shutil.rmtree(cls.image_source_directory)
+
+
+@skipUnlessKvm
+class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
+  __partition_reference__ = 'vhdu'
+  kvm_instance_partition_reference = 'vhdu0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "virtual-hard-drive-url": cls.real_image,
+      "virtual-hard-drive-md5sum": cls.real_image_md5sum
+    }
+
+  def test(self):
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    image_repository = os.path.join(
+      kvm_partition,
+      'srv', 'virtual-hard-drive-url-repository')
+    self.assertEqual(
+      [self.getInstanceParameterDict(['virtual-hard-drive-md5sum'])],
+      os.listdir(image_repository)
+    )
+    destination_image = os.path.join(kvm_partition, 'srv', 'virtual.qcow2')
+    # compare result of qemu-img info of repository and the one
+    with open(
+      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      qemu_img = [
+        q for q in fh.readlines()
+        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+    qemu_img_list = [qemu_img, 'info', '-U', '--output', 'json']
+    source_image_info_json = json.loads(subprocess.check_output(
+      qemu_img_list + [
+        os.path.join(self.image_source_directory, self.real_image_md5sum)]))
+    destination_image_info_json = json.loads(subprocess.check_output(
+      qemu_img_list + [destination_image]))
+    source_image_info_json.pop('filename')
+    destination_image_info_json.pop('filename')
+    # the best possible way to assure that provided image is used is by
+    # comparing the result of qemu-img info for both
+    self.assertEqual(
+      source_image_info_json,
+      destination_image_info_json
+    )
+
+
+@skipUnlessKvm
+class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
+  __partition_reference__ = 'vhdug'
+  kvm_instance_partition_reference = 'vhdug0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "virtual-hard-drive-url": cls.real_gzip,
+      "virtual-hard-drive-md5sum": cls.real_gzip_md5sum,
+      "virtual-hard-drive-gzipped": True
+    }
 
 
 @skipUnlessKvm
@@ -975,20 +1066,6 @@ class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
         cls.fake_image, cls.fake_image_md5sum, cls.fake_image2,
         cls.fake_image2_md5sum)
     }
-
-  @classmethod
-  def setUpClass(cls):
-    try:
-      cls.startImageHttpServer()
-      super().setUpClass()
-    except BaseException:
-      cls.stopImageHttpServer()
-      raise
-
-  @classmethod
-  def tearDownClass(cls):
-    super().tearDownClass()
-    cls.stopImageHttpServer()
 
   def tearDown(self):
     # clean up the instance for other tests
