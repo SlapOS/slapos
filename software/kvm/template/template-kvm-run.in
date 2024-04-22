@@ -176,6 +176,8 @@ if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) an
   if image_config['error-amount'] == 0:
     image = image_config['image-list'][0]
     downloaded_image = os.path.join(image_config['destination-directory'], image['destination'])
+    if not os.path.exists(downloaded_image):
+      raise ValueError('virtual-hard-drive-url not present yet')
     # previous version was using disk in place, but here it would result with
     # redownload, so copy it
     if virtual_hard_drive_gzipped == 'true':
