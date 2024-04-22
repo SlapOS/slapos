@@ -1019,6 +1019,90 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
 
 
 @skipUnlessKvm
+class TestInstanceNbd(KVMTestCase):
+  __partition_reference__ = 'in'
+  kvm_instance_partition_reference = 'in0'
+
+  @classmethod
+  def startNbdServer(cls):
+    cls.nbd_directory = tempfile.mkdtemp()
+    img_1 = os.path.join(cls.nbd_directory, 'one.qcow')
+    img_2 = os.path.join(cls.nbd_directory, 'two.qcow')
+    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_1, "1M"])
+    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_2, "1M"])
+
+    nbd_list = [cls.qemu_nbd, '-r', '-t', '-e', '32767']
+    cls.nbd_1_port = findFreeTCPPort(cls._ipv6_address)
+    cls.nbd_1 = subprocess.Popen(
+      nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_1_port), img_1])
+    cls.nbd_1_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_1_port)
+    cls.nbd_2_port = findFreeTCPPort(cls._ipv6_address)
+    cls.nbd_2 = subprocess.Popen(
+      nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_2_port), img_2])
+    cls.nbd_2_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_2_port)
+
+  @classmethod
+  def stopNbdServer(cls):
+    cls.nbd_1.terminate()
+    cls.nbd_2.terminate()
+    shutil.rmtree(cls.nbd_directory)
+
+  @classmethod
+  def setUpClass(cls):
+    # we need qemu-nbd binary location
+    # it's to hard to put qemu in software/slapos-sr-testing
+    # so let's find it here
+    # let's find our software .installed.cfg
+    cls.findQemuTools()
+    cls.startNbdServer()
+    super().setUpClass()
+
+  @classmethod
+  def tearDownClass(cls):
+    super().tearDownClass()
+    cls.stopNbdServer()
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls._ipv6_address,
+      "nbd-port": cls.nbd_1_port
+    }
+
+  def test(self):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
+    )
+
+
+@skipUnlessKvm
+class TestInstanceNbdBoth(TestInstanceNbd):
+  __partition_reference__ = 'inb'
+  kvm_instance_partition_reference = 'inb0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls._ipv6_address,
+      "nbd-port": cls.nbd_1_port,
+      "nbd2-host": cls._ipv6_address,
+      "nbd2-port": cls.nbd_2_port
+    }
+
+  def test(self):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', f'nbd:{self.nbd_2_uri}',
+       '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
+    )
+
+
+@skipUnlessKvm
 class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
   __partition_reference__ = 'vhdug'
   kvm_instance_partition_reference = 'vhdug0'
