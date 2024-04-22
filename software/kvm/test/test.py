@@ -1014,6 +1014,23 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
 
 
 @skipUnlessKvm
+class TestInstanceNbd(KVMTestCase):
+  __partition_reference__ = 'in'
+  kvm_instance_partition_reference = 'in0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+
+  def test(self):
+    self.fail('TODO')
+
+@skipUnlessKvm
 class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
   __partition_reference__ = 'vhdug'
   kvm_instance_partition_reference = 'vhdug0'
