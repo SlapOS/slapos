@@ -118,6 +118,48 @@ bootstrap_machine_param_dict = {
 
 class KVMTestCase(InstanceTestCase):
   @classmethod
+  def findQemuTools(cls):
+    with open(os.path.join(
+        cls.slap.software_directory,
+        hashlib.md5(cls.getSoftwareURL().encode()).hexdigest(),
+        '.installed.cfg'
+      )) as fh:
+      location_cfg = fh.read()
+    qemu_location = [
+      q for q in location_cfg.splitlines()
+      if q.startswith('location') and '/qemu/' in q]
+    assert (len(qemu_location) == 1)
+    qemu_location = qemu_location[0].split('=')[1].strip()
+    cls.qemu_nbd = os.path.join(qemu_location, 'bin', 'qemu-nbd')
+    assert (os.path.exists(cls.qemu_nbd))
+    cls.qemu_img = os.path.join(qemu_location, 'bin', 'qemu-img')
+    assert (os.path.exists(cls.qemu_img))
+
+  def getRunningImageList(
+      self, kvm_instance_partition,
+      _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
+      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
+    ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
+                            % re.escape(self.slap.shared_directory)).sub
+    image_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_cdrom(entry)
+      if m:
+        path = m.group(1)
+        image_list.append(
+          _sub_iso(
+            r'\1-${ver}\3',
+            sub_shared(
+              r'${shared}/',
+              path.replace(kvm_instance_partition, '${inst}')
+            )))
+    return image_list
+
+  @classmethod
   def _findTopLevelPartitionPath(cls, path):
     index = 0
     while True:
@@ -882,6 +924,7 @@ class FakeImageServerMixin(KvmMixin):
   @classmethod
   def setUpClass(cls):
     try:
+      cls.findQemuTools()
       cls.startImageHttpServer()
       super().setUpClass()
     except BaseException:
@@ -924,7 +967,6 @@ class FakeImageServerMixin(KvmMixin):
       fh.write(fake_image3_content)
 
     # real fake image
-    cls.image_source_directory = tempfile.mkdtemp()
     real_image_input = os.path.join(cls.image_source_directory, 'real.img')
     subprocess.check_call([
       cls.qemu_img, "create", "-f", "qcow2", real_image_input, "1M"])
@@ -970,6 +1012,196 @@ class FakeImageServerMixin(KvmMixin):
         'Process %s still alive', cls.server_process)
 
     shutil.rmtree(cls.image_source_directory)
+
+
+@skipUnlessKvm
+class TestInstanceNbd(KVMTestCase):
+  __partition_reference__ = 'in'
+  kvm_instance_partition_reference = 'in0'
+
+  @classmethod
+  def startNbdServer(cls):
+    cls.nbd_directory = tempfile.mkdtemp()
+    img_1 = os.path.join(cls.nbd_directory, 'one.qcow')
+    img_2 = os.path.join(cls.nbd_directory, 'two.qcow')
+    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_1, "1M"])
+    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_2, "1M"])
+
+    nbd_list = [cls.qemu_nbd, '-r', '-t', '-e', '32767']
+    cls.nbd_1_port = findFreeTCPPort(cls.ipv6_address_pure)
+    cls.nbd_1 = subprocess.Popen(
+      nbd_list + [
+        '-b', cls.ipv6_address_pure, '-p', str(cls.nbd_1_port), img_1])
+    cls.nbd_1_uri = '[%s]:%s' % (cls.ipv6_address_pure, cls.nbd_1_port)
+    cls.nbd_2_port = findFreeTCPPort(cls.ipv6_address_pure)
+    cls.nbd_2 = subprocess.Popen(
+      nbd_list + [
+        '-b', cls.ipv6_address_pure, '-p', str(cls.nbd_2_port), img_2])
+    cls.nbd_2_uri = '[%s]:%s' % (cls.ipv6_address_pure, cls.nbd_2_port)
+
+  @classmethod
+  def stopNbdServer(cls):
+    cls.nbd_1.terminate()
+    cls.nbd_2.terminate()
+    shutil.rmtree(cls.nbd_directory)
+
+  @classmethod
+  def setUpClass(cls):
+    # we need qemu-nbd binary location
+    # it's to hard to put qemu in software/slapos-sr-testing
+    # so let's find it here
+    # let's find our software .installed.cfg
+    cls.ipv6_address_pure = cls._ipv6_address.split('/')[0]
+    cls.findQemuTools()
+    cls.startNbdServer()
+    super().setUpClass()
+
+  @classmethod
+  def tearDownClass(cls):
+    super().tearDownClass()
+    cls.stopNbdServer()
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls.ipv6_address_pure,
+      "nbd-port": cls.nbd_1_port
+    }
+
+  def test(self):
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_partition)
+    )
+
+
+@skipUnlessKvm
+class TestInstanceNbdWithVirtualHardDriveUrl(
+  FakeImageServerMixin, TestInstanceNbd):
+  __partition_reference__ = 'inbvhdu'
+  kvm_instance_partition_reference = 'inbvhdu0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls.ipv6_address_pure,
+      "nbd-port": cls.nbd_1_port,
+      "virtual-hard-drive-url": cls.real_image,
+      "virtual-hard-drive-md5sum": cls.real_image_md5sum
+    }
+
+  def test(self):
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_partition)
+    )
+    image_repository = os.path.join(
+      kvm_partition,
+      'srv', 'virtual-hard-drive-url-repository')
+    self.assertEqual(
+      [self.getInstanceParameterDict()['virtual-hard-drive-md5sum']],
+      os.listdir(image_repository)
+    )
+    destination_image = os.path.join(kvm_partition, 'srv', 'virtual.qcow2')
+    # compare result of qemu-img info of repository and the one
+    qemu_img_list = [self.qemu_img, 'info', '-U', '--output', 'json']
+    source_image_info_json = json.loads(subprocess.check_output(
+      qemu_img_list + [
+        os.path.join(self.image_source_directory, self.real_image_md5sum)]))
+    destination_image_info_json = json.loads(subprocess.check_output(
+      qemu_img_list + [destination_image]))
+    source_image_info_json.pop('filename')
+    destination_image_info_json.pop('filename')
+    # the best possible way to assure that provided image is used is by
+    # comparing the result of qemu-img info for both
+    self.assertEqual(
+      source_image_info_json,
+      destination_image_info_json
+    )
+
+
+@skipUnlessKvm
+class TestInstanceNbdWithBootImageUrlList(
+  FakeImageServerMixin, TestInstanceNbd):
+  __partition_reference__ = 'inbiul'
+  kvm_instance_partition_reference = 'inbiul0'
+  image_directory = 'boot-image-url-list-repository'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls.ipv6_address_pure,
+      "nbd-port": cls.nbd_1_port,
+      "boot-image-url-list": f"{cls.fake_image}#{cls.fake_image_md5sum}"
+    }
+
+  def test(self):
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [
+        f'nbd:{self.nbd_1_uri}',
+        f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
+        '${shared}/debian-${ver}-amd64-netinst.iso',
+      ],
+      self.getRunningImageList(kvm_partition)
+    )
+
+
+@skipUnlessKvm
+class TestInstanceNbdWithBootImageUrlSelect(
+  FakeImageServerMixin, TestInstanceNbd):
+  __partition_reference__ = 'inbius'
+  kvm_instance_partition_reference = 'inbius0'
+  image_directory = 'boot-image-url-select-repository'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls.ipv6_address_pure,
+      "nbd-port": cls.nbd_1_port,
+      "boot-image-url-select": f'["{cls.fake_image}#{cls.fake_image_md5sum}"]'
+    }
+
+  def test(self):
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [
+        f'nbd:{self.nbd_1_uri}',
+        f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
+        '${shared}/debian-${ver}-amd64-netinst.iso',
+      ],
+      self.getRunningImageList(kvm_partition)
+    )
+
+
+@skipUnlessKvm
+class TestInstanceNbdBoth(TestInstanceNbd):
+  __partition_reference__ = 'inb'
+  kvm_instance_partition_reference = 'inb0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls.ipv6_address_pure,
+      "nbd-port": cls.nbd_1_port,
+      "nbd2-host": cls.ipv6_address_pure,
+      "nbd2-port": cls.nbd_2_port
+    }
+
+  def test(self):
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', f'nbd:{self.nbd_2_uri}',
+       '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_partition)
+    )
 
 
 @skipUnlessKvm
@@ -1027,7 +1259,7 @@ class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
 
 
 @skipUnlessKvm
-class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
+class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'biul'
   kvm_instance_partition_reference = 'biul0'
 
@@ -1075,30 +1307,6 @@ class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
     super().tearDown()
-
-  def getRunningImageList(
-      self, kvm_instance_partition,
-      _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
-      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
-    ):
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
-    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
-                            % re.escape(self.slap.shared_directory)).sub
-    image_list = []
-    for entry in psutil.Process(kvm_pid).cmdline():
-      m = _match_cdrom(entry)
-      if m:
-        path = m.group(1)
-        image_list.append(
-          _sub_iso(
-            r'\1-${ver}\3',
-            sub_shared(
-              r'${shared}/',
-              path.replace(kvm_instance_partition, '${inst}')
-            )))
-    return image_list
 
   def test(self):
     # check that image is correctly downloaded
@@ -1373,7 +1581,7 @@ class TestBootImageUrlSelectResilientJson(
 
 
 @skipUnlessKvm
-class TestBootImageUrlListKvmCluster(KVMTestCase, FakeImageServerMixin):
+class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'biulkc'
 
   @classmethod
@@ -1383,14 +1591,6 @@ class TestBootImageUrlListKvmCluster(KVMTestCase, FakeImageServerMixin):
   input_value = "%s#%s"
   key = 'boot-image-url-list'
   config_file_name = 'boot-image-url-list.conf'
-
-  def setUp(self):
-    super().setUp()
-    self.startImageHttpServer()
-
-  def tearDown(self):
-    self.stopImageHttpServer()
-    super().tearDown()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -1695,7 +1895,7 @@ class TestDiskDevicePathWipeDiskOndestroyJson(
 
 
 @skipUnlessKvm
-class TestImageDownloadController(KVMTestCase, FakeImageServerMixin):
+class TestImageDownloadController(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'idc'
   maxDiff = None
 
@@ -1713,14 +1913,12 @@ class TestImageDownloadController(KVMTestCase, FakeImageServerMixin):
       self.working_directory, 'error_state_file')
     self.processed_md5sum = os.path.join(
       self.working_directory, 'processed_md5sum')
-    self.startImageHttpServer()
     self.image_download_controller = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '0',
       'software_release', 'parts', 'image-download-controller',
       'image-download-controller.py')
 
   def tearDown(self):
-    self.stopImageHttpServer()
     shutil.rmtree(self.working_directory)
     super().tearDown()
 
