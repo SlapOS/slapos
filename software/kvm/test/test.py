@@ -118,6 +118,48 @@ bootstrap_machine_param_dict = {
 
 class KVMTestCase(InstanceTestCase):
   @classmethod
+  def findQemuTools(cls):
+    with open(os.path.join(
+        cls.slap.software_directory,
+        hashlib.md5(cls.getSoftwareURL().encode()).hexdigest(),
+        '.installed.cfg'
+      )) as fh:
+      location_cfg = fh.read()
+    qemu_location = [
+      q for q in location_cfg.splitlines()
+      if q.startswith('location') and '/qemu/' in q]
+    assert (len(qemu_location) == 1)
+    qemu_location = qemu_location[0].split('=')[1].strip()
+    cls.qemu_nbd = os.path.join(qemu_location, 'bin', 'qemu-nbd')
+    assert (os.path.exists(cls.qemu_nbd))
+    cls.qemu_img = os.path.join(qemu_location, 'bin', 'qemu-img')
+    assert (os.path.exists(cls.qemu_img))
+
+  def getRunningImageList(
+      self, kvm_instance_partition,
+      _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
+      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
+    ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                     if 'kvm-' in q['name'])['pid']
+    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
+                            % re.escape(self.slap.shared_directory)).sub
+    image_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_cdrom(entry)
+      if m:
+        path = m.group(1)
+        image_list.append(
+          _sub_iso(
+            r'\1-${ver}\3',
+            sub_shared(
+              r'${shared}/',
+              path.replace(kvm_instance_partition, '${inst}')
+            )))
+    return image_list
+
+  @classmethod
   def _findTopLevelPartitionPath(cls, path):
     index = 0
     while True:
@@ -882,6 +924,7 @@ class FakeImageServerMixin(KvmMixin):
   @classmethod
   def setUpClass(cls):
     try:
+      cls.findQemuTools()
       cls.startImageHttpServer()
       super().setUpClass()
     except BaseException:
@@ -1013,6 +1056,90 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
 
 
 @skipUnlessKvm
+class TestInstanceNbd(KVMTestCase):
+  __partition_reference__ = 'in'
+  kvm_instance_partition_reference = 'in0'
+
+  @classmethod
+  def startNbdServer(cls):
+    cls.nbd_directory = tempfile.mkdtemp()
+    img_1 = os.path.join(cls.nbd_directory, 'one.qcow')
+    img_2 = os.path.join(cls.nbd_directory, 'two.qcow')
+    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_1, "1M"])
+    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_2, "1M"])
+
+    nbd_list = [cls.qemu_nbd, '-r', '-t', '-e', '32767']
+    cls.nbd_1_port = findFreeTCPPort(cls._ipv6_address)
+    cls.nbd_1 = subprocess.Popen(
+      nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_1_port), img_1])
+    cls.nbd_1_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_1_port)
+    cls.nbd_2_port = findFreeTCPPort(cls._ipv6_address)
+    cls.nbd_2 = subprocess.Popen(
+      nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_2_port), img_2])
+    cls.nbd_2_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_2_port)
+
+  @classmethod
+  def stopNbdServer(cls):
+    cls.nbd_1.terminate()
+    cls.nbd_2.terminate()
+    shutil.rmtree(cls.nbd_directory)
+
+  @classmethod
+  def setUpClass(cls):
+    # we need qemu-nbd binary location
+    # it's to hard to put qemu in software/slapos-sr-testing
+    # so let's find it here
+    # let's find our software .installed.cfg
+    cls.findQemuTools()
+    cls.startNbdServer()
+    super().setUpClass()
+
+  @classmethod
+  def tearDownClass(cls):
+    super().tearDownClass()
+    cls.stopNbdServer()
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls._ipv6_address,
+      "nbd-port": cls.nbd_1_port
+    }
+
+  def test(self):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
+    )
+
+
+@skipUnlessKvm
+class TestInstanceNbdBoth(TestInstanceNbd):
+  __partition_reference__ = 'inb'
+  kvm_instance_partition_reference = 'inb0'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "nbd-host": cls._ipv6_address,
+      "nbd-port": cls.nbd_1_port,
+      "nbd2-host": cls._ipv6_address,
+      "nbd2-port": cls.nbd_2_port
+    }
+
+  def test(self):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+    self.assertEqual(
+      [f'nbd:{self.nbd_1_uri}', f'nbd:{self.nbd_2_uri}',
+       '${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
+    )
+
+
+@skipUnlessKvm
 class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
   __partition_reference__ = 'vhdug'
   kvm_instance_partition_reference = 'vhdug0'
@@ -1075,30 +1202,6 @@ class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
     super().tearDown()
-
-  def getRunningImageList(
-      self, kvm_instance_partition,
-      _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
-      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
-    ):
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
-    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
-                            % re.escape(self.slap.shared_directory)).sub
-    image_list = []
-    for entry in psutil.Process(kvm_pid).cmdline():
-      m = _match_cdrom(entry)
-      if m:
-        path = m.group(1)
-        image_list.append(
-          _sub_iso(
-            r'\1-${ver}\3',
-            sub_shared(
-              r'${shared}/',
-              path.replace(kvm_instance_partition, '${inst}')
-            )))
-    return image_list
 
   def test(self):
     # check that image is correctly downloaded
