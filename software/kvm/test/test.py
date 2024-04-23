@@ -967,7 +967,6 @@ class FakeImageServerMixin(KvmMixin):
       fh.write(fake_image3_content)
 
     # real fake image
-    cls.image_source_directory = tempfile.mkdtemp()
     real_image_input = os.path.join(cls.image_source_directory, 'real.img')
     subprocess.check_call([
       cls.qemu_img, "create", "-f", "qcow2", real_image_input, "1M"])
@@ -1154,7 +1153,7 @@ class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
 
 
 @skipUnlessKvm
-class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
+class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'biul'
   kvm_instance_partition_reference = 'biul0'
 
