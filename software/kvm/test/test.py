@@ -967,7 +967,6 @@ class FakeImageServerMixin(KvmMixin):
       fh.write(fake_image3_content)
 
     # real fake image
-    cls.image_source_directory = tempfile.mkdtemp()
     real_image_input = os.path.join(cls.image_source_directory, 'real.img')
     subprocess.check_call([
       cls.qemu_img, "create", "-f", "qcow2", real_image_input, "1M"])
@@ -1154,7 +1153,7 @@ class TestVirtualHardDriveUrlGzipped(TestVirtualHardDriveUrl):
 
 
 @skipUnlessKvm
-class TestBootImageUrlList(KVMTestCase, FakeImageServerMixin):
+class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'biul'
   kvm_instance_partition_reference = 'biul0'
 
@@ -1476,7 +1475,7 @@ class TestBootImageUrlSelectResilientJson(
 
 
 @skipUnlessKvm
-class TestBootImageUrlListKvmCluster(KVMTestCase, FakeImageServerMixin):
+class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'biulkc'
 
   @classmethod
@@ -1486,14 +1485,6 @@ class TestBootImageUrlListKvmCluster(KVMTestCase, FakeImageServerMixin):
   input_value = "%s#%s"
   key = 'boot-image-url-list'
   config_file_name = 'boot-image-url-list.conf'
-
-  def setUp(self):
-    super().setUp()
-    self.startImageHttpServer()
-
-  def tearDown(self):
-    self.stopImageHttpServer()
-    super().tearDown()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -1798,7 +1789,7 @@ class TestDiskDevicePathWipeDiskOndestroyJson(
 
 
 @skipUnlessKvm
-class TestImageDownloadController(KVMTestCase, FakeImageServerMixin):
+class TestImageDownloadController(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'idc'
   maxDiff = None
 
@@ -1816,14 +1807,12 @@ class TestImageDownloadController(KVMTestCase, FakeImageServerMixin):
       self.working_directory, 'error_state_file')
     self.processed_md5sum = os.path.join(
       self.working_directory, 'processed_md5sum')
-    self.startImageHttpServer()
     self.image_download_controller = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '0',
       'software_release', 'parts', 'image-download-controller',
       'image-download-controller.py')
 
   def tearDown(self):
-    self.stopImageHttpServer()
     shutil.rmtree(self.working_directory)
     super().tearDown()
 
