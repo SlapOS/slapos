@@ -88,6 +88,129 @@
     }
 %}
 
+{#- Custom configuration requested for TOP project #}
+{%- set top_config = {
+      3200: {
+        'ru/lopcomm': {
+          'n_antenna_dl': 4,
+          'n_antenna_ul': 4,
+        },
+        'cell/lte': {
+          'pdsch_dedicated': {
+            'p_a': -6,
+            'p_b': -1,
+          },
+          'bandwidth': 10,
+          'initial_cqi': 1,
+        },
+        'sib5': {
+          'q-RxLevMin': -61,
+          't-ReselectionEUTRA': 1,
+          'threshX-High': 6,
+          'threshX-Low': 0,
+          'allowedMeasBandwidth': 'mbw50',
+          'cellReselectionPriority': 5,
+          'q-OffsetFreq': 'dB0',
+        },
+      },
+      6275: {
+        'ru/lopcomm': {
+          'n_antenna_dl': 2,
+          'n_antenna_ul': 2,
+        },
+        'cell/lte': {
+          'pdsch_dedicated': {
+            'p_a': -3,
+            'p_b': -1,
+          },
+          'bandwidth': 5,
+          'initial_cqi': 3,
+        },
+        'sib5': {
+          'q-RxLevMin': -61,
+          't-ReselectionEUTRA': 2,
+          'threshX-High': 0,
+          'threshX-Low': 13,
+          'allowedMeasBandwidth': 'mbw25',
+          'cellReselectionPriority': 2,
+          'q-OffsetFreq': 'dB0',
+        },
+      },
+      1802: {
+        'ru/lopcomm': {
+          'n_antenna_dl': 4,
+          'n_antenna_ul': 4,
+        },
+        'cell/lte': {
+          'n_antenna_dl': 4,
+          'n_antenna_ul': 4,
+          'pdsch_dedicated': {
+            'p_a': -6,
+            'p_b': -1,
+          },
+          'bandwidth': 20,
+          'initial_cqi': 1,
+        },
+        'sib5': {
+          'q-RxLevMin': -61,
+          't-ReselectionEUTRA': 1,
+          'threshX-High': 6,
+          'threshX-Low': 6,
+          'allowedMeasBandwidth': 'mbw100',
+          'cellReselectionPriority': 5,
+          'q-OffsetFreq': 'dB0',
+        },
+      },
+      38100: {
+        'ru/lopcomm': {
+          'n_antenna_dl': 0,
+          'n_antenna_ul': 0,
+        },
+        'cell/lte': {
+          'pdsch_dedicated': {
+            'p_a': 0,
+            'p_b': 0,
+          },
+          'bandwidth': 0,
+          'initial_cqi': 0,
+        },
+        'sib5': {
+          'q-RxLevMin': -53,
+          't-ReselectionEUTRA': 1,
+          'threshX-High': 6,
+          'threshX-Low': 0,
+          'allowedMeasBandwidth': 'mbw100',
+          'cellReselectionPriority': 5,
+          'q-OffsetFreq': 'dB-10',
+        },
+      },
+      375: {
+        'ru/lopcomm': {
+          'n_antenna_dl': 0,
+          'n_antenna_ul': 0,
+        },
+        'cell/lte': {
+          'pdsch_dedicated': {
+            'p_a': 0,
+            'p_b': 0,
+          },
+          'bandwidth': 0,
+          'initial_cqi': 0,
+        },
+        'sib5': {
+          'q-RxLevMin': -61,
+          't-ReselectionEUTRA': 1,
+          'threshX-High': 6,
+          'threshX-Low': 0,
+          'allowedMeasBandwidth': 'mbw75',
+          'cellReselectionPriority': 5,
+          'q-OffsetFreq': 'dB-3',
+        },
+      },
+    }
+%}
+
+
 
 {#- B(name) escapes name to be safe to use in buildout code.
 
@@ -207,7 +330,6 @@
 {%-   do ishared.update({'_': J(ishared['_'])}) %}
 {%- endfor  %}
 
-
 {#- load_iru_and_icell initializes RU and cell registries.
 
     icell_dict keeps cell shared instances:  reference -> icell
@@ -222,14 +344,11 @@
 {%-   for ishared in qshared_instance_list  %}
 {%-     set ref = J(jref_of_shared(ishared))  %}
 {%-     set _ = ishared['_']  %}
-{%-     if   'ru_type'   in _ %}
-{%-       set iru = ishared %}
-{%-       do _ru_set_defaults(_)  %}
-{%-       do iru_dict.update({ref: iru})  %}
-{%-     elif 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
+{%-     if 'cell_type' in _  and  _.get('cell_kind') == icell_kind  %}
 {%-       set icell = ishared %}
 {%-       do _cell_set_defaults(_, icell_kind, icell_dict)  %}
 {%-       do icell_dict.update({ref: icell})  %}
+{%-       do _cell_set_top_config(_, icell_kind)  %}
 {%-       set ru = _['ru']  %}
 {%-       if ru.ru_type not in ('ru_ref', 'ruincell_ref') %}
 {#-         embedded ru definition -> expose it as synthethic `_<cell_ref>_ru` #}
@@ -240,7 +359,17 @@
                   'slave_reference':  False,
                }})  %}
 {%-       endif %}
-{%-     else  %}
+{%-     endif %}
+{%-   endfor  %}
+{%-   for ishared in qshared_instance_list  %}
+{%-     set ref = J(jref_of_shared(ishared))  %}
+{%-     set _ = ishared['_']  %}
+{%-     if   'ru_type'   in _ %}
+{%-       set iru = ishared %}
+{%-       do _ru_set_defaults(_)  %}
+{%-       do iru_dict.update({ref: iru})  %}
+{%-       do _ru_set_top_config(ref, iru, icell_dict)  %}
+{%-     elif not ('cell_type' in _  and  _.get('cell_kind') == icell_kind)  %}
 {%-       do qother.append(ishared) %}
 {%-     endif %}
 {%-   endfor  %}
@@ -331,6 +460,28 @@
 {%-   endif %}
 {%- endmacro %}
 
+{%- macro _cell_set_top_config(cell, icell_kind)  %}
+{%-   do cell.setdefault('top_config', False) %}
+{%-   if icell_kind == 'enb'  %}
+{%-     if cell.top_config and cell.dl_earfcn in top_config %}
+{%-       for k, v in top_config[cell.dl_earfcn]['cell/%s' % (cell.cell_type,)].items() %}
+{%-         do cell.setdefault(k, v) %}
+{%-       endfor  %}
+{%-     endif  %}
+{%-   endif  %}
+{%- endmacro %}
+
+{%- macro _ru_set_top_config(ru_ref, ru, icell_dict)  %}
+{%-   for _, icell in icell_dict|dictsort %}
+{%-     if icell['_'].ru.ru_ref == ru_ref %}
+{%-       if icell['_'].get('top_config', False) %}
+{%-         for k, v in top_config[icell['_'].dl_earfcn]['ru/lopcomm'].items()  %}
+{%-           do ru['_'].update({k: v}) %}
+{%-         endfor  %}
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
+{%- endmacro  %}
 
 {#- jcell_ru_ref returns RU reference linked from a cell.
     if the cell embeds RU definition, its reference comes as `_<cell_ref>_ru`. #}

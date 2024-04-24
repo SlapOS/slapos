@@ -1,0 +1,35 @@
+{%- if cell.top_config %}
+{
+  message c1: systemInformation: {
+    criticalExtensions systemInformation-r8: {
+      sib-TypeAndInfo {
+        sib5: {
+          interFreqCarrierFreqList {
+{%- for earfcn in [1802, 3200, 6275, 38100, 375] %}
+{%-   if cell.dl_earfcn != earfcn %}
+            {
+              dl-CarrierFreq {{ earfcn }},
+              q-RxLevMin {{ top_config[earfcn]['sib5']['q-RxLevMin'] }},
+              p-Max 23,
+              t-ReselectionEUTRA {{ top_config[earfcn]['sib5']['t-ReselectionEUTRA'] }},
+              t-ReselectionEUTRA-SF {
+                sf-Medium oDot25,
+                sf-High oDot25
+              },
+              threshX-High {{ top_config[earfcn]['sib5']['threshX-High'] }},
+              threshX-Low {{ top_config[earfcn]['sib5']['threshX-Low'] }},
+              allowedMeasBandwidth {{ top_config[earfcn]['sib5']['allowedMeasBandwidth'] }},
+              presenceAntennaPort1 TRUE,
+              cellReselectionPriority {{ top_config[earfcn]['sib5']['cellReselectionPriority'] }},
+              neighCellConfig '01'B,
+              q-OffsetFreq {{ top_config[earfcn]['sib5']['q-OffsetFreq'] }}
+            },
+{%-   endif %}
+{%- endfor %}
+          }
+        }
+      }
+    }
+  }
+}
+{%- endif %}

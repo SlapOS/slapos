@@ -1,3 +1,6 @@
+{%- if _standalone is defined %}
+{%-   do cell.setdefault('top_config', False) %}
+{%- endif %}
 {%- set B = xbuildout.encode -%}
 /* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ B(cell_ref) }} @ {{ B(ru_ref) }}. */
 {
@@ -8,7 +11,14 @@
           radioResourceConfigCommon {
             rach-ConfigCommon {
               preambleInfo {
-                numberOfRA-Preambles n52
+                numberOfRA-Preambles n52,
+{%- if cell.top_config %}
+                preamblesGroupAConfig{
+                  sizeOfRA-PreamblesGroupA n28,
+                  messageSizeGroupA b56,
+                  messagePowerOffsetGroupB dB10
+                }
+{%- endif %}
               },
               powerRampingParameters {
                 powerRampingStep dB2,
@@ -17,24 +27,40 @@
               ra-SupervisionInfo {
                 preambleTransMax n10,
                 ra-ResponseWindowSize sf10,
-                mac-ContentionResolutionTimer sf40
+{%- if cell.top_config %}
+                mac-ContentionResolutionTimer sf64
+{%- endif %}
               },
               maxHARQ-Msg3Tx 5
             },
             bcch-Config {
+{%- if cell.top_config %}
+              modificationPeriodCoeff n2
+{%- else %}
               modificationPeriodCoeff n4
+{%- endif %}
             },
             pcch-Config {
+{%- if cell.top_config %}
+              defaultPagingCycle rf64,
+{%- else %}
               defaultPagingCycle rf128,
+{%- endif %}
               nB oneT
             },
             prach-Config {
               rootSequenceIndex 0, /* patched by eNB */
               prach-ConfigInfo {
+{%- if cell.top_config %}
+                prach-ConfigIndex 3, /* patched by eNB */
+                zeroCorrelationZoneConfig 12,
+                prach-FreqOffset 17 /* patched by eNB */
+{%- else %}
                 prach-ConfigIndex 4, /* patched by eNB */
-                highSpeedFlag FALSE,
                 zeroCorrelationZoneConfig 11,
                 prach-FreqOffset 4 /* patched by eNB */
+{%- endif %}
+                highSpeedFlag FALSE,
               }
             },
             pdsch-ConfigCommon {
@@ -90,12 +116,21 @@
             ul-CyclicPrefixLength len1
           },
           ue-TimersAndConstants {
+{%- if cell.top_config %}
+            t300 ms600,
+            t301 ms600,
+            t310 ms2000,
+            n310 n10,
+            t311 ms5000,
+            n311 n1
+{%- else %}
             t300 ms200,
             t301 ms200,
             t310 ms200,
             n310 n6,
             t311 ms10000,
             n311 n5
+{%- endif %}
           },
           freqInfo {
             additionalSpectrumEmission 1
@@ -107,14 +142,23 @@
             q-Hyst dB2
           },
           cellReselectionServingFreqInfo {
+{%- if cell.top_config %}
+            s-NonIntraSearch 21,
+            threshServingLow 4,
+{%- else %}
             s-NonIntraSearch 3,
             threshServingLow 2,
+{%- endif %}
             cellReselectionPriority 6
           },
           intraFreqCellReselectionInfo {
             q-RxLevMin -61,
             p-Max 23,
+{%- if cell.top_config %}
+            s-IntraSearch 26,
+{%- else %}
             s-IntraSearch 5,
+{%- endif %}
             presenceAntennaPort1 TRUE,
             neighCellConfig '01'B,
             t-ReselectionEUTRA 1

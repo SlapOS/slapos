@@ -482,6 +482,10 @@ def _do_enb_with(iru_icell_func):
     json_params = """{
         %(jextra)s
         "sib23_file": "sib2_3.asn",
+        "sib4_file": "sib4.asn",
+        "sib5_file": "sib5.asn",
+        "sib6_file": "sib6.asn",
+        "sib7_file": "sib7.asn",
         "slap_configuration": {
             "tap-name": "slaptap9",
             "slap-computer-partition-id": "slappart9",
