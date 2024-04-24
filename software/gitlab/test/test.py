@@ -59,7 +59,7 @@ class TestGitlab(SlapOSInstanceTestCase):
     session = requests.session()
 
     # Load the login page to get a CSRF token.
-    response = session.get(urljoin(self.backend_url, 'users/sign_in'))
+    response = session.get(urljoin(self.backend_url, 'users/sign_in'), verify=False)
     self.assertEqual(response.status_code, 200)
 
     # Extract the CSRF token and param.
@@ -73,7 +73,7 @@ class TestGitlab(SlapOSInstanceTestCase):
                     csrf_param: csrf_token}
 
     sign_in = functools.partial(
-       requests.post,
+       session.post,
        response.url,
        data=request_data,
        verify=False)
