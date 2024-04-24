@@ -566,7 +566,7 @@ production: &base
     {# ICP: '{{ cfg("icp_license") }}' #}
     {% endif %}
 
-rack_attack:
+  rack_attack:
     git_basic_auth:
       # Rack Attack IP banning enabled
       enabled: {{ cfg("rack_attack_enable") }}

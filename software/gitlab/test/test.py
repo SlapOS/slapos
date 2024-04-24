@@ -26,10 +26,10 @@
 ##############################################################################
 
 import os
-import logging
-import urllib
 import requests
 import functools
+import bs4
+from urllib.parse import urljoin
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -56,10 +56,28 @@ class TestGitlab(SlapOSInstanceTestCase):
       resp.status_code in [requests.codes.ok, requests.codes.found])
 
   def test_rack_attack_sign_in_rate_limiting(self):
+    session = requests.session()
+
+    # Load the login page to get a CSRF token.
+    response = session.get(urljoin(self.backend_url, 'users/sign_in'))
+    self.assertEqual(response.status_code, 200)
+
+    # Extract the CSRF token and param.
+    bsoup = bs4.BeautifulSoup(response.text, 'html.parser')
+    csrf_param = bsoup.find('meta', dict(name='csrf-param'))['content']
+    csrf_token = bsoup.find('meta', dict(name='csrf-token'))['content']
+
+    request_data = {
+                    'user[login]': 'test',
+                    'user[password]': 'random',
+                    csrf_param: csrf_token}
+
     sign_in = functools.partial(
        requests.post,
-       urllib.parse.urljoin(self.backend_url, '/users/sign_in'),
+       response.url,
+       data=request_data,
        verify=False)
+
     for _ in range(10):
       sign_in(headers={'X_FORWARDED_FOR': '1.2.3.4'})
     # after 10 authentication failures, this client is rate limited
