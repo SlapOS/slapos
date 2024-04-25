@@ -23,12 +23,13 @@
     socket;
 
   function updateConnexionClass(element, status) {
-    element.classList.remove(
-      status ? DISCONNECTED_CLASS_NAME : CONNECTED_CLASS_NAME
-    );
-    element.classList.add(
-      status ? CONNECTED_CLASS_NAME : DISCONNECTED_CLASS_NAME
-    );
+    var class_name = status ? CONNECTED_CLASS_NAME : DISCONNECTED_CLASS_NAME;
+    if (!element.classList.contains(class_name)) {
+      element.classList.remove(
+        status ? DISCONNECTED_CLASS_NAME : CONNECTED_CLASS_NAME
+      );
+      element.classList.add(class_name);
+    }
   }
 
   function setWebSocketStatus(connected, status) {
@@ -87,10 +88,10 @@
           log_textarea.value += drone["log"];
           {% endif -%}
         });
-      } else if (message.hasOwnProperty("state") && message.hasOwnProperty("id")) {
+      } else if (message.hasOwnProperty("id")) {
         flight_state_cell = document.getElementById(FLIGHT_STATUS_BASE_ID + message['id']);
         flight_state_cell.innerHTML = message['state'];
-        updateConnexionClass(flight_state_cell, message['inAir']);
+        updateConnexionClass(flight_state_cell, message['okState']);
       } else {
         console.info(message);
       }

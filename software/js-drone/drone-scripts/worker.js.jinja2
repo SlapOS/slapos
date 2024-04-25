@@ -276,12 +276,14 @@ import { evalScript, fdopen, loadFile, open } from "std";
           while (parsed_message.timestamp !== last_message_timestamp_list[id]) {
             if (user_me.hasOwnProperty("onGetMsg")
                 && [-1, user_me.id].includes(parsed_message.dest_id)) {
-              console.log("running on getMsg");
               user_me.onGetMsg(parsed_message.content);
             }
 
             last_message_timestamp_list[id] = parsed_message.timestamp;
-            parsed_message = JSON.parse(peer.message);
+            message = peer.message;
+            if (message.length > 0) {
+              parsed_message = JSON.parse(message);
+            }
           }
         }
       });
