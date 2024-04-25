@@ -88,7 +88,7 @@ class WendelinTutorialTestCase(FluentdTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'conf_text': cls._conf,}
+    return {'conf-text': cls._conf,}
 
   @classmethod
   def measureDict(cls):

@@ -1,0 +1,13 @@
+{
+  "name": "Fluentd",
+  "description": "Fluentd",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Fluentd",
+      "request": "instance-input-schema.json",
+      "index": 0
+    }
+  }
+}
