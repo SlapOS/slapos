@@ -1069,16 +1069,18 @@ class TestInstanceNbd(KVMTestCase):
 
     nbd_list = [cls.qemu_nbd, '-r', '-t', '-e', '32767']
     try:
-      cls.nbd_1_port = findFreeTCPPort(cls._ipv6_address)
+      cls.nbd_1_port = findFreeTCPPort(cls.ipv6_address_pure)
     except Exception:
-      raise ValueError('%r might be just bad' % (cls._ipv6_address,))
+      raise ValueError('%r might be just bad' % (cls.ipv6_address_pure,))
     cls.nbd_1 = subprocess.Popen(
-      nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_1_port), img_1])
-    cls.nbd_1_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_1_port)
-    cls.nbd_2_port = findFreeTCPPort(cls._ipv6_address)
+      nbd_list + [
+        '-b', cls.ipv6_address_pure, '-p', str(cls.nbd_1_port), img_1])
+    cls.nbd_1_uri = '[%s]:%s' % (cls.ipv6_address_pure, cls.nbd_1_port)
+    cls.nbd_2_port = findFreeTCPPort(cls.ipv6_address_pure)
     cls.nbd_2 = subprocess.Popen(
-      nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_2_port), img_2])
-    cls.nbd_2_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_2_port)
+      nbd_list + [
+        '-b', cls.ipv6_address_pure, '-p', str(cls.nbd_2_port), img_2])
+    cls.nbd_2_uri = '[%s]:%s' % (cls.ipv6_address_pure, cls.nbd_2_port)
 
   @classmethod
   def stopNbdServer(cls):
@@ -1092,6 +1094,7 @@ class TestInstanceNbd(KVMTestCase):
     # it's to hard to put qemu in software/slapos-sr-testing
     # so let's find it here
     # let's find our software .installed.cfg
+    cls.ipv6_address_pure = cls._ipv6_address.split('/')[0]
     cls.findQemuTools()
     cls.startNbdServer()
     super().setUpClass()
@@ -1104,7 +1107,7 @@ class TestInstanceNbd(KVMTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      "nbd-host": cls._ipv6_address,
+      "nbd-host": cls.ipv6_address_pure,
       "nbd-port": cls.nbd_1_port
     }
 
@@ -1125,9 +1128,9 @@ class TestInstanceNbdBoth(TestInstanceNbd):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      "nbd-host": cls._ipv6_address,
+      "nbd-host": cls.ipv6_address_pure,
       "nbd-port": cls.nbd_1_port,
-      "nbd2-host": cls._ipv6_address,
+      "nbd2-host": cls.ipv6_address_pure,
       "nbd2-port": cls.nbd_2_port
     }
 
