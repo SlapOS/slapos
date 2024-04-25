@@ -1068,7 +1068,10 @@ class TestInstanceNbd(KVMTestCase):
     subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_2, "1M"])
 
     nbd_list = [cls.qemu_nbd, '-r', '-t', '-e', '32767']
-    cls.nbd_1_port = findFreeTCPPort(cls._ipv6_address)
+    try:
+      cls.nbd_1_port = findFreeTCPPort(cls._ipv6_address)
+    except Exception:
+      raise ValueError('%r might be just bad' % (cls._ipv6_address,))
     cls.nbd_1 = subprocess.Popen(
       nbd_list + ['-b', cls._ipv6_address, '-p', str(cls.nbd_1_port), img_1])
     cls.nbd_1_uri = '[%s]:%s' % (cls._ipv6_address, cls.nbd_1_port)
