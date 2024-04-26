@@ -2,9 +2,13 @@
   This script initializes Jupyter's configuration such as passwords and other
   things. It is run by IPython hence why it can use functions like get_config().
 '''
-import ConfigParser
+import six
+from six.moves.configparser import ConfigParser
 import random
-from notebook.auth import passwd
+if six.PY3:
+  from jupyter_server.auth import passwd
+else:
+  from notebook.auth import passwd
 import os
 import ssl
 
@@ -17,8 +21,8 @@ def random_password(length = 10):
 knowledge_0 = '{{ config_cfg }}'
 
 if not os.path.exists(knowledge_0):
-  print "Your software does <b>not</b> embed 0-knowledge. \
-  This interface is useless in this case</body></html>"
+  print ("Your software does <b>not</b> embed 0-knowledge.\n"
+  "This interface is useless in this case</body></html>")
   exit(0)
 
 c = get_config()
@@ -33,10 +37,29 @@ if not parser.has_option("jupyter_notebook", "password") or \
   parser.get("jupyter_notebook", "password") == "":
   parser.set("jupyter_notebook", "password", random_password())
 
-c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
-c.NotebookApp.ssl_options = {
+c.ServerApp.password = passwd(parser.get("jupyter_notebook", "password"))
+c.ServerApp.ssl_options = {
   'ssl_version': ssl.PROTOCOL_TLSv1_2,
 }
+
+if 0 and six.PY3: # WIP
+  import pathlib
+  import jupyterlab
+  # JUPYTERLAB_DIR set to ~/jupyter/lab
+  jupyterlab_dir = pathlib.Path(os.environ['JUPYTERLAB_DIR'])
+  if not jupyterlab_dir.exists():
+    jupyterlab_dir.mkdir()
+  for d in 'schemas', 'static', 'themes':
+    local_dir = jupyterlab_dir / d
+    if not local_dir.exists():
+      dir_from_package = (pathlib.Path(jupyterlab.__file__).parent.parent / 'share' / 'jupyter' / 'lab' / d)
+      local_dir.symlink_to(dir_from_package)
+    if d == 'static':
+      c.ServerApp.extra_template_paths = str(local_dir)
+#      c.LabApp.extra_template_paths = str(local_dir)
+#      c.LabApp.static_url_prefix = 'static/lab'
+#      c.ServerApp.static_url_prefix = 'static/lab'
+
 
 with open(knowledge_0, 'w') as file:
   parser.write(file)

@@ -52,10 +52,9 @@ class TestJupyter(InstanceTestCase):
 
     self.assertEqual(
       {
-        'jupyter-classic-url': 'https://[%s]:8888/tree' % (self.computer_partition_ipv6_address, ),
         'jupyterlab-url': 'https://[%s]:8888/lab' % (self.computer_partition_ipv6_address, ),
         'password': '%s' % (password, ),
-        'url': 'https://[%s]:8888/tree' % (self.computer_partition_ipv6_address, )
+        'url': 'https://[%s]:8888/lab' % (self.computer_partition_ipv6_address, )
       },
       connection_dict
     )
@@ -63,7 +62,7 @@ class TestJupyter(InstanceTestCase):
     result = requests.get(
       connection_dict['url'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [http.client.FOUND, True, '/login?next=%2Flab%3F'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 
@@ -71,15 +70,7 @@ class TestJupyter(InstanceTestCase):
       connection_dict['jupyter-classic-url'],
       verify=False, allow_redirects=False)
     self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Ftree'],
-      [result.status_code, result.is_redirect, result.headers['Location']]
-    )
-
-    result = requests.get(
-      connection_dict['jupyterlab-url'],
-      verify=False, allow_redirects=False)
-    self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Flab'],
+      [http.client.FOUND, True, '/login?next=%2Flab%3F'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 
@@ -98,15 +89,7 @@ class TestJupyterAdditional(InstanceTestCase):
     result = requests.get(
       connection_dict['url'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Ftree'],
-      [result.status_code, result.is_redirect, result.headers['Location']]
-    )
-
-    result = requests.get(
-      connection_dict['jupyter-classic-url'],
-      verify=False, allow_redirects=False)
-    self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [http.client.FOUND, True, '/login?next=%2Flab%3F'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 
@@ -121,15 +104,7 @@ class TestJupyterAdditional(InstanceTestCase):
     result = requests.get(
       connection_dict['url-additional'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Ftree'],
-      [result.status_code, result.is_redirect, result.headers['Location']]
-    )
-
-    result = requests.get(
-      connection_dict['jupyter-classic-url-additional'],
-      verify=False, allow_redirects=False)
-    self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [http.client.FOUND, True, '/login?next=%2Flab%3F'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 
@@ -137,7 +112,7 @@ class TestJupyterAdditional(InstanceTestCase):
       connection_dict['jupyterlab-url-additional'],
       verify=False, allow_redirects=False)
     self.assertEqual(
-      [http.client.FOUND, True, '/login?next=%2Flab'],
+      [http.client.FOUND, True, '/login?next=%2Flab%3F'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 

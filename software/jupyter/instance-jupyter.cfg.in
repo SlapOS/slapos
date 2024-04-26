@@ -91,12 +91,11 @@ environment =
 
 [jupyter-password]
 recipe = slapos.cookbook:generate.password
-bytes = 10
 
 [jupyter-notebook-config]
 recipe = slapos.recipe.template:jinja2
 url = {{ jupyter_config_location }}/{{ jupyter_config_filename }}
-output = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
+output = ${directory:jupyter_config_dir}/jupyter_server_config.py
 context =
   key password jupyter-password:passwd
   raw gcc_location {{ gcc_location }}
@@ -171,13 +170,11 @@ instance-configuration =
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-jupyter-classic-url = ${request-slave-frontend:connection-secure_access}/tree
-url = ${:jupyter-classic-url}
 jupyterlab-url = ${request-slave-frontend:connection-secure_access}/lab
+url = ${:jupyterlab-url}
 {% if additional_frontend %}
-jupyter-classic-url-additional = ${request-slave-frontend-additional:connection-secure_access}/tree
-url-additional = ${:jupyter-classic-url-additional}
 jupyterlab-url-additional = ${request-slave-frontend-additional:connection-secure_access}/lab
+url-additional = ${:jupyterlab-url-additional}
 {% endif %}
 password = ${jupyter-password:passwd}
 
@@ -194,7 +191,7 @@ output = ${directory:erp5_kernel_dir}/kernel.json
 context =
   raw python_executable {{ python_executable }}
   raw kernel_dir ${erp5-kernel:target-directory}/{{ erp5_kernel_filename }}
-  key erp5_url slapconfiguration:configuration.erp5-url 
+  key erp5_url slapconfiguration:configuration.erp5-url
   raw display_name ERP5
   raw language_name python
 

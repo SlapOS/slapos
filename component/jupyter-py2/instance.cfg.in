@@ -74,9 +74,12 @@ environment =
 [jupyter-notebook-config]
 recipe = slapos.recipe.template:jinja2
 url = {{ jupyter_config_location }}/{{ jupyter_config_filename }}
-output = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
+output = ${directory:jupyter_config_dir}/jupyter_server_config.py
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
+
+[jupyter-notebook-config:python2]
+output = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -100,7 +103,7 @@ erp5_kernel_dir = ${:jupyter_kernel_dir}/ERP5
 # This part is called like this because knowledge0.write uses the part name for
 # the section name in the config file.
 recipe = slapos.cookbook:zero-knowledge.write
-password = 
+password =
 filename = knowledge0.cfg
 
 [read-knowledge0]
@@ -136,7 +139,7 @@ output = ${directory:erp5_kernel_dir}/kernel.json
 context =
   raw python_executable {{ python_executable }}
   raw kernel_dir ${erp5-kernel:target-directory}/{{ erp5_kernel_filename }}
-  key erp5_url slapconfiguration:configuration.erp5-url 
+  key erp5_url slapconfiguration:configuration.erp5-url
   raw display_name ERP5
   raw language_name python
 
