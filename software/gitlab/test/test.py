@@ -46,6 +46,10 @@ class TestGitlab(SlapOSInstanceTestCase):
   def getInstanceSoftwareType(cls):
     return 'gitlab'
 
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'root-password': 'admin1234'}
+
   def setUp(self):
     self.backend_url = self.computer_partition.getConnectionParameterDict(
     )['backend_url']
@@ -79,8 +83,8 @@ class TestGitlab(SlapOSInstanceTestCase):
        verify=False)
 
     for _ in range(10):
-      sign_in(headers={'X_FORWARDED_FOR': '1.2.3.4'})
+      sign_in(headers={'X-Forwarded-For': '1.2.3.4'})
     # after 10 authentication failures, this client is rate limited
-    self.assertEqual(sign_in(headers={'X_FORWARDED_FOR': '1.2.3.4'}).status_code, 429)
+    self.assertEqual(sign_in(headers={'X-Forwarded-For': '1.2.3.4'}).status_code, 429)
     # but other clients are not
-    self.assertNotEqual(sign_in(headers={'X_FORWARDED_FOR': '5.6.7.8'}).status_code, 429)
+    self.assertNotEqual(sign_in(headers={'X-Forwarded-For': '5.6.7.8'}).status_code, 429)
