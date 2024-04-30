@@ -21,13 +21,11 @@
 
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "sdr",
-      "template": "sdr"
+      "const":    "sdr"
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "sdr",
-      "template": "sdr"
+      "const":    "sdr"
     },
 
     "sdr_dev_list": {

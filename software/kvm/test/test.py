@@ -234,10 +234,14 @@ class TestInstance(KVMTestCase, KvmMixin):
       {
         'ipv6': self.computer_partition_ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8026',
-        'nat-rule-port-tcp-22': f'{self.computer_partition_ipv6_address} : 10022',
-        'nat-rule-port-tcp-443': f'{self.computer_partition_ipv6_address} : 10443',
-        'nat-rule-port-tcp-80': f'{self.computer_partition_ipv6_address} : 10080',
+        'monitor-base-url':
+        f'https://[{self.computer_partition_ipv6_address}]:8026',
+        'nat-rule-port-tcp-22':
+        f'{self.computer_partition_ipv6_address} : 10022',
+        'nat-rule-port-tcp-443':
+        f'{self.computer_partition_ipv6_address} : 10443',
+        'nat-rule-port-tcp-80':
+        f'{self.computer_partition_ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -315,7 +319,7 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
         self.computer_partition_root_path, 'var', 'qmp_socket'))
       ram_mb = sum(
         q['size']
-         for q in qemu_wrapper.getMemoryInfo()['hotplugged']) / 1024 / 1024
+        for q in qemu_wrapper.getMemoryInfo()['hotplugged']) / 1024 / 1024
       cpu_count = len(
         [q['CPU'] for q in qemu_wrapper.getCPUInfo()['hotplugged']])
       return {'cpu_count': cpu_count, 'ram_mb': ram_mb}
@@ -713,7 +717,8 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
       connection_parameter_dict,
       {
         'ipv6': self.kvm0_ipv6,
-        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8160',
+        'monitor-base-url':
+        f'https://[{self.computer_partition_ipv6_address}]:8160',
         'monitor-user': 'admin',
         'takeover-kvm-1-url': f'http://[{self.kvm1_ipv6}]:9263/',
       }
@@ -2212,7 +2217,8 @@ class TestExternalDiskModernCluster(TestExternalDiskModern):
     return 'kvm-cluster'
 
   def getExternalDiskInstanceParameterDict(self, *args, **kwargs):
-    partition_dict = super().getExternalDiskInstanceParameterDict(*args, **kwargs)
+    partition_dict = super().getExternalDiskInstanceParameterDict(
+      *args, **kwargs)
     partition_dict.update({"disable-ansible-promise": True})
     return {
       "kvm-partition-dict": {
@@ -2366,10 +2372,14 @@ vm""",
       {
         'ipv6': self.computer_partition_ipv6_address,
         'maximum-extra-disk-amount': '0',
-        'monitor-base-url': f'https://[{self.computer_partition_ipv6_address}]:8026',
-        'nat-rule-port-tcp-22': f'{self.computer_partition_ipv6_address} : 10022',
-        'nat-rule-port-tcp-443': f'{self.computer_partition_ipv6_address} : 10443',
-        'nat-rule-port-tcp-80': f'{self.computer_partition_ipv6_address} : 10080',
+        'monitor-base-url':
+        f'https://[{self.computer_partition_ipv6_address}]:8026',
+        'nat-rule-port-tcp-22':
+        f'{self.computer_partition_ipv6_address} : 10022',
+        'nat-rule-port-tcp-443':
+        f'{self.computer_partition_ipv6_address} : 10443',
+        'nat-rule-port-tcp-80':
+        f'{self.computer_partition_ipv6_address} : 10080',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))

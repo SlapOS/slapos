@@ -114,7 +114,7 @@ command =
   then
     openssl req -x509 -nodes -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
-      -newkey rsa:1024 -keyout ${:key-file} \
+      -newkey rsa -keyout ${:key-file} \
       -out ${:cert-file}
     openssl x509 -addtrust serverAuth \
       -in ${:cert-file} \

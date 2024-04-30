@@ -237,7 +237,7 @@ command =
   then
     ${openssl-output:openssl} req -x509 -nodes -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
-      -newkey rsa:2048 -keyout $${:cert-file} \
+      -newkey rsa -keyout $${:cert-file} \
       -out $${:cert-file}
   fi
 update-command = $${:command}

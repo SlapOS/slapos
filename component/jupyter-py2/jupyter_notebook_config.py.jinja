@@ -6,6 +6,7 @@ import ConfigParser
 import random
 from notebook.auth import passwd
 import os
+import ssl
 
 def random_password(length = 10):
   result = ""
@@ -33,6 +34,9 @@ if not parser.has_option("jupyter_notebook", "password") or \
   parser.set("jupyter_notebook", "password", random_password())
 
 c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
+c.NotebookApp.ssl_options = {
+  'ssl_version': ssl.PROTOCOL_TLSv1_2,
+}
 
 with open(knowledge_0, 'w') as file:
   parser.write(file)
