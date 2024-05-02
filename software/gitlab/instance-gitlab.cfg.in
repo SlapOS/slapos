@@ -628,9 +628,9 @@ wrapper-path    = ${directory:service}/puma
 # Those operations require PG and Redis to be up and running already, that's
 # why we do it here. See gitlab-puma-startup for details.
 command-line    = ${gitlab-puma-startup:output}
-{% if instance_parameter_dict.get('root-password') -%}
+{% if instance_parameter_dict.get('configuration.root-password') -%}
 environment =
-  GITLAB_ROOT_PASSWORD={{ instance_parameter_dict['root-password'] }}
+  GITLAB_ROOT_PASSWORD={{ instance_parameter_dict['configuration.root-password'] }}
 {% endif %}
 
 depend  =
