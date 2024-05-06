@@ -1,0 +1,14 @@
+diff --git a/main.c b/main.c
+diff --git a/main.c b/main.c
+index dcf3f23..3eb6332 100644
+--- a/main.c
++++ b/main.c
+@@ -130,7 +130,7 @@ main(int ac, char **av)
+ 			case 'd':
+ 				DebugOpt = 1;
+ 				LogLevel = LOG_DEBUG;
+-                [[fallthrough]]; //fall through to include f too
++                __attribute__((fallthrough)); //fall through to include f too
+ 			case 'f':
+ 				ForegroundOpt = 1;
+ 				break;
