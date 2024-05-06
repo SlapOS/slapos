@@ -63,7 +63,6 @@ class UserInfoTest(unittest.TestCase):
         'testnode': '/bin/testnode',
         'working-directory': 'srv/testnode',
         'wrapper': 'bin/erp5testnode-service',
-        'zip-binary': '/bin/zip',
     }
 
     # values for test

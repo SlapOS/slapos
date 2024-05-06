@@ -65,7 +65,6 @@ keep-log-days = {{ slapparameter_dict['keep-log-days'] }}
 git-binary = ${git:location}/bin/git
 slapos-binary = ${buildout:bin-directory}/slapos
 testnode = ${buildout:bin-directory}/testnode
-zip-binary = ${zip:location}/bin/zip
 httpd-pid-file = $${basedirectory:run}/httpd.pid
 httpd-lock-file = $${basedirectory:run}/httpd.lock
 httpd-conf-file = $${rootdirectory:etc}/httpd.conf
