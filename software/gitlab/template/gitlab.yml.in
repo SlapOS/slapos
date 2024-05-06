@@ -551,11 +551,6 @@ production: &base
     <% end %>
     #}
 
-    {# we are ok (for now) with default rack-attack git settings
-    rack_attack:
-      git_basic_auth: <%= @rack_attack_git_basic_auth.to_json if @rack_attack_git_basic_auth %>
-    #}
-
 
     ## Site ICP License
     # XXX unquote needed only for slapos.core earlier than
