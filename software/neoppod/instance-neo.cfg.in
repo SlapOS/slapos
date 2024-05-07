@@ -144,6 +144,9 @@ database-adapter = {{ storage_type }}
 wait-database = -1
 {%- if mysql %}
 engine = ${my-cnf-parameters:engine}
+{%- else %}
+environment =
+  PATH={{sqlite3_location}}/bin
 {%- endif %}
 dedup = {{ dumps(bool(slapparameter_dict.get('data-deduplication'))) }}
 disable-drop-partitions = {{ dumps(bool(slapparameter_dict.get('disable-drop-partitions'))) }}
