@@ -590,6 +590,12 @@
               "examples": [
                 "https://user:password@example.com/{test_result_id}/{test_name}.coverage.sqlite3"
               ]
+            },
+            "fail-under": {
+              "description": "Make the test reporting coverage fail if combined coverage is below this percentage value.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             }
           }
         },
