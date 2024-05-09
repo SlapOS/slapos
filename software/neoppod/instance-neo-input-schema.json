@@ -110,14 +110,6 @@
               "default": false,
               "type": "boolean"
             },
-            "storage-type": {
-              "description": "Storage type. Defaults to MySQL if available, else SQLite.",
-              "enum": [
-                "MySQL",
-                "SQLite"
-              ],
-              "type": "string"
-            },
             "private-tmpfs": {
               "description": "Size of private tmpfs mount to store the database. See filesystems/tmpfs.txt in Linux documentation. Use only for testing.",
               "type": "string"
@@ -126,24 +118,50 @@
               "description": "List of bindings to test when running the test suite.",
               "type": "array"
             },
-            "mysql": {
-              "description": "Dictionary containing parameters for MySQL.",
-              "default": {},
+            "storage-type": {
+              "description": "Storage type. Required when several types are configured and you select which one to use via 'node!' parameter. Defaults to whatever is configured ('sqlite' or 'mysql'), else MySQL if available, else SQLite.",
+              "enum": [
+                "MySQL",
+                "SQLite"
+              ],
+              "type": "string"
+            },
+            "sqlite": {
+              "description": "Storage backend configuration.",
               "properties": {
                 "relaxed-writes": {
-                  "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
+                  "description": "When enabled, sets synchronous = OFF and journal_mode = MEMORY - RTFM, those options are dangerous.",
                   "default": false,
                   "type": "boolean"
                 }
               },
               "additionalProperties": {
-                "description": "To configure important parameters like innodb_buffer_pool_size, rocksdb_block_cache_size, etc.",
-                "type": "string"
+                "description": "See NEO documentation for the list of supported settings.",
+                "type": ["number", "string"]
+              },
+              "type": "object"
+            },
+            "mysql": {
+              "description": "MariaDB server configuration.",
+              "properties": {
+                "relaxed-writes": {
+                  "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous.",
+                  "default": false,
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": {
+                "description": "To configure parameters like innodb_buffer_pool_size, rocksdb_block_cache_size, etc.",
+                "type": ["number", "string"]
               },
               "type": "object"
             },
             "engine": {
-              "description": "Configures storage engine, currently only InnoDB and RocksDB are supported. Defaults to NEO's default.",
+              "description": "[MySQL only] For NEO, this is a creation-time parameter and it defaults to NEO's default. For mysqld, this sets plugins to load and it defaults to load all.",
+              "enum": [
+                "InnoDB",
+                "RocksDB"
+              ],
               "type": "string"
             }
           },
