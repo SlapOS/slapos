@@ -1,9 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "NR Cell",
   "type": "object",
-
   "required": [
     "cell_type",
     "rf_mode",
@@ -11,18 +9,15 @@
     "cell_id",
     "bandwidth",
     "ru",
-
     "dl_nr_arfcn",
     "nr_band"
   ],
   "properties": {
     "$ref": "../../cell/common.json#/properties",
-
     "cell_type": {
       "$ref": "#/properties/cell_type",
-      "const":    "nr"
+      "const": "nr"
     },
-
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "type": "string",
@@ -38,11 +33,9 @@
         }
       }
     },
-
     "bandwidth": {
       "$ref": "#/properties/bandwidth"
     },
-
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
@@ -75,7 +68,6 @@
       "default": 1
     }
   },
-
   "$defs": {
     "tac": {
       "title": "Tracking Area Code",

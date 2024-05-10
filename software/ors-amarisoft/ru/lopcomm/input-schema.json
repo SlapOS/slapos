@@ -1,9 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "Lopcomm ORAN",
   "type": "object",
-
   "required": [
     "ru_type",
     "ru_link_type",
@@ -11,23 +9,19 @@
     "n_antenna_ul",
     "tx_gain",
     "rx_gain",
-
     "cpri_link",
     "mac_addr"
   ],
-
   "properties": {
     "$ref": "../../ru/common.json#/properties",
-
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "lopcomm"
+      "const": "lopcomm"
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "cpri"
+      "const": "cpri"
     },
-
     "n_antenna_dl": {
       "$ref": "#/properties/n_antenna_dl",
       "default": 2
@@ -42,8 +36,10 @@
         "$ref": "#/properties/cpri_link/properties",
         "mapping": {
           "$ref": "#/properties/cpri_link/properties/mapping",
-          "const":    "hw",
-          "enum":     ["hw"]
+          "const": "hw",
+          "enum": [
+            "hw"
+          ]
         },
         "rx_delay": {
           "$ref": "#/properties/cpri_link/properties/rx_delay",
@@ -59,7 +55,6 @@
         }
       }
     },
-
     "reset_schedule": {
       "title": "Cron schedule for RRH reset",
       "description": "Refer https://crontab.guru/ to make a reset schedule for RRH, for example, '0 1 * * *' means the RRH will reset every day at 1 am",

@@ -1,26 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "UE Cell. Common properties",
   "type": "object",
-
   "required": [
     "cell_type",
     "cell_kind",
     "rf_mode",
     "ru"
   ],
-
   "properties": {
     "cell_type": {
       "type": "string"
     },
     "cell_kind": {
       "type": "string",
-      "const":    "ue"
+      "const": "ue"
     },
-
-    "rf_mode": { "$ref": "../../cell/common.json#/properties/rf_mode" },
-    "ru":      { "$ref": "../../cell/common.json#/$defs/ru-of-cell"   }
+    "rf_mode": {
+      "$ref": "../../cell/common.json#/properties/rf_mode"
+    },
+    "ru": {
+      "$ref": "../../cell/common.json#/$defs/ru-of-cell"
+    }
   }
 }

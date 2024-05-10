@@ -1,10 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "Peer Cell",
   "type": "object",
   "oneOf": [
-    { "$ref": "../../peer/cell/lte/input-schema.json" },
-    { "$ref": "../../peer/cell/nr/input-schema.json" }
+    {
+      "$ref": "../../peer/cell/lte/input-schema.json"
+    },
+    {
+      "$ref": "../../peer/cell/nr/input-schema.json"
+    }
   ]
 }

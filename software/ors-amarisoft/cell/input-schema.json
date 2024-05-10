@@ -1,10 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "Cell",
   "type": "object",
   "oneOf": [
-    { "$ref": "../cell/lte/input-schema.json" },
-    { "$ref": "../cell/nr/input-schema.json" }
+    {
+      "$ref": "../cell/lte/input-schema.json"
+    },
+    {
+      "$ref": "../cell/nr/input-schema.json"
+    }
   ]
 }
