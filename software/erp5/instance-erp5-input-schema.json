@@ -131,6 +131,11 @@
               "default": false,
               "type": "boolean"
             },
+            "xml-rpc": {
+              "description": "Serve XML-RPC queries",
+              "default": false,
+              "type": "boolean"
+            },
             "activity-timeout": {
               "description": "Override global activity timeout",
               "type": [

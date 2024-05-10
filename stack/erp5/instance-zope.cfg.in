@@ -349,6 +349,7 @@ wrapped-command-line =
     --access-log-file={{ '${' ~ conf_parameter_name ~ ':z2-log}' }}
     {% if longrequest_logger_interval > 0 %} --long-request-log-file={{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {% endif %}
     {% if webdav %}-w{% endif %}
+    {% if slapparameter_dict['xml-rpc'] %}--enable-xml-rpc{% endif %}
     {% if with_max_rlimit_nofile %}--with-max-rlimit-nofile{% endif %}
     {{ ipv4 }}:${:port}
     {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %}
