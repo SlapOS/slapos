@@ -1,10 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "UE",
   "type": "object",
   "oneOf": [
-    { "$ref": "../ue/lte/input-schema.json" },
-    { "$ref": "../ue/nr/input-schema.json" }
+    {
+      "$ref": "../ue/lte/input-schema.json"
+    },
+    {
+      "$ref": "../ue/nr/input-schema.json"
+    }
   ]
 }

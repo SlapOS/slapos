@@ -137,7 +137,10 @@
               },
               "additionalProperties": {
                 "description": "See NEO documentation for the list of supported settings.",
-                "type": ["number", "string"]
+                "type": [
+                  "number",
+                  "string"
+                ]
               },
               "type": "object"
             },
@@ -152,7 +155,10 @@
               },
               "additionalProperties": {
                 "description": "To configure parameters like innodb_buffer_pool_size, rocksdb_block_cache_size, etc.",
-                "type": ["number", "string"]
+                "type": [
+                  "number",
+                  "string"
+                ]
               },
               "type": "object"
             },

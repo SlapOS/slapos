@@ -1,10 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "SDR transiever",
   "description": "Radio Unit constituted of several SDR boards",
   "type": "object",
-
   "required": [
     "ru_type",
     "ru_link_type",
@@ -12,22 +10,18 @@
     "n_antenna_ul",
     "tx_gain",
     "rx_gain",
-
     "sdr_dev_list"
   ],
-
   "properties": {
     "$ref": "../../ru/common.json#/properties",
-
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const":    "sdr"
+      "const": "sdr"
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",
-      "const":    "sdr"
+      "const": "sdr"
     },
-
     "sdr_dev_list": {
       "title": "SDR boards",
       "description": "Which SDR boards to use as combined RF port",

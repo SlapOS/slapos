@@ -1,9 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "LTE Cell",
   "type": "object",
-
   "required": [
     "cell_type",
     "rf_mode",
@@ -11,18 +9,15 @@
     "cell_id",
     "bandwidth",
     "ru",
-
     "dl_earfcn",
     "tac"
   ],
   "properties": {
     "$ref": "../../cell/common.json#/properties",
-
     "cell_type": {
       "$ref": "#/properties/cell_type",
-      "const":    "lte"
+      "const": "lte"
     },
-
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "type": "string",
@@ -37,7 +32,6 @@
         }
       }
     },
-
     "bandwidth": {
       "$ref": "#/properties/bandwidth",
       "enum": [
@@ -49,7 +43,6 @@
         20
       ]
     },
-
     "dl_earfcn": {
       "title": "DL EARFCN",
       "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",

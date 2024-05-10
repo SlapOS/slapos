@@ -1,21 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "Peer eNB",
   "type": "object",
-
   "required": [
     "peer_type",
-
     "x2_addr"
   ],
-
   "properties": {
     "peer_type": {
       "$ref": "../../peer/common.json#/properties/peer_type",
-      "const":    "lte"
+      "const": "lte"
     },
-
     "x2_addr": {
       "title": "X2 Address",
       "description": "X2 Address of the neighbour node (eNB Address)",

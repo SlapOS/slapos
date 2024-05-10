@@ -1,9 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "Cell. Common properties",
   "type": "object",
-
   "required": [
     "cell_type",
     "rf_mode",
@@ -12,21 +10,22 @@
     "bandwidth",
     "ru"
   ],
-
   "properties": {
     "cell_type": {
       "type": "string"
     },
     "cell_kind": {
       "type": "string",
-      "const":    "enb"
+      "const": "enb"
     },
-
     "rf_mode": {
       "title": "RF mode",
       "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
       "type": "string",
-      "enum": ["fdd", "tdd"],
+      "enum": [
+        "fdd",
+        "tdd"
+      ],
       "propertyOrder": 101
     },
     "pci": {
@@ -59,7 +58,6 @@
       "propertyOrder": 9999
     }
   },
-
   "$defs": {
     "ru-of-cell": {
       "title": "Radio Unit",
@@ -68,11 +66,14 @@
           "title": "Shared Radio Unit",
           "description": "Use radio unit defined in separate shared instance",
           "type": "object",
-          "required": ["ru_type", "ru_ref"],
+          "required": [
+            "ru_type",
+            "ru_ref"
+          ],
           "properties": {
             "ru_type": {
-                "type": "string",
-                "const": "ru_ref"
+              "type": "string",
+              "const": "ru_ref"
             },
             "ru_ref": {
               "title": "RU Reference",
@@ -85,11 +86,14 @@
           "title": "Shared Radio Unit of a Cell",
           "description": "Use the same radio unit as referenced cell instance does",
           "type": "object",
-          "required": ["ru_type", "ruincell_ref"],
+          "required": [
+            "ru_type",
+            "ruincell_ref"
+          ],
           "properties": {
             "ru_type": {
-                "type": "string",
-                "const":    "ruincell_ref"
+              "type": "string",
+              "const": "ruincell_ref"
             },
             "ruincell_ref": {
               "title": "Cell Reference",
@@ -98,9 +102,15 @@
             }
           }
         },
-        { "$ref": "../ru/sdr/input-schema.json" },
-        { "$ref": "../ru/lopcomm/input-schema.json" },
-        { "$ref": "../ru/sunwave/input-schema.json" }
+        {
+          "$ref": "../ru/sdr/input-schema.json"
+        },
+        {
+          "$ref": "../ru/lopcomm/input-schema.json"
+        },
+        {
+          "$ref": "../ru/sunwave/input-schema.json"
+        }
       ]
     }
   }

@@ -1,15 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "NR UE",
   "type": "object",
-
   "properties": {
     "$ref": "../../ue/common.json#/properties",
-
     "ue_type": {
       "$ref": "#/properties/ue_type",
-      "const":    "nr"
+      "const": "nr"
     }
   }
 }
