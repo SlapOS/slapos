@@ -13,6 +13,7 @@ def post_make_hook(options, buildout):
       os.unlink(f)
   shutil.copyfile(os.path.join(os.curdir, original), os.path.join(destination,
     original))
+  os.chmod(os.path.join(destination, original), 0o555)
 
   for link in link_list:
     os.symlink(original, os.path.join(destination,
