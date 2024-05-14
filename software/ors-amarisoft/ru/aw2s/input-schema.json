@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AW2S",
+  "type": "object",
+  "required": [
+    "ru_type",
+    "ru_link_type",
+    "n_antenna_dl",
+    "n_antenna_ul"
+  ],
+  "properties": {
+    "$ref": "../../ru/common.json#/properties",
+    "ru_type": {
+      "$ref": "#/properties/ru_type",
+      "const": "aw2s"
+    },
+    "ru_link_type": {
+      "$ref": "#/properties/ru_link_type",
+      "const": "aw2s"
+    },
+    "n_antenna_dl": {
+      "$ref": "#/properties/n_antenna_dl",
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "$ref": "#/properties/n_antenna_ul",
+      "default": 2
+    },
+    "aw2s_cpri_link": {
+      "title": "AW2S CPRI link settings",
+      "type": "object",
+      "required": [
+        "swallow_board",
+        "sfp_port"
+      ],
+      "properties": {
+        "swallow_board": {
+          "title": "ID of swallow board",
+          "type": "integer"
+        },
+        "sfp_port": {
+          "title": "SFP port # on the CPRI board",
+          "type": "integer"
+        },
+        "mult": {
+          "title": "CPRI line bit rate multipler",
+          "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7",
+          "type": "integer",
+          "enum": [
+            4,
+            5,
+            8,
+            16
+          ],
+          "default": 16
+        }
+      }
+    }
+  }
+}

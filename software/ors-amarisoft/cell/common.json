@@ -109,6 +109,9 @@
           "$ref": "../ru/lopcomm/input-schema.json"
         },
         {
+          "$ref": "../ru/aw2s/input-schema.json"
+        },
+        {
           "$ref": "../ru/sunwave/input-schema.json"
         }
       ]

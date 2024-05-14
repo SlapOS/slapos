@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Radio Management Unit configuration file -->
+
+<rmu>
+
+	<!-- Swallow configuration -->
+	<swallow minor="*">
+		<sync mode="gps" output="umts"/>
+		<port id="*" line-speed="3" defragment="true"/>
+	</swallow>
+
+	<!-- Optional FTP links -->
+	<ftp>
+		<link alias="Releases">
+			<host>127.0.0.1</host>
+			<user>user</user>
+			<password>default0</password>
+			<directory>releases</directory>
+		</link>
+	</ftp>
+
+</rmu>
+

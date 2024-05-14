@@ -1,0 +1,51 @@
+{%- import 'slaplte.jinja2' as slaplte with context %}
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Swallow V6 LTEENB TRx PCIe configuration file -->
+
+{%- set cpri_board_list = [] %}
+{%- for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
+{%-   set ru = iru['_'] %}
+{%-   set cpri_board = ru.aw2s_cpri_link.swallow_board %}
+{%-   if cpri_board not in cpri_board_list %}
+{%-     do cpri_board_list.append(cpri_board) %}
+{%-   endif %}
+{%- endfor %}
+
+
+{%- for cpri_board in cpri_board_list|sort %}
+<swallow minor="{{ cpri_board }}">
+
+	<!-- CPU management -->
+	<cpu wait-mode="poll" irq-interval-us="250"/>
+
+{%-   if len(cpri_board_list) == 1 %}
+	<!-- Synchronization scheme (ignored when using MRAT transceiver) -->
+	<sync mode="gps" output="umts"/>
+
+	<!-- CPRI master ports setup (ignored when using MRAT transceiver) -->
+{%-     for (ru_ref, iru) in iru_dict.items() | sort(attribute="1._._rf_port")  %}
+{%-       set ru = iru['_'] %}
+  <port id="{{ ru._rf_port }}" cpri-line-speed="{{ ru.aw2s_cpri_link.cpri_line_speed }}"/>
+{%-     endfor %}
+{%-   endif %}
+
+	<!-- Cells configuration -->
+{%-   for cell_index, (cell_ref, icell) in enumerate(icell_dict|dictsort) %}
+{%-     set cell = icell['_'] %}
+{%-     set ru_ref = slaplte.J(slaplte.jcell_ru_ref(icell, icell_dict)) %}
+{%-     set iru = iru_dict[ru_ref]  %}
+{%-     set ru = iru['_'] %}
+{%-     if ru.aw2s_cpri_link.swallow_board == cpri_board %}
+  <cell id="{{ cell_index }}">
+		<iq-compression type="none" tx-sigma="7000" rx-sigma="4000"/>
+{%-       for ant in range(ru.n_antenna_dl) %}
+    <tx id="{{ ant }}" master-port="{{ ru._rf_port }}" hop-count="0" antport="{{ ant }}" power-dBm="{{ cell.power_dbm }}"/>
+{%-       endfor %}
+{%-       for ant in range(ru.n_antenna_ul) %}
+    <rx id="{{ ant }}" master-port="{{ ru._rf_port }}" hop-count="0" antport="{{ ant }}"/>
+{%-       endfor %}
+	</cell>
+{%-     endif %}
+{%-   endfor %}
+</swallow>
+{%- endfor %}
