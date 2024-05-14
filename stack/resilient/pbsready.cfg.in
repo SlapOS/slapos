@@ -103,7 +103,7 @@ recipe = slapos.cookbook:pbs
 client = false
 path = $${directory:backup}
 wrapper = $${rootdirectory:bin}/rdiffbackup-server
-rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
+rdiffbackup-binary = ${rdiff-backup-2.2.4:location}/bin/rdiff-backup
 
 
 #----------------
@@ -293,5 +293,5 @@ recipe = slapos.cookbook:userinfo
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
-resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
+resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}$${rdiff-backup-server:path}
 ip = $${slap-network-information:global-ipv6}

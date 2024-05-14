@@ -1,0 +1,25 @@
+diff -Naur src/rdiffbackup/actions/__init__.py src/rdiffbackup/actions/__init__.py
+--- src/rdiffbackup/actions/__init__.py	2023-02-27 07:45:09.000000000 +0100
++++ src/rdiffbackup/actions/__init__.py	2023-06-07 16:38:33.705533987 +0200
+@@ -64,6 +64,9 @@
+     "--fsync", default=True, action=BooleanOptionalAction,
+     help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
+ COMMON_PARSER.add_argument(
++    "--change-ownership", action="store_true",
++    help="[opt] change (or not) target's uid/gid")
++COMMON_PARSER.add_argument(
+     "--null-separator", action="store_true",
+     help="[opt] use null instead of newline in input and output files")
+ COMMON_PARSER.add_argument(
+diff -Naur src/rdiffbackup/run.py src/rdiffbackup/run.py
+--- src/rdiffbackup/run.py	2023-02-27 07:45:09.000000000 +0100
++++ src/rdiffbackup/run.py	2023-06-07 16:39:27.826150443 +0200
+@@ -156,6 +156,8 @@
+         Globals.set("allow_duplicate_timestamps",
+                     arglist.allow_duplicate_timestamps)
+     Globals.set("null_separator", arglist.null_separator)
++    if arglist.change_ownership is not None:
++        Globals.set("change_ownership", arglist.change_ownership)
+     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
+     Globals.set("do_fsync", arglist.fsync)
+     if arglist.current_time is not None:
