@@ -2,28 +2,36 @@
   This script initializes Jupyter's configuration such as passwords and other
   things. It is run by IPython hence why it can use functions like get_config().
 '''
-import ConfigParser
-import random
-from notebook.auth import passwd
+
 import os
 import ssl
+import sys
+import six
+from six.moves.configparser import ConfigParser
+if six.PY3:
+  from jupyter_server.auth import passwd
+  import secrets
+  random_password = secrets.token_hex
+else:
+  from notebook.auth import passwd
+  import random
+  def random_password(length=10):
+    result = ""
+    for i in range(0, length):
+      result = result + chr(random.randint(0, 25) + ord('a'))
+    return result
 
-def random_password(length = 10):
-  result = ""
-  for i in range(0, length):
-    result = result + chr(random.randint(0, 25) + ord('a'))
-  return result
 
 knowledge_0 = '{{ config_cfg }}'
 
 if not os.path.exists(knowledge_0):
-  print "Your software does <b>not</b> embed 0-knowledge. \
-  This interface is useless in this case</body></html>"
+  print ("Your software does <b>not</b> embed 0-knowledge.\n"
+  "This interface is useless in this case</body></html>")
   exit(0)
 
 c = get_config()
 
-parser = ConfigParser.ConfigParser()
+parser = ConfigParser()
 parser.read(knowledge_0)
 
 if not parser.has_section("jupyter_notebook"):
@@ -33,10 +41,50 @@ if not parser.has_option("jupyter_notebook", "password") or \
   parser.get("jupyter_notebook", "password") == "":
   parser.set("jupyter_notebook", "password", random_password())
 
-c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
-c.NotebookApp.ssl_options = {
-  'ssl_version': ssl.PROTOCOL_TLSv1_2,
-}
+
+if six.PY3:   # This supports old jupyterlab on python2 and recent jupyterlab on python3
+  import pathlib
+  import jupyterlab
+
+  jupyterlab_dir = pathlib.Path(os.environ['JUPYTERLAB_DIR'])
+
+  # symlink all schemas in a folder, jupyter seems to assume that everything is installed
+  # in the same place.
+  schemas_dir = jupyterlab_dir / 'schemas'
+  if not schemas_dir.exists():
+    schemas_dir.mkdir()
+  for p in sys.path:
+    for schema in (pathlib.Path(p) / 'share' / 'jupyter' / 'lab' / 'schemas').glob('*/'):
+      dest = (schemas_dir / schema.name)
+      if dest.exists():
+        dest.unlink()
+      dest.symlink_to(schema)
+  c.LabServerApp.schemas_dir = str(schemas_dir)
+
+  # static really needs to be a sub-folder of $JUPYTERLAB_DIR
+  static = pathlib.Path(jupyterlab.__file__).parent.parent / 'share' / 'jupyter' / 'lab' / 'static'
+  static_dir = jupyterlab_dir  / 'static'
+  if static_dir.exists():
+    static_dir.unlink()
+  static_dir.symlink_to(static)
+
+  c.LabServerApp.themes_dir = str(pathlib.Path(jupyterlab.__file__).parent / 'themes')
+
+  c.ServerApp.jpserver_extensions = {
+    'notebook': True,
+    'jupyter_lsp':True,
+    'jupyter_server_terminals': True,
+    'jupyterlab': True,
+    'notebook_shim': True,
+  }
+  c.ServerApp.password = passwd(parser.get("jupyter_notebook", "password"))
+
+else:
+  c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
+  c.NotebookApp.ssl_options = {
+    'ssl_version': ssl.PROTOCOL_TLSv1_2,
+  }
+
 
 with open(knowledge_0, 'w') as file:
   parser.write(file)
