@@ -47,7 +47,7 @@ class TestJupyter(InstanceTestCase):
   def test(self):
     connection_dict = self.computer_partition.getConnectionParameterDict()
 
-    self.assertTrue('password' in connection_dict)
+    self.assertIn('password', connection_dict)
     password = connection_dict['password']
 
     self.assertEqual(
