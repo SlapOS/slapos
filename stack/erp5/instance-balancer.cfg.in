@@ -472,10 +472,9 @@ command = generate-apachedex-report
 recipe = slapos.recipe.template
 output = ${directory:etc}/${:_buildout_section_name_}
 inline =
-  {% for line in slapparameter_dict['apachedex-configuration'] %}
+  {% for line in slapparameter_dict['apachedex-configuration'] -%}
     {# apachedex config files use shlex.split, so we need to quote the arguments. #}
-    {# BBB: in python 3 we can use shlex.quote instead. #}
-    {{ repr(line.encode('utf-8')) }}
+    {{ six.moves.shlex_quote(line) }}
   {% endfor %}
 
 [apachedex-parameters]
