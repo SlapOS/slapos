@@ -743,6 +743,48 @@ class TestInstanceResilientBackupMixin(KvmMixin):
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
 
+  @classmethod
+  def findDcron(cls):
+    with open(os.path.join(
+        cls.slap.software_directory,
+        hashlib.md5(cls.getSoftwareURL().encode()).hexdigest(),
+        '.installed.cfg'
+      )) as fh:
+      location_cfg = fh.read()
+    dcron_location = [
+      q for q in location_cfg.splitlines()
+      if q.startswith('location') and q.endswith('/dcron')]
+    assert (len(dcron_location) == 1)
+    dcron_location = dcron_location[0].split('=')[1].strip()
+    cls.dcron = os.path.join(dcron_location, 'sbin', 'crond')
+    assert (os.path.exists(cls.dcron))
+
+  @classmethod
+  def disableDcron(cls):
+    cls.findDcron()
+    cls.dcron_orig = cls.dcron + '.orig'
+    os.rename(cls.dcron, cls.dcron_orig)
+    with open(cls.dcron, 'w') as fh:
+      fh.write("#!/bin/sh\necho $*\nwhile :; do sleep 5 ; done")
+    os.chmod(cls.dcron, 0o700)
+
+  @classmethod
+  def enableDcron(cls):
+    if os.path.exists(cls.dcron_orig):
+      if os.path.exists(cls.dcron):
+        os.unlink(cls.dcron)
+      os.rename(cls.dcron_orig, cls.dcron)
+
+  @classmethod
+  def setUpClass(cls):
+    cls.disableDcron()
+    super().setUpClass()
+
+  @classmethod
+  def tearDownClass(cls):
+    super().tearDownClass()
+    cls.enableDcron()
+
   def setUp(self):
     super().setUp()
     exporter_partition = glob.glob(os.path.join(
