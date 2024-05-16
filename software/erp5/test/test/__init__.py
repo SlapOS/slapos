@@ -46,10 +46,14 @@ from cryptography.x509.oid import NameOID
 from slapos.testing.testcase import ManagedResource, makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 
+ERP5PY3 = os.environ['SLAPOS_SR_TEST_NAME'] == 'erp5-py3'
 
 _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', '..', 'software%s.cfg' % (
+          '-py3' if ERP5PY3 else ''))),
+    software_id=os.environ['SLAPOS_SR_TEST_NAME'],
+)
 
 
 setup_module_executed = False
@@ -191,7 +195,10 @@ def neo(instance_parameter_dict):
 class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMeta):
   """ERP5 base test case
   """
-  __test_matrix__ = matrix((zeo, neo))  # switch between NEO and ZEO mode
+  if ERP5PY3:
+    __test_matrix__ = matrix((zeo, ))  # TODO: NEO is not yet enabled for py3
+  else:
+    __test_matrix__ = matrix((zeo, neo))  # switch between NEO and ZEO mode
 
   @classmethod
   def isNEO(cls):
