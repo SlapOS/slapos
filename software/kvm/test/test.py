@@ -59,8 +59,7 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+    os.path.join(os.path.dirname(__file__), 'test-software.cfg'))
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
@@ -720,6 +719,43 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
+
+
+class CronMixin(object):
+  def setUp(self):
+    super().setUp()
+    # wait until all installed partition have var/cron-environment.json
+    for i in range(20):
+      missing_list = []
+      for installed in glob.glob(os.path.join(
+        self.slap._instance_root, '*', '.installed.cfg')):
+        cron_environment = os.path.join(
+          '/', *installed.split('/')[:-1], 'var', 'cron-environment.json')
+        if not os.path.exists(cron_environment):
+          missing_list.append(cron_environment)
+      if len(missing_list) == 0:
+        break
+      time.sleep(1)
+    else:
+      raise ValueError('Missing cron environment', ' '.join(missing_list))
+
+  @classmethod
+  def executeCronDJob(cls, instance_type, cron):
+    jobpath = cls.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
+    with open(
+      cls.getPartitionPath(
+          'kvm-export', 'var', 'cron-environment.json')) as fh:
+      cron_environment = json.load(fh)
+    job_list = []
+    with open(jobpath, 'r') as fh:
+      for job in fh.readlines():
+        job_list.append(' '.join(job.split(' ')[5:]))
+    job_list_output = []
+    for job in job_list:
+      job_list_output.append(subprocess.run(
+        job, env=cron_environment, shell=True, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT))
+    return job_list_output
 
 
 @skipUnlessKvm
