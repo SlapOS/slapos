@@ -23,7 +23,7 @@ import unittest
 from slapos.grid.utils import md5digest
 
 from . import ERP5InstanceTestCase
-from . import setUpModule as _setUpModule
+from . import setUpModule as _setUpModule, ERP5PY3
 from .test_erp5 import TestPublishedURLIsReachableMixin
 
 
@@ -38,6 +38,8 @@ def setUpModule():
       md5digest(cls.getSoftwareURL()),
       'bin', 'wcfs')):
     raise unittest.SkipTest("built with wendelin.core 1")
+  if ERP5PY3:
+    raise unittest.SkipTest("wendelin.core does not support python3 yet")
 
 
 class TestWCFS(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
