@@ -302,6 +302,7 @@ config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-with-max-rlimit-nofile = {{ dumps(with_max_rlimit_nofile_enable) }}
 {# BBB: zope_parameter_dict used to contain 'webdav', so fallback to it -#}
 config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_parameter_dict.get('webdav', False))) }}
+config-xml-rpc = {{ dumps(current_zope_family_override_dict.get('xml-rpc', False)) }}
 config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}

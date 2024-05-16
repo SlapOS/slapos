@@ -41,6 +41,7 @@ url = {{ neo_master }}
 <= jinja2-template-base
 url = {{ neo }}
 extra-context =
+    import urllib urllib
     key master_cfg neo-master:output
     key admin_cfg neo-admin:output
 {%- if mariadb_location is defined %}

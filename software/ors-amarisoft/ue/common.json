@@ -1,28 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "UE. Common properties",
   "type": "object",
-
   "required": [
     "ue_type",
     "rue_addr"
   ],
-
   "properties": {
     "$ref": "../sim/input-schema.json#/properties",
-
     "ue_type": {
       "type": "string"
     },
-
     "rue_addr": {
       "title": "[Required] Remote UE address",
       "description": "[Required] Address of remote UE server. Default port is 2152.",
       "type": "string",
       "default": ""
     },
-
     "imsi": {
       "$ref": "../sim/input-schema.json#/properties/imsi",
       "default": "001010123456789"

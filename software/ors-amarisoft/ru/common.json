@@ -1,9 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-
   "title": "Radio Unit. Common properties",
   "type": "object",
-
   "required": [
     "ru_type",
     "ru_link_type",
@@ -12,7 +10,6 @@
     "tx_gain",
     "rx_gain"
   ],
-
   "properties": {
     "ru_type": {
       "type": "string"
@@ -20,46 +17,41 @@
     "ru_link_type": {
       "type": "string"
     },
-
     "n_antenna_dl": {
       "title": "Number of DL antennas",
       "type": "integer"
     },
-
     "n_antenna_ul": {
       "title": "Number of UL antennas",
       "type": "integer"
     },
-
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
       "type": "number"
     },
-
     "rx_gain": {
       "title": "Rx gain",
       "description": "Rx gain (in dB)",
       "type": "number"
     },
-
     "txrx_active": {
       "title": "Activate Tx/Rx",
       "description": "Activate or inactivate Tx transmission and Rx reception. When inactive RU does no radio.",
       "type": "string",
-      "enum": ["ACTIVE", "INACTIVE"],
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ],
       "default": "INACTIVE"
     },
-
     "cpri_link": {
       "title": "CPRI link settings",
-
       "options": {
         "dependencies": {
           "ru_link_type": "cpri"
         }
       },
-
       "type": "object",
       "required": [
         "sdr_dev",
@@ -78,13 +70,23 @@
         "mapping": {
           "title": "Mapping method of AxCs on the CPRI",
           "type": "string",
-          "enum": ["standard", "hw", "spread", "bf1"]
+          "enum": [
+            "standard",
+            "hw",
+            "spread",
+            "bf1"
+          ]
         },
         "mult": {
           "title": "CPRI line bit rate multipler",
           "description": "Select the CPRI line bit rate in terms of multiple of option 1 (614.4 Mbps). E.g set 4 for option 3, 8 for option 5 and 16 for option 7",
           "type": "integer",
-          "enum": [4, 5, 8, 16],
+          "enum": [
+            4,
+            5,
+            8,
+            16
+          ],
           "default": 16
         },
         "rx_delay": {
@@ -107,18 +109,15 @@
         }
       }
     },
-
     "mac_addr": {
       "title": "RU MAC address",
       "description": "RU MAC address used for NETCONF",
       "type": "string",
-
       "options": {
         "dependencies": {
           "ru_link_type": "cpri"
         }
       }
     }
-
   }
 }

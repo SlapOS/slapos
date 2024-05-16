@@ -190,6 +190,19 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
       installed['request-frontend-default']['connection-secure_access'],
       self.getRootPartitionConnectionParameterDict()['url-frontend-default'])
 
+  def test_xml_rpc_disabled(self):
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    # don't verify certificate
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    with xmlrpc.client.ServerProxy(
+        param_dict['family-default-v6'],
+        context=ssl_context,
+      ) as cli:
+      with self.assertRaises(xmlrpc.client.ProtocolError):
+        cli.getId()
+
 
 class TestExternalCaucase(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test providing the URL of an external caucase in parameters.
@@ -654,8 +667,22 @@ class TestWatchActivities(ERP5InstanceTestCase):
 
 
 class ZopeSkinsMixin:
-  """Mixins with utility methods to test zope behaviors.
+  """Mixins with utility methods to test zope behaviors, needs XML-RPC enabled
+  for family `default`
   """
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+        json.dumps({
+            "family-override": {
+                "default": {
+                    "xml-rpc": True,
+                }
+            }
+        })
+    }
+
   @classmethod
   def _setUpClass(cls):
     super()._setUpClass()
@@ -753,6 +780,11 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
                     "port-base":  2210,
                 },
             },
+            "family-override": {
+                "default": {
+                    "xml-rpc": True
+                }
+            }
         }),
     }
 
@@ -1138,11 +1170,15 @@ class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
         json.dumps({
             # a default timeout of 3
             "publisher-timeout": 3,
-            # and a family without timeout
             "family-override": {
                 "no-timeout": {
+                    # and a family without timeout
                     "publisher-timeout": None,
                 },
+                # enable XML-RPC for ZopeSkinsMixin
+                "default": {
+                    "xml-rpc": True,
+                }
             },
             "zope-partition-dict": {
                 # a family to process activities, so that our test
@@ -1207,6 +1243,12 @@ class TestCloudooo(ZopeSkinsMixin, ERP5InstanceTestCase):
               'https://cloudooo2.example.com/',
             ],
             'cloudooo-retry-count': 123,
+            # enable XML-RPC for ZopeSkinsMixin
+            "family-override": {
+                "default": {
+                    "xml-rpc": True,
+                }
+            }
         })
     }
 
