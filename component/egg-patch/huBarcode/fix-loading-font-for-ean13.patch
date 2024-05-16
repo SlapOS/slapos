@@ -1,0 +1,30 @@
+From c56146829ab065183c709229a9daa682cc445212 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Fri, 26 Apr 2024 15:09:39 +0900
+Subject: [PATCH] fix loading font for ean13
+
+use same technique as for code128
+---
+ hubarcode/ean13/renderer.py | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/hubarcode/ean13/renderer.py b/hubarcode/ean13/renderer.py
+index 654501e..ff5f518 100644
+--- a/hubarcode/ean13/renderer.py
++++ b/hubarcode/ean13/renderer.py
+@@ -78,8 +78,10 @@ class EAN13Renderer:
+         # Draw the text
+         font_size = font_sizes.get(bar_width, 24)
+ 
+-        # Use relative name, PIL will do searching for us
+-        fontfile = os.path.join("fonts", "courR%02d.pil" % font_size)
++        # Locate and load the font file relative to the module
++        ean13dir, _ = os.path.split(__file__)
++        rootdir, _ = os.path.split(ean13dir)
++        fontfile = os.path.join(rootdir, "fonts", "courR%02d.pil" % font_size)
+ 
+         font = ImageFont.load_path(fontfile)
+         draw = ImageDraw.Draw(img)
+-- 
+2.42.0
+

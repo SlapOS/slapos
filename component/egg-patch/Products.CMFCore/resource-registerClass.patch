@@ -1,0 +1,81 @@
+From 2a248ffc584082122776f3b51f5fdaf90c5e2905 Mon Sep 17 00:00:00 2001
+From: Maurits van Rees <maurits@vanrees.org>
+Date: Tue, 23 Apr 2024 22:22:53 +0200
+Subject: [PATCH] Use the new resources keyword of registerClass if available.
+
+This avoids a deprecation warning for using a non callable constructor in Zope higher than 5.9.
+See report in https://github.com/zopefoundation/Zope/issues/1202
+---
+ CHANGES.rst                   |  6 ++++-
+ src/Products/CMFCore/utils.py | 51 ++++++++++++++++++++++++-----------
+ 2 files changed, 40 insertions(+), 17 deletions(-)
+
+diff --git a/src/Products/CMFCore/utils.py b/src/Products/CMFCore/utils.py
+index 2f99d6d..565914d 100644
+--- a/src/Products/CMFCore/utils.py
++++ b/src/Products/CMFCore/utils.py
+@@ -599,13 +599,20 @@ def initialize(self, context):
+         # Add only one meta type to the folder add list.
+         productObject = context._ProductContext__prod
+         self.product_name = productObject.id
+-        context.registerClass(
+-            meta_type=self.meta_type,
+-            # This is a little sneaky: we add self to the
+-            # FactoryDispatcher under the name "toolinit".
+-            # manage_addTool() can then grab it.
+-            constructors=(manage_addToolForm, manage_addTool, self),
+-            icon=self.icon)
++        # We add self to the FactoryDispatcher under the name 'toolinit'.
++        # manage_addContentType() can then grab it.
++        try:
++            context.registerClass(
++                meta_type=self.meta_type,
++                constructors=(manage_addToolForm, manage_addTool),
++                resources=(self, ),
++                icon=self.icon)
++        except TypeError:
++            # The 'resources' keyword was only introduced after Zope 5.9.
++            context.registerClass(
++                meta_type=self.meta_type,
++                constructors=(manage_addToolForm, manage_addTool, self),
++                icon=self.icon)
+ 
+         if self.icon:
+             icon = os_path.split(self.icon)[1]
+@@ -680,15 +687,27 @@ def __init__(self, meta_type, content_types, permission=None,
+ 
+     def initialize(self, context):
+         # Add only one meta type to the folder add list.
+-        context.registerClass(
+-            meta_type=self.meta_type,
+-            # This is a little sneaky: we add self to the
+-            # FactoryDispatcher under the name "contentinit".
+-            # manage_addContentType() can then grab it.
+-            constructors=(manage_addContentForm, manage_addContent,
+-                          self) + self.extra_constructors,
+-            permission=self.permission,
+-            visibility=self.visibility)
++        # We add self to the FactoryDispatcher under the name 'contentinit'.
++        # manage_addContentType() can then grab it.
++        try:
++            context.registerClass(
++                meta_type=self.meta_type,
++                constructors=(
++                    manage_addContentForm,
++                    manage_addContent,
++                    ) + self.extra_constructors,
++                resources=(self, ),
++                permission=self.permission,
++                visibility=self.visibility)
++        except TypeError:
++            # The 'resources' keyword was only introduced after Zope 5.9.
++            context.registerClass(
++                meta_type=self.meta_type,
++                constructors=(
++                    manage_addContentForm, manage_addContent, self,
++                    ) + self.extra_constructors,
++                permission=self.permission,
++                visibility=self.visibility)
+ 
+         for ct in self.content_types:
+             ct.__factory_meta_type__ = self.meta_type

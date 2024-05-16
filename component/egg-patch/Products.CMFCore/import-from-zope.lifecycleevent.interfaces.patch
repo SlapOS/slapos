@@ -1,0 +1,48 @@
+From c233d7278ae7089ba2ad32b8a178a3793273a47d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sat, 1 Jun 2024 14:58:23 +0900
+Subject: [PATCH] import from zope.lifecycleevent.interfaces to prevent
+ DeprecationWarnings
+
+partial backport from https://github.com/zopefoundation/Products.CMFCore/pull/125
+---
+ src/Products/CMFCore/CMFCatalogAware.py      | 4 ++--
+ src/Products/CMFCore/CachingPolicyManager.py | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/Products/CMFCore/CMFCatalogAware.py b/src/Products/CMFCore/CMFCatalogAware.py
+index a574660..502161f 100644
+--- a/src/Products/CMFCore/CMFCatalogAware.py
++++ b/src/Products/CMFCore/CMFCatalogAware.py
+@@ -25,11 +25,11 @@ from OFS.interfaces import IObjectClonedEvent
+ from OFS.interfaces import IObjectWillBeMovedEvent
+ from zope.component import queryUtility
+ from zope.component import subscribers
+-from zope.container.interfaces import IObjectAddedEvent
+-from zope.container.interfaces import IObjectMovedEvent
+ from zope.interface import implementer
++from zope.lifecycleevent.interfaces import IObjectAddedEvent
+ from zope.lifecycleevent.interfaces import IObjectCopiedEvent
+ from zope.lifecycleevent.interfaces import IObjectCreatedEvent
++from zope.lifecycleevent.interfaces import IObjectMovedEvent
+ 
+ from .interfaces import ICallableOpaqueItem
+ from .interfaces import ICatalogAware
+diff --git a/src/Products/CMFCore/CachingPolicyManager.py b/src/Products/CMFCore/CachingPolicyManager.py
+index 3722b7f..65a079d 100644
+--- a/src/Products/CMFCore/CachingPolicyManager.py
++++ b/src/Products/CMFCore/CachingPolicyManager.py
+@@ -27,9 +27,9 @@ from Persistence import PersistentMapping
+ from Products.PageTemplates.Expressions import SecureModuleImporter
+ from Products.PageTemplates.Expressions import getEngine
+ from zope.component import getUtility
+-from zope.container.interfaces import IObjectMovedEvent
+ from zope.datetime import rfc1123_date
+ from zope.interface import implementer
++from zope.lifecycleevent.interfaces import IObjectMovedEvent
+ 
+ from .Expression import Expression
+ from .interfaces import ICachingPolicy
+-- 
+2.42.0
+

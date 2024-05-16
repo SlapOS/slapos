@@ -1,0 +1,244 @@
+From 3666a7afd46ea6d069606450c520b8b7e2b5fddf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Thu, 22 Feb 2024 23:33:41 +0900
+Subject: [PATCH] Make dict views behave like their unrestricted versions
+
+unlike the restricted versions, the unrestricted versions:
+ - are not iterators, they are views
+ - have a len
+ - are false when the mapping is empty, true otherwise
+ - are instances of collections.abc.MappingView
+
+During this refactoring, also change `.items()` to validate
+ach keys and values, like `.keys()` and `.values()` do.
+---
+ CHANGES.rst                               |  7 ++++
+ src/AccessControl/ZopeGuards.py           | 50 ++++++++++++++++++-----
+ src/AccessControl/tests/actual_python.py  | 33 +++++++++++++++
+ src/AccessControl/tests/testZopeGuards.py | 34 +++++++++++----
+ 4 files changed, 104 insertions(+), 20 deletions(-)
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index f35a8d2..073b791 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -8,6 +8,13 @@ For changes before version 3.0, see ``HISTORY.rst``.
+ 
+ - Nothing changed yet.
+ 
++- Make dict views (`.keys()`, `.items()` and `.values()`) behave like their
++  unrestricted versions.
++  (`#147 <https://github.com/zopefoundation/AccessControl/pull/147>`_)
++
++- Make `.items()` validate each keys and values, like `.keys()` and
++  `.values()` do.
++
+ 
+ 6.3 (2023-11-20)
+ ----------------
+diff --git a/src/AccessControl/ZopeGuards.py b/src/AccessControl/ZopeGuards.py
+index 84c2e9e..bc24941 100644
+--- a/src/AccessControl/ZopeGuards.py
++++ b/src/AccessControl/ZopeGuards.py
+@@ -12,6 +12,7 @@
+ ##############################################################################
+ 
+ 
++import collections.abc
+ import math
+ import random
+ import string
+@@ -127,13 +128,18 @@ def guarded_pop(key, default=_marker):
+     return guarded_pop
+ 
+ 
+-def get_iter(c, name):
+-    iter = getattr(c, name)
++def get_mapping_view(c, name):
+ 
+-    def guarded_iter():
+-        return SafeIter(iter(), c)
++    view_class = {
++        'keys': SafeKeysView,
++        'items': SafeItemsView,
++        'values': SafeValuesView,
++    }
+ 
+-    return guarded_iter
++    def guarded_mapping_view():
++        return view_class[name](c)
++
++    return guarded_mapping_view
+ 
+ 
+ def get_list_pop(lst, name):
+@@ -153,18 +159,15 @@ def guarded_pop(index=-1):
+     'copy': 1,
+     'fromkeys': 1,
+     'get': get_dict_get,
+-    'items': 1,
++    'items': get_mapping_view,
++    'keys': get_mapping_view,
+     'pop': get_dict_pop,
+     'popitem': 1,
+     'setdefault': 1,
+     'update': 1,
++    'values': get_mapping_view,
+ }
+ 
+-_dict_white_list.update({
+-    'keys': get_iter,
+-    'values': get_iter,
+-})
+-
+ 
+ def _check_dict_access(name, value):
+     # Check whether value is a dict method
+@@ -262,6 +265,31 @@ def __next__(self):
+     next = __next__
+ 
+ 
++class _SafeMappingView:
++    __allow_access_to_unprotected_subobjects__ = 1
++
++    def __iter__(self):
++        for e in super().__iter__():
++            guard(self._mapping, e)
++            yield e
++
++
++class SafeKeysView(_SafeMappingView, collections.abc.KeysView):
++    pass
++
++
++class SafeValuesView(_SafeMappingView, collections.abc.ValuesView):
++    pass
++
++
++class SafeItemsView(_SafeMappingView, collections.abc.ItemsView):
++    def __iter__(self):
++        for k, v in super().__iter__():
++            guard(self._mapping, k)
++            guard(self._mapping, v)
++            yield k, v
++
++
+ class NullIter(SafeIter):
+     def __init__(self, ob):
+         self._iter = ob
+diff --git a/src/AccessControl/tests/actual_python.py b/src/AccessControl/tests/actual_python.py
+index 3405b8e..866a480 100644
+--- a/src/AccessControl/tests/actual_python.py
++++ b/src/AccessControl/tests/actual_python.py
+@@ -123,6 +123,39 @@ def f7():
+         access = getattr(d, meth)
+         result = sorted(access())
+         assert result == expected[kind], (meth, kind, result, expected[kind])
++        assert len(access()) == len(expected[kind]), (meth, kind, "len")
++        iter_ = access()  # iterate twice on the same view
++        assert list(iter_) == list(iter_)
++
++        assert sorted([k for k in getattr(d, meth)()]) == expected[kind]
++        assert sorted(k for k in getattr(d, meth)()) == expected[kind]
++    assert {k: v for k, v in d.items()} == d
++
++    assert 1 in d
++    assert 1 in d.keys()
++    assert 2 in d.values()
++    assert (1, 2) in d.items()
++
++    assert d
++    assert d.keys()
++    assert d.values()
++    assert d.items()
++
++    empty_d = {}
++    assert not empty_d
++    assert not empty_d.keys()
++    assert not empty_d.values()
++    assert not empty_d.items()
++
++    smaller_d = {1: 2}
++    for m, _ in methods:
++        assert getattr(d, m)() != getattr(smaller_d, m)()
++        assert not getattr(d, m)() == getattr(smaller_d, m)()
++        if m != 'values':
++            assert getattr(d, m)() > getattr(smaller_d, m)()
++            assert getattr(d, m)() >= getattr(smaller_d, m)()
++            assert getattr(smaller_d, m)() < getattr(d, m)()
++            assert getattr(smaller_d, m)() <= getattr(d, m)()
+ 
+ 
+ f7()
+diff --git a/src/AccessControl/tests/testZopeGuards.py b/src/AccessControl/tests/testZopeGuards.py
+index 533bfa2..50eeca9 100644
+--- a/src/AccessControl/tests/testZopeGuards.py
++++ b/src/AccessControl/tests/testZopeGuards.py
+@@ -258,23 +258,40 @@ def test_pop_validates(self):
+         self.assertTrue(sm.calls)
+ 
+     def test_keys_empty(self):
+-        from AccessControl.ZopeGuards import get_iter
+-        keys = get_iter({}, 'keys')
++        from AccessControl.ZopeGuards import get_mapping_view
++        keys = get_mapping_view({}, 'keys')
+         self.assertEqual(list(keys()), [])
+ 
++    def test_kvi_len(self):
++        from AccessControl.ZopeGuards import get_mapping_view
++        for attr in ("keys", "values", "items"):
++            with self.subTest(attr):
++                view = get_mapping_view({'a': 1}, attr)
++                self.assertEqual(len(view()), 1)
++
+     def test_keys_validates(self):
+         sm = SecurityManager()
+         old = self.setSecurityManager(sm)
+         keys = guarded_getattr({GuardTestCase: 1}, 'keys')
+         try:
+-            next(keys())
++            next(iter(keys()))
+         finally:
+             self.setSecurityManager(old)
+         self.assertTrue(sm.calls)
+ 
++    def test_items_validates(self):
++        sm = SecurityManager()
++        old = self.setSecurityManager(sm)
++        items = guarded_getattr({GuardTestCase: GuardTestCase}, 'items')
++        try:
++            next(iter(items()))
++        finally:
++            self.setSecurityManager(old)
++        self.assertEqual(len(sm.calls), 2)
++
+     def test_values_empty(self):
+-        from AccessControl.ZopeGuards import get_iter
+-        values = get_iter({}, 'values')
++        from AccessControl.ZopeGuards import get_mapping_view
++        values = get_mapping_view({}, 'values')
+         self.assertEqual(list(values()), [])
+ 
+     def test_values_validates(self):
+@@ -282,18 +299,17 @@ def test_values_validates(self):
+         old = self.setSecurityManager(sm)
+         values = guarded_getattr({GuardTestCase: 1}, 'values')
+         try:
+-            next(values())
++            next(iter(values()))
+         finally:
+             self.setSecurityManager(old)
+         self.assertTrue(sm.calls)
+ 
+     def test_kvi_iteration(self):
+-        from AccessControl.ZopeGuards import SafeIter
+         d = dict(a=1, b=2)
+         for attr in ("keys", "values", "items"):
+             v = getattr(d, attr)()
+-            si = SafeIter(v)
+-            self.assertEqual(next(si), next(iter(v)))
++            si = guarded_getattr(d, attr)()
++            self.assertEqual(next(iter(si)), next(iter(v)))
+ 
+ 
+ class TestListGuards(GuardTestCase):

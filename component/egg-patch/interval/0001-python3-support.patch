@@ -1,0 +1,965 @@
+From 42fab4bbede61a384046646dbc2573bb79957a89 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sat, 17 Feb 2024 16:07:18 +0900
+Subject: [PATCH] python3 support
+
+---
+ interval.py | 366 ++++++++++++++++++++++++++++------------------------
+ 1 file changed, 194 insertions(+), 172 deletions(-)
+
+diff --git a/interval.py b/interval.py
+index fe9e595..8a4b2be 100644
+--- a/interval.py
++++ b/interval.py
+@@ -36,15 +36,18 @@ False
+ >>> "15:30" in myHours
+ True
+ >>> inOffice = officeHours & myHours
+->>> print inOffice
++>>> print(inOffice)
+ ['08:30'..'11:30'),('12:30'..'17:00']
+ >>> overtime = myHours - officeHours
+->>> print overtime
++>>> print(overtime)
+ ('17:00'..'19:30']
+ """
+ 
+ import copy
++import functools
+ 
++
++@functools.total_ordering
+ class Smallest:
+   """Represents the smallest value
+   
+@@ -70,11 +73,17 @@ class Smallest:
+     
+     The opposite of negative infinity is infinity, the largest value.
+ 
+-    >>> print -Smallest()
++    >>> print(-Smallest())
+     ~
+     """
+     return Largest()
+     
++  def __eq__(self, other):
++    return isinstance(other, self.__class__)
++
++  def __gt__(self, other):
++    return False
++
+   def __cmp__(self, other):
+     """Compares this with another object
+     
+@@ -103,7 +112,7 @@ class Smallest:
+       
+       The string for the smallest number is -~, which means negative infinity.
+       
+-      >>> print Smallest()
++      >>> print(Smallest())
+       -~
+       """
+       return "-~"
+@@ -124,6 +133,7 @@ class Smallest:
+     return 0x55555555
+ 
+ 
++@functools.total_ordering
+ class Largest:
+   """Class representing the universal largest value
+   
+@@ -149,11 +159,17 @@ class Largest:
+     
+     The opposite of infinity is negative infinity, the smallest value.
+ 
+-    >>> print -Largest()
++    >>> print(-Largest())
+     -~
+     """
+     return Smallest()
+     
++  def __eq__(self, other):
++    return isinstance(other, self.__class__)
++
++  def __ge__(self, other):
++    return True
++
+   def __cmp__(self, other):
+     """Compares object with another object
+     
+@@ -182,7 +198,7 @@ class Largest:
+       
+       The largest number is displayed as ~ (it sort of looks like infinity...)
+       
+-      >>> print Largest()
++      >>> print(Largest())
+       ~
+       """
+       return "~"
+@@ -203,6 +219,8 @@ class Largest:
+ Inf = Largest()
+ # Use -Inf for the smallest value      
+ 
++
++@functools.total_ordering
+ class Interval:
+     """Represents a continuous range of values
+     
+@@ -255,7 +273,7 @@ class Interval:
+         Intervals that are not normalized, i.e. that have a lower bound
+         exceeding an upper bound, are silently normalized.
+ 
+-        >>> print Interval(5, 2, lower_closed=False)
++        >>> print(Interval(5, 2, lower_closed=False))
+         [2..5)
+ 
+         Intervals can represent an empty set.
+@@ -343,27 +361,27 @@ class Interval:
+         consisting of only a single value are shown as that value.  Empty 
+         intervals are shown as the string <Empty>
+         
+-        >>> print Interval.all()
++        >>> print(Interval.all())
+         (...)
+-        >>> print Interval.less_than(100)
++        >>> print(Interval.less_than(100))
+         (...100)
+-        >>> print Interval.less_than_or_equal_to(2593)
++        >>> print(Interval.less_than_or_equal_to(2593))
+         (...2593]
+-        >>> print Interval.greater_than(2378)
++        >>> print(Interval.greater_than(2378))
+         (2378...)
+-        >>> print Interval.between(26, 8234, False)
++        >>> print(Interval.between(26, 8234, False))
+         (26..8234)
+-        >>> print Interval(237, 2348, lower_closed=False)
++        >>> print(Interval(237, 2348, lower_closed=False))
+         (237..2348]
+-        >>> print Interval.greater_than_or_equal_to(347)
++        >>> print(Interval.greater_than_or_equal_to(347))
+         [347...)
+-        >>> print Interval(237, 278, upper_closed=False)
++        >>> print(Interval(237, 278, upper_closed=False))
+         [237..278)
+-        >>> print Interval.between(723, 2378)
++        >>> print(Interval.between(723, 2378))
+         [723..2378]
+-        >>> print Interval.equal_to(5)
++        >>> print(Interval.equal_to(5))
+         5
+-        >>> print Interval.none()
++        >>> print(Interval.none())
+         <Empty>
+         """
+         if self.lower_bound == self.upper_bound:
+@@ -399,20 +417,22 @@ class Interval:
+             retval = "".join([lbchar, lstr, between, ustr, ubchar])
+         return retval
+ 
+-    def __nonzero__(self):
++    def __bool__(self):
+         """Tells whether the interval is empty
+-        
+         >>> if Interval(12, 12, closed=False):
+-        ...   print "Non-empty"
++        ...   print("Non-empty")
+         >>> if Interval(12, 12, upper_closed=False):
+-        ...   print "Non-empty"
++        ...   print("Non-empty")
+         >>> if Interval(12, 12):
+-        ...   print "Non-empty"
++        ...   print("Non-empty")
+         Non-empty
+         """
+         return self.lower_bound != self.upper_bound \
+             or (self.upper_closed and self.lower_closed)
+ 
++    def __lt__(self, other):
++        return self.comes_before(other)
++
+     def __cmp__(self, other):
+         """Compares two intervals for ordering purposes
+         
+@@ -442,15 +462,15 @@ class Interval:
+     def __and__(self, other):
+         """Returns the intersection of two intervals
+ 
+-        >>> print Interval.greater_than(3) & Interval.greater_than(5)
++        >>> print(Interval.greater_than(3) & Interval.greater_than(5))
+         (5...)
+-        >>> print Interval.greater_than(3) & Interval.equal_to(3)
++        >>> print(Interval.greater_than(3) & Interval.equal_to(3))
+         <Empty>
+-        >>> print Interval.greater_than_or_equal_to(3) & Interval.equal_to(3)
++        >>> print(Interval.greater_than_or_equal_to(3) & Interval.equal_to(3))
+         3
+-        >>> print Interval.all() & Interval.all()
++        >>> print(Interval.all() & Interval.all())
+         (...)
+-        >>> print Interval.greater_than(3) & Interval.less_than(10)
++        >>> print(Interval.greater_than(3) & Interval.less_than(10))
+         (3..10)
+         """
+         if self == other:
+@@ -494,7 +514,7 @@ class Interval:
+     def none(cls):
+         """Returns an empty interval
+         
+-        >>> print Interval.none()
++        >>> print(Interval.none())
+         <Empty>
+         """
+         return cls(0, 0, closed=False)
+@@ -503,7 +523,7 @@ class Interval:
+     def all(cls):
+       """Returns an interval encompassing all values
+       
+-      >>> print Interval.all()
++      >>> print(Interval.all())
+       (...)
+       """
+       return cls()
+@@ -516,9 +536,9 @@ class Interval:
+       then the endpoints are included.  Otherwise, the endpoints are
+       excluded.
+ 
+-      >>> print Interval.between(2, 4)
++      >>> print(Interval.between(2, 4))
+       [2..4]
+-      >>> print Interval.between(2, 4, False)
++      >>> print(Interval.between(2, 4, False))
+       (2..4)
+       """
+       return cls(a, b, closed=closed)
+@@ -529,7 +549,7 @@ class Interval:
+       
+       Returns an interval containing only a.
+ 
+-      >>> print Interval.equal_to(32)
++      >>> print(Interval.equal_to(32))
+       32
+       """
+       return cls(a, a)
+@@ -541,7 +561,7 @@ class Interval:
+       Returns an interval containing all values less than a.  If closed
+       is True, then all values less than or equal to a are returned.
+ 
+-      >>> print Interval.less_than(32)
++      >>> print(Interval.less_than(32))
+       (...32)
+       """
+       return cls(upper_bound=a, upper_closed=False)
+@@ -550,7 +570,7 @@ class Interval:
+     def less_than_or_equal_to(cls, a):
+         """Returns an interval containing the given values and everything less
+ 
+-        >>> print Interval.less_than_or_equal_to(32)
++        >>> print(Interval.less_than_or_equal_to(32))
+         (...32]
+         """
+         return cls(upper_bound=a, upper_closed=True)
+@@ -559,7 +579,7 @@ class Interval:
+     def greater_than(cls, a):
+       """Returns interval of all values greater than the given value
+       
+-      >>> print Interval.greater_than(32)
++      >>> print(Interval.greater_than(32))
+       (32...)
+       """
+       return cls(lower_bound=a, lower_closed=False)
+@@ -568,7 +588,7 @@ class Interval:
+     def greater_than_or_equal_to(cls, a):
+       """Returns interval of all values greater than or equal to the given value
+       
+-      >>> print Interval.greater_than_or_equal_to(32)
++      >>> print(Interval.greater_than_or_equal_to(32))
+       [32...)
+       """
+       return cls(lower_bound=a, lower_closed=True)
+@@ -637,29 +657,29 @@ class Interval:
+         >>> r13 = Interval.greater_than(100)
+         >>> r14 = Interval.equal_to(100)
+         >>> r15 = Interval.greater_than_or_equal_to(100)
+-        >>> print r13.join(r15)
++        >>> print(r13.join(r15))
+         [100...)
+-        >>> print r7.join(r6)
++        >>> print(r7.join(r6))
+         (-100..100]
+-        >>> print r11.join(r2)
++        >>> print(r11.join(r2))
+         (...100]
+-        >>> print r4.join(r15)
++        >>> print(r4.join(r15))
+         (...)
+-        >>> print r8.join(r8)
++        >>> print(r8.join(r8))
+         (-100...)
+-        >>> print r3.join(r7)
++        >>> print(r3.join(r7))
+         (...100]
+-        >>> print r5.join(r10)
++        >>> print(r5.join(r10))
+         (...)
+-        >>> print r9.join(r1)
++        >>> print(r9.join(r1))
+         (...-100]
+-        >>> print r12.join(r5)
++        >>> print(r12.join(r5))
+         (...)
+-        >>> print r13.join(r1)
++        >>> print(r13.join(r1))
+         Traceback (most recent call last):
+         ...
+         ArithmeticError: The Intervals are disjoint.
+-        >>> print r14.join(r2)
++        >>> print(r14.join(r2))
+         Traceback (most recent call last):
+         ...
+         ArithmeticError: The Intervals are disjoint.
+@@ -894,27 +914,27 @@ class BaseIntervalSet(object):
+         If no parameters are provided, then an empty IntervalSet is 
+         constructed.
+ 
+-        >>> print IntervalSet() # An empty set
++        >>> print(IntervalSet()) # An empty set
+         <Empty>
+ 
+         Interval objects arguments are added directly to the IntervalSet.
+ 
+-        >>> print IntervalSet([Interval(4, 6, lower_closed=False)])
++        >>> print(IntervalSet([Interval(4, 6, lower_closed=False)]))
+         (4..6]
+-        >>> print IntervalSet([Interval.less_than_or_equal_to(2)])
++        >>> print(IntervalSet([Interval.less_than_or_equal_to(2)]))
+         (...2]
+ 
+         Each non-Interval value of an iterator is added as a discrete 
+         value.
+ 
+-        >>> print IntervalSet(set([3, 7, 2, 1]))
++        >>> print(IntervalSet(set([3, 7, 2, 1])))
+         1,2,3,7
+-        >>> print IntervalSet(["Bob", "Fred", "Mary"])
++        >>> print(IntervalSet(["Bob", "Fred", "Mary"]))
+         'Bob','Fred','Mary'
+-        >>> print IntervalSet(range(10))
++        >>> print(IntervalSet(range(10)))
+         0,1,2,3,4,5,6,7,8,9
+-        >>> print IntervalSet(
+-        ...   Interval.between(l, u) for l, u in [(10, 20), (30, 40)])
++        >>> print(IntervalSet(
++        ...   Interval.between(l, u) for l, u in [(10, 20), (30, 40)]))
+         [10..20],[30..40]
+         """
+         self.intervals = []
+@@ -935,9 +955,9 @@ class BaseIntervalSet(object):
+         1
+         >>> nonempty = IntervalSet([3])
+         >>> if IntervalSet.empty():
+-        ...     print "Non-empty"
++        ...     print("Non-empty")
+         >>> if nonempty:
+-        ...     print "Non-empty"
++        ...     print("Non-empty")
+         Non-empty
+         """
+         return len(self.intervals)
+@@ -948,17 +968,17 @@ class BaseIntervalSet(object):
+         This function shows a string representation of an IntervalSet.  
+         The string is shown sorted, with all intervals normalized.
+ 
+-        >>> print IntervalSet()
++        >>> print(IntervalSet())
+         <Empty>
+-        >>> print IntervalSet([62])
++        >>> print(IntervalSet([62]))
+         62
+-        >>> print IntervalSet([62, 56])
++        >>> print(IntervalSet([62, 56]))
+         56,62
+-        >>> print IntervalSet([23, Interval(26, 32, upper_closed=False)])
++        >>> print(IntervalSet([23, Interval(26, 32, upper_closed=False)]))
+         23,[26..32)
+-        >>> print IntervalSet.less_than(3) + IntervalSet.greater_than(3)
++        >>> print(IntervalSet.less_than(3) + IntervalSet.greater_than(3))
+         (...3),(3...)
+-        >>> print IntervalSet([Interval.less_than_or_equal_to(6)])
++        >>> print(IntervalSet([Interval.less_than_or_equal_to(6)]))
+         (...6]
+         """
+         if len(self.intervals) == 0:
+@@ -987,20 +1007,20 @@ class BaseIntervalSet(object):
+             ...
+         IndexError: Index is out of range
+         >>> interval = IntervalSet.greater_than(5)
+-        >>> print interval[0]
++        >>> print(interval[0])
+         (5...)
+-        >>> print interval[1]
++        >>> print(interval[1])
+         Traceback (most recent call last):
+             ...
+         IndexError: Index is out of range
+-        >>> print interval[-1]
++        >>> print(interval[-1])
+         (5...)
+         >>> interval = IntervalSet([3, 6])
+-        >>> print interval[1]
++        >>> print(interval[1])
+         6
+-        >>> print interval[0]
++        >>> print(interval[0])
+         3
+-        >>> print interval[2]
++        >>> print(interval[2])
+         Traceback (most recent call last):
+             ...
+         IndexError: Index is out of range
+@@ -1018,14 +1038,14 @@ class BaseIntervalSet(object):
+         that with the left-most lower bound to that with the right-most.
+ 
+         >>> for i in IntervalSet():
+-        ...     print i
++        ...     print(i)
+         ...
+         >>> for i in IntervalSet.between(3, 5):
+-        ...     print i
++        ...     print(i)
+         ...
+         [3..5]
+         >>> for i in IntervalSet([2, 5, 3]):
+-        ...     print i
++        ...     print(i)
+         ...
+         2
+         3
+@@ -1104,11 +1124,11 @@ class BaseIntervalSet(object):
+     def bounds(self):
+         """Returns an interval that encompasses the entire BaseIntervalSet
+         
+-        >>> print IntervalSet([Interval.between(4, 6), 2, 12]).bounds()
++        >>> print(IntervalSet([Interval.between(4, 6), 2, 12]).bounds())
+         [2..12]
+-        >>> print IntervalSet().bounds()
++        >>> print(IntervalSet().bounds())
+         <Empty>
+-        >>> print IntervalSet.all().bounds()
++        >>> print(IntervalSet.all().bounds())
+         (...)
+         """
+         if len(self.intervals) == 0:
+@@ -1240,7 +1260,7 @@ class BaseIntervalSet(object):
+         >>> for i in s:
+         ...   l.add(str(i))
+         ...
+-        >>> print len(l)
++        >>> print(len(l))
+         6
+         >>> "2" in l
+         True
+@@ -1284,15 +1304,15 @@ class BaseIntervalSet(object):
+         >>> zero      = IntervalSet([0])
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+-        >>> print evens + positives
++        >>> print(evens + positives)
+         -8,-6,-4,-2,[0...)
+-        >>> print negatives + zero
++        >>> print(negatives + zero)
+         (...0]
+-        >>> print empty + negatives
++        >>> print(empty + negatives)
+         (...0)
+-        >>> print empty + naturals
++        >>> print(empty + naturals)
+         [0...)
+-        >>> print nonzero + evens
++        >>> print(nonzero + evens)
+         (...)
+         """
+         return self.__or__(other)
+@@ -1309,17 +1329,17 @@ class BaseIntervalSet(object):
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+         >>> all       = IntervalSet.all()
+-        >>> print evens - nonzero
++        >>> print(evens - nonzero)
+         0
+-        >>> print empty - naturals
++        >>> print(empty - naturals)
+         <Empty>
+-        >>> print zero - naturals
++        >>> print(zero - naturals)
+         <Empty>
+-        >>> print positives - zero
++        >>> print(positives - zero)
+         (0...)
+-        >>> print naturals - negatives
++        >>> print(naturals - negatives)
+         [0...)
+-        >>> print all - zero
++        >>> print(all - zero)
+         (...0),(0...)
+         >>> all - zero == nonzero
+         True
+@@ -1380,17 +1400,17 @@ class BaseIntervalSet(object):
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+         >>> all       = IntervalSet.all()
+-        >>> print evens.difference(nonzero)
++        >>> print(evens.difference(nonzero))
+         0
+-        >>> print empty.difference(naturals)
++        >>> print(empty.difference(naturals))
+         <Empty>
+-        >>> print zero.difference(naturals)
++        >>> print(zero.difference(naturals))
+         <Empty>
+-        >>> print positives.difference(zero)
++        >>> print(positives.difference(zero))
+         (0...)
+-        >>> print naturals.difference(negatives)
++        >>> print(naturals.difference(negatives))
+         [0...)
+-        >>> print all.difference(zero)
++        >>> print(all.difference(zero))
+         (...0),(0...)
+         >>> all.difference(zero) == nonzero
+         True
+@@ -1413,15 +1433,15 @@ class BaseIntervalSet(object):
+         >>> zero      = IntervalSet([0])
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+-        >>> print naturals and naturals
++        >>> print(naturals and naturals)
+         [0...)
+-        >>> print evens & zero
++        >>> print(evens & zero)
+         0
+-        >>> print negatives & zero
++        >>> print(negatives & zero)
+         <Empty>
+-        >>> print nonzero & positives
++        >>> print(nonzero & positives)
+         (0...)
+-        >>> print empty & zero
++        >>> print(empty & zero)
+         <Empty>
+         >>> positives & [0]
+         Traceback (most recent call last):
+@@ -1469,15 +1489,15 @@ class BaseIntervalSet(object):
+         >>> zero      = IntervalSet([0])
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+-        >>> print naturals.intersection(naturals)
++        >>> print(naturals.intersection(naturals))
+         [0...)
+-        >>> print evens.intersection(zero)
++        >>> print(evens.intersection(zero))
+         0
+-        >>> print negatives.intersection(zero)
++        >>> print(negatives.intersection(zero))
+         <Empty>
+-        >>> print nonzero.intersection(positives)
++        >>> print(nonzero.intersection(positives))
+         (0...)
+-        >>> print empty.intersection(zero)
++        >>> print(empty.intersection(zero))
+         <Empty>
+         """
+         if isinstance(other, BaseIntervalSet):
+@@ -1497,17 +1517,17 @@ class BaseIntervalSet(object):
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+         >>> all       = IntervalSet.all()
+-        >>> print evens | positives
++        >>> print(evens | positives)
+         -8,-6,-4,-2,[0...)
+-        >>> print negatives | zero
++        >>> print(negatives | zero)
+         (...0]
+-        >>> print empty | negatives
++        >>> print(empty | negatives)
+         (...0)
+-        >>> print empty | naturals
++        >>> print(empty | naturals)
+         [0...)
+-        >>> print nonzero | evens
++        >>> print(nonzero | evens)
+         (...)
+-        >>> print negatives | range(5)
++        >>> print(negatives | range(5))
+         Traceback (most recent call last):
+             ...
+         TypeError: unsupported operand type(s) for |: expected BaseIntervalSet
+@@ -1537,17 +1557,17 @@ class BaseIntervalSet(object):
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+         >>> all       = IntervalSet.all()
+-        >>> print evens.union(positives)
++        >>> print(evens.union(positives))
+         -8,-6,-4,-2,[0...)
+-        >>> print negatives.union(zero)
++        >>> print(negatives.union(zero))
+         (...0]
+-        >>> print empty.union(negatives)
++        >>> print(empty.union(negatives))
+         (...0)
+-        >>> print empty.union(naturals)
++        >>> print(empty.union(naturals))
+         [0...)
+-        >>> print nonzero.union(evens)
++        >>> print(nonzero.union(evens))
+         (...)
+-        >>> print negatives.union(range(5))
++        >>> print(negatives.union(range(5)))
+         (...0],1,2,3,4
+         """
+         if isinstance(other, BaseIntervalSet):
+@@ -1566,13 +1586,13 @@ class BaseIntervalSet(object):
+         >>> zero      = IntervalSet([0])
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+-        >>> print nonzero ^ naturals
++        >>> print(nonzero ^ naturals)
+         (...0]
+-        >>> print zero ^ negatives
++        >>> print(zero ^ negatives)
+         (...0]
+-        >>> print positives ^ empty
++        >>> print(positives ^ empty)
+         (0...)
+-        >>> print evens ^ zero
++        >>> print(evens ^ zero)
+         -8,-6,-4,-2,2,4,6,8
+         >>> negatives ^ [0]
+         Traceback (most recent call last):
+@@ -1599,15 +1619,15 @@ class BaseIntervalSet(object):
+         >>> zero      = IntervalSet([0])
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+         >>> empty     = IntervalSet.empty()
+-        >>> print nonzero.symmetric_difference(naturals)
++        >>> print(nonzero.symmetric_difference(naturals))
+         (...0]
+-        >>> print zero.symmetric_difference(negatives)
++        >>> print(zero.symmetric_difference(negatives))
+         (...0]
+-        >>> print positives.symmetric_difference(empty)
++        >>> print(positives.symmetric_difference(empty))
+         (0...)
+-        >>> print evens.symmetric_difference(zero)
++        >>> print(evens.symmetric_difference(zero))
+         -8,-6,-4,-2,2,4,6,8
+-        >>> print evens.symmetric_difference(range(0, 9, 2))
++        >>> print(evens.symmetric_difference(range(0, 9, 2)))
+         -8,-6,-4,-2
+         """
+         if isinstance(other, BaseIntervalSet):
+@@ -1625,15 +1645,15 @@ class BaseIntervalSet(object):
+         >>> evens     = IntervalSet([-8, -6, -4, -2, 0, 2, 4, 6, 8])
+         >>> zero      = IntervalSet([0])
+         >>> nonzero   = IntervalSet.not_equal_to(0)
+-        >>> print ~(IntervalSet.empty())
++        >>> print(~(IntervalSet.empty()))
+         (...)
+         >>> ~negatives == naturals
+         True
+-        >>> print ~positives
++        >>> print(~positives)
+         (...0]
+         >>> ~naturals == negatives
+         True
+-        >>> print ~evens
++        >>> print(~evens)
+         (...-8),(-8..-6),(-6..-4),(-4..-2),(-2..0),(0..2),(2..4),(4..6),(6..8),(8...)
+         >>> ~zero == nonzero
+         True
+@@ -1954,9 +1974,9 @@ class BaseIntervalSet(object):
+     def less_than(cls, n):
+         """Returns an IntervalSet containing values less than the given value
+         
+-        >>> print IntervalSet.less_than(0)
++        >>> print(IntervalSet.less_than(0))
+         (...0)
+-        >>> print IntervalSet.less_than(-23)
++        >>> print(IntervalSet.less_than(-23))
+         (...-23)
+         """
+         return cls([Interval.less_than(n)])
+@@ -1966,9 +1986,9 @@ class BaseIntervalSet(object):
+         """Returns an IntervalSet containing values less than or equal to the 
+         given value
+         
+-        >>> print IntervalSet.less_than_or_equal_to(0)
++        >>> print(IntervalSet.less_than_or_equal_to(0))
+         (...0]
+-        >>> print IntervalSet.less_than_or_equal_to(-23)
++        >>> print(IntervalSet.less_than_or_equal_to(-23))
+         (...-23]
+         """
+         return cls([Interval.less_than_or_equal_to(n)])
+@@ -1977,9 +1997,9 @@ class BaseIntervalSet(object):
+     def greater_than(cls, n):
+         """Returns an IntervalSet containing values greater than the given value
+         
+-        >>> print IntervalSet.greater_than(0)
++        >>> print(IntervalSet.greater_than(0))
+         (0...)
+-        >>> print IntervalSet.greater_than(-23)
++        >>> print(IntervalSet.greater_than(-23))
+         (-23...)
+         """
+         return cls([Interval.greater_than(n)])
+@@ -1989,9 +2009,9 @@ class BaseIntervalSet(object):
+         """Returns an IntervalSet containing values greater than or equal to 
+         the given value
+         
+-        >>> print IntervalSet.greater_than_or_equal_to(0)
++        >>> print(IntervalSet.greater_than_or_equal_to(0))
+         [0...)
+-        >>> print IntervalSet.greater_than_or_equal_to(-23)
++        >>> print(IntervalSet.greater_than_or_equal_to(-23))
+         [-23...)
+         """
+         return cls([Interval.greater_than_or_equal_to(n)])
+@@ -2000,9 +2020,9 @@ class BaseIntervalSet(object):
+     def not_equal_to(cls, n):
+         """Returns an IntervalSet of all values not equal to n
+     
+-        >>> print IntervalSet.not_equal_to(0)
++        >>> print(IntervalSet.not_equal_to(0))
+         (...0),(0...)
+-        >>> print IntervalSet.not_equal_to(-23)
++        >>> print(IntervalSet.not_equal_to(-23))
+         (...-23),(-23...)
+         """
+         return cls([Interval.less_than(n), Interval.greater_than(n)])
+@@ -2014,9 +2034,9 @@ class BaseIntervalSet(object):
+         If closed is True, then the endpoints are included; otherwise, they 
+         aren't.
+     
+-        >>> print IntervalSet.between(0, 100)
++        >>> print(IntervalSet.between(0, 100))
+         [0..100]
+-        >>> print IntervalSet.between(-1, 1)
++        >>> print(IntervalSet.between(-1, 1))
+         [-1..1]
+         """
+         return cls([Interval.between(a, b, closed)])
+@@ -2025,7 +2045,7 @@ class BaseIntervalSet(object):
+     def all(cls):
+         """Returns an interval set containing all values
+         
+-        >>> print IntervalSet.all()
++        >>> print(IntervalSet.all())
+         (...)
+         """
+         return cls([Interval.all()])
+@@ -2034,7 +2054,7 @@ class BaseIntervalSet(object):
+     def empty(cls):
+         """Returns an interval set containing no values.
+         
+-        >>> print IntervalSet.empty()
++        >>> print(IntervalSet.empty())
+         <Empty>
+         """
+         return cls()
+@@ -2101,7 +2121,7 @@ class IntervalSet(BaseIntervalSet):
+         >>> del interval[1]
+         >>> len(interval)
+         2
+-        >>> print interval
++        >>> print(interval)
+         -2,7
+         """
+         try:
+@@ -2114,13 +2134,13 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet()
+         >>> r.add(4)
+-        >>> print r
++        >>> print(r)
+         4
+         >>> r.add(Interval(23, 39, lower_closed=False))
+-        >>> print r
++        >>> print(r)
+         4,(23..39]
+         >>> r.add(Interval.less_than(25))
+-        >>> print r
++        >>> print(r)
+         (...39]
+         """
+         BaseIntervalSet._add(self, obj)
+@@ -2134,10 +2154,10 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet.all()
+         >>> r.remove(4)
+-        >>> print r
++        >>> print(r)
+         (...4),(4...)
+         >>> r.remove(Interval(23, 39, lower_closed=False))
+-        >>> print r
++        >>> print(r)
+         (...4),(4..23],(39...)
+         >>> r.remove(Interval.less_than(25))
+         Traceback (most recent call last):
+@@ -2157,13 +2177,13 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet.all()
+         >>> r.discard(4)
+-        >>> print r
++        >>> print(r)
+         (...4),(4...)
+         >>> r.discard(Interval(23, 39, lower_closed=False))
+-        >>> print r
++        >>> print(r)
+         (...4),(4..23],(39...)
+         >>> r.discard(Interval.less_than(25))
+-        >>> print r
++        >>> print(r)
+         (39...)
+         """
+         diff = self - IntervalSet([obj])
+@@ -2177,18 +2197,18 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet.all()
+         >>> r.difference_update([4])
+-        >>> print r
++        >>> print(r)
+         (...4),(4...)
+         >>> r.difference_update(
+         ...   IntervalSet([Interval(23, 39, lower_closed=False)]))
+-        >>> print r
++        >>> print(r)
+         (...4),(4..23],(39...)
+         >>> r.difference_update(IntervalSet.less_than(25))
+-        >>> print r
++        >>> print(r)
+         (39...)
+         >>> r2 = IntervalSet.all()
+         >>> r.difference_update(r2)
+-        >>> print r
++        >>> print(r)
+         <Empty>
+         """
+         diff = self.difference(other)
+@@ -2198,10 +2218,10 @@ class IntervalSet(BaseIntervalSet):
+         """Removes all Intervals from the object
+         
+         >>> s = IntervalSet([2, 7, Interval.greater_than(8), 2, 6, 34])
+-        >>> print s
++        >>> print(s)
+         2,6,7,(8...)
+         >>> s.clear()
+-        >>> print s
++        >>> print(s)
+         <Empty>
+         """
+         self.intervals = []
+@@ -2214,17 +2234,17 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet()
+         >>> r.update([4])
+-        >>> print r
++        >>> print(r)
+         4
+         >>> r.update(IntervalSet([Interval(23, 39, lower_closed=False)]))
+-        >>> print r
++        >>> print(r)
+         4,(23..39]
+         >>> r.update(IntervalSet.less_than(25))
+-        >>> print r
++        >>> print(r)
+         (...39]
+         >>> r2 = IntervalSet.all()
+         >>> r.update(r2)
+-        >>> print r
++        >>> print(r)
+         (...)
+         """
+         union = self.union(other)
+@@ -2238,19 +2258,19 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet.all()
+         >>> r.intersection_update([4])
+-        >>> print r
++        >>> print(r)
+         4
+         >>> r = IntervalSet.all()
+         >>> r.intersection_update(
+         ...   IntervalSet([Interval(23, 39, lower_closed=False)]))
+-        >>> print r
++        >>> print(r)
+         (23..39]
+         >>> r.intersection_update(IntervalSet.less_than(25))
+-        >>> print r
++        >>> print(r)
+         (23..25)
+         >>> r2 = IntervalSet.all()
+         >>> r.intersection_update(r2)
+-        >>> print r
++        >>> print(r)
+         (23..25)
+         """
+         intersection = self.intersection(other)
+@@ -2264,18 +2284,18 @@ class IntervalSet(BaseIntervalSet):
+ 
+         >>> r = IntervalSet.empty()
+         >>> r.symmetric_difference_update([4])
+-        >>> print r
++        >>> print(r)
+         4
+         >>> r.symmetric_difference_update(
+         ...   IntervalSet([Interval(23, 39, lower_closed=False)]))
+-        >>> print r
++        >>> print(r)
+         4,(23..39]
+         >>> r.symmetric_difference_update(IntervalSet.less_than(25))
+-        >>> print r
++        >>> print(r)
+         (...4),(4..23],[25..39]
+         >>> r2 = IntervalSet.all()
+         >>> r.symmetric_difference_update(r2)
+-        >>> print r
++        >>> print(r)
+         4,(23..25),(39...)
+         """
+         xor = self.symmetric_difference(other)
+@@ -2294,7 +2314,7 @@ class IntervalSet(BaseIntervalSet):
+         True
+         >>> "7" in l
+         True
+-        >>> print s
++        >>> print(s)
+         <Empty>
+         >>> i = s.pop()
+         Traceback (most recent call last):
+@@ -2341,7 +2361,7 @@ class FrozenIntervalSet(BaseIntervalSet):
+     ...   FrozenIntervalSet.less_than(3) : 3}
+     """
+     
+-    def __new__(cls, items=[]):
++    def __new__(cls, items=None):
+         """Constructs a new FrozenInteralSet
+         
+         Object creation is just like with a regular IntervalSet, except for
+@@ -2354,11 +2374,13 @@ class FrozenIntervalSet(BaseIntervalSet):
+         >>> id(fs1) == id(fs2)
+         True
+         """
++        if items is None:
++            items = []
+         if (cls == FrozenIntervalSet) and isinstance(items, FrozenIntervalSet):
+             result = items
+         else:
+             s = IntervalSet(items)
+-            result = super(FrozenIntervalSet, cls).__new__(cls, items)
++            result = super(FrozenIntervalSet, cls).__new__(cls)
+             result.intervals = s.intervals
+         return result
+     
+-- 
+2.42.0
+

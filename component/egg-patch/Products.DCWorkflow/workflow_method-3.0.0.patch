@@ -1,0 +1,141 @@
+From 3c6b815bbb2a9300984a7b50cb5ec5375bf4588e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 2 Apr 2024 21:54:07 +0900
+Subject: [PATCH] Revive TRIGGER_WORKFLOW_METHOD support, ERP5 uses it
+
+---
+ src/Products/DCWorkflow/DCWorkflow.py         | 47 +++++++++++++++++++
+ src/Products/DCWorkflow/Transitions.py        |  1 +
+ .../dtml/transition_properties.dtml           | 10 ++++
+ src/Products/DCWorkflow/dtml/transitions.dtml |  3 +-
+ src/Products/DCWorkflow/exportimport.py       |  2 +-
+ 5 files changed, 61 insertions(+), 2 deletions(-)
+
+diff --git a/src/Products/DCWorkflow/DCWorkflow.py b/src/Products/DCWorkflow/DCWorkflow.py
+index 9adf05c..d0306dc 100644
+--- a/src/Products/DCWorkflow/DCWorkflow.py
++++ b/src/Products/DCWorkflow/DCWorkflow.py
+@@ -38,6 +38,7 @@ from .Expression import createExprContext
+ from .interfaces import IDCWorkflowDefinition
+ from .Transitions import TRIGGER_AUTOMATIC
+ from .Transitions import TRIGGER_USER_ACTION
++from .Transitions import TRIGGER_WORKFLOW_METHOD
+ from .utils import Message as _
+ from .utils import modifyRolesForGroup
+ from .utils import modifyRolesForPermission
+@@ -278,6 +279,52 @@ class DCWorkflowDefinition(WorkflowUIMixin, Folder):
+             raise Unauthorized(action)
+         self._changeStateOf(ob, tdef, kw)
+ 
++    @security.private
++    def isWorkflowMethodSupported(self, ob, method_id):
++        '''
++        Returns a true value if the given workflow method
++        is supported in the current state.
++        '''
++        sdef = self._getWorkflowStateOf(ob)
++        if sdef is None:
++            return 0
++        if method_id in sdef.transitions:
++            tdef = self.transitions.get(method_id, None)
++            if (tdef is not None and
++                tdef.trigger_type == TRIGGER_WORKFLOW_METHOD and
++                self._checkTransitionGuard(tdef, ob)):
++                return 1
++        return 0
++
++    @security.private
++    def wrapWorkflowMethod(self, ob, method_id, func, args, kw):
++        '''
++        Allows the user to request a workflow action.  This method
++        must perform its own security checks.
++        '''
++        sdef = self._getWorkflowStateOf(ob)
++        if sdef is None:
++            raise WorkflowException('Object is in an undefined state')
++        if method_id not in sdef.transitions:
++            raise Unauthorized(method_id)
++        tdef = self.transitions.get(method_id, None)
++        if tdef is None or tdef.trigger_type != TRIGGER_WORKFLOW_METHOD:
++            raise WorkflowException(
++                'Transition %s is not triggered by a workflow method'
++                % method_id)
++        if not self._checkTransitionGuard(tdef, ob):
++            raise Unauthorized(method_id)
++        res = func(*args, **kw)
++        try:
++            self._changeStateOf(ob, tdef)
++        except ObjectDeleted:
++            # Re-raise with a different result.
++            raise ObjectDeleted(res)
++        except ObjectMoved as ex:
++            # Re-raise with a different result.
++            raise ObjectMoved(ex.getNewObject(), res)
++        return res
++
+     @security.private
+     def isInfoSupported(self, ob, name):
+         '''
+diff --git a/src/Products/DCWorkflow/Transitions.py b/src/Products/DCWorkflow/Transitions.py
+index a6e1e6f..b4e012c 100644
+--- a/src/Products/DCWorkflow/Transitions.py
++++ b/src/Products/DCWorkflow/Transitions.py
+@@ -31,6 +31,7 @@ from .utils import _dtmldir
+ 
+ TRIGGER_AUTOMATIC = 0
+ TRIGGER_USER_ACTION = 1
++TRIGGER_WORKFLOW_METHOD = 2
+ 
+ 
+ class TransitionDefinition(SimpleItem):
+diff --git a/src/Products/DCWorkflow/dtml/transition_properties.dtml b/src/Products/DCWorkflow/dtml/transition_properties.dtml
+index d6b8a74..6a0803e 100644
+--- a/src/Products/DCWorkflow/dtml/transition_properties.dtml
++++ b/src/Products/DCWorkflow/dtml/transition_properties.dtml
+@@ -55,6 +55,16 @@ Initiated by user action
+ </td>
+ </tr>
+ 
++<tr>
++<th></th>
++<td>
++<dtml-let checked="trigger_type==2 and 'checked' or ' '">
++<input type="radio" name="trigger_type" value="2" &dtml-checked; />
++Initiated by WorkflowMethod
++</dtml-let>
++</td>
++</tr>
++
+ <tr>
+ <th align="left">Script (before)</th>
+ <td>
+diff --git a/src/Products/DCWorkflow/dtml/transitions.dtml b/src/Products/DCWorkflow/dtml/transitions.dtml
+index 4cdd3d3..37e949c 100644
+--- a/src/Products/DCWorkflow/dtml/transitions.dtml
++++ b/src/Products/DCWorkflow/dtml/transitions.dtml
+@@ -17,7 +17,8 @@
+   <td>
+    Destination state: <code><dtml-if new_state_id>&dtml-new_state_id;<dtml-else>(Remain in state)</dtml-if></code> <br />
+    Trigger: <dtml-var expr="(trigger_type == 0 and 'Automatic') or
+-                            (trigger_type == 1 and 'User action')">
++                            (trigger_type == 1 and 'User action') or
++                            (trigger_type == 2 and 'WorkflowMethod')">
+    <br />
+    <dtml-if script_name>
+      Script (before): &dtml-script_name;
+diff --git a/src/Products/DCWorkflow/exportimport.py b/src/Products/DCWorkflow/exportimport.py
+index f17264d..2374b6e 100644
+--- a/src/Products/DCWorkflow/exportimport.py
++++ b/src/Products/DCWorkflow/exportimport.py
+@@ -37,7 +37,7 @@ from .interfaces import IDCWorkflowDefinition
+ from .utils import _xmldir
+ 
+ 
+-TRIGGER_TYPES = ('AUTOMATIC', 'USER')
++TRIGGER_TYPES = ('AUTOMATIC', 'USER', 'METHOD' )
+ _FILENAME = 'workflows.xml'
+ 
+ 
+-- 
+2.42.0
+

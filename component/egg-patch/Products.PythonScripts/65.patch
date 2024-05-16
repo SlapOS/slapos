@@ -1,0 +1,166 @@
+From a037f2a2e2090dcd63b83af9b06427dd8c7e9536 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Wed, 22 May 2024 23:58:45 +0900
+Subject: [PATCH] Show Python Script source code in tracebacks
+
+Expose a __loader__ in globals so that linecache module is able to use
+it to display the source code.
+
+This requires changing the "filename" used when compiling function,
+because linecache uses code.co_filename as a cache key, so it's
+necessary that each python script use a different filename.
+
+WIP from https://github.com/zopefoundation/Products.PythonScripts/pull/65
+
+
+---
+ CHANGES.rst                                   |  2 +
+ src/Products/PythonScripts/PythonScript.py    | 19 ++++++-
+ .../PythonScripts/tests/testPythonScript.py   | 50 ++++++++++++++++++-
+ 3 files changed, 67 insertions(+), 4 deletions(-)
+
+diff --git a/src/Products/PythonScripts/PythonScript.py b/src/Products/PythonScripts/PythonScript.py
+index fe4223a..5cb7f37 100644
+--- a/src/Products/PythonScripts/PythonScript.py
++++ b/src/Products/PythonScripts/PythonScript.py
+@@ -16,7 +16,9 @@
+ Python code.
+ """
+ 
++import importlib.abc
+ import importlib.util
++import linecache
+ import marshal
+ import os
+ import re
+@@ -56,7 +58,7 @@
+ Python_magic = importlib.util.MAGIC_NUMBER
+ 
+ # This should only be incremented to force recompilation.
+-Script_magic = 4
++Script_magic = 5
+ _log_complaint = (
+     'Some of your Scripts have stale code cached.  Since Zope cannot'
+     ' use this code, startup will be slightly slower until these Scripts'
+@@ -97,6 +99,16 @@ def manage_addPythonScript(self, id, title='', file=None, REQUEST=None,
+     return ''
+ 
+ 
++class PythonScriptLoader(importlib.abc.Loader):
++    """PEP302 loader to display source code in tracebacks
++    """
++    def __init__(self, source):
++        self._source = source
++
++    def get_source(self, name):
++        return self._source
++
++
+ class PythonScript(Script, Historical, Cacheable):
+     """Web-callable scripts written in a safe subset of Python.
+ 
+@@ -234,7 +246,7 @@ def _compile(self):
+             self._params,
+             body=self._body or 'pass',
+             name=self.id,
+-            filename=self.meta_type,
++            filename=getattr(self, '_filepath', None) or self.get_filepath(),
+             globalize=bind_names)
+ 
+         code = compile_result.code
+@@ -261,6 +273,7 @@ def _compile(self):
+                                fc.co_argcount)
+         self.Python_magic = Python_magic
+         self.Script_magic = Script_magic
++        linecache.clearcache()
+         self._v_change = 0
+ 
+     def _newfun(self, code):
+@@ -331,6 +344,8 @@ def _exec(self, bound_names, args, kw):
+             PythonScriptTracebackSupplement, self, -1)
+         safe_globals['__file__'] = getattr(
+             self, '_filepath', None) or self.get_filepath()
++        safe_globals['__loader__'] = PythonScriptLoader(self._body)
++
+         function = types.FunctionType(
+             function_code, safe_globals, None, function_argument_definitions)
+ 
+diff --git a/src/Products/PythonScripts/tests/testPythonScript.py b/src/Products/PythonScripts/tests/testPythonScript.py
+index 60ef6c3..7cd2266 100644
+--- a/src/Products/PythonScripts/tests/testPythonScript.py
++++ b/src/Products/PythonScripts/tests/testPythonScript.py
+@@ -15,6 +15,7 @@
+ import io
+ import os
+ import sys
++import traceback
+ import unittest
+ import warnings
+ from urllib.error import HTTPError
+@@ -241,7 +242,8 @@ def test_manage_DAVget(self):
+         self.assertEqual(ps.read(), ps.manage_DAVget())
+ 
+     def test_PUT_native_string(self):
+-        ps = makerequest(self._filePS('complete'))
++        container = DummyFolder('container')
++        ps = makerequest(self._filePS('complete').__of__(container))
+         self.assertEqual(ps.title, 'This is a title')
+         self.assertEqual(ps.body(), 'print(foo+bar+baz)\nreturn printed\n')
+         self.assertEqual(ps.params(), 'foo, bar, baz=1')
+@@ -265,7 +267,8 @@ def test_PUT_native_string(self):
+         self.assertEqual(ps.params(), 'oops')
+ 
+     def test_PUT_bytes(self):
+-        ps = makerequest(self._filePS('complete'))
++        container = DummyFolder('container')
++        ps = makerequest(self._filePS('complete').__of__(container))
+         self.assertEqual(ps.title, 'This is a title')
+         self.assertEqual(ps.body(), 'print(foo+bar+baz)\nreturn printed\n')
+         self.assertEqual(ps.params(), 'foo, bar, baz=1')
+@@ -588,3 +591,46 @@ def test_PythonScript_proxyroles_nonmanager(self):
+ 
+         # Cleanup
+         noSecurityManager()
++
++
++class TestTraceback(FunctionalTestCase, PythonScriptTestBase):
++
++    def _format_exception(self):
++        return "".join(traceback.format_exception(*sys.exc_info()))
++
++    def test_source_code_in_traceback(self):
++        ps = self._newPS("1 / 0")
++        try:
++            ps()
++        except ZeroDivisionError:
++            formatted_exception = self._format_exception()
++        self.assertIn("1 / 0", formatted_exception)
++
++        ps.write("2 / 0")
++        try:
++            ps()
++        except ZeroDivisionError:
++            formatted_exception = self._format_exception()
++        self.assertIn("2 / 0", formatted_exception)
++
++    def test_multiple_scripts_in_traceback(self):
++        from Products.PythonScripts.PythonScript import manage_addPythonScript
++
++        script1_body = "container.script2()"
++        manage_addPythonScript(
++            self.folder,
++            "script1",
++            file=script1_body,
++        )
++        script2_body = "1 / 0"
++        manage_addPythonScript(
++            self.folder,
++            "script2",
++            file=script2_body,
++        )
++        try:
++            self.folder.script1()
++        except ZeroDivisionError:
++            formatted_exception = self._format_exception()
++        self.assertIn(script1_body, formatted_exception)
++        self.assertIn(script2_body, formatted_exception)
