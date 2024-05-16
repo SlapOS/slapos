@@ -1,0 +1,45 @@
+[buildout]
+extends = ${template:output}
+parts +=
+  cron-env
+  cron-env-service
+  cron-env-entry-environment
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+services = $${:etc}/service
+bin = $${buildout:directory}/bin
+var = $${buildout:directory}/var
+log = $${:var}/log
+cron-env-entries = $${:etc}/cron-env.d
+crontabs-env = $${:etc}/crontabs-env
+cronstamps-env = $${:etc}/cronstamps-env
+
+[cron-env]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron-output:crond-orig}
+cron-entries = $${directory:cron-env-entries}
+crontabs = $${directory:crontabs-env}
+cronstamps = $${directory:cronstamps-env}
+catcher = $${cron-env-simplelogger:wrapper}
+binary = $${directory:bin}/crond-env_raw
+
+[cron-env-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${cron-env:binary}
+wrapper-path = $${directory:services}/crond-env
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
+[cron-env-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron-env_simplelogger
+log = $${directory:log}/crond-env.log
+
+[cron-env-entry-environment]
+<= cron-env
+recipe = slapos.cookbook:cron.d
+name = environment
+frequency = * * * * *
+command = ${buildout:executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ)))' > $${directory:var}/cron-environment.json
