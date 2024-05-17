@@ -114,6 +114,7 @@ zope.testrunner = 5.2
 recipe = zc.recipe.egg
 eggs =
   ${:recipe}
+  zc.buildout[test]
   zope.testing
   zope.testrunner
 scripts =
