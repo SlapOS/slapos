@@ -151,8 +151,16 @@ engine = ${my-cnf-parameters:engine}
 environment =
   PATH={{sqlite3_location}}/bin
 {%- endif %}
-dedup = {{ dumps(bool(slapparameter_dict.get('data-deduplication'))) }}
-disable-drop-partitions = {{ dumps(bool(slapparameter_dict.get('disable-drop-partitions'))) }}
+extra-options =
+{%- if slapparameter_dict.get('data-deduplication') %}
+  --dedup
+{%- endif %}
+{%- if slapparameter_dict.get('disable-drop-partitions') %}
+  --disable-drop-partitions
+{%- endif %}
+{%- if slapparameter_dict.get('disable-pack') %}
+  --disable-pack
+{%- endif %}
 
 {% for i in range(storage_count) -%}
 {%   set storage_id = 'neo-storage-' ~ i -%}
