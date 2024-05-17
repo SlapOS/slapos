@@ -1,0 +1,26 @@
+From 46956eda499b1bdc41521273046e1f92aa0fd0d3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Mon, 9 May 2022 16:18:34 +0200
+Subject: [PATCH] Always consider absolute_import for ERP5 component modules
+
+---
+ astroid/scoped_nodes.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/astroid/scoped_nodes.py b/astroid/scoped_nodes.py
+index ea1dbdb8..e4c280ef 100644
+--- a/astroid/scoped_nodes.py
++++ b/astroid/scoped_nodes.py
+@@ -473,6 +473,9 @@ class Module(LocalsDictNodeNG):
+     if six.PY2:
+         @decorators_mod.cachedproperty
+         def _absolute_import_activated(self):
++            if (self.name.startswith('checkPythonSourceCode') or
++                self.name.startswith('erp5')):
++                return True
+             for stmt in self._locals.get('absolute_import', ()):
+                 if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
+                     return True
+-- 
+2.35.1
+
