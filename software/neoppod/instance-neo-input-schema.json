@@ -110,6 +110,11 @@
               "default": false,
               "type": "boolean"
             },
+            "disable-pack": {
+              "description": "Set the --disable-pack option for storage nodes.",
+              "default": false,
+              "type": "boolean"
+            },
             "private-tmpfs": {
               "description": "Size of private tmpfs mount to store the database. See filesystems/tmpfs.txt in Linux documentation. Use only for testing.",
               "type": "string"
