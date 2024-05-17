@@ -79,6 +79,9 @@ command = mysql
 {% elif storage_type == 'SQLite' -%}
 {%   set extra_dict = slapparameter_dict.get('sqlite') or {} -%}
 
+{%   if extra_dict.setdefault('cksumvfs', 1) == 0 -%}
+{%     do extra_dict.pop('cksumvfs') -%}
+{%   endif -%}
 {%   if extra_dict.pop('relaxed-writes', False) -%}
 {%     do extra_dict.setdefault('synchronous', 'OFF') -%}
 {%     do extra_dict.setdefault('journal_mode', 'MEMORY') -%}
