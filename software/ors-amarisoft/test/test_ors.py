@@ -123,7 +123,7 @@ gnb_param_dict2 = {
         '0x171717': {'sd': '0x171717', 'sst': 10},
         '0x181818': {'sd': '0x181818', 'sst': 20},
     },
-    'tdd_ul_dl_config': '2.5ms 1UL 3DL 2/10',
+    'tdd_ul_dl_config': '5ms 6UL 3DL 10/2 (high uplink)',
 }
 enb_param_dict.update(param_dict)
 gnb_param_dict1.update(param_dict)
@@ -216,6 +216,13 @@ def test_gnb_conf2(self):
     sd = hex(p['sd'])
     self.assertEqual(sd, gnb_param_dict2['nssai'][sd]['sd'], 16)
     self.assertEqual(p['sst'], gnb_param_dict2['nssai'][sd]['sst'])
+
+  tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
+  self.assertEqual(float(tdd_config['period']), 5)
+  self.assertEqual(int(tdd_config['dl_slots']), 3)
+  self.assertEqual(int(tdd_config['dl_symbols']), 2)
+  self.assertEqual(int(tdd_config['ul_slots']), 6)
+  self.assertEqual(int(tdd_config['ul_symbols']), 10)
 
 def test_mme_conf(self):
 
