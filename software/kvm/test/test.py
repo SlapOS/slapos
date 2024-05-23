@@ -217,6 +217,29 @@ class KvmMixin:
         '--run-only', promise])
     )
 
+  @classmethod
+  def getPartitionId(cls, instance_type):
+    software_url = cls.getSoftwareURL()
+    for computer_partition in cls.slap.computer.getComputerPartitionList():
+      try:
+        partition_url = computer_partition.\
+          getSoftwareRelease()._software_release
+        partition_type = computer_partition.getType()
+      except (
+        slapos.slap.exception.NotFoundError,
+        slapos.slap.exception.ResourceNotReady
+      ):
+        partition_url = 'NA'
+        partition_type = 'NA'
+      if partition_url == software_url and partition_type == instance_type:
+        return computer_partition.getId()
+    raise Exception("Partition type %s not found" % instance_type)
+
+  @classmethod
+  def getPartitionPath(cls, instance_type='kvm-export', *paths):
+    return os.path.join(
+      cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
+
   def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
