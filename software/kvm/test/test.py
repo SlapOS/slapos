@@ -785,24 +785,21 @@ class TestInstanceResilientBackupMixin(KvmMixin):
     super().tearDownClass()
     cls.enableDcron()
 
+  @classmethod
+  def getBackupPartitionPath(cls, *paths):
+    return cls.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm',
+      cls.disk_type_backup_mapping[cls.disk_type], *paths)
+
   def setUp(self):
     super().setUp()
-    exporter_partition = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'template-kvm-export.cfg'))
-    self.assertEqual(1, len(exporter_partition))
-    self.exporter_partition = os.path.dirname(exporter_partition[0])
-    self.exporter = os.path.join(self.exporter_partition, 'bin', 'exporter')
-    self.backup_directory = os.path.join(
-      self.exporter_partition, 'srv', 'backup', 'kvm',
-      self.disk_type_backup_mapping[self.disk_type])
     importer_partition = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'template-kvm-import.cfg'))
     self.assertEqual(1, len(importer_partition))
     self.importer_partition = os.path.dirname(importer_partition[0])
 
-  def call_exporter(self, exporter=None):
-    if exporter is None:
-      exporter = self.exporter
+  def call_exporter(self):
+    exporter = self.getPartitionPath('kvm-export', 'bin', 'exporter')
     try:
       return (0, subprocess.check_output(
         [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
@@ -822,7 +819,7 @@ class TestInstanceResilientBackupImporter(
       self.importer_partition, 'srv', 'backup', 'kvm',
       self.disk_type_backup_mapping[self.disk_type])
     # sanity check - no export/import happened yet
-    self.assertFalse(os.path.exists(self.backup_directory))
+    self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
     status_code, status_text = self.call_exporter()
     self.assertEqual(0, status_code, status_text)
 
@@ -839,7 +836,7 @@ class TestInstanceResilientBackupImporter(
     equeue_log = awaitBackup(equeue_file)
     self.assertNotIn('qemu-img rebase', equeue_log)
     self.assertEqual(
-      os.listdir(self.backup_directory),
+      os.listdir(self.getBackupPartitionPath()),
       os.listdir(destination_backup)
     )
     self.assertTrue(os.path.exists(destination_qcow2))
@@ -853,7 +850,7 @@ class TestInstanceResilientBackupImporter(
     equeue_log = awaitBackup(equeue_file)
     self.assertIn('qemu-img rebase', equeue_log)
     self.assertEqual(
-      os.listdir(self.backup_directory),
+      os.listdir(self.getBackupPartitionPath()),
       os.listdir(destination_backup)
     )
     self.assertTrue(os.path.exists(destination_qcow2))
@@ -868,13 +865,7 @@ class TestInstanceResilientBackupImporter(
     # the real assertions comes from re-stabilizing the instance tree
     self.slap.waitForInstance(max_retry=10)
     # check that all stabilizes after backup after takeover
-    new_exporter_partition = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'template-kvm-export.cfg'))
-    self.assertEqual(1, len(new_exporter_partition))
-    new_exporter_partition = os.path.dirname(new_exporter_partition[0])
-    new_exporter = os.path.join(new_exporter_partition, 'bin', 'exporter')
-    self.assertNotEqual(new_exporter, self.exporter)
-    status_code, status_text = self.call_exporter(new_exporter)
+    status_code, status_text = self.call_exporter()
     self.assertEqual(0, status_code, status_text)
     self.slap.waitForInstance(max_retry=10)
 
@@ -892,35 +883,34 @@ class TestInstanceResilientBackupExporter(
     status_code, status_text = self.call_exporter()
     self.assertEqual(0, status_code, status_text)
     self.assertEqual(
-      len(glob.glob(os.path.join(self.backup_directory, 'FULL-*.qcow2'))),
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(os.path.join(self.backup_directory, 'INC-*.qcow2'))),
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
       0)
     self.assertNotIn(
       'Recovered from partial backup by removing partial',
       status_text
     )
     # cover .partial file in the backup directory with fallback to full
-    current_backup = glob.glob(
-      os.path.join(self.backup_directory, 'FULL-*'))[0]
+    current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
     with open(current_backup + '.partial', 'w') as fh:
       fh.write('')
     status_code, status_text = self.call_exporter()
     self.assertEqual(0, status_code, status_text)
     self.assertEqual(
-      len(glob.glob(os.path.join(self.backup_directory, 'FULL-*.qcow2'))),
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(os.path.join(self.backup_directory, 'INC-*.qcow2'))),
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
       1)
     self.assertIn(
       'Recovered from partial backup by removing partial',
       status_text
     )
     self.assertTrue(os.path.exists(os.path.join(
-      self.exporter_partition,
-      'etc', 'plugin', 'check-backup-directory.py')))
+      self.getPartitionPath(
+        'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
 
 
 @skipUnlessKvm
