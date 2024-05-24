@@ -741,6 +741,7 @@ class CronMixin(object):
 
   @classmethod
   def disableDcron(cls):
+    # XXX-this is toooooo dangerous!!!!!
     cls.findDcron()
     cls.dcron_orig = cls.dcron + '.orig'
     os.rename(cls.dcron, cls.dcron_orig)
