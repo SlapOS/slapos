@@ -749,6 +749,35 @@ class CronMixin(object):
     os.chmod(cls.dcron, 0o700)
 
   @classmethod
+  def exposeDcronEnv(cls):
+    try:
+      working_directory = tempfile.mkdtemp()
+      crontabs = os.path.join(working_directory, 'crontabs')
+      os.mkdir(crontabs)
+      cron_d = os.path.join(working_directory, 'cron.d')
+      os.mkdir(cron_d)
+      env_json = os.path.join(working_directory, 'env.json')
+      with open(os.path.join(cron_d, 'env'), 'w') as fh:
+         fh.write(f"""
+* * * * * {sys.executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ))) > {env_json}'
+""")
+      crontstamps = os.path.join(working_directory, 'cronstamps')
+      logger = '/bin/true'
+      # executor of cron as it would be on the partition
+      dcron_execute = [
+        cls.dcron_orig,
+        '-s', cron_d,
+        '-c', crontabs,
+        '-t', crontstamps,
+        '-f', '-l', '5',
+        '-M', logger
+      ]
+      #import ipdb ; ipdb.set_trace()
+    finally:
+       shutil.rmtree(working_directory)
+    pass
+
+  @classmethod
   def enableDcron(cls):
     if os.path.exists(cls.dcron_orig):
       if os.path.exists(cls.dcron):
@@ -758,6 +787,7 @@ class CronMixin(object):
   @classmethod
   def setUpClass(cls):
     cls.disableDcron()
+    cls.exposeDcronEnv()
     super().setUpClass()
 
   @classmethod
