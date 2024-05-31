@@ -24,7 +24,8 @@
       "enum": [
         "5ms 2UL 7DL 4/6 (default)",
         "2.5ms 1UL 3DL 2/10",
-        "5ms 8UL 1DL 2/10 (maximum uplink)"
+        "5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)",
+        "5ms 6UL 3DL 10/2 (high uplink)"
       ],
       "default": "5ms 2UL 7DL 4/6 (default)",
       "options": {

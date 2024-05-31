@@ -417,8 +417,6 @@ class TestFirefox102(
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='102.15.1esr')
   user_agent = 'Gecko/20100101 Firefox/102.0'
 
-  # resizing window does not work, but we don't really depend on it
-  @unittest.expectedFailure
   def test_resize_window(self):
     super().test_resize_window()
 
@@ -431,8 +429,6 @@ class TestFirefox115(
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='115.3.1esr')
   user_agent = 'Gecko/20100101 Firefox/115.0'
 
-  # resizing window does not work, but we don't really depend on it
-  @unittest.expectedFailure
   def test_resize_window(self):
     super().test_resize_window()
 

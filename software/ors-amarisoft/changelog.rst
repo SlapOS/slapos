@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 1.0.361 (2024-05-29)
+-------------
+
+* Support BBU controlling multiple RUs with one or more CPRI boards
+* Code refactorization (to support BBUs with multiple RUs)
+* Support IMS for Amarisoft >= 2024-05-02, which is needed for 5G support on some phones
+* Add high UL TDD config (TDD CONFIG 4, supported on more UEs than the maximum UL TDD config)
+* Add fixed-ips option for core network
+
 Version 1.0.344 (2023-11-03)
 -------------
 
