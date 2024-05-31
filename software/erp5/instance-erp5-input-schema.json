@@ -213,6 +213,7 @@
           "type": "object"
         }
       },
+      "additionalProperties": false,
       "type": "object"
     },
     "zope-partition-dict": {
@@ -285,6 +286,7 @@
           "type": "object"
         }
       },
+      "additionalProperties": false,
       "type": "object"
     },
     "kumofs": {
