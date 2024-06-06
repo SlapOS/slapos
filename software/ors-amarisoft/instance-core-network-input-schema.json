@@ -45,6 +45,18 @@
       "description": "Set to true to use IPv4 for AMF / MME addresses",
       "type": "boolean"
     },
+    "enable_multicast": {
+      "default": false,
+      "title": "Enable IPv4 multicast",
+      "description": "Set to true to enable IPv4 multicast",
+      "type": "boolean"
+    },
+    "enable_broadcast": {
+      "default": false,
+      "title": "Enable IPv4 broadcast",
+      "description": "Set to true to enable IPv4 broadcast",
+      "type": "boolean"
+    },
     "fixed_ips": {
       "default": false,
       "title": "Fixed IP for the UE",
