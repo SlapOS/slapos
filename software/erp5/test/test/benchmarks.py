@@ -28,6 +28,7 @@
 import contextlib
 import datetime
 import json
+import os
 import pathlib
 import socket
 import struct
@@ -179,6 +180,17 @@ class TestOrderBuildPackingListSimulation(
       zeo_root_stats = zeo_stats.pop('root')
       assert not zeo_stats
 
+    # Deadlocks
+    deadlock_total_count = 0
+    grep = pathlib.Path(
+      self.getComputerPartitionPath('zope-activities')) / 'bin' / 'grep'
+    log_directory = pathlib.Path(
+      self.getComputerPartitionPath('zope-activities')) / 'var' / 'log'
+    for path in log_directory.glob('zope-*-event.log'):
+      deadlock_total_count += int(subprocess.run(
+        (grep, '-ac', 'Deadlock found when trying to get lock; try restarting transaction', path),
+        capture_output=True, text=True).stdout)
+
     self.logger.info(
       "Measurements for %s (after %s): "
       "elapsed=%s zope_total_rss=%s / %s root_fs_size=%s",
@@ -198,6 +210,7 @@ class TestOrderBuildPackingListSimulation(
         'zope_count': zope_count,
         'root_fs_size': root_fs_size,
         'zeo_stats': zeo_root_stats,
+        'deadlock_total_count': deadlock_total_count,
         'now': str(now),
       })
 
@@ -277,9 +290,21 @@ class TestOrderBuildPackingListSimulation(
       mariadb_slowquery_log = pathlib.Path(
         self.getComputerPartitionPath(
           'mariadb')) / 'var' / 'log' / 'mariadb_slowquery.log'
+      mariadb_data = pathlib.Path(
+        self.getComputerPartitionPath(
+          'mariadb')) / 'srv' / 'mariadb'
+      mariadb_data_size = sum(sum(os.path.getsize(os.path.join(root, f)) for f in files) \
+        for root, dirs, files in os.walk(mariadb_data))
+      mariadb_binlog_data = pathlib.Path(
+        self.getComputerPartitionPath(
+          'mariadb')) / 'srv' / 'backup' / 'mariadb-incremental'
+      mariadb_binlog_data_size = sum(sum(os.path.getsize(os.path.join(root, f)) for f in files) \
+        for root, dirs, files in os.walk(mariadb_binlog_data))
       self.write_measurement(
         {
           'pt-query-digest':
           subprocess.check_output(
-            (pt_query_digest, mariadb_slowquery_log), text=True)
+            (pt_query_digest, mariadb_slowquery_log), text=True),
+          'data-size': mariadb_data_size,
+          'binlog-data-size': mariadb_binlog_data_size,
         })
