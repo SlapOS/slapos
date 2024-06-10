@@ -222,6 +222,12 @@ class KvmMixin:
     return os.path.join(
       cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
 
+  @classmethod
+  def getBackupPartitionPath(cls, *paths):
+    return cls.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm',
+      cls.disk_type_backup_mapping[cls.disk_type], *paths)
+
   def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
@@ -760,7 +766,7 @@ class CronMixin(object):
       env_json = os.path.join(working_directory, 'env.json')
       with open(os.path.join(cron_d, 'env'), 'w') as fh:
          fh.write(f"""
-* * * * * {sys.executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ))) > {env_json}'
+* * * * * {sys.executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ)))' > {env_json}
 """)
       crontstamps = os.path.join(working_directory, 'cronstamps')
       logger = '/bin/true'
@@ -773,10 +779,25 @@ class CronMixin(object):
         '-f', '-l', '5',
         '-M', logger
       ]
-      #import ipdb ; ipdb.set_trace()
+      popen = subprocess.Popen(dcron_execute)
+      limit = 60
+      while limit > 0:
+        if os.path.exists(env_json):
+          break
+        time.sleep(1)
+        limit -= 1
+      else:
+        raise ValueError('Environment not exposed in %r' % (env_json,))
+      popen.terminate()
+      with open(env_json) as fh:
+        cls.dcron_env = json.load(fh)
     finally:
        shutil.rmtree(working_directory)
     pass
+
+  @classmethod
+  def executeCrondJob(cls, jobpath):
+    #import ipdb ; ipdb.set_trace()
 
   @classmethod
   def enableDcron(cls):
@@ -826,6 +847,8 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     self.importer_partition = os.path.dirname(importer_partition[0])
 
   def call_exporter(self):
+    backup = self.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
+    self.executeCrondJob(backup)
     exporter = self.getPartitionPath('kvm-export', 'bin', 'exporter')
     try:
       return (0, subprocess.check_output(
