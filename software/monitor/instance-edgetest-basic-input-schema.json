@@ -44,6 +44,12 @@
               "type": "number",
               "minimum": 1
             },
+            "check-domain-expiration-days": {
+              "title": "Domain Expiration Check (days)",
+              "description": "Amount of days to consider the domain as being to-be-expired. Defaults to global configuration.",
+              "type": "number",
+              "minimum": 1
+            },
             "check-maximum-elapsed-time": {
               "title": "Maximum Elapsed Check (seconds)",
               "description": "Maximum elapsed time for a site to reply to be considered good. Defaults to global configuration.",
@@ -84,6 +90,13 @@
       "default": 15,
       "minimum": 1
     },
+    "check-domain-expiration-days": {
+      "title": "Default Domain Expiration Check (days)",
+      "description": "Default amount of days to consider the domain as being to-be-expired.",
+      "type": "number",
+      "default": 30,
+      "minimum": 1
+    },
     "check-maximum-elapsed-time": {
       "title": "Default Maximum Elapsed Check (seconds)",
       "description": "Default maximum elapsed time for a site to reply to be considered good.",
@@ -102,7 +115,7 @@
       "title": "[EXPERT] Enabled Senses",
       "description": "Space separated list of enabled senses of the promise.",
       "type": "string",
-      "default": "dns_query tcp_server http_query ssl_certificate elapsed_time"
+      "default": "dns_query whois tcp_server http_query ssl_certificate elapsed_time"
     }
   }
 }
