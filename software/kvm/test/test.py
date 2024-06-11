@@ -58,9 +58,24 @@ has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
+  location = os.path.join(os.path.dirname(__file__), '..')
+  real_software = os.path.abspath(os.path.join(location, 'software.cfg'))
+  dcron_mock = os.path.abspath(os.path.join(location, 'dcron'))
+  with open(dcron_mock, 'w') as fh:
+    fh.write("#!/bin/sh\necho $*\nwhile :; do sleep 5 ; done")
+  os.chmod(dcron_mock, 0o700)
+  custom_software = os.path.abspath(os.path.join(
+    location, 'custom-software.cfg'))
+  with open(custom_software, 'w') as fh:
+    fh.write("""
+[buildout]
+extends = %(real_software)s
+
+[dcron-output]
+dcron = %(dcron_mock)s
+""" % {'real_software': real_software, 'dcron_mock': dcron_mock})
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+    custom_software)
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
@@ -730,7 +745,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 
 class CronMixin(object):
   @classmethod
-  def findDcron(cls):
+  def findDcronOrig(cls):
     with open(os.path.join(
         cls.slap.software_directory,
         hashlib.md5(cls.getSoftwareURL().encode()).hexdigest(),
@@ -739,24 +754,14 @@ class CronMixin(object):
       location_cfg = fh.read()
     dcron_location = [
       q for q in location_cfg.splitlines()
-      if q.startswith('location') and q.endswith('/dcron')]
+      if q.startswith('crond-orig') and q.endswith('/crond')]
     assert (len(dcron_location) == 1)
-    dcron_location = dcron_location[0].split('=')[1].strip()
-    cls.dcron = os.path.join(dcron_location, 'sbin', 'crond')
-    assert (os.path.exists(cls.dcron))
-
-  @classmethod
-  def disableDcron(cls):
-    # XXX-this is toooooo dangerous!!!!!
-    cls.findDcron()
-    cls.dcron_orig = cls.dcron + '.orig'
-    os.rename(cls.dcron, cls.dcron_orig)
-    with open(cls.dcron, 'w') as fh:
-      fh.write("#!/bin/sh\necho $*\nwhile :; do sleep 5 ; done")
-    os.chmod(cls.dcron, 0o700)
+    cls.dcron_orig = dcron_location[0].split('=')[1].strip()
+    assert (os.path.exists(cls.dcron_orig))
 
   @classmethod
   def exposeDcronEnv(cls):
+    cls.findDcronOrig()
     try:
       working_directory = tempfile.mkdtemp()
       crontabs = os.path.join(working_directory, 'crontabs')
@@ -766,7 +771,8 @@ class CronMixin(object):
       env_json = os.path.join(working_directory, 'env.json')
       with open(os.path.join(cron_d, 'env'), 'w') as fh:
          fh.write(f"""
-* * * * * {sys.executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ)))' > {env_json}
+* * * * * {sys.executable} -c 'import os ; import json ; """
+                  f"""print(json.dumps(dict(os.environ)))' > {env_json}
 """)
       crontstamps = os.path.join(working_directory, 'cronstamps')
       logger = '/bin/true'
@@ -781,41 +787,42 @@ class CronMixin(object):
       ]
       popen = subprocess.Popen(dcron_execute)
       limit = 60
-      while limit > 0:
-        if os.path.exists(env_json):
-          break
-        time.sleep(1)
-        limit -= 1
-      else:
-        raise ValueError('Environment not exposed in %r' % (env_json,))
-      popen.terminate()
+      try:
+        while limit > 0:
+          if os.path.exists(env_json):
+            break
+          time.sleep(1)
+          limit -= 1
+        else:
+          raise ValueError('Environment not exposed in %r' % (env_json,))
+      finally:
+        popen.terminate()
       with open(env_json) as fh:
         cls.dcron_env = json.load(fh)
+    except Exception:
+      #import ipdb ; ipdb.set_trace()
+      raise
     finally:
-       shutil.rmtree(working_directory)
+      shutil.rmtree(working_directory)
     pass
 
   @classmethod
   def executeCrondJob(cls, jobpath):
-    #import ipdb ; ipdb.set_trace()
-
-  @classmethod
-  def enableDcron(cls):
-    if os.path.exists(cls.dcron_orig):
-      if os.path.exists(cls.dcron):
-        os.unlink(cls.dcron)
-      os.rename(cls.dcron_orig, cls.dcron)
+    job_list = []
+    with open(jobpath, 'r') as fh:
+      for job in fh.readlines():
+        job_list.append(' '.join(job.split(' ')[5:]))
+    job_list_output = []
+    for job in job_list:
+      job_list_output.append(subprocess.run(
+        job, env=cls.dcron_env, shell=True, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT))
+    return job_list_output
 
   @classmethod
   def setUpClass(cls):
-    cls.disableDcron()
     cls.exposeDcronEnv()
     super().setUpClass()
-
-  @classmethod
-  def tearDownClass(cls):
-    super().tearDownClass()
-    cls.enableDcron()
 
 
 class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
@@ -848,13 +855,13 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
 
   def call_exporter(self):
     backup = self.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
-    self.executeCrondJob(backup)
-    exporter = self.getPartitionPath('kvm-export', 'bin', 'exporter')
-    try:
-      return (0, subprocess.check_output(
-        [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
-    except subprocess.CalledProcessError as e:
-      return (e.returncode, e.output.decode('utf-8'))
+    result = self.executeCrondJob(backup)
+    self.assertEqual(len(result), 1)
+    self.assertEqual(
+      0,
+      result[0].returncode,
+      result[0].stdout.decode('utf-8'))
+    return result[0].stdout.decode('utf-8')
 
 
 @skipUnlessKvm
@@ -870,8 +877,7 @@ class TestInstanceResilientBackupImporter(
       self.disk_type_backup_mapping[self.disk_type])
     # sanity check - no export/import happened yet
     self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    self.call_exporter()
 
     def awaitBackup(equeue_file):
       for f in range(30):
@@ -895,8 +901,7 @@ class TestInstanceResilientBackupImporter(
       fh.write('')
     # drop backup destination to assert its recreation
     os.unlink(destination_qcow2)
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    self.call_exporter()
     equeue_log = awaitBackup(equeue_file)
     self.assertIn('qemu-img rebase', equeue_log)
     self.assertEqual(
@@ -915,8 +920,7 @@ class TestInstanceResilientBackupImporter(
     # the real assertions comes from re-stabilizing the instance tree
     self.slap.waitForInstance(max_retry=10)
     # check that all stabilizes after backup after takeover
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    self.call_exporter()
     self.slap.waitForInstance(max_retry=10)
 
 
@@ -930,8 +934,7 @@ class TestInstanceResilientBackupImporterIde(
 class TestInstanceResilientBackupExporter(
   TestInstanceResilientBackupMixin, KVMTestCase):
   def test(self):
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
@@ -946,8 +949,7 @@ class TestInstanceResilientBackupExporter(
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
     with open(current_backup + '.partial', 'w') as fh:
       fh.write('')
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
