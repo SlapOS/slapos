@@ -237,6 +237,12 @@ class KvmMixin:
     return os.path.join(
       cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
 
+  @classmethod
+  def getBackupPartitionPath(cls, *paths):
+    return cls.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm',
+      cls.disk_type_backup_mapping[cls.disk_type], *paths)
+
   def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
@@ -851,12 +857,14 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     self.importer_partition = os.path.dirname(importer_partition[0])
 
   def call_exporter(self):
-    exporter = self.getPartitionPath('kvm-export', 'bin', 'exporter')
-    try:
-      return (0, subprocess.check_output(
-        [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
-    except subprocess.CalledProcessError as e:
-      return (e.returncode, e.output.decode('utf-8'))
+    backup = self.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
+    result = self.executeCrondJob(backup)
+    self.assertEqual(len(result), 1)
+    self.assertEqual(
+      0,
+      result[0].returncode,
+      result[0].stdout.decode('utf-8'))
+    return result[0].stdout.decode('utf-8')
 
 
 @skipUnlessKvm
@@ -872,8 +880,7 @@ class TestInstanceResilientBackupImporter(
       self.disk_type_backup_mapping[self.disk_type])
     # sanity check - no export/import happened yet
     self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    self.call_exporter()
 
     def awaitBackup(equeue_file):
       for f in range(30):
@@ -897,8 +904,7 @@ class TestInstanceResilientBackupImporter(
       fh.write('')
     # drop backup destination to assert its recreation
     os.unlink(destination_qcow2)
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    self.call_exporter()
     equeue_log = awaitBackup(equeue_file)
     self.assertIn('qemu-img rebase', equeue_log)
     self.assertEqual(
@@ -917,8 +923,7 @@ class TestInstanceResilientBackupImporter(
     # the real assertions comes from re-stabilizing the instance tree
     self.slap.waitForInstance(max_retry=10)
     # check that all stabilizes after backup after takeover
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    self.call_exporter()
     self.slap.waitForInstance(max_retry=10)
 
 
@@ -932,8 +937,7 @@ class TestInstanceResilientBackupImporterIde(
 class TestInstanceResilientBackupExporter(
   TestInstanceResilientBackupMixin, KVMTestCase):
   def test(self):
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
@@ -948,8 +952,7 @@ class TestInstanceResilientBackupExporter(
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
     with open(current_backup + '.partial', 'w') as fh:
       fh.write('')
-    status_code, status_text = self.call_exporter()
-    self.assertEqual(0, status_code, status_text)
+    status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
