@@ -80,6 +80,8 @@ environment +=
   TZ={{ slapparameter_dict['timezone'] }}
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
   PYTHONUNBUFFERED=1
+  OFS_IMAGE_USE_DENYLIST=1
+  DISALLOWED_INLINE_MIMETYPES=
   INSTANCE_HOME=${:instance-home}
   FONTCONFIG_FILE=${fontconfig-conf:output}
   JUPYTER_PATH=${directory:jupyter-dir}
@@ -372,17 +374,11 @@ instance-home = ${directory:instance}
 port = {{ port }}
 
 [{{ section("promise-" ~ name) }}]
-{% if six.PY3 -%}
-# Disable the promise in Python 3. ERP5 is not compatible with Python 3 yet, so
-# the promise would always fail.
-recipe =
-{% else -%}
 <= monitor-promise-base
 promise = check_socket_listening
 name = {{ name }}.py
 config-host = {{ ipv4 }}
 config-port = {{ port }}
-{% endif -%}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
@@ -408,8 +404,8 @@ config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 promise = check_error_on_zope_longrequest_log
 name = {{'check-' ~ name ~ '-longrequest-error-log.py'}}
 config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
-config-error-threshold = {{ slapparameter_dict["zope-longrequest-logger-error-threshold"] }}
-config-maximum-delay = {{ slapparameter_dict["zope-longrequest-logger-maximum-delay"] }}
+config-error-threshold = {{ dumps(slapparameter_dict["zope-longrequest-logger-error-threshold"]) }}
+config-maximum-delay = {{ dumps(slapparameter_dict["zope-longrequest-logger-maximum-delay"]) }}
 {% endif -%}
 
 [{{ section('logrotate-entry-' ~ name) }}]
