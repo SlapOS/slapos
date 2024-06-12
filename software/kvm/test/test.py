@@ -58,24 +58,8 @@ has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
-  location = os.path.join(os.path.dirname(__file__), '..')
-  real_software = os.path.abspath(os.path.join(location, 'software.cfg'))
-  dcron_mock = os.path.abspath(os.path.join(location, 'dcron'))
-  with open(dcron_mock, 'w') as fh:
-    fh.write("#!/bin/sh\necho $*\nwhile :; do sleep 5 ; done")
-  os.chmod(dcron_mock, 0o700)
-  custom_software = os.path.abspath(os.path.join(
-    location, 'custom-software.cfg'))
-  with open(custom_software, 'w') as fh:
-    fh.write("""
-[buildout]
-extends = %(real_software)s
-
-[dcron-output]
-dcron = %(dcron_mock)s
-""" % {'real_software': real_software, 'dcron_mock': dcron_mock})
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    custom_software)
+    os.path.join(os.path.dirname(__file__), 'test-software.cfg'))
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
@@ -761,12 +745,14 @@ class CronMixin(object):
 
   @classmethod
   def exposeDcronEnv(cls):
+    # XXX: It shall be exposed via running the process with supervisord!!!!!!
+    #      Otherwise the environment is incorrect!!!
     cls.findDcronOrig()
     try:
       working_directory = tempfile.mkdtemp()
       crontabs = os.path.join(working_directory, 'crontabs')
       os.mkdir(crontabs)
-      cron_d = os.path.join(working_directory, 'cron.d')
+      cron_d = os.path.join(working_directory, 'cro.d')
       os.mkdir(cron_d)
       env_json = os.path.join(working_directory, 'env.json')
       with open(os.path.join(cron_d, 'env'), 'w') as fh:
@@ -824,7 +810,7 @@ class CronMixin(object):
 
   @classmethod
   def setUpClass(cls):
-    cls.exposeDcronEnv()
+    #cls.exposeDcronEnv()
     super().setUpClass()
 
 
@@ -871,6 +857,7 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
 class TestInstanceResilientBackupImporter(
   TestInstanceResilientBackupMixin, KVMTestCase):
   def test(self):
+    #import ipdb ; ipdb.set_trace()
     equeue_file = os.path.join(
       self.importer_partition, 'var', 'log', 'equeue.log')
     destination_qcow2 = os.path.join(
