@@ -58,24 +58,8 @@ has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
-  location = os.path.join(os.path.dirname(__file__), '..')
-  real_software = os.path.abspath(os.path.join(location, 'software.cfg'))
-  dcron_mock = os.path.abspath(os.path.join(location, 'dcron'))
-  with open(dcron_mock, 'w') as fh:
-    fh.write("#!/bin/sh\necho $*\nwhile :; do sleep 5 ; done")
-  os.chmod(dcron_mock, 0o700)
-  custom_software = os.path.abspath(os.path.join(
-    location, 'custom-software.cfg'))
-  with open(custom_software, 'w') as fh:
-    fh.write("""
-[buildout]
-extends = %(real_software)s
-
-[dcron-output]
-dcron = %(dcron_mock)s
-""" % {'real_software': real_software, 'dcron_mock': dcron_mock})
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    custom_software)
+    os.path.join(os.path.dirname(__file__), 'test-software.cfg'))
   # XXX Keep using slapos node instance --all, because of missing promises
   InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
@@ -744,73 +728,30 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 
 
 class CronMixin(object):
-  @classmethod
-  def findDcronOrig(cls):
-    with open(os.path.join(
-        cls.slap.software_directory,
-        hashlib.md5(cls.getSoftwareURL().encode()).hexdigest(),
-        '.installed.cfg'
-      )) as fh:
-      location_cfg = fh.read()
-    dcron_location = [
-      q for q in location_cfg.splitlines()
-      if q.startswith('crond-orig') and q.endswith('/crond')]
-    assert (len(dcron_location) == 1)
-    cls.dcron_orig = dcron_location[0].split('=')[1].strip()
-    assert (os.path.exists(cls.dcron_orig))
+  def setUp(self):
+    super().setUp()
+    # wait until all installed partition have var/cron-environment.json
+    for i in range(20):
+      missing_list = []
+      for installed in glob.glob(os.path.join(
+        self.slap._instance_root, '*', '.installed.cfg')):
+        cron_environment = os.path.join(
+          '/', *installed.split('/')[:-1], 'var', 'cron-environment.json')
+        if not os.path.exists(cron_environment):
+          missing_list.append(cron_environment)
+      if len(missing_list) == 0:
+        break
+      time.sleep(1)
+    else:
+      raise ValueError('Missing cron environment', ' '.join(missing_list))
 
   @classmethod
-  def exposeDcronEnv(cls):
-    cls.findDcronOrig()
-    try:
-      working_directory = tempfile.mkdtemp()
-      crontabs = os.path.join(working_directory, 'crontabs')
-      os.mkdir(crontabs)
-      cron_d = os.path.join(working_directory, 'cron.d')
-      os.mkdir(cron_d)
-      env_json = os.path.join(working_directory, 'env.json')
-      with open(os.path.join(cron_d, 'env'), 'w') as fh:
-         fh.write(f"""
-* * * * * {sys.executable} -c 'import os ; import json ; """
-                  f"""print(json.dumps(dict(os.environ)))' > {env_json}
-""")
-      crontstamps = os.path.join(working_directory, 'cronstamps')
-      logger = '/bin/true'
-      # executor of cron as it would be on the partition
-      dcron_execute = [
-        cls.dcron_orig,
-        '-s', cron_d,
-        '-c', crontabs,
-        '-t', crontstamps,
-        '-f', '-l', '5',
-        '-M', logger
-      ]
-      popen = subprocess.Popen(dcron_execute)
-      limit = 60
-      try:
-        while limit > 0:
-          if os.path.exists(env_json):
-            try:
-              with open(env_json) as fh:
-                cls.dcron_env = json.load(fh)
-            except json.decoder.JSONDecodeError:
-              pass
-            else:
-              break
-          time.sleep(1)
-          limit -= 1
-        else:
-          raise ValueError('Environment not exposed in %r' % (env_json,))
-      finally:
-        popen.terminate()
-      with open(env_json) as fh:
-        cls.dcron_env = json.load(fh)
-    finally:
-      shutil.rmtree(working_directory)
-    pass
-
-  @classmethod
-  def executeCrondJob(cls, jobpath):
+  def executeCronDJob(cls, instance_type, cron):
+    jobpath = cls.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
+    with open(
+      cls.getPartitionPath(
+          'kvm-export', 'var', 'cron-environment.json')) as fh:
+      cron_environment = json.load(fh)
     job_list = []
     with open(jobpath, 'r') as fh:
       for job in fh.readlines():
@@ -818,14 +759,9 @@ class CronMixin(object):
     job_list_output = []
     for job in job_list:
       job_list_output.append(subprocess.run(
-        job, env=cls.dcron_env, shell=True, stdout=subprocess.PIPE,
+        job, env=cron_environment, shell=True, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT))
     return job_list_output
-
-  @classmethod
-  def setUpClass(cls):
-    cls.exposeDcronEnv()
-    super().setUpClass()
 
 
 class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
@@ -857,8 +793,7 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     self.importer_partition = os.path.dirname(importer_partition[0])
 
   def call_exporter(self):
-    backup = self.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
-    result = self.executeCrondJob(backup)
+    result = self.executeCronDJob('kvm-export', 'backup')
     self.assertEqual(len(result), 1)
     self.assertEqual(
       0,
