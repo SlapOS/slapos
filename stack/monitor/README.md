@@ -20,9 +20,9 @@ Implementation :
 Extend monitor template and a monitor-base to parts:
 
     [buildout]
-    extends = 
+    extends =
       ${monitor-template:output}
-    parts = 
+    parts =
       ...
       monitor-base
 
@@ -35,7 +35,7 @@ Override monitor configuration by adding monitor-instance-parameter section to d
     monitor-base-url = ${monitor-frontend-promise:url}
     root-instance-title = ${slap-configuration:root-instance-title}
     monitor-url-list =
-    cors-domains = monitor.app.officejs.com
+    # cors-domains = monitor.app.officejs.com
     collector-db = ...
     password = ${monitor-htpasswd:passwd}
     username = admin
@@ -55,6 +55,7 @@ You don't need to define all parameters, you can only set what is required to be
 - monitor-httpd-port: the port to bind monitor httpd server on.
 - monitor-base-url: this url will be used/showed in monitor interface. This url is present in some monitor generated output files. There can be two value, the default: ${monitor-frontend-promise:url} which access monitor httpd server through the frontend and ${monitor-httpd-conf-parameter:url} which is the url with ipv6 (https://[IPv6]:port/).
 - monitor-url-list: set list of Monitor Base URL of monitor sub-instances, if this is the root instance with at least one child.
+# could this be dropped ?
 - cors-domains: the domain used by the monitor web interface. The default is: monitor.app.officejs.com.
 - username: monitor username, this should be the same in all sub-instances. Default is: admin.
 - password: monitor password, this should be the same in all sub-instances. Default is generated (${monitor-instance-parameter:username}).
@@ -156,12 +157,12 @@ Monitor Base web directory tree
                 --------------------------
                 |           |             |
               share       public        private
-            (webdav)        X             Y 
+            (webdav)        X             Y
                 |
         ---------------------------------
-        |       |       
-      public  private 
-        X       Y     
+        |       |
+      public  private
+        X       Y
 
 
 MONITOR_BASE_URL/public or private is for normal HTTPS.
@@ -199,7 +200,7 @@ Monitor has a paramters called "instance-configuration" from the section [monito
 Parameters can be editable (except raw parameter) directly from  monitor interface. The change will be updated into the related file. Here are some examples:
 
     [monitor-instance-parameter]
-    instance-configuration = 
+    instance-configuration =
       raw init-user ${publish-connection-information:init-user}
       htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
       file promise-timeout ${monitor-promise-timeout-file:file}
