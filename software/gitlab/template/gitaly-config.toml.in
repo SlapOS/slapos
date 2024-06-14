@@ -7,7 +7,12 @@ socket_path = "{{ gitaly.socket }}"
 # The directory where Gitaly's executables are stored
 bin_dir = "{{ gitaly.location }}"
 
-# # Optional: listen on a TCP socket. This is insecure (no authentication)
+# # Optional. The directory where Gitaly can create all files required to
+# # properly operate at runtime. If not set, Gitaly will create a directory in
+# # the global temporary directory. This directory must exist.
+runtime_dir = "{{ gitaly.basedir }}"
+
+# # Optional if socket_path is set. TCP address for Gitaly to listen on. This is insecure (unencrypted connection).
 # listen_addr = "localhost:9999"
 # tls_listen_addr = "localhost:8888
 
@@ -33,6 +38,10 @@ internal_socket_dir = "{{ gitaly.internal_socket }}"
 bin_path = "{{ git }}"
 # catfile_cache_size = 100
 
+# [[git.config]]
+# key = fetch.fsckObjects
+# value = true
+
 [[storage]]
 name = "default"
 path = "{{ gitlab.repositories }}"
@@ -47,9 +56,9 @@ path = "{{ gitlab.repositories }}"
 # You can optionally configure Gitaly to output JSON-formatted log messages to stdout
 [logging]
 # The directory where Gitaly stores extra log files
-dir = "{{ gitaly.log }}"
-# format = "json"
-# format = "json"
+dir = "{{ gitaly.logdir }}"
+# format = "text"
+format = "json"
 # # Optional: Set log level to only log entries with that severity or above
 # # One of, in order: debug, info, warn, errror, fatal, panic
 # # Defaults to "info"
@@ -79,7 +88,7 @@ dir = "{{ gitaly.location }}/ruby"
 # restart_delay = "5m"
 #
 # # Number of gitaly-ruby worker processes
-# num_workers = 2
+num_workers = {{ gitaly.num_workers }}
 #
 # # Search path for system gitconfig file (e.g. /etc, /opt/gitlab/embedded/etc)
 # # NOTE: This only affects RPCs that use Rugged.
@@ -89,7 +98,47 @@ dir = "{{ gitaly.location }}/ruby"
 # The directory where gitlab-shell is installed
 dir = "{{ gitlab_shell_work.location }}"
 
+[hooks]
+custom_hooks_dir = "{{ gitlab_shell_work.location }}/hooks/"
+
+[gitlab]
+secret_file = "{{ gitlab_shell.secret }}"
+url = "http+unix://{{ urllib.parse.unquote_plus(gitlab_workhorse.socket) }}"
+# Only needed if a UNIX socket is used in `url` and GitLab is configured to
+# use a relative path (e.g. /gitlab).
+# relative_url_root = '/'
+
+[gitlab.http-settings]
+# read_timeout = 300
+# user = someone
+# password = somepass
+# ca_file = /etc/ssl/cert.pem
+# ca_path = /etc/pki/tls/certs
+# self_signed_cert = false
+
 # # You can adjust the concurrency of each RPC endpoint
 # [[concurrency]]
 # rpc = "/gitaly.RepositoryService/GarbageCollect"
 # max_per_repo = 1
+
+# Daily maintenance designates time slots to run daily to optimize and maintain
+# enabled storages.
+# [daily_maintenance]
+# start_hour = 23
+# start_minute = 30
+# duration = "45m"
+# storages = ["default"]
+# disabled = false
+
+# [cgroups]
+# count = 10
+# mountpoint = "/sys/fs/cgroup"
+# hierarchy_root = "gitaly"
+
+# [cgroups.memory]
+# enabled = true
+# limit = 1048576
+
+# [cgroups.cpu]
+# enabled = true
+# shares = 512
