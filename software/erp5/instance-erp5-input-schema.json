@@ -762,6 +762,54 @@
         }
       },
       "type": "object"
+    },
+    "monitor": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Monitor parameters (unstable/experimental)",
+      "properties": {
+        "computer-memory-percent-threshold": {
+          "type": "number",
+          "description": "Promise fails if total used memory on the computer is above this value, expressed in percentage of the total available RAM,.",
+          "default": 80,
+          "minimum": 0,
+          "maximum": 100
+        },
+        "max-slowqueries-threshold": {
+          "type": "integer",
+          "description": "Promise fails if more than `max-slowqueries-threshold` queries taking longer than `slowest-query-threshold` are found in the mariadb slow query log for the current day.",
+          "default": 1000
+        },
+        "slowest-query-threshold": {
+          "type": "number",
+          "description": "see `max-slowqueries-threshold`",
+          "default": null
+        },
+        "zope-longrequest-logger-error-threshold": {
+          "type": "number",
+          "title": "Promise fails if more than `zope-longrequest-logger-error-threshold` requests taking more than `zope-longrequest-logger-maximum-delay` are found in the zope long request logs for the currency day",
+          "default": 20
+        },
+        "zope-longrequest-logger-maximum-delay": {
+          "type": "number",
+          "title": "See `zope-longrequest-logger-error-threshold`",
+          "default": 0
+        },
+        "apachedex-promise-threshold": {
+          "type": "number",
+          "title": "Promise fails if the overall Apdex score for the previous day is below than this value.",
+          "default": 70,
+          "minimum": 0,
+          "maximum": 100
+        },
+        "apachedex-configuration": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command line arguments to run apachedex to build daily reports"
+        }
+      }
     }
   }
 }
