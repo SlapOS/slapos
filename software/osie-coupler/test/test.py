@@ -35,10 +35,37 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class OsieTestCase(SlapOSInstanceTestCase):
 
+
+  MULTICAST_INTERFACE = 'lo'
+  MULTICAST_GROUP_COUNT = 2
+  MULTICAST_GROUP = '224.0.0.22'
+
+
   @classmethod
   def getInstanceParameterDict(cls):
-    return {"mode": 1}
+    return {"mode": 1, "network_interface": "127.0.0.1", "heart_beat_id_list": "1"}
 
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertIn('url-ipv6', parameter_dict)
+
+  def test_process(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
+    self.assertIn('coupler-opc-ua-on-watch', process_names)
+
+  def IPV4_to_little_endian_hex_str(self, ipv4_str):
+    hex_str_list = []
+    for int_str in ipv4_str.split('.'):
+      hex_str_list.append('%0.2X' % int(int_str))
+    return ''.join(reversed(hex_str_list))
+
+  def test_joined_multicast_grp(self):
+    with open('/proc/net/igmp') as f:
+      igmp_content = f.readlines()
+      for igmp_line in (
+        '1\t%s        :     %s      V3\n' % (self.MULTICAST_INTERFACE, self.MULTICAST_GROUP_COUNT),
+        '\t\t\t\t%s     1 0:00000000\t\t0\n' % self.IPV4_to_little_endian_hex_str(self.MULTICAST_GROUP),
+      ):
+        self.assertIn(igmp_line, igmp_content)

@@ -12,7 +12,7 @@ parts =
 
 #   gitlab-<prog>
 # ? mailroom
-{% set gitlab_progv = 'rails rake unicorn sidekiq unicorn-startup' .split() %}
+{% set gitlab_progv = 'rails rake puma sidekiq puma-startup' .split() %}
 {% for prog in gitlab_progv %}
     gitlab-{{ prog }}
 {% endfor %}
@@ -23,7 +23,7 @@ parts =
     gitlab-shell-work
 
     service-gitlab-workhorse
-    service-unicorn
+    service-puma
     service-sidekiq
 
     service-nginx
@@ -51,29 +51,29 @@ offline = true
 
 [worker-processes]
 recipe = slapos.recipe.build
-unicorn-worker-processes = {{ instance_parameter_dict['configuration.unicorn_worker_processes'] }}
+puma-worker-processes = {{ instance_parameter_dict['configuration.puma_worker_processes'] }}
 init =
   import multiprocessing
-  worker_count = int(options['unicorn-worker-processes'])
+  worker_count = int(options['puma-worker-processes'])
   if worker_count == 0:
     # automatically load all available CPUs
     worker_count = multiprocessing.cpu_count() + 1
   worker_count = 2 if worker_count < 2 else worker_count
-  options['unicorn-worker-processes'] = worker_count
+  options['puma-worker-processes'] = worker_count
   options['nginx-worker-processes'] = worker_count -1
 
 [instance-parameter]
 {#- There are dangerous keys like recipe, etc #}
 {#- XXX: Some other approach would be useful #}
 {%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert',
-                         'configuration.unicorn_worker_processes', 'configuration.nginx_worker_processes'] %}
+                         'configuration.puma_worker_processes', 'configuration.nginx_worker_processes'] %}
 {%- for key, value in instance_parameter_dict.items() -%}
 {%-   if key not in DROP_KEY_LIST %}
 {{ key }} = {{ value }}
 {%-   endif -%}
 {%- endfor %}
 # settings for worker processes:
-configuration.unicorn_worker_processes = ${worker-processes:unicorn-worker-processes}
+configuration.puma_worker_processes = ${worker-processes:puma-worker-processes}
 configuration.nginx_worker_processes   = ${worker-processes:nginx-worker-processes}
 
 
@@ -186,16 +186,18 @@ mode    = 0700
 [gitaly-dir]
 recipe  = slapos.cookbook:mkdirectory
 gitaly  = ${directory:var}/gitaly
-sockets = ${:gitaly}/sockets
-internal = ${directory:var}/int
+sockets = ${:gitaly}/s
+internal = ${:sockets}/int
 log     = ${directory:log}/gitaly
 
 [gitaly]
-socket  = ${directory:var}/gitaly.socket
-log     = ${gitaly-dir:log}
+socket  = ${gitaly-dir:sockets}/gitaly.socket
+logdir     = ${gitaly-dir:log}
 location = {{ gitaly_location }}
 pid     = ${directory:run}/gitaly.pid
 internal_socket = ${gitaly-dir:internal}
+basedir = ${gitaly-dir:gitaly}
+num_workers = 2
 
 [gitaly-socket-listening-promise]
 <= monitor-promise-base
@@ -249,7 +251,7 @@ context-extra =
     section gitlab                  gitlab
     section gitlab_shell            gitlab-shell
     section gitlab_shell_work       gitlab-shell-work
-    section unicorn                 unicorn
+    section puma                    puma
     section service_redis           service-redis
     raw     redis_binprefix         {{ redis_binprefix }}
 
@@ -261,6 +263,7 @@ context-extra =
     section gitlab                  gitlab
     section gitlab_shell            gitlab-shell
     section gitlab_shell_work       gitlab-shell-work
+    section gitlab_workhorse        gitlab-workhorse
     section gitaly                  gitaly
 
 [nginx.conf]
@@ -288,11 +291,9 @@ context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
     section gitlab_shell_work       gitlab-shell-work
+    section gitlab_shell            gitlab-shell
+    section gitlab_workhorse        gitlab-workhorse
     section gitaly                  gitaly
-
-[rack_attack.rb]
-<= gitlab-etc-template
-url = {{ rack_attack_rb_in }}
 
 [resque.yml]
 <= gitlab-etc-template
@@ -306,11 +307,11 @@ url = {{ smtp_settings_rb_in }}
 # contains smtp password
 mode    = 0600
 
-[unicorn.rb]
+[puma.rb]
 <= gitlab-etc-template
-url = {{ unicorn_rb_in }}
+url = {{ puma_rb_in }}
 context-extra =
-    section unicorn                 unicorn
+    section puma                    puma
     section directory               directory
     section gitlab_work             gitlab-work
 
@@ -340,20 +341,20 @@ prog    = {{ prog }}
 {% endfor %}
 
 
-[gitlab-unicorn-startup]
+[gitlab-puma-startup]
 recipe  = slapos.recipe.template:jinja2
 mode    = 0755
-url = {{ gitlab_unicorn_startup_in }}
+url = {{ gitlab_puma_startup_in }}
 output= ${directory:bin}/${:_buildout_section_name_}
 context =
     raw     bash_bin                {{ bash_bin }}
     raw     gitlab_rake             ${gitlab-rake:wrapper-path}
-    raw     gitlab_unicorn          ${gitlab-unicorn:wrapper-path}
+    raw     gitlab_puma            ${gitlab-puma:wrapper-path}
     raw     psql_bin                {{ postgresql_location }}/bin/psql
     section pgsql                   service-postgresql
     raw     log_dir                 ${gitlab:log}
     raw     var_dir                 ${directory:var}
-    section unicorn_rb              unicorn.rb
+    section puma_rb                 puma.rb
     section gitlab_work             gitlab-work
 
 
@@ -421,14 +422,13 @@ tune-command =
     ln -sf ${gitlab-workhorse:secret} .gitlab_workhorse_secret
 # config/
     cd config  &&
-    ln -sf ${unicorn.rb:output} unicorn.rb  &&
+    ln -sf ${puma.rb:output} puma.rb  &&
     ln -sf ${gitlab.yml:output} gitlab.yml  &&
     ln -sf ${database.yml:output} database.yml  &&
     ln -sf ${resque.yml:output} resque.yml  &&
     ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
 # config/initializers/
     cd initializers  &&
-    ln -sf ${rack_attack.rb:output} rack_attack.rb  &&
     ln -sf ${smtp_settings.rb:output} smtp_settings.rb  &&
 # public/
     cd ../../public  &&
@@ -573,11 +573,12 @@ wrapper-path    = ${directory:service}/gitlab-workhorse
 command-line    = {{ gitlab_workhorse }}
     -listenNetwork unix
     -listenAddr ${gitlab-workhorse:socket}
-    -authSocket ${unicorn:socket}
+    -authSocket ${puma:socket}
     -documentRoot ${gitlab-work:location}/public
     -secretPath ${gitlab-workhorse:secret}
     -logFile ${gitlab-workhorse:log}
-    -repoPath ${gitlab-repo-dir:repositories}
+# repoPath is for patched gitlab-workhorse
+#    -repoPath ${gitlab-repo-dir:repositories}
 # NOTE for profiling
 #   -pprofListenAddr ...
 
@@ -606,41 +607,47 @@ config-command     = {{ curl_bin }} --unix-socket ${gitlab-workhorse:socket}  ht
 
 
 ######################
-#   unicorn worker   #
+#   puma worker   #
 ######################
-[unicorn-dir]
+[puma-dir]
 recipe  = slapos.cookbook:mkdirectory
-srv     = ${directory:srv}/unicorn
-log     = ${directory:log}/unicorn
+srv     = ${directory:srv}/puma
+log     = ${directory:log}/puma
+pid     = ${directory:srv}/pids
 
-[unicorn]
-srv     = ${unicorn-dir:srv}
-log     = ${unicorn-dir:log}
-socket  = ${directory:srv}/unicorn.socket
+[puma]
+srv     = ${puma-dir:srv}
+log     = ${puma-dir:log}
+socket  = ${puma-dir:srv}/puma.socket
+pid     = ${puma-dir:pid}
 
-[service-unicorn]
+[service-puma]
 recipe  = slapos.cookbook:wrapper
-wrapper-path    = ${directory:service}/unicorn
-# NOTE we perform db setup / migrations as part of unicorn startup.
+wrapper-path    = ${directory:service}/puma
+# NOTE we perform db setup / migrations as part of puma startup.
 # Those operations require PG and Redis to be up and running already, that's
-# why we do it here. See gitlab-unicorn-startup for details.
-command-line    = ${gitlab-unicorn-startup:output}
+# why we do it here. See gitlab-puma-startup for details.
+command-line    = ${gitlab-puma-startup:output}
+{% if instance_parameter_dict.get('configuration.root-password') -%}
+environment =
+  GITLAB_ROOT_PASSWORD={{ instance_parameter_dict['configuration.root-password'] }}
+{% endif %}
 
 depend  =
-    ${promise-unicorn:recipe}
+    ${promise-puma:recipe}
     ${promise-gitlab-app:recipe}
     ${promise-gitlab-shell:recipe}
 
-    ${logrotate-entry-unicorn:recipe}
-# gitlab is a service "run" under unicorn
+    ${logrotate-entry-puma:recipe}
+# gitlab is a service "run" under puma
 # gitlab-shell is called by gitlab
 # -> associate their logs rotation to here
     ${logrotate-entry-gitlab:recipe}
 
 
-[promise-unicorn]
+[promise-puma]
 <= promise-byurl
-config-command = {{ curl_bin }} --unix-socket ${unicorn:socket}  http://localhost/
+config-command = {{ curl_bin }} --unix-socket ${puma:socket}  http://localhost/
 
 [promise-rakebase]
 recipe  = slapos.cookbook:wrapper
@@ -662,10 +669,10 @@ command-line    = ${:rake} gitlab:gitlab_shell:check
 # rake gitlab:repo:check        (fsck all repos)
 
 
-[logrotate-entry-unicorn]
+[logrotate-entry-puma]
 <= logrotate-entry-base
-log     = ${unicorn:log}/*.log
-name    = unicorn
+log     = ${puma:log}/*.log
+name    = puma
 copytruncate = true
 
 [logrotate-entry-gitlab]
@@ -682,8 +689,8 @@ copytruncate = true
 
 [logrotate-entry-gitlab-workhorse]
 <= logrotate-entry-base
-log     = ${gitlab-workhorse-dir:log}//*.log
-name    = gitlab-shell
+log     = ${gitlab-workhorse-dir:log}/*.log
+name    = gitlab-workhorse
 copytruncate = true
 
 #######################################
@@ -828,18 +835,17 @@ cron-entries = ${cron:cron-entries}
 [service-gitaly]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitaly
-#command-line    = ${gitlab-work:location}/bin/daemon_with_pidfile ${gitaly:pid}
 command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
 
 environment =
-    PATH={{ bundler_1_17_3_dir }}:{{ ruby_location }}/bin:/bin:/usr/bin
+    PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
 
 
 # 6. on-reinstantiate actions
 
 # NOTE here we only recompile assets. Other on-reinstantiate actions, which
-# require pg and redis running, are performed as part of unicorn service -
-# right before its startup (see gitlab-unicorn-startup).
+# require pg and redis running, are performed as part of puma service -
+# right before its startup (see gitlab-puma-startup).
 [on-reinstantiate]
 recipe  = plone.recipe.command
 stop-on-error   = true
