@@ -72,9 +72,13 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
     self.assertIn('beremiz-runtime-on-watch', process_names)
 
   def check_connexion(self, ip, port):
+    connexion_list = []
     for connexion in psutil.net_connections(kind='tcp4'):
+      if connexion.laddr.port == port:
+        connexion_list.append(connexion)
       if connexion.laddr.ip == ip and connexion.laddr.port == port and connexion.status == 'ESTABLISHED':
         return True
+    print(connexion_list)
     return False
 
   def test_opc_ua(self):
