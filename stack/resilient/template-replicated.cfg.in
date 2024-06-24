@@ -221,6 +221,9 @@ sla-mode = unique_by_network
 sla-{{ key }} = {{ value }}
 {%   endfor %}
 {% endif %}
+{% if 'retention-delay' not in sla_dict %}
+sla-retention_delay = 7
+{% endif %}
 
 [resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise-bin]
 # Check that public-key-value parameter exists and is not empty
