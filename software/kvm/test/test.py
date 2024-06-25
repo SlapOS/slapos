@@ -261,7 +261,6 @@ class KvmMixin:
     kvm_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     hash_file_list = [
-       os.path.join(kvm_partition, 'bin', 'kvm_raw')
     ] + kvm_additional_hash_file_list + [
       'software_release/buildout.cfg']
 
@@ -2515,10 +2514,11 @@ class ExternalDiskModernMixin(object):
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
-      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      os.path.join(
+          self.computer_partition_root_path, 'bin', 'kvm_raw')) as fh:
       self.qemu_img = [
         q for q in fh.readlines()
-        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
       self.qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
@@ -2665,10 +2665,11 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
-      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      os.path.join(
+          self.computer_partition_root_path, 'bin', 'kvm_raw')) as fh:
       qemu_img = [
         q for q in fh.readlines()
-        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
