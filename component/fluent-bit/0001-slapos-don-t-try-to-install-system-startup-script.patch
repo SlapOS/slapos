@@ -1,4 +1,4 @@
-From 2a3dd1d84cf45bb78f1b42deab5a8386932c0802 Mon Sep 17 00:00:00 2001
+From 9168120a3814e4188196e09d85d5c8fe6b92027f Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
 Date: Sun, 15 Oct 2023 09:39:33 +0900
 Subject: [PATCH] slapos: don't try to install system startup script
@@ -10,10 +10,10 @@ packages
  1 file changed, 27 deletions(-)
 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index b6233d9f7..9b3d395ba 100644
+index ede230441..d8f25f5ec 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -515,33 +515,6 @@ if(FLB_BINARY)
+@@ -539,33 +539,6 @@ if(FLB_BINARY)
        DESTINATION "${FLB_INSTALL_BINDIR}")
    endif()
  
@@ -23,7 +23,7 @@ index b6233d9f7..9b3d395ba 100644
 -  if(NOT SYSTEMD_UNITDIR AND IS_DIRECTORY /lib/systemd/system)
 -    set(SYSTEMD_UNITDIR  /lib/systemd/system)
 -  endif()
--  
+-
 -  if(SYSTEMD_UNITDIR)
 -    set(FLB_SYSTEMD_SCRIPT "${PROJECT_SOURCE_DIR}/init/${FLB_OUT_NAME}.service")
 -    configure_file(
@@ -48,5 +48,5 @@ index b6233d9f7..9b3d395ba 100644
      install(FILES
        "${PROJECT_SOURCE_DIR}/conf/fluent-bit-win32.conf"
 -- 
-2.40.1
+2.48.0
 
