@@ -13,6 +13,7 @@ services = $${:etc}/service
 bin = $${buildout:directory}/bin
 var = $${buildout:directory}/var
 log = $${:var}/log
+cron-d-mock = $${:var}/cron-d-mock
 cron-env-entries = $${:etc}/cron-env.d
 crontabs-env = $${:etc}/crontabs-env
 cronstamps-env = $${:etc}/cronstamps-env
@@ -43,3 +44,14 @@ recipe = slapos.cookbook:cron.d
 name = environment
 frequency = * * * * *
 command = ${buildout:executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ)))' > $${directory:var}/cron-environment.json
+
+[dynamic-template-kvm-export-mock]
+recipe = slapos.recipe.template:jinja2
+url = ${template-kvm-export-mock:location}/${template-kvm-export-mock:filename}
+output = $${buildout:directory}/template-kvm-export-mock.cfg
+context =
+  key template_kvm_export dynamic-template-kvm-export:output
+  key cron_d_mock directory:cron-d-mock
+
+[switch_softwaretype]
+kvm-export = dynamic-template-kvm-export-mock:output
