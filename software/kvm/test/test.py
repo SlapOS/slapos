@@ -792,8 +792,9 @@ class CronMixin(object):
       raise ValueError('Missing cron environment', ' '.join(missing_list))
 
   @classmethod
-  def executeCronDJob(cls, instance_type, cron):
-    jobpath = cls.getPartitionPath('kvm-export', 'etc', 'cron.d', 'backup')
+  def executeCronDMockJob(cls, instance_type, cron):
+    jobpath = cls.getPartitionPath(
+      instance_type, 'var', 'cron-d-mock', cron)
     with open(
       cls.getPartitionPath(
           'kvm-export', 'var', 'cron-environment.json')) as fh:
@@ -801,7 +802,8 @@ class CronMixin(object):
     job_list = []
     with open(jobpath, 'r') as fh:
       for job in fh.readlines():
-        job_list.append(' '.join(job.split(' ')[5:]))
+        job = job.strip()
+        job_list.append(job)
     job_list_output = []
     for job in job_list:
       job_list_output.append(subprocess.run(
@@ -839,7 +841,7 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     self.importer_partition = os.path.dirname(importer_partition[0])
 
   def call_exporter(self):
-    result = self.executeCronDJob('kvm-export', 'backup')
+    result = self.executeCronDMockJob('kvm-export', 'backup')
     self.assertEqual(len(result), 1)
     self.assertEqual(
       0,
@@ -2515,10 +2517,11 @@ class ExternalDiskModernMixin(object):
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
-      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      os.path.join(
+          self.computer_partition_root_path, 'bin', 'kvm_raw')) as fh:
       self.qemu_img = [
         q for q in fh.readlines()
-        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
       self.qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
@@ -2665,10 +2668,11 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
-      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      os.path.join(
+          self.computer_partition_root_path, 'bin', 'kvm_raw')) as fh:
       qemu_img = [
         q for q in fh.readlines()
-        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
