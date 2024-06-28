@@ -1,0 +1,15 @@
+{
+  "name": "Dependency-Track",
+  "description": "Dependency-Track is an intelligent Component Analysis platform that allows organizations to identify and reduce risk in the software supply chain.",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-dependency-track-input-schema.json",
+      "response": "instance-dependency-track-output-schema.json",
+      "index": 1
+    }
+  }
+}
