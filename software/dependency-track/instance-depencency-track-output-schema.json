@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "url": {
+      "title": "URL",
+      "description": "URL to access Dependency-Track.",
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}
