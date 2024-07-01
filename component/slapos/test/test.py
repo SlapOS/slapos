@@ -46,7 +46,7 @@ download_cache = os.path.join(build_directory, 'download_cache')
 extends_cache = os.path.join(build_directory, 'extends_cache')
 
 for d in build_directory, download_cache, extends_cache:
-  os.makedirs(test_root_dir, exist_ok=True)
+  os.makedirs(d, exist_ok=True)
 
 with open(profile_cfg, 'w') as f:
   f.write(f'''\
@@ -61,7 +61,9 @@ extends-cache = {extends_cache}
 ''')
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    profile_cfg, shared_part_list=[])
+    profile_cfg,
+    base_directory = build_directory,
+    shared_part_list=[])
 
 
 class TestSlapOSNodeBuild(SlapOSInstanceTestCase):
