@@ -34,12 +34,13 @@ from slapos.recipe.librecipe import unwrap
 import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
-from slapos.util import mkdir_p
+from slapos.util import mkdir_p, dumps, calculate_dict_hash
+from slapos.grid.SlapObject import SOFTWARE_INSTANCE_JSON_FILENAME
+
 from slapos import format as slapformat
 
 
 logger = logging.getLogger("slapos")
-
 
 class Recipe(object):
   """
@@ -70,6 +71,10 @@ class Recipe(object):
       Partition identifier.
       Example:
         ${slap-connection:partition-id}
+    software-instance-reference (optional)
+      Reference of the instance, this is used when the jIO API is available
+      Example:
+        ${slap-connection:software-instance-reference}
     storage-home
       Path of folder configured for data storage
       Example:
@@ -128,40 +133,79 @@ class Recipe(object):
       1. SlapOS Master - for external computer/partition information
       2. format.Partition.resource_file - for partition specific details
       """
+      software_instance = None
+
+      instance_json_path = os.path.join(instance_root, SOFTWARE_INSTANCE_JSON_FILENAME)
+      if os.path.exists(instance_json_path):
+        with open(instance_json_path, "r") as f:
+          software_instance = json.load(f)
+
       slap = slapos.slap.slap()
       slap.initializeConnection(
           options['url'],
           options.get('key'),
           options.get('cert'),
       )
-      computer_partition = slap.registerComputerPartition(
-          options['computer'],
-          options['partition'],
-      )
-      parameter_dict = computer_partition.getInstanceParameterDict()
-      options['instance-state'] = computer_partition.getState()
-      # XXX: those are not partition parameters, strictly speaking.
-      # Make them available as individual section keys.
-      for his_key in (
-                  'slap_software_type',
-                  'slap_computer_partition_id',
-                  'slap_computer_id',
-                  'slap_software_release_url',
-                  'slave_instance_list',
-                  'timestamp',
-              ):
-          try:
-              value = parameter_dict.pop(his_key)
-          except KeyError:
-              pass
+
+      # Fallback to requesting to SlapOS Master
+      if not software_instance:
+        if slap.jio_api_connector:
+          if options.get("software-instance-reference"):
+            software_instance = slap.jio_api_connector.get({
+              "portal_type": "Software Instance",
+              "reference": options.get("software-instance-reference"),
+            })
           else:
-              options[his_key.replace('_', '-')] = value
-      # Get Instance and root instance title or return UNKNOWN if not set
-      options['instance-title'] = parameter_dict.pop('instance_title',
-                                            'UNKNOWN Instance')
-      options['root-instance-title'] = parameter_dict.pop('root_instance_title',
-                                            'UNKNOWN')
-      options['instance-guid'] = computer_partition.getInstanceGuid()
+            software_instance = slap.jio_api_connector.get({
+              "portal_type": "Software Instance",
+              "compute_node_id": options["computer"],
+              "compute_partition_id": options["partition"],
+            })
+      if software_instance:
+        options["instance-state"] = software_instance.get("state")
+        options["slap-software-type"] = software_instance.get("software_type")
+        options["slap-computer-partition-id"] = software_instance.get("compute_partition_id")
+        options["slap-computer-id"] = software_instance.get("compute_node_id")
+        options["slap-software-release-url"] = software_instance.get("software_release_uri")
+        options["timestamp"] = software_instance.get("processing_timestamp")
+        options["instance-title"] = software_instance.get("title")
+        options["root-instance-title"] = software_instance.get("root_instance_title")
+        options["instance-guid"] = software_instance.get("reference")
+        ip_list = software_instance.get("ip_list", [])
+        full_ip_list = software_instance.get("full_ip_list", [])
+        parameter_dict = software_instance.get("parameters")
+
+      else:
+        computer_partition = slap.registerComputerPartition(
+            options['computer'],
+            options['partition'],
+        )
+        parameter_dict = computer_partition.getInstanceParameterDict()
+        options['instance-state'] = computer_partition.getState()
+        # XXX: those are not partition parameters, strictly speaking.
+        # Make them available as individual section keys.
+        for his_key in (
+                    'slap_software_type',
+                    'slap_computer_partition_id',
+                    'slap_computer_id',
+                    'slap_software_release_url',
+                    'slave_instance_list',
+                    'timestamp',
+                ):
+            try:
+                value = parameter_dict.pop(his_key)
+            except KeyError:
+                pass
+            else:
+                options[his_key.replace('_', '-')] = value
+        # Get Instance and root instance title or return UNKNOWN if not set
+        options['instance-title'] = parameter_dict.pop('instance_title',
+                                              'UNKNOWN Instance')
+        options['root-instance-title'] = parameter_dict.pop('root_instance_title',
+                                              'UNKNOWN')
+        options['instance-guid'] = computer_partition.getInstanceGuid()
+        ip_list = parameter_dict.pop('ip_list')
+        full_ip_list = parameter_dict.pop('full_ip_list', [])
 
       ipv4_set = set()
       v4_add = ipv4_set.add
@@ -177,7 +221,7 @@ class Recipe(object):
       route_v4_add = route_ipv4_set.add
       route_network_set = set()
       route_net_add = route_network_set.add
-      for tap, ip in parameter_dict.pop('ip_list'):
+      for tap, ip in ip_list:
           tap_add(tap)
           if valid_ipv4(ip):
               v4_add(ip)
@@ -185,19 +229,18 @@ class Recipe(object):
               v6_add(ip)
           # XXX: emit warning on unknown address type ?
 
-      if 'full_ip_list' in parameter_dict:
-        for item in parameter_dict.pop('full_ip_list'):
-          if len(item) == 5:
-            tap, ip, gw, netmask, network = item
-            if  tap.startswith('route_'):
-              if valid_ipv4(gw):
-                route_gw_add(gw)
-              if valid_ipv4(netmask):
-                route_mask_add(netmask)
-              if valid_ipv4(ip):
-                route_v4_add(ip)
-              if valid_ipv4(network):
-                route_net_add(network)
+      for item in full_ip_list:
+        if len(item) == 5:
+          tap, ip, gw, netmask, network = item
+          if  tap.startswith('route_'):
+            if valid_ipv4(gw):
+              route_gw_add(gw)
+            if valid_ipv4(netmask):
+              route_mask_add(netmask)
+            if valid_ipv4(ip):
+              route_v4_add(ip)
+            if valid_ipv4(network):
+              route_net_add(network)
 
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
@@ -213,7 +256,7 @@ class Recipe(object):
       if storage_home and os.path.exists(storage_home) and \
                                   os.path.isdir(storage_home):
         for filename in os.listdir(storage_home):
-          storage_path = os.path.join(storage_home, filename, 
+          storage_path = os.path.join(storage_home, filename,
                                     options['slap-computer-partition-id'])
           if os.path.exists(storage_path) and os.path.isdir(storage_path):
             storage_link = os.path.join(instance_root, 'DATA', filename)
@@ -245,6 +288,7 @@ class Recipe(object):
               options[key] = value
       # print out augmented options to see what we are passing
       logger.debug(str(options))
+
       return self._expandParameterDict(options, parameter_dict)
 
   def _expandParameterDict(self, options, parameter_dict):
