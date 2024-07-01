@@ -8,12 +8,11 @@ parts =
   publish-connection-parameter
   download-plc
   beremiz-runtime
-#beremiz-runtime-promise
+  http-promise
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
-extends = {{ template_monitor }}
 
 [download-plc]
 recipe = slapos.recipe.build:download-unpacked
@@ -30,8 +29,8 @@ cert = ${slap-connection:cert-file}
 configuration.runtime_plc_url =
 configuration.runtime_plc_md5sum =
 configuration.autostart = 1
-configuration.interface = 0.0.0.0
-configuration.port = 61248
+configuration.interface = 127.0.0.1
+configuration.port = 8009
 
 # Create all needed directories, depending on your needs
 [directory]
@@ -41,6 +40,7 @@ etc = ${:home}/etc
 var = ${:home}/var
 script = ${:etc}/run
 service = ${:etc}/service
+promise = ${:etc}/promise
 log = ${:var}/log
 
 [beremiz-runtime]
@@ -60,12 +60,11 @@ command-line =
  {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_cli.py -k --project-home ${directory:home}/parts/download-plc/ build transfer run
 wrapper-path = ${directory:service}/beremiz-runtime
 
-[beremiz-runtime-promise]
-<= monitor-promise-base
-module = check_port_listening
-name = beremiz-runtime.py
-config-hostname= ${instance-parameter:configuration.interface}
-config-port    = ${instance-parameter:configuration.port}
+[http-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+hostname = ${instance-parameter:configuration.interface}
+port = ${instance-parameter:configuration.port}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
