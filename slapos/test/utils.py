@@ -18,8 +18,10 @@ def makeRecipe(recipe_class, options, name='test', buildout=None):
       'bin-directory': '',
       'find-links': '',
       'allow-hosts': '',
+      'allow-unknown-extras': False,
       'develop-eggs-directory': '',
       'eggs-directory': '',
+      'directory': '',
       'python': 'testpython',
     },
     'testpython': {
