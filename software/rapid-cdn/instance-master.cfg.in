@@ -1080,6 +1080,7 @@ name = publish-failsafe-error.py
 config-filename = ${check-publish-failsafe-error:file}
 config-state = empty
 config-url = ${check-publish-failsafe-error-publish:url}
+config-failure_amount = 5
 
 [buildout]
 extends =
