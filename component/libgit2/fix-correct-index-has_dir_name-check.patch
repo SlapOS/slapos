@@ -1,0 +1,44 @@
+From 487af0cf6687dc48b0a960fa2f39894e2d84d77b Mon Sep 17 00:00:00 2001
+From: Edward Thomson <ethomson@edwardthomson.com>
+Date: Sat, 16 Dec 2023 11:19:07 +0000
+Subject: [PATCH] index: correct index has_dir_name check
+
+`has_dir_name` is used to check for directory/file collisions,
+and attempts to determine whether the index contains a file with
+a directory name that is a proper subset of the new index entry
+that we're trying to add.
+
+To determine directory name, the function would walk the path string
+backwards to identify a `/`, stopping at the end of the string. However,
+the function assumed that the strings did not start with a `/`. If the
+paths contain only a single `/` at the beginning of the string, then the
+function would continue the loop, erroneously, when they should have
+stopped at the first character.
+
+Correct the order of the tests to terminate properly.
+
+Credit to Michael Rodler (@f0rki) and Amazon AWS Security.
+---
+ src/index.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/index.c b/src/index.c
+index 9d919093be0..ccb38230a16 100644
+--- a/src/index.c
++++ b/src/index.c
+@@ -1185,10 +1185,13 @@ static int has_dir_name(git_index *index,
+ 		size_t len, pos;
+ 
+ 		for (;;) {
+-			if (*--slash == '/')
+-				break;
++			slash--;
++
+ 			if (slash <= entry->path)
+ 				return 0;
++
++			if (*slash == '/')
++				break;
+ 		}
+ 		len = slash - name;
+ 
