@@ -1,0 +1,17 @@
+Disable a stringop-overflow warning failing build on gcc 10.5
+
+This is an original slapos patch probably no longer necessary once we update gcc
+
+--- zeromq-4.3.5.orig/src/xpub.cpp	2023-06-18 23:40:34.000000000 +0900
++++ zeromq-4.3.5/src/xpub.cpp	2024-07-11 20:07:19.620329232 +0900
+@@ -384,7 +384,10 @@
+         //  Place the unsubscription to the queue of pending (un)subscriptions
+         //  to be retrieved by the user later on.
+         blob_t unsub (size_ + 1);
++
++#pragma GCC diagnostic ignored "-Wstringop-overflow="
+         *unsub.data () = 0;
++#pragma GCC diagnostic pop
+         if (size_ > 0)
+             memcpy (unsub.data () + 1, data_, size_);
+         self_->_pending_data.ZMQ_PUSH_OR_EMPLACE_BACK (ZMQ_MOVE (unsub));
