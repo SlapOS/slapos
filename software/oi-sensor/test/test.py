@@ -69,17 +69,17 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
                        for process in supervisor.getAllProcessInfo()]
     self.assertIn('oi-sensor-on-watch', process_names)
 
-  def check_connexion(self, ip, port):
-    connexion_list = [] # test node debug
-    for connexion in psutil.net_connections(kind='tcp4'):
+  def check_connection(self, ip, port):
+    connection_list = [] # test node debug
+    for connection in psutil.net_connections(kind='tcp4'):
       # test node debug
-      if connexion.laddr.port == port:
-        connexion_list.append(connexion)
+      if connection.laddr.port == port:
+        connection_list.append(connection)
       # debug end
-      if connexion.laddr.ip == ip and connexion.laddr.port == port and connexion.status == 'ESTABLISHED':
+      if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'ESTABLISHED':
         return True
     # test node debug
-    print(connexion_list)
+    print(connection_list)
     test_path = self.computer_partition_root_path
     with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_beremiz-runtime.log')) as log_file:
       print(log_file.readlines()[-15:])
@@ -87,4 +87,4 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
     return False
 
   def test_opc_ua(self):
-    self.assertTrue(self.check_connexion('127.0.0.1', 4840))
+    self.assertTrue(self.check_connection('127.0.0.1', 4840))
