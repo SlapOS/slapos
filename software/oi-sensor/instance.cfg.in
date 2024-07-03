@@ -19,7 +19,6 @@ etc = ${:home}/etc
 var = ${:home}/var
 script = ${:etc}/run/
 service = ${:etc}/service
-promise = ${:etc}/promise/
 log = ${:var}/log
 bin = ${:home}/bin
 
