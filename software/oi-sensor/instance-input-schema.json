@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "Parameters to instantiate an Optical Inspection OPCUA sensor",
+  "type": "object",
+  "configuration": {
+    "headless": {
+      "description": "Run in a headless (without X serer and display mode)..",
+      "type": "int",
+      "default": "1"
+    },
+    "camera": {
+      "description": "The index of the camera USB device represented as /dev/videoX.",
+      "type": "string",
+      "default": ""
+    }
+  }
+}
