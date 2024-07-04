@@ -1,9 +1,9 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 {% if isADrone -%}
 /*global console, execUserScript, getAltitude, getClimbRate, getInitialAltitude,
-  gpsIsOk, getPosition, getSpeed, getYaw, initPubsub, isLanding, isReadyToFly,
-  land, loiter, setMessage, setTargetCoordinates, std, takeOff,
-  updateLogAndProjection, ArrayBuffer, Drone, Uint8Array, Worker*/
+  gpsIsOk, getMaxCommandFrequency, getPosition, getSpeed, getYaw, initPubsub,
+  isLanding, isReadyToFly, land, loiter, setMessage, setTargetCoordinates, std,
+  takeOff, updateLogAndProjection, ArrayBuffer, Drone, Uint8Array, Worker*/
 {% else -%}
 /*global console, execUserScript, initPubsub, setMessage, setTargetCoordinates,
   std, updateLogAndProjection, Drone, Worker*/
@@ -15,6 +15,7 @@ import {
   getClimbRate,
   getInitialAltitude,
   gpsIsOk,
+  getMaxCommandFrequency,
   getPosition,
   getSpeed,
   getYaw,
@@ -48,10 +49,10 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
 {% if isADrone -%}
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-           fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition,
-           getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
-           pipe, setMessage, setReadHandler, setTargetCoordinates,
-           land, updateLogAndProjection, waitpid) {
+           fdopen, getAltitude, getInitialAltitude, gpsIsOk,
+           getMaxCommandFrequency, getPosition, getYaw, initPubsub, isLanding,
+           kill, loadFile, loiter, open, pipe, setMessage, setReadHandler,
+           setTargetCoordinates, land, updateLogAndProjection, waitpid) {
 {% else -%}
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, initPubsub, kill, loadFile, open, pipe, setMessage,
@@ -82,6 +83,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       getCurrentPosition: getPosition,
       getInitialAltitude: getInitialAltitude,
       gpsIsOk: gpsIsOk,
+      getMaxCommandFrequency: getMaxCommandFrequency,
       getSpeed: getSpeed,
       getYaw: getYaw,
 {% endif -%}
@@ -324,9 +326,9 @@ import { evalScript, fdopen, loadFile, open } from "std";
   };
 {% if isADrone -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getYaw,
-  initPubsub, isLanding, kill, loadFile, loiter, open, pipe, setMessage,
-  setReadHandler, setTargetCoordinates, land,
+  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getMaxCommandFrequency,
+  getPosition, getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
+  pipe, setMessage, setReadHandler, setTargetCoordinates, land,
   updateLogAndProjection, waitpid));
 {% else -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
