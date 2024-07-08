@@ -12,7 +12,14 @@
 {% if zodb['type'] == 'zeo' -%}
 {%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
 {% elif zodb['type'] == 'neo' -%}
-{%   set zurl = ('neo://%s@%s' % (z.pop('name'), z.pop('master_nodes')|replace(" ", ","))) -%}
+{#   If 'ca' in storage-dict, SSL is true. #}
+{#   (see https://lab.nexedi.com/nexedi/slapos/blob/397726e1/stack/erp5/instance-zodb-base.cfg.in#L17-21) #}
+{%   if "ca" in z -%}
+{%     set zurlscheme = 'neos' -%}
+{%   else -%}
+{%     set zurlscheme = 'neo' -%}
+{%   endif -%}
+{%   set zurl = ('%s://%s@%s' % (zurlscheme, z.pop('name'), z.pop('master_nodes')|replace(" ", ","))) -%}
 {%   set argv = [] -%}
 {%   set i = 0 -%}
 {%   for k,v in z|dictsort -%}
