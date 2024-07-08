@@ -81,7 +81,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     # test node debug
     print(connection_list)
     test_path = self.computer_partition_root_path
-    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_beremiz-runtime.log')) as log_file:
+    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_oi-sensor-service.log')) as log_file:
       print(log_file.readlines()[-15:])
     # debug end
     return False
