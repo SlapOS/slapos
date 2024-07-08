@@ -23,8 +23,8 @@
       "title": "UE",
       "software-type": "ue",
       "description": "User Equipment Configuration",
-      "request": "instance-ue-input-schema.json",
-      "response": "instance-ue-schema.json",
+      "request": "instance-ors-ue-input-schema.json",
+      "response": "instance-ors-ue-schema.json",
       "index": 3
     },
     "ue-slave": {
