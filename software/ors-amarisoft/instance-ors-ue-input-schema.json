@@ -1,0 +1,59 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "type": "string",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "default": "20 MHz"
+    },
+    "n_antenna_dl": {
+      "$ref": "ru/common.json#/properties/n_antenna_dl",
+      "enum": [
+        1,
+        2
+      ],
+      "default": 2
+    },
+    "n_antenna_ul": {
+      "$ref": "ru/common.json#/properties/n_antenna_ul",
+      "enum": [
+        1,
+        2
+      ],
+      "default": 2
+    },
+    "rf_mode": {
+      "$ref": "cell/common.json#/properties/rf_mode",
+      "default": "tdd"
+    },
+    "dl_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
+    },
+    "tx_gain": {
+      "$ref": "ru/common.json#/properties/tx_gain"
+    },
+    "rx_gain": {
+      "$ref": "ru/common.json#/properties/rx_gain"
+    },
+    "log_phy_debug": {
+      "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug"
+    },
+    "disable_sdr": {
+      "default": false,
+      "title": "Disable SDR",
+      "description": "Disables radio",
+      "type": "boolean"
+    }
+  }
+}
