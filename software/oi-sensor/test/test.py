@@ -32,7 +32,7 @@ import psutil
 from slapos.testing.testcase import installSoftwareUrlList, makeModuleSetUpAndTestCaseClass
 
 oi_sensor_software_release_url = os.path.abspath(
-  os.path.join(os.path.dirname(__file__), '..', '..', 'oi-sensor', 'software.cfg'))
+  os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -47,7 +47,7 @@ def setUpModule():
   )
 
 
-class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
+class OISensorTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def requestDefaultInstance(cls, state='started'):
@@ -61,7 +61,7 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {"runtime_plc_url": "https://lab.nexedi.com/nexedi/osie/-/raw/dd9aea8012376124ad216e3516e4f33945d14fc5/Beremiz/beremiz_test_opc_ua/bin/beremiz_test_opc_ua.tgz"}
+    return {}
 
   def test_process(self):
     with self.slap.instance_supervisor_rpc as supervisor:
