@@ -25,7 +25,7 @@ def main():
         obj = json.load(infile, object_pairs_hook=collections.OrderedDict)
       except ValueError as e:
         exit_code = 1
-        print(e, file=sys.stderr)
+        print(f'{f}:{e.lineno}', e, file=sys.stderr)
       else:
         with open(f, 'w') as outfile:
           json.dump(obj, outfile, ensure_ascii=False, sort_keys=False, indent=2, separators=(',', ': '))
