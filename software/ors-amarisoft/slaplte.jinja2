@@ -240,7 +240,7 @@
                   'slave_reference':  False,
                }})  %}
 {%-       endif %}
-{%-     else  %}
+{%-     elif 'imsi' not in _ %}
 {%-       do qother.append(ishared) %}
 {%-     endif %}
 {%-   endfor  %}
