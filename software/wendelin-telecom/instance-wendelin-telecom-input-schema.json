@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "gateway-host": {
+      "title": "Fluentd gateway address",
+      "description": "Address of the instance's fluentd gateway",
+      "type": "string"
+    }
+  }
+}
