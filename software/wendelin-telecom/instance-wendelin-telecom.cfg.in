@@ -1,0 +1,107 @@
+[buildout]
+extends =
+  {{ instance_erp5 }}
+
+parts +=
+  ors-client-project-register
+
+[directory]
+ors-client-project-register = ${:etc}/ors-client-project-register
+
+[ors-client-project-register]
+recipe = slapos.recipe.build
+slave-instance-list = {{ dumps(slave_instance_list) }}
+ors-client-project-register-path = ${directory:ors-client-project-register}
+backend-url = ${publish:family-default-v6}
+client-frontend-url = {{ slapparameter_dict.get('client-frontend-url', '')}}
+inituser-login = ${publish:inituser-login}
+inituser-password = ${publish-early:inituser-password}
+update =
+  import json
+  import logging
+  import os
+  import requests
+  import slapos
+
+  log = logging.getLogger('SLAPOS-WENDELIN-TELECOM')
+  logging.basicConfig(level=logging.INFO)
+
+  slap = slapos.slap.slap()
+  slap_connection = self.buildout['slap-connection']
+  self.computer_id = slap_connection['computer-id']
+  self.computer_partition_id = slap_connection['partition-id']
+  self.server_url = slap_connection['server-url']
+  self.software_release_url = slap_connection['software-release-url']
+  self.key_file = slap_connection.get('key-file')
+  self.cert_file = slap_connection.get('cert-file')
+  self.slave_instance_list = list(options['slave-instance-list'])
+
+  # Redeploy instance to update published information
+  slap.initializeConnection(self.server_url, self.key_file, self.cert_file)
+  computer_partition = slap.registerComputerPartition(self.computer_id, self.computer_partition_id)
+
+  ors_client_project_register_path = options['ors-client-project-register-path']
+  wendelin_telecom_backend_url = options['backend-url']
+  wendelin_telecom_client_frontend_url = options['client-frontend-url']
+  inituser_login = options['inituser-login']
+  inituser_password = options['inituser-password']
+
+  for slave in self.slave_instance_list:
+    slave_reference = slave['slave_reference']
+
+    try:
+      project_title = slave['project-title']
+      project_reference = project_title.replace(" ", "_").lower()
+      client_username = slave['client-username']
+      ors_tag = slave['ors-tag']
+      ors_title = slave['ors-title']
+    except KeyError as e:
+      log.fatal("%s: Parameter %s not found, skipping registration" % (slave_reference, e))
+      continue
+
+    register_file = os.path.join(ors_client_project_register_path, '%s.json' % slave_reference)
+
+    connection_dict = {}
+    if not os.path.exists(register_file):
+      with open(register_file, 'w') as file:
+        json.dump(connection_dict, file)
+    else:
+      with open(register_file, 'r') as file:
+        connection_dict = json.load(file)
+
+    request_url = "%s/erp5/Base_registerOrsClientProject?project_reference=%s&project_title=%s&client_username=%s&ors_tag=%s&ors_title=%s" \
+      % (wendelin_telecom_backend_url, project_reference, project_title, client_username, ors_tag, ors_title)
+
+    response = requests.get(request_url, verify=False, auth=(inituser_login, inituser_password))
+    response = response.json()
+
+    error_msg_key = "error_msg"
+    if error_msg_key in response:
+      error_msg = response[error_msg_key]
+      log.info(error_msg)
+    else:
+      if "username" in response and "init_password" in response:
+        connection_dict = {
+          "username": response['username'],
+          "init-password": response['init_password']
+        }
+        with open(register_file, 'w') as file:
+          json.dump(connection_dict, file)
+          log.info("ORS client project successfully registered: %s" % slave_reference)
+      else:
+        log.fatal("Error while fetching client user account credentials")
+        continue
+
+    no_client_frontend_url_msg = "Wendelin Telecom website has not been configured."
+    connection_dict['wendelin-telecom-homepage'] = wendelin_telecom_client_frontend_url or no_client_frontend_url_msg
+
+    try:
+      log.info("Update parameters for client project %s" % slave_reference)
+
+      computer_partition.setConnectionDict(connection_dict, slave_reference)
+    except Exception:
+      log.fatal("Error while sending slave %s information: %s",
+          slave_reference, traceback.format_exc())
+
+[publish]
+slave-amount = {{ len(slave_instance_list) }}
