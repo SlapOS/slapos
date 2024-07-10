@@ -51,6 +51,12 @@
       "description": "Set to true to enable IPv4 multicast",
       "type": "boolean"
     },
+    "enable_ipv6_multicast": {
+      "default": false,
+      "title": "Enable IPv6 multicast",
+      "description": "Set to true to enable IPv6 multicast",
+      "type": "boolean"
+    },
     "enable_broadcast": {
       "default": false,
       "title": "Enable IPv4 broadcast",
