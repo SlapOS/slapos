@@ -1,0 +1,51 @@
+Disable clamdtop as it requires ncurses5, but ncurses5 doesn't build without an extra old gcc.
+---
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1f890da..5e51ca1 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -106,6 +106,7 @@ endif()
+ set(ENABLE_DOXYGEN_DEFAULT          OFF)
+ set(ENABLE_UNRAR_DEFAULT            ON)
+ set(ENABLE_SYSTEMD_DEFAULT          ON)
++set(ENABLE_CLAMDTOP_DEFAULT         ON)
+ 
+ # See CMakeOptions.cmake for additional options.
+ include(CMakeOptions.cmake)
+@@ -564,7 +565,9 @@ if(NOT ENABLE_LIBCLAMAV_ONLY)
+     endif()
+ 
+     if(ENABLE_APP)
+-        find_package(CURSES REQUIRED)
++        if(ENABLE_CLAMDTOP)
++          find_package(CURSES REQUIRED)
++        endif()
+ 
+         if(NOT WIN32 AND ENABLE_MILTER)
+             find_package(Milter REQUIRED)
+@@ -1086,7 +1089,9 @@ if(NOT ENABLE_LIBCLAMAV_ONLY)
+ 
+         add_subdirectory( freshclam )
+ 
+-        add_subdirectory( clamdtop )
++        if(ENABLE_CLAMDTOP)
++          add_subdirectory( clamdtop )
++        endif()
+ 
+         if(WIN32)
+             add_subdirectory( win32/conf_examples )
+diff --git a/CMakeOptions.cmake b/CMakeOptions.cmake
+index e6e9b11..00b9db6 100644
+--- a/CMakeOptions.cmake
++++ b/CMakeOptions.cmake
+@@ -116,6 +116,10 @@ option(ENABLE_SYSTEMD
+     "Install systemd service files if systemd is found."
+     ${ENABLE_SYSTEMD_DEFAULT})
+ 
++option(ENABLE_CLAMDTOP
++    "Compile clamdtop."
++    ${ENABLE_CLAMDTOP_DEFAULT})
++
+ # For reference determining target platform:
+ #  Rust Targets:  https://doc.rust-lang.org/nightly/rustc/platform-support.html
+ option(RUST_COMPILER_TARGET
