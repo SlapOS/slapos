@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Values returned by ORS Wendelin",
+  "type": "object",
+  "properties": {
+    "ors-wendelin-homepage": {
+      "description": "URL to the homepage of the ORS Wendelin platform",
+      "type": "string"
+    },
+    "username": {
+      "description": "Username for the project's user account",
+      "type": "string"
+    },
+    "init-password": {
+      "description": "Initial password for the project's user account",
+      "type": "string"
+    }
+  }
+}
