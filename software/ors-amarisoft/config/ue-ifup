@@ -1,0 +1,70 @@
+#!/bin/bash
+
+ue_id="$1"
+pdn_id="$2"
+ifname="$3"
+ipv4_addr="$4"
+ipv4_dns="$5"
+ipv6_local_addr="$6"
+ipv6_dns="$7"
+param="$8"
+old_link_local=""
+
+shift; shift; shift; shift; shift; shift; shift; shift;
+while [ "$1" != "" ] ; do
+    case "$1" in
+    --mtu)
+        mtu="$2"
+        shift
+        ;;
+    *)
+        echo "Bad parameter: $1" >&2
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+if [ "$pdn_id" != "0" ] ; then
+    echo "We should have only PDN 0, exiting..."
+    exit 1
+fi
+
+echo "Configure $ue_id($param) on pdn $pdn_id, tun=$ifname, ip=$ipv4_addr, dns=$ipv4_dns, ip6=$ipv6_local_addr, ip6_dns=$ipv6_dns"
+
+if [ "$ipv4_dns" != "" ] || [ "$ipv6_dns" != "" ] ; then
+    if [ "$ipv4_dns" != "" ] ; then
+        echo "nameserver $ipv4_dns" >> /etc/resolv.conf
+    fi
+    if [ "$ipv6_dns" != "" ] ; then
+        echo "nameserver $ipv6_dns" >> /etc/resolv.conf
+    fi
+fi
+
+if [ "$ipv6_local_addr" != "" ] ; then
+    echo '0' > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+    echo '1' > /proc/sys/net/ipv6/conf/$ifname/accept_ra
+    echo '1' > /proc/sys/net/ipv6/conf/$ifname/router_solicitation_delay
+    echo '1' > /proc/sys/net/ipv6/conf/$ifname/autoconf
+else
+    echo '1' > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+fi
+
+ifconfig $ifname up
+if [ "$ipv4_addr" != "" ] ; then
+    ifconfig $ifname $ipv4_addr/24
+    if [ "$mtu" != "" ] ; then
+        ifconfig $ifname mtu $mtu
+    fi
+fi
+if [ "$ipv6_local_addr" != "" ] ; then
+    old_link_local=`ip addr show dev $ifname | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d'`
+    if [ "$old_link_local" != "" ] ; then
+        ifconfig $ifname inet6 del $old_link_local/64
+    fi
+    ifconfig $ifname inet6 add $ipv6_local_addr/64
+fi
+
+if [ "$ipv4_addr" != "" -a "$ipv6_local_addr" != "" ] ; then
+    echo "MAC_ADDR="$(ip link show dev $ifname | grep -oP "ether \K[\d:a-f]+")
+fi
