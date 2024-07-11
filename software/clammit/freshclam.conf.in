@@ -1,0 +1,8 @@
+Foreground yes
+DatabaseDirectory {{ clamconfig["clam-database-directory"] }}
+UpdateLogFile {{ clamconfig["freshclam-log-file"] }}
+LogRotate no
+LogTime yes
+PidFile {{ clamconfig["freshclam-pid-file"] }}
+DatabaseMirror database.clamav.net
+NotifyClamd {{ clamd_config_file }}
