@@ -1,0 +1,213 @@
+[buildout]
+
+extends =
+  {{ template_logrotate_base }}
+
+parts =
+  ${:clamd-parts}
+  ${:freshclam-parts}
+  ${:clammit-parts}
+  ${:frontend-parts}
+  cron-entry-logrotate
+  publish-connection-parameter
+
+clamd-parts =
+  clamd
+  clamd-logrotate
+freshclam-parts =
+  freshclam
+  freshclam-cron
+  freshclam-logrotate
+clammit-parts =
+  clammit
+  clammit-port-listening-promise
+frontend-parts =
+  frontend
+  frontend-promise
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${frontend-config:url}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+etc.promise = ${:etc}/promise
+etc.run = ${:etc}/run
+etc.service = ${:etc}/service
+srv = ${:home}/srv
+tmp = ${:home}/tmp
+var = ${:home}/var
+var.clamdb = ${:var}/clamdb
+var.log = ${:var}/log
+var.run = ${:var}/run
+
+[clam-config]
+clam-database-directory = ${directory:var.clamdb}
+clamd-log-file = ${directory:var.log}/clamd.log
+clamd-pid-file = ${directory:var.run}/clamd.pid
+clamd-socket-file = ${directory:var.run}/clamd.sock
+clamd-temporary-directory = ${directory:tmp}
+freshclam-log-file = ${directory:var.log}/freshclam.log
+freshclam-pid-file = ${directory:var.run}/freshclam.pid
+clammit-log-file = ${directory:var.log}/clammit.log
+clammit-listen-address = ${instance-parameter:ipv4-random}
+clammit-listen-port = 8438
+clammit-url = http://${:clammit-listen-address}:${:clammit-listen-port}
+
+################################################################################
+# Clamd
+################################################################################
+
+[clamd.conf]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/clamd.conf
+url = {{ clamd_conf_path }}
+context =
+  section clamconfig clam-config
+
+[clamd]
+recipe = slapos.cookbook:wrapper
+command-line = {{ clamav.location }}/sbin/clamd --config-file ${clamd.conf:output}
+wrapper-path = ${directory:etc.service}/${:_buildout_section_name_}
+hash-files =
+  ${clamd.conf:output}
+hash-existing-files =
+  {{ buildout.directory }}/.completed
+
+[clamd-logrotate]
+<= logrotate-entry-base
+name = clamd
+log = ${clam-config:clamd-log-file}
+post = {{ buildout.directory }}/bin/slapos-kill --pidfile ${clam-config:clamd-pid-file} -s SIGHUP
+
+################################################################################
+# Freshclam
+################################################################################
+
+[freshclam.conf]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/freshclam.conf
+url = {{ freshclam_conf_path }}
+context =
+  section clamconfig clam-config
+  key clamd_config_file clamd.conf:output
+
+[freshclam]
+recipe = slapos.cookbook:wrapper
+command-line = {{ clamav.location }}/bin/freshclam --config-file ${freshclam.conf:output}
+wrapper-path = ${directory:etc.run}/${:_buildout_section_name_}
+
+[freshclam-cron]
+recipe = slapos.cookbook:cron.d
+time = daily
+cron-entries = ${cron:cron-entries}
+name = freshclam
+command = {{ clamav.location }}/bin/freshclam --config-file ${freshclam.conf:output}
+
+[freshclam-logrotate]
+<= logrotate-entry-base
+name = freshclam
+log = ${clam-config:freshclam-log-file}
+
+################################################################################
+# Clammit
+################################################################################
+
+[clammit.conf]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/clammit.conf
+url = {{ clammit_conf_path }}
+context =
+  section clamconfig clam-config
+  key database_directory directory:var.clamdb
+
+[clammit]
+recipe = slapos.cookbook:wrapper
+command-line = {{ clammit_bin }} -config ${clammit.conf:output}
+wrapper-path = ${directory:etc.service}/${:_buildout_section_name_}
+hash-files =
+  ${clammit.conf:output}
+hash-existing-files =
+  {{ buildout.directory }}/.completed
+
+[clammit-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:etc.promise}/${:_buildout_section_name_}
+hostname= ${clam-config:clammit-listen-address}
+port = ${clam-config:clammit-listen-port}
+
+################################################################################
+# Local frontend
+################################################################################
+
+[frontend-config]
+address = ${instance-parameter:ipv6-random}
+port = 3000
+url = https://[${:address}]:${:port}
+socket = ${directory:var.run}/haproxy.sock
+user = admin
+password = ${frontend-password:passwd}
+
+[frontend-password]
+recipe = slapos.cookbook:generate.password
+username = admin
+
+[frontend-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:cert-file} ]
+  then
+    {{ openssl.location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
+      -newkey rsa -keyout ${:cert-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+cert-file = ${directory:var}/${:_buildout_section_name_}.pem
+common-name = ${frontend-config:address}
+location =
+  ${:cert-file}
+
+[haproxy.conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ haproxy_conf_path }}
+output = ${directory:etc}/${:_buildout_section_name_}
+context =
+  key pidfile :pidfile
+  key content :content
+content =
+  frontend listener
+    mode http
+    bind [${frontend-config:address}]:${frontend-config:port} ssl crt ${frontend-certificate:cert-file} alpn h2,http/1.1
+    default_backend servers
+  backend servers
+    server app ${clam-config:clammit-listen-address}:${clam-config:clammit-listen-port} check
+pidfile = ${directory:var.run}/haproxy.pid
+
+[frontend]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:etc.service}/${:_buildout_section_name_}
+command-line =
+  {{ haproxy.location }}/sbin/haproxy -f ${haproxy.conf:output}
+hash-files = ${haproxy.conf:output}
+
+[frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:etc.promise}/${:_buildout_section_name_}.py
+url = ${frontend-config:url}/clammit/readyz
+dash_path = {{ dash.location }}/bin/dash
+curl_path = {{ curl.location }}/bin/curl
