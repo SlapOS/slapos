@@ -1,0 +1,12 @@
+Foreground yes
+LogFile {{ clamconfig["clamd-log-file"] }}
+LogRotate no
+LogTime yes
+PidFile {{ clamconfig["clamd-pid-file"] }}
+LocalSocket {{ clamconfig["clamd-socket-file"] }}
+DatabaseDirectory {{ clamconfig["clam-database-directory"] }}
+TemporaryDirectory {{ clamconfig["clamd-temporary-directory"] }}
+LocalSocketMode 660
+ReadTimeout 30
+# MaxScanTime is in milliseconds.
+MaxScanTime 60000
