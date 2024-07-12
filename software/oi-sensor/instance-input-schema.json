@@ -4,7 +4,7 @@
   "type": "object",
   "configuration": {
     "headless": {
-      "description": "Run in a headless (without X serer and display mode)..",
+      "description": "Run in a headless (without a X server).",
       "type": "int",
       "default": "1"
     },
