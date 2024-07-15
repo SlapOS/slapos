@@ -1,0 +1,35 @@
+<source>
+  @type forward
+  bind {{ bind }}
+  port {{ port }}
+{%- if tag_prefix %}
+  add_tag_prefix {{ tag_prefix }}
+{%- endif %}
+{%- if tls_transport_enabled %}
+  <transport tls>
+    cert_path {{ cert_file }}
+    private_key_path {{ key_file }}
+    private_key_passphrase
+  </transport>
+{%- endif %}
+</source>
+{%- if tag_match_pattern %}
+<match {{ tag_match_pattern }}>
+{%- elif tag_prefix %}
+<match {{ tag_prefix }}.**>
+{%- else %}
+<match **>
+{%- endif %}
+  @type wendelin
+  streamtool_uri {{ wendelin_ingestion_url }}
+  user {{ username }}
+  password {{ password }}
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval {{ flush_interval }}
+    flush_thread_count 4
+    @type file
+    path {{ buffer_file_dir }}/
+  </buffer>
+</match>
