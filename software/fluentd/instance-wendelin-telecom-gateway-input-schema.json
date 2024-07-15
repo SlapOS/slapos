@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Parameters to instantiate Fluentd",
+  "additionalProperties": false,
+  "properties": {
+    "port": {
+      "title": "Port",
+      "description": "Port on which to listen for incoming data",
+      "type": "integer",
+      "default": 24224
+    },
+    "shared-key": {
+      "title": "Shared Key",
+      "description": "Shared key for authentication between fluentd and a fluentd/fluentbit data source",
+      "type": "string"
+    },
+    "wendelin-frontend-url": {
+      "title": "Wendelin frontend URL",
+      "description": "URL of the Wendelin Telecom instance to which the data is to be forwarded",
+      "type": "string"
+    },
+    "username": {
+      "title": "The username of a valid account to authenticate with on the Wendelin instance",
+      "type": "string"
+    },
+    "password": {
+      "title": "The password of the account to authenticate with on the Wendelin instance",
+      "type": "string"
+    }
+  }
+}
