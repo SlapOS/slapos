@@ -110,6 +110,11 @@
               "default": false,
               "type": "boolean"
             },
+            "disable-pack": {
+              "description": "Set the --disable-pack option for storage nodes.",
+              "default": false,
+              "type": "boolean"
+            },
             "private-tmpfs": {
               "description": "Size of private tmpfs mount to store the database. See filesystems/tmpfs.txt in Linux documentation. Use only for testing.",
               "type": "string"
@@ -133,6 +138,15 @@
                   "description": "When enabled, sets synchronous = OFF and journal_mode = MEMORY - RTFM, those options are dangerous.",
                   "default": false,
                   "type": "boolean"
+                },
+                "cksumvfs": {
+                  "description": "See https://www.sqlite.org/cksumvfs.html. It can be safely disabled if the underlying storage layer is already checksumming, e.g. Btrfs (on this FS, you should also set journal_mode=TRUNCATE).",
+                  "default": 1,
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1
+                  ]
                 }
               },
               "additionalProperties": {
