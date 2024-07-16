@@ -1,14 +1,16 @@
+{% import "caucase" as caucase with context %}
+
 [buildout]
 
 extends =
-  {{ template_logrotate_base }}
+  {{ template_monitor }}
 
 parts =
   ${:clamd-parts}
   ${:freshclam-parts}
   ${:clammit-parts}
   ${:frontend-parts}
-  cron-entry-logrotate
+  monitor-base
   publish-connection-parameter
 
 clamd-parts =
@@ -24,6 +26,7 @@ clammit-parts =
 frontend-parts =
   frontend
   frontend-promise
+  frontend-certificate
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -40,15 +43,20 @@ cert = ${slap-connection:cert-file}
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = ${frontend-config:url}
+status-url = ${:url}/clammit
+scan-url = ${:url}/clammit/scan
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
 etc = ${:home}/etc
+etc.certificate = ${:etc}/certificate
 etc.promise = ${:etc}/promise
 etc.run = ${:etc}/run
 etc.service = ${:etc}/service
 srv = ${:home}/srv
+srv.backup.caucased = ${:srv}/backup/caucased
+srv.caucased = ${:srv}/caucased
 tmp = ${:home}/tmp
 var = ${:home}/var
 var.clamdb = ${:var}/clamdb
@@ -149,6 +157,84 @@ recipe = slapos.cookbook:check_port_listening
 path = ${directory:etc.promise}/${:_buildout_section_name_}
 hostname= ${clam-config:clammit-listen-address}
 port = ${clam-config:clammit-listen-port}
+
+################################################################################
+# Caucase
+################################################################################
+
+[frontend-certificate]
+key-file = ${directory:etc.certificate}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc.certificate}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+ca-file = ${directory:etc.certificate}/${:_buildout_section_name_}.ca.crt
+crl-file = ${directory:etc.certificate}/${:_buildout_section_name_}.crl
+
+{{
+caucase.updater(
+    prefix='frontend-certificate',
+    buildout_bin_directory=buildout['bin-directory'],
+    updater_path='${directory:etc.service}/frontend-certificate-updater',
+    url='${caucased:url}',
+    data_dir='${directory:srv}/caucase-updater',
+    crt_path='${frontend-certificate:cert-file}',
+    ca_path='${frontend-certificate:ca-file}',
+    crl_path='${frontend-certificate:crl-file}',
+    key_path='${frontend-certificate:key-file}',
+    template_csr='${frontend-certificate-prepare-csr:csr}',
+    openssl=openssl.location + "/bin",
+)}}
+
+[frontend-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [req]
+  prompt = no
+  req_extensions = req_ext
+  distinguished_name = dn
+  [ dn ]
+  CN = frontend
+  [ req_ext ]
+  subjectAltName = @alt_names
+  [ alt_names ]
+  IP.1 = ${frontend-config:address}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
+
+[frontend-certificate-prepare-csr]
+recipe = plone.recipe.command
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ openssl.location }}/bin/openssl req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -sha256 \
+      -nodes \
+      -keyout /dev/null \
+      -config '${frontend-certificate-csr-config:output}' \
+      -out '${:csr}'
+  fi
+stop-on-error = true
+csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
+
+[caucased]
+port = 19980
+ip = ${instance-parameter:ipv6-random}
+netloc = [${:ip}]:${:port}
+url = http://${:netloc}/
+
+{{
+caucase.caucased(
+    prefix='caucased',
+    buildout_bin_directory=buildout['bin-directory'],
+    caucased_path='${directory:etc.service}/caucased',
+    backup_dir='${directory:srv.backup.caucased}',
+    data_dir='${directory:srv.caucased}',
+    netloc='${caucased:netloc}',
+    tmp='${directory:tmp}',
+    service_auto_approve_count=1,
+    user_auto_approve_count=0,
+    key_len=2048,
+)}}
 
 ################################################################################
 # Local frontend
