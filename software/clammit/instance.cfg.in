@@ -26,7 +26,9 @@ clammit-parts =
 frontend-parts =
   frontend
   frontend-promise
+  caucased-promise
   frontend-certificate
+  frontend-certificate-promise
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
