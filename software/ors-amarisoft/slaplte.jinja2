@@ -432,7 +432,7 @@
 {#- ---- building configuration ---- #}
 
 {#- ru_config emits RF driver configuration for specified Radio Units. #}
-{%- macro ru_config(iru_dict, slapparameter_dict) %}
+{%- macro ru_config(iru_dict, slapparameter_dict, support_gain_in_list) %}
   // Radio Units
   rf_driver: {
   {%- set dev_argv = []                                                       %}
@@ -516,6 +516,12 @@
   },
 
   {#- emit tx/rx gain for all channels #}
+  {%- if support_gain_in_list  %}
   tx_gain: {{ tx_gainv }},
   rx_gain: {{ rx_gainv }},
+  {%- else %}
+  tx_gain: {{ tx_gainv[0] }},
+  rx_gain: {{ rx_gainv[0] }},
+  {%- endif %}
+
 {%- endmacro  %}
