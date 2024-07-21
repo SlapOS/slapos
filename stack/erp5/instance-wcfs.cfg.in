@@ -23,7 +23,12 @@
 {%   set argv = [] -%}
 {%   set i = 0 -%}
 {%   for k,v in z|dictsort -%}
-{%     do argv.append('%s=%s' % (k,v)) -%}
+{#     Parameters which neither set client nor server: -#}
+{#     they can be ignored as they are merely resulting from a convenience hack. -#}
+{#     (see https://lab.nexedi.com/nexedi/slapos/commit/706801f2) -#}
+{%     if k not in ["_ca", "_key", "_cert"] %}
+{%       do argv.append('%s=%s' % (k,v)) -%}
+{%     endif %}
 {%   endfor -%}
 {%   if len(argv) > 0 -%}
 {%     set zurl = zurl + '?' + '&'.join(argv) -%}
