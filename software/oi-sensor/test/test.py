@@ -34,18 +34,8 @@ from slapos.testing.testcase import installSoftwareUrlList, makeModuleSetUpAndTe
 oi_sensor_software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
-
-_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(oi_sensor_software_release_url))
-
-
-def setUpModule():
-  installSoftwareUrlList(
-    SlapOSInstanceTestCase,
-    [oi_sensor_software_release_url],
-    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
-  )
-
 
 class OISensorTestCase(SlapOSInstanceTestCase):
 
