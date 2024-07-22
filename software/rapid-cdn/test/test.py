@@ -2365,7 +2365,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper',
+      '/test-path/deep/.././deeper' * 250,
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
         'Accept-Encoding': 'gzip',
@@ -2379,7 +2379,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
-    self.assertEqualResultJson(result, 'Path', '?a=b&c=/test-path/deeper')
+    self.assertEqualResultJson(
+      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
@@ -2399,7 +2400,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_access_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
-      r'"GET \/test-path\/deep\/..\/.\/deeper '
+      r'"GET \/(\/test-path\/deep\/..\/.\/deeper){250} '
       r'HTTP\/%(http_version)s" \d{3} '
       r'\d+ "-" "TEST USER AGENT" \d+' % dict(
         http_version=self.max_client_version)
@@ -2423,7 +2424,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET /test-path/deeper HTTP/1.1"'
+      r'"GET (/test-path/deeper){250} HTTP/1.1"'
     )
 
     result_http = fakeHTTPResult(
