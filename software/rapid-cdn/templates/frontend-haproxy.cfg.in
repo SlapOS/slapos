@@ -8,7 +8,8 @@ global
   # master-worker is compatible with foreground with process management
   master-worker
   expose-experimental-directives
-  log {{ configuration['log-socket'] }} local0
+  tune.http.logurilen 16384
+  log {{ configuration['log-socket'] }} len 65535 local0
 
 defaults
   mode http

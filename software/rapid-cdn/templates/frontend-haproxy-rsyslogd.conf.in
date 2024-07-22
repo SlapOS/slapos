@@ -6,7 +6,7 @@ module(
 # haproxy emits enough information by itself
 # Also cut out first empty space in msg, which is related to rsyslogd
 # internal and end up cutting on 8k, as it's default of $MaxMessageSize
-template(name="rawoutput" type="string" string="%msg:2:8192%\n")
+template(name="rawoutput" type="string" string="%msg:2:65537%\n")
 $ActionFileDefaultTemplate rawoutput
 
 $FileCreateMode 0600
