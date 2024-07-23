@@ -28,6 +28,49 @@
           "description": "Master nodes in the cluster to backup.",
           "type": "string"
         },
+        "reflink": {
+          "description": "Track references between OIDs of an external ZODB.",
+          "additionalProperties": false,
+          "required": [
+            "zurl"
+          ],
+          "properties": {
+            "zurl": {
+              "description": "ZODB to track.",
+              "type": "string"
+            },
+            "_ca": {
+              "type": "string"
+            },
+            "_cert": {
+              "type": "string"
+            },
+            "_key": {
+              "type": "string"
+            },
+            "max-txn-size": {
+              "description": "Maximum number of OIDs to delete per transaction.",
+              "default": 2097151,
+              "type": "integer"
+            },
+            "commit-interval": {
+              "description": "Commit every SECONDS of work.",
+              "default": 10,
+              "type": "integer"
+            },
+            "period": {
+              "description": "Age of the historical revision at which a GC is performed (this can be seen as a grace period). See --period option.",
+              "default": 86400,
+              "type": "integer"
+            },
+            "no-gc": {
+              "description": "Only track references.",
+              "default": false,
+              "type": "boolean"
+            },
+          },
+          "type": "object"
+        },
         "monitor": {
           "description": "Parameters for monitoring.",
           "properties": {
@@ -124,7 +167,7 @@
               "type": "array"
             },
             "storage-type": {
-              "description": "Storage type. Required when several types are configured and you select which one to use via 'node!' parameter. Defaults to whatever is configured ('sqlite' or 'mysql'), else MySQL if available, else SQLite.",
+              "description": "Storage type. Required when several types are configured and you select which one to use via 'node!' parameter. Defaults to whatever is configured ('sqlite' or 'mysql'), else MySQL if available, else SQLite. SQLite is recommended for a reflink DB.",
               "enum": [
                 "MySQL",
                 "SQLite"

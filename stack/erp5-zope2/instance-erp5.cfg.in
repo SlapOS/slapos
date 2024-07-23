@@ -186,6 +186,7 @@ connection-url = smtp://127.0.0.2:0/
 {%     set ((name, server_dict),) = server_dict.items() -%}
 {%     do neo.append(server_dict.get('cluster')) -%}
 {%     do server_dict.update(cluster='${publish-early:neo-cluster}') -%}
+{{     assert('reflink' not in server_dict, 'reflink option is meaningless in ERP5 SR') }}
 {{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-', monitor_base_url_dict) }}
 {%     set client_dict = zodb_dict[name].setdefault('storage-dict', {}) -%}
 {%     for k in 'ssl', '_ca', '_cert', '_key' -%}
