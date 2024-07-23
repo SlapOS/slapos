@@ -133,6 +133,9 @@ config-monitor-port = {{ dumps(port) }}
 {%-     endif %}
 config-monitor = {{ dumps(parameter_dict.get('monitor', {})) }}
 {%-   endif %}
+{%- if 'reflink' in parameter_dict %}
+config-reflink = {{ dumps(parameter_dict.pop('reflink')) }}
+{%- endif %}
 {%-   for k, v in six.iteritems(node) %}
 config-{{ k }} = {{ dumps(v) }}
 {%-   endfor %}
