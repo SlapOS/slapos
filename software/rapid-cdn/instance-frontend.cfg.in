@@ -651,7 +651,7 @@ output = ${directory:bin}/trafficserver-rotate
 xz_binary = {{ software_parameter_dict['xz_location'] ~ '/bin/xz' }}
 pattern = *.old
 # days to keep log files
-keep_days = 365
+keep_days = ${configuration:rotate-num}
 
 extra-context =
   raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find

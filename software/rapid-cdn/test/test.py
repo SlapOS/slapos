@@ -2111,7 +2111,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       )
 
     # check retention
-    old_time = time.time() - (400 * 24 * 3600)
+    # 4000 is default configuration:rotate-num, so make the log a bit older
+    old_time = time.time() - (4010 * 24 * 3600)
     os.utime(
       os.path.join(ats_logrotate_dir, older_file_name + '.xz'),
       (old_time, old_time))
