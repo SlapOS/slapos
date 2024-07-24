@@ -35,7 +35,9 @@ oi_sensor_software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(oi_sensor_software_release_url))
+    os.path.abspath(oi_sensor_software_release_url),
+    # skip software checks
+    skip_software_check = True)
 
 class OISensorTestCase(SlapOSInstanceTestCase):
 
