@@ -59,7 +59,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     with self.slap.instance_supervisor_rpc as supervisor:
       process_names = [process['name']
                        for process in supervisor.getAllProcessInfo()]
-    self.assertIn('oi-sensor-on-watch', process_names)
+    self.assertIn('oi-sensor-service-on-watch', process_names)
 
   def check_connection(self, ip, port):
     connection_list = [] # test node debug
