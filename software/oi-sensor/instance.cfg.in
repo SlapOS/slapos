@@ -1,6 +1,5 @@
 [buildout]
 parts =
-  promises
   directory
   oi-sensor-service
 
@@ -38,13 +37,3 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ interpreter_location }}/py {{ osie_repository_location }}/oi-sensor/oi-sensor.py --headless ${instance-parameter:configuration.headless} --camera ${instance-parameter:configuration.camera}
 wrapper-path = ${directory:service}/oi-sensor-service
 output = $${:wrapper-path}
-
-[oi-sensor-service-listen-promise-ipv4]
-<= check-port-listening-promise
-hostname = 0.0.0.0
-port = 4840
-
-[promises]
-recipe =
-instance-promises =
-  ${oi-sensor-service-listen-promise-ipv4:path}
