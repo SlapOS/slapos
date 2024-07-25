@@ -46,7 +46,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     osie_coupler_instance = cls.slap.request(
       software_release=oi_sensor_software_release_url,
       partition_reference='oi-sensor',
-      partition_parameter_kw={'headless': 1, 'mode':1},
+      partition_parameter_kw={'headless': 1, 'mode':1, 'port': 48400},
       state=state,
     )
     return super().requestDefaultInstance(state=state)
@@ -79,4 +79,4 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     return False
 
   def test_opc_ua(self):
-    self.assertTrue(self.check_connection('127.0.0.1', 4840))
+    self.assertTrue(self.check_connection('127.0.0.1', 48400))
