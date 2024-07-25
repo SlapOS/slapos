@@ -46,7 +46,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     osie_coupler_instance = cls.slap.request(
       software_release=oi_sensor_software_release_url,
       partition_reference='oi-sensor',
-      partition_parameter_kw={'headless': 1},
+      partition_parameter_kw={'headless': 1, 'mode':1},
       state=state,
     )
     return super().requestDefaultInstance(state=state)
