@@ -42,18 +42,8 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class OISensorTestCase(SlapOSInstanceTestCase):
 
   @classmethod
-  def requestDefaultInstance(cls, state='started'):
-    osie_coupler_instance = cls.slap.request(
-      software_release=oi_sensor_software_release_url,
-      partition_reference='oi-sensor',
-      partition_parameter_kw={'headless': 1, 'mode':1, 'port': 4840},
-      state=state,
-    )
-    return super().requestDefaultInstance(state=state)
-
-  @classmethod
   def getInstanceParameterDict(cls):
-    return {}
+    return {'headless': 1, 'mode':1, 'port': 4840}
 
   def test_process(self):
     with self.slap.instance_supervisor_rpc as supervisor:
