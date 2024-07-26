@@ -1,6 +1,6 @@
 [buildout]
 parts =
-  promises
+#  promises
   directory
   oi-sensor-service
 
