@@ -2,8 +2,9 @@ global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
   master-worker
+  tune.http.logurilen 16384
+  log {{ configuration['log-socket'] }} len 65535 local0
 
-log {{ configuration['log-socket'] }} local0
 defaults
   log global
   mode http
