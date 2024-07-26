@@ -12,6 +12,7 @@
 
 * autopilotType: Select which autopilot wrapper should be used
 * autopilotIp: IPv4 address to identify the autopilot from the companion board
+* autopilotPort: Port on whichautopilot serviceis running
 * droneGuidList: List of computer id on which flight script must be deployed
 * droneNetIf: Drone network interface used for multicast traffic
 * debug: Must be set to 'true' to send drone logs through OPC-UA
@@ -19,6 +20,7 @@
 * operatorScript: URL of operator's script to prepare the flight
 * mapJson: URL of terrain's map used by the operator script
 * flightScript: URL of user's script to execute to fly drone swarm
+* subscriptionScript: URL of the script which will be executed by subscribers
 * loopPeriod: Minimal period (in milliseconds) between 2 executions of the flight script loop
 * subscriberGuidList: List of computer id on which a GUI must be deployed
 * subscriberNetIf: Subscriber network interface used for multicast traffic

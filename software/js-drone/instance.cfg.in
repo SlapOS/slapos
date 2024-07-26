@@ -39,6 +39,7 @@ default-parameters =
     "operatorScript": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/operator.js",
     "mapJson": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/map.json",
     "flightScript": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/default.js",
+    "subscriptionScript": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/subscribe.js",
     "loopPeriod": 200,
     "multicastIp": "ff15::1111",
     "subscriberGuidList":[],

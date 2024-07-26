@@ -68,6 +68,12 @@
       "type": "string",
       "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/default.js"
     },
+    "subscriptionScript": {
+      "title": "Script's URL for subscribers",
+      "description": "URL of the script which will be executed by subscribers.",
+      "type": "string",
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/subscribe.js"
+    },
     "loopPeriod": {
       "title": "Loop execution period",
       "description": "Minimal period between 2 executions of flight script loop",
