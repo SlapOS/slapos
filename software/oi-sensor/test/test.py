@@ -63,6 +63,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
 
   def check_connection(self, ip, port):
     connection_list = [] # test node debug
+    print(psutil.net_connections(kind='tcp4'))
     for connection in psutil.net_connections(kind='tcp4'):
       # test node debug
       if connection.laddr.port == port:
@@ -79,5 +80,4 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     return False
 
   def test_opc_ua(self):
-    self.assertSameSet(psutil.net_connections(kind='tcp4') == [])
     self.assertTrue(self.check_connection('0.0.0.0', 48400))
