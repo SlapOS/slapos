@@ -12,6 +12,11 @@
       "description": "The index of the camera USB device represented as /dev/videoX.",
       "type": "string",
       "default": ""
+    },
+    "mode": {
+      "description": "The mode of operation of sensor. 0 - with camera support, 1 - no camera support (virtual mode).",
+      "type": "int",
+      "default": "0"
     }
   }
 }
