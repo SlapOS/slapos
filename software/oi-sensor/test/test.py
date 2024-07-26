@@ -57,6 +57,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
 
   def test_process(self):
     with self.slap.instance_supervisor_rpc as supervisor:
+      print(supervisor.getAllProcessInfo())
       process_names = [process['name']
                        for process in supervisor.getAllProcessInfo()]
     self.assertIn('oi-sensor-service-on-watch', process_names)
@@ -64,9 +65,6 @@ class OISensorTestCase(SlapOSInstanceTestCase):
   def check_connection(self, ip, port):
     connection_list = [] # test node debug
     print(psutil.net_connections(kind='tcp4'))
-    test_path = self.computer_partition_root_path
-    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_oi-sensor-service.log')) as log_file:
-      print(log_file.readlines()[-150:])
     for connection in psutil.net_connections(kind='tcp4'):
       # test node debug
       if connection.laddr.port == port:
@@ -74,12 +72,6 @@ class OISensorTestCase(SlapOSInstanceTestCase):
       # debug end
       if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'ESTABLISHED':
         return True
-    # test node debug
-    print(connection_list)
-    test_path = self.computer_partition_root_path
-    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_oi-sensor-service.log')) as log_file:
-      print(log_file.readlines()[-15:])
-    # debug end
     return False
 
   def test_opc_ua(self):
