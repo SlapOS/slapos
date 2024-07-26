@@ -64,6 +64,9 @@ class OISensorTestCase(SlapOSInstanceTestCase):
   def check_connection(self, ip, port):
     connection_list = [] # test node debug
     print(psutil.net_connections(kind='tcp4'))
+    test_path = self.computer_partition_root_path
+    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_oi-sensor-service.log')) as log_file:
+      print(log_file.readlines()[-150:])
     for connection in psutil.net_connections(kind='tcp4'):
       # test node debug
       if connection.laddr.port == port:
