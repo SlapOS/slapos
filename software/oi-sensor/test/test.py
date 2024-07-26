@@ -53,8 +53,6 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     self.assertIn('oi-sensor-service-on-watch', process_names)
 
   def check_connection(self, ip, port):
-    connection_list = [] # test node debug
-    print(psutil.net_connections(kind='tcp4'))
     for connection in psutil.net_connections(kind='tcp4'):
       if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'LISTEN':
         return True
