@@ -44,7 +44,7 @@ output = $${:wrapper-path}
 [oi-sensor-service-listen-promise-ipv4]
 <= check-port-listening-promise
 hostname = 0.0.0.0
-port = 4840
+port = ${instance-parameter:configuration.port}
 
 [promises]
 recipe =
