@@ -79,4 +79,4 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     return False
 
   def test_opc_ua(self):
-    self.assertTrue(self.check_connection('127.0.0.1', 48400))
+    self.assertTrue(self.check_connection('0.0.0.0', 48400))
