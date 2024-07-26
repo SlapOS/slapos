@@ -56,11 +56,7 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     connection_list = [] # test node debug
     print(psutil.net_connections(kind='tcp4'))
     for connection in psutil.net_connections(kind='tcp4'):
-      # test node debug
-      if connection.laddr.port == port:
-        connection_list.append(connection)
-      # debug end
-      if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'ESTABLISHED':
+      if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'LISTEN':
         return True
     return False
 
