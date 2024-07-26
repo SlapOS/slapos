@@ -79,5 +79,5 @@ class OISensorTestCase(SlapOSInstanceTestCase):
     return False
 
   def test_opc_ua(self):
-    self.assertTrue(psutil.net_connections(kind='tcp4') == []) 
+    self.assertSameSet(psutil.net_connections(kind='tcp4') == [])
     self.assertTrue(self.check_connection('0.0.0.0', 48400))
