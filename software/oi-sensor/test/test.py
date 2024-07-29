@@ -47,7 +47,6 @@ class OISensorTestCase(SlapOSInstanceTestCase):
 
   def test_process(self):
     with self.slap.instance_supervisor_rpc as supervisor:
-      print(supervisor.getAllProcessInfo())
       process_names = [process['name']
                        for process in supervisor.getAllProcessInfo()]
     self.assertIn('oi-sensor-service-on-watch', process_names)
