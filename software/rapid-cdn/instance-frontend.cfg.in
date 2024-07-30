@@ -630,6 +630,7 @@ promise = check_socket_listening
 name = trafficserver-port-listening.py
 config-host = ${trafficserver-variable:local-ip}
 config-port = ${trafficserver-variable:input-port}
+config-report-anomaly = True
 
 [trafficserver-ctl]
 recipe = slapos.cookbook:wrapper
@@ -765,6 +766,7 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv4_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
+config-report-anomaly = True
 
 [promise-frontend-haproxy-v4-http]
 <= monitor-promise-base
@@ -772,6 +774,7 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv4_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
+config-report-anomaly = True
 
 [promise-frontend-haproxy-v6-https]
 <= monitor-promise-base
@@ -779,6 +782,7 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv6_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
+config-report-anomaly = True
 
 [promise-frontend-haproxy-v6-http]
 <= monitor-promise-base
@@ -786,6 +790,7 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv6_http.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
+config-report-anomaly = True
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
@@ -793,6 +798,7 @@ promise = check_socket_listening
 name = backend_haproxy_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
+config-report-anomaly = True
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
@@ -800,6 +806,7 @@ promise = check_socket_listening
 name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
+config-report-anomaly = True
 
 [backend-haproxy-configuration]
 file = ${directory:etc}/backend-haproxy.cfg
@@ -1028,6 +1035,7 @@ name = backend-haproxy-statistic-frontend.py
 config-http-code = 401
 config-url =
   ${backend-haproxy-statistic-frontend:connection-secure_access}
+config-report-anomaly = True
 
 [slave-introspection-configuration-state]
 <= jinja2-template-base
@@ -1096,6 +1104,7 @@ promise = check_socket_listening
 name = slave_introspection_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${frontend-configuration:slave-introspection-https-port}
+config-report-anomaly = True
 
 [logrotate-entry-slave-introspection]
 <= logrotate-entry-base
@@ -1127,6 +1136,7 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${logrotate-setup-validate:state-file}
 config-state = empty
+config-report-anomaly = True
 
 [configuration]
 {%- for key, value in instance_parameter_dict.items() -%}
