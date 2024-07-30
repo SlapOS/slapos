@@ -45,17 +45,17 @@ def createInstanceParameterSchemaValidatorTest(path):
     "http://json-schema.org/draft-04/schema#": jsonschema.Draft4Validator,
     "http://json-schema.org/draft-06/schema#": jsonschema.Draft6Validator,
     "http://json-schema.org/draft-07/schema#": jsonschema.Draft7Validator,
-    "http://json-schema.org/draft/2019-09/schema": jsonschema.Draft201909Validator,
-    "http://json-schema.org/draft/2019-09/schema#": jsonschema.Draft201909Validator,
-    "http://json-schema.org/draft/2020-12/schema": jsonschema.Draft202012Validator,
-    "http://json-schema.org/draft/2020-12/schema#": jsonschema.Draft202012Validator,
+    "https://json-schema.org/draft/2019-09/schema": jsonschema.Draft201909Validator,
+    "https://json-schema.org/draft/2019-09/schema#": jsonschema.Draft201909Validator,
+    "https://json-schema.org/draft/2020-12/schema": jsonschema.Draft202012Validator,
+    "https://json-schema.org/draft/2020-12/schema#": jsonschema.Draft202012Validator,
   }
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
       json_dict = json.load(json_file)
-      validator = validator_dict.get(
-        json_dict.get('$schema'),
-        jsonschema.Draft7Validator)
+      validator = validator_dict.get(json_dict.get('$schema'))
+      if validator is None:
+        raise ValueError("%s has an invalid $schema %s" % (path, json_dict.get('$schema')))
       validator.check_schema(json_dict)
   return run
 
