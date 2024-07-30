@@ -640,6 +640,7 @@ promise = check_socket_listening
 name = expose-csr-ip-port-listening.py
 config-host = ${expose-csr-configuration:ip}
 config-port = ${expose-csr-configuration:port}
+config-report-anomaly = True
 
 [expose-csr]
 recipe = slapos.cookbook:wrapper

@@ -501,6 +501,7 @@ promise = check_url_available
 name = check-backend-haproxy-statistic-url-frontend-node-{{ index + 1 }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
+config-report-anomaly = True
 {% endfor %}
 
 #----------------------------
@@ -704,6 +705,7 @@ wrapper-path = ${directory:bin}/aikc-caucase-csr-sign-check
 promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = ${aikc-sign-promise-wrapper:wrapper-path}
+config-report-anomaly = True
 
 {% for csr in frontend_list + ['kedifa'] %}
 [aikc-{{ csr }}-wrapper]
@@ -828,6 +830,7 @@ wrapper-path = ${directory:bin}/aibcc-caucase-csr-sign-check
 promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = ${aibcc-sign-promise-wrapper:wrapper-path}
+config-report-anomaly = True
 
 {% for csr in frontend_list %}
 [aibcc-{{ csr }}-wrapper]
@@ -999,6 +1002,7 @@ promise = check_socket_listening
 name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
+config-report-anomaly = True
 
 [rejected-slave-promise]
 <= monitor-promise-base
@@ -1007,6 +1011,9 @@ name = rejected-slave.py
 config-filename = ${rejected-slave-json:output}
 config-state = empty
 config-url = ${rejected-slave-publish:url}
+config-report-anomaly = False
+config-failure-amount = 2
+config-result-count = 2
 
 [master-key-upload-url-ready]
 recipe = slapos.recipe.build
@@ -1029,6 +1036,7 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${master-key-upload-url-ready:output}
 config-state = empty
+config-report-anomaly = True
 
 [master-key-generate-auth-url-ready]
 <= master-key-upload-url-ready
@@ -1037,6 +1045,7 @@ key = ${request-kedifa:connection-master-key-generate-auth-url}
 [master-key-generate-auth-url-ready-promise]
 <= master-key-upload-url-ready-promise
 config-filename = ${master-key-generate-auth-url-ready:output}
+config-report-anomaly = True
 
 [master-key-download-url-ready]
 <= master-key-upload-url-ready
@@ -1045,6 +1054,7 @@ key = ${request-kedifa:connection-master-key-download-url}
 [master-key-download-url-ready-promise]
 <= master-key-upload-url-ready-promise
 config-filename = ${master-key-download-url-ready:output}
+config-report-anomaly = True
 
 [caucased-backend-client]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
