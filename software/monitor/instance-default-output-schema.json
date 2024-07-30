@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Values returned by node-monitoring instanciation",
   "type": "object",
   "properties": {
