@@ -1124,6 +1124,8 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${logrotate-setup-validate:state-file}
 config-state = empty
+# reprocessing might lead to automatic fix
+config-report-anomaly = True
 
 [configuration]
 {%- for key, value in instance_parameter_dict.items() -%}
