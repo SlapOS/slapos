@@ -754,9 +754,10 @@ context =
 
 [promise-frontend-frontend-haproxy-configuration]
 <= monitor-promise-base
-promise = validate_frontend_configuration
+promise = check_command_execute
 name = frontend-frontend-haproxy-configuration-promise.py
-config-verification-script = ${promise-helper-last-configuration-state:output}
+config-command = ${promise-helper-last-configuration-state:output}
+config-report-anomaly = True
 
 [promise-frontend-haproxy-v4-https]
 <= monitor-promise-base
@@ -918,9 +919,10 @@ extra-context =
 
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
-promise = validate_frontend_configuration
+promise = check_command_execute
 name = backend-haproxy-configuration.py
-config-verification-script = ${promise-backend-haproxy-configuration-helper:output}
+config-command = ${promise-backend-haproxy-configuration-helper:output}
+config-report-anomaly = True
 
 [promise-backend-haproxy-configuration-helper]
 < = jinja2-template-base
@@ -1073,9 +1075,10 @@ extra-context =
 
 [promise-slave-introspection-configuration]
 <= monitor-promise-base
-promise = validate_frontend_configuration
+promise = check_command_execute
 name = slave-introspection-configuration.py
-config-verification-script = ${promise-slave-introspection-configuration-helper:output}
+config-command = ${promise-slave-introspection-configuration-helper:output}
+config-report-anomaly = True
 
 [promise-slave-introspection-configuration-helper]
 < = jinja2-template-base
