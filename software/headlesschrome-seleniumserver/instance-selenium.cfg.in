@@ -96,10 +96,10 @@ environment =
   FONTCONFIG_FILE=$${fontconfig-conf:output}
 hostname = $${slap-configuration:ipv4-random}
 
-[selenium-server-node-instance-chromium-69]
+[selenium-server-node-instance-chromium-120]
 <= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-69:version},chrome_binary=${chromium-wrapper-69:location}
-java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-2.41:location}
+capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
+java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-120:location}
 port = 7781
 
 [selenium-server-node-instance-chromium-91]
@@ -296,7 +296,7 @@ instance-promises =
   $${selenium-server-hub-listen-promise:name}
   $${selenium-server-hub-nodes-registered-promise:name}
 [check-port-listening-promise]
-<= monitor-promise-base
+120<= monitor-promise-base
 name = $${:_buildout_section_name_}.py
 
 [sshd-listen-promise]
@@ -341,9 +341,9 @@ inline =
 <= check-port-listening-promise
 config-host = $${selenium-server-node-instance-firefox-52:hostname}
 
-[selenium-server-node-instance-chromium-91-listen-promise]
+120[selenium-server-node-instance-chromium-91-listen-promise]
 <= check-port-listening-promise
-config-host = $${selenium-server-node-instance-chromium-91:hostname}
+120config-host = $${selenium-server-node-instance-chromi120-91:hostname}
 config-port = $${selenium-server-node-instance-chromium-91:port}
 
 [selenium-server-node-instance-headless-chromium-listen-promise]
