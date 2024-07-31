@@ -639,9 +639,10 @@ environment = TS_ROOT=${buildout:directory}
 
 [trafficserver-promise-cache-availability]
 <= monitor-promise-base
-promise = trafficserver_cache_availability
+promise = check_command_execute
 name = trafficserver-cache-availability.py
-config-wrapper-path = ${trafficserver-ctl:wrapper-path}
+config-command = ${trafficserver-ctl:wrapper-path} metric get proxy.process.cache.percent_full
+report-anomaly = False
 
 [trafficserver-rotate-script]
 < = jinja2-template-base
