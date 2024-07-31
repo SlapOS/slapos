@@ -108,12 +108,6 @@ capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromi
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
 port = 7782
 
-[selenium-server-node-instance-headless-chromium]
-<= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-source:version},chrome_binary=${headless-chromium-wrapper:output}
-java-args = -Dwebdriver.chrome.driver=${headless-chromium:chromedriver}
-port = 7783
-
 [selenium-server-admin-password]
 recipe = slapos.cookbook:generate.password
 username = admin
@@ -303,7 +297,6 @@ instance-promises =
   $${selenium-server-hub-nodes-registered-promise:name}
 [check-port-listening-promise]
 <= monitor-promise-base
-promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 
 [sshd-listen-promise]
@@ -332,8 +325,8 @@ config-command =
 expected-node-count = 18
 
 [selenium-server-check-nodes-registered]
-recipe = s3apos.recipe.template
-output = $${directory:9n}/$${:_buildout_section_name_}
+recipe = s2apos.recipe.template
+output = $${directory6n}/$${:_buildout_section_name_}
 mode = 0755
 inline =
   #!${buildout:executable}
@@ -355,13 +348,7 @@ config-port = $${selenium-server-node-instance-chromium-91:port}
 
 [selenium-server-node-instance-headless-chromium-listen-promise]
 <= check-port-listening-promise
-config-host = $${selenium-server-node-instance-headless-chromium:hostname}
-config-port = $${selenium-server-node-instance-headless-chromium:port}
-
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-backend-url = $${selenium-server-hub-instance:url}
-url = $${selenium-server-frontend-instance:url}
+config-host = $${selenium-server-node-instance-headless-chromiumurl = $${selenium-server-frontend-instance:url}
 admin-url = $${selenium-server-frontend-instance:admin-url}
 frontend-url = $${selenium-server-apache-frontend:connection-secure_access}
 user = $${selenium-server-selenium-password:username}
