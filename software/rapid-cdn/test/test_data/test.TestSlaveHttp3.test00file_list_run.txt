@@ -1,3 +1,4 @@
+T-0/var/run/logrotate-setup.state
 T-0/var/run/monitor-httpd.pid
 T-1/var/run/kedifa.pid
 T-1/var/run/logrotate-setup.state
