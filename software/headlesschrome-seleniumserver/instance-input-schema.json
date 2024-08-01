@@ -3,5 +3,12 @@
   "type": "object",
   "description": "Parameters to request selenium instance",
   "additionalProperties": false,
-  "properties": {}
+  "properties": {
+    "slotQuantity": {
+      "title": "Slot quantity",
+      "description": "Number of slot per selenium node",
+      "type": "integer",
+      "default": 3
+    }
+  }
 }

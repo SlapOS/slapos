@@ -20,8 +20,14 @@ output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
 url = ${template-selenium:output}
 filename = instance-selenium.cfg
 context =
+  jsonkey default_parameter_dict :default-parameters
+  key parameter_dict slap-configuration:configuration
   key partition_ipv4 slap-configuration:ipv4-random
   key partition_ipv6 slap-configuration:ipv6-random
+default-parameters =
+  {
+    "slotQuantity": 3
+  }
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration

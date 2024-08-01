@@ -1,3 +1,4 @@
+{% set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
 [buildout]
 parts =
   monitor-base
@@ -37,7 +38,7 @@ command-line =
     -host $${:hostname}
     -port $${:port}
     -role hub
-    -maxSession 20
+    -maxSession {{ parameter_dict['slotQuantity'] }}
     -newSessionWaitTimeout 600000
     --debug
 
@@ -84,7 +85,7 @@ ip = $${selenium-server-node-instance:hostname}
 
 [selenium-server-node-instance-chromium-120]
 <= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
+capabilities = browserName=chrome,maxInstances={{ parameter_dict['slotQuantity'] }},platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-120:location}
 port = $${chromium-address:port}
 
@@ -214,8 +215,7 @@ promise = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
   $${selenium-server-check-nodes-registered:output} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
-# We have 3 slots by node
-expected-node-count = 3
+expected-node-count = {{ parameter_dict['slotQuantity'] }}
 
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template
