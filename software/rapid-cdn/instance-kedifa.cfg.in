@@ -164,6 +164,9 @@ promise = check_socket_listening
 name = expose-csr-ip-port-listening.py
 config-host = ${expose-csr-configuration:ip}
 config-port = ${expose-csr-configuration:port}
+# banging the tree might result with fixing the problem
+config-report-anomaly = True
+
 
 [expose-csr]
 recipe = slapos.cookbook:wrapper
@@ -227,6 +230,8 @@ name = kedifa-http-reply.py
 config-http-code = 400
 config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
 config-ca-cert-file = ${kedifa-config:ca-certificate}
+# banging the tree might result with fixing the problem
+config-report-anomaly = True
 
 [logrotate-entry-kedifa]
 <= logrotate-entry-base

@@ -501,6 +501,8 @@ promise = check_url_available
 name = check-backend-haproxy-statistic-url-frontend-node-{{ index + 1 }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
+# banging the tree might result with fixing the problem
+config-report-anomaly = True
 {% endfor %}
 
 #----------------------------
@@ -705,6 +707,8 @@ wrapper-path = ${directory:bin}/aikc-caucase-csr-sign-check
 promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = ${aikc-sign-promise-wrapper:wrapper-path}
+# reprocessing will have chance to fix
+config-report-anomaly = True
 
 {% for csr in frontend_list + ['kedifa'] %}
 [aikc-{{ csr }}-wrapper]
@@ -829,6 +833,8 @@ wrapper-path = ${directory:bin}/aibcc-caucase-csr-sign-check
 promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = ${aibcc-sign-promise-wrapper:wrapper-path}
+# reprocessing will have chance to fix
+config-report-anomaly = True
 
 {% for csr in frontend_list %}
 [aibcc-{{ csr }}-wrapper]
@@ -1000,6 +1006,8 @@ promise = check_socket_listening
 name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
+# reprocessing might result in fixing the situation
+config-report-anomaly = True
 
 [rejected-slave-promise]
 <= monitor-promise-base
