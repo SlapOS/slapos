@@ -1085,6 +1085,30 @@ config-result-count = 5
 # republish the instance has to reprocess
 config-report-anomaly = False
 
+[logrotate-setup-validate]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_wrapper'] }}
+output = ${directory:scripts}/logrotate-setup-validate
+command =
+  if ${logrotate:wrapper-path} -d > ${:state-file-tmp} 2>&1 ; then
+    cat /dev/null > ${:state-file}
+    rm -f ${:state-file-tmp}
+  else 
+    mv ${:state-file-tmp} ${:state-file}
+  fi
+extra-context =
+  key content :command
+state-file = ${directory:run}/logrotate-setup.state
+state-file-tmp = ${:state-file}.tmp
+
+[promise-logrotate-setup]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${logrotate-setup-validate:state-file}
+config-state = empty
+config-report-anomaly = True
+
 [buildout]
 extends =
   {{ software_parameter_dict['profile_common'] }}
@@ -1104,6 +1128,7 @@ parts =
   master-key-generate-auth-url-ready-promise
   master-key-download-url-ready-promise
   master-introspection-frontend
+  promise-logrotate-setup
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
