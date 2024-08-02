@@ -9,10 +9,9 @@
 
 {% if slapparameter_dict.get('enable-monitor', True) == True -%}
 {% set monitor_return = ['monitor-base-url'] -%}
-{% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
+{% set monitor_parameter = {} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
 {% endif -%}
-{% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 {% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
 
 [buildout]
@@ -47,7 +46,6 @@ recipe = slapos.cookbook:publish-early
 [monitor-instance-parameter]
 monitor-httpd-port = 8160
 password = ${publish-early:monitor-password}
-cors-domains = {{ monitor_parameter.get('monitor-cors-domains', '') }}
 
 {%  do monitor_parameter.__setitem__('monitor-username', slapparameter_dict.get('monitor-username', 'admin'))%}
 {%  do monitor_parameter.__setitem__('monitor-password', slapparameter_dict.get('monitor-password', '${publish-early:monitor-password}'))%}
@@ -84,7 +82,7 @@ monitor-password = ${publish-early:monitor-password}
 monitor-user = ${monitor-publish-parameters:monitor-user}
 {% if monitor_dict -%}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${publish-early:monitor-password}
+monitor-setup-url = &url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${publish-early:monitor-password}
 {% endif -%}
 {% if additional_frontend %}
 url-additional = ${request-kvm:connection-url-additional}
