@@ -6,6 +6,7 @@ extends =
 parts +=
   cron-entry-backup
   ${instance-kvm-parts:parts}
+  check-backup-directory-promise
 
 [slap-parameter]
 {% for k, v in slapparameter_dict.items() -%}
@@ -16,13 +17,10 @@ parts +=
 {%-  endif %}
 {% endfor -%}
 
-# Create the exporter executable, which is a simple shell script
-[exporter]
-recipe = slapos.recipe.template:jinja2
-url = {{ template_kvm_export }}
-output = ${directory:bin}/${slap-parameter:namebase}-exporter
-# Resilient stack wants a "wrapper" parameter
-wrapper = ${:output}
+[directory]
+tmp = ${buildout:directory}/tmp
+
+[disk]
 {%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
 {%- if disk_type == "virtio" %}
 device = virtio0
@@ -32,12 +30,19 @@ device = ide0-hd0
 {%- else %}
 # unsupported disk-type {{ disk_type }}
 {%- endif %}
+
+[exporter]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_kvm_export }}
+output = ${directory:bin}/${slap-parameter:namebase}-exporter
+# Resilient stack wants a "wrapper" parameter
+wrapper = ${:output}
 context =
     section directory directory
     section buildout buildout
     key socket_path kvm-instance:socket-path
-    key device :device
-    raw gzip_binary {{ gzip_binary }}
+    section disk disk
+    raw qmpbackup {{ qmpbackup }}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]
@@ -56,3 +61,10 @@ username = {{ slapparameter_dict['monitor-username'] }}
 password = {{ slapparameter_dict['monitor-password'] }}
 {% endif -%}
 
+[check-backup-directory-promise]
+# Check that disk image is not corrupted
+<= monitor-promise-base
+promise = check_command_execute
+name = check-backup-directory.py
+config-command = {{ check_backup_directory }} ${directory:backup}/${disk:device} ${directory:tmp}
+failure_amount = 5
