@@ -1,1 +1,1 @@
-Tests for html5as software release
+Tests for html5as-base software release
