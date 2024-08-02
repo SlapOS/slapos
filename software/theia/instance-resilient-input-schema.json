@@ -1,12 +1,14 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
   "type": "object",
   "description": "Parameters to instantiate resilient Theia",
   "allOf": [
     {
-      "$ref": "./instance-input-schema.json#"
+      "$ref": "./instance-input-schema.json#",
+      "additionalProperties": true
     },
     {
+      "additionalProperties": true,
       "properties": {
         "resilient-clone-number": {
           "title": "Amount of backup(s) to create",

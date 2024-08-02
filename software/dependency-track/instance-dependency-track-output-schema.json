@@ -4,7 +4,7 @@
   "properties": {
     "url": {
       "title": "URL",
-      "description": "URL to access metabase.",
+      "description": "URL to access Dependency-Track.",
       "type": "string",
       "format": "uri"
     }
