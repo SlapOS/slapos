@@ -2,7 +2,7 @@
 
 set -e
 set -x
-
+exit 1
 #checkout if directory and matomo resources exist
 
 if [ ! -d {{ parameter_dict['document-root'] }}/matomo/config ]; then
@@ -46,4 +46,4 @@ if [ -d $TMPFILE ]; then
   mv -f $TMPFILE {{ parameter_dict['dir-backup'] }}/`date +%m-%d-%Y-%T`
 fi
 
-exit 0
+exit 1
