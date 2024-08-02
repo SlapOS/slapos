@@ -1,0 +1,67 @@
+[buildout]
+parts =
+  switch-softwaretype
+  request-extra
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = ${:default}
+default = instance-basic:output
+replicate = instance-replicate:output
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[instance-basic]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_basic }}
+output = ${buildout:directory}/${:filename}
+filename = instance-basic.cfg
+context =
+  section buildout buildout
+# partition_ipv6 is the random ipv6 allocated to the local partition
+  key partition_ipv4 slap-configuration:ipv4-random
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "title": ""
+  }
+
+[request-extra]
+name = test-subinstance
+recipe = slapos.cookbook:request.serialised
+software-url = https://lab.nexedi.com/tsoulard/slapos/raw/wipapi-rebase/software/test-new-api/software.cfg
+software-type = default
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[instance-replicate]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_instance_replicate }}
+output = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+filename = instance-replicate.cfg
+context =
+  section buildout buildout
+# partition_ipv6 is the random ipv6 allocated to the local partition
+  key partition_ipv4 slap-configuration:ipv4-random
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "title": "",
+    "replicate-quantity": 1
+  }
