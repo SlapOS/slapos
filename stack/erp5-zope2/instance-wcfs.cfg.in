@@ -1,6 +1,8 @@
 {# instance that runs WCFS service associated with ZODB storage  #}
 {% from "instance_zodb_base" import zodb_dict  with context %}
-
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set part_list = [] -%}
+{% set ssl_dict = {"ca": 'ca.crt', "cert": 'neo.crt', "key": 'neo.key'} -%}
 
 {# build zurl to connect to configured ZODB #}
 {% if len(zodb_dict) != 1 -%}
@@ -8,7 +10,7 @@
 {% endif -%}
 
 {% set db_name, zodb = zodb_dict.popitem() -%}
-{% set z = zodb['storage-dict'] -%}
+{% set z = dict(zodb['storage-dict']) -%}
 {% if zodb['type'] == 'zeo' -%}
 {%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
 {% elif zodb['type'] == 'neo' -%}
@@ -27,6 +29,7 @@
 {#     they can be ignored as they are merely resulting from a convenience hack. -#}
 {#     (see https://lab.nexedi.com/nexedi/slapos/commit/706801f2) -#}
 {%     if k not in ["_ca", "_key", "_cert"] %}
+{%       set v = (ssl_dict.get(k) and "${directory:etc}/" + ssl_dict.get(k)) or v -%}
 {%       do argv.append('%s=%s' % (k,v)) -%}
 {%     endif %}
 {%   endfor -%}
@@ -36,14 +39,6 @@
 {% else -%}
 {%   do assert(False, ("unsupported ZODB type", zodb)) -%}
 {% endif -%}
-
-
-[buildout]
-extends = {{ template_monitor }}
-parts +=
-  wcfs
-  wcfs-promise
-  publish
 
 
 [directory]
@@ -71,3 +66,31 @@ config-command = {{ bin_directory }}/wcfs status {{ zurl }}
 [publish]
 recipe = slapos.cookbook:publish.serialised
 serving-zurl = {{ zurl }}
+
+{# Hack to deploy SSL certs via instance parameters -#}
+{# XXX Duplication wrt https://lab.nexedi.com/nexedi/slapos/-/blob/5ae99219/stack/erp5/instance-zope.cfg.in -#}
+{% set storage_dict = zodb.setdefault('storage-dict', {}) -%}
+{% if zodb['type'] == 'neo' and storage_dict.get('ssl', 1) -%}
+{%   for k,v in ssl_dict|dictsort -%}
+{%     set k = "_{}".format(k) -%}
+{%     if k in storage_dict -%}
+[{{ section('neo-ssl-' + k[1:]) }}]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/{{v}}
+inline = {{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(storage_dict.pop(k))}}
+
+{%     endif -%}
+{%   endfor -%}
+{% endif -%}
+{# endhack -#}
+
+
+[buildout]
+extends = {{ template_monitor }}
+parts +=
+  wcfs
+  wcfs-promise
+  publish
+  {{ '\n  '.join(part_list) }}
