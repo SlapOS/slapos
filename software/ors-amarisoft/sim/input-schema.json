@@ -60,6 +60,43 @@
       "description": "Defines user IMPI. Must be fully filled with hostname if necessary.",
       "type": "string",
       "default": ""
+    },
+    "enable_multicast": {
+      "default": false,
+      "title": "Enable IPv4 multicast",
+      "description": "Set to true to enable IPv4 multicast",
+      "type": "boolean"
+    },
+    "enable_ipv6_multicast": {
+      "default": false,
+      "title": "Enable IPv6 multicast",
+      "description": "Set to true to enable IPv6 multicast",
+      "type": "boolean"
+    },
+    "enable_broadcast": {
+      "default": false,
+      "title": "Enable IPv4 broadcast",
+      "description": "Set to true to enable IPv4 broadcast",
+      "type": "boolean"
+    },
+    "route_list": {
+      "title": "Route list",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "ipv6_remote_addr_prefix": {
+              "title": "IPv6 remote address prefix",
+              "type": "string"
+            },
+            "prefix_len": {
+              "title": "Prefix length",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
     }
   }
 }
