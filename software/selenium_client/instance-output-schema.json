@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "description": "Values returned by Selenium client instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "python-with-eggs": {
+      "description": "Path to a Python interpreter with selenium egg installed",
+      "type": "array"
+    }
+  },
+  "type": "object"
+}
