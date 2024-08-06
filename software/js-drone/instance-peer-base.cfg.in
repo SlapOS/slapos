@@ -78,7 +78,7 @@ offline = false
 [qjs-launcher]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/qjs-launcher
-command-line = ${quickjs:location}/bin/qjs $${main:rendered} $${user:target}
+command-line = nice -n -10 ${quickjs:location}/bin/qjs $${main:rendered} $${user:target}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
