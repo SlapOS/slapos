@@ -5,8 +5,15 @@
   "software-type": {
     "default": {
       "title": "Default",
-      "description": "Fluentd",
+      "description": "Default Fluentd configuration",
       "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 0
+    },
+    "gateway": {
+      "title": "ORS Wendelin Gateway",
+      "description": "Gateway configuration for forwarding Xlog data from ORS Fluentbit to ORS Wendelin",
+      "request": "instance-gateway-input-schema.json",
       "response": "instance-output-schema.json",
       "index": 0
     }

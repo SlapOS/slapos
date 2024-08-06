@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Parameters to instantiate Fluentd",
+  "additionalProperties": false,
+  "properties": {
+    "port": {
+      "title": "Port",
+      "description": "Port on which to listen for incoming ORS log data",
+      "type": "integer"
+    },
+    "fluentd-shared-key": {
+      "title": "Shared Key",
+      "description": "Shared key for authentication between fluentd and an ORS' fluentbit",
+      "type": "string"
+    },
+    "ors-wendelin-frontend-url": {
+      "title": "ORS Wendelin frontend URL",
+      "description": "URL of the ORS Wendelin instance",
+      "type": "string"
+    },
+    "inituser-login": {
+      "title": "ORS Wendelin initial user login",
+      "type": "string"
+    },
+    "inituser-password": {
+      "title": "ORS Wendelin initial user password",
+      "type": "string"
+    }
+  }
+}
