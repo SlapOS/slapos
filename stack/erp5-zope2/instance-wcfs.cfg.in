@@ -19,7 +19,7 @@
 {%     do argv.append('%s=%s' % (k,v)) -%}
 {%   endfor -%}
 {%   if len(argv) > 0 -%}
-{%     set zurl = zurl + '&' + '?'.join(argv) -%}
+{%     set zurl = zurl + '?' + '&'.join(argv) -%}
 {%   endif -%}
 {% else -%}
 {%   do assert(False, ("unsupported ZODB type", zodb)) -%}
