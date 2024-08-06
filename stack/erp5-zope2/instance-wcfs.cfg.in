@@ -1,8 +1,6 @@
 {# instance that runs WCFS service associated with ZODB storage  #}
 {% from "instance_zodb_base" import zodb_dict  with context %}
 
-{# q(text) returns urllib.quote_plus(text) #}
-{% macro q(text) %}{{ urllib_parse.quote_plus(text) }}{% endmacro %}
 
 {# build zurl to connect to configured ZODB #}
 {% if len(zodb_dict) != 1 -%}
@@ -14,18 +12,15 @@
 {% if zodb['type'] == 'zeo' -%}
 {%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
 {% elif zodb['type'] == 'neo' -%}
-{#   neo(s)://[credentials@]master1,master2,...,masterN/name?options #}
-{#   (see https://lab.nexedi.com/kirr/neo/blob/3e13fa06/go/neo/client.go#L417) #}
-{#   If 'ca' in storage-dict, ssl is true. #}
-{#   (see https://lab.nexedi.com/nexedi/slapos/blob/397726e1/stack/erp5/instance-zodb-base.cfg.in#L17-21) #}
-{%   if "ca" in z -%}
-{#     ca=ca.crt;cert=my.crt;key=my.key  (see https://lab.nexedi.com/kirr/neo/blob/3e13fa06/go/neo/client.go#L428) #}
-{%     set zurl = 'neos://ca=%s;cert=%s;key=%s@' % (q(z.pop("ca")), q(z.pop("cert")), q(z.pop("key"))) -%}
-{%   else -%}
-{%     set zurl = 'neo://' -%}
+{%   set zurl = ('neo://%s@%s' % (z.pop('name'), z.pop('master_nodes')|replace(" ", ","))) -%}
+{%   set argv = [] -%}
+{%   set i = 0 -%}
+{%   for k,v in z|dictsort -%}
+{%     do argv.append('%s=%s' % (k,v)) -%}
+{%   endfor -%}
+{%   if len(argv) > 0 -%}
+{%     set zurl = zurl + '&' + '?'.join(argv) -%}
 {%   endif -%}
-{%   set zurl = ('%s%s/%s' % (zurl, z.pop('master_nodes')|replace(" ", ","), z.pop('name'))) -%}
-{%   set zurl = zurl + '?' + (z | dictsort | urlencode) -%}
 {% else -%}
 {%   do assert(False, ("unsupported ZODB type", zodb)) -%}
 {% endif -%}
