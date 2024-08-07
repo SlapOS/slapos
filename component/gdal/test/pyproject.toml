@@ -1,0 +1,4 @@
+[build-system]
+# We need older setuptools: https://github.com/pypa/setuptools/issues/2781
+requires = ["setuptools<58.0.0"]
+build-backend = "setuptools.build_meta"
