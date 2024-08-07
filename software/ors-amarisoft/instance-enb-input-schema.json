@@ -198,18 +198,18 @@
       "default": 0
     },
     "xlog_fluentbit_forward_host": {
-      "title": "Address to Forward Xlog by Fluenbit",
-      "description": "Address of Remote Fluentd or Fluentbit Server to Forward Xlog",
+      "title": "Fluentbit Xlog forwarding address",
+      "description": "Address of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
       "type": "string"
     },
     "xlog_fluentbit_forward_port": {
-      "title": "Port to Forward Xlog by Fluentbit",
-      "description": "Optional Port of Remote Fluentd or Fluentbit Server to Forward Xlog",
+      "title": "Fluentbit Xlog forwarding port",
+      "description": "(Optional) Port of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
       "type": "string"
     },
     "xlog_fluentbit_forward_shared_key": {
-      "title": "Shared Key to Forward Xlog by Fluentbit",
-      "description": "Secret Key Shared with Remote Fluentd or Fluentbit Server for Authentication when Forwarding Xlog",
+      "title": "Fluentbit Xlog forwarding shared key",
+      "description": "Secret Key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
       "type": "string"
     }
   }

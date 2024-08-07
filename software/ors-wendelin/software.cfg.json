@@ -1,0 +1,23 @@
+{
+  "name": "ORS Wendelin",
+  "description": "Master instance of ORS Wendelin",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "ORS Wendelin",
+      "request": "instance-ors-wendelin-input-schema.json",
+      "response": "instance-ors-wendelin-output-schema.json",
+      "index": 0
+    },
+    "default-slave": {
+      "title": "Default (Shared)",
+      "description": "ORS Client Project Registration",
+      "software-type": "default",
+      "request": "instance-ors-shared-input-schema.json",
+      "response": "instance-ors-shared-output-schema.json",
+      "shared": true,
+      "index": 1
+    }
+  }
+}
