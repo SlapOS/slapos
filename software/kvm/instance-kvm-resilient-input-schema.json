@@ -5,7 +5,7 @@
   "allOf": [
     {
       "$ref": "./instance-kvm-input-schema.json#",
-      "additionalProperties": true,
+      "additionalProperties": true
     },
     {
       "additionalProperties": true,
