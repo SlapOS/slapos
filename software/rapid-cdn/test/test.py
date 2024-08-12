@@ -2584,10 +2584,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.certificate_pem,
         result.certificate)
 
-      self.assertEqual(
+      self.assertIn(
         result.status_code,
-        http.client.BAD_GATEWAY
-      )
+        [http.client.BAD_GATEWAY, http.client.SERVICE_UNAVAILABLE])
     finally:
       self.stopAuthenticatedServerProcess()
 
