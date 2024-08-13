@@ -1,75 +1,84 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema#",
-  "type": "object",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
   "description": "Parameters to instantiate Theia",
-  "additionalProperties": false,
-  "properties": {
-    "autorun": {
-      "title": "Automatically Run Software/Instance",
-      "description": "The option used to pilot automatic build and run of software and instances hosted inside Theia. When 'running', build and run is done automatically in the background. When 'stopped' build and run processes are stopped and need to be run manually. When 'user-controlled', the user can manage it directly in the local supervisord. ",
-      "type": "string",
-      "enum": [
-        "running",
-        "stopped",
-        "user-controlled"
-      ],
-      "default": "running"
-    },
-    "initial-embedded-instance": {
-      "title": "Initial Embedded Instance Configuration",
-      "description": "One-shot optional JSON preconfiguration for an embedded instance. Only applied once when Theia is instantiated. Changing this option afterward will have no effect.",
-      "type": "string",
-      "textarea": true,
-      "examples": [
-        "{\"software-url\": \"~/srv/project/slapos/software/html5as-base/software.cfg\"}",
-        "{\"software-url\": \"~/srv/project/slapos/software/html5as/software.cfg\", \"software-type\": \"replicate\", \"instance-parameters\": {\"replicate-quantity\": 3}}"
-      ]
-    },
-    "forward-slapos-frontend-requests": {
-      "title": "Forward Frontend Requests in the Embedded SlapOS",
-      "description": "Embedded SlapOS instance by default forwards frontend requests as shared instances attached to the Theia instance, so that HTTP frontends can be allocated for services. This behavior can be disabled, in that case frontends will not be allocated.",
-      "type": "string",
-      "enum": [
-        "enabled",
-        "disabled"
-      ],
-      "default": "enabled"
-    },
-    "frontend-guid": {
-      "title": "Frontend Instance ID",
-      "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-      "type": "string"
-    },
-    "frontend-sr": {
-      "title": "Frontend Software URL",
-      "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-      "type": "string",
-      "format": "uri",
-      "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-    },
-    "frontend-sr-type": {
-      "title": "Frontend Software Type",
-      "description": "Type of the frontend instance, like \"frontend\".",
-      "type": "string",
-      "default": "RootSoftwareInstance"
-    },
-    "additional-frontend-guid": {
-      "title": "Additional Frontend Instance ID",
-      "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
-      "type": "string"
-    },
-    "additional-frontend-sr": {
-      "title": "Additional Frontend Software URL",
-      "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-      "type": "string",
-      "format": "uri",
-      "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-    },
-    "additional-frontend-sr-type": {
-      "title": "Additional Frontend Software Type",
-      "description": "Type of the frontend instance, like \"frontend\".",
-      "type": "string",
-      "default": "RootSoftwareInstance"
+  "$defs": {
+    "instance-parameters": {
+      "type": "object",
+      "properties": {
+        "autorun": {
+          "title": "Automatically Run Software/Instance",
+          "description": "The option used to pilot automatic build and run of software and instances hosted inside Theia. When 'running', build and run is done automatically in the background. When 'stopped' build and run processes are stopped and need to be run manually. When 'user-controlled', the user can manage it directly in the local supervisord. ",
+          "type": "string",
+          "enum": [
+            "running",
+            "stopped",
+            "user-controlled"
+          ],
+          "default": "running"
+        },
+        "initial-embedded-instance": {
+          "title": "Initial Embedded Instance Configuration",
+          "description": "One-shot optional JSON preconfiguration for an embedded instance. Only applied once when Theia is instantiated. Changing this option afterward will have no effect.",
+          "type": "string",
+          "textarea": true,
+          "examples": [
+            "{\"software-url\": \"~/srv/project/slapos/software/html5as-base/software.cfg\"}",
+            "{\"software-url\": \"~/srv/project/slapos/software/html5as/software.cfg\", \"software-type\": \"replicate\", \"instance-parameters\": {\"replicate-quantity\": 3}}"
+          ]
+        },
+        "forward-slapos-frontend-requests": {
+          "title": "Forward Frontend Requests in the Embedded SlapOS",
+          "description": "Embedded SlapOS instance by default forwards frontend requests as shared instances attached to the Theia instance, so that HTTP frontends can be allocated for services. This behavior can be disabled, in that case frontends will not be allocated.",
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "default": "enabled"
+        },
+        "frontend-guid": {
+          "title": "Frontend Instance ID",
+          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+          "type": "string"
+        },
+        "frontend-sr": {
+          "title": "Frontend Software URL",
+          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+          "type": "string",
+          "format": "uri",
+          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+        },
+        "frontend-sr-type": {
+          "title": "Frontend Software Type",
+          "description": "Type of the frontend instance, like \"frontend\".",
+          "type": "string",
+          "default": "RootSoftwareInstance"
+        },
+        "additional-frontend-guid": {
+          "title": "Additional Frontend Instance ID",
+          "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+          "type": "string"
+        },
+        "additional-frontend-sr": {
+          "title": "Additional Frontend Software URL",
+          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+          "type": "string",
+          "format": "uri",
+          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+        },
+        "additional-frontend-sr-type": {
+          "title": "Additional Frontend Software Type",
+          "description": "Type of the frontend instance, like \"frontend\".",
+          "type": "string",
+          "default": "RootSoftwareInstance"
+        }
+      }
     }
-  }
+  },
+  "unevaluatedProperties": false,
+  "allOf": [
+    {
+      "$ref": "#/$defs/instance-parameters"
+    }
+  ]
 }
