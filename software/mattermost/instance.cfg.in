@@ -83,12 +83,9 @@ bin     = {{ postgresql_location }}/bin
 services= ${directory:service}
 
 dbname  = mattermost_production
-# NOTE db name must match to what was used in KVM on lab.nexedi.com (restore script grants access to this user)
 superuser = mattermost-psql
 # no password - pgsql will listen only on unix sockets (see below) thus access
 # is protected with filesystem-level permissions.
-# ( besides, if we use slapos.cookbook:generate.password and do `password = ...`
-#   the password is stored in plain text in .installed and thus becomes insecure )
 password=
 
 pgdata-directory = ${directory:srv}/postgresql
