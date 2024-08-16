@@ -33,7 +33,7 @@ long_description = open("README.md").read()
 setup(
     name=name,
     version=version,
-    description="Test for SlapOS' dufs",
+    description="Test for SlapOS' clammit",
     long_description=long_description,
     long_description_content_type='text/markdown',
     maintainer="Nexedi",
