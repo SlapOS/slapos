@@ -115,9 +115,19 @@ context =
   section clamconfig clam-config
   key clamd_config_file clamd.conf:output
 
+[freshclam-updater]
+recipe = slapos.recipe.template
+output = ${directory:bin}/freshclam
+inline =
+  #!/bin/sh
+  if [ ! -f "${directory:var.clamdb}/freshclam.dat" ]; then
+    {{ clamav.location }}/bin/freshclam --config-file ${freshclam.conf:output}
+  fi
+mode = 700
+
 [freshclam]
 recipe = slapos.cookbook:wrapper
-command-line = {{ clamav.location }}/bin/freshclam --config-file ${freshclam.conf:output}
+command-line = ${freshclam-updater:output}
 wrapper-path = ${directory:etc.run}/${:_buildout_section_name_}
 
 [freshclam-database-refresh-time]
