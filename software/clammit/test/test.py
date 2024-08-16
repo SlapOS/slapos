@@ -83,6 +83,16 @@ class ClammitTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(r.status_code, 418)
 
+  def test_virus_database_is_downloaded_on_instanciation(self):
+    database_path = os.path.join(
+      self.computer_partition_root_path,
+      "var", "clamdb", "freshclam.dat"
+    )
+    try:
+      os.stat(database_path)
+    except OSError:
+      raise AssertionError("No database found at %s", database_path)
+
   def test_renew_certificate(self):
     def _getpeercert():
       # XXX low level way to get the server certificate
