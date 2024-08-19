@@ -207,6 +207,7 @@ caucase.updater(
     ca_path='${frontend-certificate:ca-file}',
     crl_path='${frontend-certificate:crl-file}',
     key_path='${frontend-certificate:key-file}',
+    on_renew='${haproxy-reload:output}',
     template_csr='${frontend-certificate-prepare-csr:csr}',
     openssl=openssl.location + "/bin",
 )}}
@@ -295,6 +296,15 @@ content =
     server app ${clam-config:clammit-listen-address}:${clam-config:clammit-listen-port} check
 pidfile = ${directory:var.run}/haproxy.pid
 
+[haproxy-reload]
+recipe = collective.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+mode = 700
+input =
+  inline:
+  #!/bin/sh
+  kill -USR2 $(cat "${haproxy.conf:pidfile}")
+
 [frontend]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:etc.service}/${:_buildout_section_name_}
@@ -302,7 +312,6 @@ command-line =
   {{ haproxy.location }}/sbin/haproxy -f ${haproxy.conf:output}
 hash-files =
   ${haproxy.conf:output}
-  ${frontend-certificate:cert-file}
 
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
