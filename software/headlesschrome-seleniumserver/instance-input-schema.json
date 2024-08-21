@@ -8,7 +8,7 @@
       "title": "Slot quantity",
       "description": "Number of slot per selenium node",
       "type": "integer",
-      "default": 3
+      "default": 1
     }
   }
 }

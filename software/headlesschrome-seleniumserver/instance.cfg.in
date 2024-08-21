@@ -26,7 +26,7 @@ context =
   key partition_ipv6 slap-configuration:ipv6-random
 default-parameters =
   {
-    "slotQuantity": 3
+    "slotQuantity": 1
   }
 
 [slap-configuration]
