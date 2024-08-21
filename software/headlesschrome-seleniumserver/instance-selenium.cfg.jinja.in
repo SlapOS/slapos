@@ -57,7 +57,6 @@ capabilities =
 port =
 java-args =
 
-recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
   ${java-re-8:location}/bin/java $${:java-args}
@@ -85,6 +84,7 @@ ip = $${selenium-server-node-instance:hostname}
 
 [selenium-server-node-instance-chromium-120]
 <= selenium-server-node-instance
+recipe = slapos.cookbook:wrapper
 capabilities = browserName=chrome,maxInstances={{ parameter_dict['slotQuantity'] }},platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-120:location}
 port = $${chromium-address:port}
@@ -227,7 +227,10 @@ inline =
   api_url = sys.argv[1]
   expected_node_count = int(sys.argv[2])
   actual_node_count = json.load(urllib.request.urlopen(api_url))['slotCounts']['total']
-  sys.exit(0 if expected_node_count == actual_node_count else 1)
+  if expected_node_count != actual_node_count:
+    print('expect %s nodes but found %s' % (expected_node_count, actual_node_count))
+    sys.exit(1)
+  sys.exit(0)
 
 [selenium-server-node-instance-chromium-120-listen-promise]
 <= check-port-listening-promise
