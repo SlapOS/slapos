@@ -334,8 +334,7 @@ monitor-base-url = ${monitor-frontend:connection-secure_access}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-# XXX: could CORS be dropped ?
-# cors-domains = monitor.app.officejs.com
+cors-domains = ${slap-configuration:monitor-cors-domains}
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
@@ -345,8 +344,7 @@ instance-configuration =
 
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
 
-# XXX drop hardcoded monitor app urls
-#interface-url = https://monitor.app.officejs.com
+interface-url = https://supermonitorapp.net/
 
 [monitor-frontend]
 <= slap-connection
