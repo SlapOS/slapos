@@ -20,6 +20,11 @@
       "description": "The list of entry to add to the cloudooo mimetype registry. Each entry should on one line which format is: \"<source_mimetype> <destination_mimetype> <handler>\"",
       "textarea": true,
       "type": "string"
+    },
+    "enable-scripting": {
+      "description": "Enable the execution of scripts before saving a converted document",
+      "default": false,
+      "type": "boolean"
     }
   }
 }
