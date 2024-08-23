@@ -96,6 +96,7 @@ class Recipe(GenericBaseRecipe):
       ip=self.options['ip'],
       port=int(self.options['port']),
       openoffice_port=int(self.options['openoffice-port']),
+      ooo_enable_scripting=self.options.get('ooo_enable_scripting', 'false'),
     )
     environment_variable_list = []
     for env_line in self.options['environment'].splitlines():
