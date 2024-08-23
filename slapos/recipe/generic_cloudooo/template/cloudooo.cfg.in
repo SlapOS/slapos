@@ -12,6 +12,8 @@ working_path = %(working_path)s
 uno_path = %(uno_path)s
 # Folder where soffice.bin is installed
 office_binary_path = %(office_binary_path)s
+# Whether running scripts on the loaded document is allowed
+ooo_enable_scripting = %(ooo_enable_scripting)s
 #
 ## Monitor Settings
 #
