@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import annotations
 
 import codecs
 import csv
@@ -35,6 +36,8 @@ import urllib.parse as urllib_parse
 import ssl
 import base64
 import io
+import textwrap
+from typing import Mapping
 
 import requests
 import PIL.Image
@@ -66,6 +69,45 @@ class CloudOooTestCase(_CloudOooTestCase):
         allow_none=True,
     )
     self.addCleanup(self.server('close'))
+
+
+def script_test_basic(server: xmlrpclib.ServerProxy) -> bytes:
+  """
+  Tries to execute a hello world script.
+
+  Args:
+    server: The server used to send requests to Cloudooo.
+
+  Returns:
+    The file contents in base64. If the script is executed
+    properly, it should contain the string ``"Hello World"``,
+    preceded by the UTF-8 BOM and with a trailing newline.
+  """
+  script = textwrap.dedent(
+    """\
+    # Get the XText interface
+    text = Document.Text
+
+    # Create an XTextRange at the end of the document
+    tRange = text.End
+
+    # Set the string
+    tRange.String = "Hello World"
+    """,
+  )
+
+  file = server.convertFile(
+    base64.encodebytes(b"<html></html>").decode(),
+    "html",
+    "txt",
+    False, # zip
+    False, # refresh
+    {"script": script},
+  )
+
+  assert isinstance(file, str)
+
+  return file.encode()
 
 
 def normalizeFontName(font_name):
@@ -345,3 +387,31 @@ class TestLibreOfficeCluster(CloudOooTestCase):
             'cloudooo_4': 0,
             'BACKEND': 0,
         })
+
+
+class TestLibreOfficeScripting(CloudOooTestCase):
+  """Class with scripting enabled, to try that functionality."""
+  __partition_reference__ = "se"
+
+  @classmethod
+  def getInstanceParameterDict(cls) -> Mapping[str, object]:
+    """Enable scripting for this instance."""
+    return {"enable-scripting": True}
+
+  def test_scripting_basic(self) -> None:
+    """Test that the basic script works."""
+    file = script_test_basic(self.server)
+    self.assertEqual(
+      base64.decodebytes(file),
+      codecs.BOM_UTF8 + b"Hello World\n",
+    )
+
+
+class TestScriptingDisabled(CloudOooTestCase):
+  """Class with scripting disabled (the default), to test that."""
+  __partition_reference__ = "sd"
+
+  def test_scripting_disabled(self) -> None:
+    """Test that the basic script raises when scripting is disabled."""
+    with self.assertRaisesRegex(Exception, "ooo: scripting is disabled"):
+      script_test_basic(self.server)
