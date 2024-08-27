@@ -189,13 +189,12 @@ context =
   section directory monitor-directory
   section parameter_dict monitor-httpd-conf-parameter
 
-# XXX: could CORS be dropped ?
-#[monitor-httpd-cors]
-#recipe = slapos.recipe.template:jinja2
-#url = {{ monitor_https_cors }}
-#output = ${directory:etc}/httpd-cors.cfg
-#context =
-#  key domain monitor-instance-parameter:cors-domains
+[monitor-httpd-cors]
+recipe = slapos.recipe.template:jinja2
+url = {{ monitor_https_cors }}
+output = ${directory:etc}/httpd-cors.cfg
+context =
+  key domain monitor-instance-parameter:cors-domains
 
 [monitor-httpd-wrapper]
 recipe = slapos.cookbook:wrapper
