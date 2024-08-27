@@ -9,6 +9,7 @@ cert = ${slap-connection:cert-file}
 # XXX Default values if doesn't exists
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
+configuration.monitor-interface-url = https://monitor.app.officejs.com/#page=ojsm_landing
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -158,6 +159,9 @@ recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${monitor-directory:etc}/.monitor-password
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
+location =
+  ${:password-file}
+  ${:htpasswd-path}
 command =
   echo "${monitor-instance-parameter:password}" >${:password-file}
   {{ apache_location }}/bin/htpasswd -cib ${:htpasswd-path} "${monitor-instance-parameter:username}" "${monitor-instance-parameter:password}"
@@ -324,6 +328,16 @@ monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
 
+[monitor-parameters-propagation]
+config-monitor-interface-url = ${slap-configuration:configuration.monitor-interface-url}
+
+[monitor-interface-configuration]
+recipe = slapos.recipe.build
+url = ${monitor-parameters-propagation:config-monitor-interface-url}
+init =
+  from six.moves.urllib.parse import urlparse
+  options['cors-domain'] = urlparse(options['url']).hostname
+
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
@@ -333,17 +347,15 @@ monitor-base-url = ${monitor-frontend:connection-secure_access}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-cors-domains = monitor.app.officejs.com
+cors-domains = ${monitor-interface-configuration:cors-domain}
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
 password = ${monitor-htpasswd:passwd}
 username = admin
 instance-configuration =
-
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
-
-interface-url = https://monitor.app.officejs.com
+interface-url = ${monitor-interface-configuration:url}
 
 [monitor-frontend]
 <= slap-connection
@@ -425,10 +437,32 @@ depends =
   ${logrotate-entry-monitor-data:name}
   ${logrotate-entry-monitor-promise-history:name}
 
+[expand-monitor-uri-template]
+recipe = slapos.recipe.build
+template = ${monitor-instance-parameter:interface-url}{&url,username,password}
+url = ${monitor-publish-parameters:monitor-url}
+username = ${monitor-publish-parameters:monitor-user}
+password = ${monitor-publish-parameters:monitor-password}
+init =
+  import zc.buildout
+  import pkg_resources
+  from six.moves.urllib.parse import unquote
+
+  buildout_options = self.buildout["buildout"]
+  zc.buildout.easy_install.install(
+    ["uritemplate"],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[
+      buildout_options["develop-eggs-directory"],
+      buildout_options["eggs-directory"]])
+
+  import uritemplate
+  options['uri'] = unquote(uritemplate.URITemplate(options['template']).expand(options))
+
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-
+monitor-setup-url = ${expand-monitor-uri-template:uri}
 
 [buildout]
 
