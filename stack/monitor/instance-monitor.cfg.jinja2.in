@@ -334,9 +334,7 @@ monitor-base-url = ${monitor-frontend:connection-secure_access}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
 
-cors-domains = #${slap-configuration:monitor-cors-domains}
-#{{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-#${slap-connection:monitor-cors-domains}
+cors-domains = #${slap-configuration:configuration.monitor-cors-domains}
 
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
