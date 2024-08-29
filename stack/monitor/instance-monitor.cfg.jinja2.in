@@ -9,6 +9,7 @@ cert = ${slap-connection:cert-file}
 # XXX Default values if doesn't exists
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
+configuration.monitor-cors-domains = monitor.app.officejs.com
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -333,9 +334,7 @@ monitor-base-url = ${monitor-frontend:connection-secure_access}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-
 cors-domains = ${slap-configuration:configuration.monitor-cors-domains}
-
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
