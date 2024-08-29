@@ -10,7 +10,7 @@ cert = ${slap-connection:cert-file}
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
 configuration.monitor-cors-domains = monitor.app.officejs.com
-configuration.interface-url = https://monitor.app.officejs.com
+configuration.monitor-interface-url = https://monitor.app.officejs.com
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -343,7 +343,7 @@ password = ${monitor-htpasswd:passwd}
 username = admin
 instance-configuration =
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
-interface-url = ${slap-configuration:configuration.interface-url}
+interface-url = ${slap-configuration:configuration.monitor-interface-url}
 
 [monitor-frontend]
 <= slap-connection
