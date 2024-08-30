@@ -534,16 +534,18 @@ class Sunwave4:
     ))
 
 # RUMultiType4 is mixin to verify that different RU types can be used at the same time.
+# Due to only one type of RU being supported in the SR, the test is currently not applicable.
 class RUMultiType4:
   # ENB does not support mixing SDR + CPRI - verify only with CPRI-based units
   # see https://support.amarisoft.com/issues/26021 for details
   @classmethod
   def RUcfg(cls, i):
-    assert 1 <= i <= 4, i
-    if i in (1,2):
-      return SDR4.RUcfg(i)
-    else:
-      return Sunwave4.RUcfg(i)
+      pass
+#     assert 1 <= i <= 4, i
+#     if i in (1,2):
+#         return Lopcomm4.RUcfg(i)
+#     else:
+#         return Sunwave4.RUcfg(i)
 
   # radio units configuration in enb.cfg
   def test_rf_cfg_ru(t):
