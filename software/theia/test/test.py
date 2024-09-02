@@ -650,6 +650,15 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
           monitor_setup_params['password'],
         )).raise_for_status()
 
+  def test_all_favicon_are_different(self):
+    favicon_relpath = os.path.join('srv', 'frontend-static', 'favicon.ico')
+    with open(self.getPartitionPath('export', favicon_relpath), 'rb') as f:
+      export_favicon = f.read()
+    with open(self.getPartitionPath('import', favicon_relpath), 'rb') as f:
+      import_favicon = f.read()
+    if export_favicon == import_favicon:
+      self.fail('Import favicon and export favicon are not different')
+
 
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   pass
