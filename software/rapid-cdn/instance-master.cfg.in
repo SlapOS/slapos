@@ -558,13 +558,13 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 {% endfor %}
 
 [active-slave-instance]
-{% set active_slave_instance_list = [] %}
-{% for slave_instance in instance_parameter_dict['slave-instance-list'] %}
-{# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
+{%- set active_slave_instance_list = [] %}
+{%- for slave_instance in instance_parameter_dict['slave-instance-list'] %}
+{#- Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
 {# Note: This functionality is not yet covered by tests, please modify with care #}
-{%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
-{% endfor %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{%-   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
+{%- endfor %}
+{#- sort_keys are important in order to avoid shuffling parameters on each run #}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [frontend-information]

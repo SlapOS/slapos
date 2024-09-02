@@ -27,6 +27,7 @@
 {%   endfor %}
 {% endfor %}
 
+# XXX: {{ slave_information_dict }}
 {% for slave_reference, rejected_info_list in rejected_slave_information['rejected-slave-dict'].items() %}
 {%   if slave_reference not in slave_information_dict %}
 {%     do slave_information_dict.__setitem__(slave_reference, {}) %}
