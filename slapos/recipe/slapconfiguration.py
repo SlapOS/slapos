@@ -29,13 +29,20 @@ import json
 import logging
 import os
 
+import jsonschema
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
 import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
-from slapos.util import mkdir_p
+from slapos.util import (
+  mkdir_p,
+  SoftwareReleaseSchema,
+  SoftwareReleaseSerialisation,
+  SoftwareReleaseSchemaValidationError,
+)
 from slapos import format as slapformat
+from zc.buildout import UserError
 
 
 logger = logging.getLogger("slapos")
@@ -215,7 +222,7 @@ class Recipe(object):
       if storage_home and os.path.exists(storage_home) and \
                                   os.path.isdir(storage_home):
         for filename in os.listdir(storage_home):
-          storage_path = os.path.join(storage_home, filename, 
+          storage_path = os.path.join(storage_home, filename,
                                     options['slap-computer-partition-id'])
           if os.path.exists(storage_path) and os.path.isdir(storage_path):
             storage_link = os.path.join(instance_root, 'DATA', filename)
@@ -262,6 +269,55 @@ class Serialised(Recipe):
           return parameter_dict
       else:
           return {}
+
+class JsonSchema(Recipe):
+  """
+  Input:
+    jsonschema
+      JSON Schema for the SR.
+      All instance schemas must be available at the advertised relative paths.
+      Example:
+        ${buildout:directory}/software.cfg.json
+  """
+  def _schema(self, options):
+    path = options['jsonschema']
+    # because SoftwareReleaseSchema accepts only file:// paths
+    path = path if path.startswith('file://') else 'file://' + path
+    # because SoftwareReleaseSchema expects the SR url and adds .json
+    path = path[:-5] if path.endswith('.json') else path
+    return SoftwareReleaseSchema(path, options['slap-software-type'])
+
+  def _validator_for(self, schema):
+    # adapted from https://python-jsonschema.readthedocs.io/en/stable/faq
+    validator_cls = jsonschema.validators.validator_for(schema)
+    validate_original = validator_cls.VALIDATORS["properties"]
+    def validate_with_defaults(validator, properties, instance, schema):
+      # Set defaults
+      for key, subschema in properties.items():
+        if "default" in subschema:
+          instance.setdefault(key, subschema["default"])
+      # Call original properties validator
+      for error in validate_original(validator, properties, instance, schema):
+        yield error
+    # Extend validator class with extended properties validator
+    return jsonschema.validators.extend(
+        validator_cls, {"properties" : validate_with_defaults})
+
+  def _expandParameterDict(self, options, parameter_dict):
+    software_schema = self._schema(options)
+    serialisation = software_schema.getSerialisation(strict=True)
+    instance_schema = software_schema.getInstanceRequestParameterSchema()
+    if serialisation == SoftwareReleaseSerialisation.JsonInXml:
+      parameter_dict = unwrap(parameter_dict)
+    instance = parameter_dict if isinstance(parameter_dict, dict) else {}
+    validator = self._validator_for(instance_schema)(instance_schema)
+    errors = list(validator.iter_errors(instance))
+    if errors:
+      err = SoftwareReleaseSchemaValidationError(errors).format_error(indent=2)
+      msg = "Invalid parameters:\n" + err
+      raise UserError(msg)
+    options['configuration'] = instance
+    return instance
 
 class JsonDump(Recipe):
   def __init__(self, buildout, name, options):
