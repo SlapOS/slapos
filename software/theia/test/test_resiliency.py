@@ -499,8 +499,8 @@ class TakeoverMixin(ExportAndImportMixin):
     resp = requests.get("%s?password=%s" % (takeover_url, takeover_password), verify=True)
     self.assertEqual(requests.codes.ok, resp.status_code)
     # Allow KeyError because of stricter "slapos request" command
-    self.assertNotIn("Error", resp.text.replace("KeyError: \\'frozen\\'", ""), "An Error occured: %s" % resp.text)
-    self.assertIn("Success", resp.text, "An Error occured: %s" % resp.text)
+    self.assertNotIn("Error", resp.text.replace("KeyError: \\'frozen\\'", ""))
+    self.assertIn("Success", resp.text)
     return resp.text
 
   def _doTakeover(self):

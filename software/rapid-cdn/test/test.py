@@ -2584,10 +2584,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.certificate_pem,
         result.certificate)
 
-      self.assertEqual(
+      # 502 and 503 are both ok as response codes by the backend-haproxy
+      self.assertIn(
         result.status_code,
-        http.client.BAD_GATEWAY
-      )
+        [http.client.BAD_GATEWAY, http.client.SERVICE_UNAVAILABLE])
     finally:
       self.stopAuthenticatedServerProcess()
 

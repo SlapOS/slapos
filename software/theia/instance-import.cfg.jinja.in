@@ -67,8 +67,8 @@ autorun = stopped
 
 
 # Change the gravatar favicon seed
-[favicon.ico]
-seed = Import {{ root_title }}
+[frontend-instance-favicon.ico]
+seed = {{ theia_id }} {{ root_title }}
 
 
 # The resilient stack calls post-notification-run:output followed by
