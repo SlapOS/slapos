@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.360'
+version = '1.0.365'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -163,7 +163,6 @@ setup(name=name,
           'urlparse = slapos.recipe._urlparse:Recipe',
           'uuid = slapos.recipe._uuid:Recipe',
           'userinfo = slapos.recipe.userinfo:Recipe',
-          'webchecker = slapos.recipe.web_checker:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',

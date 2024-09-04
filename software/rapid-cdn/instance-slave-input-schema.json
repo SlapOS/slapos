@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "properties": {
     "custom_domain": {
       "description": "Custom Domain to use for the website. Shall contain only letters, numbers and -, and can look like example.com, first2.example.com special-site.example.com.",

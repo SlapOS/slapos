@@ -65,7 +65,6 @@ sftp-log=${directory:log}/proftpd-sftp.log
 xfer-log=${directory:log}/proftpd-xfer.log
 ban-log=${directory:log}/proftpd-ban.log
 ssh-host-rsa-key=${ssh-host-rsa-key:output}
-ssh-host-dsa-key=${ssh-host-dsa-key:output}
 ssh-host-ecdsa-key=${ssh-host-ecdsa-key:output}
 ssh-authorized-key = ${ssh-authorized-keys:output}
 ban-table=${directory:srv}/proftpd-ban-table
@@ -118,9 +117,6 @@ command = {{ ssh_keygen_bin }} -f ${:output} -N '' ${:extra-args}
 [ssh-host-rsa-key]
 <=ssh-keygen-base
 extra-args=-t rsa
-[ssh-host-dsa-key]
-<=ssh-keygen-base
-extra-args=-t dsa
 [ssh-host-ecdsa-key]
 <=ssh-keygen-base
 extra-args=-t ecdsa -b 521

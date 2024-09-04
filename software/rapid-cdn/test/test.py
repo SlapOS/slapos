@@ -2111,7 +2111,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       )
 
     # check retention
-    old_time = time.time() - (400 * 24 * 3600)
+    # 4000 is default configuration:rotate-num, so make the log a bit older
+    old_time = time.time() - (4010 * 24 * 3600)
     os.utime(
       os.path.join(ats_logrotate_dir, older_file_name + '.xz'),
       (old_time, old_time))
@@ -2365,7 +2366,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper',
+      '/test-path/deep/.././deeper' * 250,
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
         'Accept-Encoding': 'gzip',
@@ -2379,7 +2380,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
-    self.assertEqualResultJson(result, 'Path', '?a=b&c=/test-path/deeper')
+    self.assertEqualResultJson(
+      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
@@ -2399,7 +2401,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_access_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
-      r'"GET \/test-path\/deep\/..\/.\/deeper '
+      r'"GET \/(\/test-path\/deep\/..\/.\/deeper){250} '
       r'HTTP\/%(http_version)s" \d{3} '
       r'\d+ "-" "TEST USER AGENT" \d+' % dict(
         http_version=self.max_client_version)
@@ -2423,7 +2425,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET /test-path/deeper HTTP/1.1"'
+      r'"GET (/test-path/deeper){250} HTTP/1.1"'
     )
 
     result_http = fakeHTTPResult(
@@ -2582,10 +2584,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.certificate_pem,
         result.certificate)
 
-      self.assertEqual(
+      # 502 and 503 are both ok as response codes by the backend-haproxy
+      self.assertIn(
         result.status_code,
-        http.client.BAD_GATEWAY
-      )
+        [http.client.BAD_GATEWAY, http.client.SERVICE_UNAVAILABLE])
     finally:
       self.stopAuthenticatedServerProcess()
 
