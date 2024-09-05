@@ -626,6 +626,16 @@ class ResilientTheiaMixin(object):
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
 
+  def test_monitoring_default_interface(self):
+    monitor_setup_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-setup-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    for url in monitor_setup_url_list:
+      self.assertIn('monitor.app.officejs.com', url)
+
   def test_all_monitor_url_use_same_password(self):
     monitor_setup_params = dict(
       parse_qsl(
@@ -666,3 +676,45 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
 
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   pass
+
+class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
+
+  MONITOR_CORS_DOMAIN = 'monitor.couscous.interface'
+  MONITOR_INTERFACE_URL = 'https://' + MONITOR_CORS_DOMAIN + '/#param1=a1'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'monitor-interface-url': TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL
+    }
+
+  def test_monitoring_propagation(self):
+
+    monitor_setup_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-setup-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    self.assertEqual(len(monitor_setup_url_list), 4)
+    for url in monitor_setup_url_list:
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL, url)
+
+    monitor_cors_url_list = [
+      u for u in [
+        p.getInstanceParameterDict().get('monitor-cors-domains')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    for url in monitor_cors_url_list:
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_CORS_DOMAIN, url) # TODO: assert equal
+
+    monitor_interface_url_list = [
+      u for u in [
+        p.getInstanceParameterDict().get('monitor-interface-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    self.assertEqual(len(monitor_interface_url_list), 4)
+    for url in monitor_interface_url_list:
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL, url)
