@@ -669,3 +669,6 @@ class TestTheiaResilientMonitoring(ResilientTheiaMixin, SlapOSInstanceTestCase):
       return {
         # set monitor-cors-domains parameter
       }
+
+    def test_monitoring_propagation(self):
+      self.fail('Not implemented')
