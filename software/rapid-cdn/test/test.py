@@ -40,8 +40,6 @@ from socketserver import ThreadingMixIn
 import time
 import tempfile
 import ipaddress
-import io
-import gzip
 import base64
 import re
 from slapos.recipe.librecipe import generateHashFromFiles
@@ -51,8 +49,6 @@ import socket
 import sys
 import logging
 import lzma
-import random
-import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
@@ -240,6 +236,13 @@ def subprocess_status_output(*args, **kwargs):
 
 def subprocess_output(*args, **kwargs):
   return subprocess_status_output(*args, **kwargs)[1]
+
+
+def setUpHeaders(header_list_list):
+  result = http.client.HTTPMessage()
+  for header, value in header_list_list:
+    result.add_header(header, value)
+  return result
 
 
 mimikra = Recurls()
@@ -499,20 +502,29 @@ class TestDataMixin(object):
     self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
 
 
+def fakeSetupHeaders(headers):
+  if headers is None:
+    headers = http.client.HTTPMessage()
+  default_header_dict = {
+    # workaround request problem of setting Accept-Encoding
+    # https://github.com/requests/requests/issues/2234
+    'Accept-Encoding': 'dummy',
+    # Headers to tricks the whole system, like rouge user would do
+    'X-Forwarded-For': '192.168.0.1',
+    'X-Forwarded-Proto': 'irc',
+    'X-Forwarded-Port': '17',
+    # Expose some Via to show how nicely it arrives to the backend
+    'Via': 'http/1.1 clientvia'
+  }
+  for header_name, header_value in default_header_dict.items():
+    if header_name not in headers:
+      headers.add_header(header_name, header_value)
+  return headers
+
+
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
                     headers=None, source_ip=SOURCE_IP):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  # Headers to tricks the whole system, like rouge user would do
-  headers.setdefault('X-Forwarded-For', '192.168.0.1')
-  headers.setdefault('X-Forwarded-Proto', 'irc')
-  headers.setdefault('X-Forwarded-Port', '17')
-  # Expose some Via to show how nicely it arrives to the backend
-  headers.setdefault('Via', 'http/1.1 clientvia')
-
+  headers = fakeSetupHeaders(headers)
   url = 'https://%s:%s/%s' % (domain, port, path)
 
   return mimikra.get(
@@ -535,18 +547,9 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  # Headers to tricks the whole system, like rouge user would do
-  headers.setdefault('X-Forwarded-For', '192.168.0.1')
-  headers.setdefault('X-Forwarded-Proto', 'irc')
-  headers.setdefault('X-Forwarded-Port', '17')
-  # Expose some Via to show how nicely it arrives to the backend
-  headers.setdefault('Via', 'http/1.1 clientvia')
-  headers['Host'] = '%s:%s' % (domain, port)
+  headers = fakeSetupHeaders(headers)
+  if 'Host' not in headers:
+    headers.add_header('Host', '%s:%s' % (domain, port))
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
   return mimikra.get(
     url,
@@ -560,12 +563,25 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   )
 
 
+class ConfigurationReplyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bytes):
+            return '<%i>' % (len(obj))
+        elif isinstance(obj, http.client.HTTPMessage):
+            reply = ''
+            for k, v in obj.items():
+              reply += '%r: %r' % (k, v)
+            return reply
+        return json.JSONEncoder.default(self, obj)
+
+
 class TestHandler(BaseHTTPRequestHandler):
-  identification = None
   configuration = {}
-  # override Server header response
-  server_version = "TestBackend"
-  sys_version = ""
+  DEFAULT_CONFIGURATION = {
+   'Status-Code': '200',
+   'Protocol-Version': 'HTTP/1.0',
+   'Timeout': '0',
+  }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
 
@@ -580,127 +596,92 @@ class TestHandler(BaseHTTPRequestHandler):
       self.end_headers()
       self.wfile.write(json.dumps({self.path: config}, indent=2))
 
-  def do_PUT(self):
-    incoming_config = {}
-    for key, value in list(self.headers.items()):
-      if key.startswith('X-'):
-        incoming_config[key] = value
-    config = {
-      'status_code': incoming_config.pop('X-Reply-Status-Code', '200')
-    }
-    prefix = 'X-Reply-Header-'
-    length = len(prefix)
-    for key in list(incoming_config.keys()):
-      if key.startswith(prefix):
-        header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-        config[header] = incoming_config.pop(key)
-
-    if 'X-Reply-Body' in incoming_config:
-      config['Body'] = base64.b64decode(
-        incoming_config.pop('X-Reply-Body')).decode()
-
-    config['X-Drop-Header'] = incoming_config.pop('X-Drop-Header', None)
-    self.configuration[self.path] = config
-
+  def do_CONFIG(self):
+    config = self.DEFAULT_CONFIGURATION.copy()
+    incoming_headers = http.client.HTTPMessage()
+    config_header = 'X-Config-'
+    config_header_header = 'X-Config-Reply-Header-'
+    for header_name, header_value in self.headers.items():
+      if header_name.startswith(config_header_header):
+        incoming_headers.add_header(
+          header_name[len(config_header_header):], header_value)
+      elif header_name.startswith(config_header):
+        config[header_name[len(config_header):]] = header_value
+    if 'X-Config-Body' not in self.headers:
+      config['Body'] = self.rfile.read(int(self.headers.get(
+        'Content-Length', '0')))
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
     self.end_headers()
-    reply = {self.path: config}
-    if incoming_config:
-      reply['unknown_config'] = incoming_config
-    self.wfile.write(json.dumps(reply, indent=2).encode())
+    self.configuration[self.path] = {
+      'headers': incoming_headers,
+      'configuration': config
+    }
+    reply = {self.path: dict(self.configuration[self.path])}
+    self.wfile.write(json.dumps(
+      reply, indent=2, cls=ConfigurationReplyEncoder).encode())
 
   def do_POST(self):
     return self.do_GET()
 
   def do_GET(self):
-    config = self.configuration.get(self.path, None)
-    if config is not None:
-      config = config.copy()
-      response = config.pop('Body', None)
-      status_code = int(config.pop('status_code'))
-      timeout = int(config.pop('Timeout', '0'))
-      compress = int(config.pop('Compress', '0'))
-      drop_header_list = []
-      for header in (config.pop('X-Drop-Header') or '').split():
-        drop_header_list.append(header)
-      header_dict = config
-    else:
-      drop_header_list = []
-      for header in (self.headers.get('x-drop-header') or '').split():
-        drop_header_list.append(header)
-      response = None
-      status_code = 200
-      timeout = int(self.headers.get('timeout', '0'))
-      if 'x-maximum-timeout' in self.headers:
-        maximum_timeout = int(self.headers['x-maximum-timeout'])
-        timeout = random.randrange(maximum_timeout)
-      if 'x-response-size' in self.headers:
-        min_response, max_response = [
-          int(q) for q in self.headers['x-response-size'].split(' ')]
-        reponse_size = random.randrange(min_response, max_response)
-        response = ''.join(
-          random.choice(string.lowercase) for x in range(reponse_size))
-      compress = int(self.headers.get('compress', '0'))
+    def generateDefaultResponse():
       header_dict = {}
-      prefix = 'x-reply-header-'
-      length = len(prefix)
-      for key, value in list(self.headers.items()):
-        if key.startswith(prefix):
-          header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-          header_dict[header] = value.strip()
-    if response is None:
-      if 'x-reply-body' not in self.headers:
-        headers_dict = dict()
-        for header in list(self.headers.keys()):
-          content = self.headers.get_all(header)
-          if len(content) == 0:
-            headers_dict[header] = None
-          elif len(content) == 1:
-            headers_dict[header] = content[0]
-          else:
-            headers_dict[header] = content
-        response = {
+      for header in list(self.headers.keys()):
+        content = self.headers.get_all(header)
+        if len(content) == 0:
+          header_dict[header] = None
+        elif len(content) == 1:
+          header_dict[header] = content[0]
+        else:
+          header_dict[header] = content
+
+      return json.dumps(
+        {
           'Path': self.path,
-          'Incoming Headers': headers_dict
-        }
-        response = json.dumps(response, indent=2)
-      else:
-        response = base64.b64decode(self.headers['x-reply-body'])
+          'Incoming Headers': header_dict
+        },
+        indent=2).encode()
 
-    time.sleep(timeout)
-    self.send_response_only(status_code)
-    self.send_header('Server', self.server_version)
-
-    for key, value in list(header_dict.items()):
-      self.send_header(key, value)
-
-    if self.identification is not None:
-      self.send_header('X-Backend-Identification', self.identification)
-
-    if 'Content-Type' not in drop_header_list:
-      self.send_header("Content-Type", "application/json")
-    if 'Set-Cookie' not in drop_header_list:
-      self.send_header('Set-Cookie', 'secured=value;secure')
-      self.send_header('Set-Cookie', 'nonsecured=value')
-
-    if 'Via' not in drop_header_list:
-      self.send_header('Via', 'http/1.1 backendvia')
-    if compress:
-      self.send_header('Content-Encoding', 'gzip')
-      out = io.BytesIO()
-      # compress with level 0, to find out if in the middle someting would
-      # like to alter the compression
-      with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=0) as f:
-        f.write(response.encode())
-      response = out.getvalue()
-      self.send_header('Backend-Content-Length', len(response))
-    if 'Content-Length' not in drop_header_list:
+    identification = getattr(self, 'identification', None)
+    config = self.configuration.get(self.path, None)
+    if config is None:
+      self.send_response(404)
+      response = generateDefaultResponse()
       self.send_header('Content-Length', len(response))
+      self.send_header('Content-Type', 'application/json')
+      if identification is not None:
+        self.send_header('X-Backend-Identification', identification)
+      self.end_headers()
+      self.wfile.write(response)
+      return
+
+    self.protocol_version = config['configuration']['Protocol-Version']
+    time.sleep(int(config['configuration']['Timeout']))
+    self.send_response_only(int(config['configuration']['Status-Code']))
+    if config['configuration']['Body'] == 'calculate':
+      body = generateDefaultResponse()
+    else:
+      body = config['configuration']['Body']
+    for header, value in config['headers'].items():
+      for header_type in ['Date', 'Last-Modified']:
+        if header == header_type:
+          if value == 'now':
+            value = self.date_time_string()
+      if header == 'Expires':
+        if value.startswith('delta:'):
+          value = self.date_time_string(
+            time.time() + float(value.split(':')[1])
+          )
+      if header == 'Content-Length':
+        if value == 'calculate':
+          value = '%s' % (len(body),)
+      self.send_header(header, value)
+    if identification is not None:
+      if 'X-Backend-Identification' not in config['headers']:
+        self.send_header('X-Backend-Identification', identification)
     self.end_headers()
-    if getattr(response, 'encode', None) is not None:
-      response = response.encode()
-    self.wfile.write(response)
+    self.wfile.write(body)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
@@ -984,49 +965,66 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       client_version = self.max_client_version
     if alt_svc is None:
       alt_svc = self.alt_svc
-    headers = result.headers.copy()
-    self.assertKeyWithPop('Content-Length', headers)
-    if 'Connection' in headers and headers[
-      'Connection'].lower() == 'keep-alive':
-      headers.pop('Connection')
+    pop_header_list = []
+
+    def assertSingleHeader(header):
+      value_list = result.headers.get_all(header, [])
+      self.assertEqual(1, len(value_list))
+      return value_list[0]
+
+    def assertAndPopSingleHeader(header):
+      pop_header_list.append(header.lower())
+      return assertSingleHeader(header)
+
+    assertAndPopSingleHeader('Content-Length')
+    if 'Connection' in result.headers:
+      if assertSingleHeader().lower() == 'keep-alive':
+        pop_header_list.append('Connection'.lower())
+
     if alt_svc:
       self.assertEqual(
         'h3=":%s"; ma=3600' % (HTTPS_PORT,),
-        headers.pop('Alt-Svc', '')
+        assertAndPopSingleHeader('Alt-Svc')
       )
       self.assertEqual(
         '%s:quic' % (HTTPS_PORT,),
-        headers.pop('Alternate-Protocol', '')
+        assertAndPopSingleHeader('Alternate-Protocol')
       )
 
     if backend_reached:
-      self.assertEqual('TestBackend', headers.pop('Server', ''))
-      self.assertKeyWithPop('Date', headers)
+      self.assertEqual('TestBackend', assertAndPopSingleHeader('Server'))
+      assertAndPopSingleHeader('Date')
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
       list(self.node_information_dict['version-hash-history'].keys())[0])
     if via:
-      self.assertIn('Via', headers)
+      pop_header_list.append('Via'.lower())
+      via = ' '.join(result.headers.get_all('Via'))
       if cached:
         self.assertEqual(
-          'http/1.1 backendvia, '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'http/1.0 rapid-cdn-cache-%(via_id)s, '
+          'http/1.1 backendvia '
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '  # ATS adds to existing
+                                                     # header, so ","
+          'http/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          headers.pop('Via')
+          via
         )
       else:
         self.assertEqual(
-          'http/1.1 backendvia, '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
+          'http/1.1 backendvia '
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          headers.pop('Via')
+          via
         )
     else:
-      self.assertNotIn('Via', headers)
+      self.assertNotIn('Via', result.headers)
+    headers = http.client.HTTPMessage()
+    for header, value in result.headers.items():
+      if header not in pop_header_list:
+        headers.add_header(header, value)
     return headers
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
@@ -2364,14 +2362,27 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             self.backend_url, self.backend_url)],
       }
     )
+    path = '/test-path/deep/.././deeper' * 250
+    backend_path = '/test-path/deeper' * 250
+    config_result = mimikra.config(
+      self.backend_url.rstrip('/') + '?a=b&c=' + backend_path,
+      headers=setUpHeaders([
+        ('X-Config-Timeout', '10'),
+        ('X-Config-Body', 'calculate'),
+        ('X-Config-Reply-Header-Server', 'TestBackend'),
+        ('X-Config-Reply-Header-Content-Length', 'calculate'),
+        ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+        ('X-Config-Reply-Header-Set-Cookie', 'secured=value;secure, nonsecured=value'),
+      ])
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      '/test-path/deep/.././deeper' * 250,
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-        'User-Agent': 'TEST USER AGENT',
-      }
+      path,
+      headers=setUpHeaders([
+        ('Accept-Encoding', 'gzip'),
+        ('User-Agent', 'TEST USER AGENT'),
+      ])
     )
 
     self.assertEqual(
@@ -2381,14 +2392,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -2512,6 +2522,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
 
+    path = 'test-path/deep/.././deeper'
+    backend_url = self.getSlaveParameterDictDict()['auth-to-backend']['url']
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=setUpHeaders([
+        ('X-Config-Timeout', '10')
+      ])
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
@@ -2524,11 +2543,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        'test-path/deep/.././deeper',
-        headers={
-          'Timeout': '10',  # more than default backend-connect-timeout == 5
-          'Accept-Encoding': 'gzip',
-        }
+        path,
+        headers=setUpHeaders([
+          ('Accept-Encoding', 'gzip'),
+        ])
       )
 
       self.assertEqual(
@@ -2542,7 +2560,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       except Exception:
         raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-      self.assertEqual(j['Incoming Headers']['timeout'], '10')
       self.assertFalse('Content-Encoding' in result.headers)
       self.assertRequestHeaders(
          j['Incoming Headers'], parameter_dict['domain'])
@@ -2561,6 +2578,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_auth_to_backend_not_configured(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend-not-configured')
+    path = 'test-path/deep/.././deeper'
+    backend_url = self.getSlaveParameterDictDict()[
+      'auth-to-backend-not-configured']['url']
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=setUpHeaders([
+        ('X-Config-Timeout', '10')
+      ])
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
@@ -2573,11 +2600,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        'test-path/deep/.././deeper',
-        headers={
-          'Timeout': '10',  # more than default backend-connect-timeout == 5
-          'Accept-Encoding': 'gzip',
-        }
+        path,
+        headers=setUpHeaders([
+          ('Accept-Encoding', 'gzip'),
+        ])
       )
 
       self.assertEqual(
@@ -2614,7 +2640,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -2812,7 +2837,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -4061,7 +4085,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
-      result = mimikra.put(backend_url + path, headers={
+      result = mimikra.config(backend_url + path, headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
           'X-Reply-Body': base64.b64encode(body.encode()).decode(),
@@ -4832,7 +4856,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     normal_path = 'normal'
     with_date_path = 'with_date'
     specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
-    result_configure = mimikra.put(
+    result_configure = mimikra.config(
       backend_url + '/' + with_date_path, headers={
         'X-Reply-Header-Date': specific_date
       })
@@ -7162,7 +7186,7 @@ backend _health-check-default-http
         'failover-url?a=b&c=',
         'failover-https-url?a=b&c='
       ]:
-        result = mimikra.put(
+        result = mimikra.config(
           self.backend_url + url + path,
           headers={
             'X-Reply-Status-Code': '503',
@@ -7173,7 +7197,7 @@ backend _health-check-default-http
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()[
         'health-check-failover-url']['https-url']
-      result = mimikra.put(
+      result = mimikra.config(
         '/'.join([backend_url, cached_path]),
         headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
@@ -7204,14 +7228,14 @@ backend _health-check-default-http
     checkResult(http.client.OK, body_200)
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = mimikra.put(
+      result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7274,7 +7298,7 @@ backend _health-check-default-http
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7282,7 +7306,7 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = mimikra.put(
+      result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7321,7 +7345,7 @@ backend _health-check-default-http
     self.assertNotIn('X-Backend-Identification', result.headers)
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7354,7 +7378,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7383,7 +7407,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7413,7 +7437,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
