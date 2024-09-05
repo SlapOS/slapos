@@ -52,21 +52,21 @@ class Recipe(object):
   For example {"tun": {"ipv4": <addr>}} would be available in buildout as ${instance:tun-ipv4}.
 
   Input:
-    url
+    url | server-url
       Slap server url.
       Example:
         ${slap-connection:server-url}
-    key & cert (optional)
+    key & cert | key-file & cert-file (optional)
       Path of files containing key and certificate for secure connection to
       slap server.
       Example:
         ${slap-connection:key-file}
         ${slap-connection:cert-file}
-    computer
+    computer | computer-id
       Computer identifier.
       Example:
         ${slap-connection:computer-id}
-    partition
+    partition | partition-id
       Partition identifier.
       Example:
         ${slap-connection:partition-id}
@@ -129,14 +129,16 @@ class Recipe(object):
       2. format.Partition.resource_file - for partition specific details
       """
       slap = slapos.slap.slap()
+      # BBB: or ... (right side) clauses kept for compatibility;
+      # left-side clauses correspond directly to slap-connection.
       slap.initializeConnection(
-          options['url'],
-          options.get('key'),
-          options.get('cert'),
+          options.get('server-url') or options['url'],
+          options.get('key-file') or options.get('key'),
+          options.get('cert-file') or options.get('cert'),
       )
       computer_partition = slap.registerComputerPartition(
-          options['computer'],
-          options['partition'],
+          options.get('computer-id') or options['computer'],
+          options.get('partition-id') or options['partition'],
       )
       parameter_dict = computer_partition.getInstanceParameterDict()
       options['instance-state'] = computer_partition.getState()
