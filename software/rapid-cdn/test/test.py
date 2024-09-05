@@ -649,6 +649,11 @@ class TestHandler(BaseHTTPRequestHandler):
         if key.startswith(prefix):
           header = '-'.join([q.capitalize() for q in key[length:].split('-')])
           header_dict[header] = value.strip()
+
+    # handle Date header
+    if 'Date' not in header_dict and 'Date' not in drop_header_list:
+      header_dict['Date'] = self.date_time_string()
+
     if response is None:
       if 'x-reply-body' not in self.headers:
         headers_dict = dict()
@@ -4039,6 +4044,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       ats_log = fh.read()
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
+
+  def test_enable_cache_ims_request(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    self.fail('https://www.erp5.com/group_section/forum/Possible-frontend-bug--loss-of-Content-Type-on-frontend-initiated-If-Modified-Since-requests-fjqyR6VEyr')
 
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
