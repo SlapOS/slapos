@@ -107,10 +107,6 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
 
 class TestTheia(TheiaTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {"autorun": "user-controlled"} # we interact with slapos in this test
-
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
@@ -666,3 +662,26 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
 
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   pass
+
+class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'monitor-cors-domains': 'monitor.couscous.cors',
+      'monitor-interface-url': 'monitor.couscous.interface'
+    }
+
+  def test_monitoring_propagation(self):
+
+    monitor_setup_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-setup-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+
+    self.assertEqual(len(monitor_setup_url_list), 4)
+
+    for url in monitor_setup_url_list:
+      self.assertIn('monitor.couscous.interface', url)
