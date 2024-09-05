@@ -292,6 +292,15 @@ class JsonSchema(Recipe):
     validator_cls = jsonschema.validators.validator_for(schema)
     validate_original = validator_cls.VALIDATORS["properties"]
     def validate_with_defaults(validator, properties, instance, schema):
+      # Attempt to adjust str to int if required
+      for key, subschema in properties.items():
+        if subschema.get('type') == 'integer':
+          value = instance.get(key)
+          if type(value) is str:
+            try:
+              instance[key] = int(value)
+            except ValueError:
+              pass
       # Set defaults
       for key, subschema in properties.items():
         if "default" in subschema:

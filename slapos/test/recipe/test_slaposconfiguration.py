@@ -126,6 +126,9 @@ class SlapConfigurationTest(unittest.TestCase):
     expected_dict.update(sent_parameters)
     self.assertEqual(received_parameters, expected_dict)
 
+  def recoverStrToInt(self, sent_parameters, keys):
+    return {k : int(v) if k in keys else v for k, v in sent_parameters.items()}
+
   def test_jsonschema_json_in_xml_valid_xml_input_defaults(self):
     self.writeJsonSchema()
     parameters = {"number": 1}
@@ -154,9 +157,25 @@ class SlapConfigurationTest(unittest.TestCase):
       received = self.receiveParameters()
       self.checkParameters(received, parameters)
 
-  def test_jsonschema_json_in_xml_wrong_type_xml_input(self):
+  def test_jsonschema_json_in_xml_recover_str_to_int_xml_input(self):
     self.writeJsonSchema()
     parameters = {"number": "1"}
+    with self.patchSlap(parameters, False):
+      received = self.receiveParameters()
+      recovered = self.recoverStrToInt(parameters, ('number',))
+      self.checkParameters(received, recovered)
+
+  def test_jsonschema_json_in_xml_recover_str_to_int_json_input(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters()
+      recovered = self.recoverStrToInt(parameters, ('number',))
+      self.checkParameters(received, recovered)
+
+  def test_jsonschema_json_in_xml_wrong_type_xml_input(self):
+    self.writeJsonSchema()
+    parameters = {"number": True}
     with self.patchSlap(parameters, False):
       self.assertRaises(
         slapconfiguration.UserError,
@@ -165,12 +184,13 @@ class SlapConfigurationTest(unittest.TestCase):
 
   def test_jsonschema_json_in_xml_wrong_type_json_input(self):
     self.writeJsonSchema()
-    parameters = {"number": "1"}
+    parameters = {"number": True}
     with self.patchSlap(parameters, True):
       self.assertRaises(
         slapconfiguration.UserError,
         self.receiveParameters,
       )
+
 
   def test_jsonschema_json_in_xml_incomplete_xml_input(self):
     self.writeJsonSchema()
