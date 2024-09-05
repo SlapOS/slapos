@@ -664,3 +664,8 @@ class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithE
 
 class TestTheiaResilientMonitoring(ResilientTheiaMixin, SlapOSInstanceTestCase):
   pass
+  @classmethod
+    def getInstanceParameterDict(cls):
+      return {
+        # set monitor-cors-domains parameter
+      }
