@@ -649,6 +649,11 @@ class TestHandler(BaseHTTPRequestHandler):
         if key.startswith(prefix):
           header = '-'.join([q.capitalize() for q in key[length:].split('-')])
           header_dict[header] = value.strip()
+
+    # handle Date header
+    if 'Date' not in header_dict and 'Date' not in drop_header_list:
+      header_dict['Date'] = self.date_time_string()
+
     if response is None:
       if 'x-reply-body' not in self.headers:
         headers_dict = dict()
