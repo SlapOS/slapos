@@ -663,6 +663,17 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
     if export_favicon == import_favicon:
       self.fail('Import favicon and export favicon are not different')
 
-
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   pass
+
+class TestTheiaResilientMonitoring(ResilientTheiaMixin, SlapOSInstanceTestCase):
+  pass
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      # set monitor-cors-domains parameter
+    }
+
+  def test_monitoring_propagation(self):
+    self.fail('Not implemented')
+
