@@ -2,6 +2,7 @@
 import json
 import mock
 import os
+import shutil
 import unittest
 import tempfile
 from collections import defaultdict
@@ -32,17 +33,16 @@ class SlapConfigurationTest(unittest.TestCase):
         "directory": self.instance_root
       }
     }
+    self.software_root = tempfile.mkdtemp()
 
   def tearDown(self):
     os.unlink(self.resource_file)
     os.rmdir(self.instance_root)
+    shutil.rmtree(self.software_root)
 
   @mock.patch("slapos.slap.slap")
-  def test_correct_naming(self, MockClient):
+  def test_correct_naming(self, _):
     """Test correct naming of variables from resource file."""
-    MockClient.initializeConnection.return_value = None
-    MockClient.getInstanceParameterDict.return_value = dict()
-  
     options = defaultdict(str)
     recipe = slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
 
@@ -52,3 +52,214 @@ class SlapConfigurationTest(unittest.TestCase):
 
     self.assertEqual(options['address-list'], [10, 20],
       "All underscores should be replaced with -")
+
+  def writeJsonSchema(self, serialisation='json-in-xml'):
+    self.software_json_file = os.path.join(self.software_root, 'software.cfg.json')
+    software_schema = {
+      "name": "Test",
+      "serialisation": serialisation,
+      "software-type": {
+        "default": {
+          "title": "Default",
+          "software-type": "default",
+          "request": "instance-default-input.json",
+          "index": 0,
+        },
+        "default/*": {
+          "title": "Default",
+          "shared": True,
+          "software-type": "default",
+          "request": "shared-default-input.json",
+          "index": 0,
+        },
+      }
+    }
+    with open(self.software_json_file, 'w') as f:
+      json.dump(software_schema, f)
+    self.instance_json_file = os.path.join(self.software_root, 'instance-default-input.json')
+    properties = {
+      "letter": {
+        "type": "string",
+        "enum": ["a", "b", "c"],
+        "default": "a"
+      },
+      "number": {
+        "type": "integer",
+      },
+    }
+    default_dict = {}
+    without_default = []
+    for key, obj in properties.items():
+      default = obj.get('default')
+      if default is None:
+        without_default.append(key)
+      else:
+        default_dict[key] = default
+    self.default_dict = default_dict
+    instance_schema = {
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+      "$defs": {
+        "instance-parameters": {
+          "type": "object",
+          "properties": properties,
+          "required": without_default,
+        },
+      },
+      "unevaluatedProperties": False,
+      "allOf": [{"$ref": "#/$defs/instance-parameters" },]
+    }
+    with open(self.instance_json_file, 'w') as f:
+      json.dump(instance_schema, f)
+    self.shared_json_file = os.path.join(self.software_root, 'shared-default-input.json')
+    shared_schema = {
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+      "type": "object",
+      "oneOf": [
+        {
+          "$ref": "shared-1-default-input.json"
+        },
+        {
+          "$ref": "shared-2-default-input.json"
+        },
+      ]
+    }
+    with open(self.shared_json_file, 'w') as f:
+      json.dump(shared_schema, f)
+    self.shared_1_json_file = os.path.join(self.software_root, 'shared-1-default-input.json')
+    shared_1_schema = {
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": 1,
+        },
+        "thing": {
+          "type": "string",
+          "default": "hello",
+        },
+      },
+      "required": ["kind"],
+    }
+    with open(self.shared_1_json_file, 'w') as f:
+      json.dump(shared_1_schema, f)
+    self.shared_2_json_file = os.path.join(self.software_root, 'shared-2-default-input.json')
+    shared_2_schema = {
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": 2,
+        },
+        "thing": {
+          "type": "integer",
+          "default": 42,
+        },
+        "required": ["kind"],
+      }
+    }
+    with open(self.shared_2_json_file, 'w') as f:
+      json.dump(shared_2_schema, f)
+
+
+  def patchSlap(self, parameters, serialise, shared=None, software_type='default'):
+    d = {'_': json.dumps(parameters)} if serialise else dict(parameters)
+    slap = mock.MagicMock()
+    slap_object = slap.return_value
+    slap_object.initializeConnection.return_value = None
+    computer_partition = slap_object.registerComputerPartition.return_value
+    computer_partition.getInstanceParameterDict.return_value = d
+    d['ip_list'] = []
+    d['slap_software_type'] = software_type
+    d['slave_instance_list'] = shared or []
+    return mock.patch("slapos.slap.slap", slap)
+
+  def receiveParameters(self, shared=False):
+    options = defaultdict(str)
+    options['jsonschema'] = self.software_json_file
+    recipe = slapconfiguration.JsonSchema(self.buildout, "slapconfiguration", options)
+    return options['slave-instance-list'] if shared else options['configuration']
+
+  def checkParameters(self, received_parameters, sent_parameters):
+    expected_dict = dict(self.default_dict)
+    expected_dict.update(sent_parameters)
+    self.assertEqual(received_parameters, expected_dict)
+
+  def test_jsonschema_json_in_xml_valid_xml_input_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, False):
+      received = self.receiveParameters()
+      self.checkParameters(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_json_input_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters()
+      self.checkParameters(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_xml_input_full(self):
+    self.writeJsonSchema()
+    parameters = {"letter": "b", "number": 1}
+    with self.patchSlap(parameters, False):
+      received = self.receiveParameters()
+      self.checkParameters(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_json_input_full(self):
+    self.writeJsonSchema()
+    parameters = {"letter": "b", "number": 1}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters()
+      self.checkParameters(received, parameters)
+
+  def test_jsonschema_json_in_xml_wrong_type_xml_input(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters, False):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+      )
+
+  def test_jsonschema_json_in_xml_wrong_type_json_input(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters, True):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+      )
+
+  def test_jsonschema_json_in_xml_incomplete_xml_input(self):
+    self.writeJsonSchema()
+    parameters = {}
+    with self.patchSlap(parameters, False):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+      )
+
+  def test_jsonschema_json_in_xml_incomplete_json_input(self):
+    self.writeJsonSchema()
+    parameters = {}
+    with self.patchSlap(parameters, True):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+      )
+
+  def test_jsonschema_shared_1_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}]
+    with self.patchSlap(parameters, True, shared):
+      received = self.receiveParameters(shared=True)
+      self.assertEqual(received, [{"kind": 1, "thing": "hello"}])
+
+  def test_jsonschema_shared_2_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 2}]
+    with self.patchSlap(parameters, True, shared):
+      received = self.receiveParameters(shared=True)
+      self.assertEqual(received, [{"kind": 2, "thing": 42}])
