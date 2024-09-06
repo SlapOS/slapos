@@ -665,10 +665,11 @@ class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithE
 class TestTheiaResilientMonitoring(ResilientTheiaMixin, SlapOSInstanceTestCase):
   pass
   @classmethod
-    def getInstanceParameterDict(cls):
-      return {
-        # set monitor-cors-domains parameter
-      }
+  def getInstanceParameterDict(cls):
+    return {
+      # set monitor-cors-domains parameter
+    }
 
-    def test_monitoring_propagation(self):
-      self.fail('Not implemented')
+  def test_monitoring_propagation(self):
+    self.fail('Not implemented')
+
