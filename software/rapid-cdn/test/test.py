@@ -4011,6 +4011,42 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
 
+  def test_enable_cache_ims_request(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    path = 'ims'
+    delta = 10
+    backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
+
+    def setUpHeaders(header_list_list):
+      result = http.client.HTTPMessage()
+      for header, value in header_list_list:
+        result.add_header(header, value)
+      return result
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '200'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=10, stale-if-error=604800, stale-while-revalidate=15, public'),
+      ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:10'),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+      data='some data'
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+
+    headers = self.assertResponseHeaders(check_result, cached=True)
+    self.fail('TODO')
+
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
