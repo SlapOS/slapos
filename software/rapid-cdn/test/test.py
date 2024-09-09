@@ -4064,6 +4064,124 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
 
+  def test_enable_cache_ims_request(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    path = 'ims'
+    delta = 10
+    data = 'some data'
+    backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
+
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '200'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:%s' % (delta,)),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+      data=data
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '200'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:%s' % (delta,)),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+      data=data
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertTrue(
+      check_result.status_code,
+      http.client.OK
+    )
+    result_headers = self.assertResponseHeaders(check_result, cached=True)
+    expires_value = result_headers.get('Expires')
+    last_modified_value = result_headers.get('Last-Modified')
+    self.assertEqual(
+      [('x-reveal-duplicate', 'same'),
+       ('cache-control',
+        'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+        'public' % (delta,)),
+       ('content-type', 'text/plain'),
+       ('expires', expires_value),
+       ('last-modified', last_modified_value),
+       ('x-reveal-duplicate', 'other'),
+       ('age', '0')],
+      result_headers.items()
+    )
+    self.assertEqual(check_result.text, data)
+
+    time.sleep(delta + 2)
+
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '304'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:%s' % (delta,)),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertTrue(
+      check_result.status_code,
+      http.client.OK
+    )
+    result_headers = self.assertResponseHeaders(check_result, cached=True)
+    expires_value = result_headers.get('Expires')
+    last_modified_value = result_headers.get('Last-Modified')
+    self.assertEqual(
+      [
+       ('content-type', 'text/plain'),
+       ('x-reveal-duplicate', 'same'),
+       ('cache-control',
+        'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+        'public' % (delta,)),
+       ('expires', expires_value),
+       ('last-modified', last_modified_value),
+       ('x-reveal-duplicate', 'other'),
+       ('age', '0')
+      ],
+      result_headers.items()
+    )
+    self.assertEqual(check_result.text, data)
+
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
