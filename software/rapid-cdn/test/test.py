@@ -4040,6 +4040,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
 
+  def test_enable_cache_ims_request(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    self.fail('TODO')
+
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
