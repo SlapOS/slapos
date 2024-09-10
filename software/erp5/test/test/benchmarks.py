@@ -86,6 +86,11 @@ class TestOrderBuildPackingListSimulation(
               "port-base": 2200
             },
           },
+          "family-override": {
+            "default": {
+              "xml-rpc": True
+            }
+          }
         })
     }
 
