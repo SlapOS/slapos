@@ -178,8 +178,10 @@ class SlapConfigurationTest(unittest.TestCase):
     d['slave_instance_list'] = list(shared)
     return mock.patch("slapos.slap.slap", slap)
 
-  def receiveParameters(self, shared=False):
+  def receiveParameters(self, shared=False, without_defaults=False):
     options = defaultdict(str)
+    if without_defaults:
+      options['without-defaults'] = 'true'
     options['jsonschema'] = self.software_json_file
     recipe = slapconfiguration.JsonSchema(self.buildout, "slapconfiguration", options)
     if shared:
@@ -209,6 +211,13 @@ class SlapConfigurationTest(unittest.TestCase):
     with self.patchSlap(parameters, True):
       received = self.receiveParameters()
       self.checkParameters(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_json_input_without_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters(without_defaults=True)
+      self.assertEqual(received, parameters)
 
   def test_jsonschema_json_in_xml_valid_xml_input_full(self):
     self.writeJsonSchema()
@@ -277,6 +286,14 @@ class SlapConfigurationTest(unittest.TestCase):
       valid, invalid = self.receiveParameters(shared=True)
       self.assertEqual(invalid, {})
       self.assertEqual(list(valid.values()), [{"kind": 2, "thing": 42}])
+
+  def test_jsonschema_shared_2_valid_without_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 2}]
+    with self.patchSlap(parameters, True, shared):
+      valid, _ = self.receiveParameters(shared=True, without_defaults=True)
+      self.assertEqual(list(valid.values()), shared)
 
   def test_jsonschema_shared_1_and_2_valid_defaults(self):
     self.writeJsonSchema()

@@ -276,6 +276,16 @@ class Serialised(Recipe):
           return {}
 
 
+class BasicValidator(object):
+  def __init__(self, schema):
+    self.schema = schema
+    self.validator = jsonschema.validators.validator_for(schema)(schema)
+
+  def validate(self, instance):
+    for error in self.validator.iter_errors(instance):
+      yield error
+
+
 class DefaultValidator(object):
   def __init__(self, schema):
     self.schema = schema
@@ -347,6 +357,11 @@ class JsonSchema(Recipe):
       All instance schemas must be available at the advertised relative paths.
       Example:
         ${buildout:directory}/software.cfg.json
+    without-defaults
+      Flag to leave parameters as-is without adding defaults.
+      Any value triggers this behavior.
+      Example:
+        true
   """
   def _schema(self, options):
     path = options['jsonschema']
@@ -367,7 +382,7 @@ class JsonSchema(Recipe):
   def _parseParameters(self, software_schema, parameter_dict):
     instance_schema = software_schema.getInstanceRequestParameterSchema()
     instance = parameter_dict if isinstance(parameter_dict, dict) else {}
-    validator = DefaultValidator(instance_schema)
+    validator = self.Validator(instance_schema)
     errors = list(validator.validate(instance))
     if errors:
       err = SoftwareReleaseSchemaValidationError(errors).format_error(indent=2)
@@ -380,7 +395,7 @@ class JsonSchema(Recipe):
     if not shared_list:
       return
     shared_schema = self._getSharedSchema(software_schema)
-    validator = DefaultValidator(shared_schema)
+    validator = self.Validator(shared_schema)
     valid, invalid = [], []
     for instance in shared_list:
       reference = instance.pop('slave_reference')
@@ -398,6 +413,8 @@ class JsonSchema(Recipe):
     options['invalid-slave-instance-list'] = invalid
 
   def _expandParameterDict(self, options, parameter_dict):
+    without_defaults = 'without-defaults' in options
+    self.Validator = BasicValidator if without_defaults else DefaultValidator
     software_schema = self._schema(options)
     serialisation = software_schema.getSerialisation(strict=True)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
