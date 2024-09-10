@@ -39,6 +39,11 @@
 {% set apache_dict = {} -%}
 {% do apache_dict.__setitem__(publish_url_name, (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port, False)) -%}
 
+{% set ooo_enable_scripting = instance_parameter_dict['enable-scripting']  | string | lower -%}
+{% if instance_parameter_dict.get('enable-scripting-parameter-name') -%}
+{%   set ooo_enable_scripting = slapparameter_dict.get(instance_parameter_dict['enable-scripting-parameter-name'], ooo_enable_scripting)  | string | lower -%}
+{% endif -%}
+
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set section_list = [] -%}
 {% set cloudooo_section_list = [] -%}
@@ -168,6 +173,7 @@ mimetype_entry_addition =
 ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+ooo_enable_scripting = {{ ooo_enable_scripting }}
 
 {% for index in range(1, backend_count + 1) -%}
 {%   set name = 'cloudooo-' ~ index -%}

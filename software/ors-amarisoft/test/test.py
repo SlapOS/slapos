@@ -502,171 +502,6 @@ class SDR4:
     ))
 
 
-# Lopcomm4 is mixin to verify Lopcomm driver wrt all LTE/NR x FDD/TDD modes.
-class Lopcomm4:
-  @classmethod
-  def RUcfg(cls, i):
-    return {
-        'ru_type':      'lopcomm',
-        'ru_link_type': 'cpri',
-        'cpri_link':    {
-            'sdr_dev':  0,
-            'sfp_port': i,
-            'mult':     4,
-            'mapping':  'hw',
-            'rx_delay': 40+i,
-            'tx_delay': 50+i,
-            'tx_dbm':   60+i
-        },
-        'mac_addr':     '00:0A:45:00:00:%02x' % i,
-    }
-
-  # radio units configuration in enb.cfg
-  def test_rf_cfg_ru(t):
-    assertMatch(t, t.rf_cfg['rf_driver'],  dict(
-      name='sdr',
-      args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr0@3,dev3=/dev/sdr0@4',
-      cpri_mapping='hw,hw,hw,hw',
-      cpri_mult='4,4,4,4',
-      cpri_rx_delay='41,42,43,44',
-      cpri_tx_delay='51,52,53,54',
-      cpri_tx_dbm='61,62,63,64',
-    ))
-
-  # RU configuration in cu_config.xml
-  def test_ru_cu_config_xml(t):
-    def uctx(rf_mode, cell_type, dl_arfcn, ul_arfcn, bw, dl_freq, ul_freq, tx_gain, rx_gain):
-      return {
-          'tx-array-carriers': {
-            'rw-duplex-scheme':              rf_mode,
-            'rw-type':                       cell_type,
-            'absolute-frequency-center':    '%d' % dl_arfcn,
-            'center-of-channel-bandwidth':  '%d' % dl_freq,
-            'channel-bandwidth':            '%d' % bw,
-            'gain':                         '%d' % tx_gain,
-            'active':                       'ACTIVE',
-          },
-          'rx-array-carriers': {
-            'absolute-frequency-center':    '%d' % ul_arfcn,
-            'center-of-channel-bandwidth':  '%d' % ul_freq,
-            'channel-bandwidth':            '%d' % bw,
-            # XXX no rx_gain
-            'active':                       'ACTIVE',
-          },
-      }
-
-    _ = t._test_ru_cu_config_xml
-
-    #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
-    _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
-    _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
-    _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
-    _(4, uctx('TDD',  'NR', 470400,  470400, 20000000, 2352000000, 2352000000, 14, 24))
-
-  def _test_ru_cu_config_xml(t, i, uctx):
-    cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_config.xml' % t.ref('RU%d' % i)))
-    with open(cu_xml, 'r') as f:
-      cu = f.read()
-    cu = xmltodict.parse(cu)
-
-    assertMatch(t, cu, {
-      'xc:config': {
-        'user-plane-configuration': {
-          'tx-endpoints': [
-            {'name': 'TXA0P00C00', 'e-axcid': {'eaxc-id': '0'}},
-            {'name': 'TXA0P00C01', 'e-axcid': {'eaxc-id': '1'}},
-            {'name': 'TXA0P01C00', 'e-axcid': {'eaxc-id': '2'}},
-            {'name': 'TXA0P01C01', 'e-axcid': {'eaxc-id': '3'}},
-          ],
-          'tx-links': [
-            {'name': 'TXA0P00C00', 'tx-endpoint': 'TXA0P00C00'},
-            {'name': 'TXA0P00C01', 'tx-endpoint': 'TXA0P00C01'},
-            {'name': 'TXA0P01C00', 'tx-endpoint': 'TXA0P01C00'},
-            {'name': 'TXA0P01C01', 'tx-endpoint': 'TXA0P01C01'},
-          ],
-          'rx-endpoints': [
-            {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': '0'}},
-            {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': '8'}},
-            {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': '1'}},
-            {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': '24'}},
-          ],
-          'rx-links': [
-            {'name': 'RXA0P00C00',   'rx-endpoint': 'RXA0P00C00'},
-            {'name': 'PRACH0P00C00', 'rx-endpoint': 'PRACH0P00C00'},
-            {'name': 'RXA0P00C01',   'rx-endpoint': 'RXA0P00C01'},
-            {'name': 'PRACH0P00C01', 'rx-endpoint': 'PRACH0P00C01'},
-          ],
-        } | uctx
-      }
-    })
-
-  # RU configuration in cu_inactive_config.xml
-  def test_ru_cu_inactive_config_xml(t):
-    def uctx(rf_mode, cell_type, dl_arfcn, ul_arfcn, bw, dl_freq, ul_freq, tx_gain, rx_gain):
-      return {
-          'tx-array-carriers': {
-            'rw-duplex-scheme':              rf_mode,
-            'rw-type':                       cell_type,
-            'absolute-frequency-center':    '%d' % dl_arfcn,
-            'center-of-channel-bandwidth':  '%d' % dl_freq,
-            'channel-bandwidth':            '%d' % bw,
-            'gain':                         '%d' % tx_gain,
-            'active':                       'INACTIVE',
-          },
-          'rx-array-carriers': {
-            'absolute-frequency-center':    '%d' % ul_arfcn,
-            'center-of-channel-bandwidth':  '%d' % ul_freq,
-            'channel-bandwidth':            '%d' % bw,
-            # XXX no rx_gain
-            'active':                       'INACTIVE',
-          },
-      }
-
-    _ = t._test_ru_cu_inactive_config_xml
-
-    #       rf_mode  ctype dl_arfcn ul_arfcn   bw      dl_freq     ul_freq     txg rxg
-    _(1, uctx('FDD', 'LTE',    100,   18100,  5000000, 2120000000, 1930000000, 11, 21))
-    _(2, uctx('TDD', 'LTE',  40200,   40200, 10000000, 2551000000, 2551000000, 12, 22))
-    _(3, uctx('FDD',  'NR', 300300,  290700, 15000000, 1501500000, 1453500000, 13, 23))
-    _(4, uctx('TDD',  'NR', 470400,  470400, 20000000, 2352000000, 2352000000, 14, 24))
-
-  def _test_ru_cu_inactive_config_xml(t, i, uctx):
-    cu_xml = t.ipath('etc/%s' % xbuildout.encode('%s-cu_inactive_config.xml' % t.ref('RU%d' % i)))
-    with open(cu_xml, 'r') as f:
-      cu = f.read()
-    cu = xmltodict.parse(cu)
-
-    assertMatch(t, cu, {
-      'xc:config': {
-        'user-plane-configuration': {
-          'tx-endpoints': [
-            {'name': 'TXA0P00C00', 'e-axcid': {'eaxc-id': '0'}},
-            {'name': 'TXA0P00C01', 'e-axcid': {'eaxc-id': '1'}},
-            {'name': 'TXA0P01C00', 'e-axcid': {'eaxc-id': '2'}},
-            {'name': 'TXA0P01C01', 'e-axcid': {'eaxc-id': '3'}},
-          ],
-          'tx-links': [
-            {'name': 'TXA0P00C00', 'tx-endpoint': 'TXA0P00C00'},
-            {'name': 'TXA0P00C01', 'tx-endpoint': 'TXA0P00C01'},
-            {'name': 'TXA0P01C00', 'tx-endpoint': 'TXA0P01C00'},
-            {'name': 'TXA0P01C01', 'tx-endpoint': 'TXA0P01C01'},
-          ],
-          'rx-endpoints': [
-            {'name': 'RXA0P00C00',   'e-axcid': {'eaxc-id': '0'}},
-            {'name': 'PRACH0P00C00', 'e-axcid': {'eaxc-id': '8'}},
-            {'name': 'RXA0P00C01',   'e-axcid': {'eaxc-id': '1'}},
-            {'name': 'PRACH0P00C01', 'e-axcid': {'eaxc-id': '24'}},
-          ],
-          'rx-links': [
-            {'name': 'RXA0P00C00',   'rx-endpoint': 'RXA0P00C00'},
-            {'name': 'PRACH0P00C00', 'rx-endpoint': 'PRACH0P00C00'},
-            {'name': 'RXA0P00C01',   'rx-endpoint': 'RXA0P00C01'},
-            {'name': 'PRACH0P00C01', 'rx-endpoint': 'PRACH0P00C01'},
-          ],
-        } | uctx
-      }
-    })
-
 # Sunwave4 is mixin to verify Sunwave driver wrt all LTE/NR x FDD/TDD modes.
 class Sunwave4:
   @classmethod
@@ -699,35 +534,35 @@ class Sunwave4:
     ))
 
 # RUMultiType4 is mixin to verify that different RU types can be used at the same time.
-class RUMultiType4:
-  # ENB does not support mixing SDR + CPRI - verify only with CPRI-based units
-  # see https://support.amarisoft.com/issues/26021 for details
-  @classmethod
-  def RUcfg(cls, i):
-    assert 1 <= i <= 4, i
-    if i in (1,2):
-      return Lopcomm4.RUcfg(i)
-    else:
-      return Sunwave4.RUcfg(i)
-
-  # radio units configuration in enb.cfg
-  def test_rf_cfg_ru(t):
-    assertMatch(t, t.rf_cfg['rf_driver'],  dict(
-      name='sdr',
-      args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
-      cpri_mapping='hw,hw,bf1,bf1',
-      cpri_mult='4,4,5,5',
-      cpri_rx_delay='41,42,143,144',
-      cpri_tx_delay='51,52,153,154',
-      cpri_tx_dbm='61,62,163,164',
-    ))
+# Due to only one type of RU being supported in the SR, the test is currently not applicable.
+#class RUMultiType4:
+#  # ENB does not support mixing SDR + CPRI - verify only with CPRI-based units
+#  # see https://support.amarisoft.com/issues/26021 for details
+#  @classmethod
+#  def RUcfg(cls, i):
+#    assert 1 <= i <= 4, i
+#    if i in (1,2):
+#      return SDR4.RUcfg(i)
+#    else:
+#      return Sunwave4.RUcfg(i)
+#
+#  # radio units configuration in enb.cfg
+#  def test_rf_cfg_ru(t):
+#    assertMatch(t, t.rf_cfg['rf_driver'],  dict(
+#      name='sdr',
+#      args='dev0=/dev/sdr0@1,dev1=/dev/sdr0@2,dev2=/dev/sdr1@3,dev3=/dev/sdr1@4',
+#      cpri_mapping='hw,hw,bf1,bf1',
+#      cpri_mult='4,4,5,5',
+#      cpri_rx_delay='41,42,143,144',
+#      cpri_tx_delay='51,52,153,154',
+#      cpri_tx_dbm='61,62,163,164',
+#    ))
 
 
 # instantiate eNB tests
 class TestENB_SDR4        (ENBTestCase4, SDR4):         pass
-class TestENB_Lopcomm4    (ENBTestCase4, Lopcomm4):     pass
 class TestENB_Sunwave4    (ENBTestCase4, Sunwave4):     pass
-class TestENB_RUMultiType4(ENBTestCase4, RUMultiType4): pass
+# class TestENB_RUMultiType4(ENBTestCase4, RUMultiType4): pass
 
 
 # ---- UEsim ----
@@ -844,9 +679,8 @@ class UEsimTestCase4(RFTestCase4):
 
 # instantiate UEsim tests
 class TestUEsim_SDR4        (UEsimTestCase4, SDR4):         pass
-class TestUEsim_Lopcomm4    (UEsimTestCase4, Lopcomm4):     pass
 class TestUEsim_Sunwave4    (UEsimTestCase4, Sunwave4):     pass
-class TestUEsim_RUMultiType4(UEsimTestCase4, RUMultiType4): pass
+# class TestUEsim_RUMultiType4(UEsimTestCase4, RUMultiType4): pass
 
 
 # ---- misc ----
