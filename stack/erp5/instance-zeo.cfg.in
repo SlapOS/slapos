@@ -56,6 +56,9 @@ base-name = {{ "${" ~ zeo_section_name ~"-conf:base-name}" }}
 log-path = {{ "${" ~ zeo_section_name ~"-conf:log-path}" }}
 wrapper-path = ${directory:services}/${:base-name}
 command-line = {{ bin_directory }}/runzeo -C {{ "${" ~ zeo_section_name ~"-conf:output}" }}
+environment =
+  TMPDIR=${directory:tmp}
+  TMP=${directory:tmp}
 
 [{{ section("logrotate-" ~ zeo_section_name) }}]
 < = logrotate-entry-base
@@ -206,6 +209,7 @@ srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
+tmp = ${buildout:directory}/tmp
 backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
 tidstorage = {{ tidstorage_repozo_path }}
