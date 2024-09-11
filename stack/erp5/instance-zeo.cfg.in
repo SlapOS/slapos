@@ -8,14 +8,6 @@
 {% set default_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 
-[zeo-base]
-recipe = slapos.cookbook:zeo
-log-path = ${directory:log}/${:base-name}.log
-pid-path = ${directory:run}/${:base-name}.pid
-conf-path = ${directory:etc}/${:base-name}.conf
-wrapper-path = ${directory:services}/${:base-name}
-binary-path = {{ bin_directory }}/runzeo
-ip = {{ ipv4 }}
 
 {% set known_tid_storage_identifier_dict = {} -%}
 {% set zodb_dict = {} -%}
@@ -41,11 +33,29 @@ ip = {{ ipv4 }}
 {%   endfor -%}
 
 {%   set zeo_section_name = 'zeo-' ~ family %}
-[{{ zeo_section_name }}]
-< = zeo-base
+[{{ zeo_section_name ~ "-base" }}]
 base-name = zeo-{{ family }}
+log-path = ${directory:log}/${:base-name}.log
+pid-path = ${directory:run}/${:base-name}.pid
+ip = {{ ipv4 }}
 port = {{ current_port }}
 storage = {{ dumps(storage_list) }}
+
+[{{ zeo_section_name ~ "-conf" }}]
+<= {{ zeo_section_name ~ "-base" }}
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['zeo-conf-template'] }}
+output = ${directory:etc}/${:base-name}.conf
+context =
+  section parameter_dict ${:_buildout_section_name_}
+
+[{{ zeo_section_name }}]
+<= {{ zeo_section_name ~ "-base" }}
+recipe = slapos.cookbook:wrapper
+base-name = {{ "${" ~ zeo_section_name ~"-conf:base-name}" }}
+log-path = {{ "${" ~ zeo_section_name ~"-conf:log-path}" }}
+wrapper-path = ${directory:services}/${:base-name}
+command-line = {{ bin_directory }}/runzeo -C {{ "${" ~ zeo_section_name ~"-conf:output}" }}
 
 [{{ section("logrotate-" ~ zeo_section_name) }}]
 < = logrotate-entry-base
