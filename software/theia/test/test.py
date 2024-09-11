@@ -222,7 +222,11 @@ class TestTheia(TheiaTestCase):
         'https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
     )
 
-    process.sendline('slapos node software')
+    # check slapos node software, but first stop slapos-node-software that might have
+    # been started by slapos-node-auto
+    process.sendline(
+        'supervisorctl -c ~/srv/runner/etc/supervisord.conf stop slapos-node-software'
+        ' && slapos node software')
     process.expect(
         'Installing software release https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
     )
