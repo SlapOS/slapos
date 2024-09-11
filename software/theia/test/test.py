@@ -107,6 +107,10 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
 
 class TestTheia(TheiaTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {"autorun": "user-controlled"} # we interact with slapos in this test
+
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
