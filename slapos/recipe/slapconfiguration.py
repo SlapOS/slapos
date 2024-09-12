@@ -334,18 +334,22 @@ class DefaultValidator(object):
       for error in self.validator.iter_errors(instance):
         invalid = True
         yield error
-    # Apply collected defaults - only to valid instances
+    # Stop there in case of validation errors
     if invalid:
       return
-    for instance, defaults in self.defaults.values():
+    # Apply collected defaults
+    for data, defaults in self.defaults.values():
       for key, defaultdict in defaults.items():
-        if key not in instance:
+        if key not in data:
           it = iter(defaultdict.values())
           default = next(it)
           if any(d != default for d in it):
             raise UserError(
               "Conflicting defaults for key %s: %r" % (key, defaultlist))
-          instance[key] = default
+          data[key] = default
+    # Validate the updated instance
+    for error in self.validatorfor(self.schema).iter_errors(instance):
+      yield error
 
 
 class JsonSchema(Recipe):
