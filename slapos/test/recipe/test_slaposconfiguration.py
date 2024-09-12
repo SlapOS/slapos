@@ -54,7 +54,7 @@ class SlapConfigurationTest(unittest.TestCase):
     self.assertEqual(options['address-list'], [10, 20],
       "All underscores should be replaced with -")
 
-  def writeJsonSchema(self, serialisation='json-in-xml'):
+  def writeJsonSchema(self, serialisation='json-in-xml', valid_defaults=True):
     self.software_json_file = os.path.join(self.software_root, 'software.cfg.json')
     software_schema = {
       "name": "Test",
@@ -82,7 +82,7 @@ class SlapConfigurationTest(unittest.TestCase):
       "letter": {
         "type": "string",
         "enum": ["a", "b", "c"],
-        "default": "a"
+        "default": "a" if valid_defaults else 1,
       },
       "number": {
         "type": "integer",
@@ -136,7 +136,7 @@ class SlapConfigurationTest(unittest.TestCase):
         },
         "thing": {
           "type": "string",
-          "default": "hello",
+          "default": "hello" if valid_defaults else 1,
         },
       },
       "required": ["kind"],
@@ -153,7 +153,7 @@ class SlapConfigurationTest(unittest.TestCase):
         },
         "thing": {
           "type": "integer",
-          "default": 42,
+          "default": 42 if valid_defaults else "forty-two",
         },
         "required": ["kind"],
       }
@@ -280,6 +280,15 @@ class SlapConfigurationTest(unittest.TestCase):
   def test_jsonschema_json_in_xml_incomplete_json_input(self):
     self.writeJsonSchema()
     parameters = {}
+    with self.patchSlap(parameters, True):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+      )
+
+  def test_jsonschema_json_in_xml_invalid_defaults_json_input(self):
+    self.writeJsonSchema(valid_defaults=False)
+    parameters = {"number": 1}
     with self.patchSlap(parameters, True):
       self.assertRaises(
         slapconfiguration.UserError,
