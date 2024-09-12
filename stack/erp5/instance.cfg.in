@@ -102,6 +102,7 @@ import-list =
 
 [dynamic-template-zeo-parameters]
 <= default-dynamic-template-parameters
+zeo-conf-template = {{ template_zeo_conf }}
 
 [dynamic-template-zeo]
 <= jinja2-template-base

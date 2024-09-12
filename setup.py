@@ -165,7 +165,6 @@ setup(name=name,
           'userinfo = slapos.recipe.userinfo:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
-          'zeo = slapos.recipe.zeo:Recipe',
           'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
           'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'
         ],
