@@ -183,11 +183,11 @@ class SlapConfigurationTest(unittest.TestCase):
     slapconfiguration.JsonSchema(self.buildout, "slapconfiguration", options)
     return options
 
-  def receiveParameters(self, options=()):
+  def receiveParameters(self, options=(('set-default', 'all'),)):
     options = self.runJsonSchemaRecipe(options)
     return options['configuration']
 
-  def receiveSharedParameters(self, options=()):
+  def receiveSharedParameters(self, options=(('set-default', 'all'),)):
     options = self.runJsonSchemaRecipe(options)
     self.assertNotIn('slave-instance-list', options)
     valid = options['valid-shared-instance-list']
@@ -213,6 +213,27 @@ class SlapConfigurationTest(unittest.TestCase):
     parameters = {"number": 1}
     with self.patchSlap(parameters, True):
       received = self.receiveParameters()
+      self.checkParametersWithDefaults(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_input_without_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters(options=())
+      self.assertEqual(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_input_with_only_shared_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters({'set-default': 'shared'})
+      self.assertEqual(received, parameters)
+
+  def test_jsonschema_json_in_xml_valid_input_with_only_main_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters({'set-default': 'main'})
       self.checkParametersWithDefaults(received, parameters)
 
   def test_jsonschema_json_in_xml_valid_xml_input_full(self):
@@ -270,7 +291,7 @@ class SlapConfigurationTest(unittest.TestCase):
     parameters = {"number": 1}
     shared = [{"kind": 1}]
     with self.patchSlap(parameters, True, shared):
-      valid, invalid = self.receiveParameters(shared=True)
+      valid, invalid = self.receiveSharedParameters()
       self.assertEqual(invalid, {})
       self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
 
@@ -301,6 +322,30 @@ class SlapConfigurationTest(unittest.TestCase):
       self.assertEqual(valid, {})
       invalid_values = list(invalid.values())
       self.assertEqual(invalid_values, [{"kind": 2, "thing": "forty-two"}])
+
+  def test_jsonschema_shared_2_valid_without_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 2}]
+    with self.patchSlap(parameters, True, shared):
+      valid, _ = self.receiveSharedParameters(options=())
+      self.assertEqual(list(valid.values()), shared)
+
+  def test_jsonschema_shared_2_valid_with_only_main_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 2}]
+    with self.patchSlap(parameters, True, shared):
+      valid, _ = self.receiveSharedParameters({'set-default': 'main'})
+      self.assertEqual(list(valid.values()), shared)
+
+  def test_jsonschema_shared_2_valid_with_only_shared_defaults(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 2}]
+    with self.patchSlap(parameters, True, shared):
+      valid, _ = self.receiveSharedParameters({'set-default': 'shared'})
+      self.assertEqual(list(valid.values()), [{"kind": 2, "thing": 42}])
 
   def test_jsonschema_shared_1_and_2_valid_defaults(self):
     self.writeJsonSchema()
@@ -344,6 +389,6 @@ class SlapConfigurationTest(unittest.TestCase):
     parameters = {"number": 1}
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
     with self.patchSlap(parameters, True, shared):
-      valid, invalid = self.receiveParameters(shared=True)
+      valid, invalid = self.receiveSharedParameters()
       self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
       self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": "hello"}])
