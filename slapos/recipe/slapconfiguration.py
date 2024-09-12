@@ -376,6 +376,16 @@ class JsonSchema(Recipe):
       False by default; any value makes this flag behave as true.
       Example:
         true
+    skip-main
+      Flag to skip validating main parameters.
+      False by default; any value makes this flag behave as true.
+      Example:
+        true
+    skip-shared
+      Flag to skip validating shared parameters.
+      False by default; any value makes this flag behave as true.
+      Example:
+        true
   """
   def _schema(self, options):
     path = options['jsonschema']
@@ -430,16 +440,22 @@ class JsonSchema(Recipe):
     set_default = 'set-default' in options
     set_main = set_default or 'set-main-default' in options
     set_shared = set_default or 'set-shared-default' in options
+    validate_main = 'skip-main' not in options
+    validate_shared = 'skip-shared' not in options
     self.Validator = DefaultValidator if set_main else BasicValidator
     self.SharedValidator = DefaultValidator if set_shared else BasicValidator
     software_schema = self._schema(options)
     serialisation = software_schema.getSerialisation(strict=True)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
-    self._parseSharedParameterDict(software_schema, options)
-    parameter_dict = self._parseParameterDict(software_schema, parameter_dict)
+    if validate_shared:
+      self._parseSharedParameterDict(software_schema, options)
+    if validate_main:
+      parameter_dict = self._parseParameterDict(software_schema, parameter_dict)
     options['configuration'] = parameter_dict
-    return parameter_dict
+    if validate_main or isinstance(parameter_dict, dict):
+      return parameter_dict
+    return {}
 
 
 class JsonDump(Recipe):
