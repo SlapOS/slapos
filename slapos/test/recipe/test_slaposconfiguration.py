@@ -268,6 +268,23 @@ class SlapConfigurationTest(unittest.TestCase):
         self.receiveParameters,
       )
 
+  def test_jsonschema_json_in_xml_wrong_type_json_input_skip_main(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters, True):
+      received = self.receiveParameters({'validate-parameters': 'shared'})
+      self.assertEqual(received, parameters)
+
+  def test_jsonschema_json_in_xml_wrong_type_json_input_skip_shared(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters, True):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'validate-parameters': 'main'},
+      )
+
   def test_jsonschema_json_in_xml_incomplete_xml_input(self):
     self.writeJsonSchema()
     parameters = {}
@@ -399,5 +416,30 @@ class SlapConfigurationTest(unittest.TestCase):
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
     with self.patchSlap(parameters, True, shared):
       valid, invalid = self.receiveSharedParameters()
+      self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
+      self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": "hello"}])
+
+  def test_jsonschema_shared_valid_and_invalid_skip_shared(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
+    with self.patchSlap(parameters, True, shared):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      shared = options['slave-instance-list']
+      self.assertEqual(
+        shared,
+        [
+          {"slave_reference": "SHARED0", "kind": 1},
+          {"slave_reference": "SHARED1", "kind": 2, "thing": "hello"},
+        ],
+      )
+
+  def test_jsonschema_shared_valid_and_invalid_skip_main(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
+    with self.patchSlap(parameters, True, shared):
+      options = {'validate-parameters': 'shared', 'set-default': 'all'}
+      valid, invalid = self.receiveSharedParameters(options)
       self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
       self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": "hello"}])
