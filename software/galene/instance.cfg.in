@@ -17,7 +17,6 @@ cert = $${slap-connection:cert-file}
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-template-default:output
-RootSoftwareInstance = $${:default}
 
 [dynamic-template-default]
 recipe = slapos.recipe.template:jinja2
