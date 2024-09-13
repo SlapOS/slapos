@@ -327,7 +327,6 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 [{{ name}}-publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
 default = {{ 'dynamic-' ~name ~ '-publish-slave-information:output' }}
-RootSoftwareInstance = ${:default}
 
 [dynamic-{{ name}}-publish-slave-information]
 recipe = slapos.recipe.template:jinja2

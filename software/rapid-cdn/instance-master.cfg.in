@@ -509,7 +509,6 @@ config-url =
 [publish-slave-information]
 recipe = slapos.cookbook:switch-softwaretype
 default = instance-publish-slave-information:output
-RootSoftwareInstance = ${:default}
 replicate = instance-publish-slave-information:output
 custom-personal = instance-publish-slave-information:output
 custom-group = instance-publish-slave-information:output

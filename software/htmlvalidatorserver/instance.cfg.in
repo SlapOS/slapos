@@ -17,7 +17,6 @@ context =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = $${:validator}
 default = $${:validator}
 validator = dynamic-template-validator:output
 

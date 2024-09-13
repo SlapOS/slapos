@@ -52,7 +52,7 @@
           "title": "Frontend Software Type",
           "description": "Type of the frontend instance, like \"frontend\".",
           "type": "string",
-          "default": "RootSoftwareInstance"
+          "default": "default"
         },
         "additional-frontend-guid": {
           "title": "Additional Frontend Instance ID",
@@ -70,7 +70,7 @@
           "title": "Additional Frontend Software Type",
           "description": "Type of the frontend instance, like \"frontend\".",
           "type": "string",
-          "default": "RootSoftwareInstance"
+          "default": "default"
         }
       }
     }

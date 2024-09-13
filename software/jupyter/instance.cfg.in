@@ -9,7 +9,6 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 recipe = slapos.cookbook:switch-softwaretype
 default = $${:jupyter}
 jupyter = instance-jupyter:output
-RootSoftwareInstance = $${:default}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised

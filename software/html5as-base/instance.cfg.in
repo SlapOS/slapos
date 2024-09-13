@@ -26,7 +26,6 @@ context =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = ${:default}
 default = instance-html5as:output
 
 [slap-configuration]

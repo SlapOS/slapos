@@ -8,7 +8,6 @@ offline = true
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = $${:default}
 default  = dynamic-template-turnserver:output
 insecure  = dynamic-template-insecure-turnserver:output
 

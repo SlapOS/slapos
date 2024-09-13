@@ -44,7 +44,6 @@ default-parameters =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = ${:default}
 default = instance-headless-chromium:output
 
 [slap-configuration]

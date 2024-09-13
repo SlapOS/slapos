@@ -34,5 +34,3 @@ recipe = slapos.cookbook:switch-softwaretype
 # XXX Jerome: what is this override for ?
 override = {{ dumps(override_switch_softwaretype |default) }}
 default = instance-default:output
-# BBB
-RootSoftwareInstance = ${:default}

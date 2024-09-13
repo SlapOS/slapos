@@ -15,7 +15,7 @@ context =
 {% set part_list = [] -%}
 {% set monitor_url_list = [] -%}
 {% set single_type_key = 'single-' %}
-{% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
+{% if slap_software_type in ("replicate", "default", "RootSoftwareInstance") %}
 {%   set dns_type = slapparameter_dict.pop('-dns-type', 'single-default') -%}
 {% else -%}
 {%   set dns_type = "%s%s" % (single_type_key, slap_software_type) -%}

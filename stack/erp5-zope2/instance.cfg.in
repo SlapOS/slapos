@@ -229,8 +229,6 @@ override = {{ dumps(override_switch_softwaretype |default) }}
 
 # Public software types
 default = dynamic-template-erp5:output
-# BBB
-RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:output
 caucase = dynamic-template-caucase:output
