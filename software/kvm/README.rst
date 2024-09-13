@@ -33,7 +33,7 @@ See the instance-kvm-input-schema.json file for more instance parameters (cpu-co
 KVM instance parameters:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- frontend-software-type (default: RootSoftwareInstance)
+- frontend-software-type (default: default)
 - frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)
 - frontend-instance-guid
 - frontend-addtional-instance-guid

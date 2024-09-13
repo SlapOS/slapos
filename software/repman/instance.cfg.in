@@ -9,7 +9,6 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = template-instance-repman.cfg:output
-RootSoftwareInstance = ${:default}
 mariadb = template-instance-mariadb.cfg:output
 
 

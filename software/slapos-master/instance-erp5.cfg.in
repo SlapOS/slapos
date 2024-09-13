@@ -471,7 +471,7 @@ config-apachedex-configuration = {{
 <= request-common
 recipe = slapos.cookbook:request
 software-url = {{ dumps(frontend_dict['software-url']) }}
-software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
+software-type = {{ dumps(frontend_dict.get('software-type', 'default')) }}
 {{ root_common.sla('frontend', True) }}
 shared = true
 {% set config_dict = {

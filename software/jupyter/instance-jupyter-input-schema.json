@@ -12,7 +12,7 @@
       "title": "Frontend Software Type",
       "description": "Type of the frontend instance, like \"frontend\".",
       "type": "string",
-      "default": "RootSoftwareInstance"
+      "default": "default"
     },
     "frontend-software-url": {
       "title": "Frontend Software URL",
@@ -30,7 +30,7 @@
       "title": "Additional Frontend Software Type",
       "description": "Type of the frontend instance, like \"frontend\".",
       "type": "string",
-      "default": "RootSoftwareInstance"
+      "default": "default"
     },
     "frontend-additional-software-url": {
       "title": "Additional Frontend Software URL",
