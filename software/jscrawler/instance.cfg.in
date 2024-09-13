@@ -10,7 +10,6 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default  = dynamic-template-jscrawler:output
-RootSoftwareInstance = ${:default}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised

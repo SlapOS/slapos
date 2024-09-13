@@ -40,6 +40,4 @@ extra-context =
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
 default = root:output
-# BBB
-RootSoftwareInstance = ${:default}
 server = server:output
