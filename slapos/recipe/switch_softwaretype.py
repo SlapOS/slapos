@@ -79,8 +79,20 @@ class Recipe:
     try:
       section, key = self.options[self.software_type].split(":")
     except MissingOption:
-      raise MissingOption("This software type (%s) isn't mapped. RootSoftwareInstance "
-                      "is the default software type." % self.software_type)
+      # backward compatibility with previous default
+      if self.software_type == "RootSoftwareInstance":
+        self.software_type = "default"
+        try:
+          section, key = self.options[self.software_type].split(":")
+          self.logger.info("The software_type 'RootSoftwareInstance' is "
+                  "deprecated. We used 'default' instead. Please change the "
+                  "software_type of your instance to 'default'.")
+        except MissingOption:
+          raise MissingOption("The software type 'RootSoftwareInstance' isn't mapped. "
+                      "We even tried 'default' but it isn't mapped either.")
+      else:
+        raise MissingOption("This software type (%s) isn't mapped. 'default' "
+                        "is the default software type." % self.software_type)
     except ValueError:
       raise UserError("The software types in the section [%s] must be separated "
                       "by a colon such as: 'section:key', where key is usually 'rendered'. "
