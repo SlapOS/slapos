@@ -44,4 +44,3 @@ extra-context =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = cloudooo-dynamic-template:output
-RootSoftwareInstance = ${:default}

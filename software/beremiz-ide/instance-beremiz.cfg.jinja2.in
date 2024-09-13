@@ -261,7 +261,6 @@ config-url = https://[${nginx-params:ip}]:${nginx-params:port}
 config-websocket-path-list = ${nginx-params:websocket-path}
 return = secure_access domain
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-software-type = RootSoftwareInstance
 name = Beremiz VNC
 
 

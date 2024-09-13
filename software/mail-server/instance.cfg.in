@@ -43,4 +43,3 @@ cert = $${slap-connection:cert-file}
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-template-default:output
-RootSoftwareInstance = $${:default}

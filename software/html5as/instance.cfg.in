@@ -56,7 +56,6 @@ default-parameters =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = ${:default}
 default = instance-html5as:output
 replicate = instance-replicate:output
 

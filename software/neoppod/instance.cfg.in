@@ -23,6 +23,4 @@ extra-context +=
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
 default = neo-cluster:output
-# BBB
-RootSoftwareInstance = ${:default}
 neo = neo:output
