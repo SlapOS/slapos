@@ -18,7 +18,6 @@ cert = $${slap-connection:cert-file}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = $${:default}
 default = $${:theia}
 theia = theia:output
 export = export:output
@@ -50,11 +49,11 @@ default-parameters =
     "forward-slapos-frontend-requests": "enabled",
     "frontend-name": "Theia Frontend",
     "frontend-sr": "$${:frontend-sr}",
-    "frontend-sr-type": "RootSoftwareInstance",
+    "frontend-sr-type": "default",
     "frontend-guid": null,
     "additional-frontend-name":"Theia Additional Frontend",
     "additional-frontend-sr": "$${:frontend-sr}",
-    "additional-frontend-sr-type": "RootSoftwareInstance",
+    "additional-frontend-sr-type": "default",
     "additional-frontend-guid": null,
     "monitor-httpd-port": 8386
   }

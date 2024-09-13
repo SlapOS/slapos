@@ -14,9 +14,9 @@
         },
         "frontend-software-type": {
           "title": "Frontend Software Type",
-          "description": "Type of the frontend instance, like \"RootSoftwareInstance\".",
+          "description": "Type of the frontend instance, like \"default\".",
           "type": "string",
-          "default": "RootSoftwareInstance"
+          "default": "default"
         },
         "frontend-software-url": {
           "title": "Frontend Software URL",
@@ -32,9 +32,9 @@
         },
         "frontend-additional-software-type": {
           "title": "Additional Frontend Software Type",
-          "description": "Type of the frontend instance, like \"RootSoftwareInstance\".",
+          "description": "Type of the frontend instance, like \"default\".",
           "type": "string",
-          "default": "RootSoftwareInstance"
+          "default": "default"
         },
         "frontend-additional-software-url": {
           "title": "Additional Frontend Software URL",
