@@ -35,7 +35,6 @@ context =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = $${:default}
 default = peertube:output
 
 [slap-configuration]

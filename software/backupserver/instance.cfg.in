@@ -19,7 +19,7 @@ context =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = $${:pullrdiffbackup}
+default = $${:pullrdiffbackup}
 pullrdiffbackup = dynamic-template-pullrdiffbackup:output
 
 [slap-configuration]

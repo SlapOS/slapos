@@ -239,7 +239,7 @@ redirected and accessible from the proxy::
 
   instance = request(
     software_release=rapid_cdn,
-    software_type="RootSoftwareInstance",
+    software_type="default",
     partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
@@ -257,7 +257,7 @@ proxy::
 
   instance = request(
     software_release=rapid_cdn,
-    software_type="RootSoftwareInstance",
+    software_type="default",
     partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
@@ -277,7 +277,7 @@ the proxy::
 
   instance = request(
     software_release=rapid_cdn,
-    software_type="RootSoftwareInstance",
+    software_type="default",
     partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
@@ -296,7 +296,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
 
   instance = request(
     software_release=rapid_cdn,
-    software_type="RootSoftwareInstance",
+    software_type="default",
     partition_reference='my frontend',
     shared=True,
     software_type="custom-personal",

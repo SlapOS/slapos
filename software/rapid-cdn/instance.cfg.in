@@ -26,7 +26,6 @@ import-list =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-profile-master:output
-RootSoftwareInstance = ${:default}
 custom-personal = dynamic-profile-master:output
 single-default = dynamic-profile-frontend:output
 single-custom-personal = dynamic-profile-frontend:output
@@ -58,6 +57,8 @@ extra-context =
     import validators validators
     import software software
 # Must match the key id in [switch-softwaretype] which uses this section.
+# Keep RootSoftwareInstance for backward compatibility until all instances have
+# changed their software_type to default
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
 [dynamic-profile-kedifa]
