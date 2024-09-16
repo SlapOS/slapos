@@ -107,11 +107,8 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
 
 class TestTheia(TheiaTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {"autorun": "user-controlled"} # we interact with slapos in this test
-
   def setUp(self):
+    print("print roque debug TestTheia setUp")
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
   def get(self, url, expect_code=requests.codes.ok):
@@ -564,7 +561,9 @@ class TestTheiaSharedPath(TheiaTestCase):
 class ResilientTheiaMixin(object):
   @classmethod
   def setUpClass(cls):
+    print("roque debug ResilientTheiaMixin setUpClass before super setUpClass")
     super(ResilientTheiaMixin, cls).setUpClass()
+    print("roque debug ResilientTheiaMixin setUpClass AFTER super setUpClass")
     # Patch the computer root path to that of the export theia instance
     cls.computer_partition_root_path = cls.getPartitionPath('export')
     # Add resiliency files to snapshot patterns
@@ -577,6 +576,7 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def getPartitionId(cls, instance_type):
+    print("roque debug ResilientTheiaMixin getPartitionId")
     software_url = cls.getSoftwareURL()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
       partition_url = computer_partition.getSoftwareRelease()._software_release
@@ -587,10 +587,12 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def getPartitionPath(cls, instance_type='export', *paths):
+    print("roque debug ResilientTheiaMixin getPartitionPath")
     return os.path.join(cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
 
   @classmethod
   def getPath(cls, *components): # patch getPath
+    print("roque debug ResilientTheiaMixin getPath")
     return cls.getPartitionPath('export', *components)
 
   @classmethod
@@ -604,6 +606,7 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def checkSlapos(cls, *command, **kwargs):
+    print("roque debug ResilientTheiaMixin checkSlapos")
     instance_type = kwargs.pop('instance_type', 'export')
     return subprocess.check_call((cls._getSlapos(instance_type),) + command, **kwargs)
 
@@ -619,12 +622,27 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def waitForInstance(cls):
+    print("roque debug ResilientTheiaMixin waitForInstance")
     # process twice to propagate to all instances
     for _ in range(2):
       super(ResilientTheiaMixin, cls).waitForInstance()
 
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
+
+  '''@classmethod
+  def requestDefaultInstance():
+    print("print roque debug - requestDefaultInstance - before breakpoint")
+    breakpoint()'''
+
+  @classmethod
+  def waitForInstance(cls):
+    print("print roque debug - override waitForInstance - NO breakpoint. max to 30")
+    cls.instance_max_retry= 30
+    print("print roque debug - call super ResilientTheiaMixin waitForInstance")
+    super(ResilientTheiaMixin, cls).waitForInstance()
+    print("print roque debug - call super ResilientTheiaMixin waitForInstance DONE")
+
 
   def test_all_monitor_url_use_same_password(self):
     monitor_setup_params = dict(
@@ -663,17 +681,17 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
     if export_favicon == import_favicon:
       self.fail('Import favicon and export favicon are not different')
 
+
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   pass
 
-class TestTheiaResilientMonitoring(ResilientTheiaMixin, SlapOSInstanceTestCase):
+class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
   pass
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      # set monitor-cors-domains parameter
+      'monitor-cors-domains': 'monitor.couscous'
     }
 
   def test_monitoring_propagation(self):
     self.fail('Not implemented')
-
