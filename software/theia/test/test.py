@@ -627,8 +627,8 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
 
   @classmethod
   def waitForInstance(cls):
-    cls.instance_max_retry= 1
-    print("print roque debug - override waitForInstance - NO breakpoint. max to " + cls.instance_max_retry)
+    cls.instance_max_retry= 30
+    print("print roque debug - override waitForInstance - NO breakpoint. max to " + str(cls.instance_max_retry))
     for _ in range(2):
       super(ResilientTheiaMixin, cls).waitForInstance()
 
