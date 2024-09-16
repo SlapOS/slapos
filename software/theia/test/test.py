@@ -576,7 +576,6 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def getPartitionId(cls, instance_type):
-    print("roque debug ResilientTheiaMixin getPartitionId")
     software_url = cls.getSoftwareURL()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
       partition_url = computer_partition.getSoftwareRelease()._software_release
@@ -587,12 +586,10 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def getPartitionPath(cls, instance_type='export', *paths):
-    print("roque debug ResilientTheiaMixin getPartitionPath")
     return os.path.join(cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
 
   @classmethod
   def getPath(cls, *components): # patch getPath
-    print("roque debug ResilientTheiaMixin getPath")
     return cls.getPartitionPath('export', *components)
 
   @classmethod
@@ -606,7 +603,6 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def checkSlapos(cls, *command, **kwargs):
-    print("roque debug ResilientTheiaMixin checkSlapos")
     instance_type = kwargs.pop('instance_type', 'export')
     return subprocess.check_call((cls._getSlapos(instance_type),) + command, **kwargs)
 
@@ -622,7 +618,6 @@ class ResilientTheiaMixin(object):
 
   @classmethod
   def waitForInstance(cls):
-    print("roque debug ResilientTheiaMixin waitForInstance")
     # process twice to propagate to all instances
     for _ in range(2):
       super(ResilientTheiaMixin, cls).waitForInstance()
@@ -630,18 +625,12 @@ class ResilientTheiaMixin(object):
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
 
-  '''@classmethod
-  def requestDefaultInstance():
-    print("print roque debug - requestDefaultInstance - before breakpoint")
-    breakpoint()'''
-
   @classmethod
   def waitForInstance(cls):
-    print("print roque debug - override waitForInstance - NO breakpoint. max to 30")
-    cls.instance_max_retry= 30
-    print("print roque debug - call super ResilientTheiaMixin waitForInstance")
-    super(ResilientTheiaMixin, cls).waitForInstance()
-    print("print roque debug - call super ResilientTheiaMixin waitForInstance DONE")
+    cls.instance_max_retry= 1
+    print("print roque debug - override waitForInstance - NO breakpoint. max to " + cls.instance_max_retry)
+    for _ in range(2):
+      super(ResilientTheiaMixin, cls).waitForInstance()
 
 
   def test_all_monitor_url_use_same_password(self):
