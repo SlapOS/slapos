@@ -107,11 +107,8 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
 
 class TestTheia(TheiaTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {"autorun": "user-controlled"} # we interact with slapos in this test
-
   def setUp(self):
+    print("print roque debug TestTheia setUp")
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
   def get(self, url, expect_code=requests.codes.ok):
@@ -564,7 +561,9 @@ class TestTheiaSharedPath(TheiaTestCase):
 class ResilientTheiaMixin(object):
   @classmethod
   def setUpClass(cls):
+    print("roque debug ResilientTheiaMixin setUpClass before super setUpClass")
     super(ResilientTheiaMixin, cls).setUpClass()
+    print("roque debug ResilientTheiaMixin setUpClass AFTER super setUpClass")
     # Patch the computer root path to that of the export theia instance
     cls.computer_partition_root_path = cls.getPartitionPath('export')
     # Add resiliency files to snapshot patterns
@@ -626,6 +625,14 @@ class ResilientTheiaMixin(object):
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
 
+  @classmethod
+  def waitForInstance(cls):
+    cls.instance_max_retry= 1
+    print("print roque debug - override waitForInstance - NO breakpoint. max to " + cls.instance_max_retry)
+    for _ in range(2):
+      super(ResilientTheiaMixin, cls).waitForInstance()
+
+
   def test_all_monitor_url_use_same_password(self):
     monitor_setup_params = dict(
       parse_qsl(
@@ -663,17 +670,17 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
     if export_favicon == import_favicon:
       self.fail('Import favicon and export favicon are not different')
 
+
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):
   pass
 
-class TestTheiaResilientMonitoring(ResilientTheiaMixin, SlapOSInstanceTestCase):
+class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
   pass
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      # set monitor-cors-domains parameter
+      'monitor-cors-domains': 'monitor.couscous'
     }
 
   def test_monitoring_propagation(self):
     self.fail('Not implemented')
-
