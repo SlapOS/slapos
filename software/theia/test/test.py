@@ -675,7 +675,14 @@ class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithE
   pass
 
 class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
-  pass
+
+  @classmethod
+  def waitForInstance(cls):
+    cls.instance_max_retry= 30
+    print("roque debug - override waitForInstance - breakpoint. max to " + str(cls.instance_max_retry))
+    for _ in range(6):
+      super(ResilientTheiaMixin, cls).waitForInstance()
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
