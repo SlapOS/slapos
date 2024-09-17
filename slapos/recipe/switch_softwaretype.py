@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import logging
 from zc.buildout.buildout import Buildout, MissingOption, MissingSection
 from zc.buildout import UserError
 
@@ -67,6 +68,7 @@ class SubBuildout(Buildout):
 class Recipe:
 
   def __init__(self, buildout, name, options):
+    self.logger = logging.getLogger(name)
     self.buildout = buildout
     self.options = options
     self.name = name
