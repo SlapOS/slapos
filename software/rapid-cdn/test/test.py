@@ -653,6 +653,10 @@ class TestHandler(BaseHTTPRequestHandler):
     # handle Date header
     if 'Date' not in header_dict and 'Date' not in drop_header_list:
       header_dict['Date'] = self.date_time_string()
+    if 'Last-Modified' not in header_dict and 'Last-Modified' not in drop_header_list:
+      header_dict['Last-Modified'] = self.date_time_string()
+    if 'Expires' not in header_dict and 'Expires' not in drop_header_list:
+      header_dict['Expires'] = self.date_time_string(time.time() + 3600)
 
     if response is None:
       if 'x-reply-body' not in self.headers:
@@ -700,12 +704,13 @@ class TestHandler(BaseHTTPRequestHandler):
         f.write(response.encode())
       response = out.getvalue()
       self.send_header('Backend-Content-Length', len(response))
-    if 'Content-Length' not in drop_header_list:
-      self.send_header('Content-Length', len(response))
     self.end_headers()
-    if getattr(response, 'encode', None) is not None:
-      response = response.encode()
-    self.wfile.write(response)
+    if status_code not in [204, 304, 205]:
+      if 'Content-Length' not in drop_header_list:
+        self.send_header('Content-Length', len(response))
+      if getattr(response, 'encode', None) is not None:
+        response = response.encode()
+      self.wfile.write(response)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
