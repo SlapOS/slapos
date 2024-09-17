@@ -372,7 +372,7 @@ config-command = {{ '${' ~ check_software_url_section_name ~ ':path}' }}
 ) -%}
 
 [request-frontend-base]
-<= request-common
+<= request-common-base
 recipe = slapos.cookbook:request
 shared = true
 return =
