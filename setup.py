@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.365'
+version = '1.0.367'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -98,7 +98,6 @@ setup(name=name,
           'dropbear.client = slapos.recipe.dropbear:Client',
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5.promise = slapos.recipe.erp5_promise:Recipe',
-          'erp5scalabilitytestbed = slapos.recipe.erp5scalabilitytestbed:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'free_port = slapos.recipe.free_port:Recipe',
           'generate.mac = slapos.recipe.random:Mac',
@@ -145,7 +144,6 @@ setup(name=name,
           'requestoptional.serialised = '
           'slapos.recipe.request:RequestOptionalJSONEncoded',
           're6stnet.registry = slapos.recipe.re6stnet:Recipe',
-          'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'shell = slapos.recipe.shell:Recipe',
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
@@ -165,7 +163,6 @@ setup(name=name,
           'userinfo = slapos.recipe.userinfo:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
-          'zeo = slapos.recipe.zeo:Recipe',
           'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
           'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'
         ],
