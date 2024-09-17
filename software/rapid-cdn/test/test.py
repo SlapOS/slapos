@@ -586,7 +586,9 @@ class TestHandler(BaseHTTPRequestHandler):
       if key.startswith('X-'):
         incoming_config[key] = value
     config = {
-      'status_code': incoming_config.pop('X-Reply-Status-Code', '200')
+      'status_code': incoming_config.pop('X-Reply-Status-Code', '200'),
+      'protocol_version': incoming_config.pop('X-Protocol-Version', 'HTTP/1.0'),
+      'expires_delta': incoming_config.pop('X-Expires-Delta', '3600'),
     }
     prefix = 'X-Reply-Header-'
     length = len(prefix)
@@ -601,6 +603,7 @@ class TestHandler(BaseHTTPRequestHandler):
 
     config['X-Drop-Header'] = incoming_config.pop('X-Drop-Header', None)
     self.configuration[self.path] = config
+    config['X-Response-Size'] = incoming_config.pop('X-Response-Size', None)
 
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
@@ -625,7 +628,17 @@ class TestHandler(BaseHTTPRequestHandler):
       for header in (config.pop('X-Drop-Header') or '').split():
         drop_header_list.append(header)
       header_dict = config
+      response_size = config.pop('X-Response-Size', None)
+      if response_size is not None:
+        min_response, max_response = [
+          int(q) for q in response_size.split(' ')]
+      else:
+        min_response = None
+        max_response = None
+      protocol_version = config.pop('protocol_version')
+      expires_delta = int(config.pop('expires_delta'))
     else:
+      protocol_version = 'HTTP/1.0'
       drop_header_list = []
       for header in (self.headers.get('x-drop-header') or '').split():
         drop_header_list.append(header)
@@ -635,12 +648,14 @@ class TestHandler(BaseHTTPRequestHandler):
       if 'x-maximum-timeout' in self.headers:
         maximum_timeout = int(self.headers['x-maximum-timeout'])
         timeout = random.randrange(maximum_timeout)
+      if 'x-expires-delta' in self.headers:
+        expires_delta = int(self.headers['x-expires-delta'])
       if 'x-response-size' in self.headers:
         min_response, max_response = [
           int(q) for q in self.headers['x-response-size'].split(' ')]
-        reponse_size = random.randrange(min_response, max_response)
-        response = ''.join(
-          random.choice(string.lowercase) for x in range(reponse_size))
+      else:
+        min_response = None
+        max_response = None
       compress = int(self.headers.get('compress', '0'))
       header_dict = {}
       prefix = 'x-reply-header-'
@@ -650,9 +665,17 @@ class TestHandler(BaseHTTPRequestHandler):
           header = '-'.join([q.capitalize() for q in key[length:].split('-')])
           header_dict[header] = value.strip()
 
+    if min_response is not None and max_response is not None:
+      reponse_size = random.randrange(min_response, max_response)
+      response = ''.join(
+        random.choice(string.ascii_lowercase) for x in range(reponse_size))
     # handle Date header
     if 'Date' not in header_dict and 'Date' not in drop_header_list:
       header_dict['Date'] = self.date_time_string()
+    if 'Last-Modified' not in header_dict and 'Last-Modified' not in drop_header_list:
+      header_dict['Last-Modified'] = self.date_time_string()
+    if 'Expires' not in header_dict and 'Expires' not in drop_header_list:
+      header_dict['Expires'] = self.date_time_string(time.time() + expires_delta)
 
     if response is None:
       if 'x-reply-body' not in self.headers:
@@ -673,6 +696,7 @@ class TestHandler(BaseHTTPRequestHandler):
       else:
         response = base64.b64decode(self.headers['x-reply-body'])
 
+    self.protocol_version = protocol_version
     time.sleep(timeout)
     self.send_response_only(status_code)
     self.send_header('Server', self.server_version)
@@ -683,7 +707,7 @@ class TestHandler(BaseHTTPRequestHandler):
     if self.identification is not None:
       self.send_header('X-Backend-Identification', self.identification)
 
-    if 'Content-Type' not in drop_header_list:
+    if 'Content-Type' not in header_dict and 'Content-Type' not in drop_header_list:
       self.send_header("Content-Type", "application/json")
     if 'Set-Cookie' not in drop_header_list:
       self.send_header('Set-Cookie', 'secured=value;secure')
@@ -700,12 +724,15 @@ class TestHandler(BaseHTTPRequestHandler):
         f.write(response.encode())
       response = out.getvalue()
       self.send_header('Backend-Content-Length', len(response))
-    if 'Content-Length' not in drop_header_list:
-      self.send_header('Content-Length', len(response))
-    self.end_headers()
-    if getattr(response, 'encode', None) is not None:
-      response = response.encode()
-    self.wfile.write(response)
+    if status_code not in [204, 304, 205]:
+      if 'Content-Length' not in drop_header_list:
+        self.send_header('Content-Length', len(response))
+        self.end_headers()
+      if getattr(response, 'encode', None) is not None:
+        response = response.encode()
+      self.wfile.write(response)
+    else:
+      self.end_headers()
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
