@@ -12,7 +12,7 @@
     },
     "default-slave": {
       "title": "Default (Shared)",
-      "description": "ORS Client Project Registration",
+      "description": "ORS Registration",
       "software-type": "default",
       "request": "instance-shared-input-schema.json",
       "response": "instance-shared-output-schema.json",
