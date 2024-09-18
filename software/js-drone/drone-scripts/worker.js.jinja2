@@ -80,7 +80,15 @@ import { evalScript, fdopen, loadFile, open } from "std";
 {% if isADrone -%}
       getAltitudeAbs: getAltitude,
       getClimbRate: getClimbRate,
-      getCurrentPosition: getPosition,
+      getCurrentPosition: function () {
+        const position = getPosition();
+        return {
+          latitude: position.latitude,
+          longitude: position.longitude,
+          altitude: position.altitude,
+          timestamp: position.timestamp
+        };
+      },
       getInitialAltitude: getInitialAltitude,
       gpsIsOk: gpsIsOk,
       getMaxCommandFrequency: getMaxCommandFrequency,
