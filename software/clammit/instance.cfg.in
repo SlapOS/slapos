@@ -128,7 +128,7 @@ mode = 700
 [freshclam]
 recipe = slapos.cookbook:wrapper
 command-line = ${freshclam-updater:output}
-wrapper-path = ${directory:etc.run}/${:_buildout_section_name_}
+wrapper-path = ${directory:etc.run}/freshclam-bootstrap
 
 [freshclam-database-refresh-time]
 recipe = slapos.cookbook:random.time
