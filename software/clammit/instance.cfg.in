@@ -121,7 +121,7 @@ output = ${directory:bin}/freshclam
 inline =
   #!/bin/sh
   if [ ! -f "${directory:var.clamdb}/freshclam.dat" ]; then
-    {{ clamav.location }}/bin/freshclam --config-file ${freshclam.conf:output}
+    exec {{ clamav.location }}/bin/freshclam --config-file ${freshclam.conf:output}
   fi
 mode = 700
 
