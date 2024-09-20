@@ -1,8 +1,10 @@
-from unittest.mock import MagicMock
 import unittest
 from slapos.recipe import switch_softwaretype
 import zc.buildout.testing
 from zc.buildout.buildout import MissingOption, MissingSection
+from mock import MagicMock
+import six
+
 
 class SwitchSoftwaretypeTest(unittest.TestCase):
 
@@ -55,8 +57,11 @@ class SwitchSoftwaretypeTest(unittest.TestCase):
 
   def test_fallback_default(self):
     self.buildout['slap-configuration']['slap-software-type'] = 'RootSoftwareInstance'
-    with self.assertLogs('switch-softwaretype', level='INFO') as lc:
+    if six.PY2:  # BBB
       self.install_recipe()
+    else:
+      with self.assertLogs('switch-softwaretype', level='INFO') as lc:
+        self.install_recipe()
+      self.assertIn("The software_type 'RootSoftwareInstance' is deprecated", lc.output[0])
     self.magick_sub_buildout.assert_called_once()
-    self.assertIn("The software_type 'RootSoftwareInstance' is deprecated", lc.output[0])
     self.assertIn('instance-default.cfg', self.magick_sub_buildout.call_args.args)
