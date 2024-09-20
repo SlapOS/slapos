@@ -1,6 +1,8 @@
 Foreground yes
 LogFile {{ clamconfig["clamd-log-file"] }}
+# Both LogRotate and LogFileMaxSize are necessary to prevent auto log rotation
 LogRotate no
+LogFileMaxSize 0
 LogTime yes
 PidFile {{ clamconfig["clamd-pid-file"] }}
 LocalSocket {{ clamconfig["clamd-socket-file"] }}
