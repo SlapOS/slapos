@@ -560,12 +560,20 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   )
 
 
+class BytesEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bytes):
+            return '<%i>' % (len(obj))
+        return json.JSONEncoder.default(self, obj)
+
 class TestHandler(BaseHTTPRequestHandler):
-  identification = None
   configuration = {}
-  # override Server header response
-  server_version = "TestBackend"
-  sys_version = ""
+  DEFAULT_CONFIGURATION = {
+   'Status-Code': '200',
+   'Protocol-Version': 'HTTP/1.0',
+   'Header-List': '',
+   'Timeout': '0',
+  }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
 
@@ -580,159 +588,50 @@ class TestHandler(BaseHTTPRequestHandler):
       self.end_headers()
       self.wfile.write(json.dumps({self.path: config}, indent=2))
 
-  def do_PUT(self):
-    incoming_config = {}
+  def do_CONFIG(self):
+    config = self.DEFAULT_CONFIGURATION.copy()
+    config_header = 'X-Config-'
     for key, value in list(self.headers.items()):
-      if key.startswith('X-'):
-        incoming_config[key] = value
-    config = {
-      'status_code': incoming_config.pop('X-Reply-Status-Code', '200'),
-      'protocol_version': incoming_config.pop('X-Protocol-Version', 'HTTP/1.0'),
-      'expires_delta': incoming_config.pop('X-Expires-Delta', '3600'),
-    }
-    prefix = 'X-Reply-Header-'
-    length = len(prefix)
-    for key in list(incoming_config.keys()):
-      if key.startswith(prefix):
-        header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-        config[header] = incoming_config.pop(key)
-
-    if 'X-Reply-Body' in incoming_config:
-      config['Body'] = base64.b64decode(
-        incoming_config.pop('X-Reply-Body')).decode()
-
-    config['X-Drop-Header'] = incoming_config.pop('X-Drop-Header', None)
-    self.configuration[self.path] = config
-    config['X-Response-Size'] = incoming_config.pop('X-Response-Size', None)
-
+      if key.startswith(config_header):
+        config[key[len(config_header):]] = value
+    config['Body'] = self.rfile.read(int(self.headers.get('Content-Length', '0')))
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
     self.end_headers()
+    self.configuration[self.path] = config
     reply = {self.path: config}
-    if incoming_config:
-      reply['unknown_config'] = incoming_config
-    self.wfile.write(json.dumps(reply, indent=2).encode())
+    self.wfile.write(json.dumps(reply, indent=2, cls=BytesEncoder).encode())
 
   def do_POST(self):
     return self.do_GET()
 
   def do_GET(self):
     config = self.configuration.get(self.path, None)
-    if config is not None:
-      config = config.copy()
-      response = config.pop('Body', None)
-      status_code = int(config.pop('status_code'))
-      timeout = int(config.pop('Timeout', '0'))
-      compress = int(config.pop('Compress', '0'))
-      drop_header_list = []
-      for header in (config.pop('X-Drop-Header') or '').split():
-        drop_header_list.append(header)
-      header_dict = config
-      response_size = config.pop('X-Response-Size', None)
-      if response_size is not None:
-        min_response, max_response = [
-          int(q) for q in response_size.split(' ')]
-      else:
-        min_response = None
-        max_response = None
-      protocol_version = config.pop('protocol_version')
-      expires_delta = int(config.pop('expires_delta'))
-    else:
-      protocol_version = 'HTTP/1.0'
-      drop_header_list = []
-      for header in (self.headers.get('x-drop-header') or '').split():
-        drop_header_list.append(header)
-      response = None
-      status_code = 200
-      timeout = int(self.headers.get('timeout', '0'))
-      if 'x-maximum-timeout' in self.headers:
-        maximum_timeout = int(self.headers['x-maximum-timeout'])
-        timeout = random.randrange(maximum_timeout)
-      if 'x-expires-delta' in self.headers:
-        expires_delta = int(self.headers['x-expires-delta'])
-      if 'x-response-size' in self.headers:
-        min_response, max_response = [
-          int(q) for q in self.headers['x-response-size'].split(' ')]
-      else:
-        min_response = None
-        max_response = None
-      compress = int(self.headers.get('compress', '0'))
-      header_dict = {}
-      prefix = 'x-reply-header-'
-      length = len(prefix)
-      for key, value in list(self.headers.items()):
-        if key.startswith(prefix):
-          header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-          header_dict[header] = value.strip()
-
-    if min_response is not None and max_response is not None:
-      reponse_size = random.randrange(min_response, max_response)
-      response = ''.join(
-        random.choice(string.ascii_lowercase) for x in range(reponse_size))
-    # handle Date header
-    if 'Date' not in header_dict and 'Date' not in drop_header_list:
-      header_dict['Date'] = self.date_time_string()
-    if 'Last-Modified' not in header_dict and 'Last-Modified' not in drop_header_list:
-      header_dict['Last-Modified'] = self.date_time_string()
-    if 'Expires' not in header_dict and 'Expires' not in drop_header_list:
-      header_dict['Expires'] = self.date_time_string(time.time() + expires_delta)
-
-    if response is None:
-      if 'x-reply-body' not in self.headers:
-        headers_dict = dict()
-        for header in list(self.headers.keys()):
-          content = self.headers.get_all(header)
-          if len(content) == 0:
-            headers_dict[header] = None
-          elif len(content) == 1:
-            headers_dict[header] = content[0]
-          else:
-            headers_dict[header] = content
-        response = {
-          'Path': self.path,
-          'Incoming Headers': headers_dict
-        }
-        response = json.dumps(response, indent=2)
-      else:
-        response = base64.b64decode(self.headers['x-reply-body'])
-
-    self.protocol_version = protocol_version
-    time.sleep(timeout)
-    self.send_response_only(status_code)
-    self.send_header('Server', self.server_version)
-
-    for key, value in list(header_dict.items()):
-      self.send_header(key, value)
-
-    if self.identification is not None:
-      self.send_header('X-Backend-Identification', self.identification)
-
-    if 'Content-Type' not in header_dict and 'Content-Type' not in drop_header_list:
-      self.send_header("Content-Type", "application/json")
-    if 'Set-Cookie' not in drop_header_list:
-      self.send_header('Set-Cookie', 'secured=value;secure')
-      self.send_header('Set-Cookie', 'nonsecured=value')
-
-    if 'Via' not in drop_header_list:
-      self.send_header('Via', 'http/1.1 backendvia')
-    if compress:
-      self.send_header('Content-Encoding', 'gzip')
-      out = io.BytesIO()
-      # compress with level 0, to find out if in the middle someting would
-      # like to alter the compression
-      with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=0) as f:
-        f.write(response.encode())
-      response = out.getvalue()
-      self.send_header('Backend-Content-Length', len(response))
-    if status_code not in [204, 304, 205]:
-      if 'Content-Length' not in drop_header_list:
-        self.send_header('Content-Length', len(response))
-        self.end_headers()
-      if getattr(response, 'encode', None) is not None:
-        response = response.encode()
-      self.wfile.write(response)
-    else:
+    if config is None:
+      self.send_response(404)
       self.end_headers()
+      return
+
+    self.protocol_version = config['Protocol-Version']
+    time.sleep(int(config['Timeout']))
+    self.send_response_only(int(config['Status-Code']))
+    for header in config['Header-List'].split():
+      value = config['Reply-Header-' + header]
+      for header_type in ['Date', 'Last-Modified']:
+        if header == header_type:
+          if value == 'now':
+            value = self.date_time_string()
+      if header == 'Expires':
+        if value.startswith('delta:'):
+          value = self.date_time_string(
+            time.time() + float(value.split(':')[1])
+          )
+      if header == 'Content-Length':
+        if value == 'calculate':
+          value = '%s' % (len(config['Body']),)
+      self.send_header(header, value)
+    self.end_headers()
+    self.wfile.write(config['Body'])
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
