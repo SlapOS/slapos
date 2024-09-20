@@ -1,8 +1,9 @@
-from unittest.mock import MagicMock
 import unittest
 from slapos.recipe import switch_softwaretype
 import zc.buildout.testing
 from zc.buildout.buildout import MissingOption, MissingSection
+from mock import MagicMock
+
 
 class SwitchSoftwaretypeTest(unittest.TestCase):
 
