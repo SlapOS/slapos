@@ -74,6 +74,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     last_message_timestamp_list = [],
     parent = Worker.parent,
     peer_dict = {},
+    to_send_list = [],
     user_me = {
       exit: exitWorker,
       getDroneDict: function () { return drone_dict; },
@@ -110,11 +111,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
   function sendMsg(msg, id) {
     if (id === undefined) { id = -1; }
-    setMessage(JSON.stringify({
-      content: msg,
-      timestamp: Date.now(),
-      dest_id: id
-    }));
+    to_send_list.push({ content: msg, dest_id: id });
   }
 
   function exitWorker(exit_code) {
@@ -252,7 +249,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, parsed_message, peer_id, log;
+    var type = evt.data.type, parsed_message, peer_id, peer_message,
+      log, res;
 
     switch (type) {
 
@@ -280,19 +278,21 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
-        message = peer.message;
-        if (message.length > 0) {
-          parsed_message = JSON.parse(message);
+        peer_message = peer.message;
+        if (peer_message.length > 0) {
+          parsed_message = JSON.parse(peer_message);
           while (parsed_message.timestamp !== last_message_timestamp_list[id]) {
-            if (user_me.hasOwnProperty("onGetMsg")
-                && [-1, user_me.id].includes(parsed_message.dest_id)) {
-              user_me.onGetMsg(parsed_message.content);
-            }
+            parsed_message.message_list.forEach(function(message) {
+              if (user_me.hasOwnProperty("onGetMsg")
+                && [-1, user_me.id].includes(message.dest_id)) {
+                user_me.onGetMsg(message.content);
+              }
+            });
 
             last_message_timestamp_list[id] = parsed_message.timestamp;
-            message = peer.message;
-            if (message.length > 0) {
-              parsed_message = JSON.parse(message);
+            peer_message = peer.message;
+            if (peer_message.length > 0) {
+              parsed_message = JSON.parse(peer_message);
             }
           }
         }
@@ -302,6 +302,12 @@ import { evalScript, fdopen, loadFile, open } from "std";
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
+
+      setMessage(JSON.stringify({
+        message_list: to_send_list,
+        timestamp: Date.now()
+      }));
+      to_send_list = [];
 
       if (evt.data.timestamp - last_log_timestamp >= 1000) {
 {% if isADrone -%}
