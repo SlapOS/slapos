@@ -1,7 +1,9 @@
 Foreground yes
 DatabaseDirectory {{ clamconfig["clam-database-directory"] }}
 UpdateLogFile {{ clamconfig["freshclam-log-file"] }}
+# Both LogRotate and LogFileMaxSize are necessary to prevent auto log rotation
 LogRotate no
+LogFileMaxSize 0
 LogTime yes
 PidFile {{ clamconfig["freshclam-pid-file"] }}
 DatabaseMirror database.clamav.net
