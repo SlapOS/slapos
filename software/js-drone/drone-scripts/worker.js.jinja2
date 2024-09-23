@@ -288,9 +288,12 @@ import { evalScript, fdopen, loadFile, open } from "std";
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         peer_message = peer.message;
         if (peer_message.length > 0) {
+          console.log("received", peer_message);
           parsed_message = JSON.parse(peer_message);
           while (parsed_message.timestamp !== last_message_timestamp_list[id]) {
             for (message in parsed_message.message_list) {
+              console.log(id);
+              console.log(message);
               if (user_me.hasOwnProperty("onGetMsg")
                 && [-1, user_me.id].includes(message.dest_id)) {
                 user_me.onGetMsg(message.content);
