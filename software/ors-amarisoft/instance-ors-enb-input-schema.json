@@ -196,14 +196,14 @@
     "min_rxtx_delay": {
       "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
     },
+    "wendelin_telecom_software_release_url": {
+      "$ref": "instance-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
+    },
     "xlog_fluentbit_forward_host": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_host"
     },
     "xlog_fluentbit_forward_port": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_port"
-    },
-    "xlog_fluentbit_forward_shared_key": {
-      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key"
     }
   }
 }
