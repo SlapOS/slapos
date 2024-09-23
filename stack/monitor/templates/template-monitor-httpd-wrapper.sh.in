@@ -9,8 +9,8 @@ if [ -f "$pid_file" ]; then
     pid=$(cat "$pid_file")
     result=$(ps aux | grep "^\S*\s*$pid\s")
 
-    # The process with the specified PID is running
     if [ -n "$result" ]; then
+        # The process with the specified PID is running
         echo "there is a process running with the same pid"
         # Get the command line of the process and replace null characters with spaces
         cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
@@ -21,6 +21,14 @@ if [ -f "$pid_file" ]; then
             echo "The process is not running with the monitor_httpd_conf"
             rm -f {{ pid_file }};
         fi
+    else
+        # No process is running with this PID. If we do nothing, httpd should
+        # be able to start. However, we already experienced some case where
+        # httpd was not able to recover. For example, a thread with TID equal
+        # to PID would lead to a failure from httpd to start. So we "help"
+        # httpd by removing the file proactively.
+        echo "No process is running with PID $pid, removing the pid file"
+        rm -f {{ pid_file }};
     fi
 fi
 
