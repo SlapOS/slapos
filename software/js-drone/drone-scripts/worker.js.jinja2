@@ -289,6 +289,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
         peer_message = peer.message;
         if (peer_message.length > 0) {
           parsed_message = JSON.parse(peer_message);
+          console.log("received");
+          console.log(parsed_message);
           while (parsed_message.timestamp !== last_message_timestamp_list[id]) {
             for (message in parsed_message.message_list) {
               if (user_me.hasOwnProperty("onGetMsg")
@@ -312,6 +314,10 @@ import { evalScript, fdopen, loadFile, open } from "std";
       }
 
       setMessage(JSON.stringify({
+        message_list: to_send_list,
+        timestamp: Date.now()
+      }));
+      console.log("Sending", JSON.stringify({
         message_list: to_send_list,
         timestamp: Date.now()
       }));
