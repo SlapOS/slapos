@@ -109,6 +109,12 @@ import { evalScript, fdopen, loadFile, open } from "std";
     };
   conf_file.close();
 
+  console.logCopy = console.log.bind(console);
+  console.log = function(...args) {
+    var timestamp = '[' + new Date().toISOString() + ']';
+    this.logCopy(timestamp, ...args);
+  }
+
   function sendMsg(msg, id) {
     if (id === undefined) { id = -1; }
     to_send_list.push({ content: msg, dest_id: id });
@@ -279,6 +285,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       break;
 
     case "update":
+      console.log("Reading messages");
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         peer_message = peer.message;
         if (peer_message.length > 0) {
@@ -300,11 +307,13 @@ import { evalScript, fdopen, loadFile, open } from "std";
         }
       });
 
+      console.log("Updating");
       // Call the drone onUpdate function
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
 
+      console.log("Sending messages");
       setMessage(JSON.stringify({
         message_list: to_send_list,
         timestamp: Date.now()
@@ -319,6 +328,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       }
 
       parent.postMessage({type: "updated"});
+      console.log("End");
       break;
 
     case "exit":
