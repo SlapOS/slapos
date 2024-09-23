@@ -250,7 +250,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       );
       user_me.execOperatorScript = execOperatorScript.bind(null, operator);
     } catch (e) {
-      console.log("Failed to evaluate operator script", e);
+      console.log("Failed to evaluate operator script", e, e.stack);
     }
   }
 
