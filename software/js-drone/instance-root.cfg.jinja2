@@ -1,44 +1,44 @@
 {% set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
-{% set guid_list = parameter_dict['droneGuidList'] + parameter_dict['subscriberGuidList'] -%}
+{% set entitie_list = parameter_dict['droneList'] + parameter_dict['subscriberList'] -%}
 {% set drone_id_list = [] -%}
 {% set subscriber_id_list = [] -%}
 {% set part_list = ['publish-connection-information'] -%}
 
-{% for id, guid in enumerate(guid_list) -%}
+{% for id, entitie in enumerate(entitie_list) -%}
 {%   set request_peer_section_title = 'request-peer' ~ id -%}
 {%   do part_list.append(request_peer_section_title) %}
+{% set guid = entitie['guid'] %}
 [{{ request_peer_section_title }}]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
-{% if id < len(parameter_dict['droneGuidList']) -%}
+{% if id < len(parameter_dict['droneList']) -%}
 {%  set sr_name = parameter_dict['autopilotType'] -%}
 name = Drone{{ id }}_{{ guid }}
 {% else -%}
 {%  set sr_name = 'subscriber' -%}
-name = Subscriber{{ len(parameter_dict['droneGuidList']) - id }}_{{ guid }}
+name = Subscriber{{ len(parameter_dict['droneList']) - id }}_{{ guid }}
 {% endif -%}
 software-url = {{ '/'.join(software_url.split('/')[:-1]) + '/software-%s.cfg' % sr_name }}
 return = instance-path
 sla-computer_guid = {{ guid }}
 config-autopilotIp = {{ parameter_dict['autopilotIp'] }}
 config-autopilotPort = {{ dumps(parameter_dict['autopilotPort']) }}
-config-numberOfDrones = {{ dumps(len(parameter_dict['droneGuidList'])) }}
-config-numberOfSubscribers = {{ dumps(len(parameter_dict['subscriberGuidList'])) }}
+config-numberOfDrones = {{ dumps(len(parameter_dict['droneList'])) }}
+config-numberOfSubscribers = {{ dumps(len(parameter_dict['subscriberList'])) }}
 config-id = {{ dumps(id) }}
 config-debug = {{ dumps(parameter_dict['debug']) }}
 config-loopPeriod = {{ dumps(parameter_dict['loopPeriod']) }}
-{% if id < len(parameter_dict['droneGuidList']) -%}
+config-netIf = {{ entitie.get('netIf', 'eth0') }}
+{% if id < len(parameter_dict['droneList']) -%}
 {%   do drone_id_list.append(id) %}
 config-isADrone = {{ dumps(True) }}
 config-flightScript = {{ parameter_dict['flightScript'] }}
-config-netIf = {{ parameter_dict['droneNetIf'] }}
 {% else -%}
 {%   do subscriber_id_list.append(id) %}
 config-isADrone = {{ dumps(False) }}
 config-operatorScript = {{ parameter_dict['operatorScript'] }}
 config-mapJson = {{ parameter_dict['mapJson'] }}
 config-flightScript = {{ parameter_dict['subscriptionScript'] }}
-config-netIf = {{ parameter_dict['subscriberNetIf'] }}
 {% endif -%}
 config-multicastIp = {{ parameter_dict['multicastIp'] }}
 {% endfor %}

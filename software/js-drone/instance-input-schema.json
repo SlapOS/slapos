@@ -1,8 +1,30 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "description": "Parameters to instantiate JS drone",
   "additionalProperties": false,
+  "definitions": {
+    "entitie-list": {
+      "description": "List of entities able to listen/send OPC-UA messages from/to the swarm",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "description": "Computer ID",
+            "type": "string"
+          },
+          "netIf": {
+            "description": "Interface used for multicast traffic.",
+            "type": "string",
+            "default": "eth0"
+          }
+        }
+      },
+      "uniqueItems": true
+    }
+  },
   "properties": {
     "autopilotType": {
       "title": "Type of the drone's autopilot",
@@ -26,17 +48,9 @@
       "type": "integer",
       "default": 7909
     },
-    "droneGuidList": {
-      "title": "List of drones computer ID",
-      "description": "List of computer ID of drones in the swarm",
-      "type": "array",
-      "default": []
-    },
-    "droneNetIf": {
-      "title": "Drones Network interface",
-      "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
+    "droneList": {
+      "$ref": "#/definitions/entitie-list",
+      "title": "List of drones in the swarm"
     },
     "debug": {
       "title": "Set debug mode",
@@ -80,17 +94,9 @@
       "type": "integer",
       "default": 200
     },
-    "subscriberGuidList": {
-      "title": "List of subscribers computer ID",
-      "description": "List of computer ID of swarms subscribers (entities able to listen/send OPC-UA messages from/to the swarm)",
-      "type": "array",
-      "default": []
-    },
-    "subscriberNetIf": {
-      "title": "Subscribers Network interface",
-      "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
+    "subscriberList": {
+      "$ref": "#/definitions/entitie-list",
+      "title": "List of swarm subscribers"
     }
   }
 }
