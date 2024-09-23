@@ -1,0 +1,5 @@
+[ application ]
+listen            = {{ clamconfig["clammit-listen-address"] }}:{{ clamconfig["clammit-listen-port"] }}
+clamd-url         = {{ clamconfig["clamd-socket-file"] }}
+virus-status-code = 418
+log-file          = {{ clamconfig["clammit-log-file"] }}
