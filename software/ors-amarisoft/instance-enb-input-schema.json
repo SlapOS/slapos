@@ -197,19 +197,27 @@
       "type": "number",
       "default": 0
     },
+    "wendelin_telecom_software_release_url": {
+      "title": "Wendelin Telecom Software Release URL",
+      "description": "URL of the Wendelin Telecom Software Release to use to request a shared instance",
+      "type": "string",
+      "default": "wendelin-telecom-enb-shared-instance"
+    },
     "xlog_fluentbit_forward_host": {
       "title": "Fluentbit Xlog forwarding address",
       "description": "Address of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
-      "type": "string"
+      "type": "string",
+      "default": "fluentd.rapid.space"
     },
     "xlog_fluentbit_forward_port": {
       "title": "Fluentbit Xlog forwarding port",
-      "description": "(Optional) Port of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
-      "type": "string"
+      "description": "Port of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
+      "type": "integer",
+      "default": 24224
     },
     "xlog_fluentbit_forward_shared_key": {
       "title": "Fluentbit Xlog forwarding shared key",
-      "description": "Secret Key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
+      "description": "Secret key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
       "type": "string"
     }
   }
