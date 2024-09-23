@@ -223,7 +223,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
         "function execUserScript(from, me) {" + script_content + "};"
       );
     } catch (e) {
-      console.log("Failed to evaluate user script", e);
+      console.log("Failed to evaluate user script")
+      console.log(e);
       exitWorker(1);
     }
     execUserScript(null, user_me);
@@ -250,7 +251,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
       );
       user_me.execOperatorScript = execOperatorScript.bind(null, operator);
     } catch (e) {
-      console.log("Failed to evaluate operator script", e);
+      console.log("Failed to evaluate operator script");
+      console.log(e);
     }
   }
 
