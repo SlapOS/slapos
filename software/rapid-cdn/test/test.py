@@ -28,7 +28,7 @@
 import backend
 import glob
 import os
-from recurls import Recurls
+from recurls import Recurls, CurlException
 import http.client
 import json
 import multiprocessing
@@ -1201,7 +1201,12 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     def method():
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
         if 'domain' in parameter_dict:
-          fakeHTTPSResult(parameter_dict['domain'], '/')
+          try:
+            fakeHTTPSResult(parameter_dict['domain'], '/')
+          except CurlException:
+            # domains like *.customdomain.example.com will lead to
+            # CurlException
+            pass
     cls.waitForMethod('waitForSlave', method)
 
   @classmethod
@@ -2429,11 +2434,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
-      self.assertEqual(
-        0,
-        mimikra.get(self.backend_https_auth_url, verify=False).status_code,
-        'Access to %r shall be not possible without certificate' % (
-          self.backend_https_auth_url,))
+      with self.assertRaises(CurlException) as cm:
+        mimikra.get(self.backend_https_auth_url, verify=False)
+      self.assertEqual(55, cm.exception.command_returncode)
       # check that you can access this backend via frontend
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
@@ -2478,11 +2481,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
-      self.assertEqual(
-        0,
-        mimikra.get(self.backend_https_auth_url, verify=False).status_code,
-        'Access to %r shall be not possible without certificate' % (
-          self.backend_https_auth_url,))
+      with self.assertRaises(CurlException) as cm:
+        mimikra.get(self.backend_https_auth_url, verify=False)
+      self.assertEqual(55, cm.exception.command_returncode)
       # check that you can access this backend via frontend
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
