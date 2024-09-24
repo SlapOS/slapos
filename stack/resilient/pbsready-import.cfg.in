@@ -4,7 +4,7 @@ extends = {{ pbsready_template_path }}
 parts +=
   resiliency-takeover-script
   resilient-web-takeover-cgi-script
-  resilient-web-takeover-httpd-wrapper
+  resilient-web-takeover-httpd-service-wrapper
   resilient-web-takeover-httpd-promise
 
   notify-callback
@@ -153,7 +153,20 @@ error-log = $${directory:log}/resilient-web-takeover-httpd-error-log
 recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${resilient-web-takeover-httpd-configuration-file:output} -DFOREGROUND
-wrapper-path = $${basedirectory:services}/resilient-web-takeover-httpd
+wrapper-path = $${rootdirectory:bin}/resilient-web-takeover-httpd
+
+[resilient-web-takeover-httpd-service-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = ${template-monitor-httpd-wrapper:location}/${template-monitor-httpd-wrapper:filename}
+output = $${basedirectory:services}/resilient-web-takeover-httpd
+monitor-httpd-wrapper-path = $${resilient-web-takeover-httpd-wrapper:wrapper-path}
+pid-file = $${directory:run}/resilient-web-takeover-httpd.pid
+monitor-httpd-conf = $${resilient-web-takeover-httpd-configuration-file:output}
+context =
+    key pid_file :pid-file
+    key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
+    key monitor_httpd_conf :monitor-httpd-conf
+    raw dash_binary ${bash:location}/bin/bash
 
 [resilient-web-takeover-httpd-promise]
 <= monitor-promise-base
