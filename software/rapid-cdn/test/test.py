@@ -28,7 +28,7 @@
 import backend
 import glob
 import os
-from recurls import Recurls
+from recurls import Recurls, CurlException
 import http.client
 import json
 import multiprocessing
@@ -1201,7 +1201,12 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     def method():
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
         if 'domain' in parameter_dict:
-          fakeHTTPSResult(parameter_dict['domain'], '/')
+          try:
+            fakeHTTPSResult(parameter_dict['domain'], '/')
+          except CurlException:
+            # domains like *.customdomain.example.com will lead to
+            # CurlException
+            pass
     cls.waitForMethod('waitForSlave', method)
 
   @classmethod
