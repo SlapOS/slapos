@@ -815,7 +815,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       parameter_dict['master-key-generate-auth-url'],
       verify=cls.kedifa_caucase_ca_certificate_file)
     assert auth.status_code == http.client.CREATED
-    upload = mimikra.put(
+    upload = mimikra.config(
       parameter_dict['master-key-upload-url'] + auth.text,
       data=cls.key_pem + cls.certificate_pem,
       verify=cls.kedifa_caucase_ca_certificate_file)
@@ -2837,7 +2837,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.customdomain_ca_key_pem + \
         self.ca.certificate_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2871,7 +2871,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     data = self.ca.certificate_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2893,7 +2893,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     _, ca_certificate_pem = self.ca.signCSR(csr)
 
     data = ca_certificate_pem + ca_key_pem + 'some garbage'.encode()
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -2928,7 +2928,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     data = self.certificate_pem + self.key_pem + self.ca.certificate_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -3032,7 +3032,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(http.client.CREATED, auth.status_code)
     data = self.customdomain_certificate_pem + \
         self.customdomain_key_pem
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -4007,7 +4007,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
-      result = mimikra.put(backend_url + path, headers={
+      result = mimikra.config(backend_url + path, headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
           'X-Reply-Body': base64.b64encode(body.encode()).decode(),
@@ -4778,7 +4778,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     normal_path = 'normal'
     with_date_path = 'with_date'
     specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
-    result_configure = mimikra.put(
+    result_configure = mimikra.config(
       backend_url + '/' + with_date_path, headers={
         'X-Reply-Header-Date': specific_date
       })
@@ -5127,7 +5127,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     auth = mimikra.get(
       master_parameter_dict['master-key-generate-auth-url'],
       verify=self.kedifa_caucase_ca_certificate_file)
-    mimikra.put(
+    mimikra.config(
       master_parameter_dict['master-key-upload-url'] + auth.text,
       data=key_pem + certificate_pem,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5432,7 +5432,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     data = certificate_pem + key_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5495,7 +5495,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     data = certificate_pem + key_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5550,7 +5550,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     data = certificate_pem + key_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -5617,7 +5617,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     data = certificate_pem + key_pem
 
-    upload = mimikra.put(
+    upload = mimikra.config(
       self.current_upload_url + auth.text,
       data=data,
       verify=self.kedifa_caucase_ca_certificate_file)
@@ -6597,7 +6597,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         verify=self.kedifa_caucase_ca_certificate_file)
       self.assertEqual(http.client.CREATED, auth.status_code)
       data = certificate + key
-      upload = mimikra.put(
+      upload = mimikra.config(
         self.current_upload_url + auth.text,
         data=data,
         verify=self.kedifa_caucase_ca_certificate_file)
@@ -7108,7 +7108,7 @@ backend _health-check-default-http
         'failover-url?a=b&c=',
         'failover-https-url?a=b&c='
       ]:
-        result = mimikra.put(
+        result = mimikra.config(
           self.backend_url + url + path,
           headers={
             'X-Reply-Status-Code': '503',
@@ -7119,7 +7119,7 @@ backend _health-check-default-http
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()[
         'health-check-failover-url']['https-url']
-      result = mimikra.put(
+      result = mimikra.config(
         '/'.join([backend_url, cached_path]),
         headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
@@ -7150,14 +7150,14 @@ backend _health-check-default-http
     checkResult(http.client.OK, body_200)
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = mimikra.put(
+      result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7220,7 +7220,7 @@ backend _health-check-default-http
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7228,7 +7228,7 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = mimikra.put(
+      result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7267,7 +7267,7 @@ backend _health-check-default-http
     self.assertNotIn('X-Backend-Identification', result.headers)
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7300,7 +7300,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7329,7 +7329,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7359,7 +7359,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
