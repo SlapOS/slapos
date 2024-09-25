@@ -139,9 +139,11 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
-        'droneGuidList': [cls.slap._computer_id],
-        'subscriberGuidList': [cls.slap._computer_id],
-        'subscriberNetIf': OPC_UA_NET_IF
+        'droneList': [{'guid': cls.slap._computer_id}],
+        'subscriberList': [{
+          'guid': cls.slap._computer_id,
+          'netIf': OPC_UA_NET_IF,
+        }],
       })
     }
 
