@@ -1,0 +1,19 @@
+Author: Arnaud Fontaine <arnaud.fontaine@nexedi.com>
+Date:   Wed Apr 3 14:58:52 2024 +0900
+
+    Fixes #3501 (pylint.git:e5e6ca71) for pylint 1.4.
+
+--- a/pylint/checkers/variables.py	2024-06-26 16:40:48.654379000 +0000
++++ b/pylint/checkers/variables.py	2024-09-25 10:31:09.680816539 +0000
+@@ -987,7 +987,10 @@
+                 if module is astroid.YES:
+                     return None
+             except astroid.NotFoundError:
+-                if module.name in ignored_modules:
++                if (module.name in ignored_modules or
++                    (node.parent is not None and
++                     isinstance(node.parent, astroid.nodes.If) and
++                     node.parent.test.as_string() in ('six.PY2', 'six.PY3'))):
+                     return None
+                 self.add_message('no-name-in-module',
+                                  args=(name, module.name), node=node)
