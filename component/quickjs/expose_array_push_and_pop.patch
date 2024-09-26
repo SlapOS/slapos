@@ -1,3 +1,25 @@
+diff --git a/Makefile b/Makefile
+index 57cdd7e..19f8276 100644
+--- a/Makefile
++++ b/Makefile
+@@ -154,7 +154,7 @@ CONFIG_SHARED_LIBS=y # building shared libraries is supported
+ endif
+ endif
+ 
+-PROGS=qjs$(EXE) qjsc$(EXE) run-test262
++PROGS=qjs$(EXE) qjs-debug$(EXE) qjsc$(EXE) run-test262
+ ifneq ($(CROSS_PREFIX),)
+ QJSC_CC=gcc
+ QJSC=./host-qjsc
+@@ -320,7 +320,7 @@ clean:
+ install: all
+ 	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
+ 	$(STRIP) qjs qjsc
+-	install -m755 qjs qjsc "$(DESTDIR)$(PREFIX)/bin"
++	install -m755 qjs qjsc qjs-debug "$(DESTDIR)$(PREFIX)/bin"
+ 	ln -sf qjs "$(DESTDIR)$(PREFIX)/bin/qjscalc"
+ 	mkdir -p "$(DESTDIR)$(PREFIX)/lib/quickjs"
+ 	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
 diff --git a/quickjs.c b/quickjs.c
 index 4e58a98..e75ddb8 100644
 --- a/quickjs.c
