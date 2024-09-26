@@ -71,7 +71,6 @@ import { evalScript, fdopen, loadFile, open } from "std";
     gwsocket_w_pipe_fd,
     handleWebSocketMessage,
     last_log_timestamp = 0,
-    last_message_timestamp_list = [],
     parent = Worker.parent,
     peer_dict = {},
     to_send_list = [],
@@ -265,7 +264,6 @@ import { evalScript, fdopen, loadFile, open } from "std";
         if (peer_id < configuration.numberOfDrones) {
           drone_dict[peer_id] = peer_dict[peer_id];
         }
-        last_message_timestamp_list[peer_id] = 0;
       }
       parent.postMessage({type: "initialized"});
       break;
@@ -281,23 +279,16 @@ import { evalScript, fdopen, loadFile, open } from "std";
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         peer_message = peer.message;
-        if (peer_message.length > 0) {
+        while (peer_message.length > 0) {
           parsed_message = JSON.parse(peer_message);
-          while (parsed_message.timestamp !== last_message_timestamp_list[id]) {
-            parsed_message.message_list.forEach(function(message) {
-              if (user_me.hasOwnProperty("onGetMsg")
-                && [-1, user_me.id].includes(message.dest_id)) {
-                user_me.onGetMsg(message.content);
-              }
-            });
-
-            last_message_timestamp_list[id] = parsed_message.timestamp;
-            peer_message = peer.message;
-            if (peer_message.length > 0) {
-              parsed_message = JSON.parse(peer_message);
+          parsed_message.message_list.forEach(function(message) {
+            if (user_me.hasOwnProperty("onGetMsg")
+              && [-1, user_me.id].includes(message.dest_id)) {
+              user_me.onGetMsg(message.content);
             }
-          }
+          });
         }
+        peer_message = peer.message;
       });
 
       // Call the drone onUpdate function
