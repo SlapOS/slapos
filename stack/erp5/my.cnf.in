@@ -31,7 +31,7 @@ innodb_file_per_table = {{ parameter_dict['innodb-file-per-table'] }}
 
 default_time_zone = '+00:00'
 
-plugin_load = ha_mroonga
+plugin_load = ha_mroonga;ha_rocksdb
 plugin-dir = {{ parameter_dict['plugin-directory'] }}
 
 max_connections = {{ parameter_dict['max-connection-count'] }}
