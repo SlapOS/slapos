@@ -258,8 +258,11 @@ import { evalScript, fdopen, loadFile, open } from "std";
     switch (type) {
 
     case "initPubsub":
-      initPubsub(configuration.numberOfDrones,
-                 configuration.numberOfSubscribers);
+      if (initPubsub(configuration.numberOfDrones,
+                     configuration.numberOfSubscribers
+          ) !== 0) {
+          throw new Error("Failed to initialize PubSub.");
+      }
       for (peer_id = 0; peer_id < configuration.numberOfDrones + configuration.numberOfSubscribers; peer_id++) {
         peer_dict[peer_id] = new Drone(peer_id);
         peer_dict[peer_id].init(peer_id);
@@ -281,6 +284,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         peer_message = peer.message;
+        console.log(peer_message, "from", id);
         while (peer_message.length > 0) {
           try {
             parsed_message = JSON.parse(peer_message);
