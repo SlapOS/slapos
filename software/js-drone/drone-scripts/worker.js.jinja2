@@ -258,8 +258,11 @@ import { evalScript, fdopen, loadFile, open } from "std";
     switch (type) {
 
     case "initPubsub":
-      console.log("initPubsub result", initPubsub(configuration.numberOfDrones,
-                                                  configuration.numberOfSubscribers));
+      if (initPubsub(configuration.numberOfDrones,
+                     configuration.numberOfSubscribers
+          ) !== 0) {
+          throw new Error("Failed to initialize PubSub.");
+      }
       for (peer_id = 0; peer_id < configuration.numberOfDrones + configuration.numberOfSubscribers; peer_id++) {
         peer_dict[peer_id] = new Drone(peer_id);
         peer_dict[peer_id].init(peer_id);
