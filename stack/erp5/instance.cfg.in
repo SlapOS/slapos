@@ -178,6 +178,7 @@ gzip-location = {{ gzip_location }}
 xz-utils-location = {{ xz_utils_location }}
 mariadb-location = {{ mariadb_location }}
 template-my-cnf = {{ template_my_cnf }}
+template-mariadb-init-file = {{ template_mariadb_init_file }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
 link-binary = {{ dumps(mariadb_link_binary) }}

@@ -123,6 +123,7 @@ tmp-directory = ${directory:tmp}
 etc-directory = ${directory:etc}
 plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
 groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
+mariadb-init-file-path = ${mariadb-init-file:output}
 pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
@@ -152,6 +153,12 @@ ssl-{{ key }} = {{ value }}
 recipe = slapos.recipe.template:jinja2
 output = ${directory:etc}/mariadb.cnf
 url = {{ parameter_dict['template-my-cnf'] }}
+context = section parameter_dict my-cnf-parameters
+
+[mariadb-init-file]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/mariadb-init.sql
+url = {{ parameter_dict['template-mariadb-init-file'] }}
 context = section parameter_dict my-cnf-parameters
 
 [init-script-parameters]

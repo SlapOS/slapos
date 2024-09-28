@@ -1,0 +1,1 @@
+SET GLOBAL rocksdb_large_prefix=1;

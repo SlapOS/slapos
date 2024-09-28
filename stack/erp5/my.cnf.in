@@ -33,6 +33,7 @@ default_time_zone = '+00:00'
 
 plugin_load = ha_mroonga;ha_rocksdb
 plugin-dir = {{ parameter_dict['plugin-directory'] }}
+init_file = {{ parameter_dict['mariadb-init-file-path'] }}
 
 max_connections = {{ parameter_dict['max-connection-count'] }}
 
