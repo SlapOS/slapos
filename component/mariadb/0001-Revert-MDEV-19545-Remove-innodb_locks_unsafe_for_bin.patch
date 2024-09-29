@@ -1,0 +1,951 @@
+From e54480aeee9dd822d447fb84fe152b3dae50490b Mon Sep 17 00:00:00 2001
+From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
+Date: Sun, 29 Sep 2024 11:02:02 +0000
+Subject: [PATCH] Revert "MDEV-19545 Remove innodb_locks_unsafe_for_binlog"
+ Revert "MDEV-19563 Removed references to deprecated option
+ innodb_locks_unsafe_for_binlog"
+
+also revert part of
+* MDEV-23039 update removed_variables in mysql_upgrade_service for 10.5
+* more "removed" mysqld command-line options
+---
+ Docs/README-wsrep                             |   3 +
+ .../unsafe_binlog_innodb_option-master.opt    |   1 +
+ .../main/unsafe_binlog_innodb_option.result   | 189 ++++++++++++++++++
+ .../main/unsafe_binlog_innodb_option.test     |  16 ++
+ ...nnodb_locks_unsafe_for_binlog_basic.result |  53 +++++
+ .../suite/sys_vars/r/sysvars_innodb.result    |  12 ++
+ .../innodb_locks_unsafe_for_binlog_basic.test | 106 ++++++++++
+ .../wsrep_info/mysql-test/wsrep_info/my.cnf   |   1 +
+ sql/mysqld.cc                                 |   1 -
+ sql/upgrade_conf_file.cc                      |   1 -
+ storage/innobase/handler/ha_innodb.cc         |  45 ++++-
+ storage/innobase/include/row0mysql.h          |  12 +-
+ storage/innobase/include/srv0srv.h            |   4 +
+ storage/innobase/lock/lock0lock.cc            |   7 +-
+ storage/innobase/row/row0mysql.cc             |  14 +-
+ storage/innobase/row/row0sel.cc               |  89 +++++++--
+ storage/innobase/srv/srv0srv.cc               |   3 +
+ 17 files changed, 515 insertions(+), 42 deletions(-)
+ create mode 100644 mysql-test/main/unsafe_binlog_innodb_option-master.opt
+ create mode 100644 mysql-test/main/unsafe_binlog_innodb_option.result
+ create mode 100644 mysql-test/main/unsafe_binlog_innodb_option.test
+ create mode 100644 mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
+ create mode 100644 mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
+
+diff --git a/Docs/README-wsrep b/Docs/README-wsrep
+index 2e3bf52219d..a4d7d8c0ccb 100644
+--- a/Docs/README-wsrep
++++ b/Docs/README-wsrep
+@@ -269,6 +269,9 @@ innodb_autoinc_lock_mode=2
+    autoinc lock modes 0 and 1 can cause unresolved deadlock, and make
+    the system unresponsive.
+ 
++innodb_locks_unsafe_for_binlog=1
++   This option is required for parallel applying.
++
+ 5.2 WSREP OPTIONS
+ 
+ All options are optional except for wsrep_provider, wsrep_cluster_address, and
+diff --git a/mysql-test/main/unsafe_binlog_innodb_option-master.opt b/mysql-test/main/unsafe_binlog_innodb_option-master.opt
+new file mode 100644
+index 00000000000..0d13f0834a5
+--- /dev/null
++++ b/mysql-test/main/unsafe_binlog_innodb_option-master.opt
+@@ -0,0 +1 @@
++--loose-innodb_locks_unsafe_for_binlog --loose-innodb_lock_wait_timeout=1
+diff --git a/mysql-test/main/unsafe_binlog_innodb_option.result b/mysql-test/main/unsafe_binlog_innodb_option.result
+new file mode 100644
+index 00000000000..bb407d9562a
+--- /dev/null
++++ b/mysql-test/main/unsafe_binlog_innodb_option.result
+@@ -0,0 +1,189 @@
++drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
++create table t1 (id int not null, f_id int not null, f int not null,
++primary key(f_id, id)) engine = InnoDB;
++create table t2 (id int not null,s_id int not null,s varchar(200),
++primary key(id)) engine = InnoDB;
++INSERT INTO t1 VALUES (8, 1, 3);
++INSERT INTO t1 VALUES (1, 2, 1);
++INSERT INTO t2 VALUES (1, 0, '');
++INSERT INTO t2 VALUES (8, 1, '');
++commit;
++DELETE ml.* FROM t1 AS ml LEFT JOIN t2 AS mm ON (mm.id=ml.id)
++WHERE mm.id IS NULL;
++select ml.* from t1 as ml left join t2 as mm on (mm.id=ml.id)
++where mm.id is null lock in share mode;
++id	f_id	f
++drop table t1,t2;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values(1,1),(2,2),(3,1),(4,2),(5,1),(6,2),(7,3);
++commit;
++set autocommit = 0;
++select * from t1 lock in share mode;
++a	b
++1	1
++2	2
++3	1
++4	2
++5	1
++6	2
++7	3
++update t1 set b = 5 where b = 1;
++connection b;
++set autocommit = 0;
++select * from t1 where a = 2 and b = 2 for update;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection a;
++commit;
++connection b;
++commit;
++drop table t1;
++connection default;
++disconnect a;
++disconnect b;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values(1,1),(2,2),(3,1),(4,2),(5,1),(6,2),(7,3);
++commit;
++set autocommit = 0;
++update t1 set b = 5 where b = 1;
++connection b;
++set autocommit = 0;
++select * from t1 where a = 7 and b = 3 for update;
++a	b
++7	3
++commit;
++connection a;
++commit;
++drop table t1;
++connection default;
++disconnect a;
++disconnect b;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values (1,2),(5,3),(4,2);
++create table t2(d int not null, e int, primary key(d)) engine = InnoDB;
++insert into t2 values (8,6),(12,1),(3,1);
++commit;
++set autocommit = 0;
++select * from t2 for update;
++d	e
++3	1
++8	6
++12	1
++connection b;
++set autocommit = 0;
++insert into t1 select * from t2;
++update t1 set b = (select e from t2 where a = d);
++create table t3(d int not null, e int, primary key(d)) engine = InnoDB
++select * from t2;
++commit;
++connection a;
++commit;
++connection default;
++disconnect a;
++disconnect b;
++drop table t1, t2, t3;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connect  c,localhost,root,,;
++connect  d,localhost,root,,;
++SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
++connect  e,localhost,root,,;
++connect  f,localhost,root,,;
++connect  g,localhost,root,,;
++SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
++connect  h,localhost,root,,;
++connect  i,localhost,root,,;
++connect  j,localhost,root,,;
++SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values (1,2),(5,3),(4,2);
++create table t2(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t2 values (8,6),(12,1),(3,1);
++create table t3(d int not null, b int, primary key(d)) engine = InnoDB;
++insert into t3 values (8,6),(12,1),(3,1);
++create table t5(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t5 values (1,2),(5,3),(4,2);
++create table t6(d int not null, e int, primary key(d)) engine = InnoDB;
++insert into t6 values (8,6),(12,1),(3,1);
++create table t8(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t8 values (1,2),(5,3),(4,2);
++create table t9(d int not null, e int, primary key(d)) engine = InnoDB;
++insert into t9 values (8,6),(12,1),(3,1);
++commit;
++set autocommit = 0;
++select * from t2 for update;
++a	b
++3	1
++8	6
++12	1
++connection b;
++set autocommit = 0;
++SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
++insert into t1 select * from t2;
++connection c;
++set autocommit = 0;
++SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
++update t3 set b = (select b from t2 where a = d);
++connection d;
++set autocommit = 0;
++SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
++create table t4(a int not null, b int, primary key(a)) select * from t2;
++connection e;
++set autocommit = 0;
++insert into t5 (select * from t2 lock in share mode);
++connection f;
++set autocommit = 0;
++update t6 set e = (select b from t2 where a = d lock in share mode);
++connection g;
++set autocommit = 0;
++create table t7(a int not null, b int, primary key(a)) select * from t2 lock in share mode;
++connection h;
++set autocommit = 0;
++insert into t8 (select * from t2 for update);
++connection i;
++set autocommit = 0;
++update t9 set e = (select b from t2 where a = d for update);
++connection j;
++set autocommit = 0;
++create table t10(a int not null, b int, primary key(a)) select * from t2 for update;
++connection b;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection c;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection d;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection e;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection f;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection g;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection h;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection i;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection j;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection a;
++commit;
++connection default;
++disconnect a;
++disconnect b;
++disconnect c;
++disconnect d;
++disconnect e;
++disconnect f;
++disconnect g;
++disconnect h;
++disconnect i;
++disconnect j;
++drop table t1, t2, t3, t5, t6, t8, t9;
+diff --git a/mysql-test/main/unsafe_binlog_innodb_option.test b/mysql-test/main/unsafe_binlog_innodb_option.test
+new file mode 100644
+index 00000000000..a0516749451
+--- /dev/null
++++ b/mysql-test/main/unsafe_binlog_innodb_option.test
+@@ -0,0 +1,16 @@
++# t/unsafe_binlog_innodb.test
++#
++# Note that this test uses at least in case of InnoDB options
++#     innodb_locks_unsafe_for_binlog = true
++#     innodb_lock_timeout = 5
++#
++# Last update:
++# 2006-08-02 ML test refactored
++#               old name was innodb_unsafe_binlog.test
++#               main code went into include/unsafe_binlog.inc
++#
++
++--source include/have_innodb.inc
++let $engine_type= InnoDB;
++
++--source include/unsafe_binlog.inc
+diff --git a/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result b/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
+new file mode 100644
+index 00000000000..c2229d54d02
+--- /dev/null
++++ b/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
+@@ -0,0 +1,53 @@
++'#---------------------BS_STVARS_031_01----------------------#'
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++'#---------------------BS_STVARS_031_02----------------------#'
++SET @@GLOBAL.innodb_locks_unsafe_for_binlog=1;
++ERROR HY000: Variable 'innodb_locks_unsafe_for_binlog' is a read only variable
++Expected error 'Read only variable'
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++'#---------------------BS_STVARS_031_03----------------------#'
++SELECT IF(@@GLOBAL.innodb_locks_unsafe_for_binlog, "ON", "OFF") = VARIABLE_VALUE
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++IF(@@GLOBAL.innodb_locks_unsafe_for_binlog, "ON", "OFF") = VARIABLE_VALUE
++1
++1 Expected
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++SELECT COUNT(VARIABLE_VALUE)
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES 
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++COUNT(VARIABLE_VALUE)
++1
++1 Expected
++'#---------------------BS_STVARS_031_04----------------------#'
++SELECT @@innodb_locks_unsafe_for_binlog = @@GLOBAL.innodb_locks_unsafe_for_binlog;
++@@innodb_locks_unsafe_for_binlog = @@GLOBAL.innodb_locks_unsafe_for_binlog
++1
++1 Expected
++'#---------------------BS_STVARS_031_05----------------------#'
++SELECT COUNT(@@innodb_locks_unsafe_for_binlog);
++COUNT(@@innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++SELECT COUNT(@@local.innodb_locks_unsafe_for_binlog);
++ERROR HY000: Variable 'innodb_locks_unsafe_for_binlog' is a GLOBAL variable
++Expected error 'Variable is a GLOBAL variable'
++SELECT COUNT(@@SESSION.innodb_locks_unsafe_for_binlog);
++ERROR HY000: Variable 'innodb_locks_unsafe_for_binlog' is a GLOBAL variable
++Expected error 'Variable is a GLOBAL variable'
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++SELECT innodb_locks_unsafe_for_binlog = @@SESSION.innodb_locks_unsafe_for_binlog;
++ERROR 42S22: Unknown column 'innodb_locks_unsafe_for_binlog' in 'field list'
++Expected error 'Readonly variable'
+diff --git a/mysql-test/suite/sys_vars/r/sysvars_innodb.result b/mysql-test/suite/sys_vars/r/sysvars_innodb.result
+index 6a7e184f68e..74c7893a177 100644
+--- a/mysql-test/suite/sys_vars/r/sysvars_innodb.result
++++ b/mysql-test/suite/sys_vars/r/sysvars_innodb.result
+@@ -967,6 +967,18 @@ NUMERIC_BLOCK_SIZE	0
+ ENUM_VALUE_LIST	NULL
+ READ_ONLY	NO
+ COMMAND_LINE_ARGUMENT	REQUIRED
++VARIABLE_NAME	INNODB_LOCKS_UNSAFE_FOR_BINLOG
++SESSION_VALUE	NULL
++DEFAULT_VALUE	OFF
++VARIABLE_SCOPE	GLOBAL
++VARIABLE_TYPE	BOOLEAN
++VARIABLE_COMMENT	Force InnoDB to not use next-key locking, to use only row-level locking.
++NUMERIC_MIN_VALUE	NULL
++NUMERIC_MAX_VALUE	NULL
++NUMERIC_BLOCK_SIZE	NULL
++ENUM_VALUE_LIST	OFF,ON
++READ_ONLY	YES
++COMMAND_LINE_ARGUMENT	NONE
+ VARIABLE_NAME	INNODB_LOCK_WAIT_TIMEOUT
+ SESSION_VALUE	50
+ DEFAULT_VALUE	50
+diff --git a/mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test b/mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
+new file mode 100644
+index 00000000000..755c5c62c70
+--- /dev/null
++++ b/mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
+@@ -0,0 +1,106 @@
++
++
++################## mysql-test\t\innodb_locks_unsafe_for_binlog_basic.test #####
++#                                                                             #
++# Variable Name: innodb_locks_unsafe_for_binlog                               #
++# Scope: Global                                                               #
++# Access Type: Static                                                         #
++# Data Type: boolean                                                          #
++#                                                                             #
++#                                                                             #
++# Creation Date: 2008-02-07                                                   #
++# Author : Sharique Abdullah                                                      #
++#                                                                             #
++#                                                                             #
++# Description:Test Cases of Dynamic System Variable innodb_locks_unsafe_for_binlog#
++#             that checks the behavior of this variable in the following ways #
++#              * Value Check                                                  #
++#              * Scope Check                                                  #
++#                                                                             #
++# Reference: http://dev.mysql.com/doc/refman/5.1/en/                          #
++#  server-system-variables.html                                               #
++#                                                                             #
++###############################################################################
++
++--source include/have_innodb.inc
++
++--echo '#---------------------BS_STVARS_031_01----------------------#'
++####################################################################
++#   Displaying default value                                       #
++####################################################################
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++
++--echo '#---------------------BS_STVARS_031_02----------------------#'
++####################################################################
++#   Check if Value can set                                         #
++####################################################################
++
++--error ER_INCORRECT_GLOBAL_LOCAL_VAR
++SET @@GLOBAL.innodb_locks_unsafe_for_binlog=1;
++--echo Expected error 'Read only variable'
++
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++
++
++
++--echo '#---------------------BS_STVARS_031_03----------------------#'
++#################################################################
++# Check if the value in GLOBAL Table matches value in variable  #
++#################################################################
++
++--disable_warnings
++SELECT IF(@@GLOBAL.innodb_locks_unsafe_for_binlog, "ON", "OFF") = VARIABLE_VALUE
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++--enable_warnings
++--echo 1 Expected
++
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++--disable_warnings
++SELECT COUNT(VARIABLE_VALUE)
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES 
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++--enable_warnings
++--echo 1 Expected
++
++
++
++--echo '#---------------------BS_STVARS_031_04----------------------#'
++################################################################################
++#  Check if accessing variable with and without GLOBAL point to same variable  #
++################################################################################
++SELECT @@innodb_locks_unsafe_for_binlog = @@GLOBAL.innodb_locks_unsafe_for_binlog;
++--echo 1 Expected
++
++
++
++--echo '#---------------------BS_STVARS_031_05----------------------#'
++################################################################################
++#   Check if innodb_locks_unsafe_for_binlog can be accessed with and without @@ sign #
++################################################################################
++
++SELECT COUNT(@@innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++--Error ER_INCORRECT_GLOBAL_LOCAL_VAR
++SELECT COUNT(@@local.innodb_locks_unsafe_for_binlog);
++--echo Expected error 'Variable is a GLOBAL variable'
++
++--Error ER_INCORRECT_GLOBAL_LOCAL_VAR
++SELECT COUNT(@@SESSION.innodb_locks_unsafe_for_binlog);
++--echo Expected error 'Variable is a GLOBAL variable'
++
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++--Error ER_BAD_FIELD_ERROR
++SELECT innodb_locks_unsafe_for_binlog = @@SESSION.innodb_locks_unsafe_for_binlog;
++--echo Expected error 'Readonly variable'
++
++
+diff --git a/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf b/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
+index 8f62cfd0cc9..1c7a8ad4122 100644
+--- a/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
++++ b/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
+@@ -4,6 +4,7 @@
+ [mysqld]
+ binlog-format=row
+ innodb-autoinc-lock-mode=2
++innodb-locks-unsafe-for-binlog=1
+ wsrep_provider=@ENV.WSREP_PROVIDER
+ 
+ [mysqld.1]
+diff --git a/sql/mysqld.cc b/sql/mysqld.cc
+index d0619aa26c2..3d8a40c7685 100644
+--- a/sql/mysqld.cc
++++ b/sql/mysqld.cc
+@@ -5317,7 +5317,6 @@ static int init_server_components()
+       MARIADB_REMOVED_OPTION("super-large-pages"),
+ #endif
+       MARIADB_REMOVED_OPTION("innodb-idle-flush-pct"),
+-      MARIADB_REMOVED_OPTION("innodb-locks-unsafe-for-binlog"),
+       MARIADB_REMOVED_OPTION("innodb-rollback-segments"),
+       MARIADB_REMOVED_OPTION("innodb-stats-sample-pages"),
+       MARIADB_REMOVED_OPTION("max-long-data-size"),
+diff --git a/sql/upgrade_conf_file.cc b/sql/upgrade_conf_file.cc
+index 0d7bc603468..f6f5a9a27e8 100644
+--- a/sql/upgrade_conf_file.cc
++++ b/sql/upgrade_conf_file.cc
+@@ -94,7 +94,6 @@ static const char *removed_variables[] =
+ "innodb_large_prefix",
+ "innodb_lazy_drop_table",
+ "innodb_locking_fake_changes",
+-"innodb_locks_unsafe_for_binlog",
+ "innodb_log_arch_dir",
+ "innodb_log_arch_expire_sec",
+ "innodb_log_archive",
+diff --git a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_innodb.cc
+index dfe034ec2a5..82624fb5cc9 100644
+--- a/storage/innobase/handler/ha_innodb.cc
++++ b/storage/innobase/handler/ha_innodb.cc
+@@ -196,6 +196,7 @@ static char*	innobase_reset_all_monitor_counter;
+ stopword table to be used */
+ static char*	innobase_server_stopword_table;
+ 
++static my_bool innobase_locks_unsafe_for_binlog;
+ my_bool innobase_rollback_on_timeout;
+ static my_bool	innobase_create_status_file;
+ my_bool	innobase_stats_on_metadata;
+@@ -3979,6 +3980,7 @@ static int innodb_init_params()
+ 	}
+ 
+ 	srv_buf_pool_size = ulint(innobase_buffer_pool_size);
++	srv_locks_unsafe_for_binlog = (ibool) innobase_locks_unsafe_for_binlog;
+ 
+ 	if (innobase_open_files < 10) {
+ 		innobase_open_files = 300;
+@@ -8735,7 +8737,7 @@ ha_innobase::delete_row(
+ /**********************************************************************//**
+ Removes a new lock set on a row, if it was not read optimistically. This can
+ be called after a row has been read in the processing of an UPDATE or a DELETE
+-query. */
++query, if the option innodb_locks_unsafe_for_binlog is set. */
+ 
+ void
+ ha_innobase::unlock_row(void)
+@@ -8751,8 +8753,11 @@ ha_innobase::unlock_row(void)
+ 
+ 	switch (m_prebuilt->row_read_type) {
+ 	case ROW_READ_WITH_LOCKS:
+-		if (m_prebuilt->trx->isolation_level > TRX_ISO_READ_COMMITTED)
++		if (!srv_locks_unsafe_for_binlog
++		    && m_prebuilt->trx->isolation_level
++		    > TRX_ISO_READ_COMMITTED) {
+ 			break;
++		}
+ 		/* fall through */
+ 	case ROW_READ_TRY_SEMI_CONSISTENT:
+ 		row_unlock_for_mysql(m_prebuilt, FALSE);
+@@ -8779,12 +8784,20 @@ void ha_innobase::try_semi_consistent_read(bool yes)
+ {
+ 	ut_ad(m_prebuilt->trx == thd_to_trx(ha_thd()));
+ 	/* Row read type is set to semi consistent read if this was
+-	requested by the SQL layer and the transaction isolation level is
+-	READ UNCOMMITTED or READ COMMITTED. */
+-	m_prebuilt->row_read_type = yes
+-		&& m_prebuilt->trx->isolation_level <= TRX_ISO_READ_COMMITTED
+-		? ROW_READ_TRY_SEMI_CONSISTENT
+-		: ROW_READ_WITH_LOCKS;
++	requested by the MySQL and either innodb_locks_unsafe_for_binlog
++	option is used or this session is using READ COMMITTED isolation
++	level. */
++
++	if (yes
++	    && (srv_locks_unsafe_for_binlog
++		|| m_prebuilt->trx->isolation_level
++		<= TRX_ISO_READ_COMMITTED)) {
++
++		m_prebuilt->row_read_type = ROW_READ_TRY_SEMI_CONSISTENT;
++
++	} else {
++		m_prebuilt->row_read_type = ROW_READ_WITH_LOCKS;
++	}
+ }
+ 
+ /******************************************************************//**
+@@ -16498,7 +16511,9 @@ ha_innobase::store_lock(
+ 		if (sql_command == SQLCOM_CHECKSUM
+ 		    || sql_command == SQLCOM_CREATE_SEQUENCE
+ 		    || (sql_command == SQLCOM_ANALYZE && lock_type == TL_READ)
+-		    || (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++		    || ((srv_locks_unsafe_for_binlog
++			|| trx->isolation_level <= TRX_ISO_READ_COMMITTED)
++			&& trx->isolation_level != TRX_ISO_SERIALIZABLE
+ 			&& (lock_type == TL_READ
+ 			    || lock_type == TL_READ_NO_INSERT)
+ 			&& (sql_command == SQLCOM_INSERT_SELECT
+@@ -16507,8 +16522,10 @@ ha_innobase::store_lock(
+ 			    || sql_command == SQLCOM_CREATE_SEQUENCE
+ 			    || sql_command == SQLCOM_CREATE_TABLE))) {
+ 
+-			/* If the transaction isolation level is
+-			READ UNCOMMITTED or READ COMMITTED and we are executing
++			/* If we either have innobase_locks_unsafe_for_binlog
++			option set or this session is using READ COMMITTED
++			isolation level and isolation level of the transaction
++			is not set to serializable and MySQL is doing
+ 			INSERT INTO...SELECT or REPLACE INTO...SELECT
+ 			or UPDATE ... = (SELECT ...) or CREATE  ...
+ 			SELECT... without FOR UPDATE or IN SHARE
+@@ -18911,6 +18928,11 @@ static MYSQL_SYSVAR_ENUM(flush_method, srv_file_flush_method,
+   NULL, NULL, IF_WIN(SRV_ALL_O_DIRECT_FSYNC, SRV_O_DIRECT),
+   &innodb_flush_method_typelib);
+ 
++static MYSQL_SYSVAR_BOOL(locks_unsafe_for_binlog, innobase_locks_unsafe_for_binlog,
++  PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_READONLY,
++  "Force InnoDB to not use next-key locking, to use only row-level locking.",
++  NULL, NULL, FALSE);
++
+ static MYSQL_SYSVAR_STR(log_group_home_dir, srv_log_group_home_dir,
+   PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
+   "Path to ib_logfile0", NULL, NULL, NULL);
+@@ -19803,6 +19825,7 @@ static struct st_mysql_sys_var* innobase_system_variables[]= {
+   MYSQL_SYSVAR(ft_min_token_size),
+   MYSQL_SYSVAR(ft_num_word_optimize),
+   MYSQL_SYSVAR(ft_sort_pll_degree),
++  MYSQL_SYSVAR(locks_unsafe_for_binlog),
+   MYSQL_SYSVAR(lock_wait_timeout),
+   MYSQL_SYSVAR(deadlock_detect),
+   MYSQL_SYSVAR(deadlock_report),
+diff --git a/storage/innobase/include/row0mysql.h b/storage/innobase/include/row0mysql.h
+index 878d9c9f1a2..6f7b5cb99d9 100644
+--- a/storage/innobase/include/row0mysql.h
++++ b/storage/innobase/include/row0mysql.h
+@@ -262,8 +262,8 @@ row_update_for_mysql(
+ 	row_prebuilt_t*		prebuilt)
+ 	MY_ATTRIBUTE((warn_unused_result));
+ 
+-/** This can only be used when the current transaction is at
+-READ COMMITTED or READ UNCOMMITTED isolation level.
++/** This can only be used when srv_locks_unsafe_for_binlog is TRUE or this
++session is using a READ COMMITTED or READ UNCOMMITTED isolation level.
+ Before calling this function row_search_mvcc() must have
+ initialized prebuilt->new_rec_locks to store the information which new
+ record locks really were set. This function removes a newly set
+@@ -573,9 +573,8 @@ struct row_prebuilt_t {
+ 	ulint		row_read_type;	/*!< ROW_READ_WITH_LOCKS if row locks
+ 					should be the obtained for records
+ 					under an UPDATE or DELETE cursor.
+-					At READ UNCOMMITTED or
+-					READ COMMITTED isolation level,
+-					this can be set to
++					If innodb_locks_unsafe_for_binlog
++					is TRUE, this can be set to
+ 					ROW_READ_TRY_SEMI_CONSISTENT, so that
+ 					if the row under an UPDATE or DELETE
+ 					cursor was locked by another
+@@ -597,7 +596,8 @@ struct row_prebuilt_t {
+ 					cases; note that this breaks
+ 					serializability. */
+ 	ulint		new_rec_locks;	/*!< normally 0; if
+-					the session is using READ
++					srv_locks_unsafe_for_binlog is
++					TRUE or session is using READ
+ 					COMMITTED or READ UNCOMMITTED
+ 					isolation level, set in
+ 					row_search_mvcc() if we set a new
+diff --git a/storage/innobase/include/srv0srv.h b/storage/innobase/include/srv0srv.h
+index 5e6bfc33304..ddf43804573 100644
+--- a/storage/innobase/include/srv0srv.h
++++ b/storage/innobase/include/srv0srv.h
+@@ -168,6 +168,10 @@ extern my_bool	high_level_read_only;
+ dictionary tables are in the system tablespace 0 */
+ extern my_bool	srv_file_per_table;
+ 
++/** Place locks to records only i.e. do not use next-key locking except
++on duplicate key checking and foreign key checking */
++extern ibool   srv_locks_unsafe_for_binlog;
++
+ /** Sort buffer size in index creation */
+ extern ulong	srv_sort_buf_size;
+ /** Maximum modification log file size for online index creation */
+diff --git a/storage/innobase/lock/lock0lock.cc b/storage/innobase/lock/lock0lock.cc
+index a210700727c..cea242e00ac 100644
+--- a/storage/innobase/lock/lock0lock.cc
++++ b/storage/innobase/lock/lock0lock.cc
+@@ -2402,8 +2402,8 @@ lock_rec_inherit_to_gap(hash_cell_t &heir_cell, const page_id_t heir,
+ {
+   ut_ad(!from_split || heir_heap_no == PAGE_HEAP_NO_SUPREMUM);
+ 
+-  /* At READ UNCOMMITTED or READ COMMITTED isolation level,
+-  we do not want locks set
++  /* If srv_locks_unsafe_for_binlog is TRUE or session is using
++  READ COMMITTED isolation level, we do not want locks set
+   by an UPDATE or a DELETE to be inherited as gap type locks. But we
+   DO want S-locks/X-locks(taken for replace) set by a consistency
+   constraint to be inherited also then. */
+@@ -2414,7 +2414,8 @@ lock_rec_inherit_to_gap(hash_cell_t &heir_cell, const page_id_t heir,
+     trx_t *lock_trx= lock->trx;
+     if (!lock->trx->is_not_inheriting_locks() &&
+         !lock->is_insert_intention() &&
+-        (lock_trx->isolation_level > TRX_ISO_READ_COMMITTED ||
++        ((!srv_locks_unsafe_for_binlog
++          && lock_trx->isolation_level > TRX_ISO_READ_COMMITTED) ||
+          /* When we are in a page split (not purge), then we don't set a lock
+          on supremum if the donor lock type is LOCK_REC_NOT_GAP. That is, do
+          not create bogus gap locks for non-gap locks for READ UNCOMMITTED and
+diff --git a/storage/innobase/row/row0mysql.cc b/storage/innobase/row/row0mysql.cc
+index 6a71cf3ac62..5c8f4a5a80e 100644
+--- a/storage/innobase/row/row0mysql.cc
++++ b/storage/innobase/row/row0mysql.cc
+@@ -1746,8 +1746,8 @@ row_update_for_mysql(row_prebuilt_t* prebuilt)
+ 	DBUG_RETURN(err);
+ }
+ 
+-/** This can only be used when the current transaction is at
+-READ COMMITTED or READ UNCOMMITTED isolation level.
++/** This can only be used when srv_locks_unsafe_for_binlog is TRUE or this
++session is using a READ COMMITTED or READ UNCOMMITTED isolation level.
+ Before calling this function row_search_mvcc() must have
+ initialized prebuilt->new_rec_locks to store the information which new
+ record locks really were set. This function removes a newly set
+@@ -1766,7 +1766,15 @@ row_unlock_for_mysql(
+ {
+ 	if (prebuilt->new_rec_locks == 1 && prebuilt->index->is_clust()) {
+ 		trx_t* trx = prebuilt->trx;
+-		ut_ad(trx->isolation_level <= TRX_ISO_READ_COMMITTED);
++		if (UNIV_UNLIKELY
++		    (!srv_locks_unsafe_for_binlog
++		     && trx->isolation_level > TRX_ISO_READ_COMMITTED)) {
++			ib::error() << "Calling row_unlock_for_mysql though"
++				" innodb_locks_unsafe_for_binlog is FALSE and this"
++				" session is not using READ COMMITTED isolation"
++				" level.";
++			return;
++		}
+ 		trx->op_info = "unlock_row";
+ 
+ 		const rec_t*	rec;
+diff --git a/storage/innobase/row/row0sel.cc b/storage/innobase/row/row0sel.cc
+index 944f73588ae..33c7c347922 100644
+--- a/storage/innobase/row/row0sel.cc
++++ b/storage/innobase/row/row0sel.cc
+@@ -1056,14 +1056,16 @@ row_sel_get_clust_rec(
+ 		/* Try to place a lock on the index record */
+ 		trx_t* trx = thr_get_trx(thr);
+ 
+-		/* At READ UNCOMMITTED or READ COMMITTED isolation level
++		/* If innodb_locks_unsafe_for_binlog option is used
++		or this session is using READ COMMITTED or lower isolation level
+ 		we lock only the record, i.e., next-key locking is
+ 		not used. */
+ 		err = lock_clust_rec_read_check_and_lock(
+ 			0, btr_pcur_get_block(&plan->clust_pcur),
+ 			clust_rec, index, offsets,
+ 			node->row_lock_mode,
+-			trx->isolation_level <= TRX_ISO_READ_COMMITTED
++			(srv_locks_unsafe_for_binlog
++			    || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
+ 			? LOCK_REC_NOT_GAP : LOCK_ORDINARY,
+ 			thr);
+ 
+@@ -1832,10 +1834,13 @@ row_sel(
+ 						  index->n_core_fields,
+ 						  ULINT_UNDEFINED, &heap);
+ 
+-			/* At READ UNCOMMITTED or READ COMMITTED
+-			isolation level, we lock only the record,
+-			i.e., next-key locking is not used. */
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++			/* If innodb_locks_unsafe_for_binlog option is used
++			or this session is using READ COMMITTED or lower isolation
++			level, we lock only the record, i.e., next-key
++			locking is not used. */
++			if (srv_locks_unsafe_for_binlog
++			    || trx->isolation_level
++			    <= TRX_ISO_READ_COMMITTED) {
+ 				if (page_rec_is_supremum(next_rec)) {
+ 					goto skip_lock;
+ 				}
+@@ -1892,10 +1897,12 @@ row_sel(
+ 					  index->n_core_fields,
+ 					  ULINT_UNDEFINED, &heap);
+ 
+-		/* At READ UNCOMMITTED or READ COMMITTED isolation level,
++		/* If innodb_locks_unsafe_for_binlog option is used
++		or this session is using READ COMMITTED or lower isolation level,
+ 		we lock only the record, i.e., next-key locking is
+ 		not used. */
+-		if (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++		if (srv_locks_unsafe_for_binlog
++		    || trx->isolation_level <= TRX_ISO_READ_COMMITTED
+ 		    || dict_index_is_spatial(index)) {
+ 
+ 			if (page_rec_is_supremum(rec)) {
+@@ -4769,9 +4776,18 @@ row_search_mvcc(
+ 		pcur->old_rec = nullptr;
+ 
+ 		if (index->is_spatial()) {
++			bool    need_pred_lock;
++
++			need_pred_lock = (set_also_gap_locks
++					  && !(srv_locks_unsafe_for_binlog
++					      || trx->isolation_level
++						 <= TRX_ISO_READ_COMMITTED)
++					  && prebuilt->select_lock_type
++						 != LOCK_NONE);
++
+ 			if (!prebuilt->rtr_info) {
+ 				prebuilt->rtr_info = rtr_create_rtr_info(
+-					set_also_gap_locks, true,
++					need_pred_lock, true,
+ 					btr_pcur_get_btr_cur(pcur), index);
+ 				prebuilt->rtr_info->search_tuple = search_tuple;
+ 				prebuilt->rtr_info->search_mode = mode;
+@@ -4780,7 +4796,7 @@ row_search_mvcc(
+ 			} else {
+ 				rtr_info_reinit_in_cursor(
+ 					btr_pcur_get_btr_cur(pcur),
+-					index, set_also_gap_locks);
++					index, need_pred_lock);
+ 				prebuilt->rtr_info->search_tuple = search_tuple;
+ 				prebuilt->rtr_info->search_mode = mode;
+ 			}
+@@ -4805,6 +4821,9 @@ row_search_mvcc(
+ 
+ 		if (!moves_up
+ 		    && set_also_gap_locks
++		    && !(srv_locks_unsafe_for_binlog
++			 || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
++		    && prebuilt->select_lock_type != LOCK_NONE
+ 		    && !page_rec_is_supremum(rec)
+ 		    && !dict_index_is_spatial(index)) {
+ 
+@@ -4925,12 +4944,16 @@ row_search_mvcc(
+ 	if (page_rec_is_supremum(rec)) {
+ 
+ 		if (set_also_gap_locks
++		    && !(srv_locks_unsafe_for_binlog
++			 || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
++		    && prebuilt->select_lock_type != LOCK_NONE
+ 		    && !dict_index_is_spatial(index)) {
+ 
+ 			/* Try to place a lock on the index record */
+ 
+-			/* If the transaction isolation level is
+-			READ UNCOMMITTED or READ COMMITTED,
++			/* If innodb_locks_unsafe_for_binlog option is used
++			or this session is using a READ COMMITTED or lower isolation
++			level we do not lock gaps. Supremum record is really
+ 			we do not lock gaps. Supremum record is really
+ 			a gap and therefore we do not set locks there. */
+ 
+@@ -5070,7 +5093,17 @@ row_search_mvcc(
+ 		if (cmp_dtuple_rec(search_tuple, rec, index, offsets)) {
+ 
+ 			if (set_also_gap_locks
++			    && !(srv_locks_unsafe_for_binlog
++				 || trx->isolation_level
++				 <= TRX_ISO_READ_COMMITTED)
++			    && prebuilt->select_lock_type != LOCK_NONE
+ 			    && !dict_index_is_spatial(index)) {
++
++				/* Try to place a gap lock on the index
++				record only if innodb_locks_unsafe_for_binlog
++				option is not set or this session is not
++				using a READ COMMITTED or lower isolation level. */
++
+ 				err = sel_set_rec_lock(
+ 					pcur,
+ 					rec, index, offsets,
+@@ -5106,7 +5139,17 @@ row_search_mvcc(
+ 						 index, offsets)) {
+ 
+ 			if (set_also_gap_locks
++			    && !(srv_locks_unsafe_for_binlog
++				 || trx->isolation_level
++				 <= TRX_ISO_READ_COMMITTED)
++			    && prebuilt->select_lock_type != LOCK_NONE
+ 			    && !dict_index_is_spatial(index)) {
++
++				/* Try to place a gap lock on the index
++				record only if innodb_locks_unsafe_for_binlog
++				option is not set or this session is not
++				using a READ COMMITTED or lower isolation level. */
++
+ 				err = sel_set_rec_lock(
+ 					pcur,
+ 					rec, index, offsets,
+@@ -5146,9 +5189,15 @@ row_search_mvcc(
+ 		is a non-delete marked record, then it is enough to lock its
+ 		existence with LOCK_REC_NOT_GAP. */
+ 
++		/* If innodb_locks_unsafe_for_binlog option is used
++		or this session is using a READ COMMITED isolation
++		level we lock only the record, i.e., next-key locking is
++		not used. */
++
+ 		unsigned lock_type;
+ 
+-		if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++		if (srv_locks_unsafe_for_binlog
++		    || trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
+ 			/* At READ COMMITTED or READ UNCOMMITTED
+ 			isolation levels, do not lock committed
+ 			delete-marked records. */
+@@ -5238,7 +5287,9 @@ row_search_mvcc(
+ 		switch (err) {
+ 			const rec_t*	old_vers;
+ 		case DB_SUCCESS_LOCKED_REC:
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++			if (srv_locks_unsafe_for_binlog
++			    || trx->isolation_level
++			    <= TRX_ISO_READ_COMMITTED) {
+ 				/* Note that a record of
+ 				prebuilt->index was locked. */
+ 				prebuilt->new_rec_locks = 1;
+@@ -5524,7 +5575,9 @@ row_search_mvcc(
+ 			break;
+ 		case DB_SUCCESS_LOCKED_REC:
+ 			ut_a(clust_rec != NULL);
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++			if (srv_locks_unsafe_for_binlog
++			    || trx->isolation_level
++			    <= TRX_ISO_READ_COMMITTED) {
+ 				/* Note that the clustered index record
+ 				was locked. */
+ 				prebuilt->new_rec_locks = 2;
+@@ -5547,7 +5600,8 @@ row_search_mvcc(
+ 
+ 			/* The record is delete marked: we can skip it */
+ 
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++			if ((srv_locks_unsafe_for_binlog
++			     || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
+ 			    && prebuilt->select_lock_type != LOCK_NONE) {
+ 
+ 				/* No need to keep a lock on a delete-marked
+@@ -5866,7 +5920,8 @@ row_search_mvcc(
+ 				moves_up, &mtr);
+ 		}
+ 
+-		if (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++		if ((srv_locks_unsafe_for_binlog
++		     || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
+ 		    && !same_user_rec) {
+ 
+ 			/* Since we were not able to restore the cursor
+diff --git a/storage/innobase/srv/srv0srv.cc b/storage/innobase/srv/srv0srv.cc
+index 7c0c4b92c47..e008e40ea4f 100644
+--- a/storage/innobase/srv/srv0srv.cc
++++ b/storage/innobase/srv/srv0srv.cc
+@@ -127,6 +127,9 @@ my_bool	srv_file_per_table;
+ is greater than SRV_FORCE_NO_TRX_UNDO. */
+ my_bool	high_level_read_only;
+ 
++/** Place locks to records only i.e. do not use next-key locking except
++on duplicate key checking and foreign key checking */
++ibool  srv_locks_unsafe_for_binlog;
+ /** Sort buffer size in index creation */
+ ulong	srv_sort_buf_size;
+ /** Maximum modification log file size for online index creation */
+-- 
+2.40.1
+
