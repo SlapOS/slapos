@@ -1,0 +1,455 @@
+From f3c3f6c457f90d181aa14c8a15cdc7ff9019b1fd Mon Sep 17 00:00:00 2001
+From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
+Date: Sun, 29 Sep 2024 11:02:02 +0000
+Subject: [PATCH] Revert "MDEV-19545 Remove innodb_locks_unsafe_for_binlog"
+
+---
+ storage/innobase/handler/ha_innodb.cc | 44 +++++++++----
+ storage/innobase/include/row0mysql.h  | 12 ++--
+ storage/innobase/include/srv0srv.h    |  4 ++
+ storage/innobase/lock/lock0lock.cc    |  7 ++-
+ storage/innobase/row/row0mysql.cc     | 14 ++++-
+ storage/innobase/row/row0sel.cc       | 89 ++++++++++++++++++++++-----
+ storage/innobase/srv/srv0srv.cc       |  3 +
+ 7 files changed, 133 insertions(+), 40 deletions(-)
+
+diff --git a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_innodb.cc
+index dfe034ec2a5..afa28c81eb7 100644
+--- a/storage/innobase/handler/ha_innodb.cc
++++ b/storage/innobase/handler/ha_innodb.cc
+@@ -196,6 +196,7 @@ static char*	innobase_reset_all_monitor_counter;
+ stopword table to be used */
+ static char*	innobase_server_stopword_table;
+ 
++static my_bool innobase_locks_unsafe_for_binlog;
+ my_bool innobase_rollback_on_timeout;
+ static my_bool	innobase_create_status_file;
+ my_bool	innobase_stats_on_metadata;
+@@ -8735,7 +8736,7 @@ ha_innobase::delete_row(
+ /**********************************************************************//**
+ Removes a new lock set on a row, if it was not read optimistically. This can
+ be called after a row has been read in the processing of an UPDATE or a DELETE
+-query. */
++query, if the option innodb_locks_unsafe_for_binlog is set. */
+ 
+ void
+ ha_innobase::unlock_row(void)
+@@ -8751,8 +8752,11 @@ ha_innobase::unlock_row(void)
+ 
+ 	switch (m_prebuilt->row_read_type) {
+ 	case ROW_READ_WITH_LOCKS:
+-		if (m_prebuilt->trx->isolation_level > TRX_ISO_READ_COMMITTED)
++		if (!srv_locks_unsafe_for_binlog
++		    && m_prebuilt->trx->isolation_level
++		    > TRX_ISO_READ_COMMITTED) {
+ 			break;
++		}
+ 		/* fall through */
+ 	case ROW_READ_TRY_SEMI_CONSISTENT:
+ 		row_unlock_for_mysql(m_prebuilt, FALSE);
+@@ -8779,12 +8783,20 @@ void ha_innobase::try_semi_consistent_read(bool yes)
+ {
+ 	ut_ad(m_prebuilt->trx == thd_to_trx(ha_thd()));
+ 	/* Row read type is set to semi consistent read if this was
+-	requested by the SQL layer and the transaction isolation level is
+-	READ UNCOMMITTED or READ COMMITTED. */
+-	m_prebuilt->row_read_type = yes
+-		&& m_prebuilt->trx->isolation_level <= TRX_ISO_READ_COMMITTED
+-		? ROW_READ_TRY_SEMI_CONSISTENT
+-		: ROW_READ_WITH_LOCKS;
++	requested by the MySQL and either innodb_locks_unsafe_for_binlog
++	option is used or this session is using READ COMMITTED isolation
++	level. */
++
++	if (yes
++	    && (srv_locks_unsafe_for_binlog
++		|| m_prebuilt->trx->isolation_level
++		<= TRX_ISO_READ_COMMITTED)) {
++
++		m_prebuilt->row_read_type = ROW_READ_TRY_SEMI_CONSISTENT;
++
++	} else {
++		m_prebuilt->row_read_type = ROW_READ_WITH_LOCKS;
++	}
+ }
+ 
+ /******************************************************************//**
+@@ -16498,7 +16510,9 @@ ha_innobase::store_lock(
+ 		if (sql_command == SQLCOM_CHECKSUM
+ 		    || sql_command == SQLCOM_CREATE_SEQUENCE
+ 		    || (sql_command == SQLCOM_ANALYZE && lock_type == TL_READ)
+-		    || (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++		    || ((srv_locks_unsafe_for_binlog
++			|| trx->isolation_level <= TRX_ISO_READ_COMMITTED)
++			&& trx->isolation_level != TRX_ISO_SERIALIZABLE
+ 			&& (lock_type == TL_READ
+ 			    || lock_type == TL_READ_NO_INSERT)
+ 			&& (sql_command == SQLCOM_INSERT_SELECT
+@@ -16507,8 +16521,10 @@ ha_innobase::store_lock(
+ 			    || sql_command == SQLCOM_CREATE_SEQUENCE
+ 			    || sql_command == SQLCOM_CREATE_TABLE))) {
+ 
+-			/* If the transaction isolation level is
+-			READ UNCOMMITTED or READ COMMITTED and we are executing
++			/* If we either have innobase_locks_unsafe_for_binlog
++			option set or this session is using READ COMMITTED
++			isolation level and isolation level of the transaction
++			is not set to serializable and MySQL is doing
+ 			INSERT INTO...SELECT or REPLACE INTO...SELECT
+ 			or UPDATE ... = (SELECT ...) or CREATE  ...
+ 			SELECT... without FOR UPDATE or IN SHARE
+@@ -18911,6 +18927,11 @@ static MYSQL_SYSVAR_ENUM(flush_method, srv_file_flush_method,
+   NULL, NULL, IF_WIN(SRV_ALL_O_DIRECT_FSYNC, SRV_O_DIRECT),
+   &innodb_flush_method_typelib);
+ 
++static MYSQL_SYSVAR_BOOL(locks_unsafe_for_binlog, innobase_locks_unsafe_for_binlog,
++  PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_READONLY,
++  " Force InnoDB to not use next-key locking, to use only row-level locking.",
++  NULL, NULL, FALSE);
++
+ static MYSQL_SYSVAR_STR(log_group_home_dir, srv_log_group_home_dir,
+   PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
+   "Path to ib_logfile0", NULL, NULL, NULL);
+@@ -19803,6 +19824,7 @@ static struct st_mysql_sys_var* innobase_system_variables[]= {
+   MYSQL_SYSVAR(ft_min_token_size),
+   MYSQL_SYSVAR(ft_num_word_optimize),
+   MYSQL_SYSVAR(ft_sort_pll_degree),
++  MYSQL_SYSVAR(locks_unsafe_for_binlog),
+   MYSQL_SYSVAR(lock_wait_timeout),
+   MYSQL_SYSVAR(deadlock_detect),
+   MYSQL_SYSVAR(deadlock_report),
+diff --git a/storage/innobase/include/row0mysql.h b/storage/innobase/include/row0mysql.h
+index 878d9c9f1a2..6f7b5cb99d9 100644
+--- a/storage/innobase/include/row0mysql.h
++++ b/storage/innobase/include/row0mysql.h
+@@ -262,8 +262,8 @@ row_update_for_mysql(
+ 	row_prebuilt_t*		prebuilt)
+ 	MY_ATTRIBUTE((warn_unused_result));
+ 
+-/** This can only be used when the current transaction is at
+-READ COMMITTED or READ UNCOMMITTED isolation level.
++/** This can only be used when srv_locks_unsafe_for_binlog is TRUE or this
++session is using a READ COMMITTED or READ UNCOMMITTED isolation level.
+ Before calling this function row_search_mvcc() must have
+ initialized prebuilt->new_rec_locks to store the information which new
+ record locks really were set. This function removes a newly set
+@@ -573,9 +573,8 @@ struct row_prebuilt_t {
+ 	ulint		row_read_type;	/*!< ROW_READ_WITH_LOCKS if row locks
+ 					should be the obtained for records
+ 					under an UPDATE or DELETE cursor.
+-					At READ UNCOMMITTED or
+-					READ COMMITTED isolation level,
+-					this can be set to
++					If innodb_locks_unsafe_for_binlog
++					is TRUE, this can be set to
+ 					ROW_READ_TRY_SEMI_CONSISTENT, so that
+ 					if the row under an UPDATE or DELETE
+ 					cursor was locked by another
+@@ -597,7 +596,8 @@ struct row_prebuilt_t {
+ 					cases; note that this breaks
+ 					serializability. */
+ 	ulint		new_rec_locks;	/*!< normally 0; if
+-					the session is using READ
++					srv_locks_unsafe_for_binlog is
++					TRUE or session is using READ
+ 					COMMITTED or READ UNCOMMITTED
+ 					isolation level, set in
+ 					row_search_mvcc() if we set a new
+diff --git a/storage/innobase/include/srv0srv.h b/storage/innobase/include/srv0srv.h
+index 5e6bfc33304..ddf43804573 100644
+--- a/storage/innobase/include/srv0srv.h
++++ b/storage/innobase/include/srv0srv.h
+@@ -168,6 +168,10 @@ extern my_bool	high_level_read_only;
+ dictionary tables are in the system tablespace 0 */
+ extern my_bool	srv_file_per_table;
+ 
++/** Place locks to records only i.e. do not use next-key locking except
++on duplicate key checking and foreign key checking */
++extern ibool   srv_locks_unsafe_for_binlog;
++
+ /** Sort buffer size in index creation */
+ extern ulong	srv_sort_buf_size;
+ /** Maximum modification log file size for online index creation */
+diff --git a/storage/innobase/lock/lock0lock.cc b/storage/innobase/lock/lock0lock.cc
+index a210700727c..cea242e00ac 100644
+--- a/storage/innobase/lock/lock0lock.cc
++++ b/storage/innobase/lock/lock0lock.cc
+@@ -2402,8 +2402,8 @@ lock_rec_inherit_to_gap(hash_cell_t &heir_cell, const page_id_t heir,
+ {
+   ut_ad(!from_split || heir_heap_no == PAGE_HEAP_NO_SUPREMUM);
+ 
+-  /* At READ UNCOMMITTED or READ COMMITTED isolation level,
+-  we do not want locks set
++  /* If srv_locks_unsafe_for_binlog is TRUE or session is using
++  READ COMMITTED isolation level, we do not want locks set
+   by an UPDATE or a DELETE to be inherited as gap type locks. But we
+   DO want S-locks/X-locks(taken for replace) set by a consistency
+   constraint to be inherited also then. */
+@@ -2414,7 +2414,8 @@ lock_rec_inherit_to_gap(hash_cell_t &heir_cell, const page_id_t heir,
+     trx_t *lock_trx= lock->trx;
+     if (!lock->trx->is_not_inheriting_locks() &&
+         !lock->is_insert_intention() &&
+-        (lock_trx->isolation_level > TRX_ISO_READ_COMMITTED ||
++        ((!srv_locks_unsafe_for_binlog
++          && lock_trx->isolation_level > TRX_ISO_READ_COMMITTED) ||
+          /* When we are in a page split (not purge), then we don't set a lock
+          on supremum if the donor lock type is LOCK_REC_NOT_GAP. That is, do
+          not create bogus gap locks for non-gap locks for READ UNCOMMITTED and
+diff --git a/storage/innobase/row/row0mysql.cc b/storage/innobase/row/row0mysql.cc
+index 6a71cf3ac62..5c8f4a5a80e 100644
+--- a/storage/innobase/row/row0mysql.cc
++++ b/storage/innobase/row/row0mysql.cc
+@@ -1746,8 +1746,8 @@ row_update_for_mysql(row_prebuilt_t* prebuilt)
+ 	DBUG_RETURN(err);
+ }
+ 
+-/** This can only be used when the current transaction is at
+-READ COMMITTED or READ UNCOMMITTED isolation level.
++/** This can only be used when srv_locks_unsafe_for_binlog is TRUE or this
++session is using a READ COMMITTED or READ UNCOMMITTED isolation level.
+ Before calling this function row_search_mvcc() must have
+ initialized prebuilt->new_rec_locks to store the information which new
+ record locks really were set. This function removes a newly set
+@@ -1766,7 +1766,15 @@ row_unlock_for_mysql(
+ {
+ 	if (prebuilt->new_rec_locks == 1 && prebuilt->index->is_clust()) {
+ 		trx_t* trx = prebuilt->trx;
+-		ut_ad(trx->isolation_level <= TRX_ISO_READ_COMMITTED);
++		if (UNIV_UNLIKELY
++		    (!srv_locks_unsafe_for_binlog
++		     && trx->isolation_level > TRX_ISO_READ_COMMITTED)) {
++			ib::error() << "Calling row_unlock_for_mysql though"
++				" innodb_locks_unsafe_for_binlog is FALSE and this"
++				" session is not using READ COMMITTED isolation"
++				" level.";
++			return;
++		}
+ 		trx->op_info = "unlock_row";
+ 
+ 		const rec_t*	rec;
+diff --git a/storage/innobase/row/row0sel.cc b/storage/innobase/row/row0sel.cc
+index 944f73588ae..33c7c347922 100644
+--- a/storage/innobase/row/row0sel.cc
++++ b/storage/innobase/row/row0sel.cc
+@@ -1056,14 +1056,16 @@ row_sel_get_clust_rec(
+ 		/* Try to place a lock on the index record */
+ 		trx_t* trx = thr_get_trx(thr);
+ 
+-		/* At READ UNCOMMITTED or READ COMMITTED isolation level
++		/* If innodb_locks_unsafe_for_binlog option is used
++		or this session is using READ COMMITTED or lower isolation level
+ 		we lock only the record, i.e., next-key locking is
+ 		not used. */
+ 		err = lock_clust_rec_read_check_and_lock(
+ 			0, btr_pcur_get_block(&plan->clust_pcur),
+ 			clust_rec, index, offsets,
+ 			node->row_lock_mode,
+-			trx->isolation_level <= TRX_ISO_READ_COMMITTED
++			(srv_locks_unsafe_for_binlog
++			    || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
+ 			? LOCK_REC_NOT_GAP : LOCK_ORDINARY,
+ 			thr);
+ 
+@@ -1832,10 +1834,13 @@ row_sel(
+ 						  index->n_core_fields,
+ 						  ULINT_UNDEFINED, &heap);
+ 
+-			/* At READ UNCOMMITTED or READ COMMITTED
+-			isolation level, we lock only the record,
+-			i.e., next-key locking is not used. */
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++			/* If innodb_locks_unsafe_for_binlog option is used
++			or this session is using READ COMMITTED or lower isolation
++			level, we lock only the record, i.e., next-key
++			locking is not used. */
++			if (srv_locks_unsafe_for_binlog
++			    || trx->isolation_level
++			    <= TRX_ISO_READ_COMMITTED) {
+ 				if (page_rec_is_supremum(next_rec)) {
+ 					goto skip_lock;
+ 				}
+@@ -1892,10 +1897,12 @@ row_sel(
+ 					  index->n_core_fields,
+ 					  ULINT_UNDEFINED, &heap);
+ 
+-		/* At READ UNCOMMITTED or READ COMMITTED isolation level,
++		/* If innodb_locks_unsafe_for_binlog option is used
++		or this session is using READ COMMITTED or lower isolation level,
+ 		we lock only the record, i.e., next-key locking is
+ 		not used. */
+-		if (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++		if (srv_locks_unsafe_for_binlog
++		    || trx->isolation_level <= TRX_ISO_READ_COMMITTED
+ 		    || dict_index_is_spatial(index)) {
+ 
+ 			if (page_rec_is_supremum(rec)) {
+@@ -4769,9 +4776,18 @@ row_search_mvcc(
+ 		pcur->old_rec = nullptr;
+ 
+ 		if (index->is_spatial()) {
++			bool    need_pred_lock;
++
++			need_pred_lock = (set_also_gap_locks
++					  && !(srv_locks_unsafe_for_binlog
++					      || trx->isolation_level
++						 <= TRX_ISO_READ_COMMITTED)
++					  && prebuilt->select_lock_type
++						 != LOCK_NONE);
++
+ 			if (!prebuilt->rtr_info) {
+ 				prebuilt->rtr_info = rtr_create_rtr_info(
+-					set_also_gap_locks, true,
++					need_pred_lock, true,
+ 					btr_pcur_get_btr_cur(pcur), index);
+ 				prebuilt->rtr_info->search_tuple = search_tuple;
+ 				prebuilt->rtr_info->search_mode = mode;
+@@ -4780,7 +4796,7 @@ row_search_mvcc(
+ 			} else {
+ 				rtr_info_reinit_in_cursor(
+ 					btr_pcur_get_btr_cur(pcur),
+-					index, set_also_gap_locks);
++					index, need_pred_lock);
+ 				prebuilt->rtr_info->search_tuple = search_tuple;
+ 				prebuilt->rtr_info->search_mode = mode;
+ 			}
+@@ -4805,6 +4821,9 @@ row_search_mvcc(
+ 
+ 		if (!moves_up
+ 		    && set_also_gap_locks
++		    && !(srv_locks_unsafe_for_binlog
++			 || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
++		    && prebuilt->select_lock_type != LOCK_NONE
+ 		    && !page_rec_is_supremum(rec)
+ 		    && !dict_index_is_spatial(index)) {
+ 
+@@ -4925,12 +4944,16 @@ row_search_mvcc(
+ 	if (page_rec_is_supremum(rec)) {
+ 
+ 		if (set_also_gap_locks
++		    && !(srv_locks_unsafe_for_binlog
++			 || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
++		    && prebuilt->select_lock_type != LOCK_NONE
+ 		    && !dict_index_is_spatial(index)) {
+ 
+ 			/* Try to place a lock on the index record */
+ 
+-			/* If the transaction isolation level is
+-			READ UNCOMMITTED or READ COMMITTED,
++			/* If innodb_locks_unsafe_for_binlog option is used
++			or this session is using a READ COMMITTED or lower isolation
++			level we do not lock gaps. Supremum record is really
+ 			we do not lock gaps. Supremum record is really
+ 			a gap and therefore we do not set locks there. */
+ 
+@@ -5070,7 +5093,17 @@ row_search_mvcc(
+ 		if (cmp_dtuple_rec(search_tuple, rec, index, offsets)) {
+ 
+ 			if (set_also_gap_locks
++			    && !(srv_locks_unsafe_for_binlog
++				 || trx->isolation_level
++				 <= TRX_ISO_READ_COMMITTED)
++			    && prebuilt->select_lock_type != LOCK_NONE
+ 			    && !dict_index_is_spatial(index)) {
++
++				/* Try to place a gap lock on the index
++				record only if innodb_locks_unsafe_for_binlog
++				option is not set or this session is not
++				using a READ COMMITTED or lower isolation level. */
++
+ 				err = sel_set_rec_lock(
+ 					pcur,
+ 					rec, index, offsets,
+@@ -5106,7 +5139,17 @@ row_search_mvcc(
+ 						 index, offsets)) {
+ 
+ 			if (set_also_gap_locks
++			    && !(srv_locks_unsafe_for_binlog
++				 || trx->isolation_level
++				 <= TRX_ISO_READ_COMMITTED)
++			    && prebuilt->select_lock_type != LOCK_NONE
+ 			    && !dict_index_is_spatial(index)) {
++
++				/* Try to place a gap lock on the index
++				record only if innodb_locks_unsafe_for_binlog
++				option is not set or this session is not
++				using a READ COMMITTED or lower isolation level. */
++
+ 				err = sel_set_rec_lock(
+ 					pcur,
+ 					rec, index, offsets,
+@@ -5146,9 +5189,15 @@ row_search_mvcc(
+ 		is a non-delete marked record, then it is enough to lock its
+ 		existence with LOCK_REC_NOT_GAP. */
+ 
++		/* If innodb_locks_unsafe_for_binlog option is used
++		or this session is using a READ COMMITED isolation
++		level we lock only the record, i.e., next-key locking is
++		not used. */
++
+ 		unsigned lock_type;
+ 
+-		if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++		if (srv_locks_unsafe_for_binlog
++		    || trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
+ 			/* At READ COMMITTED or READ UNCOMMITTED
+ 			isolation levels, do not lock committed
+ 			delete-marked records. */
+@@ -5238,7 +5287,9 @@ row_search_mvcc(
+ 		switch (err) {
+ 			const rec_t*	old_vers;
+ 		case DB_SUCCESS_LOCKED_REC:
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++			if (srv_locks_unsafe_for_binlog
++			    || trx->isolation_level
++			    <= TRX_ISO_READ_COMMITTED) {
+ 				/* Note that a record of
+ 				prebuilt->index was locked. */
+ 				prebuilt->new_rec_locks = 1;
+@@ -5524,7 +5575,9 @@ row_search_mvcc(
+ 			break;
+ 		case DB_SUCCESS_LOCKED_REC:
+ 			ut_a(clust_rec != NULL);
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED) {
++			if (srv_locks_unsafe_for_binlog
++			    || trx->isolation_level
++			    <= TRX_ISO_READ_COMMITTED) {
+ 				/* Note that the clustered index record
+ 				was locked. */
+ 				prebuilt->new_rec_locks = 2;
+@@ -5547,7 +5600,8 @@ row_search_mvcc(
+ 
+ 			/* The record is delete marked: we can skip it */
+ 
+-			if (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++			if ((srv_locks_unsafe_for_binlog
++			     || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
+ 			    && prebuilt->select_lock_type != LOCK_NONE) {
+ 
+ 				/* No need to keep a lock on a delete-marked
+@@ -5866,7 +5920,8 @@ row_search_mvcc(
+ 				moves_up, &mtr);
+ 		}
+ 
+-		if (trx->isolation_level <= TRX_ISO_READ_COMMITTED
++		if ((srv_locks_unsafe_for_binlog
++		     || trx->isolation_level <= TRX_ISO_READ_COMMITTED)
+ 		    && !same_user_rec) {
+ 
+ 			/* Since we were not able to restore the cursor
+diff --git a/storage/innobase/srv/srv0srv.cc b/storage/innobase/srv/srv0srv.cc
+index 7c0c4b92c47..e008e40ea4f 100644
+--- a/storage/innobase/srv/srv0srv.cc
++++ b/storage/innobase/srv/srv0srv.cc
+@@ -127,6 +127,9 @@ my_bool	srv_file_per_table;
+ is greater than SRV_FORCE_NO_TRX_UNDO. */
+ my_bool	high_level_read_only;
+ 
++/** Place locks to records only i.e. do not use next-key locking except
++on duplicate key checking and foreign key checking */
++ibool  srv_locks_unsafe_for_binlog;
+ /** Sort buffer size in index creation */
+ ulong	srv_sort_buf_size;
+ /** Maximum modification log file size for online index creation */
+-- 
+2.40.1
+
