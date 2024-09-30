@@ -1,4 +1,4 @@
-From ab7d9c253ff6e68c069cbcb8dcbe6c79aa035f50 Mon Sep 17 00:00:00 2001
+From 35c98569eebe8fe2ef9600ec47b66412c8de7ca9 Mon Sep 17 00:00:00 2001
 From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
 Date: Sun, 29 Sep 2024 11:02:02 +0000
 Subject: [PATCH] Revert "MDEV-19545 Remove innodb_locks_unsafe_for_binlog"
@@ -10,20 +10,26 @@ also revert part of
 * more "removed" mysqld command-line options
 ---
  Docs/README-wsrep                             |   3 +
- ...nnodb_locks_unsafe_for_binlog_basic.result |  53 +++++++++
+ .../unsafe_binlog_innodb_option-master.opt    |   1 +
+ .../main/unsafe_binlog_innodb_option.result   | 189 ++++++++++++++++++
+ .../main/unsafe_binlog_innodb_option.test     |  16 ++
+ ...nnodb_locks_unsafe_for_binlog_basic.result |  53 +++++
  .../suite/sys_vars/r/sysvars_innodb.result    |  12 ++
- .../innodb_locks_unsafe_for_binlog_basic.test | 106 ++++++++++++++++++
+ .../innodb_locks_unsafe_for_binlog_basic.test | 106 ++++++++++
  .../wsrep_info/mysql-test/wsrep_info/my.cnf   |   1 +
  sql/mysqld.cc                                 |   1 -
  sql/upgrade_conf_file.cc                      |   1 -
- storage/innobase/handler/ha_innodb.cc         |  45 ++++++--
+ storage/innobase/handler/ha_innodb.cc         |  45 ++++-
  storage/innobase/include/row0mysql.h          |  12 +-
  storage/innobase/include/srv0srv.h            |   4 +
  storage/innobase/lock/lock0lock.cc            |   7 +-
- storage/innobase/row/row0mysql.cc             |  14 ++-
- storage/innobase/row/row0sel.cc               |  89 ++++++++++++---
+ storage/innobase/row/row0mysql.cc             |  14 +-
+ storage/innobase/row/row0sel.cc               |  89 +++++++--
  storage/innobase/srv/srv0srv.cc               |   3 +
- 14 files changed, 309 insertions(+), 42 deletions(-)
+ 17 files changed, 515 insertions(+), 42 deletions(-)
+ create mode 100644 mysql-test/main/unsafe_binlog_innodb_option-master.opt
+ create mode 100644 mysql-test/main/unsafe_binlog_innodb_option.result
+ create mode 100644 mysql-test/main/unsafe_binlog_innodb_option.test
  create mode 100644 mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
  create mode 100644 mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
 
@@ -41,6 +47,230 @@ index 2e3bf52219d..a4d7d8c0ccb 100644
  5.2 WSREP OPTIONS
  
  All options are optional except for wsrep_provider, wsrep_cluster_address, and
+diff --git a/mysql-test/main/unsafe_binlog_innodb_option-master.opt b/mysql-test/main/unsafe_binlog_innodb_option-master.opt
+new file mode 100644
+index 00000000000..0d13f0834a5
+--- /dev/null
++++ b/mysql-test/main/unsafe_binlog_innodb_option-master.opt
+@@ -0,0 +1 @@
++--loose-innodb_locks_unsafe_for_binlog --loose-innodb_lock_wait_timeout=1
+diff --git a/mysql-test/main/unsafe_binlog_innodb_option.result b/mysql-test/main/unsafe_binlog_innodb_option.result
+new file mode 100644
+index 00000000000..bb407d9562a
+--- /dev/null
++++ b/mysql-test/main/unsafe_binlog_innodb_option.result
+@@ -0,0 +1,189 @@
++drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
++create table t1 (id int not null, f_id int not null, f int not null,
++primary key(f_id, id)) engine = InnoDB;
++create table t2 (id int not null,s_id int not null,s varchar(200),
++primary key(id)) engine = InnoDB;
++INSERT INTO t1 VALUES (8, 1, 3);
++INSERT INTO t1 VALUES (1, 2, 1);
++INSERT INTO t2 VALUES (1, 0, '');
++INSERT INTO t2 VALUES (8, 1, '');
++commit;
++DELETE ml.* FROM t1 AS ml LEFT JOIN t2 AS mm ON (mm.id=ml.id)
++WHERE mm.id IS NULL;
++select ml.* from t1 as ml left join t2 as mm on (mm.id=ml.id)
++where mm.id is null lock in share mode;
++id	f_id	f
++drop table t1,t2;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values(1,1),(2,2),(3,1),(4,2),(5,1),(6,2),(7,3);
++commit;
++set autocommit = 0;
++select * from t1 lock in share mode;
++a	b
++1	1
++2	2
++3	1
++4	2
++5	1
++6	2
++7	3
++update t1 set b = 5 where b = 1;
++connection b;
++set autocommit = 0;
++select * from t1 where a = 2 and b = 2 for update;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection a;
++commit;
++connection b;
++commit;
++drop table t1;
++connection default;
++disconnect a;
++disconnect b;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values(1,1),(2,2),(3,1),(4,2),(5,1),(6,2),(7,3);
++commit;
++set autocommit = 0;
++update t1 set b = 5 where b = 1;
++connection b;
++set autocommit = 0;
++select * from t1 where a = 7 and b = 3 for update;
++a	b
++7	3
++commit;
++connection a;
++commit;
++drop table t1;
++connection default;
++disconnect a;
++disconnect b;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values (1,2),(5,3),(4,2);
++create table t2(d int not null, e int, primary key(d)) engine = InnoDB;
++insert into t2 values (8,6),(12,1),(3,1);
++commit;
++set autocommit = 0;
++select * from t2 for update;
++d	e
++3	1
++8	6
++12	1
++connection b;
++set autocommit = 0;
++insert into t1 select * from t2;
++update t1 set b = (select e from t2 where a = d);
++create table t3(d int not null, e int, primary key(d)) engine = InnoDB
++select * from t2;
++commit;
++connection a;
++commit;
++connection default;
++disconnect a;
++disconnect b;
++drop table t1, t2, t3;
++connect  a,localhost,root,,;
++connect  b,localhost,root,,;
++connect  c,localhost,root,,;
++connect  d,localhost,root,,;
++SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
++connect  e,localhost,root,,;
++connect  f,localhost,root,,;
++connect  g,localhost,root,,;
++SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
++connect  h,localhost,root,,;
++connect  i,localhost,root,,;
++connect  j,localhost,root,,;
++SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
++connection a;
++create table t1(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t1 values (1,2),(5,3),(4,2);
++create table t2(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t2 values (8,6),(12,1),(3,1);
++create table t3(d int not null, b int, primary key(d)) engine = InnoDB;
++insert into t3 values (8,6),(12,1),(3,1);
++create table t5(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t5 values (1,2),(5,3),(4,2);
++create table t6(d int not null, e int, primary key(d)) engine = InnoDB;
++insert into t6 values (8,6),(12,1),(3,1);
++create table t8(a int not null, b int, primary key(a)) engine = InnoDB;
++insert into t8 values (1,2),(5,3),(4,2);
++create table t9(d int not null, e int, primary key(d)) engine = InnoDB;
++insert into t9 values (8,6),(12,1),(3,1);
++commit;
++set autocommit = 0;
++select * from t2 for update;
++a	b
++3	1
++8	6
++12	1
++connection b;
++set autocommit = 0;
++SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
++insert into t1 select * from t2;
++connection c;
++set autocommit = 0;
++SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
++update t3 set b = (select b from t2 where a = d);
++connection d;
++set autocommit = 0;
++SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
++create table t4(a int not null, b int, primary key(a)) select * from t2;
++connection e;
++set autocommit = 0;
++insert into t5 (select * from t2 lock in share mode);
++connection f;
++set autocommit = 0;
++update t6 set e = (select b from t2 where a = d lock in share mode);
++connection g;
++set autocommit = 0;
++create table t7(a int not null, b int, primary key(a)) select * from t2 lock in share mode;
++connection h;
++set autocommit = 0;
++insert into t8 (select * from t2 for update);
++connection i;
++set autocommit = 0;
++update t9 set e = (select b from t2 where a = d for update);
++connection j;
++set autocommit = 0;
++create table t10(a int not null, b int, primary key(a)) select * from t2 for update;
++connection b;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection c;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection d;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection e;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection f;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection g;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection h;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection i;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection j;
++ERROR HY000: Lock wait timeout exceeded; try restarting transaction
++connection a;
++commit;
++connection default;
++disconnect a;
++disconnect b;
++disconnect c;
++disconnect d;
++disconnect e;
++disconnect f;
++disconnect g;
++disconnect h;
++disconnect i;
++disconnect j;
++drop table t1, t2, t3, t5, t6, t8, t9;
+diff --git a/mysql-test/main/unsafe_binlog_innodb_option.test b/mysql-test/main/unsafe_binlog_innodb_option.test
+new file mode 100644
+index 00000000000..a0516749451
+--- /dev/null
++++ b/mysql-test/main/unsafe_binlog_innodb_option.test
+@@ -0,0 +1,16 @@
++# t/unsafe_binlog_innodb.test
++#
++# Note that this test uses at least in case of InnoDB options
++#     innodb_locks_unsafe_for_binlog = true
++#     innodb_lock_timeout = 5
++#
++# Last update:
++# 2006-08-02 ML test refactored
++#               old name was innodb_unsafe_binlog.test
++#               main code went into include/unsafe_binlog.inc
++#
++
++--source include/have_innodb.inc
++let $engine_type= InnoDB;
++
++--source include/unsafe_binlog.inc
 diff --git a/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result b/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
 new file mode 100644
 index 00000000000..c2229d54d02
