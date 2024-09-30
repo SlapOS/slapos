@@ -282,10 +282,9 @@ import { evalScript, fdopen, loadFile, open } from "std";
       break;
 
     case "update":
-      console.log("Updating", Date.now());
+      console.log("Main asking for update");
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         peer_message = peer.message;
-        console.log(peer_message, "from", id);
         while (peer_message.length > 0) {
           try {
             parsed_message = JSON.parse(peer_message);
@@ -300,8 +299,8 @@ import { evalScript, fdopen, loadFile, open } from "std";
             console.log(error);
             console.log(error.stack);
           }
+          peer_message = peer.message;
         }
-        peer_message = peer.message;
       });
 
       // Call the drone onUpdate function
@@ -320,6 +319,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
       }
 
       parent.postMessage({type: "updated"});
+      console.log("Sending update end");
       break;
 
     case "exit":
