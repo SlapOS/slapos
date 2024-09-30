@@ -12,11 +12,11 @@
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-0",
     "slap_software_release_url": "@@00getSoftwareURL@@",
-    "slap_software_type": "RootSoftwareInstance",
+    "slap_software_type": "default",
     "slave_instance_list": [
       {
         "enable_cache": true,
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_default",
         "slave_title": "_default",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"

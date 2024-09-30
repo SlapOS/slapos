@@ -1,0 +1,122 @@
+From 27d88c40e251b370f4dd2fcc7ae03c2967c68e4c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Mon, 2 Sep 2024 04:41:13 +0000
+Subject: [PATCH] checkPermission: align behavior with objects raising in
+ __getattr__
+
+The observed problem was a behavior different between C and python
+implementation on python 3, happening with Zope python script. When the
+context can not be accessed by the current user, Zope binds a
+`Shared.DC.Scripts.Bindings.UnauthorizedBinding`, a class that raises an
+Unauthorized error when the context is actually accessed, in order to
+postpone the Unauthorized if something is actually accessed. This class
+does implements this by raising Unauthorized in __getattr__.
+
+The python implementation of `checkPermission` uses `hasattr` and
+`hasattr` has changed between python2 and python3, on python2 it was
+ignoring all exceptions, including potential Unauthorized errors and
+just returning False, but on python3 these errors are raised.
+This change of behavior of python causes checkPermission to behave
+differently: when using python implementation on python2 or when using
+C implementation, such Unauthorized errors were gracefully handled and
+caused checkPermission to return False, but on python3 checkPermission
+raises.
+
+This change make this scenario behave the same between python2, python3
+and C implementation: Unauthorized errors raised in __getattr__ are
+supported. The code is also micro-simplified by doing only one getattr
+instead of hasattr and then getattr.
+---
+ src/AccessControl/ImplPython.py                   |  6 +++++-
+ src/AccessControl/cAccessControl.c                |  7 +++++--
+ src/AccessControl/tests/testZopeSecurityPolicy.py | 15 +++++++++++++++
+ 4 files changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/src/AccessControl/ImplPython.py b/src/AccessControl/ImplPython.py
+index 1a7788b..0a9326b 100644
+--- a/src/AccessControl/ImplPython.py
++++ b/src/AccessControl/ImplPython.py
+@@ -31,6 +31,7 @@
+ from Acquisition import aq_parent
+ from ExtensionClass import Base
+ from zope.interface import implementer
++from zExceptions import Unauthorized as zExceptions_Unauthorized
+ 
+ PURE_PYTHON = int(os.environ.get('PURE_PYTHON', '0'))
+ if PURE_PYTHON:
+@@ -71,8 +72,11 @@ def rolesForPermissionOn(perm, object, default=_default_roles, n=None):
+     r = None
+ 
+     while True:
+-        if hasattr(object, n):
++        try:
+             roles = getattr(object, n)
++        except (AttributeError, zExceptions_Unauthorized):
++            pass
++        else:
+             if roles is None:
+                 if _embed_permission_in_roles:
+                     return (('Anonymous',), n)
+diff --git a/src/AccessControl/cAccessControl.c b/src/AccessControl/cAccessControl.c
+index 403ed67..1a109fa 100644
+--- a/src/AccessControl/cAccessControl.c
++++ b/src/AccessControl/cAccessControl.c
+@@ -1847,13 +1847,16 @@ c_rolesForPermissionOn(PyObject *perm, PyObject *object,
+   Py_INCREF(r);
+ 
+   /*
+-    while 1:
++    while True:
+   */
+   while (1)
+     {
+       /*
+-        if hasattr(object, n):
++        try:
+             roles = getattr(object, n)
++        except (AttributeError, zExceptions_Unauthorized):
++            pass
++        else:
+       */
+       PyObject *roles = PyObject_GetAttr(object, n);
+       if (roles != NULL)
+diff --git a/src/AccessControl/tests/testZopeSecurityPolicy.py b/src/AccessControl/tests/testZopeSecurityPolicy.py
+index 9b12a0f..ee74bad 100644
+--- a/src/AccessControl/tests/testZopeSecurityPolicy.py
++++ b/src/AccessControl/tests/testZopeSecurityPolicy.py
+@@ -157,6 +157,15 @@ class PartlyProtectedSimpleItem3 (PartlyProtectedSimpleItem1):
+     __roles__ = sysadmin_roles
+ 
+ 
++class DynamicallyUnauthorized(SimpleItemish):
++    # This class raises an Unauthorized on attribute access,
++    # similar to Zope's Shared.DC.Scripts.Bindings.UnauthorizedBinding
++    __ac_local_roles__ = {}
++
++    def __getattr__(self, name):
++        raise Unauthorized('Not authorized to access: %s' % name)
++
++
+ class SimpleClass:
+     attr = 1
+ 
+@@ -173,6 +182,7 @@ def setUp(self):
+         a.item1 = PartlyProtectedSimpleItem1()
+         a.item2 = PartlyProtectedSimpleItem2()
+         a.item3 = PartlyProtectedSimpleItem3()
++        a.d_item = DynamicallyUnauthorized()
+         uf = UserFolder()
+         a.acl_users = uf
+         self.uf = a.acl_users
+@@ -351,6 +361,11 @@ def test_checkPermission_proxy_role_scope(self):
+                                                     r_subitem,
+                                                     context))
+ 
++    def test_checkPermission_dynamically_unauthorized(self):
++        d_item = self.a.d_item
++        context = self.context
++        self.assertFalse(self.policy.checkPermission('View', d_item, context))
++
+     def testUnicodeRolesForPermission(self):
+         r_item = self.a.r_item
+         context = self.context
