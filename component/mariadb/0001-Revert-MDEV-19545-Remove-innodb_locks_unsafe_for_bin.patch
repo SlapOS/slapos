@@ -1,20 +1,79 @@
-From f3c3f6c457f90d181aa14c8a15cdc7ff9019b1fd Mon Sep 17 00:00:00 2001
+From f65384de19f43f7eb4c0c8ac3f492cbe23319151 Mon Sep 17 00:00:00 2001
 From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
 Date: Sun, 29 Sep 2024 11:02:02 +0000
 Subject: [PATCH] Revert "MDEV-19545 Remove innodb_locks_unsafe_for_binlog"
+ Revert "MDEV-19563 Removed references to deprecated option
+ innodb_locks_unsafe_for_binlog"
 
+also revert part of
+* MDEV-23039 update removed_variables in mysql_upgrade_service for 10.5
+* more "removed" mysqld command-line options
 ---
- storage/innobase/handler/ha_innodb.cc | 44 +++++++++----
- storage/innobase/include/row0mysql.h  | 12 ++--
- storage/innobase/include/srv0srv.h    |  4 ++
- storage/innobase/lock/lock0lock.cc    |  7 ++-
- storage/innobase/row/row0mysql.cc     | 14 ++++-
- storage/innobase/row/row0sel.cc       | 89 ++++++++++++++++++++++-----
- storage/innobase/srv/srv0srv.cc       |  3 +
- 7 files changed, 133 insertions(+), 40 deletions(-)
+ Docs/README-wsrep                             |  3 +
+ .../wsrep_info/mysql-test/wsrep_info/my.cnf   |  1 +
+ sql/mysqld.cc                                 |  1 -
+ sql/upgrade_conf_file.cc                      |  1 -
+ storage/innobase/handler/ha_innodb.cc         | 45 +++++++---
+ storage/innobase/include/row0mysql.h          | 12 +--
+ storage/innobase/include/srv0srv.h            |  4 +
+ storage/innobase/lock/lock0lock.cc            |  7 +-
+ storage/innobase/row/row0mysql.cc             | 14 ++-
+ storage/innobase/row/row0sel.cc               | 89 +++++++++++++++----
+ storage/innobase/srv/srv0srv.cc               |  3 +
+ 11 files changed, 138 insertions(+), 42 deletions(-)
 
+diff --git a/Docs/README-wsrep b/Docs/README-wsrep
+index 2e3bf52219d..a4d7d8c0ccb 100644
+--- a/Docs/README-wsrep
++++ b/Docs/README-wsrep
+@@ -269,6 +269,9 @@ innodb_autoinc_lock_mode=2
+    autoinc lock modes 0 and 1 can cause unresolved deadlock, and make
+    the system unresponsive.
+ 
++innodb_locks_unsafe_for_binlog=1
++   This option is required for parallel applying.
++
+ 5.2 WSREP OPTIONS
+ 
+ All options are optional except for wsrep_provider, wsrep_cluster_address, and
+diff --git a/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf b/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
+index 8f62cfd0cc9..1c7a8ad4122 100644
+--- a/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
++++ b/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
+@@ -4,6 +4,7 @@
+ [mysqld]
+ binlog-format=row
+ innodb-autoinc-lock-mode=2
++innodb-locks-unsafe-for-binlog=1
+ wsrep_provider=@ENV.WSREP_PROVIDER
+ 
+ [mysqld.1]
+diff --git a/sql/mysqld.cc b/sql/mysqld.cc
+index d0619aa26c2..3d8a40c7685 100644
+--- a/sql/mysqld.cc
++++ b/sql/mysqld.cc
+@@ -5317,7 +5317,6 @@ static int init_server_components()
+       MARIADB_REMOVED_OPTION("super-large-pages"),
+ #endif
+       MARIADB_REMOVED_OPTION("innodb-idle-flush-pct"),
+-      MARIADB_REMOVED_OPTION("innodb-locks-unsafe-for-binlog"),
+       MARIADB_REMOVED_OPTION("innodb-rollback-segments"),
+       MARIADB_REMOVED_OPTION("innodb-stats-sample-pages"),
+       MARIADB_REMOVED_OPTION("max-long-data-size"),
+diff --git a/sql/upgrade_conf_file.cc b/sql/upgrade_conf_file.cc
+index 0d7bc603468..f6f5a9a27e8 100644
+--- a/sql/upgrade_conf_file.cc
++++ b/sql/upgrade_conf_file.cc
+@@ -94,7 +94,6 @@ static const char *removed_variables[] =
+ "innodb_large_prefix",
+ "innodb_lazy_drop_table",
+ "innodb_locking_fake_changes",
+-"innodb_locks_unsafe_for_binlog",
+ "innodb_log_arch_dir",
+ "innodb_log_arch_expire_sec",
+ "innodb_log_archive",
 diff --git a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_innodb.cc
-index dfe034ec2a5..afa28c81eb7 100644
+index dfe034ec2a5..27f1b4d6ce5 100644
 --- a/storage/innobase/handler/ha_innodb.cc
 +++ b/storage/innobase/handler/ha_innodb.cc
 @@ -196,6 +196,7 @@ static char*	innobase_reset_all_monitor_counter;
@@ -25,7 +84,15 @@ index dfe034ec2a5..afa28c81eb7 100644
  my_bool innobase_rollback_on_timeout;
  static my_bool	innobase_create_status_file;
  my_bool	innobase_stats_on_metadata;
-@@ -8735,7 +8736,7 @@ ha_innobase::delete_row(
+@@ -3979,6 +3980,7 @@ static int innodb_init_params()
+ 	}
+ 
+ 	srv_buf_pool_size = ulint(innobase_buffer_pool_size);
++	srv_locks_unsafe_for_binlog = (ibool) innobase_locks_unsafe_for_binlog;
+ 
+ 	if (innobase_open_files < 10) {
+ 		innobase_open_files = 300;
+@@ -8735,7 +8737,7 @@ ha_innobase::delete_row(
  /**********************************************************************//**
  Removes a new lock set on a row, if it was not read optimistically. This can
  be called after a row has been read in the processing of an UPDATE or a DELETE
@@ -34,7 +101,7 @@ index dfe034ec2a5..afa28c81eb7 100644
  
  void
  ha_innobase::unlock_row(void)
-@@ -8751,8 +8752,11 @@ ha_innobase::unlock_row(void)
+@@ -8751,8 +8753,11 @@ ha_innobase::unlock_row(void)
  
  	switch (m_prebuilt->row_read_type) {
  	case ROW_READ_WITH_LOCKS:
@@ -47,7 +114,7 @@ index dfe034ec2a5..afa28c81eb7 100644
  		/* fall through */
  	case ROW_READ_TRY_SEMI_CONSISTENT:
  		row_unlock_for_mysql(m_prebuilt, FALSE);
-@@ -8779,12 +8783,20 @@ void ha_innobase::try_semi_consistent_read(bool yes)
+@@ -8779,12 +8784,20 @@ void ha_innobase::try_semi_consistent_read(bool yes)
  {
  	ut_ad(m_prebuilt->trx == thd_to_trx(ha_thd()));
  	/* Row read type is set to semi consistent read if this was
@@ -74,7 +141,7 @@ index dfe034ec2a5..afa28c81eb7 100644
  }
  
  /******************************************************************//**
-@@ -16498,7 +16510,9 @@ ha_innobase::store_lock(
+@@ -16498,7 +16511,9 @@ ha_innobase::store_lock(
  		if (sql_command == SQLCOM_CHECKSUM
  		    || sql_command == SQLCOM_CREATE_SEQUENCE
  		    || (sql_command == SQLCOM_ANALYZE && lock_type == TL_READ)
@@ -85,7 +152,7 @@ index dfe034ec2a5..afa28c81eb7 100644
  			&& (lock_type == TL_READ
  			    || lock_type == TL_READ_NO_INSERT)
  			&& (sql_command == SQLCOM_INSERT_SELECT
-@@ -16507,8 +16521,10 @@ ha_innobase::store_lock(
+@@ -16507,8 +16522,10 @@ ha_innobase::store_lock(
  			    || sql_command == SQLCOM_CREATE_SEQUENCE
  			    || sql_command == SQLCOM_CREATE_TABLE))) {
  
@@ -98,7 +165,7 @@ index dfe034ec2a5..afa28c81eb7 100644
  			INSERT INTO...SELECT or REPLACE INTO...SELECT
  			or UPDATE ... = (SELECT ...) or CREATE  ...
  			SELECT... without FOR UPDATE or IN SHARE
-@@ -18911,6 +18927,11 @@ static MYSQL_SYSVAR_ENUM(flush_method, srv_file_flush_method,
+@@ -18911,6 +18928,11 @@ static MYSQL_SYSVAR_ENUM(flush_method, srv_file_flush_method,
    NULL, NULL, IF_WIN(SRV_ALL_O_DIRECT_FSYNC, SRV_O_DIRECT),
    &innodb_flush_method_typelib);
  
@@ -110,7 +177,7 @@ index dfe034ec2a5..afa28c81eb7 100644
  static MYSQL_SYSVAR_STR(log_group_home_dir, srv_log_group_home_dir,
    PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
    "Path to ib_logfile0", NULL, NULL, NULL);
-@@ -19803,6 +19824,7 @@ static struct st_mysql_sys_var* innobase_system_variables[]= {
+@@ -19803,6 +19825,7 @@ static struct st_mysql_sys_var* innobase_system_variables[]= {
    MYSQL_SYSVAR(ft_min_token_size),
    MYSQL_SYSVAR(ft_num_word_optimize),
    MYSQL_SYSVAR(ft_sort_pll_degree),
