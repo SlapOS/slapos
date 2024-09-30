@@ -185,10 +185,12 @@ import { err, exit, open, out } from "std";
   function loop() {
     var timestamp = Date.now(),
       timeout;
+    console.log(timestamp, previous_timestamp, can_update);
     if (can_update) {
       if (LOOP_EXECUTION_PERIOD <= (timestamp - previous_timestamp)) {
         // Expected timeout between every update
         can_update = false;
+        console.log("asking worker to update");
         worker.postMessage({
           type: "update",
           timestamp: timestamp
@@ -224,6 +226,7 @@ import { err, exit, open, out } from "std";
       // Start the update loop
       loop();
     } else if (type === 'updated') {
+      console.log("worker updated");
       can_update = true;
       err.flush();
       out.flush();
