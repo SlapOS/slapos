@@ -307,6 +307,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
         user_me.onUpdate(evt.data.timestamp);
       }
 
+      console.log("setting message", JSON.stringify({message_list: to_send_list}), Date.now());
       setMessage(JSON.stringify({message_list: to_send_list}));
       to_send_list = [];
 
