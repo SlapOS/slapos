@@ -142,7 +142,7 @@ class TestOrderBuildPackingListSimulation(
           text=True),
     })
 
-  def getDatabaseConnection(self) -> MySQLdb.connections.Connection:
+  def getDatabaseConnection(self):
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(connection_parameter_dict['mariadb-database-list'][0])
