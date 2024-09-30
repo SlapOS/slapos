@@ -37,6 +37,7 @@ import urllib.parse
 
 import psutil
 import requests
+import MySQLdb
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
 from .test_erp5 import ZopeSkinsMixin
@@ -141,6 +142,24 @@ class TestOrderBuildPackingListSimulation(
           text=True),
     })
 
+  def getDatabaseConnection(self) -> MySQLdb.connections.Connection:
+    connection_parameter_dict = json.loads(
+        self.computer_partition.getConnectionParameterDict()['_'])
+    db_url = urllib.parse.urlparse(connection_parameter_dict['mariadb-database-list'][0])
+    self.assertEqual('mysql', db_url.scheme)
+
+    self.assertTrue(db_url.path.startswith('/'))
+    database_name = db_url.path[1:]
+    return MySQLdb.connect(
+        user=db_url.username,
+        passwd=db_url.password,
+        host=db_url.hostname,
+        port=db_url.port,
+        db=database_name,
+        use_unicode=True,
+        charset='utf8mb4'
+    )
+
   def write_measurement(
       self, measurement: dict[str, typing.Union[str, float]]) -> None:
     json.dump(
@@ -185,15 +204,12 @@ class TestOrderBuildPackingListSimulation(
       assert not zeo_stats
 
     # Deadlocks
-    deadlock_total_count = 0
-    grep = pathlib.Path(
-      self.getComputerPartitionPath('zope-activities')) / 'bin' / 'grep'
-    log_directory = pathlib.Path(
-      self.getComputerPartitionPath('zope-activities')) / 'var' / 'log'
-    for path in log_directory.glob('zope-*-event.log'):
-      deadlock_total_count += int(subprocess.run(
-        (grep, '-ac', 'Deadlock found when trying to get lock; try restarting transaction', path),
-        capture_output=True, text=True).stdout)
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query(
+        "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE name='lock_deadlocks'"
+      )
+      deadlock_total_count = cnx.store_result().fetch_row()[0][0]
 
     self.logger.info(
       "Measurements for %s (after %s): "
