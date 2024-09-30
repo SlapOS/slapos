@@ -284,6 +284,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
         peer_message = peer.message;
+        console.log("got", peer_message, "from", id);
         while (peer_message.length > 0) {
           try {
             parsed_message = JSON.parse(peer_message);
@@ -307,6 +308,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
         user_me.onUpdate(evt.data.timestamp);
       }
 
+      console.log("setting message", JSON.stringify({message_list: to_send_list}), Date.now());
       setMessage(JSON.stringify({message_list: to_send_list}));
       to_send_list = [];
 
