@@ -9,7 +9,7 @@
       "default": ""
     },
     "md5sum": {
-      "description": "The md5sum of the downloaded gzipped PLC source project program file.",
+      "description": "The md5sum of the downloaded gzipped PLC source project program file. If empty, md5sum is not checked.",
       "type": "string",
       "default": ""
     }
