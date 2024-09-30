@@ -1,4 +1,4 @@
-From f65384de19f43f7eb4c0c8ac3f492cbe23319151 Mon Sep 17 00:00:00 2001
+From ab7d9c253ff6e68c069cbcb8dcbe6c79aa035f50 Mon Sep 17 00:00:00 2001
 From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
 Date: Sun, 29 Sep 2024 11:02:02 +0000
 Subject: [PATCH] Revert "MDEV-19545 Remove innodb_locks_unsafe_for_binlog"
@@ -9,18 +9,23 @@ also revert part of
 * MDEV-23039 update removed_variables in mysql_upgrade_service for 10.5
 * more "removed" mysqld command-line options
 ---
- Docs/README-wsrep                             |  3 +
- .../wsrep_info/mysql-test/wsrep_info/my.cnf   |  1 +
- sql/mysqld.cc                                 |  1 -
- sql/upgrade_conf_file.cc                      |  1 -
- storage/innobase/handler/ha_innodb.cc         | 45 +++++++---
- storage/innobase/include/row0mysql.h          | 12 +--
- storage/innobase/include/srv0srv.h            |  4 +
- storage/innobase/lock/lock0lock.cc            |  7 +-
- storage/innobase/row/row0mysql.cc             | 14 ++-
- storage/innobase/row/row0sel.cc               | 89 +++++++++++++++----
- storage/innobase/srv/srv0srv.cc               |  3 +
- 11 files changed, 138 insertions(+), 42 deletions(-)
+ Docs/README-wsrep                             |   3 +
+ ...nnodb_locks_unsafe_for_binlog_basic.result |  53 +++++++++
+ .../suite/sys_vars/r/sysvars_innodb.result    |  12 ++
+ .../innodb_locks_unsafe_for_binlog_basic.test | 106 ++++++++++++++++++
+ .../wsrep_info/mysql-test/wsrep_info/my.cnf   |   1 +
+ sql/mysqld.cc                                 |   1 -
+ sql/upgrade_conf_file.cc                      |   1 -
+ storage/innobase/handler/ha_innodb.cc         |  45 ++++++--
+ storage/innobase/include/row0mysql.h          |  12 +-
+ storage/innobase/include/srv0srv.h            |   4 +
+ storage/innobase/lock/lock0lock.cc            |   7 +-
+ storage/innobase/row/row0mysql.cc             |  14 ++-
+ storage/innobase/row/row0sel.cc               |  89 ++++++++++++---
+ storage/innobase/srv/srv0srv.cc               |   3 +
+ 14 files changed, 309 insertions(+), 42 deletions(-)
+ create mode 100644 mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
+ create mode 100644 mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
 
 diff --git a/Docs/README-wsrep b/Docs/README-wsrep
 index 2e3bf52219d..a4d7d8c0ccb 100644
@@ -36,6 +41,200 @@ index 2e3bf52219d..a4d7d8c0ccb 100644
  5.2 WSREP OPTIONS
  
  All options are optional except for wsrep_provider, wsrep_cluster_address, and
+diff --git a/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result b/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
+new file mode 100644
+index 00000000000..c2229d54d02
+--- /dev/null
++++ b/mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
+@@ -0,0 +1,53 @@
++'#---------------------BS_STVARS_031_01----------------------#'
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++'#---------------------BS_STVARS_031_02----------------------#'
++SET @@GLOBAL.innodb_locks_unsafe_for_binlog=1;
++ERROR HY000: Variable 'innodb_locks_unsafe_for_binlog' is a read only variable
++Expected error 'Read only variable'
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++'#---------------------BS_STVARS_031_03----------------------#'
++SELECT IF(@@GLOBAL.innodb_locks_unsafe_for_binlog, "ON", "OFF") = VARIABLE_VALUE
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++IF(@@GLOBAL.innodb_locks_unsafe_for_binlog, "ON", "OFF") = VARIABLE_VALUE
++1
++1 Expected
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++SELECT COUNT(VARIABLE_VALUE)
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES 
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++COUNT(VARIABLE_VALUE)
++1
++1 Expected
++'#---------------------BS_STVARS_031_04----------------------#'
++SELECT @@innodb_locks_unsafe_for_binlog = @@GLOBAL.innodb_locks_unsafe_for_binlog;
++@@innodb_locks_unsafe_for_binlog = @@GLOBAL.innodb_locks_unsafe_for_binlog
++1
++1 Expected
++'#---------------------BS_STVARS_031_05----------------------#'
++SELECT COUNT(@@innodb_locks_unsafe_for_binlog);
++COUNT(@@innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++SELECT COUNT(@@local.innodb_locks_unsafe_for_binlog);
++ERROR HY000: Variable 'innodb_locks_unsafe_for_binlog' is a GLOBAL variable
++Expected error 'Variable is a GLOBAL variable'
++SELECT COUNT(@@SESSION.innodb_locks_unsafe_for_binlog);
++ERROR HY000: Variable 'innodb_locks_unsafe_for_binlog' is a GLOBAL variable
++Expected error 'Variable is a GLOBAL variable'
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog)
++1
++1 Expected
++SELECT innodb_locks_unsafe_for_binlog = @@SESSION.innodb_locks_unsafe_for_binlog;
++ERROR 42S22: Unknown column 'innodb_locks_unsafe_for_binlog' in 'field list'
++Expected error 'Readonly variable'
+diff --git a/mysql-test/suite/sys_vars/r/sysvars_innodb.result b/mysql-test/suite/sys_vars/r/sysvars_innodb.result
+index 6a7e184f68e..74c7893a177 100644
+--- a/mysql-test/suite/sys_vars/r/sysvars_innodb.result
++++ b/mysql-test/suite/sys_vars/r/sysvars_innodb.result
+@@ -967,6 +967,18 @@ NUMERIC_BLOCK_SIZE	0
+ ENUM_VALUE_LIST	NULL
+ READ_ONLY	NO
+ COMMAND_LINE_ARGUMENT	REQUIRED
++VARIABLE_NAME	INNODB_LOCKS_UNSAFE_FOR_BINLOG
++SESSION_VALUE	NULL
++DEFAULT_VALUE	OFF
++VARIABLE_SCOPE	GLOBAL
++VARIABLE_TYPE	BOOLEAN
++VARIABLE_COMMENT	Force InnoDB to not use next-key locking, to use only row-level locking.
++NUMERIC_MIN_VALUE	NULL
++NUMERIC_MAX_VALUE	NULL
++NUMERIC_BLOCK_SIZE	NULL
++ENUM_VALUE_LIST	OFF,ON
++READ_ONLY	YES
++COMMAND_LINE_ARGUMENT	NONE
+ VARIABLE_NAME	INNODB_LOCK_WAIT_TIMEOUT
+ SESSION_VALUE	50
+ DEFAULT_VALUE	50
+diff --git a/mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test b/mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
+new file mode 100644
+index 00000000000..755c5c62c70
+--- /dev/null
++++ b/mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
+@@ -0,0 +1,106 @@
++
++
++################## mysql-test\t\innodb_locks_unsafe_for_binlog_basic.test #####
++#                                                                             #
++# Variable Name: innodb_locks_unsafe_for_binlog                               #
++# Scope: Global                                                               #
++# Access Type: Static                                                         #
++# Data Type: boolean                                                          #
++#                                                                             #
++#                                                                             #
++# Creation Date: 2008-02-07                                                   #
++# Author : Sharique Abdullah                                                      #
++#                                                                             #
++#                                                                             #
++# Description:Test Cases of Dynamic System Variable innodb_locks_unsafe_for_binlog#
++#             that checks the behavior of this variable in the following ways #
++#              * Value Check                                                  #
++#              * Scope Check                                                  #
++#                                                                             #
++# Reference: http://dev.mysql.com/doc/refman/5.1/en/                          #
++#  server-system-variables.html                                               #
++#                                                                             #
++###############################################################################
++
++--source include/have_innodb.inc
++
++--echo '#---------------------BS_STVARS_031_01----------------------#'
++####################################################################
++#   Displaying default value                                       #
++####################################################################
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++
++--echo '#---------------------BS_STVARS_031_02----------------------#'
++####################################################################
++#   Check if Value can set                                         #
++####################################################################
++
++--error ER_INCORRECT_GLOBAL_LOCAL_VAR
++SET @@GLOBAL.innodb_locks_unsafe_for_binlog=1;
++--echo Expected error 'Read only variable'
++
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++
++
++
++--echo '#---------------------BS_STVARS_031_03----------------------#'
++#################################################################
++# Check if the value in GLOBAL Table matches value in variable  #
++#################################################################
++
++--disable_warnings
++SELECT IF(@@GLOBAL.innodb_locks_unsafe_for_binlog, "ON", "OFF") = VARIABLE_VALUE
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++--enable_warnings
++--echo 1 Expected
++
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++--disable_warnings
++SELECT COUNT(VARIABLE_VALUE)
++FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES 
++WHERE VARIABLE_NAME='innodb_locks_unsafe_for_binlog';
++--enable_warnings
++--echo 1 Expected
++
++
++
++--echo '#---------------------BS_STVARS_031_04----------------------#'
++################################################################################
++#  Check if accessing variable with and without GLOBAL point to same variable  #
++################################################################################
++SELECT @@innodb_locks_unsafe_for_binlog = @@GLOBAL.innodb_locks_unsafe_for_binlog;
++--echo 1 Expected
++
++
++
++--echo '#---------------------BS_STVARS_031_05----------------------#'
++################################################################################
++#   Check if innodb_locks_unsafe_for_binlog can be accessed with and without @@ sign #
++################################################################################
++
++SELECT COUNT(@@innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++--Error ER_INCORRECT_GLOBAL_LOCAL_VAR
++SELECT COUNT(@@local.innodb_locks_unsafe_for_binlog);
++--echo Expected error 'Variable is a GLOBAL variable'
++
++--Error ER_INCORRECT_GLOBAL_LOCAL_VAR
++SELECT COUNT(@@SESSION.innodb_locks_unsafe_for_binlog);
++--echo Expected error 'Variable is a GLOBAL variable'
++
++SELECT COUNT(@@GLOBAL.innodb_locks_unsafe_for_binlog);
++--echo 1 Expected
++
++--Error ER_BAD_FIELD_ERROR
++SELECT innodb_locks_unsafe_for_binlog = @@SESSION.innodb_locks_unsafe_for_binlog;
++--echo Expected error 'Readonly variable'
++
++
 diff --git a/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf b/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
 index 8f62cfd0cc9..1c7a8ad4122 100644
 --- a/plugin/wsrep_info/mysql-test/wsrep_info/my.cnf
