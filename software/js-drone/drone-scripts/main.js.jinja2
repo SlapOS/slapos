@@ -224,6 +224,7 @@ import { err, exit, open, out } from "std";
       // Start the update loop
       loop();
     } else if (type === 'updated') {
+      console.log("worker updated");
       can_update = true;
       err.flush();
       out.flush();
