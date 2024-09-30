@@ -302,12 +302,15 @@ import { evalScript, fdopen, loadFile, open } from "std";
         }
       });
 
+      console.log("onUpdate start", evt.data.timestamp, Date.now());
       // Call the drone onUpdate function
       if (user_me.hasOwnProperty("onUpdate")) {
         user_me.onUpdate(evt.data.timestamp);
       }
 
+      console.log("setting message", Date.now());
       setMessage(JSON.stringify({message_list: to_send_list}));
+      console.log("setting message", Date.now());
       to_send_list = [];
 
       if (evt.data.timestamp - last_log_timestamp >= 1000) {
