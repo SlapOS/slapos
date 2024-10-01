@@ -369,6 +369,12 @@
                 "https://shacache.nxdcdn.com/6c355def68b3c0427f21598cb054ffc893568902f205601ac60f192854769b31bc9cff8eeb6ce99ef975a8fb887d8d3e56fc6cd5ea5cb4b3bba1175c520047cb#57088b77f795ca44b00971e44782ee23"
               ],
               "title": "FreeBSD 12.1 RELEASE bootonly x86_64"
+            },
+            {
+              "const": [
+                "https://shacache.nxdcdn.com/e72e03bbcc4c54ce4b8d5f360b47dab9ee514d754e8d78c403626cf000d6ae98d808b3bcff2201e3cf49c1be1b0f308f1cb5ed81676adcb1837dfc811d2451ac"
+              ],
+              "title": "SUSE Linux Enterprise Server 15 SP6 x86_64"
             }
           ]
         },
