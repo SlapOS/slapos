@@ -203,13 +203,15 @@ class TestOrderBuildPackingListSimulation(
       zeo_root_stats = zeo_stats.pop('root')
       assert not zeo_stats
 
-    # Deadlocks
+    # InnoDB/MariaDB metrics
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query(
-        "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE name='lock_deadlocks'"
-      )
-      deadlock_total_count = cnx.store_result().fetch_row()[0][0]
+      cursor = cnx.cursor(MySQLdb.cursors.DictCursor)
+      cursor.execute('SELECT * FROM information_schema.INNODB_METRICS')
+      innodb_metrics = {r['NAME']: r['COUNT'] for r in cursor.fetchall()
+                        if r.get('ENABLED') or r.get('STATUS') == 'enabled'}
+      cursor.execute('SHOW GLOBAL STATUS')
+      mariadb_metrics = {r['Variable_name']: r['Value'] for cursor.fetchall()}
 
     self.logger.info(
       "Measurements for %s (after %s): "
@@ -230,7 +232,8 @@ class TestOrderBuildPackingListSimulation(
         'zope_count': zope_count,
         'root_fs_size': root_fs_size,
         'zeo_stats': zeo_root_stats,
-        'deadlock_total_count': deadlock_total_count,
+        'innodb_metrics': innodb_metrics,
+        'mariadb_metrics': mariadb_metrics,
         'now': str(now),
       })
 
