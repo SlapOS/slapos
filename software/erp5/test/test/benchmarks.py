@@ -144,20 +144,20 @@ class TestOrderBuildPackingListSimulation(
 
   def getDatabaseConnection(self):
     connection_parameter_dict = json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
+      self.computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(connection_parameter_dict['mariadb-database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
     database_name = db_url.path[1:]
     return MySQLdb.connect(
-        user=db_url.username,
-        passwd=db_url.password,
-        host=db_url.hostname,
-        port=db_url.port,
-        db=database_name,
-        use_unicode=True,
-        charset='utf8mb4'
+      user=db_url.username,
+      passwd=db_url.password,
+      host=db_url.hostname,
+      port=db_url.port,
+      db=database_name,
+      use_unicode=True,
+      charset='utf8mb4',
     )
 
   def write_measurement(
@@ -204,14 +204,13 @@ class TestOrderBuildPackingListSimulation(
       assert not zeo_stats
 
     # InnoDB/MariaDB metrics
-    cnx = self.getDatabaseConnection()
-    with contextlib.closing(cnx):
+    with contextlib.closing(self.getDatabaseConnection()) as cnx:
       cursor = cnx.cursor(MySQLdb.cursors.DictCursor)
       cursor.execute('SELECT * FROM information_schema.INNODB_METRICS')
       innodb_metrics = {r['NAME']: r['COUNT'] for r in cursor.fetchall()
                         if r.get('ENABLED') or r.get('STATUS') == 'enabled'}
       cursor.execute('SHOW GLOBAL STATUS')
-      mariadb_metrics = {r['Variable_name']: r['Value'] for cursor.fetchall()}
+      mariadb_metrics = {r['Variable_name']: r['Value'] for r in cursor.fetchall()}
 
     self.logger.info(
       "Measurements for %s (after %s): "
