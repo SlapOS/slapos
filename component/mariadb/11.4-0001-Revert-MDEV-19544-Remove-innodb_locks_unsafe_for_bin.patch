@@ -1,18 +1,20 @@
-From 86fe4f1e4be4f71d45a22cff8c6bf1bf158a0937 Mon Sep 17 00:00:00 2001
+From dfa6e62251670d4b1f7bb8fb9eed56210198e04b Mon Sep 17 00:00:00 2001
 From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
 Date: Sun, 29 Sep 2024 11:02:02 +0000
-Subject: [PATCH] Revert "MDEV-19545 Remove innodb_locks_unsafe_for_binlog"
+Subject: [PATCH] Revert "MDEV-19544 Remove innodb_locks_unsafe_for_binlog"
  Revert "MDEV-19563 Removed references to deprecated option
  innodb_locks_unsafe_for_binlog"
 
 also revert part of
 * MDEV-23039 update removed_variables in mysql_upgrade_service for 10.5
 * more "removed" mysqld command-line options
+
+also add main.innodb_locks_unsafe_for_binlog test based on main.unsafe_binlog_innodb.
 ---
  Docs/README-wsrep                             |   3 +
- .../unsafe_binlog_innodb_option-master.opt    |   1 +
- .../main/unsafe_binlog_innodb_option.result   | 189 ++++++++++++++++++
- .../main/unsafe_binlog_innodb_option.test     |  16 ++
+ .../innodb_locks_unsafe_for_binlog-master.opt |   1 +
+ .../innodb_locks_unsafe_for_binlog.result     | 189 ++++++++++++++++++
+ .../main/innodb_locks_unsafe_for_binlog.test  |  16 ++
  ...nnodb_locks_unsafe_for_binlog_basic.result |  53 +++++
  .../suite/sys_vars/r/sysvars_innodb.result    |  12 ++
  .../innodb_locks_unsafe_for_binlog_basic.test | 106 ++++++++++
@@ -27,9 +29,9 @@ also revert part of
  storage/innobase/row/row0sel.cc               |  89 +++++++--
  storage/innobase/srv/srv0srv.cc               |   3 +
  17 files changed, 515 insertions(+), 42 deletions(-)
- create mode 100644 mysql-test/main/unsafe_binlog_innodb_option-master.opt
- create mode 100644 mysql-test/main/unsafe_binlog_innodb_option.result
- create mode 100644 mysql-test/main/unsafe_binlog_innodb_option.test
+ create mode 100644 mysql-test/main/innodb_locks_unsafe_for_binlog-master.opt
+ create mode 100644 mysql-test/main/innodb_locks_unsafe_for_binlog.result
+ create mode 100644 mysql-test/main/innodb_locks_unsafe_for_binlog.test
  create mode 100644 mysql-test/suite/sys_vars/r/innodb_locks_unsafe_for_binlog_basic.result
  create mode 100644 mysql-test/suite/sys_vars/t/innodb_locks_unsafe_for_binlog_basic.test
 
@@ -47,18 +49,18 @@ index 2e3bf52219d..a4d7d8c0ccb 100644
  5.2 WSREP OPTIONS
  
  All options are optional except for wsrep_provider, wsrep_cluster_address, and
-diff --git a/mysql-test/main/unsafe_binlog_innodb_option-master.opt b/mysql-test/main/unsafe_binlog_innodb_option-master.opt
+diff --git a/mysql-test/main/innodb_locks_unsafe_for_binlog-master.opt b/mysql-test/main/innodb_locks_unsafe_for_binlog-master.opt
 new file mode 100644
 index 00000000000..0d13f0834a5
 --- /dev/null
-+++ b/mysql-test/main/unsafe_binlog_innodb_option-master.opt
++++ b/mysql-test/main/innodb_locks_unsafe_for_binlog-master.opt
 @@ -0,0 +1 @@
 +--loose-innodb_locks_unsafe_for_binlog --loose-innodb_lock_wait_timeout=1
-diff --git a/mysql-test/main/unsafe_binlog_innodb_option.result b/mysql-test/main/unsafe_binlog_innodb_option.result
+diff --git a/mysql-test/main/innodb_locks_unsafe_for_binlog.result b/mysql-test/main/innodb_locks_unsafe_for_binlog.result
 new file mode 100644
 index 00000000000..bb407d9562a
 --- /dev/null
-+++ b/mysql-test/main/unsafe_binlog_innodb_option.result
++++ b/mysql-test/main/innodb_locks_unsafe_for_binlog.result
 @@ -0,0 +1,189 @@
 +drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t9,t10;
 +create table t1 (id int not null, f_id int not null, f int not null,
@@ -249,11 +251,11 @@ index 00000000000..bb407d9562a
 +disconnect i;
 +disconnect j;
 +drop table t1, t2, t3, t5, t6, t8, t9;
-diff --git a/mysql-test/main/unsafe_binlog_innodb_option.test b/mysql-test/main/unsafe_binlog_innodb_option.test
+diff --git a/mysql-test/main/innodb_locks_unsafe_for_binlog.test b/mysql-test/main/innodb_locks_unsafe_for_binlog.test
 new file mode 100644
 index 00000000000..a0516749451
 --- /dev/null
-+++ b/mysql-test/main/unsafe_binlog_innodb_option.test
++++ b/mysql-test/main/innodb_locks_unsafe_for_binlog.test
 @@ -0,0 +1,16 @@
 +# t/unsafe_binlog_innodb.test
 +#
