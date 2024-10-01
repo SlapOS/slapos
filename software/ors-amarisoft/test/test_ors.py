@@ -77,7 +77,8 @@ param_dict = {
     },
 }
 enb_param_dict = {
-    'dl_earfcn': 36100,
+    # ors_version for tests is B39, so earfcn needs to be within B39
+    'dl_earfcn': 38450,
     'enb_id': '0x17',
     'bandwidth': "10 MHz",
     'plmn_list': {
@@ -105,10 +106,11 @@ enb_param_dict = {
     },
 }
 gnb_param_dict = {
-    'dl_nr_arfcn': 403500,
-    'nr_band': 34,
-    'nr_bandwidth': 50,
-    'ssb_nr_arfcn': 403520,
+    # ors_version for tests is B39, so dl_nr_arfcn needs to be within N39
+    'dl_nr_arfcn': 380000,
+    'nr_band': 39,
+    'nr_bandwidth': 40,
+    'ssb_nr_arfcn': 380020,
     'gnb_id': '0x17',
     'gnb_id_bits': 30,
     'ssb_pos_bitmap': '10',
