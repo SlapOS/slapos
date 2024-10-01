@@ -51,17 +51,30 @@ def setUpModule():
   )
 
 class SlaposTestingTestCase(SlapOSInstanceTestCase):
+  @classmethod
   def requestDefaultInstance(cls, state='started'):
     # This method is called for requesting and destroying (state='destroyed').
     for name, url in zip(software_files, software_urls):
-      cls.slap.request(
+      computer_partition = cls.slap.request(
         software_release=url,
         software_type=None, # default
         partition_reference='Instance_of_' + name,
         partition_parameter_kw=cls._instance_parameter_dict,
         state=state,
       )
+    # one of the requested computer partitions
+    # to satisfy slapos.testing.testcase (slapos.core < 1.13.0)
+    # and to make it call waitForInstance (slapos.core >= 1.13.0).
+    return computer_partition
 
-  def test():
-    # Just test that each version of the software compiled and instantiates.
-    pass
+  def test(self):
+    # Just test that each version of the software compiles and instantiates.
+    # Check that all expected instances have been requested.
+    cp = self.slap.computer.getComputerPartitionList()
+    requested = {
+      p.getSoftwareRelease()._software_release: p.getConnectionParameterDict()
+      for p in self.slap.computer.getComputerPartitionList()
+      if p.getState() == 'started'
+    }
+    self.assertEqual(set(requested.keys()), set(software_urls))
+    self.assertTrue(all('environment-script' in d for d in requested.values()))
