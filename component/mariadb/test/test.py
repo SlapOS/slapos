@@ -35,21 +35,11 @@ from slapos.testing.testcase import installSoftwareUrlList, makeModuleSetUpAndTe
 software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'test.cfg'))
 
-_, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(software_release_url))
 
-def setUpModule():
-  installSoftwareUrlList(
-    InstanceTestCase,
-    [software_release_url],
-    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
-  )
-
 class TestMariaDB(InstanceTestCase):
-  @classmethod
-  def setUpClass(cls):
-    # We generate no instance
-    pass
+  request_instance = False
 
   def test(self):
     mariadb_path = os.path.join(
