@@ -20,6 +20,11 @@
       "type": "string",
       "default": "127.0.1.1"
     },
+    "mbmsgw_addr": {
+      "title": "SGW Address",
+      "description": "Set the IP address (and optional port) of the MBMS Gateway for the M2 connection. The default port is 36443.",
+      "type": "string"
+    },
     "mme_list": {
       "title": "MME list",
       "description": "List of MME to which the eNodeB is connected. (must be set if there are LTE cells)",
@@ -29,6 +34,11 @@
             "mme_addr": {
               "title": "MME Address",
               "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
+              "type": "string"
+            },
+            "s1ap_bind_addr": {
+              "title": "S1AP Bind Address",
+              "description": "Optional String. IP address and optional port on which the S1AP SCTP connection is bound.",
               "type": "string"
             }
           },
@@ -86,6 +96,11 @@
             "amf_addr": {
               "title": "AMF Address",
               "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
+              "type": "string"
+            },
+            "ngap_bind_addr": {
+              "title": "NGAP Bind Address",
+              "description": "Optional string. IP address and optional port on which the NGAP SCTP connection is bound.",
               "type": "string"
             }
           },
