@@ -54,6 +54,9 @@
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
       "default": "127.0.1.1"
     },
+    "mbmsgw_addr": {
+      "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
+    },
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
       "default": {
