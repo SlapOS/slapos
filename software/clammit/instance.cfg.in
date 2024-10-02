@@ -15,6 +15,7 @@ parts =
 
 clamd-parts =
   clamd
+  clamd-socket-promise
   clamd-logrotate
 freshclam-parts =
   freshclam
@@ -96,6 +97,12 @@ hash-files =
   ${clamd.conf:output}
 hash-existing-files =
   {{ buildout.directory }}/.completed
+
+[clamd-socket-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = check_clamd_socket.py
+config-command = test -S ${clam-config:clamd-socket-file}
 
 [clamd-logrotate]
 <= logrotate-entry-base
