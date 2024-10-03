@@ -236,7 +236,12 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     # Create the rdiff-backup wrapper
     # It is useful to separate it from the notifier so that we can run it manually.
 
-    remote_schema = '{ssh} -o "ConnectTimeout 300" -p %s {username}@{hostname}'.format(
+    remote_schema = ('{ssh} '
+              '-o "ConnectTimeout 300" '
+              '-o "ServerAliveCountMax 10" '
+              '-o "ServerAliveInterval 30" '
+              '-p %s '
+              '{username}@{hostname}').format(
               ssh=self.options['sshclient-binary'],
               username=parsed_url.username,
               hostname=parsed_url.hostname
