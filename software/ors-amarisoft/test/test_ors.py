@@ -43,34 +43,14 @@ param_dict = {
     'testing': True,
     'tx_gain': 17,
     'rx_gain': 17,
-    'dl_earfcn': 36100,
-    'bandwidth': "10 MHz",
-    'enb_id': '0x17',
     'pci': 250,
     'tac': '0x1717',
     'root_sequence_index': '1',
-    'mme_list': {
-        '10.0.0.1': {'mme_addr': '10.0.0.1'},
-        '2001:db8::1': {'mme_addr': '2001:db8::1'},
-    },
     'core_network_plmn': '00102',
-    'dl_nr_arfcn': 403500,
-    'nr_band': 34,
-    'nr_bandwidth': 50,
-    'ssb_nr_arfcn': 403520,
     'rue_addr': '192.168.99.88',
     'n_antenna_dl': 2,
     'n_antenna_ul': 2,
     'inactivity_timer': 17,
-    'gnb_id': '0x17',
-    'gnb_id_bits': 30,
-    'ssb_pos_bitmap': '10',
-    'amf_list': {
-        '10.0.0.1': {'amf_addr': '10.0.0.1'},
-        '2001:db8::1': {'amf_addr': '2001:db8::1'},
-    },
-    'nr_handover_time_to_trigger': 40,
-    'nr_handover_a3_offset': 10,
     'ncell_list': {
         'ORS1': {
             'dl_earfcn': 40000,
@@ -95,6 +75,49 @@ param_dict = {
             'tac': 2
         },
     },
+}
+enb_param_dict = {
+    'dl_earfcn': 36100,
+    'enb_id': '0x17',
+    'bandwidth': "10 MHz",
+    'plmn_list': {
+        '00101': {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
+        '00102': {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
+    },
+    'tdd_ul_dl_config': '[Configuration 6] 5ms 5UL 3DL (maximum uplink)',
+    'mme_list': {
+        '10.0.0.1': {'mme_addr': '10.0.0.1'},
+        '2001:db8::1': {'mme_addr': '2001:db8::1'},
+    },
+    'ncell_list': {
+        'ORS1': {
+            'dl_earfcn': 40000,
+            'pci': 1,
+            'cell_id': '0x0000001',
+            'tac': 1
+        },
+        'ORS2': {
+            'dl_earfcn': 50000,
+            'pci': 2,
+            'cell_id': '0x0000001',
+            'tac': 2
+        },
+    },
+}
+gnb_param_dict = {
+    'dl_nr_arfcn': 403500,
+    'nr_band': 34,
+    'nr_bandwidth': 50,
+    'ssb_nr_arfcn': 403520,
+    'gnb_id': '0x17',
+    'gnb_id_bits': 30,
+    'ssb_pos_bitmap': '10',
+    'amf_list': {
+        '10.0.0.1': {'amf_addr': '10.0.0.1'},
+        '2001:db8::1': {'amf_addr': '2001:db8::1'},
+    },
+    'nr_handover_time_to_trigger': 40,
+    'nr_handover_a3_offset': 10,
     'xn_peers': {
         '2001:db8::1': {
             'xn_addr': '2001:db8::1',
@@ -103,13 +126,26 @@ param_dict = {
             'xn_addr': '2001:db8::2',
         },
     },
-}
-enb_param_dict = {
-    'plmn_list': {
-        '00101': {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
-        '00102': {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
+    'ncell_list': {
+        'ORS1': {
+            'dl_nr_arfcn': 403500,
+            'ssb_nr_arfcn': 403500,
+            'pci': 1,
+            'nr_cell_id': '0x0000001',
+            'gnb_id_bits': 28,
+            'nr_band': 34,
+            'tac': 1
+        },
+        'ORS2': {
+            'dl_nr_arfcn': 519000,
+            'ssb_nr_arfcn': 519000,
+            'pci': 2,
+            'nr_cell_id': '0x0000002',
+            'gnb_id_bits': 30,
+            'nr_band': 38,
+            'tac': 2
+        },
     },
-    'tdd_ul_dl_config': '[Configuration 6] 5ms 5UL 3DL (maximum uplink)',
 }
 gnb_param_dict1 = {
     'plmn_list': {
@@ -126,153 +162,140 @@ gnb_param_dict2 = {
     'tdd_ul_dl_config': '5ms 6UL 3DL 10/2 (high uplink)',
 }
 enb_param_dict.update(param_dict)
+gnb_param_dict1.update(gnb_param_dict)
 gnb_param_dict1.update(param_dict)
+gnb_param_dict2.update(gnb_param_dict)
 gnb_param_dict2.update(param_dict)
 
-def test_enb_conf(self):
+def load_yaml_conf(slap, name):
+    conf_file = glob.glob(os.path.join(
+      slap.instance_directory, '*', 'etc', name + '.cfg'))[0]
+    return yamlpp_load(conf_file)
 
-  conf_file = glob.glob(os.path.join(
-    self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
+class TestENBParameters(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(enb_param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb"
+  def test_enb_conf(self):
 
-  conf = yamlpp_load(conf_file)
-  self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
-  self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
-  self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
-  self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
-  self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
-  self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
-  self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
-  self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
-  self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
-  self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
-  self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
-  for p in conf['cell_default']['plmn_list']:
-    for n in "plmn attach_without_pdn reserved".split():
-      self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
-  for p in conf['mme_list']:
-    self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
+    conf = load_yaml_conf(self.slap, 'enb')
 
-  for p in conf['cell_list'][0]['ncell_list']:
-    for k in enb_param_dict['ncell_list']:
-      if p['dl_earfcn'] == gnb_param_dict1['ncell_list'][k]['dl_earfcn']:
-        break
-    conf_ncell = enb_param_dict['ncell_list'][k]
-    self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
-    self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
-    self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
-    self.assertEqual(p['tac'],          conf_ncell['tac'])
+    self.assertEqual(conf['tx_gain'], [enb_param_dict['tx_gain']] * enb_param_dict['n_antenna_dl'])
+    self.assertEqual(conf['rx_gain'], [enb_param_dict['rx_gain']] * enb_param_dict['n_antenna_ul'])
+    self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['inactivity_timer'])
+    self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
+    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['dl_earfcn'])
+    self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
+    self.assertEqual(conf['enb_id'], int(enb_param_dict['enb_id'], 16))
+    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['pci'])
+    self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['tac'], 16))
+    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['root_sequence_index']))
+    self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
+    for p in conf['cell_default']['plmn_list']:
+      for n in "plmn attach_without_pdn reserved".split():
+        self.assertEqual(p[n], enb_param_dict['plmn_list'][p['plmn']][n])
+    for p in conf['mme_list']:
+      self.assertEqual(p['mme_addr'], enb_param_dict['mme_list'][p['mme_addr']]['mme_addr'])
 
-def test_gnb_conf1(self):
-
-  conf_file = glob.glob(os.path.join(
-    self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
-
-  conf = yamlpp_load(conf_file)
-  self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
-  self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
-  self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
-  self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
-  self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
-  self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
-  self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['nr_bandwidth'])
-  self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
-  self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
-  self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
-  for p in conf['nr_cell_default']['plmn_list']:
-    for n in "plmn ranac reserved tac".split():
-      self.assertEqual(p[n], gnb_param_dict1['plmn_list'][p['plmn']][n])
-  for p in conf['amf_list']:
-    self.assertEqual(p['amf_addr'], gnb_param_dict1['amf_list'][p['amf_addr']]['amf_addr'])
-  for p in conf['xn_peers']:
-    self.assertEqual(p, gnb_param_dict1['xn_peers'][p]['xn_addr'])
-  for p in conf['nr_cell_list'][0]['ncell_list']:
-    for k in gnb_param_dict1['ncell_list']:
-      if p['dl_nr_arfcn'] == gnb_param_dict1['ncell_list'][k]['dl_nr_arfcn']:
-        break
-    conf_ncell = gnb_param_dict1['ncell_list'][k]
-    self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
-    self.assertEqual(p['ssb_nr_arfcn'], conf_ncell['ssb_nr_arfcn'])
-    self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])    # assumes nr_band is TDD
-    self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
-    self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
-    self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
-    self.assertEqual(p['tac'],          conf_ncell['tac'])
-    self.assertEqual(p['band'],         conf_ncell['nr_band'])
-  tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
-  self.assertEqual(float(tdd_config['period']), 2.5)
-  self.assertEqual(int(tdd_config['dl_slots']), 3)
-  self.assertEqual(int(tdd_config['dl_symbols']), 10)
-  self.assertEqual(int(tdd_config['ul_slots']), 1)
-  self.assertEqual(int(tdd_config['ul_symbols']), 2)
-
-def test_gnb_conf2(self):
-
-  conf_file = glob.glob(os.path.join(
-    self.slap.instance_directory, '*', 'etc', 'enb.cfg'))[0]
-
-  conf = yamlpp_load(conf_file)
-
-  for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
-    sd = hex(p['sd'])
-    self.assertEqual(sd, gnb_param_dict2['nssai'][sd]['sd'], 16)
-    self.assertEqual(p['sst'], gnb_param_dict2['nssai'][sd]['sst'])
-
-  tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
-  self.assertEqual(float(tdd_config['period']), 5)
-  self.assertEqual(int(tdd_config['dl_slots']), 3)
-  self.assertEqual(int(tdd_config['dl_symbols']), 2)
-  self.assertEqual(int(tdd_config['ul_slots']), 6)
-  self.assertEqual(int(tdd_config['ul_symbols']), 10)
-
-def test_mme_conf(self):
-
-  conf_file = glob.glob(os.path.join(
-    self.slap.instance_directory, '*', 'etc', 'mme.cfg'))[0]
-
-  conf = yamlpp_load(conf_file)
-  self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
-
-def getSimParam(id=0):
-  return {
-    'sim_algo': 'milenage',
-    'imsi': '{0:015}'.format(1010000000000 + id),
-    'opc': '000102030405060708090A0B0C0D0E0F',
-    'amf': '0x9001',
-    'sqn': '000000000000',
-    'k': '00112233445566778899AABBCCDDEEFF',
-    'impu': 'impu%s' % '{0:03}'.format(id),
-    'impi': 'impi%s@amarisoft.com' % '{0:03}'.format(id)
-  }
+    for p in conf['cell_list'][0]['ncell_list']:
+      for k in enb_param_dict['ncell_list']:
+        if p['dl_earfcn'] == gnb_param_dict1['ncell_list'][k]['dl_earfcn']:
+          break
+      conf_ncell = enb_param_dict['ncell_list'][k]
+      self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
+      self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
+      self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
+      self.assertEqual(p['tac'],          conf_ncell['tac'])
 
 
-def test_sim_card(self, nb_sim_cards, fixed_ips, tun_network):
+class TestGNBParameters1(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(gnb_param_dict1)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "gnb"
+  def test_gnb_conf(self):
 
-  conf_file = glob.glob(os.path.join(
-    self.slap.instance_directory, '*', 'etc', 'ue_db.cfg'))[0]
+    conf = load_yaml_conf(self.slap, 'enb')
 
-  conf = yamlpp_load(conf_file)
-  first_ip = netaddr.IPAddress(tun_network.first)
-  for i in range(nb_sim_cards):
-    params = getSimParam(i)
-    for n in "sim_algo imsi opc sqn impu impi".split():
-      self.assertEqual(conf['ue_db'][i][n], params[n], "%s doesn't match" % n)
-    self.assertEqual(conf['ue_db'][i]['K'], params['k'])
-    self.assertEqual(conf['ue_db'][i]['amf'], int(params['amf'], 16))
+    self.assertEqual(conf['tx_gain'], [gnb_param_dict1['tx_gain']] * gnb_param_dict1['n_antenna_dl'])
+    self.assertEqual(conf['rx_gain'], [gnb_param_dict1['rx_gain']] * gnb_param_dict1['n_antenna_ul'])
+    self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['inactivity_timer'])
+    self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['dl_nr_arfcn'])
+    self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['nr_band'])
+    self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ssb_pos_bitmap'])
+    self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['nr_bandwidth'])
+    self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['pci'])
+    self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['gnb_id'], 16))
+    self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['gnb_id_bits'])
+    for p in conf['nr_cell_default']['plmn_list']:
+      for n in "plmn ranac reserved tac".split():
+        self.assertEqual(p[n], gnb_param_dict1['plmn_list'][p['plmn']][n])
+    for p in conf['amf_list']:
+      self.assertEqual(p['amf_addr'], gnb_param_dict1['amf_list'][p['amf_addr']]['amf_addr'])
+    for p in conf['xn_peers']:
+      self.assertEqual(p, gnb_param_dict1['xn_peers'][p]['xn_addr'])
+    for p in conf['nr_cell_list'][0]['ncell_list']:
+      for k in gnb_param_dict1['ncell_list']:
+        if p['dl_nr_arfcn'] == gnb_param_dict1['ncell_list'][k]['dl_nr_arfcn']:
+          break
+      conf_ncell = gnb_param_dict1['ncell_list'][k]
+      self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
+      self.assertEqual(p['ssb_nr_arfcn'], conf_ncell['ssb_nr_arfcn'])
+      self.assertEqual(p['ul_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])    # assumes nr_band is TDD
+      self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
+      self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
+      self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
+      self.assertEqual(p['tac'],          conf_ncell['tac'])
+      self.assertEqual(p['band'],         conf_ncell['nr_band'])
+    tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
+    self.assertEqual(float(tdd_config['period']), 2.5)
+    self.assertEqual(int(tdd_config['dl_slots']), 3)
+    self.assertEqual(int(tdd_config['dl_symbols']), 10)
+    self.assertEqual(int(tdd_config['ul_slots']), 1)
+    self.assertEqual(int(tdd_config['ul_symbols']), 2)
 
-    p = self.requestSlaveInstanceWithId(i).getConnectionParameterDict()
-    p = json.loads(p['_'])
-    self.assertIn('info', p)
-    if fixed_ips:
-      self.assertIn('ipv4', p)
-      if nb_sim_cards + 2 > tun_network.size:
-        self.assertEqual(p['ipv4'], "Too many SIM for the IPv4 network")
-      else:
-        ip = str(first_ip + 2 + i)
-        self.assertEqual(p['ipv4'], ip)
-        self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['access_point_name'], "internet")
-        self.assertTrue(conf['ue_db'][i]['pdn_list'][0]['default'])
-        self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['ipv4_addr'], ip)
 
+class TestGNBParameters2(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(gnb_param_dict2)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "gnb"
+  def test_gnb_conf(self):
+
+    conf = load_yaml_conf(self.slap, 'enb')
+
+    for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
+      sd = hex(p['sd'])
+      self.assertEqual(sd, gnb_param_dict2['nssai'][sd]['sd'], 16)
+      self.assertEqual(p['sst'], gnb_param_dict2['nssai'][sd]['sst'])
+
+    tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
+    self.assertEqual(float(tdd_config['period']), 5)
+    self.assertEqual(int(tdd_config['dl_slots']), 3)
+    self.assertEqual(int(tdd_config['dl_symbols']), 2)
+    self.assertEqual(int(tdd_config['ul_slots']), 6)
+    self.assertEqual(int(tdd_config['ul_symbols']), 10)
+
+
+class TestCoreNetworkParameters(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "core-network"
+  def test_mme_conf(self):
+
+    conf = load_yaml_conf(self.slap, 'mme')
+
+    self.assertEqual(conf['plmn'], param_dict['core_network_plmn'])
 
 def test_monitor_gadget_url(self):
   parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
@@ -291,45 +314,6 @@ def test_monitor_gadget_url(self):
   self.assertIn('<script src="g-chart.line.js"></script>', response.text)
   self.assertIn('<script src="promise.gadget.js"></script>', response.text)
 
-class TestENBParameters(ORSTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps(enb_param_dict)}
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return "enb"
-  def test_enb_conf(self):
-    test_enb_conf(self)
-
-class TestGNBParameters1(ORSTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps(gnb_param_dict1)}
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return "gnb"
-  def test_gnb_conf(self):
-    test_gnb_conf1(self)
-
-class TestGNBParameters2(ORSTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps(gnb_param_dict2)}
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return "gnb"
-  def test_gnb_conf(self):
-    test_gnb_conf2(self)
-
-class TestCoreNetworkParameters(ORSTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps(param_dict)}
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return "core-network"
-  def test_mme_conf(self):
-    test_mme_conf(self)
 
 class TestENBMonitorGadgetUrl(ORSTestCase):
   @classmethod
@@ -371,6 +355,20 @@ class TestSimCard(ORSTestCase):
   nb_sim_cards = 1
   fixed_ips = False
   tun_network = netaddr.IPNetwork('192.168.10.0/24')
+
+  @classmethod
+  def getSimParam(cls, id=0):
+    return {
+      'sim_algo': 'milenage',
+      'imsi': '{0:015}'.format(1010000000000 + id),
+      'opc': '000102030405060708090A0B0C0D0E0F',
+      'amf': '0x9001',
+      'sqn': '000000000000',
+      'k': '00112233445566778899AABBCCDDEEFF',
+      'impu': 'impu%s' % '{0:03}'.format(id),
+      'impi': 'impi%s@amarisoft.com' % '{0:03}'.format(id)
+    }
+
   @classmethod
   def requestDefaultInstance(cls, state='started'):
 
@@ -396,7 +394,7 @@ class TestSimCard(ORSTestCase):
   @classmethod
   def requestSlaveInstanceWithId(cls, id=0):
     software_url = cls.getSoftwareURL()
-    param_dict = getSimParam(id)
+    param_dict = cls.getSimParam(id)
     return cls.slap.request(
         software_release=software_url,
         partition_reference="SIM-CARD-%s" % id,
@@ -414,8 +412,33 @@ class TestSimCard(ORSTestCase):
       f.seek(0)
       f.truncate()
       json.dump(resource, f, indent=2)
-  def test_sim_card(cls):
-    test_sim_card(cls, cls.nb_sim_cards, cls.fixed_ips, cls.tun_network)
+
+  def test_sim_card(self):
+
+    conf = load_yaml_conf(self.slap, 'ue_db')
+
+    first_ip = netaddr.IPAddress(self.tun_network.first)
+    for i in range(self.nb_sim_cards):
+      params = self.getSimParam(i)
+      for n in "sim_algo imsi opc sqn impu impi".split():
+        self.assertEqual(conf['ue_db'][i][n], params[n], "%s doesn't match" % n)
+      self.assertEqual(conf['ue_db'][i]['K'], params['k'])
+      self.assertEqual(conf['ue_db'][i]['amf'], int(params['amf'], 16))
+
+      p = self.requestSlaveInstanceWithId(i).getConnectionParameterDict()
+      p = json.loads(p['_'])
+      self.assertIn('info', p)
+      if self.fixed_ips:
+        self.assertIn('ipv4', p)
+        if self.nb_sim_cards + 2 > self.tun_network.size:
+          self.assertEqual(p['ipv4'], "Too many SIM for the IPv4 network")
+        else:
+          ip = str(first_ip + 2 + i)
+          self.assertEqual(p['ipv4'], ip)
+          self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['access_point_name'], "internet")
+          self.assertTrue(conf['ue_db'][i]['pdn_list'][0]['default'])
+          self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['ipv4_addr'], ip)
+
 
 class TestSimCardManySim(TestSimCard):
   nb_sim_cards = 10
