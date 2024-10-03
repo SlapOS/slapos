@@ -18,7 +18,7 @@ offline = true
 recipe = slapos.recipe.build:download-unpacked
 offline = false
 url = ${instance-parameter:configuration.runtime_plc_url}
-md5sum = ${instance-parameter:configuration.md5sum}
+md5sum = ${instance-parameter:configuration.runtime_plc_md5sum}
 
 [instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
