@@ -12,3 +12,13 @@ LocalSocketMode 660
 ReadTimeout 30
 # MaxScanTime is in milliseconds.
 MaxScanTime 60000
+ExtendedDetectionInfo yes
+StreamMaxLength 25M
+AlertExceedsMax yes
+AlertBrokenExecutables yes
+AlertBrokenMedia yes
+AlertEncrypted yes
+AlertEncryptedArchive yes
+AlertEncryptedDoc yes
+AlertOLE2Macros yes
+AlertPartitionIntersection yes
