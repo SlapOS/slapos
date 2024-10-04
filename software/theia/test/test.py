@@ -673,4 +673,15 @@ class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
     }
 
   def test_monitoring_propagation(self):
-    self.fail('Not implemented')
+
+    monitor_setup_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-setup-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+
+    self.assertEqual(len(monitor_setup_url_list), 4)
+
+    for url in monitor_setup_url_list:
+      self.assertIn('monitor.couscous.interface', url)
