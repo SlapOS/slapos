@@ -52,12 +52,12 @@ update =
       slave_reference = slave['slave_reference']
 
       try:
-        ors_tag = slave['ors-tag']
+        fluentbit_tag = slave['fluentbit-tag']
       except KeyError as err:
         log.fatal("%s: Parameter %s not found, skipping registration" % (slave_reference, err))
         continue
 
-      request_url = "%s/%s/ERP5Site_registerOrs?ors_tag=%s" % (wendelin_telecom_backend_url, wendelin_telecom_site_id, ors_tag)
+      request_url = "%s/%s/ERP5Site_registerOrs?fluentbit_tag=%s" % (wendelin_telecom_backend_url, wendelin_telecom_site_id, fluentbit_tag)
 
       response = requests.get(request_url, verify=False, auth=(inituser_login, inituser_password))
       response = response.json()
