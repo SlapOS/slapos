@@ -668,7 +668,8 @@ class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'monitor-cors-domains': 'monitor.couscous'
+      'monitor-cors-domains': 'monitor.couscous.cors',
+      'monitor-interface-url': 'monitor.couscous.interface'
     }
 
   def test_monitoring_propagation(self):
