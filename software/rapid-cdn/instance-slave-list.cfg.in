@@ -640,6 +640,7 @@ promise = check_socket_listening
 name = expose-csr-ip-port-listening.py
 config-host = ${expose-csr-configuration:ip}
 config-port = ${expose-csr-configuration:port}
+config-report-anomaly = True
 
 [expose-csr]
 recipe = slapos.cookbook:wrapper
@@ -685,3 +686,6 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${key-download-url-ready:output}
 config-state = empty
+config-failure-amount = 5
+config-result-count = 5
+config-report-anomaly = True
