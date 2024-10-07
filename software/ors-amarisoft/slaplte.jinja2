@@ -411,11 +411,8 @@
 {%-   for ishared in qshared_instance_list  %}
 {%-     set ref = J(jref_of_shared(ishared))  %}
 {%-     set _ = ishared['_']  %}
-{%-     if   'ue_type'   in _ or (ors and 'imsi' in _) %}
+{%-     if   'ue_type'   in _ %}
 {%-       set iue = ishared %}
-{%-       if   ors %}
-{%-         do _.update({'ue_type': 'lte'}) %}
-{%-       endif %}
 {%-       for k, v in defaults['ue'].items()  %}
 {%-         do _.setdefault(k, v) %}
 {%-       endfor  %}
