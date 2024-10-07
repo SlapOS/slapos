@@ -223,7 +223,6 @@ url = {{ instance_wcfs_cfg_in }}
 filename = instance_wcfs.cfg
 extra-context =
     section parameter_dict dynamic-template-zope-parameters
-    import urllib_parse six.moves.urllib.parse
 import-list =
     file instance_zodb_base context:template-zodb-base
 

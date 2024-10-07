@@ -458,21 +458,27 @@
               "oneOf": [
                 {
                   "const": [
-                    "https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c72871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0"
+                    "https://shacache.nxdcdn.com/33c08e56c83d13007e4a5511b9bf2c4926c4aa12fd5dd56d493c0653aecbab380988c5bf1671dbaea75c582827797d98c4a611f7fb2b131fbde2c677d5258ec9#326b7737c4262e8eb09cd26773f3356a"
                   ],
-                  "title": "Debian Bullseye 11.1 netinst x86_64"
+                  "title": "Debian Bookworm 12 netinst x86_64"
                 },
                 {
                   "const": [
-                    "https://shacache.nxdcdn.com/bc469019b9057073d36ff8f5402c95ff0a0363657358336dc9a05fc6af66276229aa727ec46cf17b84d308f44b825de7f24ea1a256062a14e0f605cd70bae02f#2dcf188877075d7b58ca46e27ca31bb9"
+                    "https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c72871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0"
                   ],
-                  "title": "Debian Buster 10.12 netinst x86_64"
+                  "title": "Debian Bookworm 11 netinst x86_64"
                 },
                 {
                   "const": [
                     "https://shacache.nxdcdn.com/ce5ddfdbdaccdf929b7fe321212356347d82a02f6b7733427282b416f113d91e587682b003e9d376ac189c3b731595c50c236962aadf2720c16d9f36913577c0#23bf2a2d60271e553e63525e794415f1"
                   ],
                   "title": "Centos 8.2004 Minimal x86_64"
+                },
+                {
+                  "const": [
+                    "https://shacache.nxdcdn.com/3d518612aabbdb77fd6b49cb55b824fed11e40540e4af52f5f26174257715c93740f83079ea618b4d933081f0b1bc69d32b7885b7c75bc90da5ad3fe1814cfd4#c53b2d7c3269c3b91a2d941ceaa8ab9b"
+                  ],
+                  "title": "Ubuntu Jammy 24.04.1 Live Server x86_64"
                 },
                 {
                   "const": [
