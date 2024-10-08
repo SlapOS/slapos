@@ -16,7 +16,7 @@ recipe = slapos.cookbook:request.serialised
 name = Drone{{ id }}_{{ guid }}
 {% else -%}
 {%  set sr_name = 'subscriber' -%}
-name = Subscriber{{ len(parameter_dict['droneList']) - id }}_{{ guid }}
+name = Subscriber{{ id - len(parameter_dict['droneList']) }}_{{ guid }}
 {% endif -%}
 software-url = {{ '/'.join(software_url.split('/')[:-1]) + '/software-%s.cfg' % sr_name }}
 return = instance-path
