@@ -92,6 +92,7 @@ context =
   key eggs_directory buildout:eggs-directory
   key slapparameter_dict slap-configuration:configuration
   raw monitor_template ${monitor-template:output}
+  import urllib_parse six.moves.urllib.parse
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
