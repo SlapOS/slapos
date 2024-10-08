@@ -50,6 +50,37 @@
       "title": "Fixed IP for the UE",
       "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
       "type": "boolean"
+    },
+    "eps_5gs_interworking": {
+      "title": "EPS 5GS Interworking",
+      "type": "string",
+      "description": "Defines whether inter RAT mobility between EPS and 5GS is supported or not, and whether N26 interface is supported or not. Note that interworking with N26 is required to perform handover between EPS and 5GS.",
+      "enum": [
+        "None",
+        "With N26",
+        "Without N26"
+      ],
+      "default": "With N26"
+    },
+    "hss_addr": {
+      "title": "HSS Address",
+      "description": "IP address and optional port of the HSS used for S6a interface. The default port is 3868.",
+      "type": "string"
+    },
+    "hss_bind_addr": {
+      "title": "HSS Bind Address",
+      "description": "IP address and optional port on which the S6a SCTP connection is bound. The default address is the same as the S1AP SCTP connection.",
+      "type": "string"
+    },
+    "s6_origin_realm": {
+      "title": "S6 Origin Realm",
+      "description": "Defines the string sent in the Origin-Realm AVP for S6 messages. Default is set to mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
+      "type": "string"
+    },
+    "s6_origin_host": {
+      "title": "S6 Origin Host",
+      "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
+      "type": "string"
     }
   }
 }
