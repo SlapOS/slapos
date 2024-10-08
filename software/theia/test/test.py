@@ -679,11 +679,14 @@ class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithE
 
 class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
 
+  MONITOR_CORS_DOMAINS = 'monitor.couscous.cors'
+  MONITOR_INTERFACE_URL = 'monitor.couscous.interface'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'monitor-cors-domains': 'monitor.couscous.cors',
-      'monitor-interface-url': 'monitor.couscous.interface'
+      'monitor-cors-domains': TestTheiaResilientMonitoring.MONITOR_CORS_DOMAINS,
+      'monitor-interface-url': TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL
     }
 
   def test_monitoring_propagation(self):
@@ -694,8 +697,26 @@ class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
         for p in self.slap.computer.getComputerPartitionList()
       ] if u is not None
     ]
-
     self.assertEqual(len(monitor_setup_url_list), 4)
-
     for url in monitor_setup_url_list:
-      self.assertIn('monitor.couscous.interface', url)
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL, url)
+
+    monitor_cors_url_list = [
+      u for u in [
+        p.getInstanceParameterDict().get('monitor-cors-domains')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    self.assertEqual(len(monitor_cors_url_list), 4)
+    for url in monitor_cors_url_list:
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_CORS_DOMAINS, url)
+
+    monitor_interface_url_list = [
+      u for u in [
+        p.getInstanceParameterDict().get('monitor-interface-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    self.assertEqual(len(monitor_interface_url_list), 4)
+    for url in monitor_interface_url_list:
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL, url)
