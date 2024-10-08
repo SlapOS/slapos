@@ -1,6 +1,32 @@
 Changelog
 =========
 
+Version 1.0.371 (2024-10-09)
+-------------
+
+* rename ors-amarisoft to simpleran
+
+## UE simulator:
+
+* add UE mode for ORS (experimental)
+
+## eNB / gNB changes:
+
+* add compatibility with our KPI calculation and storage platform
+* support external MBMSGW
+* display current frequency and band
+* add promise testing if frequency is out of bounds (ORS only)
+* fix eNB configuration for 1.4MHz bandwidth
+* change default RX gain to 25
+* add useful information in eNB / gNB logs: host ID, FPGA version and kernel version
+* keep old eNB / gNB radio logs
+
+## Core Network changes:
+
+* support external HSS (S6), tested only for LTE
+* add multicast and broadcast
+* display the list of IMSI in the UE database
+
 Version 1.0.361 (2024-05-29)
 -------------
 
