@@ -6,11 +6,11 @@ Version 1.0.371 (2024-10-09)
 
 * rename ors-amarisoft to simpleran
 
-## UE simulator:
+**UE simulator:**
 
 * add UE mode for ORS (experimental)
 
-## eNB / gNB changes:
+**eNB / gNB changes:**
 
 * add compatibility with our KPI calculation and storage platform
 * support external MBMSGW
@@ -21,7 +21,7 @@ Version 1.0.371 (2024-10-09)
 * add useful information in eNB / gNB logs: host ID, FPGA version and kernel version
 * keep old eNB / gNB radio logs
 
-## Core Network changes:
+**Core Network changes:**
 
 * support external HSS (S6), tested only for LTE
 * add multicast and broadcast
