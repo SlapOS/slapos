@@ -466,7 +466,7 @@
                   "const": [
                     "https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c72871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0"
                   ],
-                  "title": "Debian Bookworm 11 netinst x86_64"
+                  "title": "Debian Bullseye 11 netinst x86_64"
                 },
                 {
                   "const": [

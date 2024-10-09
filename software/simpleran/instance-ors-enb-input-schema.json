@@ -73,6 +73,9 @@
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
       "default": "127.0.1.1"
     },
+    "mbmsgw_addr": {
+      "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
+    },
     "mme_list": {
       "$ref": "instance-enb-input-schema.json#/properties/mme_list",
       "default": {
@@ -195,6 +198,9 @@
     },
     "min_rxtx_delay": {
       "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
+    },
+    "wendelin_telecom_software_release_url": {
+      "$ref": "instance-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
     },
     "xlog_fluentbit_forward_host": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_host"

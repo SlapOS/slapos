@@ -314,12 +314,14 @@ class ENBTestCase4(RFTestCase4):
         'enb_id':       '0x17',
         'gnb_id':       '0x23',
         'gnb_id_bits':  30,
+        'mbmsgw_addr':  '1.4.3.2',
+        'gtp_addr':  '4.2.3.1',
         'mme_list':     {
-            '1': {'mme_addr': '1.2.3.4'},
+            '1': {'mme_addr': '1.2.3.4', 's1ap_bind_addr': '2.1.3.4'},
             '2': {'mme_addr': '[abcd:5::1]:78'},
         },
         'amf_list':     {
-            '1': {'amf_addr': '4.3.2.1:77'},
+            '1': {'amf_addr': '4.3.2.1:77', 'ngap_bind_addr': '2.1.3.4'},
             '2': {'amf_addr': 'dcba:5::1'},
         },
         'plmn_list':    {
