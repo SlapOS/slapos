@@ -1,4 +1,4 @@
-# ORS Amarisoft software release
+# Simpleran software release
 
 How to deploy from scratch
 
