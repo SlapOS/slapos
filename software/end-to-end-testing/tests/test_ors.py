@@ -14,7 +14,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.sim_instance_name = time.strftime('e2e-ors84-sim-%Y-%B-%d-%H:%M:%S')
             cls.ue_instance_name = time.strftime('e2e-simbox005-ue-%Y-%B-%d-%H:%M:%S')
             cls.product = cls.product.get('ors-tdd')
-            cls.ue_product = "/opt/e2e/slapos/software/ors-amarisoft/software-fdd-lopcomm.cfg"
+            cls.ue_product = "/opt/e2e/slapos/software/simpleran/software-fdd-lopcomm.cfg"
 
             # Component GUIDs and configurations
             cls.comp_enb = "COMP-4057"
