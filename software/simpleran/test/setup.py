@@ -34,7 +34,7 @@ with open("README.md") as f:
 setup(
     name=name,
     version=version,
-    description="Test for SlapOS' ors-amarisoft",
+    description="Test for SlapOS' simpleran",
     long_description=long_description,
     long_description_content_type='text/markdown',
     maintainer="Nexedi",
