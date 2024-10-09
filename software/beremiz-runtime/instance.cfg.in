@@ -30,7 +30,7 @@ cert = ${slap-connection:cert-file}
 configuration.runtime_plc_url =
 configuration.runtime_plc_md5sum =
 configuration.autostart = 1
-configuration.interface = 127.0.0.1
+configuration.interface = ${:ipv4-random}
 configuration.port = 8009
 
 # Create all needed directories, depending on your needs
