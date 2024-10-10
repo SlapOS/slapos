@@ -9,8 +9,10 @@ cert = ${slap-connection:cert-file}
 # XXX Default values if doesn't exists
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
-configuration.monitor-cors-domains = monitor.app.officejs.com
-configuration.monitor-interface-url = https://monitor.app.officejs.com
+#configuration.monitor-cors-domains = {{ propa_moni_cors }}
+#configuration.monitor-interface-url = {{ propa_moni_interface }}
+configuration.monitor-cors-domains = default.cors
+configuration.monitor-interface-url = default.interface
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -326,7 +328,13 @@ monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
 
+[monitor-parameters-propagation]
+update =
+config-monitor-cors-domains = "roque-buildout-cors-domain"
+config-monitor-interface-url = "roque-buildout-interface-url"
+
 [monitor-instance-parameter]
+<= monitor-parameters-propagation
 monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
@@ -335,7 +343,8 @@ monitor-base-url = ${monitor-frontend:connection-secure_access}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-cors-domains = ${slap-configuration:configuration.monitor-cors-domains}
+#cors-domains = ${slap-configuration:configuration.monitor-cors-domains}
+cors-domains = ${monitor-parameters-propagation:config-monitor-cors-domains}
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
@@ -343,7 +352,8 @@ password = ${monitor-htpasswd:passwd}
 username = admin
 instance-configuration =
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
-interface-url = ${slap-configuration:configuration.monitor-interface-url}
+#interface-url = ${slap-configuration:configuration.monitor-interface-url}
+interface-url = ${monitor-parameters-propagation:config-monitor-interface-url}
 
 [monitor-frontend]
 <= slap-connection
