@@ -1,0 +1,47 @@
+[project]
+name = "slapos.test.gdal"
+version = "0.0.1.dev0"
+description = "Test for SlapOS' GDAL component."
+readme = "README.md"
+requires-python = ">=3"
+license = {text = "GNU General Public License version 3 or later"}
+keywords = [
+	"SlapOS",
+	"testing",
+	"GDAL",
+]
+authors = [
+  {name = "Nexedi"},
+]
+maintainers = [
+  {name = "Nexedi", email = "info@nexedi.com"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+
+dependencies = [
+	"slapos.core",
+	"slapos.libnetworkcache",
+]
+
+[project.urls]
+homepage = "https://slapos.nexedi.com"
+documentation = "https://slapos.nexedi.com"
+repository = "https://lab.nexedi.com/nexedi/slapos"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+zip-safe = true
