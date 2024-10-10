@@ -1,4 +1,3 @@
-import glob
 import ipaddress
 import json
 import logging
@@ -267,17 +266,13 @@ class TestLog(BalancerTestCase, CrontabMixin):
     # crontab for apachedex is executed
     self._executeCrontabAtDate('generate-apachedex-report', '23:59')
     # it creates a report for the day
-    apachedex_report, = glob.glob(
-        os.path.join(
-            self.computer_partition_root_path,
-            'srv',
-            'monitor',
-            'private',
-            'apachedex',
-            'ApacheDex-*.html',
-        ))
-    with open(apachedex_report) as f:
-      report_text = f.read()
+    apachedex_report, = (
+      self.computer_partition_root_path
+        / 'srv'
+        / 'monitor'
+        / 'private'
+        / 'apachedex').glob('ApacheDex-*.html')
+    report_text = apachedex_report.read_text()
     self.assertIn('APacheDEX', report_text)
     # having this table means that apachedex could parse some lines.
     self.assertIn('<h2>Hits per status code</h2>', report_text)
@@ -318,8 +313,8 @@ class TestLog(BalancerTestCase, CrontabMixin):
     self.assertEqual(
         requests.get(self.default_balancer_zope_url, verify=False).status_code,
         requests.codes.service_unavailable)
-    with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-error.log')) as error_log_file:
-      error_line = error_log_file.read().splitlines()[-1]
+    error_log_file = self.computer_partition_root_path / 'var' / 'log' / 'apache-error.log'
+    error_line = error_log_file.read_text().splitlines()[-1]
     self.assertIn('backend default has no server available!', error_line)
     # this log also include a timestamp
     self.assertRegex(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
@@ -416,7 +411,7 @@ class TestBalancer(BalancerTestCase):
     # real time statistics can be obtained by using the stats socket and there
     # is a wrapper which makes this a bit easier.
     socat_process = subprocess.Popen(
-        [self.computer_partition_root_path + '/bin/haproxy-socat-stats'],
+        [self.computer_partition_root_path / 'bin' / 'haproxy-socat-stats'],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT
@@ -604,14 +599,10 @@ class TestServerTLSEmbeddedCaucase(BalancerTestCase):
       balancer_parsed_url.port)
 
     # run caucase updater in the future, so that certificate is renewed
-    caucase_updater, = glob.glob(
-      os.path.join(
-        self.computer_partition_root_path,
-        'etc',
-        'service',
-        'caucase-updater-haproxy-certificate-*',
-      ))
-    process = pexpect.spawnu("faketime +90days " + caucase_updater)
+    caucase_updater, = (
+      self.computer_partition_root_path / 'etc' / 'service'
+    ).glob('caucase-updater-haproxy-certificate-*')
+    process = pexpect.spawnu(f"faketime +90days {caucase_updater}")
     logger = self.logger
     class DebugLogFile:
       def write(self, msg):
@@ -953,21 +944,16 @@ class TestClientTLS(BalancerTestCase):
 
       # We have two services in charge of updating CRL and CA certificates for
       # each frontend CA, plus the one for the balancer's own certificate
-      caucase_updater_list = glob.glob(
-          os.path.join(
-              self.computer_partition_root_path,
-              'etc',
-              'service',
-              'caucase-updater-*',
-          ))
+      caucase_updater_list = list((
+        self.computer_partition_root_path / 'etc' / 'service'
+      ).glob('caucase-updater-*'))
       self.assertEqual(len(caucase_updater_list), 3)
 
       # find the one corresponding to this caucase
       for caucase_updater_candidate in caucase_updater_list:
-        with open(caucase_updater_candidate) as f:
-          if caucase.url in f.read():
-            caucase_updater = caucase_updater_candidate
-            break
+        if caucase.url in caucase_updater_candidate.read_text():
+          caucase_updater = caucase_updater_candidate
+          break
       else:
         self.fail("Could not find caucase updater script for %s" % caucase.url)
 

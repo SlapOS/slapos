@@ -236,7 +236,7 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
         [],
         [
             f for f in self.proftpdProcess.open_files() if f.mode != 'r'
-            if not f.path.startswith(self.computer_partition_root_path)
+            if not f.path.startswith(str(self.computer_partition_root_path))
         ])
 
   def test_only_unix_socket_in_instance_dir(self):
@@ -244,7 +244,7 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
         [],
         [
             s for s in self.proftpdProcess.connections('unix')
-            if not s.laddr.startswith(self.computer_partition_root_path)
+            if not s.laddr.startswith(str(self.computer_partition_root_path))
         ])
 
 

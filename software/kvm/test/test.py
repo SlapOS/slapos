@@ -160,7 +160,7 @@ class KVMTestCase(InstanceTestCase):
     return image_list
 
   @classmethod
-  def _findTopLevelPartitionPath(cls, path):
+  def _findTopLevelPartitionPath(cls, path: str):
     index = 0
     while True:
       index = path.find(os.path.sep, index) + len(os.path.sep)
@@ -551,7 +551,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
   def test(self):
     # START: mock .slapos-resource with tap.ipv4_addr
     # needed for netconfig.sh
-    partition_path = self.computer_partition_root_path
+    partition_path = str(self.computer_partition_root_path)
     top_partition_path = self._findTopLevelPartitionPath(partition_path)
 
     with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
