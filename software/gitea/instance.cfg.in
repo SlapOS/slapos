@@ -1,0 +1,160 @@
+[buildout]
+parts =
+  postgresql
+  publish-connection-parameter
+extends = {{ monitor_template }}
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+
+[gitea]
+ipv6 = ${instance-parameter:ipv6-random}
+port = 8180
+url = https://[${:ipv6}]:${:port}
+
+# TODO: published frontend URL
+domain = softinstXXXX.host.vifib.net
+
+
+repositories-dir = ${directory:gitea-repositories-dir}
+logs-dir = ${directory:gitea-logs-dir}
+custom-dir = ${directory:gitea-custom-dir}
+work-path-dir = ${directory:gitea-work-path-dir}
+static-root-path = {{ gitea_static_root_path }}
+pid-file = ${directory:var}/${:_buildout_section_name_}.pid
+
+ssl-cert-file = ${gitea-certificate:cert-file}
+ssl-key-file = ${gitea-certificate:key-file}
+git-bin = {{ git_bin }}
+
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ gitea_bin }}
+    --config ${gitea-config-file:rendered}
+    --work-path ${:work-path-dir}
+    --custom-path ${:custom-dir}
+    --pid ${:pid-file}
+    web
+wrapper-path = ${directory:service}/gitea
+hash-files =
+  ${gitea-config-file:rendered}
+environment =
+  PATH={{ gitea_environment_path }}:/usr/bin/:/bin/
+# bug : /install complain
+# Could not test 'git' command: exec: "git": executable file not found in $PATH
+# so we also add it in $PATH here
+# TODO: don't hardcode /usr/bin/:/bin/
+
+[gitea-certificate]
+<= generate-certificate
+
+[gitea-config-file]
+<= config-file
+context =
+  section gitea gitea
+  section postgresql postgresql
+  key slapparameter_dict slap-configuration:configuration
+
+
+[postgresql]
+recipe = slapos.cookbook:postgres
+bin = {{ postgresql_bin }}
+services = ${directory:service}
+dbname = gitea
+superuser = gitea-psql
+password = insecure
+pgdata-directory = ${directory:srv}/postgresql
+
+# disable listening on ip
+ipv4 =
+ipv6 =
+port = 5432
+
+promises = ${postgresql-promise:name}
+
+[postgresql-psql]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+command-line =
+    ${postgresql:bin}/psql
+        -h ${postgresql:pgdata-directory}
+        -U ${postgresql:superuser}
+        -d ${postgresql:dbname}
+
+[postgresql-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = promise-postgresql.py
+config-command = ${postgresql-psql:wrapper-path} -c '\q'
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-configuration]
+# apache-frontend reads from from a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+
+gitea-repositories-dir = ${:srv}/repositories/
+gitea-logs-dir = ${:var}/log/
+gitea-work-path-dir = ${:srv}/gitea/
+gitea-custom-dir = ${:srv}/gitea-custom/
+
+# macros
+[generate-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    {{ openssl_bin }} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
+      -newkey rsa:1024 -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${directory:etc}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+
+[config-file]
+recipe = slapos.recipe.template:jinja2
+template = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
+rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
+mode = 0644
+extensions = jinja2.ext.do
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[check-url-available-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promise}/${:_buildout_section_name_}
+dash_path = {{ dash_bin }}
+curl_path = {{ curl_bin }}
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${gitea:url}
