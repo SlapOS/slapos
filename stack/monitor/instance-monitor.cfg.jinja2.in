@@ -9,8 +9,7 @@ cert = ${slap-connection:cert-file}
 # XXX Default values if doesn't exists
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
-configuration.monitor-cors-domains = monitor.app.officejs.com
-configuration.monitor-interface-url = https://monitor.app.officejs.com
+configuration.monitor-interface-url = https://monitor.app.officejs.com/#page=ojsm_landing
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -160,6 +159,9 @@ recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${monitor-directory:etc}/.monitor-password
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
+location =
+  ${:password-file}
+  ${:htpasswd-path}
 command =
   echo "${monitor-instance-parameter:password}" >${:password-file}
   {{ apache_location }}/bin/htpasswd -cib ${:htpasswd-path} "${monitor-instance-parameter:username}" "${monitor-instance-parameter:password}"
@@ -326,6 +328,16 @@ monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
 
+[monitor-parameters-propagation]
+config-monitor-interface-url = ${slap-configuration:configuration.monitor-interface-url}
+
+[monitor-interface-configuration]
+recipe = slapos.recipe.build
+url = ${monitor-parameters-propagation:config-monitor-interface-url}
+init =
+  from six.moves.urllib.parse import urlparse
+  options['cors-domain'] = urlparse(options['url']).hostname
+
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
@@ -335,7 +347,7 @@ monitor-base-url = ${monitor-frontend:connection-secure_access}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-cors-domains = ${slap-configuration:configuration.monitor-cors-domains}
+cors-domains = ${monitor-interface-configuration:cors-domain}
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
@@ -343,7 +355,7 @@ password = ${monitor-htpasswd:passwd}
 username = admin
 instance-configuration =
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
-interface-url = ${slap-configuration:configuration.monitor-interface-url}
+interface-url = ${monitor-interface-configuration:url}
 
 [monitor-frontend]
 <= slap-connection
@@ -427,8 +439,8 @@ depends =
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=ojsm_landing&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-
+# interface-url can be a template URI.
+monitor-setup-url = ${monitor-instance-parameter:interface-url}&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
 
 [buildout]
 
