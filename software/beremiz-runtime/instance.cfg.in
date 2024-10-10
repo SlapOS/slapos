@@ -29,9 +29,6 @@ key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 configuration.runtime_plc_url =
 configuration.runtime_plc_md5sum =
-configuration.autostart = 1
-configuration.interface = ${:ipv4-random}
-configuration.port = 8009
 
 # Create all needed directories, depending on your needs
 [directory]
@@ -47,6 +44,10 @@ log = ${:var}/log
 [beremiz-runtime]
 logfile = ${directory:log}/beremiz-runtime.log
 recipe = slapos.cookbook:wrapper
+
+# default webport in Beremiz
+webport = 8009
+
 # adding BEREMIZPYTHONPATH is needed so we can override the Beremiz'
 # internal code which tries to use sys.executable to spawn processes
 # and in the context of SlapOS it's a plain Python without needed modules
@@ -56,6 +57,7 @@ environment =
   BEREMIZPYTHONPATH = {{ buildout['bin-directory'] }}/pythonwitheggs
   PATH={{ gcc_location }}/bin
   LIBRARY_PATH={{ openssl_location }}/lib
+  BEREMIZ_LOCAL_HOST=${instance-parameter:ipv4-random}
 
 command-line =
  {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/parts/beremiz-source/Beremiz_cli.py -k --project-home ${directory:home}/parts/download-plc/ build transfer run
@@ -64,10 +66,9 @@ wrapper-path = ${directory:service}/beremiz-runtime
 [http-promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promise}/${:_buildout_section_name_}
-hostname = ${instance-parameter:configuration.interface}
-port = ${instance-parameter:configuration.port}
+hostname = ${instance-parameter:ipv4-random}
+port = ${beremiz-runtime:webport}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-port = ${instance-parameter:configuration.port}
-interface = ${instance-parameter:configuration.interface}
+beremiz_runtime_url = http://${instance-parameter:ipv4-random}:${beremiz-runtime:webport}
