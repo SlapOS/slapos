@@ -28,13 +28,11 @@
 import os
 import contextlib
 import paramiko
-import subprocess
 
 from urllib.parse import urlparse
-import socket
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.util import bytes2str
+
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -71,5 +69,5 @@ class TestSSH(SlapOSInstanceTestCase):
         self.assertTrue(client.get_transport().is_active())
         # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
         # exec_command means `ssh user@host command`
-        current_path = bytes2str(client.exec_command("pwd")[1].read(1000)).strip()
-        self.assertIn(current_path, self.computer_partition_root_path)
+        current_path = client.exec_command("pwd")[1].read(1000).decode().strip()
+        self.assertIn(current_path, str(self.computer_partition_root_path))
