@@ -51,7 +51,7 @@ install =
 [mosquitto-password-file]
 recipe = plone.recipe.command
 location = ${directory:etc}/${:_buildout_section_name_}.txt
-command = 
+command =
   touch ${:location}
   {{ mosquitto_location }}/bin/mosquitto_passwd -b ${:location} ${mosquitto-password:username} ${mosquitto-password:passwd}
 stop-on-error = true
