@@ -101,6 +101,7 @@ inline =
   echo "Backing up $storage_name ..."
   $repozo \
     --backup \
+    --kill-old-on-full \
     --gzip \
     --quick \
     --repository="$zodb_backup_directory/$storage_name" \
