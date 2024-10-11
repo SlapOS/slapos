@@ -212,6 +212,12 @@
       "type": "number",
       "default": 0
     },
+    "xlog_forwarding_enabled": {
+      "title": "Enable eNB xlog forwarding",
+      "description": "Enable eNB xlog forwarding through fluentbit",
+      "type": "boolean",
+      "default": "true"
+    },
     "wendelin_telecom_software_release_url": {
       "title": "Wendelin Telecom Software Release URL",
       "description": "URL of the Wendelin Telecom Software Release to use to request a shared instance",
@@ -221,8 +227,7 @@
     "xlog_fluentbit_forward_host": {
       "title": "Fluentbit Xlog forwarding address",
       "description": "Address of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
-      "type": "string",
-      "default": "fluentd.rapid.space"
+      "type": "string"
     },
     "xlog_fluentbit_forward_port": {
       "title": "Fluentbit Xlog forwarding port",
