@@ -51,6 +51,8 @@ setup(name=name,
         'cryptography',
         'pexpect',
         'pyOpenSSL',
+        'ZEO',
+        'zodburi',
       ],
       test_suite='test',
     )
