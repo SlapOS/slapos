@@ -80,6 +80,44 @@ config-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
 {%   set tidstorage_repozo_path = '' -%}
 {% else -%}
 
+[repozo-backup-script]
+repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
+
+# BBB on python3 we don't use Products.TIDStorage but repozo directly.
+[repozo-backup-script:python3]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  zodb_directory="${directory:zodb}"
+  zodb_backup_directory="{{ default_backup_path }}"
+  repozo="${tidstorage:repozo-binary}"
+  EXIT_CODE=0
+
+  {% for family, zodb in six.iteritems(zodb_dict) -%}
+  {%   for name, zodb in zodb -%}
+  storage_name="{{ name }}"
+  zodb_path="$storage_name.fs"
+  [ ! -d "$zodb_backup_directory/$storage_name" ]] && mkdir "$zodb_backup_directory/$storage_name"
+  echo "Backing up $storage_name ..."
+  $repozo \
+    --backup \
+    --gzip \
+    --quick \
+    --repository="$zodb_backup_directory/$storage_name" \
+    --file="$zodb_directory/$zodb_path"
+
+  CURRENT_EXIT_CODE=$?
+  if [ ! "$CURRENT_EXIT_CODE"="0" ]; then
+    EXIT_CODE="$CURRENT_EXIT_CODE"
+    echo "$storage_name Backup restoration failed."
+  fi
+  {%   endfor -%}
+  {% endfor -%}
+  exit $EXIT_CODE
+repozo-wrapper = ${:output}
+mode = 755
+output = ${buildout:bin-directory}/repozo-backup
+
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) }}
@@ -116,7 +154,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = tidstorage
 time = {{ dumps(backup_periodicity) }}
-command = ${tidstorage:repozo-wrapper}
+command = ${repozo-backup-script:repozo-wrapper}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
