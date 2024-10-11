@@ -147,8 +147,6 @@ inline =
   # zodb location. It is launched by the clone (importer) instance of webrunner
   # in the end of the import script.
 
-  # Depending on the output, it will create a file containing
-  # the status of the restoration (success or failure).
   zodb_directory="${directory:zodb}"
   zodb_backup_directory="{{ default_backup_path }}"
   repozo="${tidstorage:repozo-binary}"
