@@ -26,7 +26,7 @@
 ##############################################################################
 from setuptools import setup, find_packages
 
-version = '0.0.1.dev0'
+version = '0.0.1.dev1'
 name = 'slapos.test.erp5'
 with open("README.md") as f:
   long_description = f.read()
@@ -51,6 +51,8 @@ setup(name=name,
         'cryptography',
         'pexpect',
         'pyOpenSSL',
+        'ZEO',
+        'zodburi',
       ],
       test_suite='test',
     )
