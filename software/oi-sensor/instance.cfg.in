@@ -1,0 +1,52 @@
+[buildout]
+parts =
+  promises
+  directory
+  oi-sensor-service
+
+eggs-directory = {{ buildout["eggs-directory"] }}
+develop-eggs-directory = {{ buildout["develop-eggs-directory"] }}
+offline = true
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise/
+log = ${:var}/log
+bin = ${:home}/bin
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.camera = 0
+configuration.headless = 1
+configuration.mode = 0
+configuration.port = 4840
+
+[oi-sensor-service]
+recipe = slapos.cookbook:wrapper
+command-line = {{ interpreter_location }}/py {{ osie_repository_location }}/oi-sensor/oi-sensor.py --headless ${instance-parameter:configuration.headless} --camera ${instance-parameter:configuration.camera} --mode ${instance-parameter:configuration.mode} --port ${instance-parameter:configuration.port}
+wrapper-path = ${directory:service}/oi-sensor-service
+output = $${:wrapper-path}
+
+[oi-sensor-service-listen-promise-ipv4]
+<= check-port-listening-promise
+hostname = 0.0.0.0
+port = ${instance-parameter:configuration.port}
+
+[promises]
+recipe =
+instance-promises =
+  ${oi-sensor-service-listen-promise-ipv4:path}
