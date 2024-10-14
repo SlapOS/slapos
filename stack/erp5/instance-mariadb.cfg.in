@@ -37,6 +37,7 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+replication-bootstrap-url = ${mariadb-backup-static-http-server:bootstrap-url}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
@@ -90,21 +91,32 @@ about laxist file mode. -#}
 {%- endif %}
 
 {% if full_backup_retention_days > -1 -%}
-[{{ section('cron-entry-mariadb-backup') }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = mariadb-backup
-time = {{ dumps(backup_periodicity) }}
+[mariadb-backup-script]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+ln = {{ parameter_dict['coreutils_location'] }}/bin/ln
+most-recent = most-recent.sql.gz
 {# When binlogs are enabled:
 # flush-logs: used so no manipulation on binlogs is needed to restore from
 #   full + binlogs. The first binlog after a dump starts from dump snapshot and
 #   can be fully restored.
 # master-data: use value "2" as we are not in a replication case
 #}
-command = "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+inline =
+  #! {{ dash }}
+  filepath="${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+  "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  ${:ln} -sf $filepath "${directory:mariadb-backup-full}/${:most-recent}"
 {# KEEP GLOB PATTERN IN SYNC with generated filenames above
 #           YYYYmmddHHMMSS -#}
 file-glob = ??????????????.sql.gz
+
+[{{ section('cron-entry-mariadb-backup') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariadb-backup
+time = {{ dumps(backup_periodicity) }}
+command = ${mariadb-backup-script:output}
 
 {% if full_backup_retention_days > 0 -%}
 [{{ section("cron-entry-mariadb-backup-expire") }}]
@@ -112,7 +124,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup-expire
 time = {{ dumps(backup_periodicity) }}
-command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
+command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${mariadb-backup-script:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
 {%- endif %}
 {%- endif %}
 
@@ -191,6 +203,22 @@ environ =
   {{ variable }}
   {%- endfor %}
 
+
+[{{ section('mariadb-backup-static-server-promise') }}]
+<= monitor-promise-base
+promise = check_socket_listening
+name = mariadb_replication_bootstrap_static_server.py
+config-host = ${mariadb-backup-static-http-server:host}
+config-port = ${mariadb-backup-static-http-server:port}
+
+[{{ section('mariadb-backup-static-http-server') }}]
+recipe = slapos.cookbook:simplehttpserver
+wrapper = ${directory:services}/${:_buildout_section_name_}
+bootstrap-url = http://{{ ip_as_host }}:${:port}/${mariadb-backup-script:most-recent}
+host = {{ ip }}
+port = {{ port - 1 }}
+base-path = ${directory:mariadb-backup-full}
+log-file = ${directory:log}/${:_buildout_section_name_}.log
 
 [{{ section('odbc-ini') }}]
 recipe = slapos.recipe.template
@@ -315,7 +343,7 @@ filename = generate-mariadb-slow-query-report
 context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
-  raw dash {{ parameter_dict['dash-location'] }}/bin/dash
+  raw dash {{ dash }}
   raw xz {{ parameter_dict['xz-utils-location'] }}/bin/xz
   key output_folder directory:slowquery
 
