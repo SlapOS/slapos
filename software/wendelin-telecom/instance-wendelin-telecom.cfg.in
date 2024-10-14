@@ -11,6 +11,7 @@ slave-instance-list = {{ dumps(slave_instance_list) }}
 site-id = ${publish:site-id}
 inituser-login = ${publish:inituser-login}
 inituser-password = ${publish-early:inituser-password}
+gateway-host = {{ slapparameter_dict.get("gateway-host", "") }}
 update =
   import json
   import logging
@@ -47,6 +48,7 @@ update =
     wendelin_telecom_site_id = options['site-id']
     inituser_login = options['inituser-login']
     inituser_password = options['inituser-password']
+    fluentd_gateway_host = options['gateway-host']
 
     for slave in self.slave_instance_list:
       slave_reference = slave['slave_reference']
@@ -68,6 +70,8 @@ update =
         log.info(error_msg)
       else:
         log.info("ORS successfully registered: %s" % slave_reference)
+        log.info("Update parameters for %s" % slave_reference)
+        computer_partition.setConnectionDict({'gateway-host': str(fluentd_gateway_host)}, slave_reference),
 
 [publish]
 slave-amount = {{ len(slave_instance_list) }}
