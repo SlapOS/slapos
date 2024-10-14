@@ -327,7 +327,7 @@ class TestOrderBuildPackingListSimulation(
         {
           'pt-query-digest':
           subprocess.check_output(
-            (pt_query_digest, mariadb_slowquery_log), text=True),
+            (pt_query_digest, mariadb_slowquery_log), text=True, errors='surrogateescape'),
           'data-size': mariadb_data_size,
           'binlog-data-size': mariadb_binlog_data_size,
         })
