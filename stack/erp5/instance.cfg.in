@@ -190,6 +190,7 @@ unixodbc-location = {{ unixodbc_location }}
 mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
 mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
 groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
+wget-location = {{ wget_location }}
 coreutils_location = {{ coreutils_location }}
 
 [dynamic-template-mariadb]
@@ -198,6 +199,7 @@ url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
+    import urllib_parse six.moves.urllib.parse
 
 # Keep a section for backward compatibility for removed types
 # Once the section is removed, ghost instances will keep failing until
