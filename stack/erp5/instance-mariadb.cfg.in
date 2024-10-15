@@ -18,7 +18,10 @@
 {%   set ip = (ipv4_set | list)[0] -%}
 {%   set ip_as_host = ip -%}
 {% endif -%}
-{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
+{% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
+{% set replication = slapparameter_dict.get('replication', {}) -%}
+
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -95,7 +98,7 @@ about laxist file mode. -#}
 [mariadb-backup-script]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
-ln = {{ parameter_dict['coreutils_location'] }}/bin/ln
+ln = {{ parameter_dict['coreutils-location'] }}/bin/ln
 most-recent = most-recent.sql.gz
 {# When binlogs are enabled:
 # flush-logs: used so no manipulation on binlogs is needed to restore from
@@ -201,10 +204,6 @@ mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 recipe = slapos.recipe.template:jinja2
 output = ${directory:services}/mariadb
 url = {{ parameter_dict['template-mysqld-wrapper'] }}
-context =
-  key defaults_file my-cnf:output
-  key datadir my-cnf-parameters:data-directory
-  key environ :environ
 environ =
   GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
   ODBCSYSINI='${my-cnf-parameters:etc-directory}'
@@ -212,7 +211,185 @@ environ =
   {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
   {{ variable }}
   {%- endfor %}
+context =
+  key defaults_file my-cnf:output
+  key datadir my-cnf-parameters:data-directory
+  key environ :environ
+{%- if replication %}
+  key initialisation mariadb-setup-replication:output
+{%- endif %}
 
+{% if replication -%}
+{% set bootstrap_url = replication['bootstrap-url'] -%}
+{% set primary_url = replication['primary-url'] -%}
+{% set primary = urllib_parse.urlsplit(primary_url) -%}
+[{{ section('mariadb-setup-replication') }}]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  #! {{ bash }}
+  set -euo pipefail
+
+  date="{{ parameter_dict['coreutils-location'] }}/bin/date"
+  echo="{{ parameter_dict['coreutils-location'] }}/bin/echo"
+  mariadb="{{ parameter_dict['mariadb-location'] }}/bin/mysqld"
+  mycnf="${my-cnf:output}"
+  mycnf_socket="${my-cnf-parameters:socket}"
+  update_mysql="${update-mysql:output}"
+  bootstrap_url={{ six_moves.shlex_quote(bootstrap_url) }}
+  bootstrap_file="${directory:mariadb-backup-full}/bootstrap.sql.gz"
+  curl="{{ parameter_dict['curl-location'] }}/bin/curl"
+  zcat="{{ parameter_dict['gzip-location'] }}/bin/zcat"
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  head="{{ parameter_dict['coreutils-location'] }}/bin/head"
+  grep="${binary-link:target-directory}/grep"
+  sed="${binary-link:target-directory}/sed"
+
+  $date
+
+  $echo "Starting mariadb for replication initialization"
+  $echo -n "  \_"
+  $mariadb --defaults-file=$mycnf --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin &
+  PID=$!
+  trap "kill $PID; wait; exit 1" EXIT
+  while true; do
+    if [ ! -e "/proc/$PID" ]; then
+      trap EXIT
+      $echo "Service exited; ABORT. Check the logs"
+      wait
+      exit 1
+    fi
+    test -S $mycnf_socket && break
+    $echo -n .
+    sleep 0.5
+  done
+  $echo " OK"
+
+  $echo "Updating mariadb"
+  $update_mysql
+  $echo "  \_ OK"
+
+  $echo "Fetching $bootstrap_url"
+  $curl -o $bootstrap_file $bootstrap_url
+  $echo "  \_ OK"
+
+  $echo "Importing $bootstrap_file"
+  $zcat $bootstrap_file | $mysql
+  $echo "  \_ OK"
+
+  $echo "Extracting GTID from backup"
+  set +o pipefail
+  SQL_SET_GTID=$($zcat $bootstrap_file 2>/dev/null | $head -n 100 | $grep "^--\s*SET GLOBAL gtid_slave_pos=" | $sed "s/^--\s*//")
+  set -o pipefail
+  if [ -z "$SQL_SET_GTID" ]; then
+    $echo "  \_ GTID not found in backup; ABORT"
+    exit 1
+  fi
+  $echo "  \_ OK, found $SQL_SET_GTID"
+
+  $echo "Configuring server as replica"
+  $echo -n "  \_"
+  $mysql -e "$SQL_SET_GTID"
+  $echo -n .
+  $mysql -e "
+    CHANGE MASTER TO
+    MASTER_HOST='{{ primary.hostname }}',
+    MASTER_USER='{{ primary.username }}',
+    MASTER_PASSWORD='{{ primary.password }}',
+    MASTER_PORT={{ primary.port }},
+    MASTER_USE_GTID="slave_pos";
+  "
+  $echo -n .
+  $mysql -e "START SLAVE;"
+  $echo -n .
+  $echo " OK"
+
+  $echo "Stopping mariadb"
+  trap EXIT
+  kill $PID
+  wait
+  $echo "  \_ OK"
+
+  $echo "Starting mariadb normally"
+{%- endif %}
+
+{% if replication -%}
+{# cast to assert types -#}
+{% set threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
+{% set primary_url = str(primary_url) -%}
+{% else -%}
+{% set primary_url = None -%}
+{% set primary = {'host': None, 'port': None, 'user': None} -%}
+{% set threshold = None -%}
+{% endif -%}
+[mariadb-replication-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  from contextlib import closing
+
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  import pymysql.cursors
+
+  expected_url = {{ repr(primary_url) }}
+  expected = {{ repr((primary.hostname, primary.port, primary.username)) }}
+  max_delay = {{ threshold }}
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      conn = pymysql.connect(
+        read_default_file='${my-cnf:output}',
+        cursorclass=pymysql.cursors.DictCursor)
+      with closing(conn):
+        with closing(conn.cursor()) as cursor:
+          cursor.execute("SHOW SLAVE STATUS")
+          data = cursor.fetchone()
+      if data is None:
+        if expected_url is None:
+          self.logger.info("Mariadb is in primary mode")
+        else:
+          self.logger.error(
+            "Mariadb is not in replica mode\n"
+            "If this is expected, please unset 'replication' parameter"
+          )
+        return
+      if expected is None:
+        self.logger.error(
+          "Mariadb is in replica mode\n"
+          "If this is expected, please set 'replication' parameter"
+        )
+        return
+      primary = tuple(data.get('Master_' + k) for k in ('Host', 'Port', 'User'))
+      seconds_behind = data.get('Seconds_Behind_Master')
+      if any(v is None for v in primary) or seconds_behind is None:
+        from pprint import pformat
+        self.logger.error("Replication is in bad state:\n%s", pformat(data))
+        return
+      if primary != expected:
+        self.logger.error(
+          "Replica is not following given primary %s\n"
+          "Instead it's following %r\n"
+          "If this is expected, please correct 'replication' parameter'",
+          expected_primary_url,
+          primary,
+        )
+        return
+      if seconds_behind > max_delay >= 0:
+        self.logger.error("Replica is %d seconds behind", seconds_behind)
+        return
+      self.logger.info("Replica is %d seconds behind", seconds_behind)
+
+[{{ section('mariadb-replication-promise') }}]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.core
+  PyMySQL
+file = ${mariadb-replication-sense:output}
+output = ${directory:plugins}/mariadb_replication.py
 
 [{{ section('mariadb-backup-static-server-promise') }}]
 <= monitor-promise-base
