@@ -23,10 +23,6 @@ disk_type = {{ repr(parameter_dict["disk-type"]) }}
 network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
-nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
-              {{ parameter_dict.get("nbd-port") }}),
-            ('{{ parameter_dict.get("nbd2-host") }}',
-              {{ parameter_dict.get("nbd2-port") }}))
 default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
 
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
@@ -389,35 +385,18 @@ def handle_image(config, name):
   else:
     raise ValueError('%s not ready yet' % (name,))
 
-# Try to connect to NBD server (and second nbd if defined).
-# If not available, don't even specify it in qemu command line parameters.
-# Reason: if qemu starts with unavailable NBD drive, it will just crash.
-for nbd_ip, nbd_port in nbd_list:
-  if nbd_ip and nbd_port:
-    s = getSocketStatus(nbd_ip, nbd_port)
-    if s is None:
-      # NBD is not available : launch kvm without it
-      print('Warning : Nbd is not available.')
-    else:
-      # NBD is available
-      # We close the NBD socket else qemu won't be able to use it apparently
-      s.close()
-      kvm_argument_list.extend([
-          '-drive',
-          'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
-else:
-  # Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
-  #       Debian installation CDs, rendering it uninstallable
-  if boot_image_url_select_json_config:
-    # Support boot-image-url-select
-    handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
-  if boot_image_url_list_json_config:
-    # Support boot-image-url-list
-    handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
-  # Always add by default the default image
-  kvm_argument_list.extend([
-      '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
-  ])
+# Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
+#       Debian installation CDs, rendering it uninstallable
+if boot_image_url_select_json_config:
+  # Support boot-image-url-select
+  handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
+if boot_image_url_list_json_config:
+  # Support boot-image-url-list
+  handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
+# Always add by default the default image
+kvm_argument_list.extend([
+    '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
+])
 
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
