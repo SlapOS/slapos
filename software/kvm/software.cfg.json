@@ -25,13 +25,6 @@
       "request": "instance-kvm-cluster-input-schema.json",
       "response": "instance-kvm-output-schema.json",
       "index": 2
-    },
-    "nbd": {
-      "title": "NBD Server",
-      "description": "Simple NBD server where you can upload one image. This is a one-time server. Create another server if you want to change the image.",
-      "request": "instance-kvm-nbd-server-input-schema.json",
-      "response": "instance-kvm-nbd-server-output-schema.json",
-      "index": 4
     }
   }
 }

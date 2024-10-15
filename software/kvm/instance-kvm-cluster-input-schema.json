@@ -354,20 +354,6 @@
                 "vmxnet3"
               ]
             },
-            "nbd-host": {
-              "title": "NBD hostname or IP",
-              "description": "hostname (or IP) of the NBD server containing the boot image.",
-              "type": "string",
-              "format": "internet-address"
-            },
-            "nbd-port": {
-              "title": "NBD port",
-              "description": "Port of the NBD server containing the boot image.",
-              "type": "integer",
-              "default": 1024,
-              "minimum": 1,
-              "maximum": 65535
-            },
             "virtual-hard-drive-url": {
               "title": "Existing disk image URL",
               "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",

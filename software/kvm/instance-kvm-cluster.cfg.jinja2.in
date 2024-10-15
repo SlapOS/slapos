@@ -75,8 +75,6 @@ config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
 {% endif -%}
-config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
-config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 4096)) }}
 config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 4096)) + 512)) }}
 config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
@@ -89,7 +87,6 @@ config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', int(kvm_
 config-network-adapter = {{ dumps(kvm_parameter_dict.get('network-adapter', 'virtio-net-pci')) }}
 {{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
 {{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
-{{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
 {{ setconfig('host2', kvm_parameter_dict.get('host2', '')) }}
 
 config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True)) }}

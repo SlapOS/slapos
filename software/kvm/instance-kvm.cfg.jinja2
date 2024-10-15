@@ -415,10 +415,6 @@ boot-image-url-select-json-config = ${boot-image-url-select-json-config:output}
 {% else %}
 boot-image-url-select-json-config =
 {% endif %}
-nbd-host = ${slap-parameter:nbd-host}
-nbd-port = ${slap-parameter:nbd-port}
-nbd2-host = ${slap-parameter:nbd2-host}
-nbd2-port = ${slap-parameter:nbd2-port}
 
 tap-interface = {{ slap_configuration.get('tap-name', '') }}
 tap-ipv6-addr = {{ slap_configuration.get('tap-ipv6-addr', '') }}
@@ -1085,10 +1081,6 @@ frontend-additional-software-type = default
 frontend-additional-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 frontend-additional-instance-guid =
 frontend-additional-instance-name = VNC Real Frontend Additional
-nbd-port = 1024
-nbd-host =
-nbd2-port = 1024
-nbd2-host =
 boot-image-url-list =
 
 enable-device-hotplug = False
