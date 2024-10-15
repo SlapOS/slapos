@@ -1,0 +1,8 @@
+[buildout]
+extends = {{ template_kvm_export }}
+
+[cron-entry-backup]
+recipe = slapos.recipe.template:jinja2
+inline =
+  ${:command}
+output = {{ cron_d_mock }}/${:name}
