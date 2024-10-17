@@ -1,301 +1,63 @@
 [buildout]
-parts =
-  promises
-  publish-connection-parameter
-
+parts = switch-softwaretype
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+filename = ${:_buildout_section_name_}.cfg
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extensions =
+    jinja2.ext.do
+extra-context =
+context =
+    raw buildout_bin_directory {{ buildout['bin-directory'] }}
+    raw buildout_parts_directory {{ buildout['parts-directory'] }}
+    raw buildout_eggs_directory {{ buildout['eggs-directory'] }}
+    raw buildout_develop_eggs_directory {{ buildout['develop-eggs-directory'] }}
+    key slapparameter_dict slap-configuration:configuration
+    raw instance_default {{ instance_default }}
+    raw instance_agent {{ instance_agent }}
+    raw openssl_bin {{ openssl_bin }}
+    raw telegraf_bin {{ telegraf_bin }}
+    raw telegraf_input_slapos_bin {{ telegraf_input_slapos_bin }}
+    raw influxd_bin {{ influxd_bin }}
+    raw influx_bin {{ influx_bin }}
+    raw grafana_bin {{ grafana_bin }}
+    raw grafana_homepath {{ grafana_homepath }}
+    raw loki_bin {{ loki_bin }}
+    raw promtail_bin {{ promtail_bin }}
+    raw curl_bin {{ curl_bin }}
+    raw dash_bin {{ dash_bin }}
+    raw jq_bin {{ jq_bin }}
+import-list =
+    file caucase context:caucase-jinja2-library
 
 
-[instance-parameter]
-recipe = slapos.cookbook:slapconfiguration
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+[context]
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+
+
+[instance-default]
+<= jinja2-template-base
+url = {{ instance_default }}
+
+[instance-agent]
+<= jinja2-template-base
+url = {{ instance_agent }}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+
+default = instance-default:output
+RootSoftwareInstance = ${:default}
+agent = instance-agent:output
 
 [slap-configuration]
-# apache-frontend reads from from a part named [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-
-[directory]
-recipe = slapos.cookbook:mkdirectory
-home = ${buildout:directory}
-etc = ${:home}/etc
-var = ${:home}/var
-srv = ${:home}/srv
-service = ${:etc}/service
-promise = ${:etc}/promise
-influxdb-data-dir = ${:srv}/influxdb
-grafana-dir = ${:srv}/grafana
-grafana-data-dir = ${:grafana-dir}/data
-grafana-logs-dir = ${:var}/log
-grafana-plugins-dir = ${:grafana-dir}/plugins
-grafana-provisioning-config-dir = ${:grafana-dir}/provisioning-config
-grafana-provisioning-datasources-dir = ${:grafana-provisioning-config-dir}/datasources
-grafana-provisioning-dashboards-dir = ${:grafana-provisioning-config-dir}/dashboards
-telegraf-dir = ${:srv}/telegraf
-telegraf-extra-config-dir = ${:telegraf-dir}/extra-config
-loki-dir = ${:srv}/loki
-loki-storage-boltdb-dir = ${:loki-dir}/index/
-loki-storage-filesystem-dir = ${:loki-dir}/chunks/
-promtail-dir = ${:srv}/promtail
-
-# macros
-[generate-certificate]
-recipe = plone.recipe.command
-command =
-  if [ ! -e ${:key-file} ]
-  then
-    {{ openssl_bin }} req -x509 -nodes -sha256 -days 3650 \
-      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
-      -newkey rsa -keyout ${:key-file} \
-      -out ${:cert-file}
-  fi
-update-command = ${:command}
-key-file = ${directory:etc}/${:_buildout_section_name_}.key
-cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
-common-name = ${:_buildout_section_name_}
-
-[config-file]
-recipe = slapos.recipe.template:jinja2
-url = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
-output = ${directory:etc}/${:_buildout_section_name_}.cfg
-extensions = jinja2.ext.do
-
-[check-port-listening-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/${:_buildout_section_name_}
-
-[check-url-available-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promise}/${:_buildout_section_name_}
-dash_path = {{ dash_bin }}
-curl_path = {{ curl_bin }}
-
-[influxdb]
-ipv6 = ${instance-parameter:ipv6-random}
-ipv4 = ${instance-parameter:ipv4-random}
-host = ${:ipv6}
-local-host = ${:ipv4}
-rpc-port = 8088
-http-port = 8086
-url = https://[${:host}]:${:http-port}
-data-dir = ${directory:influxdb-data-dir}
-auth-username = ${influxdb-password:username}
-auth-password = ${influxdb-password:passwd}
-unix-socket = ${directory:var}/influxdb.socket
-ssl-cert-file = ${influxdb-certificate:cert-file}
-ssl-key-file = ${influxdb-certificate:key-file}
-database = telegraf
-
-recipe = slapos.cookbook:wrapper
-command-line =
-   nice -19 chrt --idle 0 ionice -c3 {{ influxd_bin }} -config ${influxdb-config-file:output}
-wrapper-path = ${directory:service}/influxdb
-
-[influxdb-config-file]
-<= config-file
-context =
-  section influxdb influxdb
-
-[influxdb-password]
-recipe = slapos.cookbook:generate.password
-username = influxdb
-
-[influxdb-certificate]
-<= generate-certificate
-
-[influxdb-listen-promise]
-<= check-port-listening-promise
-hostname = ${influxdb:ipv6}
-port = ${influxdb:http-port}
-
-[influxdb-password-promise]
-recipe = slapos.cookbook:wrapper
-command-line =
-  {{ influx_bin }} -username ${influxdb:auth-username} -password ${influxdb:auth-password} -socket ${influxdb:unix-socket} -execute "CREATE USER ${influxdb:auth-username} WITH PASSWORD '${influxdb:auth-password}' WITH ALL PRIVILEGES"
-wrapper-path = ${directory:promise}/${:_buildout_section_name_}
-
-[influxdb-database-ready-promise]
-recipe = slapos.cookbook:wrapper
-command-line =
-  bash -c "{{ influx_bin }} \
-     -username ${influxdb:auth-username} \
-     -password ${influxdb:auth-password} \
-     -host [${influxdb:host}] \
-     -port ${influxdb:http-port} \
-     -unsafeSsl \
-     -ssl \
-     -execute 'show databases' | grep '${influxdb:database}'"
-wrapper-path = ${directory:promise}/${:_buildout_section_name_}
-
-
-[grafana]
-ipv6 = ${instance-parameter:ipv6-random}
-port = 8180
-url = https://[${:ipv6}]:${:port}
-
-data-dir = ${directory:grafana-data-dir}
-logs-dir = ${directory:grafana-logs-dir}
-plugins-dir = ${directory:grafana-plugins-dir}
-provisioning-config-dir = ${directory:grafana-provisioning-config-dir}
-provisioning-datasources-dir = ${directory:grafana-provisioning-datasources-dir}
-admin-user = ${grafana-password:username}
-admin-password = ${grafana-password:passwd}
-secret-key = ${grafana-secret-key:passwd}
-ssl-key-file = ${grafana-certificate:key-file}
-ssl-cert-file = ${grafana-certificate:cert-file}
-
-recipe = slapos.cookbook:wrapper
-command-line =
-    {{ grafana_bin }} -config ${grafana-config-file:output} -homepath {{ grafana_homepath }}
-wrapper-path = ${directory:service}/grafana
-
-[grafana-certificate]
-<= generate-certificate
-
-[grafana-password]
-recipe = slapos.cookbook:generate.password
-username = admin
-
-[grafana-secret-key]
-recipe = slapos.cookbook:generate.password
-
-[grafana-config-file]
-<= config-file
-context =
-  section grafana grafana
-  section apache_frontend apache-frontend
-  key slapparameter_dict slap-configuration:configuration
-depends =
-  ${grafana-provisioning-config-file:output}
-
-[grafana-provisioning-config-file]
-<= config-file
-output = ${grafana:provisioning-datasources-dir}/datasource.yaml
-context =
-  section influxdb influxdb
-  section loki loki
-
-[grafana-listen-promise]
-<= check-port-listening-promise
-hostname= ${grafana:ipv6}
-port = ${grafana:port}
-
-
-
-[telegraf]
-recipe = slapos.cookbook:wrapper
-extra-config-dir = ${directory:telegraf-extra-config-dir}
-# telegraf needs influxdb to be already listening before starting
-command-line =
-   bash -c '${influxdb-listen-promise:path} && nice -19 chrt --idle 0 ionice -c3 {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
-wrapper-path = ${directory:service}/telegraf
-
-[telegraf-config-file]
-<= config-file
-context =
-  section influxdb influxdb
-  section telegraf telegraf
-
-
-[loki]
-recipe = slapos.cookbook:wrapper
-command-line =
-   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ loki_bin }} -config.file=${loki-config-file:output}'
-wrapper-path = ${directory:service}/loki
-
-storage-boltdb-dir = ${directory:loki-storage-boltdb-dir}
-storage-filesystem-dir = ${directory:loki-storage-filesystem-dir}
-ip = ${instance-parameter:ipv4-random}
-port = 3100
-grpc-port = 9095
-url = http://${:ip}:${:port}
-
-
-[loki-config-file]
-<= config-file
-context =
-  section loki loki
-
-[loki-listen-promise]
-<= check-url-available-promise
-url = ${loki:url}/ready
-
-[promtail]
-recipe = slapos.cookbook:wrapper
-command-line =
-   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ promtail_bin }} -config.file=${promtail-config-file:output}'
-wrapper-path = ${directory:service}/promtail
-
-dir = ${directory:promtail-dir}
-http-port = 19080
-grpc-port = 19095
-ip = ${instance-parameter:ipv4-random}
-url = http://${:ip}:${:http-port}
-
-[promtail-config-file]
-<= config-file
-context =
-  section promtail promtail
-  section loki loki
-  key slapparameter_dict slap-configuration:configuration
-
-[promtail-listen-promise]
-<= check-port-listening-promise
-hostname= ${promtail:ip}
-port = ${promtail:http-port}
-
-
-
-[apache-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
-name = Grafana Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-shared = true
-config-url = ${grafana:url}
-config-https-only = true
-return = domain secure_access
-
-[apache-frontend-available-promise]
-<= check-url-available-promise
-url = ${apache-frontend:connection-secure_access}
-
-
-[promises]
-recipe =
-instance-promises =
-  ${influxdb-listen-promise:path}
-  ${influxdb-password-promise:wrapper-path}
-  ${influxdb-database-ready-promise:wrapper-path}
-  ${grafana-listen-promise:path}
-  ${loki-listen-promise:path}
-  ${promtail-listen-promise:path}
-  ${promtail-listen-promise:path}
-  ${apache-frontend-available-promise:path}
-
-
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-influxdb-url = ${influxdb:url}
-influxdb-database = ${influxdb:database}
-influxdb-username = ${influxdb:auth-username}
-influxdb-password = ${influxdb:auth-password}
-telegraf-extra-config-dir = ${telegraf:extra-config-dir}
-grafana-url = ${grafana:url}
-grafana-username = ${grafana:admin-user}
-grafana-password = ${grafana:admin-password}
-loki-url = ${loki:url}
-promtail-url = ${promtail:url}
-url = ${apache-frontend:connection-secure_access}
