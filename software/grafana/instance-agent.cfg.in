@@ -219,20 +219,20 @@ init =
                   "field_columns_include": ["failed_message_count"],
                   "tag_columns_include": ["cmf_activity_queue"],
                 },
-                {
-                  "query": """
-                    select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message.date)), 0) as int)
-                      as waiting_time, 'message' as cmf_activity_queue
-                      from message where processing_node in (-1, 0) and message.message not like '%after_tag%'
-                    union all
-                    select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message_queue.date)), 0) as int)
-                      as waiting_time, 'message_queue' as cmf_activity_queue
-                      from message_queue where processing_node in (-1, 0) and message_queue.message not like '%after_tag%'
-                  """,
-                  "field_columns_include": ["waiting_time"],
-                  "tag_columns_include": ["cmf_activity_queue"],
-
-                },
+                # TODO: these queries are slow and maybe not correct
+                # {
+                #   "query": """
+                #     select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message.date)), 0) as int)
+                #       as waiting_time, 'message' as cmf_activity_queue
+                #       from message where processing_node in (-1, 0) and message.message not like '%after_tag%'
+                #     union all
+                #     select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message_queue.date)), 0) as int)
+                #       as waiting_time, 'message_queue' as cmf_activity_queue
+                #       from message_queue where processing_node in (-1, 0) and message_queue.message not like '%after_tag%'
+                #   """,
+                #   "field_columns_include": ["waiting_time"],
+                #   "tag_columns_include": ["cmf_activity_queue"],
+                # },
               ],
               "tags": dict(
                 partition.get("static-tags", {}),
