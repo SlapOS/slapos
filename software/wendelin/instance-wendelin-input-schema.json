@@ -119,6 +119,11 @@
         }
       ]
     },
+    "python2-data-compatibility": {
+      "description": "Enable compatibility for ZODB data created with Python 2 when running under Python 3. By default, no compatibility is disabled, which is the recommended option for instances that only use Python 3.",
+      "default": false,
+      "type": "boolean"
+    },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
       "default": {},
