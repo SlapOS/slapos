@@ -1,0 +1,25 @@
+#############################
+#
+# Deploy html5as instance
+#
+#############################
+# parameter_dict: a dictionary with the default parameters from instance.cfg.in
+# replaces the values with the parameters of the instance request if there are any
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
+[buildout]
+parts =
+    publish-connection-information
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+# Always the same.
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+# Publish nginx address
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+title = Title {{ parameter_dict['title'] }}!
+ipv4 = {{ partition_ipv4 }}!
