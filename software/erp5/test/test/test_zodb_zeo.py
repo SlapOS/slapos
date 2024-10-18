@@ -38,11 +38,35 @@ class ZEOTestCase(ERP5InstanceTestCase):
       self.computer_partition.getConnectionParameterDict()["_"]
     )["storage-dict"]
 
-  def db(self) -> contextlib.AbstractContextManager[DB]:
+  def get_zodb_uri(self) -> str:
     root = self.storage_dict["root"]
-    zeo_uri = f"zeo://{root['server']}?storage={root['storage']}"
+    return f"zeo://{root['server']}?storage={root['storage']}"
+
+  def db(self) -> contextlib.AbstractContextManager[DB]:
+    zeo_uri = self.get_zodb_uri()
     storage_factory, dbkw = zodburi.resolve_uri(zeo_uri)
     return contextlib.closing(DB(storage_factory(), **dbkw))
+
+
+class TestZODBTools(ZEOTestCase):
+
+  def setUp(self):
+    super().setUp()
+    if ERP5PY3:
+      with self.db() as db:
+        with db.transaction() as cnx:
+          cnx.root.state = f"dummy change for {self.id()}"
+
+  def test_zodb_analyze(self):
+    output = subprocess.check_output(
+      [
+        self.computer_partition_root_path / 'software_release' / 'bin' / 'zodb',
+        'analyze',
+        self.get_zodb_uri(),
+      ],
+      text=True
+    )
+    self.assertIn("ransactions", output)
 
 
 class TestRepozo(ZEOTestCase, CrontabMixin):
