@@ -44,8 +44,23 @@ class TestPassword(unittest.TestCase):
     self._makeRecipe({'storage-path': tf.name}, "another").install()
     self.assertEqual(self.buildout["another"]["passwd"], passwd)
 
+  def test_storage_path_passwd_set_in_options(self):
+    tf = tempfile.NamedTemporaryFile(delete=False)
+    self.addCleanup(os.unlink, tf.name)
+    self._makeRecipe({'storage-path': tf.name, 'passwd': 'secret'}).install()
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': 'secret'})
+
+    self._makeRecipe({'storage-path': tf.name}, "another").install()
+    self.assertEqual(self.buildout["another"]["passwd"], 'secret')
+
+    self._makeRecipe({'storage-path': tf.name, 'passwd': 'updated'}, "updated").install()
+    self.assertEqual(self.buildout["updated"]["passwd"], 'updated')
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': 'updated'})
+
   def test_storage_path_legacy_format(self):
-    with tempfile.NamedTemporaryFile(delete=False) as tf:
+    with tempfile.NamedTemporaryFile() as tf:
       tf.write(b'secret\n')
       tf.flush()
 
@@ -56,8 +71,22 @@ class TestPassword(unittest.TestCase):
       with open(tf.name) as f:
         self.assertEqual(json.load(f), {'': 'secret'})
 
-    self._makeRecipe({'storage-path': tf.name}, "another").install()
-    self.assertEqual(self.buildout["another"]["passwd"], passwd)
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
+
+  def test_storage_path_legacy_format_passwd_set_in_options(self):
+    with tempfile.NamedTemporaryFile() as tf:
+      tf.write(b'secret\n')
+      tf.flush()
+      self._makeRecipe({'storage-path': tf.name, 'passwd': 'secret'}).install()
+      passwd = self.buildout["random"]["passwd"]
+      self.assertEqual(passwd, 'secret')
+      tf.flush()
+      with open(tf.name) as f:
+        self.assertEqual(json.load(f), {'': 'secret'})
+
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
 
   def test_bytes(self):
     self._makeRecipe({'bytes': '32'}).install()
