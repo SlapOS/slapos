@@ -347,6 +347,17 @@
       "type": "string",
       "default": "false"
     },
+    "http-01-challenge-path": {
+      "title": "HTTP-01 Challenge Path",
+      "description": "A path used for HTTP-01 challenge, serverd on plain text HTTP port. All requestes are going to be directed to http-01-challenge-url. Note: The path is only active when http-01-challenge-url is set, otherwise it's passed to usual backends.",
+      "type": "string",
+      "default": "/.well-known"
+    },
+    "http-01-challenge-url": {
+      "title": "HTTP-01 Challenge URL",
+      "description": "A backend responsible for HTTP-01 Challenge. By default empty, so no CDN level HTTP-01 challenge happens.",
+      "type": "string"
+    },
     "url-netloc-list": {
       "type": "string",
       "title": "[EXPERT] List of netlocs for \"Backend URL\"",
