@@ -150,32 +150,31 @@ class Password(object):
     except KeyError:
       self.storage_path = options['storage-path'] = os.path.join(
         buildout['buildout']['parts-directory'], name)
-    passwd_dict = {
-      '': options.get('passwd')
-    }
-    if not passwd_dict['']:
-      if self.storage_path:
-        self._needs_migration = False
-        try:
-          with open(self.storage_path) as f:
-            content = f.read().strip('\n')
-            # new format: the file contains password and hashes in json format
-            try:
-              passwd_dict = json.loads(content)
-              if sys.version_info < (3, ):
-                passwd_dict = {k: v.encode() for k, v in passwd_dict.items()}
-            except ValueError:
-              # old format: the file only contains the password in plain text
-              passwd_dict[''] = content
-              self._needs_migration = True
-        except IOError as e:
-          if e.errno != errno.ENOENT:
-            raise
 
-      if not passwd_dict['']:
-        passwd_dict[''] = self.generatePassword(int(options.get('bytes', '16')))
-        self.update = self.install
-      options['passwd'] = passwd_dict['']
+    passwd_option = options.get('passwd')
+    passwd_dict = {'': passwd_option}
+    if self.storage_path:
+      try:
+        with open(self.storage_path) as f:
+          content = f.read().strip('\n')
+          # new format: the file contains password and hashes in json format
+          try:
+            passwd_dict = json.loads(content)
+            if sys.version_info < (3, ):
+              passwd_dict = {k: v.encode('utf-8') for k, v in passwd_dict.items()}
+          except ValueError:
+            # old format: the file only contains the password in plain text
+            passwd_dict[''] = content
+      except IOError as e:
+        if e.errno != errno.ENOENT:
+          raise
+      if passwd_option and passwd_dict[''] != passwd_option:
+        passwd_dict = {'': passwd_option}
+
+    if not passwd_dict['']:
+      passwd_dict[''] = self.generatePassword(int(options.get('bytes', '16')))
+      self.update = self.install
+    options['passwd'] = passwd_dict['']
 
     class HashedPasswordDict(dict):
       def __missing__(self, key):
@@ -202,17 +201,17 @@ class Password(object):
 
   def install(self):
     if self.storage_path:
+      serialized = json.dumps(self.passwd_dict, sort_keys=True)
+      stored = None
       try:
-        # The following 2 lines are just an optimization to avoid recreating
-        # the file with the same content.
-        if self.create_once and os.stat(self.storage_path).st_size and not self._needs_migration:
-          return
-        os.unlink(self.storage_path)
-      except OSError as e:
+        with open(self.storage_path) as f:
+          stored = f.read()
+      except IOError as e:
         if e.errno != errno.ENOENT:
           raise
-      with open(self.storage_path, 'w') as f:
-        json.dump(self.passwd_dict, f)
+      if stored != serialized:
+        with open(self.storage_path, 'w') as f:
+          f.write(serialized)
       if not self.create_once:
         return self.storage_path
 
