@@ -75,6 +75,7 @@ param_dict = {
             'tac': 2
         },
     },
+    'xlog_forwarding_enabled': False,
 }
 enb_param_dict = {
     # ors_version for tests is B39, so earfcn needs to be within B39
