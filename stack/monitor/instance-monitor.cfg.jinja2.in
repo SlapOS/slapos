@@ -9,8 +9,10 @@ cert = ${slap-connection:cert-file}
 # XXX Default values if doesn't exists
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
-configuration.monitor-cors-domains = {{ propa_moni_cors }}
-configuration.monitor-interface-url = {{ propa_moni_interface }}
+#configuration.monitor-cors-domains = {{ propa_moni_cors }}
+#configuration.monitor-interface-url = {{ propa_moni_interface }}
+configuration.monitor-cors-domains = default.cors
+configuration.monitor-interface-url = default.interface
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
