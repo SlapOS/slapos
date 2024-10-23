@@ -328,7 +328,13 @@ monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
 
+[monitor-parameters-propagation]
+update =
+config-monitor-cors-domains = "roque-buildout-cors-domain"
+config-monitor-interface-url = "roque-buildout-interface-url"
+
 [monitor-instance-parameter]
+<= monitor-parameters-propagation
 monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
