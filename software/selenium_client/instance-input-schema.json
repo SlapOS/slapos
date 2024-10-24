@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "type": "object",
+  "description": "Parameters to instantiate Selenium client",
+  "additionalProperties": false,
+  "properties": {
+    "flight-log-dir": {
+      "title": "Fligh log directory",
+      "description": "Directory where Fluentd will find the flight logs to send to Wendelin.",
+      "type": "string",
+      "default": "BUILDOUT_DIRECTORY/etc/flight_log_dir"
+    },
+    "simulation-log-dir": {
+      "title": "Simulation log directory",
+      "description": "Directory where Fluentd will find the simulation logs to send to Wendelin.",
+      "type": "string",
+      "default": "BUILDOUT_DIRECTORY/etc/flight_log_dir/simulation_log_dir"
+    },
+    "wendelin-password": {
+      "title": "Wendelin passwor",
+      "description": "Password for Wendelin instance",
+      "type": "string",
+      "default": ""
+    },
+    "wendelin-url": {
+      "title": "Wendelin url",
+      "description": "Url of the wendelin instance to send logs to",
+      "type": "string",
+      "default": ""
+    },
+    "wendelin-user": {
+      "title": "Wendelin user",
+      "description": "Username for Wendelin instance",
+      "type": "string",
+      "default": ""
+    }
+  }
+}

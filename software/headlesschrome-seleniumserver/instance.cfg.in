@@ -1,0 +1,38 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = $${:default}
+default = template-selenium:output
+
+[dynamic-template]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
+
+[template-selenium]
+<= dynamic-template
+url = ${template-selenium:output}
+filename = instance-selenium.cfg
+context =
+  jsonkey default_parameter_dict :default-parameters
+  key parameter_dict slap-configuration:configuration
+  key partition_ipv4 slap-configuration:ipv4-random
+  key partition_ipv6 slap-configuration:ipv6-random
+default-parameters =
+  {
+    "slotQuantity": 1
+  }
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}

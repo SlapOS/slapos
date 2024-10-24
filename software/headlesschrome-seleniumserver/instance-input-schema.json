@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "type": "object",
+  "description": "Parameters to request selenium instance",
+  "additionalProperties": false,
+  "properties": {
+    "slotQuantity": {
+      "title": "Slot quantity",
+      "description": "Number of slot per selenium node",
+      "type": "integer",
+      "default": 1
+    }
+  }
+}
