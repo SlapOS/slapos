@@ -199,6 +199,9 @@
     "min_rxtx_delay": {
       "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
     },
+    "xlog_forwarding_enabled": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+    },
     "wendelin_telecom_software_release_url": {
       "$ref": "instance-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
     },
