@@ -4,6 +4,7 @@ T-0:bootstrap-monitor EXITED
 T-0:caucased-backend-client-{hash-generic}-on-watch RUNNING
 T-0:certificate_authority-{hash-generic}-on-watch RUNNING
 T-0:crond-{hash-generic}-on-watch RUNNING
+T-0:logrotate-setup-validate EXITED
 T-0:master-introspection-server-{hash-master-introspection}-on-watch RUNNING
 T-0:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-0:monitor-httpd-graceful EXITED
