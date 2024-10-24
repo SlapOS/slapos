@@ -1,0 +1,12 @@
+[buildout]
+extends = ${template:output}
+
+[dynamic-template-kvm-export-mock]
+recipe = slapos.recipe.template:jinja2
+url = ${template-kvm-export-mock:location}/${template-kvm-export-mock:filename}
+output = $${buildout:directory}/template-kvm-export-mock.cfg
+context =
+  key template_kvm_export dynamic-template-kvm-export:output
+
+[switch_softwaretype]
+kvm-export = dynamic-template-kvm-export-mock:output

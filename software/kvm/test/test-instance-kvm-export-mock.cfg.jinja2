@@ -1,0 +1,21 @@
+[buildout]
+extends = {{ template_kvm_export }}
+
+parts +=
+  cron-entry-environment
+
+[directory]
+cron-d-mock = ${:var}/cron-d-mock
+
+[cron-entry-environment]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = environment
+frequency = * * * * *
+command = ${buildout:executable} -c 'import os ; import json ; print(json.dumps(dict(os.environ)))' > ${directory:var}/cron-environment.json
+
+[cron-entry-backup]
+recipe = slapos.recipe.template:jinja2
+inline =
+  ${:command}
+output = ${directory:cron-d-mock}/${:name}
