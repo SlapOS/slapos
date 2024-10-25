@@ -32,6 +32,7 @@ sla-computer_guid = ${slap-connection:computer-id}
 
 {% macro common_section() -%}
 [request-common-base]
+<= monitor-parameters-propagation
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
 server-url = ${slap-connection:server-url}
