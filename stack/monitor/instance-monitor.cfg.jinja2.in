@@ -9,8 +9,8 @@ cert = ${slap-connection:cert-file}
 # XXX Default values if doesn't exists
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
-configuration.monitor-cors-domains = default.cors
-configuration.monitor-interface-url = default.interface
+configuration.monitor-cors-domains = monitor.app.officejs.com
+configuration.monitor-interface-url = https://monitor.app.officejs.com
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
