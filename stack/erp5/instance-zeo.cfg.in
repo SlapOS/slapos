@@ -108,9 +108,9 @@ inline =
     --file="$zodb_directory/$zodb_path"
 
   CURRENT_EXIT_CODE=$?
-  if [ ! "$CURRENT_EXIT_CODE"="0" ]; then
+  if [ $CURRENT_EXIT_CODE != 0 ]; then
     EXIT_CODE="$CURRENT_EXIT_CODE"
-    echo "$storage_name Backup restoration failed."
+    echo "$storage_name Backup failed."
   fi
   {%   endfor -%}
   {% endfor -%}
