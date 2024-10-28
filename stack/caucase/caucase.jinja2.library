@@ -9,7 +9,9 @@
   user_auto_approve_count=1,
   key_len=None,
   backup_dir=None,
-  promise=True
+  promise=True,
+  bind=None,
+  base_port=None,
 ) -%}
 [{{ prefix }}-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -28,6 +30,8 @@ command-line = '{{ buildout_bin_directory }}/caucased'
   --db          '${ {{- prefix }}-directory:data-dir}/caucase.sqlite'
   --server-key  '${ {{- prefix }}-directory:data-dir}/server.key.pem'
   --netloc      '{{ netloc }}'
+  {% if bind is not None %}--bind '{{ bind }}' {%- endif %}
+  {% if base_port is not None %}--base-port '{{ base_port }}' {%- endif %}
   {% if key_len %}--key-len '{{ key_len }}' {%- endif %}
   {% if backup_dir %}--backup-directory {{ backup_dir }} {%- endif %}
   --service-auto-approve-count '{{ service_auto_approve_count }}'
