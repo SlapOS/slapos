@@ -13,6 +13,12 @@
     "external-url": {
       "$comment": "(deprecated)"
     },
+    "external-netloc": {
+      "title": "External netloc",
+      "description": "When provided, this is used as netloc in the CRL distribution point extension in issued certificates. Setting up that domain and routing accesses to the IP and ports caucased binds to is outside the scope of this software-release. Otherwise, instead of the caucased bind IP and port are used (preventing caucased relocation).",
+      "type": "string",
+      "format": "uri"
+    },
     "service-auto-approve-amount": {
       "title": "Number of service certificate requests to automatically approve",
       "description": "Once that number has been reached, a user must validate further requests. Renewals do not count toward this number. Cannot be changed once set.",

@@ -3,7 +3,8 @@
   "description": "Values returned by Caucase instantiation",
   "properties": {
     "url": {
-      "description": "Caucase URL",
+      "title": "Caucase URL",
+      "description": "This contains the plain IP and port caucasd binds to, indepencently from external-netloc parameter.",
       "type": "string"
     }
   },
