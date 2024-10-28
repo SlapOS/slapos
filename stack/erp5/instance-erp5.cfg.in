@@ -42,7 +42,6 @@
 {% endfor -%}
 [request-common]
 <= request-common-base
-#<= propagate-monitor-parameters
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-memory-percent-threshold', 80)) }}
 {% set caucase_dict = slapparameter_dict.get('caucase', {}) -%}
