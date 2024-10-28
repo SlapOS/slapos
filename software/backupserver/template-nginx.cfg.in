@@ -51,9 +51,8 @@ http {
   gzip_types text/plain text/css application/json application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
 
 server {
-  listen [$${nginx-configuration:ip}]:$${nginx-configuration:port};
+  listen [$${nginx-configuration:ip}]:$${nginx-configuration:port} ssl;
 
-  ssl                 on;
   ssl_certificate $${nginx-configuration:ssl_crt};
   ssl_certificate_key $${nginx-configuration:ssl_key};
 

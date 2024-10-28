@@ -45,16 +45,19 @@ def createInstanceParameterSchemaValidatorTest(path):
     "http://json-schema.org/draft-04/schema#": jsonschema.Draft4Validator,
     "http://json-schema.org/draft-06/schema#": jsonschema.Draft6Validator,
     "http://json-schema.org/draft-07/schema#": jsonschema.Draft7Validator,
+    "https://json-schema.org/draft/2019-09/schema": jsonschema.Draft201909Validator,
+    "https://json-schema.org/draft/2019-09/schema#": jsonschema.Draft201909Validator,
+    "https://json-schema.org/draft/2020-12/schema": jsonschema.Draft202012Validator,
+    "https://json-schema.org/draft/2020-12/schema#": jsonschema.Draft202012Validator,
   }
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
       json_dict = json.load(json_file)
-      validator = validator_dict.get(
-        json_dict.get('$schema'),
-        jsonschema.Draft7Validator)
+      validator = validator_dict.get(json_dict.get('$schema'))
+      if validator is None:
+        raise ValueError("%s has an invalid $schema %s" % (path, json_dict.get('$schema')))
       validator.check_schema(json_dict)
   return run
-
 
 def createSoftwareCfgValidatorTest(path, software_cfg_schema):
   # Test that software json follows the schema for softwares json,
@@ -64,13 +67,20 @@ def createSoftwareCfgValidatorTest(path, software_cfg_schema):
       schema = json.load(json_file)
       jsonschema.validate(schema, software_cfg_schema)
 
+      _viewed_software_type = []
       # also make sure request and response schemas can be resolved
       schema.setdefault('$id', 'file://' + path)
       resolver = jsonschema.RefResolver.from_schema(schema)
-      for software_type_definition in six.itervalues(schema['software-type']):
+      for key, software_type_definition in six.iteritems(schema['software-type']):
         resolver.resolve(software_type_definition['request'])
         resolver.resolve(software_type_definition['response'])
-
+        # Ensure there inst a duplicated entry.
+        _software_type_tuple = (
+          software_type_definition.get("software-type", key),
+          software_type_definition.get("shared", False))
+        assert _software_type_tuple not in _viewed_software_type, \
+                "Duplicated software release on %s, shared: %s" % _software_type_tuple
+        _viewed_software_type.append(_software_type_tuple)
   return run
 
 
@@ -85,6 +95,7 @@ def createFormatTest(path):
       self.assertEqual(
           (json.dumps(
               json.loads(content, object_pairs_hook=collections.OrderedDict),
+              ensure_ascii=False,
               sort_keys=False,
               indent=2,
               separators=(',', ': ')) + "\n").splitlines(),
@@ -115,7 +126,8 @@ def generateJSONSchemaTest():
 
 
 class TestJSONSchemaValidation(unittest.TestCase):
-  pass
+  # Show full difference to understand problems
+  maxDiff = None
 
 generateSoftwareCfgTest()
 generateJSONSchemaTest()

@@ -13,7 +13,8 @@ theia-environment-parts =
   settings.json
 
 theia-parts =
-  frontend-reload
+  frontend-instance
+  slapos-standalone-bin-wrapper
   promises
 
 parts =
@@ -37,7 +38,7 @@ additional-url = $${remote-additional-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
-ipv6 = {{ ipv6_random }}
+ipv6 = {{ ipv6_theia }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -49,6 +50,7 @@ bin = $${:home}/bin
 tmp = $${:home}/tmp
 dot-theia = $${:home}/.theia/
 pidfiles = $${:var}/run
+statefiles = $${:var}/state
 
 services = $${:etc}/service
 runner = $${:srv}/runner
@@ -90,6 +92,7 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
+  $${python-server-listen-promise:name}
   $${frontend-authentication-promise:name}
   $${remote-frontend-url-available-promise:name}
   {% if additional_frontend %}
@@ -115,6 +118,12 @@ promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+
+[python-server-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = $${:_buildout_section_name_}.py
+config-pathname = $${python-server:socket}
 
 [frontend-authentication-promise]
 <= monitor-promise-base
@@ -207,7 +216,7 @@ sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 {% endif %}
 
 
-# Local Caddy Frontend
+# Local Haproxy Frontend
 # --------------------
 
 [frontend-instance-password]
@@ -219,66 +228,73 @@ storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
 recipe = slapos.cookbook:free_port
 minimum = 3000
 maximum = 3100
-ip = {{ ipv6_random }}
+ip = {{ ipv6_theia }}
 
 [frontend-instance-certificate]
 recipe = plone.recipe.command
 command =
-  if [ ! -e $${:key-file} ]
+  if [ ! -e $${:cert-file} ]
   then
     ${openssl-output:openssl} req -x509 -nodes -days 3650 \
       -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
-      -newkey rsa:1024 -keyout $${:key-file} \
+      -newkey rsa -keyout $${:cert-file} \
       -out $${:cert-file}
   fi
 update-command = $${:command}
-key-file = $${directory:etc}/$${:_buildout_section_name_}.key
-cert-file = $${directory:etc}/$${:_buildout_section_name_}.crt
+cert-file = $${directory:etc}/$${:_buildout_section_name_}.pem
 common-name = $${frontend-instance-config:ip}
 location =
-  $${:key-file}
   $${:cert-file}
 
 [frontend-instance-config]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
+url = ${stack-haproxy-default-backend-config:target}
 output = $${directory:etc}/$${:_buildout_section_name_}
-inline =
-  :$${:port} {
-    bind $${:ip}
-    tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
-    log stdout
-    errors stderr
-    gzip
-    # because caddy does not support upgrade http2 to websocket
-    # https://tools.ietf.org/html/rfc8441
-    tls {
-      alpn http/1.1
-    }
-    root $${directory:frontend-static}
-    browse
-    proxy / $${theia-instance:base-url} {
-      except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename} $${frontend-instance-logo:filename}
-    }
-    proxy /services $${theia-instance:base-url} {
-      websocket
-    }
-    proxy /socket.io $${theia-instance:base-url} {
-      websocket
-    }
-    basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
-      realm "Theia"
-      /
-    }
-  }
+context =
+  key pidfile frontend-instance:pidfile
+  key content :content
+content =
+  userlist basic-auth-list
+    user $${frontend-instance-password:username} password $${frontend-instance-password:passwd-sha256-crypt}
+
+  frontend app
+    log global
+    bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
+    acl is_public path_beg /public/
+    acl auth_ok http_auth(basic-auth-list)
+    # writing twice the same ACL is doing OR
+    acl is_static path_beg /$${frontend-instance-fonts:folder-name}
+    acl is_static path_beg /$${frontend-instance-slapos.css:folder-name}
+    acl is_static path /$${frontend-instance-logo:filename}
+    acl is_static path /$${frontend-instance-favicon.ico:filename}
+    acl is_static path /$${frontend-instance-theia.webmanifest:filename}
+    acl is_static path /$${frontend-instance-theia-serviceworker.js:filename}
+    # No authentication for public folder
+    http-request auth unless auth_ok || is_public
+    use_backend static if is_static || is_public
+    default_backend nodejs
+
+  backend nodejs
+    log global
+    server nodejs_backend $${theia-instance:ip}:$${theia-instance:port}
+
+  backend static
+    log global
+    server static_backend $${python-server:socket}
+    option forwardfor
+    http-response set-header Content-Security-Policy "default-src 'self'; img-src 'self' data:; script-src 'none'"
+
 ip = $${frontend-instance-port:ip}
 hostname = [$${:ip}]
 port = $${frontend-instance-port:port}
+pidfile = $${directory:pidfiles}/haproxy.pid
 
 [frontend-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${caddy:output} -conf $${frontend-instance-config:output} -pidfile $${:pidfile}
+  ${haproxy:location}/sbin/haproxy -f $${frontend-instance-config:output}
+hash-files = $${frontend-instance-config:output}
 
 ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
@@ -287,7 +303,7 @@ pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
 url = https://$${:hostname}:$${:port}/
 
 [frontend-instance-fonts]
-; XXX caddy 1 does not seem to serve different folders at different locations
+; XXX python server only serves one folder
 ; so we link fonts in static folder
 recipe = plone.recipe.command
 location = $${directory:frontend-static}/$${:folder-name}
@@ -314,19 +330,42 @@ folder-name = css
 context =
   key logo_image frontend-instance-logo:filename
 
-[frontend-reload]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line =
-  ${bash:location}/bin/bash -c
-  "kill -s USR1 $$(${coreutils:location}/bin/cat $${frontend-instance:pidfile}) \
-    && ${coreutils:location}/bin/sleep infinity"
-hash-files =
-  $${frontend-instance-config:output}
-  $${frontend-instance:wrapper-path}
-wait-for-files = $${frontend-instance:pidfile}
+[frontend-instance-theia.webmanifest]
+recipe = slapos.recipe.build
+short-name = {{ root_title }}
+name = Theia SlapOS $${:short-name}
+background-color = #3c3c3c
+install =
+  import json
+  with open(options['location'], 'w') as f:
+    json.dump({
+      "name": options["name"],
+      "short_name": options["short-name"],
+      "icons": [
+        {
+          "src": "/" + self.buildout["frontend-instance-favicon.ico"]["filename"],
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+      ],
+      "start_url": "/",
+      "display": "fullscreen",
+      "background_color": options["background-color"]
+    }, f)
 
-[favicon.ico]
+location = $${directory:frontend-static}/$${:filename}
+filename = theia.webmanifest
+
+[frontend-instance-theia-serviceworker.js]
+recipe = slapos.recipe.template
+inline =
+  /* minimal service worker for A2HS */
+  self.addEventListener("fetch", function(event) { });
+
+output = $${directory:frontend-static}/$${:filename}
+filename = theia-serviceworker.js
+
+[frontend-instance-favicon.ico]
 # generate a pseudo random favicon, different for each instance name.
 recipe = slapos.recipe.build
 seed = {{ root_title }}
@@ -348,8 +387,33 @@ install =
     self.buildout['buildout']['offline'] = buildout_offline
 
 location = $${directory:frontend-static}/$${:filename}
-filename = $${:_buildout_section_name_}
+filename = favicon.ico
 
+# Local Python Server
+# -------------------
+
+[python-server]
+recipe = slapos.recipe.template
+output = $${directory:services}/$${:_buildout_section_name_}
+socket = $${directory:run}/$${:_buildout_section_name_}.sock
+inline =
+  #!$${buildout:executable}
+  import atexit, os, socketserver
+  from http import server
+  class Server(socketserver.ThreadingUnixStreamServer):
+    daemon_threads = True
+  class Handler(server.SimpleHTTPRequestHandler):
+    def address_string(self): # insecure but ok for logging
+      return self.headers.get("X-Forwarded-For", "local")
+  s = "$${:socket}"
+  os.chdir("$${directory:frontend-static}")
+  def cleanup():
+    try:
+      os.remove(s)
+    except FileNotFoundError:
+      pass
+  atexit.register(cleanup)()
+  Server(s, Handler).serve_forever()
 
 # Common Environment
 # ------------------
@@ -360,8 +424,8 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   export HOME=$${directory:home}
-  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
-  export IPV6_SLAPRUNNER={{ ipv6_random }}
+  export PATH=${cli-utilities:PATH}:$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+  export IPV6_SLAPRUNNER={{ ipv6_theia }}
 
 # Theia Backend
 # -------------
@@ -406,7 +470,6 @@ hash-existing-files =
 ip =  {{ ipv4_random }}
 hostname = $${:ip}
 port = $${theia-service:port}
-base-url = $${theia-service:base-url}
 
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
@@ -415,8 +478,9 @@ inline =
   {% raw -%}
   #!{{ bash }}
   SHELL=$BASH
-  # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if [ $# = 0 ]; then
+  # when running interactively, or as a login shell, activate slapos configuration
+  # and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+  if [ $# = 0 ] || [ $# = 1 -a "$1" = -l ]; then
     . {{ activate }}
     unset GIT_EXEC_PATH
     set -- --rcfile {{ bashrc }}
@@ -434,6 +498,9 @@ output = $${directory:etc}/$${:_buildout_section_name_}
 inline =
   # enable bash completion
   . ${bash-completion:location}/etc/profile.d/bash_completion.sh
+  # enable color for ls
+  eval "$(${coreutils:location}/bin/dircolors -b)"
+  alias ls='ls --color=auto'
   # source user's .bashrc
   [ -f ~/.bashrc ] && . ~/.bashrc
 depends =
@@ -497,7 +564,7 @@ ip = {{ ipv4_random }}
 
 [slapos-standalone-config]
 ipv4 = {{ ipv4_random }}
-ipv6 = {{ ipv6_random }}
+ipv6 = {{ slap_resource.get('ipv6-range-network') or ipv6_theia }}
 port = $${slapos-standalone-port:port}
 base-directory = $${directory:runner}
 software-root = $${directory:runner}/software
@@ -520,9 +587,14 @@ inline =
 [slapos-standalone-script]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/$${:_buildout_section_name_}
-embedded-request-exitcode-file = $${directory:etc}/embedded-request-exitcode
+embedded-request-exitcode-file = $${directory:statefiles}/embedded-request.exitcode
+standalone-ran-before-flag = $${directory:statefiles}/standalone-ran-before.flag
 shared-part-list =
+{%- if 'shared-part-list' in slap_connection %}
+  {{ slap_connection['shared-part-list'] | indent(2) }}
+{%- else %}
   {{ """${buildout:shared-part-list}""" | indent(2) }}
+{%- endif %}
 context =
   raw python_for_standalone ${python-for-standalone:executable}
   raw request_script_path $${directory:project}/request-embedded-instance.sh
@@ -530,11 +602,12 @@ context =
   key request_script_template request-script-example:inline
   key shared_part_list :shared-part-list
   key embedded_request_exitcode_file :embedded-request-exitcode-file
+  key standalone_ran_before_flag :standalone-ran-before-flag
   key embedded_instance_config embedded-instance-config:output
   key home_path directory:home
   key forward_frontend_requests :forward-frontend-requests
   section slap_connection slap-connection
-  section slapos_standalone_config slapos-standalone-config
+  section config slapos-standalone-config
 forward-frontend-requests = {{ parameter_dict['forward-slapos-frontend-requests'] }}
 url = ${slapos-standalone-script:output}
 
@@ -544,8 +617,6 @@ output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   . $${common-environment:output}
-  #XXX find out where the extra nodejs in theia's PATH comes from
-  export PATH=${nodejs:location}/bin/:$PATH
   . $${slapos-standalone-activate:output}
   exec $${slapos-standalone-script:output}
 
@@ -558,6 +629,11 @@ hash-files =
   $${slapos-standalone-script:output}
 hostname = $${slapos-standalone-config:ipv4}
 port = $${slapos-standalone-config:port}
+
+[slapos-standalone-bin-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/slapos
+command-line = $${slapos-standalone-config:base-directory}/bin/slapos
 
 
 # Slapos Standalone Autoprocessing
@@ -663,7 +739,7 @@ inline =
     },
     "git.terminalAuthentication": false,
     "security.workspace.trust.startupPrompt": "once",
-    "zc-buildout.python.executable": "${python-for-buildout-languageserver:executable}"
+    "zc-buildout.python.executable": "$${buildout:directory}/software_release/bin/${python-for-buildout-languageserver:interpreter}"
   }
 
 [runner-link]

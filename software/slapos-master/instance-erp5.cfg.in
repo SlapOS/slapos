@@ -21,6 +21,10 @@
 {%   set test_runner_total_database_count = mariadb_test_database_amount %}
 {%   set test_runner_enabled = mariadb_test_database_amount > 0 %}
 {% endif -%}
+{# Backward compatibility for cloudooo-url #}
+{% if slapparameter_dict.get('cloudooo-url') -%}
+{%   do slapparameter_dict.setdefault('cloudooo-url-list', slapparameter_dict['cloudooo-url'].split(',')) %}
+{% endif -%}
 {% set test_runner_random_activity_priority = slapparameter_dict.get('test-runner', {}).get('random-activity-priority') -%}
 {% set monitor_base_url_dict = {} -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
@@ -231,7 +235,7 @@ return =
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', ' '.join(bt5_default_list))) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
-config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cloudooo_url)) }}
+config-cloudooo-url-list = {{ dumps(slapparameter_dict.get('cloudooo-url-list', default_cloudooo_url_list)) }}
 config-caucase-url = {{ dumps(caucase_url) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
@@ -243,18 +247,18 @@ config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval'))
 config-zope-longrequest-logger-error-threshold = {{ dumps(monitor_dict.get('zope-longrequest-logger-error-threshold', 20)) }}
 config-zope-longrequest-logger-maximum-delay = {{ dumps(monitor_dict.get('zope-longrequest-logger-maximum-delay', 0)) }}
 config-inituser-login = {{ dumps(inituser_login) }}
-config-inituser-password = ${publish-early:inituser-password}
+config-inituser-password-hashed = ${publish-early:inituser-password-hashed}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
 config-memcached-url = ${request-memcached-volatile:connection-url}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
+config-python-hash-seed = {{ dumps(slapparameter_dict.get('python-hash-seed', '')) }}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
-config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 config-test-runner-random-activity-priority = {{ dumps(test_runner_random_activity_priority) }}
@@ -299,12 +303,14 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
+config-with-max-rlimit-nofile = {{ dumps(slapparameter_dict.get('with-max-rlimit-nofile', false)) }}
 {# BBB: zope_parameter_dict used to contain 'webdav', so fallback to it -#}
 config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_parameter_dict.get('webdav', False))) }}
+config-xml-rpc = {{ dumps(current_zope_family_override_dict.get('xml-rpc', False)) }}
 config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}
-config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+config-test-runner-balancer-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
 [{{ promise_software_url_section_name }}]
 # Promise to wait for zope partition to use the expected software URL,
@@ -430,6 +436,7 @@ return =
 {% endfor -%}
 {% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
+config-frontend-parameter-dict = {{ dumps({}) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
@@ -442,7 +449,8 @@ config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-ch
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-ssl = {{ dumps(balancer_dict['ssl']) }}
 config-name = ${:name}
-config-shared-certificate-authority-path = ${directory:ca-dir} 
+config-shared-certificate-authority-path = ${directory:ca-dir}
+config-check-crl = {{ dumps(slapparameter_dict.get('check-crl', True)) }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
@@ -463,7 +471,7 @@ config-apachedex-configuration = {{
 <= request-common
 recipe = slapos.cookbook:request
 software-url = {{ dumps(frontend_dict['software-url']) }}
-software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
+software-type = {{ dumps(frontend_dict.get('software-type', 'default')) }}
 {{ root_common.sla('frontend', True) }}
 shared = true
 {% set config_dict = {
@@ -510,6 +518,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 recipe = slapos.cookbook:publish-early
 -init =
   inituser-password gen-password:passwd
+  inituser-password-hashed gen-password:passwd-ldap-salted-sha1
   deadlock-debugger-password gen-deadlock-debugger-password:passwd
 {%- if has_posftix %}
   smtpd-sasl-password gen-smtpd-sasl-password:passwd
@@ -527,10 +536,6 @@ recipe = slapos.cookbook:publish-early
 neo-cluster = {{ dumps(neo[0]) }}
 {%-  endif %}
 {%- endif %}
-{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
-{%- if inituser_password %}
-inituser-password = {{ dumps(inituser_password) }}
-{%- endif %}
 {%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
 {%- if deadlock_debugger_password %}
 deadlock-debugger-password = {{ dumps(deadlock_debugger_password) }}
@@ -547,6 +552,10 @@ recipe =
 [gen-password]
 recipe = slapos.cookbook:generate.password
 storage-path =
+{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
+{%- if inituser_password %}
+passwd = {{ dumps(inituser_password) }}
+{%- endif %}
 
 [gen-deadlock-debugger-password]
 <= gen-password

@@ -4,8 +4,8 @@
       "./format-json"
     ],
     "{component,software,stack}/**": [
-      "python -c 'import sys, os.path, subprocess; [subprocess.check_call((\"./update-hash\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'",
-      "python -c 'import sys, os.path, subprocess; [subprocess.check_call((\"git\", \"add\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'"
+      "python3 -c 'import sys, os.path, subprocess; [subprocess.check_call((\"./update-hash\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'",
+      "python3 -c 'import sys, os.path, subprocess; [subprocess.check_call((\"git\", \"add\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'"
     ]
   },
   "devDependencies": {

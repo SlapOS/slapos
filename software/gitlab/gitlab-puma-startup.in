@@ -1,0 +1,78 @@
+#!{{ bash_bin }}
+# start up gitlab's unicorn with first making sure db is properly setup and all
+# migrations are up as pre-condition.
+
+RAKE={{ gitlab_rake }}
+
+die() {
+    echo "$*" 1>&2
+    exit 1
+}
+
+# run psql on gitlab db
+psql() {
+    {{ psql_bin }}  \
+        -h {{ pgsql['pgdata-directory'] }}  \
+        -U {{ pgsql.superuser }}            \
+        -d {{ pgsql.dbname }}               \
+        "$@"
+}
+
+# 1. what to do when instance is initially setup
+# see
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/database_migrations.rb
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/postgresql.rb
+
+# initial db setup
+# ( first quering PG several times waiting a bit till postgresql is started and ready )
+tpgwait=5
+while true; do
+    pgtables="$(psql -c '\d' 2>&1)" && break
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pg query problem"
+    echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+echo "I: PostgreSQL ready." 1>&2
+
+# make sure pg_trgm extension is enabled for gitlab db
+psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
+
+psql -c 'CREATE EXTENSION IF NOT EXISTS btree_gist;'  || die "btree_gist setup failed"
+
+if echo "$pgtables" | grep -q '^Did not find any relations' ; then
+    $RAKE gitlab:setup RAILS_ENV=production force=yes || die "initial db setup failed"
+fi
+
+
+# 2. what to do when instance is upgraded
+# see
+#   https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/deploy/deploy.sh
+#   https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/upgrader.rb
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/gitlab-rails.rb
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-ctl-commands/upgrade.rb
+#
+# Assets compilation is handled at instance deployment time. We do everything else here.
+
+# make sure all migrations are up
+migrate_log="{{ log_dir }}/db-migrate-`date +%s`.log"
+$RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
+# if it was a no-op "migration" - we don't need info about that - only keep
+# logs of actual migration run.
+test -s $migrate_log || rm $migrate_log
+
+touch {{ var_dir }}/gitlab_db_ok
+
+# clear cache
+$RAKE cache:clear   || die "cache:clear failed"
+
+# re-build ssh keys
+# (we do not use them - just for cleannes)
+# run before migration to avoir error on missing tables in db
+force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
+
+
+# 3. finally exec to puma
+exec {{ gitlab_puma }}   \
+    -e production \
+    -C {{ puma_rb.output }}

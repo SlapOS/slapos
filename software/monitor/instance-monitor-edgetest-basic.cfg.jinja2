@@ -6,9 +6,10 @@
   'failure-amount': 2,
   'check-maximum-elapsed-time': 2,
   'check-frontend-ip-list': [],
-  'nameserver-list': []
+  'nameserver-list': [],
+  'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate elapsed_time'
 } %}
-{%- for default_key in ['check-frontend-ip-list', 'nameserver-list', 'check-status-code', 'check-certificate-expiration-days', 'check-maximum-elapsed-time', 'failure-amount'] %}
+{%- for default_key in ['check-frontend-ip-list', 'nameserver-list', 'check-status-code', 'check-certificate-expiration-days', 'check-maximum-elapsed-time', 'failure-amount', 'enabled-sense-list'] %}
 {%-   if default_key in slapparameter_dict %}
 {%-     do DEFAULT_DICT.__setitem__(default_key, slapparameter_dict[default_key]) %}
 {%-   endif %}
@@ -68,6 +69,7 @@ config-certificate-expiration-days = {{ check['check-certificate-expiration-days
 config-failure-amount = {{ check['failure-amount'] }}
 config-maximum-elapsed-time = {{ check['check-maximum-elapsed-time'] }}
 config-ip-list = {{ ' '.join(check['check-frontend-ip-list']) }}
+config-enabled-sense-list = {{ check['enabled-sense-list'] }}
 config-json-file = ${surykatka-config-{{ class }}:json}
 {%-     endfor %} {#- for url in check['url-list'] #}
 {%-   endfor %} {#- for check in class_check_list | sort(attribute='-name') #}
@@ -90,6 +92,7 @@ nameserver_list = {{ dumps(DEFAULT_DICT['nameserver-list']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
 timeout = {{ int(class) + 2 }}
+check_maximum_elapsed_time = {{ int(class) }}
 
 context =
   import json_module json
@@ -97,6 +100,7 @@ context =
   key nameserver_list :nameserver_list
   key url_list :url_list
   key timeout :timeout
+  key check_maximum_elapsed_time :check_maximum_elapsed_time
 
 {%-     do PART_LIST.append('surykatka-%i'% (class,)) %}
 [surykatka-{{ class }}]
@@ -135,8 +139,43 @@ command = ${surykatka-status-json-{{ class }}:output}
 {%- endfor %} {#- for class, class_check_list in CHECK_DICT.items() #}
 
 [buildout]
-extends = {{ instance_base_monitor }}
-parts +=
+extends = {{ monitor_template }}
+parts =
+  publish-connection-information
 {% for part_id in sorted(PART_LIST) %}
   {{ part_id }}
 {% endfor %}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+monitor-setup-url = https://monitor.app.officejs.com/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
+server_log_url = ${monitor-publish-parameters:monitor-base-url}/${slap-configuration:private-hash}/
+
+[monitor-directory]
+service = ${buildout:directory}/etc/service
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+server-log = ${:private}/server-log
+monitor-log = ${:private}/monitor-log
+system-log = ${:private}/system-log
+consumption = ${:log}/consumption
+
+[pwgen]
+recipe = slapos.cookbook:generate.password
+user = admin
+bytes = 16
+
+[pwgen32]
+recipe = slapos.cookbook:generate.password
+user = admin
+bytes = 16
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+private-hash = ${pwgen:passwd}${pwgen32:passwd}
+frontend-domain = 

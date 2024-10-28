@@ -10,7 +10,7 @@
       "default": "",
       "type": "string"
     },
-    "fronted-url": {
+    "frontend-url": {
       "title": "Frontend URL",
       "description": "Frontend URL",
       "default": "",

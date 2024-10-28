@@ -31,6 +31,8 @@ import json
 import os
 import requests
 import sqlite3
+import subprocess
+import tempfile
 
 from slapos.proxy.db_version import DB_VERSION
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -45,15 +47,15 @@ class TestJupyter(InstanceTestCase):
   def test(self):
     connection_dict = self.computer_partition.getConnectionParameterDict()
 
-    self.assertTrue('password' in connection_dict)
+    self.assertIn('password', connection_dict)
     password = connection_dict['password']
 
     self.assertEqual(
       {
-        'jupyter-classic-url': 'https://[%s]:8888/tree' % (self._ipv6_address, ),
-        'jupyterlab-url': 'https://[%s]:8888/lab' % (self._ipv6_address, ),
+        'jupyter-classic-url': 'https://[%s]:8888/tree' % (self.computer_partition_ipv6_address, ),
+        'jupyterlab-url': 'https://[%s]:8888/lab' % (self.computer_partition_ipv6_address, ),
         'password': '%s' % (password, ),
-        'url': 'https://[%s]:8888/tree' % (self._ipv6_address, )
+        'url': 'https://[%s]:8888/tree' % (self.computer_partition_ipv6_address, )
       },
       connection_dict
     )
@@ -268,3 +270,77 @@ class TestJupyterCustomAdditional(SelectMixin, InstanceTestCase):
 
     # clean up the fake master
     r.destroyed()
+
+
+class IPythonNotebook(object):
+  def __init__(self, name, binary):
+    self.tempdir = tempdir = tempfile.TemporaryDirectory()
+    path = os.path.join(tempdir.name, name)
+    self.path = path + '.ipynb'# input notebook
+    self.output_path = path + '.nbconvert.ipynb' # output notebook
+    self.binary = binary
+
+  def write(self, code):
+    content = {
+      "cells": [
+        {
+          "cell_type": "code",
+          "execution_count": None,
+          "metadata": {},
+          "outputs": [],
+          "source": code.splitlines(keepends=True)
+        }
+      ],
+      "metadata": {},
+      "nbformat": 4,
+      "nbformat_minor": 4
+    }
+    with open(self.path, 'w') as notebook:
+      notebook.write(json.dumps(content))
+
+  def run(self):
+    return subprocess.check_output(
+      (self.binary,'--execute', '--to', 'notebook', self.path),
+      stderr=subprocess.STDOUT, text=True)
+
+  def readResult(self):
+    with open(self.output_path) as result:
+      return json.loads(result.read())['cells'][0]['outputs'][0]['text'][0]
+
+  def __enter__(self):
+    return self
+
+  def __exit__(self, *args):
+    if self.tempdir:
+      self.tempdir.cleanup()
+      del self.tempdir
+
+
+class TestIPython(InstanceTestCase):
+  message = 'test_sys'
+  module = 'sys'
+
+  def test(self):
+    binary = os.path.join(
+      self.computer_partition_root_path,
+      'software_release', 'bin', 'jupyter-nbconvert')
+    with IPythonNotebook('test', binary) as notebook:
+      notebook.write("import %s\nprint(%r)" % (self.module, self.message))
+      out = notebook.run()
+
+      self.assertIn(
+        "[NbConvertApp] Converting notebook %s to notebook" % notebook.path,
+        out,
+      )
+      self.assertRegex(
+        out,
+        r"\[NbConvertApp\] Writing \d+ bytes to %s" % notebook.output_path
+      )
+
+      self.assertTrue(os.path.exists(notebook.output_path))
+      self.assertEqual(notebook.readResult(), self.message + '\n')
+
+
+class TestIPythonNumpy(TestIPython):
+  message = 'test_numpy'
+  module = 'numpy'

@@ -25,16 +25,28 @@
 #
 ##############################################################################
 
+import datetime
 import glob
 import hashlib
 import json
 import os
+import psutil
 import re
 import requests
+import shutil
 import subprocess
+import tempfile
+import time
 import xml.etree.ElementTree as ET
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.util import bytes2str
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -64,6 +76,141 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+  def test_monitor_httpd_normal_reboot(self):
+    # Start the monitor-httpd service
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      partition = info['group']
+      if info['statename'] != "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.startProcess(monitor_httpd_process_name)
+        for _retries in range(20):
+          time.sleep(1)
+          info, = [i for i in 
+           supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+          if info['statename'] == "RUNNING":
+            break
+        else:
+          self.fail(f"the supervisord service '{monitor_httpd_process_name}' is not running")
+
+    # Get the partition path
+    partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc', 'monitor-httpd.conf')):
+        self.partition_path = partition_path
+        break
+
+    # Make sure we are focusing the same httpd service
+    self.assertIn(partition, self.partition_path)
+
+    # Get the monitor-httpd-service
+    monitor_httpd_service_path = glob.glob(os.path.join(
+      self.partition_path, 'etc', 'service', 'monitor-httpd*'
+    ))[0]
+
+    try:
+      output = subprocess.check_output([monitor_httpd_service_path], timeout=10, stderr=subprocess.STDOUT, text=True)
+      # If the httpd-monitor service is running
+      # and the monitor-httpd.pid contains the identical PID as the servicse
+      # run the monitor-httpd service can cause the "already running" error correctly
+      self.assertIn("already running", output)
+    except subprocess.CalledProcessError as e:
+      self.logger.debug("Unexpected error when running the monitor-httpd service:", e)
+      self.fail("Unexpected error when running the monitor-httpd service")
+    except subprocess.TimeoutExpired as e:
+      # Timeout means we run the httpd service corrrectly
+      # This is not the expected behaviour
+      self.logger.debug("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test:", e)
+      # Kill the process that we started manually
+      # Get the pid of the monitor_httpd from the PID file
+      monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+      monitor_httpd_pid = ""
+      if os.path.exists(monitor_httpd_pid_file):
+        with open(monitor_httpd_pid_file, "r") as pid_file:
+          monitor_httpd_pid = pid_file.read()
+      try:
+        pid_to_kill = monitor_httpd_pid.strip('\n')
+        subprocess.run(["kill", "-9", str(pid_to_kill)], check=True)
+        self.logger.debug(f"Process with PID {pid_to_kill} killed.")
+      except subprocess.CalledProcessError as e:
+        self.logger.debug(f"Error killing process with PID {pid_to_kill}: {e}")
+      self.fail("Unexpected behaviour: We are not suppose to be able to run the httpd service in the test")
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      partition = info['group']
+      if info['statename'] == "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.stopProcess(monitor_httpd_process_name)
+
+  def test_monitor_httpd_crash_reboot(self):
+    # Get the partition path
+    partition_path_list = glob.glob(os.path.join(self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc', 'monitor-httpd.conf')):
+        self.partition_path = partition_path
+        break
+
+    # Get the pid file
+    monitor_httpd_pid_file = os.path.join(self.partition_path, 'var', 'run', 'monitor-httpd.pid')
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
+      if info['statename'] == "RUNNING":
+        monitor_httpd_process_name = f"{info['group']}:{info['name']}"
+        supervisor.stopProcess(monitor_httpd_process_name)
+
+    # Write the PID of the infinite process to the pid file.
+    with open(monitor_httpd_pid_file, "w") as file:
+      file.write(str(os.getpid()))
+
+    # Get the monitor-httpd-service
+    monitor_httpd_service_path = glob.glob(os.path.join(
+      self.partition_path, 'etc', 'service', 'monitor-httpd*'
+    ))[0]
+
+    monitor_httpd_service_is_running = False
+
+    # Create the subprocess
+    self.logger.debug("Ready to run the process in crash reboot")
+    try:
+      process = subprocess.Popen(monitor_httpd_service_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+      stdout, stderr = '', ''
+      try:
+        # Wait for the process to finish, but with a timeout
+        stdout, stderr = process.communicate(timeout=3)
+        self.logger.debug("Communicated!")
+      except subprocess.TimeoutExpired:
+        monitor_httpd_service_is_running = True # We didn't get any output within 3 seconds, this means everything is fine.
+        # If the process times out, terminate it
+        try:
+          main_process = psutil.Process(process.pid)
+          child_processes = main_process.children(recursive=True)
+
+          for process in child_processes + [main_process]:
+            process.terminate()
+
+          psutil.wait_procs(child_processes + [main_process])
+
+          self.logger.debug(f"Processes with PID {process.pid} and its subprocesses terminated.")
+        except psutil.NoSuchProcess as e:
+          # This print will generate ResourceWarningm but it is normal in Python 3
+          # See https://github.com/giampaolo/psutil/blob/master/psutil/tests/test_process.py#L1526
+          self.logger.debug("No process found with PID: %s" % process.pid)
+
+      # "httpd (pid 21934) already running" means we start httpd failed
+      if "already running" in stdout:
+        self.fail("Unexepected output from the monitor-httpd process: %s" % stdout)
+        raise Exception("Unexepected output from the monitor-httpd process: %s" % stdout)
+
+    except subprocess.CalledProcessError as e:
+      self.logger.debug("Unexpected error when running the monitor-httpd service:", e)
+      self.fail("Unexpected error when running the monitor-httpd service")
+
+    self.assertTrue(monitor_httpd_service_is_running)
 
 
 class MonitorTestMixin:
@@ -194,7 +341,7 @@ class EdgeMixin(object):
         with open(info_dict['status-cron']) as fh:
           self.assertEqual(
             '*/2 * * * * %s' % (info_dict['status-json'],),
-          fh.read().strip()
+            fh.read().strip()
           )
 
   def initiateSurykatkaRun(self):
@@ -334,6 +481,7 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
 INTERVAL = 120
 TIMEOUT = 7
 SQLITE = %(db_file)s
+ELAPSED_FAST = 5
 NAMESERVER =
   127.0.1.1
   127.0.1.2
@@ -353,6 +501,7 @@ URL =
 INTERVAL = 120
 TIMEOUT = 13
 SQLITE = %(db_file)s
+ELAPSED_FAST = 11
 NAMESERVER =
   127.0.1.1
   127.0.1.2
@@ -367,12 +516,16 @@ URL =
   def getInstanceSoftwareType(cls):
     return 'edgetest-basic'
 
+  enabled_sense_list = "'dns_query tcp_server http_query ssl_certificate '\n"\
+                       "                        'elapsed_time'"
+
   def assertSurykatkaPromises(self):
     self.assertHttpQueryPromiseContent(
       'edge0',
       'path-check',
       'https://path.example.com/path',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -381,6 +534,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://path.example.com/path'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -388,6 +542,7 @@ URL =
       'domain-check',
       'https://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -396,6 +551,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://domain.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -403,6 +559,7 @@ URL =
       'domain-check',
       'http://domain.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -411,6 +568,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'http://domain.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -418,6 +576,7 @@ URL =
       'frontend-check',
       'https://frontend.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.3',
@@ -426,6 +585,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://frontend.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -433,6 +593,7 @@ URL =
       'frontend-empty-check',
       'https://frontendempty.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '',
@@ -441,6 +602,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://frontendempty.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -448,6 +610,7 @@ URL =
       'status-check',
       'https://status.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -456,6 +619,7 @@ URL =
   'report': 'http_query',
   'status-code': '202',
   'url': 'https://status.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -463,6 +627,7 @@ URL =
       'certificate-check',
       'https://certificate.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '11',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -471,6 +636,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://certificate.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -478,6 +644,7 @@ URL =
       'time-check',
       'https://time.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -486,6 +653,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://time.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][11]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -493,6 +661,7 @@ URL =
       'failure-check',
       'https://failure.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '3',
   'http-header-dict': '{}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -501,6 +670,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://failure.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
     self.assertHttpQueryPromiseContent(
@@ -508,6 +678,7 @@ URL =
       'header-check',
       'https://header.example.com',
       """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
   'failure-amount': '1',
   'http-header-dict': '{"A": "AAA"}',
   'ip-list': '127.0.0.1 127.0.0.2',
@@ -516,6 +687,7 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://header.example.com'}""" % (
+        self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
   def test(self):
@@ -533,3 +705,180 @@ URL =
     self.assertSurykatkaPromises()
     self.assertSurykatkaCron()
     self.assertConnectionParameterDict()
+
+
+class TestEdgeBasicEnableSenseList(TestEdgeBasic):
+  enabled_sense_list = "'ssl_certificate'"
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    orig_instance_parameter_dict = super().getInstanceParameterDict()
+    _ = json.loads(orig_instance_parameter_dict['_'])
+    _['enabled-sense-list'] = 'ssl_certificate'
+    return {'_': json.dumps(_)}
+
+
+class TestNodeMonitoring(SlapOSInstanceTestCase):
+  """Test class for node monitoring instanciation"""
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'promise_cpu_temperature_frequency': 2,
+      'promise_cpu_temperature_threshold': 90,
+      'promise_cpu_avg_temperature_threshold': 80,
+      'promise_cpu_avg_temperature_threshold_duration': 600,
+      'promise_ram_available_frequency': 2,
+      'promise_ram_available_threshold': 500,
+      'promise_ram_avg_available_threshold': 1e3,
+      'promise_ram_avg_available_threshold_duration': 600,
+      'promise_network_errors_frequency': 5,
+      'promise_network_errors_threshold': 100,
+      'promise_network_lost_packets_threshold': 100,
+      'promise_network_transit_frequency': 1,
+      'promise_network_transit_max_data_threshold': 1e6,
+      'promise_network_transit_min_data_threshold': 0,
+      'promise_network_transit_duration': 600,
+      'promise_cpu_load_threshold': 1.5,
+      'promise_monitor_space_frequency': 5,
+      'promise_partition_space_threshold': 0.08,
+      'promise_free_disk_space_frequency': 3,
+      'promise_free_disk_space_threshold': 0.08,
+      'promise_free_disk_space_nb_days_predicted': 10,
+      'promise_free_disk_space_display_partition': True,
+      'promise_free_disk_space_display_prediction': True,
+    })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def test_node_monitoring_instance(self):
+    pass
+
+
+class TestNodeMonitoringRe6stCertificate(SlapOSInstanceTestCase):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def reRequestInstance(self, partition_parameter_kw=None, state='started'):
+    if partition_parameter_kw is None:
+      partition_parameter_kw = {}
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        state=state)
+
+  def test_default(self):
+    self.reRequestInstance()
+    self.slap.waitForInstance()
+    promise = os.path.join(
+      self.computer_partition_root_path, 'etc', 'plugin',
+      'check-re6stnet-certificate.py')
+    self.assertTrue(os.path.exists(promise))
+    with open(promise) as fh:
+      promise_content = fh.read()
+    # this test depends on OS level configuration
+    if os.path.exists('/etc/re6stnet/cert.crt'):
+      self.assertIn(
+        "extra_config_dict = {'certificate': '/etc/re6stnet/cert.crt', "
+        "'certificate-expiration-days': '15'}", promise_content)
+      self.assertIn(
+        "from slapos.promise.plugin.check_certificate import RunPromise",
+        promise_content)
+    else:
+      self.assertIn(
+        "extra_config_dict = {'command': 'echo \"re6stnet disabled on the "
+        "node\"'}", promise_content)
+      self.assertIn(
+        "from slapos.promise.plugin.check_command_execute import RunPromise",
+        promise_content)
+
+  def createKey(self):
+    key = rsa.generate_private_key(
+      public_exponent=65537, key_size=2048, backend=default_backend())
+    key_pem = key.private_bytes(
+      encoding=serialization.Encoding.PEM,
+      format=serialization.PrivateFormat.TraditionalOpenSSL,
+      encryption_algorithm=serialization.NoEncryption()
+    )
+    return key, key_pem
+
+  def createCertificate(self, key, days=30):
+    subject = issuer = x509.Name([
+      x509.NameAttribute(NameOID.COUNTRY_NAME, u"FR"),
+      x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Nord"),
+      x509.NameAttribute(NameOID.LOCALITY_NAME, u"Lille"),
+      x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Nexedi"),
+      x509.NameAttribute(NameOID.COMMON_NAME, u"Common"),
+    ])
+    certificate = x509.CertificateBuilder().subject_name(
+        subject
+    ).issuer_name(
+        issuer
+    ).public_key(
+        key.public_key()
+    ).serial_number(
+        x509.random_serial_number()
+    ).not_valid_before(
+        datetime.datetime.utcnow()
+    ).not_valid_after(
+        datetime.datetime.utcnow() + datetime.timedelta(days)
+    ).sign(key, hashes.SHA256(), default_backend())
+    certificate_pem = certificate.public_bytes(
+      encoding=serialization.Encoding.PEM)
+    return certificate, certificate_pem
+
+  def createKeyCertificate(self, certificate_path):
+    key, key_pem = self.createKey()
+    certificate, certificate_pem = self.createCertificate(key, 30)
+    with open(certificate_path, 'w') as fh:
+      fh.write(bytes2str(key_pem))
+    with open(certificate_path, 'a') as fh:
+      fh.write(bytes2str(certificate_pem))
+
+  def setUp(self):
+    super().setUp()
+    self.re6st_dir = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, self.re6st_dir)
+
+  def test_re6st_dir(self, days=None, filename='cert.crt'):
+    self.createKeyCertificate(os.path.join(self.re6st_dir, filename))
+    with open(os.path.join(self.re6st_dir, 're6stnet.conf'), 'w') as fh:
+      fh.write("")
+    partition_parameter_kw = {
+      'promise_re6stnet_config_directory': self.re6st_dir
+    }
+    if filename != 'cert.crt':
+      partition_parameter_kw['promise_re6stnet_certificate_file'] = filename
+    if days is not None:
+      partition_parameter_kw['re6stnet_certificate_expiration_delay'] = days
+    self.reRequestInstance(
+      partition_parameter_kw={'_': json.dumps(partition_parameter_kw)})
+    self.slap.waitForInstance()
+    promise = os.path.join(
+      self.computer_partition_root_path, 'etc', 'plugin',
+      'check-re6stnet-certificate.py')
+    self.assertTrue(os.path.exists(promise))
+    with open(promise) as fh:
+      promise_content = fh.read()
+    self.assertIn(
+      """extra_config_dict = { 'certificate': '%(re6st_dir)s/%(filename)s',
+  'certificate-expiration-days': '%(days)s'}""" % {
+       're6st_dir': self.re6st_dir,
+       'days': days or 15,
+       'filename': filename},
+      promise_content)
+    self.assertIn(
+      "from slapos.promise.plugin.check_certificate import RunPromise",
+      promise_content)
+
+  def test_re6st_dir_expiration(self):
+    self.test_re6st_dir(days=10)
+
+  def test_re6st_dir_filename(self):
+    self.test_re6st_dir(filename="cert.pem")

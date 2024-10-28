@@ -1,0 +1,45 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = instance-root:output
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
+software = $${slap-connection:software-release-url}
+
+[instance-root]
+recipe = slapos.recipe.template:jinja2
+url = ${instance-root:target}
+output = $${buildout:directory}/$${:_buildout_section_name_}.cfg
+extensions = jinja2.ext.do
+context =
+  jsonkey default_parameter_dict :default-parameters
+  key parameter_dict slap-configuration:configuration
+  key software_url slap-configuration:software
+default-parameters =
+  {
+    "autopilotType": "c-astral",
+    "autopilotIp": "192.168.27.1",
+    "autopilotPort": 7909,
+    "debug": false,
+    "droneGuidList": [],
+    "droneNetIf": "eth0",
+    "flightScript": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js",
+    "isASimulation": false,
+    "loopPeriod": 200,
+    "multicastIp": "ff15::1111",
+    "subscriberGuidList":[],
+    "subscriberNetIf": "eth0"
+  }

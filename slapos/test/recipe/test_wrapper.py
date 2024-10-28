@@ -135,6 +135,8 @@ class TestPidFile(WrapperTestCase):
       time.sleep(0.1)
       if os.path.exists(self.pidfile):
         break
+    else:
+      self.fail(process.stdout.read())
 
     with open(self.pidfile) as f:
       pid = int(f.read())
@@ -169,10 +171,16 @@ class TestPidFile(WrapperTestCase):
       if process.pid == pid:
         break
     else:
-      self.fail('pidfile not updated', process.stdout.read())
+      self.fail('pidfile not updated: %s' % process.stdout.read())
 
 
 class TestWaitForFiles(WrapperTestCase):
+  env = None
+  if sys.platform.startswith("linux"):
+    expected_output = 'done\n'
+  else:
+    expected_output = 'Error using inotify, falling back to polling\ndone\n'
+
   def getOptions(self):
     self.waitfile = self.getTempPath('wait')
     return {
@@ -190,6 +198,7 @@ class TestWaitForFiles(WrapperTestCase):
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
       universal_newlines=True,
+      env=self.env,
     )
     self.addCleanup(self.terminate_process, process)
     if process.poll():
@@ -205,11 +214,12 @@ class TestWaitForFiles(WrapperTestCase):
     for _ in range(20):
       time.sleep(0.1)
       if process.poll() is not None:
-        self.assertEqual(process.stdout.read(), 'done\n')
+        self.assertEqual(process.stdout.read(), self.expected_output)
         self.assertEqual(process.returncode, 0)
         break
     else:
       self.fail('process did not start after file was created')
+
 
 
 class TestPrivateTmpFS(WrapperTestCase):

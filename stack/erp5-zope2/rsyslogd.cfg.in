@@ -1,0 +1,18 @@
+module(
+    load="imuxsock"
+    SysSock.Name="{{ parameter_dict['log-socket'] }}")
+
+# Just simply output the raw line without any additional information, as
+# haproxy emits enough information by itself
+# Also cut out first empty space in msg, which is related to rsyslogd
+# internal and end up cutting on 8k, as it's default of $MaxMessageSize
+template(name="rawoutput" type="string" string="%msg:2:8192%\n")
+
+$FileCreateMode 0644
+$DirCreateMode 0700
+$Umask 0022
+
+$WorkDirectory {{ parameter_dict['spool-directory'] }}
+
+local0.=info {{ parameter_dict['access-log-file'] }};rawoutput
+local0.warning {{ parameter_dict['error-log-file'] }}

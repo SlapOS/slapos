@@ -66,8 +66,8 @@
               "type": "string"
             },
             "shared": {
-              "description": "Define if the request will request a Slave or Software Instance.",
-              "default": "false",
+              "description": "Define if the request will request a Shared Instance or Software Instance.",
+              "default": false,
               "type": "boolean"
             },
             "index": {

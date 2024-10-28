@@ -1,9 +1,0 @@
-#!/bin/bash
-
-. environment.sh
-hadoop jar software_release/parts/hadoop-streaming/*jar \
-    -mapper demo/wikipedia/mapper.py \
-    -reducer demo/wikipedia/reducer.py \
-    -input var/wikipedia/input/* \
-    -output var/wikipedia/output
-

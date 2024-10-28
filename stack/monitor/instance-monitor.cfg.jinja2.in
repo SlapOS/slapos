@@ -67,8 +67,21 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${monitor-httpd-conf-parameter:key-file}
 cert-file = ${monitor-httpd-conf-parameter:cert-file}
-executable = ${monitor-httpd-wrapper:wrapper-path}
+executable = ${monitor-httpd-service-wrapper:output}
 wrapper = ${directory:bin}/ca-monitor-httpd
+
+[monitor-httpd-service-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_monitor_httpd_wrapper }}
+output = ${directory:bin}/monitor-httpd-service-wrapper
+pid-file = ${monitor-httpd-conf-parameter:pid-file}
+monitor-httpd-wrapper-path = ${monitor-httpd-wrapper:wrapper-path}
+monitor-httpd-conf = ${monitor-httpd-conf:output}
+context =
+    key pid_file :pid-file
+    key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
+    key monitor_httpd_conf :monitor-httpd-conf
+    raw dash_binary {{ dash_executable_location }}
 
 [ca-monitor-httpd-service]
 recipe = slapos.cookbook:wrapper
@@ -99,7 +112,6 @@ parameter-list =
   htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
   ${monitor-instance-parameter:instance-configuration}
-# htpasswd entry:  htpasswd key password-file username htpasswd-file
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
@@ -144,14 +156,11 @@ storage-path = ${directory:etc}/.monitor_pwd
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
-password-file = ${directory:etc}/.monitor_pwd
+password-file = ${monitor-directory:etc}/.monitor-password
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 command =
   echo "${monitor-instance-parameter:password}" >${:password-file}
-  [ -s "${:htpasswd-path}" ] ||
-    {{ apache_location }}/bin/htpasswd -ci ${:htpasswd-path} "${monitor-instance-parameter:username}" <${:password-file}
-update-command =
-  [ -s "${:password-file}" ] || ${:command}
+  {{ apache_location }}/bin/htpasswd -cib ${:htpasswd-path} "${monitor-instance-parameter:username}" "${monitor-instance-parameter:password}"
 
 [monitor-symlink]
 recipe = cns.recipe.symlink
@@ -330,8 +339,6 @@ collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
 password = ${monitor-htpasswd:passwd}
 username = admin
-# XXX: type key value
-# ex raw monitor-password resqdsdsd34
 instance-configuration =
 
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
@@ -410,9 +417,7 @@ depends =
   ${ca-monitor-httpd-service:wrapper-path}
   ${monitor-httpd-promise:name}
   ${monitor-frontend-promise:name}
-# XXX this is not enabled yet because this conflicts with testnode's own
-# monitoring.
-#  ${check-monitor-password-promise:name}
+  ${check-monitor-password-promise:name}
   ${monitor-bootstrap-promise:name}
   ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}

@@ -1,0 +1,14 @@
+{
+  "name": "Mail Server",
+  "description": "Mail Server",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "request": "instance-default-input-schema.json",
+      "response": "instance-default-output-schema.json",
+      "index": 0
+    }
+  }
+}

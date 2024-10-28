@@ -1,0 +1,24 @@
+global
+  maxconn 4096
+  master-worker
+  pidfile {{ pidfile }}
+  log stdout format raw daemon
+
+defaults
+  log global
+  option httplog
+  mode http
+  retries 1
+  option redispatch
+  maxconn 2000
+  balance roundrobin
+  timeout connect 10s
+  timeout queue 60s
+  timeout server 305s
+  timeout client 305s
+
+  compression algo gzip
+  compression type application/font-woff application/font-woff2 application/hal+json application/javascript application/json application/rss+xml application/wasm application/x-font-opentype application/x-font-ttf application/x-javascript application/xml image/svg+xml text/cache-manifest text/css text/html text/javascript text/plain text/xml
+
+{{ content }}
+{# BLANKLINE #}

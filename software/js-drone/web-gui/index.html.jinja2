@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+
+  <meta charset="utf-8">
+  <title>JS-Drone GUI</title>
+
+  <script src="script.js"></script>
+
+  <style>
+    button {
+      margin: 2vh;
+      padding: 2vh;
+      font-size: 24px;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px #999;
+    }
+    button:active {
+      box-shadow: 0 2px #666;
+      transform: translateY(4px);
+    }
+    label {margin: auto 2%}
+    table {
+      min-width: 1028px;
+      height: max-content;
+    }
+    textarea {
+      resize: none;
+    }
+    th, td{
+      padding: 1%;
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .blue-text {color: blue}
+    .connected {color: green}  
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cyan-text {color: cyan}
+    .disconnected {color: red}
+    .gray-button {background-color: lightgray}
+    .gray-button:hover {background-color: gray}
+    .green-text {color: green}
+    .green-button {background-color: #4caf50}
+    .green-button:hover {background-color: #3e8e41}
+    .magenta-text {color: magenta}
+    .red-button {background-color: red}
+    .red-button:hover {background-color: #e42828}
+    .red-text {color: red}
+    .white-text {color: white}
+    .yellow-text {color: yellow}
+    #drones-status {height: 50vh}
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <label for="web-socket-status">web socket status:</label>
+    <output class="disconnected" id="web-socket-status">Disconnected</output>
+  </div>
+
+  {% if debug -%}
+  <div class="container">
+    <table>
+      {% for i in range(int(nb_drones)) -%}
+      <tr>
+        <th>Drone {{ i }} logs</th>
+        <td><textarea id="log_{{ i }}" rows="4" cols="100" readonly></textarea><td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif -%}
+
+  <div class="container" id="drones-status">
+    <table>
+      <tr>
+        <th></th>
+        {% for i in range(int(nb_drones)) -%}
+        <th>Drone {{ i }}</th>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Flight state</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td class="disconnected" id="flight_state_{{ i }}">Unknown</td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Latitude (°)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="latitude_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Longitude (°)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="longitude_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Altitude (m)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="altitude_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Yaw (°)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="yaw_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Speed (m/s)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="speed_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Climb rate (m/s)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="climb_rate_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th>Timestamp (hh:mm:ss)</th>
+        {% for i in range(int(nb_drones)) -%}
+        <td id="timestamp_{{ i }}"></td>
+        {% endfor %}
+      </tr>
+    </table>
+  </div>
+
+  <div class="container">
+    <button id="flight-btn" class="green-button" type="button">
+      Start
+    </button>
+    <button id="switch-btn" class="gray-button" type="button">
+      Switch leader
+    </button>
+    <button id="quit-btn" class="red-button" type="button">
+      Quit
+    </button>
+  </div>
+
+</body>
+</html>

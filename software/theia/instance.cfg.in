@@ -18,7 +18,6 @@ cert = $${slap-connection:cert-file}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-RootSoftwareInstance = $${:default}
 default = $${:theia}
 theia = theia:output
 export = export:output
@@ -33,12 +32,14 @@ url = ${instance-theia:output}
 output = $${buildout:directory}/instance-theia.cfg
 extensions = jinja2.ext.do
 context =
+  section slap_connection slap-connection
   jsonkey default_parameter_dict :default-parameters
   key parameter_dict slap-configuration:configuration
   key root_title slap-configuration:root-instance-title
   key partition_root_path buildout:directory
-  key ipv6_random slap-configuration:ipv6-random
+  key ipv6_theia slap-configuration:ipv6-random
   key ipv4_random slap-configuration:ipv4-random
+  section slap_resource slap-configuration
   import os os
   import json json
 default-parameters =
@@ -48,11 +49,11 @@ default-parameters =
     "forward-slapos-frontend-requests": "enabled",
     "frontend-name": "Theia Frontend",
     "frontend-sr": "$${:frontend-sr}",
-    "frontend-sr-type": "RootSoftwareInstance",
+    "frontend-sr-type": "default",
     "frontend-guid": null,
     "additional-frontend-name":"Theia Additional Frontend",
     "additional-frontend-sr": "$${:frontend-sr}",
-    "additional-frontend-sr-type": "RootSoftwareInstance",
+    "additional-frontend-sr-type": "default",
     "additional-frontend-guid": null,
     "monitor-httpd-port": 8386
   }

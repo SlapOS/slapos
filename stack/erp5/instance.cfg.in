@@ -26,11 +26,26 @@ extra-context =
     section parameter_dict dynamic-template-postfix-parameters
     import urllib urllib
 
+[default-cloudooo-url-list]
+recipe = slapos.recipe.build
+default-url-list =
+  {{ default_cloudooo_url_list | indent }}
+init =
+  # Expose the default cloudooo URLs, sorted using a pseudo-random seed,
+  # so that the same instance keep the same order
+  import six, random
+  seed = repr(sorted(six.iteritems(self.buildout['slap-connection'])))
+  default_cloudooo_url_list = [url.strip() for url in self.options['default-url-list'].splitlines()]
+  random.Random(seed).shuffle(default_cloudooo_url_list)
+  self.options['url-list'] = default_cloudooo_url_list
+
 [dynamic-template-erp5-parameters]
-default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
+default-cloudooo-url-list = ${default-cloudooo-url-list:url-list}
 jupyter-enable-default = {{ jupyter_enable_default }}
 wcfs-enable-default = {{ wcfs_enable_default }}
+with-max-rlimit-nofile-enable-default = {{ with_max_rlimit_nofile_enable_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
+default-bt5 = {{ ' '.join(default_bt5.split()) }}
 
 [context]
 root-common = {{ root_common }}
@@ -42,10 +57,12 @@ template-zodb-base = {{ template_zodb_base }}
 url = {{ template_erp5 }}
 filename = instance-erp5.cfg
 extra-context =
-    key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
+    key default_cloudooo_url_list dynamic-template-erp5-parameters:default-cloudooo-url-list
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key wcfs_enable_default dynamic-template-erp5-parameters:wcfs-enable-default
+    key with_max_rlimit_nofile_enable_default dynamic-template-erp5-parameters:with-max-rlimit-nofile-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    key default_bt5 dynamic-template-erp5-parameters:default-bt5
     key openssl_location :openssl-location
     import re re
     import urllib_parse six.moves.urllib.parse
@@ -76,14 +93,16 @@ url = {{ template_balancer }}
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
-    import itertools itertools
     import hashlib hashlib
+# XXX: only used in software/slapos-master:
+    import itertools itertools
     import functools functools
 import-list =
     file caucase context:caucase-jinja2-library
 
 [dynamic-template-zeo-parameters]
 <= default-dynamic-template-parameters
+zeo-conf-template = {{ template_zeo_conf }}
 
 [dynamic-template-zeo]
 <= jinja2-template-base
@@ -128,9 +147,7 @@ extra-context =
     key buildout_directory buildout:directory
     key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
-    import base64 base64
     import urllib_parse six.moves.urllib.parse
-    import hashlib hashlib
     import itertools itertools
     import json json
 import-list =
@@ -206,7 +223,6 @@ url = {{ instance_wcfs_cfg_in }}
 filename = instance_wcfs.cfg
 extra-context =
     section parameter_dict dynamic-template-zope-parameters
-    import urllib_parse six.moves.urllib.parse
 import-list =
     file instance_zodb_base context:template-zodb-base
 
@@ -216,8 +232,6 @@ override = {{ dumps(override_switch_softwaretype |default) }}
 
 # Public software types
 default = dynamic-template-erp5:output
-# BBB
-RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:output
 caucase = dynamic-template-caucase:output

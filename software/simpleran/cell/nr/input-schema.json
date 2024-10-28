@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NR Cell",
+  "type": "object",
+  "required": [
+    "cell_type",
+    "rf_mode",
+    "pci",
+    "cell_id",
+    "bandwidth",
+    "ru",
+    "dl_nr_arfcn",
+    "nr_band"
+  ],
+  "properties": {
+    "$ref": "../../cell/common.json#/properties",
+    "cell_type": {
+      "$ref": "#/properties/cell_type",
+      "const": "nr"
+    },
+    "tdd_ul_dl_config": {
+      "title": "TDD Configuration",
+      "type": "string",
+      "enum": [
+        "5ms 2UL 7DL 4/6 (default)",
+        "2.5ms 1UL 3DL 2/10",
+        "5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)",
+        "5ms 6UL 3DL 10/2 (high uplink)"
+      ],
+      "default": "5ms 2UL 7DL 4/6 (default)",
+      "options": {
+        "dependencies": {
+          "rf_mode": "tdd"
+        }
+      }
+    },
+    "bandwidth": {
+      "$ref": "#/properties/bandwidth"
+    },
+    "dl_nr_arfcn": {
+      "title": "DL NR ARFCN",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
+      "type": "integer"
+    },
+    "nr_band": {
+      "title": "NR band",
+      "description": "NR band number",
+      "type": "integer"
+    },
+    "ul_nr_arfcn": {
+      "title": "UL NR ARFCN",
+      "description": "Uplink NR Absolute Radio Frequency Channel Number of the cell. By default a frequency corresponding to dl_nr_arfcn and nr_band is chosen.",
+      "type": "integer"
+    },
+    "ssb_nr_arfcn": {
+      "title": "SSB NR ARFCN",
+      "description": "SSB NR Absolute Radio Frequency Channel Number of the cell. If set it must be an element of global synchronization raster and be at offset from center DL frequency that aligns with SSB subcarrier spacing of selected band. By default a valid frequency nearby dl_nr_arfcn is chosen.",
+      "type": "integer"
+    },
+    "ssb_pos_bitmap": {
+      "title": "SSB Position Bitmap",
+      "description": "SSB position bitmap in bits (4, 8 or 64 bits depending on the DL frequency).",
+      "type": "string",
+      "default": "10000000"
+    },
+    "root_sequence_index": {
+      "$ref": "#/properties/root_sequence_index",
+      "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+      "default": 1
+    }
+  },
+  "$defs": {
+    "tac": {
+      "title": "Tracking Area Code",
+      "description": "Integer (range 0 to 16777215)",
+      "type": "number"
+    }
+  }
+}

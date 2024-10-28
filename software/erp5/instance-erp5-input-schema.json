@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "definitions": {
     "routing-rule-list": {
-      "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given. This requires the path received from the outside world (typically: frontend) to have its root correspond to Zope's root (for frontend: 'path' parameter must be empty), with the customary VirtualHostMonster construct (for frontend: 'type' must be 'zope').",
+      "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given, after 'internal-path' from 'frontend' parameter. This also supports legacy frontends, using Rapid CDN with \"zope\" type.",
       "type": "array",
       "default": [
         [
@@ -37,7 +37,7 @@
   },
   "properties": {
     "sla-dict": {
-      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (note: Zope partitions reference must be prefixed with \"zope-\").",
+      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (notes: Zope partitions reference must be prefixed with \"zope-\", frontends must be prefixed with \"frontend-\").",
       "additionalProperties": {
         "type": "array",
         "items": {
@@ -53,7 +53,7 @@
       "type": "string"
     },
     "bt5": {
-      "description": "Business Template to install at automatic site creation. By default, all configurators are installed.",
+      "description": "A space-separated list of Business Templates to install at automatic site creation (e.g. \"erp5_full_text_mroonga_catalog erp5_base\"). By default, all configurators are installed.",
       "type": "string"
     },
     "id-store-interval": {
@@ -103,15 +103,37 @@
         "null"
       ]
     },
+    "with-max-rlimit-nofile": {
+      "description": "Set open file descriptors soft limit to hard limit",
+      "type": "boolean"
+    },
+    "python-hash-seed": {
+      "description": "Sets the value of `PYTHONHASHSEED` environment variable for zope processes and test runner. If not provided, zope processes use python default (`0` for python2, `random` for python3) and test runner choose a different `PYTHONHASHSEED` for each execution.",
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "const": "random",
+          "type": "string"
+        }
+      ]
+    },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
       "default": {},
       "patternProperties": {
-        ".*": {
+        "^[a-zA-Z0-9_-]+$": {
           "default": {},
+          "additionalProperties": false,
           "properties": {
             "webdav": {
               "description": "Serve webdav queries, implies timerserver-interval=0 (disabled)",
+              "default": false,
+              "type": "boolean"
+            },
+            "xml-rpc": {
+              "description": "Serve XML-RPC queries",
               "default": false,
               "type": "boolean"
             },
@@ -145,7 +167,7 @@
       "type": "object"
     },
     "hosts-dict": {
-      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-cloudooo, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
       "patternProperties": {
         ".*": {
           "description": "An IP or domain name to which current entry will resolve",
@@ -155,41 +177,45 @@
       "type": "object"
     },
     "frontend": {
-      "description": "Front-end slave instance request parameters",
-      "properties": {
-        "software-url": {
-          "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
-          "default": "",
-          "type": "string",
-          "format": "uri"
-        },
-        "domain": {
-          "description": "The domain name to request front-end to respond as.",
-          "default": "",
-          "type": "string"
-        },
-        "software-type": {
-          "description": "Request a front-end slave instance of this software type.",
-          "default": "RootSoftwareInstance",
-          "type": "string"
-        },
-        "virtualhostroot-http-port": {
-          "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
-          "default": 80,
-          "type": "integer"
-        },
-        "virtualhostroot-https-port": {
-          "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
-          "default": 443,
-          "type": "integer"
+      "description": "Frontend shared instances requests parameters. When this parameter is unset, the system defaults to requesting a frontend, but only when exactly one family exists in `zope-partition-dict`. For more complex zope partition layout, the frontend layout also have to be explicitly defined.",
+      "default": {
+        "default": {}
+      },
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "required": [
+            "zope-family"
+          ],
+          "properties": {
+            "zope-family": {
+              "description": "The zope family to which the requests will be routed.",
+              "type": "string"
+            },
+            "internal-path": {
+              "description": "Internal path from the backend. `%(site-id)s` is substituted by the site id.",
+              "type": "string",
+              "default": "/%(site-id)s"
+            },
+            "software-url": {
+              "description": "Software URL of the frontend shared instance.",
+              "type": "string",
+              "format": "uri",
+              "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+            },
+            "software-type": {
+              "description": "Software type of the frontend shared instance.",
+              "type": "string"
+            },
+            "instance-parameters": {
+              "description": "Instance parameters for the frontend shared instance.",
+              "$ref": "../rapid-cdn/instance-slave-input-schema.json"
+            }
+          },
+          "type": "object"
         }
       },
+      "additionalProperties": false,
       "type": "object"
-    },
-    "wsgi": {
-      "description": "If set to true, Zope is run as a WSGI application, instead of using the Medusa HTTP server.",
-      "type": "boolean",
-      "default": true
     },
     "zope-partition-dict": {
       "description": "Zope layout definition",
@@ -197,13 +223,14 @@
         "1": {}
       },
       "patternProperties": {
-        ".*": {
+        "^[a-zA-Z0-9_-]+$": {
           "additionalProperties": false,
           "properties": {
             "family": {
               "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own balancer entry. It has no special meaning for the system.",
               "default": "default",
-              "type": "string"
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+$"
             },
             "instance-count": {
               "description": "Number of Zopes to setup on this partition",
@@ -260,6 +287,7 @@
           "type": "object"
         }
       },
+      "additionalProperties": false,
       "type": "object"
     },
     "kumofs": {
@@ -294,11 +322,14 @@
       ],
       "type": "object"
     },
-    "cloudooo-url": {
-      "description": "Format conversion service URL",
-      "pattern": "^https?://",
-      "type": "string",
-      "format": "uri"
+    "cloudooo-url-list": {
+      "description": "Format conversion service URLs",
+      "type": "array",
+      "items": {
+        "pattern": "^https?://",
+        "type": "string",
+        "format": "uri"
+      }
     },
     "cloudooo-retry-count": {
       "description": "Define retry count for cloudooo in network error case in test",
@@ -503,7 +534,7 @@
           "properties": {
             "url": {
               "title": "Caucase URL",
-              "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+              "description": "URL of existing caucase instance to use. If empty, caucase instances will be deployed inside partitions.",
               "default": "",
               "type": "string",
               "format": "uri"
@@ -562,6 +593,12 @@
               "examples": [
                 "https://user:password@example.com/{test_result_id}/{test_name}.coverage.sqlite3"
               ]
+            },
+            "fail-under": {
+              "description": "Make the test reporting coverage fail if combined coverage is below this percentage value.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             }
           }
         },
@@ -710,15 +747,9 @@
               },
               "uniqueItems": true
             },
-            "caucase-url": {
-              "title": "Caucase URL",
-              "description": "URL of caucase service to use. If not set, global setting will be used.",
-              "type": "string",
-              "format": "uri"
-            },
             "csr": {
               "title": "csr",
-              "description": "PEM-encoded certificate signature request to request server certificate with. If not provided, HTTPS will be disabled.",
+              "description": "PEM-encoded certificate signature request to request server certificate with.",
               "type": "string"
             },
             "max-crl-update-delay": {
@@ -732,6 +763,54 @@
         }
       },
       "type": "object"
+    },
+    "monitor": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Monitor parameters (unstable/experimental)",
+      "properties": {
+        "computer-memory-percent-threshold": {
+          "type": "number",
+          "description": "Promise fails if total used memory on the computer is above this value, expressed in percentage of the total available RAM,.",
+          "default": 80,
+          "minimum": 0,
+          "maximum": 100
+        },
+        "max-slowqueries-threshold": {
+          "type": "integer",
+          "description": "Promise fails if more than `max-slowqueries-threshold` queries taking longer than `slowest-query-threshold` are found in the mariadb slow query log for the current day.",
+          "default": 1000
+        },
+        "slowest-query-threshold": {
+          "type": "number",
+          "description": "see `max-slowqueries-threshold`",
+          "default": null
+        },
+        "zope-longrequest-logger-error-threshold": {
+          "type": "number",
+          "title": "Promise fails if more than `zope-longrequest-logger-error-threshold` requests taking more than `zope-longrequest-logger-maximum-delay` are found in the zope long request logs for the currency day",
+          "default": 20
+        },
+        "zope-longrequest-logger-maximum-delay": {
+          "type": "number",
+          "title": "See `zope-longrequest-logger-error-threshold`",
+          "default": 0
+        },
+        "apachedex-promise-threshold": {
+          "type": "number",
+          "title": "Promise fails if the overall Apdex score for the previous day is below than this value.",
+          "default": 70,
+          "minimum": 0,
+          "maximum": 100
+        },
+        "apachedex-configuration": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command line arguments to run apachedex to build daily reports"
+        }
+      }
     }
   }
 }

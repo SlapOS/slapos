@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Peer gNB",
+  "type": "object",
+  "required": [
+    "peer_type",
+    "xn_addr"
+  ],
+  "properties": {
+    "peer_type": {
+      "$ref": "../../peer/common.json#/properties/peer_type",
+      "const": "nr"
+    },
+    "xn_addr": {
+      "title": "XN Address",
+      "description": "XN Address of the neighbour node (gNB Address)",
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by mail server",
+  "properties": {
+    "imap-port": {
+      "description": "IMAP port of the dovecot instance",
+      "type": "integer"
+    },
+    "smtp-port": {
+      "description": "SMTP port of the postfix instance",
+      "type": "integer"
+    },
+    "imap-smtp-ipv6": {
+      "description": "IPv6 address of the IMAP and SMTP instances",
+      "type": "string"
+    },
+    "domain": {
+      "description": "Domain of the mail server",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

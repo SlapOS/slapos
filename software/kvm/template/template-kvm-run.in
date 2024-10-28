@@ -23,11 +23,6 @@ disk_type = {{ repr(parameter_dict["disk-type"]) }}
 network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
-nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
-              {{ parameter_dict.get("nbd-port") }}),
-            ('{{ parameter_dict.get("nbd2-host") }}',
-              {{ parameter_dict.get("nbd2-port") }}))
-default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
 
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
@@ -48,13 +43,25 @@ external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
 external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
 external_disk = {{ parameter_dict['external-disk'] }}
-if int(external_disk_number) > 0 and len(external_disk) > 0:
-  raise ValueError("external-disk-number and external-disk are mutually exclusive.")
+etc_directory = '{{ parameter_dict.get("etc-directory") }}'.strip()
+last_disk_num_f = os.path.join(etc_directory, '.data-disk-amount')
+if os.path.exists(last_disk_num_f):
+  with open(last_disk_num_f, 'r') as lf:
+    last_amount = int(lf.readline())
+else:
+  last_amount = 0
+if len(external_disk) > 0:
+  conflict_list = []
+  if int(external_disk_number) > 0:
+    conflict_list.append('conflicts with external-disk-number = %s' % (external_disk_number,))
+  if last_amount > 0:
+    conflict_list.append('conflicts with already configured disks amount %s in %s' % (last_amount, last_disk_num_f))
+  if len(conflict_list) > 0:
+    raise ValueError('external-disk problems: ' + ', '.join(conflict_list))
 instance_root = '{{ parameter_dict['instance-root'] }}'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
 map_storage_list = []
-etc_directory = '{{ parameter_dict.get("etc-directory") }}'.strip()
 httpd_port = {{ parameter_dict.get("httpd-port") }}
 netcat_bin = '{{ parameter_dict.get("netcat-binary") }}'.strip()
 cluster_doc_host = '{{ parameter_dict.get("cluster-doc-host") }}'
@@ -164,6 +171,8 @@ if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) an
   if image_config['error-amount'] == 0:
     image = image_config['image-list'][0]
     downloaded_image = os.path.join(image_config['destination-directory'], image['destination'])
+    if not os.path.exists(downloaded_image):
+      raise ValueError('virtual-hard-drive-url not present yet')
     # previous version was using disk in place, but here it would result with
     # redownload, so copy it
     if virtual_hard_drive_gzipped == 'true':
@@ -375,36 +384,15 @@ def handle_image(config, name):
   else:
     raise ValueError('%s not ready yet' % (name,))
 
-# Try to connect to NBD server (and second nbd if defined).
-# If not available, don't even specify it in qemu command line parameters.
-# Reason: if qemu starts with unavailable NBD drive, it will just crash.
-for nbd_ip, nbd_port in nbd_list:
-  if nbd_ip and nbd_port:
-    s = getSocketStatus(nbd_ip, nbd_port)
-    if s is None:
-      # NBD is not available : launch kvm without it
-      print('Warning : Nbd is not available.')
-    else:
-      # NBD is available
-      # We close the NBD socket else qemu won't be able to use it apparently
-      s.close()
-      kvm_argument_list.extend([
-          '-drive',
-          'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
-else:
-  # Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
-  #       Debian installation CDs, rendering it uninstallable
-  if boot_image_url_select_json_config:
-    # Support boot-image-url-select
-    handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
-  if boot_image_url_list_json_config:
-    # Support boot-image-url-list
-    handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
-  # Always add by default the default image
-  kvm_argument_list.extend([
-      '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
-  ])
-
+# Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
+#       Debian installation CDs, rendering it uninstallable
+# Note: boot-image-url-list has precedence over boot-image-url-select
+if boot_image_url_list_json_config:
+  # Support boot-image-url-list
+  handle_image(boot_image_url_list_json_config, 'boot-image-url-list')
+if boot_image_url_select_json_config:
+  # Support boot-image-url-select
+  handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 os.execv(qemu_path, kvm_argument_list)

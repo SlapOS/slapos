@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import six
 import os
 import shlex
 from zc.buildout import UserError
@@ -41,7 +42,7 @@ class Cluster(object):
     for node in sorted(options['nodes'].split()):
       node = buildout[node]
       node_list.append(node)
-      for k, v in result_dict.iteritems():
+      for k, v in six.iteritems(result_dict):
         x = node[k]
         if x:
           v.append(x)
@@ -88,9 +89,17 @@ class NeoBaseRecipe(GenericBaseRecipe):
         )
     args += self._getOptionList()
     args += shlex.split(options.get('extra-options', ''))
+
+    environment = {}
+    for line in (options.get('environment') or '').splitlines():
+      line = line.strip()
+      if line:
+        k, v = line.split('=', 1)
+        environment[k.rstrip()] = v.lstrip()
+
     private_tmpfs = self.parsePrivateTmpfs()
     kw = {'private_tmpfs': private_tmpfs} if private_tmpfs else {}
-    return self.createWrapper(options['wrapper'], args, **kw)
+    return self.createWrapper(options['wrapper'], args, env=environment, **kw)
 
   def _getBindingAddress(self):
     options = self.options
@@ -119,10 +128,6 @@ class Storage(NeoBaseRecipe):
     engine = self.options.get('engine')
     if engine: # old versions of NEO don't support -e
       r  += '-e', engine
-    if self.options.get('dedup'):
-      r.append('--dedup')
-    if self.options.get('disable-drop-partitions'):
-      r.append('--disable-drop-partitions')
     return r
 
 class Admin(NeoBaseRecipe):

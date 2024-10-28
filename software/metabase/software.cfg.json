@@ -1,0 +1,15 @@
+{
+  "name": "Metabase",
+  "description": "Business Intelligence and Reporting tool",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-metabase-input-schema.json",
+      "response": "instance-metabase-output-schema.json",
+      "index": 1
+    }
+  }
+}

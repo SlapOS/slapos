@@ -89,6 +89,11 @@
       "title": "Community configuration",
       "textarea": true,
       "type": "string"
+    },
+    "grace-period": {
+      "title": "Period in seconds during which a client can renew its certificate even if expired (default 100 days)",
+      "type": "integer",
+      "default": 8640000
     }
   }
 }

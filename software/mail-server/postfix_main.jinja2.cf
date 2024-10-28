@@ -1,0 +1,55 @@
+# http://www.postfix.org/STANDARD_CONFIGURATION_README.html
+# http://www.postfix.org/postconf.5.html
+queue_directory = {{ queue_directory }}
+command_directory = {{ bin_directory }}
+daemon_directory = {{ usr_directory }}/libexec/postfix
+data_directory = {{ data_directory }}
+mail_spool_directory = {{ spool_directory }}
+html_directory = no
+manpage_directory = {{ postfix_location }}/usr/local/man
+sample_directory = {{ postfix_location }}/etc/postfix
+readme_directory = no
+sendmail_path = {{ bin_directory }}/sendmail
+newaliases_path = {{ bin_directory }}/newaliases
+mailq_path = {{ bin_directory }}/mailq
+compatibility_level = 3.6
+smtputf8_enable = no
+
+mail_owner = {{ mail_owner }}
+setgid_group = {{ setgid_group }}
+
+virtual_mailbox_domains = {{ mail_domain }}
+virtual_mailbox_base = {{ vhosts_directory }}
+virtual_mailbox_maps = hash:{{ vmailbox_file }}
+virtual_minimum_uid = 100
+virtual_uid_maps = static:1001
+virtual_gid_maps = static:1022
+virtual_alias_maps = hash:{{ virtual_file }}
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
+inet_interfaces = {{ ip_address }}
+inet_protocols = all
+smtp_bind_address = 0.0.0.0
+smtp_bind_address6 = ::
+
+import_environment =
+  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+
+smtpd_tls_security_level = none
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+
+smtpd_recipient_restrictions =
+  permit_sasl_authenticated
+smtpd_relay_restrictions =
+  permit_sasl_authenticated
+  defer_unauth_destination
+
+allow_min_user = yes
+
+local_transport = error
+
+maillog_file = {{ log_directory }}/postfix.log
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ log_directory }}

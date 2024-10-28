@@ -44,7 +44,7 @@ gateway-port = {{ tcpv4_port + 3 }}
 data-path = *#capsiz={{ ram_storage_size }}m
 {% else -%}
 # (with 10M buckets and HDBTLARGE option)
-data-path = ${directory:kumofs-data}/kumodb.tch#bnum=10485760#opts=l
+data-path = ${directory:kumofs-data}/${:kumodb-tch}#bnum=10485760#opts=l
 {% endif -%}
 
 # Paths: Running wrappers
@@ -62,6 +62,12 @@ kumo-gateway-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-gateway
 kumo-manager-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-manager
 kumo-server-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-server
 shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
+
+kumodb-tch = kumodb.tch
+[kumofs-instance:python3]
+# use different filename on python3, so that we don't have to deal with data
+# migration issues.
+kumodb-tch = kumodb-py3.tch
 
 [logrotate-entry-kumofs]
 < = logrotate-entry-base

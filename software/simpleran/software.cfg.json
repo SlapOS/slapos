@@ -1,0 +1,58 @@
+{
+  "name": "Amarisoft stack",
+  "description": "4G and 5G amarisoft stack",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "enb": {
+      "title": "eNB/gNB",
+      "software-type": "enb",
+      "description": "eNodeB/gNodeB Configuration",
+      "request": "instance-enb-input-schema.json",
+      "response": "instance-enb-schema.json",
+      "index": 1
+    },
+    "enb/*": {
+      "title": "→  eNB/gNB | Radio Unit / Cell / Peer / Peer Cell",
+      "description": "Configuration of a shared instance attached to eNB/gNB",
+      "software-type": "enb",
+      "shared": true,
+      "request": "instance-enb-item-input-schema.json",
+      "response": "instance-enb-item-schema.json",
+      "index": 2
+    },
+    "core-network": {
+      "title": "Core Network",
+      "software-type": "core-network",
+      "description": "Core Network Configuration",
+      "request": "instance-core-network-input-schema.json",
+      "response": "instance-core-network-schema.json",
+      "index": 3
+    },
+    "core-network-slave": {
+      "title": "→ Core Network | Sim Card",
+      "description": "Core Network Sim Card Configuration",
+      "software-type": "core-network",
+      "request": "sim/input-schema.json",
+      "response": "sim/schema.json",
+      "shared": true,
+      "index": 4
+    },
+    "ue": {
+      "title": "UEsim",
+      "description": "UEsim Configuration",
+      "software-type": "ue",
+      "request": "instance-ue-input-schema.json",
+      "response": "instance-ue-schema.json",
+      "index": 5
+    },
+    "ue/*": {
+      "title": "→ UEsim | Radio Unit / UE / UE Cell",
+      "description": "Configuration of a shared instance attached to UEsim",
+      "software-type": "ue",
+      "shared": true,
+      "request": "instance-ue-item-input-schema.json",
+      "response": "instance-ue-item-schema.json",
+      "index": 6
+    }
+  }
+}

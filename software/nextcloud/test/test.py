@@ -31,6 +31,8 @@ import json
 import glob
 import re
 
+from six.moves.urllib.parse import urlparse
+
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -63,13 +65,21 @@ class NextCloudTestCase(InstanceTestCase):
         self.nextcloud_path,
         "Nextcloud path not found in %r" % (partition_path_list,))
 
+    # lookup nextcloud partition ipv6
+    partition_id = os.path.basename(self.partition_dir)
+    self.nextcloud_ipv6 = self.getPartitionIPv6(partition_id)
+
+    # parse database info from mariadb url
+    d = self.computer_partition.getConnectionParameterDict()
+    db_url = d['mariadb-url-list'][2:-2] # parse <url> out of "['<url>']"
+    self._db_info = urlparse(db_url)
 
   def getNextcloudConfig(self, config_dict={}):
     data_dict = dict(
       datadirectory=self.partition_dir + "/srv/data",
       dbhost="%s:2099" % self._ipv4_address,
       dbname="nextcloud",
-      dbpassword="insecure",
+      dbpassword=self._db_info.password,
       dbport="",
       dbuser="nextcloud",
       mail_domain="nextcloud@example.com",
@@ -80,9 +90,9 @@ class NextCloudTestCase(InstanceTestCase):
       mail_smtpport="587",
       mail_smtppassword="",
       mail_smtpname="",
-      cli_url="https://[%s]:9988/" % self._ipv6_address,
+      cli_url="https://[%s]:9988/" % self.nextcloud_ipv6,
       partition_dir=self.partition_dir,
-      trusted_domain_list=json.dumps(["[%s]:9988" % self._ipv6_address]),
+      trusted_domain_list=json.dumps(["[%s]:9988" % self.nextcloud_ipv6] * 2),
       trusted_proxy_list=[],
     )
     data_dict.update(config_dict)
@@ -269,10 +279,15 @@ class TestServices(NextCloudTestCase):
       "turn_servers"
     ])
     self.assertEqual(turn_config.strip(), b'[{"server":"","secret":"","protocols":"udp,tcp"}]')
-    news_config_file = os.path.join(self.partition_dir, 'srv/data/news/config/config.ini')
-    with open(news_config_file) as f:
-      config = f.read()
-    self.assertRegex(config, r"(useCronUpdates\s+=\s+false)")
+
+    news_config = subprocess.check_output([
+      php_bin,
+      occ,
+      "config:app:get",
+      "news",
+      "useCronUpdates"
+    ])
+    self.assertEqual(news_config.strip(), b'false')
 
 
 class TestNextCloudParameters(NextCloudTestCase):
@@ -294,8 +309,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       'instance.turn-server': 'turn.example.net:5439',
       'instance.turn-secret': 'c4f0ead40a49bbbac3c58f7b9b43990f78ebd96900757ae67e10190a3a6b6053',
       'instance.cli-url': 'nextcloud.example.com',
-      'instance.trusted-domain-1': 'nextcloud.example.com',
-      'instance.trusted-domain-2': 'nextcloud.proxy.com',
+      'instance.trusted-domain-list': 'nextcloud.example.com nextcloud.proxy.com',
       'instance.trusted-proxy-list': '2001:67c:1254:e:89::5df3 127.0.0.1 10.23.1.3',
     }
 
@@ -330,7 +344,8 @@ class TestNextCloudParameters(NextCloudTestCase):
       cli_url="nextcloud.example.com",
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps([
-        "[%s]:9988" % self._ipv6_address,
+        "[%s]:9988" % self.nextcloud_ipv6,
+        "[%s]:9988" % self.nextcloud_ipv6,
         "nextcloud.example.com",
         "nextcloud.proxy.com"
       ]),

@@ -1,0 +1,125 @@
+{%- set proxy_append_list = [('', 'Default proxy configuration')] %}
+{%- if slave_parameter['prefer-gzip-encoding-to-backend'] %}
+{%- do proxy_append_list.append(('prefer-gzip', 'Proxy which always overrides Accept-Encoding to gzip if such is found')) %}
+{%- endif %} {#- if slave_parameter['prefer-gzip-encoding-to-backend'] #}
+{%- set http_host_list = [] %}
+{%- set https_host_list = [] %}
+{%- for host in slave_parameter['host_list'] %}
+{%-   do http_host_list.append('http://%s:%s' % (host, slave_parameter['http_port'] )) %}
+{%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
+{%- endfor %} {#- for host in slave_parameter['host_list'] #}
+
+{%- macro proxy_header() %}
+    timeout {{ slave_parameter['request-timeout'] }}s
+    # workaround for lost connection to haproxy by reconnecting
+    try_duration 3s
+    try_interval 250ms
+{%- endmacro %} {# proxy_header #}
+
+{%- for tls in [True, False] %}
+{%- if tls %}
+{%-   set backend_url = slave_parameter.get('backend-https-url', slave_parameter['backend-http-url']) %}
+# SSL enabled hosts
+{{ https_host_list|join(', ') }} {
+{%- else %}
+{%-   set backend_url = slave_parameter['backend-http-url'] %}
+# SSL-disabled hosts
+{{ http_host_list|join(', ') }} {
+{%- endif %}
+  bind {{ slave_parameter['local_ipv4'] }}
+{%- if tls %}
+  tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
+  } {# tls #}
+{%- endif %} {#- if tls #}
+  log / {{ slave_parameter['access_log'] }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 10000000
+  }
+
+  errors {{ slave_parameter['error_log'] }} {
+    rotate_size 10000000
+  }
+
+{%- if not (slave_parameter['type'] == 'zope' and backend_url) %}
+{%    if slave_parameter['prefer-gzip-encoding-to-backend'] and not (not tls and slave_parameter['https-only']) %}
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /prefer-gzip{1}
+  }
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to {1}
+  }
+{%    elif slave_parameter['type'] not in ['notebook', 'websocket'] %}
+  rewrite {
+    regexp (.*)
+    to {1}
+  }
+{%    endif %} {#    elif slave_parameter['type'] != 'notebook' #}
+{%- endif %} {#- if not (slave_parameter['type'] == 'zope' and backend_url) #}
+
+{%- if not tls and slave_parameter['https-only'] %}
+  # Enforced redirection to SSL-enabled host
+  redir 302 {
+    / https://{host}{rewrite_uri}
+  }
+  }
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+{%- elif slave_parameter['type'] == 'notebook' %}
+  proxy / {{ backend_url }} {
+{{ proxy_header() }}
+{{ hsts_header(tls) }}
+    transparent
+  }
+  rewrite {
+    regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
+    to /proxy/{1}
+  }
+  proxy /proxy/ {{ backend_url }} {
+{{ proxy_header() }}
+{{ hsts_header(tls) }}
+    transparent
+    websocket
+    without /proxy/
+  }
+{%-   else %}
+    header_upstream Host {host}
+{%-   endif %}
+  }
+{%-   endif %}
+{%- else %} {#- if slave_parameter['type'] ==  'zope' and backend_url #}
+  # Default configuration
+{%-   if backend_url %}
+
+{%-   for (proxy_name, proxy_comment) in proxy_append_list %}
+  # {{ proxy_comment }}
+  proxy "/{{ proxy_name }}" {{ backend_url }} {
+{{ proxy_header() }}
+{{ hsts_header(tls) }}
+{%-     if proxy_name == 'prefer-gzip' %}
+    without /prefer-gzip
+    header_upstream Accept-Encoding gzip
+{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
+{%- for disabled_cookie in slave_parameter['disabled-cookie-list'] %}
+    # Remove cookie {{ disabled_cookie }} from client Cookies
+    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
+{%- endfor %} {#- for disabled_cookie in slave_parameter['disabled-cookie-list'] #}
+
+{%-     if slave_parameter['disable-via-header'] %}
+    header_downstream -Via
+{%-     endif %} {#-     if slave_parameter['disable-via-header'] #}
+
+{%-     if slave_parameter['disable-no-cache-request'] %}
+    header_upstream -Cache-Control
+    header_upstream -Pragma
+{%-     endif %} {#-     if slave_parameter['disable-no-cache-request'] #}
+    transparent
+  }  {# proxy #}
+{%-    endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
+{%-   endif %} {#-   if backend_url #}
+{%- endif %} {#- if slave_parameter['type'] ==  'zope' and backend_url #}
+}  {# https_host_list|join(', ') #}
+{%- endfor %} {#- for tls in [True, False] #}

@@ -13,10 +13,6 @@
 {% do extra_dict.setdefault('rocksdb_max_log_file_size', '16M') -%}
 {% endif -%}
 
-{% if not engine or engine == 'TokuDB' -%}
-{% do plugins.append('ha_tokudb') -%}
-{% endif -%}
-
 [mysqld]
 skip_networking
 socket = {{ socket }}
@@ -49,7 +45,7 @@ innodb_locks_unsafe_for_binlog = 1
 {{x}}sync_frm = 0
 
 # Extra parameters.
-{%- for k, v in extra_dict.iteritems() %}
+{%- for k, v in six.iteritems(extra_dict) %}
 {%- do assert('-' not in k) %}
 {{ k }} = {{ v }}
 {%- endfor %}

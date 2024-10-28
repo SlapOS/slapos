@@ -1,0 +1,90 @@
+From 892e66132025ab8c213e4be57dd10f0f8eec7e60 Mon Sep 17 00:00:00 2001
+From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
+Date: Fri, 14 Jul 2023 21:10:06 +0200
+Subject: [PATCH 2/4] Fix compare methods between DateTime(0) and None (fix
+ #52).
+
+This is a fixup commit of 'further py3 work' that changed the behaviour of compare methods between DateTime(0) and None.
+Now None is less than any DateTime instance including DateTime(0), just same as DateTime 2.
+---
+ src/DateTime/DateTime.py            | 10 +++++-----
+ src/DateTime/tests/test_datetime.py | 14 +++++++-------
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/src/DateTime/DateTime.py b/src/DateTime/DateTime.py
+index c141306..caf67e1 100644
+--- a/src/DateTime/DateTime.py
++++ b/src/DateTime/DateTime.py
+@@ -1255,7 +1255,7 @@ class DateTime(object):
+         long integer microseconds.
+         """
+         if t is None:
+-            t = 0
++            return True
+         if isinstance(t, (float, int)):
+             return self._micros > long(t * 1000000)
+         else:
+@@ -1276,7 +1276,7 @@ class DateTime(object):
+         long integer microseconds.
+         """
+         if t is None:
+-            t = 0
++            return True
+         if isinstance(t, (float, int)):
+             return self._micros >= long(t * 1000000)
+         else:
+@@ -1296,7 +1296,7 @@ class DateTime(object):
+         long integer microseconds.
+         """
+         if t is None:
+-            t = 0
++            return False
+         if isinstance(t, (float, int)):
+             return self._micros == long(t * 1000000)
+         else:
+@@ -1341,7 +1341,7 @@ class DateTime(object):
+         long integer microseconds.
+         """
+         if t is None:
+-            t = 0
++            return False
+         if isinstance(t, (float, int)):
+             return self._micros < long(t * 1000000)
+         else:
+@@ -1361,7 +1361,7 @@ class DateTime(object):
+         long integer microseconds.
+         """
+         if t is None:
+-            t = 0
++            return False
+         if isinstance(t, (float, int)):
+             return self._micros <= long(t * 1000000)
+         else:
+diff --git a/src/DateTime/tests/test_datetime.py b/src/DateTime/tests/test_datetime.py
+index e6b3f93..1dd6c32 100644
+--- a/src/DateTime/tests/test_datetime.py
++++ b/src/DateTime/tests/test_datetime.py
+@@ -248,13 +248,13 @@ class DateTimeTests(unittest.TestCase):
+ 
+     def test_compare_methods_none(self):
+         # Compare a date to None
+-        dt = DateTime('1997/1/1')
+-        self.assertTrue(dt.greaterThan(None))
+-        self.assertTrue(dt.greaterThanEqualTo(None))
+-        self.assertFalse(dt.lessThan(None))
+-        self.assertFalse(dt.lessThanEqualTo(None))
+-        self.assertTrue(dt.notEqualTo(None))
+-        self.assertFalse(dt.equalTo(None))
++        for dt in (DateTime('1997/1/1'), DateTime(0)):
++            self.assertTrue(dt.greaterThan(None))
++            self.assertTrue(dt.greaterThanEqualTo(None))
++            self.assertFalse(dt.lessThan(None))
++            self.assertFalse(dt.lessThanEqualTo(None))
++            self.assertTrue(dt.notEqualTo(None))
++            self.assertFalse(dt.equalTo(None))
+ 
+     def test_pickle(self):
+         dt = DateTime()
+-- 
+2.40.1
+

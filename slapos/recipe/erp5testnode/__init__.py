@@ -58,6 +58,7 @@ class Recipe(GenericBaseRecipe):
           "\npath_list = %s" % ",".join(software_path_list) 
     CONFIG['computer_id'] = self.buildout['slap-connection']['computer-id']
     CONFIG['server_url'] = self.buildout['slap-connection']['server-url']
+    CONFIG['shared_part_list'] = CONFIG['shared_part_list'].replace('\n', '\n  ')
     configuration_file = self.createFile(
       self.options['configuration-file'],
       self.substituteTemplate(

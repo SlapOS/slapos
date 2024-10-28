@@ -1,0 +1,22 @@
+USE mysql;
+{% set mroonga = parameter_dict.get('mroonga', 'ha_mroonga.so') -%}
+{% if mroonga %}
+SOURCE {{ parameter_dict['mroonga-mariadb-install-sql'] }};
+{% endif %}
+DROP FUNCTION IF EXISTS sphinx_snippets;
+
+{% macro database(name, user, password, with_process_privilege) -%}
+CREATE DATABASE IF NOT EXISTS `{{ name }}`;
+{% if user -%}
+GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@`%` IDENTIFIED BY '{{ password }}';
+GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@localhost IDENTIFIED BY '{{ password }}';
+{%   if with_process_privilege %}
+GRANT PROCESS ON *.* TO `{{ user }}`@`%` IDENTIFIED BY '{{ password }}';
+GRANT PROCESS ON *.* TO `{{ user }}`@localhost IDENTIFIED BY '{{ password }}';
+{%-   endif %}
+{%- endif %}
+{% endmacro -%}
+
+{% for entry in parameter_dict['database-list'] -%}
+{{   database(entry['name'], entry.get('user'), entry.get('password'), entry.get('with-process-privilege')) }}
+{% endfor -%}

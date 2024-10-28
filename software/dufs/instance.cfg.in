@@ -55,7 +55,20 @@ dash_path = {{ dash_bin }}
 curl_path = {{ curl_bin }}
 
 # Caucase
+[dufs-certificate-init-certificate]
+recipe = slapos.recipe.build
+init =
+  # pre-create a file at the path of the certificate,
+  # so that we can use hash-existing-files options
+  import pathlib
+  cert_file = pathlib.Path(self.buildout['dufs-certificate']['cert-file'])
+  if not cert_file.parent.exists():
+    cert_file.parent.mkdir()
+  if not cert_file.exists():
+    cert_file.touch()
+
 [dufs-certificate]
+init = ${dufs-certificate-init-certificate:init}
 key-file = ${directory:etc}/${:_buildout_section_name_}.key
 cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
 common-name = ${:_buildout_section_name_}
@@ -102,6 +115,7 @@ command =
       -newkey rsa \
       -batch \
       -new \
+      -sha256 \
       -nodes \
       -keyout /dev/null \
       -config '${dufs-certificate-csr-config:output}' \
@@ -142,9 +156,11 @@ command-line =
     --enable-cors
     --bind ${:ip}
     --port ${:port}
+    --render-try-index
     --allow-all
-    --auth /@${admin-password:user}:${admin-password:passwd}
-    --auth /pub@${admin-password:user}:${admin-password:passwd}@*
+    --auth-method basic
+    --auth ${admin-password:user}:${admin-password:passwd-sha512-crypt}@/:rw
+    --auth @/pub
     --tls-cert ${dufs-certificate:cert-file}
     --tls-key ${dufs-certificate:key-file}
     ${directory:dufs-data-dir}
@@ -153,6 +169,8 @@ wrapper-path = ${directory:service}/${:_buildout_section_name_}
 port = 19080
 ip = ${instance-parameter:ipv6-random}
 url = https://[${:ip}]:${:port}
+hash-existing-files =
+  ${dufs-certificate:cert-file}
 
 [dufs-listen-promise]
 <= check-port-listening-promise
@@ -194,7 +212,7 @@ init =
   frontend_url = urlparse(self.options['frontend-url'])
   admin_user = self.options['admin-user']
   admin_password = self.options['admin-password']
-  self.options['public-url'] = frontend_url._replace(path='/pub').geturl()
+  self.options['public-url'] = frontend_url._replace(path='/pub/').geturl()
   assert not frontend_url.username
   self.options['upload-url'] = frontend_url._replace(
     netloc=f'{admin_user}:{admin_password}@{frontend_url.netloc}').geturl()

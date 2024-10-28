@@ -84,6 +84,7 @@ hello = {{ slapparameter_dict.get('hello', 15) }}
 min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
 encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
 same-country = {{ slapparameter_dict.get('same-country', '') }}
+grace-period = {{ slapparameter_dict.get('grace-period', 8640000) }}
 {%- set community = slapparameter_dict.get('community-conf') %}
 {%- if community %}
 community-path = ${re6st-community-conf:output}
@@ -106,6 +107,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/re6st-registry
 pidfile = ${directory:run}/registry.pid
 command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:output}
+hash-files = ${re6st-registry-conf:output}
 
 [cron-entry-re6st-backup]
 recipe = slapos.cookbook:cron.d

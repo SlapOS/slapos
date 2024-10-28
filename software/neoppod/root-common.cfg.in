@@ -6,12 +6,12 @@
 {%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
 {% endfor -%}
 
-{% macro sla(name, required=False) -%}
+{% macro sla(name, required=False, default_to_same_computer=True) -%}
 {% if required or name in sla_dict -%}
 {%  for k, (v,) in six.iteritems(urllib_parse.parse_qs(sla_dict.pop(name), strict_parsing=1)) -%}
 sla-{{ k }} = {{ v }}
 {%  endfor -%}
-{% else -%}
+{% elif default_to_same_computer -%}
 sla-computer_guid = ${slap-connection:computer-id}
 {% endif -%}
 {% endmacro -%}
@@ -107,12 +107,11 @@ config-autostart = {{ dumps(sum(storage_count)) }}
 {%-   if monitor or node.get('admin') == 0 %}
 {%-     do node.setdefault('monitor', 0) %}
 {%-   endif %}
-{%-   for x in 'admin', 'master', 'storage-count' if node.get(x, 1) %}
+{%-   if node.get('admin', 1) or node.get('master', 1) or node.get('storage-count', 1) %}
 {%-     do section_id_list.append(section_id) %}
 
 [{{section_id}}]
 <= {{ prefix }}request-common
-name = {{ section_id }}
 return =
   master
   admin
@@ -138,8 +137,14 @@ config-{{ k }} = {{ dumps(v) }}
 {%-   endfor %}
 {{ sla(section_id) }}
 
-{%-     break %}
-{%-   endfor %}
+{%-   else %}
+
+[{{section(section_id)}}]
+<= request-common-base
+state = destroyed
+{%-   endif %}
+name = {{ section_id }}
+
 {%- endfor %}
 {%- do assert(len(monitor) == 1, monitor) %}
 

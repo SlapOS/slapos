@@ -1,7 +1,7 @@
 {
   "name": "Monitor",
   "description": "Software release for Monitoring purpose",
-  "serialisation": "xml",
+  "serialisation": "json-in-xml",
   "software-type": {
     "default": {
       "title": "Default",
@@ -14,7 +14,7 @@
       "title": "Edge Test Basic",
       "description": "Basic URL monitoring configuration",
       "request": "instance-edgetest-basic-input-schema.json",
-      "response": "instance-default-output-schema.json",
+      "response": "instance-edgetest-basic-output-schema.json",
       "serialisation": "json-in-xml",
       "index": 1
     }

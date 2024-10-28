@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "request_dns": {
+      "title": "Request DNS",
+      "description": "Request local DNS to a core network running on the same node",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

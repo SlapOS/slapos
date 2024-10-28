@@ -13,13 +13,15 @@ def makeRecipe(recipe_class, options, name='test', buildout=None):
   and SLAPOS_TEST_DEVELOP_EGGS_DIRECTORY environment variables, so that the
   test recipe does not need to install eggs again when using working set.
   """
-  _buildout = {
+  _buildout = six.moves.UserDict({
     'buildout': {
       'bin-directory': '',
       'find-links': '',
       'allow-hosts': '',
+      'allow-unknown-extras': False,
       'develop-eggs-directory': '',
       'eggs-directory': '',
+      'directory': '',
       'python': 'testpython',
     },
     'testpython': {
@@ -31,7 +33,7 @@ def makeRecipe(recipe_class, options, name='test', buildout=None):
        'server-url': '',
        'software-release-url': '',
      }
-  }
+  })
 
   _buildout['buildout']['eggs-directory'] = os.environ['SLAPOS_TEST_EGGS_DIRECTORY']
   _buildout['buildout']['develop-eggs-directory'] = os.environ['SLAPOS_TEST_DEVELOP_EGGS_DIRECTORY']

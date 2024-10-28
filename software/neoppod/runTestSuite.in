@@ -1,4 +1,4 @@
-#!{{ bin_directory }}/runTestSuite_py
+#!{{ parameters.bin_directory }}/runTestSuite_py
 """
   Script to run NEO test suite using Nexedi's test node framework.
 """
@@ -13,12 +13,12 @@ SUMMARY_RE = re.compile(
   r' (.*) (?P<duration>\d+(\.\d*)?|\.\d+)s', re.MULTILINE)
 
 PATH = os.environ['PATH']
-PATH = {{ repr(prepend_path) }} + (PATH and ':' + PATH)
+PATH = {{ repr(parameters.prepend_path) }} + (PATH and ':' + PATH)
 
 # NEO specific environment
 TEMP_DIRECTORY  = {{ repr(directory.tmp) }}
 NEO_DB_SOCKET = {{ repr(my_cnf_parameters.socket) }}
-RUN_NEO_TESTS_COMMAND = {{ repr(bin_directory + '/neotestrunner') }}
+RUN_NEO_TESTS_COMMAND = {{ repr(parameters.bin_directory + '/neotestrunner') }}
 
 def parseTestStdOut(data):
   """
@@ -90,7 +90,7 @@ def main():
 
   test_suite_title = args.test_suite_title or args.test_suite
 
-  test_name_list = 'SQLite', 'MySQL'
+  test_name_list = {{ repr(parameters.test_binding_list) }}
 
   if args.master_url:
     tool = taskdistribution.TaskDistributor(portal_url = args.master_url)
@@ -115,24 +115,15 @@ def main():
       shutil.rmtree(temp)
     os.mkdir(temp)
 
-    args = [RUN_NEO_TESTS_COMMAND,
-{%- if pypy_location is defined -%}
-            '-fz'
-{%- else -%}
-            '-ufz'
-{%- endif -%}
-            ]
+    args = [RUN_NEO_TESTS_COMMAND, '-ufz']
     command = ' '.join(args)
     env = {'PATH': PATH,
            'TEMP': temp,
-{%- if pypy_location is defined %}
-           'NEO_PYPY': {{ repr(pypy_location) }},
-{%- endif %}
            'NEO_TESTS_ADAPTER': adapter,
            'NEO_TEST_ZODB_FUNCTIONAL': '1',
            'NEO_DB_USER': 'root'}
     try:
-      if adapter == 'MySQL':
+      if adapter != 'SQLite':
         env['NEO_DB_SOCKET'] = NEO_DB_SOCKET
         timeout = time() + 60
         while not os.path.exists(NEO_DB_SOCKET):

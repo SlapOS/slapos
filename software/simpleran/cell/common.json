@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cell. Common properties",
+  "type": "object",
+  "required": [
+    "cell_type",
+    "rf_mode",
+    "pci",
+    "cell_id",
+    "bandwidth",
+    "ru"
+  ],
+  "properties": {
+    "cell_type": {
+      "type": "string"
+    },
+    "cell_kind": {
+      "type": "string",
+      "const": "enb"
+    },
+    "rf_mode": {
+      "title": "RF mode",
+      "description": "Mode for TX/RX radio multiplexing: Frequency- or Time- Domain Division",
+      "type": "string",
+      "enum": [
+        "fdd",
+        "tdd"
+      ],
+      "propertyOrder": 101
+    },
+    "pci": {
+      "title": "Physical Cell ID",
+      "description": "Physical Cell ID",
+      "type": "integer"
+    },
+    "cell_id": {
+      "title": "Cell ID",
+      "description": "Cell ID",
+      "type": "string"
+    },
+    "bandwidth": {
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
+      "type": "number"
+    },
+    "root_sequence_index": {
+      "title": "Root Sequence Index",
+      "type": "integer"
+    },
+    "inactivity_timer": {
+      "title": "Inactivity Timer",
+      "description": "Send RRC connection release after this time (in ms) of network inactivity.",
+      "type": "number",
+      "default": 10000
+    },
+    "ru": {
+      "$ref": "#/$defs/ru-of-cell",
+      "propertyOrder": 9999
+    }
+  },
+  "$defs": {
+    "ru-of-cell": {
+      "title": "Radio Unit",
+      "oneOf": [
+        {
+          "title": "Shared Radio Unit",
+          "description": "Use radio unit defined in separate shared instance",
+          "type": "object",
+          "required": [
+            "ru_type",
+            "ru_ref"
+          ],
+          "properties": {
+            "ru_type": {
+              "type": "string",
+              "const": "ru_ref"
+            },
+            "ru_ref": {
+              "title": "RU Reference",
+              "description": "Reference of shared radio unit instance",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Shared Radio Unit of a Cell",
+          "description": "Use the same radio unit as referenced cell instance does",
+          "type": "object",
+          "required": [
+            "ru_type",
+            "ruincell_ref"
+          ],
+          "properties": {
+            "ru_type": {
+              "type": "string",
+              "const": "ruincell_ref"
+            },
+            "ruincell_ref": {
+              "title": "Cell Reference",
+              "description": "Reference of cell instance whose radio unit to share",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "$ref": "../ru/sdr/input-schema.json"
+        },
+        {
+          "$ref": "../ru/sunwave/input-schema.json"
+        }
+      ]
+    }
+  }
+}

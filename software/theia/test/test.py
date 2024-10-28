@@ -26,6 +26,7 @@
 ##############################################################################
 from __future__ import unicode_literals
 
+import configparser
 import json
 import logging
 import os
@@ -33,17 +34,19 @@ import re
 import subprocess
 import sqlite3
 import time
+import unittest
 
+import netaddr
 import pexpect
 import psutil
 import requests
-import six
 
-from six.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, parse_qsl
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 from slapos.proxy.db_version import DB_VERSION
+from slapos.slap.standalone import SlapOSConfigWriter
 
 
 theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
@@ -63,7 +66,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
     try:
       return cls._theia_slapos
     except AttributeError:
-      cls._theia_slapos = slapos = cls.getPath('srv', 'runner', 'bin', 'slapos')
+      cls._theia_slapos = slapos = cls.getPath('bin', 'slapos')
       return slapos
 
   @classmethod
@@ -104,6 +107,10 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
 
 class TestTheia(TheiaTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {"autorun": "user-controlled"} # we interact with slapos in this test
+
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
@@ -146,18 +153,32 @@ class TestTheia(TheiaTestCase):
         )).geturl()
     self.get(authenticated_url)
 
-    # there's a public folder to serve file
-    with open('{}/srv/frontend-static/public/test_file'.format(
-        self.getPath()), 'w') as f:
+    # there's a public folder to serve file (no need for authentication)
+    with open(self.getPath() + '/srv/frontend-static/public/test_file',
+              'w') as f:
       f.write("hello")
-    resp = self.get(urljoin(authenticated_url, '/public/'))
-    self.assertIn('test_file', resp.text)
-    resp = self.get(urljoin(authenticated_url, '/public/test_file'))
-    self.assertEqual('hello', resp.text)
+    def get(path_info):
+      resp = self.get(urljoin(url, path_info))
+      self.assertIn('Content-Security-Policy', resp.headers)
+      return resp.text
+    self.assertIn('test_file', get('/public/'))
+    self.assertEqual('hello', get('/public/test_file'))
 
-    # there's a (not empty) favicon
+    # favicon is not empty
+    self.get(urljoin(url, '/favicon.ico'), requests.codes.unauthorized)
     resp = self.get(urljoin(authenticated_url, '/favicon.ico'))
+    resp.raise_for_status()
     self.assertTrue(resp.raw)
+
+    self.get(urljoin(url, '/theia-serviceworker.js'), requests.codes.unauthorized)
+    resp = self.get(urljoin(authenticated_url, '/theia-serviceworker.js'))
+    resp.raise_for_status()
+    self.assertTrue(resp.raw)
+
+    self.get(urljoin(url, '/theia.webmanifest'), requests.codes.unauthorized)
+    resp = self.get(urljoin(authenticated_url, '/theia.webmanifest'))
+    resp.raise_for_status()
+    self.assertIn('Theia SlapOS', resp.text)
 
     # there is a CSS referencing fonts
     css_text = self.get(urljoin(authenticated_url, '/css/slapos.css')).text
@@ -238,6 +259,26 @@ class TestTheia(TheiaTestCase):
   def test_slapos_cli(self):
     self.assertIn(b'slaprunner', self.captureSlapos('proxy', 'show'))
     self.assertIn(b'slaprunner', self.captureSlapos('computer', 'list'))
+
+  def test_ipv6_range(self):
+    proxy_path = self.getPath('srv', 'runner', 'var', 'proxy.db')
+    query = "SELECT partition_reference, address FROM partition_network%s" % DB_VERSION
+
+    ipv6, *prefixlen = self._ipv6_address.split('/')
+    if not prefixlen:
+      raise unittest.SkipTest('No IPv6 range')
+    elif int(prefixlen[0]) + 16 >= 123:
+      # Note: prefixlen-theia = prefixlen-sr-testing + 16
+      raise unittest.SkipTest('IPv6 range too small: %s' % self._ipv6_address)
+
+    with sqlite3.connect(proxy_path) as db:
+      rows = db.execute(query).fetchall()
+      partitions = set(p for p, _ in rows)
+      ipv6 = set(addr for _, addr in rows if netaddr.valid_ipv6(addr))
+      # Check that each partition has a different IPv6
+      self.assertEqual(len(partitions), len(ipv6))
+      # Check that no partition has the same IPv6 as theia
+      self.assertNotIn(self.connection_parameters['ipv6'], ipv6)
 
 
 class TestTheiaWithNonAsciiInstanceName(TestTheia):
@@ -494,6 +535,32 @@ class TestTheiaEnv(TheiaTestCase):
     self.assertEqual(theia_shell_env['HOME'], supervisord_env['HOME'])
 
 
+class TestTheiaSharedPath(TheiaTestCase):
+  bogus_path = 'bogus'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaSharedPath, cls).setUpClass()
+    # Change shared part list to include bogus paths
+    cls.slap._shared_part_list.append(cls.bogus_path)
+    SlapOSConfigWriter(cls.slap).writeConfig(cls.slap._slapos_config)
+    # Re-instanciate
+    cls.slap._force_slapos_node_instance_all = True
+    try:
+      cls.waitForInstance()
+    finally:
+      cls.slap._force_slapos_node_instance_all = False
+
+  def test(self):
+    theia_cfg_path = self.getPath('srv', 'runner', 'etc', 'slapos.cfg')
+    cfg = configparser.ConfigParser()
+    cfg.read(theia_cfg_path)
+    self.assertTrue(cfg.has_option('slapos', 'shared_part_list'))
+    shared_parts_string = cfg.get('slapos', 'shared_part_list')
+    shared_parts_list = [s.strip() for s in shared_parts_string.splitlines()]
+    self.assertIn(self.bogus_path, shared_parts_list)
+
+
 class ResilientTheiaMixin(object):
   @classmethod
   def setUpClass(cls):
@@ -521,6 +588,10 @@ class ResilientTheiaMixin(object):
   @classmethod
   def getPartitionPath(cls, instance_type='export', *paths):
     return os.path.join(cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
+
+  @classmethod
+  def getPath(cls, *components): # patch getPath
+    return cls.getPartitionPath('export', *components)
 
   @classmethod
   def _getSlapos(cls, instance_type='export'):
@@ -554,7 +625,43 @@ class ResilientTheiaMixin(object):
 
 
 class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
-  pass
+
+  def test_all_monitor_url_use_same_password(self):
+    monitor_setup_params = dict(
+      parse_qsl(
+        urlparse(
+          self.computer_partition.getConnectionParameterDict()
+          ['monitor-setup-url']).fragment))
+
+    monitor_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-base-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    self.assertEqual(len(monitor_url_list), 4)
+
+    for url in monitor_url_list:
+      self.assertEqual(
+        requests.get(url, verify=False).status_code,
+        requests.codes.unauthorized)
+
+      requests.get(
+        url,
+        verify=False,
+        auth=(
+          monitor_setup_params['username'],
+          monitor_setup_params['password'],
+        )).raise_for_status()
+
+  def test_all_favicon_are_different(self):
+    favicon_relpath = os.path.join('srv', 'frontend-static', 'favicon.ico')
+    with open(self.getPartitionPath('export', favicon_relpath), 'rb') as f:
+      export_favicon = f.read()
+    with open(self.getPartitionPath('import', favicon_relpath), 'rb') as f:
+      import_favicon = f.read()
+    if export_favicon == import_favicon:
+      self.fail('Import favicon and export favicon are not different')
 
 
 class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithEmbeddedInstance):

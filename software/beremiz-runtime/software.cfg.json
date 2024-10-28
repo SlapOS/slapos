@@ -1,0 +1,14 @@
+{
+  "name": "Beremiz-runtime",
+  "description": "Beremiz-runtime is a headless implementation of Beremiz-ide which is responsible for compiling and running PLC programs.",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json"
+    }
+  }
+}

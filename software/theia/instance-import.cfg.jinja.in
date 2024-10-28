@@ -1,5 +1,9 @@
 {%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
 {%- set additional_frontend = parameter_dict['additional-frontend-guid'] -%}
+{%- set namebase = parameter_dict['namebase'] -%}
+{%- set theia_number = parameter_dict['number'] -%}
+{%- set theia_id = '%s%s' % (namebase, theia_number) -%}
+{%- set frontend_name = parameter_dict['frontend-name'] -%}
 
 [buildout]
 extends = {{ theia_instance_cfg }}
@@ -10,22 +14,26 @@ parts +=
   $${:theia-parts}
   $${:theia-environment-parts}
 
+# Avoid publication conflicts
+parts -=
+  publish-connection-parameter
+
 
 # The resilient stack makes the 'resilient' instance
 # request the 'import' instance with a 'namebase' parameter.
 # The import template then expects to receive it in
 # slap-parameter:namebase
 [slap-parameter]
-namebase = {{ parameter_dict['namebase'] }}
+namebase = {{ namebase }}
 
 
 # Change frontend name to avoid conflicts
 [remote-frontend]
-name = Import {{ parameter_dict['frontend-name'] }}
+name = {{ frontend_name }} for {{ theia_id }}
 
 {% if additional_frontend -%}
 [remote-additional-frontend]
-name = Import {{ parameter_dict['additional-frontend-name'] }}
+name = {{ parameter_dict['additional-frontend-name'] }} for {{ theia-id }}
 {%- endif %}
 
 
@@ -59,8 +67,8 @@ autorun = stopped
 
 
 # Change the gravatar favicon seed
-[favicon.ico]
-seed = Import {{ root_title }}
+[frontend-instance-favicon.ico]
+seed = {{ theia_id }} {{ root_title }}
 
 
 # The resilient stack calls post-notification-run:output followed by
@@ -102,6 +110,7 @@ context =
   raw slapos_cfg $${directory:runner}/etc/slapos.cfg
   raw project_path $${directory:project}
   raw public_path $${directory:frontend-static-public}
+  raw statefiles_path $${directory:statefiles}
   key exitfile :exitcode-file
   key errorfile :error-file
 {%- raw %}
@@ -122,6 +131,7 @@ inline =
   --cfg {{ slapos_cfg }} \
   --dirs {{ project_path }} \
   --dirs {{ public_path }} \
+  --dirs {{ statefiles_path }} \
   --exitfile {{ exitfile }} \
   --errorfile {{ errorfile }}
 {%- endraw %}

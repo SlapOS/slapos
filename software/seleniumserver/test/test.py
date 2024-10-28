@@ -282,20 +282,20 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     webdriver_url = parameter_dict['backend-url']
 
     desired_capabilities = DesiredCapabilities.FIREFOX.copy()
-    desired_capabilities['version'] = '60.0.2esr'
+    desired_capabilities['version'] = '102.15.1esr'
     driver = webdriver.Remote(
         command_executor=webdriver_url,
         desired_capabilities=desired_capabilities)
     self.assertIn(
-        'Gecko/20100101 Firefox/60.0',
+        'Gecko/20100101 Firefox/102.0',
         driver.execute_script('return navigator.userAgent'))
     driver.quit()
-    desired_capabilities['version'] = '52.9.0esr'
+    desired_capabilities['version'] = '115.3.1esr'
     driver = webdriver.Remote(
         command_executor=webdriver_url,
         desired_capabilities=desired_capabilities)
     self.assertIn(
-        'Gecko/20100101 Firefox/52.0',
+        'Gecko/20100101 Firefox/115.0',
         driver.execute_script('return navigator.userAgent'))
     driver.quit()
 
@@ -310,6 +310,12 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     parsed = urllib.parse.urlparse(admin_url)
     self.assertEqual('admin', parsed.username)
     self.assertTrue(parsed.password)
+    self.assertEqual(
+      requests.get(
+        parsed._replace(netloc=f"[{parsed.hostname}]:{parsed.port}").geturl(),
+        verify=False).status_code,
+      requests.codes.unauthorized
+    )
 
     self.assertIn('Grid Console', requests.get(admin_url, verify=False).text)
 
@@ -319,6 +325,12 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     parsed = urllib.parse.urlparse(webdriver_url)
     self.assertEqual('selenium', parsed.username)
     self.assertTrue(parsed.password)
+    self.assertEqual(
+      requests.get(
+        parsed._replace(netloc=f"[{parsed.hostname}]:{parsed.port}").geturl(),
+        verify=False).status_code,
+      requests.codes.unauthorized
+    )
 
     # XXX we are using a self signed certificate, but selenium 3.141.0 does
     # not expose API to ignore certificate verification
@@ -397,52 +409,28 @@ class TestSSHServer(SeleniumServerTestCase):
       self.assertIn(b"Welcome to SlapOS Selenium Server.", received)
 
 
-class TestFirefox52(
+class TestFirefox102(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='52.9.0esr')
-  user_agent = 'Gecko/20100101 Firefox/52.0'
-  # resizing window is not supported on firefox 52 geckodriver
-  @unittest.expectedFailure
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='102.15.1esr')
+  user_agent = 'Gecko/20100101 Firefox/102.0'
+
   def test_resize_window(self):
     super().test_resize_window()
 
 
-class TestFirefox60(
+class TestFirefox115(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='60.0.2esr')
-  user_agent = 'Gecko/20100101 Firefox/60.0'
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='115.3.1esr')
+  user_agent = 'Gecko/20100101 Firefox/115.0'
 
-
-class TestFirefox68(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
-  user_agent = 'Gecko/20100101 Firefox/68.0'
-
-class TestFirefox78(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='78.1.0esr')
-  user_agent = 'Gecko/20100101 Firefox/78.0'
-
-
-class TestChrome69(
-    BrowserCompatibilityMixin,
-    SeleniumServerTestCase,
-    ImageComparisonTestCase,
-):
-  desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
-  user_agent = 'Chrome/69.0.3497.0'
+  def test_resize_window(self):
+    super().test_resize_window()
 
 
 class TestChrome91(
@@ -452,3 +440,12 @@ class TestChrome91(
 ):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
   user_agent = 'Chrome/91.0.4472.0'
+
+
+class TestChrome120(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.CHROME, version='120.0.6099.109')
+  user_agent = 'Chrome/120.0.0.0'

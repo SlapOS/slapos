@@ -4,7 +4,7 @@ kvm
 Introduction
 ------------
 
-This software release is used to deploy KVM and NBD instances.
+This software release is used to deploy KVM.
 
 For extensive parameters definition, please look at parameter-input-schema.json.
 
@@ -24,7 +24,6 @@ to be accessible from IPv4::
       software_release=kvm,
       partition_reference="My awesome KVM",
       partition_parameter_kw={
-          "nbd-host":"ubuntu-1204.nbd.vifib.net",
       }
   )
 
@@ -33,15 +32,11 @@ See the instance-kvm-input-schema.json file for more instance parameters (cpu-co
 KVM instance parameters:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- frontend-software-type (default: RootSoftwareInstance)
+- frontend-software-type (default: default)
 - frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)
 - frontend-instance-guid
 - frontend-addtional-instance-guid
 - frontend-instance-name (default: VNC Frontend)
-- nbd-port (default: 1024)
-- nbd-host
-- nbd2-port (default: 1024)
-- nbd2-host
 
 - ram-size (default: 4096)
 - disk-size = (default: 40)
@@ -194,8 +189,12 @@ removing files:
 
 from the partition (typically ``/srv/slapgrid/slappartNN/`` directory).
 
+They will reappear automatically after some time, but as the old
+``external-disk-amount`` approach is now disabled, they won't be updated.
+
 The failure observed to confirm the situation can be found in
 ``.slappartNN_kvm-HASH.log`` with presence of message like::
 
-  qemu-system-x86_64: -drive file=/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2,if=virtio,cache=writeback: Failed to get "write" lock
-  Is another process using the image [/<instance_storage_home>/dataX/slappartNN/kvm_virtual_disk.qcow2]?
+  ValueError: external-disk problems: conflicts with external-disk-number = XX, conflicts with already configured disks amount XX in /srv/slapgrid/slappartNN/etc/.data-disk-amount
+
+Where ``XX`` is the previously used ``external-disk-number`` and ``NN`` is the partition.

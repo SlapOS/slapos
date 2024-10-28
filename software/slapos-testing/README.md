@@ -10,7 +10,7 @@ The results of this test suite running on Nexedi ERP5 are published as
 
 
 Here's an example session of how a developer could use this software release in
-slaprunner to develop a slapos egg, in the example `slapos.core`, to make
+Theia to develop a slapos egg, in the example `slapos.core`, to make
 changes to the code, run tests and publish changes.
 
 ```bash
