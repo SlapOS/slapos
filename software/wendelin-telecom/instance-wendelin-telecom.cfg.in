@@ -64,14 +64,18 @@ update =
       response = requests.get(request_url, verify=False, auth=(inituser_login, inituser_password))
       response = response.json()
 
-      error_msg_key = "error_msg"
-      if error_msg_key in response:
-        error_msg = response[error_msg_key]
-        log.info(error_msg)
+      status = response['status']
+      message = response['message']
+      message = "%s: %s" % (slave_reference, message)
+
+      if status == 'ok':
+        log.info(message)
+        log.info("%s: Update connection parameters" % slave_reference)
+        computer_partition.setConnectionDict({'gateway-host': str(fluentd_gateway_host)}, slave_reference)
+      elif status == 'error':
+        log.fatal(message)
       else:
-        log.info("ORS successfully registered: %s" % slave_reference)
-        log.info("Update parameters for %s" % slave_reference)
-        computer_partition.setConnectionDict({'gateway-host': str(fluentd_gateway_host)}, slave_reference),
+        log.fatal("Unexpected status received during ORS registration: %s" % status)
 
 [publish]
 slave-amount = {{ len(slave_instance_list) }}
