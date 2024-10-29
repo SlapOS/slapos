@@ -38,6 +38,7 @@ database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 replication-bootstrap-url = ${mariadb-backup-static-http-server:bootstrap-url}
+replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ ip_as_host }}:{{ port }}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
@@ -167,9 +168,14 @@ output = ${directory:etc}/mariadb.cnf
 url = {{ parameter_dict['template-my-cnf'] }}
 context = section parameter_dict my-cnf-parameters
 
+[replication-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/mariadb-replication.password
+
 [init-script-parameters]
 database-list = {{ dumps(database_list + test_database_list) }}
 mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
+replication-password = ${replication-password:passwd}
 
 [init-script]
 recipe = slapos.recipe.template:jinja2
