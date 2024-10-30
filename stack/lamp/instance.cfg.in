@@ -88,7 +88,7 @@ dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
 xz-utils-location = {{ xz_utils_location }}
-mariadb-location = {{ mariadb_location }}
+mariadb = {{ dumps(mariadb) }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
@@ -104,12 +104,14 @@ mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
 groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
 check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
 bin-directory = {{ bin_directory }}
+curl-location = {{ curl_location }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
 url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
+    key mariadb dynamic-template-mariadb-parameters:mariadb
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
     raw bin_directory {{ bin_directory }}
