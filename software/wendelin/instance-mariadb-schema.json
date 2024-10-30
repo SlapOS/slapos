@@ -13,6 +13,39 @@
         }
       ]
     },
+    "replication": {
+      "description": "Setup this mariadb as a replica of another mariadb",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "upstream-mariadb-url": {
+          "description": "URL of the primary mariadb to replicate from",
+          "type": "string"
+        },
+        "upstream-bootstrap-url": {
+          "description": "URL of a recent mariadb backup to bootstrap replication from",
+          "type": "string"
+        },
+        "seconds-behind-master-threshold": {
+          "description": "Monitoring threshold for Seconds_Behind_Master in the replica, in seconds, -1 meaning no threshold",
+          "type": "integer",
+          "minimum": -1,
+          "default": -1
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "primary-url"
+          ]
+        },
+        {
+          "enum": [
+            {}
+          ]
+        }
+      ]
+    },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
       "default": [
