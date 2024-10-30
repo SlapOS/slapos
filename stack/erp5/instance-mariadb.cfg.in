@@ -18,7 +18,23 @@
 {%   set ip = (ipv4_set | list)[0] -%}
 {%   set ip_as_host = ip -%}
 {% endif -%}
-{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
+{% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
+
+{#- Replication parameters -#}
+{% set replication = slapparameter_dict.get('replication', {}) -%}
+{% if replication -%}
+{# cast to assert types -#}
+{% set replica_threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
+{% set primary_url = str(replication['primary-url']) -%}
+{% set bootstrap_url = replication.get('bootstrap-url') -%}
+{% set primary = urllib_parse.urlsplit(primary_url) -%}
+{% else -%}
+{% set primary_url = None -%}
+{% set primary = {'hostname': None, 'port': None, 'username': None} -%}
+{% set replica_threshold = None -%}
+{% endif -%}
+
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -184,22 +200,10 @@ output = ${directory:etc}/mariadb_initial_setup.sql
 url = {{ parameter_dict['template-mariadb-initial-setup'] }}
 context = section parameter_dict init-script-parameters
 
-[{{ section('update-mysql') }}]
-recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
-output = ${directory:services}/mariadb_update
-binary = ${binary-wrap-mysql_upgrade:wrapper-path}
-mysql = ${binary-wrap-mysql:wrapper-path}
-init-script = ${init-script:output}
-mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
-
 [{{ section('mysqld') }}]
 recipe = slapos.recipe.template:jinja2
 output = ${directory:services}/mariadb
-url = {{ parameter_dict['template-mysqld-wrapper'] }}
-context =
-  key defaults_file my-cnf:output
-  key datadir my-cnf-parameters:data-directory
-  key environ :environ
+url = {{ mariadb['mariadb-service-template'] }}
 environ =
   GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
   ODBCSYSINI='${my-cnf-parameters:etc-directory}'
@@ -207,7 +211,189 @@ environ =
   {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
   {{ variable }}
   {%- endfor %}
+context =
+  key defaults_file my-cnf:output
+  key datadir my-cnf-parameters:data-directory
+  key environ :environ
+{%- if replication %}
+  raw skip_install true
+  raw on_creation ${mariadb-setup-replication:output}
+{%- else %}
+  raw on_creation ${mariadb-setup-db:output}
+  raw on_startup ${mariadb-on-startup:output}
+# XXX: Run upgrader and tzinfo on replication startup as well,
+# or might this break replication? In doubt, avoid.
+{%- endif %}
 
+[mariadb-setup-db]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ mariadb['mariadb-background-template'] }}
+context =
+  key mariadb_socket my-cnf-parameters:socket
+  key defaults_file my-cnf:output
+  key foreground_script :foreground-script
+  raw extra_options --skip-networking
+foreground-script =
+  "${binary-wrap-mysql:wrapper-path}" < "${init-script:output}"
+
+[pytz-path]
+recipe = slapos.recipe.build
+init =
+  import pkg_resources, os, zc.buildout.easy_install
+  buildout = self.buildout['buildout']
+  e, d = buildout['eggs-directory'], buildout['develop-eggs-directory']
+  req = pkg_resources.Requirement.parse('pytz')
+  dist = zc.buildout.easy_install.working_set(['pytz'], [e, d]).find(req)
+  options['zoneinfo'] = os.path.join(dist.location, 'pytz', 'zoneinfo')
+
+[mariadb-on-startup]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ mariadb['mariadb-background-template'] }}
+context =
+  key mariadb_socket my-cnf-parameters:socket
+  key defaults_file my-cnf:output
+  key foreground_script :foreground-script
+  raw extra_options --skip-networking
+foreground-script =
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  mysql_upgrade="${binary-wrap-mysql_upgrade:wrapper-path}"
+  mysql_tzinfo_to_sql="${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}"
+  zoneinfo="${pytz-path:zoneinfo}"
+  if [ -z "$("$mysql" -e "SHOW SLAVE STATUS")" ]
+  then
+    "$mysql_upgrade" || true
+    "mysql_tzinfo_to_sql" "$zoneinfo" | "$mysql" -B mysql || true
+  fi
+
+{% if replication -%}
+[{{ section('mariadb-setup-replication') }}]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ mariadb['mariadb-background-template'] }}
+context =
+  key shebang :shebang
+  key mariadb_socket my-cnf-parameters:socket
+  key defaults_file my-cnf:output
+  raw extra_options --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin
+  key foreground_script :foreground-script
+shebang =
+  #!{{ bash }}
+  set -euo pipefail
+foreground-script =
+{%- if bootstrap_url %}
+  bootstrap_url={{ six_moves.shlex_quote(bootstrap_url) }}
+  bootstrap_file="${directory:mariadb-backup-full}/bootstrap.sql.gz"
+{%- endif %}
+  curl="{{ parameter_dict['curl-location'] }}/bin/curl"
+  zcat="{{ parameter_dict['gzip-location'] }}/bin/zcat"
+  mysql="${binary-wrap-mysql:wrapper-path}"
+
+  date
+
+{%- if bootstrap_url %}
+  echo "Fetching $bootstrap_url"
+  "$curl" -o "$bootstrap_file" --fail "$bootstrap_url"
+
+  echo "Importing $bootstrap_file"
+  "$zcat" "$bootstrap_file" | "$mysql"
+
+  echo "Extracting GTID from backup"
+  set +o pipefail
+  SQL_SET_GTID=$("$zcat" "$bootstrap_file" 2>/dev/null | sed '100q; /^--\s*SET GLOBAL gtid_slave_pos=/!d; s/^--\s*//; q')
+  set -o pipefail
+  if [ -z "$SQL_SET_GTID" ]; then
+    echo "  \_ GTID not found in backup; ABORT"
+    exit 1
+  fi
+  echo "  \_ OK, found $SQL_SET_GTID"
+
+{%- else %}
+  echo "Skipping bootstrap and using empty GTID"
+  SQL_SET_GTID='SET GLOBAL gtid_slave_pos=""'
+  echo "  \_ Using $SQL_SET_GTID"
+
+{%- endif %}
+  echo "Configuring server as replica"
+  "$mysql" -e "$SQL_SET_GTID"
+  "$mysql" -e "
+    CHANGE MASTER TO
+    MASTER_HOST='{{ primary.hostname }}',
+    MASTER_USER='{{ primary.username }}',
+    MASTER_PASSWORD='{{ primary.password }}',
+    MASTER_PORT={{ primary.port }},
+    MASTER_USE_GTID="slave_pos";
+  "
+  "$mysql" -e "START SLAVE;"
+{%- endif %}
+
+[mariadb-replication-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  from contextlib import closing
+
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  import pymysql.cursors
+
+  expected_url = {{ repr(primary_url) }}
+  expected = {{ repr((primary.hostname, primary.port, primary.username)) }}
+  max_delay = {{ replica_threshold }}
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      conn = pymysql.connect(
+        read_default_file='${my-cnf:output}',
+        cursorclass=pymysql.cursors.DictCursor)
+      with closing(conn):
+        with closing(conn.cursor()) as cursor:
+          cursor.execute("SHOW SLAVE STATUS")
+          data = cursor.fetchone()
+      if data is None:
+        if expected_url is None:
+          self.logger.info("Mariadb is in primary mode")
+        else:
+          self.logger.error(
+            "Mariadb is not in replica mode. "
+            "If this is expected, please unset 'replication' parameter"
+          )
+        return
+      if expected is None:
+        self.logger.error(
+          "Mariadb is in replica mode. "
+          "If this is expected, please set 'replication' parameter"
+        )
+        return
+      primary = tuple(data.get('Master_' + k) for k in ('Host', 'Port', 'User'))
+      seconds_behind = data.get('Seconds_Behind_Master')
+      if None in primary or seconds_behind is None:
+        from pprint import pformat
+        self.logger.error("Replication is in bad state:\n%s", pformat(data))
+        return
+      if primary != expected:
+        self.logger.error(
+          "Replica is not following given primary %s\n"
+          "Instead it's following %r\n"
+          "If this is expected, please correct 'replication' parameter'",
+          expected_primary_url,
+          primary,
+        )
+        return
+      (self.logger.error if seconds_behind > max_delay >= 0 else
+       self.logger.info)("Replica is %d seconds behind", seconds_behind)
+
+[{{ section('mariadb-replication-promise') }}]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.core
+  PyMySQL
+file = ${mariadb-replication-sense:output}
+output = ${directory:plugins}/mariadb_replication.py
 
 [{{ section('mariadb-backup-static-server-promise') }}]
 <= monitor-promise-base
@@ -245,7 +431,7 @@ link-binary = {{ dumps(parameter_dict['link-binary']) }}
 recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
 # will reject it.
-command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
+command-line = "{{ mariadb['location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
 
 [binary-wrap-mysql]
@@ -262,7 +448,7 @@ command = mysql_upgrade
 
 [binary-wrap-mysql_tzinfo_to_sql]
 < = binary-wrap-base
-command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
+command-line = "{{ mariadb['location'] }}/bin/${:command}"
 command = mysql_tzinfo_to_sql
 
 [binary-wrap-pt-digest]
@@ -372,7 +558,15 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 <= monitor-promise-base
 promise = check_command_execute
 name = mariadb.py
-config-command = "${binary-wrap-mysql:wrapper-path}"  --execute ';' {% if database_list and database_list[0].get('user') %} --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}" --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}" {% endif %}
+mysql = "${binary-wrap-mysql:wrapper-path}"
+{%- if not replication and database_list and database_list[0].get('user') %}
+netloc = --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}"
+auth = --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}
+{%- else %}
+netloc =
+host =
+{%- endif %}
+config-command = ${:mysql} --execute ';' ${:netloc} ${:auth}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
