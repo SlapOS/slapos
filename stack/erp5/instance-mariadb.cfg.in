@@ -186,7 +186,11 @@ context = section parameter_dict init-script-parameters
 
 [{{ section('update-mysql') }}]
 recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
+{% if replication -%}
+output = ${directory:bin}/mariadb_update
+{%- else %}
 output = ${directory:services}/mariadb_update
+{%- endif %}
 binary = ${binary-wrap-mysql_upgrade:wrapper-path}
 mysql = ${binary-wrap-mysql:wrapper-path}
 init-script = ${init-script:output}
