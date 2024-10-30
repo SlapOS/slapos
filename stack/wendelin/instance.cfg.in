@@ -120,7 +120,7 @@ zope-conf-template = {{ template_zope_conf }}
 run-zelenium-template = {{ template_run_zelenium }}
 6tunnel = {{ sixtunnel_location }}
 coreutils = {{ coreutils_location }}
-sqlbench_path = {{ mariadb_location }}/sql-bench
+sqlbench_path = {{ mariadb['location'] }}/sql-bench
 perl_dbd_mariadb_path = {{ perl_dbd_mariadb_path }}
 dash = {{ dash_location }}
 link-binary = {{ dumps(zope_link_binary) }}
@@ -176,27 +176,29 @@ dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
 xz-utils-location = {{ xz_utils_location }}
-mariadb-location = {{ mariadb_location }}
+mariadb = {{ dumps(mariadb) }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
-template-mysqld-wrapper = {{ template_mysqld_wrapper }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
-mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
 mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
 mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
 groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
+curl-location = {{ curl_location }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
 url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
+    key mariadb dynamic-template-mariadb-parameters:mariadb
     section parameter_dict dynamic-template-mariadb-parameters
+    import urllib_parse six.moves.urllib.parse
+    import six_moves six.moves
 
 # Keep a section for backward compatibility for removed types
 # Once the section is removed, ghost instances will keep failing until
