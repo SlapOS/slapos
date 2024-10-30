@@ -204,10 +204,18 @@ environ =
   {%- endfor %}
 
 
+[{{ section('mariadb-backup-static-server-promise') }}]
+<= monitor-promise-base
+promise = check_socket_listening
+name = mariadb_replication_bootstrap_static_server.py
+config-host = ${mariadb-backup-static-http-server:ip}
+config-port = ${mariadb-backup-static-http-server:port}
+
 [{{ section('mariadb-backup-static-http-server') }}]
 recipe = slapos.recipe.template
 output = ${directory:services}/${:_buildout_section_name_}
 port = {{ port - 1 }}
+ip = {{ ip }}
 bootstrap-url = http://{{ ip_as_host }}:${:port}/${mariadb-backup-script:most-recent}
 inline =
   #!${buildout:executable}
@@ -220,7 +228,7 @@ inline =
 {%- endif %}
     daemon_threads = True
   Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-  ip = {{ repr(ip) }}
+  ip = '${:ip}'
   port = ${:port}
   os.chdir("${directory:mariadb-backup-full}")
   Server((ip, port), Handler).serve_forever()
