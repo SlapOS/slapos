@@ -104,6 +104,7 @@ enb_param_dict = {
             'tac': 2
         },
     },
+    'xlog_forwarding_enabled': False,
 }
 gnb_param_dict = {
     # ors_version for tests is B39, so dl_nr_arfcn needs to be within N39
@@ -148,6 +149,7 @@ gnb_param_dict = {
             'tac': 2
         },
     },
+    'xlog_forwarding_enabled': False,
 }
 gnb_param_dict1 = {
     'plmn_list': {
