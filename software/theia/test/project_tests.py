@@ -24,7 +24,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import unicode_literals
 
 import gzip
 import json
@@ -32,20 +31,19 @@ import os
 import re
 import subprocess
 import time
-import unittest
 import shutil
 import requests
 import tempfile
 
 from datetime import datetime, timedelta
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from mimetypes import guess_type
 from json.decoder import JSONDecodeError
 
 from slapos.testing.testcase import installSoftwareUrlList
 
 import test_resiliency
-from test import SlapOSInstanceTestCase, theia_software_release_url
+from .test import SlapOSInstanceTestCase, theia_software_release_url
 
 
 erp5_software_release_url = os.path.abspath(
@@ -448,8 +446,9 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
+
 class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
-  test_instance_max_retries = 12
+  test_instance_max_retries = 50  # puma takes time to be ready
   backup_max_tries = 480
   backup_wait_interval = 60
   _connection_parameters_regex = re.compile(r"{.*}", re.DOTALL)
@@ -467,7 +466,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
       stderr=subprocess.STDOUT,
       text=True,
     )
-    print(out)
+    self.logger.info("_getGitlabConnectionParameters output: %s", out)
     return json.loads(self._connection_parameters_regex.search(out).group(0).replace("'", '"'))
 
   def test_twice(self):
@@ -499,7 +498,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Create a new project
     print("Gitlab create a project")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
     # Token can be set manually
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
@@ -508,7 +507,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
       projects = response.json()
@@ -583,7 +582,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
     response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
