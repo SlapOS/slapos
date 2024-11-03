@@ -24,7 +24,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import unicode_literals
 
 import gzip
 import json
@@ -32,13 +31,12 @@ import os
 import re
 import subprocess
 import time
-import unittest
 import shutil
 import requests
 import tempfile
 
 from datetime import datetime, timedelta
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from mimetypes import guess_type
 from json.decoder import JSONDecodeError
 
@@ -448,6 +446,7 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
     return self.getPartitionPath(
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
+
 class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 50  # puma takes time to be ready
   backup_max_tries = 480
@@ -467,7 +466,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
       stderr=subprocess.STDOUT,
       text=True,
     )
-    print(out)
+    self.logger.info("_getGitlabConnectionParameters output: %s", out)
     return json.loads(self._connection_parameters_regex.search(out).group(0).replace("'", '"'))
 
   def test_twice(self):
