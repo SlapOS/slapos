@@ -55,7 +55,7 @@ import zc.buildout.configparser
 
 from . import ERP5InstanceTestCase, default, matrix, neo, setUpModule, ERP5PY3
 
-setUpModule # pyflakes
+_ = setUpModule
 
 
 class TestPublishedURLIsReachableMixin:
