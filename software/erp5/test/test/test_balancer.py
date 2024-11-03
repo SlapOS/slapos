@@ -28,7 +28,7 @@ from slapos.testing.utils import CrontabMixin, ManagedHTTPServer
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
 
-setUpModule  # pyflakes
+_ = setUpModule
 
 
 class EchoHTTPServer(ManagedHTTPServer):
