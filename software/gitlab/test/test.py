@@ -28,6 +28,7 @@
 import os
 import functools
 import urllib.parse
+import subprocess
 import time
 from typing import Optional, Tuple
 
@@ -162,3 +163,69 @@ class TestGitlab(SlapOSInstanceTestCase):
       ),
       "1.2.3.4",
     )
+
+  def test_download_archive_rate_limiting(self):
+    gitlab_rails_bin = self.computer_partition_root_path / 'bin' / 'gitlab-rails'
+
+    subprocess.check_call(
+      (gitlab_rails_bin,
+      'runner',
+      "user = User.find(1);" \
+      "token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token');" \
+      "token.set_token('SLurtnxPscPsU-SDm4oN');" \
+      "token.save!"),
+    )
+
+    client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
+    with requests.Session() as session:
+      session.cert = (client_certificate.cert_file, client_certificate.key_file)
+      session.verify = False
+
+      ret = session.post(
+        urllib.parse.urljoin(self.backend_url, '/api/v4/projects'),
+        data={
+          'name': 'sample-test',
+          'visibility': 'public',
+        },
+        headers={"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'},
+      )
+      ret.raise_for_status()
+      project_id = ret.json()['id']
+
+      session.post(
+        urllib.parse.urljoin(
+          self.backend_url, f"/api/v4/projects/{project_id}/repository/commits"
+        ),
+        json={
+          "branch": "main",
+          "commit_message": "Add a file to test download archive",
+          "actions": [
+            {"action": "create", "file_path": "README.md", "content": "file content"}
+          ],
+        },
+        headers={"PRIVATE-TOKEN": "SLurtnxPscPsU-SDm4oN"},
+      ).raise_for_status()
+
+      for i, ext in enumerate(("zip", "tar.gz", "tar.bz2", "tar")):
+        headers = {"X-Forwarded-For": f"{i}.{i}.{i}.{i}"}
+        get = functools.partial(
+          session.get,
+          urllib.parse.urljoin(
+            self.backend_url,
+            f"/root/sample-test/-/archive/main/sample-test-main.{ext}",
+          ),
+          headers=headers,
+        )
+        with self.subTest(ext):
+          get().raise_for_status()
+          self.assertEqual(get().status_code, 429)
+
+      self.assertEqual(
+        session.get(
+          urllib.parse.urljoin(
+            self.backend_url,
+            f"/root/sample-test/-/archive/invalidref/sample-test-invalidref.zip",
+          ),
+        ).status_code,
+        404,
+      )
