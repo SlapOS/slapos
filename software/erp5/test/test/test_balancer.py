@@ -23,9 +23,10 @@ import psutil
 import requests
 
 from slapos.proxy.db_version import DB_VERSION
+from slapos.testing.caucase import CaucaseCertificate, CaucaseService
 from slapos.testing.utils import CrontabMixin, ManagedHTTPServer
 
-from . import CaucaseCertificate, CaucaseService, ERP5InstanceTestCase, default, matrix, setUpModule
+from . import ERP5InstanceTestCase, default, matrix, setUpModule
 
 setUpModule  # pyflakes
 
