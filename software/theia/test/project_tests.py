@@ -499,7 +499,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Create a new project
     print("Gitlab create a project")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
     # Token can be set manually
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
@@ -508,14 +508,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
-    response = requests.get(backend_url + path, headers=headers, verify=False)
+    path = '/api/v4/projects'
+    response = requests.get(backend_url + path, params={'search': 'sample-test'}, headers=headers, verify=False)
     try:
       projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
 
-    # Only one project exist
+    # Only one project matches the search
     self.assertEqual(len(projects), 1)
     # The project name is sample-test, which we created above.
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
@@ -583,9 +583,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
-    response = requests.get(backend_url + path, headers=headers, verify=False)
+    response = requests.get(backend_url + path, params={'search': 'sample-test'}, headers=headers, verify=False)
     try:
       projects = response.json()
     except JSONDecodeError:
