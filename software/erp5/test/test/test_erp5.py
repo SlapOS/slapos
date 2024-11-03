@@ -48,10 +48,12 @@ import xmlrpc.client
 import psutil
 import requests
 import urllib3
+from slapos.testing.caucase import CaucaseService
 from slapos.testing.utils import CrontabMixin
 import zc.buildout.configparser
 
-from . import CaucaseService, ERP5InstanceTestCase, default, matrix, neo, setUpModule, ERP5PY3
+
+from . import ERP5InstanceTestCase, default, matrix, neo, setUpModule, ERP5PY3
 
 setUpModule # pyflakes
 
