@@ -499,7 +499,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Create a new project
     print("Gitlab create a project")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
     # Token can be set manually
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
@@ -508,14 +508,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
-    response = requests.get(backend_url + path, headers=headers, verify=False)
+    path = '/api/v4/projects'
+    response = requests.get(backend_url + path, params={'search': 'sample-test'}, headers=headers, verify=False)
     try:
       projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
 
-    # Only one project exist
+    # Only one project matches the search
     self.assertEqual(len(projects), 1)
     # The project name is sample-test, which we created above.
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
@@ -543,12 +543,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     output = subprocess.check_output(('git', 'push', 'origin'), cwd=repo_path, universal_newlines=True)
 
     # Do a fake periodically update
-    # Compute backup date in the near future
-    soon = (datetime.now() + timedelta(minutes=4))
+    # Compute backup date in the future
+    # During slapos node instance, the static assets are recompiled, which takes a lot
+    # of time, so we give it at least 20 minutes.
+    soon = (datetime.now() + timedelta(minutes=20))
     frequency = "%d * * * *" % soon.minute
     params = 'backup_frequency=%s' % frequency
 
-    # Update Peertube parameters
+    # Update Gitlab parameters
     print('Requesting Gitlab with parameters %s' % params)
     self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
 
@@ -557,8 +559,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     self.callSlapos('node', 'restart', 'all')
 
     # Wait until after the programmed backup date, and a bit more
-    t = (soon - datetime.now()).total_seconds()
-    time.sleep(t + 240)
+    t = ((soon - datetime.now()) + timedelta(minutes=10)).total_seconds()
+    time.sleep(t)
     self.callSlapos('node', 'status')
 
     os.chdir(self.temp_clone_dir)
@@ -583,9 +585,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
-    response = requests.get(backend_url + path, headers=headers, verify=False)
+    response = requests.get(backend_url + path, params={'search': 'sample-test'}, headers=headers, verify=False)
     try:
       projects = response.json()
     except JSONDecodeError:
