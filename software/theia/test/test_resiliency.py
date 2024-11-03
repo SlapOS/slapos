@@ -72,34 +72,42 @@ def setUpModule():
 class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
   @classmethod
   def _processEmbeddedInstance(cls, retries=0, instance_type='export'):
-    for _ in range(retries):
+    for retry in range(retries):
       try:
-        output = cls.captureSlapos('node', 'instance', instance_type=instance_type, stderr=subprocess.STDOUT)
+        output = cls.captureSlapos('node', 'instance', instance_type=instance_type, stderr=subprocess.STDOUT, text=True)
       except subprocess.CalledProcessError:
         continue
-      print(output)
+      cls.logger.info("_processEmbeddedInstance retry=%s output=%s", retry, output)
       break
     else:
       if retries:
         # Sleep a bit as an attempt to workaround monitoring boostrap not being ready
         print("Wait before running slapos node instance one last time")
         time.sleep(120)
-      cls.checkSlapos('node', 'instance', instance_type=instance_type)
+      try:
+        cls.checkSlapos('node', 'instance', instance_type=instance_type, text=True)
+      except subprocess.CalledProcessError as e:
+        cls.logger.error(e.output, exc_info=True)
+        raise
 
   @classmethod
   def _processEmbeddedSoftware(cls, retries=0, instance_type='export'):
-    for _ in range(retries):
+    for retry in range(retries):
       try:
-        output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
+        output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT, text=True)
       except subprocess.CalledProcessError:
         continue
-      print(output)
+      cls.logger.info("_processEmbeddedSoftware retry=%s output=%s", retry, output)
       break
     else:
       if retries:
         print("Wait before running slapos node software one last time")
         time.sleep(120)
-      cls.checkSlapos('node', 'software', instance_type=instance_type)
+      try:
+        cls.checkSlapos('node', 'software', instance_type=instance_type, text=True)
+      except subprocess.CalledProcessError as e:
+        cls.logger.error(e.output, exc_info=True)
+        raise
 
   @classmethod
   def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
