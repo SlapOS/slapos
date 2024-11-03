@@ -37,6 +37,8 @@ upstream gitlab-workhorse {
   server unix:{{ gitlab_workhorse.socket }};
 }
 
+limit_req_zone $trusted_remote_addr zone=downloadarchive:10m rate={{ cfg('nginx_download_archive_rate_limit') }}r/m;
+
 {# not needed for us - the frontend can do the redirection and also
    gitlab/nginx speaks HSTS on https port so when we access https port via http
    protocol, it gets redirected to https
@@ -161,6 +163,8 @@ server {
 
   proxy_http_version 1.1;
 
+  limit_req_status 429;
+
   {# we do not support relative URL - path is always "/" #}
   {% set path = "/" %}
 
@@ -171,6 +175,20 @@ server {
   #  set $http_host_with_default $http_host;
   #}
   location ~ (\.git/gitlab-lfs/objects|\.git/info/lfs/objects/batch$) {
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+
+    proxy_pass http://gitlab-workhorse;
+  }
+
+  ## archive downloads are rate limited.
+  location ~ /[^/]+/[^/]+/-/archive/.* {
+    limit_req zone=downloadarchive;
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
     {% if cfg_https %}
