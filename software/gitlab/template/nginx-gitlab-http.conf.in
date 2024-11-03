@@ -76,11 +76,12 @@ server {
   ## https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html & https://cipherli.st/
   ssl_certificate {{ nginx.cert_file }};
   ssl_certificate_key {{ nginx.key_file }};
-  {# we don't need - most root CA will be included by default
-  <% if @ssl_client_certificate %>
-  ssl_client_certificate <%= @ssl_client_certificate%>;
- 	<% end %>
-  #}
+
+  {%   if nginx.client_ca_file %}
+  ssl_client_certificate {{ nginx.client_ca_file }};
+  ssl_crl {{ nginx.client_crl_file }};
+  ssl_verify_client optional_no_ca;
+  {%   endif %}
 
   # GitLab needs backwards compatible ciphers to retain compatibility with Java IDEs
   # NOTE(slapos) ^^^ is not relevant for us - we are behind frontend and clients
@@ -109,6 +110,18 @@ server {
   {% for trusted_address in cfg("nginx_real_ip_trusted_addresses").split() %}
   set_real_ip_from {{ trusted_address }};
   {% endfor %}
+
+  ## SlapOS: For Real IP, instead of trusting the frontends through their IP addresses,
+  ## we expect the frontends to use a client certificate and we trust frontends only if
+  ## we can validate that certificate.
+  set $trusted_remote_addr $remote_addr;
+  {% if nginx.client_ca_file %}
+  set_real_ip_from 0.0.0.0/0;
+  set_real_ip_from ::/0;
+  if ($ssl_client_verify != SUCCESS) {
+    set $trusted_remote_addr $realip_remote_addr;
+  }
+  {% endif %}
 
   ## HSTS Config
   ## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
@@ -163,7 +176,7 @@ server {
     {% if cfg_https %}
     proxy_set_header    X-Forwarded-Ssl     on;
     {% endif %}
-    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
 
     proxy_pass http://gitlab-workhorse;
@@ -188,7 +201,7 @@ server {
     {% if cfg_https %}
     proxy_set_header    X-Forwarded-Ssl     on;
     {% endif %}
-    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
 
     proxy_pass  http://gitlab-workhorse;
