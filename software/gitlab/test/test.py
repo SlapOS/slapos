@@ -41,6 +41,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestGitlab(SlapOSInstanceTestCase):
   __partition_reference__ = 'G'  # solve path too long for postgresql and unicorn
+  instance_max_retry = 50  # puma takes time to be ready
 
   @classmethod
   def getInstanceSoftwareType(cls):
