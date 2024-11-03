@@ -499,7 +499,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Create a new project
     print("Gitlab create a project")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
     # Token can be set manually
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
@@ -508,7 +508,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
       projects = response.json()
@@ -583,7 +583,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
     response = requests.get(backend_url + path, headers=headers, verify=False)
     try:
