@@ -35,57 +35,58 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
+)
 
 
 class TestGitlab(SlapOSInstanceTestCase):
-  __partition_reference__ = 'G'  # solve path too long for postgresql and unicorn
+  __partition_reference__ = "G"  # solve path too long for postgresql and unicorn
   instance_max_retry = 50  # puma takes time to be ready
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return 'gitlab'
+    return "gitlab"
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'root-password': 'admin1234'}
+    return {"root-password": "admin1234"}
 
   def setUp(self):
-    self.backend_url = self.computer_partition.getConnectionParameterDict(
-    )['backend_url']
+    self.backend_url = self.computer_partition.getConnectionParameterDict()[
+      "backend_url"
+    ]
 
   def test_http_get(self):
     resp = requests.get(self.backend_url, verify=False)
-    self.assertTrue(
-      resp.status_code in [requests.codes.ok, requests.codes.found])
+    self.assertTrue(resp.status_code in [requests.codes.ok, requests.codes.found])
 
   def test_rack_attack_sign_in_rate_limiting(self):
     session = requests.session()
 
     # Load the login page to get a CSRF token.
-    response = session.get(urljoin(self.backend_url, 'users/sign_in'), verify=False)
+    response = session.get(urljoin(self.backend_url, "users/sign_in"), verify=False)
     self.assertEqual(response.status_code, 200)
 
     # Extract the CSRF token and param.
-    bsoup = bs4.BeautifulSoup(response.text, 'html.parser')
-    csrf_param = bsoup.find('meta', dict(name='csrf-param'))['content']
-    csrf_token = bsoup.find('meta', dict(name='csrf-token'))['content']
+    bsoup = bs4.BeautifulSoup(response.text, "html.parser")
+    csrf_param = bsoup.find("meta", dict(name="csrf-param"))["content"]
+    csrf_token = bsoup.find("meta", dict(name="csrf-token"))["content"]
 
     request_data = {
-                    'user[login]': 'test',
-                    'user[password]': 'random',
-                    csrf_param: csrf_token}
+      "user[login]": "test",
+      "user[password]": "random",
+      csrf_param: csrf_token,
+    }
 
     sign_in = functools.partial(
-       session.post,
-       response.url,
-       data=request_data,
-       verify=False)
+      session.post, response.url, data=request_data, verify=False
+    )
 
     for _ in range(10):
-      sign_in(headers={'X-Forwarded-For': '1.2.3.4'})
+      sign_in(headers={"X-Forwarded-For": "1.2.3.4"})
     # after 10 authentication failures, this client is rate limited
-    self.assertEqual(sign_in(headers={'X-Forwarded-For': '1.2.3.4'}).status_code, 429)
+    self.assertEqual(sign_in(headers={"X-Forwarded-For": "1.2.3.4"}).status_code, 429)
     # but other clients are not
-    self.assertNotEqual(sign_in(headers={'X-Forwarded-For': '5.6.7.8'}).status_code, 429)
+    self.assertNotEqual(
+      sign_in(headers={"X-Forwarded-For": "5.6.7.8"}).status_code, 429
+    )
