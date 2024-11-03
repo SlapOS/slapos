@@ -77,7 +77,7 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
         output = cls.captureSlapos('node', 'instance', instance_type=instance_type, stderr=subprocess.STDOUT)
       except subprocess.CalledProcessError:
         continue
-      print(output)
+      cls.logger.info("_processEmbeddedInstance output: %s", output)
       break
     else:
       if retries:
@@ -93,7 +93,7 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
         output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
       except subprocess.CalledProcessError:
         continue
-      print(output)
+      cls.logger.info("_processEmbeddedSoftware output: %s", output)
       break
     else:
       if retries:
