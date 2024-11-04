@@ -7,6 +7,9 @@
       "$ref": "sdr/input-schema.json"
     },
     {
+      "$ref": "lopcomm/input-schema.json"
+    },
+    {
       "$ref": "sunwave/input-schema.json"
     }
   ]
