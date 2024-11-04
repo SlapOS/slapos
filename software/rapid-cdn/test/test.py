@@ -495,8 +495,7 @@ class TestDataMixin(object):
     self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
 
 
-def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, source_ip=SOURCE_IP):
+def fakeSetupHeaders(headers):
   if headers is None:
     headers = http.client.HTTPMessage()
   default_header_dict = {
@@ -513,7 +512,12 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   for header_name, header_value in default_header_dict.items():
     if header_name not in headers:
       headers.add_header(header_name, header_value)
+  return headers
 
+
+def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
+                    headers=None, source_ip=SOURCE_IP):
+  headers = fakeSetupHeaders(headers)
   url = 'https://%s:%s/%s' % (domain, port, path)
 
   return mimikra.get(
@@ -536,18 +540,9 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  # Headers to tricks the whole system, like rouge user would do
-  headers.setdefault('X-Forwarded-For', '192.168.0.1')
-  headers.setdefault('X-Forwarded-Proto', 'irc')
-  headers.setdefault('X-Forwarded-Port', '17')
-  # Expose some Via to show how nicely it arrives to the backend
-  headers.setdefault('Via', 'http/1.1 clientvia')
-  headers['Host'] = '%s:%s' % (domain, port)
+  headers = fakeSetupHeaders(headers)
+  if 'Host' not in headers:
+    headers.add_header('Host', '%s:%s' % (domain, port))
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
   return mimikra.get(
     url,
