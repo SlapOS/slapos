@@ -380,7 +380,7 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     # Deploy dummy instance in export partition
     self._deployEmbeddedSoftware(self._test_software_url, 'dummy_instance')
 
-    relpath_dummy = os.path.join('srv', 'runner', 'instance', 'slappart0')
+    relpath_dummy = os.path.join('runner', 'instance', 'slappart0')
     self.export_dummy_root = dummy_root = self.getPartitionPath('export', relpath_dummy)
     self.import_dummy_root = self.getPartitionPath('import', relpath_dummy)
 
@@ -607,7 +607,7 @@ class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
     self._deployEmbeddedSoftware(self.html5as_url, 'html5as', 1)
 
   def _checkSync(self):
-    proxy_relpath = os.path.join('srv', 'runner', 'var', 'proxy.db')
+    proxy_relpath = os.path.join('r', 'proxy.db')
     query = "SELECT rowid, partition_reference FROM forwarded_partition_request%s" % DB_VERSION
 
     # Check that theia0 forwards frontend requests
