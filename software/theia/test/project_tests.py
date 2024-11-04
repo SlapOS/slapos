@@ -65,6 +65,21 @@ def setUpModule():
   )
 
 
+class TestTheiaResilienceWithShortPaths(test_resiliency.TestTheiaResilience):
+  """TestTheiaResilience, but with shorter paths for embedded slapos, to
+  overcome OS limit with the length of unix sockets or #! "shebang" lines.
+  """
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return dict(
+      super().getInstanceParameterDict(),
+      **{'testing-short-embedded-instance-path': 'true'})
+
+  @classmethod
+  def _getSlapos(cls, instance_type='export'):
+    return cls.getPartitionPath(instance_type, 'r', 'bin', 'slapos')
+
+
 class ERP5Mixin(object):
   _test_software_url = erp5_software_release_url
   _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
@@ -123,7 +138,7 @@ class ERP5Mixin(object):
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
 
-class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
+class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilienceWithShortPaths):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
@@ -240,7 +255,8 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
     self.assertIn(self._erp5_new_title, out, 'Mariadb catalog is not properly restored')
 
-class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
+
+class TestTheiaResiliencePeertube(TestTheiaResilienceWithShortPaths):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
@@ -444,10 +460,10 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
     partition = self._getPeertubePartition(servicename)
     return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+      instance_type, 'r', 'i', partition, *paths)
 
 
-class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
+class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
   test_instance_max_retries = 50  # puma takes time to be ready
   backup_max_tries = 480
   backup_wait_interval = 60
@@ -624,4 +640,4 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   def _getGitlabPartitionPath(self, instance_type, servicename, *paths):
     partition = self._getGitlabPartition(servicename)
     return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+      instance_type, 'r', 'i', partition, *paths)
