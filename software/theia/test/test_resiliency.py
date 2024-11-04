@@ -118,7 +118,10 @@ class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'autorun': 'stopped'}
+    return {
+      'autorun': 'stopped',
+      'testing-short-embedded-instance-path': 'true',
+    }
 
 
 class ResilienceMixin(object):
