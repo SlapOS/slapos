@@ -25,7 +25,9 @@
 #
 ##############################################################################
 
+import base64
 import contextlib
+import json
 import io
 import os
 import pathlib
@@ -33,13 +35,15 @@ import subprocess
 import tempfile
 import urllib.parse
 
+
 import requests
+import lxml.html
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
+
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-  os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  pathlib.Path(__file__).parent.parent / 'software.cfg')
 
 
 class TestFileServer(SlapOSInstanceTestCase):
@@ -62,6 +66,11 @@ class TestFileServer(SlapOSInstanceTestCase):
         )).text)
     self.addCleanup(os.unlink, ca_cert.name)
     return ca_cert.name
+
+  def _decode_index_content(self, response_text:str) -> dict:
+    index_data, = lxml.html.fromstring(
+      response_text).xpath('.//template[@id="index-data"]/text()')
+    return json.loads(base64.b64decode(index_data))
 
   def test_anonymous_can_only_access_public(self):
     resp = requests.get(
@@ -87,12 +96,13 @@ class TestFileServer(SlapOSInstanceTestCase):
         urllib.parse.urljoin(self.connection_parameters['public-url'], '..'),
         verify=self.ca_cert,
       )
-      self.assertIn('pub', resp.text)
-      self.assertNotIn('secret', resp.text)
+      self.assertEqual(
+        [path['name'] for path in self._decode_index_content(resp.text)['paths']],
+        ['pub'])
       self.assertEqual(resp.status_code, requests.codes.ok)
 
   def test_index(self):
-    pub = pathlib.Path(self.computer_partition_root_path) / 'srv' / 'www' / 'pub'
+    pub = self.computer_partition_root_path / 'srv' / 'www' / 'pub'
     (pub / 'with-index').mkdir()
     (pub / 'with-index' / 'index.html').write_text('<html>Hello !</html>')
     self.assertEqual(
@@ -106,10 +116,14 @@ class TestFileServer(SlapOSInstanceTestCase):
     (pub / 'without-index' / 'file.txt').write_text('Hello !')
     self.assertIn(
       'file.txt',
-      requests.get(
-        urllib.parse.urljoin(self.connection_parameters['public-url'], 'without-index/'),
-        verify=self.ca_cert,
-      ).text)
+      [path['name'] for path in
+        self._decode_index_content(
+          requests.get(
+          urllib.parse.urljoin(self.connection_parameters['public-url'], 'without-index/'),
+          verify=self.ca_cert,
+        ).text)['paths']
+      ]
+    )
 
   def test_upload_file_refused_without_auth(self):
     parsed_upload_url = urllib.parse.urlparse(self.connection_parameters['upload-url'])
@@ -168,7 +182,7 @@ class TestFileServer(SlapOSInstanceTestCase):
 
     # reprocess instance to get the new certificate, after removing the timestamp
     # to force execution
-    (pathlib.Path(self.computer_partition_root_path) / '.timestamp').unlink()
+    (self.computer_partition_root_path / '.timestamp').unlink()
     self.waitForInstance()
 
     cert_after = _getpeercert()

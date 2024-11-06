@@ -43,6 +43,7 @@ setup(
     install_requires=[
         'slapos.core',
         'slapos.libnetworkcache',
+        'lxml',
         'requests',
     ],
     zip_safe=True,
