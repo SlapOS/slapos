@@ -1,0 +1,57 @@
+{
+  "name": "Simpleran",
+  "description": "4G and 5G amarisoft stack for ORS",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "enb": {
+      "title": "eNB",
+      "software-type": "enb",
+      "description": "eNodeB Configuration",
+      "request": "instance-ors-enb-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
+      "index": 1
+    },
+    "gnb": {
+      "title": "gNB",
+      "software-type": "gnb",
+      "description": "gNodeB Configuration",
+      "request": "instance-ors-gnb-input-schema.json",
+      "response": "instance-ors-gnb-schema.json",
+      "index": 2
+    },
+    "ue": {
+      "title": "UE",
+      "software-type": "ue",
+      "description": "User Equipment Configuration",
+      "request": "instance-ors-ue-input-schema.json",
+      "response": "instance-ors-ue-schema.json",
+      "index": 3
+    },
+    "ue-slave": {
+      "title": "UE Sim Card",
+      "software-type": "ue",
+      "description": "User Equipment Sim Card Configuration",
+      "request": "sim/input-schema.json",
+      "response": "sim/schema.json",
+      "shared": true,
+      "index": 4
+    },
+    "core-network": {
+      "title": "Core Network",
+      "software-type": "core-network",
+      "description": "Core Network Configuration",
+      "request": "instance-core-network-input-schema.json",
+      "response": "instance-core-network-schema.json",
+      "index": 5
+    },
+    "core-network-slave": {
+      "title": "Core Network Sim Card",
+      "description": "Core Network Sim Card Configuration",
+      "software-type": "core-network",
+      "request": "sim/input-schema.json",
+      "response": "sim/schema.json",
+      "shared": true,
+      "index": 6
+    }
+  }
+}

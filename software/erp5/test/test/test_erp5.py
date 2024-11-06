@@ -48,12 +48,14 @@ import xmlrpc.client
 import psutil
 import requests
 import urllib3
+from slapos.testing.caucase import CaucaseService
 from slapos.testing.utils import CrontabMixin
 import zc.buildout.configparser
 
-from . import CaucaseService, ERP5InstanceTestCase, default, matrix, neo, setUpModule, ERP5PY3
 
-setUpModule # pyflakes
+from . import ERP5InstanceTestCase, default, matrix, neo, setUpModule, ERP5PY3
+
+_ = setUpModule
 
 
 class TestPublishedURLIsReachableMixin:
@@ -477,8 +479,8 @@ class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMi
     }
 
   def test_test_runner_configuration_json_file(self):
-    runUnitTest_script, = glob.glob(
-        self.computer_partition_root_path + "/../*/bin/runUnitTest.real")
+    runUnitTest_script, = self.computer_partition_root_path.glob(
+      "../*/bin/runUnitTest.real")
     config_file = None
     with open(runUnitTest_script) as f:
       for line in f:
@@ -504,8 +506,8 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     """
     # self.computer_partition_root_path is the path of root partition.
     # we want to assert that no scripts exist in any partition.
-    bin_programs = list(map(os.path.basename,
-      glob.glob(self.computer_partition_root_path + "/../*/bin/*")))
+    bin_programs = [
+      p.name for p in self.computer_partition_root_path.glob("../*/bin/*")]
 
     self.assertTrue(bin_programs) # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)

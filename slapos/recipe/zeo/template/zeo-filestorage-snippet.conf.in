@@ -1,4 +1,0 @@
-<filestorage %(storage_name)s>
-  path %(path)s
-  # pack-gc false
-</filestorage>

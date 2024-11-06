@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import httplib
 import logging
 import json
 import os
@@ -93,9 +92,6 @@ def requestRemoveToken(client, token_base_path):
       reference = reference_key.split('.')[0]
       try:
         result = client.deleteToken(token)
-      except httplib.NOT_FOUND:
-        # Token is alread removed.
-        result = True
       except Exception:
         log.debug('Request delete token fail for %s... \n %s' % (request_file,
                     traceback.format_exc()))
@@ -119,7 +115,7 @@ def requestRemoveToken(client, token_base_path):
           os.unlink(ipv6_file)
 
     else:
-      log.debug('Bad token. Request add token fail for %s...' % request_file)
+      log.debug('Bad token. Request remove token fail for %s...' % request_file)
 
 def checkService(client, token_base_path, token_json, computer_partition):
   token_dict = loadJsonFile(token_json)
@@ -128,7 +124,7 @@ def checkService(client, token_base_path, token_json, computer_partition):
     return
 
   # Check token status
-  for slave_reference, token in token_dict.iteritems():
+  for slave_reference, token in token_dict.items():
     log.info("%s %s" % (slave_reference, token))
     status_file = os.path.join(token_base_path, '%s.status' % slave_reference)
     if not os.path.exists(status_file):

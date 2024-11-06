@@ -8,14 +8,6 @@
 {% set default_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 
-[zeo-base]
-recipe = slapos.cookbook:zeo
-log-path = ${directory:log}/${:base-name}.log
-pid-path = ${directory:run}/${:base-name}.pid
-conf-path = ${directory:etc}/${:base-name}.conf
-wrapper-path = ${directory:services}/${:base-name}
-binary-path = {{ bin_directory }}/runzeo
-ip = {{ ipv4 }}
 
 {% set known_tid_storage_identifier_dict = {} -%}
 {% set zodb_dict = {} -%}
@@ -41,11 +33,32 @@ ip = {{ ipv4 }}
 {%   endfor -%}
 
 {%   set zeo_section_name = 'zeo-' ~ family %}
-[{{ zeo_section_name }}]
-< = zeo-base
+[{{ zeo_section_name ~ "-base" }}]
 base-name = zeo-{{ family }}
+log-path = ${directory:log}/${:base-name}.log
+pid-path = ${directory:run}/${:base-name}.pid
+ip = {{ ipv4 }}
 port = {{ current_port }}
 storage = {{ dumps(storage_list) }}
+
+[{{ zeo_section_name ~ "-conf" }}]
+<= {{ zeo_section_name ~ "-base" }}
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['zeo-conf-template'] }}
+output = ${directory:etc}/${:base-name}.conf
+context =
+  section parameter_dict ${:_buildout_section_name_}
+
+[{{ zeo_section_name }}]
+<= {{ zeo_section_name ~ "-base" }}
+recipe = slapos.cookbook:wrapper
+base-name = {{ "${" ~ zeo_section_name ~"-conf:base-name}" }}
+log-path = {{ "${" ~ zeo_section_name ~"-conf:log-path}" }}
+wrapper-path = ${directory:services}/${:base-name}
+command-line = {{ bin_directory }}/runzeo -C {{ "${" ~ zeo_section_name ~"-conf:output}" }}
+environment =
+  TMPDIR=${directory:tmp}
+  TMP=${directory:tmp}
 
 [{{ section("logrotate-" ~ zeo_section_name) }}]
 < = logrotate-entry-base
@@ -66,6 +79,45 @@ config-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
 {%   set known_tid_storage_identifier_dict = () %}
 {%   set tidstorage_repozo_path = '' -%}
 {% else -%}
+
+[repozo-backup-script]
+repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
+
+# BBB on python3 we don't use Products.TIDStorage but repozo directly.
+[repozo-backup-script:python3]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  zodb_directory="${directory:zodb}"
+  zodb_backup_directory="{{ default_backup_path }}"
+  repozo="${tidstorage:repozo-binary}"
+  EXIT_CODE=0
+
+  {% for family, zodb in six.iteritems(zodb_dict) -%}
+  {%   for name, zodb in zodb -%}
+  storage_name="{{ name }}"
+  zodb_path="$storage_name.fs"
+  [ ! -d "$zodb_backup_directory/$storage_name" ]] && mkdir "$zodb_backup_directory/$storage_name"
+  echo "Backing up $storage_name ..."
+  $repozo \
+    --backup \
+    --kill-old-on-full \
+    --gzip \
+    --quick \
+    --repository="$zodb_backup_directory/$storage_name" \
+    --file="$zodb_directory/$zodb_path"
+
+  CURRENT_EXIT_CODE=$?
+  if [ $CURRENT_EXIT_CODE != 0 ]; then
+    EXIT_CODE="$CURRENT_EXIT_CODE"
+    echo "$storage_name Backup failed."
+  fi
+  {%   endfor -%}
+  {% endfor -%}
+  exit $EXIT_CODE
+repozo-wrapper = ${:output}
+mode = 755
+output = ${buildout:bin-directory}/repozo-backup
 
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
@@ -103,7 +155,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = tidstorage
 time = {{ dumps(backup_periodicity) }}
-command = ${tidstorage:repozo-wrapper}
+command = ${repozo-backup-script:repozo-wrapper}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
@@ -124,8 +176,9 @@ mode = 770
 
 [{{ section("resiliency-after-import-script") }}]
 # Generate after import script used by importer instance of webrunner
-recipe = collective.recipe.template
-input = inline: #!/bin/sh
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
   # DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
   # OR ZODB DATA WILL BE ERASED.
 
@@ -133,8 +186,6 @@ input = inline: #!/bin/sh
   # zodb location. It is launched by the clone (importer) instance of webrunner
   # in the end of the import script.
 
-  # Depending on the output, it will create a file containing
-  # the status of the restoration (success or failure).
   zodb_directory="${directory:zodb}"
   zodb_backup_directory="{{ default_backup_path }}"
   repozo="${tidstorage:repozo-binary}"
@@ -152,12 +203,11 @@ input = inline: #!/bin/sh
       exit 1
     fi
   fi
-  echo "Removing $zodb_path..."
-  echo "Restoring $storage_name into $zodb_path..."
+  echo "Restoring $zodb_path..."
   $repozo --recover --with-verify --output="$zodb_directory/$zodb_path" --repository="$zodb_backup_directory/$storage_name"
   CURRENT_EXIT_CODE=$?
-  if [ ! "$CURRENT_EXIT_CODE"="0" ]; then
-    EXIT_CODE="$CURRENT_EXIT_CODE"
+  if [ $CURRENT_EXIT_CODE != 0 ]; then
+    EXIT_CODE=$CURRENT_EXIT_CODE
     echo "$storage_name Backup restoration failed."
   fi
   {%   endfor -%}
@@ -196,6 +246,7 @@ srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
+tmp = ${buildout:directory}/tmp
 backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
 tidstorage = {{ tidstorage_repozo_path }}

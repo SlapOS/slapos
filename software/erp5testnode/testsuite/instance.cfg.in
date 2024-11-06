@@ -3,7 +3,6 @@ extends = ${template:output}
 
 [switch_softwaretype]
 default = $${:test}
-RootSoftwareInstance = $${:test}
 
 # Used for the test of resiliency. The system wants a "test" software_type.
 test = dynamic-template-resilient-test:output

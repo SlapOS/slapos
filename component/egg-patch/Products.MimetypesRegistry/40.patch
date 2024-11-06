@@ -1,0 +1,57 @@
+From 94785bb0ef91fd69b802b904b6037bc027f9b5b4 Mon Sep 17 00:00:00 2001
+From: Kazuhiko SHIOZAKI <kazuhiko@nexedi.com>
+Date: Mon, 16 Sep 2024 09:48:40 +0200
+Subject: [PATCH] Fix classify() for magic classifier and binary data.
+
+---
+ Products/MimetypesRegistry/MimeTypesRegistry.py    | 3 ++-
+ Products/MimetypesRegistry/tests/test_mimetypes.py | 8 ++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/Products/MimetypesRegistry/MimeTypesRegistry.py b/Products/MimetypesRegistry/MimeTypesRegistry.py
+index 1f5c4b5..ad480c3 100644
+--- a/Products/MimetypesRegistry/MimeTypesRegistry.py
++++ b/Products/MimetypesRegistry/MimeTypesRegistry.py
+@@ -303,6 +303,8 @@ def classify(self, data, mimetype=None, filename=None):
+             if mt is None:
+                 mt = self.globFilename(filename)
+         if data and not mt:
++            if isinstance(data, str):
++                data = data.encode()
+             for c in self._classifiers():
+                 if c.classify(data):
+                     mt = c
+@@ -322,7 +324,6 @@ def classify(self, data, mimetype=None, filename=None):
+                 failed = "text/x-unknown-content-type"
+                 filename = filename or ""
+                 data = data or ""
+-                data = data.encode()
+                 ct, enc = guess_content_type(filename, data, None)
+                 if ct == failed:
+                     ct = "text/plain"
+diff --git a/Products/MimetypesRegistry/tests/test_mimetypes.py b/Products/MimetypesRegistry/tests/test_mimetypes.py
+index 1f55056..1fb75a7 100644
+--- a/Products/MimetypesRegistry/tests/test_mimetypes.py
++++ b/Products/MimetypesRegistry/tests/test_mimetypes.py
+@@ -58,6 +58,10 @@ def testClassify(self):
+         mt = reg.classify("<?xml ?>")
+         self.assertTrue(isinstance(mt, text_xml), str(mt))
+ 
++        # test magic classifiers
++        mt = reg.classify("BEGIN:VCARD\n")
++        self.assertEqual(str(mt), "text/vcard")
++
+         # test no data return default
+         mt = reg.classify("")
+         self.assertTrue(isinstance(mt, text_plain), str(mt))
+@@ -73,6 +77,10 @@ def testClassify(self):
+         mt = reg.classify("baz", filename="xxx")
+         self.assertTrue(isinstance(mt, application_octet_stream), str(mt))
+ 
++        # test unclassifiable binary data
++        mt = reg.classify(b"\x01")
++        self.assertTrue(isinstance(mt, application_octet_stream), str(mt))
++
+     def testExtension(self):
+         reg = self.registry
+         data = "<foo>bar</foo>"

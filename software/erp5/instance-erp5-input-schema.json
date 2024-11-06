@@ -125,6 +125,7 @@
       "patternProperties": {
         "^[a-zA-Z0-9_-]+$": {
           "default": {},
+          "additionalProperties": false,
           "properties": {
             "webdav": {
               "description": "Serve webdav queries, implies timerserver-interval=0 (disabled)",

@@ -102,6 +102,7 @@ import-list =
 
 [dynamic-template-zeo-parameters]
 <= default-dynamic-template-parameters
+zeo-conf-template = {{ template_zeo_conf }}
 
 [dynamic-template-zeo]
 <= jinja2-template-base
@@ -222,7 +223,6 @@ url = {{ instance_wcfs_cfg_in }}
 filename = instance_wcfs.cfg
 extra-context =
     section parameter_dict dynamic-template-zope-parameters
-    import urllib_parse six.moves.urllib.parse
 import-list =
     file instance_zodb_base context:template-zodb-base
 
@@ -232,8 +232,6 @@ override = {{ dumps(override_switch_softwaretype |default) }}
 
 # Public software types
 default = dynamic-template-erp5:output
-# BBB
-RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:output
 caucase = dynamic-template-caucase:output
