@@ -160,6 +160,9 @@ recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${monitor-directory:etc}/.monitor-password
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
+location =
+  ${:password-file}
+  ${:htpasswd-path}
 command =
   echo "${monitor-instance-parameter:password}" >${:password-file}
   {{ apache_location }}/bin/htpasswd -cib ${:htpasswd-path} "${monitor-instance-parameter:username}" "${monitor-instance-parameter:password}"
