@@ -916,8 +916,6 @@ rake    = ${gitlab-rake:wrapper-path}
 # run command on every reinstantiation
 update-command = ${:command}
 
-# https://gitlab.com/gitlab-org/gitlab-foss/issues/38457
-# we need to manually install ajv@^4.0.0 with yarn to fix the bug 'yarn check failed!'
 command =
     ${:rake} gitlab:assets:clean  &&
     ${:rake} gettext:compile RAILS_ENV=production &&
