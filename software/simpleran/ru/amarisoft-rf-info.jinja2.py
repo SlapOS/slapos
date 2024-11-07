@@ -21,8 +21,7 @@ class enbWebSocket:
         if {{ testing }}:
             return
 
-        self.ws_url = "ws://127.0.1.2:9001"
-        self.ws = create_connection(self.ws_url)
+        self.ws = create_connection("{{ ws_url }}")
 
     def close(self):
         if {{ testing }}:

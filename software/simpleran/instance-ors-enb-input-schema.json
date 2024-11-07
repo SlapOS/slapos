@@ -165,9 +165,6 @@
       "type": "object",
       "default": {}
     },
-    "websocket_password": {
-      "$ref": "instance-enb-input-schema.json#/properties/websocket_password"
-    },
     "inactivity_timer": {
       "$ref": "cell/common.json#/properties/inactivity_timer",
       "default": 10000
