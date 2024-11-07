@@ -9,6 +9,12 @@
       "description": "ssh public key",
       "type": "string",
       "default": ""
+    },
+    "slotQuantity": {
+      "title": "Slot quantity",
+      "description": "Number of slot per selenium node",
+      "type": "integer",
+      "default": 3
     }
   }
 }
