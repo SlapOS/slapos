@@ -159,9 +159,6 @@
       "type": "object",
       "default": {}
     },
-    "websocket_password": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/websocket_password"
-    },
     "inactivity_timer": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/inactivity_timer"
     },
