@@ -9,7 +9,7 @@
  "Arch Linux 2020.09.01 x86_64" : "https://shacache.nxdcdn.com/fc17e8c6ae0790162f4beb8fa6226d945cff638429588999b3a08493ff27b280dc2939fba825ae04be1d9082ea8d7c3c002c5e4c39fbbcf88b8ab5104619e28a#ebcdb2223a77f098af3923fe1fa180aa",
  "Fedora Server 32 netinst x86_64" : "https://shacache.nxdcdn.com/c5a511f349a1146b615e6fab9c24f9be4362046adcf24f0ff82c470d361fac5f6628895e2110ebf8ff87db49d4c413a0a332699da6b1bec64275e0c17a15b999#ca7a1e555c04b4d9a549065fa2ddf713",
  "FreeBSD 12.1 RELEASE bootonly x86_64" : "https://shacache.nxdcdn.com/6c355def68b3c0427f21598cb054ffc893568902f205601ac60f192854769b31bc9cff8eeb6ce99ef975a8fb887d8d3e56fc6cd5ea5cb4b3bba1175c520047cb#57088b77f795ca44b00971e44782ee23",
-  "SUSE Linux Enterprise Server 15 SP6 x86_64": "https://shacache.nxdcdn.com/e72e03bbcc4c54ce4b8d5f360b47dab9ee514d754e8d78c403626cf000d6ae98d808b3bcff2201e3cf49c1be1b0f308f1cb5ed81676adcb1837dfc811d2451ac",
+  "SUSE Linux Enterprise Server 15 SP6 x86_64": "https://shacache.nxdcdn.com/e72e03bbcc4c54ce4b8d5f360b47dab9ee514d754e8d78c403626cf000d6ae98d808b3bcff2201e3cf49c1be1b0f308f1cb5ed81676adcb1837dfc811d2451ac#ad2f29ff40fd245b50fe261a88039675",
 } -%}
 {%- if boot_image_url_select %}
 {#-   Fail in the promise if bad boot-image-url-select is set -#}
