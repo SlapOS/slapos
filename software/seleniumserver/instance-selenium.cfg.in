@@ -55,7 +55,6 @@ command-line =
     -host $${:hostname}
     -port $${:port}
     -role hub
-    -maxSession {{ parameter_dict['slotQuantity'] }}
     -newSessionWaitTimeout 600000
     --debug
 
@@ -83,6 +82,7 @@ command-line =
     -host $${:hostname}
     -port $${:port}
     -role node
+    -maxSession {{ parameter_dict['slotQuantity'] }}
     -timeout 300
     -hub $${selenium-server-hub-instance:register-url}
     -capabilities $${:capabilities}
