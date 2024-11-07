@@ -165,11 +165,6 @@
       "type": "object",
       "default": {}
     },
-    "websocket_password": {
-      "title": "Websocket password",
-      "description": "Activates websocket for remote control and sets password",
-      "type": "string"
-    },
     "log_phy_debug": {
       "title": "Physical layer log debug",
       "description": "Enable debug mode for physical layer logs",
