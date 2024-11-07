@@ -607,8 +607,9 @@ class TestHandler(BaseHTTPRequestHandler):
           header_name[len(config_header_header):], header_value)
       elif header_name.startswith(config_header):
         config[header_name[len(config_header):]] = header_value
-    config['Body'] = self.rfile.read(int(self.headers.get(
-      'Content-Length', '0')))
+    if 'X-Config-Body' not in self.headers:
+      config['Body'] = self.rfile.read(int(self.headers.get(
+        'Content-Length', '0')))
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
     self.end_headers()
@@ -624,10 +625,28 @@ class TestHandler(BaseHTTPRequestHandler):
     return self.do_GET()
 
   def do_GET(self):
+    def generateDefaultResponse():
+      header_dict = {}
+      for header in list(self.headers.keys()):
+        content = self.headers.get_all(header)
+        if len(content) == 0:
+          header_dict[header] = None
+        elif len(content) == 1:
+          header_dict[header] = content[0]
+        else:
+          header_dict[header] = content
+
+      return json.dumps(
+        {
+          'Path': self.path,
+          'Incoming Headers': header_dict
+        },
+        indent=2).encode()
+
     config = self.configuration.get(self.path, None)
     if config is None:
       self.send_response(404)
-      response = json.dumps({'path': self.path}, indent=2).encode()
+      response = generateDefaultResponse()
       self.send_header('Content-Length', len(response))
       self.send_header('Content-Type', 'application/json')
       self.end_headers()
@@ -637,6 +656,10 @@ class TestHandler(BaseHTTPRequestHandler):
     self.protocol_version = config['configuration']['Protocol-Version']
     time.sleep(int(config['configuration']['Timeout']))
     self.send_response_only(int(config['configuration']['Status-Code']))
+    if config['configuration']['Body'] == 'calculate':
+      body = generateDefaultResponse()
+    else:
+      body = config['configuration']['Body']
     for header, value in config['headers'].items():
       for header_type in ['Date', 'Last-Modified']:
         if header == header_type:
@@ -649,10 +672,10 @@ class TestHandler(BaseHTTPRequestHandler):
           )
       if header == 'Content-Length':
         if value == 'calculate':
-          value = '%s' % (len(config['configuration']['Body']),)
+          value = '%s' % (len(body),)
       self.send_header(header, value)
     self.end_headers()
-    self.wfile.write(config['configuration']['Body'])
+    self.wfile.write(body)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
@@ -2334,11 +2357,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       }
     )
     path = '/test-path/deep/.././deeper' * 250
-    backend_url = self.getSlaveParameterDictDict()['Url']['url']
+    backend_path = '/test-path/deeper' * 250
     config_result = mimikra.config(
-      backend_url + path,
+      self.backend_url.rstrip('/') + '?a=b&c=' + backend_path,
       headers=setUpHeaders([
-        ('X-Config-Timeout', '10')
+        ('X-Config-Timeout', '10'),
+        ('X-Config-Body', 'calculate'),
+        ('X-Config-Reply-Header-Server', 'TestBackend'),
+        ('X-Config-Reply-Header-Content-Length', 'calculate'),
+        ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+        ('X-Config-Reply-Header-Set-Cookie', 'secured=value;secure, nonsecured=value'),
       ])
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
@@ -2358,14 +2386,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -2527,7 +2554,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       except Exception:
         raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-      self.assertEqual(j['Incoming Headers']['timeout'], '10')
       self.assertFalse('Content-Encoding' in result.headers)
       self.assertRequestHeaders(
          j['Incoming Headers'], parameter_dict['domain'])
@@ -2608,7 +2634,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -2806,7 +2831,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
