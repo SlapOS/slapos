@@ -164,6 +164,7 @@ init =
   inputs["disk"].append({})
   inputs["io"].append({})
   inputs["mem"].append({})
+  inputs["net"].append({"ignore_protocol_stats": True})
   inputs["system"].append({})
 
   for application in slapparameter_dict.get("applications", []):
