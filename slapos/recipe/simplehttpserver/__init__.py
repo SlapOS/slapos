@@ -29,16 +29,19 @@ import string, random
 import os
 from six.moves import range
 
+from zc.buildout.buildout import bool_option
+
+
 class Recipe(GenericBaseRecipe):
 
   def __init__(self, buildout, name, options):
 
     base_path = options['base-path']
-    if options.get('use-hash-url', 'True') in ['true', 'True']:
+    if bool_option(options, 'use-hash-url', 'false'):
       pool = string.ascii_letters + string.digits
       hash_string = ''.join(random.choice(pool) for i in range(64))
       path = os.path.join(base_path, hash_string)
-  
+
       if os.path.exists(base_path):
         path_list = os.listdir(base_path)
         if len(path_list) == 1:
@@ -46,7 +49,7 @@ class Recipe(GenericBaseRecipe):
           path = os.path.join(base_path, hash_string)
         elif len(path_list) > 1:
           raise ValueError("Folder %s should contain 0 or 1 element." % base_path)
-  
+
       options['root-dir'] = path
       options['path'] = hash_string
     else:
@@ -66,7 +69,8 @@ class Recipe(GenericBaseRecipe):
       'log-file': self.options['log-file'],
       'cert-file': self.options.get('cert-file', ''),
       'key-file': self.options.get('key-file', ''),
-      'root-dir': self.options['root-dir']
+      'root-dir': self.options['root-dir'],
+      'allow-write': bool_option(self.options, 'allow-write', 'false')
     }
 
     return self.createPythonScript(
