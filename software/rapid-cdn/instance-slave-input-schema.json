@@ -232,7 +232,7 @@
       "type": "string"
     },
     "health-check-http-method": {
-      "title": "Health Check HTTP Metod",
+      "title": "Health Check HTTP Method",
       "description": "Selects method to do the active check. CONNECT means that connection will be enough for the check, otherwise it's HTTP method.",
       "enum": [
         "GET",
