@@ -435,8 +435,8 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     self.checkLog(os.path.join(dummy_root, 'log.log'), self.initial_log, newline=None)
 
     # Check that the non ascii filename has been correctly propagated
-    self.assertTrue(os.path.exists(self.getPartitionPath('import', 'srv', 'project'),
-                                   non_ascii_only_filename))
+    self.assertTrue(os.path.exists(os.path.join(self.getPartitionPath('import', 'srv', 'project'),
+                                   non_ascii_only_filename)))
 
     # Check that ~/srv/.backup_identity_script was detected and called
     signature =  self.getPartitionPath(
