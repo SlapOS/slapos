@@ -21,35 +21,26 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.install_dir = tempfile.mkdtemp()
     self.addCleanup(shutil.rmtree, self.install_dir)
     self.wrapper = os.path.join(self.install_dir, 'server')
+    self.process = None
+
+  def setUpRecipe(self, opt=()):
     host, port = os.environ['SLAPOS_TEST_IPV4'], 9999
-    self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
+    options = {
+        'base-path': self.base_path,
+        'host': host,
+        'port': port,
+        'log-file': os.path.join(self.install_dir, 'simplehttpserver.log'),
+        'wrapper': self.wrapper,
+    }
+    options.update(opt)
     self.recipe = makeRecipe(
         simplehttpserver.Recipe,
-        options={
-            'base-path': self.base_path,
-            'host': host,
-            'port': port,
-            'log-file': os.path.join(self.install_dir, 'simplehttpserver.log'),
-            'wrapper': self.wrapper,
-        },
+        options=options,
         name='simplehttpserver',
     )
+    self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
 
-  def tearDown(self):
-    if self.process:
-      self.process.terminate()
-      self.process.wait()
-
-  def test_options(self):
-    self.assertNotEqual(self.recipe.options['path'], '')
-    self.assertEqual(
-        self.recipe.options['root-dir'],
-        os.path.join(
-            self.base_path,
-            self.recipe.options['path'],
-        ))
-
-  def test_install(self):
+  def startServer(self):
     self.assertEqual(self.recipe.install(), self.wrapper)
     self.process = subprocess.Popen(
         self.wrapper,
@@ -70,6 +61,36 @@ class SimpleHTTPServerTest(unittest.TestCase):
       self.fail(
           'server did not start.\nout: %s error: %s' % self.process.communicate())
     self.assertIn('Directory listing for /', resp.text)
+    return server_base_url
+
+  def tearDown(self):
+    if self.process:
+      self.process.terminate()
+      self.process.wait()
+      self.process.communicate() # close pipes
+      self.process = None
+
+  def test_options_use_hash(self):
+    self.setUpRecipe({'use-hash-url': 'true'})
+    self.assertNotEqual(self.recipe.options['path'], '')
+    self.assertEqual(
+        self.recipe.options['root-dir'],
+        os.path.join(
+            self.base_path,
+            self.recipe.options['path'],
+        ))
+
+  def test_options_no_hash(self):
+    self.setUpRecipe()
+    self.assertEqual(self.recipe.options['path'], '')
+    self.assertEqual(
+        self.recipe.options['root-dir'],
+        self.base_path
+    )
+
+  def test_write(self):
+    self.setUpRecipe({'allow-write': 'true'})
+    server_base_url = self.startServer()
 
     # post with multipart/form-data encoding
     resp = requests.post(
@@ -119,3 +140,29 @@ class SimpleHTTPServerTest(unittest.TestCase):
           },
       )
       self.assertEqual(resp.status_code, requests.codes.forbidden)
+
+  def test_readonly(self):
+    self.setUpRecipe()
+
+    indexpath = os.path.join(self.base_path, 'index.txt')
+    indexcontent = "This file is served statically and readonly"
+    with open(indexpath, 'w') as f:
+      f.write(indexcontent)
+
+    server_base_url = self.startServer()
+    indexurl = os.path.join(server_base_url, 'index.txt')
+
+    resp = requests.get(indexurl)
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    self.assertEqual(resp.text, indexcontent)
+
+    resp = requests.post(
+        server_base_url,
+        files={
+            'path': 'index.txt',
+            'content': 'Not readonly after all',
+        },
+    )
+    self.assertEqual(resp.status_code, requests.codes.forbidden)
+    with open(indexpath) as f:
+      self.assertEqual(f.read(), indexcontent)
