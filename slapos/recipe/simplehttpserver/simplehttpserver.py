@@ -15,15 +15,21 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
   document_path = ''
   restrict_root_folder = True
+  restrict_write = True
 
   def respond(self, code=200, type='text/html'):
     self.send_response(code)
     self.send_header("Content-type", type)
     self.end_headers()
 
-  def restrictedRootAccess(self):
+  def restrictedAccess(self):
     if self.restrict_root_folder and self.path and self.path == '/':
       # no access to root path
+      self.respond(403)
+      self.wfile.write(b"Forbidden")
+      return True
+    if self.restrict_write and self.command not in ('GET', 'HEAD'):
+      # no write access
       self.respond(403)
       self.wfile.write(b"Forbidden")
       return True
@@ -31,7 +37,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
   def do_GET(self):
     logging.info('%s - GET: %s \n%s' % (self.client_address[0], self.path, self.headers))
-    if self.restrictedRootAccess():
+    if self.restrictedAccess():
       return
     SimpleHTTPRequestHandler.do_GET(self)
 
@@ -46,7 +52,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     request can be encoded as application/x-www-form-urlencoded or multipart/form-data
     """
     logging.info('%s - POST: %s \n%s' % (self.client_address[0], self.path, self.headers))
-    if self.restrictedRootAccess():
+    if self.restrictedAccess():
       return
 
     form = cgi.FieldStorage(
@@ -83,7 +89,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
         logging.error('Failed to create file in %s. The error is \n%s' % (
           file_path, str(exception)))
 
-    logging.info('Writing recieved content to file %s' % file_path)
+    logging.info('Writing received content to file %s' % file_path)
     try:
       with open(file_path, method) as myfile:
         myfile.write(content)
@@ -97,31 +103,32 @@ class HTTPServerV6(HTTPServer):
 
 
 def run(args):
-  
+
   # minimal web server.  serves files relative to the
   # current directory.
   logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                             filename=args['log-file'] ,level=logging.INFO)
-  
+
   port = args['port']
   host = args['host']
   os.chdir(args['cwd'])
-  
+
   Handler = ServerHandler
   Handler.document_path = args['root-dir']
   Handler.restrict_root_folder = (args['root-dir'] != args['cwd'])
-  
+  Handler.restrict_write = not args['allow-write']
+
   if valid_ipv6(host):
     server = HTTPServerV6
   else:
     server = HTTPServer
-  
+
   httpd = server((host, port), Handler)
   scheme = 'http'
   if 'cert-file' in args and 'key-file' in args and \
       os.path.exists(args['cert-file']) and os.path.exists(args['key-file']):
     scheme = 'https'
-    httpd.socket = ssl.wrap_socket (httpd.socket, 
+    httpd.socket = ssl.wrap_socket (httpd.socket,
                                      server_side=True,
                                      certfile=args['cert-file'],
                                      keyfile=args['key-file'])
