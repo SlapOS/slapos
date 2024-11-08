@@ -87,7 +87,7 @@ return = ssh-public-key resilient-ssh-url notification-url ip takeover-url takeo
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
-{% for extra_parameter_for_pseudo_replicating_instance in ["software-root", "buildout-shared-folder"] %}
+{% for extra_parameter_for_pseudo_replicating_instance in ["software-root", "buildout-shared-folder", "testing-short-embedded-instance-path"] %}
 {% if slapparameter_dict.get(extra_parameter_for_pseudo_replicating_instance) %}
 config-{{ extra_parameter_for_pseudo_replicating_instance }} = {{ slapparameter_dict.get(extra_parameter_for_pseudo_replicating_instance) }}
 {% endif %}
