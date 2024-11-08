@@ -748,6 +748,63 @@ copytruncate = true
 #   Nginx frontend   #
 ######################
 
+[frontend-caucase-ssl]
+ca =
+crl =
+
+{% import "caucase" as caucase with context %}
+{% set frontend_caucase_url_list = instance_parameter_dict.get('configuration.frontend-caucase-url-list', '').split() -%}
+
+{% set frontend_caucase_url_hash_list = [] -%}
+{% set frontend_caucase_updater_section_list = [] -%}
+{% for frontend_caucase_url in frontend_caucase_url_list -%}
+{%   set hash = hashlib.md5(frontend_caucase_url.encode()).hexdigest() -%}
+{%   do frontend_caucase_url_hash_list.append(hash) -%}
+{%   set data_dir = '${nginx-ssl-dir:ssl}/%s' % hash -%}
+{{   caucase.updater(
+       prefix='frontend-caucase-updater-%s' % hash,
+       buildout_bin_directory=buildout_bin_directory,
+       updater_path='${directory:service}/frontend-caucase-updater-%s' % hash,
+       url=frontend_caucase_url,
+       data_dir=data_dir,
+       ca_path='%s/ca.crt' % data_dir,
+       crl_path='%s/crl.pem' % data_dir,
+       on_renew='${frontend-caucase-updater-housekeeper:output}',
+       max_sleep=1,
+       openssl=openssl_bin,
+     )}}
+{%   do frontend_caucase_updater_section_list.append('frontend-caucase-updater-%s' % hash) -%}
+{% endfor -%}
+
+{% if frontend_caucase_url_hash_list %}
+{%   do frontend_caucase_updater_section_list.append('frontend-caucase-updater-housekeeper') -%}
+[frontend-caucase-ssl]
+ca = ${nginx-ssl-dir:ssl}/frontend_ca.crt
+crl = ${nginx-ssl-dir:ssl}/frontend_crl.pem
+
+[frontend-caucase-updater-housekeeper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/frontend-caucase-updater-housekeeper
+mode = 700
+inline =
+  #!/bin/sh -e
+  # assemble all frontends CA and CRL in one file
+  CA=${frontend-caucase-ssl:ca}
+  :> $CA.tmp
+  CRL=${frontend-caucase-ssl:crl}
+  :> $CRL.tmp
+{% for hash in frontend_caucase_url_hash_list %}
+{%   set data_dir = '${nginx-ssl-dir:ssl}/%s' % hash %}
+  echo "# {{ data_dir }}/ca.crt" >> $CA.tmp
+  cat "{{ data_dir }}/ca.crt" >> $CA.tmp
+  echo "# {{ data_dir }}/crl.pem" >> $CRL.tmp
+  cat "{{ data_dir }}/crl.pem" >> $CRL.tmp
+{% endfor %}
+  mv $CA.tmp $CA
+  mv $CRL.tmp $CRL
+  kill -HUP $(cat ${directory:run}/nginx.pid)
+{% endif %}
+
 # srv/nginx/ prefix  +  etc/ log/ ...
 [nginx-dir]
 recipe  = slapos.cookbook:mkdirectory
@@ -787,6 +844,9 @@ ssl     = ${nginx-ssl-dir:ssl}
 cert_file   = ${nginx-generate-certificate:cert_file}
 key_file    = ${nginx-generate-certificate:key_file}
 
+client_ca_file = ${frontend-caucase-ssl:ca}
+client_crl_file = ${frontend-caucase-ssl:crl}
+
 
 [nginx-symlinks]
 # (nginx wants <prefix>/logs to be there from start - else it issues alarm to the log)
@@ -801,6 +861,9 @@ depend  =
     ${nginx-symlinks:recipe}
     ${promise-nginx:recipe}
     ${logrotate-entry-nginx:recipe}
+{% for section in frontend_caucase_updater_section_list %}
+    {{ '${' ~  section ~ ':recipe}' }}
+{% endfor %}
 
 
 [promise-nginx]
