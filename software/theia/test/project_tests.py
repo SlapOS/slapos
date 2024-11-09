@@ -138,7 +138,7 @@ class ERP5Mixin(object):
       instance_type, 'srv', 'runner', 'instance', partition, *paths)
 
 
-class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilienceWithShortPaths):
+class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
