@@ -135,7 +135,7 @@ class ERP5Mixin(object):
   def _getERP5PartitionPath(self, instance_type, servicename, *paths):
     partition = self._getERP5Partition(servicename)
     return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+      instance_type, 'r', 'i', partition, *paths)
 
 
 class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilienceWithShortPaths):
