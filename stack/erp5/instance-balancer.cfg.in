@@ -219,6 +219,7 @@ ca-cert = ${haproxy-conf-ssl:ca-cert}
 crl = ${haproxy-conf-ssl:crl}
 {% endif %}
 stats-socket = ${directory:run}/ha.sock
+admin-socket = ${directory:run}/haa.sock
 path-routing-list = {{ dumps(slapparameter_dict['path-routing-list']) }}
 family-path-routing-dict = {{ dumps(slapparameter_dict['family-path-routing-dict']) }}
 pidfile = ${directory:run}/haproxy.pid
@@ -336,18 +337,60 @@ context =
 extensions = jinja2.ext.do
 
 [haproxy-reload]
-recipe = collective.recipe.template
+recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 mode = 700
-input =
-  inline:
-  #!/bin/sh
-  kill -USR2 $(cat "${haproxy-cfg-parameter-dict:pidfile}")
+inline =
+  #!${buildout:executable}
+  """Restarts haproxy and waits for all workers to have been restarted"""
+  import errno
+  import contextlib
+  import socket
+  import sys
+  import time
+  ADMIN_SOCKET = '''${haproxy-cfg-parameter-dict:admin-socket}'''
+
+  def send_command(command, connect_retries=10):
+    with contextlib.closing(socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)) as sock:
+      while True:
+        connect_retries = connect_retries - 1
+        try:
+          sock.connect(ADMIN_SOCKET)
+        except OSError as e:
+          if e.errno != errno.ECONNREFUSED:
+            raise
+          if not connect_retries:
+            raise
+          time.sleep(1)
+        else:
+          break
+      sock.sendall((command + "\nquit\n").encode())
+      response = b""
+      while True:
+        data = sock.recv(4096)
+        if not data:
+          break
+        response += data
+    return response.decode()
+
+  send_command("reload")
+
+  for _ in range(360):
+    time.sleep(1)
+    proc = send_command("show proc")
+    if "old workers" not in proc:
+      sys.exit(0)
+  print(proc)
+  sys.exit(1)
+
 
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services-on-watch}/haproxy
-command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:output}"
+command-line =
+  "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
+  -S ${haproxy-cfg-parameter-dict:admin-socket},level,operator
+  -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
 
 [{{ section('haproxy-socat-stats')}}]
