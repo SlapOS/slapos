@@ -139,19 +139,21 @@ class TestFileServer(SlapOSInstanceTestCase):
     self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
   def test_upload_file(self):
-    resp = requests.put(
-      urllib.parse.urljoin(self.connection_parameters['upload-url'], 'hello.txt'),
-      data=io.BytesIO(b'hello'),
-      verify=self.ca_cert,
-    )
-    self.assertEqual(resp.status_code, requests.codes.created)
+    for path in 'hello.txt', 'pub/hello.txt', 'create/intermediate/paths':
+      with self.subTest(path):
+        resp = requests.put(
+          urllib.parse.urljoin(self.connection_parameters['upload-url'], path),
+          data=io.BytesIO(b'hello'),
+          verify=self.ca_cert,
+        )
+        self.assertEqual(resp.status_code, requests.codes.created)
 
-    resp = requests.get(
-      urllib.parse.urljoin(self.connection_parameters['upload-url'], 'hello.txt'),
-      verify=self.ca_cert,
-    )
-    self.assertEqual(resp.text, 'hello')
-    self.assertEqual(resp.status_code, requests.codes.ok)
+        resp = requests.get(
+          urllib.parse.urljoin(self.connection_parameters['upload-url'], path),
+          verify=self.ca_cert,
+        )
+        self.assertEqual(resp.text, 'hello')
+        self.assertEqual(resp.status_code, requests.codes.ok)
 
   def test_renew_certificate(self):
     def _getpeercert():
