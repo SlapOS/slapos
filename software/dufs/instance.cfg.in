@@ -159,7 +159,7 @@ command-line =
     --render-try-index
     --allow-all
     --auth-method basic
-    --auth ${admin-password:user}:${admin-password:passwd-sha512-crypt}@/:rw
+    --auth ${admin-password:user}:${admin-password:passwd-sha512-crypt}@/:rw,/pub:rw
     --auth @/pub
     --tls-cert ${dufs-certificate:cert-file}
     --tls-key ${dufs-certificate:key-file}
