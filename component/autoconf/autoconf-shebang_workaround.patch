@@ -1,0 +1,24 @@
+diff -ur autoconf-2.72.orig/lib/freeze.mk autoconf-2.72/lib/freeze.mk
+--- autoconf-2.72.orig/lib/freeze.mk	2023-03-12 16:29:55.000000000 +0100
++++ autoconf-2.72/lib/freeze.mk	2024-11-13 11:10:31.491703037 +0100
+@@ -31,7 +31,7 @@
+ # apply to us.
+ MY_AUTOM4TE =									\
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_build_prefix)bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         perl $(top_build_prefix)bin/autom4te	\
+ 		-B '$(top_build_prefix)'lib -B '$(top_srcdir)'/lib        # keep ' '
+ 
+ # When processing the file with diversion disabled, there must be no
+diff -ur autoconf-2.72.orig/Makefile.in autoconf-2.72/Makefile.in
+--- autoconf-2.72.orig/Makefile.in	2023-12-22 19:32:21.000000000 +0100
++++ autoconf-2.72/Makefile.in	2024-11-13 11:10:46.559530554 +0100
+@@ -577,7 +577,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_build_prefix)bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         perl $(top_build_prefix)bin/autom4te	\
+ 		-B '$(top_build_prefix)'lib -B '$(top_srcdir)'/lib        # keep ' '
+ 
+ 
