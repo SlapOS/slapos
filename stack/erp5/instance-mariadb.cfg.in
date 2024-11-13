@@ -349,6 +349,64 @@ eggs =
   PyMySQL
 file = ${mariadb-replication-test:output}
 output = ${directory:plugins}/mariadb_replication.py
+
+[{{ section('mariadb-replica-change-primary') }}]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+logfile = ${directory:log}/${:_buildout_section_name_}.log
+inline =
+  #! {{ bash }}
+  set -eu
+
+  echo="{{ parameter_dict['coreutils-location'] }}/bin/echo"
+  date="{{ parameter_dict['coreutils-location'] }}/bin/date"
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  logfile="${:logfile}"
+
+  $date >> $logfile
+  $mysql -e "
+    STOP SLAVE;
+    CHANGE MASTER TO
+    MASTER_HOST='{{ primary.hostname }}',
+    MASTER_USER='{{ primary.username }}',
+    MASTER_PASSWORD='{{ primary.password }}',
+    MASTER_PORT={{ primary.port }},
+    MASTER_USE_GTID="slave_pos";
+    START SLAVE;
+  " >> $logfile
+  $echo "\n" >> logfile
+
+  $echo "See $logfile"
+
+[{{ section('mariadb-primary-become-replica') }}]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+logfile = ${directory:log}/${:_buildout_section_name_}.log
+inline =
+  #! {{ bash }}
+  set -eu
+
+  echo="{{ parameter_dict['coreutils-location'] }}/bin/echo"
+  date="{{ parameter_dict['coreutils-location'] }}/bin/date"
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  logfile="${:logfile}"
+
+  $date >> $logfile
+  $mysql -e "
+    STOP ALL SLAVES;
+    RESET MASTER;
+    RESET SLAVE ALL;
+    CHANGE MASTER TO
+    MASTER_HOST='{{ primary.hostname }}',
+    MASTER_USER='{{ primary.username }}',
+    MASTER_PASSWORD='{{ primary.password }}',
+    MASTER_PORT={{ primary.port }},
+    MASTER_USE_GTID="slave_pos";
+    START SLAVE;
+  " >> $logfile
+  $echo "\n" >> logfile
+
+  $echo "See $logfile"
 {%- endif %}
 
 [{{ section('mariadb-replica-become-primary') }}]
