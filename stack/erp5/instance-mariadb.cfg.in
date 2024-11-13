@@ -351,6 +351,31 @@ file = ${mariadb-replication-test:output}
 output = ${directory:plugins}/mariadb_replication.py
 {%- endif %}
 
+[{{ section('mariadb-replica-become-primary') }}]
+# See https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+logfile = ${directory:log}/${:_buildout_section_name_}.log
+inline =
+  #! {{ bash }}
+  set -eu
+
+  echo="{{ parameter_dict['coreutils-location'] }}/bin/echo"
+  date="{{ parameter_dict['coreutils-location'] }}/bin/date"
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  logfile="${:logfile}"
+
+  $date >> $logfile
+  $mysql -e "
+    STOP ALL SLAVES;
+    RESET SLAVE ALL;
+    SHOW MASTER STATUS;
+    SELECT @@global.gtid_binlog_pos;
+  " >> $logfile
+  $echo "\n" >> logfile
+
+  $echo "See $logfile"
+
 
 [{{ section('mariadb-backup-static-server-promise') }}]
 <= monitor-promise-base
