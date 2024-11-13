@@ -398,8 +398,7 @@ eggs =
 file = ${mariadb-replication-sense:output}
 output = ${directory:plugins}/mariadb_replication.py
 
-[{{ section('mariadb-replica-become-primary') }}]
-# See https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary
+[mariadb-replica-change-base]
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 logfile = ${directory:log}/${:_buildout_section_name_}.log
@@ -413,15 +412,49 @@ inline =
   {
     date
     $mysql -e "
-      STOP ALL SLAVES;
-      RESET SLAVE ALL;
-      SHOW MASTER STATUS;
-      SELECT @@global.gtid_binlog_pos;
+      {{ sql | indent(4) }}
     "
     echo
   } >> "${:logfile}"
   echo "See ${:logfile}"
 {%- endraw %}
+
+[{{ section('mariadb-replica-become-primary') }}]
+# See https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  RESET SLAVE ALL;
+  SHOW MASTER STATUS;
+  SELECT @@global.gtid_binlog_pos;
+
+{% if replication -%}
+[{{ section('mariadb-replica-change-primary') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP SLAVE;
+  CHANGE MASTER TO
+  MASTER_HOST='{{ primary.hostname }}',
+  MASTER_USER='{{ primary.username }}',
+  MASTER_PASSWORD='{{ primary.password }}',
+  MASTER_PORT={{ primary.port }},
+  MASTER_USE_GTID="slave_pos";
+  START SLAVE;
+
+[{{ section('mariadb-primary-become-replica') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  RESET MASTER;
+  RESET SLAVE ALL;
+  CHANGE MASTER TO
+  MASTER_HOST='{{ primary.hostname }}',
+  MASTER_USER='{{ primary.username }}',
+  MASTER_PASSWORD='{{ primary.password }}',
+  MASTER_PORT={{ primary.port }},
+  MASTER_USE_GTID="slave_pos";
+  START SLAVE;
+{%- endif %}
 
 [{{ section('mariadb-backup-static-server-promise') }}]
 <= monitor-promise-base
