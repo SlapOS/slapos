@@ -320,14 +320,16 @@ foreground-script =
   echo "Configuring server as replica"
   "$mysql" -e "$SQL_SET_GTID"
   "$mysql" -e "
-    CHANGE MASTER TO
-    MASTER_HOST='{{ upstream.hostname }}',
-    MASTER_USER='{{ upstream.username }}',
-    MASTER_PASSWORD='{{ upstream.password }}',
-    MASTER_PORT={{ upstream.port }},
-    MASTER_USE_GTID="slave_pos";
+  ${:sql-change-master-command}
   "
   "$mysql" -e "START SLAVE;"
+sql-change-master-command =
+  CHANGE MASTER TO
+  MASTER_HOST='{{ upstream.hostname }}',
+  MASTER_PORT={{ upstream.port }},
+  MASTER_USER='{{ upstream.username }}',
+  MASTER_PASSWORD='{{ upstream.password }}',
+  MASTER_USE_GTID="slave_pos";
 {%- endif %}
 
 [mariadb-replication-sense]
@@ -397,7 +399,7 @@ eggs =
 file = ${mariadb-replication-sense:output}
 output = ${directory:plugins}/mariadb_replication.py
 
-[{{ section('mariadb-replica-become-primary') }}]
+[mariadb-replica-change-base]
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 logfile = ${directory:log}/${:_buildout_section_name_}.log
@@ -411,15 +413,38 @@ inline =
   {
     date
     $mysql -e "
-      STOP ALL SLAVES;
-      RESET SLAVE ALL;
-      SHOW MASTER STATUS;
-      SELECT @@global.gtid_binlog_pos;
+      {{ sql | indent(4) }}
     "
     echo
   } >> "${:logfile}"
   echo "See ${:logfile}"
 {%- endraw %}
+
+[{{ section('mariadb-replica-become-primary') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  RESET SLAVE ALL;
+  SHOW MASTER STATUS;
+  SELECT @@global.gtid_binlog_pos;
+
+{% if replication -%}
+[{{ section('mariadb-replica-change-primary') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP SLAVE;
+  ${mariadb-setup-replication:sql-change-master-command}
+  START SLAVE;
+
+[{{ section('mariadb-primary-become-replica') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  RESET MASTER;
+  RESET SLAVE ALL;
+  ${mariadb-setup-replication:sql-change-master-command}
+  START SLAVE;
+{%- endif %}
 
 [{{ section('mariadb-backup-static-server-promise') }}]
 <= monitor-promise-base
