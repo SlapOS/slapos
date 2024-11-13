@@ -348,7 +348,7 @@ inline =
   import socket
   import sys
   import time
-  ADMIN_SOCKET = '''${haproxy-cfg-parameter-dict:admin-socket}''''
+  ADMIN_SOCKET = '''${haproxy-cfg-parameter-dict:admin-socket}'''
 
   def send_command(command, connect_retries=10):
     with contextlib.closing(socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)) as sock:
