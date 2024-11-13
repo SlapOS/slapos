@@ -395,6 +395,31 @@ eggs =
 file = ${mariadb-replication-sense:output}
 output = ${directory:plugins}/mariadb_replication.py
 
+[{{ section('mariadb-replica-become-primary') }}]
+# See https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+logfile = ${directory:log}/${:_buildout_section_name_}.log
+context =
+  key sql :sql-commands
+{% raw -%}
+inline =
+  #! /bin/sh
+  set -eu
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  {
+    date
+    $mysql -e "
+      STOP ALL SLAVES;
+      RESET SLAVE ALL;
+      SHOW MASTER STATUS;
+      SELECT @@global.gtid_binlog_pos;
+    "
+    echo
+  } >> "${:logfile}"
+  echo "See ${:logfile}"
+{%- endraw %}
+
 [{{ section('mariadb-backup-static-server-promise') }}]
 <= monitor-promise-base
 promise = check_socket_listening
