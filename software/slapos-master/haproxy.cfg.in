@@ -32,7 +32,7 @@ defaults
   # to render a page
   option httpclose
 
-{% for name, (port, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
+{% for name, (port, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
 listen {{ name }}
   bind {{ parameter_dict['ip'] }}:{{ port }}
   http-request set-header X-Balancer-Current-Cookie SERVERID
