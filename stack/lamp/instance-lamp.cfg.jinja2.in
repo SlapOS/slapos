@@ -20,7 +20,7 @@ partition-id = ${slap-connection:partition-id}
 [request-apache]
 <= request-common
 software-type = apache
-name = apache-php
+name = {{ instance_title }}_apache-php
 sla-computer_guid = {{ dumps(slapparameter_dict.get('apache-computer-guid', '')) }}
 {% for key, value in slapparameter_dict.items() -%}
 {%  if key.startswith('instance.') -%}
@@ -42,7 +42,7 @@ return =
 [request-mariadb]
 <= request-common
 software-type = mariadb
-name = Mariadb
+name = {{ instance_title }}_Mariadb
 sla-computer_guid = {{ dumps(slapparameter_dict.get('mariadb-computer-guid', '')) }}
 config-database-list = {{ dumps([{'name': db_name, 'user': db_user, 'password': db_password }]) }}
 config-test-database-amount = {{ dumps(0) }}
