@@ -215,9 +215,9 @@ init =
                 {
                   "query": """
                     select 'message' as cmf_activity_queue, count(*) as failed_message_count
-                      from message where processing_node between -2 and -10
+                      from message where processing_node between -10 and -2
                     union all select 'message_queue' as cmf_activity_queue, count(*) as failed_message_count
-                      from message_queue where processing_node between -2 and -10
+                      from message_queue where processing_node between -10 and -2
                   """,
                   "field_columns_include": ["failed_message_count"],
                   "tag_columns_include": ["cmf_activity_queue"],
