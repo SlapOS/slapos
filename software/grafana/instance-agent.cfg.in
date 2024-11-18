@@ -263,7 +263,8 @@ init =
     urls = application.get("urls", [])
     if urls:
       inputs["http_response"].append({
-        "interval": "5m",
+        "interval": "2m",
+        "response_timeout": "1m",
         "urls": urls,
         "tags": {"app": application["name"]},
       })
