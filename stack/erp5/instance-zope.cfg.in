@@ -87,7 +87,7 @@ environment +=
   JUPYTER_PATH=${directory:jupyter-dir}
   JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
   JUPYTER_RUNTIME_DIR=${directory:jupyter-runtime-dir}
-{% if slapparameter_dict.get('python-hash-seed') %}
+{% if slapparameter_dict.get('python-hash-seed') != '' %}
   PYTHONHASHSEED={{ slapparameter_dict['python-hash-seed'] }}
 {% endif %}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
@@ -476,7 +476,7 @@ wrapper-path = ${buildout:bin-directory}/runUnitTest
 recipe = slapos.recipe.template
 inline =
   #!/bin/sh
-  {% if slapparameter_dict.get('python-hash-seed') %}
+  {% if slapparameter_dict.get('python-hash-seed') != '' %}
   PYTHONHASHSEED={{ slapparameter_dict['python-hash-seed'] }}
   {% endif %}
   if [ -z "$PYTHONHASHSEED" ]; then
