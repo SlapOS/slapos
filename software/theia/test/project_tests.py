@@ -24,7 +24,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import unicode_literals
 
 import gzip
 import json
@@ -32,13 +31,12 @@ import os
 import re
 import subprocess
 import time
-import unittest
 import shutil
 import requests
 import tempfile
 
 from datetime import datetime, timedelta
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from mimetypes import guess_type
 from json.decoder import JSONDecodeError
 
@@ -65,6 +63,21 @@ def setUpModule():
     [theia_software_release_url, erp5_software_release_url],
     debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
   )
+
+
+class TestTheiaResilienceWithShortPaths(test_resiliency.TestTheiaResilience):
+  """TestTheiaResilience, but with shorter paths for embedded slapos, to
+  overcome OS limit with the length of unix sockets or #! "shebang" lines.
+  """
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return dict(
+      super().getInstanceParameterDict(),
+      **{'testing-short-embedded-instance-path': 'true'})
+
+  @classmethod
+  def _getSlapos(cls, instance_type='export'):
+    return cls.getPartitionPath(instance_type, 'r', 'bin', 'slapos')
 
 
 class ERP5Mixin(object):
@@ -242,7 +255,8 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
     self.assertIn(self._erp5_new_title, out, 'Mariadb catalog is not properly restored')
 
-class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
+
+class TestTheiaResiliencePeertube(TestTheiaResilienceWithShortPaths):
   test_instance_max_retries = 12
   backup_max_tries = 480
   backup_wait_interval = 60
@@ -446,10 +460,11 @@ class TestTheiaResiliencePeertube(test_resiliency.TestTheiaResilience):
   def _getPeertubePartitionPath(self, instance_type, servicename, *paths):
     partition = self._getPeertubePartition(servicename)
     return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+      instance_type, 'r', 'i', partition, *paths)
 
-class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
-  test_instance_max_retries = 12
+
+class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
+  test_instance_max_retries = 50  # puma takes time to be ready
   backup_max_tries = 480
   backup_wait_interval = 60
   _connection_parameters_regex = re.compile(r"{.*}", re.DOTALL)
@@ -467,7 +482,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
       stderr=subprocess.STDOUT,
       text=True,
     )
-    print(out)
+    self.logger.info("_getGitlabConnectionParameters output: %s", out)
     return json.loads(self._connection_parameters_regex.search(out).group(0).replace("'", '"'))
 
   def test_twice(self):
@@ -499,7 +514,7 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Create a new project
     print("Gitlab create a project")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     parameter_dict = {'name': 'sample-test', 'namespace': 'open'}
     # Token can be set manually
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
@@ -508,14 +523,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
-    response = requests.get(backend_url + path, headers=headers, verify=False)
+    path = '/api/v4/projects'
+    response = requests.get(backend_url + path, params={'search': 'sample-test'}, headers=headers, verify=False)
     try:
       projects = response.json()
     except JSONDecodeError:
       self.fail("No json file returned! Maybe your Gitlab URL is incorrect.")
 
-    # Only one project exist
+    # Only one project matches the search
     self.assertEqual(len(projects), 1)
     # The project name is sample-test, which we created above.
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
@@ -543,12 +558,14 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     output = subprocess.check_output(('git', 'push', 'origin'), cwd=repo_path, universal_newlines=True)
 
     # Do a fake periodically update
-    # Compute backup date in the near future
-    soon = (datetime.now() + timedelta(minutes=4))
+    # Compute backup date in the future
+    # During slapos node instance, the static assets are recompiled, which takes a lot
+    # of time, so we give it at least 20 minutes.
+    soon = (datetime.now() + timedelta(minutes=20))
     frequency = "%d * * * *" % soon.minute
     params = 'backup_frequency=%s' % frequency
 
-    # Update Peertube parameters
+    # Update Gitlab parameters
     print('Requesting Gitlab with parameters %s' % params)
     self.checkSlapos('request', 'test_instance', self._test_software_url, '--parameters', params)
 
@@ -557,8 +574,8 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
     self.callSlapos('node', 'restart', 'all')
 
     # Wait until after the programmed backup date, and a bit more
-    t = (soon - datetime.now()).total_seconds()
-    time.sleep(t + 240)
+    t = ((soon - datetime.now()) + timedelta(minutes=10)).total_seconds()
+    time.sleep(t)
     self.callSlapos('node', 'status')
 
     os.chdir(self.temp_clone_dir)
@@ -583,9 +600,9 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
 
     # Check the project is exist
     print("Gitlab check project is exist")
-    path = '/api/v3/projects'
+    path = '/api/v4/projects'
     headers = {"PRIVATE-TOKEN" : 'SLurtnxPscPsU-SDm4oN'}
-    response = requests.get(backend_url + path, headers=headers, verify=False)
+    response = requests.get(backend_url + path, params={'search': 'sample-test'}, headers=headers, verify=False)
     try:
       projects = response.json()
     except JSONDecodeError:
@@ -623,4 +640,4 @@ class TestTheiaResilienceGitlab(test_resiliency.TestTheiaResilience):
   def _getGitlabPartitionPath(self, instance_type, servicename, *paths):
     partition = self._getGitlabPartition(servicename)
     return self.getPartitionPath(
-      instance_type, 'srv', 'runner', 'instance', partition, *paths)
+      instance_type, 'r', 'i', partition, *paths)
