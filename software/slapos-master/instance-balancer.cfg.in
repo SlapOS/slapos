@@ -207,7 +207,7 @@ input = inline:
 promise = check_socket_listening
 name = apache.py
 config-host = {{ ipv4 }}
-config-port = {{ apache_dict.values()[0][0] }}
+config-port = {{ list(apache_dict.values())[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
