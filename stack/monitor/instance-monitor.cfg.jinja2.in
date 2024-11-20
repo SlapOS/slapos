@@ -333,12 +333,10 @@ config-monitor-interface-url = ${slap-configuration:configuration.monitor-interf
 
 [monitor-interface-configuration]
 recipe = slapos.recipe.build
-input = ${monitor-parameters-propagation:config-monitor-interface-url}
+url = ${monitor-parameters-propagation:config-monitor-interface-url}
 init =
-  import urlparse
-  input = options['input']
-  options['url'] = input
-  options['cors-domain'] = urlparse.urlparse(input).hostname
+  from six.moves.urllib.parse import urlparse
+  options['cors-domain'] = urlparse(options['url']).hostname
 
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
