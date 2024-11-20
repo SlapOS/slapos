@@ -214,13 +214,13 @@ init =
                 },
                 {
                   "query": """
-                    select 'message' as cmf_activity_queue, count(*) as failed_message_count
-                      from message where processing_node between -10 and -2
-                    union all select 'message_queue' as cmf_activity_queue, count(*) as failed_message_count
-                      from message_queue where processing_node between -10 and -2
+                    select 'message' as cmf_activity_queue, method_id, count(*) as failed_message_count
+                      from message where processing_node between -10 and -2 group by method_id
+                    union all select 'message_queue' as cmf_activity_queue, method_id, count(*) as failed_message_count
+                      from message_queue where processing_node between -10 and -2 group by method_id
                   """,
                   "field_columns_include": ["failed_message_count"],
-                  "tag_columns_include": ["cmf_activity_queue"],
+                  "tag_columns_include": ["cmf_activity_queue", "method_id"],
                 },
                 # TODO: these queries are slow and maybe not correct
                 # {
