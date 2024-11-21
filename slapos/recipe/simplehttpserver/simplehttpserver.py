@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
-from six.moves.BaseHTTPServer import HTTPServer
+from six.moves.socketserver import TCPServer
 import ssl
 import os
 import logging
@@ -93,8 +93,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     self.respond(200, type=self.headers['Content-Type'])
     self.wfile.write(b"Content written to %s" % str2bytes(filename))
 
-class HTTPServerV6(HTTPServer):
-  address_family = socket.AF_INET6
+
 
 
 def run(args):
@@ -104,8 +103,7 @@ def run(args):
   logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                             filename=args['log-file'] ,level=logging.INFO)
 
-  port = args['port']
-  host = args['host']
+  address = args['address']
   cwd = args['cwd']
 
   os.chdir(cwd)
@@ -114,12 +112,17 @@ def run(args):
   Handler.base_path = cwd
   Handler.restrict_write = not args['allow-write']
 
-  if valid_ipv6(host):
-    server = HTTPServerV6
-  else:
-    server = HTTPServer
+  try:
+    host, port = address
+    family, _, _, _, _ = socket.getaddrinfo(host, port)[0]
+  except ValueError:
+    family = socket.AF_UNIX
 
-  httpd = server((host, port), Handler)
+  class Server(TCPServer):
+    allow_reuse_address = 1 # for tests, HTTPServer in stdlib sets it too
+    address_family = family
+
+  httpd = Server(address, Handler)
   scheme = 'http'
   if 'cert-file' in args and 'key-file' in args and \
       os.path.exists(args['cert-file']) and os.path.exists(args['key-file']):
@@ -129,5 +132,5 @@ def run(args):
                                      certfile=args['cert-file'],
                                      keyfile=args['key-file'])
 
-  logging.info("Starting simple http server at %s://%s:%s" % (scheme, host, port))
+  # logging.info("Starting simple http server at %s://%s:%s" % (scheme, host, port))
   httpd.serve_forever()

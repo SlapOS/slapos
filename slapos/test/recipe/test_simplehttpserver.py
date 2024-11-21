@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import socket
 import subprocess
 import time
 
@@ -24,12 +25,14 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.wrapper = os.path.join(self.install_dir, 'server')
     self.process = None
 
-  def setUpRecipe(self, opt=()):
-    host, port = os.environ['SLAPOS_TEST_IPV4'], 9999
+  def setUpRecipe(self, opt=None):
+    opt = opt or {}
+    if not 'socketpath' in opt and not 'abstract' in opt:
+      opt['host'] = host = os.environ['SLAPOS_TEST_IPV4']
+      opt['port'] = port = 9999
+      self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
     options = {
         'base-path': self.base_path,
-        'host': host,
-        'port': port,
         'log-file': os.path.join(self.install_dir, 'simplehttpserver.log'),
         'wrapper': self.wrapper,
     }
@@ -39,7 +42,6 @@ class SimpleHTTPServerTest(unittest.TestCase):
         options=options,
         name='simplehttpserver',
     )
-    self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
 
   def startServer(self):
     self.assertEqual(self.recipe.install(), self.wrapper)
@@ -183,3 +185,37 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.assertEqual(resp.status_code, requests.codes.forbidden)
     with open(indexpath) as f:
         self.assertEqual(f.read(), indexcontent)
+
+  def startSocketServer(self):
+    self.assertEqual(self.recipe.install(), self.wrapper)
+    self.process = subprocess.Popen(
+        self.wrapper,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    address = self.recipe.options['address']
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+      for i in range(16):
+        try:
+          s.connect(address)
+          break
+        except socket.error as e:
+          time.sleep(i * .1)
+      else:
+        self.fail("Unable to connect to socketpath")
+    finally:
+      s.close()
+
+  def test_socketpath(self):
+    socketpath = os.path.join(self.install_dir, 'http.sock')
+    self.setUpRecipe({'socketpath': socketpath})
+    self.assertEqual(socketpath, self.recipe.options['address'])
+    self.startSocketServer()
+
+  def test_abstract(self):
+    abstract = os.path.join(self.install_dir, 'abstract.http')
+    self.setUpRecipe({'abstract': abstract})
+    self.assertEqual('\0' + abstract, self.recipe.options['address'])
+    self.startSocketServer()
+
