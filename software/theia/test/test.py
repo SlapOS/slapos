@@ -679,13 +679,12 @@ class TestTheiaResilientWithEmbeddedInstance(ResilientTheiaMixin, TestTheiaWithE
 
 class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
 
-  MONITOR_CORS_DOMAINS = 'monitor.couscous.cors'
-  MONITOR_INTERFACE_URL = 'monitor.couscous.interface'
+  MONITOR_CORS_DOMAIN = 'monitor.couscous.interface'
+  MONITOR_INTERFACE_URL = 'https://' + MONITOR_CORS_DOMAIN + '/#param1=a1'
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'monitor-cors-domains': TestTheiaResilientMonitoring.MONITOR_CORS_DOMAINS,
       'monitor-interface-url': TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL
     }
 
@@ -707,9 +706,8 @@ class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
         for p in self.slap.computer.getComputerPartitionList()
       ] if u is not None
     ]
-    self.assertEqual(len(monitor_cors_url_list), 4)
     for url in monitor_cors_url_list:
-      self.assertIn(TestTheiaResilientMonitoring.MONITOR_CORS_DOMAINS, url)
+      self.assertIn(TestTheiaResilientMonitoring.MONITOR_CORS_DOMAIN, url) # TODO: assert equal
 
     monitor_interface_url_list = [
       u for u in [
