@@ -41,29 +41,18 @@ def issubpathof(subpath, path):
 
 
 class Recipe(GenericBaseRecipe):
-  def __init__(self, buildout, name, options):
-    base_path = options['base-path']
-    root_path = options.get('root-path')
-    if root_path:
-      if not issubpathof(root_path, base_path):
-        raise UserError("root-path must be a subpath of base-path")
-    else:
-      root_path = base_path
-    self.server_parameters = {
-      'host': options['host'],
-      'port': int(options['port']),
-      'cwd': base_path,
-      'log-file': options['log-file'],
-      'cert-file': options.get('cert-file', ''),
-      'key-file': options.get('key-file', ''),
-      'root-path': root_path,
-      'allow-write': bool_option(options, 'allow-write', 'false')
-    }
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
-
   def install(self):
+    parameters = {
+      'host': self.options['host'],
+      'port': int(self.options['port']),
+      'cwd': self.options['base-path'],
+      'log-file': self.options['log-file'],
+      'cert-file': self.options.get('cert-file', ''),
+      'key-file': self.options.get('key-file', ''),
+      'allow-write': bool_option(self.options, 'allow-write', 'false')
+    }
     return self.createPythonScript(
         self.options['wrapper'].strip(),
         __name__ + '.simplehttpserver.run',
-        (self.server_parameters,)
+        (parameters,)
       )

@@ -15,8 +15,6 @@ from . import issubpathof
 
 class ServerHandler(SimpleHTTPRequestHandler):
   base_path = None # set by run
-  root_path = None # set by run
-  restrict_path = False # set by run
   restrict_write = True # set by run
 
   def respond(self, code=200, type='text/html'):
@@ -24,15 +22,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     self.send_header("Content-type", type)
     self.end_headers()
 
-  def restrictedAccess(self):
-    if self.restrict_path:
-      path = os.path.join(self.base_path, os.path.relpath(self.path, '/'))
-      if not issubpathof(path, self.root_path):
-        logging.info('TOTO %s %s', path, self.root_path)
-        # no access outside root path
-        self.respond(403)
-        self.wfile.write(b"Forbidden")
-        return True
+  def restrictedWriteAccess(self):
     if self.restrict_write and self.command not in ('GET', 'HEAD'):
       # no write access
       self.respond(403)
@@ -42,8 +32,6 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
   def do_GET(self):
     logging.info('%s - GET: %s \n%s' % (self.client_address[0], self.path, self.headers))
-    if self.restrictedAccess():
-      return
     SimpleHTTPRequestHandler.do_GET(self)
 
   def do_POST(self):
@@ -57,7 +45,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     request can be encoded as application/x-www-form-urlencoded or multipart/form-data
     """
     logging.info('%s - POST: %s \n%s' % (self.client_address[0], self.path, self.headers))
-    if self.restrictedAccess():
+    if self.restrictedWriteAccess():
       return
 
     form = cgi.FieldStorage(
@@ -80,9 +68,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
     self.writeFile(file_path, file_content, file_open_mode)
 
   def writeFile(self, filename, content, method='ab'):
-    file_path = os.path.abspath(os.path.join(self.root_path, filename))
+    file_path = os.path.abspath(os.path.join(self.base_path, filename))
     # Check writing there is allowed
-    if not issubpathof(file_path, self.root_path):
+    if not issubpathof(file_path, self.base_path):
       self.respond(403, 'text/plain')
       self.wfile.write(b"Forbidden")
       return
@@ -119,14 +107,11 @@ def run(args):
   port = args['port']
   host = args['host']
   cwd = args['cwd']
-  root_path = args['root-path']
 
   os.chdir(cwd)
 
   Handler = ServerHandler
   Handler.base_path = cwd
-  Handler.root_path = root_path
-  Handler.restrict_path = (root_path != cwd)
   Handler.restrict_write = not args['allow-write']
 
   if valid_ipv6(host):
