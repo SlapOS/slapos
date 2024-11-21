@@ -164,6 +164,7 @@ promise = check_socket_listening
 name = expose-csr-ip-port-listening.py
 config-host = ${expose-csr-configuration:ip}
 config-port = ${expose-csr-configuration:port}
+config-report-anomaly = True
 
 [expose-csr]
 recipe = slapos.cookbook:wrapper
@@ -227,6 +228,7 @@ name = kedifa-http-reply.py
 config-http-code = 400
 config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
 config-ca-cert-file = ${kedifa-config:ca-certificate}
+config-report-anomaly = True
 
 [logrotate-entry-kedifa]
 <= logrotate-entry-base
@@ -346,6 +348,7 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${logrotate-setup-validate:state-file}
 config-state = empty
+config-report-anomaly = True
 
 [kedifa-auth-ready]
 recipe = plone.recipe.command
@@ -359,5 +362,8 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${kedifa-auth-ready:output}
 config-state = empty
+config-report-anomaly = True
+config-failure-amount = 2
+config-result-count = 2
 
 {%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}
