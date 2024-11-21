@@ -41,10 +41,19 @@ def issubpathof(subpath, path):
 
 
 class Recipe(GenericBaseRecipe):
+  def __init__(self, buildout, name, options):
+    host, port, socketpath, abstract = (
+      options.get(k) for k in ('host', 'port', 'socketpath', 'abstract'))
+    oneof = host, socketpath, abstract
+    if sum(bool(v) for v in oneof) != 1 or bool(host) != bool(port):
+      raise UserError("Specify one of (host, port) | socketpath | abstract")
+    address = (host, int(port)) if host else socketpath or '\0' + abstract
+    options['address'] = address
+    return GenericBaseRecipe.__init__(self, buildout, name, options)
+
   def install(self):
     parameters = {
-      'host': self.options['host'],
-      'port': int(self.options['port']),
+      'address': self.options['address'],
       'cwd': self.options['base-path'],
       'log-file': self.options['log-file'],
       'cert-file': self.options.get('cert-file', ''),

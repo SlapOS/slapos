@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import socket
 import subprocess
 import time
 
@@ -24,12 +25,16 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.wrapper = os.path.join(self.install_dir, 'server')
     self.process = None
 
-  def setUpRecipe(self, opt=()):
-    host, port = os.environ['SLAPOS_TEST_IPV4'], 9999
+  def setUpRecipe(self, opt=None):
+    opt = opt or {}
+    if not 'socketpath' in opt and not 'abstract' in opt:
+      opt['host'] = host = os.environ['SLAPOS_TEST_IPV4']
+      opt['port'] = port = 9999
+      self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
+    else:
+      self.server_url = None
     options = {
         'base-path': self.base_path,
-        'host': host,
-        'port': port,
         'log-file': os.path.join(self.install_dir, 'simplehttpserver.log'),
         'wrapper': self.wrapper,
     }
@@ -39,7 +44,6 @@ class SimpleHTTPServerTest(unittest.TestCase):
         options=options,
         name='simplehttpserver',
     )
-    self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
 
   def startServer(self):
     self.assertEqual(self.recipe.install(), self.wrapper)
@@ -48,16 +52,39 @@ class SimpleHTTPServerTest(unittest.TestCase):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    for i in range(16):
-      try:
+    if self.server_url:
+      def check_connection():
         resp = requests.get(self.server_url)
-        break
-      except requests.exceptions.ConnectionError:
-        time.sleep(i * .1)
+        self.assertIn('Directory listing for /', resp.text)
+      ConnectionError = requests.exceptions.ConnectionError
+      cleanup = None
     else:
-      self.fail(
-          'server did not start.\nout: %s error: %s' % self.process.communicate())
-    self.assertIn('Directory listing for /', resp.text)
+      address = self.recipe.options['address']
+      s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      def check_connection():
+        s.connect(address)
+      ConnectionError = socket.error
+      cleanup = lambda: s.close()
+    try:
+      for i in range(16):
+        try:
+          check_connection()
+          break
+        except ConnectionError:
+          time.sleep(i * .1)
+      else:
+        # Kill process in case it did not crash
+        # otherwise .communicate() may hang forever.
+        self.process.terminate()
+        self.process.wait()
+        self.fail(
+          "Server did not start\n"
+          "out: %s\n"
+          "err: %s"
+          % self.process.communicate())
+    finally:
+      if cleanup:
+        cleanup()
     return self.server_url
 
   def tearDown(self):
@@ -177,3 +204,15 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.assertEqual(resp.status_code, requests.codes.forbidden)
     with open(indexpath) as f:
       self.assertEqual(f.read(), indexcontent)
+
+  def test_socketpath(self):
+    socketpath = os.path.join(self.install_dir, 'http.sock')
+    self.setUpRecipe({'socketpath': socketpath})
+    self.assertEqual(socketpath, self.recipe.options['address'])
+    self.startServer()
+
+  def test_abstract(self):
+    abstract = os.path.join(self.install_dir, 'abstract.http')
+    self.setUpRecipe({'abstract': abstract})
+    self.assertEqual('\0' + abstract, self.recipe.options['address'])
+    self.startServer()
