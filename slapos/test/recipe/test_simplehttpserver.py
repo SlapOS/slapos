@@ -1,3 +1,4 @@
+import errno
 import os
 import shutil
 import tempfile
@@ -87,6 +88,37 @@ class SimpleHTTPServerTest(unittest.TestCase):
         self.recipe.options['root-dir'],
         self.base_path
     )
+
+  def test_write_outside_root_dir_should_fail(self):
+    self.setUpRecipe({'allow-write': 'true'})
+    server_base_url = self.startServer()
+
+    # A file outside the server's root directory
+    hack_path = os.path.join(self.install_dir, 'forbidden', 'hack.txt')
+    hack_content = "You should not be able to write to hack.txt"
+
+    # post with multipart/form-data encoding
+    resp = requests.post(
+        server_base_url,
+        files={
+            'path': hack_path,
+            'content': hack_content,
+        },
+    )
+    # First check for actual access to forbidden files
+    try:
+      with open(hack_path) as f:
+        content = f.read()
+      if content == hack_content:
+        self.fail(content)
+      self.fail("%s should not have been created" % hack_path)
+    except IOError as e:
+      if e.errno != errno.ENOENT:
+        raise
+    self.assertFalse(os.path.exists(os.path.dirname(hack_path)))
+    # Now check for proper response
+    self.assertEqual(resp.status_code, requests.codes.forbidden)
+    self.assertEqual(resp.text, 'Forbidden')
 
   def test_write(self):
     self.setUpRecipe({'allow-write': 'true'})

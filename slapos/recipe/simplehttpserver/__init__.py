@@ -32,6 +32,13 @@ from six.moves import range
 from zc.buildout.buildout import bool_option
 
 
+def issubpathof(subpath, path):
+  subpath = os.path.abspath(subpath)
+  path = os.path.abspath(path)
+  relpath = os.path.relpath(subpath, start=path)
+  return not relpath.startswith(os.pardir)
+
+
 class Recipe(GenericBaseRecipe):
 
   def __init__(self, buildout, name, options):
