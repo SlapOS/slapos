@@ -14,10 +14,10 @@ from . import issubpathof
 
 
 class ServerHandler(SimpleHTTPRequestHandler):
-
-  document_path = ''
-  restrict_root_folder = True
-  restrict_write = True
+  base_path = None # set by run
+  root_path = None # set by run
+  restrict_path = False # set by run
+  restrict_write = True # set by run
 
   def respond(self, code=200, type='text/html'):
     self.send_response(code)
@@ -25,11 +25,14 @@ class ServerHandler(SimpleHTTPRequestHandler):
     self.end_headers()
 
   def restrictedAccess(self):
-    if self.restrict_root_folder and self.path and self.path == '/':
-      # no access to root path
-      self.respond(403)
-      self.wfile.write(b"Forbidden")
-      return True
+    if self.restrict_path:
+      path = os.path.join(self.base_path, os.path.relpath(self.path, '/'))
+      if not issubpathof(path, self.root_path):
+        logging.info('TOTO %s %s', path, self.root_path)
+        # no access outside root path
+        self.respond(403)
+        self.wfile.write(b"Forbidden")
+        return True
     if self.restrict_write and self.command not in ('GET', 'HEAD'):
       # no write access
       self.respond(403)
@@ -77,9 +80,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
     self.writeFile(file_path, file_content, file_open_mode)
 
   def writeFile(self, filename, content, method='ab'):
-    file_path = os.path.abspath(os.path.join(self.document_path, filename))
+    file_path = os.path.abspath(os.path.join(self.root_path, filename))
     # Check writing there is allowed
-    if not issubpathof(file_path, self.document_path):
+    if not issubpathof(file_path, self.root_path):
       self.respond(403, 'text/plain')
       self.wfile.write(b"Forbidden")
       return
@@ -115,11 +118,15 @@ def run(args):
 
   port = args['port']
   host = args['host']
-  os.chdir(args['cwd'])
+  cwd = args['cwd']
+  root_path = args['root-path']
+
+  os.chdir(cwd)
 
   Handler = ServerHandler
-  Handler.document_path = args['root-dir']
-  Handler.restrict_root_folder = (args['root-dir'] != args['cwd'])
+  Handler.base_path = cwd
+  Handler.root_path = root_path
+  Handler.restrict_path = (root_path != cwd)
   Handler.restrict_write = not args['allow-write']
 
   if valid_ipv6(host):

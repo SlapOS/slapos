@@ -48,13 +48,15 @@ class SimpleHTTPServerTest(unittest.TestCase):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    server_base_url = urlparse.urljoin(
-        self.server_url,
-        self.recipe.options['path'],
-    )
+    root_path = self.recipe.options.get('root-path')
+    if root_path:
+      root_relpath = os.path.relpath(root_path, self.base_path)
+      server_ok_url = urlparse.urljoin(self.server_url, root_relpath)
+    else:
+      server_ok_url = self.server_url
     for i in range(16):
       try:
-        resp = requests.get(server_base_url)
+        resp = requests.get(server_ok_url)
         break
       except requests.exceptions.ConnectionError:
         time.sleep(i * .1)
@@ -62,7 +64,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
       self.fail(
           'server did not start.\nout: %s error: %s' % self.process.communicate())
     self.assertIn('Directory listing for /', resp.text)
-    return server_base_url
+    return self.server_url
 
   def tearDown(self):
     if self.process:
@@ -71,35 +73,17 @@ class SimpleHTTPServerTest(unittest.TestCase):
       self.process.communicate() # close pipes
       self.process = None
 
-  def test_options_use_hash(self):
-    self.setUpRecipe({'use-hash-url': 'true'})
-    self.assertNotEqual(self.recipe.options['path'], '')
-    self.assertEqual(
-        self.recipe.options['root-dir'],
-        os.path.join(
-            self.base_path,
-            self.recipe.options['path'],
-        ))
-
-  def test_options_no_hash(self):
-    self.setUpRecipe()
-    self.assertEqual(self.recipe.options['path'], '')
-    self.assertEqual(
-        self.recipe.options['root-dir'],
-        self.base_path
+  def test_options_valid_root_path(self):
+    self.assertRaises(
+      simplehttpserver.UserError,
+      self.setUpRecipe,
+      {'root-path': '/'}
     )
 
-  def test_write_outside_root_dir_should_fail(self):
-    self.setUpRecipe({'allow-write': 'true'})
-    server_base_url = self.startServer()
-
-    # A file outside the server's root directory
-    hack_path = os.path.join(self.install_dir, 'forbidden', 'hack.txt')
-    hack_content = "You should not be able to write to hack.txt"
-
+  def write_should_fail(self, url, hack_path, hack_content):
     # post with multipart/form-data encoding
     resp = requests.post(
-        server_base_url,
+        url,
         files={
             'path': hack_path,
             'content': hack_content,
@@ -115,10 +99,53 @@ class SimpleHTTPServerTest(unittest.TestCase):
     except IOError as e:
       if e.errno != errno.ENOENT:
         raise
-    self.assertFalse(os.path.exists(os.path.dirname(hack_path)))
     # Now check for proper response
     self.assertEqual(resp.status_code, requests.codes.forbidden)
     self.assertEqual(resp.text, 'Forbidden')
+
+  def test_write_outside_base_path_should_fail(self):
+    self.setUpRecipe({'allow-write': 'true'})
+    server_base_url = self.startServer()
+
+    # A file outside the server's root directory
+    hack_path = os.path.join(self.install_dir, 'forbidden', 'hack.txt')
+    hack_content = "You should not be able to write to hack.txt"
+
+    self.write_should_fail(server_base_url, hack_path, hack_content)
+    self.assertFalse(os.path.exists(os.path.dirname(hack_path)))
+
+  def test_write_outside_root_path_should_fail(self):
+    root_path = os.path.join(self.base_path, 'forbidden', 'allowed')
+    os.makedirs(root_path)
+    self.setUpRecipe({'allow-write': 'true', 'root-path': root_path})
+    server_base_url = self.startServer()
+
+    # A file outside the server's root directory
+    hack_path = os.path.join(self.base_path, 'forbidden', 'hack.txt')
+    hack_content = "You should not be able to write to hack.txt"
+
+    self.write_should_fail(server_base_url, hack_path, hack_content)
+
+  def test_access_outside_root_path_should_fail(self):
+    root_path = os.path.join(self.base_path, 'forbidden', 'allowed')
+    os.makedirs(root_path)
+    self.setUpRecipe({'root-path': root_path})
+
+    server_base_url = self.startServer()
+    forbiddenurl = os.path.join(server_base_url, 'forbidden')
+
+    resp = requests.get(forbiddenurl)
+    self.assertEqual(resp.status_code, requests.codes.forbidden)
+    self.assertEqual(resp.text, 'Forbidden')
+
+    resp = requests.post(
+        forbiddenurl,
+        files={
+            'path': 'index.txt',
+            'content': 'Not forbidden after all',
+        },
+    )
+    self.assertEqual(resp.status_code, requests.codes.forbidden)
 
   def test_write(self):
     self.setUpRecipe({'allow-write': 'true'})
@@ -135,8 +162,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.assertEqual(resp.status_code, requests.codes.ok)
     self.assertEqual(resp.text, 'Content written to hello-form-data.txt')
     with open(
-        os.path.join(self.base_path, self.recipe.options['path'],
-                     'hello-form-data.txt')) as f:
+        os.path.join(self.base_path, 'hello-form-data.txt')) as f:
       self.assertEqual(f.read(), 'hello-form-data')
 
     self.assertIn('hello-form-data.txt', requests.get(server_base_url).text)
@@ -153,8 +179,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
     )
     self.assertEqual(resp.status_code, requests.codes.ok)
     with open(
-        os.path.join(self.base_path, self.recipe.options['path'],
-                     'hello-form-urlencoded.txt')) as f:
+        os.path.join(self.base_path, 'hello-form-urlencoded.txt')) as f:
       self.assertEqual(f.read(), 'hello-form-urlencoded')
 
     self.assertIn('hello-form-urlencoded.txt', requests.get(server_base_url).text)
