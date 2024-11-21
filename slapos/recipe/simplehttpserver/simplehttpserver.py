@@ -10,6 +10,8 @@ import cgi, errno
 
 from slapos.util import str2bytes
 
+from . import issubpathof
+
 
 class ServerHandler(SimpleHTTPRequestHandler):
 
@@ -73,30 +75,32 @@ class ServerHandler(SimpleHTTPRequestHandler):
     file_open_mode = 'wb' if ('clear' in form and form['clear'].value in ('1', b'1')) else 'ab'
 
     self.writeFile(file_path, file_content, file_open_mode)
-    self.respond(200, type=self.headers['Content-Type'])
-    self.wfile.write(b"Content written to %s" % str2bytes(file_path))
 
   def writeFile(self, filename, content, method='ab'):
     file_path = os.path.abspath(os.path.join(self.document_path, filename))
-    if not file_path.startswith(self.document_path):
+    # Check writing there is allowed
+    if not issubpathof(file_path, self.document_path):
       self.respond(403, 'text/plain')
       self.wfile.write(b"Forbidden")
-
+      return
+    # Create missing directories if needed
     try:
       os.makedirs(os.path.dirname(file_path))
     except OSError as exception:
       if exception.errno != errno.EEXIST:
-        logging.error('Failed to create file in %s. The error is \n%s' % (
-          file_path, str(exception)))
-
-    logging.info('Writing received content to file %s' % file_path)
+        logging.error('Failed to create file in %s. The error is \n%s',
+          file_path, str(exception))
+    # Write content to file
+    logging.info('Writing received content to file %s', file_path)
     try:
       with open(file_path, method) as myfile:
         myfile.write(content)
         logging.info('Done.')
     except IOError as e:
-      logging.error('Something happened while processing \'writeFile\'. The message is %s' %
+      logging.error('Something happened while processing \'writeFile\'. The message is %s',
                     str(e))
+    self.respond(200, type=self.headers['Content-Type'])
+    self.wfile.write(b"Content written to %s" % str2bytes(filename))
 
 class HTTPServerV6(HTTPServer):
   address_family = socket.AF_INET6
