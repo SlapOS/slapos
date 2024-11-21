@@ -18,8 +18,8 @@ parts +=
 
 
 {#- Prepare monitoring information to transmit to and request from the main theia, the clones and the PBS #}
-{%- set monitor_cors_domains = slapparameter_dict.pop('monitor-cors-domains', 'monitor.app.officejs.com') %}
-{%- set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'monitor.app.officejs.com') %}
+{%- set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'monitor.app.officejs.com/#page=ojsm_landing') %}
+{%- set monitor_cors_domains = urllib_parse.urlparse(monitor_interface_url).hostname %}
 {%- set monitor_username = slapparameter_dict.get('monitor-username', '${monitor-instance-parameter:username}') %}
 {%- set monitor_password = slapparameter_dict.get('monitor-password', '${monitor-htpasswd:passwd}') %}
 {%- set monitor_return = ['monitor-base-url'] %}
