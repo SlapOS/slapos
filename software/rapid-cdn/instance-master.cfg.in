@@ -1079,11 +1079,6 @@ name = publish-failsafe-error.py
 config-filename = ${check-publish-failsafe-error:file}
 config-state = empty
 config-url = ${check-publish-failsafe-error-publish:url}
-config-failure-amount = 5
-config-result-count = 5
-# It shall bang, as republishing has a chance to fix it, and in order to
-# republish the instance has to reprocess
-config-report-anomaly = False
 
 [logrotate-setup-validate]
 <= jinja2-template-base
