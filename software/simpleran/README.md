@@ -39,3 +39,26 @@ only one which does not follow standard `ld` path resolution.
 
 **rf_driver** has to be compiled and installed. Inside trx_sdr/kernel folder issue `# make` to compile the
 kernel module, and then `# ./init.sh` to create devices `/dev/sdr<N>` and insert compiled module.
+
+## External dependencies for ORS
+
+Simpleran SR needs:
+
+| Path                               | Use                      | How to remove (if possible )             |
+|------------------------------------|--------------------------|------------------------------------------|
+| /opt/amarisoft/v20XX-XX-XX.X       | Binaries                 |                                          |
+| /opt/amarisoft/.amarisoft          | Licenses                 |                                          |
+| /opt/amarisoft/init-sdr            | Init SDR driver          |                                          |
+| /opt/amarisoft/get-sdr-info        | Get SDR info             |                                          |
+| /opt/amarisoft/get-license-info    | Get license info         |                                          |
+| /opt/amarisoft/rm-tmp-lte          | Remove files in /tmp     | Configure amarisoft to disable this lock |
+| /opt/amarisoft/init-enb            | Set performance governor | Do it in playbook                        |
+| /opt/amarisoft/init-ue             |                          | Do it in playbook                        |
+| /opt/amarisoft/init-mme            |                          | Do it in playbook                        |
+| /opt/amarisoft/format-ims          | Format IMS slaptun       | Do it in slapformat                      |
+
+Playbook needs:
+
+| Path                               | Use                      | How to remove (if possible )             |
+|------------------------------------|--------------------------|------------------------------------------|
+| /opt/amarisoft/get-license-info    | Get license info         |                                          |
