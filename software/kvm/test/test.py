@@ -275,9 +275,40 @@ class KvmMixin:
     return running_process_info.replace(
       hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
-  def raising_waitForInstance(self, max_retry):
-    with self.assertRaises(SlapOSNodeCommandError):
-      self.slap.waitForInstance(max_retry=max_retry)
+  @classmethod
+  def waitForInstanceWithPropagation(cls, first_retry=10, second_retry=10):
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    try:
+      cls.slap.waitForInstance(max_retry=first_retry)
+    except SlapOSNodeCommandError:
+      pass
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
+    cls.slap.waitForInstance(max_retry=second_retry)
+
+  @classmethod
+  def raising_waitForInstance(cls, max_retry=5):
+    with cls.assertRaises(cls, SlapOSNodeCommandError):
+      cls.slap.waitForInstance(max_retry=max_retry)
+
+  @classmethod
+  def raising_waitForInstanceWithForce(cls, max_retry=5):
+    _current = cls.slap._force_slapos_node_instance_all
+    try:
+      cls.slap._force_slapos_node_instance_all = True
+      cls.raising_waitForInstance(max_retry=max_retry)
+    finally:
+      cls.slap._force_slapos_node_instance_all = _current
+
+  @classmethod
+  def waitForInstanceWithForce(cls, max_retry=10):
+    _current = cls.slap._force_slapos_node_instance_all
+    try:
+      cls.slap._force_slapos_node_instance_all = True
+      cls.slap.waitForInstance(max_retry=max_retry)
+    finally:
+      cls.slap._force_slapos_node_instance_all = _current
 
   def rerequestInstance(self, parameter_dict=None, state='started'):
     if parameter_dict is None:
@@ -635,7 +666,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
 
     self._updateSlaposResource(partition_path, tap=top_tap)
 
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithForce()
     # END: mock .slapos-resource with tap.ipv4_addr
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
@@ -1356,7 +1387,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         self.fake_image3, self.fake_image3_md5sum,
         self.fake_image2, self.fake_image2_md5sum)
     })
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     self.assertTrue(os.path.exists(os.path.join(
       image_repository, self.fake_image3_md5sum)))
     self.assertTrue(os.path.exists(os.path.join(
@@ -1373,7 +1404,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     # cleanup of images works, also asserts that configuration changes are
     # reflected
     self.rerequestInstance()
-    self.slap.waitForInstance(max_retry=15)
+    self.waitForInstanceWithPropagation()
     self.assertEqual(
       os.listdir(image_repository),
       []
@@ -1392,19 +1423,27 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.bad_value
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
+
+  def test_incorrect_md5sum_value(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_not_matching_md5sum(self):
@@ -1412,7 +1451,9 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_md5sum_promise)
     self.assertPromiseFails(self.download_state_promise)
 
@@ -1421,14 +1462,18 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_state_promise)
 
   def test_too_many_images(self):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
 
@@ -1484,7 +1529,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     # switch the image
     self.rerequestInstance({
       'boot-image-url-select': "Debian Bullseye 11 netinst x86_64"})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
@@ -1509,6 +1554,8 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       'boot-image-url-select': 'DOESNOTEXISTS'
     })
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1519,7 +1566,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       'boot-image-url-select': "Debian Bullseye 11 netinst x86_64"
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     # check that image is correctly downloaded
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
@@ -1567,7 +1614,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         self.fake_image, self.fake_image_md5sum),
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     # check that image is correctly downloaded
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
@@ -1603,7 +1650,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     # cleanup of images works, also asserts that configuration changes are
     # reflected
     self.rerequestInstance()
-    self.slap.waitForInstance(max_retry=15)
+    self.waitForInstanceWithPropagation()
 
     self.assertEqual(
       os.listdir(os.path.join(
@@ -1689,7 +1736,7 @@ class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
@@ -1744,7 +1791,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       'boot-image-url-select.json')
@@ -2224,7 +2271,7 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
 
   def _test(self, parameter_dict, expected):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
 
     kvm_raw = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
@@ -2358,6 +2405,8 @@ class ExternalDiskMixin(KvmMixin):
           slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
+    # as out of slapos control change applied force reprocessing
+    cls.waitForInstanceWithForce()
 
   @classmethod
   def _dropExternalStorageList(cls):
@@ -2369,6 +2418,8 @@ class ExternalDiskMixin(KvmMixin):
         slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
+    # as out of slapos control change applied force reprocessing
+    cls.raising_waitForInstanceWithForce()
 
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('file.*if=virtio.*').match
@@ -2408,8 +2459,6 @@ class TestExternalDisk(KVMTestCase, ExternalDiskMixin):
     cls.working_directory = tempfile.mkdtemp()
     # setup the external_storage_list, to mimic part of slapformat
     cls._prepareExternalStorageList()
-    # re-run the instance, as information has been updated
-    cls.waitForInstance()
 
   @classmethod
   def tearDownClass(cls):
@@ -2541,7 +2590,7 @@ class TestExternalDiskModern(
   ExternalDiskModernMixin, KVMTestCase, ExternalDiskMixin):
   def test(self):
     self.prepareEnv()
-    self.waitForInstance()
+    self.waitForInstanceWithPropagation()
     drive_list = self.getRunningDriveList(self.kvm_instance_partition)
     self.assertEqual(
       drive_list,
