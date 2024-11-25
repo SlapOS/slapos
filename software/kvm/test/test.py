@@ -633,6 +633,11 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
         "ipv4_network": "10.0.0.0"
       })
 
+    # need to refresh the partition in order to re-process it
+    timestamp = os.path.join(partition_path, '.timestamp')
+    if os.path.exists(timestamp):
+      os.unlink(timestamp)
+
     self._updateSlaposResource(partition_path, tap=top_tap)
 
     self.slap.waitForInstance(max_retry=10)
@@ -1356,7 +1361,12 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         self.fake_image3, self.fake_image3_md5sum,
         self.fake_image2, self.fake_image2_md5sum)
     })
-    self.slap.waitForInstance(max_retry=10)
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
+    self.slap.waitForInstance(max_retry=5)
     self.assertTrue(os.path.exists(os.path.join(
       image_repository, self.fake_image3_md5sum)))
     self.assertTrue(os.path.exists(os.path.join(
@@ -1392,6 +1402,11 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.bad_value
     })
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1399,11 +1414,23 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
+
+  def test_incorrect_md5sum_value(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1412,6 +1439,11 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.download_md5sum_promise)
     self.assertPromiseFails(self.download_state_promise)
@@ -1421,6 +1453,11 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.download_state_promise)
 
@@ -1428,6 +1465,11 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1689,7 +1731,12 @@ class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=5)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
+    self.slap.waitForInstance(max_retry=5)
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
