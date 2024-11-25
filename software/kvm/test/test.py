@@ -633,6 +633,11 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
         "ipv4_network": "10.0.0.0"
       })
 
+    # need to refresh the partition in order to re-process it
+    timestamp = os.path.join(partition_path, '.timestamp')
+    if os.path.exists(timestamp):
+      os.unlink(timestamp)
+
     self._updateSlaposResource(partition_path, tap=top_tap)
 
     self.slap.waitForInstance(max_retry=10)
