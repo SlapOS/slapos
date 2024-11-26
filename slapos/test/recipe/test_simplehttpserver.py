@@ -6,12 +6,65 @@ import unittest
 import socket
 import subprocess
 import time
+import warnings
 
 from six.moves.urllib import parse as urlparse
 import requests
 
 from slapos.recipe import simplehttpserver
 from slapos.test.utils import makeRecipe
+
+CERTIFICATE_FOR_TEST = """
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC8/zt/ndbvsCXb
+2Kf5CaYlSsngykwfeeekDSoYHqWrl/WltFbdz/yw1ggRZUXo0l1ueJrDWqQzZIAT
+9YjoNkX3G21nEIzg9/aKqq1vqHKBH+JaaAt+m84GnErFDztnkiMUKWFKyFmseg0O
+QtkYGw179bXfcXX2x18gz8aBmCkjBjKjfiQtYWs9sPU0grBl9rE+h1maRh2uQXnF
+BTMKHJ6wNGyFgg0ATqrBiLRv+wxCnuCdGzJzkZ3ytKuhqkwEcEIsVHSSwAx+hdBR
+3AUBl1jfwUukj8a4rf23RR3pvYIZiMEdalsuiLBKyjzCqSPo5VZzSWSiK5CTPspM
+4bz9OXPHAgMBAAECggEAMQcg/y0J+em/GHXutSrsn9Xz4s13y96K2cLUfadNoOLt
+xYuv0SDIU3NiamjUJt6TgDnnI/Bakj5q/0J9vod9xOmnisn/Ucjhev1luoZ/FcIY
+rQ06liCC5LIcr1wRM//z+6H0bDrnEFglFOMAgEFcUSDfilRbnqX/pnpf63R2j2/0
+ttsSI3/plJAJbGha01S9jLTRKqHWy0vV0XJUXWkg0BETJci0w4fJ1kdMmnELaq4L
+kU8IZoHwbRq/RBudQoN4ceZjUnMFcVSQCFa+5coYEJvrYvcrLzA8E01435AGyHyv
+DzkiYwIrAzfQYhNVKLXgXrMGclNk8k9SMISSpVq92QKBgQDtJZjWrKxz5iWheIe8
+uGM2rQ7ZgtAO9pYhDNXwKvlxEEXQrtWrVT2KA02/rbyOGoB4D7hlJXlopSLenV3o
+5d3lRXhIXHSz2Qzy5/opPK0rt6TBXKWZ3+AxV7lpzJReltgRSn6mg1bgB2D14GYa
+1gfH1W2fVJ2B5LrB3dPOCJOC4wKBgQDMBbEBsUh1HSAN9tR9icZcgYD2/1aYVHVJ
+bnGUR1xs1cQRHKZZn6y/BBy021YAGIbgbFb8YhJC5lCMmeLADho3W1XxYhe6ssiE
+E4sbK4y+fD2MFvAe7Y//IB0KRmAzTG3tPyOjBMftAMwrGoXIo990BAFtrO8tTIeb
+9XcUnd0MzQKBgA8jz1YlP/1GPDDK2R+bRfo/oisQxuetpngFscLbe4FUYKCqCMof
+bwZYn6YVGWyZFIqVtlf+xHmB0XAU6+HqivgQL1WvUWQJ/2Ginb30OboIx2Pw3kGs
+oUuFJjky7mX7i1/POba3u9whnHcWFG6yK1z+qzj41fVs/N9ToioNMh2xAoGAIAY4
+rYpVVES5FlgLLJVmtHiDdMHJpumC637RhzPYVyEKwKDdn63HoMgVdXIEQsmWyj1X
+PhBqy2N5e0hgZkMQbGYCzHvYO676eHjU2fPxCKlZw9aJ5GDnvGUfCdDYItU5YAcM
+IfeLJjF82rs0CrVmSsCiNMPzWwnrM1jJU0wgOXUCgYEAzAu7kDTITpMBvtUxWapQ
+c1YoE4CqCG6Kq+l65SDe+c9VCckEmVPEhHbPmTv28iUh9n5MipCi7tehok2YX/Cw
+o8M12F9A9sOWTqrNylCgIjU0GCTBkA5LvYV786TYJgWPZ5Mwdkmq5Ifbf3Ti/uGk
+z6Cids97LVTVrV4iAZ+alY0=
+-----END PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIDXzCCAkegAwIBAgIUAXy1ly1SQ41kXIKV2orz+SghlrUwDQYJKoZIhvcNAQEL
+BQAwPjELMAkGA1UEBhMCRVUxDzANBgNVBAoMBk5leGVkaTEeMBwGA1UEAwwVdGVz
+dF9zaW1wbGVodHRwc2VydmVyMCAXDTI0MTIwMjE0MTkzNVoYDzIxMDcwMTIyMTQx
+OTM1WjA+MQswCQYDVQQGEwJFVTEPMA0GA1UECgwGTmV4ZWRpMR4wHAYDVQQDDBV0
+ZXN0X3NpbXBsZWh0dHBzZXJ2ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+AoIBAQC8/zt/ndbvsCXb2Kf5CaYlSsngykwfeeekDSoYHqWrl/WltFbdz/yw1ggR
+ZUXo0l1ueJrDWqQzZIAT9YjoNkX3G21nEIzg9/aKqq1vqHKBH+JaaAt+m84GnErF
+DztnkiMUKWFKyFmseg0OQtkYGw179bXfcXX2x18gz8aBmCkjBjKjfiQtYWs9sPU0
+grBl9rE+h1maRh2uQXnFBTMKHJ6wNGyFgg0ATqrBiLRv+wxCnuCdGzJzkZ3ytKuh
+qkwEcEIsVHSSwAx+hdBR3AUBl1jfwUukj8a4rf23RR3pvYIZiMEdalsuiLBKyjzC
+qSPo5VZzSWSiK5CTPspM4bz9OXPHAgMBAAGjUzBRMB0GA1UdDgQWBBQc1p1Qudnk
+WcxOnVt+4zw+MpmOITAfBgNVHSMEGDAWgBQc1p1QudnkWcxOnVt+4zw+MpmOITAP
+BgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCjZfuToaybR8JqTQ1l
+4MZ8BEzFlq6Ebn8x4shiWc3wiX5cd1RSF4iilpDv2yp9MNiTHXkMxNEnx9NMdK/+
+0bNlBn6tcv5MLZynXQnT+keJ73iYFB0Og298NauEQPI9x5/gf3zVGKBJ7d/aOumR
+VRUugFQLzwWj27Muh1rbdayh73gpuNm1ZF+HgwWy8vYc5XoLS3gZ+tlGX3Im0Agg
+ug2Kng5JY+f1aC8ZWBtTTFa2k2QALD1dD+vzGsoKitUEarg1CMHO/f6VsAFTfJT3
+NDI4ky4bVMpkq17t65YXf1QVgquOEPfAnkzn51/vPzvezOMzPYQbsQqMbc4jehZT
+oxpd
+-----END CERTIFICATE-----
+""".strip()
 
 
 class SimpleHTTPServerTest(unittest.TestCase):
@@ -27,10 +80,12 @@ class SimpleHTTPServerTest(unittest.TestCase):
 
   def setUpRecipe(self, opt=None):
     opt = opt or {}
+    self.certfile = opt.get('cert-file')
     if not 'socketpath' in opt and not 'abstract' in opt:
       opt['host'] = host = os.environ['SLAPOS_TEST_IPV4']
       opt['port'] = port = 9999
-      self.server_url = 'http://{host}:{port}'.format(host=host, port=port)
+      scheme = 'https' if self.certfile else 'http'
+      self.server_url = scheme + '://{}:{}'.format(host, port)
     else:
       self.server_url = None
     options = {
@@ -51,10 +106,12 @@ class SimpleHTTPServerTest(unittest.TestCase):
         self.wrapper,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        universal_newlines=True, # BBB Py2, use text= in Py3
     )
     if self.server_url:
+      kwargs = {'verify': False} if self.certfile else {}
       def check_connection():
-        resp = requests.get(self.server_url)
+        resp = requests.get(self.server_url, **kwargs)
         self.assertIn('Directory listing for /', resp.text)
       ConnectionError = requests.exceptions.ConnectionError
       cleanup = None
@@ -216,3 +273,20 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.setUpRecipe({'abstract': abstract})
     self.assertEqual('\0' + abstract, self.recipe.options['address'])
     self.startServer()
+
+  def test_tls_self_signed(self):
+    certfile = os.path.join(self.install_dir, 'cert.pem')
+    with open(certfile, 'w') as f:
+      f.write(CERTIFICATE_FOR_TEST)
+
+    self.setUpRecipe({'cert-file': certfile})
+    with warnings.catch_warnings():
+      warnings.simplefilter("ignore") # suppress verify=False warning
+      server_base_url = self.startServer()
+
+    # Check self-signed certificate is not accepted without verify=False
+    self.assertRaises(
+      requests.exceptions.ConnectionError,
+      requests.get,
+      server_base_url
+    )
