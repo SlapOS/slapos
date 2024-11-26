@@ -94,7 +94,6 @@ about laxist file mode. -#}
 [mariadb-backup-script]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
-ln = {{ parameter_dict['coreutils_location'] }}/bin/ln
 most-recent = most-recent.sql.gz
 {# When binlogs are enabled:
 # flush-logs: used so no manipulation on binlogs is needed to restore from
@@ -103,10 +102,10 @@ most-recent = most-recent.sql.gz
 # master-data: use value "2" as we are not in a replication case
 #}
 inline =
-  #! {{ dash }}
+  #! /bin/sh
   filepath="${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
   "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
-  ${:ln} -sf $filepath "${directory:mariadb-backup-full}/${:most-recent}"
+  ln -sf $filepath "${directory:mariadb-backup-full}/${:most-recent}"
 {# KEEP GLOB PATTERN IN SYNC with generated filenames above
 #           YYYYmmddHHMMSS -#}
 file-glob = ??????????????.sql.gz
