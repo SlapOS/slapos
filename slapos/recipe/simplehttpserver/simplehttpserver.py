@@ -116,14 +116,12 @@ def run(args):
     address_family = family
 
   httpd = Server(address, Handler)
-  scheme = 'http'
-  if 'cert-file' in args and 'key-file' in args and \
-      os.path.exists(args['cert-file']) and os.path.exists(args['key-file']):
-    scheme = 'https'
-    httpd.socket = ssl.wrap_socket (httpd.socket,
-                                     server_side=True,
-                                     certfile=args['cert-file'],
-                                     keyfile=args['key-file'])
+
+  certfile = args['cert-file']
+  if certfile: # keyfile == None signify key is in certfile
+    sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    sslcontext.load_cert_chain(certfile, args['key-file'])
+    httpd.socket = sslcontext.wrap_socket(httpd.socket, server_side=True)
 
   logging.info("Starting simple http server at %s", address)
   httpd.serve_forever()

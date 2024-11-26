@@ -56,8 +56,8 @@ class Recipe(GenericBaseRecipe):
       'address': self.options['address'],
       'cwd': self.options['base-path'],
       'log-file': self.options['log-file'],
-      'cert-file': self.options.get('cert-file', ''),
-      'key-file': self.options.get('key-file', ''),
+      'cert-file': self.options.get('cert-file'),
+      'key-file': self.options.get('key-file'),
       'allow-write': bool_option(self.options, 'allow-write', 'false')
     }
     return self.createPythonScript(
