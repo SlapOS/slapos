@@ -275,6 +275,14 @@ class KvmMixin:
     return running_process_info.replace(
       hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
+  def waitForInstanceWithPropagation(self, first_retry=5, second_retry=5):
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    self.slap.waitForInstance(max_retry=first_retry)
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
+    self.slap.waitForInstance(max_retry=second_retry)
+
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
       self.slap.waitForInstance(max_retry=max_retry)
@@ -1361,7 +1369,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         self.fake_image3, self.fake_image3_md5sum,
         self.fake_image2, self.fake_image2_md5sum)
     })
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     self.assertTrue(os.path.exists(os.path.join(
       image_repository, self.fake_image3_md5sum)))
     self.assertTrue(os.path.exists(os.path.join(
@@ -1378,7 +1386,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     # cleanup of images works, also asserts that configuration changes are
     # reflected
     self.rerequestInstance()
-    self.slap.waitForInstance(max_retry=15)
+    self.waitForInstanceWithPropagation()
     self.assertEqual(
       os.listdir(image_repository),
       []
@@ -1397,19 +1405,21 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.bad_value
     })
-    self.raising_waitForInstance(3)
+    self.waitForInstanceWithPropagation()
     self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
-    self.raising_waitForInstance(3)
+    self.waitForInstanceWithPropagation()
     self.assertPromiseFails(self.config_state_promise)
+
+  def test_incorrect_md5sum_value(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
-    self.raising_waitForInstance(3)
+    self.waitForInstanceWithPropagation()
     self.assertPromiseFails(self.config_state_promise)
 
   def test_not_matching_md5sum(self):
@@ -1417,7 +1427,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.raising_waitForInstance(3)
+    self.waitForInstanceWithPropagation()
     self.assertPromiseFails(self.download_md5sum_promise)
     self.assertPromiseFails(self.download_state_promise)
 
@@ -1426,14 +1436,14 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
-    self.raising_waitForInstance(3)
+    self.waitForInstanceWithPropagation()
     self.assertPromiseFails(self.download_state_promise)
 
   def test_too_many_images(self):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
-    self.raising_waitForInstance(3)
+    self.waitForInstanceWithPropagation()
     self.assertPromiseFails(self.config_state_promise)
 
 
@@ -1489,7 +1499,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     # switch the image
     self.rerequestInstance({
       'boot-image-url-select': "Debian Bullseye 11 netinst x86_64"})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
@@ -1572,7 +1582,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
         self.fake_image, self.fake_image_md5sum),
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     # check that image is correctly downloaded
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
@@ -1694,7 +1704,7 @@ class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
@@ -2229,7 +2239,7 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
 
   def _test(self, parameter_dict, expected):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
 
     kvm_raw = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
@@ -2546,7 +2556,7 @@ class TestExternalDiskModern(
   ExternalDiskModernMixin, KVMTestCase, ExternalDiskMixin):
   def test(self):
     self.prepareEnv()
-    self.waitForInstance()
+    self.waitForInstanceWithPropagation()
     drive_list = self.getRunningDriveList(self.kvm_instance_partition)
     self.assertEqual(
       drive_list,
