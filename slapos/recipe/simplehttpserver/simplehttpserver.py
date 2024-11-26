@@ -116,14 +116,20 @@ def run(args):
     address_family = family
 
   httpd = Server(address, Handler)
-  scheme = 'http'
-  if 'cert-file' in args and 'key-file' in args and \
-      os.path.exists(args['cert-file']) and os.path.exists(args['key-file']):
-    scheme = 'https'
-    httpd.socket = ssl.wrap_socket (httpd.socket,
-                                     server_side=True,
-                                     certfile=args['cert-file'],
-                                     keyfile=args['key-file'])
+
+  certfile = args['cert-file']
+  if certfile: # keyfile == None signifies key is in certfile
+    PROTOCOL_TLS_SERVER = getattr(ssl, 'PROTOCOL_TLS_SERVER', None)
+    if PROTOCOL_TLS_SERVER:
+      sslcontext = ssl.SSLContext(PROTOCOL_TLS_SERVER)
+      sslcontext.load_cert_chain(certfile, args['key-file'])
+      httpd.socket = sslcontext.wrap_socket(httpd.socket, server_side=True)
+    else: # BBB Py2, Py<3.6
+      httpd.socket = ssl.wrap_socket(
+          httpd.socket,
+          server_side=True,
+          certfile=certfile,
+          keyfile=args['key-file'])
 
   logging.info("Starting simple http server at %s", address)
   httpd.serve_forever()
