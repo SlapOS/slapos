@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.378 (2024-10-09)
+-------------
+
+* Give access to Amarisoft GUI: add proxy to make Amarisoft websocket API accessible through a public SSL Websocket URL protected by a password
+
 Version 1.0.371 (2024-10-09)
 -------------
 
