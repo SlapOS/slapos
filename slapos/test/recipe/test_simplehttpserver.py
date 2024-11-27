@@ -76,6 +76,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.install_dir = tempfile.mkdtemp()
     self.addCleanup(shutil.rmtree, self.install_dir)
     self.wrapper = os.path.join(self.install_dir, 'server')
+    self.logfile = self.wrapper + '.log'
     self.process = None
 
   def setUpRecipe(self, opt=None):
@@ -90,7 +91,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
       self.server_url = None
     options = {
         'base-path': self.base_path,
-        'log-file': os.path.join(self.install_dir, 'simplehttpserver.log'),
+        'log-file': self.logfile,
         'wrapper': self.wrapper,
     }
     options.update(opt)
@@ -108,6 +109,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
         stderr=subprocess.PIPE,
         universal_newlines=True, # BBB Py2, use text= in Py3
     )
+    address = self.recipe.options['address']
     if self.server_url:
       kwargs = {'verify': False} if self.certfile else {}
       def check_connection():
@@ -116,7 +118,6 @@ class SimpleHTTPServerTest(unittest.TestCase):
       ConnectionError = requests.exceptions.ConnectionError
       cleanup = None
     else:
-      address = self.recipe.options['address']
       s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
       def check_connection():
         s.connect(address)
@@ -134,14 +135,19 @@ class SimpleHTTPServerTest(unittest.TestCase):
         # otherwise .communicate() may hang forever.
         self.process.terminate()
         self.process.wait()
+        with open(self.logfile) as f:
+          log = f.read()
         self.fail(
           "Server did not start\n"
           "out: %s\n"
-          "err: %s"
-          % self.process.communicate())
+          "err: %s\n"
+          "log: %s"
+          % (self.process.communicate() + (log,)))
     finally:
       if cleanup:
         cleanup()
+    with open(self.logfile) as f:
+      self.assertIn("Starting simple http server at %s" % (address,), f.read())
     return self.server_url
 
   def tearDown(self):
@@ -199,13 +205,20 @@ class SimpleHTTPServerTest(unittest.TestCase):
     )
     self.assertEqual(resp.status_code, requests.codes.ok)
     self.assertEqual(resp.text, 'Content written to hello-form-data.txt')
-    with open(
-        os.path.join(self.base_path, 'hello-form-data.txt')) as f:
+    hello_form_file = os.path.join(self.base_path, 'hello-form-data.txt')
+    with open(hello_form_file) as f:
       self.assertEqual(f.read(), 'hello-form-data')
 
     self.assertIn('hello-form-data.txt', requests.get(server_base_url).text)
     self.assertEqual(
         requests.get(server_base_url + '/hello-form-data.txt').text, 'hello-form-data')
+
+    # check GET and POST are logged
+    with open(self.logfile) as f:
+      log = f.read()
+    self.assertIn('Writing received content to file ' + hello_form_file, log)
+    self.assertIn('"POST / HTTP/1.1" 200 -', log)
+    self.assertIn('"GET /hello-form-data.txt HTTP/1.1" 200 -', log)
 
     # post as application/x-www-form-urlencoded
     resp = requests.post(
