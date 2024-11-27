@@ -16,6 +16,15 @@ class ServerHandler(SimpleHTTPRequestHandler):
   base_path = None # set by run
   restrict_write = True # set by run
 
+  def _log(self, level, msg, *args):
+    logging.log(level, '%s - - ' + msg, self.client_address[0], *args)
+
+  def log_message(self, msg, *args):
+    self._log(logging.INFO, msg, *args)
+
+  def log_error(self, msg, *args):
+    self._log(logging.ERROR, msg, *args)
+
   def respond(self, code=200, type='text/html'):
     self.send_response(code)
     self.send_header("Content-type", type)
@@ -39,7 +48,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
     request can be encoded as application/x-www-form-urlencoded or multipart/form-data
     """
-    logging.info('%s - POST: %s \n%s' % (self.client_address[0], self.path, self.headers))
+    self.log_message('POST: %s \n%s', self.path, self.headers)
     if self.restrictedWriteAccess():
       return
 
@@ -74,27 +83,28 @@ class ServerHandler(SimpleHTTPRequestHandler):
       os.makedirs(os.path.dirname(file_path))
     except OSError as exception:
       if exception.errno != errno.EEXIST:
-        logging.error('Failed to create file in %s. The error is \n%s',
-          file_path, str(exception))
+        self.log_error('Failed to create file in %s. The error is \n%s',
+          file_path, exception)
     # Write content to file
-    logging.info('Writing received content to file %s', file_path)
+    self.log_message('Writing received content to file %s', file_path)
     try:
       with open(file_path, method) as myfile:
         myfile.write(content)
-        logging.info('Done.')
+        self.log_message('Done.')
     except IOError as e:
-      logging.error('Something happened while processing \'writeFile\'. The message is %s',
-                    str(e))
+      self.log_error(
+        'Something happened while processing \'writeFile\'. The message is %s',
+        e)
     self.respond(200, type=self.headers['Content-Type'])
     self.wfile.write(b"Content written to %s" % str2bytes(filename))
 
 
 def run(args):
-
-  # minimal web server.  serves files relative to the
-  # current directory.
-  logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                            filename=args['log-file'] ,level=logging.INFO)
+  # minimal web server. serves files relative to the current directory.
+  logging.basicConfig(
+      format="%(asctime)s %(levelname)s - %(message)s",
+      # filename=args['log-file'],
+      level=logging.INFO)
 
   address = args['address']
   cwd = args['cwd']
