@@ -1405,21 +1405,24 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.bad_value
     })
-    self.waitForInstanceWithPropagation()
+    self.raising_waitForInstance(5)
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
-    self.waitForInstanceWithPropagation()
+    self.raising_waitForInstance(5)
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum_value(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
-    self.waitForInstanceWithPropagation()
+    self.raising_waitForInstance(5)
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_not_matching_md5sum(self):
@@ -1427,7 +1430,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.waitForInstanceWithPropagation()
+    self.raising_waitForInstance(5)
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_md5sum_promise)
     self.assertPromiseFails(self.download_state_promise)
 
@@ -1436,14 +1440,16 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
-    self.waitForInstanceWithPropagation()
+    self.raising_waitForInstance(5)
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_state_promise)
 
   def test_too_many_images(self):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
-    self.waitForInstanceWithPropagation()
+    self.raising_waitForInstance(5)
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
 
