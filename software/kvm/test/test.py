@@ -275,17 +275,26 @@ class KvmMixin:
     return running_process_info.replace(
       hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
-  def waitForInstanceWithPropagation(self, first_retry=5, second_retry=5):
+  @classmethod
+  def waitForInstanceWithPropagation(cls, first_retry=10, second_retry=10):
     # run slapos node instance twice
     # once to apply newly requested instance...
-    self.slap.waitForInstance(max_retry=first_retry)
+    cls.slap.waitForInstance(max_retry=first_retry)
     # ...and second time to re-read the parameters from master and propagate
     #    it to the instances
-    self.slap.waitForInstance(max_retry=second_retry)
+    cls.slap.waitForInstance(max_retry=second_retry)
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
       self.slap.waitForInstance(max_retry=max_retry)
+
+  @classmethod
+  def waitForInsstanceWithForce(cls, max_retry=10):
+    _current = cls.slap._force_slapos_node_instance_all
+    try:
+      cls.slap.waitForInstance(max_retry=max_retry)
+    finally:
+      cls.slap._force_slapos_node_instance_all = _current
 
   def rerequestInstance(self, parameter_dict=None, state='started'):
     if parameter_dict is None:
@@ -2379,6 +2388,8 @@ class ExternalDiskMixin(KvmMixin):
           slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
+    # as out of slapos control change applied force reprocessing
+    cls.waitForInsstanceWithForce()
 
   @classmethod
   def _dropExternalStorageList(cls):
@@ -2390,6 +2401,8 @@ class ExternalDiskMixin(KvmMixin):
         slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
+    # as out of slapos control change applied force reprocessing
+    cls.waitForInsstanceWithForce()
 
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('file.*if=virtio.*').match
@@ -2429,8 +2442,6 @@ class TestExternalDisk(KVMTestCase, ExternalDiskMixin):
     cls.working_directory = tempfile.mkdtemp()
     # setup the external_storage_list, to mimic part of slapformat
     cls._prepareExternalStorageList()
-    # re-run the instance, as information has been updated
-    cls.waitForInstance()
 
   @classmethod
   def tearDownClass(cls):
