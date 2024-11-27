@@ -437,10 +437,31 @@ depends =
   ${logrotate-entry-monitor-data:name}
   ${logrotate-entry-monitor-promise-history:name}
 
+[expand-monitor-uri-template]
+recipe = slapos.recipe.build
+template = ${monitor-instance-parameter:interface-url}{&url,username,password}
+url = ${monitor-publish-parameters:monitor-url}
+username = ${monitor-publish-parameters:monitor-user}
+password = ${monitor-publish-parameters:monitor-password}
+init =
+  import zc.buildout
+  import pkg_resources
+
+  buildout_options = self.buildout["buildout"]
+  zc.buildout.easy_install.install(
+    ["uritemplate"],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[
+      buildout_options["develop-eggs-directory"],
+      buildout_options["eggs-directory"]])
+
+  import uritemplate
+  options['uri'] = uritemplate.URITemplate(options['template']).expand(options)
+
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-# interface-url can be a template URI.
-monitor-setup-url = ${monitor-instance-parameter:interface-url}&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
+monitor-setup-url = ${expand-monitor-uri-template:uri}
 
 [buildout]
 
