@@ -18,9 +18,6 @@ class enbWebSocket:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-        if {{ testing }}:
-            return
-
         self.ws_url = "{{ ws_url }}"
         self.ws_password = "{{ ws_password }}"
         self.ws = create_connection(self.ws_url)
@@ -37,8 +34,6 @@ class enbWebSocket:
         self.ws.recv()
 
     def close(self):
-        if {{ testing }}:
-            return
         self.ws.close()
 
     def send(self, msg):
@@ -50,17 +45,11 @@ class enbWebSocket:
                 return r
 
     def stats(self):
-        if {{ testing }}:
-            r = {
-                'message': 'rf',
-                'rf_info': "CPRI: x16 HW SW\n"
-            }
-        else:
-            self.send({
-                "message": "rf",
-                "rf_info": True
-            })
-            r = self.recv('rf')
+        self.send({
+            "message": "rf",
+            "rf_info": True
+        })
+        r = self.recv('rf')
         self.logger.info('RF info', extra={'data': json.dumps(r)})
 
 if __name__ == '__main__':

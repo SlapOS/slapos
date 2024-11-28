@@ -311,6 +311,7 @@ class ENBTestCase4(RFTestCase4):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
         'testing':      True,
+        'lte_mock':      True,
         'enb_id':       '0x17',
         'gnb_id':       '0x23',
         'gnb_id_bits':  30,
@@ -587,6 +588,7 @@ class UEsimTestCase4(RFTestCase4):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
         'testing':      True,
+        'lte_mock':      True,
     })}
 
   @classmethod
