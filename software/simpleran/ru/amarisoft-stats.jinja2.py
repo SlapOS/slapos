@@ -20,9 +20,6 @@ class enbWebSocket:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-        if {{ testing }}:
-            return
-
         self.ws_url = "{{ ws_url }}"
         self.ws_password = "{{ ws_password }}"
         self.ws = create_connection(self.ws_url)
@@ -39,8 +36,6 @@ class enbWebSocket:
         self.ws.recv()
 
     def close(self):
-        if {{ testing }}:
-            return
         self.ws.close()
 
     def send(self, msg):
@@ -52,21 +47,12 @@ class enbWebSocket:
                 return r
 
     def stats(self):
-        if {{ testing }}:
-            from random import randint
-            nrx = {{ iru_dict.values() | sum(attribute='_.n_antenna_ul') }}
-            rxv = [{'sat': 0, 'max': randint(-500,-100) / 10.0}  for _ in range(nrx)]
-            r = {
-                'message': 'stats',
-                'samples': {'rx': rxv}
-            }
-        else:
-            self.send({
-                "message": "stats",
-                "samples": True,
-                "rf": True
-            })
-            r = self.recv('stats')
+        self.send({
+            "message": "stats",
+            "samples": True,
+            "rf": True
+        })
+        r = self.recv('stats')
         self.logger.info('Samples stats', extra={'data': json.dumps(r)})
 
 if __name__ == '__main__':
