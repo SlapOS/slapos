@@ -41,6 +41,7 @@ setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
 
 param_dict = {
     'testing': True,
+    'lte_mock': True,
     'tx_gain': 17,
     'rx_gain': 17,
     'pci': 250,
@@ -346,7 +347,11 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
 class TestCoreNetworkMonitorGadgetUrl(ORSTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'testing': True, 'slave-list': []})}
+    return {'_': json.dumps({
+      'testing': True,
+      'lte_mock': True,
+      'slave-list': []
+    })}
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -391,7 +396,11 @@ class TestSimCard(ORSTestCase):
       cls.requestSlaveInstanceWithId(i)
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'testing': True, 'fixed_ips': cls.fixed_ips})}
+    return {'_': json.dumps({
+      'testing': True,
+      'lte_mock': True,
+      'fixed_ips': cls.fixed_ips
+    })}
   @classmethod
   def getInstanceSoftwareType(cls):
     return "core-network"
