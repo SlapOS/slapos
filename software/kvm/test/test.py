@@ -292,6 +292,7 @@ class KvmMixin:
   def waitForInsstanceWithForce(cls, max_retry=10):
     _current = cls.slap._force_slapos_node_instance_all
     try:
+      cls.slap._force_slapos_node_instance_all = True
       cls.slap.waitForInstance(max_retry=max_retry)
     finally:
       cls.slap._force_slapos_node_instance_all = _current
