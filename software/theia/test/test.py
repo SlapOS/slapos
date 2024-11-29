@@ -636,6 +636,15 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
     for url in monitor_setup_url_list:
       self.assertIn('monitor.app.officejs.com', url)
 
+    monitor_url_list = [
+      u for u in [
+        p.getConnectionParameterDict().get('monitor-base-url')
+        for p in self.slap.computer.getComputerPartitionList()
+      ] if u is not None
+    ]
+    for url in monitor_url_list:
+      assertNotEqual(url, '')
+
   def test_all_monitor_url_use_same_password(self):
     monitor_setup_params = dict(
       parse_qsl(
