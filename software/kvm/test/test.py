@@ -1414,7 +1414,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.bad_value
     })
-    self.raising_waitForInstance(5)
+    self.slap.waitForInstance(5)
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1430,7 +1430,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
-    self.raising_waitForInstance(5)
+    self.slap.waitForInstance(5)
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1457,7 +1457,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
-    self.raising_waitForInstance(5)
+    self.slap.waitForInstance(5)
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1539,6 +1539,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       'boot-image-url-select': 'DOESNOTEXISTS'
     })
+    self.slap.waitForInstance(3)
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
 
