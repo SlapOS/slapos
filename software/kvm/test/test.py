@@ -1782,7 +1782,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       'boot-image-url-select.json')
