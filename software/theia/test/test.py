@@ -643,7 +643,7 @@ class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
       ] if u is not None
     ]
     for url in monitor_url_list:
-      assertNotEqual(url, '')
+      self.assertNotEqual(url, '')
 
   def test_all_monitor_url_use_same_password(self):
     monitor_setup_params = dict(
