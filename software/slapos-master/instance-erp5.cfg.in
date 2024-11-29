@@ -11,6 +11,10 @@
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set wcfs_dict = slapparameter_dict.get('wcfs', {}) -%}
 {% set wcfs_enable = wcfs_dict.get('enable', wcfs_enable_default.lower() in ('true', 'yes')) -%}
+{% set with_max_rlimit_nofile_enable = slapparameter_dict.get(
+    'with-max-rlimit-nofile',
+    with_max_rlimit_nofile_enable_default.lower() in ('true', 'yes'))
+%}
 {% set test_runner_enabled = slapparameter_dict.get('test-runner', {}).get('enabled', True) -%}
 {% set test_runner_node_count = slapparameter_dict.get('test-runner', {}).get('node-count', 3) -%}
 {% set test_runner_extra_database_count = slapparameter_dict.get('test-runner', {}).get('extra-database-count', 3) -%}
@@ -32,7 +36,7 @@
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_family_override_dict = slapparameter_dict.get('family-override', {}) -%}
-{% for zope_parameter_dict in zope_partition_dict.values() -%}
+{% for zope_parameter_dict in six.itervalues(zope_partition_dict) -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
 {%   do zope_parameter_dict.setdefault('instance-count', 1) -%}
@@ -53,7 +57,7 @@ config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-m
 name = {{ name }}
 software-type = {{ software_type }}
 return = {{ ' '.join(ret) }}
-{% for ret, publish in ret.iteritems() -%}
+{% for ret, publish in six.iteritems(ret) -%}
 {%   if publish -%}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}') %}
 {%   endif -%}
@@ -62,10 +66,10 @@ return = {{ ' '.join(ret) }}
 {%   endif -%}
 {% endfor -%}
 {{ root_common.sla(name) }}
-{% for k, v in config.iteritems() -%}
+{% for k, v in six.iteritems(config) -%}
 config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
-{% for k, v in key_config.iteritems() -%}
+{% for k, v in six.iteritems(key_config) -%}
 config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
 config-name = {{ name }}
@@ -76,6 +80,7 @@ recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 service-on-watch = ${buildout:directory}/etc/service
 srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
 backup-caucased = ${:srv}/backup/caucased
 
 {% if not caucase_url -%}
@@ -180,7 +185,7 @@ connection-url = smtp://127.0.0.2:0/
 {% endfor -%}
 {% do assert(len(mountpoints) == len(zodb_dict)) -%}
 {% set neo = [] -%}
-{% for server_type, server_dict in storage_dict.iteritems() -%}
+{% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 {%     set ((name, server_dict),) = server_dict.items() -%}
 {%     do neo.append(server_dict.get('cluster')) -%}
@@ -199,10 +204,10 @@ connection-url = smtp://127.0.0.2:0/
 
 [request-zodb-base]
 config-zodb-dict = {{ dumps(zodb_dict) }}
-{% for server_type, server_dict in storage_dict.iteritems() -%}
+{% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}
-config-neo-name = {{ server_dict.keys()[0] }}
+config-neo-name = {{ list(server_dict.keys())[0] }}
 config-neo-masters = ${publish-early:neo-masters}
 {%   else -%}
 config-zodb-zeo = ${request-zodb:connection-storage-dict}
@@ -266,14 +271,14 @@ config-wcfs_enable = {{ dumps(wcfs_enable) }}
 config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
-{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}
+{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout', 300) -%}
 {% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
 {% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
-{% for custom_name, zope_parameter_dict in zope_partition_dict.items() -%}
+{% for custom_name, zope_parameter_dict in six.iteritems(zope_partition_dict) -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
@@ -298,12 +303,12 @@ config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict['instance-count']) }}
 config-private-dev-shm = {{ zope_parameter_dict.get('private-dev-shm', '') }}
 config-thread-amount = {{ dumps(zope_parameter_dict['thread-amount']) }}
-config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
+config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 1)) }}
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
-config-with-max-rlimit-nofile = {{ dumps(slapparameter_dict.get('with-max-rlimit-nofile', false)) }}
+config-with-max-rlimit-nofile = {{ dumps(with_max_rlimit_nofile_enable) }}
 {# BBB: zope_parameter_dict used to contain 'webdav', so fallback to it -#}
 config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_parameter_dict.get('webdav', False))) }}
 config-xml-rpc = {{ dumps(current_zope_family_override_dict.get('xml-rpc', False)) }}
@@ -503,7 +508,7 @@ recipe = slapos.cookbook:publish.serialised
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.
 -#}
-hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
+hosts-dict = {{ '${' ~ next(iter(zope_address_list_id_dict)) ~ ':connection-hosts-dict}' }}
 {% endif -%}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
