@@ -1415,7 +1415,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.bad_value
     })
-    self.slap.waitForInstance(5)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1423,7 +1424,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
-    self.raising_waitForInstance(5)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1431,7 +1433,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
-    self.slap.waitForInstance(5)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1440,7 +1443,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.raising_waitForInstance(5)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_md5sum_promise)
     self.assertPromiseFails(self.download_state_promise)
@@ -1450,7 +1454,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
-    self.raising_waitForInstance(5)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_state_promise)
 
@@ -1458,7 +1463,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
-    self.slap.waitForInstance(5)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
