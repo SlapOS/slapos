@@ -1557,7 +1557,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       'boot-image-url-select': "Debian Bullseye 11 netinst x86_64"
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     # check that image is correctly downloaded
     image_repository = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference,
@@ -1641,7 +1641,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     # cleanup of images works, also asserts that configuration changes are
     # reflected
     self.rerequestInstance()
-    self.slap.waitForInstance(max_retry=15)
+    self.waitForInstanceWithPropagation()
 
     self.assertEqual(
       os.listdir(os.path.join(
