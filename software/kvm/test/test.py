@@ -289,7 +289,7 @@ class KvmMixin:
       self.slap.waitForInstance(max_retry=max_retry)
 
   @classmethod
-  def waitForInsstanceWithForce(cls, max_retry=10):
+  def waitForInstanceWithForce(cls, max_retry=10):
     _current = cls.slap._force_slapos_node_instance_all
     try:
       cls.slap._force_slapos_node_instance_all = True
@@ -2391,7 +2391,7 @@ class ExternalDiskMixin(KvmMixin):
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
     # as out of slapos control change applied force reprocessing
-    cls.waitForInsstanceWithForce()
+    cls.waitForInstanceWithForce()
 
   @classmethod
   def _dropExternalStorageList(cls):
@@ -2404,7 +2404,7 @@ class ExternalDiskMixin(KvmMixin):
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
     # as out of slapos control change applied force reprocessing
-    cls.waitForInsstanceWithForce()
+    cls.waitForInstanceWithForce()
 
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('file.*if=virtio.*').match
