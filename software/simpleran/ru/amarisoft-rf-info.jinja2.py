@@ -1,5 +1,7 @@
 #!{{ python_path }}
 import json
+import hashlib
+import hmac
 import logging
 from logging.handlers import RotatingFileHandler
 import time
@@ -21,7 +23,20 @@ class enbWebSocket:
         if {{ testing }}:
             return
 
-        self.ws = create_connection("{{ ws_url }}")
+        self.ws_url = "{{ ws_url }}"
+        self.ws_password = "{{ ws_password }}"
+        self.ws = create_connection(self.ws_url)
+
+        # Password authentication
+        data = json.loads(self.ws.recv())
+        res = hmac.new(
+          "{}:{}:{}".format(data['type'], self.ws_password, data['name']).encode(),
+          msg=data['challenge'].encode(),
+          digestmod=hashlib.sha256
+        ).hexdigest()
+        msg = {"message": "authenticate", "res": res}
+        self.ws.send(json.dumps(msg))
+        self.ws.recv()
 
     def close(self):
         if {{ testing }}:
