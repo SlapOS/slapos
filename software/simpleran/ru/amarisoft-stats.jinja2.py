@@ -27,6 +27,7 @@ class enbWebSocket:
         self.ws_password = "{{ ws_password }}"
         self.ws = create_connection(self.ws_url)
 
+        # Password authentication
         data = json.loads(self.ws.recv())
         res = hmac.new(
           "{}:{}:{}".format(data['type'], self.ws_password, data['name']).encode(),
