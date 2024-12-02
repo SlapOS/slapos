@@ -446,6 +446,7 @@ password = ${monitor-publish-parameters:monitor-password}
 init =
   import zc.buildout
   import pkg_resources
+  from six.moves.urllib.parse import unquote
 
   buildout_options = self.buildout["buildout"]
   zc.buildout.easy_install.install(
@@ -457,7 +458,7 @@ init =
       buildout_options["eggs-directory"]])
 
   import uritemplate
-  options['uri'] = uritemplate.URITemplate(options['template']).expand(options)
+  options['uri'] = unquote(uritemplate.URITemplate(options['template']).expand(options))
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
