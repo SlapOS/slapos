@@ -6,7 +6,8 @@
     "cell_type",
     "cell_kind",
     "pci",
-    "tac"
+    "tac",
+    "plmn"
   ],
   "properties": {
     "cell_type": {

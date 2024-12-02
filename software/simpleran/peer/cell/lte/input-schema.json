@@ -8,12 +8,16 @@
     "pci",
     "tac",
     "e_cell_id",
-    "dl_earfcn"
+    "dl_earfcn",
+    "plmn"
   ],
   "properties": {
     "cell_type": {
       "$ref": "../../../peer/cell/common.json#/properties/cell_type",
       "const": "lte"
+    },
+    "cell_kind": {
+      "$ref": "../../../peer/cell/common.json#/properties/cell_kind"
     },
     "e_cell_id": {
       "title": "E-UTRAN Cell ID",
@@ -28,6 +32,11 @@
     },
     "tac": {
       "$ref": "../../../cell/lte/input-schema.json#/properties/tac"
+    },
+    "plmn": {
+      "title": "Public Land Mobile Network",
+      "description": "Public Land Mobile Network",
+      "type": "string"
     }
   }
 }
