@@ -60,7 +60,7 @@
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
       "default": {
-        "1": {
+        "Local core-network": {
           "amf_addr": "127.0.1.100"
         }
       }
@@ -69,7 +69,7 @@
       "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
       "default": {
-        "1": {
+        "Test PLMN": {
           "plmn": "00101",
           "tac": 100
         }
@@ -150,7 +150,7 @@
       ],
       "default": 640
     },
-    "nr_handover": {
+    "nr_nr_handover": {
       "title": "NR Handover",
       "type": "object",
       "default": {
@@ -245,7 +245,7 @@
         }
       }
     },
-    "eutra_handover": {
+    "nr_eutra_handover": {
       "title": "EUTRA Handover",
       "type": "object",
       "default": {
