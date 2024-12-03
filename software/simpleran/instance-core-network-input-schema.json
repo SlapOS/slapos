@@ -51,6 +51,40 @@
       "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
       "type": "boolean"
     },
+    "pdn_list": {
+      "title": "PDN list",
+      "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names.",
+      "default": {
+        "internet": {
+          "name": "internet"
+        },
+        "default": {
+          "name": "default"
+        },
+        "sos": {
+          "name": "sos"
+        }
+      },
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "name": {
+              "title": "APN name",
+              "description": "APN name",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "qci": {
+      "default": 9,
+      "title": "QCI of default E-RAB",
+      "description": "QoS Class Identifier of the default E-RAB",
+      "type": "number"
+    },
     "eps_5gs_interworking": {
       "title": "EPS 5GS Interworking",
       "type": "string",
