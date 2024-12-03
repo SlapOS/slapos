@@ -16,10 +16,10 @@
       "type": "boolean"
     },
     "iperf3": {
-      "default": false,
-      "title": "iperf3 UDP server",
-      "description": "Activate iperf3 UDP server",
-      "type": "boolean"
+      "default": 0,
+      "title": "iperf3 UDP server count",
+      "description": "Activate one or multiple iperf3 UDP server",
+      "type": "number"
     },
     "local_domain": {
       "default": "",
