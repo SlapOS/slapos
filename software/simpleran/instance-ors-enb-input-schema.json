@@ -79,7 +79,7 @@
     "mme_list": {
       "$ref": "instance-enb-input-schema.json#/properties/mme_list",
       "default": {
-        "1": {
+        "Local core-network": {
           "mme_addr": "127.0.1.100"
         }
       }
@@ -88,7 +88,7 @@
       "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
       "default": {
-        "1": {
+        "Test PLMN": {
           "plmn": "00101"
         }
       }
@@ -165,7 +165,7 @@
       ],
       "default": 640
     },
-    "eutra_handover": {
+    "eutra_eutra_handover": {
       "title": "EUTRA Handover",
       "type": "object",
       "default": {
@@ -260,7 +260,7 @@
         }
       }
     },
-    "nr_handover": {
+    "eutra_nr_handover": {
       "title": "NR Handover",
       "type": "object",
       "default": {
