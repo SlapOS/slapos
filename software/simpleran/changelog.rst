@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Version 1.0.3XX (2024-12-05)
+-------------
+
+* Support handover between 4G and 5G
+* Generate unique values on ORS for the following parameters:
+  - eNB ID
+  - gNB ID
+  - Cell ID
+  - Physical Cell ID
+  - Root Sequence Index
+* Add PDN list parameter in core-network
+* Allow to configure multiple iperf3 servers
+* Publish MAC address
+
 Version 1.0.379 (2024-10-09)
 -------------
 
