@@ -62,7 +62,8 @@ param_dict = {
             'cell_id': '0x0000001',
             'gnb_id_bits': 28,
             'nr_band': 34,
-            'tac': 1
+            'tac': 1,
+            'plmn': "00101"
         },
         'ORS2': {
             'dl_earfcn': 50000,
@@ -73,7 +74,8 @@ param_dict = {
             'cell_id': '0x0000001',
             'gnb_id_bits': 30,
             'nr_band': 38,
-            'tac': 2
+            'tac': 2,
+            'plmn': "00101"
         },
     },
 }

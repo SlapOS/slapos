@@ -348,10 +348,10 @@ class ENBTestCase4(RFTestCase4):
     _('PEERCELL4',  LTE(700)      | LTE_PEER(0x12345,    35, 0x123))
     _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321))
     cls.ho_inter = [
-        dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123),
+        dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123, plmn="00101"),
         dict(rat='nr',    nr_cell_id=0x77712, gnb_id_bits=22, n_id_cell=75,
              dl_nr_arfcn=520000, ul_nr_arfcn=520000, ssb_nr_arfcn=520090, band=38,
-             tac = 0x321),
+             tac = 0x321, plmn="00101"),
     ]
 
   def CELLcfg(i):
