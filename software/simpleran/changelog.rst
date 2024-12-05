@@ -1,6 +1,21 @@
 Changelog
 =========
 
+Version 1.0.383 (2024-12-11)
+-------------
+
+* Amarisoft version is now required to be 2024-11-21 for this version of the software release
+* Support handover between 4G and 5G
+* Generate unique values on ORS for the following parameters:
+  - eNB ID
+  - gNB ID
+  - Cell ID
+  - Physical Cell ID
+  - Root Sequence Index
+* Add PDN list parameter in core-network
+* Allow to configure multiple iperf3 servers
+* Publish MAC address
+
 Version 1.0.379 (2024-10-09)
 -------------
 
