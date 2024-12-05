@@ -1,15 +1,37 @@
 # coding: utf-8
 import json
-import mock
+import httmock
 import os
 import unittest
 import tempfile
-from collections import defaultdict
 from slapos.recipe import slapconfiguration
 from slapos import format as slapformat
+from slapos.grid.SlapObject import SOFTWARE_INSTANCE_JSON_FILENAME
+from slapos.util import dumps, calculate_dict_hash
+from slapos.slap.slap import json_loads_byteified
 
 
-class SlapConfigurationTest(unittest.TestCase):
+class APIRequestHandler(object):
+  def __init__(self, response_list):
+    self.response_list = response_list
+    self.request_payload_list = []
+    self.sequence_list = []
+
+  def request_handler(self, url, req):
+    if url.path == "/getHateoasUrl":
+      return ""
+    elif url.path == "/getJIOAPIUrl":
+      return "https://127.0.0.1/api/"
+
+    self.sequence_list.append(url.path)
+
+    if not self.response_list or self.response_list[0][0] != url.path:
+      raise ValueError("Unexcpected call: %s %s" % (url.path, req.body))
+    self.request_payload_list.append(json_loads_byteified(req.body))
+    return self.response_list.pop(0)[1]
+
+
+class SlapConfigurationTestMixin(object):
 
   def setUp(self):
     """Prepare files on filesystem."""
@@ -26,6 +48,10 @@ class SlapConfigurationTest(unittest.TestCase):
     }
     with open(self.resource_file, "wt") as fo:
       json.dump(self.resource, fo)
+    self.instance_json_location = os.path.join(
+      self.instance_root,
+      SOFTWARE_INSTANCE_JSON_FILENAME
+    )
     # do your tests inside try block and clean up in finally
     self.buildout = {
       "buildout": {
@@ -35,16 +61,65 @@ class SlapConfigurationTest(unittest.TestCase):
 
   def tearDown(self):
     os.unlink(self.resource_file)
+    if os.path.exists(self.instance_json_location):
+      os.unlink(self.instance_json_location)
     os.rmdir(self.instance_root)
 
-  @mock.patch("slapos.slap.slap")
-  def test_correct_naming(self, MockClient):
-    """Test correct naming of variables from resource file."""
-    MockClient.initializeConnection.return_value = None
-    MockClient.getInstanceParameterDict.return_value = dict()
-  
-    options = defaultdict(str)
-    recipe = slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
+  def test_no_shared_instance(self):
+    """Test proper call with new api"""
+
+    options = {
+      "url": "http://127.0.0.1:80",
+      "software-instance-reference": "SOFTINST-12",
+    }
+    parameter_dict = {"foo": "bar", "hello": "bye"}
+    instance_data = {
+      "reference": options["software-instance-reference"],
+      "state": "started",
+      "software_type": "Couscous",
+      "compute_partition_id": "slappartx12",
+      "compute_node_id": "COMP-321",
+      "software_release_uri": "foo.cfg",
+      "processing_timestamp": 1223231231,
+      "title": "MyInstance",
+      "root_instance_title": "MyInstanceRoot",
+      "ip_list": [
+        [
+          "slaptap9",
+          "fe80::1ff:fe23:4567:890a"
+        ],
+        [
+          "slaptap9",
+          "10.0.246.114"
+        ]
+      ],
+      "parameters": parameter_dict,
+      "connection_parameters": {"1": 2, "3": "YourURL"},
+    }
+    if self.use_api:
+      api_handler = APIRequestHandler([
+        ("/api/get/", json.dumps(instance_data))
+      ])
+    else:
+      with open(self.instance_json_location, 'w') as f:
+        json.dump(instance_data, f, indent=2)
+      api_handler = APIRequestHandler([])
+    with httmock.HTTMock(api_handler.request_handler):
+      slapconfiguration.Recipe(self.buildout, "slapconfiguration", options)
+
+    self.assertEqual(options["instance-state"], instance_data.get("state"))
+    self.assertEqual(options["slap-software-type"], instance_data.get("software_type"))
+    self.assertEqual(options["slap-computer-partition-id"], instance_data.get("compute_partition_id"))
+    self.assertEqual(options["slap-computer-id"], instance_data.get("compute_node_id"))
+    self.assertEqual(options["slap-software-release-url"], instance_data.get("software_release_uri"))
+    self.assertEqual(options["timestamp"], instance_data.get("processing_timestamp"))
+    self.assertEqual(options["instance-title"], instance_data.get("title"))
+    self.assertEqual(options["root-instance-title"], instance_data.get("root_instance_title"))
+    self.assertEqual(options["instance-guid"], instance_data.get("reference"))
+    self.assertEqual(options["ipv4"], set([instance_data.get("ip_list")[1][1]]))
+    self.assertEqual(options["ipv6"], set([instance_data.get("ip_list")[0][1]]))
+    for key, value in parameter_dict.items():
+      options['configuration.' + key] = value
 
     self.assertEqual(options['tun-ipv4'], "192.168.0.1",
       "Folded attrs should be separated by -")
@@ -52,3 +127,9 @@ class SlapConfigurationTest(unittest.TestCase):
 
     self.assertEqual(options['address-list'], [10, 20],
       "All underscores should be replaced with -")
+
+class SlapConfigurationWithLocalInstanceFile(SlapConfigurationTestMixin, unittest.TestCase):
+  use_api = False
+
+class SlapConfigurationWithApi(SlapConfigurationTestMixin, unittest.TestCase):
+  use_api = True
