@@ -29,46 +29,37 @@ import string, random
 import os
 from six.moves import range
 
+from zc.buildout import UserError
+from zc.buildout.buildout import bool_option
+
+
+def issubpathof(subpath, path):
+  subpath = os.path.abspath(subpath)
+  path = os.path.abspath(path)
+  relpath = os.path.relpath(subpath, start=path)
+  return not relpath.startswith(os.pardir)
+
+
 class Recipe(GenericBaseRecipe):
-
   def __init__(self, buildout, name, options):
-
-    base_path = options['base-path']
-    if options.get('use-hash-url', 'True') in ['true', 'True']:
-      pool = string.ascii_letters + string.digits
-      hash_string = ''.join(random.choice(pool) for i in range(64))
-      path = os.path.join(base_path, hash_string)
-  
-      if os.path.exists(base_path):
-        path_list = os.listdir(base_path)
-        if len(path_list) == 1:
-          hash_string = path_list[0]
-          path = os.path.join(base_path, hash_string)
-        elif len(path_list) > 1:
-          raise ValueError("Folder %s should contain 0 or 1 element." % base_path)
-  
-      options['root-dir'] = path
-      options['path'] = hash_string
-    else:
-      options['root-dir'] = base_path
-      options['path'] = ''
+    host, port, socketpath, abstract = (
+      options.get(k) for k in ('host', 'port', 'socketpath', 'abstract'))
+    oneof = host, socketpath, abstract
+    if sum(bool(v) for v in oneof) != 1 or bool(host) != bool(port):
+      raise UserError("Specify one of (host, port) | socketpath | abstract")
+    address = (host, int(port)) if host else socketpath or '\0' + abstract
+    options['address'] = address
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
-
   def install(self):
-
-    if not os.path.exists(self.options['root-dir']):
-      os.mkdir( self.options['root-dir'] )
     parameters = {
-      'host': self.options['host'],
-      'port': int(self.options['port']),
+      'address': self.options['address'],
       'cwd': self.options['base-path'],
       'log-file': self.options['log-file'],
-      'cert-file': self.options.get('cert-file', ''),
-      'key-file': self.options.get('key-file', ''),
-      'root-dir': self.options['root-dir']
+      'cert-file': self.options.get('cert-file'),
+      'key-file': self.options.get('key-file'),
+      'allow-write': bool_option(self.options, 'allow-write', 'false')
     }
-
     return self.createPythonScript(
         self.options['wrapper'].strip(),
         __name__ + '.simplehttpserver.run',
