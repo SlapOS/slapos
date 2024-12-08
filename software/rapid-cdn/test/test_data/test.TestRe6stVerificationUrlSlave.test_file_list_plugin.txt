@@ -15,6 +15,7 @@ T-0/etc/plugin/master-key-upload-url-ready-promise.py
 T-0/etc/plugin/monitor-bootstrap-status.py
 T-0/etc/plugin/monitor-http-frontend.py
 T-0/etc/plugin/monitor-httpd-listening-on-tcp.py
+T-0/etc/plugin/promise-logrotate-setup.py
 T-0/etc/plugin/publish-failsafe-error.py
 T-0/etc/plugin/rejected-slave.py
 T-1/etc/plugin/__init__.py
