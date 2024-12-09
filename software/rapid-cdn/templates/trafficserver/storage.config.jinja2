@@ -50,4 +50,4 @@
 # A small default cache (256MB). This is set to allow for the regression test to succeed
 # most likely you'll want to use a larger cache. And, we definitely recommend the use
 # of raw devices for production caches.
-{{ ats_configuration.get("cache-path") }} {{ ats_configuration.get("disk-cache-size") }}
+{{ ats_configuration["cache-path"] }} {{ ats_configuration["disk-cache-size"] }}
