@@ -28,6 +28,7 @@ def main():
   parser.add_argument('--backup', required=True)
   parser.add_argument('--cfg', required=True)
   parser.add_argument('--dirs', action='append')
+  parser.add_argument('--files', action='append')
   parser.add_argument('--exitfile', required=True)
   parser.add_argument('--errorfile', required=True)
   args = parser.parse_args()
@@ -44,6 +45,7 @@ class TheiaExport(object):
     self.backup_dir = args.backup
     self.slapos_cfg = cfg = args.cfg
     self.dirs = args.dirs
+    self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
     configp = configparser.SafeConfigParser()
@@ -62,8 +64,13 @@ class TheiaExport(object):
   def backup_tree(self, src):
     return copytree(self.rsync_bin, src, self.mirror_path(src))
 
-  def backup_file(self, src):
-    return copyfile(src, self.mirror_path(src))
+  def backup_file(self, src, fail_if_missing=False):
+    if os.path.exists(src):
+      copyfile(src, self.mirror_path(src))
+    elif fail_if_missing:
+      raise Exception('File %s is missing' % src)
+    else:
+      remove(self.mirror_path(src))
 
   def backup_db(self):
     copydb(self.sqlite3_bin, self.proxy_db, self.mirror_path(self.proxy_db))
@@ -154,11 +161,15 @@ class TheiaExport(object):
     self.remove_signatures()
 
     self.log('Backup resilient timestamp ' + timestamp)
-    self.backup_file(timestamp)
+    self.backup_file(timestamp, fail_if_missing=True)
 
     for d in self.dirs:
       self.log('Backup directory ' + d)
       self.backup_tree(d)
+
+    for f in self.files:
+      self.log('Backup (or delete backup of) file ' + f)
+      self.backup_file(f)
 
     self.log('Backup slapproxy database')
     self.backup_db()
