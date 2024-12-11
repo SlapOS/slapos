@@ -357,9 +357,8 @@
       "description": "Neighbour Cell Info",
       "patternProperties": {
         ".*": {
-            "$ref": "peer/cell/input-schema.json"
-          },
-          "type": "object"
+          "$ref": "peer/cell/input-schema.json"
+        }
       },
       "type": "object",
       "default": {}
