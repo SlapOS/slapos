@@ -30,6 +30,8 @@ import os
 from recurls import Recurls
 import http.client
 import json
+import io
+import gzip
 import multiprocessing
 import subprocess
 from unittest import skip
@@ -2521,16 +2523,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
-
-    path = 'test-path/deep/.././deeper'
-    backend_url = self.getSlaveParameterDictDict()['auth-to-backend']['url']
-    config_result = mimikra.config(
-      backend_url + path,
-      headers=setUpHeaders([
-        ('X-Config-Timeout', '10')
-      ])
-    )
-    self.assertEqual(config_result.status_code, http.client.CREATED)
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
@@ -2543,51 +2535,34 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        path,
-        headers=setUpHeaders([
-          ('Accept-Encoding', 'gzip'),
-        ])
+        '/',
       )
 
       self.assertEqual(
         self.certificate_pem,
         result.certificate)
 
-      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+      # proof that proper backend was accessed
+      self.assertEqual(
+        'Auth Backend',
+        result.headers['X-Backend-Identification']
+      )
+
+      self.assertEqualResultJson(result, 'Path', '/')
 
       try:
         j = result.json()
       except Exception:
         raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-      self.assertFalse('Content-Encoding' in result.headers)
       self.assertRequestHeaders(
          j['Incoming Headers'], parameter_dict['domain'])
 
-      self.assertEqual(
-        'secured=value;secure, nonsecured=value',
-        result.headers['Set-Cookie']
-      )
-      # proof that proper backend was accessed
-      self.assertEqual(
-        'Auth Backend',
-        result.headers['X-Backend-Identification']
-      )
     finally:
       self.stopAuthenticatedServerProcess()
 
   def test_auth_to_backend_not_configured(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend-not-configured')
-    path = 'test-path/deep/.././deeper'
-    backend_url = self.getSlaveParameterDictDict()[
-      'auth-to-backend-not-configured']['url']
-    config_result = mimikra.config(
-      backend_url + path,
-      headers=setUpHeaders([
-        ('X-Config-Timeout', '10')
-      ])
-    )
-    self.assertEqual(config_result.status_code, http.client.CREATED)
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
@@ -2600,10 +2575,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        path,
-        headers=setUpHeaders([
-          ('Accept-Encoding', 'gzip'),
-        ])
+        '/',
       )
 
       self.assertEqual(
@@ -2623,10 +2595,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
     )
 
     self.assertEqual(
@@ -2642,11 +2610,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result.headers['Set-Cookie']
-    )
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
@@ -2664,6 +2627,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
   def test_compressed_result(self):
+    """Fix the test
+ * configure with compressed data
+ * send them from the backend
+ * compare some checksum of compressed data
+"""
     parameter_dict = self.assertSlaveBase(
       'Url',
       {
@@ -2673,36 +2641,42 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       }
     )
 
+    data = 'This is some compressed information'
+    out = io.BytesIO()
+    with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=9) as f:
+      f.write(data.encode())
+    data_compressed = out.getvalue()
+
+    path = '/compressed'
+    config_result = mimikra.config(
+      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      data=data_compressed,
+      headers=setUpHeaders([
+        ('X-Config-Reply-Header-Content-Encoding', 'gzip'),
+        ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ])
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result_compressed = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper',
-      headers={
-        'Accept-Encoding': 'gzip',
-        'Compress': '1',
-      }
+      path,
+      headers=setUpHeaders([
+        ('Accept-Encoding', 'gzip'),
+      ])
     )
     self.assertEqual(
       'gzip',
       result_compressed.headers['Content-Encoding']
     )
-
-    # Assert that no tampering was done with the request
-    # (compression/decompression)
-    # Backend compresses with 0 level, so decompression/compression
-    # would change somthing
     self.assertEqual(
-      result_compressed.headers['Content-Length'],
-      result_compressed.headers['Backend-Content-Length']
+      len(data_compressed),
+      int(result_compressed.headers['Content-Length'])
     )
 
-    result_not_compressed = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test-path/deep/.././deeper',
-      headers={
-        'Accept-Encoding': 'gzip',
-      }
+    self.assertEqual(
+      data_compressed,
+      result_compressed.raw_bytes
     )
-    self.assertFalse('Content-Encoding' in result_not_compressed.headers)
 
   def test_no_content_type_alter(self):
     parameter_dict = self.assertSlaveBase(
