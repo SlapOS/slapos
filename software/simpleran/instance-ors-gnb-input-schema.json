@@ -60,7 +60,7 @@
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
       "default": {
-        "1": {
+        "Local core-network": {
           "amf_addr": "127.0.1.100"
         }
       }
@@ -69,7 +69,7 @@
       "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
       "default": {
-        "1": {
+        "Test PLMN": {
           "plmn": "00101",
           "tac": 100
         }
@@ -78,15 +78,21 @@
     "nssai": {
       "$ref": "instance-enb-input-schema.json#/properties/nssai"
     },
-    "nr_handover_a3_offset": {
-      "title": "A3 offset for NR handover",
-      "description": "RSRP gain offset between gNBs which will trigger handover",
+    "handover_a1_rsrp": {
+      "title": "Handover A1 event RSRP threshold",
+      "description": "Integer, range from -140 to -43. RSRP threshold value in dBm.",
       "type": "number",
-      "default": 6
+      "default": -70
     },
-    "nr_handover_time_to_trigger": {
-      "title": "Time to Trigger for NR handover",
-      "description": "Time to triger after which NR handover will be triggerd if A3 offset is reached",
+    "handover_a1_hysteresis": {
+      "title": "Handover A1 event hysteresis",
+      "description": "Integer, range from 0 to 30. A1 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
+      "type": "number",
+      "default": 0
+    },
+    "handover_a1_time_to_trigger": {
+      "title": "Handover A1 event time to trigger",
+      "description": "Time in ms during which the A1 event condition must be met before triggering the measurement report.",
       "type": "number",
       "enum": [
         0,
@@ -106,38 +112,237 @@
         2560,
         5120
       ],
-      "default": 100
+      "default": 640
+    },
+    "handover_a2_rsrp": {
+      "title": "Handover A2 event RSRP threshold",
+      "description": "Integer, range from -140 to -43. RSRP threshold value in dBm.",
+      "type": "number",
+      "default": -80
+    },
+    "handover_a2_hysteresis": {
+      "title": "Handover A2 event hysteresis",
+      "description": "Integer, range from 0 to 30. A2 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
+      "type": "number",
+      "default": 0
+    },
+    "handover_a2_time_to_trigger": {
+      "title": "Handover A2 event time to trigger",
+      "description": "Time in ms during which the A2 event condition must be met before triggering the measurement report.",
+      "type": "number",
+      "enum": [
+        0,
+        40,
+        64,
+        80,
+        100,
+        128,
+        160,
+        256,
+        320,
+        480,
+        512,
+        640,
+        1024,
+        1280,
+        2560,
+        5120
+      ],
+      "default": 640
+    },
+    "nr_nr_handover": {
+      "title": "NR Handover",
+      "type": "object",
+      "default": {
+        "event": {
+          "a3_rsrp": 6
+        },
+        "hysteresis": 0,
+        "time_to_trigger": 480
+      },
+      "properties": {
+        "event": {
+          "title": "NR Handover event",
+          "type": "object",
+          "oneOf": [
+            {
+              "title": "A3 event",
+              "type": "object",
+              "required": [
+                "a3_rsrp"
+              ],
+              "properties": {
+                "a3_rsrp": {
+                  "title": "Handover A3 event RSRP offset",
+                  "description": "Integer, range from -140 to -43. RSRP gain offset between eNBs and gNBs which will trigger handover",
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "title": "A4 event",
+              "type": "object",
+              "required": [
+                "a4_rsrp"
+              ],
+              "properties": {
+                "a4_rsrp": {
+                  "title": "Handover A4 event RSRP threshold",
+                  "description": "Integer, range from -140 to -43. RSRP threshold value in dBm",
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "title": "A5 event",
+              "type": "object",
+              "required": [
+                "a5_threshold1_rsrp",
+                "a5_threshold2_rsrp"
+              ],
+              "properties": {
+                "a5_threshold1_rsrp": {
+                  "title": "Handover A5 event RSRP threshold1",
+                  "description": "Integer, range from -140 to -43. RSRP threshold1 value in dBm",
+                  "type": "number"
+                },
+                "a5_threshold2_rsrp": {
+                  "title": "Handover A5 event RSRP threshold2",
+                  "description": "Integer, range from -140 to -43. RSRP threshold2 value in dBm",
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "hysteresis": {
+          "title": "NR Handover hysteresis",
+          "description": "Integer, range from 0 to 30. A3/A4/A5 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
+          "type": "number"
+        },
+        "time_to_trigger": {
+          "title": "NR Handover time to trigger",
+          "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report.",
+          "type": "number",
+          "enum": [
+            0,
+            40,
+            64,
+            80,
+            100,
+            128,
+            160,
+            256,
+            320,
+            480,
+            512,
+            640,
+            1024,
+            1280,
+            2560,
+            5120
+          ]
+        }
+      }
+    },
+    "nr_eutra_handover": {
+      "title": "EUTRA Handover",
+      "type": "object",
+      "default": {
+        "event": {
+          "b1_rsrp": -80
+        },
+        "hysteresis": 0,
+        "time_to_trigger": 100
+      },
+      "properties": {
+        "event": {
+          "title": "EUTRA Handover event",
+          "type": "object",
+          "oneOf": [
+            {
+              "title": "B1 event",
+              "type": "object",
+              "required": [
+                "b1_rsrp"
+              ],
+              "properties": {
+                "b1_rsrp": {
+                  "title": "Handover B1 event RSRP threshold",
+                  "description": "Integer, range from -156 to -30. RSRP threshold value in dBm.",
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "title": "B2 event",
+              "type": "object",
+              "required": [
+                "b2_threshold1_rsrp",
+                "b2_threshold2_rsrp"
+              ],
+              "properties": {
+                "b2_threshold1_rsrp": {
+                  "title": "Handover B2 event RSRP threshold1",
+                  "description": "Integer, range from -140 to -43. RSRP threshold1 value in dBm",
+                  "type": "number"
+                },
+                "b2_threshold2_rsrp": {
+                  "title": "Handover B2 event RSRP threshold2",
+                  "description": "Integer, range from -140 to -43. RSRP threshold2 value in dBm",
+                  "type": "number"
+                }
+              }
+            }
+          ]
+        },
+        "hysteresis": {
+          "title": "EUTRA Handover hysteresis",
+          "description": "Integer, range from 0 to 30. EUTRA B1 or B2 hysteresis in 0.5dB steps.",
+          "type": "number"
+        },
+        "time_to_trigger": {
+          "title": "EUTRA Handover time to trigger",
+          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report.",
+          "type": "number",
+          "enum": [
+            0,
+            40,
+            64,
+            80,
+            100,
+            128,
+            160,
+            256,
+            320,
+            480,
+            512,
+            640,
+            1024,
+            1280,
+            2560,
+            5120
+          ]
+        }
+      }
+    },
+    "handover_meas_gap_config": {
+      "title": "Handover measurement gap configuration",
+      "description": "Configuration of the measurement gap. Ignored if no neighbour cells are configured.",
+      "type": "string",
+      "enum": [
+        "None",
+        "Gap Pattern 0",
+        "Gap Pattern 1"
+      ],
+      "default": "Gap Pattern 1"
     },
     "ncell_list": {
       "title": "Neighbour Cell Info",
       "description": "Neighbour Cell Info",
       "patternProperties": {
         ".*": {
-          "properties": {
-            "dl_nr_arfcn": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/dl_nr_arfcn"
-            },
-            "ssb_nr_arfcn": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
-            },
-            "pci": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/pci"
-            },
-            "nr_cell_id": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/nr_cell_id"
-            },
-            "gnb_id_bits": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/gnb_id_bits"
-            },
-            "nr_band": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/nr_band"
-            },
-            "tac": {
-              "$ref": "peer/cell/nr/input-schema.json#/properties/tac",
-              "default": 1
-            }
-          },
-          "type": "object"
+          "$ref": "peer/cell/input-schema.json"
         }
       },
       "type": "object",

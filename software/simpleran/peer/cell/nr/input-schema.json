@@ -10,12 +10,16 @@
     "nr_cell_id",
     "gnb_id_bits",
     "dl_nr_arfcn",
-    "nr_band"
+    "nr_band",
+    "plmn"
   ],
   "properties": {
     "cell_type": {
       "$ref": "../../../peer/cell/common.json#/properties/cell_type",
       "const": "nr"
+    },
+    "cell_kind": {
+      "$ref": "../../../peer/cell/common.json#/properties/cell_kind"
     },
     "nr_cell_id": {
       "title": "NR Cell ID",
@@ -44,6 +48,11 @@
     },
     "tac": {
       "$ref": "../../../cell/nr/input-schema.json#/$defs/tac"
+    },
+    "plmn": {
+      "title": "Public Land Mobile Network",
+      "description": "Public Land Mobile Network",
+      "type": "string"
     }
   }
 }
