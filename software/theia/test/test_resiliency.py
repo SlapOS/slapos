@@ -160,6 +160,19 @@ class ResilienceMixin(object):
 
 
 class ExportAndImportMixin(object):
+  @classmethod
+  def setUpClass(cls):
+    super(ExportAndImportMixin, cls).setUpClass()
+    cls.theia_resiliency_logs = []
+
+  def fail(self, *args):
+    for log in self.theia_resiliency_logs:
+      print(log)
+    super(ExportAndImportMixin, self).fail(*args)
+
+  def tearDown(self):
+    self.theia_resiliency_logs.clear()
+
   def getExportExitfile(self):
     return self.getPartitionPath('export', 'srv', 'export-exitcode-file')
 
@@ -212,7 +225,8 @@ class ExportAndImportMixin(object):
 
     # Call export script manually
     theia_export_script = self.getPartitionPath('export', 'bin', 'theia-export-script')
-    subprocess.check_call((theia_export_script,), stderr=subprocess.STDOUT)
+    out = subprocess.check_output((theia_export_script,), stderr=subprocess.STDOUT)
+    self.logs.append(out)
 
     # Check that the export exitcode file was modified
     self.assertGreater(os.path.getmtime(exitfile), initial_exitdate)
@@ -236,7 +250,7 @@ class ExportAndImportMixin(object):
 
     # Call the import script manually
     theia_import_script = self.getPartitionPath('import', 'bin', 'theia-import-script')
-    subprocess.check_call((theia_import_script,), stderr=subprocess.STDOUT)
+    out = subprocess.check_output((theia_import_script,), stderr=subprocess.STDOUT)
 
     # Check that the import exitcode file was updated
     self.assertGreater(os.path.getmtime(exitfile), initial_exitdate)
@@ -566,7 +580,7 @@ class TheiaSyncMixin(TakeoverMixin, ResilienceMixin):
     # XXX Accelerate cron frequency instead ?
     exporter_script = self.getPartitionPath('export', 'bin', 'exporter')
     transaction_id = str(int(time.time()))
-    subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
+    subprocess.check_output((exporter_script, '--transaction-id', transaction_id))
 
     takeover_url, _ = self._getTakeoverUrlAndPassword()
 
