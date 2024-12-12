@@ -30,6 +30,8 @@ puma_script="{{ puma_script }}"
 puma_pid_file="{{ puma_pid_file }}"
 sidekiq_script="{{ sidekiq_script }}"
 var_location="{{ var_directory }}"
+gitaly_script="{{ gitaly_script }}"
+gitaly_pid_file="{{ gitaly_pid_file }}"
 
 # export GIT_EXEC_PATH=$git_location/libexec/git-core/
 
@@ -57,6 +59,7 @@ kill_process () {
 check_process $postgres_pid_file "Postgres"
 check_process $redis_pid_file "Redis"
 check_process $puma_pid_file "Puma"
+check_process $gitaly_pid_file "Gitaly"
 
 if [ -f "$postgres_pid_file" ]; then
   rm $postgres_pid_file
@@ -66,7 +69,7 @@ fi
 # restoration will created them at every run
 echo "Cleanup gitlab backup and old repositories folders..."
 rm -rf $var_location/backup/*
-rm -rf $var_location/repositories*
+rm -rf $var_location/repositories.*
 
 echo "Starting Postgres..."
 $postgres_executable &
@@ -77,6 +80,20 @@ echo "Starting Redis server..."
 $redis_executable &
 redis_pid=$!
 trap "kill $postgres_pid $redis_pid" EXIT TERM INT
+echo "Starting gitaly service..."
+$gitaly_script &
+gitaly_pid=$!
+trap "kill $gitaly_pid $postgres_pid $redis_pid" EXIT TERM INT
+echo "Starting Puma"
+$puma_script &
+puma_pid=$!
+trap "kill $gitaly_pid $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
+# wait until Puma is started and pid file exists
+sleep 200
+if [ -s "$puma_pid_file" ]; then
+  puma_pid=$(head -n 1 $puma_pid_file) > /dev/null 2>&1
+  trap "kill $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
+fi
 echo "[OK]"
 echo "Restoring gitlab data..."
 
@@ -90,15 +107,7 @@ echo "Checking gitlab promises..."
 echo "[info] Not all promises are checked!"
 $promise_check/gitlab-app
 
-echo "Starting Puma to check gitlab-shell promise..."
-$puma_script &
-puma_pid=$!
-trap "kill $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
-sleep 60
-if [ -s "$puma_pid_file" ]; then
-  puma_pid=$(head -n 1 $puma_pid_file) > /dev/null 2>&1
-  trap "kill $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
-fi
+echo "Check gitlab-shell promise..."
 $promise_check/gitlab-shell
 
 #echo "starting Sidekiq to check sidekiq promise..."
@@ -110,6 +119,7 @@ $promise_check/gitlab-shell
 kill_process $postgres_pid
 kill_process $redis_pid
 kill_process $puma_pid
+kill_process $gitaly_pid
 
 RESTORE_EXIT_CODE=$?
 
