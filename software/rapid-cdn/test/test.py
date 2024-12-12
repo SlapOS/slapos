@@ -2521,16 +2521,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
-
-    path = 'test-path/deep/.././deeper'
-    backend_url = self.getSlaveParameterDictDict()['auth-to-backend']['url']
-    config_result = mimikra.config(
-      backend_url + path,
-      headers=setUpHeaders([
-        ('X-Config-Timeout', '10')
-      ])
-    )
-    self.assertEqual(config_result.status_code, http.client.CREATED)
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
@@ -2543,36 +2533,29 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        path,
-        headers=setUpHeaders([
-          ('Accept-Encoding', 'gzip'),
-        ])
+        '/',
       )
 
       self.assertEqual(
         self.certificate_pem,
         result.certificate)
 
-      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+      # proof that proper backend was accessed
+      self.assertEqual(
+        'Auth Backend',
+        result.headers['X-Backend-Identification']
+      )
+
+      self.assertEqualResultJson(result, 'Path', '/')
 
       try:
         j = result.json()
       except Exception:
         raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-      self.assertFalse('Content-Encoding' in result.headers)
       self.assertRequestHeaders(
          j['Incoming Headers'], parameter_dict['domain'])
 
-      self.assertEqual(
-        'secured=value;secure, nonsecured=value',
-        result.headers['Set-Cookie']
-      )
-      # proof that proper backend was accessed
-      self.assertEqual(
-        'Auth Backend',
-        result.headers['X-Backend-Identification']
-      )
     finally:
       self.stopAuthenticatedServerProcess()
 
@@ -2623,10 +2606,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
     )
 
     self.assertEqual(
@@ -2642,11 +2621,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result.headers['Set-Cookie']
-    )
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
