@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.384 (2024-12-16)
+-------------
+
+* Add promise to check if GPS is synchronized when enabled
+
 Version 1.0.383 (2024-12-11)
 -------------
 
