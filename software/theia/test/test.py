@@ -400,6 +400,12 @@ class TestTheiaFrontend(TheiaTestCase):
       resp = requests.get(self.connection_parameters[key], verify=False)
       self.assertEqual(requests.codes.unauthorized, resp.status_code)
 
+class TestTheiaFrontendOtherAdditional(TestTheiaFrontend):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'additional-frontend-sr': 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
+    }
 
 class TestTheiaForwardFrontendRequestsEnabled(TheiaTestCase):
 

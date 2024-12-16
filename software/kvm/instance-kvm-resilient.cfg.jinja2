@@ -13,7 +13,7 @@
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
 {% endif -%}
 {% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
+{% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') or slapparameter_dict.get('frontend-additional-software-type') or slapparameter_dict.get('frontend-additional-software-url')%}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
