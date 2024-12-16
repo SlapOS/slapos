@@ -170,9 +170,17 @@ context =
 [re6st-registry-promise]
 <= monitor-promise-base
 promise = check_socket_listening
-name = re6st-registry.py
+name = check-re6st-registry.py
 config-host = ${re6st-registry:ipv4}
 config-port = ${re6st-registry:port}
+
+[re6st-certificate-promise]
+<= monitor-promise-base
+promise = check_certificate
+name = check-re6st-certificate.py
+config-certificate = ${re6st-registry-conf-dict:ca}
+# RENEW_PERIOD is 30 days in re6st, so warn 15 days before all nodes will try to renew
+config-certificate-expiration-days = 45
 
 [apache-registry-promise]
 <= monitor-promise-base
@@ -206,5 +214,6 @@ parts =
   port-redirection
 
   re6st-registry-promise
+  re6st-certificate-promise
   apache-registry-promise
   monitor-base
