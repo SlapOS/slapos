@@ -1,5 +1,6 @@
+# compute additional_frintend before resolving the defaults
+{%- set additional_frontend = parameter_dict.get('additional-frontend-guid') or parameter_dict.get('additional-frontend-sr') or parameter_dict.get('additional-frontend-sr-type') %}
 {%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
-{%- set additional_frontend = parameter_dict['additional-frontend-guid'] %}
 {%- set embedded_instance_config = parameter_dict['initial-embedded-instance'] %}
 
 [buildout]
