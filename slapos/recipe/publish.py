@@ -27,15 +27,16 @@
 from __future__ import print_function
 import zc.buildout
 from slapos.recipe.librecipe import wrap
-from slapos.recipe.librecipe import GenericSlapRecipe
+from slapos.recipe.librecipe import GenericjIOAPIRecipe
 import six
 import os
 import traceback
 
 CONNECTION_PARAMETER_STRING = 'connection-'
 
-class Recipe(GenericSlapRecipe):
+class Recipe(GenericjIOAPIRecipe):
   return_list = []
+
   def __init__(self, buildout, name, options):
     super(Recipe, self).__init__(buildout, name, options)
     # Tell buildout about the sections we will access during install.
@@ -95,10 +96,10 @@ class SerialisedFailsafe(Failsafe, Serialised):
   pass
 
 
-class PublishSection(GenericSlapRecipe):
+class PublishSection(GenericjIOAPIRecipe):
   """
   Take a list of "request" sections, and publish every connection parameter.
-  
+
   Input:
     section-list: String, representing the list of sections to fetch
                   parameters to publish, in order, separated by a space.
