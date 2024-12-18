@@ -219,7 +219,7 @@ context =
 {%- endif %}
 
 {% if replication -%}
-{% set bootstrap_url = replication['bootstrap-url'] -%}
+{% set bootstrap_url = replication.get('bootstrap-url') -%}
 {% set primary_url = replication['primary-url'] -%}
 {% set primary = urllib_parse.urlsplit(primary_url) -%}
 [{{ section('mariadb-setup-replication') }}]
@@ -233,8 +233,10 @@ inline =
   mycnf="${my-cnf:output}"
   mycnf_socket="${my-cnf-parameters:socket}"
   update_mysql="${update-mysql:output}"
+{%- if bootstrap_url %}
   bootstrap_url={{ six_moves.shlex_quote(bootstrap_url) }}
   bootstrap_file="${directory:mariadb-backup-full}/bootstrap.sql.gz"
+{%- endif %}
   curl="{{ parameter_dict['curl-location'] }}/bin/curl"
   zcat="{{ parameter_dict['gzip-location'] }}/bin/zcat"
   mysql="${binary-wrap-mysql:wrapper-path}"
@@ -263,6 +265,7 @@ inline =
   $update_mysql
   echo "  \_ OK"
 
+{%- if bootstrap_url %}
   echo "Fetching $bootstrap_url"
   $curl -o $bootstrap_file --fail $bootstrap_url
   echo "  \_ OK"
@@ -281,6 +284,12 @@ inline =
   fi
   echo "  \_ OK, found $SQL_SET_GTID"
 
+{%- else %}
+  echo "Skipping bootstrap with empty GTID"
+  SQL_SET_GTID='SET GLOBAL gtid_slave_pos=""'
+  echo "  \_ Using $SQL_SET_GTID"
+
+{%- endif %}
   echo "Configuring server as replica"
   echo -n "  \_"
   $mysql -e "$SQL_SET_GTID"

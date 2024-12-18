@@ -35,7 +35,7 @@
           },
           "oneOf": {
             {
-              "required": ["primary-url", "bootstrap-url"]
+              "required": ["primary-url"]
             },
             {
               "enum": [{}]
