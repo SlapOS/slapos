@@ -376,7 +376,7 @@ config-command = {{ '${' ~ check_software_url_section_name ~ ':path}' }}
 
 [request-frontend-base]
 <= request-common-base
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:requestoptional
 shared = true
 return =
   secure_access
