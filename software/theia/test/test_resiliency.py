@@ -160,6 +160,19 @@ class ResilienceMixin(object):
 
 
 class ExportAndImportMixin(object):
+  @classmethod
+  def setUpClass(cls):
+    super(ExportAndImportMixin, cls).setUpClass()
+    cls.theia_resiliency_logs = []
+
+  def fail(self, *args):
+    for log in self.theia_resiliency_logs:
+      print(log)
+    super(ExportAndImportMixin, self).fail(*args)
+
+  def tearDown(self):
+    self.theia_resiliency_logs.clear()
+
   def getExportExitfile(self):
     return self.getPartitionPath('export', 'srv', 'export-exitcode-file')
 
@@ -212,7 +225,8 @@ class ExportAndImportMixin(object):
 
     # Call export script manually
     theia_export_script = self.getPartitionPath('export', 'bin', 'theia-export-script')
-    subprocess.check_call((theia_export_script,), stderr=subprocess.STDOUT)
+    out = subprocess.check_output((theia_export_script,), stderr=subprocess.STDOUT)
+    self.theia_resiliency_logs.append(out)
 
     # Check that the export exitcode file was modified
     self.assertGreater(os.path.getmtime(exitfile), initial_exitdate)
@@ -236,7 +250,8 @@ class ExportAndImportMixin(object):
 
     # Call the import script manually
     theia_import_script = self.getPartitionPath('import', 'bin', 'theia-import-script')
-    subprocess.check_call((theia_import_script,), stderr=subprocess.STDOUT)
+    out = subprocess.check_output((theia_import_script,), stderr=subprocess.STDOUT)
+    self.theia_resiliency_logs.append(out)
 
     # Check that the import exitcode file was updated
     self.assertGreater(os.path.getmtime(exitfile), initial_exitdate)
@@ -247,7 +262,7 @@ class ExportAndImportMixin(object):
     self.assertPromiseSucess()
 
 
-class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestCase):
+class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
   script_relpath = os.path.join(
     'srv', 'runner', 'instance', 'slappart0',
     'srv', '.backup_identity_script')
@@ -327,15 +342,15 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
     except OSError:
       pass
 
-  def test_export_promise(self):
+  def test_export_promise_error(self):
     self.writeFile(self.getExportExitfile(), '1')
     self.assertPromiseFailure('ERROR export script failed')
 
-  def test_import_promise(self):
+  def test_import_promise_error(self):
     self.writeFile(self.getImportExitfile(), '1')
     self.assertPromiseFailure('ERROR import script failed')
 
-  def test_custom_hash_script(self):
+  def test_custom_hash_script_error(self):
     errmsg = 'Bye bye'
     self.customSignatureScript(content='>&2 echo "%s"\nexit 1' % errmsg)
     custom_script = self.getPartitionPath('export', self.script_relpath)
@@ -354,8 +369,41 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
     restore_script = self.customRestoreScript('exit 1')
     self.assertImportFailure('Run custom restore script %s\n ... ERROR !' % restore_script)
 
+  def assertFileState(self, filepath, expect_content):
+    if expect_content is None:
+      self.assertFalse(os.path.exists(filepath))
+    else:
+      with open(filepath) as f:
+        self.assertEqual(f.read(), expect_content)
 
-class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
+  def test_export_import_netrc(self):
+    netrc_content = 'machine example.com login someone password secret'
+    backup_relpath = os.path.join('srv', 'backup', 'theia', '.netrc')
+    # Propagate .netrc to import theia and check each step
+    self.writeFile(self.getPartitionPath('export', '.netrc'), netrc_content)
+    self._doExport()
+    self.assertFileState(
+      self.getPartitionPath('export', backup_relpath), netrc_content)
+    self._doTransfer()
+    self.assertFileState(
+      self.getPartitionPath('import', backup_relpath), netrc_content)
+    self._doImport()
+    self.assertFileState(
+      self.getPartitionPath('import', '.netrc'), netrc_content)
+    # Propagate deletion of .netrc to import theia and check each step
+    os.remove(self.getPartitionPath('export', '.netrc'))
+    self._doExport()
+    self.assertFileState(
+      self.getPartitionPath('export', backup_relpath), None)
+    self._doTransfer()
+    self.assertFileState(
+      self.getPartitionPath('import', backup_relpath), None)
+    self._doImport()
+    self.assertFileState(
+      self.getPartitionPath('import', '.netrc'), None)
+
+
+class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
   def test_twice(self):
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
@@ -533,7 +581,7 @@ class TheiaSyncMixin(TakeoverMixin, ResilienceMixin):
     # XXX Accelerate cron frequency instead ?
     exporter_script = self.getPartitionPath('export', 'bin', 'exporter')
     transaction_id = str(int(time.time()))
-    subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
+    subprocess.check_output((exporter_script, '--transaction-id', transaction_id))
 
     takeover_url, _ = self._getTakeoverUrlAndPassword()
 
