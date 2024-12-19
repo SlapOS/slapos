@@ -1215,6 +1215,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def setUpClass(cls):
+    # snapshot certificates, as having access to them is critical to
+    # understand some failures
+    cls._save_instance_file_pattern_list += (
+      '*/srv/autocert/*',
+    )
     try:
       cls.createWildcardExampleComCertificate()
       cls.prepareCertificate()
