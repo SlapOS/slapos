@@ -38,6 +38,11 @@ setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestHtmlValidatorServer(InstanceTestCase):
+  # Instanciation must only use one partition and must work immediately
+  instance_max_retry = 1
+  report_max_retry = 0
+  partition_count = 1
+
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
 
