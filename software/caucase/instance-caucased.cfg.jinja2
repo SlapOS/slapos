@@ -2,12 +2,14 @@
 {% set bind = (ipv6_set | list)[0] -%}
 {% set base_port = slapparameter_dict.get('base-port', 8009) -%}
 {% set default_netloc = '[' ~ bind ~ ']:' ~ base_port -%}
+{% set backup_period = slapparameter_dict.get('backup-period', 0) -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 service-on-watch = ${:etc}/service
 srv = ${buildout:directory}/srv
+srv-backup-caucased = ${:srv}/backup/caucased
 tmp = ${buildout:directory}/tmp
 
 {{ caucase.caucased(
@@ -22,6 +24,8 @@ tmp = ${buildout:directory}/tmp
   key_len=slapparameter_dict.get('key-length', 2048),
   bind=bind,
   base_port=base_port,
+  backup_dir='${directory:srv-backup-caucased}' if backup_period else None,
+  backup_period=backup_period,
 ) }}
 
 [publish]
