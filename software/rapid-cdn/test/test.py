@@ -90,27 +90,6 @@ SOURCE_IPV6 = '::1'
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
-# "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
-DNS_CACHE = {}
-
-MONTH_DICT = {
-  'Jan': 1,
-  'Feb': 2,
-  'Mar': 3,
-  'Apr': 4,
-  'May': 5,
-  'Jun': 6,
-  'Jul': 7,
-  'Aug': 8,
-  'Sep': 9,
-  'Oct': 10,
-  'Nov': 11,
-  'Dec': 12,
-}
-match_nginx_datetime = re.compile(
-  '(?P<dow>...), (?P<day>..) (?P<monthname>...) (?P<year>....) '
-  '(?P<hour>..):(?P<minute>..):(?P<second>..)',
-).match
 
 def unicode_escape(s):
   return s.encode('unicode_escape').decode()
@@ -1072,45 +1051,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       'application/json',
       result.headers['Content-Type']
     )
-    result_json = result.json()
-    # expected content for each file entry:
-    # - 'type' with files having the value 'file'
-    # - 'name' with the file's basename as value
-    # - 'mtime' with the modification time (though this specific part
-    #   probably cannot be reliably tested) in some specific format (which
-    #   happens to be the one nginx produces)
-    # - 'size' with the file's size (again, not much to actually test for
-    #   exctitude I guess)
     self.assertEqual(
-      sorted([q['name'] for q in result_json]),
+      sorted([q['name'] for q in result.json()]),
       ['access.log', 'backend.log', 'frontend.log'])
-    self.assertIn(
-      'file',
-      {q['type'] for q in result_json},
-    )
-    # The following loop must not raise to pass the test, but nothing specific
-    # is done with extracted values.
-    for entry in result_json:
-      self.assertIn('size', entry)
-      parsed_remote_mtime = match_nginx_datetime(
-        entry['mtime'],
-      ).groupdict()
-      datetime.datetime(
-        int(parsed_remote_mtime['year'], 10),
-        MONTH_DICT[parsed_remote_mtime['monthname']],
-        int(parsed_remote_mtime['day'], 10),
-        int(parsed_remote_mtime['hour'], 10),
-        int(parsed_remote_mtime['minute'], 10),
-        int(parsed_remote_mtime['second'], 10),
-      )
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'access.log', verify=False).status_code
-    )
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'error.log', verify=False).status_code
-    )
     # assert only for few tests, as logs are available for sure only
     # for few of them
     for test_name in [

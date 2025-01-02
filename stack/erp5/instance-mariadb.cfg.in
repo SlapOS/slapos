@@ -275,11 +275,11 @@ url = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
 output = ${directory:bin}/start-clone-from-backup
 context =
   key dash dash:dash
-  key mysql_executable binary-wrap-mysql:wrapper-path
+  key client binary-wrap-mysql:wrapper-path
   key data_directory my-cnf-parameters:data-directory
   key pid_file my-cnf-parameters:pid-file
-  key server_executable mysqld:output
-  key update_executable update-mysql:output
+  key server mysqld:output
+  key update update-mysql:output
   key socket my-cnf-parameters:socket
 
 [{{ section('resiliency-after-import-script') }}]
@@ -290,13 +290,11 @@ output = ${directory:bin}/restore-from-backup
 context =
   key dash dash:dash
   key mysql_executable binary-wrap-mysql:wrapper-path
-  key data_directory my-cnf-parameters:data-directory
-  key backup_directory directory:mariadb-backup-full
+  key mariadb_data_directory my-cnf-parameters:data-directory
+  key mariadb_backup_directory directory:mariadb-backup-full
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
   key server_executable mysqld:output
-  key update_executable update-mysql:output
-  key socket my-cnf-parameters:socket
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d
