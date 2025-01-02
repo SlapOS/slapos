@@ -47,6 +47,7 @@ context =
   raw project_path $${directory:project}
   raw public_path $${directory:frontend-static-public}
   raw statefiles_path $${directory:statefiles}
+  raw netrc_path_if_exists $${buildout:directory}/.netrc
   key exitfile :exitcode-file
   key errorfile :error-file
 {%- raw %}
@@ -61,6 +62,7 @@ inline =
   --dirs {{ project_path }} \
   --dirs {{ public_path }} \
   --dirs {{ statefiles_path }} \
+  --files {{ netrc_path_if_exists }} \
   --exitfile {{ exitfile }} \
   --errorfile {{ errorfile }}
 {%- endraw %}
