@@ -500,7 +500,7 @@ wrapper-path = ${buildout:bin-directory}/runTestSuite
 {%     do connection_string_list.append(
          '%s@%s:%s %s %s' % (
            parsed_url.path.lstrip('/'),
-           parsed_url.hostname,
+           'erp5-catalog-0',
            parsed_url.port,
            parsed_url.username,
            parsed_url.password,
