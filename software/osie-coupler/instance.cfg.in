@@ -50,6 +50,7 @@ etc = ${:home}/etc
 var = ${:home}/var
 script = ${:etc}/run/
 service = ${:etc}/service
+promise = ${:etc}/promise
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
