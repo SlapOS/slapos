@@ -175,7 +175,7 @@ class Recipe(object):
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
                                             'UNKNOWN')
       options['instance-guid'] = computer_partition.getInstanceGuid()
-
+      parameter_dict = self._validateParameterDict(options,parameter_dict)
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
@@ -259,6 +259,9 @@ class Recipe(object):
       # print out augmented options to see what we are passing
       logger.debug(str(options))
       return self._expandParameterDict(options, parameter_dict)
+
+  def _validateParameterDict(self, options, parameter_dict):
+      return parameter_dict
 
   def _expandParameterDict(self, options, parameter_dict):
       options['configuration'] = parameter_dict
@@ -392,6 +395,9 @@ class JsonSchema(Recipe):
 
   def _parseParameterDict(self, software_schema, parameter_dict):
     instance_schema = software_schema.getInstanceRequestParameterSchema()
+    # allow properties added by slapos master
+    instance_schema['$defs']['instance-parameters']['properties']['full_address_list'] = {'type':'array'}
+    instance_schema['$defs']['instance-parameters']['properties']['ip_list'] = {'type':'array'}
     instance = parameter_dict if isinstance(parameter_dict, dict) else {}
     validator = self.Validator(instance_schema)
     errors = list(validator.validate(instance))
@@ -436,7 +442,7 @@ class JsonSchema(Recipe):
     # return: value in ('main', 'all'), value in ('shared', 'all')
     return index & 1, index & 2
 
-  def _expandParameterDict(self, options, parameter_dict):
+  def _validateParameterDict(self, options, parameter_dict):
     set_main, set_shared = self._parseOption(options, 'set-default', 'none')
     validate_tuple = self._parseOption(options, 'validate-parameters', 'all')
     validate_main, validate_shared = validate_tuple
