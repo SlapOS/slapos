@@ -175,7 +175,6 @@ class Recipe(object):
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
                                             'UNKNOWN')
       options['instance-guid'] = computer_partition.getInstanceGuid()
-
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
@@ -198,6 +197,10 @@ class Recipe(object):
               v6_add(ip)
           # XXX: emit warning on unknown address type ?
 
+      # XXX slapproxy is sending 'full_address_list' not 'full_ip_list' (like real slapos master)
+      # just pop this value for now. Remove this when slapproxy is fixed.
+      parameter_dict.pop('full_address_list')
+
       if 'full_ip_list' in parameter_dict:
         for item in parameter_dict.pop('full_ip_list'):
           if len(item) == 5:
@@ -211,6 +214,11 @@ class Recipe(object):
                 route_v4_add(ip)
               if valid_ipv4(network):
                 route_net_add(network)
+
+      # validate the parameters (only when using JsonSchema recipe)
+      # after popping the custom values sent by slapos master
+      # but before adding the value from .slapos-resources file
+      parameter_dict = self._validateParameterDict(options,parameter_dict)
 
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
@@ -259,6 +267,9 @@ class Recipe(object):
       # print out augmented options to see what we are passing
       logger.debug(str(options))
       return self._expandParameterDict(options, parameter_dict)
+
+  def _validateParameterDict(self, options, parameter_dict):
+      return parameter_dict
 
   def _expandParameterDict(self, options, parameter_dict):
       options['configuration'] = parameter_dict
@@ -436,7 +447,7 @@ class JsonSchema(Recipe):
     # return: value in ('main', 'all'), value in ('shared', 'all')
     return index & 1, index & 2
 
-  def _expandParameterDict(self, options, parameter_dict):
+  def _validateParameterDict(self, options, parameter_dict):
     set_main, set_shared = self._parseOption(options, 'set-default', 'none')
     validate_tuple = self._parseOption(options, 'validate-parameters', 'all')
     validate_main, validate_shared = validate_tuple
