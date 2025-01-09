@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "$defs": {
+    "instance-parameters": {
+      "type": "object",
+      "properties": {
+        "boot-image-url-select": {
+          "title": "Boot image",
+          "description": "Selectable list of provided ISO images.",
+          "type": "string",
+          "default": "Debian Bookworm 12 netinst x86_64",
+          "enum": [
+            "Debian Bookworm 12 netinst x86_64",
+            "Debian Bullseye 11 netinst x86_64",
+            "Centos 8.2004 Minimal x86_64",
+            "Ubuntu Noble 24.04 Live Server x86_64",
+            "Ubuntu Jammy 22.04 Live Server x86_64",
+            "Ubuntu Focal 20.04 Live Server x86_64",
+            "openSUSE Leap 15 NET x86_64",
+            "Arch Linux 2020.09.01 x86_64",
+            "Fedora Server 32 netinst x86_64",
+            "FreeBSD 12.1 RELEASE bootonly x86_64",
+            "SUSE Linux Enterprise Server 15 SP6 x86_64"
+          ]
+        },
+        "boot-image-url-list": {
+          "title": "[EXPERT] Boot image list",
+          "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. Maximum images: 4. Maximum image size: 20GB. Download tries: 4. Maximum ownload time: 4h.",
+          "type": "string",
+          "textarea": true
+        }
+      }
+    }
+  },
+  "unevaluatedProperties": false,
+  "allOf": [
+    {
+      "$ref": "#/$defs/instance-parameters"
+    }
+  ]
+}
