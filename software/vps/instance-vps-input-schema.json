@@ -11,7 +11,8 @@
           "description": "Allows to increase amount of RAM (ram-size) and CPU (cmp-count) without restart of the VM process, up to defined maximums (ram-max-size and cpu-max-count). Operation system have to support online addition of RAM and CPU.",
           "type": "boolean",
           "default": false,
-          "const": false
+          "const": false,
+          "options": {"hidden": true}
         },
         "ram-size": {
           "title": "RAM size",
