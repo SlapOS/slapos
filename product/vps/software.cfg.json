@@ -1,0 +1,14 @@
+{
+  "name": "VPS",
+  "description": "VPS",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default VPS",
+      "request": "../../software/kvm/boot-image-input-schema.json",
+      "response": "../../software/kvm/instance-kvm-output-schema.json",
+      "index": 0
+    }
+  }
+}
