@@ -109,7 +109,7 @@ def generateSoftwareCfgTest():
         os.path.dirname(slapos.test.__file__),
         "schema.json"), 'r'))
   base_path = "/".join(slapos.test.__file__.split("/")[:-3])
-  for path in glob.glob("%s/software/*/software.cfg.json" % base_path):
+  for path in glob.glob("%s/*/*/software.cfg.json" % base_path):
     test_name = "test_%s_software_cfg_json" % path.split("/")[-2]
     setattr(TestJSONSchemaValidation, test_name, createSoftwareCfgValidatorTest(path, software_cfg_schema))
     setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path))
@@ -117,7 +117,7 @@ def generateSoftwareCfgTest():
 
 def generateJSONSchemaTest():
   base_path = "/".join(slapos.test.__file__.split("/")[:-3])
-  for path in glob.glob("%s/software/*/*schema.json" % base_path):
+  for path in glob.glob("%s/*/*/*schema.json" % base_path):
     software_type = path.split("/")[-2]
     filename = path.split("/")[-1].replace("-", "_").replace(".", "_")
     test_name = "test_schema_%s_%s" % (software_type, filename)
