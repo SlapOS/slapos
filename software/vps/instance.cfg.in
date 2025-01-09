@@ -1,0 +1,76 @@
+[buildout]
+parts =
+  switch_softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+
+[switch_softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-kvm:output
+
+[slap-configuration]
+# we usejsonschema recipe in order to force some values for VPS (see all the const in the JSON schema)
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.json:target}
+set-default = main
+validate-parameters = main
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+  key develop_eggs_directory buildout:develop-eggs-directory
+  key eggs_directory buildout:eggs-directory
+  key ipv4 slap-configuration:ipv4
+  key ipv6 slap-configuration:ipv6
+  key global_ipv4_prefix network-information:global-ipv4-network
+  key storage_dict slap-configuration:storage-dict
+  key slapparameter_dict slap-configuration:configuration
+  key computer_id slap-configuration:computer-id
+  raw openssl_executable_location ${openssl:location}/bin/openssl
+  $${:extra-context}
+
+[dynamic-template-kvm]
+<= jinja2-template-base
+url = ${template-kvm:location}/instance-kvm.cfg.jinja2
+filename = template-kvm.cfg
+extra-context =
+  section slap_configuration slap-configuration
+  raw ansible_promise_tpl ${template-ansible-promise:target}
+  raw curl_executable_location ${curl:location}/bin/curl
+  raw dash_executable_location ${dash:location}/bin/dash
+  raw dnsresolver_executable ${buildout:bin-directory}/dnsresolver
+  raw dcron_executable_location ${dcron:location}/sbin/crond
+  raw boot_image_select_source_config ${boot-image-select-source-config:target}
+  raw whitelist_domains_default ${whitelist-domains-default:target}
+  raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:output}
+  raw image_download_controller ${image-download-controller:output}
+  raw image_download_config_creator ${image-download-config-creator:output}
+  raw logrotate_cfg ${template-logrotate-base:output}
+  raw novnc_location ${noVNC:location}
+  raw netcat_bin ${netcat:location}/bin/netcat
+  raw nginx_executable ${nginx-output:nginx}
+  raw nginx_mime ${nginx-output:mime}
+  raw python_executable ${buildout:executable}
+  raw python_eggs_executable ${buildout:bin-directory}/${python-with-eggs:interpreter}
+  raw qemu_executable_location ${qemu:location}/bin/qemu-system-x86_64
+  raw qemu_img_executable_location ${qemu:location}/bin/qemu-img
+  raw qemu_start_promise_tpl ${template-qemu-ready:target}
+  raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
+  raw template_httpd_cfg ${template-httpd:output}
+  raw template_content ${template-content:target}
+  raw template_kvm_controller_run ${template-kvm-controller:target}
+  raw template_kvm_run ${template-kvm-run:target}
+  raw template_monitor ${monitor2-template:output}
+  raw template_nginx ${template-nginx:target}
+  raw websockify_executable_location ${buildout:directory}/bin/websockify
+  raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
+template-parts-destination = ${template-parts:target}
+template-replicated-destination = ${template-replicated:target}
+import-list = file parts :template-parts-destination
+              file replicated :template-replicated-destination
+

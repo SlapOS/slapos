@@ -1,0 +1,14 @@
+{
+  "name": "VPS",
+  "description": "VPS",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default VPS",
+      "request": "instance-vps-input-schema.json",
+      "response": "instance-vps-output-schema.json",
+      "index": 0
+    }
+  }
+}

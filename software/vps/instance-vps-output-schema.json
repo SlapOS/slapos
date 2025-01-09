@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "name": "Output Parameters",
+  "properties": {
+    "backend-url": {
+      "title": "Backend URL",
+      "description": "URL used to connect directly to backend without frontend. Requires IPv6.",
+      "type": "string",
+      "format": "uri",
+      "require": true
+    },
+    "url": {
+      "title": "URL",
+      "description": "URL used to connect to the service.",
+      "type": "string",
+      "format": "uri",
+      "require": false
+    }
+  }
+}
