@@ -629,6 +629,13 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+@skipUnlessKvm
+class TestAccessDefaultAdditionalJson(TestAccessDefaultAdditional):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-software-url': 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
+    }
 
 @skipUnlessKvm
 class TestAccessDefaultAdditionalJson(
