@@ -798,8 +798,8 @@
         },
         "apachedex-promise-threshold": {
           "type": "number",
-          "title": "Promise fails if the overall Apdex score for the previous day is below than this value.",
-          "default": 70,
+          "title": "Promise fails if the overall Apdex score for the previous day is below than this value. A value of 0 (the default) disable the promise.",
+          "default": 0,
           "minimum": 0,
           "maximum": 100
         },

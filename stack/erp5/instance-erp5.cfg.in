@@ -469,7 +469,7 @@ config-allow-redirects = 0
     'frontend-parameter-dict': frontend_parameter_dict,
     'ssl-authentication-dict': ssl_authentication_dict,
     'timeout-dict': balancer_timeout_dict,
-    'apachedex-promise-threshold': monitor_dict.get('apachedex-promise-threshold', 70),
+    'apachedex-promise-threshold': monitor_dict.get('apachedex-promise-threshold', 0),
     'apachedex-configuration': monitor_dict.get(
       'apachedex-configuration',
       [
