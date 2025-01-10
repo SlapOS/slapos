@@ -104,7 +104,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
             '--js-embed',
             '--quiet',
           ],
-        'apachedex-promise-threshold': 100,
+        'apachedex-promise-threshold': 0,
         'haproxy-server-check-path': '/',
         'zope-family-dict': {
             'default': ['dummy_http_server'],
