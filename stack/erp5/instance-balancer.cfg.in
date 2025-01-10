@@ -544,7 +544,7 @@ recipe = slapos.recipe.template
 output = ${directory:etc}/${:_buildout_section_name_}
 inline =
   {% for line in slapparameter_dict['apachedex-configuration'] -%}
-    {# apachedex config files use shlex.split, so we need to quote the arguments. #}
+    {# apachedex config files use shlex.split, so we need to quote the arguments. -#}
     {{ six.moves.shlex_quote(line) }}
   {% endfor %}
 
