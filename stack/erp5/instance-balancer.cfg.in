@@ -400,7 +400,8 @@ command-line = "{{ parameter_dict['socat'] }}/bin/socat" unix-connect:${haproxy-
 
 [rsyslogd-cfg-parameter-dict]
 log-socket = ${directory:run}/log.sock
-access-log-file = ${directory:log}/apache-access.log
+access-log-file-basename = apache-access.log
+access-log-file = ${directory:log}/${:access-log-file-basename}
 error-log-file = ${directory:log}/apache-error.log
 pid-file = ${directory:run}/rsyslogd.pid
 spool-directory = ${directory:rsyslogd-spool}
@@ -483,6 +484,7 @@ backup-caucased-haproxy-certificate = ${:srv}/backup/caucased{{ caucase_haproxy_
 caucase-updater-haproxy-certificate = ${:srv}/caucase-updater-haproxy-certificate
 tmp = ${buildout:directory}/tmp
 apachedex = ${monitor-directory:private}/apachedex
+apachedex-weekly = ${:apachedex}/weekly
 rsyslogd-spool = ${:run}/rsyslogd-spool
 {% if frontend_caucase_url_list -%}
 ca-cert = ${:etc}/ssl.crt
@@ -510,6 +512,29 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:command}
 command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --configuration ${apachedex-parameters:configuration}
 command = generate-apachedex-report
+
+[{{ section('monitor-generate-weekly-apachedex-report') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = generate-weekly-apachedex-report
+frequency = 1 * * * 1
+command = ${monitor-generate-weekly-apachedex-report-wrapper:output}
+
+[monitor-generate-weekly-apachedex-report-wrapper]
+recipe = slapos.recipe.template
+output = ${buildout:bin-directory}:${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  exec {{ parameter_dict['apachedex-location'] }} \
+    -o ${directory:apachedex-weekly}/$(date -d "1 days ago" +"%Y-%m-%d").html \
+    @${apachedex-parameters:configuration} \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date +"%Y%m%d") \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date -d "1 days ago" +"%Y%m%d").xz \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date -d "2 days ago" +"%Y%m%d").xz \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date -d "3 days ago" +"%Y%m%d").xz \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date -d "4 days ago" +"%Y%m%d").xz \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date -d "5 days ago" +"%Y%m%d").xz \
+    ${logrotate-rsyslogd:backup}/${rsyslogd-cfg-parameter-dict:access-log-file-basename}-$(date -d "6 days ago" +"%Y%m%d").xz
 
 [monitor-apachedex-report-config]
 recipe = slapos.recipe.template
