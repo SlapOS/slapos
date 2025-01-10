@@ -29,13 +29,24 @@ import json
 import logging
 import os
 
+from collections import defaultdict
+from contextlib import contextmanager
+
+import jsonschema
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
 import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
-from slapos.util import mkdir_p
+from slapos.util import (
+  mkdir_p,
+  SoftwareReleaseSchema,
+  SoftwareReleaseSerialisation,
+  SoftwareReleaseSchemaValidationError,
+  urljoin,
+)
 from slapos import format as slapformat
+from zc.buildout import UserError
 
 
 logger = logging.getLogger("slapos")
@@ -52,21 +63,21 @@ class Recipe(object):
   For example {"tun": {"ipv4": <addr>}} would be available in buildout as ${instance:tun-ipv4}.
 
   Input:
-    url
+    url | server-url
       Slap server url.
       Example:
         ${slap-connection:server-url}
-    key & cert (optional)
+    key & cert | key-file & cert-file (optional)
       Path of files containing key and certificate for secure connection to
       slap server.
       Example:
         ${slap-connection:key-file}
         ${slap-connection:cert-file}
-    computer
+    computer | computer-id
       Computer identifier.
       Example:
         ${slap-connection:computer-id}
-    partition
+    partition | partition-id
       Partition identifier.
       Example:
         ${slap-connection:partition-id}
@@ -129,14 +140,16 @@ class Recipe(object):
       2. format.Partition.resource_file - for partition specific details
       """
       slap = slapos.slap.slap()
+      # BBB: or ... (right side) clauses kept for compatibility;
+      # left-side clauses correspond directly to slap-connection.
       slap.initializeConnection(
-          options['url'],
-          options.get('key'),
-          options.get('cert'),
+          options.get('server-url') or options['url'],
+          options.get('key-file') or options.get('key'),
+          options.get('cert-file') or options.get('cert'),
       )
       computer_partition = slap.registerComputerPartition(
-          options['computer'],
-          options['partition'],
+          options.get('computer-id') or options['computer'],
+          options.get('partition-id') or options['partition'],
       )
       parameter_dict = computer_partition.getInstanceParameterDict()
       options['instance-state'] = computer_partition.getState()
@@ -162,7 +175,6 @@ class Recipe(object):
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
                                             'UNKNOWN')
       options['instance-guid'] = computer_partition.getInstanceGuid()
-
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
@@ -185,6 +197,10 @@ class Recipe(object):
               v6_add(ip)
           # XXX: emit warning on unknown address type ?
 
+      # XXX slapproxy is sending 'full_address_list' not 'full_ip_list' (like real slapos master)
+      # just pop this value for now. Remove this when slapproxy is fixed.
+      parameter_dict.pop('full_address_list', None)
+
       if 'full_ip_list' in parameter_dict:
         for item in parameter_dict.pop('full_ip_list'):
           if len(item) == 5:
@@ -198,6 +214,11 @@ class Recipe(object):
                 route_v4_add(ip)
               if valid_ipv4(network):
                 route_net_add(network)
+
+      # validate the parameters (only when using JsonSchema recipe)
+      # after popping the custom values sent by slapos master
+      # but before adding the value from .slapos-resources file
+      parameter_dict = self._validateParameterDict(options,parameter_dict)
 
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
@@ -213,7 +234,7 @@ class Recipe(object):
       if storage_home and os.path.exists(storage_home) and \
                                   os.path.isdir(storage_home):
         for filename in os.listdir(storage_home):
-          storage_path = os.path.join(storage_home, filename, 
+          storage_path = os.path.join(storage_home, filename,
                                     options['slap-computer-partition-id'])
           if os.path.exists(storage_path) and os.path.isdir(storage_path):
             storage_link = os.path.join(instance_root, 'DATA', filename)
@@ -247,6 +268,9 @@ class Recipe(object):
       logger.debug(str(options))
       return self._expandParameterDict(options, parameter_dict)
 
+  def _validateParameterDict(self, options, parameter_dict):
+      return parameter_dict
+
   def _expandParameterDict(self, options, parameter_dict):
       options['configuration'] = parameter_dict
       return parameter_dict
@@ -260,6 +284,188 @@ class Serialised(Recipe):
           return parameter_dict
       else:
           return {}
+
+
+class BasicValidator(object):
+  def __init__(self, schema):
+    self.schema = schema
+    self.validator = jsonschema.validators.validator_for(schema)(schema)
+
+  def validate(self, instance):
+    for error in self.validator.iter_errors(instance):
+      yield error
+
+
+class DefaultValidator(object):
+  def __init__(self, schema):
+    self.schema = schema
+    self.validatorfor = v = jsonschema.validators.validator_for(schema)
+    # Retain original properties validator
+    validate_properties = v.VALIDATORS["properties"]
+    # Define new properties validator
+    def collect_defaults(validator, properties, instance, schema):
+      # Call original properties validator
+      error = False
+      for e in validate_properties(validator, properties, instance, schema):
+        error = True
+        yield e
+      # Collect defaults if the instance validates this schema
+      if not error:
+        for key, subschema in properties.items():
+          if "default" in subschema:
+            try:
+              _, defaults = self.defaults[id(instance)]
+            except KeyError:
+              defaults = defaultdict(dict)
+              self.defaults[id(instance)] = instance, defaults
+            defaults[key][id(subschema)] = subschema["default"]
+    # Extend validator class with extended properties validator
+    kls = jsonschema.validators.extend(v, {"properties" : collect_defaults})
+    self.validator = kls(schema)
+
+  @contextmanager
+  def propagate(self):
+    # Workaround https://github.com/python-jsonschema/jsonschema/issues/994
+    # This only works if all $ref schemas have the same $schema as the first.
+    version = self.schema.get("$schema")
+    try:
+      if version is not None:
+        jsonschema.validators.validates(version)(type(self.validator))
+      yield
+    finally:
+      if version is not None:
+        jsonschema.validators.validates(version)(self.validatorfor)
+
+  def validate(self, instance):
+    # Initialise default collection
+    self.defaults = {}
+    # Validate instance
+    invalid = False
+    with self.propagate():
+      for error in self.validator.iter_errors(instance):
+        invalid = True
+        yield error
+    # Stop there in case of validation errors
+    if invalid:
+      return
+    # Apply collected defaults
+    for data, defaults in self.defaults.values():
+      for key, defaultdict in defaults.items():
+        if key not in data:
+          it = iter(defaultdict.values())
+          default = next(it)
+          if any(d != default for d in it):
+            raise UserError(
+              "Conflicting defaults for key %s: %r" % (key, defaultlist))
+          data[key] = default
+    # Validate the updated instance
+    for error in self.validatorfor(self.schema).iter_errors(instance):
+      yield error
+
+
+class JsonSchema(Recipe):
+  """
+  Input:
+    jsonschema
+      JSON Schema for the SR.
+      All instance schemas must be available at the advertised relative paths.
+      Example:
+        ${buildout:directory}/software.cfg.json
+    set-default
+      Enum to control adding defaults specified by the JSON schema
+      to both/neither/either-of main and shared instance parameters.
+      Accepted values: all|main|shared|none.
+      Default value: none.
+      Example:
+        shared
+    validate-parameters
+      Enum to control validating instance parameters
+      for both/neither/either-of main and shared instances.
+      Accepted values: all|main|shared|none.
+      Example:
+        shared
+  """
+  def _schema(self, options):
+    path = options['jsonschema']
+    # because SoftwareReleaseSchema accepts only file:// paths
+    path = path if path.startswith('file://') else 'file://' + path
+    # because SoftwareReleaseSchema expects the SR url and adds .json
+    path = path[:-5] if path.endswith('.json') else path
+    return SoftwareReleaseSchema(path, options['slap-software-type'])
+
+  def _getSharedSchema(self, software_schema):
+    t = software_schema.software_type
+    software_json_dict = software_schema.getSoftwareSchema()
+    for type_dict in software_json_dict['software-type'].values():
+      if type_dict['software-type'] == t and type_dict.get('shared') == True:
+        url = urljoin(software_schema.software_url, type_dict['request'])
+        return software_schema._readAsJson(url, True)
+
+  def _parseParameterDict(self, software_schema, parameter_dict):
+    instance_schema = software_schema.getInstanceRequestParameterSchema()
+    instance = parameter_dict if isinstance(parameter_dict, dict) else {}
+    validator = self.Validator(instance_schema)
+    errors = list(validator.validate(instance))
+    if errors:
+      err = SoftwareReleaseSchemaValidationError(errors).format_error(indent=2)
+      msg = "Invalid parameters:\n" + err
+      raise UserError(msg)
+    return instance
+
+  def _parseSharedParameterDict(self, software_schema, options):
+    shared_list = options.pop('slave-instance-list')
+    if not shared_list:
+      return
+    shared_schema = self._getSharedSchema(software_schema)
+    validator = self.SharedValidator(shared_schema)
+    valid, invalid = [], []
+    for instance in shared_list:
+      reference = instance.pop('slave_reference')
+      try:
+        errors = list(validator.validate(instance))
+      except UserError as e:
+        errors = list(e.args)
+      shared_item = {'reference': reference, 'parameters': instance}
+      if errors:
+        shared_item['errors'] = errors
+        invalid.append(shared_item)
+      else:
+        valid.append(shared_item)
+    options['valid-shared-instance-list'] = valid
+    options['invalid-shared-instance-list'] = invalid
+
+  def _parseOption(self, options, key, default):
+    value = options.get(key, default)
+    accepted = ('none', 'main', 'shared', 'all')
+    try:
+      index = accepted.index(value)
+    except ValueError:
+      raise UserError(
+        "%r is not a valid value for option %r"
+        "Accepted values are %r" % (value, key, accepted)
+      )
+    # return: value in ('main', 'all'), value in ('shared', 'all')
+    return index & 1, index & 2
+
+  def _validateParameterDict(self, options, parameter_dict):
+    set_main, set_shared = self._parseOption(options, 'set-default', 'none')
+    validate_tuple = self._parseOption(options, 'validate-parameters', 'all')
+    validate_main, validate_shared = validate_tuple
+    self.Validator = DefaultValidator if set_main else BasicValidator
+    self.SharedValidator = DefaultValidator if set_shared else BasicValidator
+    software_schema = self._schema(options)
+    serialisation = software_schema.getSerialisation(strict=True)
+    if serialisation == SoftwareReleaseSerialisation.JsonInXml:
+      parameter_dict = unwrap(parameter_dict)
+    if validate_shared:
+      self._parseSharedParameterDict(software_schema, options)
+    if validate_main:
+      parameter_dict = self._parseParameterDict(software_schema, parameter_dict)
+    options['configuration'] = parameter_dict
+    if validate_main or isinstance(parameter_dict, dict):
+      return parameter_dict
+    return {}
+
 
 class JsonDump(Recipe):
   def __init__(self, buildout, name, options):
