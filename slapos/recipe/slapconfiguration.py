@@ -197,7 +197,7 @@ class Recipe(object):
               v6_add(ip)
           # XXX: emit warning on unknown address type ?
 
-      # XXX slapproxy is sending 'full_address_list' not 'full_ip_list' (like real slapos master)
+      # XXX slapproxy is sending 'full_address_list' not 'full_ip_list' (like real slapos master)
       # just pop this value for now. Remove this when slapproxy is fixed.
       parameter_dict.pop('full_address_list', None)
 
@@ -217,7 +217,7 @@ class Recipe(object):
 
       # validate the parameters (only when using JsonSchema recipe)
       # after popping the custom values sent by slapos master
-      # but before adding the value from .slapos-resources file
+      # but before adding the value from .slapos-resources file
       parameter_dict = self._validateParameterDict(options,parameter_dict)
 
       options['ipv4'] = ipv4_set
