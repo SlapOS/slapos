@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.373'
+version = '1.0.386'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -150,6 +150,7 @@ setup(name=name,
           'simplehttpserver = slapos.recipe.simplehttpserver:Recipe',
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
+          'slapconfiguration.jsonschema = slapos.recipe.slapconfiguration:JsonSchema',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
