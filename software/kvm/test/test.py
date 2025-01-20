@@ -966,6 +966,10 @@ class TestInstanceResilientBackupExporter(
       'Recovered from partial backup by removing partial',
       status_text
     )
+    self.assertNotIn(
+      'Recovered from empty backup',
+      status_text
+    )
     # cover .partial file in the backup directory with fallback to full
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
     with open(current_backup + '.partial', 'w') as fh:
@@ -984,6 +988,25 @@ class TestInstanceResilientBackupExporter(
     self.assertTrue(os.path.exists(os.path.join(
       self.getPartitionPath(
         'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
+    # cover empty backup recovery
+    current_backup_list = glob.glob(self.getBackupPartitionPath('*.qcow2'))
+    self.assertEqual(
+      2,
+      len(current_backup_list)
+    )
+    for file in current_backup_list:
+      os.unlink(file)
+    status_text = self.call_exporter()
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      0)
+    self.assertIn(
+      'Recovered from empty backup',
+      status_text
+    )
 
 
 @skipUnlessKvm
