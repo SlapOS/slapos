@@ -25,6 +25,9 @@ if [ $RESULT -ne 0 ] ; then
     find $BACKUP_DIR/{{ disk['device'] }} -name '*.qcow2' -delete
     $qmpbackup --level full || exit $?
     echo "Post take-over cleanup"
+  elif egrep -q 'No full backup found for device.*{{ disk['device']}}.*in.*{{ disk['device']}}.*: Execute full backup first.' $log ; then
+    $qmpbackup --level full || exit $?
+    echo "Recovered from empty backup"
   else
     exit $RESULT
   fi
