@@ -242,6 +242,7 @@ config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }
 config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
 config-zope-longrequest-logger-error-threshold = {{ dumps(monitor_dict.get('zope-longrequest-logger-error-threshold', 20)) }}
 config-zope-longrequest-logger-maximum-delay = {{ dumps(monitor_dict.get('zope-longrequest-logger-maximum-delay', 0)) }}
+config-zope-expect-backingup-zodb = {{ dumps(monitor_dict.get('zope-expect-backingup-zodb', False)) }}
 config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password-hashed = ${publish-early:inituser-password-hashed}
 config-kumofs-url = ${request-memcached-persistent:connection-url}

@@ -16,6 +16,7 @@
 {% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
 {% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
+{% set zope_expect_backingup_zodb = slapparameter_dict['zope-expect-backingup-zodb'] -%}
 {% if webdav -%}
 {%   set timerserver_interval = 0 -%}
 {% else -%}
@@ -357,7 +358,7 @@ wrapped-command-line =
 {%- if private_dev_shm %}
 private-tmpfs = {{ private_dev_shm }} /dev/shm
 {%- endif %}
-wrapper-path = ${directory:service-on-watch}/{{ name }}
+wrapper-path = ${directory:services}/{{ name }}
 hash-files =
   ${:configuration-file}
 hash-existing-files =
@@ -368,7 +369,7 @@ instance-home = ${directory:instance}
 port = {{ port }}
 
 [{{ section("promise-" ~ name) }}]
-{% if six.PY3 -%}
+{% if six.PY3 or zope_expect_backingup_zodb -%}
 # Disable the promise in Python 3. ERP5 is not compatible with Python 3 yet, so
 # the promise would always fail.
 recipe =

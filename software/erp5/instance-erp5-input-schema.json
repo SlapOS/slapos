@@ -737,6 +737,18 @@
         }
       },
       "type": "object"
+    },
+    "monitor": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Monitor parameters (unstable/experimental)",
+      "properties": {
+        "zope-expect-backingup-zodb": {
+          "type": "boolean",
+          "description": "Whether zope should expect the zodb to be a neo in BACKINGUP mode",
+          "default": false
+        }
+      }
     }
   }
 }
