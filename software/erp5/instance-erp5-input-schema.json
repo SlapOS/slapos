@@ -282,6 +282,11 @@
                   "default": 2200
                 }
               ]
+            },
+            "replication": {
+              "description": "Whether the zope expects to be connected to a replica zodb, such as a BACKINGUP neo",
+              "type": "boolean",
+              "default": false
             }
           },
           "type": "object"
