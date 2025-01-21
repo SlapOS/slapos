@@ -941,7 +941,11 @@ class TestInstanceResilientBackupImporter(
     # the real assertions comes from re-stabilizing the instance tree
     self.slap.waitForInstance(max_retry=10)
     # check that all stabilizes after backup after takeover
-    self.call_exporter()
+    status_text = self.call_exporter()
+    self.assertIn(
+      'Post take-over cleanup',
+      status_text
+    )
     self.slap.waitForInstance(max_retry=10)
 
 
