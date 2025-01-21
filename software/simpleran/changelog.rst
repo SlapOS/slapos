@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.390 (2025-01-21)
+-------------
+
+* Fix integration with our KPI calculation and storage platform (update to 1.0.390+ is necessary for KPI computation)
+
 Version 1.0.384 (2024-12-16)
 -------------
 
