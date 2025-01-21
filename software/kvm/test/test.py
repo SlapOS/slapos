@@ -951,10 +951,9 @@ class TestInstanceResilientBackupImporterIde(
   disk_type = 'ide'
 
 
-@skipUnlessKvm
-class TestInstanceResilientBackupExporter(
-  TestInstanceResilientBackupMixin, KVMTestCase):
-  def test(self):
+class TestInstanceResilientBackupExporterMixin(
+  TestInstanceResilientBackupMixin):
+  def initialBackup(self):
     status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
@@ -970,6 +969,24 @@ class TestInstanceResilientBackupExporter(
       'Recovered from empty backup',
       status_text
     )
+    self.assertNotIn(
+      'Post take-over cleanup',
+      status_text
+    )
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporter(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPartialRecovery(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
     # cover .partial file in the backup directory with fallback to full
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
     with open(current_backup + '.partial', 'w') as fh:
@@ -988,6 +1005,13 @@ class TestInstanceResilientBackupExporter(
     self.assertTrue(os.path.exists(os.path.join(
       self.getPartitionPath(
         'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterEmptyRecovery(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
     # cover empty backup recovery
     current_backup_list = glob.glob(self.getBackupPartitionPath('*.qcow2'))
     self.assertEqual(
@@ -1012,6 +1036,18 @@ class TestInstanceResilientBackupExporter(
 @skipUnlessKvm
 class TestInstanceResilientBackupExporterIde(
   TestInstanceResilientBackupExporter):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPartialRecoveryIde(
+  TestInstanceResilientBackupExporterPartialRecovery):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterEmptyRecoveryIde(
+  TestInstanceResilientBackupExporterEmptyRecovery):
   disk_type = 'ide'
 
 
