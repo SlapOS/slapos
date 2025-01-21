@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import logging
+import lzma
 import os
 import re
 import socket
@@ -104,7 +105,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
             '--js-embed',
             '--quiet',
           ],
-        'apachedex-promise-threshold': 100,
+        'apachedex-promise-threshold': 0,
         'haproxy-server-check-path': '/',
         'zope-family-dict': {
             'default': ['dummy_http_server'],
@@ -264,7 +265,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     # make a request so that we have something in the logs
     requests.get(self.default_balancer_zope_url, verify=False)
 
-    # crontab for apachedex is executed
+    # crontab for daily apachedex is executed
     self._executeCrontabAtDate('generate-apachedex-report', '23:59')
     # it creates a report for the day
     apachedex_report, = (
@@ -277,6 +278,39 @@ class TestLog(BalancerTestCase, CrontabMixin):
     self.assertIn('APacheDEX', report_text)
     # having this table means that apachedex could parse some lines.
     self.assertIn('<h2>Hits per status code</h2>', report_text)
+
+    # weekly apachedex uses the logs after rotation, we'll run log rotation
+    # until we have a xz file for two days ago and a non compressed file for
+    # yesterday
+    # run logrotate a first time so that it create state files
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+    requests.get(urllib.parse.urljoin(self.default_balancer_zope_url, 'error-two-days-ago'), verify=False)
+    self._executeCrontabAtDate('logrotate', 'yesterday 00:00')
+    requests.get(urllib.parse.urljoin(self.default_balancer_zope_url, 'error-yesterday'), verify=False)
+    self._executeCrontabAtDate('logrotate', '00:00')
+
+    # this apachedex command uses compressed files, verify that our test setup
+    # is correct and that the error from two days ago is in the compressed file.
+    two_days_ago_log, = (
+      self.computer_partition_root_path / 'srv' / 'backup'/ 'logrotate'
+    ).glob("apache-access.log-*.xz")
+    with lzma.open(two_days_ago_log) as f:
+      self.assertIn(b'GET /error-two-days-ago', f.read())
+
+    self._executeCrontabAtDate('generate-weekly-apachedex-report', '23:59')
+    # this creates a report for the week
+    apachedex_weekly_report, = (
+      self.computer_partition_root_path
+        / 'srv'
+        / 'monitor'
+        / 'private'
+        / 'apachedex'
+        / 'weekly').glob('*.html')
+    weekly_report_text = apachedex_weekly_report.read_text()
+    self.assertIn('APacheDEX', weekly_report_text)
+    # because we run apachedex with error details, we can see our error requests
+    self.assertIn('error-two-days-ago', weekly_report_text)
+    self.assertIn('error-yesterday', weekly_report_text)
 
   def test_access_log_rotation(self) -> None:
     # run logrotate a first time so that it create state files
