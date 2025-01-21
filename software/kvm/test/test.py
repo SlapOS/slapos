@@ -983,6 +983,22 @@ class TestInstanceResilientBackupExporter(
 
 
 @skipUnlessKvm
+class TestInstanceResilientBackupExporterMigrateOld(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    backup_partition = self.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm')
+    backup_file_list = ['virtual.qcow2', 'virtual.qcow2.gz']
+    for backup_file in backup_file_list:
+      with open(os.path.join(backup_partition, backup_file), 'w') as fh:
+        fh.write('')
+    self.initialBackup()
+    post_backup_file_list = os.listdir(backup_partition)
+    for backup_file in backup_file_list:
+      self.assertNotIn(backup_file, post_backup_file_list)
+
+
+@skipUnlessKvm
 class TestInstanceResilientBackupExporterPartialRecovery(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
@@ -1036,6 +1052,12 @@ class TestInstanceResilientBackupExporterEmptyRecovery(
 @skipUnlessKvm
 class TestInstanceResilientBackupExporterIde(
   TestInstanceResilientBackupExporter):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigrateOldIde(
+  TestInstanceResilientBackupExporterMigrateOld):
   disk_type = 'ide'
 
 
