@@ -453,7 +453,7 @@
             },
             "boot-image-url-list": {
               "title": "[EXPERT] Boot image list",
-              "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. Maximum images: 4. Maximum image size: 20GB. Download tires: 4. Maximum download time: 4h.",
+              "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. Maximum images: 4. Maximum image size: 20GB. Download tries: 4. Maximum download time: 4h.",
               "type": "string",
               "textarea": true
             },
