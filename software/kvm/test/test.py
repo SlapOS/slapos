@@ -941,7 +941,11 @@ class TestInstanceResilientBackupImporter(
     # the real assertions comes from re-stabilizing the instance tree
     self.slap.waitForInstance(max_retry=10)
     # check that all stabilizes after backup after takeover
-    self.call_exporter()
+    status_text = self.call_exporter()
+    self.assertIn(
+      'Post take-over cleanup',
+      status_text
+    )
     self.slap.waitForInstance(max_retry=10)
 
 
@@ -951,10 +955,9 @@ class TestInstanceResilientBackupImporterIde(
   disk_type = 'ide'
 
 
-@skipUnlessKvm
-class TestInstanceResilientBackupExporter(
-  TestInstanceResilientBackupMixin, KVMTestCase):
-  def test(self):
+class TestInstanceResilientBackupExporterMixin(
+  TestInstanceResilientBackupMixin):
+  def initialBackup(self):
     status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
@@ -966,6 +969,44 @@ class TestInstanceResilientBackupExporter(
       'Recovered from partial backup by removing partial',
       status_text
     )
+    self.assertNotIn(
+      'Recovered from empty backup',
+      status_text
+    )
+    self.assertNotIn(
+      'Post take-over cleanup',
+      status_text
+    )
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporter(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigrateOld(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    backup_partition = self.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm')
+    backup_file_list = ['virtual.qcow2', 'virtual.qcow2.gz']
+    for backup_file in backup_file_list:
+      with open(os.path.join(backup_partition, backup_file), 'w') as fh:
+        fh.write('')
+    self.initialBackup()
+    post_backup_file_list = os.listdir(backup_partition)
+    for backup_file in backup_file_list:
+      self.assertNotIn(backup_file, post_backup_file_list)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPartialRecovery(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
     # cover .partial file in the backup directory with fallback to full
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
     with open(current_backup + '.partial', 'w') as fh:
@@ -987,8 +1028,52 @@ class TestInstanceResilientBackupExporter(
 
 
 @skipUnlessKvm
+class TestInstanceResilientBackupExporterEmptyRecovery(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
+    # cover empty backup recovery
+    current_backup_list = glob.glob(self.getBackupPartitionPath('*.qcow2'))
+    self.assertEqual(
+      1,
+      len(current_backup_list)
+    )
+    for file in current_backup_list:
+      os.unlink(file)
+    status_text = self.call_exporter()
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      0)
+    self.assertIn(
+      'Recovered from empty backup',
+      status_text
+    )
+
+
+@skipUnlessKvm
 class TestInstanceResilientBackupExporterIde(
   TestInstanceResilientBackupExporter):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigrateOldIde(
+  TestInstanceResilientBackupExporterMigrateOld):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPartialRecoveryIde(
+  TestInstanceResilientBackupExporterPartialRecovery):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterEmptyRecoveryIde(
+  TestInstanceResilientBackupExporterEmptyRecovery):
   disk_type = 'ide'
 
 
