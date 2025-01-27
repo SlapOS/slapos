@@ -67,7 +67,7 @@
               "description": "Only track references.",
               "default": false,
               "type": "boolean"
-            },
+            }
           },
           "type": "object"
         },

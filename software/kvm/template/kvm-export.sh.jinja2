@@ -6,6 +6,9 @@ set -e
 LC_ALL=C
 export LC_ALL
 BACKUP_DIR={{ directory['backup'] }}
+# decolorize colorlog in qmpbackup
+NO_COLOR=true
+export NO_COLOR
 
 log=$(mktemp --tmpdir={{ directory['tmp'] }})
 trap "rm -f $log" EXIT TERM INT
@@ -25,6 +28,9 @@ if [ $RESULT -ne 0 ] ; then
     find $BACKUP_DIR/{{ disk['device'] }} -name '*.qcow2' -delete
     $qmpbackup --level full || exit $?
     echo "Post take-over cleanup"
+  elif egrep -q 'No full backup found for device.*{{ disk['device']}}.*in.*{{ disk['device']}}.*: Execute full backup first.' $log ; then
+    $qmpbackup --level full || exit $?
+    echo "Recovered from empty backup"
   else
     exit $RESULT
   fi
