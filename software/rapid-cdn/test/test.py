@@ -456,6 +456,7 @@ class TestDataMixin(object):
       '@@_server_http_port@@': str(self._server_http_port),
       '@@_server_https_auth_port@@': str(self._server_https_auth_port),
       '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_https_weak_port@@': str(self._server_https_weak_port),
       '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
       '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
       '@@another_server_ca.certificate_pem@@': unicode_escape(
@@ -703,6 +704,20 @@ class TestHandler(BaseHTTPRequestHandler):
     self.wfile.write(response)
 
 
+def server_https_weak_method(ip, port):
+  server_https_weak = ThreadedHTTPServer(
+    (ip, port),
+    TestHandler)
+  context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+  context.load_cert_chain(
+    os.path.join(
+      os.path.dirname(
+        os.path.realpath(__file__)), 'test_data', 'sha1-2048.pem'))
+  server_https_weak.socket = context.wrap_socket(
+    server_https_weak.socket, server_side=True)
+  server_https_weak.serve_forever()
+
+
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
   maxDiff = None
@@ -757,6 +772,28 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     server_https.socket.close()
     cls.logger.debug('Started process %s' % (server_https_process,))
 
+    cls.backend_https_weak_url = 'https://%s:%s/' % (
+      cls._ipv4_address, cls._server_https_weak_port)
+
+    openssl_conf = os.path.realpath(os.path.join(
+      os.path.realpath(__file__), '..', '..',
+      'templates', 'backend-openssl-ssl-downgrade.cnf'))
+    orig_env = os.environ.copy()
+
+    try:
+      # start the backend in spawn'ed process, so that altered environment
+      # can be used
+      os.environ['OPENSSL_CONF'] = openssl_conf
+      weak_context = multiprocessing.get_context('spawn')
+      server_https_weak_process = weak_context.Process(
+        target=server_https_weak_method, args=(
+          cls._ipv4_address, cls._server_https_weak_port),
+        name='HTTPSWeakServer', daemon=True)
+      server_https_weak_process.start()
+      cls.logger.debug('Started process %s' % (server_https_weak_process,))
+    finally:
+      os.environ = orig_env
+
     class NetlocHandler(TestHandler):
       identification = 'netloc'
 
@@ -781,6 +818,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       server_https_process,
       netloc_a_http_process,
       netloc_b_http_process,
+      server_https_weak_process,
     ]
 
   @classmethod
@@ -1221,6 +1259,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       # find ports once to be able startServerProcess many times
       cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_https_weak_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
@@ -1667,6 +1706,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           'ip': cls._ipv4_address,
           'port_a': cls._server_netloc_a_http_port,
           'port_b': cls._server_netloc_b_http_port},
+      },
+      'weak-ssl-backend': {
+        'url': cls.backend_https_weak_url
       },
       'auth-to-backend': {
         # in here use reserved port for the backend, which is going to be
@@ -2136,9 +2178,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '65',
+      'accepted-slave-amount': '66',
       'rejected-slave-amount': '0',
-      'slave-amount': '65',
+      'slave-amount': '66',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2508,6 +2550,40 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.headers['X-Backend-Identification'],
       'netloc'
     )
+
+  def test_weak_ssl_backend(self):
+    parameter_dict = self.assertSlaveBase('weak-ssl-backend')
+
+    # assure that by default CDN does not allow access to weak backend
+    result = fakeHTTPSResult(parameter_dict['domain'], '/')
+    self.assertEqual(
+      http.client.SERVICE_UNAVAILABLE,
+      result.status_code
+    )
+    original_parameter_dict = self.parameter_dict.copy()
+    try:
+      # allow SSL downgrade on the backend...
+      self.parameter_dict[
+        "-frontend-config-1-expert-backend-allow-downgrade-ssl"] = "true"
+      self.requestDefaultInstance()
+      # 1st run -- to update the master
+      self.slap.waitForInstance(self.instance_max_retry)
+      # 2nd run -- to propagathe values
+      self.slap.waitForInstance(self.instance_max_retry)
+
+      # ...and assure that connection is ok
+      result = fakeHTTPSResult(parameter_dict['domain'], '/')
+      self.assertEqual(
+        http.client.OK,
+        result.status_code
+      )
+    finally:
+      self.parameter_dict = original_parameter_dict
+      self.requestDefaultInstance()
+      # 1st run -- to update the master
+      self.slap.waitForInstance(self.instance_max_retry)
+      # 2nd run -- to propagathe values
+      self.slap.waitForInstance(self.instance_max_retry)
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
