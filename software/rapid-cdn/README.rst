@@ -27,6 +27,7 @@ These parameters are:
     * ``disk-cache-size``
     * ``enable-http3``
     * ``http3-port``
+    * ``expert-backend-allow-downgrade-ssl``
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
 For example::

@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import backend
 import glob
 import os
 from recurls import Recurls
@@ -34,14 +35,9 @@ import multiprocessing
 import subprocess
 from unittest import skip
 import ssl
-from http.server import HTTPServer
-from http.server import BaseHTTPRequestHandler
-from socketserver import ThreadingMixIn
 import time
 import tempfile
 import ipaddress
-import io
-import gzip
 import base64
 import re
 from slapos.recipe.librecipe import generateHashFromFiles
@@ -49,10 +45,7 @@ import xml.etree.ElementTree as ET
 import urllib.parse
 import socket
 import sys
-import logging
 import lzma
-import random
-import string
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
@@ -177,10 +170,6 @@ def createCSR(common_name, ip=None):
   csr = csr.sign(key, hashes.SHA256(), default_backend())
   csr_pem = csr.public_bytes(serialization.Encoding.PEM)
   return key, key_pem, csr, csr_pem
-
-
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-  pass
 
 
 class CertificateAuthority(object):
@@ -456,6 +445,7 @@ class TestDataMixin(object):
       '@@_server_http_port@@': str(self._server_http_port),
       '@@_server_https_auth_port@@': str(self._server_https_auth_port),
       '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_https_weak_port@@': str(self._server_https_weak_port),
       '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
       '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
       '@@another_server_ca.certificate_pem@@': unicode_escape(
@@ -560,149 +550,6 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   )
 
 
-class TestHandler(BaseHTTPRequestHandler):
-  identification = None
-  configuration = {}
-  # override Server header response
-  server_version = "TestBackend"
-  sys_version = ""
-
-  log_message = logging.getLogger(__name__ + '.TestHandler').info
-
-  def do_DELETE(self):
-    config = self.configuration.pop(self.path, None)
-    if config is None:
-      self.send_response(204)
-      self.end_headers()
-    else:
-      self.send_response(200)
-      self.send_header("Content-Type", "application/json")
-      self.end_headers()
-      self.wfile.write(json.dumps({self.path: config}, indent=2))
-
-  def do_PUT(self):
-    incoming_config = {}
-    for key, value in list(self.headers.items()):
-      if key.startswith('X-'):
-        incoming_config[key] = value
-    config = {
-      'status_code': incoming_config.pop('X-Reply-Status-Code', '200')
-    }
-    prefix = 'X-Reply-Header-'
-    length = len(prefix)
-    for key in list(incoming_config.keys()):
-      if key.startswith(prefix):
-        header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-        config[header] = incoming_config.pop(key)
-
-    if 'X-Reply-Body' in incoming_config:
-      config['Body'] = base64.b64decode(
-        incoming_config.pop('X-Reply-Body')).decode()
-
-    config['X-Drop-Header'] = incoming_config.pop('X-Drop-Header', None)
-    self.configuration[self.path] = config
-
-    self.send_response(201)
-    self.send_header("Content-Type", "application/json")
-    self.end_headers()
-    reply = {self.path: config}
-    if incoming_config:
-      reply['unknown_config'] = incoming_config
-    self.wfile.write(json.dumps(reply, indent=2).encode())
-
-  def do_POST(self):
-    return self.do_GET()
-
-  def do_GET(self):
-    config = self.configuration.get(self.path, None)
-    if config is not None:
-      config = config.copy()
-      response = config.pop('Body', None)
-      status_code = int(config.pop('status_code'))
-      timeout = int(config.pop('Timeout', '0'))
-      compress = int(config.pop('Compress', '0'))
-      drop_header_list = []
-      for header in (config.pop('X-Drop-Header') or '').split():
-        drop_header_list.append(header)
-      header_dict = config
-    else:
-      drop_header_list = []
-      for header in (self.headers.get('x-drop-header') or '').split():
-        drop_header_list.append(header)
-      response = None
-      status_code = 200
-      timeout = int(self.headers.get('timeout', '0'))
-      if 'x-maximum-timeout' in self.headers:
-        maximum_timeout = int(self.headers['x-maximum-timeout'])
-        timeout = random.randrange(maximum_timeout)
-      if 'x-response-size' in self.headers:
-        min_response, max_response = [
-          int(q) for q in self.headers['x-response-size'].split(' ')]
-        reponse_size = random.randrange(min_response, max_response)
-        response = ''.join(
-          random.choice(string.lowercase) for x in range(reponse_size))
-      compress = int(self.headers.get('compress', '0'))
-      header_dict = {}
-      prefix = 'x-reply-header-'
-      length = len(prefix)
-      for key, value in list(self.headers.items()):
-        if key.startswith(prefix):
-          header = '-'.join([q.capitalize() for q in key[length:].split('-')])
-          header_dict[header] = value.strip()
-    if response is None:
-      if 'x-reply-body' not in self.headers:
-        headers_dict = dict()
-        for header in list(self.headers.keys()):
-          content = self.headers.get_all(header)
-          if len(content) == 0:
-            headers_dict[header] = None
-          elif len(content) == 1:
-            headers_dict[header] = content[0]
-          else:
-            headers_dict[header] = content
-        response = {
-          'Path': self.path,
-          'Incoming Headers': headers_dict
-        }
-        response = json.dumps(response, indent=2)
-      else:
-        response = base64.b64decode(self.headers['x-reply-body'])
-
-    time.sleep(timeout)
-    self.send_response_only(status_code)
-    self.send_header('Server', self.server_version)
-
-    for key, value in list(header_dict.items()):
-      self.send_header(key, value)
-
-    if self.identification is not None:
-      self.send_header('X-Backend-Identification', self.identification)
-
-    if 'Content-Type' not in drop_header_list:
-      self.send_header("Content-Type", "application/json")
-    if 'Set-Cookie' not in drop_header_list:
-      self.send_header('Set-Cookie', 'secured=value;secure')
-      self.send_header('Set-Cookie', 'nonsecured=value')
-
-    if 'Via' not in drop_header_list:
-      self.send_header('Via', 'http/1.1 backendvia')
-    if compress:
-      self.send_header('Content-Encoding', 'gzip')
-      out = io.BytesIO()
-      # compress with level 0, to find out if in the middle someting would
-      # like to alter the compression
-      with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=0) as f:
-        f.write(response.encode())
-      response = out.getvalue()
-      self.send_header('Backend-Content-Length', len(response))
-    if 'Content-Length' not in drop_header_list:
-      self.send_header('Content-Length', len(response))
-    self.end_headers()
-    if getattr(response, 'encode', None) is not None:
-      response = response.encode()
-    self.wfile.write(response)
-
-
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
   maxDiff = None
@@ -729,13 +576,13 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def startServerProcess(cls):
-    server = ThreadedHTTPServer(
+    server = backend.ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_http_port),
-      TestHandler)
+      backend.TestHandler)
 
-    server_https = ThreadedHTTPServer(
+    server_https = backend.ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_https_port),
-      TestHandler)
+      backend.TestHandler)
 
     server_https.socket = ssl.wrap_socket(
       server_https.socket,
@@ -757,10 +604,29 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     server_https.socket.close()
     cls.logger.debug('Started process %s' % (server_https_process,))
 
-    class NetlocHandler(TestHandler):
+    cls.backend_https_weak_url = 'https://%s:%s/' % (
+      cls._ipv4_address, cls._server_https_weak_port)
+
+    openssl_conf = os.path.realpath(os.path.join(
+      os.path.dirname(os.path.realpath(__file__)), '..',
+      'templates', 'backend-openssl-ssl-downgrade.cnf'))
+    weak_backend_path = os.path.realpath(os.path.join(
+      os.path.dirname(os.path.realpath(__file__)), 'backend.py'))
+
+    backend_env = os.environ.copy()
+    backend_env['OPENSSL_CONF'] = openssl_conf
+    cls.server_https_weak_process = subprocess.Popen(
+      [
+        sys.executable, weak_backend_path, cls._ipv4_address,
+        str(cls._server_https_weak_port)],
+      env=backend_env
+    )
+    cls.logger.debug('Started process %s' % (cls.server_https_weak_process,))
+
+    class NetlocHandler(backend.TestHandler):
       identification = 'netloc'
 
-    netloc_a_http = ThreadedHTTPServer(
+    netloc_a_http = backend.ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_a_http_port),
       NetlocHandler)
     netloc_a_http_process = multiprocessing.Process(
@@ -768,7 +634,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_a_http_process.start()
     netloc_a_http.socket.close()
 
-    netloc_b_http = ThreadedHTTPServer(
+    netloc_b_http = backend.ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_b_http_port),
       NetlocHandler)
     netloc_b_http_process = multiprocessing.Process(
@@ -790,6 +656,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def stopServerProcess(cls):
+    cls.server_https_weak_process.terminate()
+    cls.server_https_weak_process.wait()
     for process in cls.server_process_list:
       if process is not None:
         cls.logger.debug('Stopping process %s' % (process,))
@@ -811,10 +679,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     with open(ca_certificate_file, 'w') as fh:
       fh.write(ca_certificate.text)
 
-    class OwnTestHandler(TestHandler):
+    class OwnTestHandler(backend.TestHandler):
       identification = 'Auth Backend'
 
-    server_https_auth = ThreadedHTTPServer(
+    server_https_auth = backend.ThreadedHTTPServer(
       (self._ipv4_address, self._server_https_auth_port),
       OwnTestHandler)
 
@@ -1221,6 +1089,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       # find ports once to be able startServerProcess many times
       cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_https_weak_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
@@ -1667,6 +1536,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           'ip': cls._ipv4_address,
           'port_a': cls._server_netloc_a_http_port,
           'port_b': cls._server_netloc_b_http_port},
+      },
+      'weak-ssl-backend': {
+        'url': cls.backend_https_weak_url
       },
       'auth-to-backend': {
         # in here use reserved port for the backend, which is going to be
@@ -2136,9 +2008,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '65',
+      'accepted-slave-amount': '66',
       'rejected-slave-amount': '0',
-      'slave-amount': '65',
+      'slave-amount': '66',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2508,6 +2380,46 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.headers['X-Backend-Identification'],
       'netloc'
     )
+
+  def test_weak_ssl_backend(self):
+    parameter_dict = self.assertSlaveBase('weak-ssl-backend')
+
+    # assure that by default CDN does not allow access to weak backend
+    self.assertEqual(
+      http.client.SERVICE_UNAVAILABLE,
+      fakeHTTPSResult(parameter_dict['domain'], '/').status_code
+    )
+    try:
+      # allow SSL downgrade on the backend...
+      instance_parameter_dict = self.parameter_dict.copy()
+      instance_parameter_dict[
+        "-frontend-config-1-expert-backend-allow-downgrade-ssl"] = "true"
+      self.slap.request(
+          software_release=self.getSoftwareURL(),
+          software_type=self.getInstanceSoftwareType(),
+          partition_reference=self.default_partition_reference,
+          partition_parameter_kw=instance_parameter_dict,
+          state='started')
+      # 1st run -- to update the master
+      self.slap.waitForInstance(self.instance_max_retry)
+      # 2nd run -- to propagathe values
+      self.slap.waitForInstance(self.instance_max_retry)
+
+      # ...and assure that connection is ok
+      self.assertEqual(
+        http.client.OK,
+        fakeHTTPSResult(parameter_dict['domain'], '/').status_code
+      )
+    finally:
+      self.requestDefaultInstance()
+      # 1st run -- to update the master
+      self.slap.waitForInstance(self.instance_max_retry)
+      # 2nd run -- to propagathe values
+      self.slap.waitForInstance(self.instance_max_retry)
+      self.assertEqual(
+        http.client.SERVICE_UNAVAILABLE,
+        fakeHTTPSResult(parameter_dict['domain'], '/').status_code
+      )
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
@@ -7433,16 +7345,16 @@ backend _health-check-default-http
 
 
 if __name__ == '__main__':
-  class HTTP6Server(ThreadedHTTPServer):
+  class HTTP6Server(backend.ThreadedHTTPServer):
     address_family = socket.AF_INET6
   ip, port = sys.argv[1], int(sys.argv[2])
   if ':' in ip:
     klass = HTTP6Server
     url_template = 'http://[%s]:%s/'
   else:
-    klass = ThreadedHTTPServer
+    klass = backend.ThreadedHTTPServer
     url_template = 'http://%s:%s/'
 
-  server = klass((ip, port), TestHandler)
+  server = klass((ip, port), backend.TestHandler)
   print((url_template % server.server_address[:2]))
   server.serve_forever()
