@@ -109,3 +109,4 @@ configuration.backend-haproxy-statistic-port = 21444
 configuration.authenticate-to-backend = False
 configuration.rotate-num = 4000
 configuration.slave-introspection-https-port = 22443
+configuration.expert-backend-allow-downgrade-ssl = false
