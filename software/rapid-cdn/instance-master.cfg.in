@@ -40,6 +40,7 @@
         'ciphers',
         'request-timeout',
         'authenticate-to-backend',
+        'expert-backend-allow-downgrade-ssl',
     ]
 %}
 {#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
