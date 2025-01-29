@@ -193,6 +193,9 @@ T-2/var/log/httpd/_url-trailing-slash-present_frontend_log
 T-2/var/log/httpd/_url_https-url_access_log
 T-2/var/log/httpd/_url_https-url_backend_log
 T-2/var/log/httpd/_url_https-url_frontend_log
+T-2/var/log/httpd/_weak-ssl-backend_access_log
+T-2/var/log/httpd/_weak-ssl-backend_backend_log
+T-2/var/log/httpd/_weak-ssl-backend_frontend_log
 T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
 T-2/var/log/slave-introspection-access.log
