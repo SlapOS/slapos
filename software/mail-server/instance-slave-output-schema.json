@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Values returned by account creation",
+  "properties": {
+    "address": {
+      "title": "E-mail address",
+      "type": "string"
+    },
+    "passwordUrl": {
+      "title": "Password creation URL (you must use this to set your password)",
+      "type": "string"
+    }
+  }
+}

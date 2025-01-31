@@ -1,6 +1,10 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 
+{%- for slave in slave_instance_list %}
+{%   do slave.__setitem__('token', str(uuid_module.uuid4())) %}
+{%- endfor %}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -28,6 +32,7 @@ var-lib-postfix = ${:var-lib}/postfix
 var-spool = ${:var}/spool
 var-spool-postfix = ${:var-spool}/postfix
 vhosts = ${:home}/vhosts
+srv = ${buildout:directory}/srv
 # Not used at buildout level, presence needed by postfix.
 var-spool-postfix-active = ${:var-spool-postfix}/active
 var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
@@ -43,6 +48,13 @@ var-spool-postfix-private = ${:var-spool-postfix}/private
 var-spool-postfix-public = ${:var-spool-postfix}/public
 var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
+httpd-log = ${:log}/apache
+php-ini-dir = ${:etc}/php
+tmp-php = ${:tmp}/php
+upload-tmp = ${:tmp}/upload
+www = ${:srv}/www/
+apache.d = ${:etc}/apache.d
+srv-backup = ${:srv}/backup
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -51,6 +63,38 @@ partition = {{ slap_connection['partition-id'] }}
 url = {{ slap_connection['server-url'] }}
 key = {{ slap_connection['key-file'] }}
 cert = {{ slap_connection['cert-file'] }}
+
+[ca-directory]
+recipe = slapos.cookbook:mkdirectory
+root = ${directory:srv}/ssl
+requests = ${:root}/requests
+private = ${:root}/private
+certs = ${:root}/certs
+newcerts = ${:root}/newcerts
+crl = ${:root}/crl
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${ca-directory:root}
+requests-directory = ${ca-directory:requests}
+wrapper = ${directory:bin}/certificate_authority
+ca-private = ${ca-directory:private}
+ca-certs = ${ca-directory:certs}
+ca-newcerts = ${ca-directory:newcerts}
+ca-crl = ${ca-directory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${certificate-authority:wrapper}
+wrapper-path = ${directory:services}/certificate_authority
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+
+
+[apache-network-configuration]
+listening-ip = ${slap-configuration:ipv6-random}
+listening-port = 9988
 
 [config-base]
 recipe = slapos.recipe.template:jinja2
@@ -67,14 +111,33 @@ context =
 url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
 extra-context =
-  key dovecot_passdb_lua dovecot-passdb-lua:output
+  key dovecot_passwd dovecot-passwd:output
   raw postfix_auth ${directory:var-spool-postfix-private}/auth
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
 
-[dovecot-passdb-lua]
+[dovecot-passwd]
 <= config-base
-url = {{ dovecot_passdb_lua_template }}
-output = ${directory:etc}/dovecot-passdb.lua
+url = {{ dovecot_passwd }}
+output = ${directory:etc}/dovecot-passwd
+extra-context =
+  import json_module json
+  raw instances {{ json_module.dumps(slave_instance_list) }}
+  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
+
+[dovecot-passwords]
+recipe = slapos.recipe.build
+init =
+  # if existing, real all tokens
+install =
+   # if not existing, create it
+   # for non-existing slaves, insert slave & token
+
+[password-php]
+<= config-base
+url = {{ password_php }}
+output = ${directory:www}/password.php
+extra-context =
+  key dovecot_passwd dovecot-passwd:output
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -92,25 +155,12 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
-[{{ section('postmap-virtual') }}]
-recipe = plone.recipe.command
-stop-on-error = true
-command = '${wrapper-postmap:wrapper-path}' '${postfix-virtual:output}'
-update-command = ${:command}
-
-[{{ section('postmap-vmailbox') }}]
-recipe = plone.recipe.command
-stop-on-error = true
-command = '${wrapper-postmap:wrapper-path}' '${postfix-vmailbox:output}'
-update-command = ${:command}
-
 [postfix-conf-main]
 <= config-base
 url = {{ postfix_main_template }}
 output = ${directory:etc-postfix}/main.cf
 extra-context =
-  key vmailbox_file postfix-vmailbox:output
-  key virtual_file postfix-virtual:output
+  key dovecot_passwd dovecot-passwd:output
   key bin_directory directory:bin
   key usr_directory directory:usr-postfix
   key queue_directory directory:var-spool-postfix
@@ -121,26 +171,41 @@ extra-context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
-  key mail_domain request-dns-entry:connection-domain
+  key server_fqdn request-dns-entry:connection-domain
+  raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
+  raw relay_host {{ slapparameter_dict['relay_host'] }}
+  raw relay_port {{ slapparameter_dict['relay_port'] }}
+  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
 
 [postfix-conf-master]
 <= config-base
 url = {{ postfix_master_template }}
 output = ${directory:etc-postfix}/master.cf
-[postfix-vmailbox]
+extra-context =
+  key smtp_port publish-connection-information:smtp-port
+
+
+
+[snappymail-conf]
 <= config-base
-url = {{ postfix_vmailbox_template }}
-output = ${directory:etc-postfix}/postfix-vmailbox
+depends = ${copy-application:recipe}
+url = {{ snappymail_conf }}
+output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
 extra-context =
   key mail_domain request-dns-entry:connection-domain
-[postfix-virtual]
+
+
+[snappymail-domain]
 <= config-base
-url = {{ postfix_virtual_template }}
-output = ${directory:etc-postfix}/postfix-virtual
+depends = ${copy-application:recipe}
+url = {{ snappymail_domain }}
+output = ${copy-application:target}/data/_data_/_default_/domains/default.json
 extra-context =
-  key mail_domain request-dns-entry:connection-domain
+  raw mail_host [${slap-configuration:ipv6-random}]
+  key smtp_port publish-connection-information:smtp-port
+
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
@@ -177,6 +242,15 @@ inline =
   rm -f var/spool/postfix/pid/master.pid
   ${directory:usr-postfix}/libexec/postfix/master -c ${directory:etc-postfix}
 
+
+[ca-apache-php]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${apache-php-configuration:key-file}
+cert-file = ${apache-php-configuration:cert-file}
+executable = ${apache-php-wrapper:wrapper-path}
+wrapper = ${directory:bin}/ca-apache-php
+
 [postfix-service]
 recipe = slapos.cookbook:wrapper
 command-line = ${postfix-wrapper:output}
@@ -189,15 +263,104 @@ hash-files =
   ${postfix-conf-main:output}
   ${postfix-wrapper:output}
 
-[publish-connection-parameters]
-recipe = slapos.cookbook:publish
+[apache-php-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-apache-php:wrapper}
+wrapper-path = ${directory:service}/apache-php
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+depends =
+ ${copy-application:recipe}
+ ${apache-graceful:recipe}
+
+[apache-graceful]
+recipe = collective.recipe.template
+output = ${directory:script}/apache-httpd-graceful
+mode = 700
+input = inline:
+  #!/bin/sh
+  kill -USR1 "$(cat '${apache-php-configuration:pid-file}')"
+
+
+[copy-application]
+recipe = plone.recipe.command
+target = ${directory:www}
+command = cp -ax {{ apache_parameter_dict['application-location'] }}/. ${:target}
+update-command = ${:command}
+stop-on-error = true
+
+[apache-php-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ apache_parameter_dict['template-apache-conf'] }}
+output = ${directory:etc}/apache.conf
+context =
+  section parameter_dict apache-php-configuration
+extensions = jinja2.ext.do
+
+[apache-php-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/apache-wrapper
+command-line = "{{ apache_parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-php-conf:output}" -DFOREGROUND
+wait-for-files =
+  ${ca-directory:certs}/httpd.crt
+  ${ca-directory:certs}/httpd.key
+
+[apache-php-configuration]
+document-root = ${directory:www}
+pid-file = ${directory:run}/apache.pid
+lock-file = ${directory:run}/apache.lock
+ip = ${apache-network-configuration:listening-ip}
+port = ${apache-network-configuration:listening-port}
+url = https://[${:ip}]:${:port}/
+error-log = ${directory:httpd-log}/error.log
+access-log = ${directory:httpd-log}/access.log
+log-dir = ${directory:httpd-log}
+php-ini-dir = ${directory:php-ini-dir}
+cert-file = ${ca-directory:certs}/httpd.crt
+key-file = ${ca-directory:certs}/httpd.key
+apache-config-dir = ${directory:apache.d}
+
+[publish-connection-information]
 <= monitor-publish
+recipe = slapos.cookbook:publish
 imap-port = 10143
 smtp-port = 10025
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
-{% if slapparameter_dict.get('request_dns', '') %}
 domain = ${request-dns-entry:connection-domain}
-{% endif %}
+webmail-url = ${apache-php-configuration:url}
+{% if apache_parameter_dict['publish-frontend'] -%}
+webmail-url = ${lamp-frontend-promise:url}
+password-url = ${lamp-frontend-promise:url}/password.php
+{% endif -%}
+{% set token_dict = {} -%}
+{% for slave_instance in slave_instance_list -%}
+{%  do token_dict.__setitem__(slave_instance["address"], slave_instance["token"]) -%}
+{% endfor -%}
+slaves = {{ json_module.dumps(token_dict) }}
+
+[lamp-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+url = {{ lamp_apache_httpd }}
+output = ${directory:apache.d}/lamp.conf
+context =
+  section parameter_dict apache-php-configuration
+
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Instance Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${apache-php-configuration:url}
+config-https-only = true
+return = domain secure_access
+
+[lamp-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = lamp-http-frontend.py
+url = ${request-frontend:connection-secure_access}
+config-url = ${:url}
 
 [imap-listen-promise]
 <= monitor-promise-base
@@ -211,9 +374,18 @@ config-port = 10143
 promise = check_socket_listening
 name = smtp_listen.py
 config-host = ${slap-configuration:ipv6-random}
-config-port = 10025
+config-port = ${publish-connection-information:smtp-port}
+
+[promise]
+# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+<= monitor-promise-base
+promise = check_socket_listening
+name = apache-httpd-port-listening.py
+config-host = ${apache-php-configuration:ip}
+config-port = ${apache-php-configuration:port}
 
 [request-dns-entry]
+{% if slapparameter_dict.get('request_dns', '') %}
 name = dns-mail-entry
 recipe = slapos.cookbook:request.serialised
 software-url = automated_local_dns
@@ -229,6 +401,9 @@ config-name = dns-mail-entry
 config-subdomain = mail
 config-ip = ${slap-configuration:ipv6-random}
 return = domain ip
+{% else %}
+connection-domain = mail.localhost
+{% endif %}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -286,22 +461,52 @@ basename = {{ basename }}
 command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfix}
 wrapper-path = ${directory:run}/postfix-master
 
+[monitor-instance-parameter]
+#monitor-httpd-port = ${apache-network-configuration:listening-port}
+
+{% for slave_instance in slave_instance_list -%}
+{%   set orig_slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_reference = orig_slave_reference.replace(' ', '_') -%}
+
+{%   set publish_section_title = 'publish-%s' % slave_reference -%}
+{%   do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+
+recipe = slapos.cookbook:publish
+-slave-reference = {{ orig_slave_reference }}
+passwordUrl = "helloworld"
+
+{% endfor -%}
+
+
 [buildout]
 extends =
   {{ template_monitor }}
 parts =
   directory
+  lamp-frontend-promise
+  copy-application
+  snappymail-conf
+  snappymail-domain
   dovecot-conf
   dovecot-service
+  password-php
   postfix-conf-main
   postfix-conf-master
   postfix-service
   postfix-symlinks-libexec
   monitor-base
-  publish-connection-parameters
+  publish-connection-information
+  certificate-authority
   imap-listen-promise
   smtp-listen-promise
-  {{ part_list | join('\n  ') }}
+  php.ini-conf
+  lamp-apache-httpd
+  apache-php-service
+  request-frontend
+{% for part in part_list -%}
+{{ '    %s' % part }}
+{% endfor -%}
 {% if slapparameter_dict.get('request_dns', '') %}
   request-dns-entry
 {% endif %}
@@ -309,3 +514,27 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
+
+[instance-parameter]
+document-root = ${apache-php-configuration:document-root}
+backend-url = ${apache-php-configuration:url}
+php-bin = {{ apache_parameter_dict['apache-php-location'] }}/bin/php
+php-ini = ${php.ini-conf:output}
+
+[php.ini-configuration]
+tmp-dir = ${directory:tmp-php}
+php-upload-dir = ${directory:upload-tmp}
+
+[php.ini-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ apache_parameter_dict['template-php-ini'] }}
+output = ${directory:php-ini-dir}/php.ini
+context =
+  section apache_parameter_dict php.ini-configuration
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}

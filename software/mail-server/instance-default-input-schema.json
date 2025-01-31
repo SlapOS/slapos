@@ -7,7 +7,28 @@
       "title": "Request DNS",
       "description": "Request local DNS to a core network running on the same node",
       "type": "boolean",
-      "default": true
+      "default": false
+    },
+    "mail_domains": {
+      "title": "Mail Domains",
+      "description": "List of domains that this mail server will host mail for",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "relay_host": {
+      "title": "Relay Host",
+      "description": "The host name of the relay server used for outbound mail",
+      "type": "string",
+      "default": ""
+    },
+    "relay_port": {
+      "title": "Relay Port",
+      "description": "The port of the relay server used for outbound mail",
+      "type": "integer",
+      "default": 25
     }
   }
 }
