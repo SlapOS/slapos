@@ -1,5 +1,6 @@
+# compute additional_frontend before resolving the defaults
+{%- set additional_frontend = parameter_dict.get('additional-frontend-guid') or parameter_dict.get('additional-frontend-sr') or parameter_dict.get('additional-frontend-sr-type') %}
 {%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
-{%- set additional_frontend = parameter_dict['additional-frontend-guid'] %}
 {%- set embedded_instance_config = parameter_dict['initial-embedded-instance'] %}
 
 [buildout]
@@ -53,7 +54,11 @@ pidfiles = $${:var}/run
 statefiles = $${:var}/state
 
 services = $${:etc}/service
+{% if parameter_dict['testing-short-embedded-instance-path'] %}
+runner = $${:home}/r
+{% else %}
 runner = $${:srv}/runner
+{% endif %}
 backup = $${:srv}/backup/theia
 project = $${:srv}/project
 
@@ -567,8 +572,13 @@ ipv4 = {{ ipv4_random }}
 ipv6 = {{ slap_resource.get('ipv6-range-network') or ipv6_theia }}
 port = $${slapos-standalone-port:port}
 base-directory = $${directory:runner}
+{% if parameter_dict['testing-short-embedded-instance-path'] %}
+software-root = $${directory:runner}/s
+instance-root = $${directory:runner}/i
+{% else %}
 software-root = $${directory:runner}/software
 instance-root = $${directory:runner}/instance
+{% endif %}
 local-software-release-root = $${directory:home}
 slapos-bin = ${buildout:bin-directory}/slapos
 slapos-configuration = $${directory:runner}/etc/slapos.cfg

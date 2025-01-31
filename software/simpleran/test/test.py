@@ -104,20 +104,22 @@ def TAC(tac):
   }
 
 # LTE_PEER/NR_PEER return basic parameters to indicate an LTE/NR ENB-PEER-kind cell.
-def LTE_PEER(e_cell_id, pci, tac):
+def LTE_PEER(e_cell_id, pci, tac, plmn):
   return {
       'cell_kind':    'enb_peer',
       'e_cell_id':    '0x%07x' % e_cell_id,
       'pci':          pci,
       'tac':          '0x%x' % tac,
+      'plmn':          plmn,
   }
-def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac):
+def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac, plmn):
   return {
       'cell_kind':    'enb_peer',
       'nr_cell_id':   '0x%09x' % nr_cell_id,
       'gnb_id_bits':  gnb_id_bits,
       'pci':          pci,
       'tac':          tac,
+      'plmn':          plmn,
   }
 
 # X2_PEER/XN_PEER return basic parameters to indicate an LTE/NR ENB peer.
@@ -311,6 +313,7 @@ class ENBTestCase4(RFTestCase4):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
         'testing':      True,
+        'lte_mock':      True,
         'enb_id':       '0x17',
         'gnb_id':       '0x23',
         'gnb_id_bits':  30,
@@ -344,13 +347,13 @@ class ENBTestCase4(RFTestCase4):
     _('PEER4',      X2_PEER('44.1.1.1'))
     _('PEER5',      XN_PEER('55.1.1.1'))
 
-    _('PEERCELL4',  LTE(700)      | LTE_PEER(0x12345,    35, 0x123))
-    _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321))
+    _('PEERCELL4',  LTE(700)      | LTE_PEER(0x12345,    35, 0x123, "00101"))
+    _('PEERCELL5',  NR(520000,38) |  NR_PEER(0x77712,22, 75, 0x321, "00101"))
     cls.ho_inter = [
-        dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123),
+        dict(rat='eutra', cell_id=0x12345, n_id_cell=35, dl_earfcn=  700, tac=0x123, plmn="00101"),
         dict(rat='nr',    nr_cell_id=0x77712, gnb_id_bits=22, n_id_cell=75,
              dl_nr_arfcn=520000, ul_nr_arfcn=520000, ssb_nr_arfcn=520090, band=38,
-             tac = 0x321),
+             tac = 0x321, plmn="00101"),
     ]
 
   def CELLcfg(i):
@@ -752,6 +755,7 @@ class UEsimTestCase4(RFTestCase4):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
         'testing':      True,
+        'lte_mock':      True,
     })}
 
   @classmethod

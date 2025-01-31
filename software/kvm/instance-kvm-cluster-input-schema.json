@@ -27,18 +27,18 @@
         },
         "frontend-additional-instance-guid": {
           "title": "Additional Frontend Instance ID",
-          "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+          "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\". Note that if the 3 options 'frontend-additional-instance-guid', 'frontend-additional-software-type' and 'frontend-additional-software-url' are empty, the additional frontend won't be requested.",
           "type": "string"
         },
         "frontend-additional-software-type": {
           "title": "Additional Frontend Software Type",
-          "description": "Type of the frontend instance, like \"default\".",
+          "description": "Type of the additional frontend instance, like \"default\". Note that if the 3 options 'frontend-additional-instance-guid', 'frontend-additional-software-type' and 'frontend-additional-software-url' are empty, the additional frontend won't be requested.",
           "type": "string",
           "default": "default"
         },
         "frontend-additional-software-url": {
           "title": "Additional Frontend Software URL",
-          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+          "description": "Software Release URL of the additional frontend instance, like \"http://example.com/path/to/software.cfg\". Note that if the 3 options 'frontend-additional-instance-guid', 'frontend-additional-software-type' and 'frontend-additional-software-url' are empty, the additional frontend won't be requested.",
           "type": "string",
           "format": "uri",
           "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
@@ -453,7 +453,7 @@
             },
             "boot-image-url-list": {
               "title": "[EXPERT] Boot image list",
-              "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. Maximum images: 4. Maximum image size: 20GB. Download tires: 4. Maximum download time: 4h.",
+              "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. Maximum images: 4. Maximum image size: 20GB. Download tries: 4. Maximum download time: 4h.",
               "type": "string",
               "textarea": true
             },

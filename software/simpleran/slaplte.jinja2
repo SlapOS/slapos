@@ -394,6 +394,7 @@
 {%-       set ipeercell = ishared %}
 {%-       if _.cell_type == 'lte'  %}
 {%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
+{%-         do _.setdefault('lte_band',    xearfcn_module.band(_.dl_earfcn)[0]["band"]) %}
 {%-       elif _.cell_type == 'nr' %}
 {%-         do _.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(_.dl_nr_arfcn, _.nr_band)))  %}
 {%-         do _.setdefault('subcarrier_spacing',

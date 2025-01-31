@@ -151,14 +151,14 @@ def checkService(client, token_base_path, token_json, computer_partition):
     email = '%s@slapos' % slave_reference.lower()
     if status == 'TOKEN_USED':
       try:
-        ipv6 = client.getIPv6Address(str(email))
+        ipv6 = client.getIPv6Address(str(email)).decode()
       except Exception:
         log.info('Error for dump ipv6 for %s... \n %s' % (slave_reference,
                                         traceback.format_exc()))
 
       log.info("%s, IPV6 = %s" % (slave_reference, ipv6))
       try:
-        ipv4 = client.getIPv4Information(str(email)) or "0.0.0.0"
+        ipv4 = client.getIPv4Information(str(email)).decode() or "0.0.0.0"
       except Exception:
         log.info('Error for dump ipv4 for %s... \n %s' % (slave_reference,
                                         traceback.format_exc()))

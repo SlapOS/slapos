@@ -76,6 +76,8 @@ context =
   raw     redis_script            ${service-redis:wrapper}
   raw     puma_script             ${service-puma:wrapper-path}
   raw     sidekiq_script          ${service-sidekiq:wrapper-path}
+  raw     gitaly_script           ${service-gitaly:wrapper-path}
+  raw     gitaly_pid_file         ${gitaly:pid}
   raw     gitlab_backup_dir       ${gitlab-backup-directory:backup-gitlab.git}
   raw     redis_pid_file          ${service-redis:pid-file}
   raw     postgres_pid_file       ${service-postgresql:pgdata-directory}/postmaster.pid

@@ -5,7 +5,7 @@
 {%     do slapparameter_dict.__setitem__(k, '') %}
 {%   endif %}
 {% endfor %}
-{% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') %}
+{% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') or slapparameter_dict.get('frontend-additional-software-type') or slapparameter_dict.get('frontend-additional-software-url')%}
 {% set enable_http = slapparameter_dict.get('enable-http-server', False) -%}
 {% set use_tap = slapparameter_dict.get('use-tap', True) -%}
 {% set use_nat = slapparameter_dict.get('use-nat', True) -%}
@@ -715,7 +715,6 @@ cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
 catcher = ${cron-simplelogger:wrapper}
-binary = ${directory:bin}/crond_raw
 
 [cron-service]
 recipe = slapos.cookbook:wrapper
@@ -774,7 +773,9 @@ config-content-to-receive = {{ dumps('RFB 003.008\n'.encode()) }}
 software-url = ${slap-parameter:frontend-additional-software-url}
 software-type = ${slap-parameter:frontend-additional-software-type}
 name = ${slap-parameter:frontend-additional-instance-name}
+{% if slapparameter_dict.get('frontend-additional-instance-guid') %}
 sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
+{% endif %}
 
 [frontend-additional-promise]
 <= monitor-promise-base
