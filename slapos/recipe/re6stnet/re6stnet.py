@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 import logging
 import json
-import os
 import time
 import slapos
-import traceback
-import logging
-from re6st import  registry
+from pathlib import Path
+from re6st import registry
 
 log = logging.getLogger('SLAPOS-RE6STNET')
-logging.basicConfig(level=logging.INFO)
-
-logging.trace = logging.debug
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 def loadJsonFile(path):
-  if os.path.exists(path):
+  if path.exists():
     with open(path, 'r') as f:
       return json.load(f)
   return {}
@@ -24,7 +23,7 @@ def writeFile(path, data):
     f.write(data)
 
 def readFile(path):
-  if os.path.exists(path):
+  if path.exists():
     with open(path, 'r') as f:
       content = f.read()
     return content
@@ -45,77 +44,81 @@ def getComputerPartition(master_url, key_file, cert_file,
 
 def requestAddToken(client, token_base_path):
   time.sleep(3)
-  path_list = [x for x in os.listdir(token_base_path) if x.endswith('.add')]
+  path_list = [x for x in token_base_path.iterdir() if x.suffix == '.add']
 
-  log.info("Searching tokens to add at %s and found %s." % (token_base_path, path_list))
+  log.info("Searching tokens to add at %s and found %s.", token_base_path, path_list)
 
   if not path_list:
     log.info("No new token to add. Exiting...")
     return
 
   for reference_key in path_list:
-    request_file = os.path.join(token_base_path, reference_key)
+    request_file = token_base_path / reference_key
     token = readFile(request_file)
-    log.info("Including token %s for %s" % (token, reference_key))
+    log.info("Including token %s for %s", token, reference_key)
     if token :
-      reference = reference_key.split('.')[0]
+      reference = reference_key.stem
       # email is unique as reference is also unique
       email = '%s@slapos' % reference.lower()
       try:
         result = client.addToken(email, token)
       except Exception:
-        log.info('Request add token fail for %s... \n %s' % (request_file,
-                    traceback.format_exc()))
+        log.exception('Request add token fail for %s...', request_file)
         continue
 
       if result in (token, None):
         # update information
-        log.info("New token added for slave instance %s. Updating file status..." %
+        log.info("New token added for slave instance %s. Updating file status...",
                             reference)
-        status_file = os.path.join(token_base_path, '%s.status' % reference)
+        status_file = (token_base_path / reference).with_suffix('.status')
         updateFile(status_file, 'TOKEN_ADDED')
-        os.unlink(request_file)
+        request_file.unlink()
     else:
-      log.debug('Bad token. Request add token fail for %s...' % request_file)
+      log.debug('Bad token. Request add token fail for %s...', request_file)
 
 def requestRemoveToken(client, token_base_path):
-  path_list = [x for x in os.listdir(token_base_path) if x.endswith('.remove')]
+  path_list = [x for x in token_base_path.iterdir() if x.suffix == '.remove']
 
   if not path_list:
     log.info("No token to delete. Exiting...")
     return
 
   for reference_key in path_list:
-    request_file = os.path.join(token_base_path, reference_key)
+    request_file = token_base_path / reference_key
     token = readFile(request_file)
     if token :
-      reference = reference_key.split('.')[0]
+      reference = reference_key.stem
       try:
         result = client.deleteToken(token)
       except Exception:
-        log.debug('Request delete token fail for %s... \n %s' % (request_file,
-                    traceback.format_exc()))
+        log.exception('Request delete token fail for %s...', request_file)
         continue
-      else:
-        # certificate is invalidated, it will be revoked
-        writeFile(os.path.join(token_base_path, '%s.revoke' % reference), '')
 
-      if result in (True, 'True'):
-        # update information
-        log.info("Token deleted for slave instance %s. Clean up file status..." %
+      if not client.isToken(str(token)):
+        # Token has been destroyed or is already used, we can proceed to revoke the certificate
+        email = '%s@slapos' % reference.lower()
+        try:
+          cn = client.getNodePrefix(str(email))
+        except Exception:
+          log.exception('getNodePrefix for email %s failed', email)
+          continue
+        if cn:
+          try:
+            client.revoke(cn)
+          except Exception:
+            log.exception('Revoke cert with cn %s failed...', cn)
+            continue
+
+
+        log.info("Token deleted for slave instance %s. Clean up file status...",
                             reference)
-
-      if result in ['True', 'False']:
-        os.unlink(request_file)
-        status_file = os.path.join(token_base_path, '%s.status' % reference)
-        if os.path.exists(status_file):
-          os.unlink(status_file)
-        ipv6_file = os.path.join(token_base_path, '%s.ipv6' % reference)
-        if os.path.exists(ipv6_file):
-          os.unlink(ipv6_file)
-
+        request_file.unlink()
+        status_file = request_file.with_suffix('.status')
+        status_file.unlink()
+        ipv6_file = request_file.with_suffix('.ipv6')
+        ipv6_file.unlink(missing_ok=True)
     else:
-      log.debug('Bad token. Request remove token fail for %s...' % request_file)
+      log.error('Bad token. Request remove token fail for %s...', request_file)
 
 def checkService(client, token_base_path, token_json, computer_partition):
   token_dict = loadJsonFile(token_json)
@@ -125,9 +128,9 @@ def checkService(client, token_base_path, token_json, computer_partition):
 
   # Check token status
   for slave_reference, token in token_dict.items():
-    log.info("%s %s" % (slave_reference, token))
-    status_file = os.path.join(token_base_path, '%s.status' % slave_reference)
-    if not os.path.exists(status_file):
+    log.info("%s %s", slave_reference, token)
+    status_file = (token_base_path / slave_reference).with_suffix('.status')
+    if not status_file.exists():
       # This token is not added yet!
       log.info("Token %s dont exist yet." % status_file)
       continue
@@ -135,10 +138,10 @@ def checkService(client, token_base_path, token_json, computer_partition):
     if not client.isToken(str(token)):
       # Token is used to register client
       updateFile(status_file, 'TOKEN_USED')
-      log.info("Token status of %s updated to 'used'." % slave_reference)
+      log.info("Token status of %s updated to 'used'.", slave_reference)
 
     status = readFile(status_file)
-    log.info("Token %s has %s State." % (status_file, status))
+    log.info("Token %s has %s State.", status_file, status)
 
     ipv6 = "::"
     ipv4 = "0.0.0.0"
@@ -153,20 +156,17 @@ def checkService(client, token_base_path, token_json, computer_partition):
       try:
         ipv6 = client.getIPv6Address(str(email)).decode()
       except Exception:
-        log.info('Error for dump ipv6 for %s... \n %s' % (slave_reference,
-                                        traceback.format_exc()))
+        log.exception('Error for dump ipv6 for %s...', slave_reference)
+      log.info("%s, IPV6 = %s", slave_reference, ipv6)
 
-      log.info("%s, IPV6 = %s" % (slave_reference, ipv6))
       try:
         ipv4 = client.getIPv4Information(str(email)).decode() or "0.0.0.0"
       except Exception:
-        log.info('Error for dump ipv4 for %s... \n %s' % (slave_reference,
-                                        traceback.format_exc()))
-
+        log.exception('Error for dump ipv4 for %s...', slave_reference)
       log.info("%s, IPV4 = %s" % (slave_reference, ipv4))
 
     try:
-      log.info("Update parameters for %s" % slave_reference)
+      log.info("Update parameters for %s", slave_reference)
 
       # Normalise the values as simple strings to be on the same format that
       # the values which come from master.
@@ -176,13 +176,13 @@ def checkService(client, token_base_path, token_json, computer_partition):
                                             'ipv4': str(ipv4)},
           slave_reference)
     except Exception:
-      log.fatal("Error while sending slave %s informations: %s",
-         slave_reference, traceback.format_exc())
+      log.exception("Error while sending slave %s information",
+         slave_reference)
 
 
 def manage(registry_url, token_base_path, token_json,
            computer_dict, can_bang=True):
-
+  token_base_path = Path(token_base_path)
   client = registry.RegistryClient(registry_url)
 
   log.info("ADD TOKEN")
@@ -197,5 +197,5 @@ def manage(registry_url, token_base_path, token_json,
 
   log.info("Update Services")
   # check status of all token
-  checkService(client, token_base_path, token_json, computer_partition)
+  checkService(client, token_base_path, Path(token_json), computer_partition)
 
