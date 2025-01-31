@@ -93,19 +93,30 @@ def requestRemoveToken(client, token_base_path):
       try:
         result = client.deleteToken(token)
       except Exception:
-        log.debug('Request delete token fail for %s... \n %s' % (request_file,
+        log.error('Request delete token fail for %s... \n %s' % (request_file,
                     traceback.format_exc()))
         continue
-      else:
-        # certificate is invalidated, it will be revoked
-        writeFile(os.path.join(token_base_path, '%s.revoke' % reference), '')
 
-      if result in (True, 'True'):
-        # update information
+      if not client.isToken(str(token)):
+        # Token has been destroyed or is already used, we can proceed to revoke the certificate
+        email = '%s@slapos' % slave_reference.lower()
+        try:
+          cn = client.getNodePrefix(str(email))
+        except Exception:
+          log.error('getNodeProefix for email %s failed\n %s' % (email,
+                      traceback.format_exc()))
+          continue
+        if cn:
+          try:
+            client.revoke(cn)
+          except Exception:
+            log.error('Revoke cert with cn %s failed... \n %s' % (cn,
+                    traceback.format_exc()))
+            continue
+
+
         log.info("Token deleted for slave instance %s. Clean up file status..." %
                             reference)
-
-      if result in ['True', 'False']:
         os.unlink(request_file)
         status_file = os.path.join(token_base_path, '%s.status' % reference)
         if os.path.exists(status_file):
@@ -113,9 +124,8 @@ def requestRemoveToken(client, token_base_path):
         ipv6_file = os.path.join(token_base_path, '%s.ipv6' % reference)
         if os.path.exists(ipv6_file):
           os.unlink(ipv6_file)
-
     else:
-      log.debug('Bad token. Request remove token fail for %s...' % request_file)
+      log.error('Bad token. Request remove token fail for %s...' % request_file)
 
 def checkService(client, token_base_path, token_json, computer_partition):
   token_dict = loadJsonFile(token_json)
