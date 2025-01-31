@@ -256,13 +256,13 @@ inline =
     -h '${postgresql:pgdata-directory}' \
     -U '${postgresql:superuser}' \
     -d '${postgresql:dbname}' \
-    -c "CREATE TABLE addresses (
+    -c "CREATE TABLE IF NOT EXISTS addresses (
           email VARCHAR(50) NOT NULL PRIMARY KEY,
           active BOOL NOT NULL DEFAULT TRUE,
           passwd VARCHAR(106) NOT NULL
         );
 
-        CREATE TABLE aliases (
+        CREATE TABLE IF NOT EXISTS aliases (
           source VARCHAR(50) NOT NULL PRIMARY KEY,
           target VARCHAR(50) NOT NULL
         );
