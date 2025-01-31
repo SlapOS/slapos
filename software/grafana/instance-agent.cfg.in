@@ -162,9 +162,11 @@ init =
     }
   )
   inputs["disk"].append({})
-  inputs["io"].append({})
+  inputs["diskio"].append({})
+  inputs["mdstat"].append({"interval": "1h"})
   inputs["mem"].append({})
   inputs["net"].append({"ignore_protocol_stats": True})
+  inputs["sensors"].append({"interval": "5m"})
   inputs["system"].append({})
 
   for application in slapparameter_dict.get("applications", []):
