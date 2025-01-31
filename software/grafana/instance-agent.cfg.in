@@ -80,9 +80,10 @@ port = ${influxdb-server:port}
 [telegraf]
 recipe = slapos.cookbook:wrapper
 extra-config-dir = ${directory:telegraf-extra-config-dir}
-# telegraf needs influxdb to be already listening before starting
+# telegraf needs influxdb to be already listening before starting, so we wrap this command in bash.
+# we also run a login shell so that $PATH is initialized and sensors plugin can find sensors command.
 command-line =
-   bash -c '${influxdb-listen-promise:path} && ${:nice} {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
+   bash --login -c '${influxdb-listen-promise:path} && ${:nice} {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
 wrapper-path = ${directory:service}/telegraf
 hash-files = ${telegraf-config-file:output}
 # TODO: control nice of the agent ?
@@ -162,9 +163,11 @@ init =
     }
   )
   inputs["disk"].append({})
-  inputs["io"].append({})
+  inputs["diskio"].append({})
+  inputs["mdstat"].append({"interval": "1h"})
   inputs["mem"].append({})
   inputs["net"].append({"ignore_protocol_stats": True})
+  inputs["sensors"].append({"interval": "5m"})
   inputs["system"].append({})
 
   for application in slapparameter_dict.get("applications", []):
