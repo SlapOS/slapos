@@ -1146,7 +1146,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return default_instance
 
   @classmethod
-  def requestSlaveInstance(cls, partition_reference, partition_parameter_kw):
+  def requestSlaveInstance(
+    cls, partition_reference, partition_parameter_kw, state='started'):
     software_url = cls.getSoftwareURL()
     software_type = cls.getInstanceSoftwareType()
     cls.logger.debug(
@@ -1157,7 +1158,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       software_type=software_type,
       partition_reference=partition_reference,
       partition_parameter_kw=partition_parameter_kw,
-      shared=True
+      shared=True,
+      state=state
     )
 
   @classmethod
@@ -7342,6 +7344,74 @@ backend _health-check-default-http
 
     # as ssl proxy verification failed, service is unavailable
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
+
+
+class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+    'request-timeout': '12',
+  }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'first': {
+      },
+      'deleted': {
+      }
+    }
+
+  def clean_frontend_log_file(self):
+    frontend_partition_config = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))
+    self.assertEqual(1, len(frontend_partition_config))
+    frontend_partition_config = frontend_partition_config[0]
+    frontend_partition = os.path.realpath(os.path.join(
+      frontend_partition_config, '..', '..'))
+    slapgrid_log_file = os.path.join(
+      frontend_partition, '.slapgrid', 'log', 'instance.log')
+    os.rename(slapgrid_log_file, slapgrid_log_file + self.id())
+    return slapgrid_log_file
+
+  def test_added_slave(self):
+    # request additional slave
+    self.requestSlaveInstance('second', {})
+    slapgrid_log_file = self.clean_frontend_log_file()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    # assert it worked with inspecting the log file, for now the only way
+    # to check how slapos node reacted to the change
+    with open(slapgrid_log_file) as fh:
+      slapgrid_log = fh.read()
+    self.assertNotIn('Installing _first-', slapgrid_log)
+    self.assertNotIn('Uninstalling _first-', slapgrid_log)
+    self.assertIn('Updating _first-', slapgrid_log)
+
+    self.assertIn('Installing _second-', slapgrid_log)
+    self.assertNotIn('Uninstalling _second-', slapgrid_log)
+    self.assertNotIn('Updating _second-', slapgrid_log)
+
+  def test_destroyed_slave(self):
+    self.requestSlaveInstance('deleted', {}, 'destroyed')
+    slapgrid_log_file = self.clean_frontend_log_file()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    # assert it worked with inspecting the log file, for now the only way
+    # to check how slapos node reacted to the change
+    with open(slapgrid_log_file) as fh:
+      slapgrid_log = fh.read()
+
+    self.assertNotIn('Installing _first-', slapgrid_log)
+    self.assertNotIn('Uninstalling _first-', slapgrid_log)
+    self.assertIn('Updating _first-', slapgrid_log)
+
+    self.assertNotIn('Installing _deleted-', slapgrid_log)
+    self.assertIn('Uninstalling _deleted-', slapgrid_log)
+    self.assertNotIn('Updating _deleted-', slapgrid_log)
 
 
 if __name__ == '__main__':
