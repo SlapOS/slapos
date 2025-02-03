@@ -36,6 +36,8 @@ context =
 
 # empty sections if no slaves are available
 [slave-log-directory-dict]
+{#- Note: This section is only to build dictionary of all slave information about their directories #}
+{#-       It shall not be referenced as ${slave-log-directory-dict: by slaves, as this section is often updated #}
 [slave-password]
 [slave-htpasswd]
 
@@ -280,7 +282,8 @@ context =
 {#-   Set slave logrotate entry #}
 [{{slave_log_directory_section}}]
 recipe = slapos.cookbook:mkdirectory
-log-directory = {{ '${slave-log-directory-dict:' + slave_reference + '}' }}
+{#- Direct reference to slave_log_folder is on purpose to not depend on slave-log-directory-dict #}
+log-directory = {{ slave_log_folder }}
 
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base

@@ -1,0 +1,76 @@
+[
+  {
+    "full_address_list": [],
+    "instance_title": "testing partition 0",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-0",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "default",
+    "slave_instance_list": [
+      {
+        "slap_software_type": "default",
+        "slave_reference": "_deleted",
+        "slave_title": "_deleted"
+      },
+      {
+        "slap_software_type": "default",
+        "slave_reference": "_first",
+        "slave_title": "_first"
+      }
+    ],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-httpd-port": "8402",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "slave_reference": "_deleted"
+        },
+        {
+          "slave_reference": "_first"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "kedifa",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-1",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "kedifa",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
+      "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
+      "cluster-identification": "testing partition 0",
+      "enable-http3": "false",
+      "extra_slave_instance_list": "[{\"slave_reference\": \"_deleted\"}, {\"slave_reference\": \"_first\"}]",
+      "frontend-name": "caddy-frontend-1",
+      "http3-port": "443",
+      "kedifa-caucase-url": "http://[@@_ipv6_address@@]:8890",
+      "master-key-download-url": "https://[@@_ipv6_address@@]:7879/@@master-key-download-url_endpoint@@",
+      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-httpd-port": 8411,
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-kedifa-information": "{\"_deleted\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@?auth=\"}, \"_first\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@?auth=\"}}"
+    },
+    "full_address_list": [],
+    "instance_title": "caddy-frontend-1",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "single-custom-personal",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  }
+]
