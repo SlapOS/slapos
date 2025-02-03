@@ -27,6 +27,7 @@
 
 import os, shlex
 from slapos.recipe.librecipe import GenericBaseRecipe, generateHashFromFiles
+from slapos.recipe.librecipe.execute import parse_signal
 from zc.buildout import UserError
 
 class Recipe(GenericBaseRecipe):
@@ -40,6 +41,9 @@ class Recipe(GenericBaseRecipe):
     :param str pidfile: path to pidfile ensure exclusivity for the process
     :param lines private-tmpfs: list of "<size> <path>" private tmpfs, using user namespaces
     :param bool reserve-cpu: command will ask for an exclusive CPU core
+    :param str sig-ign: see slapos.recipe.librecipe.execute.generic_exec
+    :param str redirect-{signal,stdout,stderr}: set 'redirect' param
+        to slapos.recipe.librecipe.execute.generic_exec
     """
 
     _existing = ()
@@ -60,6 +64,20 @@ class Recipe(GenericBaseRecipe):
           hash_files = hash_files.split()
           options['__hash_files__'] = generateHashFromFiles(hash_files)
           self.hash_files += hash_files
+        sig = options.get('sig-ign')
+        if sig:
+          parse_signal(sig)
+          self.sig_ign = sig
+        redirect = tuple(options.get('redirect-' + x)
+                         for x in ('signal', 'stdout', 'stderr',))
+        if any(redirect):
+          sig = redirect[0]
+          if sig:
+            parse_signal(sig)
+            if not any(redirect[1:]):
+              raise UserError(
+                "redirect-signal without redirecting any output makes no sense")
+          self.redirect = redirect
 
     def getWrapperPath(self):
         wrapper_path = self.options['wrapper-path']
@@ -94,6 +112,11 @@ class Recipe(GenericBaseRecipe):
           kw['private_tmpfs'] = private_tmpfs
         if self.isTrueValue(options.get('reserve-cpu')):
           kw['reserve_cpu'] = True
+        for x in 'redirect', 'sig_ign':
+          try:
+            kw[x] = getattr(self, x)
+          except AttributeError:
+            pass
         return self.createWrapper(self.getWrapperPath(),
                                   args, environment, **kw)
 
