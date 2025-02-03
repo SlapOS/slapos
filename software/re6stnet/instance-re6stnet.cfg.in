@@ -108,6 +108,10 @@ wrapper-path = ${directory:services}/re6st-registry
 pidfile = ${directory:run}/registry.pid
 command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:output}
 hash-files = ${re6st-registry-conf:output}
+redirect-signal = USR1
+# HTTP requests are logged to stderr
+redirect-stdout = ${re6stnet-dirs:log}/access.log
+redirect-stderr = ${:redirect-stdout}
 
 [cron-entry-re6st-backup]
 recipe = slapos.cookbook:cron.d
@@ -154,7 +158,7 @@ command = {{ python_bin }} ${re6st-registry:manager-wrapper}
 [logrotate-entry-re6stnet]
 < = logrotate-entry-base
 name = re6stnet
-log = ${re6st-registry-conf-dict:logfile}
+log = ${re6st-registry-conf-dict:logfile} ${re6st-registry-wrapper:redirect-stdout}
 post = [ ! -s ${re6st-registry-wrapper:pidfile} ] || {{ bin_directory }}/slapos-kill --pidfile ${re6st-registry-wrapper:pidfile} -s USR1
 
 [port-redirection]
