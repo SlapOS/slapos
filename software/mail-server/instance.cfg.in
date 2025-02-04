@@ -34,6 +34,7 @@ filename = instance-default.cfg
 extra-context =
     raw dovecot_conf_template {{ dovecot_conf_template }}
     raw dovecot_sql_template {{ dovecot_sql_template }}
+    raw dovecot_passwd {{ dovecot_passwd }}
     raw dovecot_binary {{ dovecot_binary }}
     raw postfix_main_template {{ postfix_main_template }}
     raw postfix_master_template {{ postfix_master_template }}

@@ -23,9 +23,9 @@ virtual_mailbox_base = {{ vhosts_directory }}
 virtual_minimum_uid = 100
 virtual_uid_maps = static:1001
 virtual_gid_maps = static:1022
-virtual_mailbox_maps = pgsql:{{ vmailbox_file }}
+virtual_mailbox_maps = passwd:{{ dovecot_passwd }}
 virtual_alias_maps = pgsql:{{ virtual_file }}
-virtual_transport = lmtp:unix:private/dovecot-lmtp
+virtual_transport = lmtp:unix:{{ postfix_dovecot_lmtp }}
 
 inet_interfaces = all
 inet_protocols = all
