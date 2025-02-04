@@ -193,7 +193,8 @@ extra-context =
 [snappymail-domain]
 <= config-base
 url = {{ snappymail_domain }}
-output = ${directory:www}/data/_data_/_default_/domains/${request-dns-entry:connection-domain}.json
+#output = ${directory:www}/data/_data_/_default_/domains/${request-dns-entry:connection-domain}.json
+output = ${directory:www}/data/_data_/_default_/domains/default.json
 extra-context =
   raw mail_host [${slap-configuration:ipv6-random}]
 
