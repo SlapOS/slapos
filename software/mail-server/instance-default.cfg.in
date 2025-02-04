@@ -108,6 +108,7 @@ url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
 extra-context =
   key dovecot_sql dovecot-sql:output
+  key dovecot_passwd dovecot-passwd:output
   raw postfix_auth ${directory:var-spool-postfix-private}/auth
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
 
@@ -121,6 +122,13 @@ extra-context =
   raw postgresql_dbname ${postgresql:dbname}
   raw postgresql_host ${postgresql:ipv4}
   raw postgresql_port ${postgresql:port}
+
+[dovecot-passwd]
+<= config-base
+url = {{ dovecot_passwd }}
+output = ${directory:etc}/dovecot-passwd
+extra-context =
+
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -155,6 +163,7 @@ update-command = ${:command}
 url = {{ postfix_main_template }}
 output = ${directory:etc-postfix}/main.cf
 extra-context =
+  key dovecot_passwd dovecot-passwd:output
   key vmailbox_file postfix-vmailbox:output
   key virtual_file postfix-virtual:output
   key bin_directory directory:bin
@@ -168,6 +177,7 @@ extra-context =
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
   key mail_domain request-dns-entry:connection-domain
+  raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
 
