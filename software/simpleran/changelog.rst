@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 1.0.XXX (2025-02-XX)
+-------------
+
+* Publish SSB NR ARFCN
+* Let Amarisoft compute SSB NR ARFCN for ORS, as some commercial UE's are compatible with specific SSB NR ARFCN's only
+
 Version 1.0.390 (2025-01-21)
 -------------
 
