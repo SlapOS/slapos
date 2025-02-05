@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.396 (2025-02-07)
+-------------
+
+* Publish SSB NR ARFCN
+
 Version 1.0.390 (2025-01-21)
 -------------
 
