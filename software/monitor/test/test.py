@@ -27,7 +27,7 @@
 
 import datetime
 import glob
-import hashlib
+import string
 import json
 import os
 import psutil
@@ -381,11 +381,17 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
       connection_parameter_dict
     )
 
+  def _normalizePromiseString(self, s):
+    safe_character = string.ascii_letters + string.digits + '-'
+    replacement_character = '-'
+    return ''.join([
+      q if q in safe_character else replacement_character for q in s])
+
   def assertHttpQueryPromiseContent(
     self, instance_reference, name, url, content):
     hashed = 'http-query-%s-%s.py' % (
-      hashlib.md5((name).encode('utf-8')).hexdigest(),
-      hashlib.md5((url).encode('utf-8')).hexdigest(),
+      self._normalizePromiseString(name),
+      self._normalizePromiseString(url),
     )
     self.assertPromiseContent(instance_reference, hashed, content)
 
