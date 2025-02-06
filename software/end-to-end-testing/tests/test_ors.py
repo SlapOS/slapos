@@ -29,8 +29,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             plmn = mcc + mnc
             mnc = (3 - len(mnc)) * '0' + mnc
 
-            cls.update_service('enb', 'started',
-              {
+            cls.parameters['enb'] = {
                   'bandwidth': '10 MHz',
                   'dl_earfcn': 38350,
                   'plmn_list': {
@@ -41,9 +40,8 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   'enb_drb_stats_enabled': False,
                   'xlog_forwarding_enabled': False,
                   'amarisoft_version': '2024-03-15.1727098076'
-              })
-            cls.update_service('core-network#sim', 'started',
-              {
+            }
+            cls.parameters['core-network#sim'] = {
                   'sim_algo': 'milenage',
                   'imsi': f'{plmn}0000000001',
                   'opc': '000102030405060708090A0B0C0D0E0F',
@@ -52,18 +50,18 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   'k': '00112233445566778899AABBCCDDEEFF',
                   'impu': f'{plmn}0000000001',
                   'impi': f'{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org'
-              })
-            cls.update_service('core-network', 'started',
-              {
+            }
+            cls.parameters['core-network'] = {
                    'core_network_plmn': plmn,
                    'iperf3': True,
                    'network_name': 'E2E Testing',
                    'network_short_name': 'E2E Testing',
                   'amarisoft_version': '2024-03-15.1727098076'
-              })
-            cls.update_service('ue', 'started', {'amarisoft_version': '2022-12-16.1733497882'})
-            cls.update_service('ue#cell', 'started',
-              {
+            }
+            cls.parameters['ue'] = {
+                  'amarisoft_version': '2022-12-16.1733497882'
+            }
+            cls.parameters['ue#cell'] = {
                   'cell_type': 'lte',
                   'cell_kind': 'ue',
                   'rf_mode': 'tdd',
@@ -82,9 +80,8 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   'dl_earfcn': 38350,
                   'ul_earfcn': 38350,
                   'bandwidth': 10
-              })
-            cls.update_service('ue#ue', 'started',
-              {
+            }
+            cls.parameters['ue#ue'] = {
                   'ue_type': 'lte',
                   'imsi': f'{plmn}0000000001',
                   'k': '00112233445566778899AABBCCDDEEFF',
@@ -94,7 +91,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   'sqn': '000000000000',
                   'impu': f'{plmn}0000000001',
                   'impi': f'{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org'
-              })
+            }
+            for ref in cls.parameters:
+              cls.update_service(ref, 'started', cls.parameters[ref])
 
             cls.logger.info("Waiting 5 minutes")
             time.sleep(5 * 60)
@@ -223,3 +222,18 @@ class ORSTest(WebsocketTestClass):
             self.logger.info("UE connected with ip: " + result['pdn_list'][0]['ipv4'])
         finally:
             self.power_off(ue_id)
+
+    def test_max_rx_sample_db(self):
+        custom_params = {}
+        custom_params.update(self.parameters['enb'])
+        custom_params.update({"max_rx_sample_db": -99})
+        self.update_service('enb', 'started', custom_params)
+        self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-rx-saturated", expected=False)
+
+    def test_min_rxtx_delay(self):
+        # Fixed by 9798ef1e, change `expected` to False when released
+        custom_params = {}
+        custom_params.update(self.parameters['enb'])
+        custom_params.update({"min_rxtx_delay": 99})
+        self.update_service('enb', 'started', custom_params)
+        self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-baseband-latency", expected=True)
