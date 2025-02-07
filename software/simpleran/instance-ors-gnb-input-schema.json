@@ -22,6 +22,9 @@
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
+    "ssb_nr_arfcn": {
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
+    },
     "nr_band": {
       "$ref": "cell/nr/input-schema.json#/properties/nr_band"
     },
