@@ -73,10 +73,6 @@ url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 
-[publish-connection-parameters]
-imap-port = 10143
-smtp-port = 10025
-
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-template-default:output
