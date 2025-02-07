@@ -29,6 +29,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             plmn = mcc + mnc
             mnc = (3 - len(mnc)) * '0' + mnc
 
+            cls.parameters = {}
             cls.parameters['enb'] = {
                   'bandwidth': '10 MHz',
                   'dl_earfcn': 38350,
