@@ -40,7 +40,7 @@
   },
   "SMTP": {
       "host": "{{ mail_host }}",
-      "port": 10025,
+      "port": {{ smtp_port }},
       "type": 0,
       "timeout": 60,
       "shortLogin": false,

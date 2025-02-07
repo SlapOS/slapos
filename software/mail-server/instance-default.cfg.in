@@ -185,6 +185,8 @@ extra-context =
 <= config-base
 url = {{ postfix_master_template }}
 output = ${directory:etc-postfix}/master.cf
+extra-context =
+  key smtp_port publish-connection-information:smtp-port
 
 
 
@@ -207,6 +209,7 @@ url = {{ snappymail_domain }}
 output = ${directory:www}/data/_data_/_default_/domains/default.json
 extra-context =
   raw mail_host [${slap-configuration:ipv6-random}]
+  key smtp_port publish-connection-information:smtp-port
 
 
 [postfix-vmailbox]
@@ -435,7 +438,7 @@ config-port = 10143
 promise = check_socket_listening
 name = smtp_listen.py
 config-host = ${slap-configuration:ipv6-random}
-config-port = 10025
+config-port = ${publish-connection-information:smtp-port}
 
 [promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
