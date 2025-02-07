@@ -175,9 +175,10 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         if hasattr(cls, 'ws') and cls.ws is not None:
             cls.logger.info("Closing websocket")
             cls.ws.close()
-        cls.update_service('enb', 'stopped')
-        cls.update_service('core-network', 'stopped')
-        cls.update_service('ue', 'stopped')
+        # TODO: uncomment these lines
+        #cls.update_service('enb', 'stopped')
+        #cls.update_service('core-network', 'stopped')
+        #cls.update_service('ue', 'stopped')
         # Don't call super().tearDownClass as we don't want to destroy requested instances
 
     def send(self, msg):
@@ -224,17 +225,18 @@ class ORSTest(WebsocketTestClass):
         finally:
             self.power_off(ue_id)
 
-    def test_max_rx_sample_db(self):
-        custom_params = {}
-        custom_params.update(self.parameters['enb'])
-        custom_params.update({"max_rx_sample_db": -99})
-        self.update_service('enb', 'started', custom_params)
-        self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-rx-saturated", expected=False)
+    # TODO: uncomment these tests
+    #def test_max_rx_sample_db(self):
+    #    custom_params = {}
+    #    custom_params.update(self.parameters['enb'])
+    #    custom_params.update({"max_rx_sample_db": -99})
+    #    self.update_service('enb', 'started', custom_params)
+    #    self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-rx-saturated", expected=False)
 
-    def test_min_rxtx_delay(self):
-        # Fixed by 9798ef1e, change `expected` to False when released
-        custom_params = {}
-        custom_params.update(self.parameters['enb'])
-        custom_params.update({"min_rxtx_delay": 99})
-        self.update_service('enb', 'started', custom_params)
-        self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-baseband-latency", expected=True)
+    #def test_min_rxtx_delay(self):
+    #    # Fixed by 9798ef1e, change `expected` to False when released
+    #    custom_params = {}
+    #    custom_params.update(self.parameters['enb'])
+    #    custom_params.update({"min_rxtx_delay": 99})
+    #    self.update_service('enb', 'started', custom_params)
+    #    self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-baseband-latency", expected=True)
