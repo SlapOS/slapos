@@ -217,6 +217,13 @@ class LopcommNetconfClient:
       return replied
 
     def close(self):
-        # Close not compatible between ncclient and netconf server
-        #self.conn.close()
-        pass
+        """Properly close the Netconf connection if it exists."""
+        if self.conn:
+            self.logger.info('Closing Netconf connection to %s' % (self.address,))
+            try:
+                self.conn.close_session()  # Gracefully close the Netconf session
+                self.logger.info('Connection closed successfully')
+            except Exception as e:
+                self.logger.error(f"Error closing connection: {e}")
+            finally:
+                self.conn = None

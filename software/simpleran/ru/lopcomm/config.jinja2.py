@@ -11,12 +11,11 @@ def send_config(nc, templates):
         nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
         nc.edit_config(templates)
         nc.logger.info("RU config sent")
+        nc.close()
     except Exception as e:
         nc.logger.debug('Got exception, waiting 10 seconds before reconnecting...')
         nc.logger.debug(e)
         time.sleep(10)
-    finally:
-        nc.close()
 
 def check_config_changes(src, dst, nc):
     """Check if configuration has changed and handle accordingly"""
@@ -55,7 +54,6 @@ def main():
 
         nc.logger.info("Current enb_start_date: %s", enb_start_date)
         nc.logger.info("Current last_deactivation_date: %s", last_deactivation_date)
-        
         # Check if deactivation is needed
         if last_deactivation_date < enb_start_date:
             nc.logger.info("Deactivation needed - enb_start_date: %s", enb_start_date)
@@ -73,7 +71,7 @@ def main():
             shutil.copyfile(src, dst)  # Update the reference config
         
         # Add a sleep to prevent tight loop
-        time.sleep(30) 
+        time.sleep(30)
 
 if __name__ == '__main__':
     main()

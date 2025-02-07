@@ -26,8 +26,8 @@ def get_notification_continuously(nc):
 def run_supervision_reset_continuously(nc):
     global error_occurred
     netconf_check_file = '{{ is_netconf_connected }}'
-    interval = 60
-    margin   = 10
+    interval = 43200
+    margin   = 3600
     try:
         while not error_occurred:
             t0 = time.time()
