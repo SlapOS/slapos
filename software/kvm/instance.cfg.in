@@ -126,6 +126,7 @@ import-list = file parts :template-parts-destination
 recipe = slapos.cookbook:wrapper
 environment =
   PATH=${qemu:location}/bin
+  NO_COLOR=true
 wrapper-path =
   $${buildout:bin-directory}/qmpbackup
 command-line =
@@ -150,6 +151,7 @@ context =
 recipe = slapos.cookbook:wrapper
 environment =
   PATH=${qemu:location}/bin
+  NO_COLOR=true
 wrapper-path =
   $${buildout:bin-directory}/qmprestore
 command-line =
