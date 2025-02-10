@@ -885,6 +885,18 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     return result[0].stdout.decode('utf-8')
 
 
+def awaitBackup(equeue_file):
+  for f in range(30):
+    with open(equeue_file, 'r') as fh:
+      equeue_log = fh.read()
+      if 'finished successfully' in equeue_log:
+        break
+    time.sleep(1)
+  else:
+    self.fail('Backup not finished: %s' % (equeue_log))
+  return equeue_log
+
+
 @skipUnlessKvm
 class TestInstanceResilientBackupImporter(
   TestInstanceResilientBackupMixin, KVMTestCase):
@@ -900,16 +912,6 @@ class TestInstanceResilientBackupImporter(
     self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
     self.call_exporter()
 
-    def awaitBackup(equeue_file):
-      for f in range(30):
-        with open(equeue_file, 'r') as fh:
-          equeue_log = fh.read()
-          if 'finished successfully' in equeue_log:
-            break
-        time.sleep(1)
-      else:
-        self.fail('Backup not finished: %s' % (equeue_log))
-      return equeue_log
     equeue_log = awaitBackup(equeue_file)
     self.assertNotIn('qemu-img rebase', equeue_log)
     self.assertEqual(
@@ -957,8 +959,22 @@ class TestInstanceResilientBackupImporterIde(
 
 class TestInstanceResilientBackupExporterMixin(
   TestInstanceResilientBackupMixin):
+  def assertImported(self):
+    self.assertEqual(
+      set(sorted(os.listdir(self.getPartitionPath('kvm-import', 'srv')))),
+      set([
+        'backup', 'proof.signature', 'virtual.qcow2', 'sshkeys', 'backup.diff'
+        ,'monitor', 'cgi-bin', 'passwd', 'ssl', 'equeue.db'])
+    )
+
   def initialBackup(self):
     status_text = self.call_exporter()
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    # clean up equeue file for precise assertion
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    equeue_log = awaitBackup(equeue_file)
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
@@ -977,6 +993,7 @@ class TestInstanceResilientBackupExporterMixin(
       'Post take-over cleanup',
       status_text
     )
+    self.assertImported()
 
 
 @skipUnlessKvm
@@ -984,6 +1001,15 @@ class TestInstanceResilientBackupExporter(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
     self.initialBackup()
+    # assure that additional backup run does not leave temporary files
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    # clean up equeue file for precise assertion
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    self.call_exporter()
+    equeue_log = awaitBackup(equeue_file)
+    self.assertImported()
 
 
 @skipUnlessKvm
