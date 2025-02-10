@@ -7,6 +7,9 @@ BACKUP_DIR={{ directory['backup'] }}
 LC_ALL=C
 export LC_ALL
 umask 077
+# decolorize colorlog in qmpbackup
+NO_COLOR=true
+export NO_COLOR
 
 write_backup_proof () {
   cd {{ directory['backup'] }}
