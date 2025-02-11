@@ -171,3 +171,4 @@ context =
     key pbsready_import_template template-pbsready-import:output
     key slapparameter_dict slap-configuration:configuration
     key qmprestore qmprestore-binary:wrapper-path
+    raw disk_image_corruption ${disk-image-corruption.sh:target}
