@@ -101,6 +101,7 @@ extra-context =
   raw template_nginx ${template-nginx:target}
   raw websockify_executable_location ${buildout:directory}/bin/websockify
   raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
+  raw disk_image_corruption ${disk-image-corruption.sh:target}
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
