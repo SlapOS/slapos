@@ -173,3 +173,4 @@ context =
     key slapparameter_dict slap-configuration:configuration
     key qmprestore qmprestore-binary:wrapper-path
     raw backup_signature ${buildout:bin-directory}/backup-signature
+    raw disk_image_corruption ${disk-image-corruption.sh:target}

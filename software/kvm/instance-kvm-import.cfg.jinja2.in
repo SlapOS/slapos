@@ -70,19 +70,16 @@ context =
     raw backup_signature {{ backup_signature }}
 
 [kvm-disk-image-corruption-bin]
-recipe = collective.recipe.template
-input = inline:#!/bin/sh
-  QEMU_IMAGE="${directory:srv}/virtual.qcow2"
-  if [ ! -s "$QEMU_IMAGE" ]; then
-    exit 0
-  fi
-  {{ qemu_location }}/bin/qemu-img check $QEMU_IMAGE
-  RETURN_CODE=$?
-  if [ $RETURN_CODE -eq 0 ] || [ $RETURN_CODE -eq 3 ]; then
-    exit 0
-  else
-    exit 1
-  fi
+recipe = slapos.recipe.template:jinja2
+url = {{ disk_image_corruption }}
+qemu_img_path = {{ qemu_location }}/bin/qemu-img
+disk_path = ${directory:srv}/virtual.qcow2
+# force empty disk device
+disk_device_path =
+context =
+  key disk_device_path :disk_device_path
+  key qemu_img_path :qemu_img_path
+  key disk_path :disk_path
 output = ${directory:bin}/kvm-disk-image-corruption
 mode = 700
 
