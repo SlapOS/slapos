@@ -1,6 +1,7 @@
 import json
 import hashlib
 import hmac
+import random
 import time
 import slapos.testing.e2e as e2e
 from websocket import create_connection
@@ -94,7 +95,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   'impi': f'{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org'
             }
             for ref in cls.parameters:
-              cls.update_service(ref, 'started', cls.parameters[ref])
+              cls.update_service(ref, 'started', parameters=cls.parameters[ref], lock=True)
 
             cls.logger.info("Waiting 5 minutes")
             time.sleep(5 * 60)
@@ -135,7 +136,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         cls.logger.info("Websocket authentication established.")
 
     @classmethod
-    def update_service(cls, name, state, parameters=None):
+    def update_service(cls, name, state, parameters=None, lock=None):
         sr_type = name.split('#')[0]
         shared = '#' in name
         name = name.replace('#', '_').replace('-', '_')
@@ -145,6 +146,28 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
           parameters = {'_': json.dumps(parameters)}
         else:
           parameters = {'_': json.dumps(instance_infos.parameter_dict['_'])}
+
+        # Lock mechanism, only for non shared instances
+        while lock and not shared:
+          cls.logger.info(f"Waiting for lock to be released for {instance_name}...")
+          lock = time.time()
+          previous_lock = float(instance_infos.parameter_dict['_'].get('lock', 0))
+          # If previous lock is more than 6 hours old, then we assume the previous
+          # test exited without properly releasing the lock
+          if (lock - previous_lock) > (3600 * 6):
+            parameters = json.loads(parameters['_'])
+            parameters['lock'] = lock
+            parameters = {'_': json.dumps(parameters)}
+            break
+          # Sleep a random amount between 1 and 10 minutes to avoid multiple test
+          # suites getting the lock at the same time
+          time.sleep(random.randint(60, 10 * 60))
+          instance_infos = cls.getInstanceInfos(instance_name)
+        # Unlock
+        if lock == False:
+          parameters = json.loads(parameters['_'])
+          parameters.pop('lock', None)
+          parameters = {'_': json.dumps(parameters)}
 
         cls.logger.info(f"Update {instance_name}")
         args = [instance_infos.software_url, instance_name,]
@@ -176,9 +199,12 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.logger.info("Closing websocket")
             cls.ws.close()
         # TODO: uncomment these lines
-        #cls.update_service('enb', 'stopped')
-        #cls.update_service('core-network', 'stopped')
-        #cls.update_service('ue', 'stopped')
+        #cls.update_service('enb', 'stopped', lock=False)
+        #cls.update_service('core-network', 'stopped', lock=False)
+        #cls.update_service('ue', 'stopped', lock=False)
+        cls.update_service('enb', 'started', lock=False)
+        cls.update_service('core-network', 'started', lock=False)
+        cls.update_service('ue', 'started', lock=False)
         # Don't call super().tearDownClass as we don't want to destroy requested instances
 
     def send(self, msg):
