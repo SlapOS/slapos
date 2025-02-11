@@ -6,9 +6,6 @@ set -e
 LC_ALL=C
 export LC_ALL
 BACKUP_DIR={{ directory['backup'] }}
-# decolorize colorlog in qmpbackup
-NO_COLOR=true
-export NO_COLOR
 
 log=$(mktemp --tmpdir={{ directory['tmp'] }})
 trap "rm -f $log" EXIT TERM INT
