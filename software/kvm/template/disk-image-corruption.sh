@@ -6,7 +6,7 @@
   if [ ! -s "{{ disk_path }}" ]; then
     exit 0
   fi
-  {{ qemu_img_path }} check -U {{ disk_path }} > /dev/null 2>&1
+  {{ qemu_img_path }} check -U {{ disk_path }}
   RETURN_CODE=$?
   # Return code 0 is "OK"
   # Return code 3 is "found leaks, but image is OK"
