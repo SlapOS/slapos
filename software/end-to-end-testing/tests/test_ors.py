@@ -247,14 +247,14 @@ class ORSTest(WebsocketTestClass):
         finally:
             self.power_off(ue_id)
 
-    # TODO: uncomment these tests
-    #def test_max_rx_sample_db(self):
-    #    custom_params = {}
-    #    custom_params.update(self.parameters['enb'])
-    #    custom_params.update({"max_rx_sample_db": -99})
-    #    self.update_service('enb', 'started', custom_params)
-    #    self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-rx-saturated", expected=False)
+    def test_max_rx_sample_db(self):
+        custom_params = {}
+        custom_params.update(self.parameters['enb'])
+        custom_params.update({"max_rx_sample_db": -99})
+        self.update_service('enb', 'started', custom_params)
+        self.waitUntilPromises(ORSTest.enb_instance_name, promise_name="check-rx-saturated", expected=False)
 
+    # TODO: uncomment this test
     #def test_min_rxtx_delay(self):
     #    # Fixed by 9798ef1e, change `expected` to False when released
     #    custom_params = {}
