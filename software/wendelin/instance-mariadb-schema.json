@@ -31,6 +31,11 @@
           "type": "integer",
           "minimum": -1,
           "default": -1
+        },
+        "allow-tcp-connections-on-replica": {
+          "description": "Whether a replica should allow TCP connections",
+          "type": "boolean",
+          "default": true
         }
       },
       "oneOf": [
