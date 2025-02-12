@@ -1,10 +1,11 @@
 Changelog
 =========
 
-Version 1.0.396 (2025-02-07)
+Version 1.0.396 (2025-02-12)
 -------------
 
 * Publish SSB NR ARFCN
+* Fix SSB NR ARFCN computation, affects band N79
 
 Version 1.0.390 (2025-01-21)
 -------------
