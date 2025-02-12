@@ -198,13 +198,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         if hasattr(cls, 'ws') and cls.ws is not None:
             cls.logger.info("Closing websocket")
             cls.ws.close()
-        # TODO: uncomment these lines
-        #cls.update_service('enb', 'stopped', lock=False)
-        #cls.update_service('core-network', 'stopped', lock=False)
-        #cls.update_service('ue', 'stopped', lock=False)
-        cls.update_service('enb', 'started', lock=False)
-        cls.update_service('core-network', 'started', lock=False)
-        cls.update_service('ue', 'started', lock=False)
+        cls.update_service('enb', 'stopped', lock=False)
+        cls.update_service('core-network', 'stopped', lock=False)
+        cls.update_service('ue', 'stopped', lock=False)
         # Don't call super().tearDownClass as we don't want to destroy requested instances
 
     def send(self, msg):
