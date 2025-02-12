@@ -9,6 +9,8 @@
   'nameserver-list': [],
   'enabled-sense-list': 'dns_query tcp_server http_query ssl_certificate elapsed_time'
 } %}
+{%- set SAFE_CHARACTER = string_module.ascii_letters + string_module.digits + '-' %}
+{%- set REPLACEMENT_CHARCTER = '-' %}
 {%- for default_key in ['check-frontend-ip-list', 'nameserver-list', 'check-status-code', 'check-certificate-expiration-days', 'check-maximum-elapsed-time', 'failure-amount', 'enabled-sense-list'] %}
 {%-   if default_key in slapparameter_dict %}
 {%-     do DEFAULT_DICT.__setitem__(default_key, slapparameter_dict[default_key]) %}
@@ -54,7 +56,23 @@
 {%-   for check in class_check_list | sort(attribute='-name') %}
 {%-     do CLASS_URL_LIST.extend(check['url-list']) %}
 {%-     for url in check['url-list'] %}
-{%-       set promise_name = 'http-query-' ~ hashlib_module.md5(check['-name'].encode('utf-8')).hexdigest() ~ '-' ~ hashlib_module.md5(url.encode('utf-8')).hexdigest() %}
+{%-       set name_list = [] %}
+{%-       set url_list = [] %}
+{%-       for char in check['-name'] %}
+{%-         if char in SAFE_CHARACTER %}
+{%-           do name_list.append(char) %}
+{%-         else %}
+{%-           do name_list.append(REPLACEMENT_CHARCTER) %}
+{%-         endif %}
+{%-       endfor %}
+{%-       for char in url %}
+{%-         if char in SAFE_CHARACTER %}
+{%-           do url_list.append(char) %}
+{%-         else %}
+{%-           do url_list.append(REPLACEMENT_CHARCTER) %}
+{%-         endif %}
+{%-       endfor %}
+{%-       set promise_name = 'http-query-' ~ ''.join(name_list) ~ '-' ~ ''.join(url_list) | trim('-') %}
 {%-       set part_name = promise_name ~ '-promise' %}
 {%-       do PART_LIST.append(part_name) %}
 [{{part_name}}]

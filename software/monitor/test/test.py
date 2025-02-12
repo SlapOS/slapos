@@ -27,7 +27,7 @@
 
 import datetime
 import glob
-import hashlib
+import string
 import json
 import os
 import psutil
@@ -381,11 +381,17 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
       connection_parameter_dict
     )
 
+  def _normalizePromiseString(self, s):
+    safe_character = string.ascii_letters + string.digits + '-'
+    replacement_character = '-'
+    return ''.join([
+      q if q in safe_character else replacement_character for q in s])
+
   def assertHttpQueryPromiseContent(
     self, instance_reference, name, url, content):
     hashed = 'http-query-%s-%s.py' % (
-      hashlib.md5((name).encode('utf-8')).hexdigest(),
-      hashlib.md5((url).encode('utf-8')).hexdigest(),
+      self._normalizePromiseString(name),
+      self._normalizePromiseString(url),
     )
     self.assertPromiseContent(instance_reference, hashed, content)
 
@@ -473,6 +479,11 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
            ],
            'check-http-header-dict': {"A": "AAA"},
         },
+        "TYPICAL-201": {
+           "url-list": [
+             "https://typical201.example.com",
+           ],
+        },
       }
     })}
 
@@ -497,6 +508,7 @@ URL =
   https://header.example.com
   https://path.example.com/path
   https://status.example.com
+  https://typical201.example.com
 """},
       11: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
@@ -688,6 +700,23 @@ URL =
   'report': 'http_query',
   'status-code': '201',
   'url': 'https://header.example.com'}""" % (
+        self.enabled_sense_list,
+        self.surykatka_dict['edge0'][5]['json-file'],))
+
+    self.assertHttpQueryPromiseContent(
+      'edge0',
+      'TYPICAL-201',
+      'https://typical201.example.com',
+      """extra_config_dict = { 'certificate-expiration-days': '7',
+  'enabled-sense-list': %s,
+  'failure-amount': '1',
+  'http-header-dict': '{}',
+  'ip-list': '127.0.0.1 127.0.0.2',
+  'json-file': '%s',
+  'maximum-elapsed-time': '5',
+  'report': 'http_query',
+  'status-code': '201',
+  'url': 'https://typical201.example.com'}""" % (
         self.enabled_sense_list,
         self.surykatka_dict['edge0'][5]['json-file'],))
 
