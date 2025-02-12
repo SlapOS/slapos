@@ -26,6 +26,7 @@
 {% if replication -%}
 {# cast to assert types -#}
 {% set replica_threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
+{% set replica_skip_networking = not replication.get('allow-tcp-connection-on-replica', True) -%}
 {% set primary_url = str(replication['primary-url']) -%}
 {% set bootstrap_url = replication.get('bootstrap-url') -%}
 {% set primary = urllib_parse.urlsplit(primary_url) -%}
@@ -33,6 +34,7 @@
 {% set primary_url = None -%}
 {% set primary = {'hostname': None, 'port': None, 'username': None} -%}
 {% set replica_threshold = None -%}
+{% set replica_skip_networking = False -%}
 {% endif -%}
 
 
@@ -144,9 +146,18 @@ command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:maria
 {%- endif %}
 {%- endif %}
 
-[my-cnf-parameters]
+[my-cnf-tcp-parameters]
 ip = {{ ip }}
 port = {{ port }}
+
+[my-cnf-parameters]
+{% if replica_skip_networking -%}
+# Do not set ip/port so that skip-networking will be set, disabling TCP access
+# ip =
+# port =
+{%- else %}
+<= my-cnf-tcp-parameters
+{%- endif %}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
@@ -419,6 +430,12 @@ inline =
   echo "See ${:logfile}"
 {%- endraw %}
 
+[{{ section('mariadb-shutdown-gracefully') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  SHUTDOWN WAIT FOR ALL SLAVES;
+
 [{{ section('mariadb-replica-become-primary') }}]
 # See https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary
 <= mariadb-replica-change-base
@@ -602,11 +619,27 @@ promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
-[{{ section('promise') }}]
+[{{ section('promise-mariadb-tcp') }}]
 <= monitor-promise-base
 promise = check_command_execute
+name = mariadb-tcp.py
+sql-command = "${binary-wrap-mysql:wrapper-path}"  --execute ';'
+tcp-options = --host="${my-cnf-tcp-parameters:ip}" --port="${my-cnf-tcp-parameters:port}"
+modifier = {% if replica_skip_networking %}!{% endif %}
+{%- if database_list and database_list[0].get('user') %}
+user-options =  --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}"
+{%- else %}
+user-options =
+{%- endif %}
+config-command = ${:modifier} ${:sql-command} ${:tcp-options} ${:user-options}
+
+{% if replica_skip_networking -%}
+[{{ section('promise-mariadb') }}]
+<= promise-mariadb
 name = mariadb.py
-config-command = "${binary-wrap-mysql:wrapper-path}"  --execute ';' {% if database_list and database_list[0].get('user') %} --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}" --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}" {% endif %}
+tcp-options =
+modifier =
+{%- endif %}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
