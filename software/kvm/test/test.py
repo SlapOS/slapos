@@ -893,7 +893,7 @@ def awaitBackup(equeue_file):
         break
     time.sleep(1)
   else:
-    self.fail('Backup not finished: %s' % (equeue_log))
+    raise ValueError('Backup not finished: %s' % (equeue_log))
   return equeue_log
 
 
@@ -974,7 +974,7 @@ class TestInstanceResilientBackupExporterMixin(
     # clean up equeue file for precise assertion
     with open(equeue_file, 'w') as fh:
       fh.write('')
-    equeue_log = awaitBackup(equeue_file)
+    awaitBackup(equeue_file)
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
@@ -1008,7 +1008,7 @@ class TestInstanceResilientBackupExporter(
     with open(equeue_file, 'w') as fh:
       fh.write('')
     self.call_exporter()
-    equeue_log = awaitBackup(equeue_file)
+    awaitBackup(equeue_file)
     self.assertImported()
 
 
