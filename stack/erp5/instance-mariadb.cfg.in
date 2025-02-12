@@ -20,7 +20,20 @@
 {% endif -%}
 {% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
+
+{#- Replication parameters -#}
 {% set replication = slapparameter_dict.get('replication', {}) -%}
+{% if replication -%}
+{# cast to assert types -#}
+{% set replica_threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
+{% set primary_url = str(replication['primary-url']) -%}
+{% set bootstrap_url = replication.get('bootstrap-url') -%}
+{% set primary = urllib_parse.urlsplit(primary_url) -%}
+{% else -%}
+{% set primary_url = None -%}
+{% set primary = {'hostname': None, 'port': None, 'username': None} -%}
+{% set replica_threshold = None -%}
+{% endif -%}
 
 
 [{{ section('publish') }}]
@@ -219,9 +232,6 @@ context =
 {%- endif %}
 
 {% if replication -%}
-{% set bootstrap_url = replication.get('bootstrap-url') -%}
-{% set primary_url = replication['primary-url'] -%}
-{% set primary = urllib_parse.urlsplit(primary_url) -%}
 [{{ section('mariadb-setup-replication') }}]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
@@ -316,15 +326,6 @@ inline =
   echo "Starting mariadb normally"
 {%- endif %}
 
-{% if replication -%}
-{# cast to assert types -#}
-{% set threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
-{% set primary_url = str(primary_url) -%}
-{% else -%}
-{% set primary_url = None -%}
-{% set primary = {'hostname': None, 'port': None, 'username': None} -%}
-{% set threshold = None -%}
-{% endif -%}
 [mariadb-replication-sense]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
@@ -339,7 +340,7 @@ inline =
 
   expected_url = {{ repr(primary_url) }}
   expected = {{ repr((primary.hostname, primary.port, primary.username)) }}
-  max_delay = {{ threshold }}
+  max_delay = {{ replica_threshold }}
 
   @implementer(interface.IPromise)
   class RunPromise(GenericPromise):
