@@ -7418,13 +7418,24 @@ if __name__ == '__main__':
   class HTTP6Server(backend.ThreadedHTTPServer):
     address_family = socket.AF_INET6
   ip, port = sys.argv[1], int(sys.argv[2])
+  if len(sys.argv) > 3:
+    ssl_certificate = sys.argv[3]
+    scheme = 'https'
+  else:
+    ssl_certificate = None
+    scheme = 'http'
   if ':' in ip:
     klass = HTTP6Server
-    url_template = 'http://[%s]:%s/'
+    url_template = '%s://[%s]:%s/'
   else:
     klass = backend.ThreadedHTTPServer
-    url_template = 'http://%s:%s/'
+    url_template = '%s://%s:%s/'
 
   server = klass((ip, port), backend.TestHandler)
-  print((url_template % server.server_address[:2]))
+  if ssl_certificate is not None:
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.load_cert_chain(ssl_certificate)
+    server.socket = context.wrap_socket(server.socket, server_side=True)
+
+  print((url_template % (scheme, *server.server_address[:2])))
   server.serve_forever()
