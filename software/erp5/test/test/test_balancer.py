@@ -1,3 +1,5 @@
+import datetime
+import functools
 import ipaddress
 import json
 import logging
@@ -9,9 +11,11 @@ import subprocess
 import sqlite3
 import tempfile
 import time
+import typing
 import urllib.parse
 from http.server import BaseHTTPRequestHandler
-from unittest import mock
+import http
+from unittest import expectedFailure, mock
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -1091,3 +1095,142 @@ class TestPathBasedRouting(BalancerTestCase):
     # elements which share a common prefix.
     assertRoutingEqual('second',  '/next',          prefix + '/erp5/web_site_module/the_next_website' + vhr + '/_vh_next')
     assertRoutingEqual('second',  '/next2',         prefix + '/erp5/web_site_module/the_next2_website' + vhr + '/_vh_next2')
+
+
+class StatusCodeHTTPServer(ManagedHTTPServer):
+  """An HTTP Server which replies with the status code passed as path element,
+  for example, it would reply with 418 for the following requests:
+
+    GET /418
+
+  because balancer rewrites the URL, the actual URL used by this server is:
+
+    GET /VirtualHostBase/https/{host}/VirtualHostRoot/418
+
+  """
+  class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+      path_elements = [p for p in self.path.split('/') if p]
+      if path_elements[:1] == ['VirtualHostBase']:
+        path_elements = path_elements[4:]
+      if not path_elements:
+        path_elements = ['200']
+
+      status = int(path_elements[0])
+      self.send_response(status)
+      self.send_header("Content-Type", "text/plain")
+      self.end_headers()
+      self.wfile.write(http.HTTPStatus(status).phrase.encode() + b"\n")
+
+    def log_message(self, format: str, *args) -> None:
+      logging.getLogger(__name__ + '.StatusCodeHTTPServer').info(format, *args)
+
+
+class TestRateLimiting(BalancerTestCase):
+  __partition_reference__ = 'rl'
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    parameter_dict = super()._getInstanceParameterDict()
+    # use our server with status code control instead
+    parameter_dict['dummy_http_server'] = [[cls.getManagedResource("status_code_server", StatusCodeHTTPServer).netloc, 1, False]]
+    # and set some rate limiting rules:
+    parameter_dict["rate-limits"] = {
+      "tarpit-duration": "5s",
+      "rules": [
+        # one based on the path
+        {
+          "max-requests": 3,
+          "time-window": "20s",
+          "url-path-pattern": "/200/.*limited",
+          "action": "tarpit",
+          "expire": "20s"
+        },
+        # one based on the HTTP status code
+        {
+          "max-requests": 5,
+          "time-window": "10s",
+          "status-code": "400:599",
+          "table-name": "errors",
+          "expire": "10s"
+        },
+      ],
+    }
+
+    # we'll connect to the backend with a certificate, so that the backend trusts our
+    # X-Forwarded-For header and that we can simulate multiple clients from different
+    # source IPs.
+    frontend_caucase = cls.getManagedResource('frontend_caucase', CaucaseService)
+    certificate = cls.getManagedResource('client_certificate', CaucaseCertificate)
+    certificate.request('shared frontend', frontend_caucase)
+    parameter_dict['ssl']['frontend-caucase-url-list'] = [frontend_caucase.url]
+
+    return parameter_dict
+
+  def tearDown(self):
+    # restart haproxy between tests to reset the stick tables
+    with self.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if i['name'].startswith('haproxy-')]
+      haproxy_process_name = f"{info['group']}:{info['name']}"
+      supervisor.stopProcess(haproxy_process_name)
+      supervisor.startProcess(haproxy_process_name)
+    self.slap.waitForInstance()
+
+  def do_get(self, url_path:str, client_ip:typing.Union[str, None] = None) -> requests.Response:
+    default_balancer_url = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])['url-backend-default']
+    client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
+    headers = {}
+    cert = None
+    if client_ip:
+      headers['X-Forwarded-For'] = client_ip
+      cert = (client_certificate.cert_file, client_certificate.key_file)
+    return requests.get(default_balancer_url + url_path, verify=False, headers=headers, cert=cert)
+
+  def test_backend_rate_limiting_per_url(self) -> None:
+    for client_ip in ('1.2.3.4', '::1', None):
+      with self.subTest(client_ip):
+        for _ in range(3):
+          self.do_get('/200/rate_limited', client_ip).raise_for_status()
+        limited_request = self.do_get('/200/rate_limited', client_ip)
+        self.assertEqual(limited_request.status_code, requests.codes.too_many_requests)
+        self.assertGreater(limited_request.elapsed , datetime.timedelta(seconds=5))
+        self.do_get('/200/other_url', client_ip).raise_for_status()
+
+  def test_backend_rate_limiting_per_status_code(self) -> None:
+    for client_ip in ('1.2.3.4', '::1', None):
+      with self.subTest(client_ip):
+        self.assertEqual(self.do_get('/400', client_ip).status_code, 400)
+        self.assertEqual(self.do_get('/401', client_ip).status_code, 401)
+        self.assertEqual(self.do_get('/404', client_ip).status_code, 404)
+        # status codes 2* and 3* do not increase the counter
+        self.assertEqual(self.do_get('/200', client_ip).status_code, 200)
+        self.assertEqual(self.do_get('/302', client_ip).status_code, 302)
+
+        self.assertEqual(self.do_get('/500', client_ip).status_code, 500)
+        self.assertEqual(self.do_get('/500', client_ip).status_code, 500)
+
+        limited_request = self.do_get('/200', client_ip)
+        self.assertEqual(limited_request.status_code, requests.codes.too_many_requests)
+
+    self.do_get('/500', '4.5.6.7')
+    self.assertIn(
+      'key=4.5.6.7',
+      subprocess.check_output(
+        self.computer_partition_root_path / 'bin' / 'haproxy-socat-stats',
+        input='show table stick_table_errors\n',
+        text=True,
+      )
+    )
+
+  @expectedFailure
+  def test_status_code_only_track_matching_status_code(self):
+    self.do_get('/200', '1.2.3.4')
+    self.assertNotIn(
+      'key=1.2.3.4',
+      subprocess.check_output(
+        self.computer_partition_root_path / 'bin' / 'haproxy-socat-stats',
+        input='show table stick_table_errors\n',
+        text=True,
+      )
+    )
