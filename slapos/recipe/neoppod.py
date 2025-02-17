@@ -98,8 +98,9 @@ class NeoBaseRecipe(GenericBaseRecipe):
         environment[k.rstrip()] = v.lstrip()
 
     private_tmpfs = self.parsePrivateTmpfs()
-    kw = {'private_tmpfs': private_tmpfs} if private_tmpfs else {}
-    return self.createWrapper(options['wrapper'], args, env=environment, **kw)
+    return self.createWrapper(
+      options['wrapper'], args, env=environment, sig_ign="RTMIN+1",
+      **{'private_tmpfs': private_tmpfs} if private_tmpfs else {})
 
   def _getBindingAddress(self):
     options = self.options

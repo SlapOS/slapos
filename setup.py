@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.394'
+version = '1.0.397'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -145,7 +145,6 @@ setup(name=name,
           'slapos.recipe.request:RequestOptionalJSONEncoded',
           're6stnet.registry = slapos.recipe.re6stnet:Recipe',
           'shell = slapos.recipe.shell:Recipe',
-          'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
           'simplehttpserver = slapos.recipe.simplehttpserver:Recipe',
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',

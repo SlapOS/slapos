@@ -84,13 +84,14 @@ recipe = slapos.recipe.template
 inline =
   {
     "public":true,
-    "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
-    "other": [],
-    "presenter": [{"username": "", "password": "{{ presenter_password }}"}],
+    "users":{
+        "$${admin-password:username}": {"password":"$${admin-password:passwd}", "permissions": "op"}
+    },
+    "wildcard-user": {"password": "{{ presenter_password }}", "permissions": "present"},
 {%- if slapparameter_dict.get("allow_subgroups", False) %}
-    "allow-subgroups": true
+    "auto-subgroups": true
 {%- else %}
-    "allow-subgroups": false
+    "auto-subgroups": false
 {%- endif %}
   }
 output = $${directory:groups}/public.json
