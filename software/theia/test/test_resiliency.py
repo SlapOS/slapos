@@ -50,6 +50,7 @@ from test import TheiaTestCase, ResilientTheiaMixin, theia_software_release_url
 
 dummy_software_url = os.path.abspath(
   os.path.join('resilience_dummy', 'software.cfg'))
+non_ascii_only_filename = ' 🙊 \t nonascii \n $ \r é '
 
 
 class WorkaroundSnapshotConflict(TheiaTestCase):
@@ -421,6 +422,11 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     # Check that dummy instance was properly deployed
     self.initial_log = self.checkLog(os.path.join(dummy_root, 'log.log'))
 
+    # Create a non ascii filename, to ensure signature correctly handles it
+    self.writeFile(os.path.join(self.getPartitionPath('export', 'srv', 'project'),
+                                non_ascii_only_filename),
+      'This file should be included in resilient backup')
+
     # Create ~/include and ~/include/included
     self.writeFile(os.path.join(dummy_root, 'include', 'included'),
       'This file should be included in resilient backup')
@@ -461,6 +467,10 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
 
     # Check that the dummy instance is not yet started
     self.checkLog(os.path.join(dummy_root, 'log.log'), self.initial_log, newline=None)
+
+    # Check that the non ascii filename has been correctly propagated
+    self.assertTrue(os.path.exists(os.path.join(self.getPartitionPath('import', 'srv', 'project'),
+                                   non_ascii_only_filename)))
 
     # Check that ~/srv/.backup_identity_script was detected and called
     signature =  self.getPartitionPath(
