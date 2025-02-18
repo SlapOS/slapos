@@ -88,6 +88,12 @@ command = mysql
 {%   endif -%}
 {%   set query_string = urllib.urlencode(extra_dict) -%}
 
+[{{ section('sqlite3-cksumvfs') }}]
+recipe = slapos.recipe.build
+location = ${directory:bin}/sqlite3
+source = {{sqlite3_location}}/bin/${:_buildout_section_name_}
+install = import os; os.symlink(options['source'], location)
+
 {% else -%}
 {% do assert(not storage_count) -%}
 
