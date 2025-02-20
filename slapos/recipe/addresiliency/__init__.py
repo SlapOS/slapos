@@ -50,6 +50,6 @@ class Recipe(GenericSlapRecipe):
                 'computer_guid': slap_connection['computer-id'],
                 'partition_id': slap_connection['partition-id'],
                 'software_release': slap_connection['software-release-url'],
-                'namebase': self.parameter_dict['namebase'],
+                'namebase': self.getInstanceParameterDict['namebase'],
                 'takeover_triggered_file_path': self.options['takeover-triggered-file-path'],
             })
