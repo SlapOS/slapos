@@ -13,8 +13,10 @@
 {% set port = slapparameter_dict['tcpv4-port'] %}
 {% if use_ipv6 -%}
 {%   set ip = (ipv6_set | list)[0] -%}
+{%   set ip_as_host = '[%s]' % ip -%}
 {% else -%}
 {%   set ip = (ipv4_set | list)[0] -%}
+{%   set ip_as_host = ip -%}
 {% endif -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
 
@@ -25,9 +27,9 @@ recipe = slapos.cookbook:publish.serialised
 {% set publish_database_list = [] -%}
 {% for database in database_list -%}
 {%   if database.get('user') -%}
-{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
+{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ip_as_host ~ ":" ~ port ~ "/" ~ database['name']) -%}
 {%   else -%}
-{%     do publish_database_list.append("mysql://" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
+{%     do publish_database_list.append("mysql://" ~ ip_as_host ~ ":" ~ port ~ "/" ~ database['name']) -%}
 {%   endif -%}
 {% endfor -%}
 {{ dumps(publish_database_list) }}
