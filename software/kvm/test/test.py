@@ -2468,7 +2468,7 @@ class TestParameterCluster(TestParameterDefault):
     })}
 
   def mangleParameterDict(self, parameter_dict):
-    local_parameter_dict = self.getInstanceParameterDict().copy()
+    local_parameter_dict = self.parameter_dict.copy()
     local_parameter_dict.update(parameter_dict)
     return {'_': json.dumps({
       "kvm-partition-dict": {

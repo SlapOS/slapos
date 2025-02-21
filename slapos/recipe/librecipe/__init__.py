@@ -140,10 +140,9 @@ class BaseSlapRecipe:
 
   def _getIpAddress(self, test_method):
     """Internal helper method to fetch ip address"""
-    parameter_dict = self.getInstanceParameterDict()
-    if not 'ip_list' in parameter_dict:
+    if not 'ip_list' in self.parameter_dict:
       raise AttributeError
-    for name, ip in parameter_dict['ip_list']:
+    for name, ip in self.parameter_dict['ip_list']:
       if test_method(ip):
         return ip
     raise AttributeError
@@ -265,7 +264,7 @@ class BaseSlapRecipe:
     self.request = self.computer_partition.request
     self.setConnectionDict = self.computer_partition.setConnectionDict
     self._createDefaultDirectoryStructure()
-    self.getInstanceParameterDict = self.computer_partition.getInstanceParameterDict
+    self.parameter_dict = self.computer_partition.getInstanceParameterDict()
 
     # call children part of install
     path_list = self._install()
