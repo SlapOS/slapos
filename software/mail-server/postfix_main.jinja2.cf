@@ -18,12 +18,12 @@ smtputf8_enable = no
 mail_owner = {{ mail_owner }}
 setgid_group = {{ setgid_group }}
 
-virtual_mailbox_domains = {{ mail_domain }}
+virtual_mailbox_domains = {{ mail_domain }}, mailsr.zdimension.fr
 virtual_mailbox_base = {{ vhosts_directory }}
 virtual_minimum_uid = 100
 virtual_uid_maps = static:1001
 virtual_gid_maps = static:1022
-virtual_mailbox_maps = passwd:{{ dovecot_passwd }}
+#virtual_mailbox_maps = passwd:{{ dovecot_passwd }}
 virtual_alias_maps = pgsql:{{ virtual_file }}
 virtual_transport = lmtp:unix:{{ postfix_dovecot_lmtp }}
 
@@ -54,3 +54,5 @@ local_transport = error
 maillog_file = {{ log_directory }}/postfix.log
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
+
+relayhost = [mailsrrelayv6.zdimension.fr]:10025
