@@ -69,7 +69,7 @@ class GenericSlapRecipe(GenericBaseRecipe):
 
     @property
     def parameter_dict(self):
-      return self.computer_partition.getInstanceParameterDict().copy()
+      return self.computer_partition.getInstanceParameterDict()
 
     # call children part of install
     path_list = self._install()
