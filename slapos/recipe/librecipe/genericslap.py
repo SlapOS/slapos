@@ -66,7 +66,10 @@ class GenericSlapRecipe(GenericBaseRecipe):
 
     self.request = self.computer_partition.request
     self.setConnectionDict = self.computer_partition.setConnectionDict
-    self.parameter_dict = self.computer_partition.getInstanceParameterDict()
+
+    @property
+    def parameter_dict(self):
+      return self.computer_partition.getInstanceParameterDict().copy()
 
     # call children part of install
     path_list = self._install()
