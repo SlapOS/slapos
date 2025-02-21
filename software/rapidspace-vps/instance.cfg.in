@@ -1,4 +1,7 @@
 [buildout]
+# Note that we don't extend instance.cfg.in from ../software/kvm because it
+# would bring all the resilient stuff that we don't need. The drawback is we
+# can't share all the template parameters.
 parts =
   switch_softwaretype
 
@@ -7,7 +10,10 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-template-kvm:output
+default = dynamic-template-vps:output
+vpsbrute-4disks = dynamic-template-vpsbrute-4disks:output
+vpsbrute-6disks = dynamic-template-vpsbrute-6disks:output
+vpsbrute-10disks = dynamic-template-vpsbrute-10disks:output
 
 [slap-configuration]
 # we usejsonschema recipe in order to force some values for VPS (see all the const in the JSON schema)
@@ -25,23 +31,54 @@ init =
   conf = self.buildout['slap-configuration']['configuration']
   # we know for sure that there is only the boot-image parameters in conf
   # so only set what is custom compared to default values
+  ${slap-configuration-common:common-all}
   conf['ram-size'] = 245760
   conf['ram-max-size'] = 246272
-  conf['auto-ballooning'] = False
   conf['cpu-count'] = 40
   conf['cpu-max-count'] = 41
-  conf['wipe-disk-ondestroy'] = True
-  conf['use-tap'] = True
-  conf['frontend-software-type'] = "default"
-  conf['frontend-software-url'] = "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-  conf['frontend-additional-software-type'] = "default"
-  conf['frontend-additional-software-url'] = "chinary-frontend-sr"
   conf['disk-device-path'] = "/dev/sdb"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+[slap-configuration-vpsbrute-4disks]
+# this section will force all constant values for VPSbrute 4 disks
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vpsbrute}
+  conf['disk-device-path'] = "/dev/nvme0n1 /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+[slap-configuration-vpsbrute-6disks]
+# this section will force all constant values for VPSbrute 4 disks
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vpsbrute}
+  conf['disk-device-path'] = "/dev/nvme0n1 /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1 /dev/nvme4n1 /dev/nvme5n1"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+[slap-configuration-vpsbrute-10disks]
+# this section will force all constant values for VPSbrute 4 disks
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vpsbrute}
+  conf['disk-device-path'] = "/dev/nvme0n1 /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1 /dev/nvme4n1 /dev/nvme5n1 /dev/nvme6n1 /dev/nvme7n1 /dev/nvme8n1 /dev/nvme9n1"
   options['configuration'] = conf
   # XXX we should make sure this configuration matches KVM json schema...
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+url = ${template-kvm:location}/instance-kvm.cfg.jinja2
 output = $${buildout:directory}/$${:filename}
 extensions = jinja2.ext.do
 extra-context =
@@ -52,16 +89,9 @@ context =
   key ipv6 slap-configuration:ipv6
   key global_ipv4_prefix network-information:global-ipv4-network
   key storage_dict slap-configuration:storage-dict
-  key slapparameter_dict slap-configuration-vps:configuration
+
   key computer_id slap-configuration:computer-id
   raw openssl_executable_location ${openssl:location}/bin/openssl
-  $${:extra-context}
-
-[dynamic-template-kvm]
-<= jinja2-template-base
-url = ${template-kvm:location}/instance-kvm.cfg.jinja2
-filename = template-kvm.cfg
-extra-context =
   section slap_configuration slap-configuration
   raw ansible_promise_tpl ${template-ansible-promise:target}
   raw curl_executable_location ${curl:location}/bin/curl
@@ -92,8 +122,28 @@ extra-context =
   raw template_nginx ${template-nginx:target}
   raw websockify_executable_location ${buildout:directory}/bin/websockify
   raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
-template-parts-destination = ${template-parts:target}
-template-replicated-destination = ${template-replicated:target}
-import-list = file parts :template-parts-destination
-              file replicated :template-replicated-destination
+  $${:extra-context}
 
+[dynamic-template-vps]
+<= jinja2-template-base
+filename = template-vps.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vps:configuration
+
+[dynamic-template-vpsbrute-4disks]
+<= jinja2-template-base
+filename = template-vpsbrute-4disks.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vpsbrute-4disks:configuration
+
+[dynamic-template-vpsbrute-6disks]
+<= jinja2-template-base
+filename = template-vpsbrute-6disks.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vpsbrute-6disks:configuration
+
+[dynamic-template-vpsbrute-4disks]
+<= jinja2-template-base
+filename = template-vpsbrute-10disks.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vpsbrute-10disks:configuration

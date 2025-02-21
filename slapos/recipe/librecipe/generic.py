@@ -169,7 +169,7 @@ class GenericBaseRecipe(object):
     # here (note that this can't be done correctly with a POSIX shell, because
     # the process can't be given a name).
 
-    lines = ['#!/bin/sh']
+    lines = ['#!/bin/sh -e']
 
     if sig_ign:
       lines.append("trap '' " + sig_ign)
