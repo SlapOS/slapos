@@ -26,9 +26,11 @@
 ##############################################################################
 
 import logging
-from zc.buildout.buildout import Buildout, MissingOption, MissingSection
+from zc.buildout.buildout import Buildout, MissingOption, MissingSection, \
+  dumps
 from zc.buildout import UserError
 
+NOOP_KEY = '-switch-softwaretype.noop'
 class SubBuildout(Buildout):
   """Run buildout in buildout, partially copied from infrae.buildout
   """
@@ -55,6 +57,12 @@ class SubBuildout(Buildout):
     # Use same slap connection
     for k, v in main_buildout["slap-connection"].items():
       options.append(('slap-connection', k, v))
+    options.append((
+      'slap-configuration', NOOP_KEY, dumps(main_buildout["slap-configuration"])
+    ))
+    options.append((
+      'slap-configuration', 'recipe',
+      'slapos.cookbook:switch-softwaretype.noop'))
 
     Buildout.__init__(self, config, options, **kwargs)
 
@@ -120,5 +128,19 @@ class Recipe:
     )
 
     sub_buildout.install([])
+
+  update = install
+
+class NoOperation:
+  def __init__(self, buildout, name, options):
+    self.buildout = buildout
+    self.options = options
+    self.name = name
+
+    for key, value in self.options.pop(NOOP_KEY).items():
+      self.options[key] = value
+
+  def install(self):
+    return []
 
   update = install
