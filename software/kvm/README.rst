@@ -198,3 +198,20 @@ The failure observed to confirm the situation can be found in
   ValueError: external-disk problems: conflicts with external-disk-number = XX, conflicts with already configured disks amount XX in /srv/slapgrid/slappartNN/etc/.data-disk-amount
 
 Where ``XX`` is the previously used ``external-disk-number`` and ``NN`` is the partition.
+
+Fixing qmpbackup dirty bitmap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It can happen that bin/exporter will fail with:
+
+CRITICAL - main: Error executing backup: Bitmap 'qmpbackup-virtio0-NNN' is inconsistent and cannot be used
+
+In such case it is required to:
+
+ * stop the kvm
+ * use qemu-img info virtual.qcow2 to find the bitmap value, it shall be qmpbackup-virtio0-NNN
+ * remove the bitmap value with qemu-img bitmap --remove virtual.qcow2 qmpbackup-virtio0-NNN
+ * start back the kvm
+ * re-rexecute the backup with bin/exporter
+
+Such situation might happen when more than one exporter is running in the same time.
