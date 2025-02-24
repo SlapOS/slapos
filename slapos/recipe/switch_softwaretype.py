@@ -26,7 +26,8 @@
 ##############################################################################
 
 import logging
-from zc.buildout.buildout import Buildout, MissingOption, MissingSection
+from zc.buildout.buildout import Buildout, MissingOption, MissingSection, \
+  dumps
 from zc.buildout import UserError
 
 class SubBuildout(Buildout):
@@ -55,6 +56,14 @@ class SubBuildout(Buildout):
     # Use same slap connection
     for k, v in main_buildout["slap-connection"].items():
       options.append(('slap-connection', k, v))
+    for k, v in main_buildout["slap-configuration"].items():
+#      # Note: Use buildout dumper
+#      options.append(('slap-configuration', k, dumps(v)))
+      # Note: Can't use buildout.dumps, as inner one does not buildout.loads
+      options.append(('slap-configuration', k, str(v)))
+    options.append((
+      'slap-configuration', 'recipe',
+      'slapos.cookbook:switch-softwaretype.noop'))
 
     Buildout.__init__(self, config, options, **kwargs)
 
@@ -120,5 +129,16 @@ class Recipe:
     )
 
     sub_buildout.install([])
+
+  update = install
+
+class NoOperation:
+  def __init__(self, buildout, name, options):
+    self.buildout = buildout
+    self.options = options
+    self.name = name
+
+  def install(self):
+      return []
 
   update = install
