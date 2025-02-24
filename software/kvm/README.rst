@@ -213,5 +213,6 @@ In such case it is required to:
  * remove the bitmap value with qemu-img bitmap --remove virtual.qcow2 qmpbackup-virtio0-NNN
  * start back the kvm
  * re-rexecute the backup with bin/exporter
+ * remove FULL-*partial from backup destination
 
 Such situation might happen when more than one exporter is running in the same time.
