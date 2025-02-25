@@ -264,7 +264,12 @@ class BaseSlapRecipe:
     self.request = self.computer_partition.request
     self.setConnectionDict = self.computer_partition.setConnectionDict
     self._createDefaultDirectoryStructure()
-    self.parameter_dict = self.computer_partition.getInstanceParameterDict()
+
+    # Lazy load of the instance parameter dict
+    # to prevent an http calls if not needed
+    @property
+    def parameter_dict(self):
+      return self.computer_partition.getInstanceParameterDict()
 
     # call children part of install
     path_list = self._install()

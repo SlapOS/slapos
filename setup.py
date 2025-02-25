@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.397'
+version = '1.0.401'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -166,6 +166,10 @@ setup(name=name,
           'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
           'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'
         ],
+        'zc.buildout.uninstall': [
+          'publish_failsafe = slapos.recipe.publish:RecipeFailsafe.uninstall',
+          'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe.uninstall',
+        ]
       },
       extras_require=extras_require,
       test_suite='slapos.test',
