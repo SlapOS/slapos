@@ -253,6 +253,12 @@ class BaseSlapRecipe:
     """Generates password. Shall be secured, until then all are insecure"""
     return 'insecure'
 
+  # Lazy load of the instance parameter dict
+  # to prevent an http calls if not needed
+  @property
+  def parameter_dict(self):
+    return self.computer_partition.getInstanceParameterDict()
+
   def install(self):
     self.logger.warning("BaseSlapRecipe has been deprecated. Use " \
         "GenericBaseRecipe or GenericSlapRecipe instead.")
@@ -264,12 +270,6 @@ class BaseSlapRecipe:
     self.request = self.computer_partition.request
     self.setConnectionDict = self.computer_partition.setConnectionDict
     self._createDefaultDirectoryStructure()
-
-    # Lazy load of the instance parameter dict
-    # to prevent an http calls if not needed
-    @property
-    def parameter_dict(self):
-      return self.computer_partition.getInstanceParameterDict()
 
     # call children part of install
     path_list = self._install()
