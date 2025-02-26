@@ -67,6 +67,7 @@ wrapper = ${:output}
 context =
     section directory directory
     raw qmprestore {{ qmprestore }}
+    raw backup_signature {{ backup_signature }}
 
 [kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
