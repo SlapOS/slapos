@@ -51,6 +51,12 @@ class GenericSlapRecipe(GenericBaseRecipe):
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
 
+  # Lazy load of the instance parameter dict
+  # to prevent an http calls if not needed
+  @property
+  def parameter_dict(self):
+    return self.computer_partition.getInstanceParameterDict()
+
   def install(self):
 
     cache_key = "%s_%s" % (self.computer_id, self.computer_partition_id)
@@ -66,12 +72,6 @@ class GenericSlapRecipe(GenericBaseRecipe):
 
     self.request = self.computer_partition.request
     self.setConnectionDict = self.computer_partition.setConnectionDict
-
-    # Lazy load of the instance parameter dict
-    # to prevent an http calls if not needed
-    @property
-    def parameter_dict(self):
-      return self.computer_partition.getInstanceParameterDict()
 
     # call children part of install
     path_list = self._install()
