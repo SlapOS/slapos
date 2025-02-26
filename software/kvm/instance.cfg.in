@@ -146,6 +146,7 @@ context =
     key slapparameter_dict slap-configuration:configuration
     key qmpbackup qmpbackup-binary:wrapper-path
     raw check_backup_directory ${check-backup-directory.sh:output}
+    raw backup_signature $${buildout:bin-directory}/backup-signature
 
 [qmprestore-binary]
 recipe = slapos.cookbook:wrapper
@@ -170,3 +171,4 @@ context =
     key pbsready_import_template template-pbsready-import:output
     key slapparameter_dict slap-configuration:configuration
     key qmprestore qmprestore-binary:wrapper-path
+    raw backup_signature $${buildout:bin-directory}/backup-signature
