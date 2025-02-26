@@ -24,10 +24,16 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
+# pyright: strict
+
+from __future__ import annotations
+
 import base64
 import codecs
 import csv
 import io
+import itertools
 import json
 import multiprocessing
 import ssl
@@ -36,7 +42,7 @@ import urllib.parse as urllib_parse
 import xmlrpc.client as xmlrpclib
 from functools import partial
 from pathlib import Path
-from typing import AbstractSet, Callable, ClassVar, Dict, Iterable, Mapping
+from typing import AbstractSet, Callable, Dict, Mapping
 
 import PIL.Image
 import pypdf
@@ -45,11 +51,11 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import ImageComparisonTestCase
 
 setUpModule, _CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
-  str((Path(__file__).parent.parent / "software.cfg").absolute())
+  Path(__file__).parent.parent / "software.cfg",
 )
 
 
-def open_cloudooo_connection(url):
+def open_cloudooo_connection(url: str) -> xmlrpclib.ServerProxy:
   """
   Open a RPC connection with Cloudooo.
 
@@ -72,15 +78,15 @@ def open_cloudooo_connection(url):
 
 
 def convert_file(
-  file,
-  source_format,
-  destination_format,
+  file: bytes,
+  source_format: str,
+  destination_format: str,
   *,
-  zip=False,
-  refresh=False,
-  conversion_kw={},
-  server,
-):
+  zip: bool = False,
+  refresh: bool = False,
+  conversion_kw: Dict[str, object] = {},
+  server: xmlrpclib.ServerProxy,
+) -> bytes:
   """
   Converts a file using CloudOoo.
 
@@ -132,22 +138,22 @@ class CloudOooTestCase(_CloudOooTestCase):
   instance_max_retry = 30
 
   def setUp(self):
-    self.url = json.loads(self.computer_partition.getConnectionParameterDict()["_"])[
-      "cloudooo"
-    ]
+    self.url: str = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )["cloudooo"]
     self.server = open_cloudooo_connection(self.url)
     self.addCleanup(self.server("close"))
 
   def convert_file(
     self,
-    file,
-    source_format,
-    destination_format,
+    file: bytes,
+    source_format: str,
+    destination_format: str,
     *,
-    zip=False,
-    refresh=False,
-    conversion_kw={},
-  ):
+    zip: bool = False,
+    refresh: bool = False,
+    conversion_kw: Dict[str, object] = {},
+  ) -> bytes:
     """
     Converts a file using CloudOoo.
 
@@ -177,7 +183,7 @@ class CloudOooTestCase(_CloudOooTestCase):
       server=self.server,
     )
 
-  def script_test_basic(self):
+  def script_test_basic(self) -> bytes:
     """
     Tries to execute a hello world script.
 
@@ -207,7 +213,7 @@ class CloudOooTestCase(_CloudOooTestCase):
     )
 
 
-QT_FONT_MAPPING = {
+QT_FONT_MAPPING: Mapping[str, str | AbstractSet[str]] = {
   "Arial": "LiberationSans",
   "Arial Black": "LiberationSans",
   "Avant Garde": "LiberationSans",
@@ -247,7 +253,7 @@ QT_FONT_MAPPING = {
   "ZZZdefault fonts when no match": "LiberationSans",
 }
 
-LIBREOFFICE_FONT_MAPPING = {
+LIBREOFFICE_FONT_MAPPING: Mapping[str, str | AbstractSet[str]] = {
   "Arial": "LiberationSans",
   "Arial Black": "NotoSans-Regular",
   "Avant Garde": "NotoSans-Regular",
@@ -288,7 +294,7 @@ LIBREOFFICE_FONT_MAPPING = {
 }
 
 
-def normalize_font_name(font_name):
+def normalize_font_name(font_name: str) -> str:
   """
   Normalize a font name.
 
@@ -318,8 +324,8 @@ def normalize_font_name(font_name):
 
 
 def get_referenced_fonts(
-  pdf_file_reader,
-):
+  pdf_file_reader: pypdf.PdfReader,
+) -> AbstractSet[str]:
   """
   Return fonts referenced in a pdf.
 
@@ -332,30 +338,12 @@ def get_referenced_fonts(
     Set of font names present in the PDF.
 
   """
-
-  def fonts_in_obj(obj):
-    """
-    Yield fonts from a PDF object.
-
-    Recursively visit PDF objects and yield referenced fonts in `fonts`.
-
-    Args:
-      obj: A reference to a PDF object.
-
-    Yields:
-      The font names in the object.
-
-    """
-    if hasattr(obj, "keys"):
-      if "/BaseFont" in obj:
-        yield obj["/BaseFont"]
-      for k in obj.keys():
-        yield from fonts_in_obj(obj[k])
-
   return {
     normalize_font_name(font)
     for page in pdf_file_reader.pages
-    for font in fonts_in_obj(page.get_object()["/Resources"])
+    for font in itertools.chain(
+      *page._get_fonts()  # pyright: ignore[reportPrivateUsage]
+    )
   }
 
 
@@ -366,11 +354,11 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
 
   def assert_pdf_conversion_metadata(
     self,
-    convert_html_to_pdf,
+    convert_html_to_pdf: Callable[[bytes], bytes],
     *,
-    expected_producer,
-    expected_font_mapping,
-  ):
+    expected_producer: str,
+    expected_font_mapping: Mapping[str, str | AbstractSet[str]],
+  ) -> None:
     actual_font_mapping_mapping = {}
 
     for font in expected_font_mapping:
@@ -395,7 +383,7 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
 
       fonts_in_pdf = get_referenced_fonts(pdf_reader)
 
-      font_or_set = fonts_in_pdf
+      font_or_set: str | AbstractSet[str] = fonts_in_pdf
       if len(fonts_in_pdf) == 1:
         # Tuple unpacking
         (font_or_set,) = fonts_in_pdf
@@ -404,7 +392,7 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
 
     self.assertEqual(actual_font_mapping_mapping, expected_font_mapping)
 
-  def html_to_pdf_wkhtmltopdf_convert(self, src_html):
+  def html_to_pdf_wkhtmltopdf_convert(self, src_html: bytes) -> bytes:
     """HTML to PDF conversion using wkhtmltopdf."""
     return self.convert_file(
       src_html,
@@ -421,7 +409,7 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
       expected_font_mapping=QT_FONT_MAPPING,
     )
 
-  def html_to_pdf_libreoffice_convert(self, src_html):
+  def html_to_pdf_libreoffice_convert(self, src_html: bytes) -> bytes:
     """HTML to PDF conversion using LibreOffice."""
     return self.convert_file(
       src_html,
@@ -475,11 +463,7 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
       self.script_test_basic()
 
 
-def _convert_html_to_text(
-  src_html,
-  *,
-  url,
-):
+def _convert_html_to_text(src_html: bytes, url: str) -> bytes:
   """
   Convert HTML to TXT.
 
@@ -508,7 +492,7 @@ class TestLibreOfficeCluster(CloudOooTestCase):
   __partition_reference__ = "co_cluster"
 
   @classmethod
-  def getInstanceParameterDict(cls):
+  def getInstanceParameterDict(cls) -> Mapping[str, object]:
     return {"backend-count": 4}
 
   def test_multiple_conversions(self):
@@ -530,7 +514,9 @@ class TestLibreOfficeCluster(CloudOooTestCase):
     reader = csv.DictReader(io.StringIO(res.text))
     line_list = list(reader)
     # Requests have been balanced
-    total_hrsp_2xx = {line["svname"]: int(line["hrsp_2xx"]) for line in line_list}
+    total_hrsp_2xx = {
+      line["svname"]: int(line["hrsp_2xx"]) for line in line_list
+    }
     self.assertEqual(total_hrsp_2xx["FRONTEND"], 100)
     self.assertEqual(total_hrsp_2xx["BACKEND"], 100)
     for backend in "cloudooo_1", "cloudooo_2", "cloudooo_3", "cloudooo_4":
@@ -540,7 +526,9 @@ class TestLibreOfficeCluster(CloudOooTestCase):
       # process at least one request.
       self.assertGreater(total_hrsp_2xx[backend], 0)
     # No errors
-    total_eresp = {line["svname"]: int(line["eresp"] or 0) for line in line_list}
+    total_eresp = {
+      line["svname"]: int(line["eresp"] or 0) for line in line_list
+    }
     self.assertEqual(
       total_eresp,
       {
@@ -560,7 +548,7 @@ class TestLibreOfficeScripting(CloudOooTestCase):
   __partition_reference__ = "co_script"
 
   @classmethod
-  def getInstanceParameterDict(cls):
+  def getInstanceParameterDict(cls) -> Mapping[str, object]:
     """Enable scripting for this instance."""
     return {"enable-scripting": True}
 
