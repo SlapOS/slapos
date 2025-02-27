@@ -183,6 +183,11 @@ url = ${remote-debugging-frontend:connection-secure_access}
 config-url = ${:url}
 config-username = ${frontend-instance-password:username}
 config-password = ${frontend-instance-password:passwd}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 # Promise to make sure that the remote debugging frontend returns 401
 # when queried with no credentials.

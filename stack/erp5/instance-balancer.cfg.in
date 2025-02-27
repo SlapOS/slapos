@@ -424,6 +424,11 @@ hash-files = ${rsyslogd-cfg:output}
 promise = check_command_execute
 name = rsyslogd_listen_promise.py
 config-command = test -S ${rsyslogd-cfg-parameter-dict:log-socket}
+# As it checks a local socket
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 
 [haproxy-conf-ssl]
@@ -453,6 +458,11 @@ promise = check_socket_listening
 name = haproxy.py
 config-host = {{ ipv4 }}
 config-port = ${haproxy-cfg-parameter-dict:haproxy-promise-port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised

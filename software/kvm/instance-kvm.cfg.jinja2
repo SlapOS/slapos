@@ -564,6 +564,11 @@ promise = check_socket_listening
 name = vnc_promise.py
 config-host = ${kvm-parameter-dict:vnc-ip}
 config-port = ${kvm-parameter-dict:vnc-websocket-port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
@@ -702,6 +707,11 @@ promise = check_socket_listening
 name = novnc_promise.py
 config-host = ${nginx-params:ip}
 config-port = ${nginx-params:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 
 #----------------
@@ -806,6 +816,11 @@ promise = check_socket_listening
 name = httpd.py
 config-host = ${httpd:host}
 config-port = ${httpd:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 {% endif %}
 
 [monitor-instance-parameter]

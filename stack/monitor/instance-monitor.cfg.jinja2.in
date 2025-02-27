@@ -320,6 +320,11 @@ promise = check_url_available
 name = monitor-httpd-listening-on-tcp.py
 config-url = ${monitor-httpd-conf-parameter:url}
 config-http-code = 401
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [monitor-publish-parameters]
 # XXX depends on monitor-base section
@@ -379,6 +384,11 @@ url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
 config-username = ${monitor-instance-parameter:username}
 config-password = ${monitor-instance-parameter:password}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 # Requests to the frontend URL should fail when no credentials are
 # supplied.
