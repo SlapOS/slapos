@@ -61,6 +61,12 @@
       "type": "string",
       "default": ""
     },
+    "multi_sim": {
+      "default": false,
+      "title": "Enable multi-sim (experimental)",
+      "description": "Set to true to enable multi-SIM support",
+      "type": "boolean"
+    },
     "enable_multicast": {
       "default": false,
       "title": "Enable IPv4 multicast",
