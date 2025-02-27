@@ -92,6 +92,7 @@ config-command = $${backup-checksum-integrity-promise-bin:output}
 recipe = slapos.cookbook:addresiliency
 wrapper-takeover = $${rootdirectory:bin}/takeover
 takeover-triggered-file-path = $${rootdirectory:srv}/takeover_triggered
+namebase = {{ slapparameter_dict.get['namebase'] }}
 
 # Add path of file created by takeover script when takeover is triggered
 # Takeover script will create this file
