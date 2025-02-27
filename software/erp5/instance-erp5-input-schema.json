@@ -796,6 +796,11 @@
           "title": "See `zope-longrequest-logger-error-threshold`",
           "default": 0
         },
+        "zope-expect-backingup-zodb": {
+          "type": "boolean",
+          "description": "Whether zope should expect the zodb to be a neo in BACKINGUP mode",
+          "default": false
+        },
         "apachedex-promise-threshold": {
           "type": "number",
           "title": "Promise fails if the overall Apdex score for the previous day is below than this value. A value of 0 disables the promise.",
