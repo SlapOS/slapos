@@ -116,6 +116,11 @@ promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${theia-instance:ip}
 config-port = $${theia-instance:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [frontend-listen-promise]
 <= monitor-promise-base
@@ -123,12 +128,22 @@ promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [python-server-listen-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-pathname = $${python-server:socket}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [frontend-authentication-promise]
 <= monitor-promise-base
@@ -139,6 +154,11 @@ port = $${frontend-instance:port}
 config-url = https://[$${:ip}]:$${:port}
 config-username = $${frontend-instance-password:username}
 config-password = $${frontend-instance-password:passwd}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [remote-frontend-url-available-promise]
 <= monitor-promise-base
@@ -163,12 +183,22 @@ promise = check_socket_listening
 name = standalone-listen-promise.py
 config-host = $${slapos-standalone-instance:hostname}
 config-port = $${slapos-standalone-instance:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [slapos-standalone-ready-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = standalone-ready-promise.py
 config-abstract = $${slapos-standalone-config:abstract-socket-path}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [slapos-autorun-promise]
 <= monitor-promise-base

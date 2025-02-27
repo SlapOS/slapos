@@ -208,6 +208,11 @@ promise = check_socket_listening
 name = apache.py
 config-host = {{ ipv4 }}
 config-port = {{ list(apache_dict.values())[0][0] }}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised

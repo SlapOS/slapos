@@ -221,6 +221,12 @@ promise = check_socket_listening
 name = sshd.py
 config-host = $${slap-network-information:global-ipv6}
 config-port = $${sshd-port:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
+
 
 #----------------
 #--

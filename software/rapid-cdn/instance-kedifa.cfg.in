@@ -164,6 +164,11 @@ promise = check_socket_listening
 name = expose-csr-ip-port-listening.py
 config-host = ${expose-csr-configuration:ip}
 config-port = ${expose-csr-configuration:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [expose-csr]
 recipe = slapos.cookbook:wrapper
@@ -227,6 +232,11 @@ name = kedifa-http-reply.py
 config-http-code = 400
 config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
 config-ca-cert-file = ${kedifa-config:ca-certificate}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [logrotate-entry-kedifa]
 <= logrotate-entry-base

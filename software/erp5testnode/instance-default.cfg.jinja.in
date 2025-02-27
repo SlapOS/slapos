@@ -289,6 +289,11 @@ promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${shellinabox-frontend:hostname}
 config-port = $${shellinabox-frontend:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [shellinabox-frontend-available-promise]
 <= monitor-promise-base
@@ -297,6 +302,11 @@ name = $${:_buildout_section_name_}.py
 config-url = https://$${shellinabox-frontend-config:hostname}:$${shellinabox-frontend-config:port}
 config-username = $${shellinabox-frontend-config:username}
 config-password = $${shellinabox-frontend-config:passwd}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [testnode-log-frontend-promise]
 <= monitor-promise-base
