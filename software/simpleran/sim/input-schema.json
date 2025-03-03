@@ -67,6 +67,22 @@
       "description": "Set to true to enable multi-SIM support",
       "type": "boolean"
     },
+    "impu_list": {
+      "title": "IMPU list",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "impu": {
+              "title": "sip URI or telephone number",
+              "description": "Example: 'sip:user', 'user', 'tel:+33123456789'",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "enable_multicast": {
       "default": false,
       "title": "Enable IPv4 multicast",
