@@ -72,6 +72,11 @@ promise = check_socket_listening
 name = zeo-{{ family }}.py
 config-host = {{ "${" ~ zeo_section_name ~ ":ip}" }}
 config-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 {% endfor -%}
 
@@ -145,6 +150,11 @@ promise = check_socket_listening
 name = tidstorage.py
 config-host = ${tidstorage:ip}
 config-port = ${tidstorage:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 {% endif -%}
 
 [{{ section("cron-entry-tidstorage-backup") }}]

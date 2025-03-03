@@ -112,6 +112,11 @@ config-url = https://{{ ipv4 }}:{{ list(apache_dict.values())[0][0] }}
 # XXX cloudooo replies "400 Bad Request" for GET on / but what we want to check
 # is that we don't have a "503 Service Unavailable" from apache or haproxy.
 config-http-code = 400
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt

@@ -180,6 +180,11 @@ promise = check_socket_listening
 name = check-re6st-registry.py
 config-host = ${re6st-registry:ipv4}
 config-port = ${re6st-registry:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [re6st-certificate-promise]
 <= monitor-promise-base
@@ -196,6 +201,11 @@ promise = check_socket_listening
 name = apache-re6st-registry.py
 config-host = ${apache-conf:ipv6}
 config-port = ${apache-conf:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [publish]
 recipe = slapos.cookbook:publish

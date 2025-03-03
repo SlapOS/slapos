@@ -204,6 +204,11 @@ num_workers = 2
 promise = check_socket_listening
 name = gitaly_socket_listening_promise.py
 config-pathname = ${gitaly:socket}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 # 2. configuration files
 [etc-template]

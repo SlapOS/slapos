@@ -631,6 +631,11 @@ promise = check_socket_listening
 name = trafficserver-port-listening.py
 config-host = ${trafficserver-variable:local-ip}
 config-port = ${trafficserver-variable:input-port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [trafficserver-ctl]
 recipe = slapos.cookbook:wrapper
@@ -764,6 +769,11 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv4_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [promise-frontend-haproxy-v4-http]
 <= monitor-promise-base
@@ -778,6 +788,11 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv6_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [promise-frontend-haproxy-v6-http]
 <= monitor-promise-base
@@ -785,6 +800,11 @@ promise = check_socket_listening
 name = frontend_haproxy_ipv6_http.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
@@ -792,6 +812,11 @@ promise = check_socket_listening
 name = backend_haproxy_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
@@ -799,6 +824,11 @@ promise = check_socket_listening
 name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [backend-haproxy-configuration]
 file = ${directory:etc}/backend-haproxy.cfg
@@ -1105,6 +1135,11 @@ promise = check_socket_listening
 name = slave_introspection_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${frontend-configuration:slave-introspection-https-port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [logrotate-entry-slave-introspection]
 <= logrotate-entry-base
