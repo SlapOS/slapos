@@ -5,7 +5,6 @@
   "required": [
     "sim_algo",
     "imsi",
-    "opc",
     "amf",
     "sqn",
     "k",
@@ -17,7 +16,13 @@
       "title": "Sim Algorithm",
       "description": "xor, milenage or tuak. Set the USIM authentication algorithm.",
       "type": "string",
-      "default": "milenage"
+      "default": "milenage",
+      "enum": [
+        "milenage",
+        "xor",
+        "tuak"
+      ],
+      "propertyOrder": 101
     },
     "imsi": {
       "title": "IMSI",
@@ -29,7 +34,12 @@
       "title": "OPC",
       "description": "Operator key preprocessed with the user secret key (as a 16 byte hexadecimal string). When the Milenage authentication algorithm is used, opc must be set.",
       "type": "string",
-      "default": ""
+      "default": "",
+      "options": {
+        "dependencies": {
+          "sim_algo": "milenage"
+        }
+      }
     },
     "amf": {
       "title": "AMF",
