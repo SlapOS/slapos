@@ -63,6 +63,11 @@ class Recipe(GenericSlapRecipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
     return self.setConnectionDict(publish_dict, slave_reference)
 
+  def update(self):
+    # there is no need to publish on update
+    return []
+
+
 class Serialised(Recipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
     return super(Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
@@ -128,3 +133,6 @@ class PublishSection(GenericSlapRecipe):
     self.setConnectionDict(publish_dict)
     return []
 
+  def update(self):
+    # there is no need to publish on update
+    return []
