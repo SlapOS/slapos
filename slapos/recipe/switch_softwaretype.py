@@ -57,8 +57,10 @@ class SubBuildout(Buildout):
     for k, v in main_buildout["slap-connection"].items():
       options.append(('slap-connection', k, v))
     for k, v in main_buildout["slap-configuration"].items():
-      # Note: Use buildout dumper
-      options.append(('slap-configuration', k, dumps(v)))
+#      # Note: Use buildout dumper
+#      options.append(('slap-configuration', k, dumps(v)))
+      # Note: Can't use buildout.dumps, as inner one does not buildout.loads
+      options.append(('slap-configuration', k, str(v)))
     options.append((
       'slap-configuration', 'recipe',
       'slapos.cookbook:switch-softwaretype.noop'))
