@@ -659,18 +659,23 @@ init =
           "job_name": job_name,
           "pipeline_stages": [
             {
+              # between each slow query, slow query log has a first line like:
+              #   # Time: 231008 16:29:01
+              # and then a second like:
+              #   # User@Host: user[user] @  [10.0.71.207]
+              # but the first line is not repeated for subsequent queries that happens
+              # at the same second. Drop this "Time:" line
+              "drop": {
+                "expression": r"^# Time:\d+.*",
+              }
+            },
+            {
               "match": {
                 "selector": get_job_selector(partition, job_name, application['name']),
                 "stages": [
                   {
                     "multiline": {
-                      # between each slow query, slow query log has a first line like:
-                      #   # Time: 231008 16:29:01
-                      # and then a second like:
-                      #   # User@Host: user[user] @  [10.0.71.207]
-                      # but the first line is not repeated for subsequent queries that happens
-                      # at the same second
-                      "firstline": r"(^# Time: \d{2}.*\n^# User@Host:.*|^# User@Host:.*)",
+                      "firstline": "^# User@Host:.*",
                       "max_lines": 1024,
                       "max_wait_time": "5s"
                     }
