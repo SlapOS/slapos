@@ -6,6 +6,8 @@ import unittest
 
 try:
   import subprocess32 as subprocess
+  # BBB python2
+  unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 except ImportError:
   import subprocess
 
@@ -124,7 +126,7 @@ ready'''
     cnx.close()
 
     # old password can no longer connect
-    with self.assertRaisesRegexp(
+    with self.assertRaisesRegex(
         psycopg2.OperationalError,
         'password authentication failed'
     ):
