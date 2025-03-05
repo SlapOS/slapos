@@ -4,12 +4,12 @@ import shutil
 import sys
 import tempfile
 import unittest
-
 import six
 
+if six.PY2:
+  unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 class PBSTest(unittest.TestCase):
-
     def new_recipe(self):
         from slapos.recipe import pbs
         from slapos.test.utils import makeRecipe
@@ -57,7 +57,7 @@ class PBSTest(unittest.TestCase):
                 'type': 'invalid'
                 }
 
-        self.assertRaisesRegexp(ValueError,
+        self.assertRaisesRegex(ValueError,
                                 'type parameter must be either pull or push',
                                 recipe.add_slave, entry=entry, known_hosts_file={})
 
