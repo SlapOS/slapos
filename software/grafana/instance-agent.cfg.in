@@ -568,8 +568,8 @@ init =
                 "stages": [
                   {
                     "multiline": {
-                      # TODO this does not seem to work well
                       "firstline": "^------",
+                      "max_lines": 1024,
                       "max_wait_time": "5s"
                     }
                   },
@@ -628,6 +628,7 @@ init =
                     {
                       "multiline": {
                         "firstline": "^\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}",
+                        "max_lines": 1024,
                         "max_wait_time": "5s"
                       }
                     },
@@ -670,6 +671,7 @@ init =
                       # but the first line is not repeated for subsequent queries that happens
                       # at the same second
                       "firstline": r"(^# Time: \d{2}.*\n^# User@Host:.*|^# User@Host:.*)",
+                      "max_lines": 1024,
                       "max_wait_time": "5s"
                     }
                   },
