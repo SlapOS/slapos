@@ -55,27 +55,53 @@ update =
 
       try:
         fluentbit_tag = slave['fluentbit-tag']
-      except KeyError as err:
-        log.fatal("%s: Parameter %s not found, skipping registration" % (slave_reference, err))
+      except KeyError as missing_key:
+        message = "Parameter %s not found, cannot register" % missing_key
+        log.fatal("%s: %s" % (slave_reference, message))
+        computer_partition.setConnectionDict({'1_information': message}, slave_reference)
         continue
 
-      request_url = "%s/%s/ERP5Site_registerOrs?fluentbit_tag=%s" % (wendelin_telecom_backend_url, wendelin_telecom_site_id, fluentbit_tag)
+      request_url = "%s/%s/ERP5Site_registerOrs?fluentbit_tag=%s" % (
+        wendelin_telecom_backend_url,
+        wendelin_telecom_site_id,
+        fluentbit_tag
+      )
 
       response = requests.get(request_url, verify=False, auth=(inituser_login, inituser_password))
+      if not response.ok:
+        message = "Registration request failed with status code %s %s" % (
+          response.status_code,
+          response.reason
+        )
+        log.fatal("%s: %s" % (slave_reference, message))
+        computer_partition.setConnectionDict({'1_information': message}, slave_reference)
+        continue
       response = response.json()
 
       status = response['status']
       message = response['message']
-      message = "%s: %s" % (slave_reference, message)
+
+      slave_connection_parameter_dict = {}
 
       if status == 'ok':
-        log.info(message)
-        log.info("%s: Update connection parameters" % slave_reference)
-        computer_partition.setConnectionDict({'gateway-host': str(fluentd_gateway_host)}, slave_reference)
+        log.info("%s: %s" % (slave_reference, message))
+        # Don't use registration message as is:
+        # Remove ORS-specific wording and only indicate successful registration
+        slave_connection_parameter_dict = {
+          '1_information': "eNB device successfully registered",
+          'gateway-host': str(fluentd_gateway_host)
+        }
       elif status == 'error':
-        log.fatal(message)
+        log.info("%s: %s" % (slave_reference, message))
+        # Same as above
+        slave_connection_parameter_dict['1_information'] = "Error occurred during device registration"
       else:
-        log.fatal("Unexpected status received during ORS registration: %s" % status)
+        message = "Unexpected status %s received from registration" % status
+        log.fatal("%s: %s" % (slave_reference, message))
+        slave_connection_parameter_dict['1_information'] = message
+
+      log.info("%s: Update connection parameters" % slave_reference)
+      computer_partition.setConnectionDict(slave_connection_parameter_dict, slave_reference)
 
 [publish]
 slave-amount = {{ len(slave_instance_list) }}
