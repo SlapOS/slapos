@@ -18,6 +18,9 @@ test_dict = {
   'zc.recipe.egg': os.path.join(slapos_buildout, 'zc.recipe.egg_'),
 }
 
+already_available_egg_paths = {{ repr(egg_paths) }}
+
+
 class DummyTestResult:
 
   class DummyTestResultLine:
@@ -98,17 +101,12 @@ def main():
   try:
     os.write(fd, str2bytes("""\
 [buildout]
-develop =%s
+develop =
+  %s
 parts = testrunner
-newest = false
-versions = versions
-
-[versions]
-%s
-zope.exceptions = 4.6
-zope.interface = 5.4.0
-zope.testing = 4.7
-zope.testrunner = 5.2
+offline = true
+extra-paths =
+  %s
 
 [testrunner]
 recipe = zc.recipe.egg
@@ -119,11 +117,13 @@ eggs =
   zope.testrunner
 scripts =
   zope-testrunner
-extra-paths =%s
-""" % (''.join('\n  ' + x for x in test_dict.values()),
-       '\n'.join(x + ' =' for x in test_dict),
-       ''.join('\n  ' + get_distribution(x).location for x in ('manuel', 'six')),
-       )))
+extra-paths =
+  %s
+""" % (
+      '\n  '.join(x for x in test_dict.values()),
+      '\n  '.join(p for p in already_available_egg_paths),
+      '\n  '.join(get_distribution(x).location for x in ('manuel', 'six')),
+    )))
   finally:
     os.close(fd)
   Buildout('buildout.cfg', {}).install(None)
