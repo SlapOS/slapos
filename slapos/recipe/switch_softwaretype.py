@@ -28,6 +28,7 @@
 import logging
 from zc.buildout.buildout import Buildout, MissingOption, MissingSection
 from zc.buildout import UserError
+from zc.buildout.buildout import dumps, loads
 
 class SubBuildout(Buildout):
   """Run buildout in buildout, partially copied from infrae.buildout
@@ -56,9 +57,10 @@ class SubBuildout(Buildout):
     for k, v in main_buildout["slap-connection"].items():
       options.append(('slap-connection', k, v))
     for k, v in main_buildout["slap-configuration"].items():
-      # Note: Can't use buildout.dumps, as inner one does not buildout.loads,
-      #       do just cast to string
-      options.append(('slap-configuration', k, str(v)))
+      if isinstance(v, str):
+        options.append(('slap-configuration', k, v))
+      else:
+        options.append(('slap-configuration', k, dumps(v)))
     options.append((
       'slap-configuration', 'recipe',
       'slapos.cookbook:switch-softwaretype.noop'))
