@@ -43,6 +43,7 @@ context =
     key socket_path kvm-instance:socket-path
     section disk disk
     raw qmpbackup {{ qmpbackup }}
+    raw backup_signature {{ backup_signature }}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]

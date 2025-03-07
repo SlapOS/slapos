@@ -47,4 +47,4 @@ if [ x"$recent_full" != x"" ] ; then
   done
 fi
 
-cd $BACKUP_DIR && find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
+{{ backup_signature }} --action update --directory $BACKUP_DIR --signature-file-name backup.signature
