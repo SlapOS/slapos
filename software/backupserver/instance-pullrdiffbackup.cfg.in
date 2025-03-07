@@ -190,6 +190,11 @@ promise = check_socket_listening
 name = nginx_listen.py
 config-host = $${nginx-configuration:ip}
 config-port = $${nginx-configuration:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [nginx-configuration]
 recipe = slapos.recipe.template

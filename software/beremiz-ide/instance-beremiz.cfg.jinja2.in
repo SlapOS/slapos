@@ -79,6 +79,11 @@ promise = check_socket_listening
 name = novnc_promise.py
 config-host = ${nginx-params:ip}
 config-port = ${nginx-params:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [x11vnc]
 recipe = slapos.cookbook:wrapper
@@ -100,6 +105,11 @@ promise = check_socket_listening
 name = x11vnc_listening.py
 config-host = {{ ipv4 }}
 config-port = ${x11vnc:port}
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 [random-password]
 recipe = slapos.cookbook:generate.password

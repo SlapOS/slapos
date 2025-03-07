@@ -131,6 +131,11 @@ promise = check_socket_listening
 name = galene-port-listening.py
 config-host = $${slap-configuration:ipv6-random}
 config-port = 8443
+# As it checks the local ip,
+# it can report the issue immediately
+config-frequency = 6
+config-result_count = 1
+config-failure_amount = 1
 
 {% if slapparameter_dict.get('request_dns', '') %}
 [request-dns-entry]
