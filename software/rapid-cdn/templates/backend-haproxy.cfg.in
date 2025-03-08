@@ -151,6 +151,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         else %}
 {%-           do ssl_list.append('none') %}
 {%-         endif %}
+{%-         do ssl_list.append('alpn h2,http/1.1') %}
 {%-       endif %}
 
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
