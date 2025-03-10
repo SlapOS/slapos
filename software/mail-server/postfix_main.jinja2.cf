@@ -55,4 +55,4 @@ maillog_file = {{ log_directory }}/postfix.log
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
-relayhost = [mailsrrelayv6.zdimension.fr]:10025
+relayhost = [mailsrrelayv6.zdimension.fr]:25
