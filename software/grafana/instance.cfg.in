@@ -30,6 +30,7 @@ context =
     raw promtail_bin {{ promtail_bin }}
     raw curl_bin {{ curl_bin }}
     raw dash_bin {{ dash_bin }}
+    raw db_ip_city_lite {{ db_ip_city_lite }}
     raw jq_bin {{ jq_bin }}
 import-list =
     file caucase context:caucase-jinja2-library

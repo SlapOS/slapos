@@ -93,7 +93,7 @@
       "type": "object",
       "properties": {
         "applications": {
-          "$ref": "./instance-agent-input-schema.json#properties/applications"
+          "$ref": "./instance-agent-input-schema.json#/properties/applications"
         }
       }
     }

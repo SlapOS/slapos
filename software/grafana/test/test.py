@@ -318,6 +318,9 @@ class TestLoki(GrafanaTestCase):
       self.computer_partition.getConnectionParameterDict()['_']
     )['loki-url']
 
+  def test_pdb(self):
+    breakpoint()
+
   def test_loki_certificate_required(self):
     with self.assertRaisesRegex(requests.exceptions.SSLError, 'certificate required'):
       requests.get(f'{self.loki_url}/ready', verify=False)

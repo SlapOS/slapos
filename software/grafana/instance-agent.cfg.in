@@ -473,6 +473,7 @@ recipe = slapos.recipe.build
 location = ${directory:etc}/${:_buildout_section_name_}.yaml
 slapparameter-dict = ${slap-configuration:configuration}
 depends = ${loki-promtail-client-certificate:recipe}
+db-ip-city-lite = {{ db_ip_city_lite }}
 
 {% raw %}
 init =
@@ -481,6 +482,7 @@ init =
   slapparameter_dict = self.options['slapparameter-dict']
   slap_connection = self.buildout["slap-connection"]
   loki_certificate = self.buildout['loki-promtail-client-certificate']
+  db_ip_city_lite = self.options['db-ip-city-lite']
 
   self._config_files = {}  # files to create during install step
   access_path_dict = {}
@@ -608,8 +610,48 @@ init =
               {
                 "drop": {
                   "expression": '.* "GET / HTTP/1.0" 200 .*'
+                },
+              },
+              # add geoip information, as part of the log line, not as labels because
+              # loki performance depends on the cardinality of labels.
+              {
+                "regex": {
+                  "expression": "^(?P<ip>\\S+) .*"
                 }
-              }
+              },
+              {
+                "geoip": {
+                  "db": db_ip_city_lite,
+                  "source": "ip",
+                  "db_type": "city"
+                }
+              },
+              {
+                "template": {
+                  "source": "entry",
+                  "template": (
+                    "{{ .entry }}"
+                    + " geoip_city_name={{ .geoip_city_name }}"
+                    + " geoip_country_name={{ .geoip_country_name }}"
+                    + " geoip_location_latitude={{ .geoip_location_latitude }}"
+                    + " geoip_location_longitude={{ .geoip_location_longitude }}"
+                  ),
+                }
+              },
+              {
+                "labeldrop": [
+                  "geoip_city_name",
+                  "geoip_country_name",
+                  "geoip_continent_name",
+                  "geoip_continent_code",
+                  "geoip_location_latitude",
+                  "geoip_location_longitude",
+                  "geoip_postal_code",
+                  "geoip_timezone",
+                  "geoip_subdivision_name",
+                  "geoip_subdivision_code",
+                ]
+              },
             ],
             "static_configs": get_static_configs(
               partition,
