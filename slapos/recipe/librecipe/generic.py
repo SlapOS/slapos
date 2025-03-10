@@ -113,10 +113,14 @@ class GenericBaseRecipe(object):
     except OSError as e:
       if e.errno != errno.ENOENT:
         raise
-    with open(name, 'wb') as f:
+    tmp_file = ".%s.tmp" % name
+    with open(tmp_file, 'wb') as f:
       if mode is not None:
         os.fchmod(f.fileno(), mode)
       f.write(content)
+      f.flush()
+      os.fsync(f.fileno())
+    os.replace(tmp_file, name)
     return os.path.abspath(name)
 
   def createExecutable(self, name, content, mode=0o700):
