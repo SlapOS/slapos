@@ -22,6 +22,7 @@ context =
   key ipv6 slap-configuration:ipv6
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
+  key slave_instance_list slap-configuration:slave-instance-list
   raw template_monitor {{ template_monitor }}
   raw openssl_location {{ openssl_location }}
   raw logrotate_cfg {{ logrotate_cfg }}

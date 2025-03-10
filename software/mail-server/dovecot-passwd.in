@@ -1,3 +1,6 @@
 tom@mail.localhost:MotDePasseEmail::
 bob@mail.localhost:MotDePasseEmail::
 alice@mailsr.zdimension.fr:MotDePasseEmail::
+{%- for slave in slap_configuration['slave-instance-list'] %}
+{{slave['address']}}:{{slave['password']}}::
+{%- endfor %}
