@@ -113,7 +113,7 @@ class GenericBaseRecipe(object):
     except OSError as e:
       if e.errno != errno.ENOENT:
         raise
-    tmp_file = ".%s.tmp" % name
+    tmp_file = "%s/.%s.tmp" % (os.path.dirname(name), os.path.basename(name))
     with open(tmp_file, 'wb') as f:
       if mode is not None:
         os.fchmod(f.fileno(), mode)
