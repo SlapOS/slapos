@@ -1,0 +1,16 @@
+# See https://github.com/GNUAspell/aspell-lang/issues/3
+
+--- a/configure
++++ b/configure
+@@ -79,9 +79,9 @@
+ datadir=`$ASPELL dump config data-dir`
+ echo $datadir
+ 
+-echo "ASPELL = `which $ASPELL`" > Makefile
++echo "ASPELL = `command -v $ASPELL`" > Makefile
+ echo "ASPELL_FLAGS = $ASPELL_FLAGS" >> Makefile
+-echo "PREZIP = `which $PREZIP`" >> Makefile
++echo "PREZIP = `command -v $PREZIP`" >> Makefile
+ echo "DESTDIR = $DESTDIR" >> Makefile
+ echo "dictdir = $dictdir" >> Makefile
+ echo "datadir = $datadir" >> Makefile
