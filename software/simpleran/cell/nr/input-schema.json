@@ -9,7 +9,6 @@
     "cell_id",
     "bandwidth",
     "ru",
-    "dl_nr_arfcn",
     "nr_band"
   ],
   "properties": {
@@ -41,6 +40,11 @@
       "title": "DL NR ARFCN",
       "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell",
       "type": "integer"
+    },
+    "dl_frequency": {
+      "title": "DL Frequency",
+      "description": "Downlink frequency of the cell",
+      "type": "number"
     },
     "nr_band": {
       "title": "NR band",
