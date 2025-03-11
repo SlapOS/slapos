@@ -43,9 +43,14 @@
         20
       ]
     },
+    "lte_band": {
+      "title": "LTE band",
+      "description": "LTE band number",
+      "type": "integer"
+    },
     "dl_earfcn": {
       "title": "DL EARFCN",
-      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell. If not set, value in DL Frequency will be used instead.",
       "type": "integer"
     },
     "ul_earfcn": {

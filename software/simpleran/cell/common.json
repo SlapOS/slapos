@@ -43,6 +43,11 @@
       "description": "Downlink Bandwidth (in MHz)",
       "type": "number"
     },
+    "dl_frequency": {
+      "title": "DL Frequency",
+      "description": "Downlink frequency of the cell",
+      "type": "number"
+    },
     "root_sequence_index": {
       "title": "Root Sequence Index",
       "type": "integer"
