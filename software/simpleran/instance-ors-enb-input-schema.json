@@ -40,6 +40,9 @@
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
     },
+    "dl_frequency": {
+      "$ref": "cell/nr/input-schema.json#/properties/dl_frequency"
+    },
     "dl_earfcn": {
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
     },
