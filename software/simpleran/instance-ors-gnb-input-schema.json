@@ -39,8 +39,9 @@
     "cell_id": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
-    "tx_gain": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/tx_gain"
+    "tx_power_dbm": {
+      "title": "Tx Power in dBm",
+      "type": "number"
     },
     "rx_gain": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
