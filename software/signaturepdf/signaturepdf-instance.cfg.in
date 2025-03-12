@@ -81,7 +81,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/rsvg-convert
 command-line = {{ librsvg_location }}/bin/rsvg-convert
 
-[create-nss-certificates-wrapper]
+[create-nss-certificates]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/create-nss-certificates
 command-line = bash ${directory:www}/tools/create_nss_certs.sh ${pdf-directory:nss}/ ${nss-password:passwd} ${instance-parameter:nss-cert-nick} ${instance-parameter:signature-pdf-url}
@@ -90,8 +90,8 @@ environment = ${apache-php-wrapper:environment}
 [signaturepdf-install.sh]
 recipe = plone.recipe.command
 command =
-  if if [ ! -s "${pdf-directory:nss}/pkcs11.txt" ]; then
-    ${create-nss-certificates-wrapper:wrapper-path}
+  if [ ! -s "${pdf-directory:nss}/pkcs11.txt" ]; then
+    ${create-nss-certificates:wrapper-path}
   fi
 update-command = ${:command}
 stop-on-error = true
@@ -100,7 +100,13 @@ depends =
   ${pdftk-wrapper:recipe}
   ${convert-wrapper:recipe}
   ${rsvg-convert-wrapper:recipe}
-  ${create-nss-certificates:recipe}
+  ${promise-check-nss-certificate-installed:recipe}
+
+[promise-check-nss-certificate-installed]
+<= monitor-promise-base
+name = check-nss-certificate-is-installed.py
+promise = check_command_execute
+config-command = if [ ! -s "${pdf-directory:nss}/cert9.db" ]; then echo "nss certificate not found!"; exit 1; fi
 
 [publish-connection-information]
 nss-password = ${nss-password:passwd}
