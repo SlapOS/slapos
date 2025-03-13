@@ -68,7 +68,7 @@ environment =
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
-ip = $${instance-parameter:ipv4-random}
+ip = $${slap-configuration:ipv4-random}
 port = 18080
 promises =
   $${metabase-promise:name}
@@ -103,7 +103,7 @@ content =
   server app $${metabase-instance:ip}:$${metabase-instance:port}
 
 pidfile = $${directory:run}/$${:_buildout_section_name_}.pid
-ip = $${instance-parameter:ipv6-random}
+ip = $${slap-configuration:ipv6-random}
 port = 8443
 
 [metabase-frontend]
@@ -132,7 +132,7 @@ superuser = metabase-psql
 password = $${postgresql-password:passwd}
 pgdata-directory = $${directory:srv}/postgresql
 
-ipv4 = $${instance-parameter:ipv4-random}
+ipv4 = $${slap-configuration:ipv4-random}
 # disable listening on ipv6
 ipv6 =
 port = 5432
@@ -223,7 +223,7 @@ wrapper = $${directory:bin}/cron_simplelogger
 log = $${directory:log}/cron.log
 
 
-[instance-parameter]
+[slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
