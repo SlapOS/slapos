@@ -1,5 +1,0 @@
-user = {{ postgresql_user }}
-password = {{ postgresql_pass }}
-hosts = {{ postgresql_host }}
-dbname = {{ postgresql_dbname }}
-query = SELECT 1 FROM addresses WHERE email = '%s'

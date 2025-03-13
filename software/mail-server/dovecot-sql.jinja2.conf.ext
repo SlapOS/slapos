@@ -1,9 +1,0 @@
-driver = pgsql
-connect = host={{ postgresql_host }} port={{ postgresql_port }} dbname={{ postgresql_dbname }} user={{ postgresql_user }} password={{ postgresql_pass }}
-default_pass_scheme = PLAIN
-password_query = \
-   SELECT email as username, passwd AS password FROM addresses WHERE email = '%u'
-user_query = \
-   SELECT '{{ slap_configuration['user-name'] }}' AS uid, '{{ slap_configuration['user-name'] }}' as gid, email, '{{ directory['home-dovecot'] }}/%d/%n' AS home \
-   FROM addresses WHERE email = '%u'
-iterate_query = SELECT email AS user FROM addresses
