@@ -59,12 +59,9 @@
       "$ref": "cell/common.json#/properties/root_sequence_index",
       "default": 204
     },
-    "tx_dbm_power": {
+    "tx_power_dbm": {
       "title": "Tx Power in dBm",
       "type": "number"
-    },
-    "tx_gain": {
-      "$ref": "ru/common.json#/properties/tx_gain"
     },
     "rx_gain": {
       "$ref": "ru/common.json#/properties/rx_gain"
