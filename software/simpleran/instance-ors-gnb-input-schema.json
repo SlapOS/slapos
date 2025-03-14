@@ -387,7 +387,8 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/enb_stats_fetch_period"
     },
     "enb_drb_stats_enabled": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_drb_stats_enabled"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_drb_stats_enabled",
+      "default": false
     },
     "max_rx_sample_db": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/max_rx_sample_db"
@@ -396,7 +397,8 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/min_rxtx_delay"
     },
     "xlog_forwarding_enabled": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/xlog_forwarding_enabled",
+      "default": false
     },
     "wendelin_telecom_software_release_url": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
