@@ -49,7 +49,7 @@ class TheiaExport(object):
     self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
-    configp = configparser.SafeConfigParser()
+    configp = configparser.ConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
     self.instance_dir = configp.get('slapos', 'instance_root')
