@@ -2,6 +2,7 @@ import argparse
 import glob
 import itertools
 import os
+import shutil
 import sys
 import time
 import traceback
@@ -92,7 +93,7 @@ class TheiaExport(object):
     with open(tmpfile, 'w') as f:
       for s in signatures:
         f.write(s + '\n')
-    os.rename(tmpfile, signaturefile)
+    shutil.move(tmpfile, signaturefile)
 
   def sign_root(self):
     signaturefile = os.path.join(self.backup_dir, 'backup.signature')
