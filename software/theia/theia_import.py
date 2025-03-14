@@ -264,7 +264,7 @@ class TheiaImport(object):
     self.log('Build Software Releases')
     for i in range(3):
       try:
-        self.slapos('node', 'software', '--all', '--logfile', self.sr_log)
+        self.slapos('node', 'software', '--logfile', self.sr_log)
       except sp.CalledProcessError:
         if i == 2:
           raise
