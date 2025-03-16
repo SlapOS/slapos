@@ -260,7 +260,7 @@ install =
     "jsonData": {
       "tlsAuth": True,
       "tlsAuthWithCACert": True,
-      "maxLines": 5000,  # XXX see max_entries_limit_per_query in loki config
+      "maxLines": 1000,  # XXX see max_entries_limit_per_query in loki config
     },
     "secureJsonData": {
       # XXX maybe we can use file directly ?
