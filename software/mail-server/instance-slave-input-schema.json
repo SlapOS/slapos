@@ -6,10 +6,6 @@
     "address": {
       "title": "E-mail address",
       "type": "string"
-    },
-    "password": {
-      "title": "Password",
-      "type": "string"
     }
   }
 }
