@@ -316,7 +316,9 @@ context =
 {%-   endfor %}
 {%-   for k in ['ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt'] %}
 {%-     if k in slave %}
-{%-       set crt = slave.get(k, '') %}
+{#-       Be very cautious -- some master implementations are returning None for empty strings #}
+{#-       Thus get can return None so convert it to a string #}
+{%-       set crt = slave.get(k, '') or '' %}
 {%-       set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
 {%-       do check_popen.communicate(crt.encode()) %}
 {%-       if check_popen.returncode != 0 %}

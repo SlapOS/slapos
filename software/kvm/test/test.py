@@ -215,7 +215,7 @@ class KvmMixin:
     )
 
   @classmethod
-  def getPartitionId(cls, instance_type):
+  def getPartitionIdByType(cls, instance_type):
     software_url = cls.getSoftwareURL()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
       try:
@@ -235,7 +235,7 @@ class KvmMixin:
   @classmethod
   def getPartitionPath(cls, instance_type='kvm-export', *paths):
     return os.path.join(
-      cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
+      cls.slap._instance_root, cls.getPartitionIdByType(instance_type), *paths)
 
   @classmethod
   def getBackupPartitionPath(cls, *paths):
@@ -1116,10 +1116,11 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('PBS (kvm / 1)'))
-    cls.kvm_instance_partition_reference = cls.getPartitionId('kvm0')
+    cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType(
+      'pull-backup'))
+    cls.kvm_instance_partition_reference = cls.getPartitionIdByType('kvm-export')
     cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.kvm_instance_partition_reference)
-    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm1'))
+    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType('kvm-import'))
 
   def test(self):
     connection_parameter_dict = self\
@@ -2990,3 +2991,52 @@ vm""", fh.read())
 class TestInstanceHttpServerJson(
   KvmMixinJson, TestInstanceHttpServer):
   pass
+
+
+@skipUnlessKvm
+class TestDefaultDiskImageCorruption(KVMTestCase, KvmMixin):
+  __partition_reference__ = 'ddic'
+  kvm_instance_partition_reference = 'ddic0'
+
+  def assertPromiseFails(self, partition_directory, promise):
+    monitor_run_promise = os.path.join(
+      partition_directory, 'software_release', 'bin',
+      'monitor.runpromise'
+    )
+    monitor_configuration = os.path.join(
+      partition_directory, 'etc', 'monitor.conf')
+
+    try:
+      output = subprocess.check_output(
+        [monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+         '--run-only', promise],
+        stderr=subprocess.STDOUT).decode('utf-8')
+      self.fail('Promise did not failed with output %s' % (output,))
+    except subprocess.CalledProcessError as e:
+      return e.output.decode('utf-8')
+
+  def _test(self, partition_type):
+    image = self.getPartitionPath(partition_type, 'srv', 'virtual.qcow2')
+    with open(image, 'w') as fh:
+      fh.write('damage')
+    partition = self.getPartitionPath(partition_type)
+    promise = 'kvm-disk-image-corruption.py'
+    output = self.assertPromiseFails(partition, promise)
+    self.assertIn(
+      'qemu-img: This image format does not support checks', output)
+
+  def test(self):
+    self._test('default')
+
+
+@skipUnlessKvm
+class TestResilientDiskImageCorruption(TestDefaultDiskImageCorruption):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  def test(self):
+    self._test('kvm-export')
+
+  def test_kvm_import(self):
+    self._test('kvm-import')

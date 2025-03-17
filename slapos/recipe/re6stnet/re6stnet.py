@@ -114,7 +114,7 @@ def requestRemoveToken(client, token_base_path):
                             reference)
         request_file.unlink()
         status_file = request_file.with_suffix('.status')
-        status_file.unlink()
+        status_file.unlink(missing_ok=True)
         ipv6_file = request_file.with_suffix('.ipv6')
         ipv6_file.unlink(missing_ok=True)
     else:

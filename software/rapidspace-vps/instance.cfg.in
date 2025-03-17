@@ -142,7 +142,7 @@ filename = template-vpsbrute-6disks.cfg
 extra-context =
   key slapparameter_dict slap-configuration-vpsbrute-6disks:configuration
 
-[dynamic-template-vpsbrute-4disks]
+[dynamic-template-vpsbrute-10disks]
 <= jinja2-template-base
 filename = template-vpsbrute-10disks.cfg
 extra-context =
