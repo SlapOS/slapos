@@ -432,7 +432,8 @@ depends =
 
 [expand-monitor-uri-template]
 recipe = slapos.recipe.build
-template = ${monitor-instance-parameter:interface-url}{&url,username,password}
+template = ${monitor-instance-parameter:interface-url}
+suffix = {&url,username,password}
 url = ${monitor-publish-parameters:monitor-url}
 username = ${monitor-publish-parameters:monitor-user}
 password = ${monitor-publish-parameters:monitor-password}
@@ -451,7 +452,7 @@ init =
       buildout_options["eggs-directory"]])
 
   import uritemplate
-  options['uri'] = unquote(uritemplate.URITemplate(options['template']).expand(options))
+  options['uri'] = unquote(uritemplate.URITemplate(options['template'] + options['suffix']).expand(options))
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
