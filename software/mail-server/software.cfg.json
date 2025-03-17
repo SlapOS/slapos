@@ -15,7 +15,7 @@
       "description": "Mail account",
       "software-type": "default",
       "request": "instance-slave-input-schema.json",
-      "response": "instance-default-output-schema.json",
+      "response": "instance-slave-output-schema.json",
       "shared": true,
       "index": 1
     }
