@@ -1,0 +1,156 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Common SIM Card Parameters",
+  "required": [
+    "sim_algo",
+    "imsi",
+    "amf",
+    "sqn",
+    "k",
+    "impu",
+    "impi"
+  ],
+  "properties": {
+    "sim_algo": {
+      "title": "Sim Algorithm",
+      "description": "xor, milenage or tuak. Set the USIM authentication algorithm.",
+      "type": "string"
+    },
+    "imsi": {
+      "title": "IMSI",
+      "description": "IMSI",
+      "type": "string",
+      "default": ""
+    },
+    "plmn": {
+      "title": "PLMN",
+      "description": "Public Land Mobile Network, composed of MCC and MNC",
+      "type": "string",
+      "default": "00101"
+    },
+    "msin": {
+      "title": "MSIN",
+      "description": "Mobile Subscriber Identification Number. Must not exceed 10 digits if PLMN has 5 digits, or 9 digits if PLMN has 6 digits.",
+      "type": "string",
+      "default": ""
+    },
+    "opc": {
+      "title": "OPC",
+      "description": "Operator key preprocessed with the user secret key (as a 16 byte hexadecimal string).",
+      "type": "string",
+      "default": "",
+      "options": {
+        "dependencies": {
+          "sim_algo": "milenage"
+        }
+      }
+    },
+    "amf": {
+      "title": "AMF",
+      "description": "Range: 0 to 65535. Set the Authentication Management Field.",
+      "type": "string",
+      "default": "0x9001"
+    },
+    "sqn": {
+      "title": "SQN",
+      "description": "Optional String (6 byte hexadecimal string). Set the initial sequence number. For the XOR algorithm, the actual value does not matter. For the Milenage or TUAK algorithm, a sequence number resynchronization is initiated if the sequence number does not match the one stored in the USIM.",
+      "type": "string",
+      "default": "000000000000"
+    },
+    "k": {
+      "title": "K",
+      "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
+      "type": "string",
+      "default": ""
+    },
+    "impu": {
+      "title": "IMPU",
+      "description": "sip URI or a telephone number. Note that sip URI must not include hostname. If IMPU does not start by a scheme, it is assumed to be a sip URI.",
+      "type": "string",
+      "default": ""
+    },
+    "impi": {
+      "title": "IMPI",
+      "description": "Defines user IMPI. Must be fully filled with hostname if necessary.",
+      "type": "string",
+      "default": ""
+    },
+    "domain": {
+      "title": "IMS Domain",
+      "type": "string",
+      "default": ""
+    },
+    "authent_type": {
+      "title": "Authentication Type",
+      "description": "Defines minimum authentication level. If client does no specify authentication algo, server will use this value. Else, server will allow authentication only if client provided algo is at least the one specified by this parameter.",
+      "type": "string",
+      "enum": [
+        "none",
+        "MD5",
+        "AKAv1",
+        "AKAv2-SHA-256"
+      ],
+      "default": "AKAv1"
+    },
+    "multi_sim": {
+      "default": false,
+      "title": "Enable multi-sim (experimental)",
+      "description": "Set to true to enable multi-SIM support",
+      "type": "boolean"
+    },
+    "impu_list": {
+      "title": "IMPU list",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "impu": {
+              "title": "sip URI or telephone number",
+              "description": "Example: 'sip:user', 'user', 'tel:+33123456789'",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "enable_multicast": {
+      "default": false,
+      "title": "Enable IPv4 multicast",
+      "description": "Set to true to enable IPv4 multicast",
+      "type": "boolean"
+    },
+    "enable_ipv6_multicast": {
+      "default": false,
+      "title": "Enable IPv6 multicast",
+      "description": "Set to true to enable IPv6 multicast",
+      "type": "boolean"
+    },
+    "enable_broadcast": {
+      "default": false,
+      "title": "Enable IPv4 broadcast",
+      "description": "Set to true to enable IPv4 broadcast",
+      "type": "boolean"
+    },
+    "route_list": {
+      "title": "Route list",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "ipv6_remote_addr_prefix": {
+              "title": "IPv6 remote address prefix",
+              "type": "string"
+            },
+            "prefix_len": {
+              "title": "Prefix length",
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

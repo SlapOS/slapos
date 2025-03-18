@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Milenage Algorithm (advanced parameters)",
+  "required": [
+    "sim_algo",
+    "plmn",
+    "msin",
+    "opc",
+    "k"
+  ],
+  "properties": {
+    "sim_algo": {
+      "$ref": "common.json#/properties/sim_algo",
+      "const": "milenage"
+    },
+    "plmn": {
+      "$ref": "common.json#/properties/plmn"
+    },
+    "msin": {
+      "$ref": "common.json#/properties/msin"
+    },
+    "opc": {
+      "$ref": "common.json#/properties/opc"
+    },
+    "k": {
+      "$ref": "common.json#/properties/k"
+    },
+    "impu": {
+      "$ref": "common.json#/properties/impu"
+    },
+    "impi": {
+      "$ref": "common.json#/properties/impi"
+    },
+    "domain": {
+      "$ref": "common.json#/properties/domain"
+    },
+    "authent_type": {
+      "$ref": "common.json#/properties/authent_type"
+    },
+    "multi_sim": {
+      "$ref": "common.json#/properties/multi_sim"
+    },
+    "impu_list": {
+      "$ref": "common.json#/properties/impu_list"
+    },
+    "amf": {
+      "$ref": "common.json#/properties/amf"
+    },
+    "sqn": {
+      "$ref": "common.json#/properties/sqn"
+    },
+    "enable_multicast": {
+      "$ref": "common.json#/properties/enable_multicast"
+    },
+    "enable_ipv6_multicast": {
+      "$ref": "common.json#/properties/enable_ipv6_multicast"
+    },
+    "enable_broadcast": {
+      "$ref": "common.json#/properties/enable_broadcast"
+    },
+    "route_list": {
+      "$ref": "common.json#/properties/route_list"
+    }
+  }
+}
