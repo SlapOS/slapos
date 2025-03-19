@@ -1,0 +1,85 @@
+{# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
+{% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
+{# Choose parameters according to test type -#}
+{% if test_type == 'script-from-url' -%}
+{% set data_to_vm = slapparameter_dict.get('data-to-vm') -%}
+{% elif test_type == 'cloned-playbook' -%}
+{% set script_url = 'http://10.0.2.100/standalone-local-playbook' -%}
+{% set test_yml_path = slapparameter_dict.get('yml-path-to-test') -%}
+{% else -%}
+The test_type = "{{ test_type }}" is unsupported.
+{% endif -%}
+[buildout]
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+parts =
+  request-kvm
+
+[request-kvm]
+<= slap-connection
+
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+software-type = kvm
+name = test-kvm
+sla-computer_guid = ${slap-connection:computer-id}
+
+# Tested image
+# Passed by request
+config-virtual-hard-drive-url = ${image-to-test:url}
+config-virtual-hard-drive-md5sum = ${image-to-test:md5sum}
+
+# The test script
+config-bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
+
+# Script configuration
+config-data-to-vm =
+  {{ data_to_vm }}
+
+# require HTTP server
+config-enable-http-server = true
+
+# VM options
+config-ram-size = 4096
+config-cpu-count = 2
+
+# await for system to be ready
+return =
+  url
+  backend-url
+  ipv6
+  nat-rule-port-tcp-443
+  nat-rule-port-tcp-80
+
+[image-to-test]
+# This section tries to replace the download URL by the file:// URL of an already downloaded image
+recipe = slapos.recipe.build
+init = 
+  options['url'] = options['input-url']
+  for md5sum, url in self.buildout['image-repository'].items():
+    if md5sum == options['md5sum']:
+      print("Using pre-downloaded image", url)
+      options['url'] = url
+      break
+input-url = {{ slapparameter_dict.get('image-to-test-url') }}
+md5sum = {{ slapparameter_dict.get('image-to-test-md5sum') }}
+
+[image-repository]
+{% for md5sum, url in test_image_repository.items() %}
+{{ md5sum }} = file://{{ url }}
+{% endfor %}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc/
+var = ${:home}/var/
+srv = ${:home}/srv/
+bin = ${:home}/bin/
+tmp = ${:home}/tmp/
+log = ${:var}/log/
+services = ${:etc}/service/
+scripts = ${:etc}/run/
