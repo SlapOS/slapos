@@ -55,22 +55,8 @@ return =
   nat-rule-port-tcp-80
 
 [image-to-test]
-# This section tries to replace the download URL by the file:// URL of an already downloaded image
-recipe = slapos.recipe.build
-init = 
-  options['url'] = options['input-url']
-  for md5sum, url in self.buildout['image-repository'].items():
-    if md5sum == options['md5sum']:
-      print("Using pre-downloaded image", url)
-      options['url'] = url
-      break
-input-url = {{ slapparameter_dict.get('image-to-test-url') }}
+url = {{ slapparameter_dict.get('image-to-test-url') }}
 md5sum = {{ slapparameter_dict.get('image-to-test-md5sum') }}
-
-[image-repository]
-{% for md5sum, url in test_image_repository.items() %}
-{{ md5sum }} = file://{{ url }}
-{% endfor %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
