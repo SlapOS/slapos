@@ -1,6 +1,24 @@
 Changelog
 =========
 
+Version 1.0.407 (2025-03-31)
+-------------
+
+**SIM Cards:**
+
+* Use MSIN and PLMN instead of IMSI in sim parameters
+* Auto-fill IMPI and IMPU based on PLMN and MSIN
+* Support Amarisoft default SIM / eSIM profile
+
+**eNB / gNB:**
+
+* Re-organize connection parameters names
+* Limit all log sizes and improve log rotation
+* Control TX power directly in dBm instead of using tx_gain
+* Set frequency by inputing frequency directly instead of earfcn / nr_arfcn
+* Fix 8UL 1DL mamimum uplink configuration
+* Fix TX power offset: this is important for UE's to correctly adjust their power based on what they receive
+
 Version 1.0.399 (2025-02-20)
 -------------
 
