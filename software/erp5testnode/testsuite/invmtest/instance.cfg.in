@@ -48,10 +48,3 @@ context =
     raw bin_directory ${buildout:bin-directory}
     raw in_vm_test_script ${deploy-script-controller-script:location}
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
-    section test_image_repository test-image-repository
-
-[test-image-repository]
-${download-image-debian-9:md5sum} = ${download-image-debian-9:target}
-${download-image-debian-10:md5sum} = ${download-image-debian-10:target}
-${download-image-debian-11:md5sum} = ${download-image-debian-11:target}
-
