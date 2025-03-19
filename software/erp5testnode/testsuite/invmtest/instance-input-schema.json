@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "image-to-test-url": {
+      "title": "Image To Test (URL)",
+      "description": "Absolute URL to QCOW2 vm-bootstrap compatible image.",
+      "type": "string"
+    },
+    "image-to-test-md5sum": {
+      "title": "MD5 checksum of Image To Test.",
+      "description": "MD5 checksum of QCOW2 vm-bootstrap compatible image.",
+      "type": "string"
+    },
+    "script-to-test-url": {
+      "title": "URL of script to test",
+      "description": "URL of script to test, which will be injected into the VM.",
+      "type": "string"
+    },
+    "data-to-vm": {
+      "title": "Data sent to the VM",
+      "description": "Data to be provided to the VM.",
+      "type": "string"
+    }
+  }
+}
