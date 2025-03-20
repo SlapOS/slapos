@@ -1,4 +1,5 @@
 # {{ slapparameter_dict }}
+{- do slapparameter_dict.__setitem__('enable-http-server', True) %}
 {# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
 {% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
 {# Choose parameters according to test type -#}
@@ -20,10 +21,6 @@ name = test-kvm
 # Passed by request
 virtual-hard-drive-url = ${image-to-test:url}
 virtual-hard-drive-md5sum = ${image-to-test:md5sum}
-
-# Script configuration
-data-to-vm =
-  {{ data_to_vm }}
 
 # require HTTP server
 enable-http-server = true
