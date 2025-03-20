@@ -11,12 +11,10 @@ The test_type = "{{ test_type }}" is unsupported.
 {% endif -%}
 [buildout]
 
+extends = {{ template_kvm }}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
-
-parts =
-  request-kvm
 
 [request-kvm]
 <= slap-connection
