@@ -1,3 +1,4 @@
+# {{ slapparameter_dict }}
 {# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
 {% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
 {# Choose parameters according to test type -#}
