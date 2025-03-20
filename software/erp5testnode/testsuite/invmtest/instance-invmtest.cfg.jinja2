@@ -12,45 +12,28 @@ The test_type = "{{ test_type }}" is unsupported.
 [buildout]
 
 extends = {{ template_kvm }}
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
-[request-kvm]
-<= slap-connection
-
-recipe = slapos.cookbook:request.serialised
-software-url = ${slap-connection:software-release-url}
-software-type = kvm
+[kvm-parameter-dict]
 name = test-kvm
-sla-computer_guid = ${slap-connection:computer-id}
-
 # Tested image
 # Passed by request
-config-virtual-hard-drive-url = ${image-to-test:url}
-config-virtual-hard-drive-md5sum = ${image-to-test:md5sum}
-
-# The test script
-config-bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
+virtual-hard-drive-url = ${image-to-test:url}
+virtual-hard-drive-md5sum = ${image-to-test:md5sum}
 
 # Script configuration
-config-data-to-vm =
+data-to-vm =
   {{ data_to_vm }}
 
 # require HTTP server
-config-enable-http-server = true
+enable-http-server = true
 
 # VM options
-config-ram-size = 4096
-config-cpu-count = 2
+ram-size = 4096
+cpu-count = 2
 
-# await for system to be ready
-return =
-  url
-  backend-url
-  ipv6
-  nat-rule-port-tcp-443
-  nat-rule-port-tcp-80
+# The test script XXX put to public
+bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
+
 
 [image-to-test]
 url = {{ slapparameter_dict.get('image-to-test-url') }}
