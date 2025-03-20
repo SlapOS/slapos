@@ -48,3 +48,8 @@ context =
     raw bin_directory ${buildout:bin-directory}
     raw in_vm_test_script ${deploy-script-controller-script:location}
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
+
+[slap-configuration]
+configuration.paczynka = DEBUG
+configuration.oinker = True
+lower = DEBUGGER
