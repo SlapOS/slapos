@@ -1,5 +1,5 @@
+{%- do slapparameter_dict.__setitem__('LUKEDEBUG', True) %}
 # {{ slapparameter_dict }}
-{- do slapparameter_dict.__setitem__('enable-http-server', True) %}
 {# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
 {% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
 {# Choose parameters according to test type -#}
@@ -14,6 +14,9 @@ The test_type = "{{ test_type }}" is unsupported.
 [buildout]
 
 extends = {{ template_kvm }}
+
+[switch_softwaretype]
+default = {{ template_kvm_instance }}
 
 [kvm-parameter-dict]
 name = test-kvm
