@@ -34,8 +34,7 @@ context =
     key partition_ipv4 slap-configuration:ipv4
 
 [switch_softwaretype]
-default = $${:template-invmtest}
-invmtest = dynamic-template-invmtest:output
+default = dynamic-template-invmtest:output
 
 [dynamic-template-invmtest]
 recipe = slapos.recipe.template:jinja2
