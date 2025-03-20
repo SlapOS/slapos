@@ -45,6 +45,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
+    key template_kvm dynamic-template-kvm:output
     raw bin_directory ${buildout:bin-directory}
     raw in_vm_test_script ${deploy-script-controller-script:location}
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
