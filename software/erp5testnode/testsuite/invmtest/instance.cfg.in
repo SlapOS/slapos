@@ -7,7 +7,6 @@ default = dynamic-template-invmtest:output
 [dynamic-template-invmtest]
 recipe = slapos.recipe.template:jinja2
 url = ${instance-invmtest.cfg.jinja2:target}
-inner = ${instance-inner.cfg.jinja2:target}
 output = $${buildout:directory}/template-invmtest.cfg
 template_kvm = ${template-kvm:location}/instance-kvm.cfg.jinja2
 context =
@@ -15,8 +14,44 @@ context =
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     section slap_configuration slap-configuration
-    key template_kvm $${:template_kvm}
-    raw inner_template $${:inner}
+    raw template_kvm $${:template_kvm}
     raw bin_directory ${buildout:bin-directory}
     raw in_vm_test_script ${deploy-script-controller-script:location}
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
+    section kvm_parameter_flat_dict kvm-parameter-flat-section
+
+[network-information]
+global-ipv4-network =
+
+[kvm-parameter-flat-section]
+openssl_executable_location = ${openssl:location}/bin/openssl
+global_ipv4_prefix = $${network-information:global-ipv4-network}
+ansible_promise_tpl = ${template-ansible-promise:target}
+curl_executable_location = ${curl:location}/bin/curl
+dash_executable_location = ${dash:location}/bin/dash
+dnsresolver_executable = ${buildout:bin-directory}/dnsresolver
+dcron_executable_location = ${dcron:location}/sbin/crond
+boot_image_select_source_config = ${boot-image-select-source-config:target}
+whitelist_domains_default = ${whitelist-domains-default:target}
+whitelist_firewall_download_controller = ${whitelist-firewall-download-controller:output}
+image_download_controller = ${image-download-controller:output}
+image_download_config_creator = ${image-download-config-creator:output}
+logrotate_cfg = ${template-logrotate-base:output}
+novnc_location = ${noVNC:location}
+netcat_bin = ${netcat:location}/bin/netcat
+nginx_executable = ${nginx-output:nginx}
+nginx_mime = ${nginx-output:mime}
+python_executable = ${buildout:executable}
+python_eggs_executable = ${buildout:bin-directory}/${python-with-eggs:interpreter}
+qemu_executable_location = ${qemu:location}/bin/qemu-system-x86_64
+qemu_img_executable_location = ${qemu:location}/bin/qemu-img
+qemu_start_promise_tpl = ${template-qemu-ready:target}
+sixtunnel_executable_location = ${6tunnel:location}/bin/6tunnel
+template_httpd_cfg = ${template-httpd:output}
+template_content = ${template-content:target}
+template_kvm_controller_run = ${template-kvm-controller:target}
+template_kvm_run = ${template-kvm-run:target}
+template_monitor = ${monitor2-template:output}
+template_nginx = ${template-nginx:target}
+wipe_disk_wrapper = ${buildout:directory}/bin/securedelete
+disk_image_corruption = ${disk-image-corruption.sh:target}
