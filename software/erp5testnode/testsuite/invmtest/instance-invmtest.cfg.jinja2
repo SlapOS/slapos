@@ -1,5 +1,3 @@
-# DEBUG slapparameter_dict {{ slapparameter_dict }}
-# DEBUG slap_configuration {{ slap_configuration }}
 {# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
 {% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
 {# Choose parameters according to test type -#}
@@ -18,78 +16,42 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[inner-parameter]
-paczynka = oink
-{%- for k,v in slapparameter_dict.items() %}
-{{ k }} = {{ dumps(v) }}
-{%- endfor %}
-
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-template-inner:output
+default = dynamic-template-kvm-inner:output
 
 [dynamic-template-kvm-inner]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
+url = {{ template_kvm }}
 output = ${buildout:directory}/instance-kvm-inner.cfg
 context =
   key develop_eggs_directory buildout:develop-eggs-directory
   key eggs_directory buildout:eggs-directory
   key ipv4 slap-configuration:ipv4
   key ipv6 slap-configuration:ipv6
-  key global_ipv4_prefix network-information:global-ipv4-network
-  key slapparameter_dict slap-configuration:configuration
-  key computer_id slap-configuration:computer
-  raw openssl_executable_location ${openssl:location}/bin/openssl
+{%- for k, v in kvm_parameter_flat_dict.items() %}
+  key {{ k }} kvm-parameter-flat-section:{{k}}
+{%- endfor %}
   section slap_configuration slap-configuration
-  raw ansible_promise_tpl ${template-ansible-promise:target}
-  raw curl_executable_location ${curl:location}/bin/curl
-  raw dash_executable_location ${dash:location}/bin/dash
-  raw dnsresolver_executable ${buildout:bin-directory}/dnsresolver
-  raw dcron_executable_location ${dcron:location}/sbin/crond
-  raw boot_image_select_source_config ${boot-image-select-source-config:target}
-  raw whitelist_domains_default ${whitelist-domains-default:target}
-  raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:output}
-  raw image_download_controller ${image-download-controller:output}
-  raw image_download_config_creator ${image-download-config-creator:output}
-  raw logrotate_cfg ${template-logrotate-base:output}
-  raw novnc_location ${noVNC:location}
-  raw netcat_bin ${netcat:location}/bin/netcat
-  raw nginx_executable ${nginx-output:nginx}
-  raw nginx_mime ${nginx-output:mime}
-  raw python_executable ${buildout:executable}
-  raw python_eggs_executable ${buildout:bin-directory}/${python-with-eggs:interpreter}
-  raw qemu_executable_location ${qemu:location}/bin/qemu-system-x86_64
-  raw qemu_img_executable_location ${qemu:location}/bin/qemu-img
-  raw qemu_start_promise_tpl ${template-qemu-ready:target}
-  raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
-  raw template_httpd_cfg ${template-httpd:output}
-  raw template_content ${template-content:target}
-  raw template_kvm_controller_run ${template-kvm-controller:target}
-  raw template_kvm_run ${template-kvm-run:target}
-  raw template_monitor ${monitor2-template:output}
-  raw template_nginx ${template-nginx:target}
-  raw websockify_executable_location ${buildout:directory}/bin/websockify
-  raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
-  raw disk_image_corruption ${disk-image-corruption.sh:target}
+  section slapparameter_dict kvm-parameter-section
+  section storage_dict storage-dict
 
-[kvm-parameter-dict]
+[kvm-parameter-flat-section]
+{%- for k, v in kvm_parameter_flat_dict.items() %}
+{{ k }} = {{ dumps(v) }}
+{%- endfor %}
+
+[kvm-parameter-section]
 name = test-kvm
-# Tested image
-# Passed by request
+enable-http-server = {{ dumps(True) }}
 virtual-hard-drive-url = ${image-to-test:url}
 virtual-hard-drive-md5sum = ${image-to-test:md5sum}
-
-# require HTTP server
-enable-http-server = true
-
-# VM options
 ram-size = 4096
 cpu-count = 2
-
-# The test script XXX put to public
 bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
 
+[storage-dict]
 
 [image-to-test]
 url = {{ slapparameter_dict.get('image-to-test-url') }}
