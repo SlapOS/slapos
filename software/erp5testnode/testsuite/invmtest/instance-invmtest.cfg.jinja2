@@ -1,0 +1,79 @@
+{# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
+{% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
+{# Choose parameters according to test type -#}
+{% if test_type == 'script-from-url' -%}
+{% set data_to_vm = slapparameter_dict.get('data-to-vm') -%}
+{% elif test_type == 'cloned-playbook' -%}
+{% set script_url = 'http://10.0.2.100/standalone-local-playbook' -%}
+{% set test_yml_path = slapparameter_dict.get('yml-path-to-test') -%}
+{% else -%}
+The test_type = "{{ test_type }}" is unsupported.
+{% endif -%}
+[buildout]
+parts =
+  switch_softwaretype
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[switch_softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-kvm-inner:output
+
+[dynamic-template-kvm-inner]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+url = {{ template_kvm }}
+output = ${buildout:directory}/instance-kvm-inner.cfg
+context =
+  key develop_eggs_directory buildout:develop-eggs-directory
+  key eggs_directory buildout:eggs-directory
+  key ipv4 slap-configuration:ipv4
+  key ipv6 slap-configuration:ipv6
+{%- for k, v in kvm_parameter_flat_dict.items() %}
+  key {{ k }} kvm-parameter-flat-section:{{k}}
+{%- endfor %}
+  section slap_configuration slap-configuration
+  section slapparameter_dict kvm-parameter-section
+  section storage_dict storage-dict
+
+[kvm-parameter-flat-section]
+{%- for k, v in kvm_parameter_flat_dict.items() %}
+{{ k }} = {{ dumps(v) }}
+{%- endfor %}
+
+[kvm-parameter-section]
+name = test-kvm
+enable-http-server = {{ dumps(True) }}
+virtual-hard-drive-url = ${image-to-test:url}
+virtual-hard-drive-md5sum = ${image-to-test:md5sum}
+ram-size = 4096
+cpu-count = 2
+bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
+
+[storage-dict]
+
+[image-to-test]
+url = {{ slapparameter_dict.get('image-to-test-url') }}
+md5sum = {{ slapparameter_dict.get('image-to-test-md5sum') }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc/
+var = ${:home}/var/
+srv = ${:home}/srv/
+bin = ${:home}/bin/
+tmp = ${:home}/tmp/
+log = ${:var}/log/
+services = ${:etc}/service/
+scripts = ${:etc}/run/
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
