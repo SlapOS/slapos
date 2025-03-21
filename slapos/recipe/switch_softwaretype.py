@@ -26,7 +26,8 @@
 ##############################################################################
 
 import logging
-from zc.buildout.buildout import Buildout, MissingOption, MissingSection
+from zc.buildout.buildout import Buildout, MissingOption, MissingSection, \
+  dumps
 from zc.buildout import UserError
 
 class SubBuildout(Buildout):
@@ -55,6 +56,24 @@ class SubBuildout(Buildout):
     # Use same slap connection
     for k, v in main_buildout["slap-connection"].items():
       options.append(('slap-connection', k, v))
+    for k, v in main_buildout["slap-configuration"].items():
+      ## be compatible with slapconfiguration, keep all non-configuration
+      ## strings and dumps all else
+      #if isinstance(v, str) and not k.startswith('configuration'):
+      #  options.append(('slap-configuration', k, v))
+      #else:
+      # XXX: Seems that we need to dumps all including strings, and this is
+      #      a blocker
+      #      Crazy case found: instance-title
+      #      One can request it like ${a:b}, so without dumps it'll result
+      #      with expanding it to the section...
+      #      ...but in the same time it's used in the buildout profiles
+      #      as ${slap-configuration:instance-title} and ends up with
+      #      generating bad situations
+      options.append(('slap-configuration', k, dumps(v)))
+    options.append((
+      'slap-configuration', 'recipe',
+      'slapos.cookbook:switch-softwaretype.noop'))
 
     Buildout.__init__(self, config, options, **kwargs)
 
@@ -120,5 +139,16 @@ class Recipe:
     )
 
     sub_buildout.install([])
+
+  update = install
+
+class NoOperation:
+  def __init__(self, buildout, name, options):
+    self.buildout = buildout
+    self.options = options
+    self.name = name
+
+  def install(self):
+      return []
 
   update = install
