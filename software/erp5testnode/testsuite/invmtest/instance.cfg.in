@@ -20,12 +20,9 @@ context =
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
     section kvm_parameter_flat_dict kvm-parameter-flat-section
 
-[network-information]
-global-ipv4-network =
-
 [kvm-parameter-flat-section]
 openssl_executable_location = ${openssl:location}/bin/openssl
-global_ipv4_prefix = $${network-information:global-ipv4-network}
+global_ipv4_prefix =
 ansible_promise_tpl = ${template-ansible-promise:target}
 curl_executable_location = ${curl:location}/bin/curl
 dash_executable_location = ${dash:location}/bin/dash

@@ -31,16 +31,16 @@ context =
   key eggs_directory buildout:eggs-directory
   key ipv4 slap-configuration:ipv4
   key ipv6 slap-configuration:ipv6
-{%- for k, v in kvm_parameter_flat_dict.items() %}
-  key {{ k }} kvm-parameter-flat-section:{{k}}
+{%- for k in sorted(kvm_parameter_flat_dict) %}
+  key {{ k }} kvm-parameter-flat-section:{{ k }}
 {%- endfor %}
   section slap_configuration slap-configuration
   section slapparameter_dict kvm-parameter-section
   section storage_dict storage-dict
 
 [kvm-parameter-flat-section]
-{%- for k, v in kvm_parameter_flat_dict.items() %}
-{{ k }} = {{ dumps(v) }}
+{%- for k in sorted(kvm_parameter_flat_dict) %}
+{{ k }} = {{ dumps(kvm_parameter_flat_dict[k]) }}
 {%- endfor %}
 
 [kvm-parameter-section]
