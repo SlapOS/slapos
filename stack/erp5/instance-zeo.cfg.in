@@ -37,6 +37,7 @@
 base-name = zeo-{{ family }}
 log-path = ${directory:log}/${:base-name}.log
 pid-path = ${directory:run}/${:base-name}.pid
+keep-path = {{ default_zodb_path }}
 ip = {{ ipv4 }}
 port = {{ current_port }}
 storage = {{ dumps(storage_list) }}
