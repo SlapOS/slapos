@@ -1,6 +1,10 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 
+{%- for slave in slave_instance_list %}
+{%   do slave.__setitem__('token', str(uuid_module.uuid4())) %}
+{%- endfor %}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -107,28 +111,24 @@ context =
 url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
 extra-context =
-  key dovecot_sql dovecot-sql:output
   key dovecot_passwd dovecot-passwd:output
   raw postfix_auth ${directory:var-spool-postfix-private}/auth
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
-
-[dovecot-sql]
-<= config-base
-url = {{ dovecot_sql_template }}
-output = ${directory:etc}/dovecot-sql.conf.ext
-extra-context =
-  raw postgresql_user ${postgresql:superuser}
-  raw postgresql_pass ${postgresql:password}
-  raw postgresql_dbname ${postgresql:dbname}
-  raw postgresql_host ${postgresql:ipv4}
-  raw postgresql_port ${postgresql:port}
 
 [dovecot-passwd]
 <= config-base
 url = {{ dovecot_passwd }}
 output = ${directory:etc}/dovecot-passwd
 extra-context =
+  import json_module json
+  raw instances {{ json_module.dumps(slave_instance_list) }}
 
+[password-php]
+<= config-base
+url = {{ password_php }}
+output = ${directory:www}/password.php
+extra-context =
+  key dovecot_passwd dovecot-passwd:output
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -146,26 +146,12 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
-[{{ section('postmap-virtual') }}]
-recipe = plone.recipe.command
-stop-on-error = false
-command = '${wrapper-postmap:wrapper-path}' '${postfix-virtual:output}'
-update-command = ${:command}
-
-[{{ section('postmap-vmailbox') }}]
-recipe = plone.recipe.command
-stop-on-error = false
-command = '${wrapper-postmap:wrapper-path}' '${postfix-vmailbox:output}'
-update-command = ${:command}
-
 [postfix-conf-main]
 <= config-base
 url = {{ postfix_main_template }}
 output = ${directory:etc-postfix}/main.cf
 extra-context =
   key dovecot_passwd dovecot-passwd:output
-  key vmailbox_file postfix-vmailbox:output
-  key virtual_file postfix-virtual:output
   key bin_directory directory:bin
   key usr_directory directory:usr-postfix
   key queue_directory directory:var-spool-postfix
@@ -176,7 +162,7 @@ extra-context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
-  key mail_domain request-dns-entry:connection-domain
+  key server_fqdn request-dns-entry:connection-domain
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
@@ -196,10 +182,6 @@ url = {{ snappymail_conf }}
 output = ${directory:www}/data/_data_/_default_/configs/application.ini
 extra-context =
   key mail_domain request-dns-entry:connection-domain
-  raw postgresql_user ${postgresql:superuser}
-  raw postgresql_pass ${postgresql:password}
-  raw postgresql_host ${postgresql:ipv4}
-  raw postgresql_port ${postgresql:port}
 
 
 [snappymail-domain]
@@ -211,27 +193,6 @@ extra-context =
   raw mail_host [${slap-configuration:ipv6-random}]
   key smtp_port publish-connection-information:smtp-port
 
-
-[postfix-vmailbox]
-<= config-base
-url = {{ postfix_vmailbox_template }}
-output = ${directory:etc-postfix}/mysql_virtual_mailbox_maps.cf
-extra-context =
-  key mail_domain request-dns-entry:connection-domain
-  raw postgresql_user ${postgresql:superuser}
-  raw postgresql_pass ${postgresql:password}
-  raw postgresql_dbname ${postgresql:dbname}
-  raw postgresql_host ${postgresql:ipv4}:${postgresql:port}
-[postfix-virtual]
-<= config-base
-url = {{ postfix_virtual_template }}
-output = ${directory:etc-postfix}/mysql_virtual_aliases.cf
-extra-context =
-  key mail_domain request-dns-entry:connection-domain
-  raw postgresql_user ${postgresql:superuser}
-  raw postgresql_pass ${postgresql:password}
-  raw postgresql_dbname ${postgresql:dbname}
-  raw postgresql_host ${postgresql:ipv4}:${postgresql:port}
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
@@ -266,23 +227,6 @@ output = ${directory:bin}/${:_buildout_section_name_}
 inline =
   #!/bin/sh
   rm -f var/spool/postfix/pid/master.pid
-  '${postgresql-psql:wrapper-path}' \
-    -h '${postgresql:pgdata-directory}' \
-    -U '${postgresql:superuser}' \
-    -d '${postgresql:dbname}' \
-    -c "CREATE TABLE IF NOT EXISTS addresses (
-          email VARCHAR(50) NOT NULL PRIMARY KEY,
-          active BOOL NOT NULL DEFAULT TRUE,
-          passwd VARCHAR(106) NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS aliases (
-          source VARCHAR(50) NOT NULL PRIMARY KEY,
-          target VARCHAR(50) NOT NULL
-        );
-
-        INSERT INTO addresses (email, active, passwd) VALUES ('tom@mail.localhost', TRUE, 'MotDePasseEmail') ON CONFLICT(email) DO NOTHING;
-        INSERT INTO aliases (source, target) VALUES ('tniget@mail.localhost', 'tom@mail.localhost') ON CONFLICT(source) DO NOTHING;"
   ${directory:usr-postfix}/libexec/postfix/master -c ${directory:etc-postfix}
 
 
@@ -364,13 +308,6 @@ cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 apache-config-dir = ${directory:apache.d}
 
-[postgresql-backup-crontab-entry]
-recipe = slapos.cookbook:cron.d
-name = ${:_buildout_section_name_}
-cron-entries = ${cron:cron-entries}
-time = daily
-command = ${postgresql-backup:wrapper-path}
-
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
@@ -379,10 +316,15 @@ smtp-port = 10025
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
 domain = ${request-dns-entry:connection-domain}
 webmail-url = ${apache-php-configuration:url}
-backup-crontab = ${postgresql-backup-crontab-entry:name}
 {% if apache_parameter_dict['publish-frontend'] -%}
 webmail-url = ${lamp-frontend-promise:url}
+password-url = ${lamp-frontend-promise:url}/password.php
 {% endif -%}
+{% set token_dict = {} -%}
+{% for slave_instance in slave_instance_list -%}
+{%  do token_dict.__setitem__(slave_instance["address"], slave_instance["token"]) -%}
+{% endfor -%}
+slaves = {{ json_module.dumps(token_dict) }}
 
 [lamp-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -390,23 +332,6 @@ url = {{ lamp_apache_httpd }}
 output = ${directory:apache.d}/lamp.conf
 context =
   section parameter_dict apache-php-configuration
-
-[postgresql-backup]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/${:_buildout_section_name_}
-# XXX there's a recipe for backup in slapos cookbook, but it does not create
-# the backup file in an atomic way, which is not acceptable here, because we
-# don't want to risk pulling a partial file. To prevent this, we create a
-# temp file and move it when finished.
-command-line =
-    sh -c "${postgresql:bin}/pg_dump \
-      -h ${postgresql:pgdata-directory} \
-      -U ${postgresql:superuser} \
-      --format=custom \
-      -f ${:backup-file}.tmp \
-      ${postgresql:dbname} \
-    && mv ${:backup-file}.tmp ${:backup-file}"
-backup-file = ${directory:srv-backup}/backup.pg_dump
 
 [request-frontend]
 <= slap-connection
@@ -528,6 +453,21 @@ wrapper-path = ${directory:run}/postfix-master
 [monitor-instance-parameter]
 #monitor-httpd-port = ${apache-network-configuration:listening-port}
 
+{% for slave_instance in slave_instance_list -%}
+{%   set orig_slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_reference = orig_slave_reference.replace(' ', '_') -%}
+
+{%   set publish_section_title = 'publish-%s' % slave_reference -%}
+{%   do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+
+recipe = slapos.cookbook:publish
+-slave-reference = {{ orig_slave_reference }}
+passwordUrl = "helloworld"
+
+{% endfor -%}
+
+
 [buildout]
 extends =
   {{ template_monitor }}
@@ -539,6 +479,7 @@ parts =
   snappymail-domain
   dovecot-conf
   dovecot-service
+  password-php
   postfix-conf-main
   postfix-conf-master
   postfix-service
@@ -552,7 +493,9 @@ parts =
   lamp-apache-httpd
   apache-php-service
   request-frontend
-  {{ part_list | join('\n  ') }}
+{% for part in part_list -%}
+{{ '    %s' % part }}
+{% endfor -%}
 {% if slapparameter_dict.get('request_dns', '') %}
   request-dns-entry
 {% endif %}
@@ -561,52 +504,7 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline= true
 
-
-[postgresql-password]
-recipe = slapos.cookbook:generate.password
-
-[postgresql]
-recipe = slapos.cookbook:postgres
-bin = {{ postgresql_location }}/bin
-services = ${directory:service}
-dbname  = postfix
-superuser = postfix-psql
-password = ${postgresql-password:passwd}
-pgdata-directory = ${directory:srv}/postgresql
-
-ipv4 = ${slap-configuration:ipv4-random}
-ipv6 = ${slap-configuration:ipv6-random}
-port = 5432
-
-promises = ${postgresql-promise:name}
-
-
-[postgresql-psql]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/${:_buildout_section_name_}
-command-line =
-    ${postgresql:bin}/psql
-        -h ${postgresql:pgdata-directory}
-        -U ${postgresql:superuser}
-        -d ${postgresql:dbname}
-
-[postgresql-promise]
-<= monitor-promise-base
-promise = check_command_execute
-name = promise-postgresql.py
-config-command = ${postgresql-psql:wrapper-path} -c '\q'
-
-#[mariadb-urlparse]
-#recipe = slapos.cookbook:urlparse
-#url =  slapparameter_dict['database-list'][0]
-
 [instance-parameter]
-# snappymail = ${:document-root}
-#db-user = ${mariadb-urlparse:username}
-#db-password = ${mariadb-urlparse:password}
-#db-name = ${mariadb-urlparse:path}
-#db-host = ${mariadb-urlparse:host}
-#db-port = ${mariadb-urlparse:port}
 document-root = ${apache-php-configuration:document-root}
 backend-url = ${apache-php-configuration:url}
 php-bin = {{ apache_parameter_dict['apache-php-location'] }}/bin/php
@@ -629,22 +527,3 @@ extensions = jinja2.ext.do
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
-
-# unused, remove at a later point
-[postgres-postinstall]
-recipe = slapos.recipe.build
-# Pour que ça se fasse après l'install de postgresql
-# pas nécessaire si tu as déjà besoin d'une autre valeur
-depends = ${postgresql:recipe}
-install =
-  import subprocess
-  args = ('${postgresql-psql:wrapper-path}',
-    '-h', '${postgresql:pgdata-directory}',
-    '-U', '${postgresql:superuser}',
-    '-d', '${postgresql:dbname}',
-    '-c', 'CREATE TABLE IF NOT EXISTS truc (bidule BOOL NOT NULL);')
-  p = subprocess.Popen(args)
-  retcode = p.poll()
-  if retcode:
-    raise subprocess.CalledProcessError(retcode, ' '.join(args))
-  open(options['location'], 'w').close()

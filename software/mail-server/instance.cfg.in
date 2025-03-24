@@ -33,22 +33,22 @@ context =
 url = {{ template_default }}
 filename = instance-default.cfg
 extra-context =
+    import json_module json
+    import uuid_module uuid
     raw dovecot_conf_template {{ dovecot_conf_template }}
-    raw dovecot_sql_template {{ dovecot_sql_template }}
     raw dovecot_passwd {{ dovecot_passwd }}
     raw dovecot_binary {{ dovecot_binary }}
+    raw password_php {{ password_php }}
     raw postfix_main_template {{ postfix_main_template }}
     raw postfix_master_template {{ postfix_master_template }}
-    raw postfix_virtual_template {{ postfix_virtual_template }}
-    raw postfix_vmailbox_template {{ postfix_vmailbox_template }}
     raw postfix_location {{ postfix_location }}
     raw xz_utils_location {{ xz_utils_location }}
     section apache_parameter_dict dynamic-template-apache-php-parameters
     section slap_connection slap-connection
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
+#    key slave_instance_list slap-configuration:slave-instance-list
     raw bin_directory {{ bin_directory }}
-    raw postgresql_location {{ postgresql_location }}
     raw lamp_apache_httpd {{ lamp_apache_httpd }}
     raw snappymail_conf {{ snappymail_conf }}
     raw snappymail_domain {{ snappymail_domain }}
