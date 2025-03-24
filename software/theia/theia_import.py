@@ -98,7 +98,9 @@ class TheiaImport(object):
   def restore_partition(self, mirror_partition):
     p = self.dst_path(mirror_partition)
     installed = parse_installed(p) if os.path.exists(p) else []
-    copytree(self.rsync_bin, mirror_partition, p, exclude=installed)
+    rules = os.path.join(p, 'srv', 'exporter.exclude')
+    extrargs = ('--filter=.-/ ' + rules,) if os.path.exists(rules) else ()
+    copytree(self.rsync_bin, mirror_partition, p, exclude=installed, extrargs=extrargs)
 
   def supervisorctl(self, *args):
     supervisor_command = (self.supervisorctl_bin, '-c', self.supervisord_conf)
