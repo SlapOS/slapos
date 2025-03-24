@@ -90,8 +90,7 @@ def parse_installed(partition):
         raise
     else:
       for section in six.itervalues(installed_cfg):
-        for p in section.get('__buildout_installed__', '').splitlines() + \
-            section.get('keep-path', '').splitlines():
+        for p in section.get('__buildout_installed__', '').splitlines():
           p = p.strip()
           if p:
             paths.append(p)
