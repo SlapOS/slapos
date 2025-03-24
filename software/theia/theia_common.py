@@ -14,10 +14,10 @@ import zc.buildout.configparser
 from slapos.util import bytes2str, str2bytes
 
 
-RSYNC_FLAGS = ('-rlptgo', '--safe-links', '--stats', '--ignore-missing-args', '--delete', '--delete-excluded')
+RSYNC_FLAGS = ('-rlptgo', '--safe-links', '--stats', '--ignore-missing-args', '--delete')
 RSYNC_REGEX = '^(file has vanished: |rsync warning: some files vanished before they could be transferred)'
 EXCLUDE_PATTERNS = ('*.sock', '*.socket', '*.pid', '.installed*.cfg')
-EXCLUDE_FLAGS = ['--exclude={}'.format(x) for x in sorted(EXCLUDE_PATTERNS)]
+EXCLUDE_FLAGS = ['--filter=-s {}'.format(x) for x in sorted(EXCLUDE_PATTERNS)]
 
 
 def makedirs(path):
