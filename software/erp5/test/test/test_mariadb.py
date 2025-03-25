@@ -33,6 +33,7 @@ import json
 import lzma
 import os
 import subprocess
+import time
 import urllib.parse
 
 import MySQLdb
@@ -79,12 +80,12 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getInstanceParameterDict(cls) -> dict:
     return {'_': json.dumps(cls._getInstanceParameterDict())}
 
-  def getDatabaseConnection(self) -> MySQLdb.connections.Connection:
+  def getDatabaseConnection(self, computer_partition=None) -> MySQLdb.connections.Connection:
+    computer_partition = computer_partition or self.computer_partition
     connection_parameter_dict = json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
+        computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
-
     self.assertTrue(db_url.path.startswith('/'))
     database_name = db_url.path[1:]
     return MySQLdb.connect(
@@ -97,6 +98,20 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         charset='utf8mb4'
     )
 
+  @classmethod
+  def getComputerPartitionPath(cls, computer_partition=None):
+    computer_partition = computer_partition or cls.computer_partition
+    return os.path.join(cls.slap._instance_root, computer_partition.getId())
+
+  def getSocketDatabaseConnection(self, computer_partition=None) -> MySQLdb.connections.Connection:
+    partition_path = self.getComputerPartitionPath(computer_partition)
+    default_file = os.path.join(partition_path, 'etc', 'mariadb.cnf')
+    return MySQLdb.connect(
+        read_default_file = default_file,
+        use_unicode=True,
+        charset='utf8mb4',
+        cursorclass=MySQLdb.cursors.DictCursor,
+    )
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
   _save_instance_file_pattern_list = \
@@ -358,3 +373,119 @@ class TestMroonga(MariaDBTestCase):
           (2, "I'm developing Groonga"),
           (3, "I developed Groonga"),
       ], list(sorted(cnx.store_result().fetch_row(maxrows=4))))
+
+
+class TestMariaDBReplication(MariaDBTestCase):
+  force_bootstrap = False
+
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    return {
+        'tcpv4-port': 3306,
+        'max-slowqueries-threshold': 1,
+        'slowest-query-threshold': 0.1,
+        'name': cls.__name__,
+        'monitor-passwd': 'secret',
+        'computer-memory-percent-threshold': 100,
+    }
+
+  @classmethod
+  def requestDefaultInstance(cls, state="started"):
+    software_url = cls.getSoftwareURL()
+    software_type = cls.getInstanceSoftwareType()
+    cls.logger.info("Requesting Mariadb Primary")
+    cls._primary_parameter_dict=cls.getInstanceParameterDict()
+    for i in range(2):
+      primary = cls.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference='primary',
+        partition_parameter_kw=cls._primary_parameter_dict,
+        state=state,
+      )
+      if i:
+        break
+      cls.waitForInstance()
+    cls.primary = primary
+    primary_connectors = json.loads(primary.getConnectionParameterDict()['_'])
+    primary_url = primary_connectors['replication-primary-url']
+    replication_dict = {'primary-url': primary_url}
+    if cls.force_bootstrap:
+      # Force the primary to generate a backup for bootstrap,
+      # as it may not have a backup ready yet.
+      # Note: bootstrap is not needed because the primary is recent.
+      primary_path = cls.getComputerPartitionPath(primary)
+      backupscript = os.path.join(primary_path, 'bin', 'mariadb-backup-script')
+      subprocess.check_output([backupscript])
+      bootstrap_url = primary_connectors['replication-bootstrap-url']
+      replication_dict['bootstrap-url'] = bootstrap_url
+    replica_parameter_dict = cls._getInstanceParameterDict()
+    replica_parameter_dict['tcpv4-port'] += 20
+    replica_parameter_dict['replication'] = replication_dict
+    cls._instance_parameter_dict = {'_': json.dumps(replica_parameter_dict)}
+    cls.logger.info("Requesting Mariadb Replica")
+    cls.replica = replica = cls.slap.request(
+      software_release=software_url,
+      software_type=software_type,
+      partition_reference='replica',
+      partition_parameter_kw=cls._instance_parameter_dict,
+      state=state,
+    )
+    return replica
+
+  def getReplicaStatus(self):
+    cnx = self.getSocketDatabaseConnection(self.replica)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute("SHOW SLAVE STATUS")
+      return cursor.fetchone()
+
+  def test_replica_state(self):
+    replica_status = self.getReplicaStatus()
+    try:
+      self.assertTrue(replica_status)
+      self.assertIsInstance(replica_status['Seconds_Behind_Master'], int)
+    except (AssertionError, KeyError):
+      self.logger.error('Replica is in bad state:\n%r', replica_status)
+      raise
+
+  def test_data_replication(self):
+    cnx = self.getDatabaseConnection(self.primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          CREATE TABLE test_replication (
+            col1 CHAR(10)
+          )
+          """)
+      cursor.execute(
+          """
+          insert into test_replication values ("a"), ("b")
+          """)
+      cnx.commit()
+    cnx = self.getDatabaseConnection(self.primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          select * from test_replication
+          """)
+      self.assertEqual((('a',), ('b',)), cursor.fetchall())
+    time.sleep(2)
+    for i in range(7):
+      if self.getReplicaStatus()['Seconds_Behind_Master'] == 0:
+        break
+      time.sleep((i + 1) ** 2)
+    cnx = self.getDatabaseConnection(self.replica)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          select * from test_replication
+          """)
+      self.assertEqual((('a',), ('b',)), cursor.fetchall())
+
+
+class TestMariaDBReplicationWithBootstrap(TestMariaDBReplication):
+  force_bootstrap = True
