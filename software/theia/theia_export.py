@@ -81,10 +81,10 @@ class TheiaExport(object):
   def backup_partition(self, partition):
     installed = parse_installed(partition)
     rules = os.path.join(partition, 'srv', 'exporter.exclude')
-    extrargs = ('--filter=.-/ ' + rules,) if os.path.exists(rules) else ()
+    ignorefile = rules if o.path.exists(rules) else None
     dst = self.mirror_path(partition)
-    copytree(self.rsync_bin, partition, dst, installed, extrargs)
-    self.copytree_partitions_args[partition] = (dst, installed, extrargs)
+    copytree(self.rsync_bin, partition, dst, installed, ignorefile)
+    self.copytree_partitions_args[partition] = (dst, installed, ignorefile)
 
   def sign(self, signaturefile, signatures):
     remove(signaturefile)
@@ -121,13 +121,14 @@ class TheiaExport(object):
         pass
 
   def check_partition(self, partition, pattern='/srv/backup/'):
-    dst, installed, extrargs = self.copytree_partitions_args[partition]
+    dst, installed, ignorefile = self.copytree_partitions_args[partition]
     output = copytree(
       self.rsync_bin,
       partition,
       dst,
-      exclude=installed,
-      extrargs=extrargs + ('--dry-run', '--update'),
+      delete=installed,
+      ignorefile=ignorefile,
+      extrargs=('--dry-run', '--update'),
       verbosity='--out-format=%n',
     )
     return [path for path in output.splitlines() if pattern in path]

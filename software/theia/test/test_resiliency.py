@@ -391,9 +391,15 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
 
 class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
   def test_twice(self):
+    # Create ~/exclude and ~/exclude/excluded in import partition
+    excluded_path = self.getPartitionPath('import', 'exclude', 'excluded')
+    self.writeFile(excluded_path,
+      'This file should be excluded from resilient restore')
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
     self._doSync()
+    # Check if excluded path in import partition is not deleted
+    self.assertTrue(os.path.exists(excluded_path))
 
   def checkLog(self, log_path, initial=[], newline="Hello"):
     with open(log_path) as f:
