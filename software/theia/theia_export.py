@@ -81,7 +81,7 @@ class TheiaExport(object):
   def backup_partition(self, partition):
     installed = parse_installed(partition)
     rules = os.path.join(partition, 'srv', 'exporter.exclude')
-    ignorefile = rules if o.path.exists(rules) else None
+    ignorefile = rules if os.path.exists(rules) else None
     dst = self.mirror_path(partition)
     copytree(self.rsync_bin, partition, dst, installed, ignorefile)
     self.copytree_partitions_args[partition] = (dst, installed, ignorefile)
