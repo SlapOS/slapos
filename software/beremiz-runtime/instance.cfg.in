@@ -57,7 +57,7 @@ webport = 8009
 # due to fact that Beremiz needs to find in  PATH inkscape and chromium executables
 environment =
   BEREMIZPYTHONPATH = {{ buildout['bin-directory'] }}/pythonwitheggs
-  PATH={{ gcc_location }}/bin:/usr/bin
+  PATH={{ gcc_location }}/bin:{{ inkscape_location }}/bin
   LIBRARY_PATH={{ openssl_location }}/lib
   BEREMIZ_LOCAL_HOST=${instance-parameter:ipv4-random}
 
