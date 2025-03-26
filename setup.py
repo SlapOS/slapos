@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.451'
+version = '1.0.451.dev1765979186'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
