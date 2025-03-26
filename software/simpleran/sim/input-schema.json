@@ -1,102 +1,13 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Parameter Form",
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "SIM Card Parameters",
-  "required": [
-    "sim_algo",
-    "imsi",
-    "opc",
-    "amf",
-    "sqn",
-    "k",
-    "impu",
-    "impi"
-  ],
-  "properties": {
-    "sim_algo": {
-      "title": "Sim Algorithm",
-      "description": "xor, milenage or tuak. Set the USIM authentication algorithm.",
-      "type": "string",
-      "default": "milenage"
+  "oneOf": [
+    {
+      "$ref": "input-schema-milenage.json"
     },
-    "imsi": {
-      "title": "IMSI",
-      "description": "IMSI",
-      "type": "string",
-      "default": ""
-    },
-    "opc": {
-      "title": "OPC",
-      "description": "Operator key preprocessed with the user secret key (as a 16 byte hexadecimal string). When the Milenage authentication algorithm is used, opc must be set.",
-      "type": "string",
-      "default": ""
-    },
-    "amf": {
-      "title": "AMF",
-      "description": "Range: 0 to 65535. Set the Authentication Management Field.",
-      "type": "string",
-      "default": "0x9001"
-    },
-    "sqn": {
-      "title": "SQN",
-      "description": "Optional String (6 byte hexadecimal string). Set the initial sequence number. For the XOR algorithm, the actual value does not matter. For the Milenage or TUAK algorithm, a sequence number resynchronization is initiated if the sequence number does not match the one stored in the USIM.",
-      "type": "string",
-      "default": "000000000000"
-    },
-    "k": {
-      "title": "K",
-      "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
-      "type": "string",
-      "default": ""
-    },
-    "impu": {
-      "title": "IMPU",
-      "description": "sip URI or a telephone number. Note that sip URI must not include hostname. If IMPU does not start by a scheme, it is assumed to be a sip URI.",
-      "type": "string",
-      "default": ""
-    },
-    "impi": {
-      "title": "IMPI",
-      "description": "Defines user IMPI. Must be fully filled with hostname if necessary.",
-      "type": "string",
-      "default": ""
-    },
-    "enable_multicast": {
-      "default": false,
-      "title": "Enable IPv4 multicast",
-      "description": "Set to true to enable IPv4 multicast",
-      "type": "boolean"
-    },
-    "enable_ipv6_multicast": {
-      "default": false,
-      "title": "Enable IPv6 multicast",
-      "description": "Set to true to enable IPv6 multicast",
-      "type": "boolean"
-    },
-    "enable_broadcast": {
-      "default": false,
-      "title": "Enable IPv4 broadcast",
-      "description": "Set to true to enable IPv4 broadcast",
-      "type": "boolean"
-    },
-    "route_list": {
-      "title": "Route list",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "ipv6_remote_addr_prefix": {
-              "title": "IPv6 remote address prefix",
-              "type": "string"
-            },
-            "prefix_len": {
-              "title": "Prefix length",
-              "type": "number"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
+    {
+      "$ref": "input-schema-xor.json"
     }
-  }
+  ]
 }
