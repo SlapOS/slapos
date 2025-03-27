@@ -201,8 +201,16 @@ url = {{ parameter_dict['template-mariadb-initial-setup'] }}
 context = section parameter_dict init-script-parameters
 
 [{{ section('mysqld') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/mariadb
+command-line = ${mariadbd-server:output}
+hash-files =
+  ${mariadbd-server:output}
+  ${my-cnf:output}
+
+[mariadbd-server]
 recipe = slapos.recipe.template:jinja2
-output = ${directory:services}/mariadb
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/mariadbd
 url = {{ mariadb['mariadb-service-template'] }}
 environ =
   GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
@@ -560,7 +568,7 @@ context =
   key mariadb_backup_directory directory:mariadb-backup-full
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
-  key server_executable mysqld:output
+  key server_executable mariadbd-server:output
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d
