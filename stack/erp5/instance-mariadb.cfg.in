@@ -490,19 +490,6 @@ mode = 770
 [dash]
 dash = {{ dumps(dash) }}
 
-[{{ section('start-clone-from-backup') }}]
-recipe = slapos.recipe.template:jinja2
-url = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
-output = ${directory:bin}/start-clone-from-backup
-context =
-  key dash dash:dash
-  key client binary-wrap-mysql:wrapper-path
-  key data_directory my-cnf-parameters:data-directory
-  key pid_file my-cnf-parameters:pid-file
-  key server mysqld:output
-  key update update-mysql:output
-  key socket my-cnf-parameters:socket
-
 [{{ section('resiliency-after-import-script') }}]
 # Generate after import script used by importer instance of webrunner
 recipe = slapos.recipe.template:jinja2
