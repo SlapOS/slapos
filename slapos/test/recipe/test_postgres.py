@@ -36,6 +36,7 @@ class PostgresTest(unittest.TestCase):
       'services': self.services_directory,
       'superuser': 'superuser',
       'password': 'secret',
+      'max-connections': 50,
     }
     from slapos.recipe import postgres
     self.recipe = postgres.Recipe(
