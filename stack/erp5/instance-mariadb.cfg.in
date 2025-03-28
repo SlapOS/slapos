@@ -62,6 +62,18 @@
 {% set replica_skip_networking = False -%}
 {% endif -%}
 
+{#- IPv6 reverse-proxy parameters -#}
+{% set ipv6_reverse_proxy = slapparameter_dict.get('ipv6-reverse-proxy', {}) -%}
+{% set ipv6_reverse_proxy_enable = ipv6_reverse_proxy.get('enable', True) -%}
+{% if use_ipv6 or replica_skip_networking -%}
+{% set ipv6_reverse_proxy_enable = False -%}
+{% endif -%}
+{% if ipv6_reverse_proxy_enable -%}
+{% set replication_mariadb_netloc = '[%s]:%s' % (ipv6, port) -%}
+{% else -%}
+{% set replication_mariadb_netloc = '%s:%s' % (ip_as_host, port) -%}
+{% endif -%}
+
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -80,8 +92,8 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-replication-bootstrap-url = ${mariadb-backup-static-http-server:bootstrap-url}
-replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ ip_as_host }}:{{ port }}
+replication-bootstrap-url = ${mariadb-bootstrap-server-promise:bootstrap-url}
+replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ replication_mariadb_netloc }}
 {% if caucased_enable -%}
 caucased-url = {{ caucased_url }}
 {%- endif %}
@@ -562,21 +574,92 @@ sql-commands =
   START SLAVE;
 {%- endif %}
 
-[{{ section('mariadb-backup-static-server-promise') }}]
-<= monitor-promise-base
-promise = check_socket_listening
-name = mariadb_replication_bootstrap_static_server.py
-config-host = ${mariadb-backup-static-http-server:host}
-config-port = ${mariadb-backup-static-http-server:port}
-
-[{{ section('mariadb-backup-static-http-server') }}]
+[mariadb-bootstrap-server-script]
 recipe = slapos.cookbook:simplehttpserver
-wrapper = ${directory:services}/${:_buildout_section_name_}
-bootstrap-url = http://{{ ip_as_host }}:${:port}/${mariadb-backup-script:most-recent}
-host = {{ ip }}
-port = {{ port - 1 }}
+wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
 base-path = ${directory:mariadb-backup-full}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
+{% if ipv6_reverse_proxy_enable -%}
+socketpath = ${directory:run}/bootstrap.sock
+{%- else %}
+host = {{ ip }}
+port = {{ port - 1 }}
+{%- endif %}
+
+[{{ section('mariadb-bootstrap-server-service') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/mariadb-bootstrap-server
+command-line = ${mariadb-bootstrap-server-script:wrapper}
+hash-files = ${:command-line}
+
+[{{ section('mariadb-bootstrap-server-promise') }}]
+<= monitor-promise-base
+promise = check_url_available
+name = mariadb_replication_bootstrap_server.py
+{% if ipv6_reverse_proxy_enable -%}
+{% if caucased_enable -%}
+config-url = https://[{{ ipv6 }}]:{{ port - 1 }}
+config-ca-cert-file = ${caucase-mariadb-updater:ca-path}
+config-cert-file = ${caucase-mariadb-updater:crt-path}
+config-key-file = ${:config-cert-file}
+{%- else %}
+config-url = http://[{{ ipv6 }}]:{{ port - 1 }}
+{%- endif %}
+{%- else %}
+config-url = http://{{ ip_as_host }}:{{ port - 1 }}
+{%- endif %}
+bootstrap-url = ${:config-url}/${mariadb-backup-script:most-recent}
+
+{% if ipv6_reverse_proxy_enable -%}
+[haproxy-cfg]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/haproxy.cfg
+inline =
+  global
+    maxconn 128
+    master-worker
+    pidfile ${directory:run}/haproxy.pid
+    log stdout format raw daemon
+  defaults
+    timeout connect 10s
+    timeout server 305s
+    timeout client 305s
+  listen mysql
+    log global
+    bind {{ ipv6 }}:{{ port }}
+{%- if caucased_enable %}
+{#- NOT NL #} ssl crt ${caucase-mariadb-updater:crt-path}
+{#- NOT NL #} verify required
+{#- NOT NL #} ca-file ${caucase-mariadb-updater:ca-path}
+{#- NOT NL #} crl-file ${caucase-mariadb-updater:crl-path}
+{%- endif %}
+    mode tcp
+    option tcplog
+    server mariadb unix@${my-cnf-parameters:socket} send-proxy
+  listen bootstrap
+    log global
+    bind {{ ipv6 }}:{{ port - 1 }}
+{%- if caucased_enable %}
+{#- NOT NL #} ssl crt ${caucase-mariadb-updater:crt-path}
+{#- NOT NL #} alpn h2,http/1.1
+{#- NOT NL #} verify required
+{#- NOT NL #} ca-file ${caucase-mariadb-updater:ca-path}
+{#- NOT NL #} crl-file ${caucase-mariadb-updater:crl-path}
+{%- endif %}
+    mode http
+    option httplog
+    server bootstrap unix@${mariadb-bootstrap-server-script:socketpath}
+  {% raw %}{# BLANKLINE #}{% endraw %}
+
+[{{ section('haproxy') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/haproxy
+command-line =
+  "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
+    -S ${directory:run}/haproxy.sock,level,operator
+    -f "${haproxy-cfg:output}"
+hash-files = ${haproxy-cfg:output}
+{%- endif %}
 
 [{{ section('odbc-ini') }}]
 recipe = slapos.recipe.template

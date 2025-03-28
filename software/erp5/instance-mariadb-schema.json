@@ -83,6 +83,18 @@
         }
       }
     },
+    "ipv6-reverse-proxy": {
+      "description": "Parameters for IPv6 reverse-proxy for mariadb and bootstrap server",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "enable": {
+          "description": "Whether to enable IPv6 reverse-proxy",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
       "default": [
