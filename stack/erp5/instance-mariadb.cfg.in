@@ -62,6 +62,19 @@
 {% set replica_skip_networking = False -%}
 {% endif -%}
 
+{#- Haproxy parameters -#}
+{% set haproxy = slapparameter_dict.get('haproxy', {}) -%}
+{% set haproxy_enable = haproxy.get('enable', True) -%}
+{% if use_ipv6 or replica_skip_networking -%}
+{%   set haproxy_enable = False -%}
+{% endif -%}
+{% if haproxy_enable -%}
+{% set haproxy_mariadb_netloc = '%s:%s' % (ipv6, port) -%}
+{% set haproxy_bootstrap_netloc = '%s:%s' % (ipv6, port - 1) -%}
+{% set haproxy_mariadb_url = 'https://[%s]:%s' % (ipv6, port) -%}
+{% set haproxy_bootstrap_url = 'https://[%s:%s' % (ipv6, port - 1) -%}
+{% endif -%}
+
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -80,7 +93,7 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-replication-bootstrap-url = ${mariadb-backup-static-http-server:bootstrap-url}
+replication-bootstrap-url = ${mariadb-bootstrap-server:bootstrap-url}
 replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ ip_as_host }}:{{ port }}
 
 [publish-early]
@@ -564,21 +577,84 @@ sql-commands =
   START SLAVE;
 {%- endif %}
 
-[{{ section('mariadb-backup-static-server-promise') }}]
+[{{ section('mariadb-bootstrap-server-promise') }}]
 <= monitor-promise-base
-promise = check_socket_listening
-name = mariadb_replication_bootstrap_static_server.py
-config-host = ${mariadb-backup-static-http-server:host}
-config-port = ${mariadb-backup-static-http-server:port}
+promise = check_url_available
+name = mariadb_replication_bootstrap_server.py
+config-url = ${mariadb-bootstrap-server:base-url}
 
-[{{ section('mariadb-backup-static-http-server') }}]
+[mariadb-bootstrap-server]
 recipe = slapos.cookbook:simplehttpserver
-wrapper = ${directory:services}/${:_buildout_section_name_}
-bootstrap-url = http://{{ ip_as_host }}:${:port}/${mariadb-backup-script:most-recent}
-host = {{ ip }}
+wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
+base-url = https://[{{ ipv6 }}]:{{ port - 1 }}
+bootstrap-url = ${:base-url}/${mariadb-backup-script:most-recent}
+# XXX: Workaround simplehttpserver not unlinking socketpath
+# and not supporting unnamed clients
+# until simplehttpserver is fixed
+# socketpath = ${directory:run}/bootstrap.sock
+host = {{ ipv4 }}
 port = {{ port - 1 }}
 base-path = ${directory:mariadb-backup-full}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
+
+[{{ section('mariadb-bootstrap-server-service') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/mariadb-bootstrap-server
+command-line = ${mariadb-bootstrap-server:wrapper}
+hash-files = ${mariadb-bootstrap-server:wrapper}
+
+{% if haproxy_enable -%}
+[haproxy-cfg]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/haproxy.cfg
+inline =
+  global
+    maxconn 128
+    master-worker
+    pidfile ${directory:run}/haproxy.pid
+    log stdout format raw daemon
+  defaults
+    timeout connect 10s
+    timeout server 305s
+    timeout client 305s
+  listen mysql
+    log global
+    bind {{ ipv6 }}:{{ port }}
+{%- if caucased_enable %}
+{#- NOT NL #} ssl crt ${directory:mariadb-ssl}/mariadb-crt-and-key.pem
+{#- NOT NL #} alpn h2,http/1.1
+{#- NOT NL #} verify required
+{#- NOT NL #} ca-file ${directory:mariadb-ssl}/mariadb-ca.pem
+{#- NOT NL #} crl-file ${directory:mariadb-ssl}/mariadb-crl.pem
+{%- endif %}
+    mode tcp
+    option tcplog
+    server mariadb unix@${my-cnf-parameters:socket} send-proxy
+  listen bootstrap
+    log global
+    bind {{ ipv6 }}:{{ port - 1 }}
+{%- if caucased_enable %}
+{#- NOT NL #} ssl crt ${directory:mariadb-ssl}/mariadb-crt-and-key.pem
+{#- NOT NL #} alpn h2,http/1.1
+{#- NOT NL #} verify required
+{#- NOT NL #} ca-file ${directory:mariadb-ssl}/mariadb-ca.pem
+{#- NOT NL #} crl-file ${directory:mariadb-ssl}/mariadb-crl.pem
+{%- endif %}
+    mode http
+    option httplog
+    # server bootstrap unix@ dollar {mariadb-bootstrap-server:socketpath}
+    server bootstrap {{ ipv4 }}:{{ port - 1 }}
+  {% raw %}{# BLANKLINE #}{% endraw %}
+
+[{{ section('haproxy') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/haproxy
+command-line =
+  "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
+    -S ${directory:run}/haproxy.sock,level,operator
+    -f "${haproxy-cfg:output}"
+hash-files = ${haproxy-cfg:output}
+{%- endif %}
 
 [{{ section('odbc-ini') }}]
 recipe = slapos.recipe.template
