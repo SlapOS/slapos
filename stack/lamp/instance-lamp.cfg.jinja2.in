@@ -54,6 +54,7 @@ config-monitor-passwd = ${monitor-instance-parameter:password}
 config-name = ${:name}
 config-innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 1)) }}
 config-caucased = {{ dumps({'enable': False})}}
+config-ipv6-reverse-proxy = {{ dumps({'enable': False})}}
 return =
   database-list
   monitor-base-url
