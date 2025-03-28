@@ -57,6 +57,7 @@ class Recipe(GenericSlapRecipe):
           if k != 'recipe' and not k.startswith('-'))
       for k in publish:
         publish_dict[k] = section[k]
+    print('*'*20, publish_dict)
     self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
     return self.return_list
 
