@@ -86,6 +86,7 @@ bash = {{ bash_location }}
 coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
+haproxy = {{ haproxy_location }}
 gzip-location = {{ gzip_location }}
 xz-utils-location = {{ xz_utils_location }}
 mariadb = {{ dumps(mariadb) }}
