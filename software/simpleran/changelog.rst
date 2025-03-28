@@ -50,7 +50,7 @@ Version 1.0.371 (2024-10-09)
 **eNB / gNB changes:**
 
 * add compatibility with our KPI calculation and storage platform
-* support external MBMSGW
+* support setting source S1AP address and port
 * display current frequency and band
 * add promise testing if frequency is out of bounds (ORS only)
 * fix eNB configuration for 1.4MHz bandwidth
