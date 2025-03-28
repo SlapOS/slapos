@@ -19,14 +19,17 @@
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
+    "dl_frequency": {
+      "$ref": "cell/common.json#/properties/dl_frequency"
+    },
+    "nr_band": {
+      "$ref": "cell/nr/input-schema.json#/properties/nr_band"
+    },
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
     "ssb_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
-    },
-    "nr_band": {
-      "$ref": "cell/nr/input-schema.json#/properties/nr_band"
     },
     "ssb_pos_bitmap": {
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
@@ -39,8 +42,9 @@
     "cell_id": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
-    "tx_gain": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/tx_gain"
+    "tx_power_dbm": {
+      "title": "Tx Power in dBm",
+      "type": "number"
     },
     "rx_gain": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
@@ -386,7 +390,8 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/enb_stats_fetch_period"
     },
     "enb_drb_stats_enabled": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_drb_stats_enabled"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/enb_drb_stats_enabled",
+      "default": false
     },
     "max_rx_sample_db": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/max_rx_sample_db"
@@ -395,7 +400,8 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/min_rxtx_delay"
     },
     "xlog_forwarding_enabled": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+      "$ref": "instance-ors-enb-input-schema.json#/properties/xlog_forwarding_enabled",
+      "default": false
     },
     "wendelin_telecom_software_release_url": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
