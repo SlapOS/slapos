@@ -49,6 +49,10 @@
       "title": "Tx Power in dBm",
       "type": "number"
     },
+    "tx_gain": {
+      "$ref": "ru/common.json#/properties/tx_gain",
+      "description": "Obsolete, use TX Power dBm parameter instead."
+    },
     "rx_gain": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
     },
