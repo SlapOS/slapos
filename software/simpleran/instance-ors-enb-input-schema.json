@@ -40,8 +40,19 @@
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
     },
+    "dl_frequency": {
+      "title": "DL Frequency",
+      "description": "Downlink frequency of the cell",
+      "type": "number"
+    },
+    "lte_band": {
+      "title": "LTE band",
+      "description": "LTE band number",
+      "type": "integer"
+    },
     "dl_earfcn": {
-      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell. If not set, value in DL Frequency will be used instead."
     },
     "pci": {
       "$ref": "cell/common.json#/properties/pci",
@@ -59,8 +70,9 @@
       "$ref": "cell/common.json#/properties/root_sequence_index",
       "default": 204
     },
-    "tx_gain": {
-      "$ref": "ru/common.json#/properties/tx_gain"
+    "tx_power_dbm": {
+      "title": "Tx Power in dBm",
+      "type": "number"
     },
     "rx_gain": {
       "$ref": "ru/common.json#/properties/rx_gain"
