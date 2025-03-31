@@ -783,6 +783,7 @@ base-path = ${directory:public}
 wrapper = ${directory:bin}/http-server
 log-file = ${directory:log}/httpd.log
 use-hash-url = false
+allow-write = {{ slapparameter_dict.get('httpd-server-allow-write', 'false') }}
 
 [httpd-service]
 recipe = slapos.cookbook:wrapper
