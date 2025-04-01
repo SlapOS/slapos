@@ -150,12 +150,15 @@ class SimpleHTTPServerTest(unittest.TestCase):
       self.assertIn("Starting simple http server at %s" % (address,), f.read())
     return self.server_url
 
-  def tearDown(self):
+  def stopServer(self):
     if self.process:
       self.process.terminate()
       self.process.wait()
       self.process.communicate() # close pipes
       self.process = None
+
+  def tearDown(self):
+    self.stopServer()
 
   def write_should_fail(self, url, hack_path, hack_content):
     # post with multipart/form-data encoding
@@ -279,6 +282,9 @@ class SimpleHTTPServerTest(unittest.TestCase):
     socketpath = os.path.join(self.install_dir, 'http.sock')
     self.setUpRecipe({'socketpath': socketpath})
     self.assertEqual(socketpath, self.recipe.options['address'])
+    self.startServer()
+    self.stopServer()
+    self.assertTrue(os.path.exists(socketpath))
     self.startServer()
 
   def test_abstract(self):

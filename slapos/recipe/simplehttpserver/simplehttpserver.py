@@ -137,6 +137,18 @@ def run(args):
     family, _, _, _, _ = socket.getaddrinfo(host, port)[0]
   except ValueError:
     family = socket.AF_UNIX
+    if not address.startswith('\0') and os.path.exists(address):
+      try:
+        test_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        test_sock.connect(address)
+        test_sock.close()
+      except socket.error:
+        try:
+          os.unlink(address)
+        except OSError as e:
+          if e.errno != errno.ENOENT:
+            raise
+
 
   class Server(TCPServer):
     allow_reuse_address = 1 # for tests, HTTPServer in stdlib sets it too
