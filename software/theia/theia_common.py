@@ -52,9 +52,10 @@ def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbos
   command.append('--filter=-/ {}'.format(dst))
 
   command.extend(EXCLUDE_FLAGS)
-  command.extend(('--filter=-/ {}'.format(x) for x in sorted(delete)))
+  # Put ignore patterns before delete patterns, so that ignoring takes precedence
   if ignorefile:
     command.append('--filter=.-/ {}'.format(ignorefile))
+  command.extend(('--filter=-/ {}'.format(x) for x in sorted(delete)))
   command.extend(extrargs)
   command.append(verbosity)
   command.append(src)
