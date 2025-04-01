@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.406'
+version = '1.0.408'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -62,7 +62,6 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
