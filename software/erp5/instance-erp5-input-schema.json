@@ -760,6 +760,112 @@
             }
           },
           "type": "object"
+        },
+        "rate-limits": {
+          "type": "object",
+          "title": "Request rate limiting, per source IP address (unstable/experimental)",
+          "properties": {
+            "rules": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "required": [
+                      "url-path-pattern",
+                      "max-requests",
+                      "time-window"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "status-code",
+                      "max-requests",
+                      "time-window"
+                    ]
+                  }
+                ],
+                "examples": [
+                  {
+                    "table-name": "limit_unauthorized",
+                    "max-requests": 100,
+                    "time-window": "10m",
+                    "status-code": "401",
+                    "action": "deny",
+                    "expire": "10m"
+                  },
+                  {
+                    "table-name": "limit_login",
+                    "max-requests": 10,
+                    "time-window": "30s",
+                    "url-path-pattern": "^/login.*",
+                    "action": "tarpit",
+                    "expire": "1m"
+                  }
+                ],
+                "properties": {
+                  "max-requests": {
+                    "type": "integer",
+                    "description": "Maximum number of requests during the time window before triggering the action"
+                  },
+                  "time-window": {
+                    "type": "string",
+                    "description": "Time window, in milliseconds, seconds, minutes, hours or days",
+                    "pattern": "^\\d+(ms|s|m|h|d)$"
+                  },
+                  "expire": {
+                    "type": "string",
+                    "description": "Expiration time, in milliseconds, seconds, minutes, hours or days",
+                    "pattern": "^\\d+(ms|s|m|h|d)$"
+                  },
+                  "table-size": {
+                    "type": "string",
+                    "description": "Size of the haproxy stick table. Refer to haproxy `table-size` for details.",
+                    "default": "1m",
+                    "pattern": "^\\d+(k|m|g)$"
+                  },
+                  "table-name": {
+                    "type": "string",
+                    "description": "Name of the haproxy stick table. Useful for inspection and manipulation using API. If set, make sure two rules do not share the same stick table name.",
+                    "pattern": "^[a-zA-Z0-9_-]+$"
+                  },
+                  "url-path-pattern": {
+                    "type": "string",
+                    "description": "If set, rule will only be applied for requests with path matching the regular expression.",
+                    "examples": [
+                      "^/login.*"
+                    ]
+                  },
+                  "status-code": {
+                    "type": "string",
+                    "description": "HTTP status codes to consider.",
+                    "pattern": "[\\d :]",
+                    "examples": [
+                      "401 403 404",
+                      "500",
+                      "400:599"
+                    ]
+                  },
+                  "action": {
+                    "description": "Action to take, immediately deny the request with HTTP status code 429 or after the `tarpit` delay",
+                    "type": "string",
+                    "default": "deny",
+                    "enum": [
+                      "deny",
+                      "tarpit"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "tarpit-duration": {
+              "type": "string",
+              "description": "Delay to apply on rate limited responses using `tarpit` action.",
+              "default": "5s",
+              "pattern": "^\\d+(ms|s|m|h|d)$"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "type": "object"
