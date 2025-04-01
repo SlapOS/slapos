@@ -14,10 +14,10 @@ import zc.buildout.configparser
 from slapos.util import bytes2str, str2bytes
 
 
-RSYNC_FLAGS = ('-rlptgo', '--safe-links', '--stats', '--ignore-missing-args', '--delete', '--delete-excluded')
+RSYNC_FLAGS = ('-rlptgo', '--safe-links', '--stats', '--ignore-missing-args', '--delete')
 RSYNC_REGEX = '^(file has vanished: |rsync warning: some files vanished before they could be transferred)'
 EXCLUDE_PATTERNS = ('*.sock', '*.socket', '*.pid', '.installed*.cfg')
-EXCLUDE_FLAGS = ['--exclude={}'.format(x) for x in sorted(EXCLUDE_PATTERNS)]
+EXCLUDE_FLAGS = ['--filter=-s {}'.format(x) for x in sorted(EXCLUDE_PATTERNS)]
 
 
 def makedirs(path):
@@ -34,7 +34,7 @@ def copyfile(src, dst):
   shutil.copy2(src, dst)
 
 
-def copytree(rsyncbin, src, dst, exclude=(), extrargs=(), verbosity='-v'):
+def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbosity='-v'):
   # Ensure there is a trailing slash in the source directory
   # to avoid creating an additional directory level at the destination
   src = os.path.join(src, '')
@@ -52,7 +52,9 @@ def copytree(rsyncbin, src, dst, exclude=(), extrargs=(), verbosity='-v'):
   command.append('--filter=-/ {}'.format(dst))
 
   command.extend(EXCLUDE_FLAGS)
-  command.extend(('--filter=-/ {}'.format(x) for x in sorted(exclude)))
+  command.extend(('--filter=-/ {}'.format(x) for x in sorted(delete)))
+  if ignorefile:
+    command.append('--filter=.-/ {}'.format(ignorefile))
   command.extend(extrargs)
   command.append(verbosity)
   command.append(src)
