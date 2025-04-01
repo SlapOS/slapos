@@ -62,7 +62,6 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
