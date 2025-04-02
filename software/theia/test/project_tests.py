@@ -213,6 +213,16 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
       msg = "Mariadb catalog backup %s is not up to date" % mariadb_backup_dump
       self.assertIn(new_title.encode(), f.read(), msg)
 
+  def _checkSync(self):
+    super(TestTheiaResilienceERP5, self)._checkSync()
+    # Sync again and check if ZODB is not deleted and regenerated
+    zodb_path ,= glob.glob(
+      self.getPartitionPath('import', 'srv', 'runner', 'instance', '*', 'srv', 'zodb', 'root.fs')
+    )
+    zodb_ctime = os.path.getctime(zodb_path)
+    self._doSync()
+    self.assertEqual(os.path.getctime(zodb_path), zodb_ctime)
+
   def _checkTakeover(self):
     super(TestTheiaResilienceERP5, self)._checkTakeover()
 

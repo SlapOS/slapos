@@ -204,7 +204,7 @@ inline =
     fi
   fi
   echo "Restoring $zodb_path..."
-  $repozo --recover --with-verify --output="$zodb_directory/$zodb_path" --repository="$zodb_backup_directory/$storage_name"
+  $repozo --recover --quick --with-verify --output="$zodb_directory/$zodb_path" --repository="$zodb_backup_directory/$storage_name"
   CURRENT_EXIT_CODE=$?
   if [ $CURRENT_EXIT_CODE != 0 ]; then
     EXIT_CODE=$CURRENT_EXIT_CODE
