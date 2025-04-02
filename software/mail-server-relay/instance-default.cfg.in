@@ -1,0 +1,338 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+bin = ${:home}/bin
+usr = ${:home}/usr
+tmp = ${:home}/tmp
+run = ${:var}/run
+libexec = ${:usr}/libexec
+script = ${:etc}/run
+service = ${:etc}/service
+promise = ${:etc}/promise
+log = ${:var}/log
+usr-postfix = ${:usr}/postfix
+etc-postfix = ${:etc}/postfix
+var-log = ${:var}/log
+var-lib = ${:var}/lib
+var-lib-postfix = ${:var-lib}/postfix
+var-spool = ${:var}/spool
+var-spool-postfix = ${:var-spool}/postfix
+vhosts = ${:home}/vhosts
+srv = ${buildout:directory}/srv
+# Not used at buildout level, presence needed by postfix.
+var-spool-postfix-active = ${:var-spool-postfix}/active
+var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
+var-spool-postfix-corrupt = ${:var-spool-postfix}/corrupt
+var-spool-postfix-defer = ${:var-spool-postfix}/defer
+var-spool-postfix-deferred = ${:var-spool-postfix}/deferred
+var-spool-postfix-flush = ${:var-spool-postfix}/flush
+var-spool-postfix-hold = ${:var-spool-postfix}/hold
+var-spool-postfix-incoming = ${:var-spool-postfix}/incoming
+var-spool-postfix-maildrop = ${:var-spool-postfix}/maildrop
+var-spool-postfix-pid = ${:var-spool-postfix}/pid
+var-spool-postfix-private = ${:var-spool-postfix}/private
+var-spool-postfix-public = ${:var-spool-postfix}/public
+var-spool-postfix-saved = ${:var-spool-postfix}/saved
+var-spool-postfix-trace = ${:var-spool-postfix}/trace
+srv-backup = ${:srv}/backup
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = {{ slap_connection['computer-id'] }}
+partition = {{ slap_connection['partition-id'] }}
+url = {{ slap_connection['server-url'] }}
+key = {{ slap_connection['key-file'] }}
+cert = {{ slap_connection['cert-file'] }}
+
+[ca-directory]
+recipe = slapos.cookbook:mkdirectory
+root = ${directory:srv}/ssl
+requests = ${:root}/requests
+private = ${:root}/private
+certs = ${:root}/certs
+newcerts = ${:root}/newcerts
+crl = ${:root}/crl
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${ca-directory:root}
+requests-directory = ${ca-directory:requests}
+wrapper = ${directory:bin}/certificate_authority
+ca-private = ${ca-directory:private}
+ca-certs = ${ca-directory:certs}
+ca-newcerts = ${ca-directory:newcerts}
+ca-crl = ${ca-directory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${certificate-authority:wrapper}
+wrapper-path = ${directory:services}/certificate_authority
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[postfix-generate-certificate]
+# NOTE there is slapos.cookbook:certificate_authority.request but it requires
+# to start whole service and has up to 60 seconds latency to generate
+# certificate. We only need to run 1 command to do it...
+recipe  = plone.recipe.command
+stop-on-error   = true
+
+key_file    = ${certificate-authority:ca-private}/postfix.key
+cert_file   = ${certificate-authority:ca-certs}/postfix.crt
+
+command =
+    test -e ${:key_file} || \
+        ${certificate-authority:openssl-binary} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes   \
+        -keyout ${:key_file} -out ${:cert_file}
+
+update-command = ${:command}
+
+[config-base]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+extra-context =
+context =
+  section directory directory
+  section slap_configuration slap-configuration
+  import  netaddr netaddr
+  ${:extra-context}
+
+[userinfo]
+recipe = slapos.cookbook:userinfo
+
+[ethernet-ip]
+recipe = slapos.recipe.build
+init =
+  import netifaces
+  for i in netifaces.interfaces():
+      if not (i.startswith("slaptun") or i.startswith("re6stnet") or i == "lo"):
+          a = netifaces.ifaddresses(i)
+          if netifaces.AF_INET in a:
+              try:
+                  options['ipv4'] = a[netifaces.AF_INET][0]['addr']
+              except:
+                  options['ipv4'] = "0.0.0.0"
+
+{% set source_host_list = [] %}
+{% for domain in slapparameter_dict['mail_domains'] %}
+{%   set network_address = ip_module.ip_network(domain['mail_server_host'] + "/" + str(domain['mail_server_prefix_size']), strict=False) %}
+{%   do source_host_list.append("[" + str(network_address.network_address) + "]/" + str(network_address.prefixlen)) %}
+{% endfor %}
+
+[postfix-conf-main]
+<= config-base
+url = {{ postfix_main_template }}
+output = ${directory:etc-postfix}/main.cf
+extra-context =
+  key bin_directory directory:bin
+  key usr_directory directory:usr-postfix
+  key queue_directory directory:var-spool-postfix
+  key data_directory directory:var-lib-postfix
+  key spool_directory directory:var-spool
+  key vhosts_directory directory:vhosts
+  key log_directory directory:var-log
+  key mail_owner userinfo:pw-name
+  key setgid_group userinfo:gr-name
+  key ip_address slap-configuration:ipv6-random
+  key server_fqdn request-dns-entry:connection-domain
+  key sasl_passwd postfix-sasl-passwd:output
+  key transport_maps postfix-transport:output
+  raw xz_utils_location {{ xz_utils_location }}
+  raw postfix_location {{ postfix_location }}
+  key self_ipv4 slap-configuration:ipv4
+  key self_ipv6 slap-configuration:ipv6
+  raw relay_host {{ slapparameter_dict['relay_host'] }}
+  raw relay_port {{ slapparameter_dict['relay_port'] }}
+  raw mail_domains {{ slapparameter_dict['mail_domains'] | map(attribute='name') | join(',') }}
+  raw mail_hosts {{ source_host_list | join(' ') }}
+  key postfix_cert_file postfix-generate-certificate:cert_file
+  key postfix_key_file postfix-generate-certificate:key_file
+
+[postfix-conf-master]
+<= config-base
+url = {{ postfix_master_template }}
+output = ${directory:etc-postfix}/master.cf
+extra-context =
+  key smtp_port publish-connection-information:smtp-port
+  key subm_port publish-connection-information:subm-port
+
+[postfix-sasl-passwd]
+<= config-base
+url = {{ postfix_sasl_passwd_template }}
+output = ${directory:etc-postfix}/sasl_passwd
+extra-context =
+  raw relay_host {{ slapparameter_dict['relay_host'] }}
+  raw relay_port {{ slapparameter_dict['relay_port'] }}
+  raw relay_user {{ slapparameter_dict['relay_user'] }}
+  raw relay_pass {{ slapparameter_dict['relay_password'] }}
+
+[postfix-transport]
+<= config-base
+url = {{ postfix_transport_template }}
+output = ${directory:etc-postfix}/transport
+extra-context =
+  import json_module json
+  raw mail_domains {{ json_module.dumps(slapparameter_dict['mail_domains']) }}
+
+[postfix-symlinks-libexec]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr-postfix}
+link-binary =
+    {{ postfix_location }}/usr/libexec
+
+[postfix-wrapper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  rm -f var/spool/postfix/pid/master.pid
+  ${directory:usr-postfix}/libexec/postfix/master -c ${directory:etc-postfix}
+
+[postfix-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${postfix-wrapper:output}
+wrapper-path = ${directory:service}/postfix
+mode = 0775
+pidfile = ${directory:run}/postfix.pid
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
+hash-files =
+  ${postfix-conf-main:output}
+  ${postfix-wrapper:output}
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+# todo: we use same for two since it's behind a port forward anyways
+subm-port = 10025 
+smtp-port = 10025
+imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
+domain = ${request-dns-entry:connection-domain}
+
+[subm-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = subm_listen.py
+config-host = ${slap-configuration:ipv6-random}
+config-port = ${publish-connection-information:subm-port}
+
+[smtp-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = smtp_listen.py
+config-host = ${slap-configuration:ipv6-random}
+config-port = ${publish-connection-information:smtp-port}
+
+
+[request-dns-entry]
+{% if slapparameter_dict.get('request_dns', '') %}
+name = dns-mail-entry
+recipe = slapos.cookbook:request.serialised
+software-url = automated_local_dns
+software-type = core-network
+server-url = {{ slap_connection['server-url'] }}
+computer-id = {{ slap_connection['computer-id'] }}
+partition-id = {{ slap_connection['partition-id'] }}
+key-file = {{ slap_connection['key-file'] }}
+cert-file = {{ slap_connection['cert-file'] }}
+shared = true
+sla-computer_guid = {{ slap_connection['computer-id'] }}
+config-name = dns-mail-entry
+config-subdomain = mail
+config-ip = ${slap-configuration:ipv6-random}
+return = domain ip
+{% else %}
+connection-domain = mail-relay.localhost
+{% endif %}
+
+[base-wrapper]
+recipe = slapos.cookbook:wrapper
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
+
+[base-bin-wrapper]
+< = base-wrapper
+command-line = ${:path}/${:basename}
+wrapper-path = ${directory:bin}/${:basename}
+
+[base-bin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ postfix_location }}/usr/bin
+
+[base-sbin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ postfix_location }}/usr/sbin
+
+{% for extend, basename_list in (
+  (
+    'base-bin-bin-wrapper',
+    (
+      'mailq',
+      'newaliases',
+    ),
+  ),
+  (
+    'base-sbin-bin-wrapper',
+    (
+      'postcat',
+      'postconf',
+      'postdrop',
+      'postfix',
+      'postkick',
+      'postlock',
+      'postlog',
+      'postmap',
+      'postmulti',
+      'postqueue',
+      'postsuper',
+      'sendmail',
+    ),
+  ),
+) %}
+{%   for basename in basename_list -%}
+[{{ section('wrapper-' ~ basename) }}]
+< = {{ extend }}
+basename = {{ basename }}
+{%   endfor %}
+{% endfor %}
+
+[{{ section('service-postfix-master') }}]
+< = base-wrapper
+command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfix}
+wrapper-path = ${directory:run}/postfix-master
+
+[monitor-instance-parameter]
+
+[buildout]
+extends =
+  {{ template_monitor }}
+parts =
+  directory
+  postfix-generate-certificate
+  postfix-conf-main
+  postfix-conf-master
+  postfix-service
+  postfix-symlinks-libexec
+  monitor-base
+  publish-connection-information
+  certificate-authority
+  subm-listen-promise
+  smtp-listen-promise
+{% for part in part_list -%}
+{{ '    %s' % part }}
+{% endfor -%}
+{% if slapparameter_dict.get('request_dns', '') %}
+  request-dns-entry
+{% endif %}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline= true
+
+
+[instance-parameter]
