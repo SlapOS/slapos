@@ -278,11 +278,34 @@ class SimpleHTTPServerTest(unittest.TestCase):
     with open(indexpath) as f:
       self.assertEqual(f.read(), indexcontent)
 
+  def send_socket(self, address, msg):
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(2)
+    try:
+      s.connect(address)
+      s.send(msg)
+    finally:
+      s.close()
+
+  def wait_log(self, msg):
+    for i in range(20):
+      with open(self.logfile) as f:
+        log = f.read()
+      if msg in log:
+        break
+      time.sleep(i * .1)
+    self.assertIn(msg, log)
+
   def test_socketpath(self):
     socketpath = os.path.join(self.install_dir, 'http.sock')
     self.setUpRecipe({'socketpath': socketpath})
     self.assertEqual(socketpath, self.recipe.options['address'])
     self.startServer()
+    # Send invalid HTTP request to the server
+    # and check it logs it without crashing
+    self.send_socket(socketpath, b"NOT_VALID_HTTP")
+    self.wait_log("NOT_VALID_HTTP")
+    # Check server can restart when the socketpath still exists
     self.stopServer()
     self.assertTrue(os.path.exists(socketpath))
     self.startServer()
@@ -290,8 +313,13 @@ class SimpleHTTPServerTest(unittest.TestCase):
   def test_abstract(self):
     abstract = os.path.join(self.install_dir, 'abstract.http')
     self.setUpRecipe({'abstract': abstract})
-    self.assertEqual('\0' + abstract, self.recipe.options['address'])
+    address = self.recipe.options['address']
+    self.assertEqual('\0' + abstract, address)
     self.startServer()
+    # Send invalid HTTP request to the server
+    # and check it logs it without crashing
+    self.send_socket(address, b"NOT_VALID_HTTP")
+    self.wait_log("NOT_VALID_HTTP")
 
   def test_tls_self_signed(self):
     certfile = os.path.join(self.install_dir, 'cert.pem')

@@ -18,29 +18,41 @@ from . import issubpathof
 class ServerHandler(SimpleHTTPRequestHandler):
   base_path = None # set by run
   restrict_write = True # set by run
-  _additional_logs = None
+
+  def address_string(self):
+    client_address = self.client_address
+    try:
+      host, port = client_address
+      return host
+    except ValueError:
+      return str(client_address) or '<unnamed>'
 
   @contextlib.contextmanager
-  def _log_extra(self, msg):
-    self._additional_logs = msg
+  def extra_log_lines(self, lines):
+    self._extra_log_lines = lines
     try:
       yield
     finally:
-      self._additional_logs = None
+      del self._extra_log_lines
 
-  def _log(self, level, msg, *args):
-    if self._additional_logs:
-      msg += self._additional_logs
-    logging.log(level, '%s - - ' + msg, self.client_address[0], *args)
+  def log_format(self, level, msg, *args):
+    extra_lines = getattr(self, '_extra_log_lines', None)
+    if extra_lines:
+      msg = msg + '\n  ' + '\n  '.join(extra_lines)
+    logging.log(level, '%s - - ' + msg, self.address_string(), *args)
 
   def log_message(self, msg, *args):
-    self._log(logging.INFO, msg, *args)
+    self.log_format(logging.INFO, msg, *args)
 
   def log_error(self, msg, *args):
-    self._log(logging.ERROR, msg, *args)
+    self.log_format(logging.ERROR, msg, *args)
 
   def log_request(self, *args):
-    with self._log_extra('\n' + str(self.headers)):
+    headers = getattr(self, 'headers', None)
+    if headers:
+      with self.extra_log_lines(str(headers).splitlines()):
+        SimpleHTTPRequestHandler.log_request(self, *args)
+    else:
       SimpleHTTPRequestHandler.log_request(self, *args)
 
   def respond(self, code=200, type='text/html'):
