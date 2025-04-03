@@ -58,6 +58,11 @@
     "rx_gain": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
     },
+    "sdr100_offset": {
+      "title": "Expert: SDR100 Offset",
+      "description": "Offset to SDR100 board, for fine tuning the initial reference signal power value. Default is -54 for ORS 2x1W and -35 for ORS 2x0.5W",
+      "type": "number"
+    },
     "gnb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id"
     },
