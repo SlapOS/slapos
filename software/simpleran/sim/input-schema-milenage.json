@@ -4,8 +4,6 @@
   "title": "Milenage Algorithm (advanced parameters)",
   "required": [
     "sim_algo",
-    "plmn",
-    "msin",
     "opc",
     "k"
   ],
@@ -19,6 +17,9 @@
     },
     "msin": {
       "$ref": "common.json#/properties/msin"
+    },
+    "imsi": {
+      "$ref": "common.json#/properties/imsi"
     },
     "opc": {
       "$ref": "common.json#/properties/opc"

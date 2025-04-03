@@ -4,7 +4,6 @@
   "title": "Common SIM Card Parameters",
   "required": [
     "sim_algo",
-    "imsi",
     "amf",
     "sqn",
     "k",
@@ -19,9 +18,8 @@
     },
     "imsi": {
       "title": "IMSI",
-      "description": "IMSI",
-      "type": "string",
-      "default": ""
+      "description": "International mobile subscriber identity. Shall be present if PLMN or MSIN is not set.",
+      "type": "string"
     },
     "plmn": {
       "title": "PLMN",
@@ -32,14 +30,12 @@
     "msin": {
       "title": "MSIN",
       "description": "Mobile Subscriber Identification Number. Must not exceed 10 digits if PLMN has 5 digits, or 9 digits if PLMN has 6 digits.",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "opc": {
       "title": "OPC",
       "description": "Operator key preprocessed with the user secret key (as a 16 byte hexadecimal string).",
       "type": "string",
-      "default": "",
       "options": {
         "dependencies": {
           "sim_algo": "milenage"
@@ -61,25 +57,21 @@
     "k": {
       "title": "K",
       "description": "Set the user secret key (as a 16 bytes hexadecimal string, or eventually 32 bytes hexadecimal string for TUAK).",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "impu": {
       "title": "IMPU",
       "description": "sip URI or a telephone number. Note that sip URI must not include hostname. If IMPU does not start by a scheme, it is assumed to be a sip URI.",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "impi": {
       "title": "IMPI",
       "description": "Defines user IMPI. Must be fully filled with hostname if necessary.",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "domain": {
       "title": "IMS Domain",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "authent_type": {
       "title": "Authentication Type",

@@ -4,8 +4,6 @@
   "title": "XOR Algorithm (advanced parameters)",
   "required": [
     "sim_algo",
-    "plmn",
-    "msin",
     "k"
   ],
   "properties": {
@@ -18,6 +16,9 @@
     },
     "msin": {
       "$ref": "common.json#/properties/msin"
+    },
+    "imsi": {
+      "$ref": "common.json#/properties/imsi"
     },
     "k": {
       "$ref": "common.json#/properties/k"
