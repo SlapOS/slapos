@@ -642,9 +642,15 @@
       "type": "number",
       "default": 0
     },
+    "xlog_enabled": {
+      "title": "Enable eNB/gNB xlog",
+      "description": "Enable eNB/gNB statistic collection (Needed for KPI computation)",
+      "type": "boolean",
+      "default": "true"
+    },
     "xlog_forwarding_enabled": {
-      "title": "Enable eNB xlog forwarding",
-      "description": "Enable eNB xlog forwarding through fluentbit",
+      "title": "Enable eNB/gNB xlog forwarding",
+      "description": "Enable eNB/gNB xlog forwarding through fluentbit",
       "type": "boolean",
       "default": "true"
     },
