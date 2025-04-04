@@ -261,6 +261,9 @@ class TheiaImport(object):
     for f in glob.glob(os.path.join(conf_dir, '*')):
       os.remove(f)
 
+    self.log('Prune shared parts')
+    self.slapos('node', 'prune')
+
     self.log('Build Software Releases')
     for i in range(3):
       try:
