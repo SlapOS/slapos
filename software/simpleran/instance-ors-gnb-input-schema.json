@@ -407,6 +407,10 @@
     "min_rxtx_delay": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/min_rxtx_delay"
     },
+    "xlog_enabled": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled",
+      "default": false
+    },
     "xlog_forwarding_enabled": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/xlog_forwarding_enabled",
       "default": false
