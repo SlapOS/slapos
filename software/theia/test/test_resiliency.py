@@ -394,7 +394,7 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     # Create ~/exclude and ~/exclude/excluded in import partition
     excluded_path = self.getPartitionPath('import', 'exclude', 'excluded')
     self.writeFile(excluded_path,
-      'This file should be excluded from resilient restore')
+      'This file should be be kept during resilient restore (excluded from rdiff deletion)')
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
     self._doSync()
