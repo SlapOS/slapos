@@ -39,11 +39,13 @@
       "default": "10000000"
     },
     "pci": {
-      "$ref": "cell/common.json#/properties/pci",
-      "default": 500
+      "$ref": "cell/common.json#/properties/pci"
     },
     "cell_id": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
+    },
+    "root_sequence_index": {
+      "$ref": "cell/common.json#/properties/root_sequence_index"
     },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
@@ -57,8 +59,7 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/rx_gain"
     },
     "gnb_id": {
-      "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
-      "default": "0x12345"
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id"
     },
     "gnb_id_bits": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",

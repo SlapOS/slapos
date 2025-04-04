@@ -59,16 +59,14 @@
       "default": 1
     },
     "cell_id": {
-      "$ref": "cell/common.json#/properties/cell_id",
-      "default": "0x01"
+      "$ref": "cell/common.json#/properties/cell_id"
     },
     "tac": {
       "$ref": "cell/lte/input-schema.json#/properties/tac",
-      "default": "0x0001"
+      "default": 100
     },
     "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index",
-      "default": 204
+      "$ref": "cell/common.json#/properties/root_sequence_index"
     },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
@@ -82,8 +80,7 @@
       "$ref": "ru/common.json#/properties/rx_gain"
     },
     "enb_id": {
-      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
-      "default": "0x1A2D0"
+      "$ref": "instance-enb-input-schema.json#/properties/enb_id"
     },
     "gtp_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
