@@ -17,9 +17,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.enb_instance_name = 'e2e-ors70-enb-2'
             cls.core_network_instance_name = 'e2e-ors70-mme-1737037360'
             cls.core_network_sim_instance_name = 'e2e-ors70-sim-card-1737037360'
-            cls.ue_instance_name = 'e2e-sb005-ue'
-            cls.ue_cell_instance_name = 'e2e-sb005-ue-cell'
-            cls.ue_ue_instance_name = 'e2e-sb005-ue-ue'
+            cls.ue_instance_name = 'e2e-sb005-ue-tagged'
+            cls.ue_cell_instance_name = 'e2e-sb005-ue-cell-tagged'
+            cls.ue_ue_instance_name = 'e2e-sb005-ue-ue-tagged'
 
             # Retry configurations
             cls.max_retries = 1
