@@ -59,16 +59,14 @@
       "default": 1
     },
     "cell_id": {
-      "$ref": "cell/common.json#/properties/cell_id",
-      "default": "0x01"
+      "$ref": "cell/common.json#/properties/cell_id"
     },
     "tac": {
       "$ref": "cell/lte/input-schema.json#/properties/tac",
-      "default": "0x0001"
+      "default": 100
     },
     "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index",
-      "default": 204
+      "$ref": "cell/common.json#/properties/root_sequence_index"
     },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
@@ -81,9 +79,13 @@
     "rx_gain": {
       "$ref": "ru/common.json#/properties/rx_gain"
     },
+    "sdr100_offset": {
+      "title": "Expert: SDR100 Offset",
+      "description": "Offset to SDR100 board, for fine tuning the initial reference signal power value. Default is -54 for ORS 2x1W and -35 for ORS 2x0.5W",
+      "type": "number"
+    },
     "enb_id": {
-      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
-      "default": "0x1A2D0"
+      "$ref": "instance-enb-input-schema.json#/properties/enb_id"
     },
     "gtp_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
@@ -425,6 +427,9 @@
     },
     "min_rxtx_delay": {
       "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
+    },
+    "xlog_enabled": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
     },
     "xlog_forwarding_enabled": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
