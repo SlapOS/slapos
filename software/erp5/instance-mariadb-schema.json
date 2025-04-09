@@ -67,6 +67,22 @@
         }
       ]
     },
+    "caucased": {
+      "description": "Parameters for caucased server in mariadb",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "enable": {
+          "description": "Whether to enable caucased server",
+          "type": "boolean",
+          "default": true
+        },
+        "csr-to-sign": {
+          "description": "PEM-encoded string representing one or more CSRs to sign",
+          "type": "string"
+        }
+      }
+    },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
       "default": [
