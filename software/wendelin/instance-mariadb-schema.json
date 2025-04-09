@@ -51,6 +51,22 @@
         }
       ]
     },
+    "caucased": {
+      "description": "Use a caucased server to obtain certificates for mTLS. Remote services can obtain certificates by pasting their CSRs here.",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "enable": {
+          "description": "Enable an embedded caucased server running inside the mariadb partition",
+          "type": "boolean",
+          "default": true
+        },
+        "csr-to-sign": {
+          "description": "PEM-encoded string representing one or more CSRs to be signed by this caucased server",
+          "type": "string"
+        }
+      }
+    },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
       "default": [
