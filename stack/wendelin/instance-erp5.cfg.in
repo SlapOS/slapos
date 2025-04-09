@@ -154,6 +154,7 @@ config-command = ${balancer-updated-caucase-url:path}
     'monitor-base-url': False,
     'replication-bootstrap-url': True,
     'replication-primary-url': True,
+    'caucased-url': True,
   },
   key_config={'monitor-passwd': 'monitor-htpasswd:passwd'},
 ) }}
