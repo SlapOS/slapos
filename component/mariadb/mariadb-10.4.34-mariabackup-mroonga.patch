@@ -1,0 +1,24 @@
+diff --git a/extra/mariabackup/backup_copy.cc b/extra/mariabackup/backup_copy.cc
+index e8f2e7c7d56..3829a1279f9 100644
+--- a/extra/mariabackup/backup_copy.cc
++++ b/extra/mariabackup/backup_copy.cc
+@@ -825,7 +825,8 @@
+ 		return(true);
+ 	}
+ 
+-	if (filename_matches(filepath, ext_list)) {
++	if (filename_matches(filepath, ext_list) ||
++	    strstr(strrchr(filepath, OS_PATH_SEPARATOR), ".mrn")) {
+ 		return ds_data->copy_file(filepath, filepath, thread_n);
+ 	}
+ 
+@@ -857,7 +858,8 @@
+ 		return(true);
+ 	}
+ 
+-	if (filename_matches(filepath, ext_list)) {
++	if (filename_matches(filepath, ext_list) ||
++	    strstr(strrchr(filepath, OS_PATH_SEPARATOR), ".mrn")) {
+ 		fprintf(f, "%s\n", filepath);
+ 		if (save_to_list) {
+ 			rsync_list.insert(filepath);
