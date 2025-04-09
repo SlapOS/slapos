@@ -1,0 +1,14 @@
+diff --git a/extra/mariabackup/backup_copy.cc b/extra/mariabackup/backup_copy.cc
+index e8f2e7c7d56..3829a1279f9 100644
+--- a/extra/mariabackup/backup_copy.cc
++++ b/extra/mariabackup/backup_copy.cc
+@@ -940,7 +940,8 @@ datafile_copy_backup(ds_ctxt *ds_data, const char *filepath, uint thread_n)
+ 		return(true);
+ 	}
+ 
+-	if (filename_matches(filepath, ext_list)) {
++	if (filename_matches(filepath, ext_list) ||
++	    strstr(strrchr(filepath, OS_PATH_SEPARATOR), ".mrn")) {
+ 		return ds_data->copy_file(filepath, filepath, thread_n);
+ 	}
+ 
