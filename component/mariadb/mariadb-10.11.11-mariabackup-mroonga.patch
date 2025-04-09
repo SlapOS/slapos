@@ -1,0 +1,84 @@
+diff --git a/extra/mariabackup/backup_copy.cc b/extra/mariabackup/backup_copy.cc
+index e837f7c74b6..7146eae33cf 100644
+--- a/extra/mariabackup/backup_copy.cc
++++ b/extra/mariabackup/backup_copy.cc
+@@ -1347,6 +1347,8 @@ backup_files(ds_ctxt *ds_data, const char *from)
+ 			}
+ 		}
+ 	}
++	if (!backup_mroonga_files_from_datadir(ds_data, from))
++		goto out;
+ 	msg("Finished backing up non-InnoDB tables and files");
+ out:
+ 	datadir_iter_free(it);
+@@ -1513,7 +1515,9 @@ ibx_copy_incremental_over_full()
+ 						      "aws-kms-key")) ||
+ 		    !(ret = backup_files_from_datadir(ds_data,
+ 						      xtrabackup_incremental_dir,
+-						      "aria_log")))
++						      "aria_log")) ||
++		    !(ret = backup_mroonga_files_from_datadir(ds_data,
++						      xtrabackup_incremental_dir)))
+ 			goto cleanup;
+ 
+ 		/* copy supplementary files */
+@@ -2076,6 +2080,46 @@ bool backup_files_from_datadir(ds_ctxt_t *ds_data,
+ 	return ret;
+ }
+ 
++bool backup_mroonga_files_from_datadir(ds_ctxt_t *ds_data,
++                                       const char *dir_path)
++{
++	os_file_dir_t dir = os_file_opendir(dir_path);
++	if (dir == IF_WIN(INVALID_HANDLE_VALUE, nullptr)) return false;
++
++	os_file_stat_t info;
++	bool ret = true;
++	while (os_file_readdir_next_file(dir_path, dir, &info) == 0) {
++
++		if (info.type != OS_FILE_TYPE_FILE)
++			continue;
++
++		const char *pname = strrchr(info.name, '/');
++#ifdef _WIN32
++		if (const char *last = strrchr(info.name, '\\')) {
++			if (!pname || last >pname) {
++				pname = last;
++			}
++		}
++#endif
++		if (!pname)
++			pname = info.name;
++
++		if (!strstr(pname, ".mrn"))
++			continue;
++
++		if (xtrabackup_prepare && xtrabackup_incremental_dir &&
++			file_exists(info.name))
++			unlink(info.name);
++
++		std::string full_path(dir_path);
++		full_path.append(1, '/').append(info.name);
++		if (!(ret = ds_data->copy_file(full_path.c_str() , info.name, 1)))
++			break;
++	}
++	os_file_closedir(dir);
++	return ret;
++}
++
+ 
+ static int rocksdb_remove_checkpoint_directory()
+ {
+diff --git a/extra/mariabackup/backup_copy.h b/extra/mariabackup/backup_copy.h
+index 869bfff19a3..2bf663ce4b8 100644
+--- a/extra/mariabackup/backup_copy.h
++++ b/extra/mariabackup/backup_copy.h
+@@ -60,6 +60,8 @@ const char *trim_dotslash(const char *path);
+ bool backup_files_from_datadir(ds_ctxt_t *ds_data,
+                                const char *dir_path,
+                                const char *prefix);
++bool backup_mroonga_files_from_datadir(ds_ctxt_t *ds_data,
++                                       const char *dir_path);
+ 
+ bool is_system_table(const char *dbname, const char *tablename);
+ std::unique_ptr<std::vector<std::string>>
