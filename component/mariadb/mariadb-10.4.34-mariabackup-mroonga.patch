@@ -1,0 +1,75 @@
+diff --git a/extra/mariabackup/backup_copy.cc b/extra/mariabackup/backup_copy.cc
+index e8f2e7c7d56..d73ab4b1646 100644
+--- a/extra/mariabackup/backup_copy.cc
++++ b/extra/mariabackup/backup_copy.cc
+@@ -134,6 +134,9 @@ static bool backup_files_from_datadir(ds_ctxt_t *ds_data,
+                                       const char *dir_path,
+                                       const char *prefix);
+ 
++static bool backup_mroonga_files_from_datadir(ds_ctxt_t *ds_data,
++                                              const char *dir_path);
++
+ /************************************************************************
+ Retirn true if character if file separator */
+ bool
+@@ -1437,6 +1440,9 @@ backup_files(ds_ctxt *ds_data, const char *from, bool prep_mode)
+ 		}
+ 	}
+ 
++	if (!backup_mroonga_files_from_datadir(ds_data, from))
++		goto out;
++
+ 	msg("Finished %s non-InnoDB tables and files",
+ 	       prep_mode ? "a prep copy of" : "backing up");
+ 
+@@ -1725,7 +1731,9 @@ ibx_copy_incremental_over_full()
+ 						      "aws-kms-key")) ||
+ 		    !(ret = backup_files_from_datadir(ds_data,
+ 						      xtrabackup_incremental_dir,
+-						      "aria_log")))
++						      "aria_log")) ||
++		    !(ret = backup_mroonga_files_from_datadir(ds_data,
++						      xtrabackup_incremental_dir)))
+ 			goto cleanup;
+ 
+ 		/* copy supplementary files */
+@@ -2307,6 +2315,39 @@ static bool backup_files_from_datadir(ds_ctxt_t *ds_data,
+ 	return ret;
+ }
+ 
++static bool backup_mroonga_files_from_datadir(ds_ctxt_t *ds_data,
++                                              const char *dir_path)
++{
++	os_file_dir_t dir = os_file_opendir(dir_path);
++	if (dir == IF_WIN(INVALID_HANDLE_VALUE, nullptr)) return false;
++
++	os_file_stat_t info;
++	bool ret = true;
++	while (os_file_readdir_next_file(dir_path, dir, &info) == 0) {
++
++		if (info.type != OS_FILE_TYPE_FILE)
++			continue;
++
++		const char *pname = strrchr(info.name, OS_PATH_SEPARATOR);
++		if (!pname)
++			pname = info.name;
++
++		if (!strstr(pname, ".mrn"))
++			continue;
++
++		if (xtrabackup_prepare && xtrabackup_incremental_dir &&
++			file_exists(info.name))
++			unlink(info.name);
++
++		std::string full_path(dir_path);
++		full_path.append(1, OS_PATH_SEPARATOR).append(info.name);
++		if (!(ret = ds_data->copy_file(full_path.c_str() , info.name, 1)))
++			break;
++	}
++	os_file_closedir(dir);
++	return ret;
++}
++
+ 
+ static int rocksdb_remove_checkpoint_directory()
+ {
