@@ -63,6 +63,7 @@ config-command = '{{ buildout_bin_directory }}/caucase-probe' 'http://{{ netloc 
   mode='service',
   template_csr=None,
   template_csr_pem=None,
+  openssl_req_options='-subj /CN=example.com',
   openssl=None,
   promise=True
 ) -%}
@@ -101,7 +102,7 @@ output = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
 recipe = plone.recipe.command
 command =
   if [ ! -f '{{ key_path or crt_path }}' ] && [ ! -f '${:csr}' ] ; then
-    '{{ openssl }}' req -newkey rsa -batch -new -sha256 -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+    '{{ openssl }}' req -newkey rsa -batch -new -sha256 -nodes {{ openssl_req_options }} -keyout '{{ key_path or crt_path }}' -out '${:csr}'
   fi
 {%-   endif %}
 csr = ${ {{- prefix }}-directory:data-dir}/good.csr.pem
@@ -127,7 +128,7 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
 promise = check_certificate
 name = {{ prefix }}.py
 config-certificate = {{ crt_path }}
-config-key = {{ key_path }}
+config-key = {{ key_path or crt_path }}
 config-certificate-expiration-days = 15
 {%- endif %}
 {%- endmacro %}
@@ -146,4 +147,24 @@ command =
   fi
 update-command = ${:command}
 stop-on-error = True
+{%- endmacro %}
+
+{% macro sign_csr(
+  prefix,
+  buildout_bin_directory,
+  sign_csr_path,
+  ca_url,
+  ca_crt,
+  user_key,
+  csr_path
+) -%}
+
+[{{ prefix }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = {{ sign_csr_path }}
+command-line = '{{ buildout_bin_directory }}/caucase-sign-csr'
+  --ca-url '{{ ca_url }}'
+  --ca-crt '{{ ca_crt }}'
+  --user-key '{{ user_key }}'
+  --csr-path '{{ csr_path}}'
 {%- endmacro %}
