@@ -127,7 +127,7 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
 promise = check_certificate
 name = {{ prefix }}.py
 config-certificate = {{ crt_path }}
-config-key = {{ key_path }}
+config-key = {{ key_path or crt_path }}
 config-certificate-expiration-days = 15
 {%- endif %}
 {%- endmacro %}
@@ -146,4 +146,24 @@ command =
   fi
 update-command = ${:command}
 stop-on-error = True
+{%- endmacro %}
+
+{% macro sign_csr(
+  prefix,
+  buildout_bin_directory,
+  sign_csr_path,
+  ca_url,
+  ca_crt,
+  user_key,
+  csr_path
+) -%}
+
+[{{ prefix }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = {{ sign_csr_path }}
+command-line = '{{ buildout_bin_directory }}/caucase-sign-csr'
+  --ca-url '{{ ca_url }}'
+  --ca-crt '{{ ca_crt }}'
+  --user-key '{{ user_key }}'
+  --csr-path '{{ csr_path}}'
 {%- endmacro %}

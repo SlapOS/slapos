@@ -1,6 +1,7 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+
+{#- Mariadb parameters -#}
 {% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure', 'with-process-privilege': True}]) -%}
 {% set test_database_list = [] %}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
@@ -10,16 +11,40 @@
 {% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
 {% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
 {% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
-{% set port = slapparameter_dict['tcpv4-port'] %}
-{% if use_ipv6 -%}
-{%   set ip = (ipv6_set | list)[0] -%}
-{%   set ip_as_host = '[%s]' % ip -%}
-{% else -%}
-{%   set ip = (ipv4_set | list)[0] -%}
-{%   set ip_as_host = ip -%}
-{% endif -%}
+
+{#- Binaries -#}
 {% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
+
+{#- Network parameters -#}
+{% set port = slapparameter_dict['tcpv4-port'] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% if use_ipv6 -%}
+{%   set ip = ipv6 -%}
+{%   set ip_as_host = '[%s]' % ip -%}
+{% else -%}
+{%   set ip = ipv4 -%}
+{%   set ip_as_host = ip -%}
+{% endif -%}
+
+{#- Legacy SSL parameters -#}
+{% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
+
+{#- Caucase parameters -#}
+{% import "caucase" as caucase with context %}
+{% set caucased = slapparameter_dict.get('caucased', {}) -%}
+{% set caucased_enable = caucased.get('enable', True) -%}
+{% set caucased_csr_to_sign = caucased.get('csr-to-sign', '') -%}
+{% if ssl_parameter_dict -%}
+{%   set caucased_enable = False -%}
+{% endif -%}
+{% if caucased_enable -%}
+{# caucased https port is implicitly port - 3 + 1, i.e. port - 2 -#}
+{% set caucased_netloc = '[%s]:%s' % (ipv6, port - 3) -%}
+{% set caucased_url = 'http://' + caucased_netloc -%}
+{% endif -%}
 
 {#- Replication parameters -#}
 {% set replication = slapparameter_dict.get('replication', {}) -%}
@@ -93,7 +118,6 @@ mode = {{ mode }}
 {%   do ssl_dict.__setitem__(key, path) -%}
 {{   simplefile('ssl-file-' ~ key, path, content, mode) }}
 {%- endmacro %}
-{% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
 {% if ssl_parameter_dict -%}
 {%   set base_directory = '${directory:mariadb-ssl}/' -%}
 {# Note: The key content will be stored in .installed.cfg, and this template's
@@ -107,6 +131,71 @@ about laxist file mode. -#}
 {%   if 'crl' in ssl_parameter_dict -%}
 {{     sslfile('crl', ssl_parameter_dict['crl']) }}
 {%   endif -%}
+{%- endif %}
+
+{% if caucased_enable -%}
+{{  caucase.caucased(
+      prefix='caucased-mariadb',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      caucased_path='${directory:services}/caucased',
+      data_dir='${directory:caucased}',
+      netloc='[%s]:%s' % (ipv6, port - 3),
+      tmp='${directory:tmp}',
+      service_auto_approve_count=1,
+      user_auto_approve_count=1,
+)}}
+{%-   do section('caucased-mariadb') %}
+{%-   do section('caucased-mariadb-promise') %}
+
+{{  caucase.updater(
+      prefix='caucase-admin-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-admin-updater',
+      url=caucased_url,
+      data_dir='${directory:caucase-admin-updater}',
+      ca_path='${directory:caucase-ssl}/admin-ca.pem',
+      crl_path='${directory:caucase-ssl}/admin-crl.pem',
+      crt_path='${directory:caucase-ssl}/admin-crt-and-key.pem',
+      mode='user',
+      openssl='${binary-link:target-directory}/openssl',
+)}}
+{%-   do section('caucase-admin-updater') %}
+{%-   do section('caucase-admin-updater-promise') %}
+
+{{  caucase.updater(
+      prefix='caucase-mariadb-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-mariadb-updater',
+      url=caucased_url,
+      data_dir='${directory:caucase-mariadb-updater}',
+      ca_path='${directory:mariadb-ssl}/mariadb-ca.pem',
+      crl_path='${directory:mariadb-ssl}/mariadb-crl.pem',
+      crt_path='${directory:mariadb-ssl}/mariadb-crt-and-key.pem',
+      mode='service',
+      openssl='${binary-link:target-directory}/openssl',
+)}}
+{%-   do section('caucase-mariadb-updater') %}
+{%-   do section('caucase-mariadb-updater-promise') %}
+
+[caucase-csr-to-sign]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/csr_to_sign.pem
+csr-to-sign = {{ dumps(caucased_csr_to_sign) }}
+context =
+  key csr_pem :csr-to-sign
+inline =
+  {% raw %}{{ csr_pem }}{% endraw %}
+
+{{  caucase.sign_csr(
+      prefix='caucase-sign-csr',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      sign_csr_path='${directory:services}/caucase-sign-csr',
+      ca_url=caucased_url,
+      ca_crt='${directory:mariadb-ssl}/mariadb-ca.pem',
+      user_key='${directory:caucase-ssl}/admin-crt-and-key.pem',
+      csr_path='${caucase-csr-to-sign:output}'
+)}}
+{%-   do section('caucase-sign-csr') %}
 {%- endif %}
 
 {% if full_backup_retention_days > -1 -%}
@@ -549,10 +638,15 @@ backup = ${:srv}/backup
 mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
 mariadb-ssl = ${:etc}/mariadb-ssl
+caucase-ssl = ${:etc}/caucase-ssl
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
 slowquery = ${monitor-directory:private}/slowquery_digest
+caucase = ${:srv}/caucase
+caucased = ${:caucase}/caucased
+caucase-admin-updater = ${:caucase}/admin-updater
+caucase-mariadb-updater = ${:caucase}/mariadb-updater
 
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
