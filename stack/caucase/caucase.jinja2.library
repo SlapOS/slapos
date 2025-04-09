@@ -127,7 +127,7 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
 promise = check_certificate
 name = {{ prefix }}.py
 config-certificate = {{ crt_path }}
-config-key = {{ key_path }}
+config-key = {{ key_path or crt_path }}
 config-certificate-expiration-days = 15
 {%- endif %}
 {%- endmacro %}

@@ -200,6 +200,8 @@ extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
     import urllib_parse six.moves.urllib.parse
     import six_moves six.moves
+import-list =
+    file caucase context:caucase-jinja2-library
 
 # Keep a section for backward compatibility for removed types
 # Once the section is removed, ghost instances will keep failing until

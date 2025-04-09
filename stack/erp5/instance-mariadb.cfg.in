@@ -1,6 +1,8 @@
+{% import "caucase" as caucase with context %}
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+
+{#- Mariadb parameters -#}
 {% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure', 'with-process-privilege': True}]) -%}
 {% set test_database_list = [] %}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
@@ -10,9 +12,16 @@
 {% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
 {% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
 {% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
+
+{#- Binaries -#}
+{% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
+
+{#- Network parameters -#}
 {% set port = slapparameter_dict['tcpv4-port'] %}
 {% set ipv6 = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% if use_ipv6 -%}
 {%   set ip = ipv6 -%}
 {%   set ip_as_host = '[%s]' % ip -%}
@@ -20,8 +29,6 @@
 {%   set ip = ipv4 -%}
 {%   set ip_as_host = ip -%}
 {% endif -%}
-{% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
-{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
 
 {#- Replication parameters -#}
 {% set replication = slapparameter_dict.get('replication', {}) -%}
@@ -109,6 +116,55 @@ about laxist file mode. -#}
 {%   if 'crl' in ssl_parameter_dict -%}
 {{     sslfile('crl', ssl_parameter_dict['crl']) }}
 {%   endif -%}
+{%- endif %}
+
+{% if not ssl_dict -%}
+{# caucased https port is implicitly port - 2 -#}
+{% set caucased_netloc = '[%s]:%s' % (ipv6, port - 3) -%}
+{% set caucased_url = 'http://' + caucased_netloc -%}
+{{  caucase.caucased(
+      prefix='caucased-mariadb',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      caucased_path='${directory:services}/caucased',
+      data_dir='${directory:caucased}',
+      netloc='[%s]:%s' % (ipv6, port - 3),
+      tmp='${directory:tmp}',
+      service_auto_approve_count=1,
+      user_auto_approve_count=1,
+)}}
+{%-   do section('caucased-mariadb') %}
+{%-   do section('caucased-mariadb-promise') %}
+
+{{  caucase.updater(
+      prefix='caucase-admin-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-admin-updater',
+      url=caucased_url,
+      data_dir='${directory:caucase-admin-updater}',
+      ca_path='${directory:caucase-ssl}/admin-ca.pem',
+      crl_path='${directory:caucase-ssl}/admin-crl.pem',
+      crt_path='${directory:caucase-ssl}/admin-crt-and-key.pem',
+      mode='user',
+      openssl='${binary-link:target-directory}/openssl',
+)}}
+{%-   do section('caucase-admin-updater') %}
+{%-   do section('caucase-admin-updater-promise') %}
+
+{{  caucase.updater(
+      prefix='caucase-mariadb-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-mariadb-updater',
+      url=caucased_url,
+      data_dir='${directory:caucase-mariadb-updater}',
+      ca_path='${directory:mariadb-ssl}/mariadb-ca.pem',
+      crl_path='${directory:mariadb-ssl}/mariadb-crl.pem',
+      crt_path='${directory:mariadb-ssl}/mariadb-crt.pem',
+      key_path='${directory:mariadb-ssl}/mariadb-key.pem',
+      mode='service',
+      openssl='${binary-link:target-directory}/openssl',
+)}}
+{%-   do section('caucase-mariadb-updater') %}
+{%-   do section('caucase-mariadb-updater-promise') %}
 {%- endif %}
 
 {% if full_backup_retention_days > -1 -%}
@@ -600,10 +656,15 @@ backup = ${:srv}/backup
 mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
 mariadb-ssl = ${:etc}/mariadb-ssl
+caucase-ssl = ${:etc}/caucase-ssl
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
 slowquery = ${monitor-directory:private}/slowquery_digest
+caucase = ${:srv}/caucase
+caucased = ${:caucase}/caucased
+caucase-admin-updater = ${:caucase}/admin-updater
+caucase-mariadb-updater = ${:caucase}/mariadb-updater
 
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
