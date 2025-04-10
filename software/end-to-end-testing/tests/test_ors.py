@@ -14,6 +14,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
 
             cls.logger.info("Setting up class")
 
+            # 1744295159
             cls.enb_instance_name = 'e2e-ors70-enb-2'
             cls.core_network_instance_name = 'e2e-ors70-mme-1737037360'
             cls.core_network_sim_instance_name = 'e2e-ors70-sim-card-1737037360'
