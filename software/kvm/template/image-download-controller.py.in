@@ -77,6 +77,8 @@ if __name__ == "__main__":
       #       Of course, someone nasty can come to the partition and damage
       #       this image, but it's another story, and shall not be fixed
       #       during download phase.
+      #       Note also that is the destination is a symlink and the symlink is
+      #       broken os.path.exists will return False
       print('INF: %s : already downloaded' % (image['url'],))
       continue
     # key is str, as the dict is dumped to JSON which does not accept tuples
@@ -90,39 +92,59 @@ if __name__ == "__main__":
       continue
     print('INF: %s : Downloading' % (image['url'],))
     download_success = True
-    destination_tmp = os.path.join(
-      config['destination-directory'], image['destination-tmp'])
-    try:
-      subprocess.check_output([
-        curl,
-        '--location',  # follow redirects
-        '--no-progress-meter',  # do not tell too much
-        '--max-time', '14400',  # maximum time for download is 4 hours
-        '--max-filesize', '21474836480',  # maximum 20GB for an image
-        '--output', destination_tmp, image['url']],
-        stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-      error_list.append('ERR: %s : Problem while downloading: %r' % (
-        image['url'], e.output.strip()))
-      continue
-    if not(os.path.exists(destination_tmp)):
-      error_list.append('ERR: %s : Image disappeared, will retry later')
-      continue
-    computed_md5sum = md5Checksum(destination_tmp)
-    if computed_md5sum != image['md5sum']:
+    if not image['url'].startswith('file://'):
+      # let curl handle it
+      destination_tmp = os.path.join(
+        config['destination-directory'], image['destination-tmp'])
       try:
-        os.remove(destination_tmp)
-      except Exception:
-        pass
-      error_list.append(
-        'ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
-          image['url'], image['md5sum'], computed_md5sum))
-      # Store yet another failure while computing md5sum for this
-      new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
+        subprocess.check_output([
+          curl,
+          '--location',  # follow redirects
+          '--no-progress-meter',  # do not tell too much
+          '--max-time', '14400',  # maximum time for download is 4 hours
+          '--max-filesize', '21474836480',  # maximum 20GB for an image
+          '--output', destination_tmp, image['url']],
+          stderr=subprocess.STDOUT)
+      except subprocess.CalledProcessError as e:
+        error_list.append('ERR: %s : Problem while downloading: %r' % (
+          image['url'], e.output.strip()))
+        continue
+      if not(os.path.exists(destination_tmp)):
+        error_list.append('ERR: %s : Image disappeared, will retry later')
+        continue
+      computed_md5sum = md5Checksum(destination_tmp)
+      if computed_md5sum != image['md5sum']:
+        try:
+          os.remove(destination_tmp)
+        except Exception:
+          pass
+        error_list.append(
+          'ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
+            image['url'], image['md5sum'], computed_md5sum))
+        # Store yet another failure while computing md5sum for this
+        new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
+      else:
+        os.rename(destination_tmp, destination)
+        print('INF: %s : Stored with checksum %s' % (
+          image['url'], image['md5sum']))
     else:
-      os.rename(destination_tmp, destination)
-      print('INF: %s : Stored with checksum %s' % (
-        image['url'], image['md5sum']))
+      # simply compute the md5sum and if it is OK do a symlink
+      computed_md5sum = md5Checksum(image['url'][7:])
+      if computed_md5sum != image['md5sum']:
+        error_list.append(
+          'ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
+            image['url'], image['md5sum'], computed_md5sum))
+        # Store yet another failure while computing md5sum for this
+        new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
+      else:
+        try:
+          # delete the symlink if it already exists from a previous SR
+          os.remove(destination)
+        except FileNotFoundError:
+          pass
+        os.symlink(image['url'][7:], destination)
+        print('INF: %s : Symlinked with checksum %s' % (
+          image['url'], image['md5sum']))
   with open(md5sum_fail_file, 'w') as fh:
     if new_md5sum_state_dict != {}:
       json.dump(new_md5sum_state_dict, fh, indent=2)
