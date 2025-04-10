@@ -1,18 +1,7 @@
-From c5a43f8ac6cd4b690e83d0fe883939c670242d79 Mon Sep 17 00:00:00 2001
-From: Kazuhiko Shiozaki <kazuhiko@nexedi.com>
-Date: Mon, 29 Sep 2014 09:42:24 +0200
-Subject: [PATCH] add a temporary patch to respect more tokens in natural
- language mode.
-
----
- lib/ii.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/lib/ii.c b/lib/ii.c
-index 70c50720b..be994b301 100644
---- a/lib/ii.c
-+++ b/lib/ii.c
-@@ -12830,7 +12830,9 @@ grn_ii_similar_search_internal(grn_ctx *ctx, grn_ii_select_data *data)
+diff -ur groonga-15.0.4.orig/lib/ii.cpp groonga-15.0.4/lib/ii.cpp
+--- groonga-15.0.4.orig/lib/ii.cpp	2025-03-28 09:35:27.008520315 +0200
++++ groonga-15.0.4/lib/ii.cpp	2025-04-10 22:03:55.758925164 +0300
+@@ -12499,7 +12499,9 @@
              ? ((uint32_t)(data->optarg->similarity_threshold) > GRN_HASH_SIZE(h)
                   ? GRN_HASH_SIZE(h)
                   : (uint32_t)(data->optarg->similarity_threshold))
@@ -23,6 +12,3 @@ index 70c50720b..be994b301 100644
    if (GRN_HASH_SIZE(h)) {
      grn_id j, id;
      float w2;
--- 
-2.42.0
-
