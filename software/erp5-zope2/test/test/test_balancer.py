@@ -438,7 +438,7 @@ class TestBalancer(BalancerTestCase):
     # real time statistics can be obtained by using the stats socket and there
     # is a wrapper which makes this a bit easier.
     socat_process = subprocess.Popen(
-        [self.computer_partition_root_path + '/bin/haproxy-socat-stats'],
+        [self.computer_partition_root_path / 'bin/haproxy-socat-stats'],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT

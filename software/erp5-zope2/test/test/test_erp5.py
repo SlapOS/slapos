@@ -260,7 +260,7 @@ class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMi
 
   def test_test_runner_configuration_json_file(self):
     runUnitTest_script, = glob.glob(
-        self.computer_partition_root_path + "/../*/bin/runUnitTest.real")
+        self.computer_partition_root_path / "../*/bin/runUnitTest.real")
     config_file = None
     with open(runUnitTest_script) as f:
       for line in f:
@@ -287,7 +287,7 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     # self.computer_partition_root_path is the path of root partition.
     # we want to assert that no scripts exist in any partition.
     bin_programs = list(map(os.path.basename,
-      glob.glob(self.computer_partition_root_path + "/../*/bin/*")))
+      glob.glob(self.computer_partition_root_path / "../*/bin/*")))
 
     self.assertTrue(bin_programs) # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)
