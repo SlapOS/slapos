@@ -251,12 +251,11 @@
     },
     "health-check-http-version": {
       "title": "Health Check HTTP Version",
-      "description": "A HTTP version to use to check the backend, unused in case of CONNECT.",
+      "description": "HTTP version to use to check the backend, unused in case of CONNECT. For now only HTTP/1.0 is supported.",
       "enum": [
-        "HTTP/1.1",
         "HTTP/1.0"
       ],
-      "default": "HTTP/1.1",
+      "default": "HTTP/1.0",
       "type": "string"
     },
     "health-check-timeout": {
