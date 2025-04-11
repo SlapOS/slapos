@@ -256,7 +256,7 @@
         "HTTP/1.1",
         "HTTP/1.0"
       ],
-      "default": "HTTP/1.1",
+      "default": "HTTP/1.0",
       "type": "string"
     },
     "health-check-timeout": {
