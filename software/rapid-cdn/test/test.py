@@ -7018,7 +7018,7 @@ backend _health-check-default-http
   retries 3
   server _health-check-default-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
-  option httpchk GET / HTTP/1.1
+  option httpchk GET / HTTP/1.0
   timeout check 2s""" % (backend, )
     }
 
