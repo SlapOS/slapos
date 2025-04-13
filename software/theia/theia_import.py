@@ -77,9 +77,9 @@ class TheiaImport(object):
     return os.path.abspath(os.path.join(
       self.root_dir, os.path.relpath(src, start=self.backup_dir)))
 
-  def restore_tree(self, dst, exclude=(), extrargs=(), verbosity='-v'):
+  def restore_tree(self, dst, delete=(), ignorefile=None, extrargs=(), verbosity='-v'):
     src = self.mirror_path(dst)
-    return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
+    return copytree(self.rsync_bin, src, dst, delete, ignorefile, extrargs, verbosity)
 
   def restore_file(self, dst, fail_if_missing=False):
     src = self.mirror_path(dst)
@@ -98,7 +98,9 @@ class TheiaImport(object):
   def restore_partition(self, mirror_partition):
     p = self.dst_path(mirror_partition)
     installed = parse_installed(p) if os.path.exists(p) else []
-    copytree(self.rsync_bin, mirror_partition, p, exclude=installed)
+    rules = os.path.join(p, 'srv', 'exporter.exclude')
+    ignorefile = rules if os.path.exists(rules) else None
+    copytree(self.rsync_bin, mirror_partition, p, delete=installed, ignorefile=ignorefile)
 
   def supervisorctl(self, *args):
     supervisor_command = (self.supervisorctl_bin, '-c', self.supervisord_conf)
