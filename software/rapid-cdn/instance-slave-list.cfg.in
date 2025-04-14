@@ -183,7 +183,7 @@ context =
 {%-       do slave_instance.__setitem__('health-check-http-method', 'GET') %}
 {%-     endif %}
 {%-     if 'health-check-http-version' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-http-version', 'HTTP/1.1') %}
+{%-       do slave_instance.__setitem__('health-check-http-version', 'HTTP/1.0') %}
 {%-     endif %}
 {%-     if 'health-check-interval' not in slave_instance %}
 {%-       do slave_instance.__setitem__('health-check-interval', '5') %}
