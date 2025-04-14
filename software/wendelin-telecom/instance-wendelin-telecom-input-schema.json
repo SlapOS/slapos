@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "gateway-host": {
+      "title": "Fluentd gateway address",
       "description": "Address of the instance's fluentd gateway",
       "type": "string"
     }
