@@ -187,7 +187,6 @@ subm_port = 587
 smtp-port = 25
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
 domain = ${request-dns-entry:connection-domain}
-backup-crontab = ${postgresql-backup-crontab-entry:name}
 
 [subm-listen-promise]
 <= monitor-promise-base
@@ -282,7 +281,6 @@ command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfi
 wrapper-path = ${directory:run}/postfix-master
 
 [monitor-instance-parameter]
-#monitor-httpd-port = ${apache-network-configuration:listening-port}
 
 [buildout]
 extends =
