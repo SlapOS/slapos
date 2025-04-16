@@ -114,7 +114,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup-expire
 time = {{ dumps(backup_periodicity) }}
-command = ${directory:bin}/restic forget --keep-daily {{ full_backup_retention_days }} --insecure-no-password -r ${directory:mariadb-backup-restic}
+command = ${directory:bin}/restic forget --prune --keep-daily {{ full_backup_retention_days }} --insecure-no-password -r ${directory:mariadb-backup-restic}
 {%- endif %}
 {%- endif %}
 
