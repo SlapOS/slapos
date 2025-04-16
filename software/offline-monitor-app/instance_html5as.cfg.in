@@ -148,14 +148,16 @@ default_index_html = ${default_index_html:output}
 # it's content will be served by the instance.
 # If the parameter is not provided it fallback to the default template
 install =
-  import os, shutil
+  import os, shutil, zipfile
   if self.options['archive']:
     # Create a directory and extract the file that are compressed inside
-    extract_dir = self.extract(self.options['archive'])
+    #extract_dir = self.extract(self.options['archive'])
+    with zipfile.ZipFile(self.options['archive'], 'r') as zip_ref:
+        zip_ref.extractall(location)
     # Return the right directory path
-    workdir = guessworkdir(extract_dir)
+    #workdir = guessworkdir(extract_dir)
     # Recursively copy directory
-    self.copyTree(workdir, location)
+    #self.copyTree(workdir, location)
   else:
     # Create directory and copy the default template inside
     os.makedirs(location)
