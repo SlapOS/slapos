@@ -182,9 +182,6 @@ context =
 {%-     if 'health-check-http-method' not in slave_instance %}
 {%-       do slave_instance.__setitem__('health-check-http-method', 'GET') %}
 {%-     endif %}
-{%-     if 'health-check-http-version' not in slave_instance %}
-{%-       do slave_instance.__setitem__('health-check-http-version', 'HTTP/1.1') %}
-{%-     endif %}
 {%-     if 'health-check-interval' not in slave_instance %}
 {%-       do slave_instance.__setitem__('health-check-interval', '5') %}
 {%-     endif %}
@@ -200,7 +197,6 @@ context =
 {%-     do slave_instance.__setitem__('health-check-http-path', slave_instance.get('health-check-http-path') or '/') %}
 {%-   else %}
 {%-     do slave_instance.__setitem__('health-check-http-method', '') %}
-{%-     do slave_instance.__setitem__('health-check-http-version', '') %}
 {%-     do slave_instance.__setitem__('health-check-http-path', '') %}
 {%-   endif %} {# if slave_instance['health-check'] #}
 {#-   Set Up log files #}
