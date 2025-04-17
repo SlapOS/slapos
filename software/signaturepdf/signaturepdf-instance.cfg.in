@@ -1,0 +1,117 @@
+
+################
+#   pdf Dirs   #
+################
+[pdf-directory]
+recipe    = slapos.cookbook:mkdirectory
+data      = ${directory:srv}/data
+meta      = ${:data}/meta
+backup    = ${directory:backup}/signature
+tmp       = ${buildout:directory}/tmp
+nss       = ${directory:srv}/nss
+
+[apache-php-configuration]
+document-root = ${directory:www}/public
+
+[instance-parameter]
+# php.ini
+php.opcache.revalidate-freq = 60
+php.opcache.interned-strings-buffer = 24
+php.max_file_uploads = 200
+signature-pdf-url = ${slap-parameter:instance.proxy-url}
+nss-cert-nick = ${slap-parameter:instance.nss-cert-nick}
+default-language = ${slap-parameter:instance.default-language}
+
+[config.ini]
+recipe = collective.recipe.template
+output = ${directory:www}/config/config.ini
+input = inline:[globals]
+
+  PDF_STORAGE_PATH=${pdf-directory:data}
+
+  DISABLE_ORGANIZATION=false
+
+  ; Manage demo link pdf : true (by default, show with default link), false (hide), or custom link
+  PDF_DEMO_LINK=true
+
+  ;METADATA_DEFAULT_FIELDS[metadata_key].type = "text"
+
+  ;Declare your public domain here if you can't handle location rewriting through your reverse proxy.
+  REVERSE_PROXY_URL=${instance-parameter:signature-pdf-url}
+
+  ; Encryption activation (need GPG is installed)
+  PDF_STORAGE_ENCRYPTION=false
+
+  ; Authorize these IP to use debug mode (separate IP adresses with space ' ')
+  ;ADMIN_AUTHORIZED_IP=
+
+  ; Enable the edition of local server pdf metadata
+  PDF_LOCAL_PATH=${pdf-directory:meta}
+
+  NSS3_DIRECTORY=${pdf-directory:nss}/
+  NSS3_PASSWORD="${nss-password:passwd}"
+  NSS3_NICK="${instance-parameter:nss-cert-nick}"
+
+depends = ${copy-application:recipe}
+
+[apache-php-wrapper]
+environment =
+  PATH=${directory:bin}:{{ imagemagick_location }}/bin:{{ libnss3_location }}/bin:{{ poppler_location }}/bin:{{ ghostscript_location }}/bin:{{ potrace_location }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  LANG=${instance-parameter:default-language}
+  LANGUAGE=${instance-parameter:default-language}
+  LC_ALL=${instance-parameter:default-language}
+
+[nss-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.nss_pwd
+
+[pdftk-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/pdftk
+command-line = {{ java_jdk_location }}/bin/java -jar {{ pdftk_bin }}
+
+[convert-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ imagemagick_location }}/bin/convert
+wrapper-path = ${directory:bin}/convert
+
+[rsvg-convert-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/rsvg-convert
+command-line = {{ librsvg_location }}/bin/rsvg-convert
+
+[create-nss-certificates]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/create-nss-certificates
+command-line = bash ${directory:www}/tools/create_nss_certs.sh ${pdf-directory:nss}/ ${nss-password:passwd} ${instance-parameter:nss-cert-nick} ${instance-parameter:signature-pdf-url}
+environment = ${apache-php-wrapper:environment}
+
+[signaturepdf-install.sh]
+recipe = plone.recipe.command
+command =
+  if [ ! -s "${pdf-directory:nss}/pkcs11.txt" ]; then
+    ${create-nss-certificates:wrapper-path}
+  fi
+update-command = ${:command}
+stop-on-error = true
+depends =
+  ${config.ini:recipe}
+  ${pdftk-wrapper:recipe}
+  ${convert-wrapper:recipe}
+  ${rsvg-convert-wrapper:recipe}
+  ${promise-check-nss-certificate-installed:recipe}
+
+[promise-check-nss-certificate-installed]
+<= monitor-promise-base
+name = check-nss-certificate-is-installed.py
+promise = check_command_execute
+config-command = if [ ! -s "${pdf-directory:nss}/cert9.db" ]; then echo "nss certificate not found!"; exit 1; fi
+
+[publish-connection-information]
+nss-password = ${nss-password:passwd}
+
+[slap-parameter]
+instance.proxy-url = https://softinst281246.host.vifib.net
+instance.nss-cert-nick = rapid_space_nexedi
+instance.default-language = fr_FR.UTF-8
