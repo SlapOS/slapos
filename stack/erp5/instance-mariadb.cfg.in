@@ -106,16 +106,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup
 time = {{ dumps(backup_periodicity) }}
-command = ${binary-wrap-mariabackup:wrapper-path} --backup --stream=xbstream 2> ${directory:log}/mariabackup.log | ${directory:bin}/restic backup --stdin --stdin-filename mariadb.xb --tag MariaDB --insecure-no-password -r ${directory:mariadb-backup-restic}
-
-{% if full_backup_retention_days > 0 -%}
-[{{ section("cron-entry-mariadb-backup-expire") }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = mariadb-backup-expire
-time = {{ dumps(backup_periodicity) }}
-command = ${directory:bin}/restic forget --prune --keep-daily {{ full_backup_retention_days }} --insecure-no-password -r ${directory:mariadb-backup-restic}
-{%- endif %}
+command = ${binary-wrap-mariabackup:wrapper-path} --backup --stream=xbstream 2> ${directory:log}/mariabackup.log | ${directory:bin}/restic backup --stdin --stdin-filename mariadb.xb --tag MariaDB --insecure-no-password -r ${directory:mariadb-backup-restic} {% if full_backup_retention_days > 0 -%}&& ${directory:bin}/restic forget --prune --keep-daily {{ full_backup_retention_days }} --insecure-no-password -r ${directory:mariadb-backup-restic}{%- endif %}
 {%- endif %}
 
 [my-cnf-parameters]
