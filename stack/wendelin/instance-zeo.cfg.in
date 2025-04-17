@@ -102,6 +102,7 @@ inline =
   $repozo \
     --backup \
     --kill-old-on-full \
+    --keep-only-latest-index \
     --gzip \
     --quick \
     --repository="$zodb_backup_directory/$storage_name" \
