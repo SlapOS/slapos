@@ -12,12 +12,13 @@
 
 set -e
 
-mysql_executable='{{ mysql_executable }}'
+mariabackup_executable='{{ bin_directory }}/mariabackup'
+mbstream_executable='{{ bin_directory }}/mbstream'
+restic_executable='{{ bin_directory }}/restic'
 mariadb_data_directory='{{ mariadb_data_directory }}'
 mariadb_backup_directory='{{ mariadb_backup_directory }}'
+mariadb_restore_directory="{{ tmp_directory }}/$$"
 pid_file='{{ pid_file }}'
-binlog_path='{{ binlog_path }}'
-server_executable='{{ server_executable }}'
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then
@@ -34,35 +35,14 @@ fi
 echo "Deleting existing database..."
 find "$mariadb_data_directory" -mindepth 1 -delete
 
-# $binlog_path can be empty if incremental_backup_retention_days <= -1
-if [ -n "$binlog_path" ]; then
-  new_binlog_directory="$(dirname "$binlog_path")"
-  binlog_index_file="$new_binlog_directory/binlog.index"
-  if [ -e "$binlog_index_file" ]; then
-    echo "Adapting binlog database to new paths..."
-    old_binlog_directory="$(dirname $(head -n 1 $binlog_index_file))"
-    sed -e "s|$old_binlog_directory|$new_binlog_directory|g" $binlog_index_file > $binlog_index_file
-  fi
-fi
+echo "Extracting from backup..."
+rm -rf "$mariadb_restore_directory"
+mkdir -p "$mariadb_restore_directory"
+"$restic_executable" dump latest mariadb.xb --insecure-no-password -r "$mariadb_backup_directory" | "$mbstream_executable" -C "$mariadb_restore_directory" -x
 
-echo "Starting mariadb..."
-"$server_executable" --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin &
-mysqld_pid=$!
-trap "kill $mysqld_pid" EXIT TERM INT
-sleep 30
-# If mysql has stopped, abort
-if ! [ -d /proc/$mysql_pid ]; then
-  echo "mysqld exited, aborting."
-  exit 1
-fi
-
-echo "Importing data..."
-# Use latest dump XXX can contain funny characters
-dump=$(ls -r "$mariadb_backup_directory" | head -1)
-zcat "$mariadb_backup_directory/$dump" | $mysql_executable || {
-  RESTORE_EXIT_CODE=$?
-  echo 'Backup restoration failed.'
-  exit $RESTORE_EXIT_CODE
-}
+echo "Restoring database..."
+"$mariabackup_executable" --prepare --target-dir="$mariadb_restore_directory"
+"$mariabackup_executable" --move-back --target-dir="$mariadb_restore_directory"
+rm -rf "$mariadb_restore_directory"
 
 echo 'Backup restoration successfully completed.'
