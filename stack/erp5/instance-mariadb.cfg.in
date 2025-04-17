@@ -87,31 +87,26 @@ about laxist file mode. -#}
 {%   endif -%}
 {%- endif %}
 
+[{{ section('binary-link') }}]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = {{ dumps(parameter_dict['link-binary']) }}
+
 {% if full_backup_retention_days > -1 -%}
+[{{ section('init-mariadb-backup') }}]
+recipe = plone.recipe.command
+command = if [ -z "$(ls -A ${directory:mariadb-backup-restic})" ]; then
+    ${directory:bin}/restic init --insecure-no-password -r ${directory:mariadb-backup-restic};
+  fi
+update-command = ${:command}
+stop-on-error = true
+
 [{{ section('cron-entry-mariadb-backup') }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup
 time = {{ dumps(backup_periodicity) }}
-{# When binlogs are enabled:
-# flush-logs: used so no manipulation on binlogs is needed to restore from
-#   full + binlogs. The first binlog after a dump starts from dump snapshot and
-#   can be fully restored.
-# master-data: use value "2" as we are not in a replication case
-#}
-command = "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
-{# KEEP GLOB PATTERN IN SYNC with generated filenames above
-#           YYYYmmddHHMMSS -#}
-file-glob = ??????????????.sql.gz
-
-{% if full_backup_retention_days > 0 -%}
-[{{ section("cron-entry-mariadb-backup-expire") }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = mariadb-backup-expire
-time = {{ dumps(backup_periodicity) }}
-command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
-{%- endif %}
+command = ${binary-wrap-mariabackup:wrapper-path} --backup --stream=xbstream 2> ${directory:log}/mariabackup.log | ${directory:bin}/restic backup --stdin --stdin-filename mariadb.xb --tag MariaDB --insecure-no-password -r ${directory:mariadb-backup-restic} {% if full_backup_retention_days > 0 -%}&& ${directory:bin}/restic forget --prune --keep-daily {{ full_backup_retention_days }} --insecure-no-password -r ${directory:mariadb-backup-restic}{%- endif %}
 {%- endif %}
 
 [my-cnf-parameters]
@@ -121,6 +116,8 @@ socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
 etc-directory = ${directory:etc}
+bin-directory = ${directory:bin}
+tmp-directory = ${directory:tmp}
 plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
 groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
 pid-file = ${directory:run}/mariadb.pid
@@ -201,11 +198,6 @@ name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
 
-[{{ section('binary-link') }}]
-recipe = slapos.cookbook:symbolic.link
-target-directory = ${directory:bin}
-link-binary = {{ dumps(parameter_dict['link-binary']) }}
-
 [binary-wrap-base]
 recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
@@ -216,6 +208,10 @@ wrapper-path = ${directory:bin}/${:command}
 [binary-wrap-mysql]
 < = binary-wrap-base
 command = mysql
+
+[binary-wrap-mariabackup]
+< = binary-wrap-base
+command = mariabackup
 
 [binary-wrap-mysqldump]
 < = binary-wrap-base
@@ -245,7 +241,7 @@ plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
-mariadb-backup-full = ${:backup}/mariadb-full
+mariadb-backup-restic = ${:backup}/mariadb-backup-restic
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
 mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
@@ -289,12 +285,11 @@ url = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
 output = ${directory:bin}/restore-from-backup
 context =
   key dash dash:dash
-  key mysql_executable binary-wrap-mysql:wrapper-path
+  key bin_directory my-cnf-parameters:bin-directory
+  key tmp_directory my-cnf-parameters:tmp-directory
   key mariadb_data_directory my-cnf-parameters:data-directory
-  key mariadb_backup_directory directory:mariadb-backup-full
+  key mariadb_backup_directory directory:mariadb-backup-restic
   key pid_file my-cnf-parameters:pid-file
-  key binlog_path my-cnf-parameters:binlog-path
-  key server_executable mysqld:output
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d
