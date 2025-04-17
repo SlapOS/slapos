@@ -34,7 +34,6 @@
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
-log-access-url = {{ json_module.dumps(slave_information.pop('log-access-urls', 1000)) }}
 {%   for key, value in slave_information.iteritems() -%}
 {{ key }} = {{ value }}
 {%   endfor -%}
