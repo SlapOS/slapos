@@ -1,3 +1,7 @@
+# todo: maybe this file will be used again at a later point? currently slave info 
+# is published in the instance-default.cfg directly but it doesn't work properly
+# so the info is passed in the main instance info instead
+
 {% set part_list = [] -%}
 {% set slave_information_dict = {} -%}
 
