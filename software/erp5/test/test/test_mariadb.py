@@ -105,10 +105,10 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
   def test_full_backup(self) -> None:
     self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
     mariadb_backup = os.path.join(self.computer_partition_root_path, 'srv', 'backup', 'mariadb-backup-restic')
-    output = subprocess.check_output(
+    output = subprocess.check_output([
       os.path.join(self.computer_partition_root_path, 'bin', 'restic'),
       'snapshots', '--insecure-no-password', '-r', mariadb_backup,
-    )
+    ])
     self.assertIn('2025-01-01', output.decode())
 
   def test_logrotate_and_slow_query_digest(self) -> None:
