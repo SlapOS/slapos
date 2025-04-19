@@ -202,10 +202,10 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Check that mariadb backup has started
     mariadb_backup = os.path.join(mariadb_partition, 'srv', 'backup', 'mariadb-backup-restic')
-    output = subprocess.check_output(
+    output = subprocess.check_output([
       os.path.join(mariadb_partition, 'bin', 'restic'),
       'stats', '--insecure-no-password', '-r', mariadb_backup,
-    )
+    ])
     self.assertTrue(re.search(r'Snapshots processed: +[1-9]', output.decode()))
 
     # Check that zodb backup has started
