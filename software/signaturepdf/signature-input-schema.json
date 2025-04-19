@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate Signature PDF",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "instance.proxy-url": {
+      "title": "Proxy URL",
+      "description": "Url used to access signature pdf instance.",
+      "type": "string",
+      "format": "uri",
+      "default": ""
+    },
+    "instance.nss-cert-nick": {
+      "title": "NSS Certificate Nick name",
+      "description": "NSS Certificate Nick name without dot (.).",
+      "type": "string",
+      "default": "rapid_space_nexedi"
+    }
+  }
+}
