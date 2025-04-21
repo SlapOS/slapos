@@ -79,7 +79,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         LOCAL_SOCKET=%(local_socket)s
 
         # start rest-server
-        $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --path=$RESTIC_REPOSITORY &
+        $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
         RESTIC_REST_SERVER_PID=$!
         START_TIME=$(date +%%s)
         TIMEOUT="10"
@@ -165,7 +165,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         fi
 
         # start rest-server
-        $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --path=$RESTIC_REPOSITORY &
+        $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
         RESTIC_REST_SERVER_PID=$!
         START_TIME=$(date +%%s)
         TIMEOUT="10"
