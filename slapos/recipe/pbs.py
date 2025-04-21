@@ -61,7 +61,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         if slave['type'] == 'pull':
           options['rdiff-backup-data-folder'] = str(os.path.join(options['directory'], slave['name'], 'rdiff-backup-data'))
 
-  def wrapper_push(self, remote_schema, local_dir, restic_wrapper_path):
+  def wrapper_push(self, remote_schema, local_dir, remote_dir, restic_wrapper_path):
     # Create a simple rdiff-backup wrapper that will push
 
     template = textwrap.dedent("""\
@@ -79,6 +79,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         LOCAL_SOCKET=%(local_socket)s
 
         # start rest-server
+        rm -f $LOCAL_SOCKET
         $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
         RESTIC_REST_SERVER_PID=$!
         START_TIME=$(date +%%s)
@@ -93,6 +94,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             sleep 0.1
         done
 
+        %(remote_schema)s clear
         %(remote_schema)s -R $REMOTE_SOCKET:$LOCAL_SOCKET restore
 
         # stop rest-server
@@ -100,16 +102,16 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         wait $RESTIC_REST_SERVER_PID
         """)
 
-    local_socket = os.path.join(
-      os.path.dirname(local_dir.rstrip('/')), 'restick.sock'
+    remote_socket = os.path.join(
+      os.path.dirname(remote_dir.rstrip('/')), 'restick.sock'
     )
     template_dict = {
       'restic_binary': shlex.quote(self.options['restic-binary']),
       'restic_rest_server_binary': shlex.quote(self.options['restic-rest-server-binary']),
       'remote_schema': remote_schema,
       'restic_repository': shlex.quote(os.path.join(local_dir, 'restic')),
-      'local_socket': shlex.quote(local_socket),
-      'remote_socket': shlex.quote(os.path.join(local_dir, 'restic.sock')),
+      'local_socket': shlex.quote(os.path.join(local_dir, 'restic.sock')),
+      'remote_socket': shlex.quote(remote_socket),
     }
 
     return self.createFile(
@@ -119,7 +121,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     )
 
 
-  def wrapper_pull(self, remote_schema, local_dir, restic_wrapper_path, remove_backup_older_than):
+  def wrapper_pull(self, remote_schema, local_dir, remote_dir, restic_wrapper_path, remove_backup_older_than):
     # Wrap rdiff-backup call into a script that checks consistency of backup
     # We need to manually escape the remote schema
 
@@ -165,6 +167,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         fi
 
         # start rest-server
+        rm -f $LOCAL_SOCKET
         $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
         RESTIC_REST_SERVER_PID=$!
         START_TIME=$(date +%%s)
@@ -179,6 +182,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             sleep 0.1
         done
 
+        %(remote_schema)s clear
         %(remote_schema)s -R $REMOTE_SOCKET:$LOCAL_SOCKET backup
         RESTIC_STATUS=$?
 
@@ -210,8 +214,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         wait $RESTIC_REST_SERVER_PID
         """)
 
-    local_socket = os.path.join(
-      os.path.dirname(local_dir.rstrip('/')), 'restick.sock'
+    remote_socket = os.path.join(
+      os.path.dirname(remote_dir.rstrip('/')), 'restick.sock'
     )
     template_dict = {
       'restic_binary': shlex.quote(self.options['restic-binary']),
@@ -220,8 +224,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       'remote_schema': remote_schema,
       'local_dir': shlex.quote(local_dir),
       'restic_repository': shlex.quote(os.path.join(local_dir, 'restic')),
-      'local_socket': shlex.quote(local_socket),
-      'remote_socket': shlex.quote(os.path.join(local_dir, 'restic.sock')),
+      'local_socket': shlex.quote(os.path.join(local_dir, 'restic.sock')),
+      'remote_socket': shlex.quote(remote_socket),
       'keep_args': ' '.join(shlex.quote(e) for e in keep_args),
     }
 
@@ -245,6 +249,9 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             ;;
             restore)
                 $RESTIC restore latest --insecure-no-password -r rest:http+unix:$LOCAL_SOCKET: -t $BACKUP_DIR
+            ;;
+            clear)
+                rm -f $LOCAL_SOCKET
             ;;
             *)
                 echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
@@ -314,18 +321,21 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
               username=parsed_url.username,
               hostname=parsed_url.hostname
             )
+    remote_dir = parsed_url.path
     local_dir = self.createDirectory(self.options['directory'], entry['name'])
 
     if slave_type == 'push':
       restic_wrapper = self.wrapper_push(remote_schema,
-                                        local_dir,
-                                        restic_wrapper_path)
+                                         local_dir,
+                                         remote_dir,
+                                         restic_wrapper_path)
     elif slave_type == 'pull':
       # XXX: only 3 increments is not enough by default.
       restic_wrapper = self.wrapper_pull(remote_schema,
-                                        local_dir,
-                                        restic_wrapper_path,
-                                        entry.get('remove-backup-older-than', '3B'))
+                                         local_dir,
+                                         remote_dir,
+                                         restic_wrapper_path,
+                                         entry.get('remove-backup-older-than', '3B'))
 
     path_list.append(restic_wrapper)
 
