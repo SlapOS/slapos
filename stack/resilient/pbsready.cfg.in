@@ -98,12 +98,12 @@ rotate-num = 7
 #--
 #-- Sets up an rdiff-backup server (with a openssh server for ssh)
 
-[rdiff-backup-server]
+[restic-wrapper]
 recipe = slapos.cookbook:pbs
 client = false
 path = $${directory:backup}
-wrapper = $${rootdirectory:bin}/rdiffbackup-server
-rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
+wrapper = $${rootdirectory:bin}/restic-wrapper
+restic-binary = ${gowork:bin}/restic
 
 
 #----------------
@@ -184,7 +184,7 @@ inline =
  AuthorizedKeysFile $${directory:ssh}/.ssh/authorized_keys
  PasswordAuthentication no
  PubkeyAuthentication yes
- ForceCommand $${rdiff-backup-server:wrapper}
+ ForceCommand $${restic-wrapper:wrapper}
  ClientAliveInterval 30
  ClientAliveCountMax 10
 
@@ -294,5 +294,5 @@ recipe = slapos.cookbook:userinfo
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
-resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
+resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${restic-wrapper:path}
 ip = $${slap-network-information:global-ipv6}
