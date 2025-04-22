@@ -91,8 +91,6 @@ class TestResticRestServer(SlapOSInstanceTestCase):
   def test_backup_scenario(self):
     restic_bin = os.path.join(
         self.computer_partition_root_path,
-        'software_release',
-        'go.work',
         'bin',
         'restic',
     )
