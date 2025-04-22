@@ -1,0 +1,149 @@
+#!{{ python_executable }}
+from datetime import datetime, timezone
+import glob
+import os
+import subprocess
+import sys
+import tempfile
+from urllib.parse import urlparse
+from xml.etree.ElementTree import Element, SubElement, tostring
+
+rdiff_backup_binary = {{ repr(rdiff_backup_binary) }}
+backup_dir = {{ repr(backup_dir) }}
+url = {{ repr(url) }}
+ssh_client = {{ repr(ssh_client) }}
+remove_backup_older_than = {{ repr(remove_backup_older_than) }}
+slave_type = {{ repr(slave_type) }}
+name = {{ repr(name) }}
+backup_log_dir = {{ repr(backup_log_dir) }}
+feed_path = {{ repr(feed_path) }}
+feed_url = {{ repr(feed_url) }}
+backup_software_list = ['rdiff-backup']
+
+def call_process(*args, **kw):
+  try:
+    return subprocess.check_output(*args, **kw).decode()
+  except subprocess.CalledProcessError as err:
+    output = '\n'.join(e.decode() for e in [err.output, err.stderr] if e)
+    print(output)
+    log('error', output)
+    generate_rss()
+    sys.exit(err.returncode)
+
+def log(log_entry, output):
+  if not output:
+    return
+  timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S.%f')
+  path = os.path.join(
+    backup_log_dir,
+   '%s.%s.%s.log' % (timestamp, name, log_entry),
+  )
+  with open(path, 'w') as f:
+    f.write(output)
+  print(output)
+
+def generate_rss():
+  log_path_list = sorted(glob.glob(os.path.join(backup_log_dir, '*.*.*.*.log')))
+  rss = Element('rss', {'version': '2.0'})
+  channel = SubElement(rss, 'channel')
+  SubElement(channel, 'title').text = 'Backup results'
+  SubElement(channel, 'link').text = feed_url
+  SubElement(channel, 'description').text = 'Backup results'
+  for log_path in log_path_list:
+    with open(log_path) as f:
+      ymdhms, milliseconds, name_, log_entry, _ = os.path.basename(log_path).split('.')
+      date = datetime.strptime('.'.join([ymdhms, milliseconds]), '%Y%m%d%H%M%S.%f')
+      item = SubElement(channel, 'item')
+      SubElement(item, 'title').text = ' '.join([name_, log_entry])
+      SubElement(item, 'link').text = feed_url
+      SubElement(item, 'description').text = f.read()
+      SubElement(item, 'pubDate').text = date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+  with open(feed_path, 'wb') as f:
+    f.write(tostring(rss, 'utf-8'))
+  # remove too old log files
+  for log_path in log_path_list[100:]:
+    os.remove(log_path)
+
+parsed_url = urlparse(url)
+
+if slave_type == 'push':
+  # use one of backup_software_list to push, sequentially each day.
+  backup_software_list = backup_software_list[
+    int(datetime.now().strftime('%j')) % len(backup_software_list)
+  ]
+
+for backup_software in backup_software_list:
+  if backup_software == 'rdiff-backup':
+    remote_schema = (
+      '{ssh_client} '
+      '-o "ConnectTimeout 300" '
+      '-o "ServerAliveCountMax 10" '
+      '-o "ServerAliveInterval 30" '
+      '-p %s '
+      '{username}@{hostname}').format(
+      ssh_client=ssh_client,
+      username=parsed_url.username,
+      hostname=parsed_url.hostname
+    )
+    remote_dir = '{port}::{path}'.format(port=parsed_url.port, path=parsed_url.path)
+
+    if slave_type == 'push':
+      log('restore', call_process([
+        rdiff_backup_binary,
+        '--remote-schema', remote_schema,
+        '--restore-as-of', 'now',
+        '--ignore-numerical-ids',
+        '--force',
+        backup_dir,
+        remote_dir,
+      ]))
+    elif slave_type == 'pull':
+      with tempfile.TemporaryDirectory() as d:
+        corrupted_args = []
+        if sys.argv[1:2] == ['--fix-corrupted']:
+          verify_result = subprocess.run([
+              rdiff_backup_binary,
+              '--verify',
+              backup_dir,
+            ], env={'LC_ALL': 'C'}, stderr=subprocess.PIPE).stderr.decode()
+          if verify_result:
+            corrupted_file_prefix = "Warning: Computed SHA1 digest of "
+            missing_file_prefix = "Warning: Cannot find SHA1 digest for file "
+            file_list = []
+            for e in verify_result.splitlines():
+              if e.startswith(corrupted_file_prefix):
+                file_list.append(e[len(corrupted_file_prefix):])
+              if e.startswith(missing_file_prefix):
+                file_list.append(e[len(missing_file_prefix):])
+            if file_list:
+              rdiff_corrupted = os.path.join(d, 'rdiff_corrupted')
+              with open(rdiff_corrupted,'w') as f:
+                f.write('\n'.join(file_list))
+              corrupted_args = [
+                '--always-snapshot-fromfile', rdiff_corrupted,
+              ]
+              print('Retransmitting %d corrupted/missing files' % len(file_list))
+            else:
+              print('No corrupted or missing files to retransmit')
+        log('backup', call_process([rdiff_backup_binary] + corrupted_args + [
+          '--remote-schema', remote_schema,
+          remote_dir,
+          backup_dir,
+        ]))
+      latest_stat_file = sorted(glob.glob(
+        os.path.join(backup_dir, 'rdiff-backup-data', 'session_statistics.*')
+      ))[-1]
+      with open(latest_stat_file, 'r') as f:
+        log('backup', f.read())
+      log('prune', call_process([
+        rdiff_backup_binary,
+        '--remove-older-than', remove_backup_older_than,
+        '--force',
+        backup_dir,
+      ]))
+    else:
+      raise NotImplementedError('Unexpected type %s' % slave_type)
+  else:
+    raise NotImplementedError('Unexpected backup_software %s' % backup_software)
+
+generate_rss()
