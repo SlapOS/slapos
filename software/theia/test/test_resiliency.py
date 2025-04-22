@@ -626,6 +626,10 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
     etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
     self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
+    # Check that resilient-feed was generated
+    resilient_feed = self.getPartitionPath('pull-backup', 'srv', 'monitor', 'public', 'resilient-feed')
+    self.assertTrue(os.path.isfile(resilient_feed))
+
   def _checkTakeover(self):
     # Check that there is an export, import and frozen instance and get their new partition IDs
     import_id = self.import_id
