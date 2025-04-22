@@ -26,6 +26,10 @@
           "description": "URL of a recent mariadb backup to bootstrap replication from",
           "type": "string"
         },
+        "upstream-caucased-url": {
+          "description": "URL of the caucased server of the primary mariadb to request certificates from",
+          "type": "string"
+        },
         "seconds-behind-master-threshold": {
           "description": "Monitoring threshold for Seconds_Behind_Master in the replica, in seconds, -1 meaning no threshold",
           "type": "integer",
