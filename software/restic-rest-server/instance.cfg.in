@@ -2,6 +2,7 @@
 
 [buildout]
 parts =
+  binary-link
   promises
   publish-connection-parameter
 extends =
@@ -32,6 +33,7 @@ cert = ${slap-connection:cert-file}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
+bin = ${:home}/bin
 etc = ${:home}/etc
 var = ${:home}/var
 srv = ${:home}/srv
@@ -153,10 +155,16 @@ inline =
   ${rest-server-password:user}:${rest-server-password:passwd-bcrypt}
 output = ${directory:rest-server-data-dir}/.htpasswd
 
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary =
+  {{ restic_location }}/bin/restic
+
 [rest-server]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ gowork_bin }}/rest-server
+  {{ restic_rest_server_location }}/bin/rest-server
     --listen [${:ip}]:${:port}
     --log ${directory:var-log}/${:_buildout_section_name_}-access.log
     --path ${directory:rest-server-data-dir}
