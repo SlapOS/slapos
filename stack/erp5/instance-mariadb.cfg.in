@@ -54,9 +54,11 @@
 {% set replica_skip_networking = not replication.get('allow-tcp-connections-on-replica', True) -%}
 {% set upstream_mariadb_url = str(replication['upstream-mariadb-url']) -%}
 {% set upstream_bootstrap_url = replication.get('upstream-bootstrap-url') -%}
+{% set upstream_caucased_url = replication.get('upstream-caucased-url') -%}
 {% set upstream = urllib_parse.urlsplit(upstream_mariadb_url) -%}
 {% else -%}
 {% set upstream_mariadb_url = None -%}
+{% set upstream_caucased_url = None -%}
 {% set upstream = {'hostname': None, 'port': None, 'username': None} -%}
 {% set replica_threshold = None -%}
 {% set replica_skip_networking = False -%}
@@ -96,6 +98,18 @@ replication-bootstrap-url = ${mariadb-bootstrap-server-promise:bootstrap-url}
 replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ replication_mariadb_netloc }}
 {% if caucased_enable -%}
 caucased-url = {{ caucased_url }}
+{%- endif %}
+{% if upstream_caucased_url -%}
+-depends = ${publish-caucase-replica-updater-csr-content:recipe}
+
+[publish-caucase-replica-updater-csr-content]
+recipe = slapos.recipe.build
+csr-file = ${caucase-replica-updater-csr:csr}
+update =
+  # Hack: update publish dict once csr has been generated
+  publish = self.buildout['publish']
+  with open(options['csr-file'], 'rb') as f:
+    publish['caucased-csr-to-sign'] = f.read().decode('ascii')
 {%- endif %}
 
 [publish-early]
@@ -413,6 +427,25 @@ foreground-script =
   fi
 
 {% if replication -%}
+{% if upstream_caucased_url -%}
+{{  caucase.updater(
+      prefix='caucase-replica-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-replica-updater',
+      url=upstream_caucased_url,
+      data_dir='${directory:srv}/caucase/replica',
+      ca_path='${directory:replica-ssl}/replica-ca.pem',
+      crl_path='${directory:replica-ssl}/replica-crl.pem',
+      crt_path='${directory:replica-ssl}/replica-crt.pem',
+      key_path='${directory:replica-ssl}/replica-key.pem',
+      mode='service',
+      openssl_req_options='-subj %r' % ('/CN=Mariadb Replica ' + public_ipv6),
+      openssl='${binary-link:target-directory}/openssl',
+)}}
+{%-   do section('caucase-replica-updater') %}
+{%-   do section('caucase-replica-updater-promise') %}
+{%- endif %}
+
 [{{ section('mariadb-setup-replication') }}]
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
@@ -437,9 +470,26 @@ foreground-script =
 
   date
 
+  {% if upstream_caucased_url -%}
+  echo "Checking caucase certificate for authentication to primary is ready"
+  if ! { [ -f ${caucase-replica-updater:crt-path} ] &&
+         [ -f ${caucase-replica-updater:key-path} ] &&
+         [ -f ${caucase-replica-updater:ca-path} ] &&
+         [ -f ${caucase-replica-updater:crl-path} ] ; } then
+    echo "  \_ Caucase certificate is missing; ABORT"
+    exit 1
+  fi
+  {%- endif %}
+
   {% if upstream_bootstrap_url -%}
   echo "Fetching $bootstrap_url"
   "$curl" -o "$bootstrap_file" --fail "$bootstrap_url"
+  {%- if upstream_caucased_url %}
+  {#- NOT NL #} --cert ${caucase-replica-updater:crt-path}
+  {#- NOT NL #} --key ${caucase-replica-updater:key-path}
+  {#- NOT NL #} --cacert ${caucase-replica-updater:ca-path}
+  {#- NOT NL #} --crlfile ${caucase-replica-updater:crl-path}
+  {%- endif %}
 
   echo "Importing $bootstrap_file"
   "$zcat" "$bootstrap_file" | "$mysql"
@@ -472,6 +522,14 @@ sql-change-master-command =
   MASTER_PORT={{ upstream.port }},
   MASTER_USER='{{ upstream.username }}',
   MASTER_PASSWORD='{{ upstream.password }}',
+  {% if upstream_caucased_url -%}
+  MASTER_SSL=1,
+  MASTER_SSL_CERT='${caucase-replica-updater:crt-path}',
+  MASTER_SSL_KEY='${caucase-replica-updater:key-path}',
+  MASTER_SSL_CA='${caucase-replica-updater:ca-path}',
+  MASTER_SSL_CRL='${caucase-replica-updater:crl-path}',
+  MASTER_SSL_VERIFY_SERVER_CERT=1,
+  {%- endif %}
   MASTER_USE_GTID="slave_pos";
 {%- endif %}
 
@@ -797,6 +855,9 @@ mariadb-backup-incremental = ${:backup}/mariadb-incremental
 proxysql = ${:srv}/proxysql
 mariadb-ssl = ${:etc}/mariadb-ssl
 caucase-ssl = ${:etc}/caucase-ssl
+{% if upstream_caucased_url -%}
+replica-ssl = ${:etc}/replica-ssl
+{%- endif %}
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
