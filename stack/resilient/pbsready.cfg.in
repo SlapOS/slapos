@@ -103,7 +103,7 @@ recipe = slapos.cookbook:pbs
 client = false
 path = $${directory:backup}
 wrapper = $${rootdirectory:bin}/restic-wrapper
-restic-binary = ${gowork:bin}/restic
+restic-binary = ${restic:location}/bin/restic
 
 
 #----------------
