@@ -200,6 +200,7 @@ extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
     import urllib_parse six.moves.urllib.parse
     import six_moves six.moves
+    key root_title slap-configuration:root-instance-title
 import-list =
     file caucase context:caucase-jinja2-library
 
