@@ -75,17 +75,23 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         RESTIC=%(restic_binary)s
         RESTIC_REST_SERVER=%(restic_rest_server_binary)s
         RESTIC_REPOSITORY=%(restic_repository)s
-        REMOTE_SOCKET=%(remote_socket)s
-        LOCAL_SOCKET=%(local_socket)s
+        SSH_CLIENT_SOCKET=%(ssh_client_socket)s
+        RESTIC_REST_SERVER_SOCKET=%(restic_rest_server_socket)s
+        RESTIC_REST_SERVER_PID=%(restic_rest_server_pid)s
 
         # start rest-server
-        rm -f $LOCAL_SOCKET
-        $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
-        RESTIC_REST_SERVER_PID=$!
+        if [ -d $RESTIC_REST_SERVER_PID ]; then
+            kill $(cat $RESTIC_REST_SERVER_PID)
+            wait $(cat $RESTIC_REST_SERVER_PID)
+        fi
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
+        $RESTIC_REST_SERVER --listen unix:$RESTIC_REST_SERVER_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
+        echo $! > $RESTIC_REST_SERVER_PID
         START_TIME=$(date +%%s)
         TIMEOUT="10"
         while true; do
-            test -S $LOCAL_SOCKET && break
+            test -S $RESTIC_REST_SERVER_SOCKET && break
             ELAPSED=$(($(date +%%s) - START_TIME))
             if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
                 echo "rest-server socket did not appear in $TIMEOUT seconds."
@@ -95,23 +101,27 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         done
 
         %(remote_schema)s clear
-        %(remote_schema)s -R $REMOTE_SOCKET:$LOCAL_SOCKET restore
+        %(remote_schema)s -R $SSH_CLIENT_SOCKET:$RESTIC_REST_SERVER_SOCKET restore
 
         # stop rest-server
-        kill $RESTIC_REST_SERVER_PID
-        wait $RESTIC_REST_SERVER_PID
+        kill $(cat $RESTIC_REST_SERVER_PID)
+        wait $(cat $RESTIC_REST_SERVER_PID)
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
         """)
 
-    remote_socket = os.path.join(
-      os.path.dirname(remote_dir.rstrip('/')), 'restick.sock'
+    ssh_client_socket = os.path.join(
+      os.path.dirname(remote_dir), 'restick.sock'
     )
+    restic_repository = local_dir + '.restic'
     template_dict = {
       'restic_binary': shlex.quote(self.options['restic-binary']),
       'restic_rest_server_binary': shlex.quote(self.options['restic-rest-server-binary']),
       'remote_schema': remote_schema,
-      'restic_repository': shlex.quote(os.path.join(local_dir, 'restic')),
-      'local_socket': shlex.quote(os.path.join(local_dir, 'restic.sock')),
-      'remote_socket': shlex.quote(remote_socket),
+      'restic_repository': shlex.quote(restic_repository),
+      'restic_rest_server_socket': shlex.quote(os.path.join(restic_repository, 'restic.sock')),
+      'restic_rest_server_pid': shlex.quote(os.path.join(restic_repository, 'restic.pid')),
+      'ssh_client_socket': shlex.quote(ssh_client_socket),
     }
 
     return self.createFile(
@@ -124,15 +134,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
   def wrapper_pull(self, remote_schema, local_dir, remote_dir, restic_wrapper_path, remove_backup_older_than):
     # Wrap rdiff-backup call into a script that checks consistency of backup
     # We need to manually escape the remote schema
-
-    # BBB translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
-    remove_backup_older_than = remove_backup_older_than.lower()
-    if remove_backup_older_than.endswith('b'):
-      keep_args = ('--keep-last ', remove_backup_older_than[:-1])
-    else:
-      if remove_backup_older_than.endswith('w'):
-        remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
-      keep_args = ('--keep-within', remove_backup_older_than)
 
     template = textwrap.dedent("""\
         #!/bin/sh
@@ -154,8 +155,9 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         RESTIC_REST_SERVER=%(restic_rest_server_binary)s
         BACKUP_DIR=%(local_dir)s
         RESTIC_REPOSITORY=%(restic_repository)s
-        REMOTE_SOCKET=%(remote_socket)s
-        LOCAL_SOCKET=%(local_socket)s
+        SSH_CLIENT_SOCKET=%(ssh_client_socket)s
+        RESTIC_REST_SERVER_SOCKET=%(restic_rest_server_socket)s
+        RESTIC_REST_SERVER_PID=%(restic_rest_server_pid)s
 
         test -d $RESTIC_REPOSITORY || $RESTIC init --insecure-no-password -r $RESTIC_REPOSITORY
 
@@ -163,17 +165,22 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         if [ -d %(rdiff_backup_data)s ]; then
             cd $BACKUP_DIR
             $RESTIC backup . --insecure-no-password -r $RESTIC_REPOSITORY \\
-                --exclude=rdiff-backup-data --exclude=restic
+                --exclude=rdiff-backup-data
         fi
 
         # start rest-server
-        rm -f $LOCAL_SOCKET
-        $RESTIC_REST_SERVER --listen unix:$LOCAL_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
-        RESTIC_REST_SERVER_PID=$!
+        if [ -d $RESTIC_REST_SERVER_PID ]; then
+            kill $(cat $RESTIC_REST_SERVER_PID)
+            wait $(cat $RESTIC_REST_SERVER_PID)
+        fi
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
+        $RESTIC_REST_SERVER --listen unix:$RESTIC_REST_SERVER_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
+        echo $! > $RESTIC_REST_SERVER_PID
         START_TIME=$(date +%%s)
         TIMEOUT="10"
         while true; do
-            test -S $LOCAL_SOCKET && break
+            test -S $RESTIC_REST_SERVER_SOCKET && break
             ELAPSED=$(($(date +%%s) - START_TIME))
             if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
                 echo "rest-server socket did not appear in $TIMEOUT seconds."
@@ -183,7 +190,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         done
 
         %(remote_schema)s clear
-        %(remote_schema)s -R $REMOTE_SOCKET:$LOCAL_SOCKET backup
+        %(remote_schema)s -R $SSH_CLIENT_SOCKET:$RESTIC_REST_SERVER_SOCKET backup
         RESTIC_STATUS=$?
 
         if [ ! $RESTIC_STATUS -eq 0 ]; then
@@ -210,22 +217,35 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         fi
 
         # stop rest-server
-        kill $RESTIC_REST_SERVER_PID
-        wait $RESTIC_REST_SERVER_PID
+        kill $(cat $RESTIC_REST_SERVER_PID)
+        wait $(cat $RESTIC_REST_SERVER_PID)
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
         """)
 
-    remote_socket = os.path.join(
-      os.path.dirname(remote_dir.rstrip('/')), 'restick.sock'
+    # BBB translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
+    remove_backup_older_than = remove_backup_older_than.lower()
+    if remove_backup_older_than.endswith('b'):
+      keep_args = ('--keep-last ', remove_backup_older_than[:-1])
+    else:
+      if remove_backup_older_than.endswith('w'):
+        remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
+      keep_args = ('--keep-within', remove_backup_older_than)
+
+    ssh_client_socket = os.path.join(
+      os.path.dirname(remote_dir), 'restick.sock'
     )
+    restic_repository = local_dir + '.restic'
     template_dict = {
       'restic_binary': shlex.quote(self.options['restic-binary']),
       'restic_rest_server_binary': shlex.quote(self.options['restic-rest-server-binary']),
       'rdiff_backup_data': shlex.quote(os.path.join(local_dir, 'rdiff-backup-data')),
       'remote_schema': remote_schema,
       'local_dir': shlex.quote(local_dir),
-      'restic_repository': shlex.quote(os.path.join(local_dir, 'restic')),
-      'local_socket': shlex.quote(os.path.join(local_dir, 'restic.sock')),
-      'remote_socket': shlex.quote(remote_socket),
+      'restic_repository': shlex.quote(restic_repository),
+      'restic_rest_server_socket': shlex.quote(os.path.join(restic_repository, 'restic.sock')),
+      'restic_rest_server_pid': shlex.quote(os.path.join(restic_repository, 'restic.pid')),
+      'ssh_client_socket': shlex.quote(ssh_client_socket),
       'keep_args': ' '.join(shlex.quote(e) for e in keep_args),
     }
 
@@ -241,17 +261,17 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         #!/bin/sh
         RESTIC=%(restic_binary)s
         BACKUP_DIR=%(local_dir)s
-        LOCAL_SOCKET=%(socket_path)s
+        SSH_CLIENT_SOCKET=%(socket_path)s
         case "$SSH_ORIGINAL_COMMAND" in
             backup)
                 cd $BACKUP_DIR
-                $RESTIC backup --insecure-no-password -r rest:http+unix:$LOCAL_SOCKET: .
+                $RESTIC backup --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
             ;;
             restore)
-                $RESTIC restore latest --insecure-no-password -r rest:http+unix:$LOCAL_SOCKET: -t $BACKUP_DIR
+                $RESTIC restore latest --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR
             ;;
             clear)
-                rm -f $LOCAL_SOCKET
+                rm -f $SSH_CLIENT_SOCKET
             ;;
             *)
                 echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
@@ -321,7 +341,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
               username=shlex.quote(parsed_url.username),
               hostname=shlex.quote(parsed_url.hostname),
             )
-    remote_dir = parsed_url.path
+    remote_dir = parsed_url.path.rstrip('/')
     local_dir = self.createDirectory(self.options['directory'], entry['name'])
 
     if slave_type == 'push':
