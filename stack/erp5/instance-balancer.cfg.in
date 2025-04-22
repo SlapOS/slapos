@@ -322,6 +322,15 @@ init =
   options['frontend-dict'] = frontend_dict
   options['zope-virtualhost-monster-backend-dict'] = zope_virtualhost_monster_backend_dict
 
+  rate_limits = slapparameter_dict.get('rate-limits', {})
+  rate_limits.setdefault('tarpit-duration', '5s')
+  rate_limits.setdefault('rules', [])
+  for idx, rule in enumerate(rate_limits['rules']):
+    rule.setdefault('table-name', str(idx))
+    rule.setdefault('table-size', '1m')
+    rule.setdefault('action', 'deny')
+  options['rate-limits'] = rate_limits
+
   if port_dict != previous_port_dict:
     with open(options['ports-state-file'] + '.tmp', 'w') as f:
       json.dump(port_dict, f, indent=True)

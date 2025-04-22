@@ -6092,10 +6092,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'health-check': True,
         'health-check-http-method': 'WRONG',
       },
-      'health-check-http-version': {
-        'health-check': True,
-        'health-check-http-version': 'WRONG/1.1',
-      },
       'health-check-timeout': {
         'health-check': True,
         'health-check-timeout': 'WRONG',
@@ -6167,8 +6163,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
       'accepted-slave-amount': '3',
-      'rejected-slave-amount': '28',
-      'slave-amount': '31',
+      'rejected-slave-amount': '27',
+      'slave-amount': '30',
       'rejected-slave-dict': {
         '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
@@ -6219,8 +6215,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
           'Wrong health-check-fall -2'],
         '_health-check-http-method': [
           'Wrong health-check-http-method WRONG'],
-        '_health-check-http-version': [
-          'Wrong health-check-http-version WRONG/1.1'],
         '_health-check-interval': [
           'Wrong health-check-interval WRONG'],
         '_health-check-interval-negative': [
@@ -6897,7 +6891,6 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'health-check': True,
         'health-check-http-method': 'POST',
         'health-check-http-path': '/POST-path to be encoded',
-        'health-check-http-version': 'HTTP/1.0',
         'health-check-timeout': '7',
         'health-check-interval': '15',
         'health-check-rise': '3',
@@ -7009,7 +7002,7 @@ backend _health-check-custom-http
   retries 3
   server _health-check-custom-backend-http %s   check inter 15s"""
       """ rise 3 fall 7
-  option httpchk POST /POST-path%%%%20to%%%%20be%%%%20encoded HTTP/1.0
+  option httpchk POST /POST-path%%%%20to%%%%20be%%%%20encoded
   timeout check 7s""" % (backend,),
       'health-check-default': """\
 backend _health-check-default-http
@@ -7018,7 +7011,7 @@ backend _health-check-default-http
   retries 3
   server _health-check-default-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
-  option httpchk GET / HTTP/1.1
+  option httpchk GET /
   timeout check 2s""" % (backend, )
     }
 
