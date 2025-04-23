@@ -290,7 +290,8 @@ context =
   key mariadb_data_directory my-cnf-parameters:data-directory
   key mariadb_backup_directory directory:mariadb-backup-restic
   key pid_file my-cnf-parameters:pid-file
-  key python_executable buildout:executable
+  raw python_executable {{ parameter_dict['python3-executable'] }}
+  key mariabackup_executable binary-wrap-mariabackup:wrapper-path
 
 [{{ section('mariadb-backup-cron-script') }}]
 # Generate after import script used by importer instance of webrunner
@@ -302,8 +303,9 @@ context =
   key bin_directory my-cnf-parameters:bin-directory
   key tmp_directory my-cnf-parameters:tmp-directory
   key mariadb_backup_directory directory:mariadb-backup-restic
-  key python_executable buildout:executable
+  raw python_executable {{ parameter_dict['python3-executable'] }}
   raw full_backup_retention_days {{ full_backup_retention_days }}
+  key mariabackup_executable binary-wrap-mariabackup:wrapper-path
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d

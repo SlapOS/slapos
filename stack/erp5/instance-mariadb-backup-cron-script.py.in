@@ -15,14 +15,20 @@ now = datetime.now(timezone.utc)
 timestamp = now.strftime('%Y%m%d_%H%M')
 
 print('Checking backup...')
-last_meta = sorted(glob.glob('$mariadb_backup_directory/*.meta'))[-1]
-last_full_meta = sorted(glob.glob('$mariadb_backup_directory/*.full.meta'))[-1]
+try:
+  last_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.meta')))[-1]
+except IndexError:
+  last_meta = None
+try:
+  last_full_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.full.meta')))[-1]
+except IndexError:
+  last_full_meta = None
 if not last_meta:
   incremental_count = 0
 else:
-  incremental_count = len(e for e in glob.glob('$mariadb_backup_directory/*.inc.meta') if e > last_meta)
+  incremental_count = len(e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_meta)
 
-if os.path.isdir(last_full_meta) and incremental_count > max_incremental_count:
+if last_full_meta and os.path.isdir(last_full_meta) and incremental_count > max_incremental_count:
   print('Doing incremental backup...')
   process_mariabackup = subprocess.Popen([
     mariabackup_executable, '--backup', '--stream=xbstream', '--incremental-basedir=%s' % last_meta,
