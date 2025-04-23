@@ -27,7 +27,7 @@ except IndexError:
 if not last_meta:
   incremental_count = 0
 else:
-  incremental_count = len(e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_meta)
+  incremental_count = len([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_meta])
 
 if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_incremental_count:
   print('Doing incremental backup...')
