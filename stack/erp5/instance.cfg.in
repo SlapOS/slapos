@@ -182,6 +182,7 @@ template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
+mariadb-backup-cron-script = {{ mariadb_backup_cron_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
 mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
@@ -190,6 +191,7 @@ unixodbc-location = {{ unixodbc_location }}
 mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
 mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
 groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
+python3-executable = {{ python3_executable }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
