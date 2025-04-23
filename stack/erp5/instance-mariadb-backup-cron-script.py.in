@@ -27,7 +27,7 @@ except IndexError:
 if not last_meta:
   incremental_count = 0
 else:
-  incremental_count = len([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_meta])
+  incremental_count = len([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_full_meta])
 
 if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_incremental_count:
   print('Doing incremental backup...')
@@ -64,7 +64,13 @@ else:
 
 if full_backup_retention_days > 0:
   # We keep until the latest full backup before the target date.
-  target_date = (now - timedelta(days=full_backup_retention_days)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+  def parse_datetime(s):
+    if s.endswith('Z'):
+      s = s[-1] + '+00:00'
+    if len(s) != 32:
+      s = s[:17] + '%09.6f' % float(s[17:-6]) + s[-6:]
+    return datetime.fromisoformat(s)
+  target_date = now - timedelta(days=full_backup_retention_days)
   snapshot_list = json.loads(subprocess.check_output([
     restic_executable, 'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup_directory,
   ]))
@@ -72,14 +78,14 @@ if full_backup_retention_days > 0:
   for i, snapshot in enumerate(snapshot_list):
     if snapshot['paths'][0].endswith('.full.xb'):
       latest_full_index = i
-    if snapshot['time'] > target_date:
+    if parse_datetime(snapshot['time']) > target_date:
       break
   for snapshot in snapshot_list[0:latest_full_index]:
     path = snapshot['paths'][0]
     print('Deleting old snapshots %s...' % path[1:-3])
     print(subprocess.check_output([
       restic_executable, 'forget', snapshot['id'], '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
-    ]))
-    shutil.rmtree(os.path.join(mariadb_backup_directory, path[1:-3]) + '.meta')
+    ]).decode())
+    shutil.rmtree(os.path.join(mariadb_backup_directory, path[1:-3]) + '.meta', ignore_errors=True)
 
 print('Done.')
