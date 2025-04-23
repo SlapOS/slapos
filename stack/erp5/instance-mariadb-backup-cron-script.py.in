@@ -1,0 +1,76 @@
+#!{{ python_executable }}
+from datetime import datetime, timedelta, timezone
+import glob
+import json
+import os
+import subprocess
+
+max_incremental_count = int(os.environ.get('max_incremental_count', '6'))
+mariabackup_executable  = '{{ bin_directory }}/mariabackup'
+mbstream_executable = '{{ bin_directory }}/mbstream'
+restic_executable = '{{ bin_directory }}/restic'
+mariadb_backup_directory = '{{ mariadb_backup_directory }}'
+full_backup_retention_days =  int('{{ full_backup_retention_days }}')
+now = datetime.now(timezone.utc)
+timestamp = now.strftime('%Y%m%d_%H%M')
+
+print('Checking backup...')
+last_meta = sorted(glob.glob('$mariadb_backup_directory/*.meta'))[-1]
+last_full_meta = sorted(glob.glob('$mariadb_backup_directory/*.full.meta'))[-1]
+if not last_meta:
+  incremental_count = 0
+else:
+  incremental_count = len(e for e in glob.glob('$mariadb_backup_directory/*.inc.meta') if e > last_meta)
+
+if os.path.isdir(last_full_meta) and incremental_count > max_incremental_count:
+  print('Doing incremental backup...')
+  process_mariabackup = subprocess.Popen([
+    mariabackup_executable, '--backup', '--stream=xbstream', '--incremental-basedir=%s' % last_meta,
+    '--extra-lsndir=%s/%s.inc.meta' % (mariadb_backup_directory, timestamp),
+  ], stdout=subprocess.PIPE)
+  process_restic = subprocess.Popen([
+    restic_executable, 'backup', '--stdin', '--stdin-filename', '%s.inc.xb' % timestamp,
+    '--tag', 'MariaDB', '--insecure-no-password', '-r', mariadb_backup_directory,
+  ], stdin=process_mariabackup.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  process_mariabackup.stdout.close()
+  stdout, stderr = process_restic.communicate()
+  print(stdout)
+  if stderr:
+    print(stderr)
+  assert process_restic.returncode == 0
+else:
+  print('Doing full backup...')
+  process_mariabackup = subprocess.Popen([
+    mariabackup_executable, '--backup', '--stream=xbstream',
+    '--extra-lsndir=%s/%s.full.meta' % (mariadb_backup_directory, timestamp),
+  ], stdout=subprocess.PIPE)
+  process_restic = subprocess.Popen([
+    restic_executable, 'backup', '--stdin', '--stdin-filename', '%s.full.xb' % timestamp,
+    '--tag', 'MariaDB', '--insecure-no-password', '-r', mariadb_backup_directory,
+  ], stdin=process_mariabackup.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  process_mariabackup.stdout.close()
+  stdout, stderr = process_restic.communicate()
+  print(stdout)
+  if stderr:
+    print(stderr)
+  assert process_restic.returncode == 0
+
+if full_backup_retention_days > 0:
+  target_date = (now - timedelta(days=full_backup_retention_days)).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+  snapshot_list = json.loads(subprocess.check_output([
+    restic_executable, 'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup_directory,
+  ]))
+  remaining_full_count = len([e for e in snapshot_list if e['time'] > target_date and e['paths'][0].endswith('.full.xb')])
+  if remaining_full_count == 0:
+    print('Skip deletion otherwise no full backup remains.')
+  else:
+    # 'restic forget --keep-within' does not work, as it checks the oldness from the latest snapshot *per path*
+    # thus all snapshots are the latest with the usage here, i.e. each backup has a different path.
+    delete_snapshot_id_list = [e['id'] for e in snapshot_list if e['time'] <= target_date]
+    for snapshot_id in delete_snapshot_id_list:
+      print('Deleting old snapshots...')
+      print(subprocess.check_output([
+        restic_executable, 'forget', snapshot_id, '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
+      ]))
+
+print('Done.')
