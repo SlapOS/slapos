@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import glob
 import json
 import os
+import shutil
 import subprocess
 
 max_incremental_count = int(os.environ.get('max_incremental_count', '6'))
@@ -15,14 +16,20 @@ now = datetime.now(timezone.utc)
 timestamp = now.strftime('%Y%m%d_%H%M')
 
 print('Checking backup...')
-last_meta = sorted(glob.glob('$mariadb_backup_directory/*.meta'))[-1]
-last_full_meta = sorted(glob.glob('$mariadb_backup_directory/*.full.meta'))[-1]
+try:
+  last_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.meta')))[-1]
+except IndexError:
+  last_meta = None
+try:
+  last_full_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.full.meta')))[-1]
+except IndexError:
+  last_full_meta = None
 if not last_meta:
   incremental_count = 0
 else:
-  incremental_count = len(e for e in glob.glob('$mariadb_backup_directory/*.inc.meta') if e > last_meta)
+  incremental_count = len(e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_meta)
 
-if os.path.isdir(last_full_meta) and incremental_count > max_incremental_count:
+if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_incremental_count:
   print('Doing incremental backup...')
   process_mariabackup = subprocess.Popen([
     mariabackup_executable, '--backup', '--stream=xbstream', '--incremental-basedir=%s' % last_meta,
@@ -66,11 +73,12 @@ if full_backup_retention_days > 0:
   else:
     # 'restic forget --keep-within' does not work, as it checks the oldness from the latest snapshot *per path*
     # thus all snapshots are the latest with the usage here, i.e. each backup has a different path.
-    delete_snapshot_id_list = [e['id'] for e in snapshot_list if e['time'] <= target_date]
-    for snapshot_id in delete_snapshot_id_list:
-      print('Deleting old snapshots...')
+    delete_snapshot_id_path_list = [(e['id'], e['paths'][0]) for e in snapshot_list if e['time'] <= target_date]
+    for snapshot_id, path in delete_snapshot_id_list:
+      print('Deleting old snapshots %s...' % path[1:-3])
       print(subprocess.check_output([
         restic_executable, 'forget', snapshot_id, '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
       ]))
+      shutil.rmtree(os.path.join(mariadb_backup_directory, path[1:-3]) + '.meta')
 
 print('Done.')

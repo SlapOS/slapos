@@ -191,6 +191,7 @@ unixodbc-location = {{ unixodbc_location }}
 mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
 mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
 groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
+python3-executable = {{ python3_executable }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
