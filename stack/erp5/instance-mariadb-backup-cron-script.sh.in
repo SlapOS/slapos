@@ -1,0 +1,48 @@
+#!{{ dash }}
+set -e
+
+max_incremental_count="${max_incremental_count:-6}"
+mariabackup_executable='{{ bin_directory }}/mariabackup'
+mbstream_executable='{{ bin_directory }}/mbstream'
+restic_executable='{{ bin_directory }}/restic'
+python_executable="{{ python_executable }}"
+mariadb_backup_directory='{{ mariadb_backup_directory }}'
+date="$(date '+%Y%m%d_%H%M')"
+full_backup_retention_days='{{ full_backup_retention_days }}'
+
+echo "Checking backup..."
+meta_list=$(ls -d "$mariadb_backup_directory/"*.meta)
+last_meta=$(echo $meta_list | "$python_executable" -c "import sys;print([e for e in sys.stdin.read().strip().split() if e.endswith('.full.meta')][-1])")
+if [ -z "$last_meta" ]; then
+  incremental_count=0
+else
+  incremental_count=$(echo $meta_list | "$python_executable" -c "import sys;print(len([e for e in sys.stdin.read().strip().split() if e.endswith('.inc.meta') and e > '$full']))"
+fi
+
+if [ -e "$last_meta" && "$incremental_count" -lt "$max_incremental_count" ]; then
+  echo "Doing incremental backup..."
+  "$mariabackup_executable" --backup --stream=xbstream --incremental-basedir="$last_meta" --extra-lsndir="$mariadb_backup_directory/$date.inc.meta" | \
+    "$restic_executable" backup --stdin --stdin-filename "$date.inc.xb" --tag MariaDB --insecure-no-password -r "$mariadb_backup_directory"
+else
+  echo "Doing full backup..."
+  "$mariabackup_executable" --backup --stream=xbstream --extra-lsndir="$mariadb_backup_directory/$date.full.meta" | \
+    "$restic_executable" backup --stdin --stdin-filename "$date.full.xb" --tag MariaDB --insecure-no-password -r "$mariadb_backup_directory"
+fi
+
+if [ -n "$full_backup_retention_days" ]; then
+  target_date=$("$python_executable" -c "from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(days=$full_backup_retention_days)).strftime('%Y-%m-%dT%H:%M:%S.%fZ'))")
+  snapshot_json=$("restic_executable" snapshots --json --insecure-no-password -r "$mariadb_backup_directory")
+  remaining_full_count=$(echo "$snapshot_json" | "$python_executable" -c "import json,sys; d=json.load(sys.stdin); print(len([e for e in d if e['time'] > '$target_date' and e['paths'][0].endswith('.full.xb')]))")
+  if [ "$remaining_full_count" = "0" ]; then
+    echo 'Skip deletion otherwise no full backup remains.'
+  else
+  delete_snapshot_id_list=$(echo "$snapshot_json" | "$python_executable" -c "import json,sys; d=json.load(sys.stdin); print(' '.join([e['id'] for e in d if e['time'] <= '$target_date']))")
+  if [ -n "$delete_snapshot_id_list"]; then
+    echo 'Deleting old snapshots...'
+    for snapshot_id in "$delete_snapshot_id_list"]; do
+      "restic_executable" forget "$snapshot_id" --prune --insecure-no-password -r "$mariadb_backup_directory"
+    done
+  fi
+fi
+
+echo 'Done.'
