@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "image-to-test-url": {
+      "title": "Image To Test (URL)",
+      "description": "Absolute URL to QCOW2 vm-bootstrap compatible image.",
+      "type": "string"
+    },
+    "image-to-test-md5sum": {
+      "title": "MD5 checksum of Image To Test.",
+      "description": "MD5 checksum of QCOW2 vm-bootstrap compatible image.",
+      "type": "string"
+    },
+    "image-to-test-gzipped": {
+      "title": "Define if the image to test is gzipped",
+      "type": "boolean",
+      "default": false
+    },
+    "test-script-url": {
+      "title": "Test script URL",
+      "description": "Test script will be run inside of the VM.",
+      "type": "string"
+    },
+    "test-script-md5sum": {
+      "title": "Optional test script MD5 checksum",
+      "type": "string"
+    },
+    "test-script-environment": {
+      "title": "Optional test script environment",
+      "description": "Shell style environment to be passed to the test scriptMD5 checksum of QCOW2 vm-bootstrap compatible image. The test script support TEST_SCRIPT_TRY_NUM and TEST_SCRIPT_WAIT_TIME. XXX: Maybe shall become parameter?",
+      "type": "string",
+      "textarea": true
+    }
+  }
+}
