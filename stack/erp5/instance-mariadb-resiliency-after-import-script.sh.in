@@ -15,6 +15,7 @@ set -e
 mariabackup_executable='{{ bin_directory }}/mariabackup'
 mbstream_executable='{{ bin_directory }}/mbstream'
 restic_executable='{{ bin_directory }}/restic'
+python_executable="{{ python_executable }}"
 mariadb_data_directory='{{ mariadb_data_directory }}'
 mariadb_backup_directory='{{ mariadb_backup_directory }}'
 mariadb_restore_directory="{{ tmp_directory }}/$$"
@@ -32,17 +33,37 @@ if [ -e "$pid_file" ]; then
   fi
 fi
 
+echo "Checking backup..."
+snapshot_id_path_list=$("$restic_executable" snapshots --json --insecure-no-password -r "$mariadb_backup_directory" | "$python_executable" -c "import json,sys; d=json.load(sys.stdin); f=([[]]+[(e['id'],e['paths'][0]) for e in d if e['paths'][0].endswith('.full.xb')])[-1]; i=[] if not f else [(e['id'],e['paths'][0]) for e in d if e['paths'][0]>f[1] and e['paths'][0].endswith('.inc.xb')]; print(' '.join(','.join(e) for e in [f]+i))")
+if [ -z "$snapshot_id_path_list" ]; then
+  echo "No full backup found. Aborting."
+  exit 1
+fi
+
 echo "Deleting existing database..."
 find "$mariadb_data_directory" -mindepth 1 -delete
 
 echo "Extracting from backup..."
 rm -rf "$mariadb_restore_directory"
-mkdir -p "$mariadb_restore_directory"
-"$restic_executable" dump latest mariadb.xb --insecure-no-password -r "$mariadb_backup_directory" | "$mbstream_executable" -C "$mariadb_restore_directory" -x
 
 echo "Restoring database..."
-"$mariabackup_executable" --prepare --target-dir="$mariadb_restore_directory"
+for snapshot_id_path in $snapshot_id_path_list; do
+  snapshot_id=$(echo $snapshot_id_path|sed s/,.*//)
+  path=$(echo $snapshot_id_path|sed s/.*,//)
+  echo $path
+  if [ ! -d "$mariadb_restore_directory" ]; then
+    mkdir -p "$mariadb_restore_directory"
+    "$restic_executable" dump $snapshot_id $path --insecure-no-password -r "$mariadb_backup_directory" | "$mbstream_executable" -C "$mariadb_restore_directory" -x
+    "$mariabackup_executable" --prepare --target-dir="$mariadb_restore_directory"
+  else
+    rm -rf "$mariadb_restore_directory.inc"
+    mkdir -p "$mariadb_restore_directory.inc"
+    "$restic_executable" dump $snapshot_id $path --insecure-no-password -r "$mariadb_backup_directory" | "$mbstream_executable" -C "$mariadb_restore_directory.inc" -x
+    "$mariabackup_executable" --prepare --target-dir="$mariadb_restore_directory" --incremental-dir="$mariadb_restore_directory.inc"
+  fi
+done
 "$mariabackup_executable" --move-back --target-dir="$mariadb_restore_directory"
 rm -rf "$mariadb_restore_directory"
+rm -rf "$mariadb_restore_directory.inc"
 
 echo 'Backup restoration successfully completed.'
