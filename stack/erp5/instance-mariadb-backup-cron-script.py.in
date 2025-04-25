@@ -1,8 +1,10 @@
 #!{{ python_executable }}
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from dateutil.parser import parse
 import glob
 import json
 import os
+import pytz
 import shutil
 import subprocess
 
@@ -12,7 +14,7 @@ mbstream_executable = '{{ bin_directory }}/mbstream'
 restic_executable = '{{ bin_directory }}/restic'
 mariadb_backup_directory = '{{ mariadb_backup_directory }}'
 full_backup_retention_days =  int('{{ full_backup_retention_days }}')
-now = datetime.now(timezone.utc)
+now = pytz.utc.localize(datetime.utcnow())
 timestamp = now.strftime('%Y%m%d_%H%M')
 
 print('Checking backup...')
@@ -64,12 +66,6 @@ else:
 
 if full_backup_retention_days > 0:
   # We keep until the latest full backup before the target date.
-  def parse_datetime(s):
-    if s.endswith('Z'):
-      s = s[-1] + '+00:00'
-    if len(s) != 32:
-      s = s[:17] + '%09.6f' % float(s[17:-6]) + s[-6:]
-    return datetime.fromisoformat(s)
   target_date = now - timedelta(days=full_backup_retention_days)
   snapshot_list = json.loads(subprocess.check_output([
     restic_executable, 'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup_directory,
@@ -78,7 +74,7 @@ if full_backup_retention_days > 0:
   for i, snapshot in enumerate(snapshot_list):
     if snapshot['paths'][0].endswith('.full.xb'):
       latest_full_index = i
-    if parse_datetime(snapshot['time']) > target_date:
+    if parse(snapshot['time']) > target_date:
       break
   for snapshot in snapshot_list[0:latest_full_index]:
     path = snapshot['paths'][0]
