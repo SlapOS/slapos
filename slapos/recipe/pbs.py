@@ -61,7 +61,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         if slave['type'] == 'pull':
           options['rdiff-backup-data-folder'] = str(os.path.join(options['directory'], slave['name'], 'rdiff-backup-data'))
 
-  def wrapper_push(self, remote_schema, local_dir, remote_dir, rdiff_wrapper_path):
+  def wrapper_push(self, remote_schema, local_dir, remote_dir, restic_wrapper_path):
     # Create a simple rdiff-backup wrapper that will push
 
     template = textwrap.dedent("""\
@@ -72,31 +72,66 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         LC_ALL=C
         export LC_ALL
-        RDIFF_BACKUP=%(rdiffbackup_binary)s
-        $RDIFF_BACKUP \\
-                --remote-schema %(remote_schema)s \\
-                --restore-as-of now \\
-                --ignore-numerical-ids \\
-                --force \\
-                %(local_dir)s \\
-                %(remote_dir)s
+        RESTIC=%(restic_binary)s
+        RESTIC_REST_SERVER=%(restic_rest_server_binary)s
+        RESTIC_REPOSITORY=%(restic_repository)s
+        SSH_CLIENT_SOCKET=%(ssh_client_socket)s
+        RESTIC_REST_SERVER_SOCKET=%(restic_rest_server_socket)s
+        RESTIC_REST_SERVER_PID=%(restic_rest_server_pid)s
+
+        # start rest-server
+        if [ -d $RESTIC_REST_SERVER_PID ]; then
+            kill $(cat $RESTIC_REST_SERVER_PID)
+            wait $(cat $RESTIC_REST_SERVER_PID)
+        fi
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
+        $RESTIC_REST_SERVER --listen unix:$RESTIC_REST_SERVER_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
+        echo $! > $RESTIC_REST_SERVER_PID
+        START_TIME=$(date +%%s)
+        TIMEOUT="10"
+        while true; do
+            test -S $RESTIC_REST_SERVER_SOCKET && break
+            ELAPSED=$(($(date +%%s) - START_TIME))
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                echo "rest-server socket did not appear in $TIMEOUT seconds."
+                exit 1
+            fi
+            sleep 0.1
+        done
+
+        %(remote_schema)s clear
+        %(remote_schema)s -R $SSH_CLIENT_SOCKET:$RESTIC_REST_SERVER_SOCKET restore
+
+        # stop rest-server
+        kill $(cat $RESTIC_REST_SERVER_PID)
+        wait $(cat $RESTIC_REST_SERVER_PID)
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
         """)
 
+    ssh_client_socket = os.path.join(
+      remote_dir, 'ssh.sock'
+    )
+    restic_repository = local_dir + '.restic'
     template_dict = {
-      'rdiffbackup_binary': shlex.quote(self.options['rdiffbackup-binary']),
-      'remote_schema': shlex.quote(remote_schema),
-      'remote_dir': shlex.quote(remote_dir),
-      'local_dir': shlex.quote(local_dir)
+      'restic_binary': shlex.quote(self.options['restic-binary']),
+      'restic_rest_server_binary': shlex.quote(self.options['restic-rest-server-binary']),
+      'remote_schema': remote_schema,
+      'restic_repository': shlex.quote(restic_repository),
+      'restic_rest_server_socket': shlex.quote(os.path.join(restic_repository, 'restic.sock')),
+      'restic_rest_server_pid': shlex.quote(os.path.join(restic_repository, 'restic.pid')),
+      'ssh_client_socket': shlex.quote(ssh_client_socket),
     }
 
     return self.createFile(
-      name=rdiff_wrapper_path,
+      name=restic_wrapper_path,
       content=template % template_dict,
       mode=0o700
     )
 
 
-  def wrapper_pull(self, remote_schema, local_dir, remote_dir, rdiff_wrapper_path, remove_backup_older_than):
+  def wrapper_pull(self, remote_schema, local_dir, remote_dir, restic_wrapper_path, remove_backup_older_than):
     # Wrap rdiff-backup call into a script that checks consistency of backup
     # We need to manually escape the remote schema
 
@@ -115,54 +150,54 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         LC_ALL=C
         export LC_ALL
-        is_first_backup=$(test -d %(rdiff_backup_data)s || echo yes)
-        RDIFF_BACKUP=%(rdiffbackup_binary)s
-
-        TMPDIR=%(tmpdir)s
+        is_first_backup=$(test -d %(restic_repository)s || echo yes)
+        RESTIC=%(restic_binary)s
+        RESTIC_REST_SERVER=%(restic_rest_server_binary)s
         BACKUP_DIR=%(local_dir)s
-        CORRUPTED_MSG="^Warning:\ Computed\ SHA1\ digest\ of\ "
-        CANTFIND_MSG="^Warning:\ Cannot\ find\ SHA1\ digest\ for\ file\ "
-        CORRUPTED_FILE=$TMPDIR/$$.rdiff_corrupted
-        CANTFIND_FILE=$TMPDIR/$$.rdiff_cantfind
+        RESTIC_REPOSITORY=%(restic_repository)s
+        SSH_CLIENT_SOCKET=%(ssh_client_socket)s
+        RESTIC_REST_SERVER_SOCKET=%(restic_rest_server_socket)s
+        RESTIC_REST_SERVER_PID=%(restic_rest_server_pid)s
 
-        SUCCEEDED=false
+        test -d $RESTIC_REPOSITORY || $RESTIC init --insecure-no-password -r $RESTIC_REPOSITORY
 
-        # not using --fix-corrupted can lead to an infinite loop
-        # in case of manual changes to the backup repository.
-
-        CORRUPTED_ARGS=""
-        if [ "$1" = "--fix-corrupted" ]; then
-            VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
-            echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
-
-            # Sometimes --verify reports this spurious warning:
-            echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
-
-            # There can be too many files, better not to provide them through separate command line parameters
-            CORRUPTED_ARGS="--always-snapshot-fromfile $CORRUPTED_FILE --always-snapshot-fromfile $CANTFIND_FILE"
-
-            if [ -s "$CORRUPTED_FILE" -o -s "$CANTFIND_FILE" ]; then
-                echo Retransmitting $(cat "$CORRUPTED_FILE" "$CANTFIND_FILE" | wc -l) corrupted/missing files
-            else
-                echo "No corrupted or missing files to retransmit"
-            fi
+        # import existing rdiff-backup if exists.
+        if [ -d %(rdiff_backup_data)s ]; then
+            cd $BACKUP_DIR
+            $RESTIC backup . --insecure-no-password -r $RESTIC_REPOSITORY \\
+                --exclude=rdiff-backup-data
         fi
 
-        $RDIFF_BACKUP \\
-                $CORRUPTED_ARGS \\
-                --remote-schema %(remote_schema)s \\
-                %(remote_dir)s \\
-                $BACKUP_DIR
+        # start rest-server
+        if [ -d $RESTIC_REST_SERVER_PID ]; then
+            kill $(cat $RESTIC_REST_SERVER_PID)
+            wait $(cat $RESTIC_REST_SERVER_PID)
+        fi
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
+        $RESTIC_REST_SERVER --listen unix:$RESTIC_REST_SERVER_SOCKET --no-auth --append-only --path=$RESTIC_REPOSITORY &
+        echo $! > $RESTIC_REST_SERVER_PID
+        START_TIME=$(date +%%s)
+        TIMEOUT="10"
+        while true; do
+            test -S $RESTIC_REST_SERVER_SOCKET && break
+            ELAPSED=$(($(date +%%s) - START_TIME))
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                echo "rest-server socket did not appear in $TIMEOUT seconds."
+                exit 1
+            fi
+            sleep 0.1
+        done
 
-        RDIFF_BACKUP_STATUS=$?
+        %(remote_schema)s clear
+        %(remote_schema)s -R $SSH_CLIENT_SOCKET:$RESTIC_REST_SERVER_SOCKET backup
+        RESTIC_STATUS=$?
 
-        [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
-
-        if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
+        if [ ! $RESTIC_STATUS -eq 0 ]; then
             # Check the backup, go to the last consistent backup, so that next
             # run will be okay.
             echo "Checking backup directory..."
-            $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+            $RESTIC check --insecure-no-password -r $RESTIC_REPOSITORY
             if [ ! $? -eq 0 ]; then
                 # Here, two possiblities:
                 if [ is_first_backup ]; then
@@ -178,23 +213,82 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             fi
         else
             # Everything's okay, cleaning up...
-            $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+            $RESTIC forget %(keep_args)s --insecure-no-password -r $RESTIC_REPOSITORY
         fi
 
+        # stop rest-server
+        kill $(cat $RESTIC_REST_SERVER_PID)
+        wait $(cat $RESTIC_REST_SERVER_PID)
+        rm -f $RESTIC_REST_SERVER_SOCKET
+        rm -f $RESTIC_REST_SERVER_PID
         """)
 
+    # BBB translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
+    remove_backup_older_than = remove_backup_older_than.lower()
+    if remove_backup_older_than.endswith('b'):
+      keep_args = ('--keep-last ', remove_backup_older_than[:-1])
+    else:
+      if remove_backup_older_than.endswith('w'):
+        remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
+      keep_args = ('--keep-within', remove_backup_older_than)
+
+    ssh_client_socket = os.path.join(
+      remote_dir, 'ssh.sock'
+    )
+    restic_repository = local_dir + '.restic'
     template_dict = {
-      'rdiffbackup_binary': shlex.quote(self.options['rdiffbackup-binary']),
+      'restic_binary': shlex.quote(self.options['restic-binary']),
+      'restic_rest_server_binary': shlex.quote(self.options['restic-rest-server-binary']),
       'rdiff_backup_data': shlex.quote(os.path.join(local_dir, 'rdiff-backup-data')),
-      'remote_schema': shlex.quote(remote_schema),
-      'remote_dir': shlex.quote(remote_dir),
+      'remote_schema': remote_schema,
       'local_dir': shlex.quote(local_dir),
-      'tmpdir': '/tmp',
-      'remove_backup_older_than': shlex.quote(remove_backup_older_than)
+      'restic_repository': shlex.quote(restic_repository),
+      'restic_rest_server_socket': shlex.quote(os.path.join(restic_repository, 'restic.sock')),
+      'restic_rest_server_pid': shlex.quote(os.path.join(restic_repository, 'restic.pid')),
+      'ssh_client_socket': shlex.quote(ssh_client_socket),
+      'keep_args': ' '.join(shlex.quote(e) for e in keep_args),
     }
 
     return self.createFile(
-      name=rdiff_wrapper_path,
+      name=restic_wrapper_path,
+      content=template % template_dict,
+      mode=0o700
+    )
+
+
+  def wrapper_restic(self, restic_wrapper_path, restic_binary_path, local_dir):
+    template = textwrap.dedent("""\
+        #!/bin/sh
+        RESTIC=%(restic_binary)s
+        BACKUP_DIR=%(local_dir)s
+        SSH_CLIENT_SOCKET=%(socket_path)s
+        case "$SSH_ORIGINAL_COMMAND" in
+            backup)
+                cd $BACKUP_DIR
+                $RESTIC backup --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
+            ;;
+            restore)
+                $RESTIC restore latest --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR
+            ;;
+            clear)
+                rm -f $SSH_CLIENT_SOCKET
+            ;;
+            *)
+                echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
+            ;;
+        esac
+     """)
+    socket_path = os.path.join(
+      os.path.dirname(local_dir.rstrip('/')), 'restic.sock'
+    )
+    template_dict = {
+      'restic_binary': shlex.quote(restic_binary_path),
+      'local_dir': shlex.quote(local_dir),
+      'socket_path': shlex.quote(socket_path),
+    }
+
+    return self.createFile(
+      name=restic_wrapper_path,
       content=template % template_dict,
       mode=0o700
     )
@@ -231,7 +325,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     known_hosts_file[known_hostname] = entry['server-key'].strip()
 
     notifier_wrapper_path = os.path.join(self.options['wrappers-directory'], slave_id)
-    rdiff_wrapper_path = notifier_wrapper_path + '_raw'
+    restic_wrapper_path = notifier_wrapper_path + '_raw'
 
     # Create the rdiff-backup wrapper
     # It is useful to separate it from the notifier so that we can run it manually.
@@ -240,35 +334,36 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
               '-o "ConnectTimeout 300" '
               '-o "ServerAliveCountMax 10" '
               '-o "ServerAliveInterval 30" '
-              '-p %s '
+              '-p {port} '
               '{username}@{hostname}').format(
-              ssh=self.options['sshclient-binary'],
-              username=parsed_url.username,
-              hostname=parsed_url.hostname
+              ssh=shlex.quote(self.options['sshclient-binary']),
+              port=shlex.quote(str(parsed_url.port)),
+              username=shlex.quote(parsed_url.username),
+              hostname=shlex.quote(parsed_url.hostname),
             )
-    remote_dir = '{port}::{path}'.format(port=parsed_url.port, path=parsed_url.path)
+    remote_dir = parsed_url.path.rstrip('/')
     local_dir = self.createDirectory(self.options['directory'], entry['name'])
 
     if slave_type == 'push':
-      rdiff_wrapper = self.wrapper_push(remote_schema,
-                                        local_dir,
-                                        remote_dir,
-                                        rdiff_wrapper_path)
+      restic_wrapper = self.wrapper_push(remote_schema,
+                                         local_dir,
+                                         remote_dir,
+                                         restic_wrapper_path)
     elif slave_type == 'pull':
       # XXX: only 3 increments is not enough by default.
-      rdiff_wrapper = self.wrapper_pull(remote_schema,
-                                        local_dir,
-                                        remote_dir,
-                                        rdiff_wrapper_path,
-                                        entry.get('remove-backup-older-than', '3B'))
+      restic_wrapper = self.wrapper_pull(remote_schema,
+                                         local_dir,
+                                         remote_dir,
+                                         restic_wrapper_path,
+                                         entry.get('remove-backup-older-than', '3B'))
 
-    path_list.append(rdiff_wrapper)
+    path_list.append(restic_wrapper)
 
     # Create notifier wrapper
     notifier_wrapper = self.createNotifier(
         notifier_binary=self.options['notifier-binary'],
         wrapper=notifier_wrapper_path,
-        executable=rdiff_wrapper,
+        executable=restic_wrapper,
         log=os.path.join(self.options['feeds'], entry['notification-id']),
         title=entry.get('title', slave_id),
         notification_url=entry['notify'] or '',
@@ -306,11 +401,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     else:
       self.logger.info("Server mode")
 
-      wrapper = self.createWrapper(self.options['wrapper'],
-                                   (self.options['rdiffbackup-binary'],
-                                       '--restrict', self.options['path'],
-                                       '--server'
-                                       ))
+      wrapper = self.wrapper_restic(
+        self.options['wrapper'],
+        self.options['restic-binary'],
+        self.options['path'],
+      )
       path_list.append(wrapper)
 
     return path_list
