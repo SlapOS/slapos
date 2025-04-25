@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by gitea instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "url": {
+      "description": "Shared frontend for this gitea instance",
+      "pattern": "^https://",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
