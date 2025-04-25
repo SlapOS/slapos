@@ -111,7 +111,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         """)
 
     ssh_client_socket = os.path.join(
-      os.path.dirname(remote_dir), 'restic.sock'
+      remote_dir, 'ssh.sock'
     )
     restic_repository = local_dir + '.restic'
     template_dict = {
@@ -233,7 +233,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       keep_args = ('--keep-within', remove_backup_older_than)
 
     ssh_client_socket = os.path.join(
-      os.path.dirname(remote_dir), 'restic.sock'
+      remote_dir, 'ssh.sock'
     )
     restic_repository = local_dir + '.restic'
     template_dict = {
