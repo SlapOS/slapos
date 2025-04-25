@@ -1,9 +1,12 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 [buildout]
 
 parts =
   publish-connection-information
   pbs
   logrotate-entry-notifier
+  pbs-known-hosts
   pbs-sshkeys-authority
   sshkeys-openssh
   resilient-genstatrss-wrapper
@@ -130,6 +133,18 @@ instance-root-name = $${monitor-instance-parameter:root-instance-title}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
 status-item-directory = $${directory:notifier-status-items}
 
+[pbs-known-hosts]
+recipe = slapos.recipe.build
+slave-instance-list = {{ dumps(slave_instance_list) }}
+known-hosts = $${directory:dot-ssh}/known_hosts
+location = $${:known-hosts}
+install =
+  from urllib.parse import urlparse
+  with open(options['known-hosts'], 'w') as f:
+    for slave in options['slave-instance-list']:
+      parsed_url = urlparse(slave['url'])
+      f.write('[%s]:%s %s\n' % (parsed_url.hostname, parsed_url.port, slave['server-key']))
+
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
 command-line = ${buildout:bin-directory}/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${monitor-instance-parameter:root-instance-title}-PBS" --link $${pbs:log-url}
@@ -155,6 +170,17 @@ log = $${directory:notifier-feeds}/*
 rotate-num = 5
 frequency = weekly
 nocompress = true
+
+{% for slave in slave_instance_list -%}
+[{{ section('ssh-to-' + slave['notification-id']) }}]
+recipe = slapos.recipe.template:jinja2
+url = ${template-ssh-from-pbs-promise:target}
+output = $${basedirectory:promises}/ssh-to-{{ slave['notification-id'] }}.new
+context =
+  raw python_executable ${buildout:executable}
+  raw ssh_client $${openssh-client:wrapper-path}
+  raw url {{ slave['url'] }}
+{% endfor -%}
 
 #----------------
 #--
@@ -275,3 +301,7 @@ context =
   key monitor_feed_directory monitor-directory:public
   key base_url publish-connection-information:feeds-url
   raw python_executable ${buildout:executable}
+
+[buildout]
+parts +=
+  {{ part_list | join('\n  ') }}

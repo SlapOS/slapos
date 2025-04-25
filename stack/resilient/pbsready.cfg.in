@@ -96,14 +96,17 @@ rotate-num = 7
 
 #----------------
 #--
-#-- Sets up an rdiff-backup server (with a openssh server for ssh)
+#-- Sets up an restic wrapper (with an openssh server for ssh)
 
 [restic-wrapper]
-recipe = slapos.cookbook:pbs
-client = false
-path = $${directory:backup}
+recipe = slapos.recipe.template:jinja2
+url = ${template-restic-wrapper:target}
+output = $${:wrapper}
 wrapper = $${rootdirectory:bin}/restic-wrapper
-restic-binary = ${restic:location}/bin/restic
+context =
+  raw dash_location ${dash:location}/bin/dash
+  raw restic_binary ${restic:location}/bin/restic
+  raw backup_dir $${directory:backup}
 
 
 #----------------
@@ -294,5 +297,5 @@ recipe = slapos.cookbook:userinfo
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
-resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${restic-wrapper:path}
+resilient-ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${directory:backup}
 ip = $${slap-network-information:global-ipv6}

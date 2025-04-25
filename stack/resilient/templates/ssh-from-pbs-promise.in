@@ -1,0 +1,18 @@
+#!{{ python_executable }}
+import os
+import subprocess
+import sys
+from urllib.parse import urlparse
+parsed_url = urlparse('{{ url }}')
+user = parsed_url.username
+host = parsed_url.hostname
+port = parsed_url.port
+# Redirect output to /dev/null
+with open(os.devnull, 'wb') as _dev_null:
+  ssh = subprocess.Popen(
+      ('{{ ssh_client }}', '%s@%s' % (user, host), '-p', str(port)),
+      stdin=subprocess.PIPE, stdout=_dev_null, universal_newlines=True)
+ssh.communicate('q' + chr(255) + chr(0) * 7)
+if ssh.returncode:
+  sys.stderr.write("SSH Connection failed\n")
+sys.exit(ssh.returncode)
