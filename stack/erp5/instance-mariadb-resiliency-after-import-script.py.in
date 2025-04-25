@@ -1,0 +1,96 @@
+#!{{ python_executable }}
+import json
+import os
+import shutil
+import subprocess
+import sys
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# OR MYSQL DATA WILL BE ERASED.
+
+# This script will import the dump of the mysql database to the real
+# database. It is launched by the clone (importer) instance of webrunner
+# in the end of the import script.
+
+# Depending on the output, it will create a file containing
+# the status of the restoration (success or failure)
+
+mariabackup_executable = '{{ bin_directory }}/mariabackup'
+mbstream_executable = '{{ bin_directory }}/mbstream'
+restic_executable = '{{ bin_directory }}/restic'
+mariadb_data_directory = '{{ mariadb_data_directory }}'
+mariadb_backup_directory = '{{ mariadb_backup_directory }}'
+mariadb_restore_directory = os.path.join('{{ tmp_directory }}', str(os.getpid()))
+pid_file = '{{ pid_file }}'
+
+# Make sure mariadb is not already running
+if os.path.exists(pid_file):
+  with open(pid_file) as f:
+    pid = f.read()
+    if pid:
+      try:
+        os.kill(pid, 0)
+      except OSError:
+        pass
+      else:
+        print('Mariadb is already running with pid %s. Aborting.' % pid)
+        sys.exit(1)
+
+    else:
+      print('Cannot read Mariadb pidfile, assuming running. Aborting.')
+      sys.exit(1)
+
+print('Checking backup...')
+snapshot_list = json.loads(subprocess.check_output([
+  restic_executable, 'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup_directory,
+]))
+restore_snapshot_list = [e for e in snapshot_list if e['paths'][0].endswith('.full.xb')][-1:]
+if not restore_snapshot_list:
+  print('No full backup found. Aborting')
+  sys.exit(1)
+restore_snapshot_list.extend(
+  [e for e in snapshot_list if e['paths'][0] > restore_snapshot_list[0]['paths'][0] and e['paths'][0].endswith('.inc.xb')]
+)
+
+print('Deleting existing database...')
+shutil.rmtree(mariadb_data_directory, ignore_errors=True)
+
+print('Restoring database...')
+shutil.rmtree(mariadb_restore_directory, ignore_errors=True)
+os.mkdir(mariadb_restore_directory)
+mariadb_incremental_restore_directory = mariadb_restore_directory + '.inc'
+for i, snapshot in enumerate(restore_snapshot_list):
+  snapshot_id = snapshot['id']
+  path = snapshot['paths'][0]
+  print(path)
+  if i == 0:
+    restore_directory = mariadb_restore_directory
+    extra_mariabackup_args = []
+  else:
+    shutil.rmtree(mariadb_incremental_restore_directory, ignore_errors=True)
+    os.mkdir(mariadb_incremental_restore_directory)
+    restore_directory = mariadb_incremental_restore_directory
+    extra_mariabackup_args = ['--incremental-dir=%s' % mariadb_incremental_restore_directory]
+  process_restic = subprocess.Popen([
+    restic_executable, 'dump', snapshot_id, path, '--insecure-no-password', '-r', mariadb_backup_directory,
+  ], stdout=subprocess.PIPE)
+  process_mbstream = subprocess.Popen([
+    mbstream_executable, '-C', restore_directory, '-x',
+  ], stdin=process_restic.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  process_restic.stdout.close()
+  stdout, stderr = process_mbstream.communicate()
+  print(stdout.decode())
+  if stderr:
+    print(stderr.decode())
+  assert process_mbstream.returncode == 0
+  print(subprocess.check_output([
+    mariabackup_executable, '--prepare', '--target-dir=%s' % mariadb_restore_directory,
+  ] + extra_mariabackup_args).decode())
+
+print(subprocess.check_output([
+  mariabackup_executable, '--move-back', '--target-dir=%s' % mariadb_restore_directory,
+]).decode())
+shutil.rmtree(mariadb_restore_directory)
+shutil.rmtree(mariadb_incremental_restore_directory)
+
+print('Backup restoration successfully completed.')
