@@ -79,17 +79,22 @@ for i, snapshot in enumerate(restore_snapshot_list):
   ], stdin=process_restic.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   process_restic.stdout.close()
   stdout, stderr = process_mbstream.communicate()
-  print(stdout.decode())
+  print(stdout.decode('utf-8'))
   if stderr:
-    print(stderr.decode())
-  assert process_mbstream.returncode == 0
+    print(stderr.decode('utf-8'))
+  if process_restic.returncode != 0:
+    print('restic: exit %s' % process_restic.returncode)
+    sys.exit(process_restic.returncode)
+  if process_mbstream.returncode != 0:
+    print('mbstream: exit %s' % process_mbstream.returncode)
+    sys.exit(process_mbstream.returncode)
   print(subprocess.check_output([
     mariabackup_executable, '--prepare', '--target-dir=%s' % mariadb_restore_directory,
-  ] + extra_mariabackup_args).decode())
+  ] + extra_mariabackup_args).decode('utf-8'))
 
 print(subprocess.check_output([
   mariabackup_executable, '--move-back', '--target-dir=%s' % mariadb_restore_directory,
-]).decode())
+]).decode('utf-8'))
 shutil.rmtree(mariadb_restore_directory)
 shutil.rmtree(mariadb_incremental_restore_directory)
 
