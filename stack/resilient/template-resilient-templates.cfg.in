@@ -42,3 +42,4 @@ context =
   key slave_instance_list slap-configuration:slave-instance-list
   key slapparameter_dict slap-configuration:configuration
   key ipv6 slap-configuration:ipv6-random
+  import hashlib hashlib
