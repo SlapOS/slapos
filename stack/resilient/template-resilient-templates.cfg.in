@@ -43,4 +43,3 @@ context =
   key slapparameter_dict slap-configuration:configuration
   key ipv6 slap-configuration:ipv6-random
   import hashlib hashlib
-  import json json
