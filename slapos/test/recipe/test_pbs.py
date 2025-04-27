@@ -14,7 +14,8 @@ class PBSTest(unittest.TestCase):
         from slapos.recipe import pbs
         from slapos.test.utils import makeRecipe
         options = {
-            'rdiffbackup-binary': ''
+            'restic-binary': '',
+            'restic-rest-server-binary': '',
         }
         return makeRecipe(
             pbs.Recipe,
@@ -24,30 +25,30 @@ class PBSTest(unittest.TestCase):
     def test_push(self):
         recipe = self.new_recipe()
 
-        with tempfile.NamedTemporaryFile('w+') as rdiff_wrapper:
+        with tempfile.NamedTemporaryFile('w+') as restic_wrapper:
             recipe.wrapper_push(remote_schema='TEST_REMOTE_SCHEMA',
                                 local_dir='TEST_LOCAL_DIR',
-                                remote_dir='TEST_REMOTE_DIR',
-                                rdiff_wrapper_path=rdiff_wrapper.name)
-            content = open(rdiff_wrapper.name, 'r').read()
-            self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
+                                remote_dir='TEST_REMOTE_PARENT/TEST_REMOTE_DIR',
+                                restic_wrapper_path=restic_wrapper.name)
+            content = open(restic_wrapper.name, 'r').read()
+            self.assertIn('TEST_REMOTE_SCHEMA -R $SSH_CLIENT_SOCKET:$RESTIC_REST_SERVER_SOCKET', content)
             self.assertIn('TEST_LOCAL_DIR', content)
-            self.assertIn('TEST_REMOTE_DIR', content)
+            self.assertIn('TEST_REMOTE_PARENT/restic.sock', content)
 
     def test_pull(self):
         recipe = self.new_recipe()
 
-        with tempfile.NamedTemporaryFile('w+') as rdiff_wrapper:
+        with tempfile.NamedTemporaryFile('w+') as restic_wrapper:
             recipe.wrapper_pull(remote_schema='TEST_REMOTE_SCHEMA',
                                 local_dir='TEST_LOCAL_DIR',
-                                remote_dir='TEST_REMOTE_DIR',
-                                rdiff_wrapper_path=rdiff_wrapper.name,
-                                remove_backup_older_than='TEST_OLDER')
-            content = open(rdiff_wrapper.name, 'r').read()
-            self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
+                                remote_dir='TEST_REMOTE_PARENT/TEST_REMOTE_DIR',
+                                restic_wrapper_path=restic_wrapper.name,
+                                remove_backup_older_than='2W')
+            content = open(restic_wrapper.name, 'r').read()
+            self.assertIn('TEST_REMOTE_SCHEMA -R $SSH_CLIENT_SOCKET:$RESTIC_REST_SERVER_SOCKET', content)
             self.assertIn('TEST_LOCAL_DIR', content)
-            self.assertIn('TEST_REMOTE_DIR', content)
-            self.assertIn('--remove-older-than TEST_OLDER', content)
+            self.assertIn('TEST_REMOTE_PARENT', content)
+            self.assertIn('--keep-within 14d', content)
 
     def test_invalid_type(self):
         recipe = self.new_recipe()
