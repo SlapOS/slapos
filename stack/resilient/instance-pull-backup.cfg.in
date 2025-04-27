@@ -172,7 +172,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${template-ssh-from-pbs-promise:target}
 output = $${basedirectory:promises}/ssh-to-{{ slave['notification-id'] }}
 context =
-  raw python_executable ${python-for-resiliency:executable}
+  raw python_executable ${python3:executable}
   raw ssh_client $${openssh-client:wrapper-path}
   raw url {{ slave['url'] }}
 
@@ -203,29 +203,29 @@ notifier-url = http://[$${notifier:host}]:$${notifier:port}
 instance-root-name = $${monitor-instance-parameter:root-instance-title}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
 status-item-directory = $${directory:notifier-status-items}
-location = $${pbs:wrappers-directory}/{{ slave['notification-id'] }}
+notification-id = {{ slave['notification-id'] }}
+notify = {{ slave['notify'] }}
+title = {{ slave['title'] }}
+location = $${pbs:wrappers-directory}/$${:notification-id}
 install =
-  import json
   import os
   from slapos.recipe.notifier import Notify
-  entry = json.loads(r'{{ json.dumps(slave) }}')
-  notification_id = entry['notification-id']
-  options = self.options.copy()
+  notification_id = options['notification-id']
   options['name'] = self.name
   n = Notify(self.buildout, self.name, options)
   n.createNotifier(
-    notifier_binary=self.options['notifier-binary'],
-    wrapper=self.options['location'],
-    executable=self.options['location'] + '_raw',
-    log=os.path.join(self.options['feeds'], notification_id),
-    title=entry.get('title', notification_id),
-    notification_url=entry['notify'] or '',
-    feed_url='%s/get/%s' % (self.options['notifier-url'], notification_id),
-    max_run=self.options.get('pull-push-maximum-run', 1),
-    pidfile=os.path.join(self.options['run-directory'], '%s.pid' % notification_id),
-    instance_root_name=self.options.get('instance-root-name', None),
-    log_url=self.options.get('log-url', None),
-    status_item_directory=self.options.get('status-item-directory', None)
+    notifier_binary=options['notifier-binary'],
+    wrapper=options['location'],
+    executable=options['location'] + '_raw',
+    log=os.path.join(options['feeds'], notification_id),
+    title=options['title'] or notification_id,
+    notification_url=options['notify'] or '',
+    feed_url='%s/get/%s' % (options['notifier-url'], notification_id),
+    max_run=options.get('pull-push-maximum-run', 1),
+    pidfile=os.path.join(options['run-directory'], '%s.pid' % notification_id),
+    instance_root_name=options.get('instance-root-name', None),
+    log_url=options.get('log-url', None),
+    status_item_directory=options.get('status-item-directory', None)
   )
 
 [{{ section('notifier-' + slave['notification-id'] + '-wrapper') }}]
@@ -233,7 +233,7 @@ recipe = slapos.recipe.template:jinja2
 output = $${pbs:wrappers-directory}/{{ slave['notification-id'] }}_raw
 url = ${template-notifier-pbs-wrapper:target}
 context =
-  raw python_executable ${python-for-resiliency:executable}
+  raw python_executable ${python3:executable}
   raw restic_binary ${restic:location}/bin/restic
   raw backup_dir $${directory:pbs-backup}/{{ slave['name'] }}
   raw url {{ slave['url'] }}
