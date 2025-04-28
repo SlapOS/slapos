@@ -25,6 +25,8 @@ context =
   raw logrotate_cfg {{ logrotate_cfg }}
   raw postfix_main_template {{ postfix_main_template }}
   raw postfix_master_template {{ postfix_master_template }}
+  raw postfix_sasl_passwd_template {{ postfix_sasl_passwd_template }}
+  raw postfix_transport_template {{ postfix_transport_template }}
   raw postfix_location {{ postfix_location }}
   raw xz_utils_location {{ xz_utils_location }}
   section slap_connection slap-connection

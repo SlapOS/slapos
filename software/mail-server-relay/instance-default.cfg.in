@@ -140,10 +140,10 @@ extra-context =
 url = {{ postfix_sasl_passwd_template }}
 output = ${directory:etc-postfix}/sasl_passwd
 extra-context =
-  key relay_host slapparameter_dict:relay_host
-  key relay_port slapparameter_dict:relay_port
-  key relay_user slapparameter_dict:relay_user
-  key relay_pass slapparameter_dict:relay_pass
+  raw relay_host {{ slapparameter_dict['relay_host'] }}
+  raw relay_port {{ slapparameter_dict['relay_port'] }}
+  raw relay_user {{ slapparameter_dict['relay_user'] }}
+  raw relay_pass {{ slapparameter_dict['relay_pass'] }}
 
 [postfix-transport]
 <= config-base
@@ -151,8 +151,8 @@ url = {{ postfix_transport_template }}
 output = ${directory:etc-postfix}/transport
 extra-context =
   raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
-  key mail_server_host slapparameter_dict:mail_server_host
-  key mail_server_port slapparameter_dict:mail_server_port
+  raw mail_server_host {{ slapparameter_dict['mail_server_host'] }}
+  raw mail_server_port {{ slapparameter_dict['mail_server_port'] }}
 
 [postfix-symlinks-libexec]
 recipe = slapos.cookbook:symbolic.link
