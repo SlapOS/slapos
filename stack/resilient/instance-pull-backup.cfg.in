@@ -1,13 +1,13 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 [buildout]
 
 parts =
   publish-connection-information
-  pbs
   logrotate-entry-notifier
+  pbs-known-hosts
   pbs-sshkeys-authority
   sshkeys-openssh
-  resilient-genstatrss-wrapper
-  pbs-push-history-log
   cron-pbs-status-feed
   pull-push-stalled-promise
   notifier-feed-status-promise
@@ -56,6 +56,7 @@ notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
 notifier-status-items = $${basedirectory:notifier}/status-items
 monitor-resilient = $${monitor-directory:private}/resilient
+restic-log = $${basedirectory:log}/restic
 
 
 #----------------
@@ -105,14 +106,13 @@ rotate-num = 30
 #-- to prevent a corrupt dump from destroying everything.
 
 [pbs]
-<= notifier
-recipe = slapos.cookbook:pbs
 client = true
 feeds = $${directory:notifier-feeds}
 callbacks-directory = $${directory:notifier-callbacks}
 equeue-socket = $${equeue:socket}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
-rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
+restic-binary = ${restic:location}/bin/restic
+restic-rest-server-binary = ${restic-rest-server:location}/bin/rest-server
 sshclient-binary = $${openssh-client:wrapper-path}
 known-hosts = $${directory:dot-ssh}/known_hosts
 promises-directory = $${basedirectory:promises}
@@ -128,6 +128,18 @@ slave-instance-list = {{ dumps(slave_instance_list) }}
 instance-root-name = $${monitor-instance-parameter:root-instance-title}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
 status-item-directory = $${directory:notifier-status-items}
+
+[pbs-known-hosts]
+recipe = slapos.recipe.build
+slave-instance-list = {{ dumps(slave_instance_list) }}
+known-hosts = $${directory:dot-ssh}/known_hosts
+location = $${:known-hosts}
+install =
+  from urllib.parse import urlparse
+  with open(options['known-hosts'], 'w') as f:
+    for slave in options['slave-instance-list']:
+      parsed_url = urlparse(slave['url'])
+      f.write('[%s]:%s %s\n' % (parsed_url.hostname, parsed_url.port, slave['server-key'].strip()))
 
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
@@ -154,6 +166,83 @@ log = $${directory:notifier-feeds}/*
 rotate-num = 5
 frequency = weekly
 nocompress = true
+
+{% for slave in slave_instance_list -%}
+[{{ section('ssh-to-' + slave['notification-id']) }}]
+recipe = slapos.recipe.template:jinja2
+url = ${template-ssh-from-pbs-promise:target}
+output = $${basedirectory:promises}/ssh-to-{{ slave['notification-id'] }}
+context =
+  raw python_executable ${python3:executable}
+  raw ssh_client $${openssh-client:wrapper-path}
+  raw url {{ slave['url'] }}
+
+[{{ section('restic-init-' + slave['name']) }}]
+recipe = plone.recipe.command
+repository = $${directory:pbs-backup}/{{ slave['name'] }}.restic
+command = if [ ! -d "$${:repository}" ]; then
+    ${restic:location}/bin/restic init --insecure-no-password -r $${:repository}
+  fi
+update-command = $${:command}
+stop-on-error = true
+
+[{{ section('rest-server-' + slave['name']) }}]
+recipe = slapos.cookbook:wrapper
+repository = $${directory:pbs-backup}/{{ slave['name'] }}.restic
+command-line = ${restic-rest-server:location}/bin/rest-server --listen unix:$${:repository}/rest-server.sock --no-auth --append-only --path=$${:repository}
+wrapper-path = $${basedirectory:services}/rest-server-{{ slave['name'] }}
+
+[{{ section('notifier-' + slave['notification-id']) }}]
+recipe = slapos.cookbook:notifier.notify
+notification-id = {{ slave['notification-id'] }}
+notifier-binary = ${buildout:bin-directory}/pubsubnotifier
+wrapper = $${pbs:wrappers-directory}/$${:notification-id}
+executable = $${:wrapper}_raw
+feeds =$${directory:notifier-feeds}
+name = $${:notification-id}
+title = {{ slave['title'] }}
+notify = {{ slave['notify'] }}
+pidfile = $${basedirectory:run}/$${:notification-id}.pid
+max-run = 5
+host = $${notifier:host}
+port = $${notifier:port}
+# To get a verbose feed about PBS state
+instance-root-name = $${monitor-instance-parameter:root-instance-title}
+log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
+status-item-directory = $${directory:notifier-status-items}
+
+[{{ section('notifier-' + slave['notification-id'] + '-wrapper') }}]
+recipe = slapos.recipe.template:jinja2
+output = $${pbs:wrappers-directory}/{{ slave['notification-id'] }}_raw
+url = ${template-notifier-pbs-wrapper:target}
+context =
+  raw python_executable ${python3:executable}
+  raw restic_binary ${restic:location}/bin/restic
+  raw backup_dir $${directory:pbs-backup}/{{ slave['name'] }}
+  raw url {{ slave['url'] }}
+  raw ssh_client $${openssh-client:wrapper-path}
+  raw remove_backup_older_than {{ slave.get('remove-backup-older-than', '2W') }}
+  raw slave_type {{ slave['type'] }}
+  raw name {{ slave['name'] }}
+  raw restic_log $${directory:restic-log}
+  raw feed_path $${monitor-directory:public}/resilient-feed
+  raw feed_url $${monitor-conf-parameters:base-url}/public/resilient-feed
+
+{% if 'on-notification' in slave -%}
+[{{ section('notifier-callback-' + slave['notification-id']) }}]
+recipe = slapos.cookbook:notifier.callback
+callbacks-directory = $${pbs:callbacks-directory}
+on-notification-id = {{ slave['on-notification'] }}
+callback-list =
+  $${directory:pbs-wrappers}/{{ slave['notification-id'] }}
+{% else -%}
+[{{ section('cron-' + slave['notification-id']) }}]
+recipe = slapos.recipe.template:jinja2
+output = $${pbs:cron-entries}/{{ slave['notification-id'] }}
+inline =
+  {{ slave['frequency'] }} $${directory:pbs-wrappers}/{{ slave['notification-id'] }}
+{% endif -%}
+{% endfor -%}
 
 #----------------
 #--
@@ -196,16 +285,6 @@ wrapper-path = $${rootdirectory:bin}/ssh
 #----------------
 #--
 #-- Resiliency promises.
-
-[resilient-genstatrss-wrapper]
-recipe = slapos.cookbook:wrapper
-# XXX - hard-coded Urls
-command-line = ${buildout:bin-directory}/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
-wrapper-path = $${directory:bin}/resilient-genstatrss.py
-
-[pbs-push-history-log]
-recipe = cns.recipe.symlink
-symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/pbs-push-history-log
 
 [pull-push-stalled-promise-bin]
 recipe = slapos.cookbook:wrapper
@@ -274,3 +353,7 @@ context =
   key monitor_feed_directory monitor-directory:public
   key base_url publish-connection-information:feeds-url
   raw python_executable ${buildout:executable}
+
+[buildout]
+parts +=
+  {{ part_list | join('\n  ') }}
