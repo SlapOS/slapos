@@ -8,7 +8,7 @@ case "$SSH_ORIGINAL_COMMAND" in
         $RESTIC backup --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
     ;;
     restore)
-        $RESTIC restore latest --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR
+        $RESTIC restore latest --delete --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR
     ;;
     clear)
         rm -f $SSH_CLIENT_SOCKET
