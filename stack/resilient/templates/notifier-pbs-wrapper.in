@@ -37,29 +37,51 @@ restic_args = [restic_binary, '--insecure-no-password', '-r', restic_repository]
 
 def call_process(*args, **kw):
   try:
-    return subprocess.check_output(*args, **kw)
+    return subprocess.check_output(*args, **kw).decode()
   except subprocess.CalledProcessError as err:
-    if err.output:
-      print(err.output.decode())
-    if err.stderr:
-      print(err.stderr.decode())
+    output = '\n'.join(e.decode() for e in [err.output, err.stderr])
+    print(output)
+    log('error', output)
+    generate_feed()
     sys.exit(err.returncode)
 
-def log(command, output):
+def log(log_entry, output):
   if not output:
     return
   timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S.%f')
   path = os.path.join(
     restic_log,
-   '%s.%s.%s.json' % (timestamp, name, command),
+   '%s.%s.%s.json' % (timestamp, name, log_entry),
   )
   with open(path, 'w') as f:
     f.write(output)
   print(output)
 
+def generate_rss():
+  log_path_list = sorted(glob.glob(os.path.join(restic_log, '*.*.*.*.json')))
+  rss = Element('rss', {'version': '2.0'})
+  channel = SubElement(rss, 'channel')
+  SubElement(channel, 'title').text = 'Restic results'
+  SubElement(channel, 'link').text = feed_url
+  SubElement(channel, 'description').text = 'Restic results'
+  for log_path in log_path_list:
+    with open(log_path) as f:
+      ymdhms, milliseconds, name, mode, _ = os.path.basename(log_path).split('.')
+      date = datetime.strptime('.'.join([ymdhms, milliseconds]), '%Y%m%d%H%M%S.%f')
+      item = SubElement(channel, 'item')
+      SubElement(item, 'title').text = ' '.join([name, mode])
+      SubElement(item, 'link').text = feed_url
+      SubElement(item, 'description').text = f.read()
+      SubElement(item, 'pubDate').text = date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+  with open(feed_path, 'wb') as f:
+    f.write(tostring(rss, 'utf-8'))
+  # remove too old log files
+  for log_path in log_path_list[100:]:
+    os.remove(log_path)
+
 if slave_type == 'push':
   call_process(ssh_args + ['clear'])
-  log('restore', call_process(ssh_args + ssh_tunnel_args + ['restore']).decode())
+  log('restore', call_process(ssh_args + ssh_tunnel_args + ['restore']))
 elif slave_type == 'pull':
   # import existing rdiff-backup if it exists and restic repository is empty.
   if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
@@ -70,10 +92,10 @@ elif slave_type == 'pull':
       os.chdir(backup_dir)
       log('backup', call_process(restic_args + [
         '--exclude', 'rdiff-backup-data', 'backup', '.'
-      ]).decode())
+      ]))
 
   call_process(ssh_args + ['clear'])
-  log('backup', call_process(ssh_args + ssh_tunnel_args + ['backup']).decode())
+  log('backup', call_process(ssh_args + ssh_tunnel_args + ['backup']))
 
   # BBB translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
   remove_backup_older_than = remove_backup_older_than.lower()
@@ -90,32 +112,11 @@ elif slave_type == 'pull':
   if forget_dry_run_result[0]['remove']:
     log('forget', call_process(restic_args + [
       'forget', '--prune',
-    ] + restic_keep_args).decode())
+    ] + restic_keep_args))
     # remove rdiff-backup directory that is already older than removed restic snapshots.
     if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
       shutil.rmtree(backup_dir)
 else:
   raise NotImplementedError('Unexpected type %s' % slave_type)
 
-# generate RSS feed
-log_path_list = sorted(glob.glob(os.path.join(restic_log, '*.*.*.*.json')))
-rss = Element('rss', {'version': '2.0'})
-channel = SubElement(rss, 'channel')
-SubElement(channel, 'title').text = 'Restic results'
-SubElement(channel, 'link').text = feed_url
-SubElement(channel, 'description').text = 'Restic results'
-for log_path in log_path_list:
-  with open(log_path) as f:
-    ymdhms, milliseconds, name, mode, _ = os.path.basename(log_path).split('.')
-    date = datetime.strptime('.'.join([ymdhms, milliseconds]), '%Y%m%d%H%M%S.%f')
-    item = SubElement(channel, 'item')
-    SubElement(item, 'title').text = ' '.join([name, mode])
-    SubElement(item, 'link').text = feed_url
-    SubElement(item, 'description').text = f.read()
-    SubElement(item, 'pubDate').text = date.strftime('%a, %d %b %Y %H:%M:%S GMT')
-with open(feed_path, 'wb') as f:
-  f.write(tostring(rss, 'utf-8'))
-
-# remove too old log files
-for log_path in log_path_list[100:]:
-  os.remove(log_path)
+generate_rss()
