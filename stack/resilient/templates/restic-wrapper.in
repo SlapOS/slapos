@@ -1,0 +1,19 @@
+#!{{ dash_location }}
+RESTIC="{{ restic_binary }}"
+BACKUP_DIR="{{ backup_dir }}"
+SSH_CLIENT_SOCKET=$BACKUP_DIR/../ssh.sock
+case "$SSH_ORIGINAL_COMMAND" in
+    backup)
+        cd $BACKUP_DIR
+        $RESTIC backup --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
+    ;;
+    restore)
+        $RESTIC restore latest --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR
+    ;;
+    clear)
+        rm -f $SSH_CLIENT_SOCKET
+    ;;
+    *)
+        echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
+    ;;
+esac
