@@ -92,15 +92,11 @@ recipe = slapos.cookbook:publish
 extends =
   {{ template_monitor }}
 
-  {{ parameter_dict['application-lamp-path'] }}
-
 parts =
   publish-connection-information
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
-
-  {{ parameter_dict['application-lamp-part-list'] }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
