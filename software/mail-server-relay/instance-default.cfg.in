@@ -117,15 +117,15 @@ extra-context =
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
   key server_fqdn request-dns-entry:connection-domain
-  key mail_domain slapparameter_dict:mail_domain
   key sasl_passwd postfix-sasl-passwd:output
   key transport_maps postfix-transport:output
-  key relay_host slapparameter_dict:relay_host
-  key relay_port slapparameter_dict:relay_port
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
   key self_ipv4 slap-configuration:ipv4
   key self_ipv6 slap-configuration:ipv6
+  raw relay_host {{ slapparameter_dict['relay_host'] }}
+  raw relay_port {{ slapparameter_dict['relay_port'] }}
+  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
 
 [postfix-conf-master]
 <= config-base

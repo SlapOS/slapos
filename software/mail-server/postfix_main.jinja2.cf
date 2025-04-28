@@ -18,7 +18,7 @@ smtputf8_enable = no
 mail_owner = {{ mail_owner }}
 setgid_group = {{ setgid_group }}
 
-virtual_mailbox_domains = {{ server_fqdn }}, mailsr.zdimension.fr
+virtual_mailbox_domains = {{ server_fqdn }}, {{ mail_domains }}
 virtual_mailbox_base = {{ vhosts_directory }}
 virtual_minimum_uid = 100
 virtual_uid_maps = static:1001
@@ -53,6 +53,6 @@ maillog_file = {{ log_directory }}/postfix.log
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
-relayhost = [mailsrrelayv6.zdimension.fr]:25
+relayhost = [{{ relay_host }}]:{{ relay_port}}
 
 myhostname = {{ server_fqdn }}

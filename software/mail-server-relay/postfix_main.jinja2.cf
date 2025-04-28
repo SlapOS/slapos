@@ -43,7 +43,7 @@ mynetworks = [{{ self_ipv6 }}] {{ self_ipv4 }} 127.0.0.0/8
 
 virtual_transport = relay
 relay_recipient_maps =
-relay_domains = {{ mail_domain }}
+relay_domains = {{ mail_domains }}
 relayhost = [{{ relay_host }}]:{{ relay_port }}
 
 maillog_file = {{ log_directory }}/postfix.log

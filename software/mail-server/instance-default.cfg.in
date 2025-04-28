@@ -174,6 +174,9 @@ extra-context =
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
+  raw relay_host {{ slapparameter_dict['relay_host'] }}
+  raw relay_port {{ slapparameter_dict['relay_port'] }}
+  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
 
 [postfix-conf-master]
 <= config-base
