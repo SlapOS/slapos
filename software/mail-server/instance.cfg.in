@@ -47,6 +47,7 @@ extra-context =
     section slap_connection slap-connection
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
+# TODO : why commented?
 #    key slave_instance_list slap-configuration:slave-instance-list
     raw bin_directory {{ bin_directory }}
     raw lamp_apache_httpd {{ lamp_apache_httpd }}

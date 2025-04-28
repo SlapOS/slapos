@@ -123,6 +123,14 @@ extra-context =
   import json_module json
   raw instances {{ json_module.dumps(slave_instance_list) }}
 
+[dovecot-passwords]
+recipe = slapos.recipe.build
+init =
+  # if existing, real all tokens
+install =
+   # if not existing, create it
+   # for non-existing slaves, insert slave & token
+
 [password-php]
 <= config-base
 url = {{ password_php }}
