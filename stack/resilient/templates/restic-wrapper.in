@@ -5,7 +5,7 @@ SSH_CLIENT_SOCKET=$BACKUP_DIR/../ssh.sock
 case "$SSH_ORIGINAL_COMMAND" in
     backup)
         cd $BACKUP_DIR
-        $RESTIC backup --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
+        $RESTIC backup --no-scan --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
     ;;
     restore)
         $RESTIC restore latest --delete --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR

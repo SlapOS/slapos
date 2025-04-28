@@ -1,10 +1,13 @@
 #!{{ python_executable }}
+from datetime import datetime, timezone
+import glob
 import json
 import os
 import shutil
 import subprocess
 import sys
 from urllib.parse import urlparse
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 restic_binary = '{{ restic_binary }}'
 backup_dir = '{{ backup_dir }}'
@@ -12,6 +15,10 @@ url = '{{ url }}'
 ssh_client = '{{ ssh_client }}'
 remove_backup_older_than = '{{ remove_backup_older_than }}'
 slave_type = '{{ slave_type }}'
+name = '{{ name }}'
+restic_log = '{{ restic_log }}'
+feed_path = '{{ feed_path }}'
+feed_url = '{{ feed_url }}'
 
 parsed_url = urlparse(url)
 ssh_args = [
@@ -38,9 +45,21 @@ def call_process(*args, **kw):
       print(err.stderr.decode())
     sys.exit(err.returncode)
 
+def log(command, output):
+  if not output:
+    return
+  timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S.%f')
+  path = os.path.join(
+    restic_log,
+   '%s.%s.%s.json' % (timestamp, name, command),
+  )
+  with open(path, 'w') as f:
+    f.write(output)
+  print(output)
+
 if slave_type == 'push':
   call_process(ssh_args + ['clear'])
-  print(call_process(ssh_args + ssh_tunnel_args + ['restore']).decode())
+  log('restore', call_process(ssh_args + ssh_tunnel_args + ['restore']).decode())
 elif slave_type == 'pull':
   # import existing rdiff-backup if it exists and restic repository is empty.
   if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
@@ -49,12 +68,12 @@ elif slave_type == 'pull':
     ]))
     if not snapshot_list:
       os.chdir(backup_dir)
-      print(call_process(restic_args + [
+      log('backup', call_process(restic_args + [
         '--exclude', 'rdiff-backup-data', 'backup', '.'
       ]).decode())
 
   call_process(ssh_args + ['clear'])
-  print(call_process(ssh_args + ssh_tunnel_args + ['backup']).decode())
+  log('backup', call_process(ssh_args + ssh_tunnel_args + ['backup']).decode())
 
   # BBB translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
   remove_backup_older_than = remove_backup_older_than.lower()
@@ -69,7 +88,7 @@ elif slave_type == 'pull':
     'forget', '--dry-run', '--json',
   ] + restic_keep_args))
   if forget_dry_run_result[0]['remove']:
-    print(call_process(restic_args + [
+    log('forget', call_process(restic_args + [
       'forget', '--prune',
     ] + restic_keep_args).decode())
     # remove rdiff-backup directory that is already older than removed restic snapshots.
@@ -77,3 +96,26 @@ elif slave_type == 'pull':
       shutil.rmtree(backup_dir)
 else:
   raise NotImplementedError('Unexpected type %s' % slave_type)
+
+# generate RSS feed
+log_path_list = sorted(glob.glob(os.path.join(restic_log, '*.*.*.*.json')))
+rss = Element('rss', {'version': '2.0'})
+channel = SubElement(rss, 'channel')
+SubElement(channel, 'title').text = 'Restic results'
+SubElement(channel, 'link').text = feed_url
+SubElement(channel, 'description').text = 'Restic results'
+for log_path in log_path_list:
+  with open(log_path) as f:
+    ymdhms, milliseconds, name, mode, _ = os.path.basename(log_path).split('.')
+    date = datetime.strptime('.'.join([ymdhms, milliseconds]), '%Y%m%d%H%M%S.%f')
+    item = SubElement(channel, 'item')
+    SubElement(item, 'title').text = ' '.join([name, mode])
+    SubElement(item, 'link').text = feed_url
+    SubElement(item, 'description').text = f.read()
+    SubElement(item, 'pubDate').text = date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+with open(feed_path, 'wb') as f:
+  f.write(tostring(rss, 'utf-8'))
+
+# remove too old log files
+for log_path in log_path_list[100:]:
+  os.remove(log_path)

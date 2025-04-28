@@ -56,6 +56,7 @@ notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
 notifier-status-items = $${basedirectory:notifier}/status-items
 monitor-resilient = $${monitor-directory:private}/resilient
+restic-log = $${basedirectory:log}/restic
 
 
 #----------------
@@ -222,6 +223,10 @@ context =
   raw ssh_client $${openssh-client:wrapper-path}
   raw remove_backup_older_than {{ slave.get('remove-backup-older-than', '2W') }}
   raw slave_type {{ slave['type'] }}
+  raw name {{ slave['name'] }}
+  raw restic_log $${directory:restic-log}
+  raw feed_path $${monitor-directory:public}/resilient-feed
+  raw feed_url $${monitor-conf-parameters:base-url}/public/resilient-feed
 
 {% if 'on-notification' in slave -%}
 [{{ section('notifier-callback-' + slave['notification-id']) }}]
