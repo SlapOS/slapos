@@ -1,11 +1,11 @@
 #!{{ dash_location }}
 RESTIC="{{ restic_binary }}"
 BACKUP_DIR="{{ backup_dir }}"
-SSH_CLIENT_SOCKET=$BACKUP_DIR/ssh.sock
+SSH_CLIENT_SOCKET=$BACKUP_DIR/../ssh.sock
 case "$SSH_ORIGINAL_COMMAND" in
     backup)
         cd $BACKUP_DIR
-        $RESTIC backup -e ssh.sock --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
+        $RESTIC backup --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
     ;;
     restore)
         $RESTIC restore latest --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR

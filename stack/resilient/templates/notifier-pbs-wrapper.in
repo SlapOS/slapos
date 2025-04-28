@@ -22,7 +22,7 @@ ssh_args = [
   '%s@%s' % (parsed_url.username, parsed_url.hostname)
 ]
 restic_repository = backup_dir.rstrip('/') + '.restic'
-ssh_client_socket = os.path.join(parsed_url.path.rstrip('/'), 'ssh.sock')
+ssh_client_socket = os.path.join(parsed_url.path.rstrip('/'), '..', 'ssh.sock')
 rest_server_socket = os.path.join(restic_repository, 'rest-server.sock')
 ssh_tunnel_args = ['-R', '%s:%s' % (ssh_client_socket, rest_server_socket)]
 restic_args = [restic_binary, '--insecure-no-password', '-r', restic_repository]
