@@ -1,0 +1,4 @@
+{% set domains = mail_domains.split(",") %}
+{% for domain in domains %}
+{{ domain }} smtp:[{{ mail_server_host }}]:{{ mail_server_port }}
+{% endfor %}
