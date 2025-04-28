@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from urllib.parse import urlparse
 
 restic_binary = '{{ restic_binary }}'
@@ -27,23 +28,33 @@ rest_server_socket = os.path.join(restic_repository, 'rest-server.sock')
 ssh_tunnel_args = ['-R', '%s:%s' % (ssh_client_socket, rest_server_socket)]
 restic_args = [restic_binary, '--insecure-no-password', '-r', restic_repository]
 
+def call_process(*args, **kw):
+  try:
+    return subprocess.check_output(*args, **kw)
+  except subprocess.CalledProcessError as err:
+    if err.output:
+      print(err.output.decode())
+    if err.stderr:
+      print(err.stderr.decode())
+    sys.exit(err.returncode)
+
 if slave_type == 'push':
-  subprocess.check_output(ssh_args + ['clear'])
-  print(subprocess.check_output(ssh_args + ssh_tunnel_args + ['restore']).decode())
+  call_process(ssh_args + ['clear'])
+  print(call_process(ssh_args + ssh_tunnel_args + ['restore']).decode())
 elif slave_type == 'pull':
   # import existing rdiff-backup if it exists and restic repository is empty.
   if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
-    snapshot_list = json.loads(subprocess.check_output(restic_args + [
-      '--json', 'snapshots',
+    snapshot_list = json.loads(call_process(restic_args + [
+      '--json', 'snapshots', 'latest',
     ]))
     if not snapshot_list:
       os.chdir(backup_dir)
-      print(subprocess.check_output(restic_args + [
+      print(call_process(restic_args + [
         '--exclude', 'rdiff-backup-data', 'backup', '.'
       ]).decode())
 
-  subprocess.check_output(ssh_args + ['clear'])
-  print(subprocess.check_output(ssh_args + ssh_tunnel_args + ['backup']).decode())
+  call_process(ssh_args + ['clear'])
+  print(call_process(ssh_args + ssh_tunnel_args + ['backup']).decode())
 
   # BBB translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
   remove_backup_older_than = remove_backup_older_than.lower()
@@ -54,11 +65,11 @@ elif slave_type == 'pull':
       remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
     restic_keep_args = ['--keep-within', remove_backup_older_than]
 
-  forget_dry_run_result = json.loads(subprocess.check_output(restic_args + [
+  forget_dry_run_result = json.loads(call_process(restic_args + [
     'forget', '--dry-run', '--json',
   ] + restic_keep_args))
   if forget_dry_run_result[0]['remove']:
-    print(subprocess.check_output(restic_args + [
+    print(call_process(restic_args + [
       'forget', '--prune',
     ] + restic_keep_args).decode())
     # remove rdiff-backup directory that is already older than removed restic snapshots.
