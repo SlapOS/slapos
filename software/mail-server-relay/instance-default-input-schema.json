@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "request_dns": {
+      "title": "Request DNS",
+      "description": "Request local DNS to a core network running on the same node",
+      "type": "boolean",
+      "default": false
+    },
+    "relay_host": {
+      "title": "Relay Host",
+      "description": "The host to relay the emails to",
+      "type": "string"
+    },
+    "relay_port": {
+      "title": "Relay Port",
+      "description": "The port used by the relay",
+      "type": "integer",
+      "default": 25
+    },
+    "relay_user": {
+      "title": "Relay User",
+      "description": "The user to authenticate with the relay host",
+      "type": "string"
+    },
+    "relay_password": {
+      "title": "Relay Password",
+      "description": "The password to authenticate with the relay host",
+      "type": "string"
+    },
+    "mail_domains": {
+      "title": "Mail Domains",
+      "description": "List of domains that this relay server will consider internal",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "mail_server_host": {
+      "title": "Mail Server Host",
+      "description": "The host of the mail server",
+      "type": "string",
+      "default": "mailsrv6.zdimension.fr"
+    },
+    "mail_server_port": {
+      "title": "Mail Server Port",
+      "description": "The port of the mail server",
+      "type": "integer",
+      "default": 10025
+    }
+  }
+}
