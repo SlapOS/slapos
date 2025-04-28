@@ -43,6 +43,11 @@ context =
 [mariadb-password]
 recipe = slapos.cookbook:generate.password
 
+# XXX no failure if `custom_application_template` is empty
+[application-parameters]
+custom-application-template = {{ custom_application_template }}
+custom-application-lamp-template = {{ custom_application_lamp_template }}
+
 [dynamic-template-lamp-parameters]
 
 [dynamic-template-lamp]
@@ -50,6 +55,7 @@ recipe = slapos.cookbook:generate.password
 url = {{ template_lamp }}
 filename = template-lamp.cfg
 extra-context =
+  key custom_application_lamp_template application-parameters:custom-application-lamp-template
   section parameter_dict dynamic-template-lamp-parameters
   raw db_name {{ db_name }}
   raw db_user {{ db_user }}
@@ -67,10 +73,6 @@ apache-location = {{ apache_location }}
 apache-php-location = {{ apache_php_location }}
 template-php-ini = {{ template_php_ini }}
 publish-frontend = !py!{{ default_frontend }}
-
-# XXX no failure if `custom_application_template` is empty
-[application-parameters]
-custom-application-template = {{ custom_application_template }}
 
 [dynamic-template-apache-php]
 <= jinja2-template-base

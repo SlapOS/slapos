@@ -1,0 +1,1 @@
+{{ mail_domain }} smtp:[{{ mail_server_host }}]:{{ mail_server_port }}
