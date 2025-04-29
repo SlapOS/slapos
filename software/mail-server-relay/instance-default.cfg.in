@@ -202,8 +202,9 @@ hash-files =
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-subm_port = 587
-smtp-port = 25
+# todo: we use same for two since it's behind a port forward anyways
+subm-port = 10025 
+smtp-port = 10025
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
 domain = ${request-dns-entry:connection-domain}
 
