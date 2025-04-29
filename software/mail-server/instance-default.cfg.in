@@ -122,6 +122,7 @@ output = ${directory:etc}/dovecot-passwd
 extra-context =
   import json_module json
   raw instances {{ json_module.dumps(slave_instance_list) }}
+  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
@@ -189,17 +190,18 @@ extra-context =
 
 [snappymail-conf]
 <= config-base
+depends = ${copy-application:recipe}
 url = {{ snappymail_conf }}
-output = ${directory:www}/data/_data_/_default_/configs/application.ini
+output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
 extra-context =
   key mail_domain request-dns-entry:connection-domain
 
 
 [snappymail-domain]
 <= config-base
+depends = ${copy-application:recipe}
 url = {{ snappymail_domain }}
-#output = ${directory:www}/data/_data_/_default_/domains/${request-dns-entry:connection-domain}.json
-output = ${directory:www}/data/_data_/_default_/domains/default.json
+output = ${copy-application:target}/data/_data_/_default_/domains/default.json
 extra-context =
   raw mail_host [${slap-configuration:ipv6-random}]
   key smtp_port publish-connection-information:smtp-port
@@ -281,10 +283,8 @@ input = inline:
 
 [copy-application]
 recipe = plone.recipe.command
-command = if [ -z "$(ls -A ${directory:www})" ]; then
-    rm -rf ${directory:www};
-    cp -ax {{ apache_parameter_dict['application-location'] }}/ ${directory:www};
-  fi
+target = ${directory:www}
+command = cp -ax {{ apache_parameter_dict['application-location'] }}/. ${:target}
 update-command = ${:command}
 stop-on-error = true
 
@@ -485,7 +485,7 @@ extends =
 parts =
   directory
   lamp-frontend-promise
-#  postgres-postinstall
+  copy-application
   snappymail-conf
   snappymail-domain
   dovecot-conf
