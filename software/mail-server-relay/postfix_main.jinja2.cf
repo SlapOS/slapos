@@ -34,12 +34,13 @@ import_environment =
 smtp_tls_security_level = none
 smtp_sasl_auth_enable = yes
 smtp_sasl_security_options = noanonymous
-smtp_sasl_password_maps = hash:{{ sasl_passwd }}
+smtp_sasl_password_maps = texthash:{{ sasl_passwd }}
 
 smtpd_relay_restrictions = 
   permit_mynetworks 
   reject_unauth_destination
-mynetworks = [{{ self_ipv6 }}] {{ self_ipv4 }} 127.0.0.0/8
+
+mynetworks = [{{ self_ipv6 |join(']/128 [') }}]/128 {{ self_ipv4 |join(" ")}} 127.0.0.0/8
 
 virtual_transport = relay
 relay_recipient_maps =
@@ -60,6 +61,10 @@ smtpd_tls_cert_file={{ postfix_cert_file }}
 smtpd_tls_key_file={{ postfix_key_file }}
 smtpd_tls_security_level=may
 smtp_tls_CApath=/etc/ssl/certs
-smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtp_tls_session_cache_database = btree:{{ data_directory }}/smtp_scache
 
-transport_maps = hash:{{ transport_maps }}
+transport_maps = texthash:{{ transport_maps }}
+
+# no aliases
+alias_maps =
+alias_database =
