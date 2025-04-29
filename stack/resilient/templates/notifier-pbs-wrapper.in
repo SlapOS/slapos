@@ -91,7 +91,7 @@ elif slave_type == 'pull':
     if not snapshot_list:
       os.chdir(backup_dir)
       log('backup', call_process(restic_args + [
-        '--exclude', 'rdiff-backup-data', 'backup', '.'
+        '--exclude', 'rdiff-backup-data', 'backup', '--no-scan', '.',
       ]))
 
   call_process(ssh_args + ['clear'])

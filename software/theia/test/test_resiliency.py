@@ -27,9 +27,10 @@
 from __future__ import unicode_literals
 
 import errno
+import glob
+import hashlib
 import json
 import os
-import re
 import shutil
 import sqlite3
 import subprocess
@@ -607,10 +608,39 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
     # Remember content of ~/etc in the import theia
     self.etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
 
+    # Create existing rdiff-backup'ish directory
+    export_backup_path = self.getPartitionPath('export', 'srv', 'backup', 'theia')
+    restic_backup_path, = glob.glob(self.getPartitionPath('pull-backup', 'srv', 'backup', 'pbs', '*.restic'))
+    rdiff_backup_path = restic_backup_path.rstrip('.restic')
+    if not os.path.isdir(rdiff_backup_path):
+      shutil.copytree(export_backup_path, rdiff_backup_path)
+      with open(os.path.join(rdiff_backup_path, 'dummy.txt'), 'w') as f:
+        f.write('test\n')
+      os.mkdir(os.path.join(rdiff_backup_path, 'rdiff-backup-data'))
+
   def _checkSync(self):
     # Check that ~/etc still contains everything it did before
     etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
     self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
+
+    # Check that existing rdiff-backup directory was imported
+    with open(os.path.join(
+      self.slap.software_directory,
+        hashlib.md5(self.getSoftwareURL().encode()).hexdigest(),
+        '.installed.cfg'
+      )) as fh:
+      location_cfg = fh.read()
+      restic_location = [
+       e for e in location_cfg.splitlines()
+       if e.startswith('location') and '/restic/' in e][0].split('=')[1].strip()
+    restic_backup_path, = glob.glob(self.getPartitionPath('pull-backup', 'srv', 'backup', 'pbs', '*.restic'))
+    rdiff_backup_path = restic_backup_path.rstrip('.restic')
+    snapshot_list = json.loads(subprocess.check_output([
+      '%s/bin/restic' % restic_location,
+      'snapshots', '--json', '--insecure-no-password',
+      '-r', restic_backup_path,
+    ]))
+    self.assertEqual(snapshot_list[0]['paths'], [rdiff_backup_path])
 
   def _checkTakeover(self):
     # Check that there is an export, import and frozen instance and get their new partition IDs
