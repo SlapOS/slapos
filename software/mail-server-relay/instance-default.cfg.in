@@ -240,7 +240,7 @@ config-subdomain = mail
 config-ip = ${slap-configuration:ipv6-random}
 return = domain ip
 {% else %}
-connection-domain = mail.localhost
+connection-domain = mail-relay.localhost
 {% endif %}
 
 [base-wrapper]
