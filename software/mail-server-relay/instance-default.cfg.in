@@ -75,6 +75,23 @@ command-line = ${certificate-authority:wrapper}
 wrapper-path = ${directory:services}/certificate_authority
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
+[postfix-generate-certificate]
+# NOTE there is slapos.cookbook:certificate_authority.request but it requires
+# to start whole service and has up to 60 seconds latency to generate
+# certificate. We only need to run 1 command to do it...
+recipe  = plone.recipe.command
+stop-on-error   = true
+
+key_file    = ${certificate-authority:ca-private}/postfix.key
+cert_file   = ${certificate-authority:ca-certs}/postfix.crt
+
+command =
+    test -e ${:key_file} || \
+        ${certificate-authority:openssl-binary} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes   \
+        -keyout ${:key_file} -out ${:cert_file}
+
+update-command = ${:command}
+
 [config-base]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
@@ -126,6 +143,8 @@ extra-context =
   raw relay_host {{ slapparameter_dict['relay_host'] }}
   raw relay_port {{ slapparameter_dict['relay_port'] }}
   raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
+  key postfix_cert_file postfix-generate-certificate:cert_file
+  key postfix_key_file postfix-generate-certificate:key_file
 
 [postfix-conf-master]
 <= config-base
@@ -287,6 +306,7 @@ extends =
   {{ template_monitor }}
 parts =
   directory
+  postfix-generate-certificate
   postfix-conf-main
   postfix-conf-master
   postfix-service

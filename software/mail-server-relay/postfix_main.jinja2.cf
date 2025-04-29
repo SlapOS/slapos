@@ -56,8 +56,8 @@ biff = no
 append_dot_mydomain = no
 
 # TLS parameters
-smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
-smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+smtpd_tls_cert_file={{ postfix_cert_file }}
+smtpd_tls_key_file={{ postfix_key_file }}
 smtpd_tls_security_level=may
 smtp_tls_CApath=/etc/ssl/certs
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
