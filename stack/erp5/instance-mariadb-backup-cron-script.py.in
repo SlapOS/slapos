@@ -10,11 +10,11 @@ import subprocess
 import sys
 
 max_incremental_count = int(os.environ.get('max_incremental_count', '6'))
-mariabackup_executable  = '{{ bin_directory }}/mariabackup'
+mariabackup_executable = '{{ bin_directory }}/mariabackup'
 mbstream_executable = '{{ bin_directory }}/mbstream'
 restic_executable = '{{ bin_directory }}/restic'
 mariadb_backup_directory = '{{ mariadb_backup_directory }}'
-full_backup_retention_days =  int('{{ full_backup_retention_days }}')
+full_backup_retention_days = int('{{ full_backup_retention_days }}')
 now = pytz.utc.localize(datetime.utcnow())
 timestamp = now.strftime('%Y%m%d_%H%M')
 
@@ -79,5 +79,9 @@ if full_backup_retention_days > 0:
       restic_executable, 'forget', snapshot['id'], '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
     ]).decode('utf-8'))
     shutil.rmtree(os.path.join(mariadb_backup_directory, path[1:-3]) + '.meta', ignore_errors=True)
+  if latest_full_index > 0:
+    # remove outdated mysqldump results that are older than removed restic snapshots.
+    for path in glob.glob(os.path.join(mariadb_backup_directory, '??????????????.sql.gz')):
+      os.remove(path)
 
 print('Done.')
