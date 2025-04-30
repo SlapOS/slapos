@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "request-dns": {
+      "title": "Request DNS",
+      "description": "Request local DNS to a core network running on the same node",
+      "type": "boolean",
+      "default": false
+    },
+    "relay-host": {
+      "title": "Relay Host",
+      "description": "The host to relay the emails to",
+      "type": "string"
+    },
+    "relay-port": {
+      "title": "Relay Port",
+      "description": "The port used by the relay",
+      "type": "integer",
+      "default": 25
+    },
+    "relay-user": {
+      "title": "Relay User",
+      "description": "The user to authenticate with the relay host",
+      "type": "string"
+    },
+    "relay-password": {
+      "title": "Relay Password",
+      "description": "The password to authenticate with the relay host",
+      "type": "string"
+    },
+    "mail-domains": {
+      "title": "Mail Domains",
+      "description": "List of domains that this relay server will consider internal",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The domain name"
+          },
+          "mail-server-host": {
+            "type": "string",
+            "description": "The mail server host (IPv6) for this domain",
+            "title": "Mail Server Host"
+          },
+          "mail-server-port": {
+            "type": "integer",
+            "description": "The mail server port for this domain",
+            "title": "Mail Server Port",
+            "default": 10025
+          }
+        }
+      },
+      "default": []
+    }
+  }
+}
