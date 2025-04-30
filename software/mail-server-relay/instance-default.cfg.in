@@ -121,7 +121,7 @@ init =
 {% set source_host_list = [] %}
 {% for domain in slapparameter_dict['mail_domains'] %}
 {%   set network_address = ip_module.ip_network(domain['mail_server_host'] + "/" + str(domain['mail_server_prefix_size']), strict=False) %}
-{%   do source_host_list.append(domain['mail_server_host']) %}
+{%   do source_host_list.append("[" + domain['mail_server_host'] + "]") %}
 {% endfor %}
 
 [postfix-conf-main]
