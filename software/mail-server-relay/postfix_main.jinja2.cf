@@ -40,7 +40,9 @@ smtpd_relay_restrictions =
   permit_mynetworks 
   reject_unauth_destination
 
+#mynetworks = [{{ self_ipv6 |join(']/128 [') }}]/128 {{ self_ipv4 |join(" ")}} 127.0.0.0/8 {{ mail_hosts }}
 mynetworks = [{{ self_ipv6 |join(']/128 [') }}]/128 {{ self_ipv4 |join(" ")}} 127.0.0.0/8 {{ mail_hosts }}
+
 
 virtual_transport = relay
 relay_recipient_maps =
