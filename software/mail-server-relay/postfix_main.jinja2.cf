@@ -1,0 +1,72 @@
+# http://www.postfix.org/STANDARD_CONFIGURATION_README.html
+# http://www.postfix.org/postconf.5.html
+queue_directory = {{ queue_directory }}
+command_directory = {{ bin_directory }}
+daemon_directory = {{ usr_directory }}/libexec/postfix
+data_directory = {{ data_directory }}
+mail_spool_directory = {{ spool_directory }}
+html_directory = no
+manpage_directory = {{ postfix_location }}/usr/local/man
+sample_directory = {{ postfix_location }}/etc/postfix
+readme_directory = no
+sendmail_path = {{ bin_directory }}/sendmail
+newaliases_path = {{ bin_directory }}/newaliases
+mailq_path = {{ bin_directory }}/mailq
+compatibility_level = 3.6
+smtputf8_enable = no
+
+mail_owner = {{ mail_owner }}
+setgid_group = {{ setgid_group }}
+
+myhostname = {{ server_fqdn }}
+mydestination = $myhostname, localhost.localdomain, localhost
+mailbox_size_limit = 0
+recipient_delimiter = +
+
+inet_interfaces = all
+inet_protocols = all
+smtp_bind_address = 0.0.0.0
+smtp_bind_address6 = ::
+
+import_environment =
+  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+
+smtp_tls_security_level = none
+smtp_sasl_auth_enable = yes
+smtp_sasl_security_options = noanonymous
+smtp_sasl_password_maps = texthash:{{ sasl_passwd }}
+
+smtpd_relay_restrictions = 
+  permit_mynetworks 
+  reject_unauth_destination
+
+#mynetworks = [{{ self_ipv6 |join(']/128 [') }}]/128 {{ self_ipv4 |join(" ")}} 127.0.0.0/8 {{ mail_hosts }}
+mynetworks = [{{ self_ipv6 |join(']/128 [') }}]/128 {{ self_ipv4 |join(" ")}} 127.0.0.0/8 {{ mail_hosts }}
+
+
+virtual_transport = relay
+relay_recipient_maps =
+relay_domains = {{ mail_domains }}
+relayhost = [{{ relay_host }}]:{{ relay_port }}
+
+maillog_file = {{ log_directory }}/postfix.log
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ log_directory }}
+
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# TLS parameters
+smtpd_tls_cert_file={{ postfix_cert_file }}
+smtpd_tls_key_file={{ postfix_key_file }}
+smtpd_tls_security_level=may
+smtp_tls_CApath=/etc/ssl/certs
+smtp_tls_session_cache_database = btree:{{ data_directory }}/smtp_scache
+
+transport_maps = texthash:{{ transport_maps }}
+
+# no aliases
+alias_maps =
+alias_database =
