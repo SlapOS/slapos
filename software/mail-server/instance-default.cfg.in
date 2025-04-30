@@ -122,7 +122,7 @@ output = ${directory:etc}/dovecot-passwd
 extra-context =
   import json_module json
   raw instances {{ json_module.dumps(slave_instance_list) }}
-  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
+  raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
@@ -175,9 +175,9 @@ extra-context =
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
-  raw relay_host {{ slapparameter_dict['relay_host'] }}
-  raw relay_port {{ slapparameter_dict['relay_port'] }}
-  raw mail_domains {{ slapparameter_dict['mail_domains'] |join(',') }}
+  raw relay_host {{ slapparameter_dict['relay-host'] }}
+  raw relay_port {{ slapparameter_dict['relay-port'] }}
+  raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
   key self_ipv6 slap-configuration:ipv6
 
 [postfix-conf-master]
@@ -386,7 +386,7 @@ config-host = ${apache-php-configuration:ip}
 config-port = ${apache-php-configuration:port}
 
 [request-dns-entry]
-{% if slapparameter_dict.get('request_dns', '') %}
+{% if slapparameter_dict.get('request-dns', '') %}
 name = dns-mail-entry
 recipe = slapos.cookbook:request.serialised
 software-url = automated_local_dns
@@ -475,7 +475,7 @@ wrapper-path = ${directory:run}/postfix-master
 
 recipe = slapos.cookbook:publish
 -slave-reference = {{ orig_slave_reference }}
-passwordUrl = "helloworld"
+password-url = "helloworld"
 
 {% endfor -%}
 
@@ -508,7 +508,7 @@ parts =
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor -%}
-{% if slapparameter_dict.get('request_dns', '') %}
+{% if slapparameter_dict.get('request-dns', '') %}
   request-dns-entry
 {% endif %}
 
