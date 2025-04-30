@@ -171,7 +171,7 @@ extra-context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
-  key server_fqdn request-dns-entry:connection-domain
+  key server_fqdn slap-configuration:instance-title
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
@@ -195,7 +195,7 @@ depends = ${copy-application:recipe}
 url = {{ snappymail_conf }}
 output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
 extra-context =
-  key mail_domain request-dns-entry:connection-domain
+  key mail_domain {{ slapparameter_dict['mail-domains'][0] }}
 
 
 [snappymail-domain]
@@ -326,12 +326,12 @@ recipe = slapos.cookbook:publish
 imap-port = 10143
 smtp-port = 10025
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
-domain = ${request-dns-entry:connection-domain}
-webmail-url = ${apache-php-configuration:url}
 {% if apache_parameter_dict['publish-frontend'] -%}
 webmail-url = ${lamp-frontend-promise:url}
-password-url = ${lamp-frontend-promise:url}/password.php
+{% else -%}
+webmail-url = ${apache-php-configuration:url}
 {% endif -%}
+password-url = ${:webmail-url}/password.php
 {% set token_dict = {} -%}
 {% for slave_instance in slave_instance_list -%}
 {%  do token_dict.__setitem__(slave_instance["address"], slave_instance["token"]) -%}
@@ -384,27 +384,6 @@ promise = check_socket_listening
 name = apache-httpd-port-listening.py
 config-host = ${apache-php-configuration:ip}
 config-port = ${apache-php-configuration:port}
-
-[request-dns-entry]
-{% if slapparameter_dict.get('request-dns', '') %}
-name = dns-mail-entry
-recipe = slapos.cookbook:request.serialised
-software-url = automated_local_dns
-software-type = core-network
-server-url = {{ slap_connection['server-url'] }}
-computer-id = {{ slap_connection['computer-id'] }}
-partition-id = {{ slap_connection['partition-id'] }}
-key-file = {{ slap_connection['key-file'] }}
-cert-file = {{ slap_connection['cert-file'] }}
-shared = true
-sla-computer_guid = {{ slap_connection['computer-id'] }}
-config-name = dns-mail-entry
-config-subdomain = mail
-config-ip = ${slap-configuration:ipv6-random}
-return = domain ip
-{% else %}
-connection-domain = mail.localhost
-{% endif %}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -463,7 +442,7 @@ command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfi
 wrapper-path = ${directory:run}/postfix-master
 
 [monitor-instance-parameter]
-#monitor-httpd-port = ${apache-network-configuration:listening-port}
+monitor-httpd-port = ${apache-network-configuration:listening-port}
 
 {% for slave_instance in slave_instance_list -%}
 {%   set orig_slave_reference = slave_instance.get('slave_reference') -%}
@@ -508,9 +487,6 @@ parts =
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor -%}
-{% if slapparameter_dict.get('request-dns', '') %}
-  request-dns-entry
-{% endif %}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

@@ -138,7 +138,7 @@ extra-context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   key ip_address slap-configuration:ipv6-random
-  key server_fqdn request-dns-entry:connection-domain
+  key server_fqdn slap-configuration:instance-title
   key sasl_passwd postfix-sasl-passwd:output
   key transport_maps postfix-transport:output
   raw xz_utils_location {{ xz_utils_location }}
@@ -211,7 +211,6 @@ recipe = slapos.cookbook:publish
 subm-port = 10025 
 smtp-port = 10025
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
-domain = ${request-dns-entry:connection-domain}
 
 [subm-listen-promise]
 <= monitor-promise-base
@@ -226,28 +225,6 @@ promise = check_socket_listening
 name = smtp_listen.py
 config-host = ${slap-configuration:ipv6-random}
 config-port = ${publish-connection-information:smtp-port}
-
-
-[request-dns-entry]
-{% if slapparameter_dict.get('request-dns', '') %}
-name = dns-mail-entry
-recipe = slapos.cookbook:request.serialised
-software-url = automated_local_dns
-software-type = core-network
-server-url = {{ slap_connection['server-url'] }}
-computer-id = {{ slap_connection['computer-id'] }}
-partition-id = {{ slap_connection['partition-id'] }}
-key-file = {{ slap_connection['key-file'] }}
-cert-file = {{ slap_connection['cert-file'] }}
-shared = true
-sla-computer_guid = {{ slap_connection['computer-id'] }}
-config-name = dns-mail-entry
-config-subdomain = mail
-config-ip = ${slap-configuration:ipv6-random}
-return = domain ip
-{% else %}
-connection-domain = mail-relay.localhost
-{% endif %}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -325,9 +302,6 @@ parts =
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor -%}
-{% if slapparameter_dict.get('request-dns', '') %}
-  request-dns-entry
-{% endif %}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

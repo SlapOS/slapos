@@ -3,12 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "request-dns": {
-      "title": "Request DNS",
-      "description": "Request local DNS to a core network running on the same node",
-      "type": "boolean",
-      "default": false
-    },
     "relay-host": {
       "title": "Relay Host",
       "description": "The host to relay the emails to",
