@@ -46,12 +46,6 @@
             "description": "The mail server host (IPv6) for this domain",
             "title": "Mail Server Host"
           },
-          "mail_server_prefix_size": {
-            "type": "string",
-            "description": "The IPv6 prefix size to use for the host address. This determines the range that is allowed to send mail through the relay.",
-            "title": "Mail Server Prefix Size",
-            "default": 128
-          },
           "mail_server_port": {
             "type": "integer",
             "description": "The mail server port for this domain",
