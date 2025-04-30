@@ -28,7 +28,7 @@ virtual_transport = lmtp:unix:{{ postfix_dovecot_lmtp }}
 inet_interfaces = all
 inet_protocols = all
 smtp_bind_address = 0.0.0.0
-smtp_bind_address6 = {{ self_ipv6 }}
+smtp_bind_address6 = {{ next(iter(self_ipv6)) }}
 smtp_bind_address_enforce = yes
 
 import_environment =
