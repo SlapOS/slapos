@@ -3,13 +3,13 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "request_dns": {
+    "request-dns": {
       "title": "Request DNS",
       "description": "Request local DNS to a core network running on the same node",
       "type": "boolean",
       "default": false
     },
-    "mail_domains": {
+    "mail-domains": {
       "title": "Mail Domains",
       "description": "List of domains that this mail server will host mail for",
       "type": "array",
@@ -18,13 +18,13 @@
       },
       "default": []
     },
-    "relay_host": {
+    "relay-host": {
       "title": "Relay Host",
       "description": "The host name of the relay server used for outbound mail",
       "type": "string",
       "default": ""
     },
-    "relay_port": {
+    "relay-port": {
       "title": "Relay Port",
       "description": "The port of the relay server used for outbound mail",
       "type": "integer",
