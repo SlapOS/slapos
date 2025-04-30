@@ -178,7 +178,7 @@ extra-context =
   raw relay_host {{ slapparameter_dict['relay-host'] }}
   raw relay_port {{ slapparameter_dict['relay-port'] }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
-  key self_ipv6 slap-configuration:ipv6
+  key self_ipv6 slap-configuration:ipv6-random
 
 [postfix-conf-master]
 <= config-base
