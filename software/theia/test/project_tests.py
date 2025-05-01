@@ -26,7 +26,6 @@
 ##############################################################################
 
 import glob
-import gzip
 import json
 import os
 import re
@@ -202,17 +201,17 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     time.sleep(t + 120)
 
     # Check that mariadb backup has started
-    mariadb_backup = os.path.join(mariadb_partition, 'srv', 'backup', 'mariadb-full')
-    mariadb_backup_dump, = os.listdir(mariadb_backup)
+    mariadb_backup = os.path.join(mariadb_partition, 'srv', 'backup', 'mariadb-backup-restic')
+    snapshot_list = json.loads(subprocess.check_output([
+      os.path.join(mariadb_partition, 'bin', 'restic'),
+      'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup,
+    ]))
+    self.assertTrue(snapshot_list[0]['paths'][0].endswith('.full.xb'), snapshot_list)
+    self.assertTrue(glob.glob(os.path.join(mariadb_backup, '????????_????.full.meta')))
 
     # Check that zodb backup has started
     zodb_backup = self._getERP5PartitionPath('export', 'zeo', 'srv', 'backup', 'zodb', 'root')
     self.assertEqual(len(os.listdir(zodb_backup)), 3)
-
-    # Check that mariadb catalog backup contains expected changes
-    with gzip.open(os.path.join(mariadb_backup, mariadb_backup_dump)) as f:
-      msg = "Mariadb catalog backup %s is not up to date" % mariadb_backup_dump
-      self.assertIn(new_title.encode(), f.read(), msg)
 
   def _checkSync(self):
     super(TestTheiaResilienceERP5, self)._checkSync()
