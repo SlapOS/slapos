@@ -36,13 +36,15 @@ if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_
   print('Doing incremental backup...')
   extra_mariabackup_args = ['--incremental-basedir=%s' % last_meta]
   filename = '%s.inc.xb' % timestamp
+  metadir = '%s.inc.meta' % timestamp
 else:
   print('Doing full backup...')
   extra_mariabackup_args = []
   filename = '%s.full.xb' % timestamp
+  metadir = '%s.full.meta' % timestamp
 process_mariabackup = subprocess.Popen([
   mariabackup_executable, '--backup', '--stream=xbstream',
-  '--extra-lsndir=%s/%s.inc.meta' % (mariadb_backup_directory, timestamp),
+  '--extra-lsndir=%s/%s' % (mariadb_backup_directory, metadir),
 ] + extra_mariabackup_args, stdout=subprocess.PIPE)
 process_restic = subprocess.Popen([
   restic_executable, 'backup', '--stdin', '--stdin-filename', filename,

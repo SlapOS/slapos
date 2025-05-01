@@ -82,6 +82,7 @@ for i, snapshot in enumerate(restore_snapshot_list):
   print(stdout.decode('utf-8'))
   if stderr:
     print(stderr.decode('utf-8'))
+  process_restic.wait()
   if process_restic.returncode != 0:
     print('restic: exit %s' % process_restic.returncode)
     sys.exit(process_restic.returncode)
@@ -96,6 +97,6 @@ print(subprocess.check_output([
   mariabackup_executable, '--move-back', '--target-dir=%s' % mariadb_restore_directory,
 ]).decode('utf-8'))
 shutil.rmtree(mariadb_restore_directory)
-shutil.rmtree(mariadb_incremental_restore_directory)
+shutil.rmtree(mariadb_incremental_restore_directory, ignore_errors=True)
 
 print('Backup restoration successfully completed.')
