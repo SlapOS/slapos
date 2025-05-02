@@ -44,7 +44,7 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
     "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index"
+      "$ref": "cell/nr/input-schema.json#/properties/root_sequence_index"
     },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
