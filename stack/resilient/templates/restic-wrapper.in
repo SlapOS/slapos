@@ -1,4 +1,5 @@
 #!{{ dash_location }}
+set -e
 RESTIC="{{ restic_binary }}"
 BACKUP_DIR="{{ backup_dir }}"
 SSH_CLIENT_SOCKET=$BACKUP_DIR/../ssh.sock
@@ -15,5 +16,6 @@ case "$SSH_ORIGINAL_COMMAND" in
     ;;
     *)
         echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
+        exit 1
     ;;
 esac
