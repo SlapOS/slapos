@@ -74,14 +74,15 @@ if full_backup_retention_days > 0:
       latest_full_index = i
     if parse(snapshot['time']) > target_date:
       break
-  for snapshot in snapshot_list[0:latest_full_index]:
-    path = snapshot['paths'][0]
-    print('Deleting old snapshots %s...' % path[1:-3])
-    print(subprocess.check_output([
-      restic_executable, 'forget', snapshot['id'], '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
-    ]).decode('utf-8'))
-    shutil.rmtree(os.path.join(mariadb_backup_directory, path[1:-3]) + '.meta', ignore_errors=True)
   if latest_full_index > 0:
+    delete_snapshot_list = snapshot_list[0:latest_full_index]
+    print('Deleting old snapshots %s...' % (', '.join(e['paths'][0][1:-3] for e in delete_snapshot_list)))
+    print(subprocess.check_output([
+      restic_executable, 'forget', '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
+    ] + [e['id'] for e in delete_snapshot_list]).decode('utf-8'))
+    for snapshot in delete_snapshot_list:
+      shutil.rmtree(os.path.join(mariadb_backup_directory,
+                                 snapshot['paths'][0][1:-3]) + '.meta', ignore_errors=True)
     # remove outdated mysqldump results that are older than removed restic snapshots.
     for path in glob.glob(os.path.join(mariadb_backup_directory, '??????????????.sql.gz')):
       os.remove(path)
