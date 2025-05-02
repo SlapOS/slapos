@@ -8,7 +8,7 @@
       "software-type": "gnb",
       "description": "gNodeB Configuration",
       "request": "instance-ors-duo-gnb-input-schema.json",
-      "response": "instance-ors-duo-gnb-schema.json",
+      "response": "instance-ors-gnb-schema.json",
       "index": 1
     }
   }
