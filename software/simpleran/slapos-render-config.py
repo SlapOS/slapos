@@ -373,7 +373,7 @@ ORS_ru = {
     'rx_gain':      43,
 }
 ORS_json = """
-    "ors": {"one-watt": true},
+    "ors": {"one_watt": true},
 """
 def ORS_enb(ienb):
     ienb.ishared('RU', ORS_ru)
