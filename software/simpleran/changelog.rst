@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.412 (2025-05-02)
+-------------
+
+* Fix published websocket URL missing "/websocket"
+
 Version 1.0.409 (2025-04-07)
 -------------
 
