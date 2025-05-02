@@ -1,0 +1,24 @@
+[buildout]
+extends =
+  {{ template_base }}
+
+[jinja2-template-extend]
+recipe = slapos.recipe.template:jinja2
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extra-context =
+context =
+    key slapparameter_dict slap-configuration:configuration
+    ${:extra-context}
+
+[dynamic-template-wendelin-telecom]
+<= jinja2-template-extend
+url = {{ template_wendelin_telecom }}
+filename = instance-wendelin-telecom.cfg
+extensions = jinja2.ext.do
+extra-context =
+    import json_module json
+    key slave_instance_list slap-configuration:slave-instance-list
+    key instance_erp5 dynamic-template-erp5:output
+
+[switch-softwaretype]
+default = dynamic-template-wendelin-telecom:output

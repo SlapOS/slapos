@@ -1,0 +1,107 @@
+[buildout]
+extends =
+  {{ instance_erp5 }}
+
+parts +=
+  ors-register
+
+[ors-register]
+recipe = slapos.recipe.build
+slave-instance-list = {{ dumps(slave_instance_list) }}
+site-id = ${publish:site-id}
+inituser-login = ${publish:inituser-login}
+inituser-password = ${publish-early:inituser-password}
+gateway-host = {{ slapparameter_dict.get("gateway-host", "") }}
+update =
+  import json
+  import logging
+  import requests
+  import slapos
+
+  log = logging.getLogger('SLAPOS-WENDELIN-TELECOM')
+  logging.basicConfig(level=logging.INFO)
+
+  slap = slapos.slap.slap()
+  slap_connection = self.buildout['slap-connection']
+  self.computer_id = slap_connection['computer-id']
+  self.computer_partition_id = slap_connection['partition-id']
+  self.server_url = slap_connection['server-url']
+  self.key_file = slap_connection.get('key-file')
+  self.cert_file = slap_connection.get('cert-file')
+  self.slave_instance_list = list(options['slave-instance-list'])
+
+  # Redeploy instance to update published information
+  slap.initializeConnection(self.server_url, self.key_file, self.cert_file)
+  computer_partition = slap.registerComputerPartition(self.computer_id, self.computer_partition_id)
+
+  request_balancer = self.buildout['request-balancer']
+  zope_family_name_list = ['ingestion', 'web', 'default']
+  wendelin_telecom_backend_url = None
+  for family_name in zope_family_name_list:
+    connection_name = 'connection-%s-v6' % family_name
+    if connection_name in request_balancer:
+      wendelin_telecom_backend_url = request_balancer[connection_name]
+      break
+  if not wendelin_telecom_backend_url:
+    log.fatal("Wendelin Telecom backend URL not found, cannot register")
+  else:
+    wendelin_telecom_site_id = options['site-id']
+    inituser_login = options['inituser-login']
+    inituser_password = options['inituser-password']
+    fluentd_gateway_host = options['gateway-host']
+
+    for slave in self.slave_instance_list:
+      slave_reference = slave['slave_reference']
+
+      try:
+        fluentbit_tag = slave['fluentbit-tag']
+      except KeyError as missing_key:
+        message = "Parameter %s not found, cannot register" % missing_key
+        log.fatal("%s: %s" % (slave_reference, message))
+        computer_partition.setConnectionDict({'1_information': message}, slave_reference)
+        continue
+
+      request_url = "%s/%s/ERP5Site_registerOrs?fluentbit_tag=%s" % (
+        wendelin_telecom_backend_url,
+        wendelin_telecom_site_id,
+        fluentbit_tag
+      )
+
+      response = requests.get(request_url, verify=False, auth=(inituser_login, inituser_password))
+      if not response.ok:
+        message = "Registration request failed with status code %s %s" % (
+          response.status_code,
+          response.reason
+        )
+        log.fatal("%s: %s" % (slave_reference, message))
+        computer_partition.setConnectionDict({'1_information': message}, slave_reference)
+        continue
+      response = response.json()
+
+      status = response['status']
+      message = response['message']
+
+      slave_connection_parameter_dict = {}
+
+      if status == 'ok':
+        log.info("%s: %s" % (slave_reference, message))
+        # Don't use registration message as is:
+        # Remove ORS-specific wording and only indicate successful registration
+        slave_connection_parameter_dict = {
+          '1_information': "eNB device successfully registered",
+          'gateway-host': str(fluentd_gateway_host)
+        }
+      elif status == 'error':
+        log.info("%s: %s" % (slave_reference, message))
+        # Same as above
+        slave_connection_parameter_dict['1_information'] = "Error occurred during device registration"
+      else:
+        message = "Unexpected status %s received from registration" % status
+        log.fatal("%s: %s" % (slave_reference, message))
+        slave_connection_parameter_dict['1_information'] = message
+
+      log.info("%s: Update connection parameters" % slave_reference)
+      computer_partition.setConnectionDict(slave_connection_parameter_dict, slave_reference)
+
+[publish]
+slave-amount = {{ len(slave_instance_list) }}
