@@ -67,6 +67,20 @@ class BuildoutTestSuite(TestSuite):
         skip_count = int(groupdict['skips']))
     return status_dict
 
+
+def get_versions(requirements, got_versions):
+  """gather versions from requirements and all their dependencies
+  """
+  versions = []
+  for req in requirements:
+    distribution = get_distribution(req)
+    if distribution not in got_versions:
+      got_versions.add(distribution)
+      versions.append((distribution.project_name, distribution.version))
+      versions.extend(get_versions(requirements, got_versions))
+  return versions
+
+
 def main():
   os.environ['TEMP'] = {{repr(temp_directory)}}
   parser = argparse.ArgumentParser(description='Run a test suite.')
@@ -94,6 +108,15 @@ def main():
   else:
     test_result = DummyTestResult(list(test_dict))
 
+  seen_versions = set()
+  versions = []
+  for egg, extras in (
+    ('zc.buildout', ('test',)),
+    ('zc.recipe.egg', ()),
+    ('zope.testrunner', ()),
+  ):
+    versions.extend(get_versions(get_distribution(egg).requires(extras), seen_versions))
+
   fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
   try:
     os.write(fd, str2bytes("""\
@@ -105,10 +128,7 @@ versions = versions
 
 [versions]
 %s
-zope.exceptions = 4.6
-zope.interface = 5.4.0
-zope.testing = 4.7
-zope.testrunner = 5.2
+%s
 
 [testrunner]
 recipe = zc.recipe.egg
@@ -119,10 +139,9 @@ eggs =
   zope.testrunner
 scripts =
   zope-testrunner
-extra-paths =%s
 """ % (''.join('\n  ' + x for x in test_dict.values()),
+       '\n'.join('%s = %s' % x for x in versions),
        '\n'.join(x + ' =' for x in test_dict),
-       ''.join('\n  ' + get_distribution(x).location for x in ('manuel', 'six')),
        )))
   finally:
     os.close(fd)
