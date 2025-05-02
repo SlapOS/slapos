@@ -1,0 +1,90 @@
+#!{{ python_executable }}
+from datetime import datetime, timedelta
+from dateutil.parser import parse
+import glob
+import json
+import os
+import pytz
+import shutil
+import subprocess
+import sys
+
+max_incremental_count = int(os.environ.get('max_incremental_count', '6'))
+mariabackup_executable = '{{ bin_directory }}/mariabackup'
+mbstream_executable = '{{ bin_directory }}/mbstream'
+restic_executable = '{{ bin_directory }}/restic'
+mariadb_backup_directory = '{{ mariadb_backup_directory }}'
+full_backup_retention_days = int('{{ full_backup_retention_days }}')
+now = pytz.utc.localize(datetime.utcnow())
+timestamp = now.strftime('%Y%m%d_%H%M')
+
+print('Checking backup...')
+try:
+  last_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.meta')))[-1]
+except IndexError:
+  last_meta = None
+try:
+  last_full_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.full.meta')))[-1]
+except IndexError:
+  last_full_meta = None
+if not last_meta:
+  incremental_count = 0
+else:
+  incremental_count = len([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_full_meta])
+
+if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_incremental_count:
+  print('Doing incremental backup...')
+  extra_mariabackup_args = ['--incremental-basedir=%s' % last_meta]
+  filename = '%s.inc.xb' % timestamp
+  metadir = '%s.inc.meta' % timestamp
+else:
+  print('Doing full backup...')
+  extra_mariabackup_args = []
+  filename = '%s.full.xb' % timestamp
+  metadir = '%s.full.meta' % timestamp
+process_mariabackup = subprocess.Popen([
+  mariabackup_executable, '--backup', '--stream=xbstream',
+  '--extra-lsndir=%s/%s' % (mariadb_backup_directory, metadir),
+] + extra_mariabackup_args, stdout=subprocess.PIPE)
+process_restic = subprocess.Popen([
+  restic_executable, 'backup', '--stdin', '--stdin-filename', filename,
+  '--tag', 'MariaDB', '--insecure-no-password', '-r', mariadb_backup_directory,
+], stdin=process_mariabackup.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+process_mariabackup.stdout.close()
+stdout, stderr = process_restic.communicate()
+print(stdout.decode('utf-8'))
+if stderr:
+  print(stderr.decode('utf-8'))
+if process_mariabackup.returncode != 0:
+  print('mariabackup: exit %s' % process_mariabackup.returncode)
+  sys.exit(process_mariabackup.returncode)
+if process_restic.returncode != 0:
+  print('restic: exit %s' % process_restic.returncode)
+  sys.exit(process_restic.returncode)
+
+if full_backup_retention_days > 0:
+  # We keep until the latest full backup before the target date.
+  target_date = now - timedelta(days=full_backup_retention_days)
+  snapshot_list = json.loads(subprocess.check_output([
+    restic_executable, 'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup_directory,
+  ]))
+  latest_full_index = 0
+  for i, snapshot in enumerate(snapshot_list):
+    if snapshot['paths'][0].endswith('.full.xb'):
+      latest_full_index = i
+    if parse(snapshot['time']) > target_date:
+      break
+  if latest_full_index > 0:
+    delete_snapshot_list = snapshot_list[0:latest_full_index]
+    print('Deleting old snapshots %s...' % (', '.join(e['paths'][0][1:-3] for e in delete_snapshot_list)))
+    print(subprocess.check_output([
+      restic_executable, 'forget', '--prune', '--insecure-no-password', '-r', mariadb_backup_directory,
+    ] + [e['id'] for e in delete_snapshot_list]).decode('utf-8'))
+    for snapshot in delete_snapshot_list:
+      shutil.rmtree(os.path.join(mariadb_backup_directory,
+                                 snapshot['paths'][0][1:-3]) + '.meta', ignore_errors=True)
+    # remove outdated mysqldump results that are older than removed restic snapshots.
+    for path in glob.glob(os.path.join(mariadb_backup_directory, '??????????????.sql.gz')):
+      os.remove(path)
+
+print('Done.')

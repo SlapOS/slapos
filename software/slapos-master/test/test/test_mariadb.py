@@ -27,7 +27,6 @@
 
 import os
 import json
-import glob
 import urllib.parse
 import socket
 import sys
@@ -35,7 +34,6 @@ import time
 import contextlib
 import datetime
 import subprocess
-import gzip
 
 import lzma
 import MySQLdb
@@ -104,17 +102,12 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
   def test_full_backup(self):
     # type: () -> None
     self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
-    full_backup_file, = glob.glob(
-      os.path.join(
-        self.computer_partition_root_path,
-        'srv',
-        'backup',
-        'mariadb-full',
-        '205001010000??.sql.gz',
-    ))
-
-    with gzip.open(full_backup_file, 'rt') as dump:
-      self.assertIn('CREATE TABLE', dump.read())
+    mariadb_backup = os.path.join(self.computer_partition_root_path, 'srv', 'backup', 'mariadb-backup-restic')
+    snapshot_list = json.loads(subprocess.check_output([
+      os.path.join(self.computer_partition_root_path, 'bin', 'restic'),
+      'snapshots', '--json', '--insecure-no-password', '-r', mariadb_backup,
+    ]))
+    self.assertTrue(snapshot_list[0]['paths'][0].endswith('.full.xb'), snapshot_list)
 
   def test_logrotate_and_slow_query_digest(self):
     # slow query digest needs to run after logrotate, since it operates on the rotated
