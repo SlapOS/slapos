@@ -8,10 +8,22 @@
       "default": 40
     },
     "n_antenna_dl": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/n_antenna_dl"
+      "$ref": "ru/common.json#/properties/n_antenna_dl",
+      "enum": [
+        1,
+        2,
+        4
+      ],
+      "default": 4
     },
     "n_antenna_ul": {
-      "$ref": "instance-ors-enb-input-schema.json#/properties/n_antenna_ul"
+      "$ref": "ru/common.json#/properties/n_antenna_ul",
+      "enum": [
+        1,
+        2,
+	4
+      ],
+      "default": 4
     },
     "rf_mode": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/rf_mode"
@@ -45,6 +57,37 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
     "root_sequence_index": {
+      "$ref": "cell/nr/input-schema.json#/properties/root_sequence_index"
+    },
+    "dl_frequency_ca": {
+      "title": "CA DL Frequency",
+      "description": "Downlink frequency of the aggregated cell",
+      "type": "number"
+    },
+    "lte_band_ca": {
+      "title": "CA LTE band",
+      "description": "LTE band number of the aggregated cell",
+      "type": "integer"
+    },
+    "pci_ca": {
+      "title": "CA Physical Cell ID",
+      "description": "Physical Cell ID of the aggregated cell",
+      "$ref": "cell/common.json#/properties/pci"
+    },
+    "cell_id_ca": {
+      "title": "CA Cell ID",
+      "description": "Cell ID of the aggregated cell",
+      "$ref": "cell/common.json#/properties/cell_id"
+    },
+    "tac_ca": {
+      "title": "CA Tracking Area Code",
+      "description": "Tracking Area Code of the aggregated cell",
+      "$ref": "cell/lte/input-schema.json#/properties/tac",
+      "default": 101
+    },
+    "root_sequence_index_ca": {
+      "title": "CA Root Sequence Index",
+      "description": "Root sequence index of the aggregated cell",
       "$ref": "cell/common.json#/properties/root_sequence_index"
     },
     "tx_power_dbm": {
