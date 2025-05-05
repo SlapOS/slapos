@@ -59,6 +59,18 @@
     "root_sequence_index": {
       "$ref": "cell/nr/input-schema.json#/properties/root_sequence_index"
     },
+    "enable_ca": {
+      "default": false,
+      "title": "Enable Carrier Aggregation",
+      "description": "Enable Carrier Aggregation",
+      "type": "boolean"
+    },
+    "nr_bandwidth_ca": {
+      "title": "CA Bandwidth",
+      "description": "Downlink Bandwidth of the aggregated cell",
+      "$ref": "cell/common.json#/properties/bandwidth",
+      "default": 40
+    },
     "dl_frequency_ca": {
       "title": "CA DL Frequency",
       "description": "Downlink frequency of the aggregated cell",
