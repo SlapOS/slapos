@@ -4,11 +4,48 @@
   "description": "Parameters to instantiate Fluentd",
   "additionalProperties": false,
   "properties": {
-    "conf-text": {
-      "title": "Configuration",
-      "description": "Fluentd configuration. See: https://docs.fluentd.org/configuration",
+    "tls-transport-enabled": {
+      "title": "Enable TLS transport",
+      "description": "Enable TLS transport for incoming data",
+      "type": "boolean",
+      "default": false
+    },
+    "bind": {
+      "title": "Bind address",
+      "description": "Bind address on which to listen for incoming data",
       "type": "string",
-      "textarea": true
+      "default": "::0"
+    },
+    "port": {
+      "title": "Port",
+      "description": "Port on which to listen for incoming data",
+      "type": "integer",
+      "default": 24224
+    },
+    "tag-prefix": {
+      "title": "Tag prefix",
+      "description": "Prefix that will be added to an incoming event's tag",
+      "type": "string"
+    },
+    "tag-match-pattern": {
+      "title": "Tag matching pattern",
+      "description": "Tag pattern used by the match directive in the output plugin. See https://docs.fluentd.org/configuration/config-file#id-2.-match-tell-fluentd-what-to-do",
+      "type": "string"
+    },
+    "wendelin-ingestion-url": {
+      "title": "Wendelin ingestion URL",
+      "description": "Ingestion endpoint URL of the Wendelin Telecom instance to which the data is to be forwarded",
+      "type": "string"
+    },
+    "username": {
+      "title": "Wendelin account username",
+      "description": "The username of a valid account to authenticate with on the Wendelin instance",
+      "type": "string"
+    },
+    "password": {
+      "title": "Wendelin account password",
+      "description": "The password of the account to authenticate with on the Wendelin instance",
+      "type": "string"
     }
   }
 }
