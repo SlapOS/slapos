@@ -18,42 +18,53 @@ smtputf8_enable = no
 mail_owner = {{ mail_owner }}
 setgid_group = {{ setgid_group }}
 
-virtual_mailbox_domains = {{ server_fqdn }}, {{ mail_domains }}
-virtual_mailbox_base = {{ vhosts_directory }}
-virtual_minimum_uid = 100
-virtual_uid_maps = static:1001
-virtual_gid_maps = static:1022
-virtual_transport = lmtp:unix:{{ postfix_dovecot_lmtp }}
+myhostname = {{ server_fqdn }}
+mydestination = $myhostname, localhost.localdomain, localhost
+mailbox_size_limit = 0
+recipient_delimiter = +
 
 inet_interfaces = all
 inet_protocols = all
 smtp_bind_address = 0.0.0.0
-smtp_bind_address6 = {{ self_ipv6 }}
-smtp_bind_address_enforce = yes
+smtp_bind_address6 = ::
 
 import_environment =
   MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
 
-smtpd_tls_security_level = none
-smtpd_sasl_type = dovecot
-smtpd_sasl_path = private/auth
-smtpd_sasl_auth_enable = yes
+smtp_tls_security_level = none
+smtp_sasl_auth_enable = yes
+smtp_sasl_security_options = noanonymous
+smtp_sasl_password_maps = texthash:{{ sasl_passwd }}
 
-smtpd_recipient_restrictions =
-  permit_sasl_authenticated
-smtpd_relay_restrictions =
-  permit_sasl_authenticated
-  defer_unauth_destination
+smtpd_relay_restrictions = 
   permit_mynetworks 
+  reject_unauth_destination
 
-allow_min_user = yes
+mynetworks = [{{ self_ipv6 |join(']/128 [') }}]/128 {{ self_ipv4 |join(" ")}} 127.0.0.0/8 {{ mail_hosts }}
 
-local_transport = error
+virtual_transport = relay
+relay_recipient_maps =
+relay_domains = {{ mail_domains }}
+relayhost = [{{ relay_host }}]:{{ relay_port }}
 
 maillog_file = {{ log_directory }}/postfix.log
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
-relayhost = [{{ relay_host }}]:{{ relay_port}}
+biff = no
 
-myhostname = {{ server_fqdn }}
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# TLS parameters
+smtpd_tls_cert_file={{ postfix_cert_file }}
+smtpd_tls_key_file={{ postfix_key_file }}
+smtpd_tls_security_level=may
+smtp_tls_CApath=/etc/ssl/certs
+smtp_tls_session_cache_database = btree:{{ data_directory }}/smtp_scache
+
+transport_maps = texthash:{{ transport_maps }}
+
+# no aliases
+alias_maps =
+alias_database =
