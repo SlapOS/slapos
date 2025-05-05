@@ -139,7 +139,7 @@ class KVMTestCase(InstanceTestCase):
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
+                     if q['name'].startswith('kvm-'))['pid']
     sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
                             % re.escape(self.slap.shared_directory)).sub
     image_list = []
@@ -417,7 +417,7 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
     return_list = []
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
+                 if q['name'].startswith('kvm-')][0]['pid']
       kvm_process = psutil.Process(kvm_pid)
       get_next = False
       for entry in kvm_process.cmdline():
@@ -1170,6 +1170,7 @@ ir1:monitor-httpd-{hash}-on-watch RUNNING
 ir1:monitor-httpd-graceful EXITED
 ir1:notifier-on-watch RUNNING
 ir1:pbs_sshkeys_authority-on-watch RUNNING
+ir1:rest-server-local-ir0-kvm-1-on-watch RUNNING
 ir2:6tunnel-10022-{hash}-on-watch RUNNING
 ir2:6tunnel-10080-{hash}-on-watch RUNNING
 ir2:6tunnel-10443-{hash}-on-watch RUNNING
@@ -1993,7 +1994,7 @@ class TestNatRulesKvmCluster(KVMTestCase):
   def getRunningHostFwd(self):
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
+                 if q['name'].startswith('kvm-')][0]['pid']
       kvm_process = psutil.Process(kvm_pid)
       for entry in kvm_process.cmdline():
         if 'hostfwd' in entry:
@@ -2552,7 +2553,7 @@ class ExternalDiskMixin(KvmMixin):
     _match_drive = re.compile('file.*if=virtio.*').match
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
+                     if q['name'].startswith('kvm-'))['pid']
     drive_list = []
     for entry in psutil.Process(kvm_pid).cmdline():
       m = _match_drive(entry)
