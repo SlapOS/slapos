@@ -1,7 +1,13 @@
 {
-  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
   "description": "Values returned by Fluentd instantiation",
   "additionalProperties": false,
-  "properties": {},
-  "type": "object"
+  "properties": {
+    "ipv6": {
+      "title": "IPv6 Address",
+      "description": "IPv6 address to use to send data to the Fluentd instance",
+      "type": "string"
+    },
+  }
 }

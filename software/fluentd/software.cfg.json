@@ -5,17 +5,17 @@
   "software-type": {
     "default": {
       "title": "Default",
-      "description": "Default Fluentd configuration",
+      "description": "Default Fluentd configuration for forwarding data to a Wendelin instance",
       "request": "instance-input-schema.json",
       "response": "instance-output-schema.json",
       "index": 0
     },
-    "wendelin-telecom-gateway": {
-      "title": "Wendelin Telecom Gateway",
-      "description": "Gateway configuration for forwarding ORS eNB Xlog data to Wendelin Telecom",
-      "request": "instance-wendelin-telecom-gateway-input-schema.json",
-      "response": "instance-output-schema.json",
-      "index": 0
+    "expert": {
+      "title": "Expert",
+      "description": "Advanced mode that allows specifying a custom Fluentd configuration",
+      "request": "instance-expert-input-schema.json",
+      "response": "instance-expert-output-schema.json",
+      "index": 1
     }
   }
 }
