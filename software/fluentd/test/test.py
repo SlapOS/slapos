@@ -280,3 +280,59 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
       msgpack.unpackb(
         self.serve(self._wendelin_port, WendelinHTTPRequestHandler)),
     )
+
+
+class WendelinTelecomGatewayTutorialTestCase(FluentdTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': cls._fluentd_port,
+      'shared-key': 'secret',
+      'wendelin-frontend-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_telecom_port}',
+      'username': 'foo',
+      'password': 'bar'
+    }
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'wendelin-telecom-gateway'
+
+  @classmethod
+  def setUpClass(cls):
+    cls._tmp_dir = tempfile.mkdtemp()
+
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._fluentd_port = fluentd_port
+    wendelin_telecom_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_telecom_port = wendelin_telecom_port
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  @classmethod
+  def tearDownClass(cls):
+    shutil.rmtree(cls._tmp_dir)
+    super(FluentdTestCase, cls).tearDownClass()
+
+  def read_fluentd_conf(self):
+    return subprocess.check_output(
+      [self._fluentd_bin, '-c', self._fluentd_conf, '--dry-run'],
+      env={'GEM_PATH': self._gem_path},
+      text=True,
+    )
+
+  def _test_configuration(self, expected_str):
+    self.assertRegex(
+      self.read_fluentd_conf(),
+      expected_str,
+    )
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
