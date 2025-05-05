@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Parameters to instantiate Fluentd",
+  "additionalProperties": false,
+  "properties": {
+    "conf-text": {
+      "title": "Configuration",
+      "description": "Fluentd configuration. See: https://docs.fluentd.org/configuration",
+      "type": "string",
+      "textarea": true
+    }
+  }
+}
