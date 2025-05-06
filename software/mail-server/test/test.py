@@ -42,18 +42,11 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "relay-host": "example.com",
-          "relay-port": 2525,
-          "relay-user": "user",
-          "relay-password": "pass",
           "mail-domains": [
-            {
-              "name": "domain.lan",
-              # use example ipv6
-              "mail-server-host": "2001:db8::1",
-              "mail-server-port": 25
-            }
+            "example.com"
           ],
+          "relay-host": "::1",
+          "relay-port": 1234
         }
       )
     }
