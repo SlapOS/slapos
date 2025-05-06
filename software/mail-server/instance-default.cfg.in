@@ -22,7 +22,6 @@ libexec-dovecot = ${:libexec}/dovecot
 home-dovecot = ${:home}/dovecot-home
 script = ${:etc}/run
 service = ${:etc}/service
-promise = ${:etc}/promise
 log = ${:var}/log
 usr-postfix = ${:usr}/postfix
 etc-postfix = ${:etc}/postfix
@@ -48,21 +47,13 @@ var-spool-postfix-private = ${:var-spool-postfix}/private
 var-spool-postfix-public = ${:var-spool-postfix}/public
 var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
+apache.d = ${:etc}/apache.d
 httpd-log = ${:log}/apache
 php-ini-dir = ${:etc}/php
-tmp-php = ${:tmp}/php
-upload-tmp = ${:tmp}/upload
-www = ${:srv}/www/
-apache.d = ${:etc}/apache.d
 srv-backup = ${:srv}/backup
-
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = {{ slap_connection['computer-id'] }}
-partition = {{ slap_connection['partition-id'] }}
-url = {{ slap_connection['server-url'] }}
-key = {{ slap_connection['key-file'] }}
-cert = {{ slap_connection['cert-file'] }}
+tmp-php = ${:tmp}/php
+tmp-upload = ${:tmp}/upload
+www = ${:srv}/www/
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -90,36 +81,26 @@ command-line = ${certificate-authority:wrapper}
 wrapper-path = ${directory:services}/certificate_authority
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-
-
 [apache-network-configuration]
-listening-ip = ${slap-configuration:ipv6-random}
+listening-ip = ${publish-connection-information:imap-smtp-ipv6}
 listening-port = 9988
 
-[config-base]
-recipe = slapos.recipe.template:jinja2
-extensions = jinja2.ext.do
-extra-context =
-context =
-  section directory directory
-  section slap_configuration slap-configuration
-  import  netaddr netaddr
-  ${:extra-context}
-
 [dovecot-conf]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
-extra-context =
+context =
+  section directory directory
   key dovecot_passwd dovecot-passwd:output
+  raw user_name {{ user_name }}
   raw postfix_auth ${directory:var-spool-postfix-private}/auth
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
 
 [dovecot-passwd]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 url = {{ dovecot_passwd }}
 output = ${directory:etc}/dovecot-passwd
-extra-context =
+context =
   import json_module json
   raw instances {{ json_module.dumps(slave_instance_list) }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
@@ -133,10 +114,10 @@ install =
    # for non-existing slaves, insert slave & token
 
 [password-php]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 url = {{ password_php }}
 output = ${directory:www}/password.php
-extra-context =
+context =
   key dovecot_passwd dovecot-passwd:output
 
 [userinfo]
@@ -156,10 +137,10 @@ init =
                   options['ipv4'] = "0.0.0.0"
 
 [postfix-conf-main]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 url = {{ postfix_main_template }}
 output = ${directory:etc-postfix}/main.cf
-extra-context =
+context =
   key dovecot_passwd dovecot-passwd:output
   key bin_directory directory:bin
   key usr_directory directory:usr-postfix
@@ -170,41 +151,40 @@ extra-context =
   key log_directory directory:var-log
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  key ip_address slap-configuration:ipv6-random
-  key server_fqdn slap-configuration:instance-title
+  raw server_fqdn {{ server_fqdn }}
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
   raw relay_host {{ slapparameter_dict['relay-host'] }}
   raw relay_port {{ slapparameter_dict['relay-port'] }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
-  key self_ipv6 slap-configuration:ipv6-random
+  raw ipv6 {{ ipv6 }}
 
 [postfix-conf-master]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 url = {{ postfix_master_template }}
 output = ${directory:etc-postfix}/master.cf
-extra-context =
+context =
   key smtp_port publish-connection-information:smtp-port
 
 
 
 [snappymail-conf]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 depends = ${copy-application:recipe}
 url = {{ snappymail_conf }}
 output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
-extra-context =
+context =
   key mail_domain {{ slapparameter_dict['mail-domains'][0] }}
 
 
 [snappymail-domain]
-<= config-base
+recipe = slapos.recipe.template:jinja2
 depends = ${copy-application:recipe}
 url = {{ snappymail_domain }}
 output = ${copy-application:target}/data/_data_/_default_/domains/default.json
-extra-context =
-  raw mail_host [${slap-configuration:ipv6-random}]
+context =
+  raw mail_host [${publish-connection-information:imap-smtp-ipv6}]
   key smtp_port publish-connection-information:smtp-port
 
 
@@ -321,11 +301,11 @@ key-file = ${ca-directory:certs}/httpd.key
 apache-config-dir = ${directory:apache.d}
 
 [publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
-recipe = slapos.cookbook:publish
 imap-port = 10143
 smtp-port = 10025
-imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
+imap-smtp-ipv6 = {{ ipv6}}
 {% if apache_parameter_dict['publish-frontend'] -%}
 webmail-url = ${lamp-frontend-promise:url}
 {% else -%}
@@ -367,14 +347,14 @@ config-url = ${:url}
 <= monitor-promise-base
 promise = check_socket_listening
 name = imap_listen.py
-config-host = ${slap-configuration:ipv6-random}
+config-host = ${publish-connection-information:imap-smtp-ipv6}
 config-port = 10143
 
 [smtp-listen-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = smtp_listen.py
-config-host = ${slap-configuration:ipv6-random}
+config-host = ${publish-connection-information:imap-smtp-ipv6}
 config-port = ${publish-connection-information:smtp-port}
 
 [promise]
@@ -483,7 +463,6 @@ parts =
   php.ini-conf
   lamp-apache-httpd
   apache-php-service
-  request-frontend
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor -%}
@@ -500,7 +479,7 @@ php-ini = ${php.ini-conf:output}
 
 [php.ini-configuration]
 tmp-dir = ${directory:tmp-php}
-php-upload-dir = ${directory:upload-tmp}
+php-upload-dir = ${directory:tmp-upload}
 
 [php.ini-conf]
 recipe = slapos.recipe.template:jinja2
