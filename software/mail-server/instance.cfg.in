@@ -55,7 +55,6 @@ template-apache-conf = {{ template_apache_conf }}
 apache-location = {{ apache_location }}
 apache-php-location = {{ apache_php_location }}
 template-php-ini = {{ template_php_ini }}
-publish-frontend = !py!{{ default_frontend }}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised

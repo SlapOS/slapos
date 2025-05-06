@@ -306,11 +306,7 @@ recipe = slapos.cookbook:publish.serialised
 imap-port = 10143
 smtp-port = 10025
 imap-smtp-ipv6 = ${apache-network-configuration:listening-ip}
-{% if apache_parameter_dict['publish-frontend'] -%}
 webmail-url = ${lamp-frontend-promise:url}
-{% else -%}
-webmail-url = ${apache-php-configuration:url}
-{% endif -%}
 password-url = ${:webmail-url}/password.php
 {% set token_dict = {} -%}
 {% for slave_instance in slave_instance_list -%}
