@@ -28,7 +28,7 @@ virtual_transport = lmtp:unix:{{ postfix_dovecot_lmtp }}
 inet_interfaces = all
 inet_protocols = all
 smtp_bind_address = 0.0.0.0
-smtp_bind_address6 = {{ self_ipv6 }}
+smtp_bind_address6 = {{ ipv6 }}
 smtp_bind_address_enforce = yes
 
 import_environment =
@@ -54,6 +54,6 @@ maillog_file = {{ log_directory }}/postfix.log
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
-relayhost = [{{ relay_host }}]:{{ relay_port}}
+sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}

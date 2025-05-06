@@ -1,6 +1,23 @@
+builtin
 {%- for domain in mail_domains.split(",") %}
 testmail@{{domain}}:MotDePasseEmail::
 {%- endfor %}
+{%- set fp = builtins.open(file_path, 'r') %}
+{%- set passwd = fp.read() %}
+existing
+{{ passwd }}
+{%- do fp.close() %}
+{%- set existing_users = set() %}
+{%- for line in passwd.splitlines() %}
+{%- set user = line.split(":")[0] %}
+{%- if user != "" %}
+{%- set existing_users = existing_users | union([user]) %}
+{%- endif %}
+{%- endfor %}
+new
 {%- for slave in json_module.loads(instances) %}
+{%- if slave['address'] not in existing_users %}
+{%- set existing_users = existing_users | union([slave['address']]) %}
 {{slave['address']}}:{{slave['token']}}::::::fail
+{%- endif %}
 {%- endfor %}

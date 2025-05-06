@@ -1,0 +1,9 @@
+{% for domain in mail_domains.split(",") -%}
+
+{% if relay_info['host-override'] and relay_info['port-override'] -%}
+@{{ domain }} smtp:[{{ relay_info['host-override'] }}]:{{ relay_info['port-override'] }}
+{% elif relay_info['host-' + domain] and relay_info['port-' + domain] -%}
+@{{ domain }} smtp:[{{ relay_info['host-' + domain] }}]:{{ relay_info['port-' + domain] }}
+{% endif -%}
+
+{% endfor -%}

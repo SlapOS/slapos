@@ -24,46 +24,29 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from setuptools import setup, find_packages
 
-import os
-import json
-import smtplib
+version = '0.0.1.dev0'
+name = 'slapos.test.mail-server'
+with open("README.md") as f:
+  long_description = f.read()
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-  os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' mail server",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
+        'slapos.core',
+        'slapos.libnetworkcache',
+        'erp5.util',
+        'requests',
+    ],
+    zip_safe=True,
+    test_suite='test',
 )
-
-
-class PostfixTestCase(SlapOSInstanceTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "_": json.dumps(
-        {
-          "relay-host": "example.com",
-          "relay-port": 2525,
-          "relay-user": "user",
-          "relay-password": "pass",
-          "mail-domains": [
-            {
-              "name": "domain.lan",
-              # use example ipv6
-              "mail-server-host": "2001:db8::1",
-              "mail-server-port": 25
-            }
-          ],
-        }
-      )
-    }
-
-  def test_postfix(self):
-    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
-    host = parameter_dict["smtp-ipv6"]
-
-    try:
-      server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
-      server.quit()
-    except Exception as e:
-      self.fail(f"SMTP connection failed: {e}")

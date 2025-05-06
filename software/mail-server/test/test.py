@@ -27,7 +27,10 @@
 
 import os
 import json
+import imaplib
 import smtplib
+import signal
+from contextlib import contextmanager
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -35,6 +38,16 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
 )
 
+@contextmanager
+def time_limit(seconds):
+    def signal_handler(signum, frame):
+        raise TimeoutError
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
 
 class PostfixTestCase(SlapOSInstanceTestCase):
   @classmethod
@@ -42,28 +55,37 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "relay-host": "example.com",
-          "relay-port": 2525,
-          "relay-user": "user",
-          "relay-password": "pass",
           "mail-domains": [
-            {
-              "name": "domain.lan",
-              # use example ipv6
-              "mail-server-host": "2001:db8::1",
-              "mail-server-port": 25
-            }
+            "example.com"
           ],
+          "relay-host": "::1",
+          "relay-port": 1234
         }
       )
     }
 
   def test_postfix(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
-    host = parameter_dict["smtp-ipv6"]
+    host = parameter_dict["imap-smtp-ipv6"]
 
     try:
       server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
       server.quit()
     except Exception as e:
       self.fail(f"SMTP connection failed: {e}")
+
+  def test_dovecot(self):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      imap.login("testmail@example.com", "MotDePasseEmail")
+      imap.select("INBOX")
+      result, data = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+    except Exception as e:
+      self.fail(f"IMAP connection failed: {e}")
+    finally:
+      if imap:
+        imap.logout()
