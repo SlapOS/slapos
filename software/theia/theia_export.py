@@ -138,7 +138,6 @@ class TheiaExport(object):
     self.logs.append(msg)
 
   def __call__(self):
-    remove(self.error_file)
     exitcode = 0
     try:
       self.export()
@@ -150,6 +149,11 @@ class TheiaExport(object):
         f.write('\n ... ERROR !\n\n')
         f.write(exc)
       print('\n\nERROR\n\n' + exc)
+    else:
+      with open(self.error_file, 'w') as f:
+        f.write('\n ... OK\n\n'.join(self.logs))
+        f.write('\n ... OK !\n\n')
+        f.write('SUCCESS')
     finally:
       with open(self.exit_file, 'w') as f:
         f.write(str(exitcode))
