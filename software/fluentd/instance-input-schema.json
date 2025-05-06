@@ -46,6 +46,12 @@
       "title": "Wendelin account password",
       "description": "The password of the account to authenticate with on the Wendelin instance",
       "type": "string"
+    },
+    "flush-interval": {
+      "title": "Buffer flushing interval",
+      "description": "Delay after which the data buffer is flushed to the output",
+      "type": "string",
+      "default": "1m"
     }
   }
 }
