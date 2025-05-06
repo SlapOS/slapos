@@ -185,6 +185,23 @@ about laxist file mode. -#}
 {%-   do section('caucase-admin-updater') %}
 {%-   do section('caucase-admin-updater-promise') %}
 
+[caucase-mariadb-on-renew]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+proxysql-ca-path = ${directory:proxysql}/proxysql-ca.pem
+proxysql-cert-path = ${directory:proxysql}/proxysql-cert.pem
+proxysql-key-path = ${directory:proxysql}/proxysql-key.pem
+crt-and-key-path = ${directory:mariadb-ssl}/mariadb-crt-and-key.pem
+inline =
+  #! /bin/sh -e
+  # Copy for proxysql
+  cp ${directory:mariadb-ssl}/mariadb-ca.pem ${:proxysql-ca-path}
+  cp ${directory:mariadb-ssl}/mariadb-crt.pem ${:proxysql-cert-path}
+  cp ${directory:mariadb-ssl}/mariadb-key.pem ${:proxysql-key-path}
+  # Bundle mariadb
+  cat ${directory:mariadb-ssl}/mariadb-crt.pem ${directory:mariadb-ssl}/mariadb-key.pem \
+    > ${:crt-and-key-path}
+
 {{  caucase.updater(
       prefix='caucase-mariadb-updater',
       buildout_bin_directory=parameter_dict['bin-directory'],
@@ -193,7 +210,9 @@ about laxist file mode. -#}
       data_dir='${directory:srv}/caucase/mariadb',
       ca_path='${directory:mariadb-ssl}/mariadb-ca.pem',
       crl_path='${directory:mariadb-ssl}/mariadb-crl.pem',
-      crt_path='${directory:mariadb-ssl}/mariadb-crt-and-key.pem',
+      crt_path='${directory:mariadb-ssl}/mariadb-crt.pem',
+      key_path='${directory:mariadb-ssl}/mariadb-key.pem',
+      on_renew='${caucase-mariadb-on-renew:output}',
       mode='service',
       openssl_req_options='-subj /CN=' + ipv6,
       openssl='${binary-link:target-directory}/openssl',
@@ -619,7 +638,7 @@ name = mariadb_replication_bootstrap_server.py
 {% if caucased_enable -%}
 config-url = https://[{{ ipv6 }}]:{{ port - 1 }}
 config-ca-cert-file = ${caucase-mariadb-updater:ca-path}
-config-cert-file = ${caucase-mariadb-updater:crt-path}
+config-cert-file = ${caucase-mariadb-on-renew:crt-and-key-path}
 config-key-file = ${:config-cert-file}
 {%- else %}
 config-url = http://[{{ ipv6 }}]:{{ port - 1 }}
@@ -643,23 +662,19 @@ inline =
     timeout connect 10s
     timeout server 305s
     timeout client 305s
+{%- if not caucased_enable %}
   listen mysql
     log global
     bind {{ ipv6 }}:{{ port }}
-{%- if caucased_enable %}
-{#- NOT NL #} ssl crt ${caucase-mariadb-updater:crt-path}
-{#- NOT NL #} verify required
-{#- NOT NL #} ca-file ${caucase-mariadb-updater:ca-path}
-{#- NOT NL #} crl-file ${caucase-mariadb-updater:crl-path}
-{%- endif %}
     mode tcp
     option tcplog
     server mariadb unix@${my-cnf-parameters:socket} send-proxy
+{%- endif %}
   listen bootstrap
     log global
     bind {{ ipv6 }}:{{ port - 1 }}
 {%- if caucased_enable %}
-{#- NOT NL #} ssl crt ${caucase-mariadb-updater:crt-path}
+{#- NOT NL #} ssl crt ${caucase-mariadb-on-renew:crt-and-key-path}
 {#- NOT NL #} alpn h2,http/1.1
 {#- NOT NL #} verify required
 {#- NOT NL #} ca-file ${caucase-mariadb-updater:ca-path}
@@ -678,6 +693,64 @@ command-line =
     -S ${directory:run}/haproxy.sock,level,operator
     -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
+
+{%- if caucased_enable %}
+[proxysql-cfg]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/proxysql.cfg
+inline =
+  mysql_variables =
+  {
+    interfaces="[{{ ipv6 }}]:{{ port }}"
+    have_ssl=true
+  }
+  mysql_servers =
+  (
+    {
+      hostgroup=0
+  #   ProxySQL does not support the proxy side of the proxy protocol
+  #   so Mariadb sees this address as the origin of every connection
+  #   forwarded by ProxySQL, instead of the actual origin address of
+  #   the client.
+  #   Thus letting ProxySQL connect to Mariadb's unix socket causes
+  #   issues due to the anonymous localhost account in mariadb.
+  #   address="${my-cnf-parameters:socket}"
+  #   port=0
+      address="{{ ipv4 }}"
+      port={{ port }}
+      max_connections=128
+    }
+  )
+  mysql_users =
+  (
+    {
+      username="replication_user"
+      password="${replication-password:passwd}"
+      fast_forward=1
+      use_ssl=1
+    }
+  )
+
+[{{ section('proxysql') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/proxysql
+command-line =
+  "${binary-link:target-directory}/proxysql"
+    --foreground
+    -c "${proxysql-cfg:output}"
+    -D "${directory:proxysql}"
+    -S ${directory:run}/proxysql.sock
+    --reload
+# should it be --initial instead of --reload?
+hash-files = ${proxysql-cfg:output}
+# wait for caucase to obtain certificates in mariadb-ssl
+# so that proxysql will directly use them and not try to
+# generate its own.
+wait-for-files =
+  ${caucase-mariadb-on-renew:proxysql-ca-path}
+  ${caucase-mariadb-on-renew:proxysql-cert-path}
+  ${caucase-mariadb-on-renew:proxysql-key-path}
+{%- endif %}
 {%- endif %}
 
 [{{ section('odbc-ini') }}]
@@ -737,6 +810,7 @@ tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
 mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
+proxysql = ${:srv}/proxysql
 mariadb-ssl = ${:etc}/mariadb-ssl
 caucase-ssl = ${:etc}/caucase-ssl
 var = ${buildout:directory}/var
