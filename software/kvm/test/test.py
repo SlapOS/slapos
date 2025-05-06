@@ -1925,14 +1925,15 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         fh.read().strip()
       )
     with open(KVM1_config) as fh:
+      config = fh.read().strip()
       # we don't know where the shared directly will be so just assert begin and end of the path
       self.assertIn(
         '["file://',
-        fh.read().strip()
+        config
       )
       self.assertIn(
         'debian-12.10.0-amd64-netinst.iso#6b6604d894b6d861e357be1447b370db"]',
-        fh.read().strip()
+        config
       )
 
 
