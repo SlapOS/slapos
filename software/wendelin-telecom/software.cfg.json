@@ -1,0 +1,23 @@
+{
+  "name": "Wendelin Telecom",
+  "description": "Master instance of Wendelin Telecom",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Wendelin Telecom",
+      "request": "instance-wendelin-telecom-input-schema.json",
+      "response": "instance-wendelin-telecom-output-schema.json",
+      "index": 0
+    },
+    "default-slave": {
+      "title": "Default (Shared)",
+      "description": "ORS Registration",
+      "software-type": "default",
+      "request": "instance-shared-input-schema.json",
+      "response": "instance-shared-output-schema.json",
+      "shared": true,
+      "index": 1
+    }
+  }
+}
