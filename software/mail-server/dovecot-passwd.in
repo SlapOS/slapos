@@ -1,0 +1,6 @@
+{%- for domain in mail_domains.split(",") %}
+testmail@{{domain}}:MotDePasseEmail::
+{%- endfor %}
+{%- for slave in json_module.loads(instances) %}
+{{slave['address']}}:{{slave['token']}}::::::fail
+{%- endfor %}
