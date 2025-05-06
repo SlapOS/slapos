@@ -82,7 +82,7 @@ wrapper-path = ${directory:services}/certificate_authority
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [apache-network-configuration]
-listening-ip = ${publish-connection-information:imap-smtp-ipv6}
+listening-ip = {{ ipv6 }}
 listening-port = 9988
 
 [dovecot-conf]
@@ -175,7 +175,7 @@ depends = ${copy-application:recipe}
 url = {{ snappymail_conf }}
 output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
 context =
-  key mail_domain {{ slapparameter_dict['mail-domains'][0] }}
+  raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
 
 
 [snappymail-domain]
@@ -184,7 +184,7 @@ depends = ${copy-application:recipe}
 url = {{ snappymail_domain }}
 output = ${copy-application:target}/data/_data_/_default_/domains/default.json
 context =
-  raw mail_host [${publish-connection-information:imap-smtp-ipv6}]
+  raw mail_host [${apache-network-configuration:listening-ip}]
   key smtp_port publish-connection-information:smtp-port
 
 
@@ -305,7 +305,7 @@ recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 imap-port = 10143
 smtp-port = 10025
-imap-smtp-ipv6 = {{ ipv6}}
+imap-smtp-ipv6 = ${apache-network-configuration:listening-ip}
 {% if apache_parameter_dict['publish-frontend'] -%}
 webmail-url = ${lamp-frontend-promise:url}
 {% else -%}
@@ -341,14 +341,14 @@ config-url = ${:url}
 <= monitor-promise-base
 promise = check_socket_listening
 name = imap_listen.py
-config-host = ${publish-connection-information:imap-smtp-ipv6}
+config-host = ${apache-network-configuration:listening-ip}
 config-port = 10143
 
 [smtp-listen-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = smtp_listen.py
-config-host = ${publish-connection-information:imap-smtp-ipv6}
+config-host = ${apache-network-configuration:listening-ip}
 config-port = ${publish-connection-information:smtp-port}
 
 [promise]
@@ -414,9 +414,6 @@ basename = {{ basename }}
 < = base-wrapper
 command-line = ${directory:usr}/libexec/postfix/master -c ${directory:etc-postfix}
 wrapper-path = ${directory:run}/postfix-master
-
-[monitor-instance-parameter]
-monitor-httpd-port = ${apache-network-configuration:listening-port}
 
 {% for slave_instance in slave_instance_list -%}
 {%   set orig_slave_reference = slave_instance.get('slave_reference') -%}
