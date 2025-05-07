@@ -61,7 +61,7 @@
       "default": "10000000"
     },
     "root_sequence_index": {
-      "$ref": "common.json#/properties/root_sequence_index",
+      "$ref": "../common.json#/properties/root_sequence_index",
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     }
