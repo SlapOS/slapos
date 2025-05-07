@@ -59,12 +59,10 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     }
 
   def test_postfix(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    host = parameter_dict.get("smtp-ipv6")
-    if not host:
-        self.fail("Empty or missing 'smtp-ipv6'")
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["smtp-ipv6"]
     sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    sock.connect((host, 10025))
+    sock.connect((host, int(parameter_dict["smtp-port"])))
     try:
       self.assertIn(b"ESMTP Postfix", sock.recv(1024))
       sock.send(b"EHLO localhost\r\n")

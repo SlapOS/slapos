@@ -185,8 +185,8 @@ hash-files =
   ${postfix-wrapper:output}
 
 [publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
-recipe = slapos.cookbook:publish
 # todo: we use same for two since it's behind a port forward anyways
 subm-port = 10025 
 smtp-port = 10025
