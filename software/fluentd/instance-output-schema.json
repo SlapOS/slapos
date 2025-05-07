@@ -8,6 +8,11 @@
       "title": "IPv6 Address",
       "description": "IPv6 address to use to send data to the Fluentd instance",
       "type": "string"
+    },
+    "port": {
+      "title": "Port",
+      "description": "Port to use to send data to the Fluentd instance",
+      "type": "integer"
     }
   }
 }
