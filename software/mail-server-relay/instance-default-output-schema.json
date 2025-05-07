@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by mail server",
+  "properties": {
+    "smtp-port": {
+      "description": "SMTP port of the postfix instance",
+      "type": "integer"
+    },
+    "subm-port": {
+      "description": "Submission port of the postfix instance",
+      "type": "integer"
+    },
+    "smtp-ipv6": {
+      "description": "IPv6 address of the SMTP instance",
+      "type": "string"
+    },
+    "domain": {
+      "description": "Domain of the mail server",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
