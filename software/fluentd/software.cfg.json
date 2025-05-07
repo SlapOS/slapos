@@ -5,10 +5,17 @@
   "software-type": {
     "default": {
       "title": "Default",
-      "description": "Fluentd",
+      "description": "Default Fluentd configuration for forwarding data to a Wendelin instance",
       "request": "instance-input-schema.json",
       "response": "instance-output-schema.json",
       "index": 0
+    },
+    "expert": {
+      "title": "Expert",
+      "description": "Advanced mode that allows specifying a custom Fluentd configuration",
+      "request": "instance-expert-input-schema.json",
+      "response": "instance-expert-output-schema.json",
+      "index": 1
     }
   }
 }
