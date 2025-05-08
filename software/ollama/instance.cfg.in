@@ -1,0 +1,69 @@
+[buildout]
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = false
+
+parts =
+  directory
+  ollama-download-script
+  ollama-check-download-script
+  ollama-model-download
+  ollama-service
+  publish-connection-parameter
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+model = {{ model | default('deepseek-r1:14b') }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+bin = ${:home}/bin
+tmp = ${:home}/tmp
+log = ${:var}/log
+services = ${:etc}/service
+models = ${:srv}/models
+
+[ollama-download-script]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/ollama-download-model.py
+inline = {{ download_script_template }}
+mode = 0755
+
+[ollama-check-download-script]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/ollama-check-download.py
+inline = {{ check_script_template }}
+mode = 0755
+
+[ollama-model-download]
+recipe = slapos.cookbook:wrapper
+command-line = ${directory:bin}/ollama-download-model.py
+wrapper-path = ${directory:bin}/ollama-model-download
+
+[ollama-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${directory:bin}/ollama-check-download.py && {{ ollama_location }}/ollama serve
+wrapper-path = ${directory:services}/ollama-service
+environment =
+  PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:%(PATH)s
+  CC={{ gcc_location }}/bin/gcc
+  CXX={{ gcc_location }}/bin/g++
+  CGO_ENABLED=1
+  OLLAMA_MODELS=${directory:models}
+depends = ${ollama-model-download:recipe}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+ollama-url = http://${slap-configuration:ipv4-random}:11434
+model = ${slap-configuration:model}
+model-download-log = ${directory:log}/ollama-model-download.log
+service-log = ${directory:log}/ollama-service.log

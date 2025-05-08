@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+import time
+import logging
+
+# Setup log
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='${directory:log}/ollama-model-download.log'
+)
+logger = logging.getLogger('ollama-model-download')
+
+# model name and status file path
+model_name = "${slap-configuration:model}"
+status_file = "${directory:var}/model-download-complete"
+models_dir = "${directory:models}"
+
+# if the status file is exist, it means the model download completed
+if os.path.exists(status_file):
+    logger.info(f"Model {model_name} dowload completed")
+    sys.exit(0)
+
+# make sure the model dir is exist
+os.makedirs(models_dir, exist_ok=True)
+
+# download model
+logger.info(f"Downloading {model_name}...")
+print(f"Start to downloading {model_name}，you can check the download log: ${directory:log}/ollama-model-download.log")
+
+try:
+    # Download
+    cmd = ["{{ ollama_location }}/ollama", "pull", model_name]
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        env={
+            "PATH": "{{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:" + os.environ.get("PATH", ""),
+            "CC": "{{ gcc_location }}/bin/gcc",
+            "CXX": "{{ gcc_location }}/bin/g++",
+            "CGO_ENABLED": "1",
+            "OLLAMA_MODELS": models_dir
+        }
+    )
+
+    # Send the output to the log in real time
+    for line in process.stdout:
+        line = line.strip()
+        logger.info(line)
+        print(line)
+
+    # Wait the process finish
+    process.wait()
+
+    # Check the ret code
+    if process.returncode != 0:
+        logger.error(f"Download failed, ret code: {process.returncode}")
+        sys.exit(process.returncode)
+
+    # Create status file
+    with open(status_file, 'w') as f:
+        f.write(f"Model {model_name} download completed at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    logger.info(f"Model {model_name} download completed")
+    print(f"Model {model_name} download completed")
+
+except Exception as e:
+    logger.error(f"Error in downloading: {str(e)}")
+    print(f"Error in downloading: {str(e)}")
+    sys.exit(1)
