@@ -1,13 +1,17 @@
 [buildout]
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
-offline = false
+
+#extends =
+#  {{ monitor_template_cfg }}
+extends =
+  ${monitor2-template:output}
 
 parts =
   directory
-  ollama-download-script
-  ollama-check-download-script
-  ollama-model-download
+  ollama-model-download-wrapper
+  ollama-model-download-state
+  ollama-model-download-promise
   ollama-service
   publish-connection-parameter
 
@@ -31,18 +35,41 @@ tmp = ${:home}/tmp
 log = ${:var}/log
 services = ${:etc}/service
 models = ${:srv}/models
+scripts = ${:etc}/run
 
-[ollama-download-script]
-recipe = slapos.recipe.template:jinja2
-output = ${directory:bin}/ollama-download-model.py
-inline = {{ download_script_template }}
-mode = 0755
+[ollama-model-download-wrapper]
+# wrapper to execute ollama model download
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/ollama-model-updater
+command-line = ${directory:bin}/ollama-download-model.py
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-[ollama-check-download-script]
-recipe = slapos.recipe.template:jinja2
-output = ${directory:bin}/ollama-check-download.py
-inline = {{ check_script_template }}
-mode = 0755
+[empty-file-state-base-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+config-url = ${monitor-base:base-url}/private/ollama-model/${:filename}
+
+[ollama-model-download-state]
+recipe = slapos.recipe.build
+install =
+  import os
+  state_file = '${:state-file}'
+  state_dir = os.path.dirname(state_file)
+  if not os.path.exists(state_dir):
+    os.makedirs(state_dir)
+  with open(state_file, 'w') as f:
+    f.write('')
+update = ${:install}
+state-filename = ollama-model-download.state
+state-file = ${directory:var}/run/${:state-filename}
+
+[ollama-model-download-promise]
+# promise to check if the model has been downloaded successfully
+<= empty-file-state-base-promise
+filename = ${ollama-model-download-state:state-filename}
+config-filename = ${ollama-model-download-state:state-file}
 
 [ollama-model-download]
 recipe = slapos.cookbook:wrapper
@@ -59,7 +86,7 @@ environment =
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
   OLLAMA_MODELS=${directory:models}
-depends = ${ollama-model-download:recipe}
+depends = ${ollama-model-download-promise:recipe}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
