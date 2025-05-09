@@ -120,6 +120,19 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
 
 class TestERP5Upgrade(ERP5UpgradeTestCase):
   @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+        json.dumps({
+            "family-override": {
+                "default": {
+                    "xml-rpc": True,
+                }
+            }
+        })
+    }
+
+  @classmethod
   def tearDownClass(cls):
     cls.session.close()
     super().tearDownClass()
