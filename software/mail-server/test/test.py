@@ -28,6 +28,8 @@
 import os
 import json
 import socket
+import signal
+from contextlib import contextmanager
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -35,6 +37,16 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
 )
 
+@contextmanager
+def time_limit(seconds):
+    def signal_handler(signum, frame):
+        raise TimeoutError
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
 
 class PostfixTestCase(SlapOSInstanceTestCase):
   @classmethod
@@ -55,11 +67,12 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
     sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    sock.connect((host, int(parameter_dict["smtp-port"])))
     try:
-      self.assertIn(b"ESMTP Postfix", sock.recv(1024))
-      sock.send(b"EHLO localhost\r\n")
-      self.assertIn(b"250", sock.recv(1024))
+      with time_limit(20):
+        sock.connect((host, int(parameter_dict["smtp-port"])))
+        self.assertIn(b"ESMTP Postfix", sock.recv(1024))
+        sock.send(b"EHLO localhost\r\n")
+        self.assertIn(b"250", sock.recv(1024))
     finally:
       sock.close()
 
@@ -67,14 +80,15 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
     sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    sock.connect((host, int(parameter_dict["imap-port"])))
     try:
-      self.assertIn(b"Dovecot ready.", sock.recv(1024))
-      sock.send(b"1 LOGIN invalid foobar\r\n")
-      self.assertIn(b"1 NO [AUTHENTICATIONFAILED]", sock.recv(1024))
-      # sock.send(b"1 LOGIN testmail@example.com MotDePasseEmail\r\n")
-      # self.assertIn(b"Logged in", sock.recv(1024))
-      # sock.send(b"2 SELECT INBOX\r\n")
-      # self.assertIn(b"2 OK [READ-WRITE]", sock.recv(1024))
+      with time_limit(20):
+        sock.connect((host, int(parameter_dict["imap-port"])))
+        self.assertIn(b"Dovecot ready.", sock.recv(1024))
+        sock.send(b"1 LOGIN invalid foobar\r\n")
+        self.assertIn(b"1 NO [AUTHENTICATIONFAILED]", sock.recv(1024))
+        # sock.send(b"1 LOGIN testmail@example.com MotDePasseEmail\r\n")
+        # self.assertIn(b"Logged in", sock.recv(1024))
+        # sock.send(b"2 SELECT INBOX\r\n")
+        # self.assertIn(b"2 OK [READ-WRITE]", sock.recv(1024))
     finally:
       sock.close()
