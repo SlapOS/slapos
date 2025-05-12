@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2025 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -51,6 +51,63 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
+class OneRequestServer(TCPServer):
+
+  address_family = socket.AF_INET6
+  timeout = 1
+
+  def get_first_data(self, flush_interval=1):
+    start = time.time()
+    while(not self.RequestHandlerClass.received_data
+          and time.time() - start < 10*flush_interval):
+      self.handle_request()
+    return self.RequestHandlerClass.received_data
+
+
+class FluentdHTTPRequestHandler(StreamRequestHandler):
+
+  received_data = b''
+
+  def handle(self):
+    data = self.rfile.readline().strip()
+    # ignore heartbeats (https://docs.fluentd.org/output/forward#heartbeat_type)
+    if len(data) > 0:
+      FluentdHTTPRequestHandler.received_data = data
+
+
+class WendelinHTTPRequestHandler(SimpleHTTPRequestHandler):
+
+  received_data = b''
+
+  def do_POST(self):
+    WendelinHTTPRequestHandler.received_data = self.rfile.read(
+      int(self.headers['Content-Length']))
+    self.send_response(200)
+    self.end_headers()
+
+
+class WendelinTutorialTestCaseMixin:
+
+  @classmethod
+  def measureDict(cls):
+    return {k: v for k, v in
+      zip(('pressure', 'humidity', 'temperature'), cls._measurementList)}
+
+  @classmethod
+  def sensor_value_list(cls):
+    return [str(value) for value in (round(random.uniform(870, 1084), 2),
+                                     round(random.uniform(0, 100), 2),
+                                     round(random.uniform(-20, 50), 3))]
+
+  def serve(self, port, request_handler_class):
+    server_address = (self.computer_partition_ipv6_address, port)
+    server = OneRequestServer(server_address, request_handler_class)
+
+    data = server.get_first_data(FLUSH_INTERVAL)
+    server.server_close()
+    return data
+
+
 class FluentdTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'fluentd'
 
@@ -67,41 +124,21 @@ class FluentdTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_process_name, process_names)
 
 
-class OneRequestServer(TCPServer):
-
-  address_family = socket.AF_INET6
-  timeout = 1
-
-  def get_first_data(self, flush_interval=1):
-    start = time.time()
-    while(not self.RequestHandlerClass.received_data
-          and time.time() - start < 10*flush_interval):
-      self.handle_request()
-    return self.RequestHandlerClass.received_data
-
-
-class WendelinTutorialTestCase(FluentdTestCase):
+class FluentdDefaultTestCase(FluentdTestCase):
 
   @classmethod
-  def get_configuration(cls):
-    return ''
+  def getInstanceSoftwareType(cls):
+    return 'default'
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'conf-text': cls._conf,}
-
-  @classmethod
-  def measureDict(cls):
-    return {k: v for k, v in
-      zip(('pressure', 'humidity', 'temperature'), cls._measurementList)}
+    return {}
 
   @classmethod
   def setUpClass(cls):
-    cls._tmp_dir = tempfile.mkdtemp()
-    cls._measurementList = cls.sensor_value_list()
-    cls._conf = cls.get_configuration()
-
     super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
 
     fluentd_dir = os.path.join(cls.computer_partition_root_path,
                                'software_release', 'parts', 'fluentd')
@@ -109,61 +146,86 @@ class WendelinTutorialTestCase(FluentdTestCase):
     cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
 
   @classmethod
-  def sensor_value_list(cls):
-    return [str(value) for value in (round(random.uniform(870, 1084), 2),
-                                     round(random.uniform(0, 100), 2),
-                                     round(random.uniform(-20, 50), 3))]
-
-  def serve(self, port, request_handler_class):
-    server_address = (self.computer_partition_ipv6_address, port)
-    server = OneRequestServer(server_address, request_handler_class)
-
-    data = server.get_first_data(FLUSH_INTERVAL)
-    server.server_close()
-    return data
-
-  @classmethod
   def tearDownClass(cls):
-    shutil.rmtree(cls._tmp_dir)
     super(FluentdTestCase, cls).tearDownClass()
 
-  def read_fluentd_conf(self, configuration):
-    conf_path = os.path.join(self._tmp_dir, 'fluentd.conf')
-    with open(conf_path, "w") as conf_file:
-      conf_file.write(configuration)
+  def read_fluentd_conf(self):
     return subprocess.check_output(
-      [self._fluentd_bin, '-c', conf_path, '--dry-run'],
+      [self._fluentd_bin, '-c', self._fluentd_conf, '--dry-run'],
       env={'GEM_PATH': self._gem_path},
       text=True,
     )
 
   def _test_configuration(self, expected_str):
     self.assertRegex(
-      self.read_fluentd_conf(self._conf),
+      self.read_fluentd_conf(),
       expected_str,
     )
 
 
-class FluentdHTTPRequestHandler(StreamRequestHandler):
+class FluentdExpertTestCase(FluentdTestCase):
 
-  received_data = b''
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'expert'
 
-  def handle(self):
-    data = self.rfile.readline().strip()
-    # ignore heartbeats (https://docs.fluentd.org/output/forward#heartbeat_type)
-    if len(data) > 0:
-      FluentdHTTPRequestHandler.received_data = data
-
-
-# see https://wendelin.nexedi.com/wendelin-Learning.Track/wendelin-Tutorial.Setup.Fluentd.on.Sensor
-class SensorConfTestCase(WendelinTutorialTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'conf-text': cls._conf}
 
   @classmethod
   def get_configuration(cls):
-    script_path = os.path.join(cls._tmp_dir, "custom_read_bme280.py")
-    with open(script_path, "w") as script:
-      script.write(cls.sensor_script(cls._measurementList))
-    return cls.sensor_conf(script_path)
+    return ''
+
+  @classmethod
+  def setUpClass(cls):
+    cls._conf = cls.get_configuration()
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  @classmethod
+  def tearDownClass(cls):
+    super(FluentdTestCase, cls).tearDownClass()
+
+  def read_fluentd_conf(self):
+    return subprocess.check_output(
+      [self._fluentd_bin, '-c', self._fluentd_conf, '--dry-run'],
+      env={'GEM_PATH': self._gem_path},
+      text=True,
+    )
+
+  def _test_configuration(self, expected_str):
+    fluentd_conf_content = ''
+    with open(self._fluentd_conf, 'r') as file:
+      fluentd_conf_content = file.read()
+    self.assertEqual(
+      fluentd_conf_content,
+      self._conf,
+    )
+    self.assertRegex(
+      self.read_fluentd_conf(),
+      expected_str,
+    )
+
+
+# see https://wendelin.nexedi.com/wendelin-Learning.Track/wendelin-Tutorial.Setup.Fluentd.on.Sensor
+class SensorConfTestCase(WendelinTutorialTestCaseMixin, FluentdExpertTestCase):
+
+  @classmethod
+  def sensor_script(cls, measurementList):
+    measurement_text = "\t".join(measurementList)
+    return f'''\
+#!{sys.executable}
+# -*- coding: utf-8 -*-
+
+print("{measurement_text}")'''
 
   @classmethod
   def sensor_conf(cls, script_path):
@@ -189,13 +251,31 @@ class SensorConfTestCase(WendelinTutorialTestCase):
 </match>'''
 
   @classmethod
-  def sensor_script(cls, measurementList):
-    measurement_text = "\t".join(measurementList)
-    return f'''\
-#!{sys.executable}
-# -*- coding: utf-8 -*-
+  def get_configuration(cls):
+    script_path = os.path.join(cls._tmp_dir, "custom_read_bme280.py")
+    with open(script_path, "w") as script:
+      script.write(cls.sensor_script(cls._measurementList))
+    return cls.sensor_conf(script_path)
 
-print("{measurement_text}")'''
+  @classmethod
+  def setUpClass(cls):
+    cls._tmp_dir = tempfile.mkdtemp()
+    cls._measurementList = cls.sensor_value_list()
+    cls._conf = cls.get_configuration()
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  @classmethod
+  def tearDownClass(cls):
+    shutil.rmtree(cls._tmp_dir)
+    super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration(self):
     self._test_configuration(
@@ -212,48 +292,44 @@ print("{measurement_text}")'''
     self.assertEqual({b'compressed': b'text', b'size': 1}, header)
 
 
-class WendelinHTTPRequestHandler(SimpleHTTPRequestHandler):
-
-  received_data = b''
-
-  def do_POST(self):
-    WendelinHTTPRequestHandler.received_data = self.rfile.read(
-      int(self.headers['Content-Length']))
-    self.send_response(200)
-    self.end_headers()
-
-
 # see https://wendelin.nexedi.com/wendelin-Learning.Track/wendelin-Tutorial.Setup.Fluentd.on.IOTGateway
-class GatewayConfTestCase(WendelinTutorialTestCase):
+class GatewayConfTestCase(WendelinTutorialTestCaseMixin, FluentdDefaultTestCase):
 
   @classmethod
-  def gateway_conf(cls, fluentd_port, wendelin_port):
-    return f'''\
-<source>
-  @type forward
-  port {fluentd_port}
-  bind {cls.computer_partition_ipv6_address}
-</source>
-<match tag.name>
-  @type wendelin
-  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{wendelin_port}/erp5/portal_ingestion_policies/default
-  user      foo
-  password  bar
-  <buffer>
-    flush_mode interval
-    @type file
-    path fluentd-buffer-file/
-    flush_interval {FLUSH_INTERVAL}s
-  </buffer>
-</match>'''
+  def getInstanceParameterDict(cls):
+    return {
+      'bind': cls.computer_partition_ipv6_address,
+      'port': cls._fluentd_port,
+      'tag-match-pattern': 'tag.name',
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}/erp5/portal_ingestion_policies/default',
+      'username': 'foo',
+      'password': 'bar',
+      'flush-interval': '1s'
+    }
 
   @classmethod
-  def get_configuration(cls):
+  def setUpClass(cls):
+    cls._tmp_dir = tempfile.mkdtemp()
+    cls._measurementList = cls.sensor_value_list()
+
     fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
     cls._fluentd_port = fluentd_port
     wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
     cls._wendelin_port = wendelin_port
-    return cls.gateway_conf(fluentd_port, wendelin_port)
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  @classmethod
+  def tearDownClass(cls):
+    shutil.rmtree(cls._tmp_dir)
+    super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
@@ -280,3 +356,163 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
       msgpack.unpackb(
         self.serve(self._wendelin_port, WendelinHTTPRequestHandler)),
     )
+
+
+class NoTlsDefaultTestCase(FluentdDefaultTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': cls._fluentd_port,
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
+      'username': 'foo',
+      'password': 'bar'
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._fluentd_port = fluentd_port
+    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_port = wendelin_port
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
+
+
+class TlsDefaultTestCase(FluentdDefaultTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'tls-transport-enabled': True,
+      'port': cls._fluentd_port,
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
+      'username': 'foo',
+      'password': 'bar'
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._fluentd_port = fluentd_port
+    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_port = wendelin_port
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
+
+
+class TagMatchPatternDefaultTestCase(FluentdDefaultTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': cls._fluentd_port,
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
+      'tag-match-pattern': 'some.tag.pattern',
+      'username': 'foo',
+      'password': 'bar'
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._fluentd_port = fluentd_port
+    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_port = wendelin_port
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
+
+
+class TagMatchPatternWithTagPrefixDefaultTestCase(FluentdDefaultTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': cls._fluentd_port,
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
+      'tag-prefix': 'ors',
+      'tag-match-pattern': 'some.tag.pattern',
+      'username': 'foo',
+      'password': 'bar'
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._fluentd_port = fluentd_port
+    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_port = wendelin_port
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
+
+
+class TagPrefixDefaultTestCase(FluentdDefaultTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': cls._fluentd_port,
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
+      'tag-prefix': 'ors',
+      'username': 'foo',
+      'password': 'bar'
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._fluentd_port = fluentd_port
+    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_port = wendelin_port
+
+    super(FluentdTestCase, cls).setUpClass()
+
+    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
