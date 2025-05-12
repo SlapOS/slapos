@@ -67,9 +67,6 @@ wrapper-path = ${directory:services}/certificate_authority
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [postfix-generate-certificate]
-# NOTE there is slapos.cookbook:certificate_authority.request but it requires
-# to start whole service and has up to 60 seconds latency to generate
-# certificate. We only need to run 1 command to do it...
 recipe  = plone.recipe.command
 stop-on-error   = true
 
