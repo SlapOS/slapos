@@ -46,7 +46,7 @@ from slapos.testing.testcase import (
   makeModuleSetUpAndTestCaseClass,
 )
 
-old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.167.10/software/erp5/software.cfg'
+old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.363.1/software/erp5/software.cfg'
 new_software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
@@ -119,6 +119,19 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
 
 
 class TestERP5Upgrade(ERP5UpgradeTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+        json.dumps({
+            "family-override": {
+                "default": {
+                    "xml-rpc": True,
+                }
+            }
+        })
+    }
+
   @classmethod
   def tearDownClass(cls):
     cls.session.close()
