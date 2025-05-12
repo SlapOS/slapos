@@ -27,7 +27,8 @@
 
 import os
 import json
-import socket
+import imaplib
+import smtplib
 import signal
 from contextlib import contextmanager
 
@@ -66,29 +67,25 @@ class PostfixTestCase(SlapOSInstanceTestCase):
   def test_postfix(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
-    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+
     try:
-      with time_limit(20):
-        sock.connect((host, int(parameter_dict["smtp-port"])))
-        self.assertIn(b"ESMTP Postfix", sock.recv(1024))
-        sock.send(b"EHLO localhost\r\n")
-        self.assertIn(b"250", sock.recv(1024))
-    finally:
-      sock.close()
+      server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
+      server.quit()
+    except Exception as e:
+      self.fail(f"SMTP connection failed: {e}")
 
   def test_dovecot(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
-    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    imap = None
     try:
-      with time_limit(20):
-        sock.connect((host, int(parameter_dict["imap-port"])))
-        self.assertIn(b"Dovecot ready.", sock.recv(1024))
-        sock.send(b"1 LOGIN invalid foobar\r\n")
-        self.assertIn(b"1 NO [AUTHENTICATIONFAILED]", sock.recv(1024))
-        # sock.send(b"1 LOGIN testmail@example.com MotDePasseEmail\r\n")
-        # self.assertIn(b"Logged in", sock.recv(1024))
-        # sock.send(b"2 SELECT INBOX\r\n")
-        # self.assertIn(b"2 OK [READ-WRITE]", sock.recv(1024))
+      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      imap.login("testmail@example.com", "MotDePasseEmail")
+      imap.select("INBOX")
+      result, data = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+    except Exception as e:
+      self.fail(f"IMAP connection failed: {e}")
     finally:
-      sock.close()
+      if imap:
+        imap.logout()

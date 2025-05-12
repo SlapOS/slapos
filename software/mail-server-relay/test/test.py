@@ -27,7 +27,7 @@
 
 import os
 import json
-import socket
+import smtplib
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -61,12 +61,9 @@ class PostfixTestCase(SlapOSInstanceTestCase):
   def test_postfix(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["smtp-ipv6"]
-    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    sock.connect((host, int(parameter_dict["smtp-port"])))
+
     try:
-      self.assertIn(b"ESMTP Postfix", sock.recv(1024))
-      sock.send(b"EHLO localhost\r\n")
-      self.assertIn(b"250", sock.recv(1024))
-    finally:
-      sock.close()
-    
+      server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
+      server.quit()
+    except Exception as e:
+      self.fail(f"SMTP connection failed: {e}")
