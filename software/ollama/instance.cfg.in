@@ -1,0 +1,143 @@
+[buildout]
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+extends =
+  {{ monitor_template_cfg }}
+
+parts =
+  directory
+  monitor-base
+  ollama-instance
+  ollama-model-download-source-config
+  ollama-model-download-processed-config
+  ollama-model-download-wrapper
+  ollama-model-download-processed-config-promise
+  ollama-service
+  publish-connection-parameter
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+model = {{ model | default('deepseek-r1:14b') }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+bin = ${:home}/bin
+tmp = ${:home}/tmp
+log = ${:var}/log
+services = ${:etc}/service
+models = ${:srv}/models
+scripts = ${:etc}/run
+run = ${:var}/run
+status = ${:var}/status
+ollama-model-download-expose = ${monitor-directory:private}/ollama-model-download
+
+[empty-file-state-base-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+config-url = ${monitor-base:base-url}/private/ollama-model-download/${:filename}
+
+[ollama-model-download-processed-config]
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  state_file = '${:state-file}'
+  state_dir = os.path.dirname(state_file)
+  if not os.path.exists(state_dir):
+    os.makedirs(state_dir)
+
+  with open(state_file, 'w') as f:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          f.write('')
+        else:
+          f.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      f.write(str(e))
+
+  # Create a dummy file to signal success
+  # success_marker = os.path.join('${buildout:parts-directory}', '${:_buildout_section_name_}', '.installed')
+  # os.makedirs(os.path.dirname(success_marker), exist_ok=True)
+  # with open(success_marker, 'w') as f:
+  #   f.write('')
+update = ${:install}
+config-file = ${ollama-model-download-source-config:output}
+state-filename = ollama-model-download-processed-config.state
+state-file = ${directory:ollama-model-download-expose}/${:state-filename}
+processed-md5sum = ${directory:var}/run/ollama-model-download-processed.md5sum
+
+[ollama-model-download-source-config]
+recipe = slapos.recipe.template:jinja2
+inline =
+  {{ model }}
+model = {{ model | default('deepseek-r1:14b') }}
+context =
+  key model :model
+output = ${directory:etc}/ollama-model-download.conf
+
+[ollama-model-download-wrapper]
+# Wrapper to execute ollama model download
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/ollama-model-updater
+command-line = ${directory:bin}/ollama-download-model.py ${:config} ${ollama-model-download-processed-config:processed-md5sum}
+config = ${ollama-model-download-source-config:output}
+error-state-filename = ollama-model-download-error.text
+error-state-file = ${directory:ollama-model-download-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[ollama-model-download-processed-config-promise]
+# Promise to check if the model has been downloaded
+<= empty-file-state-base-promise
+filename = ${ollama-model-download-processed-config:state-filename}
+config-filename = ${ollama-model-download-processed-config:state-file}
+
+[ollama-instance]
+recipe = plone.recipe.command
+pre-command =
+  if pgrep -f "ollama serve"; then
+    echo "Stopping Ollama service..."
+    pkill -f "ollama serve" || true
+    sleep 2
+  fi
+command =
+  mkdir -p ${directory:bin}
+  cp {{ ollama_path }}/ollama ${directory:bin}/
+update-command = ${:command}
+stop-on-error = true
+location = ${directory:bin}
+
+[ollama-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${directory:bin}/ollama-check-download.py && ${ollama-instance:location}/ollama serve
+wrapper-path = ${directory:services}/ollama-service
+environment =
+  PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:%(PATH)s
+  CC={{ gcc_location }}/bin/gcc
+  CXX={{ gcc_location }}/bin/g++
+  CGO_ENABLED=1
+  OLLAMA_MODELS=${directory:models}
+depends =
+  ${ollama-model-download-processed-config-promise:recipe}
+  ${ollama-instance:recipe}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+ollama-url = http://${slap-configuration:ipv4-random}:11434
+model = ${slap-configuration:model}
+model-download-log = ${directory:log}/ollama-model-download.log
+service-log = ${directory:log}/ollama-service.log
