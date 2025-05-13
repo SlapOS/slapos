@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate Fluentd",
+  "additionalProperties": false,
+  "required": [
+    "conf-text"
+  ],
+  "properties": {
+    "conf-text": {
+      "title": "Configuration",
+      "description": "Fluentd configuration. See: https://docs.fluentd.org/configuration",
+      "type": "string",
+      "textarea": true
+    }
+  }
+}
