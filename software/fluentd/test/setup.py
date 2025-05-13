@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2025 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
