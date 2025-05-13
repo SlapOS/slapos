@@ -3,6 +3,9 @@
   "type": "object",
   "description": "Parameters to instantiate Fluentd",
   "additionalProperties": false,
+  "required": [
+    "conf-text"
+  ],
   "properties": {
     "conf-text": {
       "title": "Configuration",

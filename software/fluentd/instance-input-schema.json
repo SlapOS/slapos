@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Parameters to instantiate Fluentd",
   "additionalProperties": false,
+  "required": [
+    "wendelin-ingestion-url",
+    "username",
+    "password"
+  ],
   "properties": {
     "tls-transport-enabled": {
       "title": "Enable TLS transport",
