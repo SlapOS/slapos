@@ -99,6 +99,13 @@ replication-bootstrap-url = ${mariadb-bootstrap-server-promise:bootstrap-url}
 replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ '[%s]' % ipv6 if haproxy_enable else ip_as_host }}:{{ port }}
 {% if caucased_enable -%}
 caucased-url = {{ caucased_url }}
+{% else -%}
+# Publish empty caucased-url so that erp5 root instance can forward it
+# unconditionally because slapos.cookbook:request recipe only supports
+# returning connection parameters that are listed beforehand, and does
+# not support inspecting the actual full connection parameter dict, so
+# it does not play well with conditional connection parameters.
+caucased-url =
 {%- endif %}
 {% if upstream_caucased_url -%}
 -depends = ${publish-caucase-replica-updater-csr-content:recipe}
