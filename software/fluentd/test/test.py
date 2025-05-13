@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import json
 import msgpack
 import os
 import random
@@ -111,32 +112,19 @@ class WendelinTutorialTestCaseMixin:
 class FluentdTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'fluentd'
 
-  def test_process(self):
-    expected_process_name_list = [
-      'fluentd-service-on-watch',
-    ]
-
-    with self.slap.instance_supervisor_rpc as supervisor:
-      process_names = [process['name']
-                       for process in supervisor.getAllProcessInfo()]
-
-    for expected_process_name in expected_process_name_list:
-      self.assertIn(expected_process_name, process_names)
-
-
-class FluentdDefaultTestCase(FluentdTestCase):
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'default'
-
   @classmethod
   def getInstanceParameterDict(cls):
-    return {}
+    # Required placeholder values
+    parameter_dict = {
+      'wendelin-ingestion-url': 'foo',
+      'username': 'bar',
+      'password': 'baz'
+    }
+    return {'_': json.dumps(parameter_dict)}
 
   @classmethod
   def setUpClass(cls):
-    super(FluentdTestCase, cls).setUpClass()
+    super().setUpClass()
 
     cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
 
@@ -147,52 +135,7 @@ class FluentdDefaultTestCase(FluentdTestCase):
 
   @classmethod
   def tearDownClass(cls):
-    super(FluentdTestCase, cls).tearDownClass()
-
-  def read_fluentd_conf(self):
-    return subprocess.check_output(
-      [self._fluentd_bin, '-c', self._fluentd_conf, '--dry-run'],
-      env={'GEM_PATH': self._gem_path},
-      text=True,
-    )
-
-  def _test_configuration(self, expected_str):
-    self.assertRegex(
-      self.read_fluentd_conf(),
-      expected_str,
-    )
-
-
-class FluentdExpertTestCase(FluentdTestCase):
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'expert'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'conf-text': cls._conf}
-
-  @classmethod
-  def get_configuration(cls):
-    return ''
-
-  @classmethod
-  def setUpClass(cls):
-    cls._conf = cls.get_configuration()
-
-    super(FluentdTestCase, cls).setUpClass()
-
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
-
-  @classmethod
-  def tearDownClass(cls):
-    super(FluentdTestCase, cls).tearDownClass()
+    super().tearDownClass()
 
   def read_fluentd_conf(self):
     return subprocess.check_output(
@@ -207,16 +150,36 @@ class FluentdExpertTestCase(FluentdTestCase):
       fluentd_conf_content = file.read()
     self.assertEqual(
       fluentd_conf_content,
-      self._conf,
+      self.get_configuration(),
     )
     self.assertRegex(
       self.read_fluentd_conf(),
       expected_str,
     )
 
+  def test_process(self):
+    expected_process_name_list = [
+      'fluentd-service-on-watch',
+    ]
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
+
+    for expected_process_name in expected_process_name_list:
+      self.assertIn(expected_process_name, process_names)
+
 
 # see https://wendelin.nexedi.com/wendelin-Learning.Track/wendelin-Tutorial.Setup.Fluentd.on.Sensor
-class SensorConfTestCase(WendelinTutorialTestCaseMixin, FluentdExpertTestCase):
+class SensorConfTestCase(WendelinTutorialTestCaseMixin, FluentdTestCase):
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'expert'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'conf-text': cls._conf,}
 
   @classmethod
   def sensor_script(cls, measurementList):
@@ -265,13 +228,6 @@ print("{measurement_text}")'''
 
     super(FluentdTestCase, cls).setUpClass()
 
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
-
   @classmethod
   def tearDownClass(cls):
     shutil.rmtree(cls._tmp_dir)
@@ -293,11 +249,11 @@ print("{measurement_text}")'''
 
 
 # see https://wendelin.nexedi.com/wendelin-Learning.Track/wendelin-Tutorial.Setup.Fluentd.on.IOTGateway
-class GatewayConfTestCase(WendelinTutorialTestCaseMixin, FluentdDefaultTestCase):
+class GatewayConfTestCase(WendelinTutorialTestCaseMixin, FluentdTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
+    parameter_dict = {
       'bind': cls.computer_partition_ipv6_address,
       'port': cls._fluentd_port,
       'tag-match-pattern': 'tag.name',
@@ -306,29 +262,45 @@ class GatewayConfTestCase(WendelinTutorialTestCaseMixin, FluentdDefaultTestCase)
       'password': 'bar',
       'flush-interval': '1s'
     }
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def get_configuration(cls):
+    buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
+    return f'''\
+<source>
+  @type forward
+  bind {cls.computer_partition_ipv6_address}
+  port {cls._fluentd_port}
+</source>
+<match tag.name>
+  @type wendelin
+  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}/erp5/portal_ingestion_policies/default
+  user foo
+  password bar
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval 1s
+    flush_thread_count 4
+    @type file
+    path {buffer_file_dir}/
+  </buffer>
+</match>'''
 
   @classmethod
   def setUpClass(cls):
-    cls._tmp_dir = tempfile.mkdtemp()
     cls._measurementList = cls.sensor_value_list()
 
     fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._fluentd_port = fluentd_port
+    cls._fluentd_port = int(fluentd_port)
     wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._wendelin_port = wendelin_port
+    cls._wendelin_port = int(wendelin_port)
 
     super(FluentdTestCase, cls).setUpClass()
 
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
-
   @classmethod
   def tearDownClass(cls):
-    shutil.rmtree(cls._tmp_dir)
     super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration_file(self):
@@ -358,161 +330,177 @@ class GatewayConfTestCase(WendelinTutorialTestCaseMixin, FluentdDefaultTestCase)
     )
 
 
-class NoTlsDefaultTestCase(FluentdDefaultTestCase):
+class TlsDefaultTestCase(FluentdTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'port': cls._fluentd_port,
-      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
-      'username': 'foo',
-      'password': 'bar'
-    }
-
-  @classmethod
-  def setUpClass(cls):
-    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._fluentd_port = fluentd_port
-    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._wendelin_port = wendelin_port
-
-    super(FluentdTestCase, cls).setUpClass()
-
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
-
-  def test_configuration_file(self):
-    self._test_configuration('starting fluentd')
-
-
-class TlsDefaultTestCase(FluentdDefaultTestCase):
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
+    parameter_dict = {
       'tls-transport-enabled': True,
+      'bind': cls.computer_partition_ipv6_address,
       'port': cls._fluentd_port,
       'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
       'username': 'foo',
       'password': 'bar'
     }
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def get_configuration(cls):
+    buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
+    ca_cert_dir = os.path.join(cls.computer_partition_root_path, 'srv', 'ssl', 'certs')
+    return f'''\
+<source>
+  @type forward
+  bind {cls.computer_partition_ipv6_address}
+  port {cls._fluentd_port}
+  <transport tls>
+    cert_path {ca_cert_dir}/fluentd.crt
+    private_key_path {ca_cert_dir}/fluentd.key
+    private_key_passphrase
+  </transport>
+</source>
+<match **>
+  @type wendelin
+  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}
+  user foo
+  password bar
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval 1m
+    flush_thread_count 4
+    @type file
+    path {buffer_file_dir}/
+  </buffer>
+</match>'''
 
   @classmethod
   def setUpClass(cls):
     fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._fluentd_port = fluentd_port
+    cls._fluentd_port = int(fluentd_port)
     wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._wendelin_port = wendelin_port
+    cls._wendelin_port = int(wendelin_port)
 
     super(FluentdTestCase, cls).setUpClass()
 
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+  @classmethod
+  def tearDownClass(cls):
+    super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
 
 
-class TagMatchPatternDefaultTestCase(FluentdDefaultTestCase):
+class TagPrefixDefaultTestCase(FluentdTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
+    parameter_dict = {
+      'bind': cls.computer_partition_ipv6_address,
       'port': cls._fluentd_port,
-      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
-      'tag-match-pattern': 'some.tag.pattern',
-      'username': 'foo',
-      'password': 'bar'
-    }
-
-  @classmethod
-  def setUpClass(cls):
-    fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._fluentd_port = fluentd_port
-    wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._wendelin_port = wendelin_port
-
-    super(FluentdTestCase, cls).setUpClass()
-
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
-
-  def test_configuration_file(self):
-    self._test_configuration('starting fluentd')
-
-
-class TagMatchPatternWithTagPrefixDefaultTestCase(FluentdDefaultTestCase):
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'port': cls._fluentd_port,
-      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
       'tag-prefix': 'ors',
-      'tag-match-pattern': 'some.tag.pattern',
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
       'username': 'foo',
       'password': 'bar'
     }
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def get_configuration(cls):
+    buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
+    ca_cert_dir = os.path.join(cls.computer_partition_root_path, 'srv', 'ssl', 'certs')
+    return f'''\
+<source>
+  @type forward
+  bind {cls.computer_partition_ipv6_address}
+  port {cls._fluentd_port}
+  add_tag_prefix ors
+</source>
+<match ors.**>
+  @type wendelin
+  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}
+  user foo
+  password bar
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval 1m
+    flush_thread_count 4
+    @type file
+    path {buffer_file_dir}/
+  </buffer>
+</match>'''
 
   @classmethod
   def setUpClass(cls):
     fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._fluentd_port = fluentd_port
+    cls._fluentd_port = int(fluentd_port)
     wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._wendelin_port = wendelin_port
+    cls._wendelin_port = int(wendelin_port)
 
     super(FluentdTestCase, cls).setUpClass()
 
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+  @classmethod
+  def tearDownClass(cls):
+    super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
 
 
-class TagPrefixDefaultTestCase(FluentdDefaultTestCase):
+class TagMatchPatternWithTagPrefixDefaultTestCase(FluentdTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
+    parameter_dict = {
+      'bind': cls.computer_partition_ipv6_address,
       'port': cls._fluentd_port,
-      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
       'tag-prefix': 'ors',
+      'tag-match-pattern': 'tag.name',
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
       'username': 'foo',
       'password': 'bar'
     }
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def get_configuration(cls):
+    buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
+    ca_cert_dir = os.path.join(cls.computer_partition_root_path, 'srv', 'ssl', 'certs')
+    return f'''\
+<source>
+  @type forward
+  bind {cls.computer_partition_ipv6_address}
+  port {cls._fluentd_port}
+  add_tag_prefix ors
+</source>
+<match tag.name>
+  @type wendelin
+  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}
+  user foo
+  password bar
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval 1m
+    flush_thread_count 4
+    @type file
+    path {buffer_file_dir}/
+  </buffer>
+</match>'''
 
   @classmethod
   def setUpClass(cls):
     fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._fluentd_port = fluentd_port
+    cls._fluentd_port = int(fluentd_port)
     wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
-    cls._wendelin_port = wendelin_port
+    cls._wendelin_port = int(wendelin_port)
 
     super(FluentdTestCase, cls).setUpClass()
 
-    cls._fluentd_conf = os.path.join(cls.computer_partition_root_path, 'etc', 'fluentd-agent.conf')
-
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
+  @classmethod
+  def tearDownClass(cls):
+    super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
