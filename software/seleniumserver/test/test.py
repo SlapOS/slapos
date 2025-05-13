@@ -298,11 +298,11 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
 class TestFrontend(WebServerMixin, SeleniumServerTestCase):
   """Test hub's https frontend.
   """
-  def test_admin(self):
+  def test_graphql(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
-    admin_url = parameter_dict['admin-url']
+    graphql_url = parameter_dict['graphql-url']
 
-    parsed = urllib.parse.urlparse(admin_url)
+    parsed = urllib.parse.urlparse(graphql_url)
     self.assertEqual('admin', parsed.username)
     self.assertTrue(parsed.password)
     self.assertEqual(
@@ -312,7 +312,11 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
       requests.codes.unauthorized
     )
 
-    self.assertIn('Grid Console', requests.get(admin_url, verify=False).text)
+    ret = requests.post(graphql_url, json={"query": "{ grid { version } }"}, verify=False)
+    self.assertEqual(
+      ret.json(),
+      {'data': {'grid': {'version': '4.32.0 (revision d17c8aa950)'}}}
+    )
 
   def test_browser_use_hub(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
