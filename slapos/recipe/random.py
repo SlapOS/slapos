@@ -160,6 +160,9 @@ class Password(object):
           # new format: the file contains password and hashes in json format
           try:
             passwd_dict = json.loads(content)
+            if not isinstance(passwd_dict, dict):
+              # to avoid converting password files to inf
+              raise ValueError
             if sys.version_info < (3, ):
               passwd_dict = {k: v.encode('utf-8') for k, v in passwd_dict.items()}
           except ValueError:
