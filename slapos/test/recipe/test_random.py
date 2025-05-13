@@ -11,7 +11,7 @@ import passlib.hash
 from slapos.recipe import random
 
 
-class TestPassword(unittest.TestCase):
+class PasswordMixin(object):
   def setUp(self):
     self.buildout = zc.buildout.testing.Buildout()
     parts_directory = tempfile.mkdtemp()
@@ -25,6 +25,8 @@ class TestPassword(unittest.TestCase):
     )
     return recipe
 
+
+class TestPassword(PasswordMixin, unittest.TestCase):
   def test_empty_options(self):
     recipe = self._makeRecipe({})
     passwd = self.buildout["random"]["passwd"]
@@ -69,35 +71,6 @@ class TestPassword(unittest.TestCase):
 
     self._makeRecipe({'storage-path': tf.name}, "another").install()
     self.assertEqual(self.buildout["another"]["passwd"], 'sécret')
-
-  def test_storage_path_legacy_format(self):
-    with tempfile.NamedTemporaryFile() as tf:
-      tf.write(b'secret\n')
-      tf.flush()
-
-      self._makeRecipe({'storage-path': tf.name}).install()
-      passwd = self.buildout["random"]["passwd"]
-      self.assertEqual(passwd, 'secret')
-      tf.flush()
-      with open(tf.name) as f:
-        self.assertEqual(json.load(f), {'': 'secret'})
-
-      self._makeRecipe({'storage-path': tf.name}, "another").install()
-      self.assertEqual(self.buildout["another"]["passwd"], passwd)
-
-  def test_storage_path_legacy_format_passwd_set_in_options(self):
-    with tempfile.NamedTemporaryFile() as tf:
-      tf.write(b'secret\n')
-      tf.flush()
-      self._makeRecipe({'storage-path': tf.name, 'passwd': 'secret'}).install()
-      passwd = self.buildout["random"]["passwd"]
-      self.assertEqual(passwd, 'secret')
-      tf.flush()
-      with open(tf.name) as f:
-        self.assertEqual(json.load(f), {'': 'secret'})
-
-      self._makeRecipe({'storage-path': tf.name}, "another").install()
-      self.assertEqual(self.buildout["another"]["passwd"], passwd)
 
   def test_bytes(self):
     self._makeRecipe({'bytes': '32'}).install()
@@ -204,3 +177,42 @@ class TestPassword(unittest.TestCase):
 
     self.assertNotEqual(initial_hashed, updated_hashed)
     self.assertTrue(passlib.hash.sha256_crypt.verify('updated', updated_hashed))
+
+
+class PasswordLegacyMixin(PasswordMixin):
+  def test_storage_path_legacy_format(self):
+    with tempfile.NamedTemporaryFile() as tf:
+      tf.write(b'%b\n' % (self.tricky_password.encode('utf-8'),))
+      tf.flush()
+
+      self._makeRecipe({'storage-path': tf.name}).install()
+      passwd = self.buildout["random"]["passwd"]
+      self.assertEqual(passwd, self.tricky_password)
+      tf.flush()
+      with open(tf.name) as f:
+        self.assertEqual(json.load(f), {'': self.tricky_password})
+
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
+
+  def test_storage_path_legacy_format_passwd_set_in_options(self):
+    with tempfile.NamedTemporaryFile() as tf:
+      tf.write(b'%b\n' % (self.tricky_password.encode('utf-8'),))
+      tf.flush()
+      self._makeRecipe({'storage-path': tf.name, 'passwd': self.tricky_password}).install()
+      passwd = self.buildout["random"]["passwd"]
+      self.assertEqual(passwd, self.tricky_password)
+      tf.flush()
+      with open(tf.name) as f:
+        self.assertEqual(json.load(f), {'': self.tricky_password})
+
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
+
+
+class TestPasswordLegacyTricky(PasswordLegacyMixin, unittest.TestCase):
+  tricky_password = '902E0817'
+
+
+class TestPasswordLegacyDict(PasswordLegacyMixin, unittest.TestCase):
+  tricky_password = '{}'
