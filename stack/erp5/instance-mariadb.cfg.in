@@ -117,6 +117,9 @@ update =
   publish = self.buildout['publish']
   with open(options['csr-file'], 'rb') as f:
     publish['caucased-csr-to-sign'] = f.read().decode('ascii')
+{% else -%}
+# Publish empty caucased-csr-to-sign to forward this parameter easily.
+caucased-csr-to-sign =
 {%- endif %}
 
 [publish-early]
