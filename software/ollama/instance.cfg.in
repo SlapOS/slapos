@@ -9,11 +9,14 @@ parts =
   directory
   monitor-base
   ollama-instance
+  ollama-download-model-script
+  ollama-run-script
   ollama-model-download-source-config
   ollama-model-download-processed-config
   ollama-model-download-wrapper
   ollama-model-download-processed-config-promise
   ollama-service
+  ollama-run-model-service
   publish-connection-parameter
 
 [slap-configuration]
@@ -41,6 +44,26 @@ run = ${:var}/run
 status = ${:var}/status
 ollama-model-download-expose = ${monitor-directory:private}/ollama-model-download
 
+[ollama-download-model-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ download_script_template }}
+output = ${directory:bin}/ollama-download-model.py
+mode = 0755
+context =
+  key directory_log directory:log
+  key directory_models directory:models
+  key ollama_instance_location ollama-instance:location
+
+[ollama-run-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ ollama_run_template }}
+output = ${directory:bin}/ollama-run.py
+mode = 0755
+context =
+  key directory_log directory:log
+  key config_file ollama-model-download-source-config:output
+  key ollama_instance_location ollama-instance:location
+
 [empty-file-state-base-promise]
 <= monitor-promise-base
 promise = check_file_state
@@ -53,6 +76,10 @@ recipe = slapos.recipe.build
 install =
   import os
   import hashlib
+
+  if not os.path.exists(location):
+    os.mkdir(location)
+
   state_file = '${:state-file}'
   state_dir = os.path.dirname(state_file)
   if not os.path.exists(state_dir):
@@ -60,26 +87,25 @@ install =
 
   with open(state_file, 'w') as f:
     try:
-      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
-        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
-        processed_md5sum = processed_handler.read()
-        if config_md5sum == processed_md5sum:
-          f.write('')
+      with open('${:config-file}', 'r') as config_handler, open('${:processed-file}') as processed_handler:
+        processed = processed_handler.read()
+        model_name = config_handler.read()
+        if processed == model_name:
+            # Model matched, create an empty file
+            open(state_file, 'w').close()
         else:
-          f.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+            # Error happened, write error message to the stats file
+            f.write(f"ERR: processed '{processed}' != desired '{model_name}'\n")
     except Exception as e:
       f.write(str(e))
-
-  # Create a dummy file to signal success
-  # success_marker = os.path.join('${buildout:parts-directory}', '${:_buildout_section_name_}', '.installed')
-  # os.makedirs(os.path.dirname(success_marker), exist_ok=True)
-  # with open(success_marker, 'w') as f:
-  #   f.write('')
 update = ${:install}
+# deepseek-r1:14b
 config-file = ${ollama-model-download-source-config:output}
 state-filename = ollama-model-download-processed-config.state
+# /srv/slapgrid/slappart14/srv/runner/instance/slappart0/srv/monitor/private/ollama-model-download ERR: processed '' != desired 'deepseek-r1:14b'
 state-file = ${directory:ollama-model-download-expose}/${:state-filename}
-processed-md5sum = ${directory:var}/run/ollama-model-download-processed.md5sum
+# /srv/slapgrid/slappart14/srv/runner/instance/slappart0/var/run/ollama-model-download-processed empty or model name
+processed-file = ${directory:var}/run/ollama-model-download-processed
 
 [ollama-model-download-source-config]
 recipe = slapos.recipe.template:jinja2
@@ -88,13 +114,14 @@ inline =
 model = {{ model | default('deepseek-r1:14b') }}
 context =
   key model :model
+#  deepseek-r1:14b
 output = ${directory:etc}/ollama-model-download.conf
 
 [ollama-model-download-wrapper]
 # Wrapper to execute ollama model download
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/ollama-model-updater
-command-line = ${directory:bin}/ollama-download-model.py ${:config} ${ollama-model-download-processed-config:processed-md5sum}
+command-line = ${directory:bin}/ollama-download-model.py ${:config} ${ollama-model-download-processed-config:processed-file} ${:error-state-file}
 config = ${ollama-model-download-source-config:output}
 error-state-filename = ollama-model-download-error.text
 error-state-file = ${directory:ollama-model-download-expose}/${:error-state-filename}
@@ -123,17 +150,25 @@ location = ${directory:bin}
 
 [ollama-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${directory:bin}/ollama-check-download.py && ${ollama-instance:location}/ollama serve
+command-line = ${ollama-instance:location}/ollama serve
 wrapper-path = ${directory:services}/ollama-service
 environment =
   PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:%(PATH)s
   CC={{ gcc_location }}/bin/gcc
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
+
+[ollama-run-model-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${directory:bin}/ollama-run.py ${:config-file} ${ollama-model-download-processed-config:state-file}
+wrapper-path = ${directory:services}/ollama-run-model-service
+environment =
   OLLAMA_MODELS=${directory:models}
+config-file = ${ollama-model-download-source-config:output}
 depends =
   ${ollama-model-download-processed-config-promise:recipe}
   ${ollama-instance:recipe}
+  ${ollama-model-download-wrapper:recipe}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish

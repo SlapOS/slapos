@@ -7,20 +7,36 @@ import time
 import hashlib
 
 # Setup logging
-log_file = os.path.join(os.environ.get('SLAPGRID_LOG_DIRECTORY', '/tmp'), 'ollama-model-download.log')
+log_file = "{{ directory_log }}/ollama-model-download.log"
 logging.basicConfig(
     filename=log_file,
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# Check if model_name already installed by ollama
+def ollama_has_model(model_name, env):
+    try:
+        out = subprocess.check_output(['{{ ollama_instance_location }}/ollama', 'list'], env=env, text=True)
+    except subprocess.CalledProcessError as e:
+        # if ollama list failed, no model was downloaded
+        return False
+    # skip the first line, then check the coloumn one
+    # NAME               ID              SIZE      MODIFIED
+    # deepseek-r1:14b    ea35dfe18182    9.0 GB    15 hours ago
+    for line in out.splitlines()[1:]:
+        parts = line.split()
+        if parts and parts[0] == model_name:
+            return True
+    return False
+
 def main():
-    if len(sys.argv) < 3:
-        logging.error("Usage: %s <config_file> <processed_md5sum_file>", sys.argv[0])
+    if len(sys.argv) != 4:
+        print(f"Usage: {sys.argv[0]} <config_file> <processed_file> <error_file>")
         return 1
 
-    config_file = sys.argv[1]
-    processed_md5sum_file = sys.argv[2]
+    config_file, processed_file, error_file = sys.argv[1:]
+    logging.info("Starting to handle the model")
 
     # Read model name from config
     try:
@@ -29,61 +45,40 @@ def main():
     except Exception as e:
         logging.error("Failed to read config file: %s", str(e))
         return 1
-
-    # Calculate MD5 of config
-    try:
-        with open(config_file, 'rb') as f:
-            config_md5sum = hashlib.md5(f.read()).hexdigest()
-    except Exception as e:
-        logging.error("Failed to calculate MD5 of config: %s", str(e))
-        return 1
-
-    # Check if we've already processed this config
-    try:
-        if os.path.exists(processed_md5sum_file):
-            with open(processed_md5sum_file, 'r') as f:
-                processed_md5sum = f.read().strip()
-                if processed_md5sum == config_md5sum:
-                    logging.info("Config already processed, skipping download")
-                    return 0
-    except Exception as e:
-        logging.error("Failed to check processed MD5: %s", str(e))
-
+    logging.info(f"Model name {model_name}")
     # Ensure model directory exists
-    models_dir = os.environ.get('OLLAMA_MODELS', os.path.expanduser('~/.ollama/models'))
+    models_dir = "{{ directory_models }}"
     os.makedirs(models_dir, exist_ok=True)
 
     # Set environment variables
     env = os.environ.copy()
     env['OLLAMA_MODELS'] = models_dir
 
-    # Check if model already exists
+    logging.info(f"Checking {model_name} is exist")
+    # Check if the model already downloaded
     try:
-        result = subprocess.run(
-            ['ollama', 'list'],
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        if model_name in result.stdout:
-            logging.info(f"Model {model_name} already exists, no need to download")
-            # Update processed MD5
-            os.makedirs(os.path.dirname(processed_md5sum_file), exist_ok=True)
-            with open(processed_md5sum_file, 'w') as f:
-                f.write(config_md5sum)
-            return 0
+        if ollama_has_model(model_name, env):
+            logging.info(f"{model_name} is exist")
+            with open(error_file, 'w+') as ef:
+                ef.write(f"INF: {model_name} : already downloaded\n")
+            # Mark it was downloaded
+            with open(processed_file, 'w') as pf:
+                pf.write(model_name)
+            sys.exit(0)
+        else:
+            logging.info(f"{model_name} not exist, download it")
+            with open(error_file, 'w') as ef:
+                ef.write("INF: Download in progress\n")
     except Exception as e:
-        logging.error(f"Failed to check if model exists: {str(e)}")
+        logging.error("Failed to open error file: %s", str(e))
 
-    # Download model
+    # Download the model with model_name
     try:
         logging.info(f"Starting download of model: {model_name}")
         start_time = time.time()
 
         process = subprocess.Popen(
-            ['ollama', 'pull', model_name],
+            ["{{ ollama_instance_location }}/ollama", 'pull', model_name],
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -105,16 +100,24 @@ def main():
 
         if return_code == 0:
             logging.info(f"Model {model_name} downloaded successfully in {duration:.2f} seconds")
-            # Update processed MD5
-            os.makedirs(os.path.dirname(processed_md5sum_file), exist_ok=True)
-            with open(processed_md5sum_file, 'w') as f:
-                f.write(config_md5sum)
-            return 0
         else:
             logging.error(f"Model download failed with return code: {return_code}")
-            return 1
     except Exception as e:
         logging.error(f"Error during model download: {str(e)}")
+
+    # Download successfully, make sure it can be read by ollama list
+    logging.info(f"Make sure model {model_name} can be read by ollama list")
+    if ollama_has_model(model_name, env):
+        # Mark it as complished
+        with open(processed_file, 'w') as pf:
+            pf.write(model_name)
+            logging.info(f"Write model {model_name} to processed file")
+        # empty error_file, means there is no error
+        open(error_file, 'w').close()
+        return 0
+    else:
+        with open(error_file, 'w+') as ef:
+            ef.write("ERR: Download reported success but model not found locally\n")
         return 1
 
 if __name__ == "__main__":
