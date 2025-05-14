@@ -3,7 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "$ref": "instance-ors-gnb-input-schema.json#/properties",
     "nr_bandwidth_ca": {
       "title": "CA Cell Bandwidth",
       "$ref": "cell/nr/input-schema.json#/properties/bandwidth"
