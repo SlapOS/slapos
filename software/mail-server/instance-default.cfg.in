@@ -29,9 +29,19 @@ var-log = ${:var}/log
 var-lib = ${:var}/lib
 var-lib-postfix = ${:var-lib}/postfix
 var-spool = ${:var}/spool
-var-spool-postfix = ${:var-spool}/postfix
 vhosts = ${:home}/vhosts
 srv = ${buildout:directory}/srv
+apache.d = ${:etc}/apache.d
+httpd-log = ${:log}/apache
+php-ini-dir = ${:etc}/php
+srv-backup = ${:srv}/backup
+tmp-php = ${:tmp}/php
+tmp-upload = ${:tmp}/upload
+www = ${:srv}/www/
+
+[postfix-directory]
+recipe = slapos.cookbook:mkdirectory
+var-spool-postfix = ${directory:var-spool}/postfix
 # Not used at buildout level, presence needed by postfix.
 var-spool-postfix-active = ${:var-spool-postfix}/active
 var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
@@ -47,13 +57,6 @@ var-spool-postfix-private = ${:var-spool-postfix}/private
 var-spool-postfix-public = ${:var-spool-postfix}/public
 var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
-apache.d = ${:etc}/apache.d
-httpd-log = ${:log}/apache
-php-ini-dir = ${:etc}/php
-srv-backup = ${:srv}/backup
-tmp-php = ${:tmp}/php
-tmp-upload = ${:tmp}/upload
-www = ${:srv}/www/
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -93,8 +96,8 @@ context =
   section directory directory
   key dovecot_passwd dovecot-passwords:location
   raw user_name {{ user_name }}
-  raw postfix_auth ${directory:var-spool-postfix-private}/auth
-  raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
+  raw postfix_auth ${postfix-directory:var-spool-postfix-private}/auth
+  raw postfix_dovecot_lmtp ${postfix-directory:var-spool-postfix-private}/dovecot-lmtp
 
 #[dovecot-passwd]
 #recipe = slapos.recipe.template:jinja2
@@ -167,7 +170,7 @@ context =
   key dovecot_passwd dovecot-passwords:location
   key bin_directory directory:bin
   key usr_directory directory:usr-postfix
-  key queue_directory directory:var-spool-postfix
+  key queue_directory postfix-directory:var-spool-postfix
   key data_directory directory:var-lib-postfix
   key spool_directory directory:var-spool
   key vhosts_directory directory:vhosts
@@ -175,7 +178,7 @@ context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   raw server_fqdn {{ server_fqdn }}
-  raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
+  raw postfix_dovecot_lmtp ${postfix-directory:var-spool-postfix-private}/dovecot-lmtp
   raw xz_utils_location {{ xz_utils_location }}
   raw postfix_location {{ postfix_location }}
   raw relay_host {{ slapparameter_dict['relay-host'] }}

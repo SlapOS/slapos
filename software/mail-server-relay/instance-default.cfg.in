@@ -20,9 +20,13 @@ var-log = ${:var}/log
 var-lib = ${:var}/lib
 var-lib-postfix = ${:var-lib}/postfix
 var-spool = ${:var}/spool
-var-spool-postfix = ${:var-spool}/postfix
 vhosts = ${:home}/vhosts
 srv = ${buildout:directory}/srv
+srv-backup = ${:srv}/backup
+
+[postfix-directory]
+recipe = slapos.cookbook:mkdirectory
+var-spool-postfix = ${directory:var-spool}/postfix
 # Not used at buildout level, presence needed by postfix.
 var-spool-postfix-active = ${:var-spool-postfix}/active
 var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
@@ -38,7 +42,6 @@ var-spool-postfix-private = ${:var-spool-postfix}/private
 var-spool-postfix-public = ${:var-spool-postfix}/public
 var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
-srv-backup = ${:srv}/backup
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -108,7 +111,7 @@ output = ${directory:etc-postfix}/main.cf
 context =
   key bin_directory directory:bin
   key usr_directory directory:usr-postfix
-  key queue_directory directory:var-spool-postfix
+  key queue_directory postfix-directory:var-spool-postfix
   key data_directory directory:var-lib-postfix
   key spool_directory directory:var-spool
   key vhosts_directory directory:vhosts
