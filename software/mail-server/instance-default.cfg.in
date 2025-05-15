@@ -91,34 +91,57 @@ url = {{ dovecot_conf_template }}
 output = ${directory:etc}/dovecot.conf
 context =
   section directory directory
-  key dovecot_passwd dovecot-passwd:output
+  key dovecot_passwd dovecot-passwords:location
   raw user_name {{ user_name }}
   raw postfix_auth ${directory:var-spool-postfix-private}/auth
   raw postfix_dovecot_lmtp ${directory:var-spool-postfix-private}/dovecot-lmtp
 
-[dovecot-passwd]
-recipe = slapos.recipe.template:jinja2
-url = {{ dovecot_passwd }}
-output = ${directory:etc}/dovecot-passwd
-context =
-  import json_module json
-  raw instances {{ json_module.dumps(slave_instance_list) }}
-  raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
+#[dovecot-passwd]
+#recipe = slapos.recipe.template:jinja2
+#url = {{ dovecot_passwd }}
+#output = ${directory:etc}/dovecot-passwd
+#extensions = jinja2.ext.do
+#context =
+#  import json_module json
+#  import builtins builtins
+#  raw file_path ${:output}
+#  raw instances {{ json_module.dumps(slave_instance_list) }}
+#  raw mail_domains {{ slapparameter_dict['mail-domains'] |join(',') }}
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
+location = ${directory:etc}/dovecot-passwd
 init =
-  # if existing, real all tokens
+  try:
+    with open(options['location']) as fp:
+      options['existing'] = fp.read()
+  except:
+    options['existing'] = ""
 install =
-   # if not existing, create it
-   # for non-existing slaves, insert slave & token
+  passwd = options['existing'].splitlines()
+  existing_users = {row.split(":")[0] for row in passwd if row}
+  result = passwd
+  
+  for slave in {{ json_module.dumps(slave_instance_list) }}:
+    if slave['address'] not in existing_users:
+      result.append(f"{slave['address']}:{slave['token']}::::::fail")
+      existing_users.add(slave['address'])
+
+  for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
+    test_mail = f"testmail@{domain}"
+    if test_mail not in existing_users:
+      result.append(f"{test_mail}:MotDePasseEmail::")
+
+  with open(options['location'], 'w') as fp:
+    for row in result:
+      fp.write(f"{row}\n")
 
 [password-php]
 recipe = slapos.recipe.template:jinja2
 url = {{ password_php }}
 output = ${directory:www}/password.php
 context =
-  key dovecot_passwd dovecot-passwd:output
+  key dovecot_passwd dovecot-passwords:location
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -141,7 +164,7 @@ recipe = slapos.recipe.template:jinja2
 url = {{ postfix_main_template }}
 output = ${directory:etc-postfix}/main.cf
 context =
-  key dovecot_passwd dovecot-passwd:output
+  key dovecot_passwd dovecot-passwords:location
   key bin_directory directory:bin
   key usr_directory directory:usr-postfix
   key queue_directory directory:var-spool-postfix
