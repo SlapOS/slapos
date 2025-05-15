@@ -106,13 +106,11 @@ elif slave_type == 'pull':
       remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
     restic_keep_args = ['--keep-within', remove_backup_older_than]
 
-  forget_dry_run_result = json.loads(call_process(restic_args + [
-    'forget', '--dry-run', '--json',
+  forget_result = json.loads(call_process(restic_args + [
+    'forget', '--json',
   ] + restic_keep_args))
-  if forget_dry_run_result[0]['remove']:
-    log('forget', call_process(restic_args + [
-      'forget', '--prune',
-    ] + restic_keep_args))
+  if forget_result[0]['remove']:
+    log('prune', call_process(restic_args + ['prune']))
     # remove rdiff-backup directory that is already older than removed restic snapshots.
     if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
       shutil.rmtree(backup_dir)
