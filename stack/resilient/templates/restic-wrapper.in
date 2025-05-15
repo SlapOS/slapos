@@ -14,6 +14,9 @@ case "$SSH_ORIGINAL_COMMAND" in
     clear)
         rm -f $SSH_CLIENT_SOCKET
     ;;
+    ping)
+        echo 'pong'
+    ;;
     *)
         echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
         exit 1

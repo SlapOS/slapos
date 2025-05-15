@@ -1,25 +1,5 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-[buildout]
-
-parts =
-  publish-connection-information
-  logrotate-entry-notifier
-  pbs-known-hosts
-  pbs-sshkeys-authority
-  sshkeys-openssh
-  cron-pbs-status-feed
-  pull-push-stalled-promise
-  notifier-feed-status-promise
-
-## Monitor for pbs
-  monitor-base
-  monitor-check-resilient-feed-file
-
-extends =
-  ${monitor2-template:output}
-  ${template-logrotate-base:output}
-
 #----------------
 #--
 #-- Creation of all needed directories.
@@ -353,5 +333,20 @@ context =
   raw python_executable ${buildout:executable}
 
 [buildout]
-parts +=
+
+parts =
+  publish-connection-information
+  logrotate-entry-notifier
+  pbs-known-hosts
+  pbs-sshkeys-authority
+  sshkeys-openssh
+  cron-pbs-status-feed
+  pull-push-stalled-promise
+  notifier-feed-status-promise
+  monitor-base
+  monitor-check-resilient-feed-file
   {{ part_list | join('\n  ') }}
+
+extends =
+  ${monitor2-template:output}
+  ${template-logrotate-base:output}
