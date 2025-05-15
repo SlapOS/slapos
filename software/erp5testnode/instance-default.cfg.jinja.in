@@ -28,6 +28,9 @@ url = $${shellinabox-frontend:url}
 frontend-url = $${testnode-frontend:connection-secure_access}
 log-frontend-url = $${testnode-log-frontend:connection-secure_access}
 
+[monitor-instance-parameter]
+monitor-httpd-port = 48196
+
 [pwgen]
 recipe = slapos.cookbook:generate.password
 storage-path = $${buildout:directory}/.password
