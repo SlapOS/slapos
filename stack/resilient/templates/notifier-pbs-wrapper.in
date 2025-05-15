@@ -9,16 +9,16 @@ import sys
 from urllib.parse import urlparse
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-restic_binary = '{{ restic_binary }}'
-backup_dir = '{{ backup_dir }}'
-url = '{{ url }}'
-ssh_client = '{{ ssh_client }}'
-remove_backup_older_than = '{{ remove_backup_older_than }}'
-slave_type = '{{ slave_type }}'
-name = '{{ name }}'
-restic_log = '{{ restic_log }}'
-feed_path = '{{ feed_path }}'
-feed_url = '{{ feed_url }}'
+restic_binary = {{ repr(restic_binary) }}
+backup_dir = {{ repr(backup_dir) }}
+url = {{ repr(url) }}
+ssh_client = {{ repr(ssh_client) }}
+remove_backup_older_than = {{ repr(remove_backup_older_than) }}
+slave_type = {{ repr(slave_type) }}
+name = {{ repr(name) }}
+restic_log = {{ repr(restic_log) }}
+feed_path = {{ repr(feed_path) }}
+feed_url = {{ repr(feed_url) }}
 
 parsed_url = urlparse(url)
 ssh_args = [
