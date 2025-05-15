@@ -73,11 +73,11 @@ init =
 
 [dovecot-directory]
 recipe = slapos.cookbook:mkdirectory
-run = ${:run}/dovecot
-var = ${:var}/dovecot
-tmp = ${:tmp}/dovecot
-libexec = ${:libexec}/dovecot
-home = ${:home}/dovecot-home
+run = ${directory:run}/dovecot
+var = ${directory:var}/dovecot
+tmp = ${directory:tmp}/dovecot
+libexec = ${directory:libexec}/dovecot
+home = ${directory:home}/dovecot-home
 
 [dovecot-conf]
 recipe = slapos.recipe.template:jinja2
@@ -150,7 +150,7 @@ hash-files =
 <= monitor-promise-base
 promise = check_socket_listening
 name = imap_listen.py
-config-host = {{ ipv6 }}
+config-host = {{ ipv6 }}
 config-port = ${dovecot-conf:imap-port}
 
 
@@ -161,7 +161,7 @@ config-port = ${dovecot-conf:imap-port}
 recipe = slapos.cookbook:mkdirectory
 usr = ${directory:usr}/postfix
 etc = ${directory:etc}/postfix
-var-lib-postfix = ${directory:var-lib}/postfix
+var-lib = ${directory:var-lib}/postfix
 var-spool = ${directory:var-spool}/postfix
 # Not used at buildout level, presence needed by postfix.
 spool-active = ${:var-spool}/active
@@ -246,7 +246,7 @@ wrapper-path = ${directory:run}/postfix-master
 <= monitor-promise-base
 promise = check_socket_listening
 name = smtp_listen.py
-config-host = {{ ipv6 }}
+config-host = {{ ipv6 }}
 config-port = ${postfix-conf-main:smtp-port}
 
 [base-wrapper]
@@ -310,8 +310,7 @@ depends = ${copy-application:recipe}
 url = {{ snappymail_conf }}
 output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
 context =
-  raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
-  raw imap_port ${dovecot-conf:imap-port}
+  raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
 
 [snappymail-domain]
 recipe = slapos.recipe.template:jinja2
@@ -319,8 +318,9 @@ depends = ${copy-application:recipe}
 url = {{ snappymail_domain }}
 output = ${copy-application:target}/data/_data_/_default_/domains/default.json
 context =
-  raw mail_host [{{ ipv6 }}]
-  key smtp_port publish-connection-information:smtp-port
+  raw mail_host [{{ ipv6 }}]
+  key smtp_port postfix-conf-main:smtp-port
+  key imap_port dovecot-conf:imap-port
 
 
 # Password reset page
@@ -461,7 +461,7 @@ recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 imap-port = ${dovecot-conf:imap-port}
 smtp-port = ${postfix-conf-main:smtp-port}
-imap-smtp-ipv6 = {{ ipv6 }}
+imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = ${lamp-frontend-promise:url}
 password-url = ${:webmail-url}/password.php
 {% set token_dict = {} -%}
@@ -506,6 +506,7 @@ parts =
   publish-connection-information
   certificate-authority
   dovecot-promise
+  dovecot-service
   postfix-promise
   apache-httpd-promise
   php.ini-conf
