@@ -108,8 +108,8 @@ init =
     options['existing'] = ""
 install =
   passwd = options['existing'].splitlines()
-  existing_users = {row.split(":")[0] for row in passwd if row}
-  result = passwd
+  result = [row for row in passwd if row and not row.endswith(":fail")]
+  existing_users = {row.split(":")[0] for row in result}
   
   for slave in {{ json_module.dumps(slave_instance_list) }}:
     if slave['address'] not in existing_users:
