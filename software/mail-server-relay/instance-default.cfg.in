@@ -135,7 +135,7 @@ url = {{ postfix_master_template }}
 output = ${directory:etc-postfix}/master.cf
 context =
   key smtp_port publish-connection-information:smtp-port
-  key submission_port publish-connection-information:subm-port
+  key submission_port publish-connection-information:submission-port
 
 [postfix-sasl-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -185,7 +185,7 @@ hash-files =
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 # todo: we use same for two since it's behind a port forward anyways
-subm-port = 10025 
+submission-port = 10025 
 smtp-port = 10025
 smtp-ipv6 = {{ ipv6 }}
 
@@ -194,7 +194,7 @@ smtp-ipv6 = {{ ipv6 }}
 promise = check_socket_listening
 name = subm_listen.py
 config-host = ${publish-connection-information:smtp-ipv6}
-config-port = ${publish-connection-information:subm-port}
+config-port = ${publish-connection-information:submission-port}
 
 [smtp-listen-promise]
 <= monitor-promise-base

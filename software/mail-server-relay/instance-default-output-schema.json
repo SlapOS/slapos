@@ -6,7 +6,7 @@
       "description": "SMTP port of the postfix instance",
       "type": "integer"
     },
-    "subm-port": {
+    "submission-port": {
       "description": "Submission port of the postfix instance",
       "type": "integer"
     },
