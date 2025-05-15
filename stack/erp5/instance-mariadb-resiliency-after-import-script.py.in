@@ -15,13 +15,13 @@ import sys
 # Depending on the output, it will create a file containing
 # the status of the restoration (success or failure)
 
-mariabackup_executable = '{{ bin_directory }}/mariabackup'
-mbstream_executable = '{{ bin_directory }}/mbstream'
-restic_executable = '{{ bin_directory }}/restic'
-mariadb_data_directory = '{{ mariadb_data_directory }}'
-mariadb_backup_directory = '{{ mariadb_backup_directory }}'
-mariadb_restore_directory = os.path.join('{{ tmp_directory }}', str(os.getpid()))
-pid_file = '{{ pid_file }}'
+mariabackup_executable = os.path.join({{ repr(bin_directory) }}, 'mariabackup')
+mbstream_executable = os.path.join({{ repr(bin_directory) }}, 'mbstream')
+restic_executable = os.path.join({{ repr(bin_directory) }}, 'restic')
+mariadb_data_directory = {{ repr(mariadb_data_directory) }}
+mariadb_backup_directory = {{ repr(mariadb_backup_directory) }}
+mariadb_restore_directory = os.path.join({{ repr(tmp_directory) }}, str(os.getpid()))
+pid_file = {{ repr(pid_file) }}
 
 # Make sure mariadb is not already running
 if os.path.exists(pid_file):
