@@ -171,6 +171,9 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   __partition_reference__ = 'defp'
   __test_matrix__ = matrix((default,))
 
+  def test_pdb(self):
+    breakpoint()
+
   def test_frontend_request(self):
     with open(os.path.join(self.computer_partition_root_path,
                            '.installed-switch-softwaretype.cfg')) as f:
