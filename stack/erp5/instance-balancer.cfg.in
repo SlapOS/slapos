@@ -502,7 +502,7 @@ client-cert-ca = ${:srv}/client-cert-ca
 {% endif -%}
 
 [{{ section('resiliency-exclude-file') }}]
-# Generate rdiff exclude file in case of resiliency
+# Generate rsync exclude file in case of resiliency
 < = jinja2-template-base
 inline = {{ '{{ "${directory:log}/**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
