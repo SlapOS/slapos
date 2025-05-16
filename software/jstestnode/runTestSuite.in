@@ -5,6 +5,7 @@
   Script to run jIO/renderJS test suite using Nexedi's test node framework.
 """
 import argparse, os, re, shutil, subprocess, sys, traceback
+from urllib.parse import urlsplit, urlunsplit
 from erp5.util import taskdistribution
 from time import gmtime, strftime
 from lxml import etree
@@ -14,8 +15,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 from subprocess import check_output
-import urllib3
-import certifi
 import json
 
 os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
@@ -24,6 +23,20 @@ os.environ['FONTCONFIG_FILE'] = '$${fontconfig-conf:output}'
 
 BASE_URL = 'https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 ETC_DIRECTORY = '$${directory:etc}'
+
+
+def extract_auth(url):
+  parts = urlsplit(url)
+  username = parts.username
+  password = parts.password
+  hostname = parts.hostname
+  if ':' in hostname:
+    hostname = f'[{hostname}]'
+  netloc = hostname
+  if parts.port:
+    netloc += f':{parts.port}'
+  clean_url = urlunsplit(parts._replace(netloc=netloc))
+  return username, password, clean_url
 
 def main():
   parsed_parameters = json.load(
@@ -89,33 +102,39 @@ def main():
     else:
       # Execute WebBrowser tests
       if target == 'firefox':
-        firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
-        firefox_capabilities['marionette'] = True
-        firefox_capabilities['acceptInsecureCerts'] = True
-        browser = webdriver.Firefox(
-            capabilities=firefox_capabilities,
-            firefox_binary='${firefox-wrapper:location}',
-            executable_path='${geckodriver:location}')
+        service = webdriver.firefox.service.Service(executable_path='${geckodriver:location}')
+        options = webdriver.firefox.options.Options()
+        options.binary_location = '${firefox-wrapper:location}'
+        browser = webdriver.Firefox(options=options, service=service)
       else:
         assert target == 'selenium-server', f"Unsupported target {test_runner['target']}"
         # use a remote connection which optionally verifies TLS certificate
         # and optionally against a user provided CA.
-        executor = RemoteConnection(test_runner['server-url'], keep_alive=True)
-        cert_reqs = 'CERT_REQUIRED'
-        ca_certs = certifi.where()
-        if not test_runner.get('verify-server-certificate', True):
-          cert_reqs = 'CERT_NONE'
-          ca_certs = None
+        capabilities = test_runner['desired-capabilities']
+        options = getattr(webdriver, capabilities.pop('browserName')).options.Options() 
+        accept_insecure_certs = capabilities.get('acceptInsecureCerts')
+        if accept_insecure_certs is not None:
+          options.accept_insecure_certs = accept_insecure_certs
+        browser_version = capabilities.get('version') or capabilities.get('browserVersion')
+        if browser_version is not None:
+          options.browser_version = browser_version
+
+        username, password, server_url = extract_auth(test_runner['server-url'])
+        ca_certs = None
         if test_runner.get('server-ca-certificate'):
           ca_certs = os.path.join(ETC_DIRECTORY, "cacerts.pem")
           with open(ca_certs, 'w') as f:
             f.write(test_runner.get('server-ca-certificate'))
-        executor._conn = urllib3.PoolManager(cert_reqs=cert_reqs, ca_certs=ca_certs)
+        client_config = webdriver.remote.client_config.ClientConfig(
+          server_url,
+          username=username,
+          password=password,
+          ignore_certificates=not test_runner.get('verify-server-certificate', True),
+          ca_certs=ca_certs,
+        )
 
         browser = webdriver.Remote(
-            command_executor=executor,
-            desired_capabilities=test_runner['desired-capabilities'],
-        )
+          command_executor=server_url, options=options, client_config=client_config)
 
       # adjust path for remote test url
       remote_access_url = parsed_parameters.get('remote-access-url')
