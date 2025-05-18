@@ -16,18 +16,25 @@ logging.basicConfig(
 
 # Check if model_name already installed by ollama
 def ollama_has_model(model_name, env):
+    logging.info("In the ollama_has_model")
     try:
         out = subprocess.check_output(['{{ ollama_instance_location }}/ollama', 'list'], env=env, text=True)
     except subprocess.CalledProcessError as e:
         # if ollama list failed, no model was downloaded
+        logging.info("Ollama checkinf failed: {e}")
         return False
     # skip the first line, then check the coloumn one
-    # NAME               ID              SIZE      MODIFIED
-    # deepseek-r1:14b    ea35dfe18182    9.0 GB    15 hours ago
+    # NAME                                ID              SIZE      MODIFIED
+    # deepseek-r1:14b                     ea35dfe18182    9.0 GB    25 hours ago
+    # steamdj/llama3.1-cpu-only:latest    9497a3e04b1b    4.7 GB    19 seconds ago
+    # qwen3:0.6b                          3bae9c93586b    522 MB    2 hours ago
+    logging.info("Get the result of ollama list")
     for line in out.splitlines()[1:]:
         parts = line.split()
-        if parts and parts[0] == model_name:
+        if parts and model_name in parts[0]:
+            logging.info("Found the model")
             return True
+    logging.info("Didn't found the model")
     return False
 
 def main():

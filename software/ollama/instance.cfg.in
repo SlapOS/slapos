@@ -17,6 +17,8 @@ parts =
   ollama-model-download-processed-config-promise
   ollama-service
   ollama-run-model-service
+  request-frontend
+  ollama-frontend-promise
   publish-connection-parameter
 
 [slap-configuration]
@@ -43,6 +45,8 @@ scripts = ${:etc}/run
 run = ${:var}/run
 status = ${:var}/status
 ollama-model-download-expose = ${monitor-directory:private}/ollama-model-download
+www = ${:srv}/www
+httpd-log = ${:var}/log/apache
 
 [ollama-download-model-script]
 recipe = slapos.recipe.template:jinja2
@@ -95,6 +99,9 @@ install =
             open(state_file, 'w').close()
         else:
             # Error happened, write error message to the stats file
+            # Looks like the promise check has some kind of 'delay'
+            # even the processed file changed, the output read from file is still the old one
+            # we need to run "slapos node instance" multiple times.
             f.write(f"ERR: processed '{processed}' != desired '{model_name}'\n")
     except Exception as e:
       f.write(str(e))
@@ -139,6 +146,7 @@ pre-command =
   if pgrep -f "ollama serve"; then
     echo "Stopping Ollama service..."
     pkill -f "ollama serve" || true
+    rm {{ ollama_path }}/ollama
     sleep 2
   fi
 command =
@@ -157,6 +165,7 @@ environment =
   CC={{ gcc_location }}/bin/gcc
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
+  OLLAMA_LLM_LIBRARY=cpu_avx2
 
 [ollama-run-model-service]
 recipe = slapos.cookbook:wrapper
@@ -164,14 +173,35 @@ command-line = ${directory:bin}/ollama-run.py ${:config-file} ${ollama-model-dow
 wrapper-path = ${directory:services}/ollama-run-model-service
 environment =
   OLLAMA_MODELS=${directory:models}
+  CUDA_VISIBLE_DEVICES=-1
+  OLLAMA_HOST=0.0.0.0:11434
 config-file = ${ollama-model-download-source-config:output}
 depends =
   ${ollama-model-download-processed-config-promise:recipe}
   ${ollama-instance:recipe}
   ${ollama-model-download-wrapper:recipe}
 
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Ollama Frontend
+# Standard Apache frontend software URL
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+software-type = default
+shared = true
+config-url = http://${slap-configuration:ipv4-random}:11434
+return = secure_access domai
+
+[ollama-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = ollama-http-frontend.py
+url = ${request-frontend:connection-secure_access}
+config-url = ${:url}
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
+url = ${request-frontend:connection-secure_access}
 ollama-url = http://${slap-configuration:ipv4-random}:11434
 model = ${slap-configuration:model}
 model-download-log = ${directory:log}/ollama-model-download.log

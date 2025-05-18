@@ -61,6 +61,7 @@ def main():
             logging.error(f"Error during model starting: {str(e)}")
 
     else:
+        logging.info(f"{model_name} is not ready...")
         raise ValueError(f"{model_name} is not ready...")
 
 if __name__ == "__main__":
