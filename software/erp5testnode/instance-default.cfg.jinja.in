@@ -54,6 +54,7 @@ test-node-title = {{ slapparameter_dict['test-node-title'] }}
 node-quantity = {{ slapparameter_dict['node-quantity'] }}
 ipv4-address = {{ partition_ipv4 }}
 ipv6-address = {{ partition_ipv6 }}
+ipv6-range = {{ partition_ipv6_range }}
 test-suite-master-url = {{ slapparameter_dict['test-suite-master-url'] }}
 {%- if isinstance(slapparameter_dict['software-path-list'], str) %}
 software-path-list = {{ slapparameter_dict['software-path-list'] }}
