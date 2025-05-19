@@ -111,7 +111,7 @@ context =
   raw postfix_dovecot_lmtp ${postfix-directory:spool-private}/dovecot-lmtp
 
 {%- for slave in slave_instance_list %}
-{%   do slave["parameters"].__setitem__('token', str(uuid_module.uuid4())) %}
+{%   do slave['parameters'].__setitem__('token', str(uuid_module.uuid4())) %}
 {%- endfor %}
 
 [dovecot-passwords]
@@ -129,9 +129,9 @@ install =
   existing_users = {row.split(":")[0] for row in result}
 
   for slave in {{ json_module.dumps(slave_instance_list) }}:
-    if slave["parameters"]['address'] not in existing_users:
-      result.append(f"{slave["parameters"]['address']}:{slave["parameters"]['token']}::::::fail")
-      existing_users.add(slave["parameters"]['address'])
+    if slave['parameters']['address'] not in existing_users:
+      result.append(f"{slave['parameters']['address']}:{slave['parameters']['token']}::::::fail")
+      existing_users.add(slave['parameters']['address'])
 
   for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
     test_mail = f"testmail@{domain}"
@@ -540,6 +540,6 @@ webmail-url = ${lamp-frontend-promise:url}
 password-url = ${:webmail-url}/password.php
 {% set token_dict = {} -%}
 {% for slave_instance in slave_instance_list -%}
-{%  do token_dict.__setitem__(slave_instance["parameters"]["address"], slave_instance["parameters"]["token"]) -%}
+{%  do token_dict.__setitem__(slave_instance['parameters']["address"], slave_instance['parameters']["token"]) -%}
 {% endfor -%}
 slaves = {{ json_module.dumps(token_dict) }}

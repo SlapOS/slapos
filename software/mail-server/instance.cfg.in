@@ -58,7 +58,7 @@ template-php-ini = {{ template_php_ini }}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.jsonschema
-jsonschema = ${software.cfg.json:target}
+jsonschema = {{ software_cfg_json }}
 set-default = all
 validate-parameters = all
 computer = ${slap-connection:computer-id}
