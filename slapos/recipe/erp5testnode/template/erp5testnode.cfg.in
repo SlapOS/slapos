@@ -14,6 +14,7 @@ node_quantity = %(node_quantity)s
 test_node_title = %(test_node_title)s
 ipv4_address = %(ipv4_address)s
 ipv6_address = %(ipv6_address)s
+ipv6_range = %(ipv6_range)s
 test_suite_master_url = %(test_suite_master_url)s
 httpd_ip = %(httpd_ip)s
 httpd_port = %(httpd_port)s
