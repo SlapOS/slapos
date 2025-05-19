@@ -1,6 +1,3 @@
-{% set part_list = [] -%}
-{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -189,20 +186,22 @@ environment =
   MAIL_CONFIG=${postfix-directory:etc}
 hash-files =
   ${postfix-conf-main:output}
+  ${postfix-conf-master:output}
   ${postfix-wrapper:output}
+depends =
+  ${postfix-symlinks-libexec:recipe}
 
-[{{ section('service-postfix-master') }}]
+[postfix-service-master]
 < = base-wrapper
 command-line = ${directory:usr}/libexec/postfix/master -c ${postfix-directory:etc}
 wrapper-path = ${directory:run}/postfix-master
-
 
 [postfix-submission-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = subm_listen.py
-config-host = ${publish-connection-information:smtp-ipv6}
-config-port = ${publish-connection-information:submission-port}
+config-host = {{ ipv6 }}
+config-port = ${postfix-conf-main:submission-port}
 
 [postfix-smtp-promise]
 <= monitor-promise-base
@@ -210,6 +209,17 @@ promise = check_socket_listening
 name = smtp_listen.py
 config-host = {{ ipv6 }}
 config-port = ${postfix-conf-main:smtp-port}
+
+[postfix]
+recipe = slapos.recipe.build
+init =
+  ""
+depends = 
+  ${postfix-service:recipe}
+  ${postfix-service-master:recipe}
+  ${postfix-wrappers:depends}
+  ${postfix-submission-promise:recipe}
+  ${postfix-smtp-promise:recipe}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -229,6 +239,7 @@ path = {{ postfix_location }}/usr/bin
 < = base-bin-wrapper
 path = {{ postfix_location }}/usr/sbin
 
+{% set postfix_wrappers = [] -%}
 {% for extend, basename_list in (
   (
     'base-bin-bin-wrapper',
@@ -256,11 +267,18 @@ path = {{ postfix_location }}/usr/sbin
   ),
 ) %}
 {%   for basename in basename_list -%}
-[{{ section('wrapper-' ~ basename) }}]
+{%     do postfix_wrappers.append('wrapper-' ~ basename) -%}
+[wrapper-{{ basename }}]
 < = {{ extend }}
 basename = {{ basename }}
 {%   endfor %}
 {% endfor %}
+
+[postfix-wrappers]
+depends =
+{% for postfix_wrapper in postfix_wrappers -%}
+  {{ "  ${" + postfix_wrapper + ":recipe}" }}
+{% endfor -%}
 
 
 [publish-connection-information]
@@ -276,17 +294,10 @@ extends =
   {{ template_monitor }}
 parts =
   directory
-  postfix-conf-master
-  postfix-service
-  postfix-symlinks-libexec
   monitor-base
   publish-connection-information
   certificate-authority
-  postfix-submission-promise
-  postfix-smtp-promise
-{% for part in part_list -%}
-{{ '    %s' % part }}
-{% endfor -%}
+  postfix
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

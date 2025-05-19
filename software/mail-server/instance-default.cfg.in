@@ -1,6 +1,3 @@
-{% set part_list = [] -%}
-{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -152,6 +149,7 @@ promise = check_socket_listening
 name = imap_listen.py
 config-host = {{ ipv6 }}
 config-port = ${dovecot-conf:imap-port}
+depends = ${dovecot-service:recipe}
 
 
 # Postfix SMTP server
@@ -235,9 +233,12 @@ environment =
   MAIL_CONFIG=${postfix-directory:etc}
 hash-files =
   ${postfix-conf-main:output}
+  ${postfix-conf-master:output}
   ${postfix-wrapper:output}
+depends =
+  ${postfix-symlinks-libexec:recipe}
 
-[{{ section('service-postfix-master') }}]
+[service-postfix-master]
 < = base-wrapper
 command-line = ${directory:usr}/libexec/postfix/master -c ${postfix-directory:etc}
 wrapper-path = ${directory:run}/postfix-master
@@ -248,6 +249,10 @@ promise = check_socket_listening
 name = smtp_listen.py
 config-host = {{ ipv6 }}
 config-port = ${postfix-conf-main:smtp-port}
+depends = 
+  ${postfix-service:recipe}
+  ${postfix-service-master:recipe}
+  ${postfix-wrappers:depends}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -267,6 +272,7 @@ path = {{ postfix_location }}/usr/bin
 < = base-bin-wrapper
 path = {{ postfix_location }}/usr/sbin
 
+{% set postfix_wrappers = [] -%}
 {% for extend, basename_list in (
   (
     'base-bin-bin-wrapper',
@@ -294,33 +300,54 @@ path = {{ postfix_location }}/usr/sbin
   ),
 ) %}
 {%   for basename in basename_list -%}
-[{{ section('wrapper-' ~ basename) }}]
+{%     do postfix_wrappers.append('wrapper-' ~ basename) -%}
+[wrapper-{{ basename }}]
 < = {{ extend }}
 basename = {{ basename }}
 {%   endfor %}
 {% endfor %}
 
+[postfix-wrappers]
+depends =
+{% for postfix_wrapper in postfix_wrappers -%}
+  ${{{ postfix_wrapper }}:recipe}
+{% endfor -%}
 
 # SnappyMail Webmail
 # -------------------
 
+[snappymail-files]
+recipe = plone.recipe.command
+target = ${directory:www}
+command = cp -ax {{ apache_parameter_dict['snappymail-location'] }}/. ${:target}
+update-command = ${:command}
+stop-on-error = true
+
 [snappymail-conf]
 recipe = slapos.recipe.template:jinja2
-depends = ${copy-application:recipe}
+depends = ${snappymail-files:recipe}
 url = {{ snappymail_conf }}
-output = ${copy-application:target}/data/_data_/_default_/configs/application.ini
+output = ${snappymail-files:target}/data/_data_/_default_/configs/application.ini
 context =
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
 
 [snappymail-domain]
 recipe = slapos.recipe.template:jinja2
-depends = ${copy-application:recipe}
+depends = ${snappymail-files:recipe}
 url = {{ snappymail_domain }}
-output = ${copy-application:target}/data/_data_/_default_/domains/default.json
+output = ${snappymail-files:target}/data/_data_/_default_/domains/default.json
 context =
   raw mail_host [{{ ipv6 }}]
   key smtp_port postfix-conf-main:smtp-port
   key imap_port dovecot-conf:imap-port
+
+[snappymail]
+recipe = slapos.recipe.build
+init =
+  ""
+depends =
+  ${snappymail-conf:recipe}
+  ${snappymail-domain:recipe}
 
 
 # Password reset page
@@ -347,8 +374,10 @@ command-line = ${ca-apache-php:wrapper}
 wrapper-path = ${directory:service}/apache-php
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 depends =
- ${copy-application:recipe}
+ ${snappymail-files:recipe}
  ${apache-graceful:recipe}
+ ${lamp-apache-httpd-conf:recipe}
+ ${php.ini-conf:recipe}
 
 [apache-graceful]
 recipe = collective.recipe.template
@@ -413,14 +442,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
 command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
 
-[copy-application]
-recipe = plone.recipe.command
-target = ${directory:www}
-command = cp -ax {{ apache_parameter_dict['application-location'] }}/. ${:target}
-update-command = ${:command}
-stop-on-error = true
-
-[lamp-apache-httpd]
+[lamp-apache-httpd-conf]
 recipe = slapos.recipe.template:jinja2
 url = {{ lamp_apache_httpd }}
 output = ${directory:apache.d}/lamp.conf
@@ -449,6 +471,7 @@ promise = check_socket_listening
 name = apache-httpd-port-listening.py
 config-host = ${apache-php-configuration:ip}
 config-port = ${apache-php-configuration:port}
+depends = ${apache-php-service:recipe}
 
 [request-frontend]
 <= monitor-frontend
@@ -474,12 +497,13 @@ slaves = {{ json_module.dumps(token_dict) }}
 # Shared instances (addresses)
 # ----------------------------
 
+{% set shared_publish_section_title_list = [] -%}
 {% for slave_instance in slave_instance_list -%}
 {%   set orig_slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_reference = orig_slave_reference.replace(' ', '_') -%}
 
 {%   set publish_section_title = 'publish-%s' % slave_reference -%}
-{%   do part_list.append(publish_section_title) -%}
+{%   do shared_publish_section_title_list.append(publish_section_title) -%}
 [{{ publish_section_title }}]
 
 recipe = slapos.cookbook:publish
@@ -488,6 +512,16 @@ password-url = "helloworld"
 
 {% endfor -%}
 
+[publish-shared]
+recipe = slapos.recipe.build
+init =
+  ""
+depends =
+{% for publish_section_title in shared_publish_section_title_list -%}
+  {{ "  ${" + publish_section_title + ":recipe}" }}
+{% endfor -%}
+
+
 
 [buildout]
 extends =
@@ -495,26 +529,15 @@ extends =
 parts =
   directory
   lamp-frontend-promise
-  copy-application
-  snappymail-conf
-  snappymail-domain
+  snappymail
   password-php
-  postfix-conf-master
-  postfix-service
-  postfix-symlinks-libexec
   monitor-base
   publish-connection-information
   certificate-authority
   dovecot-promise
-  dovecot-service
   postfix-promise
   apache-httpd-promise
-  php.ini-conf
-  lamp-apache-httpd
-  apache-php-service
-{% for part in part_list -%}
-{{ '    %s' % part }}
-{% endfor -%}
+  publish-shared
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
