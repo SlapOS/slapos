@@ -50,5 +50,11 @@
       },
       "default": []
     }
-  }
+  },
+  "required": [
+    "relay-host",
+    "relay-user",
+    "relay-password",
+    "mail-domains"
+  ]
 }

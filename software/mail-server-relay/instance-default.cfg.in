@@ -1,3 +1,25 @@
+[buildout]
+extends =
+  {{ template_monitor }}
+parts =
+  directory
+  monitor-base
+  publish-connection-information
+  certificate-authority
+  postfix
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+# todo: we use same for two since it's behind a port forward anyways
+submission-port = ${postfix-conf-main:smtp-port} 
+smtp-port = ${postfix-conf-main:smtp-port}
+smtp-ipv6 = {{ ipv6 }}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -279,28 +301,3 @@ depends =
 {% for postfix_wrapper in postfix_wrappers -%}
   {{ "  ${" + postfix_wrapper + ":recipe}" }}
 {% endfor -%}
-
-
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-<= monitor-publish
-# todo: we use same for two since it's behind a port forward anyways
-submission-port = ${postfix-conf-main:smtp-port} 
-smtp-port = ${postfix-conf-main:smtp-port}
-smtp-ipv6 = {{ ipv6 }}
-
-[buildout]
-extends =
-  {{ template_monitor }}
-parts =
-  directory
-  monitor-base
-  publish-connection-information
-  certificate-authority
-  postfix
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline= true
-
-

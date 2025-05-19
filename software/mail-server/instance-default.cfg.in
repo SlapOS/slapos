@@ -1,3 +1,23 @@
+[buildout]
+extends =
+  {{ template_monitor }}
+parts =
+  directory
+  lamp-frontend-promise
+  snappymail
+  password-php
+  monitor-base
+  publish-connection-information
+  certificate-authority
+  dovecot-promise
+  postfix-promise
+  apache-httpd-promise
+  publish-shared
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline= true
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -91,7 +111,7 @@ context =
   raw postfix_dovecot_lmtp ${postfix-directory:spool-private}/dovecot-lmtp
 
 {%- for slave in slave_instance_list %}
-{%   do slave.__setitem__('token', str(uuid_module.uuid4())) %}
+{%   do slave["parameters"].__setitem__('token', str(uuid_module.uuid4())) %}
 {%- endfor %}
 
 [dovecot-passwords]
@@ -109,9 +129,9 @@ install =
   existing_users = {row.split(":")[0] for row in result}
 
   for slave in {{ json_module.dumps(slave_instance_list) }}:
-    if slave['address'] not in existing_users:
-      result.append(f"{slave['address']}:{slave['token']}::::::fail")
-      existing_users.add(slave['address'])
+    if slave["parameters"]['address'] not in existing_users:
+      result.append(f"{slave["parameters"]['address']}:{slave["parameters"]['token']}::::::fail")
+      existing_users.add(slave["parameters"]['address'])
 
   for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
     test_mail = f"testmail@{domain}"
@@ -479,27 +499,12 @@ name = Instance Frontend
 config-url = ${apache-php-configuration:url}
 
 
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-<= monitor-publish
-imap-port = ${dovecot-conf:imap-port}
-smtp-port = ${postfix-conf-main:smtp-port}
-imap-smtp-ipv6 = {{ ipv6 }}
-webmail-url = ${lamp-frontend-promise:url}
-password-url = ${:webmail-url}/password.php
-{% set token_dict = {} -%}
-{% for slave_instance in slave_instance_list -%}
-{%  do token_dict.__setitem__(slave_instance["address"], slave_instance["token"]) -%}
-{% endfor -%}
-slaves = {{ json_module.dumps(token_dict) }}
-
-
 # Shared instances (addresses)
 # ----------------------------
 
 {% set shared_publish_section_title_list = [] -%}
 {% for slave_instance in slave_instance_list -%}
-{%   set orig_slave_reference = slave_instance.get('slave_reference') -%}
+{%   set orig_slave_reference = slave_instance["reference"] -%}
 {%   set slave_reference = orig_slave_reference.replace(' ', '_') -%}
 
 {%   set publish_section_title = 'publish-%s' % slave_reference -%}
@@ -522,25 +527,19 @@ depends =
 {% endfor -%}
 
 
+# Publish connection information
+# ------------------------------
 
-[buildout]
-extends =
-  {{ template_monitor }}
-parts =
-  directory
-  lamp-frontend-promise
-  snappymail
-  password-php
-  monitor-base
-  publish-connection-information
-  certificate-authority
-  dovecot-promise
-  postfix-promise
-  apache-httpd-promise
-  publish-shared
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline= true
-
-
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+imap-port = ${dovecot-conf:imap-port}
+smtp-port = ${postfix-conf-main:smtp-port}
+imap-smtp-ipv6 = {{ ipv6 }}
+webmail-url = ${lamp-frontend-promise:url}
+password-url = ${:webmail-url}/password.php
+{% set token_dict = {} -%}
+{% for slave_instance in slave_instance_list -%}
+{%  do token_dict.__setitem__(slave_instance["parameters"]["address"], slave_instance["parameters"]["token"]) -%}
+{% endfor -%}
+slaves = {{ json_module.dumps(token_dict) }}
