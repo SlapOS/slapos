@@ -1,6 +1,6 @@
 [buildout]
 extends =
-  {{ template_monitor }}
+  ${template-default:target}
 parts =
   directory
   lamp-frontend-promise
@@ -14,60 +14,60 @@ parts =
   apache-httpd-promise
   publish-shared
 
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline= true
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-home = ${buildout:directory}
-etc = ${:home}/etc
-var = ${:home}/var
-bin = ${:home}/bin
-usr = ${:home}/usr
-tmp = ${:home}/tmp
-run = ${:var}/run
-libexec = ${:usr}/libexec
-script = ${:etc}/run
-service = ${:etc}/service
-log = ${:var}/log
-var-log = ${:var}/log
-var-lib = ${:var}/lib
-var-spool = ${:var}/spool
-vhosts = ${:home}/vhosts
-srv = ${buildout:directory}/srv
-apache.d = ${:etc}/apache.d
-httpd-log = ${:log}/apache
-php-ini-dir = ${:etc}/php
-tmp-php = ${:tmp}/php
-tmp-upload = ${:tmp}/upload
-www = ${:srv}/www/
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+bin = $${:home}/bin
+usr = $${:home}/usr
+tmp = $${:home}/tmp
+run = $${:var}/run
+libexec = $${:usr}/libexec
+script = $${:etc}/run
+service = $${:etc}/service
+log = $${:var}/log
+var-log = $${:var}/log
+var-lib = $${:var}/lib
+var-spool = $${:var}/spool
+vhosts = $${:home}/vhosts
+srv = $${buildout:directory}/srv
+apache.d = $${:etc}/apache.d
+httpd-log = $${:log}/apache
+php-ini-dir = $${:etc}/php
+tmp-php = $${:tmp}/php
+tmp-upload = $${:tmp}/upload
+www = $${:srv}/www/
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
-root = ${directory:srv}/ssl
-requests = ${:root}/requests
-private = ${:root}/private
-certs = ${:root}/certs
-newcerts = ${:root}/newcerts
-crl = ${:root}/crl
+root = $${directory:srv}/ssl
+requests = $${:root}/requests
+private = $${:root}/private
+certs = $${:root}/certs
+newcerts = $${:root}/newcerts
+crl = $${:root}/crl
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ openssl_location }}/bin/openssl
-ca-dir = ${ca-directory:root}
-requests-directory = ${ca-directory:requests}
-wrapper = ${directory:bin}/certificate_authority
-ca-private = ${ca-directory:private}
-ca-certs = ${ca-directory:certs}
-ca-newcerts = ${ca-directory:newcerts}
-ca-crl = ${ca-directory:crl}
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${ca-directory:root}
+requests-directory = $${ca-directory:requests}
+wrapper = $${directory:bin}/certificate_authority
+ca-private = $${ca-directory:private}
+ca-certs = $${ca-directory:certs}
+ca-newcerts = $${ca-directory:newcerts}
+ca-crl = $${ca-directory:crl}
 
 [certificate-authority-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${certificate-authority:wrapper}
-wrapper-path = ${directory:services}/certificate_authority
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+command-line = $${certificate-authority:wrapper}
+wrapper-path = $${directory:services}/certificate_authority
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -90,30 +90,30 @@ init =
 
 [dovecot-directory]
 recipe = slapos.cookbook:mkdirectory
-run = ${directory:run}/dovecot
-var = ${directory:var}/dovecot
-tmp = ${directory:tmp}/dovecot
-libexec = ${directory:libexec}/dovecot
-home = ${directory:home}/dovecot-home
+run = $${directory:run}/dovecot
+var = $${directory:var}/dovecot
+tmp = $${directory:tmp}/dovecot
+libexec = $${directory:libexec}/dovecot
+home = $${directory:home}/dovecot-home
 
 [dovecot-conf]
 recipe = slapos.recipe.template:jinja2
-url = {{ dovecot_conf_template }}
-output = ${directory:etc}/dovecot.conf
+url = ${dovecot.jinja2.conf:target}
+output = $${directory:etc}/dovecot.conf
 imap-port = 10143
 context =
   section directory directory
   section dovecot_directory dovecot-directory
   key dovecot_passwd dovecot-passwords:target
   raw user_name {{ user_name }}
-  raw imap_port ${:imap-port}
-  raw postfix_auth ${postfix-directory:spool-private}/auth
-  raw postfix_dovecot_lmtp ${postfix-directory:spool-private}/dovecot-lmtp
+  raw imap_port $${:imap-port}
+  raw postfix_auth $${postfix-directory:spool-private}/auth
+  raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
 # not using location to avoid Buildout ever deleting it
-target = ${directory:etc}/dovecot-passwd
+target = $${directory:etc}/dovecot-passwd
 init =
   import uuid
 
@@ -151,32 +151,32 @@ install =
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
-output = ${directory:bin}/${:_buildout_section_name_}
+output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   # If master.pid contains PID of any running process
   # dovecot will refuse to run. Only the pidfile provided
   # by wrapper recipe should be used
   rm -f var/run/dovecot/master.pid
-  {{ dovecot_binary }} -F -c ${dovecot-conf:output}
+  ${dovecot:location}/sbin/dovecot -F -c $${dovecot-conf:output}
 
 [dovecot-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${dovecot-wrapper:output}
-wrapper-path = ${directory:service}/dovecot
+command-line = $${dovecot-wrapper:output}
+wrapper-path = $${directory:service}/dovecot
 mode = 0775
-pidfile = ${directory:run}/dovecot.pid
+pidfile = $${directory:run}/dovecot.pid
 hash-files =
-  ${dovecot-conf:output}
-  ${dovecot-wrapper:output}
+  $${dovecot-conf:output}
+  $${dovecot-wrapper:output}
 
 [dovecot-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = imap_listen.py
 config-host = {{ ipv6 }}
-config-port = ${dovecot-conf:imap-port}
-depends = ${dovecot-service:recipe}
+config-port = $${dovecot-conf:imap-port}
+depends = $${dovecot-service:recipe}
 
 
 # Postfix SMTP server
@@ -184,30 +184,30 @@ depends = ${dovecot-service:recipe}
 
 [postfix-directory]
 recipe = slapos.cookbook:mkdirectory
-usr = ${directory:usr}/postfix
-etc = ${directory:etc}/postfix
-var-lib = ${directory:var-lib}/postfix
-var-spool = ${directory:var-spool}/postfix
+usr = $${directory:usr}/postfix
+etc = $${directory:etc}/postfix
+var-lib = $${directory:var-lib}/postfix
+var-spool = $${directory:var-spool}/postfix
 # Not used at buildout level, presence needed by postfix.
-spool-active = ${:var-spool}/active
-spool-bounce = ${:var-spool}/bounce
-spool-corrupt = ${:var-spool}/corrupt
-spool-defer = ${:var-spool}/defer
-spool-deferred = ${:var-spool}/deferred
-spool-flush = ${:var-spool}/flush
-spool-hold = ${:var-spool}/hold
-spool-incoming = ${:var-spool}/incoming
-spool-maildrop = ${:var-spool}/maildrop
-spool-pid = ${:var-spool}/pid
-spool-private = ${:var-spool}/private
-spool-public = ${:var-spool}/public
-spool-saved = ${:var-spool}/saved
-spool-trace = ${:var-spool}/trace
+spool-active = $${:var-spool}/active
+spool-bounce = $${:var-spool}/bounce
+spool-corrupt = $${:var-spool}/corrupt
+spool-defer = $${:var-spool}/defer
+spool-deferred = $${:var-spool}/deferred
+spool-flush = $${:var-spool}/flush
+spool-hold = $${:var-spool}/hold
+spool-incoming = $${:var-spool}/incoming
+spool-maildrop = $${:var-spool}/maildrop
+spool-pid = $${:var-spool}/pid
+spool-private = $${:var-spool}/private
+spool-public = $${:var-spool}/public
+spool-saved = $${:var-spool}/saved
+spool-trace = $${:var-spool}/trace
 
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
-url = {{ postfix_main_template }}
-output = ${postfix-directory:etc}/main.cf
+url = ${postfix_main.jinja2.cf:target}
+output = $${postfix-directory:etc}/main.cf
 smtp-port = 10025
 context =
   key dovecot_passwd dovecot-passwords:target
@@ -221,9 +221,9 @@ context =
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   raw server_fqdn {{ server_fqdn }}
-  raw postfix_dovecot_lmtp ${postfix-directory:spool-private}/dovecot-lmtp
-  raw xz_utils_location {{ xz_utils_location }}
-  raw postfix_location {{ postfix_location }}
+  raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
+  raw xz_utils_location ${xz-utils:location}
+  raw postfix_location ${postfix:location}
   raw ipv6 {{ ipv6 }}
   raw relay_host {{ slapparameter_dict['relay-host'] }}
   raw relay_port {{ slapparameter_dict['relay-port'] }}
@@ -231,73 +231,73 @@ context =
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
-url = {{ postfix_master_template }}
-output = ${postfix-directory:etc}/master.cf
+url = ${postfix_master.jinja2.cf:target}
+output = $${postfix-directory:etc}/master.cf
 context =
   key smtp_port postfix-conf-main:smtp-port
 
 [postfix-symlinks-libexec]
 recipe = slapos.cookbook:symbolic.link
-target-directory = ${postfix-directory:usr}
+target-directory = $${postfix-directory:usr}
 link-binary =
-    {{ postfix_location }}/usr/libexec
+    ${postfix:location}/usr/libexec
 
 [postfix-wrapper]
 recipe = slapos.recipe.template
-output = ${directory:bin}/${:_buildout_section_name_}
+output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   rm -f var/spool/postfix/pid/master.pid
-  ${postfix-directory:usr}/libexec/postfix/master -c ${postfix-directory:etc}
+  $${postfix-directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
 
 [postfix-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${postfix-wrapper:output}
-wrapper-path = ${directory:service}/postfix
+command-line = $${postfix-wrapper:output}
+wrapper-path = $${directory:service}/postfix
 mode = 0775
-pidfile = ${directory:run}/postfix.pid
+pidfile = $${directory:run}/postfix.pid
 environment =
-  MAIL_CONFIG=${postfix-directory:etc}
+  MAIL_CONFIG=$${postfix-directory:etc}
 hash-files =
-  ${postfix-conf-main:output}
-  ${postfix-conf-master:output}
-  ${postfix-wrapper:output}
+  $${postfix-conf-main:output}
+  $${postfix-conf-master:output}
+  $${postfix-wrapper:output}
 depends =
-  ${postfix-symlinks-libexec:recipe}
+  $${postfix-symlinks-libexec:recipe}
 
 [postfix-service-master]
 < = base-wrapper
-command-line = ${directory:usr}/libexec/postfix/master -c ${postfix-directory:etc}
-wrapper-path = ${directory:run}/postfix-master
+command-line = $${directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
+wrapper-path = $${directory:run}/postfix-master
 
 [postfix-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = smtp_listen.py
 config-host = {{ ipv6 }}
-config-port = ${postfix-conf-main:smtp-port}
+config-port = $${postfix-conf-main:smtp-port}
 depends =
-  ${postfix-service:recipe}
-  ${postfix-service-master:recipe}
-  ${postfix-wrappers:depends}
+  $${postfix-service:recipe}
+  $${postfix-service-master:recipe}
+  $${postfix-wrappers:depends}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
 environment =
-  MAIL_CONFIG=${postfix-directory:etc}
+  MAIL_CONFIG=$${postfix-directory:etc}
 
 [base-bin-wrapper]
 < = base-wrapper
-command-line = ${:path}/${:basename}
-wrapper-path = ${directory:bin}/${:basename}
+command-line = $${:path}/$${:basename}
+wrapper-path = $${directory:bin}/$${:basename}
 
 [base-bin-bin-wrapper]
 < = base-bin-wrapper
-path = {{ postfix_location }}/usr/bin
+path = ${postfix:location}/usr/bin
 
 [base-sbin-bin-wrapper]
 < = base-bin-wrapper
-path = {{ postfix_location }}/usr/sbin
+path = ${postfix:location}/usr/sbin
 
 {% set postfix_wrappers = [] -%}
 {% for extend, basename_list in (
@@ -337,7 +337,7 @@ basename = {{ basename }}
 [postfix-wrappers]
 depends =
 {% for postfix_wrapper in postfix_wrappers -%}
-  {{ "  ${" + postfix_wrapper + ":recipe" }}
+  {{ "  $${" + postfix_wrapper + ":recipe" }}
 {% endfor -%}
 
 # SnappyMail Webmail
@@ -345,24 +345,24 @@ depends =
 
 [snappymail-files]
 recipe = plone.recipe.command
-target = ${directory:www}
-command = cp -ax {{ apache_parameter_dict['snappymail-location'] }}/. ${:target}
-update-command = ${:command}
+target = $${directory:www}
+command = cp -ax ${snappymail:location}/. $${:target}
+update-command = $${:command}
 stop-on-error = true
 
 [snappymail-conf]
 recipe = slapos.recipe.template:jinja2
-depends = ${snappymail-files:recipe}
-url = {{ snappymail_conf }}
-output = ${snappymail-files:target}/data/_data_/_default_/configs/application.ini
+depends = $${snappymail-files:recipe}
+url = ${template-snappymail.jinja2.ini:target}
+output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
 context =
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
 
 [snappymail-domain]
 recipe = slapos.recipe.template:jinja2
-depends = ${snappymail-files:recipe}
-url = {{ snappymail_domain }}
-output = ${snappymail-files:target}/data/_data_/_default_/domains/default.json
+depends = $${snappymail-files:recipe}
+url = ${template-snappymail-domain.jinja2.json:target}
+output = $${snappymail-files:target}/data/_data_/_default_/domains/default.json
 context =
   raw mail_host [{{ ipv6 }}]
   key smtp_port postfix-conf-main:smtp-port
@@ -373,8 +373,8 @@ recipe = slapos.recipe.build
 init =
   ""
 depends =
-  ${snappymail-conf:recipe}
-  ${snappymail-domain:recipe}
+  $${snappymail-conf:recipe}
+  $${snappymail-domain:recipe}
 
 
 # Password reset page
@@ -382,8 +382,8 @@ depends =
 
 [password-php]
 recipe = slapos.recipe.template:jinja2
-url = {{ password_php }}
-output = ${directory:www}/password.php
+url = ${password.php.in:target}
+output = $${directory:www}/password.php
 context =
   key dovecot_passwd dovecot-passwords:target
 
@@ -397,68 +397,68 @@ listening-port = 9988
 
 [apache-php-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${ca-apache-php:wrapper}
-wrapper-path = ${directory:service}/apache-php
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+command-line = $${ca-apache-php:wrapper}
+wrapper-path = $${directory:service}/apache-php
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
 depends =
- ${snappymail-files:recipe}
- ${apache-graceful:recipe}
- ${lamp-apache-httpd-conf:recipe}
- ${php.ini-conf:recipe}
+ $${snappymail-files:recipe}
+ $${apache-graceful:recipe}
+ $${lamp-apache-httpd-conf:recipe}
+ $${php.ini-conf:recipe}
 
 [apache-graceful]
 recipe = collective.recipe.template
-output = ${directory:script}/apache-httpd-graceful
+output = $${directory:script}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
-  kill -USR1 "$(cat '${apache-php-configuration:pid-file}')"
+  kill -USR1 "$(cat '$${apache-php-configuration:pid-file}')"
 
 [apache-php-conf]
 recipe = slapos.recipe.template:jinja2
-url = {{ apache_parameter_dict['template-apache-conf'] }}
-output = ${directory:etc}/apache.conf
+url = ${template-apache.conf:target}
+output = $${directory:etc}/apache.conf
 context =
   section parameter_dict apache-php-configuration
 extensions = jinja2.ext.do
 
 [apache-php-wrapper]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/apache-wrapper
-command-line = "{{ apache_parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-php-conf:output}" -DFOREGROUND
+wrapper-path = $${directory:bin}/apache-wrapper
+command-line = "${apache:location}/bin/httpd" -f "$${apache-php-conf:output}" -DFOREGROUND
 wait-for-files =
-  ${ca-directory:certs}/httpd.crt
-  ${ca-directory:certs}/httpd.key
+  $${ca-directory:certs}/httpd.crt
+  $${ca-directory:certs}/httpd.key
 
 [apache-php-configuration]
-document-root = ${directory:www}
-pid-file = ${directory:run}/apache.pid
-lock-file = ${directory:run}/apache.lock
-ip = ${apache-network-configuration:listening-ip}
-port = ${apache-network-configuration:listening-port}
-url = https://[${:ip}]:${:port}/
-error-log = ${directory:httpd-log}/error.log
-access-log = ${directory:httpd-log}/access.log
-log-dir = ${directory:httpd-log}
-php-ini-dir = ${directory:php-ini-dir}
-cert-file = ${ca-directory:certs}/httpd.crt
-key-file = ${ca-directory:certs}/httpd.key
-apache-config-dir = ${directory:apache.d}
+document-root = $${directory:www}
+pid-file = $${directory:run}/apache.pid
+lock-file = $${directory:run}/apache.lock
+ip = $${apache-network-configuration:listening-ip}
+port = $${apache-network-configuration:listening-port}
+url = https://[$${:ip}]:$${:port}/
+error-log = $${directory:httpd-log}/error.log
+access-log = $${directory:httpd-log}/access.log
+log-dir = $${directory:httpd-log}
+php-ini-dir = $${directory:php-ini-dir}
+cert-file = $${ca-directory:certs}/httpd.crt
+key-file = $${ca-directory:certs}/httpd.key
+apache-config-dir = $${directory:apache.d}
 
 [instance-parameter]
-document-root = ${apache-php-configuration:document-root}
-backend-url = ${apache-php-configuration:url}
-php-bin = {{ apache_parameter_dict['apache-php-location'] }}/bin/php
+document-root = $${apache-php-configuration:document-root}
+backend-url = $${apache-php-configuration:url}
+php-bin = ${apache-php:location}/bin/php
 php-ini = ${php.ini-conf:output}
 
 [php.ini-configuration]
-tmp-dir = ${directory:tmp-php}
-php-upload-dir = ${directory:tmp-upload}
+tmp-dir = $${directory:tmp-php}
+php-upload-dir = $${directory:tmp-upload}
 
 [php.ini-conf]
 recipe = slapos.recipe.template:jinja2
-url = {{ apache_parameter_dict['template-php-ini'] }}
-output = ${directory:php-ini-dir}/php.ini
+url = ${template-php.ini:target}
+output = $${directory:php-ini-dir}/php.ini
 context =
   section apache_parameter_dict php.ini-configuration
   section instance_dict instance-parameter
@@ -466,13 +466,13 @@ extensions = jinja2.ext.do
 
 [php-bin]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/php
-command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:output}
+wrapper-path = $${directory:bin}/php
+command-line = $${instance-parameter:php-bin} -c ${php.ini-conf:output}
 
 [lamp-apache-httpd-conf]
 recipe = slapos.recipe.template:jinja2
-url = {{ lamp_apache_httpd }}
-output = ${directory:apache.d}/lamp.conf
+url = ${template-apache-httpd:target}
+output = $${directory:apache.d}/lamp.conf
 context =
   section parameter_dict apache-php-configuration
 
@@ -480,30 +480,30 @@ context =
 <= monitor-promise-base
 promise = check_url_available
 name = lamp-http-frontend.py
-url = ${request-frontend:connection-secure_access}
-config-url = ${:url}
+url = $${request-frontend:connection-secure_access}
+config-url = $${:url}
 
 [ca-apache-php]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
-key-file = ${apache-php-configuration:key-file}
-cert-file = ${apache-php-configuration:cert-file}
-executable = ${apache-php-wrapper:wrapper-path}
-wrapper = ${directory:bin}/ca-apache-php
+key-file = $${apache-php-configuration:key-file}
+cert-file = $${apache-php-configuration:cert-file}
+executable = $${apache-php-wrapper:wrapper-path}
+wrapper = $${directory:bin}/ca-apache-php
 
 [apache-httpd-promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
 <= monitor-promise-base
 promise = check_socket_listening
 name = apache-httpd-port-listening.py
-config-host = ${apache-php-configuration:ip}
-config-port = ${apache-php-configuration:port}
-depends = ${apache-php-service:recipe}
+config-host = $${apache-php-configuration:ip}
+config-port = $${apache-php-configuration:port}
+depends = $${apache-php-service:recipe}
 
 [request-frontend]
 <= monitor-frontend
 name = Instance Frontend
-config-url = ${apache-php-configuration:url}
+config-url = $${apache-php-configuration:url}
 
 
 # Shared instances (addresses)
@@ -511,7 +511,7 @@ config-url = ${apache-php-configuration:url}
 
 [publish-shared]
 recipe = slapos.recipe.build
-new-account-dict = ${dovecot-passwords:new-account-dict}
+new-account-dict = $${dovecot-passwords:new-account-dict}
 init =
   for ref, content in options['new-account-dict'].items():
     self.buildout.parse(f"""
@@ -529,9 +529,9 @@ init =
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
-imap-port = ${dovecot-conf:imap-port}
-smtp-port = ${postfix-conf-main:smtp-port}
+imap-port = $${dovecot-conf:imap-port}
+smtp-port = $${postfix-conf-main:smtp-port}
 imap-smtp-ipv6 = {{ ipv6 }}
-webmail-url = ${lamp-frontend-promise:url}
-password-url = ${:webmail-url}/password.php
-slaves = ${dovecot-passwords:new-account-dict}
+webmail-url = $${lamp-frontend-promise:url}
+password-url = $${:webmail-url}/password.php
+slaves = $${dovecot-passwords:new-account-dict}
