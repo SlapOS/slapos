@@ -55,7 +55,6 @@ node-quantity = {{ slapparameter_dict['node-quantity'] }}
 ipv4-address = {{ partition_ipv4 }}
 ipv6-address = {{ partition_ipv6 }}
 test-suite-master-url = {{ slapparameter_dict['test-suite-master-url'] }}
-instance-dict = {{ slapparameter_dict['instance-dict'] }}
 {%- if isinstance(slapparameter_dict['software-path-list'], str) %}
 software-path-list = {{ slapparameter_dict['software-path-list'] }}
 {%- else %}
