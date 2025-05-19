@@ -32,5 +32,3 @@ slapos_binary = %(slapos_binary)s
 PATH = %(PATH)s
 
 %(software_path_list)s
-
-%(instance_dict)s
