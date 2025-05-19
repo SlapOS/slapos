@@ -104,42 +104,49 @@ imap-port = 10143
 context =
   section directory directory
   section dovecot_directory dovecot-directory
-  key dovecot_passwd dovecot-passwords:location
+  key dovecot_passwd dovecot-passwords:target
   raw user_name {{ user_name }}
   raw imap_port ${:imap-port}
   raw postfix_auth ${postfix-directory:spool-private}/auth
   raw postfix_dovecot_lmtp ${postfix-directory:spool-private}/dovecot-lmtp
 
-{%- for slave in slave_instance_list %}
-{%   do slave['parameters'].__setitem__('token', str(uuid_module.uuid4())) %}
-{%- endfor %}
-
 [dovecot-passwords]
 recipe = slapos.recipe.build
-location = ${directory:etc}/dovecot-passwd
+# not using location to avoid Buildout ever deleting it
+target = ${directory:etc}/dovecot-passwd
 init =
+  import uuid
+
   try:
-    with open(options['location']) as fp:
-      options['existing'] = fp.read()
+    with open(options['target'], 'r') as fp:
+      output = list(filter(None, fp.read().splitlines()))
   except:
-    options['existing'] = ""
-install =
-  passwd = options['existing'].splitlines()
-  result = [row for row in passwd if row and not row.endswith(":fail")]
-  existing_users = {row.split(":")[0] for row in result}
+    output = []
+
+  existing_users = {row.split(":")[0] for row in output}
+
+  new_account_dict = {}
 
   for slave in {{ json_module.dumps(slave_instance_list) }}:
-    if slave['parameters']['address'] not in existing_users:
-      result.append(f"{slave['parameters']['address']}:{slave['parameters']['token']}::::::fail")
-      existing_users.add(slave['parameters']['address'])
+    if (addr := slave['parameters']['address']) not in existing_users:
+      token = str(uuid.uuid4())
+      new_account_dict[slave['reference']] = {'address': addr, 'token': token}
+      output.append(f"{addr}:{token}::::::fail")
+      existing_users.add(addr)
+
+  options['new-account-dict'] = new_account_dict
 
   for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
     test_mail = f"testmail@{domain}"
     if test_mail not in existing_users:
-      result.append(f"{test_mail}:MotDePasseEmail::")
+      output.append(f"{test_mail}:MotDePasseEmail::")
 
-  with open(options['location'], 'w') as fp:
-    for row in result:
+  self.output = output
+
+  options['location'] = ''  # we don't care about the part folder existing
+install =
+  with open(options['target'], 'w') as fp:
+    for row in self.output:
       fp.write(f"{row}\n")
 
 [dovecot-wrapper]
@@ -203,7 +210,7 @@ url = {{ postfix_main_template }}
 output = ${postfix-directory:etc}/main.cf
 smtp-port = 10025
 context =
-  key dovecot_passwd dovecot-passwords:location
+  key dovecot_passwd dovecot-passwords:target
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
@@ -378,7 +385,7 @@ recipe = slapos.recipe.template:jinja2
 url = {{ password_php }}
 output = ${directory:www}/password.php
 context =
-  key dovecot_passwd dovecot-passwords:location
+  key dovecot_passwd dovecot-passwords:target
 
 
 # Apache/PHP server
@@ -502,29 +509,18 @@ config-url = ${apache-php-configuration:url}
 # Shared instances (addresses)
 # ----------------------------
 
-{% set shared_publish_section_title_list = [] -%}
-{% for slave_instance in slave_instance_list -%}
-{%   set orig_slave_reference = slave_instance["reference"] -%}
-{%   set slave_reference = orig_slave_reference.replace(' ', '_') -%}
-
-{%   set publish_section_title = 'publish-%s' % slave_reference -%}
-{%   do shared_publish_section_title_list.append(publish_section_title) -%}
-[{{ publish_section_title }}]
-
-recipe = slapos.cookbook:publish
--slave-reference = {{ orig_slave_reference }}
-password-url = "helloworld"
-
-{% endfor -%}
-
 [publish-shared]
 recipe = slapos.recipe.build
+new-account-dict = ${dovecot-passwords:new-account-dict}
 init =
-  ""
-depends =
-{% for publish_section_title in shared_publish_section_title_list -%}
-  {{ "  ${" + publish_section_title + ":recipe}" }}
-{% endfor -%}
+  for ref, content in options['new-account-dict'].items():
+    self.buildout.parse(f"""
+  [publish-{ref}]
+  recipe = slapos.cookbook:publish
+  -slave-reference = {ref}
+  address = {content['address']}
+  token = {content['token']}
+    """)
 
 
 # Publish connection information
@@ -538,8 +534,4 @@ smtp-port = ${postfix-conf-main:smtp-port}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = ${lamp-frontend-promise:url}
 password-url = ${:webmail-url}/password.php
-{% set token_dict = {} -%}
-{% for slave_instance in slave_instance_list -%}
-{%  do token_dict.__setitem__(slave_instance['parameters']["address"], slave_instance['parameters']["token"]) -%}
-{% endfor -%}
-slaves = {{ json_module.dumps(token_dict) }}
+slaves = ${dovecot-passwords:new-account-dict}

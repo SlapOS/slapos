@@ -32,7 +32,6 @@ context =
   raw openssl_location {{ openssl_location }}
   raw logrotate_cfg {{ logrotate_cfg }}
   raw dovecot_conf_template {{ dovecot_conf_template }}
-  raw dovecot_passwd {{ dovecot_passwd }}
   raw dovecot_binary {{ dovecot_binary }}
   raw password_php {{ password_php }}
   raw postfix_main_template {{ postfix_main_template }}
