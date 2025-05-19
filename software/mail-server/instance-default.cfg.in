@@ -107,7 +107,7 @@ install =
   passwd = options['existing'].splitlines()
   result = [row for row in passwd if row and not row.endswith(":fail")]
   existing_users = {row.split(":")[0] for row in result}
-  
+
   for slave in {{ json_module.dumps(slave_instance_list) }}:
     if slave['address'] not in existing_users:
       result.append(f"{slave['address']}:{slave['token']}::::::fail")
@@ -238,7 +238,7 @@ hash-files =
 depends =
   ${postfix-symlinks-libexec:recipe}
 
-[service-postfix-master]
+[postfix-service-master]
 < = base-wrapper
 command-line = ${directory:usr}/libexec/postfix/master -c ${postfix-directory:etc}
 wrapper-path = ${directory:run}/postfix-master
@@ -249,7 +249,7 @@ promise = check_socket_listening
 name = smtp_listen.py
 config-host = {{ ipv6 }}
 config-port = ${postfix-conf-main:smtp-port}
-depends = 
+depends =
   ${postfix-service:recipe}
   ${postfix-service-master:recipe}
   ${postfix-wrappers:depends}
@@ -310,7 +310,7 @@ basename = {{ basename }}
 [postfix-wrappers]
 depends =
 {% for postfix_wrapper in postfix_wrappers -%}
-  ${{{ postfix_wrapper }}:recipe}
+  {{ "  ${" + postfix_wrapper + ":recipe" }}
 {% endfor -%}
 
 # SnappyMail Webmail
