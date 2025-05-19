@@ -1,6 +1,6 @@
 [buildout]
 extends =
-  ${template-default:target}
+  ${monitor2-template:output}
 parts =
   directory
   lamp-frontend-promise
@@ -449,7 +449,7 @@ apache-config-dir = $${directory:apache.d}
 document-root = $${apache-php-configuration:document-root}
 backend-url = $${apache-php-configuration:url}
 php-bin = ${apache-php:location}/bin/php
-php-ini = ${php.ini-conf:output}
+php-ini = $${php.ini-conf:output}
 
 [php.ini-configuration]
 tmp-dir = $${directory:tmp-php}
@@ -467,7 +467,7 @@ extensions = jinja2.ext.do
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:bin}/php
-command-line = $${instance-parameter:php-bin} -c ${php.ini-conf:output}
+command-line = $${instance-parameter:php-bin} -c $${php.ini-conf:output}
 
 [lamp-apache-httpd-conf]
 recipe = slapos.recipe.template:jinja2

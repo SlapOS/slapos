@@ -13,6 +13,7 @@ extensions = jinja2.ext.do
 url = ${template-default:output}
 filename = instance-default.cfg
 context =
+  import json_module json
   key ipv4 slap-configuration:ipv4-random
   key ipv6 slap-configuration:ipv6-random
   key server_fqdn slap-configuration:instance-title
@@ -24,7 +25,7 @@ context =
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.jsonschema
 jsonschema = ${software.cfg.json:target}
-depends = 
+depends =
   ${instance-default-input-schema.json:target}
   ${instance-slave-input-schema.json:target}
 set-default = all
