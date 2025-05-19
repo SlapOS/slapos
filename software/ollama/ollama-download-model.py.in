@@ -18,7 +18,7 @@ logging.basicConfig(
 def ollama_has_model(model_name, env):
     logging.info("In the ollama_has_model")
     try:
-        out = subprocess.check_output(['{{ ollama_instance_location }}/ollama', 'list'], env=env, text=True)
+        out = subprocess.check_output(["{{ ollama_location }}/ollama", "list"], env=env, text=True)
     except subprocess.CalledProcessError as e:
         # if ollama list failed, no model was downloaded
         logging.info("Ollama checkinf failed: {e}")
@@ -85,7 +85,7 @@ def main():
         start_time = time.time()
 
         process = subprocess.Popen(
-            ["{{ ollama_instance_location }}/ollama", 'pull', model_name],
+            ["{{ ollama_location }}/ollama", 'pull', model_name],
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

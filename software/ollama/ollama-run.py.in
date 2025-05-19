@@ -38,7 +38,7 @@ def main():
         logging.info("Run the model")
         try:
             process = subprocess.Popen(
-                ["{{ ollama_instance_location }}/ollama", 'run', model_name],
+                ["{{ ollama_location }}/ollama", 'run', model_name],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

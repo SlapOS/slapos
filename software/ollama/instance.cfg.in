@@ -8,7 +8,6 @@ extends =
 parts =
   directory
   monitor-base
-  ollama-instance
   ollama-download-model-script
   ollama-run-script
   ollama-model-download-source-config
@@ -17,7 +16,6 @@ parts =
   ollama-model-download-processed-config-promise
   ollama-service
   ollama-run-model-service
-  request-frontend
   ollama-frontend-promise
   publish-connection-parameter
 
@@ -56,7 +54,7 @@ mode = 0755
 context =
   key directory_log directory:log
   key directory_models directory:models
-  key ollama_instance_location ollama-instance:location
+  raw ollama_location {{ ollama_path }}
 
 [ollama-run-script]
 recipe = slapos.recipe.template:jinja2
@@ -66,7 +64,7 @@ mode = 0755
 context =
   key directory_log directory:log
   key config_file ollama-model-download-source-config:output
-  key ollama_instance_location ollama-instance:location
+  raw ollama_location {{ ollama_path }}
 
 [empty-file-state-base-promise]
 <= monitor-promise-base
@@ -140,25 +138,9 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 filename = ${ollama-model-download-processed-config:state-filename}
 config-filename = ${ollama-model-download-processed-config:state-file}
 
-[ollama-instance]
-recipe = plone.recipe.command
-pre-command =
-  if pgrep -f "ollama serve"; then
-    echo "Stopping Ollama service..."
-    pkill -f "ollama serve" || true
-    rm {{ ollama_path }}/ollama
-    sleep 2
-  fi
-command =
-  mkdir -p ${directory:bin}
-  cp {{ ollama_path }}/ollama ${directory:bin}/
-update-command = ${:command}
-stop-on-error = true
-location = ${directory:bin}
-
 [ollama-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${ollama-instance:location}/ollama serve
+command-line = {{ ollama_path }}/ollama serve
 wrapper-path = ${directory:services}/ollama-service
 environment =
   PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:%(PATH)s
@@ -166,6 +148,7 @@ environment =
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
   OLLAMA_LLM_LIBRARY=cpu_avx2
+  OLLAMA_HOST=:11434
 
 [ollama-run-model-service]
 recipe = slapos.cookbook:wrapper
@@ -174,23 +157,15 @@ wrapper-path = ${directory:services}/ollama-run-model-service
 environment =
   OLLAMA_MODELS=${directory:models}
   CUDA_VISIBLE_DEVICES=-1
-  OLLAMA_HOST=0.0.0.0:11434
 config-file = ${ollama-model-download-source-config:output}
 depends =
   ${ollama-model-download-processed-config-promise:recipe}
-  ${ollama-instance:recipe}
   ${ollama-model-download-wrapper:recipe}
 
 [request-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
+<= monitor-frontend
 name = Ollama Frontend
-# Standard Apache frontend software URL
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-software-type = default
-shared = true
-config-url = http://${slap-configuration:ipv4-random}:11434
-return = secure_access domai
+config-url = http://[${slap-configuration:ipv6-random}]:11434
 
 [ollama-frontend-promise]
 <= monitor-promise-base
@@ -202,7 +177,7 @@ config-url = ${:url}
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = ${request-frontend:connection-secure_access}
-ollama-url = http://${slap-configuration:ipv4-random}:11434
+backend-url = http://[${slap-configuration:ipv6-random}]:11434
 model = ${slap-configuration:model}
 model-download-log = ${directory:log}/ollama-model-download.log
 service-log = ${directory:log}/ollama-service.log
