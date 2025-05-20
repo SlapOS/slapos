@@ -12,25 +12,19 @@ extends = ${monitor2-template:output}
 parts =
   testnode-service
   certificate-authority
-  ca-shellinabox
   ca-httpd-testnode
   monitor-base
   monitor-publish
   testnode-frontend
   resiliency-exclude-file
-  shellinabox-frontend-reload
   promises
   testnode-compatibility
 
 [monitor-publish]
 recipe = slapos.cookbook:publish
-url = $${shellinabox-frontend:url}
 frontend-url = $${testnode-frontend:connection-secure_access}
 log-frontend-url = $${testnode-log-frontend:connection-secure_access}
 
-[pwgen]
-recipe = slapos.cookbook:generate.password
-storage-path = $${buildout:directory}/.password
 
 [testnode]
 recipe = slapos.cookbook:erp5testnode
@@ -98,86 +92,6 @@ hash-files =
   $${testnode:wrapper}
   $${testnode:configuration-file}
 
-[shell-environment]
-shell = ${bash:location}/bin/bash
-
-[shellinabox]
-recipe = slapos.recipe.template
-# We cannot use slapos.cookbook:wrapper here because this recipe escapes too much
-socket = $${directory:run}/siab.sock
-output = $${basedirectory:services}/shellinaboxd
-inline =
-  #!/bin/sh
-  exec ${shellinabox:location}/bin/shellinaboxd \
-    --unixdomain-only=$${:socket}:$(id -u):$(id -g):0600 \
-    --service "/:$(id -u):$(id -g):HOME:$${shell-environment:shell} -l"
-
-[shellinabox-frontend-certificate]
-recipe = plone.recipe.command
-command =
-  if [ ! -e $${:cert-file} ]
-  then
-    ${openssl-output:openssl} req -x509 -nodes -sha256 -days 3650 \
-      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
-      -newkey rsa -keyout $${:cert-file} \
-      -out $${:cert-file}
-  fi
-update-command = $${:command}
-cert-file = $${directory:var}/$${:_buildout_section_name_}.pem
-common-name = $${:ipv6}
-location =
-  $${:cert-file}
-ipv6 = {{ partition_ipv6 }}
-
-[shellinabox-frontend-config]
-recipe = slapos.recipe.template:jinja2
-url = ${stack-haproxy-default-backend-config:target}
-output = $${directory:etc}/$${:_buildout_section_name_}
-context =
-  key pidfile :pidfile
-  key content :content
-pidfile = $${:pidfile}
-content =
-  userlist auth
-    user $${:username} insecure-password $${:passwd}
-
-  listen app
-    log global
-    acl auth_ok http_auth(auth)
-    http-request auth realm "Test Node $${testnode:test-node-title}" unless auth_ok
-    bind $${:ipv6}:$${:port} ssl crt $${shellinabox-frontend-certificate:cert-file} alpn h2,http/1.1
-    server app unix@$${shellinabox:socket}
-
-ipv6 = $${shellinabox-frontend-certificate:ipv6}
-hostname = [$${:ipv6}]
-port = 8080
-username = testnode
-passwd = $${pwgen:passwd}
-cert-file = $${directory:shellinabox}/public.crt
-key-file = $${directory:shellinabox}/private.key
-backend-url = https://$${:username}:$${:passwd}@$${:hostname}:$${:port}
-pidfile = $${basedirectory:run}/shellinabox-haproxy.pid
-
-[shellinabox-frontend]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${rootdirectory:bin}/$${:_buildout_section_name_}
-command-line =
-  ${haproxy:location}/sbin/haproxy -f $${shellinabox-frontend-config:output}
-url =  $${shellinabox-frontend-config:backend-url}
-hostname = $${shellinabox-frontend-config:ipv6}
-port = $${shellinabox-frontend-config:port}
-pidfile = $${shellinabox-frontend-config:pidfile}
-
-[shellinabox-frontend-reload]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${basedirectory:services}/$${:_buildout_section_name_}
-command-line =
-  ${bash:location}/bin/bash -c
-  "kill -s USR2 $$(${coreutils:location}/bin/cat $${shellinabox-frontend:pidfile}) \
-    && ${coreutils:location}/bin/sleep infinity"
-hash-files =
-  $${shellinabox-frontend-config:output}
-  $${shellinabox-frontend:wrapper-path}
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -197,14 +111,6 @@ private = $${directory:ca-dir}/private/
 certs = $${directory:ca-dir}/certs/
 newcerts = $${directory:ca-dir}/newcerts/
 crl = $${directory:ca-dir}/crl/
-
-[ca-shellinabox]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-executable = $${shellinabox-frontend:wrapper-path}
-wrapper = $${basedirectory:services}/shellinabox-frontend
-key-file = $${shellinabox-frontend-config:key-file}
-cert-file = $${shellinabox-frontend-config:cert-file}
 
 [ca-httpd-testnode]
 <= certificate-authority
@@ -237,7 +143,6 @@ test-suite = $${rootdirectory:srv}/test_suite
 log = $${basedirectory:log}/testnode
 run = $${basedirectory:run}/testnode
 software = $${rootdirectory:srv}/software
-shellinabox = $${rootdirectory:srv}/shellinabox
 ca-dir = $${rootdirectory:srv}/ca
 
 [testnode-compatibility]
@@ -279,24 +184,7 @@ config-url = https://[$${testnode:httpd-ip}]:$${testnode:httpd-port}
 [promises]
 recipe =
 instance-promises =
-  $${shellinabox-frontend-listen-promise:name}
-# $${shellinabox-frontend-available-promise:name}
   $${testnode-log-frontend-promise:name}
-
-[shellinabox-frontend-listen-promise]
-<= monitor-promise-base
-promise = check_socket_listening
-name = $${:_buildout_section_name_}.py
-config-host = $${shellinabox-frontend:hostname}
-config-port = $${shellinabox-frontend:port}
-
-[shellinabox-frontend-available-promise]
-<= monitor-promise-base
-module = check_url_available
-name = $${:_buildout_section_name_}.py
-config-url = https://$${shellinabox-frontend-config:hostname}:$${shellinabox-frontend-config:port}
-config-username = $${shellinabox-frontend-config:username}
-config-password = $${shellinabox-frontend-config:passwd}
 
 [testnode-log-frontend-promise]
 <= monitor-promise-base
