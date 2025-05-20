@@ -59,7 +59,7 @@ class TheiaImport(object):
     self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
-    configp = configparser.SafeConfigParser()
+    configp = configparser.ConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
     self.proxy_rest_url = configp.get('slapos', 'master_rest_url') # 200 OK
