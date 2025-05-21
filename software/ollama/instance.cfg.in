@@ -16,6 +16,9 @@ parts =
   ollama-model-download-processed-config-promise
   ollama-service
   ollama-run-model-service
+  nginx-conf
+  nginx-service
+  nginx-frontend-promise
   ollama-frontend-promise
   publish-connection-parameter
 
@@ -162,10 +165,39 @@ depends =
   ${ollama-model-download-processed-config-promise:recipe}
   ${ollama-model-download-wrapper:recipe}
 
+[nginx-parameters]
+ipv6 = ${slap-configuration:ipv6-random}
+port = 10007
+pid-file = ${directory:run}/nginx.pid
+config-file = ${directory:etc}/nginx.conf
+access-log = ${directory:httpd-log}/nginx-access.log
+error-log = ${directory:httpd-log}/nginx-error.log
+nginx-mime-types = {{ nginx_location }}/conf/mime.types
+backend-url = http://${slap-configuration:ipv4-random}:11434
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ nginx_conf_in }}
+output = ${nginx-parameters:config-file}
+context =
+    section parameter_dict nginx-parameters
+
+[nginx-service]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv}
+wrapper-path = ${directory:services}/nginx-service
+
+[nginx-frontend-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = nginx-ipv6-port-listening.py
+config-host = ${nginx-parameters:ipv6}
+config-port = ${nginx-parameters:port}
+
 [request-frontend]
 <= monitor-frontend
 name = Ollama Frontend
-config-url = http://[${slap-configuration:ipv6-random}]:11434
+config-url = https://[${nginx-parameters:ipv6}]:${nginx-parameters:port}
 
 [ollama-frontend-promise]
 <= monitor-promise-base
@@ -177,7 +209,7 @@ config-url = ${:url}
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = ${request-frontend:connection-secure_access}
-backend-url = http://[${slap-configuration:ipv6-random}]:11434
+backend-url = http://${slap-configuration:ipv4-random}:11434
 model = ${slap-configuration:model}
 model-download-log = ${directory:log}/ollama-model-download.log
 service-log = ${directory:log}/ollama-service.log
