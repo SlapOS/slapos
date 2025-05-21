@@ -146,13 +146,14 @@ config-filename = ${ollama-model-download-processed-config:state-file}
 recipe = slapos.cookbook:wrapper
 command-line = {{ ollama_path }}/ollama serve
 wrapper-path = ${directory:services}/ollama-service
+ollama-host = ${slap-configuration:ipv4-random}:11434
 environment =
   PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:%(PATH)s
   CC={{ gcc_location }}/bin/gcc
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
   OLLAMA_LLM_LIBRARY=cpu_avx2
-  OLLAMA_HOST=:11434
+  OLLAMA_HOST=${:ollama-host}
 
 [ollama-run-model-service]
 recipe = slapos.cookbook:wrapper
@@ -166,32 +167,15 @@ depends =
   ${ollama-model-download-processed-config-promise:recipe}
   ${ollama-model-download-wrapper:recipe}
 
-[nginx-certificate]
-recipe = plone.recipe.command
-command =
-  if [ ! -e ${:key-file} ]
-  then
-    mkdir -p ${directory:ssl}
-    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
-      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${nginx-parameters:ipv6}" \
-      -newkey rsa -keyout ${:key-file} \
-      -out ${:cert-file}
-  fi
-update-command = ${:command}
-key-file = ${nginx-parameters:ssl-key}
-cert-file = ${nginx-parameters:ssl-certificate}
-common-name = ${nginx-parameters:ipv6}
-stop-on-error = true
-
 [nginx-parameters]
 ipv6 = ${slap-configuration:ipv6-random}
-port = 11434
+port = 4443
 pid-file = ${directory:run}/nginx.pid
 config-file = ${directory:etc}/nginx.conf
 access-log = ${directory:httpd-log}/nginx-access.log
 error-log = ${directory:httpd-log}/nginx-error.log
 nginx-mime-types = {{ nginx_location }}/conf/mime.types
-backend-url = http://${slap-configuration:ipv4-random}:11434
+backend-url = http://${ollama-service:ollama-host}
 ssl-certificate = ${directory:etc}/ssl/nginx.crt
 ssl-key = ${directory:etc}/ssl/nginx.key
 
@@ -204,7 +188,7 @@ context =
 
 [nginx-service]
 recipe = slapos.cookbook:wrapper
-command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv}
+command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv} -g "error_log ${directory:log}/nginx-startup.log debug;"
 wrapper-path = ${directory:services}/nginx-service
 wait-for-files =
   ${nginx-parameters:ssl-certificate}
@@ -232,7 +216,8 @@ config-url = ${:url}
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = ${request-frontend:connection-secure_access}
-backend-url = http://${slap-configuration:ipv4-random}:11434
+ipv4_url = ${nginx-parameters:backend-url}
+backend-url = ${request-frontend:config-url}
 model = ${slap-configuration:model}
 model-download-log = ${directory:log}/ollama-model-download.log
 service-log = ${directory:log}/ollama-service.log
