@@ -48,6 +48,7 @@ status = ${:var}/status
 ollama-model-download-expose = ${monitor-directory:private}/ollama-model-download
 www = ${:srv}/www
 httpd-log = ${:var}/log/apache
+ssl = ${:etc}/ssl
 
 [ollama-download-model-script]
 recipe = slapos.recipe.template:jinja2
@@ -165,15 +166,34 @@ depends =
   ${ollama-model-download-processed-config-promise:recipe}
   ${ollama-model-download-wrapper:recipe}
 
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    mkdir -p ${directory:ssl}
+    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${nginx-parameters:ipv6}" \
+      -newkey rsa -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${nginx-parameters:ssl-key}
+cert-file = ${nginx-parameters:ssl-certificate}
+common-name = ${nginx-parameters:ipv6}
+stop-on-error = true
+
 [nginx-parameters]
 ipv6 = ${slap-configuration:ipv6-random}
-port = 10007
+port = 11434
 pid-file = ${directory:run}/nginx.pid
 config-file = ${directory:etc}/nginx.conf
 access-log = ${directory:httpd-log}/nginx-access.log
 error-log = ${directory:httpd-log}/nginx-error.log
 nginx-mime-types = {{ nginx_location }}/conf/mime.types
 backend-url = http://${slap-configuration:ipv4-random}:11434
+ssl-certificate = ${directory:etc}/ssl/nginx.crt
+ssl-key = ${directory:etc}/ssl/nginx.key
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
@@ -186,6 +206,9 @@ context =
 recipe = slapos.cookbook:wrapper
 command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv}
 wrapper-path = ${directory:services}/nginx-service
+wait-for-files =
+  ${nginx-parameters:ssl-certificate}
+  ${nginx-parameters:ssl-key}
 
 [nginx-frontend-promise]
 <= monitor-promise-base

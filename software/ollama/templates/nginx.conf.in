@@ -1,24 +1,26 @@
-daemon off;
-worker_processes auto;
 pid {{ parameter_dict['pid-file'] }};
 error_log {{ parameter_dict['error-log'] }};
+
+daemon off;
 
 events {
   worker_connections 1024;
 }
 
 http {
+  access_log {{ parameter_dict['access-log'] }};
+
   include {{ parameter_dict['nginx-mime-types'] }};
   default_type application/octet-stream;
 
-  access_log {{ parameter_dict['access-log'] }};
-
-  sendfile on;
-  keepalive_timeout 65;
-
   server {
-    listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }};
+    listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }} ssl;
 
+    # SSL config
+    ssl_certificate {{ parameter_dict['ssl-certificate'] }};
+    ssl_certificate_key {{ parameter_dict['ssl-key'] }};
+
+    # proxy config
     location / {
       proxy_pass {{ parameter_dict['backend-url'] }};
       proxy_set_header Host $host;
