@@ -1,0 +1,30 @@
+daemon off;
+worker_processes auto;
+pid {{ parameter_dict['pid-file'] }};
+error_log {{ parameter_dict['error-log'] }};
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  include {{ parameter_dict['nginx-mime-types'] }};
+  default_type application/octet-stream;
+
+  access_log {{ parameter_dict['access-log'] }};
+
+  sendfile on;
+  keepalive_timeout 65;
+
+  server {
+    listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }};
+
+    location / {
+      proxy_pass {{ parameter_dict['backend-url'] }};
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+    }
+  }
+}
