@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "$ref": "instance-ors-gnb-input-schema.json#/properties",
+    "nr_bandwidth_sdr1": {
+      "title": "2nd Cell Bandwidth",
+      "$ref": "cell/nr/input-schema.json#/properties/bandwidth"
+    },
+    "dl_frequency_sdr1": {
+      "title": "2nd Cell DL Frequency",
+      "description": "Downlink frequency of the cell",
+      "type": "number"
+    },
+    "nr_band_sdr1": {
+      "title": "2nd Cell NR band",
+      "$ref": "cell/nr/input-schema.json#/properties/nr_band"
+    },
+    "dl_nr_arfcn_sdr1": {
+      "title": "2nd Cell DL NR ARFCN",
+      "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
+      "description": "Downlink NR Absolute Radio Frequency Channel Number of the cell. If not set, value in DL Frequency will be used."
+    },
+    "ssb_nr_arfcn_sdr1": {
+      "title": "2nd Cell SSB NR ARFCN",
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
+    },
+    "ssb_pos_bitmap_sdr1": {
+      "title": "2nd Cell SSB Position Bitmap",
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
+      "default": "10000000"
+    },
+    "pci_sdr1": {
+      "title": "2nd Cell Physical Cell ID",
+      "$ref": "cell/common.json#/properties/pci"
+    },
+    "cell_id_sdr1": {
+      "title": "2nd Cell Cell ID",
+      "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
+    },
+    "root_sequence_index_sdr1": {
+      "title": "2nd Cell Root Sequence Index",
+      "$ref": "cell/nr/input-schema.json#/properties/root_sequence_index"
+    }
+  }
+}
