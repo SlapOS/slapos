@@ -39,17 +39,6 @@ class Recipe(GenericBaseRecipe):
     CONFIG = {k.replace('-', '_'): v for k, v in options.items()}
     CONFIG['PATH'] = os.environ['PATH']
 
-    if self.options['instance-dict']:
-      config_instance_dict = configparser.ConfigParser()
-      config_instance_dict.add_section('instance_dict')
-      instance_dict = json.loads(self.options['instance-dict'])
-
-      for k ,v in instance_dict.items():
-        config_instance_dict.set('instance_dict', k, v)
-      value = io.StringIO()
-      config_instance_dict.write(value)
-      CONFIG['instance_dict'] = value.getvalue()
-
     software_path_list = json.loads(self.options['software-path-list'])
     CONFIG["software_path_list"] = ""
     if software_path_list:
@@ -59,6 +48,7 @@ class Recipe(GenericBaseRecipe):
     CONFIG['computer_id'] = self.buildout['slap-connection']['computer-id']
     CONFIG['server_url'] = self.buildout['slap-connection']['server-url']
     CONFIG['shared_part_list'] = CONFIG['shared_part_list'].replace('\n', '\n  ')
+
     configuration_file = self.createFile(
       self.options['configuration-file'],
       self.substituteTemplate(
