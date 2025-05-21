@@ -1,0 +1,40 @@
+{
+  "name": "Simpleran",
+  "description": "4G and 5G amarisoft stack for ORS DUO",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "gnb": {
+      "title": "gNB",
+      "software-type": "gnb",
+      "description": "gNodeB Configuration",
+      "request": "instance-ors-duo-gnb-input-schema.json",
+      "response": "instance-ors-gnb-schema.json",
+      "index": 1
+    },
+    "enb": {
+      "title": "eNB",
+      "software-type": "enb",
+      "description": "eNodeB Configuration",
+      "request": "instance-ors-duo-enb-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
+      "index": 2
+    },
+    "core-network": {
+      "title": "Core Network",
+      "software-type": "core-network",
+      "description": "Core Network Configuration",
+      "request": "instance-core-network-input-schema.json",
+      "response": "instance-core-network-schema.json",
+      "index": 3
+    },
+    "core-network-slave": {
+      "title": "Core Network Sim Card",
+      "description": "Core Network Sim Card Configuration",
+      "software-type": "core-network",
+      "request": "sim/input-schema.json",
+      "response": "sim/schema.json",
+      "shared": true,
+      "index": 4
+    }
+  }
+}
