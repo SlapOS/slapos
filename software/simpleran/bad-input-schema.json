@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "$ref": "instance-ors-common-input-schema.json#/properties",
+    "$ref": "bad-common-input-schema.json#/properties",
     "ssb_nr_arfcn_sdr1": {
       "title": "2nd Cell SSB NR ARFCN",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"

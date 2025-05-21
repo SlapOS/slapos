@@ -27,12 +27,7 @@
         "5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)",
         "5ms 6UL 3DL 10/2 (high uplink)"
       ],
-      "default": "5ms 2UL 7DL 4/6 (default)",
-      "options": {
-        "dependencies": {
-          "rf_mode": "tdd"
-        }
-      }
+      "default": "5ms 2UL 7DL 4/6 (default)"
     },
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
