@@ -14,7 +14,7 @@ global
 defaults
   mode http
   log global
-  log-format "%{+E}o {{ '{' }}%b{{ '}' }} %ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq!!!%ci - %[capture.req.hdr(0)] [%trl] \"%HM %[capture.req.uri] %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
+  log-format "%{+E}o {{ '{' }}%b{{ '}' }} %ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %ci - %[capture.req.hdr(0)] [%trl] \"%HM %[capture.req.uri] %HV\" %ST %B \"%[capture.req.hdr(1)]\" \"%[capture.req.hdr(2)]\" %Ta"
   timeout queue 60s
   timeout server {{ configuration['request-timeout'] }}s
   timeout client {{ configuration['request-timeout'] }}s
