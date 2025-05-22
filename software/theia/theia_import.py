@@ -59,7 +59,7 @@ class TheiaImport(object):
     self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
-    configp = configparser.SafeConfigParser()
+    configp = configparser.ConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
     self.proxy_rest_url = configp.get('slapos', 'master_rest_url') # 200 OK
@@ -191,7 +191,6 @@ class TheiaImport(object):
     self.logs.append(msg)
 
   def __call__(self):
-    remove(self.error_file)
     exitcode = 0
     try:
       self.restore()
@@ -205,6 +204,11 @@ class TheiaImport(object):
         f.write('\n ... ERROR !\n\n')
         f.write(exc)
       print('\n\nERROR\n\n' + exc)
+    else:
+      with open(self.error_file, 'w') as f:
+        f.write('\n ... OK\n\n'.join(self.logs))
+        f.write('\n ... OK !\n\n')
+        f.write('SUCCESS')
     finally:
       with open(self.exit_file, 'w') as f:
         f.write(str(exitcode))
