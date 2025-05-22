@@ -4,8 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
-      "default": 40
+      "$ref": "cell/nr/input-schema.json#/properties/bandwidth"
     },
     "n_antenna_dl": {
       "$ref": "instance-ors-enb-input-schema.json#/properties/n_antenna_dl"
@@ -45,7 +44,7 @@
       "$ref": "instance-ors-enb-input-schema.json#/properties/cell_id"
     },
     "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index"
+      "$ref": "cell/nr/input-schema.json#/properties/root_sequence_index"
     },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
