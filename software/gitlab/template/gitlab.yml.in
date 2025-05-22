@@ -210,7 +210,7 @@ production: &base
   ## Uploads
   uploads:
     # The location where uploads objects are stored (default: public/).
-    storage_path: "{{ gitlab.var }}"
+    # storage_path: "{{ gitlab.var }}"
     # The location where uploads objects are stored (default: public/).
     # storage_path: public/
     # base_dir: uploads/-/system
@@ -451,7 +451,7 @@ production: &base
   # Gitaly settings
   gitaly:
     # Path to the directory containing Gitaly client executables.
-    client_path: {{ gitaly.location }}
+    # client_path: {{ gitaly.location }}
     # Default Gitaly authentication token. Can be overridden per storage. Can
     # be left blank when Gitaly is running locally on a Unix socket, which
     # is the normal way to deploy Gitaly.
@@ -500,8 +500,10 @@ production: &base
     path: {{ gitlab_shell_work.location }}
     authorized_keys_file: {{ gitlab.var }}/sshkeys-notused
 
-    repos_path: {{ gitlab.repositories }}
+    # File that contains the secret key for verifying access for gitlab-shell.
+    # Default is '.gitlab_shell_secret' relative to Rails.root (i.e. root of the GitLab app).
     secret_file: {{ gitlab_shell.secret }}
+
 
     # Git over HTTP
     upload_pack: true
@@ -522,6 +524,7 @@ production: &base
 
   workhorse:
     # File that contains the secret key for verifying access for gitlab-workhorse.
+    # Default is '.gitlab_workhorse_secret' relative to Rails.root (i.e. root of the GitLab app).
     secret_file: {{ gitlab_workhorse.secret }}
 
 
