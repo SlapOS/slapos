@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Values returned by Wendelin Telecom",
+  "type": "object",
+  "properties": {
+    "slave-amount": {
+      "description": "Amount of slaves attached to this instance",
+      "type": "number"
+    }
+  }
+}
