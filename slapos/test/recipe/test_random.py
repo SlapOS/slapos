@@ -127,6 +127,8 @@ class TestPassword(unittest.TestCase):
       passlib.hash.md5_crypt.verify(
         self.buildout['random']['passwd'], hashed))
 
+    # note: bcrypt passwords are only availabe if bcrypt python
+    # package is installed. The dependency is optional.
     hashed = self.buildout['random']['passwd-bcrypt']
     self.assertTrue(
       passlib.hash.bcrypt.verify(

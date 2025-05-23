@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.408'
+version = '1.0.408.dev0'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -37,12 +37,17 @@ for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
 
 extras_require = {
     'test': (
+        'bcrypt',
         'jsonschema',
         'mock',
         'psycopg2',
         'testfixtures',
         'requests',
     ),
+    # for bcrypt encoded passwords with slapos.cookbook:generate.password
+    'bcrypt': (
+        'bcrypt',
+    )
 }
 
 setup(name=name,
@@ -72,7 +77,6 @@ setup(name=name,
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
         'passlib',
-        'bcrypt',
         ],
       zip_safe=True,
       entry_points={
