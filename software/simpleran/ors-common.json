@@ -3,10 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "rf_mode": {
-      "$ref": "cell/common.json#/properties/rf_mode",
-      "default": "tdd"
-    },
     "n_antenna_dl": {
       "$ref": "ru/common.json#/properties/n_antenna_dl",
       "enum": [
@@ -198,9 +194,9 @@
     "xlog_fluentbit_forward_shared_key": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key"
     },
-    "sdr100_offset": {
-      "title": "Expert: SDR100 Offset",
-      "description": "Expert only. Offset to SDR100 board, for fine tuning the initial reference signal power value. Default is -54 for ORS 2x1W and -35 for ORS 2x0.5W",
+    "tx_power_offset": {
+      "title": "Expert: TX Power Offset",
+      "description": "Expert only. Offset between Amarisoft SDR50 board power and ORS power. For fine tuning the reference signal power value. Default depends on ORS frequency, please refer to the connection parameters",
       "type": "number"
     }
   }
