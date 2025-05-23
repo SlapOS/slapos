@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by ERP5 instantiation",
+  "description": "Values returned by Wendelin instantiation",
   "additionalProperties": false,
   "properties": {
     "hosts-dict": {
