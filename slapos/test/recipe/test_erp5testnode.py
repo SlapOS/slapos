@@ -42,6 +42,7 @@ class UserInfoTest(unittest.TestCase):
         'instance-dict': '',
         'ipv4-address': '127.0.0.1',
         'ipv6-address': '::1',
+        'ipv6-range': '::1/128',
         'keep-log-days': '3',
         'log-directory': 'var/log/testnode',
         'log-file': 'var/log/erp5testnode.log',
