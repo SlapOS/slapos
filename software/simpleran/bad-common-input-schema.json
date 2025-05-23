@@ -3,19 +3,9 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "xn_peers": {
-      "title": "XN Peers",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "xn_addr": {
-              "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
+    "local_domain": {
+      "title": "Local Domain",
+      "type": "string"
     }
   }
 }
