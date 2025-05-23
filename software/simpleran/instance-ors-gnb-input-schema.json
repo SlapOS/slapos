@@ -3,75 +3,72 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "$ref": "ors-common-gnb.json#/properties",
-    "rf_mode": {
-      "$ref": "ors-common-gnb.json#/properties/rf_mode"
-    },
+    "$ref": "ors-gnb-common.json#/properties",
     "n_antenna_dl": {
-      "$ref": "ors-common-gnb.json#/properties/n_antenna_dl"
+      "$ref": "ors-gnb-common.json#/properties/n_antenna_dl"
     },
     "n_antenna_ul": {
-      "$ref": "ors-common-gnb.json#/properties/n_antenna_ul"
+      "$ref": "ors-gnb-common.json#/properties/n_antenna_ul"
     },
     "gps_sync": {
-      "$ref": "ors-common-gnb.json#/properties/gps_sync"
+      "$ref": "ors-gnb-common.json#/properties/gps_sync"
     },
     "tx_power_dbm": {
-      "$ref": "ors-common-gnb.json#/properties/tx_power_dbm"
+      "$ref": "ors-gnb-common.json#/properties/tx_power_dbm"
     },
     "tx_gain": {
-      "$ref": "ors-common-gnb.json#/properties/tx_gain"
+      "$ref": "ors-gnb-common.json#/properties/tx_gain"
     },
     "rx_gain": {
-      "$ref": "ors-common-gnb.json#/properties/rx_gain"
+      "$ref": "ors-gnb-common.json#/properties/rx_gain"
     },
     "nr_band": {
-      "$ref": "ors-common-gnb.json#/properties/nr_band"
+      "$ref": "ors-gnb-common.json#/properties/nr_band"
     },
     "dl_frequency": {
-      "$ref": "ors-common-gnb.json#/properties/dl_frequency"
+      "$ref": "ors-gnb-common.json#/properties/dl_frequency"
     },
     "dl_nr_arfcn": {
-      "$ref": "ors-common-gnb.json#/properties/dl_nr_arfcn"
+      "$ref": "ors-gnb-common.json#/properties/dl_nr_arfcn"
     },
     "ssb_nr_arfcn": {
-      "$ref": "ors-common-gnb.json#/properties/ssb_nr_arfcn"
+      "$ref": "ors-gnb-common.json#/properties/ssb_nr_arfcn"
     },
     "ssb_pos_bitmap": {
-      "$ref": "ors-common-gnb.json#/properties/ssb_pos_bitmap"
+      "$ref": "ors-gnb-common.json#/properties/ssb_pos_bitmap"
     },
     "nr_bandwidth": {
-      "$ref": "ors-common-gnb.json#/properties/nr_bandwidth"
+      "$ref": "ors-gnb-common.json#/properties/nr_bandwidth"
     },
     "tdd_ul_dl_config": {
-      "$ref": "ors-common-gnb.json#/properties/tdd_ul_dl_config"
+      "$ref": "ors-gnb-common.json#/properties/tdd_ul_dl_config"
     },
     "use_ipv4": {
-      "$ref": "ors-common-gnb.json#/properties/use_ipv4"
+      "$ref": "ors-gnb-common.json#/properties/use_ipv4"
     },
     "amf_list": {
-      "$ref": "ors-common-gnb.json#/properties/amf_list"
+      "$ref": "ors-gnb-common.json#/properties/amf_list"
     },
     "plmn_list": {
-      "$ref": "ors-common-gnb.json#/properties/plmn_list"
+      "$ref": "ors-gnb-common.json#/properties/plmn_list"
     },
     "pci": {
-      "$ref": "ors-common-gnb.json#/properties/pci"
+      "$ref": "ors-gnb-common.json#/properties/pci"
     },
     "cell_id": {
-      "$ref": "ors-common-gnb.json#/properties/cell_id"
+      "$ref": "ors-gnb-common.json#/properties/cell_id"
     },
     "gnb_id": {
-      "$ref": "ors-common-gnb.json#/properties/gnb_id"
+      "$ref": "ors-gnb-common.json#/properties/gnb_id"
     },
     "gnb_id_bits": {
-      "$ref": "ors-common-gnb.json#/properties/gnb_id_bits"
+      "$ref": "ors-gnb-common.json#/properties/gnb_id_bits"
     },
     "root_sequence_index": {
-      "$ref": "ors-common-gnb.json#/properties/root_sequence_index"
+      "$ref": "ors-gnb-common.json#/properties/root_sequence_index"
     },
     "ncell_list": {
-      "$ref": "ors-common-gnb.json#/properties/ncell_list"
+      "$ref": "ors-gnb-common.json#/properties/ncell_list"
     }
   }
 }
