@@ -3,15 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "ncell_list": {
-      "title": "Neighbour Cell Info",
-      "patternProperties": {
-        ".*": {
-          "$ref": "peer/cell/input-schema.json"
-        }
-      },
-      "type": "object"
-    },
     "xn_peers": {
       "title": "XN Peers",
       "patternProperties": {
@@ -22,6 +13,15 @@
             }
           },
           "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "ncell_list": {
+      "title": "Neighbour Cell Info",
+      "patternProperties": {
+        ".*": {
+          "$ref": "peer/cell/input-schema.json"
         }
       },
       "type": "object"
