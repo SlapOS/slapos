@@ -250,7 +250,7 @@ update =
     rmtree(old_testnode_path)
 
 [resiliency-exclude-file]
-# Generate rdiff exclude file in case of resiliency
+# Generate rsync exclude file in case of resiliency
 recipe = collective.recipe.template
 input = inline: **
 output = $${directory:srv}/exporter.exclude
