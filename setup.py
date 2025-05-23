@@ -37,6 +37,7 @@ for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
 
 extras_require = {
     'test': (
+        'bcrypt',
         'jsonschema',
         'mock',
         'psycopg2',
@@ -72,7 +73,6 @@ setup(name=name,
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
         'passlib',
-        'bcrypt',
         ],
       zip_safe=True,
       entry_points={
