@@ -5,18 +5,15 @@
   "properties": {
     "ncell_list": {
       "title": "Neighbour Cell Info",
-      "description": "Neighbour Cell Info",
       "patternProperties": {
         ".*": {
           "$ref": "peer/cell/input-schema.json"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "xn_peers": {
       "title": "XN Peers",
-      "description": "XN Peers",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -27,8 +24,7 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     }
   }
 }

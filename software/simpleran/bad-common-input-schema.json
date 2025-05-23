@@ -5,7 +5,6 @@
   "properties": {
     "xn_peers": {
       "title": "XN Peers",
-      "description": "XN Peers",
       "patternProperties": {
         ".*": {
           "properties": {
@@ -16,8 +15,7 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     }
   }
 }
