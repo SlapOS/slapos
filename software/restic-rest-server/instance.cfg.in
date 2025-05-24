@@ -147,7 +147,24 @@ caucase.caucased(
 
 [rest-server-password]
 recipe = slapos.cookbook:generate.password
+depends = ${rest-server-password-bcrypt:init}
 user = backup
+
+[rest-server-password-bcrypt]
+# XXX makes `bcrypt` available for slapos.cookbook:generate.password
+recipe = slapos.recipe.build
+init =
+  import zc.buildout
+  import pkg_resources
+
+  buildout_options = self.buildout["buildout"]
+  zc.buildout.easy_install.install(
+    ["bcrypt"],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[
+      buildout_options["develop-eggs-directory"],
+      buildout_options["eggs-directory"]])
 
 [rest-server-htpassword]
 recipe = slapos.recipe.template
