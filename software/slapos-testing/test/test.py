@@ -27,54 +27,27 @@
 
 import os
 
-from slapos.testing.testcase import (
-    makeModuleSetUpAndTestCaseClass,
-    installSoftwareUrlList,
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
+
+SOFTWARE_TOGGLE =  {
+  'slapos-testing' + v : 'software%s.cfg' % v
+  for v in ('', '-py3next', '-py2')
+}
+
+software_name = os.environ.get('SLAPOS_SR_TEST_NAME')
+software_file = SOFTWARE_TOGGLE.get(software_name) or 'software.cfg'
+
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+  os.path.join(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
+    software_file,
   )
-
-parent_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-software_files =  ['software%s.cfg' % v for v in ('', '-py3next', '-py2')]
-
-software_urls = [os.path.join(parent_folder, name) for name in software_files]
-
-_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-  parent_folder + '/{' + '|'.join(software_files) + '}' # used only for display
 )
 
-def setUpModule():
-  # Supply every version of the software.
-  installSoftwareUrlList(
-    SlapOSInstanceTestCase,
-    software_urls,
-    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
-  )
 
 class SlaposTestingTestCase(SlapOSInstanceTestCase):
-  @classmethod
-  def requestDefaultInstance(cls, state='started'):
-    # This method is called for requesting and destroying (state='destroyed').
-    for name, url in zip(software_files, software_urls):
-      computer_partition = cls.slap.request(
-        software_release=url,
-        software_type=None, # default
-        partition_reference='Instance_of_' + name,
-        partition_parameter_kw=cls._instance_parameter_dict,
-        state=state,
-      )
-    # one of the requested computer partitions
-    # to satisfy slapos.testing.testcase (slapos.core < 1.13.0)
-    # and to make it call waitForInstance (slapos.core >= 1.13.0).
-    return computer_partition
-
   def test(self):
-    # Just test that each version of the software compiles and instantiates.
-    # Check that all expected instances have been requested.
-    cp = self.slap.computer.getComputerPartitionList()
-    requested = {
-      p.getSoftwareRelease()._software_release: p.getConnectionParameterDict()
-      for p in self.slap.computer.getComputerPartitionList()
-      if p.getState() == 'started'
-    }
-    self.assertEqual(set(requested.keys()), set(software_urls))
-    self.assertTrue(all('environment-script' in d for d in requested.values()))
+    self.assertTrue(
+      self.computer_partition.getConnectionParameterDict()['environment-script'])
