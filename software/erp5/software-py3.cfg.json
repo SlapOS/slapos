@@ -1,0 +1,14 @@
+{
+  "name": "ERP5",
+  "description": "ERP5, Open-Source ERP",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "request": "../wendelin/instance-wendelin-input-schema.json",
+      "response": "../wendelin/instance-wendelin-output-schema.json",
+      "index": 0
+    }
+  }
+}
