@@ -21,7 +21,7 @@ def ollama_has_model(model_name, env):
         out = subprocess.check_output(["{{ ollama_location }}/ollama", "list"], env=env, text=True)
     except subprocess.CalledProcessError as e:
         # if ollama list failed, no model was downloaded
-        logging.info("Ollama checkinf failed: {e}")
+        logging.info(f"Ollama checkinf failed: {e}")
         return False
     # skip the first line, then check the coloumn one
     # NAME                                ID              SIZE      MODIFIED
@@ -60,6 +60,7 @@ def main():
     # Set environment variables
     env = os.environ.copy()
     env['OLLAMA_MODELS'] = models_dir
+    env['OLLAMA_HOST'] = "{{ ollama_host }}"
 
     logging.info(f"Checking {model_name} is exist")
     # Check if the model already downloaded

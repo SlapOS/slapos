@@ -58,6 +58,7 @@ mode = 0755
 context =
   key directory_log directory:log
   key directory_models directory:models
+  key ollama_host ollama-service:ollama-host
   raw ollama_location {{ ollama_path }}
 
 [ollama-run-script]
@@ -148,7 +149,7 @@ command-line = {{ ollama_path }}/ollama serve
 wrapper-path = ${directory:services}/ollama-service
 ollama-host = ${slap-configuration:ipv4-random}:11434
 environment =
-  PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:%(PATH)s
+  PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:$PATH
   CC={{ gcc_location }}/bin/gcc
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
