@@ -52,9 +52,6 @@
     "cell_id": {
       "$ref": "cell/common.json#/properties/cell_id"
     },
-    "root_sequence_index": {
-      "$ref": "cell/lte/input-schema.json#/properties/root_sequence_index"
-    },
     "ncell_list": {
       "title": "Neighbour Cell Info",
       "description": "Neighbour Cell Info",

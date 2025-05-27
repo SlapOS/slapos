@@ -5,7 +5,15 @@
   "properties": {
     "$ref": "ors-common.json#/properties",
     "bandwidth": {
-      "$ref": "cell/lte/input-schema.json#/properties/bandwidth"
+      "$ref": "cell/common.json#/properties/bandwidth",
+      "enum": [
+        1.4,
+        3,
+        5,
+        10,
+        15,
+        20
+      ]
     },
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
@@ -25,6 +33,10 @@
     },
     "enb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/enb_id"
+    },
+    "root_sequence_index": {
+      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "description": "Range: 0 to 837. Set the PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "mme_list": {
       "$ref": "instance-enb-input-schema.json#/properties/mme_list",

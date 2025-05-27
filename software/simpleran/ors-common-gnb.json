@@ -5,7 +5,7 @@
   "properties": {
     "$ref": "ors-common.json#/properties",
     "nr_bandwidth": {
-      "$ref": "cell/nr/input-schema.json#/properties/bandwidth"
+      "$ref": "cell/common.json#/properties/bandwidth"
     },
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
@@ -30,6 +30,10 @@
     "gnb_id_bits": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
       "default": 28
+    },
+    "root_sequence_index": {
+      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
