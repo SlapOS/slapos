@@ -1,0 +1,8 @@
+[buildout]
+parts =
+  directories
+
+[directories]
+recipe = slapos.cookbook:makedirectory
+var = ${buildbot:directory}/var
+etc = ${buildbot:directory}/etc
