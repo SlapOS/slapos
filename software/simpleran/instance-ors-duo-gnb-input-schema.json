@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "$ref": "instance-ors-gnb-input-schema.json#/properties",
+    "nr_bandwidth_sdr1": {"$ref": "ors-common-gnb.json#/properties/nr_bandwidth",
+      "title": "2nd Cell Bandwidth"
+    },
+    "dl_frequency_sdr1": {"$ref": "ors-common-gnb.json#/properties/dl_frequency",
+      "title": "2nd Cell DL Frequency"
+    },
+    "nr_band_sdr1": {"$ref": "ors-common-gnb.json#/properties/nr_band",
+      "title": "2nd Cell NR band"
+    },
+    "dl_nr_arfcn_sdr1": {"$ref": "ors-common-gnb.json#/properties/dl_nr_arfcn",
+      "title": "2nd Cell DL NR ARFCN"
+    },
+    "ssb_nr_arfcn_sdr1": {"$ref": "ors-common-gnb.json#/properties/ssb_nr_arfcn",
+      "title": "2nd Cell SSB NR ARFCN"
+    },
+    "ssb_pos_bitmap_sdr1": {"$ref": "ors-common-gnb.json#/properties/ssb_pos_bitmap",
+      "title": "2nd Cell SSB Position Bitmap"
+    },
+    "pci_sdr1": {"$ref": "ors-common-gnb.json#/properties/pci",
+      "title": "2nd Cell Physical Cell ID",
+      "description": "Physical Cell ID. Range 0 to 503. Equal to (ORS Serial number + 504) modulo 1008 by default"
+    },
+    "cell_id_sdr1": {"$ref": "ors-common-gnb.json#/properties/cell_id",
+      "title": "2nd Cell Cell ID",
+      "description": "Cell ID. Equal to (ORS Serial number + 128) modulo 256 by default"
+    },
+    "root_sequence_index_sdr1": {"$ref": "ors-common-gnb.json#/properties/root_sequence_index",
+      "title": "2nd Cell Root Sequence Index",
+      "description": "Range: 0 to 137. Equal to (ORS serial number + 79) modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
+    }
+  }
+}
