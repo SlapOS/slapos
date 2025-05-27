@@ -17,13 +17,16 @@
       "title": "2nd Cell DL EARFCN"
     },
     "pci_sdr1": {"$ref": "ors-common-enb.json#/properties/pci",
-      "title": "2nd Cell Physical Cell ID"
+      "title": "2nd Cell Physical Cell ID",
+      "description": "Physical Cell ID. Range 0 to 503. Equal to (ORS Serial number + 252) modulo 504 by default"
     },
     "cell_id_sdr1": {"$ref": "ors-common-enb.json#/properties/cell_id",
-      "title": "2nd Cell Cell ID"
+      "title": "2nd Cell Cell ID",
+      "description": "Cell ID. Equal to (ORS Serial number + 128) modulo 256 by default"
     },
     "root_sequence_index_sdr1": {"$ref": "ors-common-enb.json#/properties/root_sequence_index",
-      "title": "2nd Cell Root Sequence Index"
+      "title": "2nd Cell Root Sequence Index",
+      "description": "Range: 0 to 137. Equal to (ORS serial number + 79) modulo 138 by default. Sets PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "tac_sdr1": {"$ref": "ors-common-enb.json#/properties/tac",
       "title": "2nd Cell Tracking Area Code"
