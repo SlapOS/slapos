@@ -16,6 +16,7 @@ parts =
   ollama-model-download-processed-config-promise
   ollama-service
   ollama-run-model-service
+  nginx-certificate
   nginx-conf
   nginx-service
   nginx-frontend-promise
@@ -167,6 +168,23 @@ config-file = ${ollama-model-download-source-config:output}
 depends =
   ${ollama-model-download-processed-config-promise:recipe}
   ${ollama-model-download-wrapper:recipe}
+
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    mkdir -p ${directory:ssl}
+    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${nginx-parameters:ipv6}" \
+      -newkey rsa -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${nginx-parameters:ssl-key}
+cert-file = ${nginx-parameters:ssl-certificate}
+common-name = ${nginx-parameters:ipv6}
+stop-on-error = true
 
 [nginx-parameters]
 ipv6 = ${slap-configuration:ipv6-random}
