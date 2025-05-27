@@ -17,6 +17,10 @@
     "domain": {
       "description": "Domain of the mail server",
       "type": "string"
+    },
+    "dns-entries": {
+      "description": "DNS entries to add",
+      "type": "string"
     }
   },
   "type": "object"

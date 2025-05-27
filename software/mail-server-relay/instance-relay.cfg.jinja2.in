@@ -19,6 +19,11 @@ recipe = slapos.cookbook:publish.serialised
 submission-port = $${postfix-conf-main:smtp-port} 
 smtp-port = $${postfix-conf-main:smtp-port}
 smtp-ipv6 = {{ ipv6 }}
+# todo: publishes internal ip instead of external
+dns-entries =
+  {% for domain in slapparameter_dict['mail-domains'] -%}
+  {{ domain['name'] }} MX 10 {{ ipv4 }}
+  {% endfor %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
