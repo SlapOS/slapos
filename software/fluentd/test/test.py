@@ -298,10 +298,6 @@ class GatewayConfTestCase(WendelinTutorialTestCaseMixin, FluentdTestCase):
 
     super(FluentdTestCase, cls).setUpClass()
 
-  @classmethod
-  def tearDownClass(cls):
-    super(FluentdTestCase, cls).tearDownClass()
-
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
 
@@ -380,10 +376,6 @@ class TlsDefaultTestCase(FluentdTestCase):
 
     super(FluentdTestCase, cls).setUpClass()
 
-  @classmethod
-  def tearDownClass(cls):
-    super(FluentdTestCase, cls).tearDownClass()
-
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
 
@@ -433,10 +425,6 @@ class TagPrefixDefaultTestCase(FluentdTestCase):
     cls._wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
 
     super(FluentdTestCase, cls).setUpClass()
-
-  @classmethod
-  def tearDownClass(cls):
-    super(FluentdTestCase, cls).tearDownClass()
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
@@ -489,9 +477,56 @@ class TagMatchPatternWithTagPrefixDefaultTestCase(FluentdTestCase):
 
     super(FluentdTestCase, cls).setUpClass()
 
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
+
+
+class IPv4BindAddressDefaultTestCase(FluentdTestCase):
+
   @classmethod
-  def tearDownClass(cls):
-    super(FluentdTestCase, cls).tearDownClass()
+  def getInstanceParameterDict(cls):
+    parameter_dict = {
+      'bind': cls._ipv4_address,
+      'port': cls._fluentd_port,
+      'tag-prefix': 'ors',
+      'tag-match-pattern': 'tag.name',
+      'wendelin-ingestion-url': f'http://[{cls._ipv4_address}]:{cls._wendelin_port}',
+      'username': 'foo',
+      'password': 'bar'
+    }
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def get_configuration(cls):
+    buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
+    return f'''\
+<source>
+  @type forward
+  bind {cls._ipv4_address}
+  port {cls._fluentd_port}
+  add_tag_prefix ors
+</source>
+<match tag.name>
+  @type wendelin
+  streamtool_uri http://[{cls._ipv4_address}]:{cls._wendelin_port}
+  user foo
+  password bar
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval 1m
+    flush_thread_count 4
+    @type file
+    path {buffer_file_dir}/
+  </buffer>
+</match>'''
+
+  @classmethod
+  def setUpClass(cls):
+    cls._fluentd_port = findFreeTCPPort(cls._ipv4_address)
+    cls._wendelin_port = findFreeTCPPort(cls._ipv4_address)
+
+    super(FluentdTestCase, cls).setUpClass()
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
