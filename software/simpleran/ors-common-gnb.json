@@ -6,7 +6,7 @@
     "$ref": "ors-common.json#/properties",
     "nr_bandwidth": {
       "$ref": "cell/common.json#/properties/bandwidth",
-      "default": 40
+      "default": 50
     },
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
