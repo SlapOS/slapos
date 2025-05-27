@@ -28,29 +28,31 @@
     },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
-      "type": "number"
+      "description": "Set transmission power of each antenna in dBm",
+      "type": "number",
+      "default": 20
     },
     "tx_gain": {
       "$ref": "ru/common.json#/properties/tx_gain",
-      "description": "Obsolete, use TX Power dBm parameter instead."
+      "title": "Expert: Tx gain",
+      "description": "Expert only. Tx gain (in dB), can be used instead of TX dBm Power to directly control tx_gain Amarisoft option"
     },
     "rx_gain": {
-      "$ref": "ru/common.json#/properties/rx_gain"
+      "$ref": "ru/common.json#/properties/rx_gain",
+      "description": "Rx gain (in dB), it should usually always be between 25 and 45. Please refer to the ORS handbook to see how to fine tune this value",
+      "default": 25
     },
     "dl_frequency": {
       "title": "DL Frequency",
-      "description": "Downlink frequency of the cell",
+      "description": "Downlink center frequency of the cell. Default depends on your ORS model, please refer to the connection parameters. Make sure to not set a value outside the range of your ORS",
       "type": "number"
     },
     "use_ipv4": {
       "$ref": "instance-enb-input-schema.json#/properties/use_ipv4"
     },
-    "pci": {
-      "$ref": "cell/common.json#/properties/pci",
-      "default": 1
-    },
     "cell_id": {
-      "$ref": "cell/common.json#/properties/cell_id"
+      "$ref": "cell/common.json#/properties/cell_id",
+      "description": "Cell ID. Equal to ORS Serial number modulo 256 by default"
     },
     "ncell_list": {
       "title": "Neighbour Cell Info",
@@ -198,7 +200,7 @@
     },
     "sdr100_offset": {
       "title": "Expert: SDR100 Offset",
-      "description": "Offset to SDR100 board, for fine tuning the initial reference signal power value. Default is -54 for ORS 2x1W and -35 for ORS 2x0.5W",
+      "description": "Expert only. Offset to SDR100 board, for fine tuning the initial reference signal power value. Default is -54 for ORS 2x1W and -35 for ORS 2x0.5W",
       "type": "number"
     }
   }
