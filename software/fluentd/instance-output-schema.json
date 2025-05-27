@@ -4,9 +4,9 @@
   "description": "Values returned by Fluentd instantiation",
   "additionalProperties": false,
   "properties": {
-    "ipv6": {
-      "title": "IPv6 Address",
-      "description": "IPv6 address to use to send data to the Fluentd instance",
+    "bind-address": {
+      "title": "Bind address",
+      "description": "IP address to use to send data to the Fluentd instance",
       "type": "string"
     },
     "port": {
