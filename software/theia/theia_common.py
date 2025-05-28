@@ -5,7 +5,7 @@ import hashlib
 import os
 import re
 import shutil
-import subprocess as sp
+import subprocess as subprocess
 import sqlite3
 
 import six
@@ -18,6 +18,12 @@ RSYNC_FLAGS = ('-rlptgo', '--safe-links', '--stats', '--ignore-missing-args', '-
 RSYNC_REGEX = '^(file has vanished: |rsync warning: some files vanished before they could be transferred)'
 EXCLUDE_PATTERNS = ('*.sock', '*.socket', '*.pid', '.installed*.cfg')
 EXCLUDE_FLAGS = ['--filter=-s {}'.format(x) for x in sorted(EXCLUDE_PATTERNS)]
+
+
+def run_process(command, **kwargs):
+  kwargs['stderr'] = subprocess.STDOUT # capture stderr too
+  kwargs['universal_newlines'] = True
+  return subprocess.check_output(command, **kwargs)
 
 
 def makedirs(path):
@@ -61,8 +67,8 @@ def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbos
   command.append(src)
   command.append(dst)
   try:
-    return sp.check_output(command, universal_newlines=True)
-  except sp.CalledProcessError as e:
+    return run_process(command)
+  except subprocess.CalledProcessError as e:
     # Not all rsync errors are to be considered as errors
     if e.returncode != 24 or re.search(RSYNC_REGEX, e.output, re.M) is None:
       raise
@@ -71,7 +77,7 @@ def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbos
 
 def copydb(sqlite3bin, src_db, dst_db):
   makedirs(os.path.dirname(dst_db))
-  sp.check_output((sqlite3bin, src_db, '.backup ' + dst_db))
+  run_process((sqlite3bin, src_db, '.backup ' + dst_db))
 
 
 def remove(path):
@@ -172,8 +178,12 @@ def hashcustom(partition, script):
           filepaths.append('./' + os.path.relpath(path, start=workingdir))
       if not filepaths:
         continue
-      hashprocess = sp.Popen(
-        script, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+      hashprocess = subprocess.Popen(
+        script,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+      )
       out, err = hashprocess.communicate(str2bytes('\0'.join(filepaths)))
       if hashprocess.returncode != 0:
         template = "Custom signature script %s failed on inputs:\n%s"
