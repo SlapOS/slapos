@@ -19,7 +19,7 @@
       "title": "Bind address",
       "description": "Bind address on which to listen for incoming data",
       "type": "string",
-      "default": "::0"
+      "default": "<PARTITION_IPV6>"
     },
     "port": {
       "title": "Port",
