@@ -3,7 +3,7 @@ import glob
 import itertools
 import os
 import sys
-import subprocess as sp
+import subprocess
 import time
 import traceback
 
@@ -106,12 +106,12 @@ class TheiaImport(object):
     supervisor_command = (self.supervisorctl_bin, '-c', self.supervisord_conf)
     command = supervisor_command + args
     print(' '.join(command))
-    print(sp.check_output(command, stderr=sp.STDOUT, universal_newlines=True))
+    print(run_process(command))
 
   def slapos(self, *args):
     command = (self.slapos_bin,) + args + ('--cfg', self.slapos_cfg)
     print(' '.join(command))
-    print(sp.check_output(command, stderr=sp.STDOUT, universal_newlines=True))
+    print(run_process(command))
 
   def sign(self, signaturefile, root_dir):
     with open(signaturefile, 'r') as f:
@@ -158,9 +158,8 @@ class TheiaImport(object):
         f.write(s + '\n')
     diffcommand = ('diff', signaturefile, proof)
     try:
-      sp.check_output(
-        diffcommand, stderr=sp.STDOUT, universal_newlines=True)
-    except sp.CalledProcessError as e:
+      run_process(diffcommand)
+    except subprocess.CalledProcessError as e:
       template = 'ERROR the backup signatures do not match\n\n%s\n%s'
       msg = template % (' '.join(diffcommand), e.output)
       print(msg)
@@ -197,7 +196,7 @@ class TheiaImport(object):
     except Exception as e:
       exitcode = 1
       exc = traceback.format_exc()
-      if isinstance(e, sp.CalledProcessError) and e.output:
+      if isinstance(e, subprocess.CalledProcessError) and e.output:
         exc = "%s\n\n%s" % (exc, e.output)
       with open(self.error_file, 'w') as f:
         f.write('\n ... OK\n\n'.join(self.logs))
@@ -251,7 +250,7 @@ class TheiaImport(object):
     custom_script = os.path.join(self.root_dir, 'srv', 'runner-import-restore')
     if os.path.exists(custom_script):
       self.log('Run custom restore script %s' % custom_script)
-      print(sp.check_output(custom_script))
+      print(run_process(custom_script))
 
     self.log('Start slapproxy again')
     self.supervisorctl('start', 'slapos-proxy')
@@ -274,7 +273,7 @@ class TheiaImport(object):
     for i in range(3):
       try:
         self.slapos('node', 'software', '--logfile', self.sr_log)
-      except sp.CalledProcessError:
+      except subprocess.CalledProcessError:
         if i == 2:
           raise
       else:
@@ -296,7 +295,7 @@ class TheiaImport(object):
     for i in range(3):
       try:
         self.slapos('node', 'instance', '--force-stop', '--logfile', cp_log)
-      except sp.CalledProcessError:
+      except subprocess.CalledProcessError:
         if i == 2:
           raise
       else:
@@ -308,7 +307,7 @@ class TheiaImport(object):
 
     for custom_script in glob.glob(scripts):
       self.log('Running custom instance script %s' % custom_script)
-      print(sp.check_output(custom_script))
+      print(run_process(custom_script))
 
     self.log('Done')
 
