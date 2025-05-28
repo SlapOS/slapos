@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "dl_frequency_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/dl_frequency",
+      "title": "2nd Cell DL Frequency"
+    },
+    "cell_id_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/cell_id",
+      "title": "2nd Cell Cell ID",
+      "description": "Cell ID. Range 0 to 255. Equal to (ORS Serial number + 128) modulo 256 by default"
+    },
+    "tx_power_dbm_sdr1": {
+      "title": "2nd Cell Tx Power in dBm",
+      "$ref": "ors-enb-common.json#/properties/tx_power_dbm"
+    },
+    "tx_gain_sdr1": {
+      "title": "Expert: 2nd Cell Tx gain",
+      "$ref": "ors-enb-common.json#/properties/tx_gain"
+    },
+    "rx_gain_sdr1": {
+      "title": "2nd Cell Rx gain",
+      "$ref": "ors-enb-common.json#/properties/rx_gain"
+    }
+  }
+}
