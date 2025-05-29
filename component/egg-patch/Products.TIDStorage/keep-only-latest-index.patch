@@ -1,0 +1,12 @@
+diff -ur Products.TIDStorage-5.5.0.orig/Products/TIDStorage/repozo/repozo_tidstorage.py Products.TIDStorage-5.5.0/Products/TIDStorage/repozo/repozo_tidstorage.py
+--- Products.TIDStorage-5.5.0.orig/Products/TIDStorage/repozo/repozo_tidstorage.py	2013-09-11 19:11:33.000000000 +0200
++++ Products.TIDStorage-5.5.0/Products/TIDStorage/repozo/repozo_tidstorage.py	2025-04-17 14:22:02.572108483 +0200
+@@ -376,7 +376,7 @@
+       check=options.dry_run,
+       last_tid_dict=last_tid_dict)
+   else:
+-    repozo_formated_command += ' -f "%s"'
++    repozo_formated_command += ' --keep-only-latest-index -f "%s"'
+     if options.status_file is not None and options.status_file_backup_dir is not None:
+       backupStatusFile(options.status_file, options.status_file_backup_dir)
+     result = backup(
