@@ -159,7 +159,13 @@ class Password(object):
           content = f.read().strip('\n')
           # new format: the file contains password and hashes in json format
           try:
-            passwd_dict = json.loads(content)
+            json_content = json.loads(content)
+            try:
+              _ = json_content['']
+            except Exception:
+              # for sure it's not the expected format, treat as password
+              raise ValueError
+            passwd_dict = json_content
             if sys.version_info < (3, ):
               passwd_dict = {k: v.encode('utf-8') for k, v in passwd_dict.items()}
           except ValueError:
