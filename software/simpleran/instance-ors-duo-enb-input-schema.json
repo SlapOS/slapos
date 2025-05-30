@@ -10,9 +10,6 @@
       "oneOf": [
         {
           "$ref": "ors-duo-enb.json"
-        },
-        {
-          "$ref": "ors-duo-gnb.json"
         }
       ],
       "type": "object",

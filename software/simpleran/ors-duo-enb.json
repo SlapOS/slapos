@@ -3,13 +3,7 @@
   "title": "LTE Peer Cell",
   "type": "object",
   "required": [
-    "cell_type",
-    "cell_kind",
-    "pci",
-    "tac",
-    "e_cell_id",
-    "dl_earfcn",
-    "plmn"
+    "cell_type"
   ],
   "properties": {
     "cell_type": {

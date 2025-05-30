@@ -4,50 +4,16 @@
   "title": "Input Parameters",
   "properties": {
     "$ref": "instance-ors-gnb-input-schema.json#/properties",
-    "dl_frequency_sdr1": {
-      "$ref": "ors-duo-common.json#/properties/dl_frequency_sdr1"
-    },
-    "cell_id_sdr1": {
-      "$ref": "ors-duo-common.json#/properties/cell_id_sdr1"
-    },
-    "tx_power_dbm_sdr1": {
-      "$ref": "ors-duo-common.json#/properties/tx_power_dbm_sdr1"
-    },
-    "tx_gain_sdr1": {
-      "$ref": "ors-duo-common.json#/properties/tx_gain_sdr1"
-    },
-    "rx_gain_sdr1": {
-      "$ref": "ors-duo-common.json#/properties/rx_gain_sdr1"
-    },
-    "nr_bandwidth_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/nr_bandwidth",
-      "title": "2nd Cell Bandwidth"
-    },
-    "nr_band_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/nr_band",
-      "title": "2nd Cell NR band"
-    },
-    "dl_nr_arfcn_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/dl_nr_arfcn",
-      "title": "2nd Cell DL NR ARFCN"
-    },
-    "ssb_nr_arfcn_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/ssb_nr_arfcn",
-      "title": "2nd Cell SSB NR ARFCN"
-    },
-    "ssb_pos_bitmap_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/ssb_pos_bitmap",
-      "title": "2nd Cell SSB Position Bitmap"
-    },
-    "pci_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/pci",
-      "title": "2nd Cell Physical Cell ID",
-      "description": "Physical Cell ID. Range 0 to 1007. Equal to (ORS Serial number + 504) modulo 1008 by default"
-    },
-    "root_sequence_index_sdr1": {
-      "$ref": "ors-gnb-common.json#/properties/root_sequence_index",
-      "title": "2nd Cell Root Sequence Index",
-      "description": "Range: 0 to 137. Equal to (ORS serial number + 79) modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
+    "second_cell": {
+      "title": "Second Cell",
+      "description": "Second Cell",
+      "oneOf": [
+        {
+          "$ref": "ors-duo-gnb.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     }
   }
 }
