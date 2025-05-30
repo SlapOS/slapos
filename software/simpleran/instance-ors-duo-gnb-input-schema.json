@@ -4,16 +4,22 @@
   "title": "Input Parameters",
   "properties": {
     "$ref": "instance-ors-gnb-input-schema.json#/properties",
-    "second_cell": {
-      "title": "Second Cell",
-      "description": "Second Cell",
+    "ors_duo_2nd_cell": {
+      "$ref": "ors-duo-common.json#/properties/ors_duo_2nd_cell",
       "oneOf": [
         {
           "$ref": "ors-duo-gnb.json"
         }
-      ],
-      "type": "object",
-      "default": {}
+      ]
+    },
+    "n_antenna_dl": {
+      "$ref": "ors-duo-common.json#/properties/n_antenna_dl"
+    },
+    "n_antenna_ul": {
+      "$ref": "ors-duo-common.json#/properties/n_antenna_ul"
+    },
+    "ors_duo_mode": {
+      "$ref": "ors-duo-common.json#/properties/ors_duo_mode"
     }
   }
 }

@@ -3,26 +3,44 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "dl_frequency_sdr1": {
-      "$ref": "ors-enb-common.json#/properties/dl_frequency",
-      "title": "2nd Cell DL Frequency"
+    "second_cell": {
+      "title": "Second Cell",
+      "description": "Radio parameters of the second cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
+      "oneOf": [
+        {
+          "$ref": "ors-duo-enb.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     },
-    "cell_id_sdr1": {
-      "$ref": "ors-enb-common.json#/properties/cell_id",
-      "title": "2nd Cell Cell ID",
-      "description": "Cell ID. Range 0 to 255. Equal to (ORS Serial number + 128) modulo 256 by default"
+    "n_antenna_dl": {
+      "$ref": "ors-common.json#/properties/n_antenna_dl",
+      "enum": [
+        1,
+        2,
+        4
+      ],
+      "default": 4
     },
-    "tx_power_dbm_sdr1": {
-      "title": "2nd Cell Tx Power in dBm",
-      "$ref": "ors-enb-common.json#/properties/tx_power_dbm"
+    "n_antenna_ul": {
+      "$ref": "ors-common.json#/properties/n_antenna_dl",
+      "enum": [
+        1,
+        2,
+	4
+      ],
+      "default": 4
     },
-    "tx_gain_sdr1": {
-      "title": "Expert: 2nd Cell Tx gain",
-      "$ref": "ors-enb-common.json#/properties/tx_gain"
-    },
-    "rx_gain_sdr1": {
-      "title": "2nd Cell Rx gain",
-      "$ref": "ors-enb-common.json#/properties/rx_gain"
+    "ors_duo_mode": {
+      "title": "ORS Duo Mode",
+      "description": "Carrier aggregation: aggregate two cells to do up to 100 MHz of bandwidth.",
+      "type": "string",
+      "enum": [
+        "Carrier Aggregation",
+        "Single Cell"
+      ],
+      "default": "Single Cell"
     }
   }
 }
