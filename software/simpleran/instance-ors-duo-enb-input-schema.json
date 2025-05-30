@@ -7,18 +7,14 @@
     "second_cell": {
       "title": "Second Cell",
       "description": "Second Cell",
-      "patternProperties": {
-        ".*": {
-          "oneOf": [
-            {
-              "$ref": "ors-duo-enb.json"
-            },
-            {
-              "$ref": "ors-duo-gnb.json"
-            }
-          ]
+      "oneOf": [
+        {
+          "$ref": "ors-duo-enb.json"
+        },
+        {
+          "$ref": "ors-duo-gnb.json"
         }
-      },
+      ],
       "type": "object",
       "default": {}
     }
