@@ -8,7 +8,8 @@
   "properties": {
     "cell_type": {
       "$ref": "peer/cell/common.json#/properties/cell_type",
-      "const": "lte"
+      "const": "lte",
+      "default": "lte"
     },
     "dl_frequency": {
       "$ref": "ors-enb-common.json#/properties/dl_frequency"
