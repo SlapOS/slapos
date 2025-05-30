@@ -21,7 +21,7 @@
         2,
         4
       ],
-      "default": 4
+      "default": 2
     },
     "n_antenna_ul": {
       "$ref": "ors-common.json#/properties/n_antenna_dl",
@@ -30,11 +30,11 @@
         2,
 	4
       ],
-      "default": 4
+      "default": 2
     },
     "ors_duo_mode": {
       "title": "ORS Duo Mode",
-      "description": "Carrier aggregation: aggregate two cells to do up to 100 MHz of bandwidth.",
+      "description": "Single Cell: up to 50 MHz of bandwidth in MIMO 4x4. Carrier aggregation: aggregate two cells, up to 100 MHz of bandwidth in MIMO 2x2 (number of DL or UL antennas shouldn't exceed 2 in this mode)",
       "type": "string",
       "enum": [
         "Carrier Aggregation",
