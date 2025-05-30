@@ -1,10 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "NR Peer Cell",
+  "title": "NR Cell",
   "type": "object",
-  "required": [
-    "cell_type"
-  ],
   "properties": {
     "dl_frequency": {
       "$ref": "ors-gnb-common.json#/properties/dl_frequency"
