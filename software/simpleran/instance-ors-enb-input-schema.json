@@ -4,9 +4,6 @@
   "title": "Input Parameters",
   "properties": {
     "$ref": "ors-enb-common.json#/properties",
-    "rf_mode": {
-      "$ref": "ors-enb-common.json#/properties/rf_mode"
-    },
     "n_antenna_dl": {
       "$ref": "ors-enb-common.json#/properties/n_antenna_dl"
     },

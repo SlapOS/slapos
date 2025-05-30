@@ -3,10 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "rf_mode": {
-      "$ref": "cell/common.json#/properties/rf_mode",
-      "default": "tdd"
-    },
     "n_antenna_dl": {
       "$ref": "ru/common.json#/properties/n_antenna_dl",
       "enum": [
