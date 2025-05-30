@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "second_cell": {
+    "ors_duo_2nd_cell": {
       "title": "Second Cell",
       "description": "Radio parameters of the second cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
       "oneOf": [
