@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LTE Peer Cell",
+  "type": "object",
+  "required": [
+    "cell_type",
+    "cell_kind",
+    "pci",
+    "tac",
+    "e_cell_id",
+    "dl_earfcn",
+    "plmn"
+  ],
+  "properties": {
+    "cell_type": {
+      "$ref": "peer/cell/common.json#/properties/cell_type",
+      "const": "lte"
+    },
+    "dl_frequency_sdr1": {
+      "$ref": "ors-duo-common.json#/properties/dl_frequency_sdr1"
+    },
+    "cell_id_sdr1": {
+      "$ref": "ors-duo-common.json#/properties/cell_id_sdr1"
+    },
+    "tx_power_dbm_sdr1": {
+      "$ref": "ors-duo-common.json#/properties/tx_power_dbm_sdr1"
+    },
+    "tx_gain_sdr1": {
+      "$ref": "ors-duo-common.json#/properties/tx_gain_sdr1"
+    },
+    "rx_gain_sdr1": {
+      "$ref": "ors-duo-common.json#/properties/rx_gain_sdr1"
+    },
+    "bandwidth_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/bandwidth_sdr1",
+      "title": "2nd Cell Bandwidth"
+    },
+    "dl_frequency_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/dl_frequency",
+      "title": "2nd Cell DL Frequency"
+    },
+    "lte_band_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/lte_band",
+      "title": "2nd Cell LTE band"
+    },
+    "dl_earfcn_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/dl_earfcn",
+      "title": "2nd Cell DL EARFCN"
+    },
+    "pci_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/pci",
+      "title": "2nd Cell Physical Cell ID",
+      "description": "Physical Cell ID. Range 0 to 503. Equal to (ORS Serial number + 252) modulo 504 by default"
+    },
+    "root_sequence_index_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/root_sequence_index",
+      "title": "2nd Cell Root Sequence Index",
+      "description": "Range: 0 to 137. Equal to (ORS serial number + 79) modulo 138 by default. Sets PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
+    },
+    "tac_sdr1": {
+      "$ref": "ors-enb-common.json#/properties/tac",
+      "title": "2nd Cell Tracking Area Code"
+    }
+  }
+}
