@@ -16,7 +16,7 @@ parts =
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
-offline= true
+offline = true
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -204,11 +204,15 @@ spool-public = $${:var-spool}/public
 spool-saved = $${:var-spool}/saved
 spool-trace = $${:var-spool}/trace
 
+[postfix-conf-common]
+smtp-port = 10025
+
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
-smtp-port = 10025
+depends =
+  $${request-relays:depends}
 context =
   key dovecot_passwd dovecot-passwords:target
   key bin_directory directory:bin
@@ -234,7 +238,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_master.jinja2.cf:target}
 output = $${postfix-directory:etc}/master.cf
 context =
-  key smtp_port postfix-conf-main:smtp-port
+  key smtp_port postfix-conf-common:smtp-port
 
 [postfix-symlinks-libexec]
 recipe = slapos.cookbook:symbolic.link
@@ -275,7 +279,7 @@ wrapper-path = $${directory:run}/postfix-master
 promise = check_socket_listening
 name = smtp_listen.py
 config-host = {{ ipv6 }}
-config-port = $${postfix-conf-main:smtp-port}
+config-port = $${postfix-conf-common:smtp-port}
 depends =
   $${postfix-service:recipe}
   $${postfix-service-master:recipe}
@@ -365,7 +369,7 @@ url = ${template-snappymail-domain.jinja2.json:target}
 output = $${snappymail-files:target}/data/_data_/_default_/domains/default.json
 context =
   raw mail_host [{{ ipv6 }}]
-  key smtp_port postfix-conf-main:smtp-port
+  key smtp_port postfix-conf-common:smtp-port
   key imap_port dovecot-conf:imap-port
 
 [snappymail]
@@ -523,6 +527,29 @@ init =
     """)
 
 
+# Request relay
+# -------------
+
+{% set relay_requests = [] -%}
+{% for mail_domain in slapparameter_dict['mail-domains'] -%}
+{%   do relay_requests.append('request-relay-' ~ mail_domain) %}
+[request-relay-{{ mail_domain }}]
+recipe = slapos.cookbook:request.serialised
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/mail-server-relay/software.cfg
+software-type = cluster
+shared = true
+config-name = {{ mail_domain }}
+config-mail-server-host = {{ ipv6 }}
+config-mail-server-port = $${postfix-conf-common:smtp-port}
+return =
+{% endfor %}
+
+[request-relays]
+depends =
+{% for relay_request in relay_requests -%}
+  {{ "  $${" + relay_request + ":recipe" }}
+{% endfor -%}
+
 # Publish connection information
 # ------------------------------
 
@@ -530,7 +557,7 @@ init =
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 imap-port = $${dovecot-conf:imap-port}
-smtp-port = $${postfix-conf-main:smtp-port}
+smtp-port = $${postfix-conf-common:smtp-port}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
 password-url = $${:webmail-url}/password.php
