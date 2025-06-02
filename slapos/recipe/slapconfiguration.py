@@ -417,9 +417,12 @@ class JsonSchema(Recipe):
     valid, invalid = [], []
     if shared_list:
       shared_schema = self._getSharedSchema(software_schema)
+      serialisation = software_schema.getSerialisation(strict=True)
       validator = self.SharedValidator(shared_schema)
       for instance in shared_list:
         reference = instance.pop('slave_reference')
+        if serialisation == SoftwareReleaseSerialisation.JsonInXml:
+          instance = unwrap(instance)
         try:
           errors = list(validator.validate(instance))
         except UserError as e:
