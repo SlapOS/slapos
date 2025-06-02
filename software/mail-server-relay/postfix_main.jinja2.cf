@@ -40,11 +40,11 @@ smtpd_relay_restrictions =
   permit_mynetworks 
   reject_unauth_destination
 
-mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ mail_hosts }}
+mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (mail_hosts) | join(' ') }}
 
 virtual_transport = relay
 relay_recipient_maps =
-relay_domains = {{ mail_domains }}
+relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
 relayhost = [{{ relay_host }}]:{{ relay_port }}
 
 maillog_file = {{ log_directory }}/postfix.log

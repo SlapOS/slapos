@@ -35,7 +35,8 @@ context =
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
   section slap_connection slap-connection
-  key slave_instance_list slap-configuration:valid-shared-instance-list
+  section slap_configuration slap-configuration
+#  key slave_instance_list slap-configuration:valid-shared-instance-list
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.jsonschema

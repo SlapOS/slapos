@@ -99,6 +99,8 @@ url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
 smtp-port = 10025
 submission-port = 10025
+mail-domains = {{ dumps(slapparameter_dict['mail-domains']) }}
+mail-hosts = {{ dumps(source_host_list) }}
 context =
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
@@ -118,8 +120,8 @@ context =
   raw ipv6 {{ ipv6 }}
   raw relay_host {{ slapparameter_dict['relay-host'] }}
   raw relay_port {{ slapparameter_dict['relay-port'] }}
-  raw mail_domains {{ slapparameter_dict['mail-domains'] | map(attribute='name') | join(',') }}
-  raw mail_hosts {{ source_host_list | join(' ') }}
+  key mail_domains :mail-domains
+  key mail_hosts :mail-hosts
   key postfix_cert_file postfix-generate-certificate:cert-file
   key postfix_key_file postfix-generate-certificate:key-file
 
