@@ -44,6 +44,7 @@ jsonschema = ${software.cfg.json:target}
 depends = 
   ${instance-relay-input-schema.json:target}
   ${instance-cluster-input-schema.json:target}
+  ${instance-slave-input-schema.json:target}
 set-default = all
 validate-parameters = all
 computer = $${slap-connection:computer-id}

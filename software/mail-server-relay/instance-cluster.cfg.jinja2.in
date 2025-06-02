@@ -30,6 +30,5 @@ sla-computer_guid = $${:computer-id}
 config-{{ key }} = {{ dumps(value) }}
 {%  endif -%}
 {% endfor -%}
-config-foobar = {{ dumps(slap_configuration.get('valid-shared-instance-list', [])) }}
-config-mail-domains = {{ dumps([]) }}
+config-mail-domains = {{ dumps(list(slap_configuration.get('valid-shared-instance-list', []) | map(attribute='parameters'))) }}
 return =
