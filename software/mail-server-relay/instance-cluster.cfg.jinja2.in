@@ -30,5 +30,10 @@ sla-computer_guid = $${:computer-id}
 config-{{ key }} = {{ dumps(value) }}
 {%  endif -%}
 {% endfor -%}
-config-mail-domains = {{ dumps(list(slap_configuration.get('valid-shared-instance-list', []) | map(attribute='parameters'))) }}
+{% set mail_domains = list(slap_configuration.get('valid-shared-instance-list', []) | map(attribute='parameters')) -%}
+{% set whitelist = set(slapparameter_dict['outbound-domain-whitelist']) -%}
+{% for domain in mail_domains -%}
+{%  do domain.__setitem__('can-send', domain['name'] in whitelist) -%}
+{% endfor -%}
+config-mail-domains = {{ dumps(mail_domains) }}
 return =

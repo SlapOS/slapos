@@ -89,7 +89,7 @@ spool-saved = $${:var-spool}/saved
 spool-trace = $${:var-spool}/trace
 
 {% set source_host_list = [] %}
-{% for domain in slapparameter_dict['mail-domains'] %}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
 {%   do source_host_list.append("[" + domain['mail-server-host'] + "]") %}
 {% endfor %}
 

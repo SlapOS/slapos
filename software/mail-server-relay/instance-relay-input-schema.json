@@ -45,6 +45,10 @@
             "description": "The mail server port for this domain",
             "title": "Mail Server Port",
             "default": 10025
+          },
+          "can-send": {
+            "type": "boolean",
+            "description": "Whether this domain can send (outbound) emails through the relay"
           }
         }
       },
