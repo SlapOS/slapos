@@ -7,10 +7,37 @@
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
-{% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
-{% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
-{% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
-{% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
+
+{#- Legacy Mariadb backup parameters -#}
+{% set legacy_catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
+{% set legacy_backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
+{% set legacy_full_backup_retention_days = legacy_catalog_backup.get('full-retention-days', 7) -%}
+{% set legacy_incremental_backup_retention_days = legacy_catalog_backup.get('incremental-retention-days', legacy_full_backup_retention_days) -%}
+
+{#- Mariadb backup parameters -#}
+{% set backup = slapparameter_dict.get('backup', {}) -%}
+{% set logical_backup = backup.pop('logical', {}) -%}
+{% set physical_backup = backup.pop('physical', {}) -%}
+{% set incremental_backup = backup.pop('incremental', {}) -%}
+{#- User-specified default backup settings -#}
+{% for k in backup -%}
+{%   for d in (logical_backup, physical_backup, incremental_backup) -%}
+{%     do d.setdefault(k, backup[k]) -%}
+{%   endfor -%}
+{% endfor -%}
+{#- Legacy backwards compatibility -#}
+{% do logical_backup.setdefault('enable', legacy_full_backup_retention_days != -1) -%}
+{% do logical_backup.setdefault('periodicity', legacy_backup_periodicity) -%}
+{% do logical_backup.setdefault('retention-days', legacy_full_backup_retention_days) -%}
+{% do incremental_backup.setdefault('enable', legacy_incremental_backup_retention_days != -1) -%}
+{% do incremental_backup.setdefault('retention-days', legacy_incremental_backup_retention_days) -%}
+{% set default_backup = {'enable': True, 'periodicity': 'daily', 'retention-days': 7} -%}
+{#- Default backup settings -#}
+{% for k in default_backup -%}
+{%   for d in (logical_backup, physical_backup, incremental_backup) -%}
+{%     do d.setdefault(k, default_backup[k]) -%}
+{%   endfor -%}
+{% endfor -%}
 
 {#- Binaries -#}
 {% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
@@ -272,8 +299,14 @@ install =
 {%-   do section('caucase-sign-csr') %}
 {%- endif %}
 
-{% if full_backup_retention_days > -1 -%}
-[mariadb-backup-script]
+[dated-filename]
+command = $("{{ parameter_dict['coreutils-location'] }}/bin/date" +%Y%m%d%H%M%S)
+{# KEEP GLOB PATTERN IN SYNC with generated filenames above
+#      YYYYmmddHHMMSS -#}
+glob = ??????????????
+
+{% if logical_backup['enable'] -%}
+[mariadb-dump-script]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 most-recent = most-recent.sql.gz
@@ -284,28 +317,60 @@ most-recent = most-recent.sql.gz
 # master-data: use value "2" as we are not in a replication case
 #}
 inline =
-  #! /bin/sh
-  filepath="${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
-  "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
-  ln -sf $filepath "${directory:mariadb-backup-full}/${:most-recent}"
-{# KEEP GLOB PATTERN IN SYNC with generated filenames above
-#           YYYYmmddHHMMSS -#}
-file-glob = ??????????????.sql.gz
+  #!{{ bash }}
+  set -euo pipefail
+  filepath="${directory:mariadb-dump-full}/"${dated-filename:command}.sql.gz
+  "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  ln -sf "$filepath" "${directory:mariadb-dump-full}/${:most-recent}"
 
-[{{ section('cron-entry-mariadb-backup') }}]
+[{{ section('cron-entry-mariadb-dump') }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
-name = mariadb-backup
-time = {{ dumps(backup_periodicity) }}
-command = ${mariadb-backup-script:output}
+name = mariadb-dump
+time = {{ dumps(logical_backup['periodicity']) }}
+command = ${mariadb-dump-script:output}
 
-{% if full_backup_retention_days > 0 -%}
-[{{ section("cron-entry-mariadb-backup-expire") }}]
+{% if logical_backup['retention-days'] > 0 -%}
+[{{ section("cron-entry-mariadb-dump-expire") }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
-name = mariadb-backup-expire
-time = {{ dumps(backup_periodicity) }}
-command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${mariadb-backup-script:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
+name = mariadb-dump-expire
+time = {{ dumps(logical_backup['periodicity']) }}
+command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-dump-full}" -maxdepth 1 -name "${dated-filename:glob}.sql.gz" -daystart -mtime +{{ logical_backup['retention-days'] }} -delete
+{%- endif %}
+{%- endif %}
+
+{% if physical_backup['enable'] -%}
+[mariabackup-script]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+most-recent = most-recent.xbstream.zstd
+inline =
+  #!{{ bash }}
+  set -euo pipefail
+  filepath="${directory:mariabackup-full}/"${dated-filename:command}.xbstream.zstd
+  "{{ mariadb['location'] }}/bin/mariadb-backup" \
+    --defaults-file="${my-cnf:output}" \
+    --backup \
+    --user=root \
+    --stream=xbstream \
+    | "{{ parameter_dict['zstd-location'] }}/bin/zstd" > "$filepath"
+  ln -sf "$filepath" "${directory:mariabackup-full}/${:most-recent}"
+
+[{{ section('cron-entry-mariabackup') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariabackup
+time = {{ dumps(physical_backup['periodicity']) }}
+command = ${mariabackup-script:output}
+
+{% if logical_backup['retention-days'] > 0 -%}
+[{{ section("cron-entry-mariabackup-expire") }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariabackup-expire
+time = {{ dumps(physical_backup['periodicity']) }}
+command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariabackup-full}" -maxdepth 1 -name "${dated-filename:glob}.gz"  -daystart -mtime +{{ physical_backup['retention-days'] }} -delete
 {%- endif %}
 {%- endif %}
 
@@ -337,10 +402,10 @@ innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 character-set-server = {{ dumps(slapparameter_dict.get('character-set-server', 'utf8mb4')) }}
 collation-server = {{ dumps(slapparameter_dict.get('collation-server', 'utf8mb4_general_ci')) }}
-{% if incremental_backup_retention_days > -1 -%}
+{% if incremental_backup['enable'] -%}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
-binlog-expire-days = {{ dumps(incremental_backup_retention_days) }}
+binlog-expire-days = {{ dumps(incremental_backup['retention-days']) }}
 server-id = ${publish-early:server-id}
 {% else %}
 binlog-path =
@@ -484,7 +549,7 @@ shebang =
 foreground-script =
   {% if upstream_bootstrap_url -%}
   bootstrap_url={{ six_moves.shlex_quote(upstream_bootstrap_url) }}
-  bootstrap_file="${directory:mariadb-backup-full}/bootstrap.sql.gz"
+  bootstrap_file="${directory:mariadb-dump-full}/bootstrap.sql.gz"
   {%- endif %}
   curl="{{ parameter_dict['curl-location'] }}/bin/curl"
   zcat="{{ parameter_dict['gzip-location'] }}/bin/zcat"
@@ -678,7 +743,7 @@ sql-commands =
 [mariadb-bootstrap-server-script]
 recipe = slapos.cookbook:simplehttpserver
 wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
-base-path = ${directory:mariadb-backup-full}
+base-path = ${directory:mariadb-dump-full}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
 {% if ipv6_reverse_proxy_enable -%}
 socketpath = ${directory:run}/bootstrap.sock
@@ -709,7 +774,7 @@ config-url = http://[{{ ipv6 }}]:{{ port - 1 }}
 {%- else %}
 config-url = http://{{ ip_as_host }}:{{ port - 1 }}
 {%- endif %}
-bootstrap-url = ${:config-url}/${mariadb-backup-script:most-recent}
+bootstrap-url = ${:config-url}/${mariadb-dump-script:most-recent}
 
 {% if ipv6_reverse_proxy_enable -%}
 [haproxy-cfg]
@@ -872,8 +937,9 @@ plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
-mariadb-backup-full = ${:backup}/mariadb-full
+mariadb-dump-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
+mariabackup-full = ${:backup}/mariabackup-full
 proxysql = ${:srv}/proxysql
 mariadb-ssl = ${:etc}/mariadb-ssl
 caucase-ssl = ${:etc}/caucase-ssl
@@ -910,7 +976,7 @@ context =
   key dash dash:dash
   key mysql_executable binary-wrap-mysql:wrapper-path
   key mariadb_data_directory my-cnf-parameters:data-directory
-  key mariadb_backup_directory directory:mariadb-backup-full
+  key mariadb_backup_directory directory:mariadb-dump-full
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
   key server_executable mariadbd-server:output
