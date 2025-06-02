@@ -70,14 +70,7 @@ def main():
 
   Buildout._setup_logging = lambda self: None
 
-  # XXX: fix install of slapos.libnetworkcache in offline mode
-  import slapos.libnetworkcache
-  from zc.buildout.easy_install import buildout_and_setuptools_path
-  path, = slapos.__path__
-  buildout_and_setuptools_path.append(os.path.dirname(path))
-  ###
-
-  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
   try:
     os.write(fd, """\
 [buildout]
