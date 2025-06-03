@@ -1,0 +1,39 @@
+[buildout]
+extends =
+  ${monitor2-template:output}
+parts =
+  monitor-base
+  publish-connection-information
+  request-relay
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+
+[request-relay]
+recipe = slapos.cookbook:request.serialised
+software-url = $${slap-connection:software-release-url}
+server-url = $${slap-connection:server-url}
+key-file = $${slap-connection:key-file}
+cert-file = $${slap-connection:cert-file}
+computer-id = $${slap-connection:computer-id}
+partition-id = $${slap-connection:partition-id}
+software-type = relay
+name = mail-server-relay
+sla-computer_guid = $${:computer-id}
+{% for key, value in slapparameter_dict.items() -%}
+{%  if key.startswith('relay-') -%}
+config-{{ key }} = {{ dumps(value) }}
+{%  endif -%}
+{% endfor -%}
+{% set mail_domains = list(slap_configuration.get('valid-shared-instance-list', []) | map(attribute='parameters')) -%}
+{% set whitelist = set(slapparameter_dict['outbound-domain-whitelist']) -%}
+{% for domain in mail_domains -%}
+{%  do domain.__setitem__('can-send', domain['name'] in whitelist) -%}
+{% endfor -%}
+config-mail-domains = {{ dumps(mail_domains) }}
+return =
