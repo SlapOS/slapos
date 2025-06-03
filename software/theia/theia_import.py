@@ -6,6 +6,7 @@ import sys
 import subprocess
 import time
 import traceback
+from base64 import urlsafe_b64decode
 
 import requests
 from requests.exceptions import RequestException
@@ -121,7 +122,7 @@ class TheiaImport(object):
         except ValueError:
           yield 'Could not parse: %s' % line
           continue
-        filepath = os.path.join(root_dir, relpath)
+        filepath = os.path.join(root_dir, urlsafe_b64decode(relpath).decode())
         try:
           signature = sha256sum(filepath)
         except IOError:
