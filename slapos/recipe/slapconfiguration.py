@@ -414,23 +414,25 @@ class JsonSchema(Recipe):
 
   def _parseSharedParameterDict(self, software_schema, options):
     shared_list = options.pop('slave-instance-list')
-    if not shared_list:
-      return
-    shared_schema = self._getSharedSchema(software_schema)
-    validator = self.SharedValidator(shared_schema)
     valid, invalid = [], []
-    for instance in shared_list:
-      reference = instance.pop('slave_reference')
-      try:
-        errors = list(validator.validate(instance))
-      except UserError as e:
-        errors = list(e.args)
-      shared_item = {'reference': reference, 'parameters': instance}
-      if errors:
-        shared_item['errors'] = errors
-        invalid.append(shared_item)
-      else:
-        valid.append(shared_item)
+    if shared_list:
+      shared_schema = self._getSharedSchema(software_schema)
+      serialisation = software_schema.getSerialisation(strict=True)
+      validator = self.SharedValidator(shared_schema)
+      for instance in shared_list:
+        reference = instance.pop('slave_reference')
+        if serialisation == SoftwareReleaseSerialisation.JsonInXml:
+          instance = unwrap(instance)
+        try:
+          errors = list(validator.validate(instance))
+        except UserError as e:
+          errors = list(e.args)
+        shared_item = {'reference': reference, 'parameters': instance}
+        if errors:
+          shared_item['errors'] = errors
+          invalid.append(shared_item)
+        else:
+          valid.append(shared_item)
     options['valid-shared-instance-list'] = valid
     options['invalid-shared-instance-list'] = invalid
 
