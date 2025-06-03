@@ -26,7 +26,7 @@
     },
     "remove-backup-older-than": {
       "title": "Remove backups older than...",
-      "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
+      "description": "Remove all the backups in PBS that are older than specified value.\nIt should be a number of years, months, days, and hours, like 2y5m7d3h/\nrdiff-backup-compatible value is also supported, like '2W' (2 weeks) or '3B' (keep latest 3 backups).",
       "type": "string",
       "default": "2W"
     }
