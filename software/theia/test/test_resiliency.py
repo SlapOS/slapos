@@ -417,6 +417,20 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     shutil.copytree(os.path.dirname(dummy_software_url), dummy_target_path)
     self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
 
+    # the software.cfg extends slapos.cfg using a relative path, but since we
+    # copied it to another location, the relative path can no longer be resolved.
+    # Rewrite the software.cfg to replace it by an absolute path.
+    with open(self._test_software_url, 'r') as f:
+      software_cfg_content = f.read()
+    assert 'extends = ../../../../stack/slapos.cfg' in software_cfg_content
+    stack_slapos_cfg_path = os.path.join(
+      os.path.dirname(dummy_software_url), '../../../../stack/slapos.cfg')
+    with open(self._test_software_url, 'w') as f:
+      f.write(software_cfg_content.replace(
+        'extends = ../../../../stack/slapos.cfg',
+        f'extends = {stack_slapos_cfg_path}',
+      ))
+
     # Deploy dummy instance in export partition
     self._deployEmbeddedSoftware(self._test_software_url, 'dummy_instance')
 

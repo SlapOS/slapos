@@ -272,7 +272,7 @@ class TheiaImport(object):
     self.log('Build Software Releases')
     for i in range(3):
       try:
-        self.slapos('node', 'software', '--logfile', self.sr_log)
+        self.slapos('node', 'software', '--garbage-collect', '--logfile', self.sr_log)
       except subprocess.CalledProcessError:
         if i == 2:
           raise
