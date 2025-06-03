@@ -20,12 +20,10 @@
     "relay-port": {
       "title": "Relay Port",
       "description": "The port of the relay server used for outbound mail",
-      "type": "integer",
-      "default": 25
+      "type": "integer"
     }
   },
   "required": [
-    "mail-domains",
-    "relay-host"
+    "mail-domains"
   ]
 }

@@ -237,8 +237,8 @@ context =
   raw smtp_port {{ smtp_port}}
 
 [relay-info]
-host-default = {{ slapparameter_dict['relay-host'] }}
-port-default = {{ slapparameter_dict['relay-port'] }}
+host-override = {{ slapparameter_dict.get('relay-host', '') }}
+port-override = {{ slapparameter_dict.get('relay-port', '') }}
 {% for domain in slapparameter_dict['mail-domains'] -%}
 host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
 port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
