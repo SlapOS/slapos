@@ -165,6 +165,8 @@ class SlapConfigurationTest(unittest.TestCase):
   def patchSlap(self, parameters, serialise, shared=None, software_type='default'):
     shared = copy.deepcopy(shared) if shared else []
     d = {'_': json.dumps(parameters)} if serialise else copy.deepcopy(parameters)
+    if serialise:
+      shared = [{'_': json.dumps(s)} for s in shared]
     for i, s in enumerate(shared):
       s['slave_reference'] = 'SHARED%s' % i
     slap = mock.MagicMock()
@@ -429,8 +431,8 @@ class SlapConfigurationTest(unittest.TestCase):
       self.assertEqual(
         shared,
         [
-          {"slave_reference": "SHARED0", "kind": 1},
-          {"slave_reference": "SHARED1", "kind": 2, "thing": "hello"},
+          {"slave_reference": "SHARED0", "_": '{"kind": 1}'},
+          {"slave_reference": "SHARED1", "_": '{"kind": 2, "thing": "hello"}'},
         ],
       )
 
