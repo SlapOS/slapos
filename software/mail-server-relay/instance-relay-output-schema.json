@@ -6,7 +6,7 @@
       "description": "SMTP port of the postfix instance",
       "type": "integer"
     },
-    "subm-port": {
+    "submission-port": {
       "description": "Submission port of the postfix instance",
       "type": "integer"
     },
@@ -16,6 +16,10 @@
     },
     "domain": {
       "description": "Domain of the mail server",
+      "type": "string"
+    },
+    "dns-entries": {
+      "description": "DNS entries to add",
       "type": "string"
     }
   },
