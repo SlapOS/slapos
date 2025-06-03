@@ -1,7 +1,7 @@
 {
   "IMAP": {
       "host": "{{ mail_host }}",
-      "port": 10143,
+      "port": {{ imap_port }},
       "type": 0,
       "timeout": 300,
       "shortLogin": false,
