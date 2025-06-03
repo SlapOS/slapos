@@ -221,5 +221,5 @@ class TestPasswordLegacyDict(PasswordLegacyMixin, unittest.TestCase):
   password = '{}'
 
 
-class TestPasswordLegacyDict(PasswordLegacyMixin, unittest.TestCase):
+class TestPasswordLegacyString(PasswordLegacyMixin, unittest.TestCase):
   password = 'secret'
