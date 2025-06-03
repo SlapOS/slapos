@@ -54,6 +54,6 @@ maillog_file = {{ log_directory }}/postfix.log
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
-relayhost = [{{ relay_host }}]:{{ relay_port}}
+sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}

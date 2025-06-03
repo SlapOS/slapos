@@ -223,11 +223,10 @@ context =
   key setgid_group userinfo:gr-name
   raw server_fqdn {{ server_fqdn }}
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
+  key relay_map postfix-relays:output
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
   raw ipv6 {{ ipv6 }}
-  key relay_host request-relay-mailsr2.zdimension.fr:connection-outbound-host
-  raw relay_port {{ slapparameter_dict['relay-port'] }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
 
 [postfix-conf-master]
@@ -236,6 +235,22 @@ url = ${postfix_master.jinja2.cf:target}
 output = $${postfix-directory:etc}/master.cf
 context =
   raw smtp_port {{ smtp_port}}
+
+[relay-info]
+host-default = {{ slapparameter_dict['relay-host'] }}
+port-default = {{ slapparameter_dict['relay-port'] }}
+{% for domain in slapparameter_dict['mail-domains'] -%}
+host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
+port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
+{% endfor -%}
+
+[postfix-relays]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_relays.in:target}
+output = $${postfix-directory:etc}/relay_by_sender
+context =
+  section relay_info relay-info
+  raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
 
 [postfix-symlinks-libexec]
 recipe = slapos.cookbook:symbolic.link
