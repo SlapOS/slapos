@@ -3,12 +3,27 @@
   "description": "Mail Server",
   "serialisation": "json-in-xml",
   "software-type": {
-    "default": {
-      "title": "Default",
-      "software-type": "default",
-      "request": "instance-default-input-schema.json",
-      "response": "instance-default-output-schema.json",
+    "cluster": {
+      "title": "Mail Server Cluster",
+      "software-type": "cluster",
+      "request": "instance-cluster-input-schema.json",
+      "response": "instance-cluster-output-schema.json",
       "index": 0
+    },
+    "cluster-slave": {
+      "title": "Mail Server Cluster Slave",
+      "software-type": "cluster",
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "index": 1
+    },
+    "relay": {
+      "title": "Mail Server Relay",
+      "software-type": "relay",
+      "request": "instance-relay-input-schema.json",
+      "response": "instance-relay-output-schema.json",
+      "index": 2
     }
   }
 }
