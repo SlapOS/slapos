@@ -1,0 +1,86 @@
+[buildout]
+extends =
+  ${monitor2-template:output}
+parts =
+  monitor-base
+  publish-connection-information
+  request-relay
+  publish-shared
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+depends = 
+  $${request-all-relays:depends}
+<= monitor-publish
+
+[request-relay-base]
+<= slap-connection
+recipe = slapos.cookbook:request.serialised
+software-url = $${slap-connection:software-release-url}
+software-type = relay
+sla-computer_guid = $${:computer-id}
+{% for key, value in slapparameter_dict['default-relay-config'].items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+{% set mail_domains = list(slap_configuration.get('valid-shared-instance-list', []) | map(attribute='parameters')) -%}
+{% set whitelist = set(slapparameter_dict['outbound-domain-whitelist']) -%}
+{% for domain in mail_domains -%}
+{%  do domain.__setitem__('can-send', domain['name'] in whitelist) -%}
+{% endfor -%}
+config-mail-domains = {{ dumps(mail_domains) }}
+return =
+  smtp-ipv6
+  smtp-port
+
+{% for relay_name, config in slapparameter_dict['topology'].items() -%}
+[request-relay-{{ relay_name }}]
+<= request-relay-base
+name = {{ relay_name }}
+state = {{ config.get('state', 'started') }}
+
+{% for key, value in config.get('config', {}).items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+{% for key, value in config.get('sla', {}).items() -%}
+sla-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+{% endfor -%}
+
+[request-all-relays]
+depends =
+{% for relay_name in slapparameter_dict['topology'].keys() %}
+  $${request-relay-{{ relay_name }}:recipe}
+{% endfor -%}
+  
+
+# Shared instances (domains)
+# ----------------------------
+
+[publish-shared]
+recipe = slapos.recipe.build
+init =
+  whitelist = {{ whitelist }}
+  for domain in {{ (slap_configuration.get('valid-shared-instance-list', [])) }}:
+    ref = domain['reference']
+    section = f"""
+  [publish-{ref}]
+  recipe = slapos.cookbook:publish.serialised
+  -slave-reference = {ref}
+  dns-entries = foobar2
+    """
+    if domain['parameters']['name'] in whitelist:
+      section += """
+  outbound-host = $${request-relay:connection-smtp-ipv6}
+  outbound-smtp-port = $${request-relay:connection-smtp-port}"""
+    else:
+      section += """
+  outbound-host =
+  outbound-smtp-port = """
+    self.buildout.parse(section)
+  
