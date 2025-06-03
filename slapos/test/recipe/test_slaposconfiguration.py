@@ -167,6 +167,8 @@ class SlapConfigurationTest(unittest.TestCase):
     d = {'_': json.dumps(parameters)} if serialise else copy.deepcopy(parameters)
     for i, s in enumerate(shared):
       s['slave_reference'] = 'SHARED%s' % i
+    if serialise:
+      shared = [{'_': json.dumps(s)} for s in shared]
     slap = mock.MagicMock()
     slap_object = slap.return_value
     slap_object.initializeConnection.return_value = None
