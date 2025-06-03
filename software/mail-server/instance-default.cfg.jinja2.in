@@ -533,7 +533,7 @@ init =
 [request-relay-{{ mail_domain }}]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
-software-url = /opt/slapos-repo/software/mail-server-relay/software.cfg
+software-url = urn:slapos:mail-relay
 software-type = cluster
 shared = true
 name = mail-server-relay-{{ mail_domain }}
