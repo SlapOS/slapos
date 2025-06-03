@@ -46,13 +46,20 @@ recipe = slapos.recipe.build
 init =
   whitelist = {{ whitelist }}
   for domain in {{ (slap_configuration.get('valid-shared-instance-list', [])) }}:
-    if domain['parameters']['name'] in whitelist:
-      ref = domain['reference']
-      self.buildout.parse(f"""
+    ref = domain['reference']
+    section = f"""
   [publish-{ref}]
   recipe = slapos.cookbook:publish.serialised
   -slave-reference = {ref}
-  outbound-host = $${request-relay:connection-smtp-ipv6}
-  outbound-smtp-port = $${request-relay:connection-smtp-port}
   dns-entries = foobar2
-    """)
+    """
+    if domain['parameters']['name'] in whitelist:
+      section += """
+  outbound-host = $${request-relay:connection-smtp-ipv6}
+  outbound-smtp-port = $${request-relay:connection-smtp-port}"""
+    else:
+      section += """
+  outbound-host =
+  outbound-smtp-port = """
+    self.buildout.parse(section)
+  
