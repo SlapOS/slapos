@@ -31,7 +31,7 @@
     "tx_gain": {
       "$ref": "ru/common.json#/properties/tx_gain",
       "title": "Expert: Tx gain",
-      "description": "Expert only. Tx gain (in dB), can be used instead of TX dBm Power to directly control tx_gain Amarisoft option"
+      "description": "Expert only. Tx gain (in dB), can be used instead of Tx dBm Power to directly control tx_gain Amarisoft option (Do not set both Tx Gain and Tx dBm Power)"
     },
     "rx_gain": {
       "$ref": "ru/common.json#/properties/rx_gain",
