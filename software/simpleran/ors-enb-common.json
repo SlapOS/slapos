@@ -26,8 +26,8 @@
     },
     "dl_earfcn": {
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
-      "title": "DL EARFCN (Alternative to DL Frequency)",
-      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell."
+      "title": "Expert: DL EARFCN",
+      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
     },
     "tac": {
       "$ref": "cell/lte/input-schema.json#/properties/tac",

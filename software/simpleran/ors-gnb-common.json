@@ -17,8 +17,8 @@
     },
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
-      "title": "DL NR ARFCN (Alternative to DL Frequency)",
-      "description": "Can be used instead of DL Frequency to directly set the Downlink NR Absolute Radio Frequency Channel Number of the cell."
+      "title": "Expert: DL NR ARFCN",
+      "description": "Can be used instead of DL Frequency to directly set the Downlink NR Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL NR ARFCN)"
     },
     "ssb_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
