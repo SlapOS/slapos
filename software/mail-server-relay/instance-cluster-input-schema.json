@@ -27,12 +27,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "relay-host",
-        "relay-port",
-        "relay-user",
-        "relay-password"
-      ]
+      "additionalProperties": false
     }
   },
   "properties": {
@@ -65,9 +60,7 @@
               "default": "started"
             },
             "config": {
-              "allOf": [
-                { "$ref": "#/definitions/relay-config" }
-              ]
+              "$ref": "#/definitions/relay-config"
             }
           }
         }
