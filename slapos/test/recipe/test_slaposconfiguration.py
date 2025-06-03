@@ -443,3 +443,14 @@ class SlapConfigurationTest(unittest.TestCase):
       valid, invalid = self.receiveSharedParameters(options)
       self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
       self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": "hello"}])
+
+  def test_jsonschema_shared_no_slaves(self):
+    """Test that [in]valid-shared-instance-list exists as an empty list when there are no slaves."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True, shared=[]):
+        options = self.runJsonSchemaRecipe()
+        self.assertIn('valid-shared-instance-list', options)
+        self.assertEqual(options['valid-shared-instance-list'], [])
+        self.assertIn('invalid-shared-instance-list', options)
+        self.assertEqual(options['invalid-shared-instance-list'], [])
