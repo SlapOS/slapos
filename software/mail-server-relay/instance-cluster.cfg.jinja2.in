@@ -5,6 +5,7 @@ parts =
   monitor-base
   publish-connection-information
   request-relay
+  publish-shared
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -15,13 +16,9 @@ recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 
 [request-relay]
+<= slap-connection
 recipe = slapos.cookbook:request.serialised
 software-url = $${slap-connection:software-release-url}
-server-url = $${slap-connection:server-url}
-key-file = $${slap-connection:key-file}
-cert-file = $${slap-connection:cert-file}
-computer-id = $${slap-connection:computer-id}
-partition-id = $${slap-connection:partition-id}
 software-type = relay
 name = mail-server-relay
 sla-computer_guid = $${:computer-id}
@@ -37,3 +34,25 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = {{ dumps(mail_domains) }}
 return =
+  smtp-ipv6
+  smtp-port
+  
+
+# Shared instances (domains)
+# ----------------------------
+
+[publish-shared]
+recipe = slapos.recipe.build
+init =
+  whitelist = {{ whitelist }}
+  for domain in {{ (slap_configuration.get('valid-shared-instance-list', [])) }}:
+    if domain['parameters']['name'] in whitelist:
+      ref = domain['reference']
+      self.buildout.parse(f"""
+  [publish-{ref}]
+  recipe = slapos.cookbook:publish.serialised
+  -slave-reference = {ref}
+  outbound-host = $${request-relay:connection-smtp-ipv6}
+  outbound-smtp-port = $${request-relay:connection-smtp-port}
+  dns-entries = foobar2
+    """)
