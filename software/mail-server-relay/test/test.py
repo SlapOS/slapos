@@ -38,32 +38,88 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class PostfixTestCase(SlapOSInstanceTestCase):
   @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'cluster'
+
+  @classmethod
   def getInstanceParameterDict(cls):
     return {
       "_": json.dumps(
         {
-          "relay-host": "example.com",
-          "relay-port": 2525,
-          "relay-user": "user",
-          "relay-password": "pass",
-          "mail-domains": [
-            {
-              "name": "domain.lan",
-              # use example ipv6
-              "mail-server-host": "2001:db8::1",
-              "mail-server-port": 25
-            }
+          "default-relay-config": {
+            "relay-host": "example.com",
+            "relay-port": 2525,
+            "relay-user": "user",
+            "relay-password": "pass",
+          },
+          "outbound-domain-whitelist": [
+            "mail1.domain.lan",
+            "mail2.domain.lan"
           ],
+          "relay-domain": "foobaz.lan",
+          "topology": {
+              "relay-foo": {
+                  "state": "started"
+              },
+              "relay-bar": {
+                  "state": "started",
+                  "config": {
+                    "relay-host": "bar.example.com"
+                  }
+              }
+          }
         }
       )
     }
 
-  def test_postfix(self):
-    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
-    host = parameter_dict["smtp-ipv6"]
+  @classmethod
+  def setUpClass(cls):
+    super(PostfixTestCase, cls).setUpClass()
+    for domain in [
+      "mail1.domain.lan",
+      "mail2.domain.lan",
+      "mail3.domain.lan",
+    ]:
+      cls.requestSlaveInstanceForDomain(domain)
 
-    try:
-      server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
-      server.quit()
-    except Exception as e:
-      self.fail(f"SMTP connection failed: {e}")
+  @classmethod
+  def createParametersForDomain(cls, domain):
+    return {
+      "name": domain,
+      "mail-server-host": "2001:db8::%d" % (hash(domain) % 100),
+      "mail-server-port": 10025
+    }
+
+  @classmethod
+  def requestSlaveInstanceForDomain(cls, domain):
+    software_url = cls.getSoftwareURL()
+    param_dict = cls.createParametersForDomain(domain)
+    return cls.slap.request(
+      software_release=software_url,
+      partition_reference="SLAVE-%s" % domain.replace('.', '-'),
+      partition_parameter_kw={'_': json.dumps(param_dict)},
+      shared=True,
+      software_type='cluster',
+    )
+
+  def test_dns_entries(self):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    expected_entries = set([
+      "mail1.domain.lan MX 10 foobaz.lan",
+      "mail2.domain.lan MX 10 foobaz.lan"
+    ])
+    actual_entries = set(
+      filter(None, (line.strip() for line in parameter_dict["dns-entries"].splitlines()))
+    )
+    self.assertEqual(actual_entries, expected_entries)
+
+  def test_slave_output_schema_and_dns(self):
+    for domain in ["mail1.domain.lan", "mail2.domain.lan"]:
+      slave_instance = self.requestSlaveInstanceForDomain(domain)
+      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      # Check required keys and values
+      expected_host = self.createParametersForDomain(domain)["mail-server-host"]
+      self.assertEqual(connection_dict.get("outbound-host", "<missing>"), expected_host)
+      self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), 10025)
+      expected_dns = f"{domain} MX 10 foobaz.lan"
+      self.assertIn(expected_dns, connection_dict.get("dns-entries", "<missing>"))

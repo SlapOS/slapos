@@ -4,25 +4,17 @@ extends =
 parts =
   monitor-base
   publish-connection-information
-  request-relay
   publish-shared
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-depends = 
-  $${request-all-relays:depends}
-<= monitor-publish
-
 [request-relay-base]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
 software-url = $${slap-connection:software-release-url}
 software-type = relay
-sla-computer_guid = $${:computer-id}
 {% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
@@ -35,6 +27,14 @@ config-mail-domains = {{ dumps(mail_domains) }}
 return =
   smtp-ipv6
   smtp-port
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+dns-entries =
+{% for domain in mail_domains | selectattr('can-send', 'eq', True) %}
+  {{ domain['name'] }} MX 10 {{ slapparameter_dict['relay-domain'] }}
+{%- endfor %}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 [request-relay-{{ relay_name }}]
@@ -64,6 +64,8 @@ depends =
 
 [publish-shared]
 recipe = slapos.recipe.build
+depends = 
+  $${request-all-relays:depends}
 init =
   whitelist = {{ whitelist }}
   for domain in {{ (slap_configuration.get('valid-shared-instance-list', [])) }}:
@@ -76,11 +78,10 @@ init =
     """
     if domain['parameters']['name'] in whitelist:
       section += """
-  outbound-host = $${request-relay:connection-smtp-ipv6}
-  outbound-smtp-port = $${request-relay:connection-smtp-port}"""
+  outbound-host = {{ slapparameter_dict['relay-domain'] }}
+  outbound-smtp-port = 10025""" # todo?
     else:
       section += """
   outbound-host =
   outbound-smtp-port = """
     self.buildout.parse(section)
-  
