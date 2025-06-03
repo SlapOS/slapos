@@ -14,7 +14,7 @@ offline = true
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 depends = 
-  $${request-all-relays:recipe}
+  $${request-all-relays:depends}
 <= monitor-publish
 
 [request-relay-base]
@@ -23,7 +23,7 @@ recipe = slapos.cookbook:request.serialised
 software-url = $${slap-connection:software-release-url}
 software-type = relay
 sla-computer_guid = $${:computer-id}
-{% for key, value in slap_configuration['default-relay-config'].items() -%}
+{% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 {% set mail_domains = list(slap_configuration.get('valid-shared-instance-list', []) | map(attribute='parameters')) -%}
@@ -36,14 +36,11 @@ return =
   smtp-ipv6
   smtp-port
 
-{% for relay_name, config in slap_configuration['topology'].items() -%}
+{% for relay_name, config in slapparameter_dict['topology'].items() -%}
 [request-relay-{{ relay_name }}]
 <= request-relay-base
 name = {{ relay_name }}
-
-{% if "state" in config -%}
-state = {{ config['state'] }}
-{% endif -%}
+state = {{ config.get('state', 'started') }}
 
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
@@ -57,7 +54,7 @@ sla-{{ key }} = {{ dumps(value) }}
 
 [request-all-relays]
 depends =
-{% for relay_name in slap_configuration['topology'].keys() -%}
+{% for relay_name in slapparameter_dict['topology'].keys() %}
   $${request-relay-{{ relay_name }}:recipe}
 {% endfor -%}
   
