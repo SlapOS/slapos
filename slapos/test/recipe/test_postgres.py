@@ -33,6 +33,7 @@ class PostgresTest(unittest.TestCase):
       'dbname': 'dbname',
       'ipv4': self.ipv4,
       'ipv6': self.ipv6,
+      'ipv6-netmask-bits': '48',
       'port': self.port,
       'pgdata-directory': os.path.join(self.pgdata_directory, 'pgdata'),
       'services': self.services_directory,
