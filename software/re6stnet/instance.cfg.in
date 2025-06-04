@@ -47,5 +47,3 @@ recipe = slapos.cookbook:switch-softwaretype
 
 default = dynamic-template-re6stnet:output
 registry = ${:default}
-# BBB
-RootSoftwareInstance = ${:default}

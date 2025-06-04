@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import httplib
 import logging
 import json
 import os
@@ -93,9 +92,6 @@ def requestRemoveToken(client, token_base_path):
       reference = reference_key.split('.')[0]
       try:
         result = client.deleteToken(token)
-      except httplib.NOT_FOUND:
-        # Token is alread removed.
-        result = True
       except Exception:
         log.debug('Request delete token fail for %s... \n %s' % (request_file,
                     traceback.format_exc()))
@@ -119,7 +115,7 @@ def requestRemoveToken(client, token_base_path):
           os.unlink(ipv6_file)
 
     else:
-      log.debug('Bad token. Request add token fail for %s...' % request_file)
+      log.debug('Bad token. Request remove token fail for %s...' % request_file)
 
 def checkService(client, token_base_path, token_json, computer_partition):
   token_dict = loadJsonFile(token_json)
@@ -128,7 +124,7 @@ def checkService(client, token_base_path, token_json, computer_partition):
     return
 
   # Check token status
-  for slave_reference, token in token_dict.iteritems():
+  for slave_reference, token in token_dict.items():
     log.info("%s %s" % (slave_reference, token))
     status_file = os.path.join(token_base_path, '%s.status' % slave_reference)
     if not os.path.exists(status_file):
@@ -155,14 +151,14 @@ def checkService(client, token_base_path, token_json, computer_partition):
     email = '%s@slapos' % slave_reference.lower()
     if status == 'TOKEN_USED':
       try:
-        ipv6 = client.getIPv6Address(str(email))
+        ipv6 = client.getIPv6Address(str(email)).decode()
       except Exception:
         log.info('Error for dump ipv6 for %s... \n %s' % (slave_reference,
                                         traceback.format_exc()))
 
       log.info("%s, IPV6 = %s" % (slave_reference, ipv6))
       try:
-        ipv4 = client.getIPv4Information(str(email)) or "0.0.0.0"
+        ipv4 = client.getIPv4Information(str(email)).decode() or "0.0.0.0"
       except Exception:
         log.info('Error for dump ipv4 for %s... \n %s' % (slave_reference,
                                         traceback.format_exc()))

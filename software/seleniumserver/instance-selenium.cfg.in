@@ -1,3 +1,4 @@
+{% set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
 [buildout]
 parts =
   monitor-base
@@ -54,7 +55,6 @@ command-line =
     -host $${:hostname}
     -port $${:port}
     -role hub
-    -maxSession 20
     -newSessionWaitTimeout 600000
     --debug
 
@@ -82,6 +82,7 @@ command-line =
     -host $${:hostname}
     -port $${:port}
     -role node
+    -maxSession {{ parameter_dict['slotQuantity'] }}
     -timeout 300
     -hub $${selenium-server-hub-instance:register-url}
     -capabilities $${:capabilities}
@@ -99,25 +100,25 @@ hostname = $${slap-configuration:ipv4-random}
 
 [selenium-server-node-instance-firefox-102]
 <= selenium-server-node-instance
-capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-102:version},firefox_binary=${firefox-wrapper-102:location}
+capabilities = browserName=firefox,maxInstances={{ parameter_dict['slotQuantity'] }},marionette=true,platform=LINUX,version=${firefox-102:version},firefox_binary=${firefox-wrapper-102:location}
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.33.0:location}
 port = 7779
 
 [selenium-server-node-instance-firefox-115]
 <= selenium-server-node-instance
-capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-115:version},firefox_binary=${firefox-wrapper-115:location}
+capabilities = browserName=firefox,maxInstances={{ parameter_dict['slotQuantity'] }},marionette=true,platform=LINUX,version=${firefox-115:version},firefox_binary=${firefox-wrapper-115:location}
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.33.0:location}
 port = 7780
 
 [selenium-server-node-instance-chromium-91]
 <= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-91:version},chrome_binary=${chromium-wrapper-91:location}
+capabilities = browserName=chrome,maxInstances={{ parameter_dict['slotQuantity'] }},platform=LINUX,version=${chromium-91:version},chrome_binary=${chromium-wrapper-91:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
 port = 7781
 
 [selenium-server-node-instance-chromium-120]
 <= selenium-server-node-instance
-capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
+capabilities = browserName=chrome,maxInstances={{ parameter_dict['slotQuantity'] }},platform=LINUX,version=${chromium-120:version},chrome_binary=${chromium-wrapper-120:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-120:location}
 port = 7782
 
@@ -321,8 +322,8 @@ promise = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
   $${selenium-server-check-nodes-registered:output} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
-# We have 4 nodes with 3 slots each
-expected-node-count = 12
+# We have 4 nodes with slotQuantity slots each
+expected-node-count = {{ 4 * int(parameter_dict['slotQuantity']) }}
 
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template

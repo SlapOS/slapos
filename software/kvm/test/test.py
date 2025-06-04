@@ -59,10 +59,7 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
-  # XXX Keep using slapos node instance --all, because of missing promises
-  InstanceTestCase.slap._force_slapos_node_instance_all = True
+    os.path.join(os.path.dirname(__file__), 'test-software.cfg'))
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
@@ -130,16 +127,16 @@ class KVMTestCase(InstanceTestCase):
       if q.startswith('location') and '/qemu/' in q]
     assert (len(qemu_location) == 1)
     qemu_location = qemu_location[0].split('=')[1].strip()
-    cls.qemu_nbd = os.path.join(qemu_location, 'bin', 'qemu-nbd')
-    assert (os.path.exists(cls.qemu_nbd))
     cls.qemu_img = os.path.join(qemu_location, 'bin', 'qemu-img')
     assert (os.path.exists(cls.qemu_img))
 
   def getRunningImageList(
-      self, kvm_instance_partition,
+      self,
       _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
       _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
     ):
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
                      if 'kvm-' in q['name'])['pid']
@@ -160,7 +157,7 @@ class KVMTestCase(InstanceTestCase):
     return image_list
 
   @classmethod
-  def _findTopLevelPartitionPath(cls, path):
+  def _findTopLevelPartitionPath(cls, path: str):
     index = 0
     while True:
       index = path.find(os.path.sep, index) + len(os.path.sep)
@@ -199,27 +196,75 @@ class KVMTestCase(InstanceTestCase):
 
 
 class KvmMixin:
+  def assertPromiseFails(self, promise):
+    partition_directory = os.path.join(
+      self.slap.instance_directory,
+      self.kvm_instance_partition_reference)
+    monitor_run_promise = os.path.join(
+      partition_directory, 'software_release', 'bin',
+      'monitor.runpromise'
+    )
+    monitor_configuration = os.path.join(
+      partition_directory, 'etc', 'monitor.conf')
+
+    self.assertNotEqual(
+      0,
+      subprocess.call([
+        monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+        '--run-only', promise])
+    )
+
+  @classmethod
+  def getPartitionId(cls, instance_type):
+    software_url = cls.getSoftwareURL()
+    for computer_partition in cls.slap.computer.getComputerPartitionList():
+      try:
+        partition_url = computer_partition.\
+          getSoftwareRelease()._software_release
+        partition_type = computer_partition.getType()
+      except (
+        slapos.slap.exception.NotFoundError,
+        slapos.slap.exception.ResourceNotReady
+      ):
+        partition_url = 'NA'
+        partition_type = 'NA'
+      if partition_url == software_url and partition_type == instance_type:
+        return computer_partition.getId()
+    raise Exception("Partition type %s not found" % instance_type)
+
+  @classmethod
+  def getPartitionPath(cls, instance_type='kvm-export', *paths):
+    return os.path.join(
+      cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
+
+  @classmethod
+  def getBackupPartitionPath(cls, *paths):
+    return cls.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm',
+      cls.disk_type_backup_mapping[cls.disk_type], *paths)
+
   def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
 
-  def getProcessInfo(self):
+  def getProcessInfo(self, kvm_additional_hash_file_list=None):
+    if kvm_additional_hash_file_list is None:
+      kvm_additional_hash_file_list = []
     hash_value = generateHashFromFiles([
       os.path.join(self.computer_partition_root_path, hash_file)
       for hash_file in [
         'software_release/buildout.cfg',
       ]
     ])
-    # find bin/kvm_raw
-    kvm_raw_list = glob.glob(
-      os.path.join(self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
-    self.assertEqual(1, len(kvm_raw_list))  # allow to work only with one
+    kvm_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
     hash_file_list = [
-      kvm_raw_list[0],
-      'software_release/buildout.cfg',
-    ]
+       os.path.join(kvm_partition, 'bin', 'kvm_raw')
+    ] + kvm_additional_hash_file_list + [
+      'software_release/buildout.cfg']
+
     kvm_hash_value = generateHashFromFiles([
-      os.path.join(self.computer_partition_root_path, hash_file)
+      os.path.join(kvm_partition, hash_file)
       for hash_file in hash_file_list
     ])
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -230,11 +275,44 @@ class KvmMixin:
     return running_process_info.replace(
       hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
-  def raising_waitForInstance(self, max_retry):
-    with self.assertRaises(SlapOSNodeCommandError):
-      self.slap.waitForInstance(max_retry=max_retry)
+  @classmethod
+  def waitForInstanceWithPropagation(cls, first_retry=10, second_retry=10):
+    # run slapos node instance twice
+    # once to apply newly requested instance...
+    try:
+      cls.slap.waitForInstance(max_retry=first_retry)
+    except SlapOSNodeCommandError:
+      pass
+    # ...and second time to re-read the parameters from master and propagate
+    #    it to the instances
+    cls.slap.waitForInstance(max_retry=second_retry)
 
-  def rerequestInstance(self, parameter_dict, state='started'):
+  @classmethod
+  def raising_waitForInstance(cls, max_retry=5):
+    with cls.assertRaises(cls, SlapOSNodeCommandError):
+      cls.slap.waitForInstance(max_retry=max_retry)
+
+  @classmethod
+  def raising_waitForInstanceWithForce(cls, max_retry=5):
+    _current = cls.slap._force_slapos_node_instance_all
+    try:
+      cls.slap._force_slapos_node_instance_all = True
+      cls.raising_waitForInstance(max_retry=max_retry)
+    finally:
+      cls.slap._force_slapos_node_instance_all = _current
+
+  @classmethod
+  def waitForInstanceWithForce(cls, max_retry=10):
+    _current = cls.slap._force_slapos_node_instance_all
+    try:
+      cls.slap._force_slapos_node_instance_all = True
+      cls.slap.waitForInstance(max_retry=max_retry)
+    finally:
+      cls.slap._force_slapos_node_instance_all = _current
+
+  def rerequestInstance(self, parameter_dict=None, state='started'):
+    if parameter_dict is None:
+      parameter_dict = {}
     software_url = self.getSoftwareURL()
     software_type = self.getInstanceSoftwareType()
     return self.slap.request(
@@ -251,7 +329,9 @@ class KvmMixinJson:
     return {
       '_': json.dumps(super().getInstanceParameterDict())}
 
-  def rerequestInstance(self, parameter_dict, *args, **kwargs):
+  def rerequestInstance(self, parameter_dict=None, *args, **kwargs):
+    if parameter_dict is None:
+      parameter_dict = {}
     return super().rerequestInstance(
       parameter_dict={'_': json.dumps(parameter_dict)},
       *args, **kwargs
@@ -261,6 +341,7 @@ class KvmMixinJson:
 @skipUnlessKvm
 class TestInstance(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
+  kvm_instance_partition_reference = 'i0'
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
@@ -292,6 +373,8 @@ class TestInstance(KVMTestCase, KvmMixin):
       """i0:6tunnel-10022-{hash}-on-watch RUNNING
 i0:6tunnel-10080-{hash}-on-watch RUNNING
 i0:6tunnel-10443-{hash}-on-watch RUNNING
+i0:boot-image-url-list-updater-{hash} EXITED
+i0:boot-image-url-select-updater-{hash} EXITED
 i0:bootstrap-monitor EXITED
 i0:certificate_authority-{hash}-on-watch RUNNING
 i0:crond-{hash}-on-watch RUNNING
@@ -303,7 +386,19 @@ i0:nginx-graceful EXITED
 i0:nginx-on-watch RUNNING
 i0:whitelist-domains-download-{hash} RUNNING
 i0:whitelist-firewall-{hash} RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
+    )
+
+    # assure that the default image is used
+    self.assertEqual(
+      [
+        '${inst}/srv/boot-image-url-select-repository/'
+        '326b7737c4262e8eb09cd26773f3356a'
+      ],
+      self.getRunningImageList()
     )
 
 
@@ -316,6 +411,7 @@ class TestInstanceJson(
 @skipUnlessKvm
 class TestMemoryManagement(KVMTestCase, KvmMixin):
   __partition_reference__ = 'i'
+  kvm_instance_partition_reference = 'i0'
 
   def getKvmProcessInfo(self, switch_list):
     return_list = []
@@ -353,7 +449,7 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
     self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
 
   def tearDown(self):
-    self.rerequestInstance({})
+    self.rerequestInstance()
     self.slap.waitForInstance(max_retry=10)
 
   def test_enable_device_hotplug(self):
@@ -484,6 +580,7 @@ class MonitorAccessMixin(KvmMixin):
 @skipUnlessKvm
 class TestAccessDefault(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ad'
+  kvm_instance_partition_reference = 'ad0'
   expected_partition_with_monitor_base_url_count = 1
 
   def test(self):
@@ -505,6 +602,7 @@ class TestAccessDefaultJson(KvmMixinJson, TestAccessDefault):
 @skipUnlessKvm
 class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ada'
+  kvm_instance_partition_reference = 'ada0'
   expected_partition_with_monitor_base_url_count = 1
 
   @classmethod
@@ -531,6 +629,13 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+@skipUnlessKvm
+class TestAccessDefaultAdditionalJson(TestAccessDefaultAdditional):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-software-url': 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
+    }
 
 @skipUnlessKvm
 class TestAccessDefaultAdditionalJson(
@@ -541,6 +646,7 @@ class TestAccessDefaultAdditionalJson(
 @skipUnlessKvm
 class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'adb'
+  kvm_instance_partition_reference = 'adb0'
   expected_partition_with_monitor_base_url_count = 1
 
   @classmethod
@@ -551,7 +657,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
   def test(self):
     # START: mock .slapos-resource with tap.ipv4_addr
     # needed for netconfig.sh
-    partition_path = self.computer_partition_root_path
+    partition_path = str(self.computer_partition_root_path)
     top_partition_path = self._findTopLevelPartitionPath(partition_path)
 
     with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
@@ -567,7 +673,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
 
     self._updateSlaposResource(partition_path, tap=top_tap)
 
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithForce()
     # END: mock .slapos-resource with tap.ipv4_addr
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
@@ -589,6 +695,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akc'
+  kvm_instance_partition_reference = 'akc0'
   expected_partition_with_monitor_base_url_count = 2
 
   @classmethod
@@ -619,6 +726,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akca'
+  kvm_instance_partition_reference = 'akca0'
   expected_partition_with_monitor_base_url_count = 2
 
   @classmethod
@@ -659,6 +767,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'akcb'
+  kvm_instance_partition_reference = 'akcb0'
   expected_partition_with_monitor_base_url_count = 3
 
   @classmethod
@@ -699,9 +808,279 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
 
 
+class CronMixin(object):
+  def setUp(self):
+    super().setUp()
+    # wait until all mocked partition have var/cron-environment.json
+    for i in range(20):
+      missing_list = []
+      for mocked in glob.glob(os.path.join(
+        self.slap._instance_root, '*', 'var', 'cron-d-mock')):
+        cron_environment = os.path.join(
+          '/', *mocked.split('/')[:-2], 'var', 'cron-environment.json')
+        if not os.path.exists(cron_environment):
+          missing_list.append(cron_environment)
+      if len(missing_list) == 0:
+        break
+      time.sleep(1)
+    else:
+      raise ValueError('Missing cron environment', ' '.join(missing_list))
+
+  @classmethod
+  def executeCronDMockJob(cls, instance_type, cron):
+    jobpath = cls.getPartitionPath(
+      instance_type, 'var', 'cron-d-mock', cron)
+    with open(
+      cls.getPartitionPath(
+          'kvm-export', 'var', 'cron-environment.json')) as fh:
+      cron_environment = json.load(fh)
+    job_list = []
+    with open(jobpath, 'r') as fh:
+      for job in fh.readlines():
+        job = job.strip()
+        job_list.append(job)
+    job_list_output = []
+    for job in job_list:
+      job_list_output.append(subprocess.run(
+        job, env=cron_environment, shell=True, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT))
+    return job_list_output
+
+
+class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
+  __partition_reference__ = 'irb'
+  instance_max_retry = 20
+
+  disk_type = 'virtio'
+  disk_type_backup_mapping = {
+    'virtio': 'virtio0',
+    'ide': 'ide0-hd0',
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = {}
+    if cls.disk_type != 'virtio':
+      parameter_dict['disk-type'] = cls.disk_type
+    return parameter_dict
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  def setUp(self):
+    super().setUp()
+    importer_partition = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'template-kvm-import.cfg'))
+    self.assertEqual(1, len(importer_partition))
+    self.importer_partition = os.path.dirname(importer_partition[0])
+
+  def call_exporter(self):
+    result = self.executeCronDMockJob('kvm-export', 'backup')
+    self.assertEqual(len(result), 1)
+    self.assertEqual(
+      0,
+      result[0].returncode,
+      result[0].stdout.decode('utf-8'))
+    return result[0].stdout.decode('utf-8')
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupImporter(
+  TestInstanceResilientBackupMixin, KVMTestCase):
+  def test(self):
+    equeue_file = os.path.join(
+      self.importer_partition, 'var', 'log', 'equeue.log')
+    destination_qcow2 = os.path.join(
+      self.importer_partition, 'srv', 'virtual.qcow2')
+    destination_backup = os.path.join(
+      self.importer_partition, 'srv', 'backup', 'kvm',
+      self.disk_type_backup_mapping[self.disk_type])
+    # sanity check - no export/import happened yet
+    self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
+    self.call_exporter()
+
+    def awaitBackup(equeue_file):
+      for f in range(30):
+        with open(equeue_file, 'r') as fh:
+          equeue_log = fh.read()
+          if 'finished successfully' in equeue_log:
+            break
+        time.sleep(1)
+      else:
+        self.fail('Backup not finished: %s' % (equeue_log))
+      return equeue_log
+    equeue_log = awaitBackup(equeue_file)
+    self.assertNotIn('qemu-img rebase', equeue_log)
+    self.assertEqual(
+      os.listdir(self.getBackupPartitionPath()),
+      os.listdir(destination_backup)
+    )
+    self.assertTrue(os.path.exists(destination_qcow2))
+    # clean up equeue file for precise assertion
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    # drop backup destination to assert its recreation
+    os.unlink(destination_qcow2)
+    self.call_exporter()
+    equeue_log = awaitBackup(equeue_file)
+    self.assertIn('qemu-img rebase', equeue_log)
+    self.assertEqual(
+      os.listdir(self.getBackupPartitionPath()),
+      os.listdir(destination_backup)
+    )
+    self.assertTrue(os.path.exists(destination_qcow2))
+    # takeover
+    connection_parameter = self.computer_partition.getConnectionParameterDict()
+    takeover_result = requests.post(
+      connection_parameter['takeover-kvm-1-url'],
+      data={
+        'password': connection_parameter['takeover-kvm-1-password']})
+    self.assertEqual(httplib.OK, takeover_result.status_code)
+    self.assertTrue(takeover_result.text.startswith('Success.'))
+    # the real assertions comes from re-stabilizing the instance tree
+    self.slap.waitForInstance(max_retry=10)
+    # check that all stabilizes after backup after takeover
+    status_text = self.call_exporter()
+    self.assertIn(
+      'Post take-over cleanup',
+      status_text
+    )
+    self.slap.waitForInstance(max_retry=10)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupImporterIde(
+  TestInstanceResilientBackupImporter):
+  disk_type = 'ide'
+
+
+class TestInstanceResilientBackupExporterMixin(
+  TestInstanceResilientBackupMixin):
+  def initialBackup(self):
+    status_text = self.call_exporter()
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      0)
+    self.assertNotIn(
+      'Recovered from partial backup by removing partial',
+      status_text
+    )
+    self.assertNotIn(
+      'Recovered from empty backup',
+      status_text
+    )
+    self.assertNotIn(
+      'Post take-over cleanup',
+      status_text
+    )
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporter(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigrateOld(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    backup_partition = self.getPartitionPath(
+      'kvm-export', 'srv', 'backup', 'kvm')
+    backup_file_list = ['virtual.qcow2', 'virtual.qcow2.gz']
+    for backup_file in backup_file_list:
+      with open(os.path.join(backup_partition, backup_file), 'w') as fh:
+        fh.write('')
+    self.initialBackup()
+    post_backup_file_list = os.listdir(backup_partition)
+    for backup_file in backup_file_list:
+      self.assertNotIn(backup_file, post_backup_file_list)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPartialRecovery(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
+    # cover .partial file in the backup directory with fallback to full
+    current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
+    with open(current_backup + '.partial', 'w') as fh:
+      fh.write('')
+    status_text = self.call_exporter()
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      1)
+    self.assertIn(
+      'Recovered from partial backup by removing partial',
+      status_text
+    )
+    self.assertTrue(os.path.exists(os.path.join(
+      self.getPartitionPath(
+        'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterEmptyRecovery(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.initialBackup()
+    # cover empty backup recovery
+    current_backup_list = glob.glob(self.getBackupPartitionPath('*.qcow2'))
+    self.assertEqual(
+      1,
+      len(current_backup_list)
+    )
+    for file in current_backup_list:
+      os.unlink(file)
+    status_text = self.call_exporter()
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      0)
+    self.assertIn(
+      'Recovered from empty backup',
+      status_text
+    )
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterIde(
+  TestInstanceResilientBackupExporter):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigrateOldIde(
+  TestInstanceResilientBackupExporterMigrateOld):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPartialRecoveryIde(
+  TestInstanceResilientBackupExporterPartialRecovery):
+  disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterEmptyRecoveryIde(
+  TestInstanceResilientBackupExporterEmptyRecovery):
+  disk_type = 'ide'
+
+
 @skipUnlessKvm
 class TestInstanceResilient(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ir'
+  kvm_instance_partition_reference = 'ir0'
   instance_max_retry = 20
 
   @classmethod
@@ -712,27 +1091,9 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
   def setUpClass(cls):
     super().setUpClass()
     cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('PBS (kvm / 1)'))
-    cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm0'))
+    cls.kvm_instance_partition_reference = cls.getPartitionId('kvm0')
+    cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.kvm_instance_partition_reference)
     cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm1'))
-
-  def test_kvm_exporter(self):
-    exporter_partition = os.path.join(
-      self.slap.instance_directory,
-      self.__partition_reference__ + '2')
-    backup_path = os.path.join(
-      exporter_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2.gz')
-    exporter = os.path.join(exporter_partition, 'bin', 'exporter')
-    if os.path.exists(backup_path):
-      os.unlink(backup_path)
-
-    def call_exporter():
-      try:
-        return (0, subprocess.check_output(
-          [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
-      except subprocess.CalledProcessError as e:
-        return (e.returncode, e.output.decode('utf-8'))
-    status_code, status_text = call_exporter()
-    self.assertEqual(0, status_code, status_text)
 
   def test(self):
     connection_parameter_dict = self\
@@ -785,6 +1146,8 @@ ir1:pbs_sshkeys_authority-on-watch RUNNING
 ir2:6tunnel-10022-{hash}-on-watch RUNNING
 ir2:6tunnel-10080-{hash}-on-watch RUNNING
 ir2:6tunnel-10443-{hash}-on-watch RUNNING
+ir2:boot-image-url-list-updater-{hash} EXITED
+ir2:boot-image-url-select-updater-{hash} EXITED
 ir2:bootstrap-monitor EXITED
 ir2:certificate_authority-{hash}-on-watch RUNNING
 ir2:crond-{hash}-on-watch RUNNING
@@ -812,7 +1175,10 @@ ir3:resilient-web-takeover-httpd-on-watch RUNNING
 ir3:resilient_sshkeys_authority-on-watch RUNNING
 ir3:sshd-graceful EXITED
 ir3:sshd-on-watch RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
 
 
@@ -840,6 +1206,7 @@ class TestInstanceResilientDiskTypeIdeJson(
 @skipUnlessKvm
 class TestAccessResilientAdditional(KVMTestCase):
   __partition_reference__ = 'ara'
+  kvm_instance_partition_reference = 'ara0'
   expected_partition_with_monitor_base_url_count = 1
 
   @classmethod
@@ -875,40 +1242,6 @@ class TestAccessResilientAdditional(KVMTestCase):
 @skipUnlessKvm
 class TestAccessResilientAdditionalJson(
   KvmMixinJson, TestAccessResilientAdditional):
-  pass
-
-
-class TestInstanceNbdServer(KVMTestCase):
-  __partition_reference__ = 'ins'
-  instance_max_retry = 5
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'nbd'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    # port 8080 is used by testnode, use another one
-    return {
-      'otu-port': '8090'
-    }
-
-  def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
-    result = requests.get(
-      connection_parameter_dict['upload_url'].strip(), verify=False)
-    self.assertEqual(
-      httplib.OK,
-      result.status_code
-    )
-    self.assertIn('<title>Upload new File</title>', result.text)
-    self.assertIn("WARNING", connection_parameter_dict['status_message'])
-
-
-@skipUnlessKvm
-class TestInstanceNbdServerJson(
-  KvmMixinJson, TestInstanceNbdServer):
   pass
 
 
@@ -1015,196 +1348,6 @@ class FakeImageServerMixin(KvmMixin):
 
 
 @skipUnlessKvm
-class TestInstanceNbd(KVMTestCase):
-  __partition_reference__ = 'in'
-  kvm_instance_partition_reference = 'in0'
-
-  @classmethod
-  def startNbdServer(cls):
-    cls.nbd_directory = tempfile.mkdtemp()
-    img_1 = os.path.join(cls.nbd_directory, 'one.qcow')
-    img_2 = os.path.join(cls.nbd_directory, 'two.qcow')
-    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_1, "1M"])
-    subprocess.check_call([cls.qemu_img, "create", "-f", "qcow", img_2, "1M"])
-
-    nbd_list = [cls.qemu_nbd, '-r', '-t', '-e', '32767']
-    cls.nbd_1_port = findFreeTCPPort(cls.ipv6_address_pure)
-    cls.nbd_1 = subprocess.Popen(
-      nbd_list + [
-        '-b', cls.ipv6_address_pure, '-p', str(cls.nbd_1_port), img_1])
-    cls.nbd_1_uri = '[%s]:%s' % (cls.ipv6_address_pure, cls.nbd_1_port)
-    cls.nbd_2_port = findFreeTCPPort(cls.ipv6_address_pure)
-    cls.nbd_2 = subprocess.Popen(
-      nbd_list + [
-        '-b', cls.ipv6_address_pure, '-p', str(cls.nbd_2_port), img_2])
-    cls.nbd_2_uri = '[%s]:%s' % (cls.ipv6_address_pure, cls.nbd_2_port)
-
-  @classmethod
-  def stopNbdServer(cls):
-    cls.nbd_1.terminate()
-    cls.nbd_2.terminate()
-    shutil.rmtree(cls.nbd_directory)
-
-  @classmethod
-  def setUpClass(cls):
-    # we need qemu-nbd binary location
-    # it's to hard to put qemu in software/slapos-sr-testing
-    # so let's find it here
-    # let's find our software .installed.cfg
-    cls.ipv6_address_pure = cls._ipv6_address.split('/')[0]
-    cls.findQemuTools()
-    cls.startNbdServer()
-    super().setUpClass()
-
-  @classmethod
-  def tearDownClass(cls):
-    super().tearDownClass()
-    cls.stopNbdServer()
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "nbd-host": cls.ipv6_address_pure,
-      "nbd-port": cls.nbd_1_port
-    }
-
-  def test(self):
-    kvm_partition = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition_reference)
-    self.assertEqual(
-      [f'nbd:{self.nbd_1_uri}', '${shared}/debian-${ver}-amd64-netinst.iso'],
-      self.getRunningImageList(kvm_partition)
-    )
-
-
-@skipUnlessKvm
-class TestInstanceNbdWithVirtualHardDriveUrl(
-  FakeImageServerMixin, TestInstanceNbd):
-  __partition_reference__ = 'inbvhdu'
-  kvm_instance_partition_reference = 'inbvhdu0'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "nbd-host": cls.ipv6_address_pure,
-      "nbd-port": cls.nbd_1_port,
-      "virtual-hard-drive-url": cls.real_image,
-      "virtual-hard-drive-md5sum": cls.real_image_md5sum
-    }
-
-  def test(self):
-    kvm_partition = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition_reference)
-    self.assertEqual(
-      [f'nbd:{self.nbd_1_uri}', '${shared}/debian-${ver}-amd64-netinst.iso'],
-      self.getRunningImageList(kvm_partition)
-    )
-    image_repository = os.path.join(
-      kvm_partition,
-      'srv', 'virtual-hard-drive-url-repository')
-    self.assertEqual(
-      [self.getInstanceParameterDict()['virtual-hard-drive-md5sum']],
-      os.listdir(image_repository)
-    )
-    destination_image = os.path.join(kvm_partition, 'srv', 'virtual.qcow2')
-    # compare result of qemu-img info of repository and the one
-    qemu_img_list = [self.qemu_img, 'info', '-U', '--output', 'json']
-    source_image_info_json = json.loads(subprocess.check_output(
-      qemu_img_list + [
-        os.path.join(self.image_source_directory, self.real_image_md5sum)]))
-    destination_image_info_json = json.loads(subprocess.check_output(
-      qemu_img_list + [destination_image]))
-    source_image_info_json.pop('filename')
-    destination_image_info_json.pop('filename')
-    # the best possible way to assure that provided image is used is by
-    # comparing the result of qemu-img info for both
-    self.assertEqual(
-      source_image_info_json,
-      destination_image_info_json
-    )
-
-
-@skipUnlessKvm
-class TestInstanceNbdWithBootImageUrlList(
-  FakeImageServerMixin, TestInstanceNbd):
-  __partition_reference__ = 'inbiul'
-  kvm_instance_partition_reference = 'inbiul0'
-  image_directory = 'boot-image-url-list-repository'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "nbd-host": cls.ipv6_address_pure,
-      "nbd-port": cls.nbd_1_port,
-      "boot-image-url-list": f"{cls.fake_image}#{cls.fake_image_md5sum}"
-    }
-
-  def test(self):
-    kvm_partition = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition_reference)
-    self.assertEqual(
-      [
-        f'nbd:{self.nbd_1_uri}',
-        f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
-        '${shared}/debian-${ver}-amd64-netinst.iso',
-      ],
-      self.getRunningImageList(kvm_partition)
-    )
-
-
-@skipUnlessKvm
-class TestInstanceNbdWithBootImageUrlSelect(
-  FakeImageServerMixin, TestInstanceNbd):
-  __partition_reference__ = 'inbius'
-  kvm_instance_partition_reference = 'inbius0'
-  image_directory = 'boot-image-url-select-repository'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "nbd-host": cls.ipv6_address_pure,
-      "nbd-port": cls.nbd_1_port,
-      "boot-image-url-select": f'["{cls.fake_image}#{cls.fake_image_md5sum}"]'
-    }
-
-  def test(self):
-    kvm_partition = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition_reference)
-    self.assertEqual(
-      [
-        f'nbd:{self.nbd_1_uri}',
-        f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
-        '${shared}/debian-${ver}-amd64-netinst.iso',
-      ],
-      self.getRunningImageList(kvm_partition)
-    )
-
-
-@skipUnlessKvm
-class TestInstanceNbdBoth(TestInstanceNbd):
-  __partition_reference__ = 'inb'
-  kvm_instance_partition_reference = 'inb0'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "nbd-host": cls.ipv6_address_pure,
-      "nbd-port": cls.nbd_1_port,
-      "nbd2-host": cls.ipv6_address_pure,
-      "nbd2-port": cls.nbd_2_port
-    }
-
-  def test(self):
-    kvm_partition = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition_reference)
-    self.assertEqual(
-      [f'nbd:{self.nbd_1_uri}', f'nbd:{self.nbd_2_uri}',
-       '${shared}/debian-${ver}-amd64-netinst.iso'],
-      self.getRunningImageList(kvm_partition)
-    )
-
-
-@skipUnlessKvm
 class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'vhdu'
   kvm_instance_partition_reference = 'vhdu0'
@@ -1266,7 +1409,6 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
   # variations
   key = 'boot-image-url-list'
   test_input = "%s#%s\n%s#%s"
-  empty_input = ""
   image_directory = 'boot-image-url-list-repository'
   config_state_promise = 'boot-image-url-list-config-state-promise.py'
   download_md5sum_promise = 'boot-image-url-list-download-md5sum-promise.py'
@@ -1300,12 +1442,9 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
 
   def tearDown(self):
     # clean up the instance for other tests
-    # 1st remove all images...
-    self.rerequestInstance({self.key: ''})
-    self.slap.waitForInstance(max_retry=10)
-    # 2nd ...move instance to "default" state
-    self.rerequestInstance({})
-    self.slap.waitForInstance(max_retry=10)
+    # move instance to "default" state
+    self.rerequestInstance()
+    self.slap.waitForInstance(max_retry=20)
     super().tearDown()
 
   def test(self):
@@ -1330,9 +1469,8 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       [
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image_md5sum}',
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image2_md5sum}',
-        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
     # Switch image
@@ -1341,7 +1479,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
         self.fake_image3, self.fake_image3_md5sum,
         self.fake_image2, self.fake_image2_md5sum)
     })
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     self.assertTrue(os.path.exists(os.path.join(
       image_repository, self.fake_image3_md5sum)))
     self.assertTrue(os.path.exists(os.path.join(
@@ -1351,18 +1489,14 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       [
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image3_md5sum}',
         f'${{inst}}/srv/{self.image_directory}/{self.fake_image2_md5sum}',
-        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
     )
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    # Note: key is left and empty_input is provided, as otherwise the part
-    #       which generate images is simply removed, which can lead to
-    #       leftover
-    self.rerequestInstance({self.key: self.empty_input})
-    self.slap.waitForInstance(max_retry=10)
+    self.rerequestInstance()
+    self.waitForInstanceWithPropagation()
     self.assertEqual(
       os.listdir(image_repository),
       []
@@ -1370,45 +1504,38 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['${shared}/debian-${ver}-amd64-netinst.iso'],
-      self.getRunningImageList(kvm_instance_partition)
-    )
-
-  def assertPromiseFails(self, promise):
-    partition_directory = os.path.join(
-      self.slap.instance_directory,
-      self.kvm_instance_partition_reference)
-    monitor_run_promise = os.path.join(
-      partition_directory, 'software_release', 'bin',
-      'monitor.runpromise'
-    )
-    monitor_configuration = os.path.join(
-      partition_directory, 'etc', 'monitor.conf')
-
-    self.assertNotEqual(
-      0,
-      subprocess.call([
-        monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
-        '--run-only', promise])
+      [
+        '${inst}/srv/boot-image-url-select-repository/'
+        '326b7737c4262e8eb09cd26773f3356a'
+      ],
+      self.getRunningImageList()
     )
 
   def test_bad_parameter(self):
     self.rerequestInstance({
       self.key: self.bad_value
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
+
+  def test_incorrect_md5sum_value(self):
     self.rerequestInstance({
       self.key: self.incorrect_md5sum_value
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
   def test_not_matching_md5sum(self):
@@ -1416,7 +1543,9 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_md5sum_promise)
     self.assertPromiseFails(self.download_state_promise)
 
@@ -1425,14 +1554,18 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
       self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.download_state_promise)
 
   def test_too_many_images(self):
     self.rerequestInstance({
       self.key: self.too_many_image_value
     })
-    self.raising_waitForInstance(3)
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
+    self.raising_waitForInstance(5)
     self.assertPromiseFails(self.config_state_promise)
 
 
@@ -1458,37 +1591,63 @@ class TestBootImageUrlListResilientJson(
 
 
 @skipUnlessKvm
-class TestBootImageUrlSelect(TestBootImageUrlList):
+class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
   __partition_reference__ = 'bius'
   kvm_instance_partition_reference = 'bius0'
 
-  # variations
-  key = 'boot-image-url-select'
-  test_input = '["%s#%s", "%s#%s"]'
-  empty_input = '[]'
-  image_directory = 'boot-image-url-select-repository'
   config_state_promise = 'boot-image-url-select-config-state-promise.py'
-  download_md5sum_promise = 'boot-image-url-select-download-md5sum-promise.py'
-  download_state_promise = 'boot-image-url-select-download-state-promise.py'
 
-  bad_value = '["jsutbad"]'
-  incorrect_md5sum_value_image = '["%s#"]'
-  incorrect_md5sum_value = '["url#asdasd"]'
-  single_image_value = '["%s#%s"]'
-  unreachable_host_value = '["evennotahost#%s"]'
-  too_many_image_value = """[
-      "image1#11111111111111111111111111111111",
-      "image2#22222222222222222222222222222222",
-      "image3#33333333333333333333333333333333",
-      "image4#44444444444444444444444444444444",
-      "image5#55555555555555555555555555555555",
-      "image6#66666666666666666666666666666666"
-      ]"""
-
-  def test_not_json(self):
+  def test(self):
+    # check the default image
+    image_repository = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      'srv', 'boot-image-url-select-repository')
+    self.assertEqual(
+      ['326b7737c4262e8eb09cd26773f3356a'],
+      os.listdir(image_repository)
+    )
+    image = os.path.join(image_repository, '326b7737c4262e8eb09cd26773f3356a')
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, '326b7737c4262e8eb09cd26773f3356a')
+    self.assertEqual(
+      [
+        '${inst}/srv/boot-image-url-select-repository/'
+        '326b7737c4262e8eb09cd26773f3356a'
+      ],
+      self.getRunningImageList()
+    )
+    # switch the image
     self.rerequestInstance({
-      self.key: 'notjson#notjson'
+      'boot-image-url-select': "Debian Bullseye 11 netinst x86_64"})
+    self.waitForInstanceWithPropagation()
+    image_repository = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      'srv', 'boot-image-url-select-repository')
+    self.assertEqual(
+      ['b710c178eb434d79ce40ce703d30a5f0'],
+      os.listdir(image_repository)
+    )
+    image = os.path.join(image_repository, 'b710c178eb434d79ce40ce703d30a5f0')
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, 'b710c178eb434d79ce40ce703d30a5f0')
+    self.assertEqual(
+      [
+        '${inst}/srv/boot-image-url-select-repository/'
+        'b710c178eb434d79ce40ce703d30a5f0'
+      ],
+      self.getRunningImageList()
+    )
+
+  def test_bad_image(self):
+    self.rerequestInstance({
+      'boot-image-url-select': 'DOESNOTEXISTS'
     })
+    if self.getInstanceSoftwareType() == 'kvm-resilient':
+      self.waitForInstance()
     self.raising_waitForInstance(3)
     self.assertPromiseFails(self.config_state_promise)
 
@@ -1496,66 +1655,113 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     partition_parameter_kw = {
       'boot-image-url-list': "{}#{}".format(
         self.fake_image, self.fake_image_md5sum),
-      'boot-image-url-select': '["{}#{}"]'.format(
-        self.fake_image, self.fake_image_md5sum)
+      'boot-image-url-select': "Debian Bullseye 11 netinst x86_64"
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     # check that image is correctly downloaded
-    for image_directory in [
-      'boot-image-url-list-repository', 'boot-image-url-select-repository']:
-      image_repository = os.path.join(
-        self.slap.instance_directory, self.kvm_instance_partition_reference,
-        'srv', image_directory)
-      image = os.path.join(image_repository, self.fake_image_md5sum)
-      self.assertTrue(os.path.exists(image))
-      with open(image, 'rb') as fh:
-        image_md5sum = hashlib.md5(fh.read()).hexdigest()
-      self.assertEqual(image_md5sum, self.fake_image_md5sum)
+    image_repository = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      'srv', 'boot-image-url-list-repository')
+    self.assertEqual(
+      [self.fake_image_md5sum],
+      os.listdir(image_repository)
+    )
+    image = os.path.join(image_repository, self.fake_image_md5sum)
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, self.fake_image_md5sum)
+
+    image_repository = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      'srv', 'boot-image-url-select-repository')
+    self.assertEqual(
+      ['b710c178eb434d79ce40ce703d30a5f0'],
+      os.listdir(image_repository)
+    )
+    image = os.path.join(image_repository, 'b710c178eb434d79ce40ce703d30a5f0')
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, 'b710c178eb434d79ce40ce703d30a5f0')
 
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
     self.assertEqual(
       [
-        '${{inst}}/srv/boot-image-url-select-repository/{}'.format(
-          self.fake_image_md5sum),
         '${{inst}}/srv/boot-image-url-list-repository/{}'.format(
           self.fake_image_md5sum),
-        '${shared}/debian-${ver}-amd64-netinst.iso',
+        '${inst}/srv/boot-image-url-select-repository/'
+        'b710c178eb434d79ce40ce703d30a5f0'
       ],
-      self.getRunningImageList(kvm_instance_partition)
+      self.getRunningImageList()
+    )
+
+    # check that using only boot-image-url-list results with not having
+    # boot-image-url-select if nothing is provided
+    partition_parameter_kw = {
+      'boot-image-url-list': "{}#{}".format(
+        self.fake_image, self.fake_image_md5sum),
+    }
+    self.rerequestInstance(partition_parameter_kw)
+    self.waitForInstanceWithPropagation()
+    # check that image is correctly downloaded
+    image_repository = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      'srv', 'boot-image-url-list-repository')
+    self.assertEqual(
+      [self.fake_image_md5sum],
+      os.listdir(image_repository)
+    )
+    image = os.path.join(image_repository, self.fake_image_md5sum)
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, self.fake_image_md5sum)
+
+    self.assertEqual(
+      [],
+      os.listdir(os.path.join(
+        self.slap.instance_directory, self.kvm_instance_partition_reference,
+        'srv', 'boot-image-url-select-repository'))
+    )
+
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+
+    self.assertEqual(
+      [
+        '${{inst}}/srv/boot-image-url-list-repository/{}'.format(
+          self.fake_image_md5sum),
+      ],
+      self.getRunningImageList()
     )
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    self.rerequestInstance(
-      {'boot-image-url-list': '', 'boot-image-url-select': ''})
-    self.slap.waitForInstance(max_retry=2)
-    for image_directory in [
-      'boot-image-url-list-repository', 'boot-image-url-select-repository']:
-      image_repository = os.path.join(
-        kvm_instance_partition, 'srv', image_directory)
-      self.assertEqual(
-        os.listdir(image_repository),
-        []
-      )
+    self.rerequestInstance()
+    self.waitForInstanceWithPropagation()
 
-    # cleanup of images works, also asserts that configuration changes are
-    # reflected
-    partition_parameter_kw[self.key] = ''
-    partition_parameter_kw['boot-image-url-list'] = ''
-    self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=2)
     self.assertEqual(
-      os.listdir(image_repository),
+      os.listdir(os.path.join(
+        kvm_instance_partition, 'srv', 'boot-image-url-select-repository')),
+      ['326b7737c4262e8eb09cd26773f3356a']
+    )
+    self.assertEqual(
+      os.listdir(os.path.join(
+        kvm_instance_partition, 'srv', 'boot-image-url-list-repository')),
       []
     )
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['${shared}/debian-${ver}-amd64-netinst.iso'],
-      self.getRunningImageList(kvm_instance_partition)
+      [
+        '${inst}/srv/boot-image-url-select-repository/'
+        '326b7737c4262e8eb09cd26773f3356a'
+      ],
+      self.getRunningImageList()
     )
 
 
@@ -1622,7 +1828,7 @@ class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
@@ -1642,12 +1848,62 @@ class TestBootImageUrlListKvmCluster(FakeImageServerMixin, KVMTestCase):
 
 
 @skipUnlessKvm
-class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
+class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
   __partition_reference__ = 'biuskc'
 
-  input_value = "[\"%s#%s\"]"
-  key = 'boot-image-url-select'
-  config_file_name = 'boot-image-url-select.json'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+        },
+        "KVM1": {
+            "disable-ansible-promise": True,
+        }
+      }
+    })}
+
+  def test(self):
+    # Note: As there is no way to introspect nicely where partition landed
+    #       we assume ordering of the cluster requests
+    self.rerequestInstance({'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            "boot-image-url-select": "Debian Bullseye 11 netinst x86_64"
+        },
+        "KVM1": {
+            "disable-ansible-promise": True,
+            "boot-image-url-select": "Debian Bookworm 12 netinst x86_64"
+        }
+      }
+    })})
+    self.waitForInstanceWithPropagation()
+    KVM0_config = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
+      'boot-image-url-select.json')
+    KVM1_config = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '2', 'etc',
+      'boot-image-url-select.json')
+    with open(KVM0_config) as fh:
+      self.assertEqual(
+        '["https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c7'
+        '2871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a'
+        '936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0"]',
+        fh.read().strip()
+      )
+    with open(KVM1_config) as fh:
+      self.assertEqual(
+        '["https://shacache.nxdcdn.com/33c08e56c83d13007e4a5511b9bf2c4926c4aa'
+        '12fd5dd56d493c0653aecbab380988c5bf1671dbaea75c582827797d98c4a611f7fb'
+        '2b131fbde2c677d5258ec9#326b7737c4262e8eb09cd26773f3356a"]',
+        fh.read().strip()
+      )
 
 
 @skipUnlessKvm
@@ -2107,7 +2363,7 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
 
   def _test(self, parameter_dict, expected):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstanceWithPropagation()
 
     kvm_raw = glob.glob(os.path.join(
       self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
@@ -2241,6 +2497,8 @@ class ExternalDiskMixin(KvmMixin):
           slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
+    # as out of slapos control change applied force reprocessing
+    cls.waitForInstanceWithForce()
 
   @classmethod
   def _dropExternalStorageList(cls):
@@ -2252,6 +2510,12 @@ class ExternalDiskMixin(KvmMixin):
         slapos_config.append(line)
     with open(cls.slap._slapos_config, 'w') as fh:
       fh.write(''.join(slapos_config))
+    # as out of slapos control change applied force reprocessing and ignore
+    # errors, as test can leave the partitions in inconsistent state
+    try:
+      cls.waitForInstanceWithForce()
+    except SlapOSNodeCommandError:
+      pass
 
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('file.*if=virtio.*').match
@@ -2291,8 +2555,6 @@ class TestExternalDisk(KVMTestCase, ExternalDiskMixin):
     cls.working_directory = tempfile.mkdtemp()
     # setup the external_storage_list, to mimic part of slapformat
     cls._prepareExternalStorageList()
-    # re-run the instance, as information has been updated
-    cls.waitForInstance()
 
   @classmethod
   def tearDownClass(cls):
@@ -2320,9 +2582,9 @@ class TestExternalDisk(KVMTestCase, ExternalDiskMixin):
     restarted_drive_list = self.getRunningDriveList(kvm_instance_partition)
     self.assertEqual(drive_list, restarted_drive_list)
     # prove that even on resetting parameters, drives are still there
-    self.rerequestInstance({}, state='stopped')
+    self.rerequestInstance(state='stopped')
     self.waitForInstance()
-    self.rerequestInstance({})
+    self.rerequestInstance()
     self.waitForInstance()
     dropped_drive_list = self.getRunningDriveList(kvm_instance_partition)
     self.assertEqual(drive_list, dropped_drive_list)
@@ -2393,10 +2655,11 @@ class ExternalDiskModernMixin(object):
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
-      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      glob.glob(os.path.join(
+          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
       self.qemu_img = [
         q for q in fh.readlines()
-        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
       self.qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
@@ -2423,7 +2686,7 @@ class TestExternalDiskModern(
   ExternalDiskModernMixin, KVMTestCase, ExternalDiskMixin):
   def test(self):
     self.prepareEnv()
-    self.waitForInstance()
+    self.waitForInstanceWithPropagation()
     drive_list = self.getRunningDriveList(self.kvm_instance_partition)
     self.assertEqual(
       drive_list,
@@ -2543,10 +2806,11 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
     # find qemu_img from the tested SR via it's partition parameter, as
     # otherwise qemu-kvm would be dependency of test suite
     with open(
-      os.path.join(self.computer_partition_root_path, 'buildout.cfg')) as fh:
+      glob.glob(os.path.join(
+          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
       qemu_img = [
         q for q in fh.readlines()
-        if 'raw qemu_img_executable_location' in q][0].split()[-1]
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
@@ -2568,6 +2832,7 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
 @skipUnlessKvm
 class TestInstanceHttpServer(KVMTestCase, KvmMixin):
   __partition_reference__ = 'ihs'
+  kvm_instance_partition_reference = 'ihs0'
 
   @classmethod
   def startHttpServer(cls):
@@ -2661,6 +2926,8 @@ vm""",
       """ihs0:6tunnel-10022-{hash}-on-watch RUNNING
 ihs0:6tunnel-10080-{hash}-on-watch RUNNING
 ihs0:6tunnel-10443-{hash}-on-watch RUNNING
+ihs0:boot-image-url-list-updater-{hash} EXITED
+ihs0:boot-image-url-select-updater-{hash} EXITED
 ihs0:bootstrap-monitor EXITED
 ihs0:certificate_authority-{hash}-on-watch RUNNING
 ihs0:crond-{hash}-on-watch RUNNING
@@ -2673,7 +2940,10 @@ ihs0:nginx-graceful EXITED
 ihs0:nginx-on-watch RUNNING
 ihs0:whitelist-domains-download-{hash} RUNNING
 ihs0:whitelist-firewall-{hash} RUNNING""",
-      self.getProcessInfo()
+      self.getProcessInfo([
+        'var/boot-image-url-list/boot-image-url-list.json',
+        'var/boot-image-url-select/boot-image-url-select.json'
+      ])
     )
     public_dir = os.path.join(
       self.computer_partition_root_path, 'srv', 'public')

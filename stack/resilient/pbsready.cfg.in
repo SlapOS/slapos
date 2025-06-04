@@ -172,7 +172,6 @@ config-command = $${notifier-stalled-promise-bin:wrapper-path}
 #--
 #-- OpenSSH.
 [resilient-sshd-config]
-# XXX: Add timeout support
 recipe = slapos.recipe.template
 output = $${directory:etc}/resilient-sshd.conf
 path_pid = $${directory:run}/resilient-sshd.pid
@@ -186,6 +185,8 @@ inline =
  PasswordAuthentication no
  PubkeyAuthentication yes
  ForceCommand $${rdiff-backup-server:wrapper}
+ ClientAliveInterval 30
+ ClientAliveCountMax 10
 
 [sshd-raw-server]
 recipe = slapos.cookbook:wrapper

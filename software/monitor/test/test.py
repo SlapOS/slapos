@@ -366,6 +366,7 @@ class EdgeMixin(object):
 
 
 class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
+  instance_max_retry = 40
   surykatka_dict = {}
 
   def assertConnectionParameterDict(self):

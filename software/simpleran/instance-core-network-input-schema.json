@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Core Network Input Parameters",
+  "type": "object",
+  "properties": {
+    "core_network_plmn": {
+      "default": "00101",
+      "title": "Core Network PLMN",
+      "description": "Core Network Public Land Mobile Network",
+      "type": "string"
+    },
+    "external_enb_gnb": {
+      "default": false,
+      "title": "External eNB / gNB",
+      "description": "Set to true if external eNB / gNB will need to connect to this core network.",
+      "type": "boolean"
+    },
+    "iperf3": {
+      "default": 0,
+      "title": "iperf3 UDP server count",
+      "description": "Activate one or multiple iperf3 UDP server",
+      "type": "number"
+    },
+    "local_domain": {
+      "default": "",
+      "title": "Local Domain",
+      "description": "Activates local DNS server serving the given domain name",
+      "type": "string"
+    },
+    "network_name": {
+      "title": "Network Name",
+      "description": "Network name displayed on UE",
+      "type": "string",
+      "default": "RAPIDSPACE"
+    },
+    "network_short_name": {
+      "title": "Network Short Name",
+      "description": "Network short name displayed on UE",
+      "type": "string",
+      "default": "RAPIDSPACE"
+    },
+    "use_ipv4": {
+      "default": false,
+      "title": "Use IPv4",
+      "description": "Set to true to use IPv4 for AMF / MME addresses",
+      "type": "boolean"
+    },
+    "fixed_ips": {
+      "default": false,
+      "title": "Fixed IP for the UE",
+      "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
+      "type": "boolean"
+    },
+    "pdn_list": {
+      "title": "PDN list",
+      "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names.",
+      "default": {
+        "internet": {
+          "name": "internet"
+        },
+        "default": {
+          "name": "default"
+        },
+        "sos": {
+          "name": "sos"
+        }
+      },
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "name": {
+              "title": "APN name",
+              "description": "APN name",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "qci": {
+      "default": 9,
+      "title": "QCI of default E-RAB",
+      "description": "QoS Class Identifier of the default E-RAB",
+      "type": "number"
+    },
+    "eps_5gs_interworking": {
+      "title": "EPS 5GS Interworking",
+      "type": "string",
+      "description": "Defines whether inter RAT mobility between EPS and 5GS is supported or not, and whether N26 interface is supported or not. Note that interworking with N26 is required to perform handover between EPS and 5GS.",
+      "enum": [
+        "None",
+        "With N26",
+        "Without N26"
+      ],
+      "default": "With N26"
+    },
+    "hss_addr": {
+      "title": "HSS Address",
+      "description": "IP address and optional port of the HSS used for S6a interface. The default port is 3868.",
+      "type": "string"
+    },
+    "hss_bind_addr": {
+      "title": "HSS Bind Address",
+      "description": "IP address and optional port on which the S6a SCTP connection is bound. The default address is the same as the S1AP SCTP connection.",
+      "type": "string"
+    },
+    "s6_origin_realm": {
+      "title": "S6 Origin Realm",
+      "description": "Defines the string sent in the Origin-Realm AVP for S6 messages. Default is set to mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
+      "type": "string"
+    },
+    "s6_origin_host": {
+      "title": "S6 Origin Host",
+      "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
+      "type": "string"
+    }
+  }
+}

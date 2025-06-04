@@ -13,11 +13,11 @@
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-0",
     "slap_software_release_url": "@@00getSoftwareURL@@",
-    "slap_software_type": "RootSoftwareInstance",
+    "slap_software_type": "default",
     "slave_instance_list": [
       {
         "custom_domain": "customdomainsslcrtsslkey.example.com",
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_custom_domain_ssl_crt_ssl_key",
         "slave_title": "_custom_domain_ssl_crt_ssl_key",
         "ssl_crt": "@@customdomain_certificate_pem@@",
@@ -26,7 +26,7 @@
       },
       {
         "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
         "slave_title": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
         "ssl_ca_crt": "@@ca.certificate_pem@@",
@@ -35,7 +35,7 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_ssl_ca_crt_does_not_match",
         "slave_title": "_ssl_ca_crt_does_not_match",
         "ssl_ca_crt": "@@ca.certificate_pem@@",
@@ -44,7 +44,7 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_ssl_ca_crt_garbage",
         "slave_title": "_ssl_ca_crt_garbage",
         "ssl_ca_crt": "some garbage",
@@ -54,19 +54,19 @@
       },
       {
         "enable_cache": true,
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_ssl_from_master",
         "slave_title": "_ssl_from_master",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_ssl_from_master_kedifa_overrides",
         "slave_title": "_ssl_from_master_kedifa_overrides",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_ssl_from_slave",
         "slave_title": "_ssl_from_slave",
         "ssl_crt": "@@ssl_from_slave_certificate_pem@@",
@@ -74,7 +74,7 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_ssl_from_slave_kedifa_overrides",
         "slave_title": "_ssl_from_slave_kedifa_overrides",
         "ssl_crt": "@@ssl_from_slave_kedifa_overrides_certificate_pem@@",
@@ -82,21 +82,21 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_type-notebook-ssl_from_master",
         "slave_title": "_type-notebook-ssl_from_master",
         "type": "notebook",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_type-notebook-ssl_from_master_kedifa_overrides",
         "slave_title": "_type-notebook-ssl_from_master_kedifa_overrides",
         "type": "notebook",
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_type-notebook-ssl_from_slave",
         "slave_title": "_type-notebook-ssl_from_slave",
         "ssl_crt": "@@type_notebook_ssl_from_slave_certificate_pem@@",
@@ -105,7 +105,7 @@
         "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
       },
       {
-        "slap_software_type": "RootSoftwareInstance",
+        "slap_software_type": "default",
         "slave_reference": "_type-notebook-ssl_from_slave_kedifa_overrides",
         "slave_title": "_type-notebook-ssl_from_slave_kedifa_overrides",
         "ssl_crt": "@@type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem@@",

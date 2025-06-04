@@ -34,6 +34,7 @@ def main():
   parser.add_argument('--backup', required=True)
   parser.add_argument('--cfg', required=True)
   parser.add_argument('--dirs', action='append')
+  parser.add_argument('--files', action='append')
   parser.add_argument('--exitfile', required=True)
   parser.add_argument('--errorfile', required=True)
   args = parser.parse_args()
@@ -55,6 +56,7 @@ class TheiaImport(object):
     self.backup_dir = args.backup
     self.slapos_cfg = cfg = args.cfg
     self.dirs = args.dirs
+    self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
     configp = configparser.SafeConfigParser()
@@ -79,9 +81,16 @@ class TheiaImport(object):
     src = self.mirror_path(dst)
     return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
 
-  def restore_file(self, dst):
+  def restore_file(self, dst, fail_if_missing=False):
     src = self.mirror_path(dst)
-    return copyfile(src, dst)
+    if os.path.exists(src):
+      self.log('Restore file ' + dst)
+      copyfile(src, dst)
+    elif fail_if_missing:
+      raise Exception('File %s is missing from backup' % dst)
+    else:
+      self.log('Remove deleted file ' + dst)
+      remove(os.path.abspath(dst))
 
   def restore_db(self):
     copydb(self.sqlite3_bin, self.mirror_path(self.proxy_db), self.proxy_db)
@@ -224,12 +233,14 @@ class TheiaImport(object):
       self.log('Restore directory ' + d)
       self.restore_tree(d)
 
+    for f in self.files:
+      self.restore_file(f)
+
     self.log('Restore slapproxy database')
     self.restore_db()
 
     timestamp = os.path.join(self.root_dir, 'etc', '.resilient_timestamp')
-    self.log('Restore resilient timestamp ' + timestamp)
-    self.restore_file(timestamp)
+    self.restore_file(timestamp, fail_if_missing=True)
 
     custom_script = os.path.join(self.root_dir, 'srv', 'runner-import-restore')
     if os.path.exists(custom_script):

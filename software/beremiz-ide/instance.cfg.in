@@ -7,7 +7,6 @@ develop-eggs-directory = {{ buildout_develop_directory }}
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default  = template-{{ instance_template_type }}:output
-RootSoftwareInstance = ${:default}
 test = template-beremiz-test:output
 
 [slap-configuration]

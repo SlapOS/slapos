@@ -4,7 +4,7 @@ kvm
 Introduction
 ------------
 
-This software release is used to deploy KVM and NBD instances.
+This software release is used to deploy KVM.
 
 For extensive parameters definition, please look at parameter-input-schema.json.
 
@@ -24,7 +24,6 @@ to be accessible from IPv4::
       software_release=kvm,
       partition_reference="My awesome KVM",
       partition_parameter_kw={
-          "nbd-host":"ubuntu-1204.nbd.vifib.net",
       }
   )
 
@@ -33,15 +32,11 @@ See the instance-kvm-input-schema.json file for more instance parameters (cpu-co
 KVM instance parameters:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- frontend-software-type (default: RootSoftwareInstance)
+- frontend-software-type (default: default)
 - frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)
 - frontend-instance-guid
 - frontend-addtional-instance-guid
 - frontend-instance-name (default: VNC Frontend)
-- nbd-port (default: 1024)
-- nbd-host
-- nbd2-port (default: 1024)
-- nbd2-host
 
 - ram-size (default: 4096)
 - disk-size = (default: 40)

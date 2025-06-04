@@ -170,7 +170,7 @@
         },
         "software-type": {
           "description": "Request a front-end slave instance of this software type.",
-          "default": "RootSoftwareInstance",
+          "default": "default",
           "type": "string"
         },
         "virtualhostroot-http-port": {

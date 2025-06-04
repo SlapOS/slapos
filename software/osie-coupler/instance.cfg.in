@@ -8,6 +8,7 @@ parts =
   directory
   publish-connection-parameter
   coupler-opc-ua
+  opc-ua-port-promise
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -49,9 +50,16 @@ etc = ${:home}/etc
 var = ${:home}/var
 script = ${:etc}/run/
 service = ${:etc}/service
+promise = ${:etc}/promise
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url-ipv6 = opc.tcp://[${instance-parameter:ipv6-random}]:${instance-parameter:configuration.opc_ua_port}
 username = ${instance-parameter:configuration.username}
 password = ${instance-parameter:configuration.password}
+
+[opc-ua-port-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+hostname = ${instance-parameter:ipv6-random}
+port = ${instance-parameter:configuration.opc_ua_port}

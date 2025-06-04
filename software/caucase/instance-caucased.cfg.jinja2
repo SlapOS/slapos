@@ -1,11 +1,15 @@
 {% import "caucase" as caucase with context %}
-{% set netloc = '[' ~ (ipv6_set | list)[0] ~ ']:' ~ slapparameter_dict.get('base-port', 8009) -%}
+{% set bind = (ipv6_set | list)[0] -%}
+{% set base_port = slapparameter_dict.get('base-port', 8009) -%}
+{% set default_netloc = '[' ~ bind ~ ']:' ~ base_port -%}
+{% set backup_period = slapparameter_dict.get('backup-period', 0) -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 service-on-watch = ${:etc}/service
 srv = ${buildout:directory}/srv
+srv-backup-caucased = ${:srv}/backup/caucased
 tmp = ${buildout:directory}/tmp
 
 {{ caucase.caucased(
@@ -13,16 +17,20 @@ tmp = ${buildout:directory}/tmp
   buildout_bin_directory=bin_directory,
   caucased_path='${directory:service-on-watch}/caucased',
   data_dir='${directory:srv}/caucased',
-  netloc=netloc,
+  netloc=slapparameter_dict.get('external-netloc', default_netloc),
   tmp='%{directory:tmp}',
   service_auto_approve_count=slapparameter_dict.get('service-auto-approve-amount', 0),
   user_auto_approve_count=slapparameter_dict.get('user-auto-approve-amount', 1),
   key_len=slapparameter_dict.get('key-length', 2048),
+  bind=bind,
+  base_port=base_port,
+  backup_dir='${directory:srv-backup-caucased}' if backup_period else None,
+  backup_period=backup_period,
 ) }}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-url = {{ dumps('http://' ~ netloc) }}
+url = {{ dumps('http://' ~ default_netloc) }}
 
 [buildout]
 parts =

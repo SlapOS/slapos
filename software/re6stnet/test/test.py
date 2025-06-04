@@ -39,9 +39,23 @@ setUpModule, Re6stnetTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestRe6stnetRegistry(Re6stnetTestCase):
-  def test_listen(self):
+  def test_default(self):
     connection_parameters = self.computer_partition.getConnectionParameterDict()
     registry_url = connection_parameters['re6stry-local-url']
+    promise = os.path.join(
+      self.computer_partition_root_path, 'etc', 'plugin',
+      'check-re6st-certificate.py')
+    self.assertTrue(os.path.exists(promise))
+    with open(promise) as fh:
+      promise_content = fh.read()
+    self.assertIn(
+      """extra_config_dict = { 'certificate': '%(partition_root_dir)s/etc/re6stnet/ssl/re6stnet.crt',
+  'certificate-expiration-days': '45',
+  'key': '%(partition_root_dir)s/etc/re6stnet/ssl/re6stnet.key'}""" % {
+    'partition_root_dir': self.computer_partition_root_path}, promise_content)
+    self.assertIn(
+      "from slapos.promise.plugin.check_certificate import RunPromise",
+      promise_content)
 
     _ = requests.get(registry_url)
 

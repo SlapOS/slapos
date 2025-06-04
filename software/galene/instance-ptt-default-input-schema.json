@@ -15,11 +15,11 @@
       "type": "boolean",
       "default": true
     },
-    "dns_sr_url": {
-      "default": "",
-      "title": "DNS SR URL",
-      "description": "URL of the SR running the DNS server",
-      "type": "string"
+    "request_dns": {
+      "title": "Request DNS",
+      "description": "Request local DNS to a core network running on the same node",
+      "type": "boolean",
+      "default": true
     }
   }
 }

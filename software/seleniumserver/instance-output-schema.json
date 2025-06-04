@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Values returned by Selenium instanciation",
+  "properties": {
+    "backend-url": {
+      "description": "Selenium hub URL",
+      "type": "string"
+    },
+    "url": {
+      "description": "Selenium instance URL",
+      "type": "string"
+    },
+    "admin-url": {
+      "description": "Selenium admin URL",
+      "type": "string"
+    },
+    "ssh-url": {
+      "description": "Selenium ssh URL",
+      "type": "string"
+    },
+    "ssh-fingerprint": {
+      "description": "Selenium ssh key fingerprint",
+      "type": "string"
+    },
+    "run-node-command": {
+      "description": "Command to run a local Selenium node",
+      "type": "string"
+    }
+  }
+}

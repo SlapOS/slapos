@@ -1,3 +1,4 @@
+# coding: utf-8
 import json
 import os
 import shutil
@@ -44,8 +45,33 @@ class TestPassword(unittest.TestCase):
     self._makeRecipe({'storage-path': tf.name}, "another").install()
     self.assertEqual(self.buildout["another"]["passwd"], passwd)
 
+  def test_storage_path_passwd_set_in_options(self):
+    tf = tempfile.NamedTemporaryFile(delete=False)
+    self.addCleanup(os.unlink, tf.name)
+    self._makeRecipe({'storage-path': tf.name, 'passwd': 'secret'}).install()
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': 'secret'})
+
+    self._makeRecipe({'storage-path': tf.name}, "another").install()
+    self.assertEqual(self.buildout["another"]["passwd"], 'secret')
+
+    self._makeRecipe({'storage-path': tf.name, 'passwd': 'updated'}, "updated").install()
+    self.assertEqual(self.buildout["updated"]["passwd"], 'updated')
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': 'updated'})
+
+  def test_storage_path_passwd_set_in_options_non_ascii(self):  # BBB Py2
+    tf = tempfile.NamedTemporaryFile(delete=False)
+    self.addCleanup(os.unlink, tf.name)
+    self._makeRecipe({'storage-path': tf.name, 'passwd': 'sécret'}).install()
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': u'sécret'})
+
+    self._makeRecipe({'storage-path': tf.name}, "another").install()
+    self.assertEqual(self.buildout["another"]["passwd"], 'sécret')
+
   def test_storage_path_legacy_format(self):
-    with tempfile.NamedTemporaryFile(delete=False) as tf:
+    with tempfile.NamedTemporaryFile() as tf:
       tf.write(b'secret\n')
       tf.flush()
 
@@ -56,8 +82,22 @@ class TestPassword(unittest.TestCase):
       with open(tf.name) as f:
         self.assertEqual(json.load(f), {'': 'secret'})
 
-    self._makeRecipe({'storage-path': tf.name}, "another").install()
-    self.assertEqual(self.buildout["another"]["passwd"], passwd)
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
+
+  def test_storage_path_legacy_format_passwd_set_in_options(self):
+    with tempfile.NamedTemporaryFile() as tf:
+      tf.write(b'secret\n')
+      tf.flush()
+      self._makeRecipe({'storage-path': tf.name, 'passwd': 'secret'}).install()
+      passwd = self.buildout["random"]["passwd"]
+      self.assertEqual(passwd, 'secret')
+      tf.flush()
+      with open(tf.name) as f:
+        self.assertEqual(json.load(f), {'': 'secret'})
+
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
 
   def test_bytes(self):
     self._makeRecipe({'bytes': '32'}).install()
@@ -125,9 +165,42 @@ class TestPassword(unittest.TestCase):
     self.assertIsInstance(self.buildout['reread']['passwd'], str)
     self.assertIsInstance(self.buildout['reread']['passwd-ldap-salted-sha1'], str)
 
+  def test_passlib_no_storage_path(self):
+    recipe = self._makeRecipe({'storage-path': ''})
+    passwd = self.buildout['random']['passwd']
+    self.assertTrue(passwd)
+    hashed = self.buildout['random']['passwd-sha256-crypt']
+    self.assertTrue(passlib.hash.sha256_crypt.verify(passwd, hashed))
+    self.assertFalse(recipe.install())
+
   def test_passlib_input_passwd(self):
     self._makeRecipe({'passwd': 'insecure'})
     self.assertEqual(self.buildout['random']['passwd'], 'insecure')
 
     hashed = self.buildout['random']['passwd-sha256-crypt']
     self.assertTrue(passlib.hash.sha256_crypt.verify('insecure', hashed))
+
+  def test_passlib_input_passwd_no_storage_path(self):
+    recipe = self._makeRecipe({'storage-path': '', 'passwd': 'insecure'})
+    self.assertEqual(self.buildout['random']['passwd'], 'insecure')
+    hashed = self.buildout['random']['passwd-sha256-crypt']
+    self.assertTrue(passlib.hash.sha256_crypt.verify('insecure', hashed))
+    self.assertFalse(recipe.install())
+
+  def test_passlib_input_passwd_update(self):
+    tf = tempfile.NamedTemporaryFile(delete=False)
+    self.addCleanup(os.unlink, tf.name)
+    initial_recipe = self._makeRecipe({'storage-path': tf.name, 'passwd': 'initial'}, 'initial')
+    initial_hashed = self.buildout['initial']['passwd-sha256-crypt']
+    initial_recipe.install()
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': 'initial', 'passwd-sha256-crypt': initial_hashed})
+
+    updated_recipe = self._makeRecipe({'storage-path': tf.name, 'passwd': 'updated'}, "updated")
+    updated_hashed = self.buildout['updated']['passwd-sha256-crypt']
+    updated_recipe.install()
+    with open(tf.name) as f:
+      self.assertEqual(json.load(f), {'': 'updated', 'passwd-sha256-crypt': updated_hashed})
+
+    self.assertNotEqual(initial_hashed, updated_hashed)
+    self.assertTrue(passlib.hash.sha256_crypt.verify('updated', updated_hashed))

@@ -195,7 +195,7 @@ recipe = slapos.cookbook:publish
 imap-port = 10143
 smtp-port = 10025
 imap-smtp-ipv6 = ${slap-configuration:ipv6-random}
-{% if slapparameter_dict.get('dns_sr_url', '') %}
+{% if slapparameter_dict.get('request_dns', '') %}
 domain = ${request-dns-entry:connection-domain}
 {% endif %}
 
@@ -216,7 +216,7 @@ config-port = 10025
 [request-dns-entry]
 name = dns-mail-entry
 recipe = slapos.cookbook:request.serialised
-software-url = {{ slapparameter_dict['dns_sr_url'] }}
+software-url = automated_local_dns
 software-type = core-network
 server-url = {{ slap_connection['server-url'] }}
 computer-id = {{ slap_connection['computer-id'] }}
@@ -302,7 +302,7 @@ parts =
   imap-listen-promise
   smtp-listen-promise
   {{ part_list | join('\n  ') }}
-{% if slapparameter_dict.get('dns_sr_url', '') %}
+{% if slapparameter_dict.get('request_dns', '') %}
   request-dns-entry
 {% endif %}
 

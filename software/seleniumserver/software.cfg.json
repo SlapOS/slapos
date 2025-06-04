@@ -1,0 +1,15 @@
+{
+  "name": "Selenium Server",
+  "description": "Selenium server running chromium and firefox nodes",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Request a selenium server",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 0
+    }
+  }
+}

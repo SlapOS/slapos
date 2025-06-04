@@ -26,27 +26,28 @@
 ##############################################################################
 from setuptools import setup, find_packages
 
-version = '0.0.1.dev0'
-name = 'slapos.test.cloudooo'
+version = "0.0.1.dev0"
+name = "slapos.test.cloudooo"
 with open("README.md") as f:
   long_description = f.read()
 
-setup(name=name,
-      version=version,
-      description="Test for SlapOS' cloudooo",
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      maintainer="Nexedi",
-      maintainer_email="info@nexedi.com",
-      url="https://lab.nexedi.com/nexedi/slapos",
-      packages=find_packages(),
-      install_requires=[
-        'slapos.core',
-        'slapos.cookbook',
-        'slapos.libnetworkcache',
-        'requests',
-        'PyPDF2',
-      ],
-      zip_safe=True,
-      test_suite='test',
-    )
+setup(
+  name=name,
+  version=version,
+  description="Test for SlapOS' CloudOoo",
+  long_description=long_description,
+  long_description_content_type="text/markdown",
+  maintainer="Nexedi",
+  maintainer_email="info@nexedi.com",
+  url="https://lab.nexedi.com/nexedi/slapos",
+  packages=find_packages(),
+  install_requires=[
+    "slapos.core",
+    "slapos.cookbook",
+    "slapos.libnetworkcache",
+    "requests",
+    "pypdf",
+  ],
+  zip_safe=True,
+  test_suite="test",
+)

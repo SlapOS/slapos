@@ -1,0 +1,55 @@
+worker_processes {{ params['nb-workers'] }};
+
+pid {{ params['path-pid'] }};
+error_log {{ params['path-error-log'] }};
+
+daemon off;
+
+events {
+  worker_connections 1024;
+  accept_mutex off;
+}
+
+http {
+    include {{ mime }};
+    default_type  application/octet-stream;
+    types_hash_bucket_size 64;
+    access_log {{ params['path-access-log'] }} combined;
+
+    upstream enb_websocket {
+        server {{ params['websocket-ip'] }}:{{ params['websocket-port'] }};
+    }
+    server {
+        listen [{{ params['ip'] }}]:{{ params['port'] }} ssl http2;
+        server_name _;
+
+        ssl_certificate {{ ca['cert-file'] }};
+        ssl_certificate_key {{ ca['key-file'] }};
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:MozSSL:10m;
+        ssl_session_tickets off;
+        ssl_protocols TLSv1.3;
+        ssl_prefer_server_ciphers off;
+
+        keepalive_timeout 5;
+        client_body_temp_path {{ tempdir['client-body-temp-path'] }};
+        proxy_temp_path {{ tempdir['proxy-temp-path'] }};
+        fastcgi_temp_path {{ tempdir['fastcgi-temp-path'] }};
+        uwsgi_temp_path {{ tempdir['uwsgi-temp-path'] }};
+        scgi_temp_path {{ tempdir['scgi-temp-path'] }};
+
+        location /{{ params['websocket-path'] }} {
+            proxy_http_version 1.1;
+            proxy_pass http://enb_websocket/;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+
+            # VNC connection timeout
+            proxy_read_timeout 61s;
+
+            # Disable cache
+            proxy_buffering off;
+        }
+
+    }
+}

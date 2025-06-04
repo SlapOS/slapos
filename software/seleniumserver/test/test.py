@@ -45,7 +45,6 @@ import requests
 from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -252,7 +251,7 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
 
     driver = webdriver.Remote(
         command_executor=webdriver_url,
-        desired_capabilities=DesiredCapabilities.CHROME)
+        desired_capabilities=webdriver.ChromeOptions().to_capabilities())
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
@@ -268,7 +267,7 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
 
     driver = webdriver.Remote(
         command_executor=webdriver_url,
-        desired_capabilities=DesiredCapabilities.FIREFOX)
+        desired_capabilities=webdriver.FirefoxOptions().to_capabilities())
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
@@ -281,7 +280,7 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     webdriver_url = parameter_dict['backend-url']
 
-    desired_capabilities = DesiredCapabilities.FIREFOX.copy()
+    desired_capabilities = webdriver.FirefoxOptions().to_capabilities()
     desired_capabilities['version'] = '102.15.1esr'
     driver = webdriver.Remote(
         command_executor=webdriver_url,
@@ -339,7 +338,7 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
 
     driver = webdriver.Remote(
         command_executor=executor,
-        desired_capabilities=DesiredCapabilities.CHROME)
+        desired_capabilities=webdriver.ChromeOptions().to_capabilities())
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
@@ -414,7 +413,8 @@ class TestFirefox102(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='102.15.1esr')
+  desired_capabilities = dict(webdriver.FirefoxOptions().to_capabilities(),
+                              version='102.15.1esr')
   user_agent = 'Gecko/20100101 Firefox/102.0'
 
   def test_resize_window(self):
@@ -426,7 +426,8 @@ class TestFirefox115(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='115.3.1esr')
+  desired_capabilities = dict(webdriver.FirefoxOptions().to_capabilities(),
+                              version='115.3.1esr')
   user_agent = 'Gecko/20100101 Firefox/115.0'
 
   def test_resize_window(self):
@@ -438,7 +439,8 @@ class TestChrome91(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
+  desired_capabilities = dict(webdriver.ChromeOptions().to_capabilities(),
+                              version='91.0.4472.114')
   user_agent = 'Chrome/91.0.4472.0'
 
 
@@ -447,5 +449,6 @@ class TestChrome120(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.CHROME, version='120.0.6099.109')
+  desired_capabilities = dict(webdriver.ChromeOptions().to_capabilities(),
+                              version='120.0.6099.109')
   user_agent = 'Chrome/120.0.0.0'

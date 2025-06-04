@@ -159,7 +159,7 @@ command-line =
     --render-try-index
     --allow-all
     --auth-method basic
-    --auth ${admin-password:user}:${admin-password:passwd-sha512-crypt}@/:rw
+    --auth ${admin-password:user}:${admin-password:passwd-sha512-crypt}@/:rw,/pub:rw
     --auth @/pub
     --tls-cert ${dufs-certificate:cert-file}
     --tls-key ${dufs-certificate:key-file}
@@ -189,9 +189,7 @@ return = domain secure_access
 
 [frontend-available-promise]
 <= check-url-available-promise
-url = ${frontend:connection-secure_access}
-check-secure = 1
-
+url = ${frontend-url:healthcheck-url}
 
 [promises]
 recipe =
@@ -216,6 +214,9 @@ init =
   assert not frontend_url.username
   self.options['upload-url'] = frontend_url._replace(
     netloc=f'{admin_user}:{admin_password}@{frontend_url.netloc}').geturl()
+  self.options['healthcheck-url'] = frontend_url._replace(
+    path='/__dufs__/health').geturl()
+
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish

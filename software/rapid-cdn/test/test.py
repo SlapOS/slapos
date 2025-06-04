@@ -6940,7 +6940,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'slap_computer_id': 'local',
         'slap_computer_partition_id': 'T-0',
         'slap_software_release_url': base_software_url,
-        'slap_software_type': 'RootSoftwareInstance',
+        'slap_software_type': 'default',
         'slave_instance_list': []
       }
     }

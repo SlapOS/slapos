@@ -36,7 +36,7 @@ import traceback
 import six
 
 SOFTWARE_PRODUCT_NAMESPACE = "product."
-DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
+DEFAULT_SOFTWARE_TYPE = 'default'
 
 class Recipe(object):
   """

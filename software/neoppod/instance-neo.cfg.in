@@ -194,6 +194,44 @@ post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostor
 
 {% endfor -%}
 
+{% set reflink = slapparameter_dict.get('reflink') -%}
+{% if reflink -%}
+{%   set zurl = 'neo://%s@%s' % (slapparameter_dict['cluster'], slapparameter_dict['masters'].replace(' ', ',')) -%}
+{%   if slapparameter_dict['ssl'] -%}
+{%     set zurl = zurl + '?ca=${ca.crt:output}&cert=${neo.crt:output}&key=${neo.key:output}' -%}
+{%   endif -%}
+[{{ section('reflink') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:etc_run}/reflink
+{%   set args = [] -%}
+{%   if 'commit-interval' in reflink -%}
+{%     do args.extend(('-i', str(reflink['commit-interval']))) -%}
+{%   endif -%}
+{%   if 'period' in reflink -%}
+{%     do args.extend(('-p', str(reflink['period']))) -%}
+{%   endif -%}
+{%   if 'no-gc' in reflink -%}
+{%     do args.append('--no-gc') -%}
+{%   endif -%}
+command-line = {{ bin_directory }}/reflink -v {{ zurl }} run {{ ' '.join(args) }} {{ reflink['zurl'] }}
+{%   if reflink['zurl'].startswith('neos://') -%}
+environment =
+  NEO_CA=${reflink-ca:output}
+  NEO_CERT=${reflink-cert:output}
+  NEO_KEY=${reflink-key:output}
+
+{%     for x in 'ca', 'cert', 'key' -%}
+[reflink-{{x}}]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/${:_buildout_section_name_}.pem
+inline =
+  {{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(reflink['_'+x])}}
+{%     endfor -%}
+{%   endif -%}
+{% endif -%}
+
 {% if mysql -%}
 [init-script]
 recipe = slapos.recipe.template
