@@ -1,0 +1,49 @@
+[buildout]
+parts =
+  directories
+  template-development-yaml
+  template-production-yaml
+  template-config-yaml
+  service
+
+[directories]
+recipe = slapos.cookbook:makedirectory
+var = ${buildout:directory}/var
+log = ${buildout:directory}/var/log
+etc = ${buildout:directory}/etc
+cfg = ${buildout:directory}/etc/qdrant/config
+
+[template-development-yaml]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/templates/development.yaml.in
+md5sum = 78721ea5454d08fd89b1ae095056744a
+context =
+  key http_port {{ params['http_port'] }}
+  key grpc_port {{ params['grpc_port'] }}
+rendered = ${directories:cfg}/development.yaml
+
+[template-production-yaml]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/templates/production.yaml.in
+md5sum = d0085646274cb8b4a94323625e1f99a7
+context =
+  key http_port {{ params['http_port'] }}
+  key grpc_port {{ params['grpc_port'] }}
+rendered = ${directories:cfg}/production.yaml
+
+[template-config-yaml]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/templates/config.yaml.in
+md5sum = 73eedd34d9395335bdc11f805f5f053f
+context =
+  key http_port {{ params['http_port'] }}
+  key grpc_port {{ params['grpc_port'] }}
+rendered = ${directories:cfg}/config.yaml
+
+[service]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ qdrant_location }}/bin/qdrant \
+    --config-path ${directories:cfg}/config.yaml \
+    > ${directories:log}/qdrant.log 2>&1
+wrapper-path = ${directories:etc}/run_qdrant

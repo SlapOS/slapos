@@ -1,0 +1,7 @@
+log_level: INFO
+
+service:
+  host: 0.0.0.0
+  http_port: {{ http_port }}
+  # Uncomment to enable gRPC:
+  #grpc_port: {{ grpc_port }}
