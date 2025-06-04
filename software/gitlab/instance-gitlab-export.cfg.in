@@ -40,7 +40,7 @@ frequency = ${instance-parameter:configuration.backup_frequency}
 command	= ${exporter:wrapper-path}
 
 [resiliency-exclude-file]
-# Generate rdiff exclude file in case of resiliency
+# Generate rsync exclude file in case of resiliency
 recipe = collective.recipe.template
 input = inline: gitlab-shell-work*
   gitlab-work*
