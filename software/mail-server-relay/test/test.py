@@ -53,8 +53,8 @@ class PostfixTestCase(SlapOSInstanceTestCase):
             "relay-password": "pass",
           },
           "outbound-domain-whitelist": [
-              "mail1.domain.lan",
-              "mail2.domain.lan"
+            "mail1.domain.lan",
+            "mail2.domain.lan"
           ],
           "relay-domain": "foobaz.lan",
           "topology": {
@@ -72,13 +72,39 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       )
     }
 
-  def test_postfix(self):
-    return
-    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
-    host = parameter_dict["smtp-ipv6"]
+  @classmethod
+  def setUpClass(cls):
+    super(PostfixTestCase, cls).setUpClass()
+    for domain in [
+      "mail1.domain.lan",
+      "mail2.domain.lan",
+      "mail3.domain.lan",
+    ]:
+      cls.requestSlaveInstanceForDomain(domain)
 
-    try:
-      server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
-      server.quit()
-    except Exception as e:
-      self.fail(f"SMTP connection failed: {e}")
+  @classmethod
+  def requestSlaveInstanceForDomain(cls, domain):
+    software_url = cls.getSoftwareURL()
+    param_dict = {
+      "name": domain,
+      "mail-server-host": "2001:db8::%d" % (hash(domain) % 100),
+      "mail-server-port": 10025
+    }
+    return cls.slap.request(
+      software_release=software_url,
+      partition_reference="SLAVE-%s" % domain.replace('.', '-'),
+      partition_parameter_kw={'_': json.dumps(param_dict)},
+      shared=True,
+      software_type='slave',
+    )
+
+  def test_dns_entries(self):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    expected_entries = set([
+      "mail1.domain.lan MX 10 foobaz.lan",
+      "mail2.domain.lan MX 10 foobaz.lan"
+    ])
+    actual_entries = set(
+      filter(None, (line.strip() for line in parameter_dict["dns-entries"].splitlines()))
+    )
+    self.assertEqual(actual_entries, expected_entries)
