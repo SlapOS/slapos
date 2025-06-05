@@ -263,14 +263,6 @@ test_binding_list = {{ dumps(slapparameter_dict.get('test-binding-list', (
 ))) }}
 
 [{{ section('runTestSuite') }}]
-{%-  if private_tmpfs %}
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/${:_buildout_section_name_}
-private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
-command-line = ${runTestSuite-ns:output}
-
-[runTestSuite-ns]
-{%-  endif %}
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 url = {{ runTestSuite_in }}
@@ -279,10 +271,7 @@ context =
     section my_cnf_parameters my-cnf-parameters
     section parameters        runTestSuite-parameters
 {%-  if private_tmpfs %}
-    key     datadir           my-cnf-parameters:data-directory
-    key     results_directory directory:results
-
-{%-    do directory_dict.__setitem__('results', '${directory:srv}/tests') %}
+    raw     private_tmpfs     {{ private_tmpfs }}
 {%-  endif %}
 {%- endif %}
 
@@ -298,7 +287,7 @@ var_run =  ${:var}/run
 log = ${buildout:directory}/var/log
 tmp = ${buildout:directory}/tmp
 srv = ${buildout:directory}/srv
-{%- for k, v in directory_dict.iteritems() %}
+{%- for k, v in six.iteritems(directory_dict) %}
 {{ k }} = {{ v }}
 {%- endfor %}
 

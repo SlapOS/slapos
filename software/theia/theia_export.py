@@ -3,6 +3,7 @@ import glob
 import itertools
 import os
 import shutil
+import subprocess
 import sys
 import time
 import traceback
@@ -141,9 +142,11 @@ class TheiaExport(object):
     exitcode = 0
     try:
       self.export()
-    except Exception:
+    except Exception as e:
       exitcode = 1
       exc = traceback.format_exc()
+      if isinstance(e, subprocess.CalledProcessError) and e.output:
+        exc = "%s\n\n%s" % (exc, e.output)
       with open(self.error_file, 'w') as f:
         f.write('\n ... OK\n\n'.join(self.logs))
         f.write('\n ... ERROR !\n\n')
