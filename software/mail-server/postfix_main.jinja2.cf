@@ -27,7 +27,7 @@ virtual_transport = lmtp:unix:{{ postfix_dovecot_lmtp }}
 
 inet_interfaces = all
 inet_protocols = all
-smtp_bind_address = 0.0.0.0
+smtp_bind_address = {{ ipv4 }}
 smtp_bind_address6 = {{ ipv6 }}
 smtp_bind_address_enforce = yes
 
@@ -57,3 +57,4 @@ maillog_file_prefixes = {{ log_directory }}
 sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}
+mydestination = localhost.$mydomain, localhost, localhost.localdomain
