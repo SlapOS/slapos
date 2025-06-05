@@ -106,6 +106,7 @@ context =
   section dovecot_directory dovecot-directory
   key dovecot_passwd dovecot-passwords:target
   raw user_name {{ user_name }}
+  raw ipv6 {{ ipv6 }}
   raw imap_port $${:imap-port}
   raw postfix_auth $${postfix-directory:spool-private}/auth
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
@@ -226,6 +227,7 @@ context =
   key relay_map postfix-relays:output
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
+  raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
 
@@ -235,6 +237,8 @@ url = ${postfix_master.jinja2.cf:target}
 output = $${postfix-directory:etc}/master.cf
 context =
   raw smtp_port {{ smtp_port}}
+  raw ipv4 {{ ipv4 }}
+  raw ipv6 {{ ipv6 }}
 
 [relay-info]
 host-override = {{ slapparameter_dict.get('relay-host', '') }}
@@ -263,7 +267,7 @@ recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/pid/master.pid
+  rm -f var/spool/postfix/pid/*.pid
   $${postfix-directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
 
 [postfix-service]
@@ -548,7 +552,7 @@ init =
 [request-relay-{{ mail_domain }}]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
-software-url = urn:slapos:mail-relay
+software-url = {{ slapparameter_dict.get('relay-sr-url', 'urn:slapos:mail-relay') }}
 software-type = cluster
 shared = true
 name = mail-server-relay-{{ mail_domain }}
