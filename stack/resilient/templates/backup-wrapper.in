@@ -1,0 +1,16 @@
+#!{{ dash_location }}
+set -e
+RDIFF_BACKUP={{ repr(rdiff_bacup_binary) }}
+BACKUP_DIR={{ repr(backup_dir) }}
+case "$SSH_ORIGINAL_COMMAND" in
+    "")
+        "$RDIFF_BACKUP" --restrict "$BACKUP_DIR" --server
+    ;;
+    ping)
+        echo 'pong'
+    ;;
+    *)
+        echo "Unexpected SSH_ORIGINAL_COMMAND: $SSH_ORIGINAL_COMMAND"
+        exit 1
+    ;;
+esac
