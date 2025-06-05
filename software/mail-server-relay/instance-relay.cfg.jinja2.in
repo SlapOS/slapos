@@ -16,7 +16,7 @@ offline = true
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 # todo: we use same for two since it's behind a port forward anyways
-submission-port = $${postfix-conf-main:smtp-port} 
+submission-port = $${postfix-conf-main:smtp-port}
 smtp-port = $${postfix-conf-main:smtp-port}
 smtp-ipv6 = {{ ipv6 }}
 # todo: publishes internal ip instead of external
@@ -132,6 +132,8 @@ output = $${postfix-directory:etc}/master.cf
 context =
   key smtp_port postfix-conf-main:smtp-port
   key submission_port postfix-conf-main:submission-port
+  raw ipv4 {{ ipv4 }}
+  raw ipv6 {{ ipv6 }}
 
 [postfix-generate-certificate]
 recipe  = plone.recipe.command
@@ -176,7 +178,7 @@ recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/pid/master.pid
+  rm -f var/spool/postfix/pid/*.pid
   $${postfix-directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
 
 [postfix-service]
@@ -217,7 +219,7 @@ config-port = $${postfix-conf-main:smtp-port}
 recipe = slapos.recipe.build
 init =
   ""
-depends = 
+depends =
   $${postfix-service:recipe}
   $${postfix-service-master:recipe}
   $${postfix-wrappers:depends}
