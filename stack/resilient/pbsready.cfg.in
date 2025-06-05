@@ -98,12 +98,15 @@ rotate-num = 7
 #--
 #-- Sets up a backup software wrapper (with an openssh server for ssh)
 
-[rdiff-backup-server]
-recipe = slapos.cookbook:pbs
-client = false
-path = $${directory:backup}
-wrapper = $${rootdirectory:bin}/rdiffbackup-server
-rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
+[backup-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = ${template-backup-wrapper:target}
+output = $${:wrapper}
+wrapper = $${rootdirectory:bin}/backup-wrapper
+context =
+  raw dash_location ${dash:location}/bin/dash
+  raw rdiff_bacup_binary ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
+  raw backup_dir $${directory:backup}
 
 
 #----------------
@@ -184,7 +187,7 @@ inline =
  AuthorizedKeysFile $${directory:ssh}/.ssh/authorized_keys
  PasswordAuthentication no
  PubkeyAuthentication yes
- ForceCommand $${rdiff-backup-server:wrapper}
+ ForceCommand $${backup-wrapper:wrapper}
  ClientAliveInterval 30
  ClientAliveCountMax 10
 
