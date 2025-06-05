@@ -34,7 +34,7 @@ recipe = slapos.cookbook:publish.serialised
 dns-entries =
 {% for domain in mail_domains | selectattr('can-send', 'eq', True) %}
   {{ domain['name'] }} MX 10 {{ slapparameter_dict['relay-domain'] }}
-{% endfor %}
+{%- endfor %}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 [request-relay-{{ relay_name }}]
