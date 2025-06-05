@@ -12,7 +12,7 @@ bin_dir = "{{ gitaly.location }}"
 # # the global temporary directory. This directory must exist.
 runtime_dir = "{{ gitaly.basedir }}"
 
-# # Optional if socket_path is set. TCP address for Gitaly to listen on. This is insecure (unencrypted connection).
+# # Optional: listen on a TCP socket. This is insecure (no authentication)
 # listen_addr = "localhost:9999"
 # tls_listen_addr = "localhost:8888
 
