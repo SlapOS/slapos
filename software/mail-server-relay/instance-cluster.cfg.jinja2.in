@@ -4,7 +4,6 @@ extends =
 parts =
   monitor-base
   publish-connection-information
-  request-relay
   publish-shared
 
 eggs-directory = ${buildout:eggs-directory}
@@ -22,7 +21,6 @@ depends =
 recipe = slapos.cookbook:request.serialised
 software-url = $${slap-connection:software-release-url}
 software-type = relay
-sla-computer_guid = $${:computer-id}
 {% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
@@ -76,8 +74,8 @@ init =
     """
     if domain['parameters']['name'] in whitelist:
       section += """
-  outbound-host = $${request-relay:connection-smtp-ipv6}
-  outbound-smtp-port = $${request-relay:connection-smtp-port}"""
+  outbound-host = {{ slapparameter_dict['relay-domain'] }}
+  outbound-smtp-port = 10025""" # todo?
     else:
       section += """
   outbound-host =

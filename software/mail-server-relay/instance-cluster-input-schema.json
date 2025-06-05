@@ -43,6 +43,11 @@
       },
       "default": []
     },
+    "relay-domain": {
+      "title": "Relay Domain",
+      "description": "The domain that will point to all relay instances",
+      "type": "string"
+    },
     "topology": {
       "title": "Topology",
       "description": "Cluster topology configuration",
