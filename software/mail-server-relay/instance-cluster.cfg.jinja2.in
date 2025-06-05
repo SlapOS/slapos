@@ -57,14 +57,14 @@ depends =
 {% for relay_name in slapparameter_dict['topology'].keys() %}
   $${request-relay-{{ relay_name }}:recipe}
 {% endfor -%}
-  
+
 
 # Shared instances (domains)
 # ----------------------------
 
 [publish-shared]
 recipe = slapos.recipe.build
-depends = 
+depends =
   $${request-all-relays:depends}
 init =
   whitelist = {{ whitelist }}
@@ -74,7 +74,7 @@ init =
   [publish-{ref}]
   recipe = slapos.cookbook:publish.serialised
   -slave-reference = {ref}
-  dns-entries = foobar2
+  dns-entries =
     """
     if domain['parameters']['name'] in whitelist:
       section += """
