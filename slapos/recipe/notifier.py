@@ -46,7 +46,6 @@ class Recipe(GenericBaseRecipe):
 
 class Callback(GenericBaseRecipe):
 
-  # Note: this function is also used in pbs recipe
   def createCallback(self, notification_id, callback_list):
     # XXX: hashing the name here and in
     # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
