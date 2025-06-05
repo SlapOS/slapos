@@ -287,14 +287,26 @@ class Serialised(Recipe):
 
 
 class DefaultValidator(object):
-  def __init__(self, schema, set_defaults=False):
+  def __init__(self, schema, set_defaults=False, unstringify=None):
     self.schema = schema
     self.set_defaults = set_defaults
+    self.unstringify = unstringify
     self.validatorfor = v = jsonschema.validators.validator_for(schema)
     # Retain original properties validator
     validate_properties = v.VALIDATORS["properties"]
     # Define new properties validator
     def collect_defaults(validator, properties, instance, schema):
+      # Attempt to unstringify stringified values back to their expected type
+      if self.unstringify:
+        for key, subschema in properties.items():
+          unstringify = self.unstringify.get(subschema.get('type'))
+          if unstringify:
+            value = instance.get(key)
+            if type(value) is str or (str is bytes and type(value) is unicode):
+              try:
+                instance[key] = unstringify(value)
+              except ValueError:
+                pass
       # Call original properties validator
       error = False
       for e in validate_properties(validator, properties, instance, schema):
@@ -328,7 +340,7 @@ class DefaultValidator(object):
         jsonschema.validators.validates(version)(self.validatorfor)
 
   def validate(self, instance):
-    if self.set_defaults:
+    if self.set_defaults or self.unstringify:
       # Initialise default collection
       self.defaults = {}
       # Validate instance
@@ -372,6 +384,14 @@ class JsonSchema(Recipe):
     set-default
       Enum to control adding defaults specified by the JSON schema
       to both/neither/either-of main and shared instance parameters.
+      Accepted values: all|main|shared|none.
+      Default value: none.
+      Example:
+        shared
+    unstringify
+      Enum to control attempting to unstringify stringified integers
+      for values that are expected to be integers by the JSON schema,
+      for both/neither/either-of main and shared instance parameters.
       Accepted values: all|main|shared|none.
       Default value: none.
       Example:
@@ -436,6 +456,7 @@ class JsonSchema(Recipe):
   def _validateParameterDict(self, options, parameter_dict):
     validate = self._parseOption(options, 'validate-parameters', 'all')
     set_defaults = self._parseOption(options, 'set-default', 'none')
+    unstringify = self._parseOption(options, 'unstringify', 'none')
     software_description = self._description(options)
     serialisation = software_description.getSerialisation(strict=True)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
@@ -444,6 +465,7 @@ class JsonSchema(Recipe):
       validator = DefaultValidator(
         software_description.getInstanceRequestParameterSchema(),
         set_defaults.main,
+        {'integer': int} if unstringify.main else None,
       )
       parameter_dict = self._parseParameterDict(validator, parameter_dict)
     if validate.shared:
@@ -451,6 +473,7 @@ class JsonSchema(Recipe):
       validator = DefaultValidator(
         self._getSharedSchema(software_description),
         set_defaults.shared,
+        {'integer': int} if unstringify.shared else None,
       ) if shared_list else None # optimisation: skip creating unused validator
       valid, invalid = self._parseSharedParameterDict(validator, shared_list)
       options['valid-shared-instance-list'] = valid

@@ -213,6 +213,9 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
     expected_dict.update(sent_parameters)
     self.assertEqual(received_parameters, expected_dict)
 
+  def recoverStrToInt(self, sent_parameters, keys):
+    return {k : int(v) if k in keys else v for k, v in sent_parameters.items()}
+
 
 class JsonSchemaTest(JsonSchemaTestCase):
 
@@ -260,6 +263,13 @@ class JsonSchemaTest(JsonSchemaTestCase):
         self.receiveParameters,
       )
 
+  def test_jsonschema_unstringify_input(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters):
+      received = self.receiveParameters({'unstringify': 'main'})
+      recovered = self.recoverStrToInt(parameters, ('number',))
+      self.assertEqual(received, recovered)
 
   def test_jsonschema_incomplete_input(self):
     self.writeJsonSchema()
@@ -389,6 +399,16 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
       self.assertEqual(valid, {})
       self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": {}}])
 
+  def test_jsonschema_shared_2_unstringify_thing(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 2, "thing": "1"}]
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters({'unstringify': 'shared'})
+      recovered = self.recoverStrToInt(shared[0], ('thing',))
+      self.assertEqual(list(valid.values()), [recovered])
+      self.assertEqual(invalid, {})
+
   def test_jsonschema_shared_valid_and_invalid(self):
     self.writeJsonSchema()
     parameters = {"number": 1}
@@ -442,6 +462,16 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         slapconfiguration.UserError,
         self.receiveParameters,
         {'validate-parameters': 'main'},
+      )
+
+  def test_jsonschema_unstringify_skip_main(self):
+    self.writeJsonSchema()
+    parameters = {"number": "1"}
+    with self.patchSlap(parameters):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'unstringify': 'shared'},
       )
 
   def test_jsonschema_shared_valid_and_invalid_skip_main(self):
