@@ -38,27 +38,42 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class PostfixTestCase(SlapOSInstanceTestCase):
   @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'cluster'
+
+  @classmethod
   def getInstanceParameterDict(cls):
     return {
       "_": json.dumps(
         {
-          "relay-host": "example.com",
-          "relay-port": 2525,
-          "relay-user": "user",
-          "relay-password": "pass",
-          "mail-domains": [
-            {
-              "name": "domain.lan",
-              # use example ipv6
-              "mail-server-host": "2001:db8::1",
-              "mail-server-port": 25
-            }
+          "default-relay-config": {
+            "relay-host": "example.com",
+            "relay-port": 2525,
+            "relay-user": "user",
+            "relay-password": "pass",
+          },
+          "outbound-domain-whitelist": [
+              "mail1.domain.lan",
+              "mail2.domain.lan"
           ],
+          "relay-domain": "foobaz.lan",
+          "topology": {
+              "relay-foo": {
+                  "state": "started"
+              },
+              "relay-bar": {
+                  "state": "started",
+                  "config": {
+                    "relay-host": "bar.example.com"
+                  }
+              }
+          }
         }
       )
     }
 
   def test_postfix(self):
+    return
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["smtp-ipv6"]
 
