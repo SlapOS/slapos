@@ -83,19 +83,23 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       cls.requestSlaveInstanceForDomain(domain)
 
   @classmethod
-  def requestSlaveInstanceForDomain(cls, domain):
-    software_url = cls.getSoftwareURL()
-    param_dict = {
+  def createParametersForDomain(cls, domain):
+    return {
       "name": domain,
       "mail-server-host": "2001:db8::%d" % (hash(domain) % 100),
       "mail-server-port": 10025
     }
+
+  @classmethod
+  def requestSlaveInstanceForDomain(cls, domain):
+    software_url = cls.getSoftwareURL()
+    param_dict = cls.createParametersForDomain(domain)
     return cls.slap.request(
       software_release=software_url,
       partition_reference="SLAVE-%s" % domain.replace('.', '-'),
       partition_parameter_kw={'_': json.dumps(param_dict)},
       shared=True,
-      software_type='slave',
+      software_type='cluster',
     )
 
   def test_dns_entries(self):
@@ -108,3 +112,14 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       filter(None, (line.strip() for line in parameter_dict["dns-entries"].splitlines()))
     )
     self.assertEqual(actual_entries, expected_entries)
+
+  def test_slave_output_schema_and_dns(self):
+    for domain in ["mail1.domain.lan", "mail2.domain.lan"]:
+      slave_instance = self.requestSlaveInstanceForDomain(domain)
+      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      # Check required keys and values
+      expected_host = self.createParametersForDomain(domain)["mail-server-host"]
+      self.assertEqual(connection_dict.get("outbound-host", "<missing>"), expected_host)
+      self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), 10025)
+      expected_dns = f"{domain} MX 10 foobaz.lan"
+      self.assertIn(expected_dns, connection_dict.get("dns-entries", "<missing>"))
