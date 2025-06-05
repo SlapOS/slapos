@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
     "allow_subgroups": {
@@ -22,5 +22,6 @@
       "textarea": true,
       "default": "[{\"urls\":[\"stun:turn-paris-rapidspace.api.nexedi.net:443\"]}]"
     }
-  }
+  },
+  "unevaluatedProperties": false
 }
