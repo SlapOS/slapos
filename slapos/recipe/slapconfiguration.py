@@ -462,16 +462,28 @@ class JsonSchema(Recipe):
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
     if validate.main:
+      schema = software_description.getInstanceRequestParameterSchema()
+      if schema is None:
+        raise UserError(
+          "requested software-type %r seems to have no "
+          "JSON schema entry in the software.cfg.json."
+        )
       validator = DefaultValidator(
-        software_description.getInstanceRequestParameterSchema(),
+        schema,
         set_defaults.main,
         {'integer': int} if unstringify.main else None,
       )
       parameter_dict = self._parseParameterDict(validator, parameter_dict)
     if validate.shared:
       shared_list = options.pop('slave-instance-list')
+      shared_schema = self._getSharedSchema(software_description)
+      if shared_schema is None:
+        raise UserError(
+          "requested shared software-type %r seems to have no "
+          "JSON schema entry in the software.cfg.json."
+        )
       validator = DefaultValidator(
-        self._getSharedSchema(software_description),
+        shared_schema,
         set_defaults.shared,
         {'integer': int} if unstringify.shared else None,
       ) if shared_list else None # optimisation: skip creating unused validator

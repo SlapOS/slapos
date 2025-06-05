@@ -494,3 +494,24 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['valid-shared-instance-list'], [])
       self.assertIn('invalid-shared-instance-list', options)
       self.assertEqual(options['invalid-shared-instance-list'], [])
+
+  def test_jsonschema_non_existing_main_software_type(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, software_type='nonexistent'):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'validate-parameters': 'main'},
+      )
+
+  def test_jsonschema_non_existing_shared_software_type(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2}]
+    with self.patchSlap(parameters, software_type='nonexistent'):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'validate-parameters': 'shared'},
+      )
