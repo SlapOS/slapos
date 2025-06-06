@@ -31,15 +31,6 @@ admin-password = $${admin-password:passwd}
 domain-url = https://$${request-dns-entry:connection-domain}:$${galene-wrapper:port}
 {% endif %}
 
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = {{ slap_connection['computer-id'] }}
-partition = {{ slap_connection['partition-id'] }}
-url = {{ slap_connection['server-url'] }}
-key = {{ slap_connection['key-file'] }}
-cert = {{ slap_connection['cert-file'] }}
-configuration.ice-servers.json = [{"urls":["stun:turn-paris-rapidspace.api.nexedi.net:443"]}]
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
@@ -134,15 +125,11 @@ config-port = 8443
 
 {% if slapparameter_dict.get('request_dns', '') %}
 [request-dns-entry]
+<= slap-connection
 name = dns-galene-entry
 recipe = slapos.cookbook:request.serialised
 software-url = automated_local_dns
 software-type = core-network
-server-url = {{ slap_connection['server-url'] }}
-computer-id = {{ slap_connection['computer-id'] }}
-partition-id = {{ slap_connection['partition-id'] }}
-key-file = {{ slap_connection['key-file'] }}
-cert-file = {{ slap_connection['cert-file'] }}
 shared = true
 sla-computer_guid = {{ slap_connection['computer-id'] }}
 config-name = dns-galene-entry
