@@ -1,0 +1,78 @@
+[buildout]
+parts =
+  test-script
+  inner_kvm
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[test-script]
+recipe = slapos.recipe.build:download
+offline = false
+url = {{ slapparameter_dict['test-script-url'] }}
+{%- if slapparameter_dict.get('test-script-md5sum') %}
+md5sum = {{ slapparameter_dict['test-script-md5sum'] }}
+{%- endif %}
+destination = ${directory:public}/test-script
+
+[inner_kvm]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-kvm-inner:output
+
+[dynamic-template-kvm-inner]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+url = {{ template_kvm }}
+output = ${buildout:directory}/instance-kvm-inner.cfg
+context =
+  key develop_eggs_directory buildout:develop-eggs-directory
+  key eggs_directory buildout:eggs-directory
+  key ipv4 slap-configuration:ipv4
+  key ipv6 slap-configuration:ipv6
+{%- for k in sorted(kvm_parameter_flat_dict) %}
+  key {{ k }} kvm-parameter-flat-section:{{ k }}
+{%- endfor %}
+  section slap_configuration slap-configuration
+  section slapparameter_dict kvm-parameter-section
+  section storage_dict storage-dict
+
+[kvm-parameter-flat-section]
+{%- for k in sorted(kvm_parameter_flat_dict) %}
+{{ k }} = {{ dumps(kvm_parameter_flat_dict[k]) }}
+{%- endfor %}
+
+[kvm-parameter-section]
+name = test-kvm
+enable-http-server = {{ dumps(True) }}
+httpd-server-allow-write = true
+virtual-hard-drive-url = {{ slapparameter_dict['image-to-test-url'] }}
+virtual-hard-drive-md5sum = {{ slapparameter_dict['image-to-test-md5sum'] }}
+virtual-hard-drive-gzipped = {{ dumps(slapparameter_dict.get('image-to-test-gzipped', False)) }}
+ram-size = 4096
+cpu-count = 2
+bootstrap-script-url = {{ invmtest_script }}#{{ invmtest_script_md5 }}
+data-to-vm = {{ dumps(slapparameter_dict.get('test-script-environment', '')) }}
+
+[storage-dict]
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc/
+var = ${:home}/var/
+srv = ${:home}/srv/
+bin = ${:home}/bin/
+tmp = ${:home}/tmp/
+log = ${:var}/log/
+services = ${:etc}/service/
+scripts = ${:etc}/run/
+public = ${:srv}/public/
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
