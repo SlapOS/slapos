@@ -1210,6 +1210,20 @@ ir3:sshd-on-watch RUNNING""",
 
 
 @skipUnlessKvm
+class TestInstanceResilientRestic(TestInstanceResilient):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    d = super().getInstanceParameterDict()
+    d.update({'pbs1-backup-software': 'restic'})
+    return d
+
+  def getProcessInfo(self, *args, **kw):
+    result = super().getProcessInfo(*args, **kw)
+    self.assertIn('ir1:rest-server-local-ir0-kvm-1-on-watch RUNNING', result)
+    return result.replace('ir1:rest-server-local-ir0-kvm-1-on-watch RUNNING\n', '')
+
+
+@skipUnlessKvm
 class TestInstanceResilientJson(
   KvmMixinJson, TestInstanceResilient):
   pass

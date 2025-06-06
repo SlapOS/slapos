@@ -652,6 +652,14 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
     self._processEmbeddedInstance(self.test_instance_max_retries)
 
 
+class TestTheiaResilienceRestic(TestTheiaResilience):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    d = super().getInstanceParameterDict()
+    d.update({'pbs1-backup-software': 'restic'})
+    return d
+
+
 class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
   backup_max_tries = 100
   backup_wait_interval = 20
@@ -722,3 +730,11 @@ class TestTheiaResilienceWithInitialInstance(TestTheiaResilience, test.TestTheia
 
     self._processEmbeddedSoftware()
     self._processEmbeddedInstance()
+
+
+class TestTheiaResilienceResticWithInitialInstance(TestTheiaResilienceWithInitialInstance):
+  @classmethod
+  def getInstanceParameterDict(cls, sr_url=None, sr_type=None, sr_config=None):
+    d = super().getInstanceParameterDict(sr_url, sr_type, sr_config)
+    d.update({'pbs1-backup-software': 'restic'})
+    return d
