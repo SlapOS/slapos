@@ -1,10 +1,22 @@
 #!{{ dash_location }}
 set -e
 RDIFF_BACKUP={{ repr(rdiff_bacup_binary) }}
+RESTIC={{ repr(restic_binary) }}
 BACKUP_DIR={{ repr(backup_dir) }}
+SSH_CLIENT_SOCKET=$BACKUP_DIR/../ssh.sock
 case "$SSH_ORIGINAL_COMMAND" in
     "")
         "$RDIFF_BACKUP" --restrict "$BACKUP_DIR" --server
+    ;;
+    restic-backup)
+        cd $BACKUP_DIR
+        $RESTIC backup --no-scan --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: .
+    ;;
+    restic-restore)
+        $RESTIC restore latest --delete --insecure-no-password -r rest:http+unix:$SSH_CLIENT_SOCKET: -t $BACKUP_DIR
+    ;;
+    clear)
+        rm -f $SSH_CLIENT_SOCKET
     ;;
     ping)
         echo 'pong'
