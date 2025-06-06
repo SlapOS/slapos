@@ -46,6 +46,20 @@
       "type": "string",
       "optional": true
     },
+    "pbs1-backup-software": {
+      "title": "Backup software used for first clone and PBS.",
+      "description": "Backup software used for first clone and PBS.",
+      "type": "string",
+      "enum": ["rdiff-backup", "restic"],
+      "default": "rdiff-backup"
+    },
+    "pbs2-backup-software": {
+      "title": "Backup software used for second clone and PBS.",
+      "description": "Backup software used for second clone and PBS.",
+      "type": "string",
+      "enum": ["rdiff-backup", "restic"],
+      "default": "rdiff-backup"
+    },
     "resiliency-backup-periodicity": {
       "title": "Periodicity of backup",
       "description": "Periodicity of backup, in cron format.",
