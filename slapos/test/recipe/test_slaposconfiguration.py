@@ -165,6 +165,8 @@ class SlapConfigurationTest(unittest.TestCase):
   def patchSlap(self, parameters, serialise, shared=None, software_type='default'):
     shared = copy.deepcopy(shared) if shared else []
     d = {'_': json.dumps(parameters)} if serialise else copy.deepcopy(parameters)
+    if serialise:
+      shared = [{'_': json.dumps(s)} for s in shared]
     for i, s in enumerate(shared):
       s['slave_reference'] = 'SHARED%s' % i
     slap = mock.MagicMock()
@@ -429,8 +431,8 @@ class SlapConfigurationTest(unittest.TestCase):
       self.assertEqual(
         shared,
         [
-          {"slave_reference": "SHARED0", "kind": 1},
-          {"slave_reference": "SHARED1", "kind": 2, "thing": "hello"},
+          {"slave_reference": "SHARED0", "_": '{"kind": 1}'},
+          {"slave_reference": "SHARED1", "_": '{"kind": 2, "thing": "hello"}'},
         ],
       )
 
@@ -443,3 +445,14 @@ class SlapConfigurationTest(unittest.TestCase):
       valid, invalid = self.receiveSharedParameters(options)
       self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
       self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": "hello"}])
+
+  def test_jsonschema_shared_no_slaves(self):
+    """Test that [in]valid-shared-instance-list exists as an empty list when there are no slaves."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, True, shared=[]):
+        options = self.runJsonSchemaRecipe()
+        self.assertIn('valid-shared-instance-list', options)
+        self.assertEqual(options['valid-shared-instance-list'], [])
+        self.assertIn('invalid-shared-instance-list', options)
+        self.assertEqual(options['invalid-shared-instance-list'], [])

@@ -9,6 +9,7 @@ import zc.buildout.testing
 import zc.buildout.buildout
 import passlib.hash
 from slapos.recipe import random
+from slapos.util import str2bytes
 
 
 class PasswordMixin(object):
@@ -184,7 +185,7 @@ class TestPassword(PasswordMixin, unittest.TestCase):
 class PasswordLegacyMixin(PasswordMixin):
   def test_storage_path_legacy_format(self):
     with tempfile.NamedTemporaryFile() as tf:
-      tf.write(b'%b\n' % (self.password.encode('utf-8'),))
+      tf.write(str2bytes('%s\n' % (self.password,)))
       tf.flush()
 
       self._makeRecipe({'storage-path': tf.name}).install()
@@ -199,7 +200,7 @@ class PasswordLegacyMixin(PasswordMixin):
 
   def test_storage_path_legacy_format_passwd_set_in_options(self):
     with tempfile.NamedTemporaryFile() as tf:
-      tf.write(b'%b\n' % (self.password.encode('utf-8'),))
+      tf.write(str2bytes('%s\n' % (self.password,)))
       tf.flush()
       self._makeRecipe({'storage-path': tf.name, 'passwd': self.password}).install()
       passwd = self.buildout["random"]["passwd"]
@@ -220,5 +221,5 @@ class TestPasswordLegacyDict(PasswordLegacyMixin, unittest.TestCase):
   password = '{}'
 
 
-class TestPasswordLegacyDict(PasswordLegacyMixin, unittest.TestCase):
+class TestPasswordLegacyString(PasswordLegacyMixin, unittest.TestCase):
   password = 'secret'
