@@ -254,7 +254,7 @@ run = ${:var}/run
 slowquery = ${monitor-directory:private}/slowquery_digest
 
 [{{ section('resiliency-exclude-file') }}]
-# Generate rdiff exclude file in case of resiliency
+# Generate rsync exclude file in case of resiliency
 recipe = slapos.recipe.template:jinja2
 inline = {{ '{{ "${my-cnf-parameters:data-directory}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
