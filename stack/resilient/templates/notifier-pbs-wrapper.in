@@ -1,0 +1,172 @@
+#!{{ python_executable }}
+from datetime import datetime, timezone
+import glob
+import json
+import os
+import shutil
+import subprocess
+import sys
+from urllib.parse import urlparse
+from xml.etree.ElementTree import Element, SubElement, tostring
+
+rdiff_backup_binary = {{ repr(rdiff_backup_binary) }}
+restic_binary = {{ repr(restic_binary) }}
+rest_server_socket = {{ repr(rest_server_socket) }}
+backup_dir = {{ repr(backup_dir) }}
+url = {{ repr(url) }}
+ssh_client = {{ repr(ssh_client) }}
+remove_backup_older_than = {{ repr(remove_backup_older_than) }}
+slave_type = {{ repr(slave_type) }}
+name = {{ repr(name) }}
+backup_log_dir = {{ repr(backup_log_dir) }}
+feed_path = {{ repr(feed_path) }}
+feed_url = {{ repr(feed_url) }}
+backup_software = {{ repr(backup_software) }}
+
+def call_process(*args, **kw):
+  try:
+    return subprocess.check_output(*args, **kw).decode()
+  except subprocess.CalledProcessError as err:
+    output = '\n'.join(e.decode() for e in [err.output, err.stderr] if e)
+    print(output)
+    log('error', output)
+    generate_rss()
+    sys.exit(err.returncode)
+
+def log(log_entry, output):
+  if not output:
+    return
+  timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S.%f')
+  path = os.path.join(
+    backup_log_dir,
+   '%s.%s.%s.log' % (timestamp, name, log_entry),
+  )
+  with open(path, 'w') as f:
+    f.write(output)
+  print(output)
+
+def generate_rss():
+  log_path_list = sorted(glob.glob(os.path.join(backup_log_dir, '*.*.*.*.log')))
+  rss = Element('rss', {'version': '2.0'})
+  channel = SubElement(rss, 'channel')
+  SubElement(channel, 'title').text = 'Backup results'
+  SubElement(channel, 'link').text = feed_url
+  SubElement(channel, 'description').text = 'Backup results'
+  for log_path in log_path_list:
+    with open(log_path) as f:
+      ymdhms, milliseconds, name_, log_entry, _ = os.path.basename(log_path).split('.')
+      date = datetime.strptime('.'.join([ymdhms, milliseconds]), '%Y%m%d%H%M%S.%f')
+      item = SubElement(channel, 'item')
+      SubElement(item, 'title').text = ' '.join([name_, log_entry])
+      SubElement(item, 'link').text = feed_url
+      SubElement(item, 'description').text = f.read()
+      SubElement(item, 'pubDate').text = date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+  with open(feed_path, 'wb') as f:
+    f.write(tostring(rss, 'utf-8'))
+  # remove too old log files
+  for log_path in log_path_list[100:]:
+    os.remove(log_path)
+
+parsed_url = urlparse(url)
+
+if backup_software == 'rdiff-backup':
+  remote_schema = (
+    '{ssh_client} '
+    '-o "ConnectTimeout 300" '
+    '-o "ServerAliveCountMax 10" '
+    '-o "ServerAliveInterval 30" '
+    '-p %s '
+    '{username}@{hostname}').format(
+    ssh_client=ssh_client,
+    username=parsed_url.username,
+    hostname=parsed_url.hostname
+  )
+  remote_dir = '{port}::{path}'.format(port=parsed_url.port, path=parsed_url.path)
+
+  if slave_type == 'push':
+    log('restore', call_process([
+      rdiff_backup_binary,
+      '--remote-schema', remote_schema,
+      '--restore-as-of', 'now',
+      '--ignore-numerical-ids',
+      '--force',
+      backup_dir,
+      remote_dir,
+    ]))
+  elif slave_type == 'pull':
+    log('backup', call_process([
+      rdiff_backup_binary,
+      '--remote-schema', remote_schema,
+      remote_dir,
+      backup_dir,
+    ]))
+    latest_stat_file = sorted(glob.glob(
+      os.path.join(backup_dir, 'rdiff-backup-data', 'session_statistics.*')
+    ))[-1]
+    with open(latest_stat_file, 'r') as f:
+      log('backup', f.read())
+    log('prune', call_process([
+      rdiff_backup_binary,
+      '--remove-older-than', remove_backup_older_than,
+      '--force',
+      backup_dir,
+    ]))
+  else:
+    raise NotImplementedError('Unexpected type %s' % slave_type)
+elif backup_software == 'restic':
+  ssh_args = [
+    ssh_client,
+    '-o', 'ConnectTimeout 300',
+    '-o', 'ServerAliveCountMax 10',
+    '-o', 'ServerAliveInterval 30',
+    '-p', str(parsed_url.port),
+    '%s@%s' % (parsed_url.username, parsed_url.hostname)
+  ]
+  restic_repository = backup_dir.rstrip('/') + '.restic'
+  ssh_client_socket = os.path.join(parsed_url.path.rstrip('/'), '..', 'ssh.sock')
+  ssh_tunnel_args = ['-R', '%s:%s' % (ssh_client_socket, rest_server_socket)]
+  restic_args = [restic_binary, '--insecure-no-password', '-r', restic_repository]
+
+  if slave_type == 'push':
+    call_process(ssh_args + ['clear'])
+    log('restore', call_process(ssh_args + ssh_tunnel_args + ['restic-restore']))
+  elif slave_type == 'pull':
+    if not os.path.exists(restic_repository):
+      log('initialise', call_process(restic_args + ['init']))
+    # import existing rdiff-backup if it exists and restic repository is empty.
+    if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
+      snapshot_list = json.loads(call_process(restic_args + [
+        '--json', 'snapshots', 'latest',
+      ]))
+      if not snapshot_list:
+        os.chdir(backup_dir)
+        log('backup', call_process(restic_args + [
+          '--exclude', 'rdiff-backup-data', 'backup', '--no-scan', '.',
+        ]))
+
+    call_process(ssh_args + ['clear'])
+    log('backup', call_process(ssh_args + ssh_tunnel_args + ['restic-backup']))
+
+    # translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
+    remove_backup_older_than = remove_backup_older_than.lower()
+    if remove_backup_older_than.endswith('b'):
+      restic_keep_args = ['--keep-last ', remove_backup_older_than[:-1]]
+    else:
+      if remove_backup_older_than.endswith('w'):
+        remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
+      restic_keep_args = ['--keep-within', remove_backup_older_than]
+
+    forget_result = json.loads(call_process(restic_args + [
+      'forget', '--json',
+    ] + restic_keep_args))
+    if forget_result[0]['remove']:
+      log('prune', call_process(restic_args + ['prune']))
+      # remove rdiff-backup directory that is already older than removed restic snapshots.
+      if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
+        shutil.rmtree(backup_dir)
+  else:
+    raise NotImplementedError('Unexpected type %s' % slave_type)
+else:
+  raise NotImplementedError('Unexpected backup_software %s' % backup_software)
+
+generate_rss()

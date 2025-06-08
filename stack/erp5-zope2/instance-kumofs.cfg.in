@@ -77,7 +77,7 @@ srv = ${buildout:directory}/srv
 kumofs-data = ${:srv}/kumofs
 
 [resiliency-exclude-file]
-# Generate rdiff exclude file in case of resiliency
+# Generate rsync exclude file in case of resiliency
 recipe = slapos.recipe.template:jinja2
 inline = {{ '{{ "**\\n" }}' }}
 output = ${directory:srv}/exporter.exclude
