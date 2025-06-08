@@ -26,6 +26,7 @@
 ##############################################################################
 from __future__ import unicode_literals
 
+import json
 import os
 import requests
 
@@ -39,6 +40,10 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestGalene(SlapOSInstanceTestCase):
   __partition_reference__ = 'G'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({"request_dns": False})}
 
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
