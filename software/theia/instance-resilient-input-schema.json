@@ -48,6 +48,25 @@
       "type": "string",
       "optional": true
     },
+    "pbs1-backup-software-list": {
+      "title": "List of backup softwares used for first clone and PBS.",
+      "description": "List of backup softwares used for first clone and PBS. WARNING: always put 'rdiff-backup' for safety, as restic is experimental",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["rdiff-backup", "restic"]
+      },
+      "default": ["rdiff-backup", "restic"]
+    },
+    "pbs2-backup-software-list": {
+      "title": "List of backup softwares used for second clone and PBS.",
+      "description": "List of backup softwares used for second clone and PBS. WARNING: always put 'rdiff-backup' for safety, as restic is experimental",
+      "items": {
+        "type": "string",
+        "enum": ["rdiff-backup", "restic"]
+      },
+      "default": ["rdiff-backup", "restic"]
+    },
     "resiliency-backup-periodicity": {
       "title": "Periodicity of backup",
       "description": "Periodicity of backup, in cron format.",
