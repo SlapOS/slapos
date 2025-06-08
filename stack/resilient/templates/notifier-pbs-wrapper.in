@@ -1,7 +1,9 @@
 #!{{ python_executable }}
 from datetime import datetime, timezone
 import glob
+import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -9,6 +11,8 @@ from urllib.parse import urlparse
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 rdiff_backup_binary = {{ repr(rdiff_backup_binary) }}
+restic_binary = {{ repr(restic_binary) }}
+rest_server_socket = {{ repr(rest_server_socket) }}
 backup_dir = {{ repr(backup_dir) }}
 url = {{ repr(url) }}
 ssh_client = {{ repr(ssh_client) }}
@@ -18,7 +22,7 @@ name = {{ repr(name) }}
 backup_log_dir = {{ repr(backup_log_dir) }}
 feed_path = {{ repr(feed_path) }}
 feed_url = {{ repr(feed_url) }}
-backup_software = 'rdiff-backup'
+backup_software = {{ repr(backup_software) }}
 
 def call_process(*args, **kw):
   try:
@@ -134,6 +138,59 @@ if backup_software == 'rdiff-backup':
       '--force',
       backup_dir,
     ]))
+  else:
+    raise NotImplementedError('Unexpected type %s' % slave_type)
+elif backup_software == 'restic':
+  ssh_args = [
+    ssh_client,
+    '-o', 'ConnectTimeout 300',
+    '-o', 'ServerAliveCountMax 10',
+    '-o', 'ServerAliveInterval 30',
+    '-p', str(parsed_url.port),
+    '%s@%s' % (parsed_url.username, parsed_url.hostname)
+  ]
+  restic_repository = backup_dir.rstrip('/') + '.restic'
+  ssh_client_socket = os.path.join(parsed_url.path.rstrip('/'), '..', 'ssh.sock')
+  ssh_tunnel_args = ['-R', '%s:%s' % (ssh_client_socket, rest_server_socket)]
+  restic_args = [restic_binary, '--insecure-no-password', '-r', restic_repository]
+
+  if slave_type == 'push':
+    call_process(ssh_args + ['clear'])
+    log('restore', call_process(ssh_args + ssh_tunnel_args + ['restic-restore']))
+  elif slave_type == 'pull':
+    if not os.path.exists(restic_repository):
+      log('initialise', call_process(restic_args + ['init']))
+    # import existing rdiff-backup if it exists and restic repository is empty.
+    if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
+      snapshot_list = json.loads(call_process(restic_args + [
+        '--json', 'snapshots', 'latest',
+      ]))
+      if not snapshot_list:
+        os.chdir(backup_dir)
+        log('backup', call_process(restic_args + [
+          '--exclude', 'rdiff-backup-data', 'backup', '--no-scan', '.',
+        ]))
+
+    call_process(ssh_args + ['clear'])
+    log('backup', call_process(ssh_args + ssh_tunnel_args + ['restic-backup']))
+
+    # translate rdiff-backup's --remove-older-than parameter to restic's forget policy.
+    remove_backup_older_than = remove_backup_older_than.lower()
+    if remove_backup_older_than.endswith('b'):
+      restic_keep_args = ['--keep-last ', remove_backup_older_than[:-1]]
+    else:
+      if remove_backup_older_than.endswith('w'):
+        remove_backup_older_than = '%sd' % (int(remove_backup_older_than[:-1]) * 7)
+      restic_keep_args = ['--keep-within', remove_backup_older_than]
+
+    forget_result = json.loads(call_process(restic_args + [
+      'forget', '--json',
+    ] + restic_keep_args))
+    if forget_result[0]['remove']:
+      log('prune', call_process(restic_args + ['prune']))
+      # remove rdiff-backup directory that is already older than removed restic snapshots.
+      if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
+        shutil.rmtree(backup_dir)
   else:
     raise NotImplementedError('Unexpected type %s' % slave_type)
 else:
