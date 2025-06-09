@@ -394,7 +394,7 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     # Create ~/exclude and ~/exclude/excluded in import partition
     excluded_path = self.getPartitionPath('import', 'exclude', 'excluded')
     self.writeFile(excluded_path,
-      'This file should be be kept during resilient restore (excluded from rdiff deletion)')
+      'This file should be be kept during resilient restore (excluded from rsync deletion)')
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
     self._doSync()
@@ -626,6 +626,10 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
     etc_listdir = os.listdir(self.getPartitionPath('import', 'etc'))
     self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
+    # Check that resilient-feed was generated
+    resilient_feed = self.getPartitionPath('pull-backup', 'srv', 'monitor', 'public', 'resilient-feed')
+    self.assertTrue(os.path.isfile(resilient_feed))
+
   def _checkTakeover(self):
     # Check that there is an export, import and frozen instance and get their new partition IDs
     import_id = self.import_id
@@ -646,6 +650,14 @@ class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
     self._processEmbeddedInstance(self.test_instance_max_retries)
+
+
+class TestTheiaResilienceRestic(TestTheiaResilience):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    d = super().getInstanceParameterDict()
+    d.update({'pbs1-backup-software': 'restic'})
+    return d
 
 
 class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
@@ -718,3 +730,11 @@ class TestTheiaResilienceWithInitialInstance(TestTheiaResilience, test.TestTheia
 
     self._processEmbeddedSoftware()
     self._processEmbeddedInstance()
+
+
+class TestTheiaResilienceResticWithInitialInstance(TestTheiaResilienceWithInitialInstance):
+  @classmethod
+  def getInstanceParameterDict(cls, sr_url=None, sr_type=None, sr_config=None):
+    d = super().getInstanceParameterDict(sr_url, sr_type, sr_config)
+    d.update({'pbs1-backup-software': 'restic'})
+    return d

@@ -1,0 +1,13 @@
+#!{{ python_executable }}
+import os
+import subprocess
+import sys
+from urllib.parse import urlparse
+parsed_url = urlparse({{ repr(url) }})
+user = parsed_url.username
+host = parsed_url.hostname
+port = parsed_url.port
+# Discard stdout
+subprocess.check_output(
+  ({{ repr(ssh_client) }}, '%s@%s' % (user, host), '-p', str(port), 'ping'),
+)
