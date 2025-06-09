@@ -152,6 +152,7 @@ config-command = ${balancer-updated-caucase-url:path}
     'database-list': True,
     'test-database-list': True,
     'monitor-base-url': False,
+    'replication-mariabackup-url': True,
     'replication-bootstrap-url': True,
     'replication-primary-url': True,
     'caucased-url': True,
