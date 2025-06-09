@@ -160,16 +160,16 @@ elif backup_software == 'restic':
   elif slave_type == 'pull':
     if not os.path.exists(restic_repository):
       log('initialise', call_process(restic_args + ['init']))
-    # import existing rdiff-backup if it exists and restic repository is empty.
-    if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
-      snapshot_list = json.loads(call_process(restic_args + [
-        '--json', 'snapshots', 'latest',
-      ]))
-      if not snapshot_list:
-        os.chdir(backup_dir)
-        log('backup', call_process(restic_args + [
-          '--exclude', 'rdiff-backup-data', 'backup', '--no-scan', '.',
+      # import existing rdiff-backup if it exists and restic repository is empty.
+      if os.path.isdir(os.path.join(backup_dir, 'rdiff-backup-data')):
+        snapshot_list = json.loads(call_process(restic_args + [
+          '--json', 'snapshots', 'latest',
         ]))
+        if not snapshot_list:
+          os.chdir(backup_dir)
+          log('backup', call_process(restic_args + [
+            '--exclude', 'rdiff-backup-data', 'backup', '--no-scan', '.',
+          ]))
 
     call_process(ssh_args + ['clear'])
     log('backup', call_process(ssh_args + ssh_tunnel_args + ['restic-backup']))
