@@ -121,6 +121,7 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+replication-mariabackup-url = ${mariadb-bootstrap-server-promise:mariabackup-url}
 replication-bootstrap-url = ${mariadb-bootstrap-server-promise:bootstrap-url}
 replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ replication_mariadb_netloc }}
 {% if caucased_enable -%}
@@ -743,7 +744,7 @@ sql-commands =
 [mariadb-bootstrap-server-script]
 recipe = slapos.cookbook:simplehttpserver
 wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
-base-path = ${directory:mariadb-dump-full}
+base-path = ${directory:backup}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
 {% if ipv6_reverse_proxy_enable -%}
 socketpath = ${directory:run}/bootstrap.sock
@@ -774,7 +775,10 @@ config-url = http://[{{ ipv6 }}]:{{ port - 1 }}
 {%- else %}
 config-url = http://{{ ip_as_host }}:{{ port - 1 }}
 {%- endif %}
-bootstrap-url = ${:config-url}/${mariadb-dump-script:most-recent}
+# Connection information
+url = ${:config-url}
+bootstrap-url = ${:url}/mariadb-full/${mariadb-dump-script:most-recent}
+mariabackup-url = ${:url}/mariabackup-full/${mariabackup-script:most-recent}
 
 {% if ipv6_reverse_proxy_enable -%}
 [haproxy-cfg]
