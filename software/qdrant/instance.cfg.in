@@ -1,49 +1,57 @@
 [buildout]
 parts =
-  directories
-  template-development-yaml
-  template-production-yaml
-  template-config-yaml
+  directory
+  development-yaml
+  production-yaml
+  config-yaml
   service
 
-[directories]
-recipe = slapos.cookbook:makedirectory
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+extends = {{ parameter_list['template_monitor'] }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
 var = ${buildout:directory}/var
 log = ${buildout:directory}/var/log
 etc = ${buildout:directory}/etc
 cfg = ${buildout:directory}/etc/qdrant/config
 
-[template-development-yaml]
-recipe = slapos.recipe.build:download
-url = ${:_profile_base_location_}/templates/development.yaml.in
-md5sum = 78721ea5454d08fd89b1ae095056744a
-context =
-  key http_port {{ params['http_port'] }}
-  key grpc_port {{ params['grpc_port'] }}
-rendered = ${directories:cfg}/development.yaml
+[qdrant-config]
+path-development-yaml = ${directory:cfg}/development.yaml
+path-production-yaml = ${directory:cfg}/production.yaml
+path-config-yaml = ${directory:cfg}/config.yaml
 
-[template-production-yaml]
-recipe = slapos.recipe.build:download
-url = ${:_profile_base_location_}/templates/production.yaml.in
-md5sum = d0085646274cb8b4a94323625e1f99a7
+[development-yaml]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['template_development_yaml'] }}
+output = ${qdrant-config:path-development-yaml}
 context =
-  key http_port {{ params['http_port'] }}
-  key grpc_port {{ params['grpc_port'] }}
-rendered = ${directories:cfg}/production.yaml
+  key http_port {{ parameter_list['http_port'] }}
+  key grpc_port {{ parameter_list['grpc_port'] }}
 
-[template-config-yaml]
-recipe = slapos.recipe.build:download
-url = ${:_profile_base_location_}/templates/config.yaml.in
-md5sum = 73eedd34d9395335bdc11f805f5f053f
+[production-yaml]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['template_production_yaml'] }}
+output = ${qdrant-config:path-production-yaml}
 context =
-  key http_port {{ params['http_port'] }}
-  key grpc_port {{ params['grpc_port'] }}
-rendered = ${directories:cfg}/config.yaml
+  key http_port {{ parameter_list['http_port'] }}
+  key grpc_port {{ parameter_list['grpc_port'] }}
+
+[config-yaml]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['template_config_yaml'] }}
+output = ${qdrant-config:path-config-yaml}
+context =
+  key http_port {{ parameter_list['http_port'] }}
+  key grpc_port {{ parameter_list['grpc_port'] }}
 
 [service]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ qdrant_location }}/bin/qdrant \
-    --config-path ${directories:cfg}/config.yaml \
-    > ${directories:log}/qdrant.log 2>&1
-wrapper-path = ${directories:etc}/run_qdrant
+  {{ parameter_list['qdrant_bin'] }} \
+    --config-path ${directory:cfg}/config.yaml \
+    > ${directory:log}/qdrant.log 2>&1
+wrapper-path = ${directory:etc}/run_qdrant
