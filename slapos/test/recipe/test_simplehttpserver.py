@@ -116,46 +116,70 @@ class SimpleHTTPServerTest(unittest.TestCase):
         resp = requests.get(self.server_url, **kwargs)
         self.assertIn('Directory listing for /', resp.text)
       ConnectionError = requests.exceptions.ConnectionError
-      cleanup = None
     else:
-      s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-      def check_connection():
-        s.connect(address)
       ConnectionError = socket.error
-      cleanup = lambda: s.close()
-    try:
-      for i in range(16):
-        try:
-          check_connection()
-          break
-        except ConnectionError:
-          time.sleep(i * .1)
-      else:
-        # Kill process in case it did not crash
-        # otherwise .communicate() may hang forever.
-        self.process.terminate()
-        self.process.wait()
-        with open(self.logfile) as f:
-          log = f.read()
-        self.fail(
-          "Server did not start\n"
-          "out: %s\n"
-          "err: %s\n"
-          "log: %s"
-          % (self.process.communicate() + (log,)))
-    finally:
-      if cleanup:
-        cleanup()
+      def check_connection():
+        self.clientSocket(address, b"GET / HTTP/1.1")
+    for i in range(16):
+      try:
+        check_connection()
+        break
+      except ConnectionError:
+        time.sleep(i * .1)
+    else:
+      # Kill process in case it did not crash
+      # otherwise .communicate() may hang forever.
+      self.process.terminate()
+      self.process.wait()
+      with open(self.logfile) as f:
+        log = f.read()
+      self.fail(
+        "Server did not start\n"
+        "out: %s\n"
+        "err: %s\n"
+        "log: %s"
+        % (self.process.communicate() + (log,)))
     with open(self.logfile) as f:
       self.assertIn("Starting simple http server at %s" % (address,), f.read())
     return self.server_url
 
-  def tearDown(self):
+  def stopServer(self):
     if self.process:
       self.process.terminate()
       self.process.wait()
-      self.process.communicate() # close pipes
+      stdout, stderr = self.process.communicate() # close pipes
       self.process = None
+      return stdout, stderr
+
+  def tearDown(self):
+    self.stopServer()
+
+  def clientSocket(self, server_address, msg, readbytes=1024):
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(2)
+    try:
+      s.connect(server_address)
+      s.send(msg)
+      s.shutdown(socket.SHUT_WR)
+      recv = None
+      try:
+        recv = s.recv(readbytes)
+        # apparently reading twice avoid Broken Pipe erro in server during test
+        recv += s.recv(readbytes)
+      except socket.error:
+        pass
+      return recv
+    finally:
+      s.close()
+
+  def waitLog(self, msg):
+    for i in range(20):
+      with open(self.logfile) as f:
+        log = f.read()
+      if msg in log:
+        break
+      time.sleep(i * .1)
+    return log
 
   def write_should_fail(self, url, hack_path, hack_content):
     # post with multipart/form-data encoding
@@ -276,16 +300,60 @@ class SimpleHTTPServerTest(unittest.TestCase):
       self.assertEqual(f.read(), indexcontent)
 
   def test_socketpath(self):
-    socketpath = os.path.join(self.install_dir, 'http.sock')
+    address = socketpath = os.path.join(self.install_dir, 'http.sock')
     self.setUpRecipe({'socketpath': socketpath})
     self.assertEqual(socketpath, self.recipe.options['address'])
+    self.startServer()
+    # Send valid HTTP request to the server
+    # and check it logs it without crashing
+    requestline = "GET / HTTP/1.1"
+    resp = self.clientSocket(address, requestline.encode())
+    self.assertIn(b"200 OK", resp)
+    log = self.waitLog(requestline)
+    self.assertIn(requestline, log)
+    self.assertIn("<unnamedsocket>", log)
+    # Send invalid HTTP request to the server
+    # and check it logs it without crashing
+    requestline = "NOT_VALID_HTTP"
+    resp = self.clientSocket(address, requestline.encode())
+    self.assertIn(b"Bad request syntax", resp)
+    log = self.waitLog(requestline)
+    self.assertIn(requestline, log)
+    self.assertIn("<unnamedsocket>", log)
+    # Stop server and check no crashes were logged
+    stdout, stderr = self.stopServer()
+    self.assertFalse(stdout)
+    self.assertFalse(stderr)
+    # Check server can restart when the socketpath still exists
+    self.assertTrue(os.path.exists(socketpath))
     self.startServer()
 
   def test_abstract(self):
     abstract = os.path.join(self.install_dir, 'abstract.http')
     self.setUpRecipe({'abstract': abstract})
-    self.assertEqual('\0' + abstract, self.recipe.options['address'])
+    address = self.recipe.options['address']
+    self.assertEqual('\0' + abstract, address)
     self.startServer()
+    # Send valid HTTP request to the server
+    # and check it logs it without crashing
+    requestline = "GET / HTTP/1.1"
+    resp = self.clientSocket(address, requestline.encode())
+    self.assertIn(b"200 OK", resp)
+    log = self.waitLog(requestline)
+    self.assertIn(requestline, log)
+    self.assertIn("<unnamedsocket>", log)
+    # Send invalid HTTP request to the server
+    # and check it logs it without crashing
+    requestline = "NOT_VALID_HTTP"
+    resp = self.clientSocket(address, requestline.encode())
+    self.assertIn(b"Bad request syntax", resp)
+    log = self.waitLog(requestline)
+    self.assertIn(requestline, log)
+    self.assertIn("<unnamedsocket>", log)
+    # Stop server and check no crashes were logged
+    stdout, stderr = self.stopServer()
+    self.assertFalse(stdout)
+    self.assertFalse(stderr)
 
   def test_tls_self_signed(self):
     certfile = os.path.join(self.install_dir, 'cert.pem')
