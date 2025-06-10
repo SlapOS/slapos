@@ -139,7 +139,7 @@ class KVMTestCase(InstanceTestCase):
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
+                     if q['name'].startswith('kvm-'))['pid']
     sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
                             % re.escape(self.slap.shared_directory)).sub
     image_list = []
@@ -417,7 +417,7 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
     return_list = []
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
+                 if q['name'].startswith('kvm-')][0]['pid']
       kvm_process = psutil.Process(kvm_pid)
       get_next = False
       for entry in kvm_process.cmdline():
@@ -1210,6 +1210,20 @@ ir3:sshd-on-watch RUNNING""",
 
 
 @skipUnlessKvm
+class TestInstanceResilientRestic(TestInstanceResilient):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    d = super().getInstanceParameterDict()
+    d.update({'pbs1-backup-software': 'restic'})
+    return d
+
+  def getProcessInfo(self, *args, **kw):
+    result = super().getProcessInfo(*args, **kw)
+    self.assertIn('ir1:rest-server-local-ir0-kvm-1-on-watch RUNNING', result)
+    return result.replace('ir1:rest-server-local-ir0-kvm-1-on-watch RUNNING\n', '')
+
+
+@skipUnlessKvm
 class TestInstanceResilientJson(
   KvmMixinJson, TestInstanceResilient):
   pass
@@ -1994,7 +2008,7 @@ class TestNatRulesKvmCluster(KVMTestCase):
   def getRunningHostFwd(self):
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
+                 if q['name'].startswith('kvm-')][0]['pid']
       kvm_process = psutil.Process(kvm_pid)
       for entry in kvm_process.cmdline():
         if 'hostfwd' in entry:
@@ -2553,7 +2567,7 @@ class ExternalDiskMixin(KvmMixin):
     _match_drive = re.compile('file.*if=virtio.*').match
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
+                     if q['name'].startswith('kvm-'))['pid']
     drive_list = []
     for entry in psutil.Process(kvm_pid).cmdline():
       m = _match_drive(entry)
