@@ -80,6 +80,7 @@
 {% set replica_threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
 {% set replica_skip_networking = not replication.get('allow-tcp-connections-on-replica', True) -%}
 {% set upstream_mariadb_url = str(replication['upstream-mariadb-url']) -%}
+{% set upstream_mariabackup_url = replication.get('upstream-mariabackup-url') -%}
 {% set upstream_bootstrap_url = replication.get('upstream-bootstrap-url') -%}
 {% set upstream_caucased_url = replication.get('upstream-caucased-url') -%}
 {% set upstream = urllib_parse.urlsplit(upstream_mariadb_url) -%}
@@ -464,7 +465,11 @@ context =
   key datadir my-cnf-parameters:data-directory
   key environ :environ
 {%- if replication %}
+{%- if upstream_mariabackup_url %}
+  raw custom_install ${mariadb-setup-replication:output}
+{%- else %}
   raw on_creation ${mariadb-setup-replication:output}
+{%- endif %}
 {%- else %}
   raw on_creation ${mariadb-setup-db:output}
   raw on_startup ${mariadb-on-startup:output}
@@ -538,17 +543,24 @@ foreground-script =
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 url = {{ mariadb['mariadb-background-template'] }}
+shebang =
+  #!{{ bash }}
+  set -euo pipefail
 context =
   key shebang :shebang
   key mariadb_socket my-cnf-parameters:socket
   key defaults_file my-cnf:output
   raw extra_options --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin
   key foreground_script :foreground-script
-shebang =
-  #!{{ bash }}
-  set -euo pipefail
-foreground-script =
-  {% if upstream_bootstrap_url -%}
+  key install_script :install-script
+install-script =
+  {% if upstream_mariabackup_url -%}
+  bootstrap_url={{ six_moves.shlex_quote(upstream_mariabackup_url) }}
+  bootstrap_file="${directory:mariadb-dump-full}/bootstrap.mariabackup.gz"
+  mariabackup="{{ mariadb['location'] }}/bin/mariadb-backup"
+  mbstream="{{ mariadb['location'] }}/bin/mbstream"
+  zstdcat="{{ parameter_dict['zstd-location'] }}/bin/zstdcat"
+  {% elif upstream_bootstrap_url -%}
   bootstrap_url={{ six_moves.shlex_quote(upstream_bootstrap_url) }}
   bootstrap_file="${directory:mariadb-dump-full}/bootstrap.sql.gz"
   {%- endif %}
@@ -569,7 +581,7 @@ foreground-script =
   fi
   {%- endif %}
 
-  {% if upstream_bootstrap_url -%}
+  {% if upstream_mariabackup_url or upstream_bootstrap_url -%}
   echo "Fetching $bootstrap_url"
   "$curl" -o "$bootstrap_file" --fail "$bootstrap_url"
   {%- if upstream_caucased_url %}
@@ -578,7 +590,30 @@ foreground-script =
   {#- NOT NL #} --cacert ${caucase-replica-updater:ca-path}
   {#- NOT NL #} --crlfile ${caucase-replica-updater:crl-path}
   {%- endif %}
+  {%- endif %}
 
+  {% if upstream_mariabackup_url -%}
+  echo "Restoring $bootstrap_file"
+  "$zstdcat" "$bootstrap_file" | "$mbstream" --extract --directory="${my-cnf-parameters:data-directory}"
+
+  echo "Preparing mariabackup-restored directory"
+  "$mariabackup" --prepare --target-dir="${my-cnf-parameters:data-directory}"
+  {%- endif %}
+
+foreground-script =
+  {% if upstream_mariabackup_url -%}
+  echo "Extracting GTID from mariabackup"
+  set +o pipefail
+  MARIABACKUP_GTID=$(cat "${my-cnf-parameters:data-directory}/xtrabackup_binlog_info" | sed 's/.*\s\+//')
+  SQL_SET_GTID="SET GLOBAL gtid_slave_pos=\"$MARIABACKUP_GTID\";"
+  set -o pipefail
+  if [ -z "$MARIABACKUP_GTID" ]; then
+    echo "  \_ GTID not found in mariabackup; ABORT"
+    exit 1
+  fi
+  echo "  \_ OK, found $SQL_SET_GTID"
+
+  {% elif upstream_bootstrap_url -%}
   echo "Importing $bootstrap_file"
   "$zcat" "$bootstrap_file" | "$mysql"
 
