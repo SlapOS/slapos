@@ -24,28 +24,28 @@ cert = ${slap-connection:cert-file}
 recipe = slapos.cookbook:mkdirectory
 var = ${buildout:directory}/var
 log = ${buildout:directory}/var/log
+bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
-cfg = ${buildout:directory}/etc/qdrant/config
 
 [qdrant-http-port]
 recipe = slapos.cookbook:free_port
 minimum = 6330
 maximum = 6340
-ip = ${slap-configuration:ipv6-random}
+ip = ${slap-configuration:ipv4-random}
 
 [qdrant-grpc-port]
 recipe = slapos.cookbook:free_port
 minimum = 6341
 maximum = 6351
-ip = ${slap-configuration:ipv6-random}
+ip = ${slap-configuration:ipv4-random}
 
 [qdrant-config]
-path-development-yaml = ${directory:cfg}/development.yaml
-path-production-yaml = ${directory:cfg}/production.yaml
-path-config-yaml = ${directory:cfg}/config.yaml
+path-development-yaml = ${directory:etc}/development.yaml
+path-production-yaml = ${directory:etc}/production.yaml
+path-config-yaml = ${directory:etc}/config.yaml
 http-port = ${qdrant-http-port:port}
 grpc-port = ${qdrant-grpc-port:port}
-ip = ${slap-configuration:ipv6-random}
+ip = ${slap-configuration:ipv4-random}
 
 [development-yaml]
 recipe = slapos.recipe.template:jinja2
@@ -70,8 +70,5 @@ context =
 
 [service]
 recipe = slapos.cookbook:wrapper
-command-line =
-  {{ parameter_list['qdrant_bin'] }} \
-    --config-path ${directory:cfg}/config.yaml \
-    > ${directory:log}/qdrant.log 2>&1
-wrapper-path = ${directory:etc}/run_qdrant
+command-line = {{ parameter_list['qdrant_bin'] }} --config-path ${directory:etc}/config.yaml > ${directory:log}/qdrant.log 2>&1
+wrapper-path = ${directory:bin}/run_qdrant
