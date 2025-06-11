@@ -12,6 +12,14 @@ offline = true
 
 extends = {{ parameter_list['template_monitor'] }}
 
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 var = ${buildout:directory}/var
@@ -19,34 +27,46 @@ log = ${buildout:directory}/var/log
 etc = ${buildout:directory}/etc
 cfg = ${buildout:directory}/etc/qdrant/config
 
+[qdrant-http-port]
+recipe = slapos.cookbook:free_port
+minimum = 6330
+maximum = 6340
+ip = ${slap-configuration:ipv6-random}
+
+[qdrant-grpc-port]
+recipe = slapos.cookbook:free_port
+minimum = 6341
+maximum = 6351
+ip = ${slap-configuration:ipv6-random}
+
 [qdrant-config]
 path-development-yaml = ${directory:cfg}/development.yaml
 path-production-yaml = ${directory:cfg}/production.yaml
 path-config-yaml = ${directory:cfg}/config.yaml
+http-port = ${qdrant-http-port:port}
+grpc-port = ${qdrant-grpc-port:port}
+ip = ${slap-configuration:ipv6-random}
 
 [development-yaml]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_development_yaml'] }}
 output = ${qdrant-config:path-development-yaml}
 context =
-  key http_port {{ parameter_list['http_port'] }}
-  key grpc_port {{ parameter_list['grpc_port'] }}
+  section config qdrant-config
 
 [production-yaml]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_production_yaml'] }}
 output = ${qdrant-config:path-production-yaml}
 context =
-  key http_port {{ parameter_list['http_port'] }}
-  key grpc_port {{ parameter_list['grpc_port'] }}
+  section config qdrant-config
 
 [config-yaml]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_config_yaml'] }}
 output = ${qdrant-config:path-config-yaml}
 context =
-  key http_port {{ parameter_list['http_port'] }}
-  key grpc_port {{ parameter_list['grpc_port'] }}
+  section config qdrant-config
 
 [service]
 recipe = slapos.cookbook:wrapper

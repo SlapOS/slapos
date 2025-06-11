@@ -1,10 +1,10 @@
 log_level: DEBUG
 
 service:
-  host: 127.0.0.1
-  http_port: {{ http_port }}
+  host: {{ config['ip'] }}
+  http_port: {{ config['http-port'] }}
   # Uncomment to enable gRPC:
-  #grpc_port: {{ grpc_port }}
+  #grpc_port: {{ config['grpc-port'] }}
   #api_key: your_secret_api_key_here
 
 
