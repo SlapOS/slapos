@@ -5,6 +5,7 @@ parts =
   production-yaml
   config-yaml
   service
+  logrotate-entry
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -24,8 +25,9 @@ cert = ${slap-connection:cert-file}
 recipe = slapos.cookbook:mkdirectory
 var = ${buildout:directory}/var
 log = ${buildout:directory}/var/log
-bin = ${buildout:directory}/bin
+run = ${buildout:directory}/var/run
 etc = ${buildout:directory}/etc
+svc = ${buildout:directory}/etc/service
 
 [qdrant-http-port]
 recipe = slapos.cookbook:free_port
@@ -39,36 +41,70 @@ minimum = 6341
 maximum = 6351
 ip = ${slap-configuration:ipv4-random}
 
-[qdrant-config]
+[qdrant]
 path-development-yaml = ${directory:etc}/development.yaml
 path-production-yaml = ${directory:etc}/production.yaml
 path-config-yaml = ${directory:etc}/config.yaml
 http-port = ${qdrant-http-port:port}
 grpc-port = ${qdrant-grpc-port:port}
 ip = ${slap-configuration:ipv4-random}
+log-file = ${directory:log}/qdrant.log
+bin-file = {{ parameter_list['qdrant_bin'] }}
+pid-file = ${directory:run}/qdrant.pid
 
 [development-yaml]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_development_yaml'] }}
-output = ${qdrant-config:path-development-yaml}
+output = ${qdrant:path-development-yaml}
 context =
-  section config qdrant-config
+  section param_qdrant qdrant
 
 [production-yaml]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_production_yaml'] }}
-output = ${qdrant-config:path-production-yaml}
+output = ${qdrant:path-production-yaml}
 context =
-  section config qdrant-config
+  section param_qdrant qdrant
 
 [config-yaml]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_list['template_config_yaml'] }}
-output = ${qdrant-config:path-config-yaml}
+output = ${qdrant:path-config-yaml}
 context =
-  section config qdrant-config
+  section param_qdrant qdrant
+
+[qdrant-server]
+recipe = slapos.recipe.template
+output = ${directory:bin}/qdrant-server
+inline =
+  #!/usr/bin/env bash
+
+  _term () {
+    kill -TERM "$QDRANT_PID" 2>/dev/null
+  }
+  trap _term SIGTERM
+
+  _interrupt () {
+    kill -INT "$QDRANT_PID" 2>/dev/null
+  }
+  trap _interrupt SIGINT
+
+  ${qdrant:bin-file} --config-path ${directory:etc}/config.yaml > ${qdrant:log-file} 2>&1 &
+
+  QDRANT_PID=$!
+  echo $QDRANT_PID > ${qdrant:pid-file}
+  wait $QDRANT_PID
+  exit $?
 
 [service]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_list['qdrant_bin'] }} --config-path ${directory:etc}/config.yaml > ${directory:log}/qdrant.log 2>&1
-wrapper-path = ${directory:bin}/run_qdrant
+command-line = ${qdrant-server:output}
+wrapper-path = ${directory:svc}/qdrant-server
+hash-files =
+  ${qdrant-server:output}
+
+[logrotate-entry]
+<= logrotate-entry-base
+name = qdrant
+log = ${qdrant:log-file}
+post = kill -USR1 $(cat ${qdrant:pid-file})

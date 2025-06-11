@@ -1,7 +1,7 @@
 log_level: INFO
 
 service:
-  host: {{ config['ip'] }}
-  http_port: {{ config['http-port'] }}
+  host: {{ param_qdrant['ip'] }}
+  http_port: {{ param_qdrant['http-port'] }}
   # Uncomment to enable gRPC:
-  #grpc_port: {{ config['grpc-port'] }}
+  #grpc_port: {{ param_qdrant['grpc-port'] }}

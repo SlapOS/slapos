@@ -3,11 +3,11 @@ log_level: INFO
 # Logging configuration
 # Qdrant logs to stdout. You may configure to also write logs to a file on disk.
 # Be aware that this file may grow indefinitely.
-# logger:
-#   on_disk:
-#     enabled: true
-#     log_file: path/to/log/file.log
-#     log_level: INFO
+logger:
+  on_disk:
+    enabled: true
+    log_file: {{ param_qdrant['log-file'] }}
+    log_level: INFO
 
 storage:
   # Where to store all the data
@@ -215,15 +215,15 @@ service:
   max_workers: 0
 
   # Host to bind the service on
-  host: {{ config['ip'] }}
+  host: {{ param_qdrant['ip'] }}
 
   # HTTP(S) port to bind the service on
-  http_port: {{ config['http-port'] }}
+  http_port: {{ param_qdrant['http-port'] }}
 
   # gRPC port to bind the service on.
   # If `null` - gRPC is disabled. Default: null
   # Comment to disable gRPC:
-  grpc_port: {{ config['grpc-port'] }}
+  grpc_port: {{ param_qdrant['grpc-port'] }}
 
   # Enable CORS headers in REST API.
   # If enabled, browsers would be allowed to query REST endpoints regardless of query origin.
