@@ -41,8 +41,12 @@ configuration.icp_license  =
 recipe  = slapos.recipe.template:jinja2
 mode    = 0644
 output= $${buildout:directory}/$${:_buildout_section_name_}
+extensions = jinja2.ext.do
+import-list =
+    rawfile caucase ${caucase-jinja2-library:target}
 context =
     import os os
+    import hashlib hashlib
     import pwd pwd
 
     key bin_directory           buildout:bin-directory

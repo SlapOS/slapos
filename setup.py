@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.373'
+version = '1.0.416'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -37,6 +37,7 @@ for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
 
 extras_require = {
     'test': (
+        'bcrypt',
         'jsonschema',
         'mock',
         'psycopg2',
@@ -62,7 +63,6 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -73,7 +73,6 @@ setup(name=name,
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
         'passlib',
-        'bcrypt',
         ],
       zip_safe=True,
       entry_points={
@@ -129,7 +128,6 @@ setup(name=name,
           'publish = slapos.recipe.publish:Recipe',
           'publish.serialised = slapos.recipe.publish:Serialised',
           'publish-early = slapos.recipe.publish_early:Recipe',
-          'publishsection = slapos.recipe.publish:PublishSection',
           'publishurl = slapos.recipe.publishurl:Recipe',
           'publish_failsafe = slapos.recipe.publish:RecipeFailsafe',
           'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe',
@@ -145,16 +143,17 @@ setup(name=name,
           'slapos.recipe.request:RequestOptionalJSONEncoded',
           're6stnet.registry = slapos.recipe.re6stnet:Recipe',
           'shell = slapos.recipe.shell:Recipe',
-          'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
           'simplehttpserver = slapos.recipe.simplehttpserver:Recipe',
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
+          'slapconfiguration.jsonschema = slapos.recipe.slapconfiguration:JsonSchema',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
           'switch-softwaretype = slapos.recipe.switch_softwaretype:Recipe',
+          'switch-softwaretype.noop = slapos.recipe.switch_softwaretype:NoOperation',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'trac = slapos.recipe.trac:Recipe',
@@ -166,6 +165,10 @@ setup(name=name,
           'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
           'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'
         ],
+        'zc.buildout.uninstall': [
+          'publish_failsafe = slapos.recipe.publish:RecipeFailsafe.uninstall',
+          'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe.uninstall',
+        ]
       },
       extras_require=extras_require,
       test_suite='slapos.test',

@@ -2,6 +2,8 @@ import argparse
 import glob
 import itertools
 import os
+import shutil
+import subprocess
 import sys
 import time
 import traceback
@@ -28,6 +30,7 @@ def main():
   parser.add_argument('--backup', required=True)
   parser.add_argument('--cfg', required=True)
   parser.add_argument('--dirs', action='append')
+  parser.add_argument('--files', action='append')
   parser.add_argument('--exitfile', required=True)
   parser.add_argument('--errorfile', required=True)
   args = parser.parse_args()
@@ -44,9 +47,10 @@ class TheiaExport(object):
     self.backup_dir = args.backup
     self.slapos_cfg = cfg = args.cfg
     self.dirs = args.dirs
+    self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
-    configp = configparser.SafeConfigParser()
+    configp = configparser.ConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
     self.instance_dir = configp.get('slapos', 'instance_root')
@@ -62,8 +66,15 @@ class TheiaExport(object):
   def backup_tree(self, src):
     return copytree(self.rsync_bin, src, self.mirror_path(src))
 
-  def backup_file(self, src):
-    return copyfile(src, self.mirror_path(src))
+  def backup_file(self, src, fail_if_missing=False):
+    if os.path.exists(src):
+      self.log('Backup file ' + src)
+      copyfile(src, self.mirror_path(src))
+    elif fail_if_missing:
+      raise Exception('File %s is missing' % src)
+    else:
+      self.log('Delete file from backup ' + src)
+      remove(self.mirror_path(src))
 
   def backup_db(self):
     copydb(self.sqlite3_bin, self.proxy_db, self.mirror_path(self.proxy_db))
@@ -71,10 +82,10 @@ class TheiaExport(object):
   def backup_partition(self, partition):
     installed = parse_installed(partition)
     rules = os.path.join(partition, 'srv', 'exporter.exclude')
-    extrargs = ('--filter=.-/ ' + rules,) if os.path.exists(rules) else ()
+    ignorefile = rules if os.path.exists(rules) else None
     dst = self.mirror_path(partition)
-    copytree(self.rsync_bin, partition, dst, installed, extrargs)
-    self.copytree_partitions_args[partition] = (dst, installed, extrargs)
+    copytree(self.rsync_bin, partition, dst, installed, ignorefile)
+    self.copytree_partitions_args[partition] = (dst, installed, ignorefile)
 
   def sign(self, signaturefile, signatures):
     remove(signaturefile)
@@ -83,7 +94,7 @@ class TheiaExport(object):
     with open(tmpfile, 'w') as f:
       for s in signatures:
         f.write(s + '\n')
-    os.rename(tmpfile, signaturefile)
+    shutil.move(tmpfile, signaturefile)
 
   def sign_root(self):
     signaturefile = os.path.join(self.backup_dir, 'backup.signature')
@@ -111,13 +122,14 @@ class TheiaExport(object):
         pass
 
   def check_partition(self, partition, pattern='/srv/backup/'):
-    dst, installed, extrargs = self.copytree_partitions_args[partition]
+    dst, installed, ignorefile = self.copytree_partitions_args[partition]
     output = copytree(
       self.rsync_bin,
       partition,
       dst,
-      exclude=installed,
-      extrargs=extrargs + ('--dry-run', '--update'),
+      delete=installed,
+      ignorefile=ignorefile,
+      extrargs=('--dry-run', '--update'),
       verbosity='--out-format=%n',
     )
     return [path for path in output.splitlines() if pattern in path]
@@ -127,18 +139,24 @@ class TheiaExport(object):
     self.logs.append(msg)
 
   def __call__(self):
-    remove(self.error_file)
     exitcode = 0
     try:
       self.export()
-    except Exception:
+    except Exception as e:
       exitcode = 1
       exc = traceback.format_exc()
+      if isinstance(e, subprocess.CalledProcessError) and e.output:
+        exc = "%s\n\n%s" % (exc, e.output)
       with open(self.error_file, 'w') as f:
         f.write('\n ... OK\n\n'.join(self.logs))
         f.write('\n ... ERROR !\n\n')
         f.write(exc)
       print('\n\nERROR\n\n' + exc)
+    else:
+      with open(self.error_file, 'w') as f:
+        f.write('\n ... OK\n\n'.join(self.logs))
+        f.write('\n ... OK !\n\n')
+        f.write('SUCCESS')
     finally:
       with open(self.exit_file, 'w') as f:
         f.write(str(exitcode))
@@ -153,12 +171,14 @@ class TheiaExport(object):
 
     self.remove_signatures()
 
-    self.log('Backup resilient timestamp ' + timestamp)
-    self.backup_file(timestamp)
+    self.backup_file(timestamp, fail_if_missing=True)
 
     for d in self.dirs:
       self.log('Backup directory ' + d)
       self.backup_tree(d)
+
+    for f in self.files:
+      self.backup_file(f)
 
     self.log('Backup slapproxy database')
     self.backup_db()

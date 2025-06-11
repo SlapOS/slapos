@@ -44,6 +44,9 @@ from . import ERP5InstanceTestCase, default, matrix, setUpModule
 from .test_erp5 import ZopeSkinsMixin
 
 
+_ = setUpModule
+
+
 class TestOrderBuildPackingListSimulation(
     ZopeSkinsMixin,
     ERP5InstanceTestCase,

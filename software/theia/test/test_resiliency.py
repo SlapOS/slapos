@@ -72,34 +72,42 @@ def setUpModule():
 class ResilientTheiaTestCase(ResilientTheiaMixin, TheiaTestCase):
   @classmethod
   def _processEmbeddedInstance(cls, retries=0, instance_type='export'):
-    for _ in range(retries):
+    for retry in range(retries):
       try:
-        output = cls.captureSlapos('node', 'instance', instance_type=instance_type, stderr=subprocess.STDOUT)
+        output = cls.captureSlapos('node', 'instance', instance_type=instance_type, stderr=subprocess.STDOUT, text=True)
       except subprocess.CalledProcessError:
         continue
-      print(output)
+      cls.logger.info("_processEmbeddedInstance retry=%s output=%s", retry, output)
       break
     else:
       if retries:
         # Sleep a bit as an attempt to workaround monitoring boostrap not being ready
         print("Wait before running slapos node instance one last time")
         time.sleep(120)
-      cls.checkSlapos('node', 'instance', instance_type=instance_type)
+      try:
+        cls.checkSlapos('node', 'instance', instance_type=instance_type, text=True)
+      except subprocess.CalledProcessError as e:
+        cls.logger.error(e.output, exc_info=True)
+        raise
 
   @classmethod
   def _processEmbeddedSoftware(cls, retries=0, instance_type='export'):
-    for _ in range(retries):
+    for retry in range(retries):
       try:
-        output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT)
+        output = cls.captureSlapos('node', 'software', instance_type=instance_type, stderr=subprocess.STDOUT, text=True)
       except subprocess.CalledProcessError:
         continue
-      print(output)
+      cls.logger.info("_processEmbeddedSoftware retry=%s output=%s", retry, output)
       break
     else:
       if retries:
         print("Wait before running slapos node software one last time")
         time.sleep(120)
-      cls.checkSlapos('node', 'software', instance_type=instance_type)
+      try:
+        cls.checkSlapos('node', 'software', instance_type=instance_type, text=True)
+      except subprocess.CalledProcessError as e:
+        cls.logger.error(e.output, exc_info=True)
+        raise
 
   @classmethod
   def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, instance_type='export'):
@@ -239,7 +247,7 @@ class ExportAndImportMixin(object):
     self.assertPromiseSucess()
 
 
-class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestCase):
+class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
   script_relpath = os.path.join(
     'srv', 'runner', 'instance', 'slappart0',
     'srv', '.backup_identity_script')
@@ -319,15 +327,15 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
     except OSError:
       pass
 
-  def test_export_promise(self):
+  def test_export_promise_error(self):
     self.writeFile(self.getExportExitfile(), '1')
     self.assertPromiseFailure('ERROR export script failed')
 
-  def test_import_promise(self):
+  def test_import_promise_error(self):
     self.writeFile(self.getImportExitfile(), '1')
     self.assertPromiseFailure('ERROR import script failed')
 
-  def test_custom_hash_script(self):
+  def test_custom_hash_script_error(self):
     errmsg = 'Bye bye'
     self.customSignatureScript(content='>&2 echo "%s"\nexit 1' % errmsg)
     custom_script = self.getPartitionPath('export', self.script_relpath)
@@ -346,12 +354,52 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
     restore_script = self.customRestoreScript('exit 1')
     self.assertImportFailure('Run custom restore script %s\n ... ERROR !' % restore_script)
 
+  def assertFileState(self, filepath, expect_content):
+    if expect_content is None:
+      self.assertFalse(os.path.exists(filepath))
+    else:
+      self.assertTrue(os.path.exists(filepath))
+      with open(filepath) as f:
+        self.assertEqual(f.read(), expect_content)
 
-class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
+  def test_export_import_netrc(self):
+    netrc_content = 'machine example.com login someone password secret'
+    backup_relpath = os.path.join('srv', 'backup', 'theia', '.netrc')
+    # Propagate .netrc to import theia and check each step
+    self.writeFile(self.getPartitionPath('export', '.netrc'), netrc_content)
+    self._doExport()
+    self.assertFileState(
+      self.getPartitionPath('export', backup_relpath), netrc_content)
+    self._doTransfer()
+    self.assertFileState(
+      self.getPartitionPath('import', backup_relpath), netrc_content)
+    self._doImport()
+    self.assertFileState(
+      self.getPartitionPath('import', '.netrc'), netrc_content)
+    # Propagate deletion of .netrc to import theia and check each step
+    os.remove(self.getPartitionPath('export', '.netrc'))
+    self._doExport()
+    self.assertFileState(
+      self.getPartitionPath('export', backup_relpath), None)
+    self._doTransfer()
+    self.assertFileState(
+      self.getPartitionPath('import', backup_relpath), None)
+    self._doImport()
+    self.assertFileState(
+      self.getPartitionPath('import', '.netrc'), None)
+
+
+class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
   def test_twice(self):
+    # Create ~/exclude and ~/exclude/excluded in import partition
+    excluded_path = self.getPartitionPath('import', 'exclude', 'excluded')
+    self.writeFile(excluded_path,
+      'This file should be be kept during resilient restore (excluded from rdiff deletion)')
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
     self._doSync()
+    # Check if excluded path in import partition is not deleted
+    self.assertTrue(os.path.exists(excluded_path))
 
   def checkLog(self, log_path, initial=[], newline="Hello"):
     with open(log_path) as f:
@@ -368,6 +416,20 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     dummy_target_path = self.getPartitionPath('export', 'srv', 'project', 'dummy')
     shutil.copytree(os.path.dirname(dummy_software_url), dummy_target_path)
     self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
+
+    # the software.cfg extends slapos.cfg using a relative path, but since we
+    # copied it to another location, the relative path can no longer be resolved.
+    # Rewrite the software.cfg to replace it by an absolute path.
+    with open(self._test_software_url, 'r') as f:
+      software_cfg_content = f.read()
+    assert 'extends = ../../../../stack/slapos.cfg' in software_cfg_content
+    stack_slapos_cfg_path = os.path.join(
+      os.path.dirname(dummy_software_url), '../../../../stack/slapos.cfg')
+    with open(self._test_software_url, 'w') as f:
+      f.write(software_cfg_content.replace(
+        'extends = ../../../../stack/slapos.cfg',
+        f'extends = {stack_slapos_cfg_path}',
+      ))
 
     # Deploy dummy instance in export partition
     self._deployEmbeddedSoftware(self._test_software_url, 'dummy_instance')

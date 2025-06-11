@@ -3,213 +3,66 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
-      "type": "string",
-      "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
-      ],
-      "default": "20 MHz"
-    },
+    "$ref": "ors-enb-common.json#/properties",
     "n_antenna_dl": {
-      "$ref": "ru/common.json#/properties/n_antenna_dl",
-      "enum": [
-        1,
-        2
-      ],
-      "default": 2
+      "$ref": "ors-enb-common.json#/properties/n_antenna_dl"
     },
     "n_antenna_ul": {
-      "$ref": "ru/common.json#/properties/n_antenna_ul",
-      "enum": [
-        1,
-        2
-      ],
-      "default": 2
-    },
-    "rf_mode": {
-      "$ref": "cell/common.json#/properties/rf_mode",
-      "default": "tdd"
-    },
-    "tdd_ul_dl_config": {
-      "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
-    },
-    "dl_earfcn": {
-      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
-    },
-    "pci": {
-      "$ref": "cell/common.json#/properties/pci",
-      "default": 1
-    },
-    "cell_id": {
-      "$ref": "cell/common.json#/properties/cell_id",
-      "default": "0x01"
-    },
-    "tac": {
-      "$ref": "cell/lte/input-schema.json#/properties/tac",
-      "default": "0x0001"
-    },
-    "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index",
-      "default": 204
-    },
-    "tx_gain": {
-      "$ref": "ru/common.json#/properties/tx_gain"
-    },
-    "rx_gain": {
-      "$ref": "ru/common.json#/properties/rx_gain"
-    },
-    "enb_id": {
-      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
-      "default": "0x1A2D0"
-    },
-    "gtp_addr": {
-      "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
-      "default": "127.0.1.1"
-    },
-    "mbmsgw_addr": {
-      "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
-    },
-    "mme_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/mme_list",
-      "default": {
-        "1": {
-          "mme_addr": "127.0.1.100"
-        }
-      }
-    },
-    "plmn_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
-      "default": {
-        "1": {
-          "plmn": "00101"
-        }
-      }
-    },
-    "lte_handover_a3_offset": {
-      "title": "A3 offset for LTE handover",
-      "description": "RSRP gain offset between gNBs which will trigger handover",
-      "type": "number",
-      "default": 6
-    },
-    "lte_handover_time_to_trigger": {
-      "title": "Time to Trigger for LTE handover",
-      "description": "Time to triger after which LTE handover will be triggered if A3 offset is reached",
-      "type": "number",
-      "enum": [
-        0,
-        40,
-        64,
-        80,
-        100,
-        128,
-        160,
-        256,
-        320,
-        480,
-        512,
-        640,
-        1024,
-        1280,
-        2560,
-        5120
-      ],
-      "default": 480
-    },
-    "ncell_list": {
-      "title": "Neighbour Cell Info",
-      "description": "Neighbour Cell Info",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "dl_earfcn": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/dl_earfcn"
-            },
-            "pci": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/pci"
-            },
-            "cell_id": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/e_cell_id"
-            },
-            "tac": {
-              "$ref": "peer/cell/lte/input-schema.json#/properties/tac",
-              "default": "0x0001"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
-    },
-    "x2_peers": {
-      "title": "X2 Peers",
-      "description": "X2 Peers",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "x2_addr": {
-              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object",
-      "default": {}
-    },
-    "websocket_password": {
-      "$ref": "instance-enb-input-schema.json#/properties/websocket_password"
-    },
-    "inactivity_timer": {
-      "$ref": "cell/common.json#/properties/inactivity_timer",
-      "default": 10000
-    },
-    "log_phy_debug": {
-      "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug"
+      "$ref": "ors-enb-common.json#/properties/n_antenna_ul"
     },
     "gps_sync": {
-      "$ref": "instance-enb-input-schema.json#/properties/gps_sync"
+      "$ref": "ors-enb-common.json#/properties/gps_sync"
     },
-    "disable_sdr": {
-      "default": false,
-      "title": "Disable SDR",
-      "description": "Disables radio",
-      "type": "boolean"
+    "tx_power_dbm": {
+      "$ref": "ors-enb-common.json#/properties/tx_power_dbm"
+    },
+    "tx_gain": {
+      "$ref": "ors-enb-common.json#/properties/tx_gain"
+    },
+    "rx_gain": {
+      "$ref": "ors-enb-common.json#/properties/rx_gain"
+    },
+    "lte_band": {
+      "$ref": "ors-enb-common.json#/properties/lte_band"
+    },
+    "dl_frequency": {
+      "$ref": "ors-enb-common.json#/properties/dl_frequency"
+    },
+    "dl_earfcn": {
+      "$ref": "ors-enb-common.json#/properties/dl_earfcn"
+    },
+    "bandwidth": {
+      "$ref": "ors-enb-common.json#/properties/bandwidth"
+    },
+    "tdd_ul_dl_config": {
+      "$ref": "ors-enb-common.json#/properties/tdd_ul_dl_config"
     },
     "use_ipv4": {
-      "$ref": "instance-enb-input-schema.json#/properties/use_ipv4"
+      "$ref": "ors-enb-common.json#/properties/use_ipv4"
     },
-    "enb_stats_fetch_period": {
-      "$ref": "instance-enb-input-schema.json#/properties/enb_stats_fetch_period"
+    "mme_list": {
+      "$ref": "ors-enb-common.json#/properties/mme_list"
     },
-    "enb_drb_stats_enabled": {
-      "$ref": "instance-enb-input-schema.json#/properties/enb_drb_stats_enabled"
+    "plmn_list": {
+      "$ref": "ors-enb-common.json#/properties/plmn_list"
     },
-    "max_rx_sample_db": {
-      "$ref": "instance-enb-input-schema.json#/properties/max_rx_sample_db"
+    "pci": {
+      "$ref": "ors-enb-common.json#/properties/pci"
     },
-    "min_rxtx_delay": {
-      "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
+    "cell_id": {
+      "$ref": "ors-enb-common.json#/properties/cell_id"
     },
-    "wendelin_telecom_software_release_url": {
-      "$ref": "instance-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
+    "enb_id": {
+      "$ref": "ors-enb-common.json#/properties/enb_id"
     },
-    "xlog_fluentbit_forward_host": {
-      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_host"
+    "tac": {
+      "$ref": "ors-enb-common.json#/properties/tac"
     },
-    "xlog_fluentbit_forward_port": {
-      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_port"
+    "root_sequence_index": {
+      "$ref": "ors-enb-common.json#/properties/root_sequence_index"
     },
-    "xlog_fluentbit_forward_shared_key": {
-      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key"
+    "ncell_list": {
+      "$ref": "ors-enb-common.json#/properties/ncell_list"
     }
   }
 }

@@ -82,7 +82,6 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
       with self.db() as db:
         with db.transaction() as cnx:
           cnx.root.state = "after backup"
-      db.close()
 
     restore_script = self.computer_partition_root_path / "srv" / "runner-import-restore"
     self.assertTrue(restore_script.exists())

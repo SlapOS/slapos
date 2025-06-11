@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "$ref": "instance-ors-enb-input-schema.json#/properties",
+    "ors_duo_2nd_cell": {
+      "$ref": "ors-duo-common.json#/properties/ors_duo_2nd_cell",
+      "oneOf": [
+        {
+          "$ref": "ors-duo-enb.json"
+        }
+      ]
+    },
+    "n_antenna_dl": {
+      "$ref": "ors-duo-common.json#/properties/n_antenna_dl"
+    },
+    "n_antenna_ul": {
+      "$ref": "ors-duo-common.json#/properties/n_antenna_ul"
+    },
+    "ors_duo_mode": {
+      "$ref": "ors-duo-common.json#/properties/ors_duo_mode"
+    }
+  }
+}

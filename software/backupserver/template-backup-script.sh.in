@@ -13,7 +13,7 @@ ${coreutils-output:echo} "Available only if backup succeed." > $${:statistic_log
 # set -e
 cd $${:datadirectory}
 ${util-linux:location}/bin/flock $${:status_log}.lock \
-  ${rdiff-backup-1.0.5:location}/bin/rdiff-backup \
+  ${rdiff-backup:location}/bin/rdiff-backup \
   $${:exclude_string} \
   --include='$${:include}' \
   --exclude='**' \
@@ -26,7 +26,7 @@ RESULT=$?
 if [ $RESULT -eq 0 ]
 then
   ${coreutils-output:echo} "`${coreutils-output:date} --iso-8601=seconds -u`, $${:statistic_log}, $${:hostname}, backup success" >> $${:status_log}
-  ${findutils-output:find} rdiff-backup-data/ -maxdepth 1 -name "session_statistic*" | ${coreutils-output:sort} | ${coreutils-output:tail} -n 1 | ${findutils-output:xargs} ${rdiff-backup-1.0.5:location}/bin/rdiff-backup --calculate-average > $${:statistic_log}
+  ${findutils-output:find} rdiff-backup-data/ -maxdepth 1 -name "session_statistic*" | ${coreutils-output:sort} | ${coreutils-output:tail} -n 1 | ${findutils-output:xargs} ${rdiff-backup:location}/bin/rdiff-backup --calculate-average > $${:statistic_log}
 else
   ${coreutils-output:echo} "`${coreutils-output:date} --iso-8601=seconds -u`, $${:statistic_log}, $${:hostname}, backup failed" >> $${:status_log}
 fi

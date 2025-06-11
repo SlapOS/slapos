@@ -45,11 +45,9 @@ import requests
 from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import urllib3
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort, ImageComparisonTestCase, ManagedHTTPServer
@@ -120,15 +118,16 @@ class WebServerMixin(object):
 class BrowserCompatibilityMixin(WebServerMixin):
   """Mixin class to run validation tests on a specific browser
   """
-  desired_capabilities = NotImplemented
   user_agent = NotImplemented
+  def browser_options(self):
+    raise NotImplementedError()
 
   def setUp(self):
     super(BrowserCompatibilityMixin, self).setUp()
     self.driver = webdriver.Remote(
         command_executor=self.computer_partition.getConnectionParameterDict()
         ['backend-url'],
-        desired_capabilities=self.desired_capabilities)
+        options=self.browser_options())
 
   def tearDown(self):
     self.driver.quit()
@@ -154,10 +153,10 @@ class BrowserCompatibilityMixin(WebServerMixin):
     self.addCleanup(lambda: os.remove(f.name))
 
     self.driver.get(self.server_url)
-    self.driver.find_element_by_xpath('//input[@name="f"]').send_keys(f.name)
-    self.driver.find_element_by_xpath('//input[@type="submit"]').click()
+    self.driver.find_element(By.XPATH, '//input[@name="f"]').send_keys(f.name)
+    self.driver.find_element(By.XPATH, '//input[@type="submit"]').click()
 
-    self.assertEqual(self.id(), self.driver.find_element_by_xpath('//div').text)
+    self.assertEqual(self.id(), self.driver.find_element(By.XPATH, '//div').text)
 
   def test_screenshot(self):
     self.driver.get(self.server_url)
@@ -216,7 +215,7 @@ class BrowserCompatibilityMixin(WebServerMixin):
     def _test(q, server_url):
       driver = webdriver.Remote(
           command_executor=webdriver_url,
-          desired_capabilities=self.desired_capabilities)
+          options=self.browser_options())
       try:
         driver.get(server_url)
         q.put(driver.title == 'Test page')
@@ -244,7 +243,7 @@ class BrowserCompatibilityMixin(WebServerMixin):
 
 
 class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
-  """Test browser can be selected by `desiredCapabilities``
+  """Test browser can be selected by options
   """
   def test_chrome(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
@@ -252,7 +251,7 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
 
     driver = webdriver.Remote(
         command_executor=webdriver_url,
-        desired_capabilities=DesiredCapabilities.CHROME)
+        options=webdriver.ChromeOptions())
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
@@ -268,7 +267,7 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
 
     driver = webdriver.Remote(
         command_executor=webdriver_url,
-        desired_capabilities=DesiredCapabilities.FIREFOX)
+        options=webdriver.FirefoxOptions())
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
@@ -281,19 +280,15 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     webdriver_url = parameter_dict['backend-url']
 
-    desired_capabilities = DesiredCapabilities.FIREFOX.copy()
-    desired_capabilities['version'] = '102.15.1esr'
-    driver = webdriver.Remote(
-        command_executor=webdriver_url,
-        desired_capabilities=desired_capabilities)
+    options = webdriver.FirefoxOptions()
+    options.browser_version = '102.15.1esr'
+    driver = webdriver.Remote(command_executor=webdriver_url, options=options)
     self.assertIn(
         'Gecko/20100101 Firefox/102.0',
         driver.execute_script('return navigator.userAgent'))
     driver.quit()
-    desired_capabilities['version'] = '115.3.1esr'
-    driver = webdriver.Remote(
-        command_executor=webdriver_url,
-        desired_capabilities=desired_capabilities)
+    options.browser_version = '115.3.1esr'
+    driver = webdriver.Remote(command_executor=webdriver_url, options=options)
     self.assertIn(
         'Gecko/20100101 Firefox/115.0',
         driver.execute_script('return navigator.userAgent'))
@@ -303,11 +298,11 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
 class TestFrontend(WebServerMixin, SeleniumServerTestCase):
   """Test hub's https frontend.
   """
-  def test_admin(self):
+  def test_graphql(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
-    admin_url = parameter_dict['admin-url']
+    graphql_url = parameter_dict['graphql-url']
 
-    parsed = urllib.parse.urlparse(admin_url)
+    parsed = urllib.parse.urlparse(graphql_url)
     self.assertEqual('admin', parsed.username)
     self.assertTrue(parsed.password)
     self.assertEqual(
@@ -317,7 +312,11 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
       requests.codes.unauthorized
     )
 
-    self.assertIn('Grid Console', requests.get(admin_url, verify=False).text)
+    ret = requests.post(graphql_url, json={"query": "{ grid { version } }"}, verify=False)
+    self.assertEqual(
+      ret.json(),
+      {'data': {'grid': {'version': '4.32.0 (revision d17c8aa950)'}}}
+    )
 
   def test_browser_use_hub(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
@@ -332,15 +331,14 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
       requests.codes.unauthorized
     )
 
-    # XXX we are using a self signed certificate, but selenium 3.141.0 does
-    # not expose API to ignore certificate verification
-    executor = RemoteConnection(webdriver_url, keep_alive=True)
-    executor._conn = urllib3.PoolManager(cert_reqs='CERT_NONE', ca_certs=None)
-
     driver = webdriver.Remote(
-        command_executor=executor,
-        desired_capabilities=DesiredCapabilities.CHROME)
-
+      command_executor=webdriver_url,
+      options=webdriver.ChromeOptions(),
+      client_config=webdriver.remote.client_config.ClientConfig(
+        webdriver_url,
+        ignore_certificates=True,
+      ),
+    )
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
     driver.quit()
@@ -414,11 +412,11 @@ class TestFirefox102(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='102.15.1esr')
+  def browser_options(self):
+    options = webdriver.FirefoxOptions()
+    options.browser_version = '102.15.1esr'
+    return options
   user_agent = 'Gecko/20100101 Firefox/102.0'
-
-  def test_resize_window(self):
-    super().test_resize_window()
 
 
 class TestFirefox115(
@@ -426,11 +424,11 @@ class TestFirefox115(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='115.3.1esr')
+  def browser_options(self):
+    options = webdriver.FirefoxOptions()
+    options.browser_version = '115.3.1esr'
+    return options
   user_agent = 'Gecko/20100101 Firefox/115.0'
-
-  def test_resize_window(self):
-    super().test_resize_window()
 
 
 class TestChrome91(
@@ -438,7 +436,10 @@ class TestChrome91(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
+  def browser_options(self):
+    options = webdriver.ChromeOptions()
+    options.browser_version = '91.0.4472.114'
+    return options
   user_agent = 'Chrome/91.0.4472.0'
 
 
@@ -447,5 +448,8 @@ class TestChrome120(
     SeleniumServerTestCase,
     ImageComparisonTestCase,
 ):
-  desired_capabilities = dict(DesiredCapabilities.CHROME, version='120.0.6099.109')
+  def browser_options(self):
+    options = webdriver.ChromeOptions()
+    options.browser_version = '120.0.6099.109'
+    return options
   user_agent = 'Chrome/120.0.0.0'

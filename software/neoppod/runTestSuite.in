@@ -2,7 +2,7 @@
 """
   Script to run NEO test suite using Nexedi's test node framework.
 """
-import argparse, errno, json, os, re, shutil, subprocess, sys, traceback
+import argparse, json, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
 from time import gmtime, sleep, strftime, time
 
@@ -110,15 +110,28 @@ def main():
       break
 
     adapter = test_result_line.name
+{%- if private_tmpfs is defined %}
+    temp = TEMP_DIRECTORY
+    results = os.path.join({{ repr(directory.srv) }}, 'tests')
+    if not os.path.exists(results):
+        os.mkdir(results)
+    results = os.path.join(results, adapter)
+    if os.path.exists(results):
+      shutil.rmtree(results)
+{%- else %}
     temp = os.path.join(TEMP_DIRECTORY, 'tests-' + adapter)
     if os.path.exists(temp):
       shutil.rmtree(temp)
     os.mkdir(temp)
+{%- endif %}
 
     args = [RUN_NEO_TESTS_COMMAND, '-ufz']
     command = ' '.join(args)
     env = {'PATH': PATH,
            'TEMP': temp,
+{%- if private_tmpfs is defined %}
+           'NEO_PRIVATE_TMPFS': results + {{ repr(':size=' + private_tmpfs) }},
+{%- endif %}
            'NEO_TESTS_ADAPTER': adapter,
            'NEO_TEST_ZODB_FUNCTIONAL': '1',
            'NEO_DB_USER': 'root'}
@@ -130,17 +143,11 @@ def main():
           if timeout < time():
             raise RuntimeError("MySQL server not started")
           sleep(1)
-{%- if datadir is defined %}
-        # fake path for neostorage (getTopologyPath)
-        try:
-          os.mkdir({{ repr(datadir) }})
-        except OSError as e:
-          if e.errno != errno.EEXIST:
-            raise
-{%- endif %}
       with open(os.devnull) as stdin:
         p = subprocess.Popen(args, stdin=stdin, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, env=env)
+                             stderr=subprocess.PIPE, env=env,
+                             **{} if str is bytes else
+                             {'text': True, 'errors': 'surrogateescape'})
     except Exception:
       end = time()
       stderr = traceback.format_exc()
@@ -169,13 +176,6 @@ def main():
       date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
       stderr=stderr,
       **status_dict)
-{%- if results_directory is defined %}
-
-    results = {{ repr(results_directory + '/') }} + adapter
-    if os.path.exists(results):
-      shutil.rmtree(results)
-    shutil.move(temp, results)
-{%- endif %}
 
 if __name__ == "__main__":
     main()

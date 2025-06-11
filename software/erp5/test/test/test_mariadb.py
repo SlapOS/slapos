@@ -42,7 +42,7 @@ from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
 
-setUpModule  # pyflakes
+_ = setUpModule
 
 
 class MariaDBTestCase(ERP5InstanceTestCase):

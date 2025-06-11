@@ -263,6 +263,7 @@ template-frontend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_f
 template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
 template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
 template-expose-csr-nginx-conf = {{ software_parameter_dict['template_expose_csr_nginx_conf'] }}
+template-backend-openssl-ssl-downgrade = {{ software_parameter_dict['template_backend_openssl_ssl_downgrade'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -841,10 +842,22 @@ extra-context =
     key wait_time :wait_time
     key lazy_command frontend-haproxy-rsyslogd-config:graceful-command
 
+[backend-haproxy-wrapper]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+backend-haproxy = {{ BACKEND_HAPROXY_EXECUTABLE }}
+inline =
+  #!/bin/bash
+{%- if instance_parameter_dict.get('configuration.expert-backend-allow-downgrade-ssl', 'false').lower() in TRUE_VALUES %}
+  export OPENSSL_CONF=${software-release-path:template-backend-openssl-ssl-downgrade}
+{%- endif %}
+  exec ${:backend-haproxy} -f ${backend-haproxy-configuration:file} "$@"
+
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = {{ BACKEND_HAPROXY_EXECUTABLE }} -f ${backend-haproxy-configuration:file}
+command-line = ${backend-haproxy-wrapper:output}
 wrapper-path = ${directory:service}/backend-haproxy
+hash-files = ${backend-haproxy-wrapper:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [backend-haproxy-rsyslogd-lazy-graceful]

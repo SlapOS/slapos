@@ -55,7 +55,8 @@ default-parameters =
     "additional-frontend-sr": "$${:frontend-sr}",
     "additional-frontend-sr-type": "default",
     "additional-frontend-guid": null,
-    "monitor-httpd-port": 8386
+    "monitor-httpd-port": 8386,
+    "testing-short-embedded-instance-path": null
   }
 frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 
@@ -91,6 +92,7 @@ context =
   key eggs_directory buildout:eggs-directory
   key slapparameter_dict slap-configuration:configuration
   raw monitor_template ${monitor-template:output}
+  import urllib_parse six.moves.urllib.parse
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination

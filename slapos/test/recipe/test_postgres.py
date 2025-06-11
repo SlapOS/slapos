@@ -6,6 +6,8 @@ import unittest
 
 try:
   import subprocess32 as subprocess
+  # BBB python2
+  unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 except ImportError:
   import subprocess
 
@@ -31,6 +33,7 @@ class PostgresTest(unittest.TestCase):
       'dbname': 'dbname',
       'ipv4': self.ipv4,
       'ipv6': self.ipv6,
+      'ipv6-netmask-bits': '48',
       'port': self.port,
       'pgdata-directory': os.path.join(self.pgdata_directory, 'pgdata'),
       'services': self.services_directory,
@@ -124,7 +127,7 @@ ready'''
     cnx.close()
 
     # old password can no longer connect
-    with self.assertRaisesRegexp(
+    with self.assertRaisesRegex(
         psycopg2.OperationalError,
         'password authentication failed'
     ):

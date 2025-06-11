@@ -3,7 +3,7 @@ import glob
 import itertools
 import os
 import sys
-import subprocess as sp
+import subprocess
 import time
 import traceback
 
@@ -34,6 +34,7 @@ def main():
   parser.add_argument('--backup', required=True)
   parser.add_argument('--cfg', required=True)
   parser.add_argument('--dirs', action='append')
+  parser.add_argument('--files', action='append')
   parser.add_argument('--exitfile', required=True)
   parser.add_argument('--errorfile', required=True)
   args = parser.parse_args()
@@ -55,9 +56,10 @@ class TheiaImport(object):
     self.backup_dir = args.backup
     self.slapos_cfg = cfg = args.cfg
     self.dirs = args.dirs
+    self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
-    configp = configparser.SafeConfigParser()
+    configp = configparser.ConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
     self.proxy_rest_url = configp.get('slapos', 'master_rest_url') # 200 OK
@@ -75,13 +77,20 @@ class TheiaImport(object):
     return os.path.abspath(os.path.join(
       self.root_dir, os.path.relpath(src, start=self.backup_dir)))
 
-  def restore_tree(self, dst, exclude=(), extrargs=(), verbosity='-v'):
+  def restore_tree(self, dst, delete=(), ignorefile=None, extrargs=(), verbosity='-v'):
     src = self.mirror_path(dst)
-    return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
+    return copytree(self.rsync_bin, src, dst, delete, ignorefile, extrargs, verbosity)
 
-  def restore_file(self, dst):
+  def restore_file(self, dst, fail_if_missing=False):
     src = self.mirror_path(dst)
-    return copyfile(src, dst)
+    if os.path.exists(src):
+      self.log('Restore file ' + dst)
+      copyfile(src, dst)
+    elif fail_if_missing:
+      raise Exception('File %s is missing from backup' % dst)
+    else:
+      self.log('Remove deleted file ' + dst)
+      remove(os.path.abspath(dst))
 
   def restore_db(self):
     copydb(self.sqlite3_bin, self.mirror_path(self.proxy_db), self.proxy_db)
@@ -89,18 +98,20 @@ class TheiaImport(object):
   def restore_partition(self, mirror_partition):
     p = self.dst_path(mirror_partition)
     installed = parse_installed(p) if os.path.exists(p) else []
-    copytree(self.rsync_bin, mirror_partition, p, exclude=installed)
+    rules = os.path.join(p, 'srv', 'exporter.exclude')
+    ignorefile = rules if os.path.exists(rules) else None
+    copytree(self.rsync_bin, mirror_partition, p, delete=installed, ignorefile=ignorefile)
 
   def supervisorctl(self, *args):
     supervisor_command = (self.supervisorctl_bin, '-c', self.supervisord_conf)
     command = supervisor_command + args
     print(' '.join(command))
-    print(sp.check_output(command, stderr=sp.STDOUT, universal_newlines=True))
+    print(run_process(command))
 
   def slapos(self, *args):
     command = (self.slapos_bin,) + args + ('--cfg', self.slapos_cfg)
     print(' '.join(command))
-    print(sp.check_output(command, stderr=sp.STDOUT, universal_newlines=True))
+    print(run_process(command))
 
   def sign(self, signaturefile, root_dir):
     with open(signaturefile, 'r') as f:
@@ -147,9 +158,8 @@ class TheiaImport(object):
         f.write(s + '\n')
     diffcommand = ('diff', signaturefile, proof)
     try:
-      sp.check_output(
-        diffcommand, stderr=sp.STDOUT, universal_newlines=True)
-    except sp.CalledProcessError as e:
+      run_process(diffcommand)
+    except subprocess.CalledProcessError as e:
       template = 'ERROR the backup signatures do not match\n\n%s\n%s'
       msg = template % (' '.join(diffcommand), e.output)
       print(msg)
@@ -180,20 +190,24 @@ class TheiaImport(object):
     self.logs.append(msg)
 
   def __call__(self):
-    remove(self.error_file)
     exitcode = 0
     try:
       self.restore()
     except Exception as e:
       exitcode = 1
       exc = traceback.format_exc()
-      if isinstance(e, sp.CalledProcessError) and e.output:
+      if isinstance(e, subprocess.CalledProcessError) and e.output:
         exc = "%s\n\n%s" % (exc, e.output)
       with open(self.error_file, 'w') as f:
         f.write('\n ... OK\n\n'.join(self.logs))
         f.write('\n ... ERROR !\n\n')
         f.write(exc)
       print('\n\nERROR\n\n' + exc)
+    else:
+      with open(self.error_file, 'w') as f:
+        f.write('\n ... OK\n\n'.join(self.logs))
+        f.write('\n ... OK !\n\n')
+        f.write('SUCCESS')
     finally:
       with open(self.exit_file, 'w') as f:
         f.write(str(exitcode))
@@ -224,17 +238,19 @@ class TheiaImport(object):
       self.log('Restore directory ' + d)
       self.restore_tree(d)
 
+    for f in self.files:
+      self.restore_file(f)
+
     self.log('Restore slapproxy database')
     self.restore_db()
 
     timestamp = os.path.join(self.root_dir, 'etc', '.resilient_timestamp')
-    self.log('Restore resilient timestamp ' + timestamp)
-    self.restore_file(timestamp)
+    self.restore_file(timestamp, fail_if_missing=True)
 
     custom_script = os.path.join(self.root_dir, 'srv', 'runner-import-restore')
     if os.path.exists(custom_script):
       self.log('Run custom restore script %s' % custom_script)
-      print(sp.check_output(custom_script))
+      print(run_process(custom_script))
 
     self.log('Start slapproxy again')
     self.supervisorctl('start', 'slapos-proxy')
@@ -250,11 +266,14 @@ class TheiaImport(object):
     for f in glob.glob(os.path.join(conf_dir, '*')):
       os.remove(f)
 
+    self.log('Prune shared parts')
+    self.slapos('node', 'prune')
+
     self.log('Build Software Releases')
     for i in range(3):
       try:
-        self.slapos('node', 'software', '--all', '--logfile', self.sr_log)
-      except sp.CalledProcessError:
+        self.slapos('node', 'software', '--garbage-collect', '--logfile', self.sr_log)
+      except subprocess.CalledProcessError:
         if i == 2:
           raise
       else:
@@ -276,7 +295,7 @@ class TheiaImport(object):
     for i in range(3):
       try:
         self.slapos('node', 'instance', '--force-stop', '--logfile', cp_log)
-      except sp.CalledProcessError:
+      except subprocess.CalledProcessError:
         if i == 2:
           raise
       else:
@@ -288,7 +307,7 @@ class TheiaImport(object):
 
     for custom_script in glob.glob(scripts):
       self.log('Running custom instance script %s' % custom_script)
-      print(sp.check_output(custom_script))
+      print(run_process(custom_script))
 
     self.log('Done')
 
