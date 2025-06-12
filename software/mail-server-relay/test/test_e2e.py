@@ -27,6 +27,7 @@
 
 import os
 import json
+import imaplib
 import smtplib
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -105,3 +106,34 @@ class PostfixEndToEndTestCase(SlapOSInstanceTestCase):
     for server in self.mail_server_instances:
       params = server.getConnectionParameterDict()
       self.assertIn('imap-port', params, "Vibe check")
+
+  def test_send_email(self):
+    # each mail server has testmail@{{domain}}:MotDePasseEmail::
+    # try sending a mail from mail1 to mail2 using smtp
+    mail1, mail2 = self.mail_server_instances[:2]
+    mail1_params = mail1.getConnectionParameterDict()
+    sender = "testmail@mail1.domain.lan"
+    recipient = "testmail@mail2.domain.lan"
+    mail2_params = mail2.getConnectionParameterDict()
+    msg = "Subject: Test Email\n\nThis is a test email."
+    with smtplib.SMTP(mail1_params['imap-smtp-ipv6'], mail1_params['smtp-port']) as smtp:
+      smtp.starttls()
+      smtp.login(sender, "MotDePasseEmail")
+      smtp.sendmail(
+        from_addr=sender,
+        to_addrs=[recipient],
+        msg=msg
+      )
+    with imaplib.IMAP4_SSL(mail2_params['imap-smtp-ipv6'], mail2_params['imap-port']) as imap:
+      imap.login(recipient, "MotDePasseEmail")
+      imap.select("INBOX")
+      result, data = imap.search(None, 'ALL')
+      self.assertEqual(result, 'OK', "Failed to search emails")
+      email_ids = data[0].split()
+      self.assertGreater(len(email_ids), 0, "No emails found in inbox")
+      # Check if the last email is the one we sent
+      latest_email_id = email_ids[-1]
+      result, data = imap.fetch(latest_email_id, '(RFC822)')
+      self.assertEqual(result, 'OK', "Failed to fetch email")
+      email_body = data[0][1].decode('utf-8')
+      self.assertIn("This is a test email.", email_body, "Email content does not match")
