@@ -37,6 +37,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class PostfixEndToEndTestCase(SlapOSInstanceTestCase):
+  instance_max_retry = 2
   domain_list = [
     "mail1.domain.lan",
     "mail2.domain.lan",
@@ -88,17 +89,19 @@ class PostfixEndToEndTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def requestMailServerForDomain(cls, domain):
-    software_url = os.path.join(cls.getSoftwareUrl(), '..', 'mail-server', 'software.cfg')
+    software_url = os.path.abspath(os.path.join(cls.getSoftwareURL(), '..', '..', 'mail-server', 'software.cfg'))
     param_dict = {
-      "mail-domains": [domain]
+      "mail-domains": [domain],
+      "relay-sr-url": cls.getSoftwareURL()
     }
     return cls.slap.request(
       software_release=software_url,
       partition_reference="MAILSERVER-%s" % domain,
       partition_parameter_kw={'_': json.dumps(param_dict)},
-      software_type='mail-server',
+      software_type='default',
     )
-  
+
   def test_servers(self):
     for server in self.mail_server_instances:
-      self.assertEqual({}, server.getConnectionParameterDict())
+      params = server.getConnectionParameterDict()
+      self.assertIn('imap-port', params, "Vibe check")

@@ -548,7 +548,7 @@ init =
 [request-relay-{{ mail_domain }}]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
-software-url = urn:slapos:mail-relay
+software-url = {{ slapparameter_dict.get('relay-sr-url', 'urn:slapos:mail-relay') }}
 software-type = cluster
 shared = true
 name = mail-server-relay-{{ mail_domain }}

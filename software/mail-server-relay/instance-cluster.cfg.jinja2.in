@@ -25,8 +25,8 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = {{ dumps(mail_domains) }}
 return =
-  smtp-ipv6
-  smtp-port
+#  smtp-ipv6
+#  smtp-port
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised

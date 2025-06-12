@@ -21,6 +21,11 @@
       "title": "Relay Port",
       "description": "The port of the relay server used for outbound mail",
       "type": "integer"
+    },
+    "relay-sr-url": {
+      "title": "Relay SR URL",
+      "description": "A custom URL to use for the relay SR",
+      "type": "string"
     }
   },
   "required": [
