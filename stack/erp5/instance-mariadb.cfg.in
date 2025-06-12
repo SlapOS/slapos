@@ -170,7 +170,7 @@ about laxist file mode. -#}
       data_dir='${directory:srv}/caucase/caucased',
       netloc='[%s]:%s' % (ipv6, port - 3),
       tmp='${directory:tmp}',
-      service_auto_approve_count=2,
+      service_auto_approve_count=0,
       user_auto_approve_count=1,
 )}}
 {%-   do section('caucased-mariadb') %}
@@ -230,13 +230,25 @@ about laxist file mode. -#}
 {%-   do section('caucase-proxysql-updater-promise') %}
 
 [caucase-csr-to-sign]
-recipe = slapos.recipe.template:jinja2
-output = ${directory:etc}/csr_to_sign.pem
+recipe = slapos.recipe.build
+location = ${directory:etc}/csr_to_sign.pem
 csr-to-sign = {{ dumps(caucased_csr_to_sign) }}
-context =
-  key csr_pem :csr-to-sign
-inline =
-  {% raw %}{{ csr_pem }}{% endraw %}
+init =
+  import os
+  self.local_csr_paths = []
+  for part in ('caucase-mariadb-updater', 'caucase-proxysql-updater'):
+    if not os.path.exists(self.buildout[part]['ca-path']):
+      self.local_csr_paths.append(self.buildout[part + '-csr']['csr'])
+install =
+  pem_bytes = []
+  for csr_path in self.local_csr_paths:
+    with open(csr_path) as f:
+      pem_bytes.append(f.read())
+  csr_to_sign = options['csr-to-sign']
+  if csr_to_sign:
+    pem_bytes.append(csr_to_sign)
+  with open(options['location'], 'w') as f:
+    f.write('\n'.join(pem_bytes) + '\n')
 
 {{  caucase.sign_csr(
       prefix='caucase-sign-csr',
@@ -245,7 +257,7 @@ inline =
       ca_url=caucased_url,
       ca_crt='${caucase-mariadb-updater:ca-path}',
       user_key='${caucase-admin-updater:crt-path}',
-      csr_path='${caucase-csr-to-sign:output}'
+      csr_path='${caucase-csr-to-sign:location}'
 )}}
 {%-   do section('caucase-sign-csr') %}
 {%- endif %}
