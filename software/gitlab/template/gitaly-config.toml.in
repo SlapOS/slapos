@@ -5,7 +5,7 @@
 socket_path = "{{ gitaly.socket }}"
 
 # The directory where Gitaly's executables are stored
-bin_dir = "{{ gitaly.location }}"
+bin_dir = "{{ gitaly.location }}/bin"
 
 # # Optional. The directory where Gitaly can create all files required to
 # # properly operate at runtime. If not set, Gitaly will create a directory in
