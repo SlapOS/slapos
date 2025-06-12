@@ -898,7 +898,7 @@ cron-entries = ${cron:cron-entries}
 [service-gitaly]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitaly
-command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
+command-line    = {{ gitaly_location }}/bin/gitaly ${gitaly-config.toml:output}
 
 environment =
     PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
