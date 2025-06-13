@@ -945,7 +945,7 @@ class TestInstanceResilientBackupImporter(
     # check that all stabilizes after backup after takeover
     status_text = self.call_exporter()
     self.assertIn(
-      'Post take-over cleanup',
+      'Post take-over or post qmpbackup upgrade cleanup',
       status_text
     )
     self.slap.waitForInstance(max_retry=10)
@@ -990,7 +990,7 @@ class TestInstanceResilientBackupExporterMixin(
       status_text
     )
     self.assertNotIn(
-      'Post take-over cleanup',
+      'Post take-over or post qmpbackup upgrade cleanup',
       status_text
     )
     self.assertImported()
@@ -1026,6 +1026,14 @@ class TestInstanceResilientBackupExporterMigrateOld(
     post_backup_file_list = os.listdir(backup_partition)
     for backup_file in backup_file_list:
       self.assertNotIn(backup_file, post_backup_file_list)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigratePre047(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    raise NotImplementedError(
+      'Show that qmpbackup upgrade to 0.47 is seamless')
 
 
 @skipUnlessKvm
