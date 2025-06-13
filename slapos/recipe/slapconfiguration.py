@@ -174,6 +174,9 @@ class Recipe(object):
                                             'UNKNOWN Instance')
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
                                             'UNKNOWN')
+      options['root-instance-short-title'] = parameter_dict.pop(
+                                            'root_instance_short_title',
+                                            'UNKNOWN')
       options['instance-guid'] = computer_partition.getInstanceGuid()
       ipv4_set = set()
       v4_add = ipv4_set.add
