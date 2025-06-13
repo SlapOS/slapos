@@ -194,13 +194,22 @@ if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) an
   else:
     raise ValueError('virtual-hard-drive-url not ready yet')
 
-# Create disk if doesn't exist
-# XXX: move to Buildout profile
-if len(disk_info_list) == 1 and not disk_info_list[0]['path'].startswith("/dev/") and not os.path.exists(disk_info_list[0]['path']):
-  print('Creating virtual hard drive...')
-  subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_info_list[0]['format'],
-      disk_info_list[0]['path'], '%sG' % disk_size])
-  print('Done.')
+if len(disk_info_list) == 1 and not disk_info_list[0]['path'].startswith("/dev/"):
+  if not os.path.exists(disk_info_list[0]['path']):
+    # Create disk if doesn't exist
+    # XXX: move to Buildout profile
+    print('Creating virtual hard drive...')
+    subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_info_list[0]['format'],
+        disk_info_list[0]['path'], '%sG' % disk_size])
+    print('Done.')
+  else:
+    # Migrate from old qmpbackup bitmap if needed
+    image_info_dict = json.loads(subprocess.check_output([qemu_img_path, 'info', '--output', 'json',
+        disk_info_list[0]['path']]))
+    for bitmap in image_info_dict.get('format-specific', {}).get('data', {}).get('bitmaps', []):
+      if bitmap.get('name', '').startswith('qmpbackup-%s' % (disk_type,)):
+        subprocess.check_call([qemu_img_path, 'bitmap' ,'--remove', disk_info_list[0]['path'], bitmap['name']])
+        print('Removed bitmap %s' % (bitmap['name'],))
 
 # Check and create external disk
 additional_disk_list = []
