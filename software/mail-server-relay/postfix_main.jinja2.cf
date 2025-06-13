@@ -23,7 +23,7 @@ mydestination = $myhostname, localhost.localdomain, localhost
 mailbox_size_limit = 0
 recipient_delimiter = +
 
-inet_interfaces = {{ ipv4 }}, [{{ipv6}}]
+inet_interfaces = all
 inet_protocols = all
 smtp_bind_address = {{ ipv4 }}
 smtp_bind_address6 = {{ ipv6 }}

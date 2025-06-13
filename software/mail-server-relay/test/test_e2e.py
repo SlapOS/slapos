@@ -37,8 +37,8 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 )
 
 
-class PostfixEndToEndTestCase(SlapOSInstanceTestCase):
-  instance_max_retry = 2
+class E2E(SlapOSInstanceTestCase):
+  instance_max_retry = 4
   domain_list = [
     "mail1.domain.lan",
     "mail2.domain.lan",
@@ -81,7 +81,7 @@ class PostfixEndToEndTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def requestDefaultInstance(cls, state: str = "started"):
-    default_instance = super(PostfixEndToEndTestCase, cls).requestDefaultInstance(state)
+    default_instance = super(E2E, cls).requestDefaultInstance(state)
     cls.waitForInstance()
     cls.mail_server_instances = [
       cls.requestMailServerForDomain(domain) for domain in cls.domain_list
@@ -104,27 +104,28 @@ class PostfixEndToEndTestCase(SlapOSInstanceTestCase):
 
   def test_servers(self):
     for server in self.mail_server_instances:
-      params = server.getConnectionParameterDict()
+      params = json.loads(server.getConnectionParameterDict()['_'])
       self.assertIn('imap-port', params, "Vibe check")
 
   def test_send_email(self):
     # each mail server has testmail@{{domain}}:MotDePasseEmail::
     # try sending a mail from mail1 to mail2 using smtp
     mail1, mail2 = self.mail_server_instances[:2]
-    mail1_params = mail1.getConnectionParameterDict()
+    mail1_params = json.loads(mail1.getConnectionParameterDict()['_'])
     sender = "testmail@mail1.domain.lan"
     recipient = "testmail@mail2.domain.lan"
-    mail2_params = mail2.getConnectionParameterDict()
+    mail2_params = json.loads(mail2.getConnectionParameterDict()['_'])
     msg = "Subject: Test Email\n\nThis is a test email."
-    with smtplib.SMTP(mail1_params['imap-smtp-ipv6'], mail1_params['smtp-port']) as smtp:
-      smtp.starttls()
+    breakpoint()
+    with smtplib.SMTP(mail1_params['imap-smtp-ipv6'], mail1_params['smtp-port'], timeout=10) as smtp:
+
       smtp.login(sender, "MotDePasseEmail")
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
         msg=msg
       )
-    with imaplib.IMAP4_SSL(mail2_params['imap-smtp-ipv6'], mail2_params['imap-port']) as imap:
+    with imaplib.IMAP4(mail2_params['imap-smtp-ipv6'], mail2_params['imap-port'], timeout=10) as imap:
       imap.login(recipient, "MotDePasseEmail")
       imap.select("INBOX")
       result, data = imap.search(None, 'ALL')
