@@ -493,6 +493,8 @@ ipv4    =
 ipv6    =
 port    =
 
+max-connections = ${instance-parameter:configuration.postgresql_max_connections}
+
 depend  =
     ${promise-postgresql:recipe}
 
@@ -898,7 +900,7 @@ cron-entries = ${cron:cron-entries}
 [service-gitaly]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitaly
-command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
+command-line    = {{ gitaly_location }}/bin/gitaly ${gitaly-config.toml:output}
 
 environment =
     PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
@@ -920,7 +922,7 @@ command =
     ${:rake} gitlab:assets:clean  &&
     ${:rake} gettext:compile RAILS_ENV=production &&
     cd ${gitlab-work:location} &&
-    PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH yarn install --prefer-offline --production --pure-lockfile &&
+    PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH yarn install --offline --production --pure-lockfile &&
     ${:rake} gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096" &&
     true
 
