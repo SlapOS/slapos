@@ -5,6 +5,9 @@
   "unevaluatedProperties": false,
   "allOf": [
     {
+      "$ref": "./boot-image-input-schema.json#/$defs/instance-parameters"
+    },
+    {
       "$ref": "./instance-kvm-input-schema.json#/$defs/instance-parameters"
     }
   ],
