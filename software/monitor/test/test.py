@@ -378,7 +378,7 @@ class TestEdgeE2E(SlapOSInstanceTestCase):
         # Note: Surykatka is implemented in a way, that we can't test it
         #       with E2E manner any other way
         "e2e-check": {
-           "check-status-code": 302,
+           "check-status-code": 200,
            "url-list": [
              "https://www.rapid.space/",
            ]
