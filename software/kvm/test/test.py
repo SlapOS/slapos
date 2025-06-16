@@ -1406,6 +1406,8 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
       qemu_img_list + [destination_image]))
     source_image_info_json.pop('filename')
     destination_image_info_json.pop('filename')
+    source_image_info_json['children'][0]['info'].pop('filename')
+    destination_image_info_json['children'][0]['info'].pop('filename')
     # the best possible way to assure that provided image is used is by
     # comparing the result of qemu-img info for both
     self.assertEqual(
