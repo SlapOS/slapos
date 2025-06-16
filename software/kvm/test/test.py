@@ -1406,6 +1406,8 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
       qemu_img_list + [destination_image]))
     source_image_info_json.pop('filename')
     destination_image_info_json.pop('filename')
+    source_image_info_json['children'][0]['info'].pop('filename')
+    destination_image_info_json['children'][0]['info'].pop('filename')
     # the best possible way to assure that provided image is used is by
     # comparing the result of qemu-img info for both
     self.assertEqual(
@@ -2667,7 +2669,7 @@ class ExternalDiskModernMixin(object):
           "first disk": {
               "path": first,
               "index": 1,
-              "format": "qcow"
+              "format": "qcow2"
           },
       }
     }
@@ -2694,7 +2696,7 @@ class ExternalDiskModernMixin(object):
         if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
-      self.qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+      self.qemu_img, "create", "-f", "qcow2", self.first_disk, "1M"])
     self.second_disk_name = 'second_disk'
     self.second_disk = os.path.join(
       self.kvm_instance_partition, self.second_disk_name)
@@ -2725,7 +2727,7 @@ class TestExternalDiskModern(
       [
         'file=${partition}/srv/virtual.qcow2,if=virtio,discard=on,'
         'format=qcow2',
-        'file={}/first_disk,if=virtio,cache=writeback,format=qcow'.format(
+        'file={}/first_disk,if=virtio,cache=writeback,format=qcow2'.format(
           self.working_directory),
         'file=${partition}/second_disk,if=virtio,cache=writeback',
         'file={}/third_disk,if=virtio,cache=none'.format(
@@ -2846,7 +2848,7 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
-      qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+      qemu_img, "create", "-f", "qcow2", self.first_disk, "1M"])
     second_disk = 'second_disk'
     self.second_disk = os.path.join(kvm_instance_partition, second_disk)
     subprocess.check_call([
