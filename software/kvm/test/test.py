@@ -1029,6 +1029,14 @@ class TestInstanceResilientBackupExporterMigrateOld(
 
 
 @skipUnlessKvm
+class TestInstanceResilientBackupExporterMigratePre047(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    raise NotImplementedError(
+      'Show that qmpbackup upgrade to 0.47 is seamless')
+
+
+@skipUnlessKvm
 class TestInstanceResilientBackupExporterPartialRecovery(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
