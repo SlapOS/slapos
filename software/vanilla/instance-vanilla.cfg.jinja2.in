@@ -1,0 +1,167 @@
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6 | list)[0] -%}
+{% set ipv4 = (ipv4 | list)[0] -%}
+{% set monitor_base_url_dict = {} -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+tmp = ${buildout:directory}/tmp
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+promise = ${:etc}/promise
+ssl = ${:etc}/ssl
+workdir = ${buildout:directory}
+vanilla = ${:workdir}/vanilla
+
+[request-mariadb]
+<= request-common
+software-type = mariadb
+name = Vanilla Mariadb
+sla-computer_guid = {{ dumps(slapparameter_dict.get('mariadb-computer-guid', '')) }}
+config-database-list = {{ dumps([{'name': 'vanilla', 'user': 'biplatform', 'password': 'biplatform' }]) }}
+config-test-database-amount = {{ dumps(0) }}
+config-tcpv4-port = {{ dumps(2099) }}
+config-max-slowqueries-threshold = {{ dumps(1000) }}
+config-slowest-query-threshold =
+config-computer-memory-percent-threshold = {{ dumps(80) }}
+config-monitor-passwd = ${monitor-instance-parameter:password}
+config-name = ${:name}
+config-innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 1)) }}
+return =
+  database-list
+  monitor-base-url
+
+{% do monitor_base_url_dict.__setitem__('mariadb', '${request-mariadb:connection-monitor-base-url}') -%}
+
+[mariadb-urlparse]
+recipe = slapos.cookbook:urlparse
+url = ${request-mariadb:connection-database-list}
+
+[vanilla]
+debug = true
+config-file = ${directory:vanilla}/vanilla-conf/vanilla.properties
+logback = ${directory:vanilla}/vanilla-conf/logback.xml
+db-user = ${mariadb-urlparse:username}
+db-password = ${mariadb-urlparse:password}
+db-name = ${mariadb-urlparse:path}
+db-host = ${mariadb-urlparse:host}
+db-port = ${mariadb-urlparse:port}
+system-login = system
+system-password = system
+
+[jetty]
+http.port = 7171
+host = {{ ipv4 }}
+url = http://{{ ipv4 }}:${:port}
+
+
+[repositoryone-properties]
+recipe = slapos.recipe.template
+inline =
+  bpm.vanilla.repository.database.driverClassName=org.h2.Driver
+  bpm.vanilla.repository.database.jdbcUrl=jdbc:h2:./vanilla/h2/repository5;AUTO_SERVER=TRUE
+  bpm.vanilla.repository.database.userName=${vanilla:db-user}
+  bpm.vanilla.repository.database.password=${vanilla:db-password}
+  bpm.vanilla.repository.database.dialect=org.hibernate.dialect.H2Dialect
+output = ${directory:vanilla}/vanilla/vanilla-conf/repositoryone.properties
+
+[vanilla.properties]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-vanilla-properties'] }}
+output = ${directory:vanilla}/vanilla/vanilla-conf/vanilla.properties
+context =
+  section parameter_dict vanilla
+  section jetty_dict     jetty
+depends =
+  ${repositoryone-properties:recipe}
+
+[install-vanilla]
+# For now simply copy downloaded vanilla files to instance repo as we need to set
+# cwd to vanilla folder. Maybe all files doesn't need to be copied
+recipe = plone.recipe.command
+command = 
+  if [ "$(ls -A ${directory:vanilla})" ]; then
+     echo "skipping..."
+	else
+    cp -ax {{ parameter_dict['vanilla-location'] }}/* ${directory:vanilla}
+	fi
+stop-on-error = true
+update-command = ${:command}
+
+[vanilla-runtime]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${java-bin:output} -jar ${directory:vanilla}/VanillaRuntime/org.eclipse.osgi_3.13.200.v20181130-2106.jar -consoleLog -console
+wrapper-path = ${directory:services}/vanilla
+environment =
+  JAVA_OPTIONS="-Xms256m -Xmx1024m -Dosgi.compatibility.bootdelegation=true -Declipse.ignoreApp=true -Dosgi.noShutdown=true -Dlog4j.debug=${vanilla:debug} -Dorg.eclipse.equinox.http.jetty.http.port=${jetty-service:port} -Dorg.eclipse.equinox.http.jetty.context.path=/VanillaRuntime -Dbpm.vanilla.configurationFile=${vanilla:config-file} -Dlogback.configurationFile=${vanilla:logback}"
+depends =
+  ${repositoryone-properties:recipe}
+  ${install-vanilla:recipe}
+
+[jetty-service]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${java-bin:output} -jar ${directory:vanilla}/start.jar -Djetty.port=${:port}
+wrapper-path = ${directory:services}/jetty
+port = ${jetty:http.port}
+environment =
+  JETTY_HOME=${directory:vanilla}
+  JAVA_OPTIONS="-Xms256m -Xmx4096m -Dlog4j.debug=${vanilla:debug} -Dbpm.vanilla.configurationFile=${vanilla:config-file} -Dlogback.configurationFile=${vanilla:logback}"
+depends =
+  ${install-vanilla:recipe}
+
+# Java wrapper with environment variable
+[java-bin]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh -e
+  export JAVA_HOME={{ parameter_dict['java-location'] }}
+  export JRE_HOME={{ parameter_dict['java-location'] }}
+  export PATH={{ parameter_dict['java-location'] }}/bin:$PATH
+
+  cd ${directory:vanilla}
+
+  exec java "$@"
+output = ${directory:bin}/vanilla-java
+
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+database-list = ${request-mariadb:connection-database-list}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  monitor-password monitor-htpasswd:passwd
+
+[monitor-instance-parameter]
+username = admin
+password = ${publish-early:monitor-password}
+
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}
+
+[buildout]
+extends =
+  {{ template_logrotate }}
+{{ '  ' ~ template_monitor }}
+
+parts =
+  monitor-base
+  request-mariadb
+  vanilla-runtime
+  jetty-service
+  publish-connection-information
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
