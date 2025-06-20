@@ -493,6 +493,8 @@ ipv4    =
 ipv6    =
 port    =
 
+max-connections = ${instance-parameter:configuration.postgresql_max_connections}
+
 depend  =
     ${promise-postgresql:recipe}
 
@@ -898,7 +900,7 @@ cron-entries = ${cron:cron-entries}
 [service-gitaly]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitaly
-command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:output}
+command-line    = {{ gitaly_location }}/bin/gitaly ${gitaly-config.toml:output}
 
 environment =
     PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
@@ -909,6 +911,34 @@ environment =
 # NOTE here we only recompile assets. Other on-reinstantiate actions, which
 # require pg and redis running, are performed as part of puma service -
 # right before its startup (see gitlab-puma-startup).
+[gitlab-yarn-install]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh -e
+
+  export PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH
+  RAKE=${gitlab-rake:wrapper-path}
+
+  cd ${gitlab-work:location}
+  GITLAB_HEAD_FILE=${gitlab:var}/current-gitlab-head
+  SAVED_HEAD=$([ -s "$GITLAB_HEAD_FILE" ] && cat $GITLAB_HEAD_FILE || true)
+  CURRENT_HEAD=$({{ git }} rev-parse HEAD)
+  if [ "$CURRENT_HEAD" = "$SAVED_HEAD" ];
+  then
+    # if there was no changes in gitlab folder, no need to re-intall
+    exit 0;
+  fi
+
+  $RAKE gitlab:assets:clean
+  $RAKE gettext:compile RAILS_ENV=production
+  yarn install --offline --production --pure-lockfile
+  $RAKE gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096"
+
+  echo $CURRENT_HEAD > $GITLAB_HEAD_FILE
+
+output = ${directory:bin}/yarn-check-install
+
+
 [on-reinstantiate]
 recipe  = plone.recipe.command
 stop-on-error   = true
@@ -916,14 +946,7 @@ rake    = ${gitlab-rake:wrapper-path}
 # run command on every reinstantiation
 update-command = ${:command}
 
-command =
-    ${:rake} gitlab:assets:clean  &&
-    ${:rake} gettext:compile RAILS_ENV=production &&
-    cd ${gitlab-work:location} &&
-    PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH yarn install --prefer-offline --production --pure-lockfile &&
-    ${:rake} gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096" &&
-    true
-
+command = ${gitlab-yarn-install:output}
 
 # Promise, gitlab can connect to gitaly:
 # sudo gitlab-rake gitlab:tcp_check[GITALY_SERVER_IP,GITALY_LISTEN_PORT]
