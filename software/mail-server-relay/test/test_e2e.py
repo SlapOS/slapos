@@ -129,7 +129,6 @@ class E2E(SlapOSInstanceTestCase):
     recipient = "testmail@mail2.domain.lan"
     mail2_params = json.loads(mail2.getConnectionParameterDict()['_'])
     msg = "Subject: Test Email\n\nThis is a test email."
-    breakpoint()
     with smtplib.SMTP(mail1_params['imap-smtp-ipv6'], mail1_params['smtp-port'], timeout=10) as smtp:
       smtp.login(sender, "MotDePasseEmail")
       smtp.sendmail(
@@ -137,12 +136,16 @@ class E2E(SlapOSInstanceTestCase):
         to_addrs=[recipient],
         msg=msg
       )
+    import time
+    time.sleep(10)
     with imaplib.IMAP4(mail2_params['imap-smtp-ipv6'], mail2_params['imap-port'], timeout=10) as imap:
       imap.login(recipient, "MotDePasseEmail")
       imap.select("INBOX")
       result, data = imap.search(None, 'ALL')
       self.assertEqual(result, 'OK', "Failed to search emails")
       email_ids = data[0].split()
+      if len(email_ids) == 0:
+        breakpoint()
       self.assertGreater(len(email_ids), 0, "No emails found in inbox")
       # Check if the last email is the one we sent
       latest_email_id = email_ids[-1]
