@@ -30,11 +30,29 @@ import json
 import imaplib
 import smtplib
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import (
+  makeModuleSetUpAndTestCaseClass,
+  installSoftwareUrlList,
+)
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+software_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+software_urls = [
+  os.path.join(software_folder, 'mail-server-relay', 'software.cfg'),
+  os.path.join(software_folder, 'mail-server', 'software.cfg'),
+]
+
+_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
 )
+
+def setUpModule():
+  # Supply every version of the software.
+  installSoftwareUrlList(
+    SlapOSInstanceTestCase,
+    software_urls,
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+  )
 
 
 class E2E(SlapOSInstanceTestCase):
@@ -63,16 +81,12 @@ class E2E(SlapOSInstanceTestCase):
             "mail1.domain.lan",
             "mail2.domain.lan"
           ],
-          "relay-domain": "foobaz.lan",
           "topology": {
               "relay-foo": {
                   "state": "started"
               },
               "relay-bar": {
                   "state": "started",
-                  "config": {
-                    "relay-host": "bar.example.com"
-                  }
               }
           }
         }
@@ -90,14 +104,13 @@ class E2E(SlapOSInstanceTestCase):
 
   @classmethod
   def requestMailServerForDomain(cls, domain):
-    software_url = os.path.abspath(os.path.join(cls.getSoftwareURL(), '..', '..', 'mail-server', 'software.cfg'))
     param_dict = {
       "mail-domains": [domain],
       "relay-sr-url": cls.getSoftwareURL()
     }
     return cls.slap.request(
-      software_release=software_url,
-      partition_reference="MAILSERVER-%s" % domain,
+      software_release=software_urls[1],
+      partition_reference=domain,
       partition_parameter_kw={'_': json.dumps(param_dict)},
       software_type='default',
     )
@@ -118,7 +131,6 @@ class E2E(SlapOSInstanceTestCase):
     msg = "Subject: Test Email\n\nThis is a test email."
     breakpoint()
     with smtplib.SMTP(mail1_params['imap-smtp-ipv6'], mail1_params['smtp-port'], timeout=10) as smtp:
-
       smtp.login(sender, "MotDePasseEmail")
       smtp.sendmail(
         from_addr=sender,

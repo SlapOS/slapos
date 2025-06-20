@@ -25,15 +25,21 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = {{ dumps(mail_domains) }}
 return =
-#  smtp-ipv6
-#  smtp-port
+  smtp-ipv6
+  smtp-port
+
+{% if "relay-domain" in slapparameter_dict %}
+{% set relay_host = slapparameter_dict['relay-domain'] %}
+{% else %}
+{% set relay_host = "$${request-relay-" + next(iter(slapparameter_dict['topology'].keys())) + ":connection-smtp-ipv6}" %}
+{% endif %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 dns-entries =
 {% for domain in mail_domains | selectattr('can-send', 'eq', True) %}
-  {{ domain['name'] }} MX 10 {{ slapparameter_dict['relay-domain'] }}
+  {{ domain['name'] }} MX 10 {{ relay_host }}
 {%- endfor %}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
@@ -78,7 +84,7 @@ init =
     """
     if domain['parameters']['name'] in whitelist:
       section += """
-  outbound-host = {{ slapparameter_dict['relay-domain'] }}
+  outbound-host = {{ relay_host }}
   outbound-smtp-port = 10025""" # todo?
     else:
       section += """
