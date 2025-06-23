@@ -945,7 +945,7 @@ class TestInstanceResilientBackupImporter(
     # check that all stabilizes after backup after takeover
     status_text = self.call_exporter()
     self.assertIn(
-      'Post take-over cleanup',
+      'Post take-over or post qmpbackup upgrade cleanup',
       status_text
     )
     self.slap.waitForInstance(max_retry=10)
@@ -990,7 +990,7 @@ class TestInstanceResilientBackupExporterMixin(
       status_text
     )
     self.assertNotIn(
-      'Post take-over cleanup',
+      'Post take-over or post qmpbackup upgrade cleanup',
       status_text
     )
     self.assertImported()
@@ -1026,6 +1026,30 @@ class TestInstanceResilientBackupExporterMigrateOld(
     post_backup_file_list = os.listdir(backup_partition)
     for backup_file in backup_file_list:
       self.assertNotIn(backup_file, post_backup_file_list)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigratePre047(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    # stop the VM to gain write access to the image
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    image = self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2')
+    with open(
+      glob.glob(os.path.join(
+          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
+      qemu_img = [
+        q for q in fh.readlines()
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+    # added bitmap like old qmpbackup would do
+    subprocess.check_call([
+      qemu_img, "bitmap", "--add", image,
+      "qmpbackup-virtio0-8a1050f7-cabd-4e29-a825-742e5eecdfea"])
+    # Simply starting the KVM will do needed migration, so all else works
+    self.requestDefaultInstance(state='started')
+    self.waitForInstanceWithPropagation()
+    self.initialBackup()
 
 
 @skipUnlessKvm
@@ -1406,6 +1430,8 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
       qemu_img_list + [destination_image]))
     source_image_info_json.pop('filename')
     destination_image_info_json.pop('filename')
+    source_image_info_json['children'][0]['info'].pop('filename')
+    destination_image_info_json['children'][0]['info'].pop('filename')
     # the best possible way to assure that provided image is used is by
     # comparing the result of qemu-img info for both
     self.assertEqual(
