@@ -4,19 +4,19 @@
   "serialisation": "xml",
   "software-type": {
     "default": {
-      "title": "Default",
+      "title": "VM without backup (dangerous, only for experts)",
       "serialisation": "json-in-xml",
       "description": "Standalone KVM",
       "request": "instance-kvm-input-schema.json",
       "response": "instance-kvm-output-schema.json",
-      "index": 0
+      "index": 1
     },
     "kvm-resilient": {
-      "title": "Resilient",
+      "title": "Resilient VM",
       "description": "Resilient KVM",
       "request": "instance-kvm-resilient-input-schema.json",
       "response": "instance-kvm-output-schema.json",
-      "index": 1
+      "index": 0
     },
     "kvm-cluster": {
       "title": "Cluster",
