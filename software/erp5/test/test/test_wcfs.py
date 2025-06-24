@@ -16,14 +16,16 @@
 # See COPYING file for full licensing terms.
 # See https://www.nexedi.com/licensing for rationale and options.
 
+import hashlib
 import json
 import os.path
 import unittest
 
 from slapos.grid.utils import md5digest
+import zc.buildout.configparser
 
 from . import ERP5InstanceTestCase
-from . import setUpModule as _setUpModule, ERP5PY3
+from . import setUpModule as _setUpModule
 from .test_erp5 import TestPublishedURLIsReachableMixin
 
 
@@ -38,8 +40,6 @@ def setUpModule():
       md5digest(cls.getSoftwareURL()),
       'bin', 'wcfs')):
     raise unittest.SkipTest("built with wendelin.core 1")
-  if ERP5PY3:
-    raise unittest.SkipTest("wendelin.core does not support python3 yet")
 
 
 class TestWCFS(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -57,7 +57,20 @@ class TestWCFS(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   def setUpClass(cls):
     if json.loads(cls.getInstanceParameterDict()["_"])['zodb'][0]["type"] == "neo":
       raise unittest.SkipTest("Not yet fixed WCFS+NEO interoperability issue.")
+    if cls.getZODBMajor() == "4":
+      raise unittest.SkipTest("WCFS doesn't support pristine ZODB4 (see https://lab.nexedi.com/nexedi/ZODB/commit/8e7eab33).")
     super().setUpClass()
+
+  @classmethod
+  def getZODBMajor(cls):
+    installed_cfg_path = os.path.join(
+      cls.slap.software_directory,
+      hashlib.md5(cls.getSoftwareURL().encode()).hexdigest(),
+      '.installed.cfg'
+    )
+    with open(installed_cfg_path, "r") as f:
+      installed_cfg = zc.buildout.configparser.parse(f, installed_cfg_path)
+    return installed_cfg["ZODB"]["major"]
 
   @classmethod
   def getInstanceParameterDict(cls):
