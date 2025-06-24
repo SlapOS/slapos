@@ -92,17 +92,16 @@
 {% set replica_skip_networking = False -%}
 {% endif -%}
 
-{#- Haproxy parameters -#}
-{% set haproxy = slapparameter_dict.get('haproxy', {}) -%}
-{% set haproxy_enable = haproxy.get('enable', True) -%}
+{#- IPv6 reverse-proxy parameters -#}
+{% set ipv6_reverse_proxy = slapparameter_dict.get('ipv6-reverse-proxy', {}) -%}
+{% set ipv6_reverse_proxy_enable = ipv6_reverse_proxy.get('enable', True) -%}
 {% if use_ipv6 or replica_skip_networking -%}
-{%   set haproxy_enable = False -%}
+{% set ipv6_reverse_proxy_enable = False -%}
 {% endif -%}
-{% if haproxy_enable -%}
-{% set haproxy_mariadb_netloc = '%s:%s' % (ipv6, port) -%}
-{% set haproxy_bootstrap_netloc = '%s:%s' % (ipv6, port - 1) -%}
-{% set haproxy_mariadb_url = 'https://[%s]:%s' % (ipv6, port) -%}
-{% set haproxy_bootstrap_url = 'https://[%s:%s' % (ipv6, port - 1) -%}
+{% if ipv6_reverse_proxy_enable -%}
+{% set mariadb_netloc = '[%s]:%s' % (ipv6, port) -%}
+{% else -%}
+{% set mariadb_netloc = '%s:%s' % (ip_as_host, port) -%}
 {% endif -%}
 
 
@@ -125,7 +124,7 @@ test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 replication-mariabackup-url = ${mariadb-bootstrap-server-promise:mariabackup-url}
 replication-bootstrap-url = ${mariadb-bootstrap-server-promise:bootstrap-url}
-replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ '[%s]' % ipv6 if haproxy_enable else ip_as_host }}:{{ port }}
+replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ mariadb_netloc }}
 {% if caucased_enable -%}
 caucased-url = {{ caucased_url }}
 {% else -%}
@@ -794,7 +793,7 @@ recipe = slapos.cookbook:simplehttpserver
 wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
 base-path = ${directory:backup}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
-{% if haproxy_enable -%}
+{% if ipv6_reverse_proxy_enable -%}
 # XXX: Workaround simplehttpserver not unlinking socketpath
 # and not supporting unnamed clients
 # until simplehttpserver is fixed
@@ -816,7 +815,7 @@ hash-files = ${:command-line}
 <= monitor-promise-base
 promise = check_url_available
 name = mariadb_replication_bootstrap_server.py
-{% if haproxy_enable -%}
+{% if ipv6_reverse_proxy_enable -%}
 {% if caucased_enable -%}
 config-url = https://[{{ ipv6 }}]:{{ port - 1 }}
 config-ca-cert-file = ${caucase-mariadb-updater:ca-path}
@@ -833,7 +832,7 @@ url = ${:config-url}
 bootstrap-url = ${:url}/mariadb-full/${mariadb-dump-script:most-recent}
 mariabackup-url = ${:url}/mariabackup-full/${mariabackup-script:most-recent}
 
-{% if haproxy_enable -%}
+{% if ipv6_reverse_proxy_enable -%}
 [haproxy-cfg]
 recipe = slapos.recipe.template:jinja2
 output = ${directory:etc}/haproxy.cfg
