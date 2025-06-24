@@ -24,8 +24,8 @@ if [ $RESULT -ne 0 ] ; then
   elif egrep -q 'Incremental backup requested but no active bitmap has been found' $log ; then
     find $BACKUP_DIR/{{ disk['device'] }} -name '*.qcow2' -delete
     $qmpbackup --level full || exit $?
-    echo "Post take-over cleanup"
-  elif egrep -q 'No full backup found for device.*{{ disk['device']}}.*in.*{{ disk['device']}}.*: Execute full backup first.' $log ; then
+    echo "Post take-over or post qmpbackup upgrade cleanup"
+  elif egrep -q 'No full backup found for device.*virtual.qcow2.*in.*{{ disk['device']}}.*: Execute full backup first.' $log ; then
     $qmpbackup --level full || exit $?
     echo "Recovered from empty backup"
   else
