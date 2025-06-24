@@ -63,7 +63,7 @@
         }
       }
     },
-    "haproxy": {
+    "ipv6-reverse-proxy": {
       "description": "Parameters for IPv6 reverse-proxy for mariadb and bootstrap server",
       "type": "object",
       "default": {},
