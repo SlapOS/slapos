@@ -1,2 +1,0 @@
-node.environment={{ node_environment }}
-wren.experimental-enable-dynamic-fields={{ experimental_enable_dynamic_fields }}

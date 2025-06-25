@@ -1,8 +1,246 @@
 [buildout]
 parts =
-  directories
+  directory
+  wren-engine-config-properties
+  wren-engine-service
+  wren-engine-logrotate-entry
+  ibis-server-service
+  ibis-server-logrotate-entry
+  qdrant-config-yaml
+  qdrant-service
+  qdrant-logrotate-entry
+  publish-connection-information
 
-[directories]
-recipe = slapos.cookbook:makedirectory
-var = ${buildbot:directory}/var
-etc = ${buildbot:directory}/etc
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+extends = {{ parameter_list['template_monitor'] }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+var = ${buildout:directory}/var
+log = ${buildout:directory}/var/log
+run = ${buildout:directory}/var/run
+etc = ${buildout:directory}/etc
+svc = ${buildout:directory}/etc/service
+
+# ---------------------------------------------------------
+# wren-engine configuration.
+
+[wren-engine-http-port]
+recipe = slapos.cookbook:free_port
+minimum = 8080
+maximum = 8090
+ip = ${slap-configuration:ipv4-random}
+
+[wren-engine]
+path-config-properties = ${directory:etc}/config.properties
+http-port = ${wren-engine-http-port:port}
+bind-ip = ${slap-configuration:ipv4-random}
+bin-file = {{ parameter_list['wren_engine_bin'] }}
+log-file = ${directory:log}/wren-engine-http.log
+pid-file = ${directory:run}/wren-engine.pid
+max-heap-size = {{ parameter_list['wren_engine_max_heap_size'] }}
+min-heap-size = {{ parameter_list['wren_engine_min_heap_size'] }}
+node-environment = {{ parameter_list['wren_engine_node_environment'] }}
+experimental-enable-dynamic-fields = {{ parameter_list['wren_engine_experimental_enable_dynamic_fields'] }}
+http-url = http://[${:bind-ip}]:${:http-port}
+
+[wren-engine-config-properties]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['wren_engine_template_config_properties'] }}
+output = ${wren-engine:path-config-properties}
+context =
+  section param_wrenai wren-engine
+
+[wren-engine-launcher]
+recipe = slapos.recipe.template
+output = ${directory:bin}/wren-engine-launcher.sh
+inline =
+  #!/usr/bin/env bash
+  _term () {
+    kill -TERM "$WREN_ENGINE_PID" 2>/dev/null
+  }
+  trap _term SIGTERM
+
+  _interrupt () {
+    kill -INT "$WREN_ENGINE_PID" 2>/dev/null
+  }
+  trap _interrupt SIGINT
+
+  # Required add-opens=java.nio=ALL-UNNAMED for Apache Arrow in the Snowflake.
+  java -Xmx${wren-engine:max-heap-size} \
+       -Xms${wren-engine:min-heap-size} \
+     -Dconfig=etc/config.properties \
+     --add-opens=java.base/java.nio=ALL-UNNAMED \
+     -jar ${wren-engine:bin-file} > ${wren-engine:log-file} 2>&1 &
+
+  WREN_ENGINE_PID=$!
+  echo $WREN_ENGINE_PID > ${wren-engine:pid-file}
+  wait $WREN_ENGINE_PID
+  exit $?
+
+[wren-engine-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${wren-engine-launcher:output}
+wrapper-path = ${directory:svc}/wren-engine-launcher.sh
+hash-files =
+  ${wren-engine-launcher:output}
+
+[wren-engine-logrotate-entry]
+<= logrotate-entry-base
+name = wren-engine
+log = ${wren-engine:log-file}
+post = kill -USR1 $(cat ${wren-engine:pid-file})
+
+# ---------------------------------------------------------
+# wren-engine configuration.
+
+[ibis-server-http-port]
+recipe = slapos.cookbook:free_port
+minimum = 8090
+maximum = 8100
+ip = ${slap-configuration:ipv4-random}
+
+[ibis-server]
+venv-path = {{ parameter_list['ibis_server_venv'] }}
+http-port = ${ibis-server-http-port:port}
+ip = ${slap-configuration:ipv4-random}
+log-file = ${directory:log}/ibis-server.log
+pid-file = ${directory:run}/ibis-server.pid
+num-workers = {{ parameter_list['ibis_server_num_workers'] }}
+max-requests = {{ parameter_list['ibis_server_max_requests'] }}
+max-requests-jitter = {{ parameter_list['ibis_server_max_requests_jitter'] }}
+timeout = {{ parameter_list['ibis_server_timeout'] }}
+graceful-timeout = {{ parameter_list['ibis_server_graceful_timeout'] }}
+http-url = http://[${:ip}]:${:http-port}
+
+[ibis-server-launcher]
+recipe = slapos.recipe.template
+output = ${directory:bin}/ibis-server-launcher.sh
+inline =
+  #!/usr/bin/env bash
+  _term () {
+    kill -TERM "$IBIS_SERVER_PID" 2>/dev/null
+  }
+  trap _term SIGTERM
+
+  _interrupt () {
+    kill -INT "$IBIS_SERVER_PID" 2>/dev/null
+  }
+  trap _interrupt SIGINT
+
+  export VIRTUAL_ENV=${ibis-server:venv-path}
+  export PATH=$VIRTUAL_ENV/bin:$PATH
+
+  $VIRTUAL_ENV/bin/gunicorn app.main:app \
+    --bind ${ibis-server:ip}:${ibis-server:http-port} \
+    -k app.worker.WrenUvicornWorker \
+    --workers ${ibis-server:num-workers} \
+    --max-requests ${ibis-server:max-requests} \
+    --max-requests-jitter ${ibis-server:max-requests-jitter} \
+    --timeout ${ibis-server:timeout} \
+    --graceful-timeout ${ibis-server:graceful-timeout} \
+    > ${ibis-server:log-file} 2>&1 &
+
+  IBIS_SERVER_PID=$!
+  echo $IBIS_SERVER_PID > ${ibis-server:pid-file}
+  wait $IBIS_SERVER_PID
+  exit $?
+
+[ibis-server-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${ibis-server-launcher:output}
+wrapper-path = ${directory:svc}/ibis-server-launcher.sh
+hash-files =
+  ${ibis-server-launcher:output}
+
+[ibis-server-logrotate-entry]
+<= logrotate-entry-base
+name = ibis-server
+log = ${ibis-server:log-file}
+post = kill -USR1 $(cat ${ibis-server:pid-file})
+
+# ---------------------------------------------------------
+# qdrant configuration.
+
+[qdrant-http-port]
+recipe = slapos.cookbook:free_port
+minimum = 6330
+maximum = 6340
+ip = ${slap-configuration:ipv4-random}
+
+[qdrant-grpc-port]
+recipe = slapos.cookbook:free_port
+minimum = 6341
+maximum = 6351
+ip = ${slap-configuration:ipv4-random}
+
+[qdrant]
+path-config-yaml = ${directory:etc}/config.yaml
+http-port = ${qdrant-http-port:port}
+grpc-port = ${qdrant-grpc-port:port}
+ip = ${slap-configuration:ipv4-random}
+log-file = ${directory:log}/qdrant.log
+bin-file = {{ parameter_list['qdrant_bin'] }}
+pid-file = ${directory:run}/qdrant.pid
+http-url = http://[${:ip}]:${:http-port}
+grpc-endpoint = [${:ip}]:${:grpc-port}
+
+[qdrant-config-yaml]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['qdrant_template_config_yaml'] }}
+output = ${qdrant:path-config-yaml}
+context =
+  section param_qdrant qdrant
+
+[qdrant-server]
+recipe = slapos.recipe.template
+output = ${directory:bin}/qdrant-server
+inline =
+  #!/usr/bin/env bash
+  _term () {
+    kill -TERM "$QDRANT_PID" 2>/dev/null
+  }
+  trap _term SIGTERM
+
+  _interrupt () {
+    kill -INT "$QDRANT_PID" 2>/dev/null
+  }
+  trap _interrupt SIGINT
+
+  ${qdrant:bin-file} --config-path ${directory:etc}/config.yaml > ${qdrant:log-file} 2>&1 &
+
+  QDRANT_PID=$!
+  echo $QDRANT_PID > ${qdrant:pid-file}
+  wait $QDRANT_PID
+  exit $?
+
+[qdrant-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${qdrant-server:output}
+wrapper-path = ${directory:svc}/qdrant-server
+hash-files =
+  ${qdrant-server:output}
+
+[qdrant-logrotate-entry]
+<= logrotate-entry-base
+name = qdrant
+log = ${qdrant:log-file}
+post = kill -USR1 $(cat ${qdrant:pid-file})
+
+# ---------------------------------------------------------
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+wren-engine-http-url = ${wren-engine:http-url}
+qdrant-http-url = ${qdrant:http-url}
+qdrant-grpc-endpoint = ${qdrant:grpc-endpoint}

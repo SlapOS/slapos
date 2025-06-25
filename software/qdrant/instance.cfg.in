@@ -6,6 +6,7 @@ parts =
   config-yaml
   service
   logrotate-entry
+  publish-connection-information
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -51,6 +52,8 @@ ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/qdrant.log
 bin-file = {{ parameter_list['qdrant_bin'] }}
 pid-file = ${directory:run}/qdrant.pid
+qdrant-http-url = http://[${:ip}]:${:http-port}
+qdrant-grpc-endpoint = [${:ip}]:${:grpc-port}
 
 [development-yaml]
 recipe = slapos.recipe.template:jinja2
@@ -108,3 +111,8 @@ hash-files =
 name = qdrant
 log = ${qdrant:log-file}
 post = kill -USR1 $(cat ${qdrant:pid-file})
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+qdrant-http-url = ${qdrant:qdrant-http-url}
+qdrant-grpc-endpoint = ${qdrant:qdrant-grpc-endpoint}
