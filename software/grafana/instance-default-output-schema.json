@@ -47,8 +47,8 @@
       "format": "uri",
       "type": "string"
     },
-    "agent-promtail-url": {
-      "description": "URL of embedded server from promtail",
+    "agent-fluent-bit-url": {
+      "description": "URL of embedded HTTP server from fluent-bit",
       "format": "uri",
       "type": "string"
     },
