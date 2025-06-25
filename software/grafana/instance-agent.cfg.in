@@ -30,6 +30,7 @@ cert = ${slap-connection:cert-file}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
+bin = ${:home}/bin
 etc = ${:home}/etc
 var = ${:home}/var
 tmp = ${:home}/tmp
