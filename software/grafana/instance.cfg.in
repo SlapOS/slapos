@@ -30,7 +30,9 @@ context =
     raw promtail_bin {{ promtail_bin }}
     raw curl_bin {{ curl_bin }}
     raw dash_bin {{ dash_bin }}
+    raw dcron_bin {{ dcron_bin }}
     raw jq_bin {{ jq_bin }}
+    raw sqlite3_bin {{ sqlite3_bin }}
 import-list =
     file caucase context:caucase-jinja2-library
 
