@@ -33,12 +33,17 @@ import json
 import lzma
 import os
 import subprocess
+import time
+import unittest
 import urllib.parse
 
 import MySQLdb
 import MySQLdb.connections
 
 from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
+from slapos.slap.standalone import SlapOSNodeCommandError
+from slapos.slap.slap import ComputerPartition
+
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
 
@@ -79,12 +84,12 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getInstanceParameterDict(cls) -> dict:
     return {'_': json.dumps(cls._getInstanceParameterDict())}
 
-  def getDatabaseConnection(self) -> MySQLdb.connections.Connection:
+  def getDatabaseConnection(self, computer_partition=None) -> MySQLdb.connections.Connection:
+    computer_partition = computer_partition or self.computer_partition
     connection_parameter_dict = json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
+        computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
-
     self.assertTrue(db_url.path.startswith('/'))
     database_name = db_url.path[1:]
     return MySQLdb.connect(
@@ -97,6 +102,20 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         charset='utf8mb4'
     )
 
+  @classmethod
+  def getComputerPartitionPath(cls, computer_partition=None):
+    computer_partition = computer_partition or cls.computer_partition
+    return os.path.join(cls.slap._instance_root, computer_partition.getId())
+
+  def getSocketDatabaseConnection(self, computer_partition=None) -> MySQLdb.connections.Connection:
+    partition_path = self.getComputerPartitionPath(computer_partition)
+    default_file = os.path.join(partition_path, 'etc', 'mariadb.cnf')
+    return MySQLdb.connect(
+        read_default_file = default_file,
+        use_unicode=True,
+        charset='utf8mb4',
+        cursorclass=MySQLdb.cursors.DictCursor,
+    )
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
   _save_instance_file_pattern_list = \
@@ -105,7 +124,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
     )
 
   def test_full_backup(self) -> None:
-    self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
+    self._executeCrontabAtDate('mariadb-dump', '2050-01-01')
     full_backup_file, = glob.glob(
       os.path.join(
         self.computer_partition_root_path,
@@ -117,6 +136,17 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
     with gzip.open(full_backup_file, 'rt') as dump:
       self.assertIn('CREATE TABLE', dump.read())
+
+  def test_full_mariabackup(self) -> None:
+    self._executeCrontabAtDate('mariabackup', '2050-01-01')
+    self.assertTrue(glob.glob(
+      os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'backup',
+        'mariabackup-full',
+        '205001010000??.mariabackup.gz',
+    )))
 
   def test_logrotate_and_slow_query_digest(self) -> None:
     # slow query digest needs to run after logrotate, since it operates on the rotated
@@ -358,3 +388,308 @@ class TestMroonga(MariaDBTestCase):
           (2, "I'm developing Groonga"),
           (3, "I developed Groonga"),
       ], list(sorted(cnx.store_result().fetch_row(maxrows=4))))
+
+
+
+class MariaDBReplicationTestCase(MariaDBTestCase):
+  # Map instance names to unique ports
+  PORT_MAP = {}
+
+  # Initial port value
+  PORT = 3306
+
+  # No default instance, requests happen in test
+  request_instance = False
+
+  @classmethod
+  def waitForInstance(cls, max_retry=None, strict=True):
+    max_retry = 10 if max_retry is None else max_retry
+    try:
+      cls.slap.waitForInstance(max_retry=max_retry)
+    except SlapOSNodeCommandError:
+      if strict:
+        raise
+
+  @classmethod
+  def waitForReport(cls, max_retry=None, strict=True):
+    max_retry = 10 if max_retry is None else max_retry
+    try:
+      cls.slap.waitForReport(max_retry=max_retry)
+    except SlapOSNodeCommandError:
+      if strict:
+        raise
+
+  @classmethod
+  def getMariadbParameterDict(cls) -> dict:
+    return {
+        'max-slowqueries-threshold': 1,
+        'slowest-query-threshold': 0.1,
+        'name': cls.__name__,
+        'monitor-passwd': 'secret',
+        'computer-memory-percent-threshold': 100,
+    }
+
+  @classmethod
+  def updateDict(cls, d, **kw):
+    for k, v in kw.items():
+      default = d.get(k)
+      if isinstance(default, dict):
+        cls.updateDict(default, **v)
+      else:
+        d[k] = v
+    return d
+
+  @classmethod
+  def requestMariadb(cls, name, **kw):
+    state = kw.pop('state', 'started')
+    strict = kw.pop('strict', True)
+    max_retry = kw.pop('max_retry', None)
+    # caucased parameters
+    caucased = kw.pop('caucased', True)
+    if isinstance(caucased, ComputerPartition):
+      downstream = json.loads(caucased.getConnectionParameterDict()['_'])
+      caucased = {'csr-to-sign': downstream['caucased-csr-to-sign']}
+      cls.updateDict(kw, caucased=caucased)
+    elif caucased is False:
+      caucased = {'enable': False}
+      cls.updateDict(kw, caucased=caucased)
+    # unique port
+    port = cls.PORT_MAP.setdefault(name, cls.PORT + 10 * len(cls.PORT_MAP))
+    parameter_dict = cls.getMariadbParameterDict()
+    parameter_dict['tcpv4-port'] = port
+    # apply kwarg updates
+    parameter_dict = cls.updateDict(parameter_dict, **kw)
+    for i in range(2):
+      mariadb = cls.slap.request(
+        software_release=cls.getSoftwareURL(),
+        software_type=cls.getInstanceSoftwareType(),
+        partition_reference=name,
+        partition_parameter_kw={'_': json.dumps(parameter_dict)},
+        state=state,
+      )
+      # request, process partition and re-request
+      if not i:
+        cls.waitForInstance(max_retry, strict)
+    return mariadb
+
+  @classmethod
+  def requestPrimary(cls, name='primary', **kw):
+    return cls.requestMariadb(name, **kw)
+
+  @classmethod
+  def requestReplica(cls, primary, name='replica', **kw):
+    bootstrap = kw.pop('bootstrap', None)
+    upstream = json.loads(primary.getConnectionParameterDict()['_'])
+    replication = {'primary-url': upstream['replication-primary-url']}
+    if bootstrap:
+      replication[bootstrap] = upstream['replication-' + bootstrap]
+      backup_script = (
+        'mariabackup-script' if 'mariabackup' in bootstrap
+        else 'mariadb-dump-script'
+      )
+      backupscript = os.path.join(
+        cls.getComputerPartitionPath(primary),
+        'bin',
+        backup_script,
+      )
+      subprocess.check_output((backupscript,), stderr=subprocess.STDOUT)
+    caucased_url = upstream['caucased-url']
+    if caucased_url:
+      replication['caucased-url'] = caucased_url
+    cls.updateDict(kw, replication=replication)
+    return cls.requestMariadb(name, **kw)
+
+  @classmethod
+  def destroyMariaDBInstances(cls):
+    for name in cls.PORT_MAP:
+      cls.slap.request(
+        software_release=cls.getSoftwareURL(),
+        software_type=cls.getInstanceSoftwareType(),
+        partition_reference=name,
+        partition_parameter_kw={'_': json.dumps({})},
+        state='destroyed',
+      )
+    for _ in range(3):
+      cls.waitForInstance(strict=False)
+      cls.waitForReport(strict=False)
+    cls.PORT_MAP.clear()
+
+  @classmethod
+  def tearDownClass(cls):
+    cls.destroyMariaDBInstances()
+    super(MariaDBReplicationTestCase, cls).tearDownClass()
+
+  def getReplicaStatus(self, replica):
+    cnx = self.getSocketDatabaseConnection(replica)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute("SHOW SLAVE STATUS")
+      return cursor.fetchone()
+
+  def checkReplicaState(self, replica):
+    replica_status = self.getReplicaStatus(replica)
+    try:
+      self.assertTrue(replica_status)
+      seconds_behind_master = replica_status['Seconds_Behind_Master']
+      self.assertIsInstance(seconds_behind_master, int)
+      return seconds_behind_master
+    except (AssertionError, KeyError):
+      self.fail('Replica is in bad state:\n%r', replica_status)
+
+  def checkDataReplication(self, primary, replica):
+    cnx = self.getDatabaseConnection(primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          CREATE TABLE test_replication (
+            col1 CHAR(10)
+          )
+          """)
+      cursor.execute(
+          """
+          insert into test_replication values ("a"), ("b")
+          """)
+      cnx.commit()
+    cnx = self.getDatabaseConnection(primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          select * from test_replication
+          """)
+      self.assertEqual((('a',), ('b',)), cursor.fetchall())
+    time.sleep(2)
+    for i in range(7):
+      if self.checkReplicaState(replica) == 0:
+        break
+      time.sleep((i + 1) ** 2)
+    cnx = self.getDatabaseConnection(replica)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          select * from test_replication
+          """)
+      self.assertEqual((('a',), ('b',)), cursor.fetchall())
+
+  def checkMroongaReplication(self, primary, replica):
+
+
+    time.sleep(2)
+    for i in range(7):
+      if self.checkReplicaState(replica) == 0:
+        break
+      time.sleep((i + 1) ** 2)
+
+
+
+class TestMariaDBReplication(MariaDBReplicationTestCase):
+  def checkCaucaseReplication(self, bootstrap=None):
+    # Request primary Mariadb
+    primary = self.requestPrimary()
+    # Request replica Mariadb, allow promises to fail
+    replica = self.requestReplica(
+      primary,
+      strict=False,
+      bootstrap=bootstrap,
+    )
+    # Let primary sign replica CSR
+    primary = self.requestPrimary(caucased=replica)
+    self.checkReplicaState(replica)
+    self.checkDataReplication(primary, replica)
+
+  def checkNoSSLReplication(self, bootstrap=None):
+    # Request primary Mariadb
+    primary = self.requestPrimary(caucased=False)
+    # Request replica Mariadb
+    replica = self.requestReplica(
+      primary,
+      caucased=False,
+      bootstrap=bootstrap,
+    )
+    self.checkReplicaState(replica)
+    self.checkDataReplication(primary, replica)
+    self.checkMroongaReplication(primary, replica)
+
+  def tearDown(self):
+    self.destroyMariaDBInstances()
+
+  def test_caucase_no_bootstrap(self):
+    self.checkCaucaseReplication(bootstrap=None)
+
+  def test_caucase_bootstrap_from_dump(self):
+    self.checkCaucaseReplication(bootstrap='bootstrap-url')
+
+  def test_caucase_bootstrap_from_mariabackup(self):
+    self.checkCaucaseReplication(bootstrap='mariabackup-url')
+
+  def test_nossl_no_boostrap(self):
+    self.checkNoSSLReplication(bootstrap=None)
+
+  def test_nossl_bootstrap_from_dump(self):
+    self.checkNoSSLReplication(bootstrap='bootstrap-url')
+
+  def test_nossl_bootstrap_from_mariabackup(self):
+    self.checkNoSSLReplication(bootstrap='mariabackup-url')
+
+  def test_mariabackup_mroonga_replication(self):
+    # Request primary Mariadb
+    primary = self.requestPrimary(caucased=False)
+    # Add fulltext data powered by Mroonga
+    cnx = self.getDatabaseConnection(primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          CREATE TABLE test_mroonga_replication (
+            `uid` BIGINT UNSIGNED NOT NULL,
+            `SearchableText` MEDIUMTEXT,
+            PRIMARY KEY  (`uid`),
+            FULLTEXT `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
+          ) Engine=Mroonga
+          """)
+      cursor.execute(
+          """INSERT INTO test_mroonga_replication VALUES (1, "Hello")""")
+      cnx.commit()
+    # Request replica Mariadb
+    replica = self.requestReplica(
+      primary,
+      caucased=False,
+      bootstrap='mariabackup-url',
+    )
+    self.checkReplicaState(replica)
+    self.checkDataReplication(primary, replica)
+    cnx = self.getDatabaseConnection(primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """REPLACE INTO test_mroonga_replication VALUES (1, "Bye")""")
+      cnx.commit()
+    time.sleep(2)
+    for i in range(7):
+      if self.checkReplicaState(replica) == 0:
+        break
+      time.sleep((i + 1) ** 2)
+    cnx = self.getDatabaseConnection(replica)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """
+          select * from test_mroonga_replication
+          """)
+      self.assertEqual(((1, "Bye"),), cursor.fetchall())
+
+
+@unittest.skip('Primary <-- Replica (passwd ok) <-- Replica (wrong passwd)')
+class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
+  def test(self):
+    primary = upstream = self.requestPrimary(caucased=False)
+    for i in range(3):
+      replica = upstream = self.requestReplica(
+        upstream,
+        'replica%d' % i,
+        caucased=False,
+      )
+      self.checkReplicaState(replica)
+      self.checkDataReplication(primary, replica)
