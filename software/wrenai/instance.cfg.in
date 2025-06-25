@@ -43,6 +43,7 @@ maximum = 8090
 ip = ${slap-configuration:ipv4-random}
 
 [wren-engine]
+jdk21_path = {{ parameter_list['jdk21_path'] }}
 path-config-properties = ${directory:etc}/config.properties
 http-port = ${wren-engine-http-port:port}
 bind-ip = ${slap-configuration:ipv4-random}
@@ -53,7 +54,7 @@ max-heap-size = {{ parameter_list['wren_engine_max_heap_size'] }}
 min-heap-size = {{ parameter_list['wren_engine_min_heap_size'] }}
 node-environment = {{ parameter_list['wren_engine_node_environment'] }}
 experimental-enable-dynamic-fields = {{ parameter_list['wren_engine_experimental_enable_dynamic_fields'] }}
-http-url = http://[${:bind-ip}]:${:http-port}
+http-url = http://${:bind-ip}:${:http-port}
 
 [wren-engine-config-properties]
 recipe = slapos.recipe.template:jinja2
@@ -77,8 +78,11 @@ inline =
   }
   trap _interrupt SIGINT
 
+  export JAVA_HOME=${wren-engine:jdk21_path}
+  export PATH=$JAVA_HOME/bin:$PATH
+
   # Required add-opens=java.nio=ALL-UNNAMED for Apache Arrow in the Snowflake.
-  java -Xmx${wren-engine:max-heap-size} \
+  ${wren-engine:jdk21_path}/bin/java -Xmx${wren-engine:max-heap-size} \
        -Xms${wren-engine:min-heap-size} \
      -Dconfig=etc/config.properties \
      --add-opens=java.base/java.nio=ALL-UNNAMED \
@@ -122,7 +126,7 @@ max-requests = {{ parameter_list['ibis_server_max_requests'] }}
 max-requests-jitter = {{ parameter_list['ibis_server_max_requests_jitter'] }}
 timeout = {{ parameter_list['ibis_server_timeout'] }}
 graceful-timeout = {{ parameter_list['ibis_server_graceful_timeout'] }}
-http-url = http://[${:ip}]:${:http-port}
+http-url = http://${:ip}:${:http-port}
 
 [ibis-server-launcher]
 recipe = slapos.recipe.template
@@ -139,6 +143,7 @@ inline =
   }
   trap _interrupt SIGINT
 
+  export WREN_ENGINE_ENDPOINT=${wren-engine:http-url}
   export VIRTUAL_ENV=${ibis-server:venv-path}
   export PATH=$VIRTUAL_ENV/bin:$PATH
 
@@ -193,8 +198,8 @@ ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/qdrant.log
 bin-file = {{ parameter_list['qdrant_bin'] }}
 pid-file = ${directory:run}/qdrant.pid
-http-url = http://[${:ip}]:${:http-port}
-grpc-endpoint = [${:ip}]:${:grpc-port}
+http-url = http://${:ip}:${:http-port}
+grpc-endpoint = ${:ip}:${:grpc-port}
 
 [qdrant-config-yaml]
 recipe = slapos.recipe.template:jinja2
