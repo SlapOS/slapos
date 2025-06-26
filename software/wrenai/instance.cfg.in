@@ -6,13 +6,13 @@ parts =
   wren-engine-logrotate-entry
   ibis-server-service
   ibis-server-logrotate-entry
-  wren-ai-service-service
-  wren-ai-service-logrotate-entry
   wren-ui-service
   wren-ui-logrotate-entry
   qdrant-config-yaml
   qdrant-service
   qdrant-logrotate-entry
+  wren-ai-service
+  wren-ai-logrotate-entry
   publish-connection-information
 
 eggs-directory = {{ buildout['eggs-directory'] }}
@@ -180,109 +180,6 @@ log = ${ibis-server:log-file}
 post = kill -USR1 $(cat ${ibis-server:pid-file})
 
 # ---------------------------------------------------------
-# wren-ai-service configuration.
-
-[wren-ai-service-http-port]
-recipe = slapos.cookbook:free_port
-minimum = 8100
-maximum = 8110
-ip = ${slap-configuration:ipv4-random}
-
-[wren-ai-service]
-location = {{ parameter_list['wren_ai_service_location'] }}
-venv-path = {{ parameter_list['wren_ai_service_venv'] }}
-http-port = ${wren-ai-service-http-port:port}
-ip = ${slap-configuration:ipv4-random}
-log-file = ${directory:log}/wren-ai-service.log
-pid-file = ${directory:run}/wren-ai-service.pid
-http-url = http://${:ip}:${:http-port}
-
-[wren-ai-service-launcher]
-recipe = slapos.recipe.template
-output = ${directory:bin}/wren-ai-service-launcher.sh
-inline =
-  #!/usr/bin/env bash
-  set -e
-  INTERVAL=1
-  TIMEOUT=60
-
-  # Wait for qdrant to be responsive:
-  echo "Waiting for qdrant to start..." | tee ${wren-ai-service:log-file}
-  current=0
-
-  while ! nc -z ${qdrant:ip} ${qdrant:http-port}; do
-      sleep $INTERVAL
-      current=$((current + INTERVAL))
-      if [ $current -eq $TIMEOUT ]; then
-          echo "Timeout: qdrant did not start within $TIMEOUT seconds" | tee ${wren-ai-service:log-file}
-          exit 1
-      fi
-  done
-  echo "qdrant has started." | tee ${wren-ai-service:log-file}
-
-  # Start wren-ai-service in the background:
-  $VIRTUAL_ENV/bin/uvicorn src.__main__:app \
-    --host ${wren-ai-service:ip} \
-    --port ${wren-ai-service:http-port} \
-    --loop uvloop \
-    --http httptools > ${wren-ai-service:log-file} 2>&1 &
-
-  WREN_AI_SERVICE_PID=$!
-  echo $WREN_AI_SERVICE_PID > ${wren-ai-service:pid-file}
-
-  # Wait for the server to be responsive:
-  echo "Waiting for wren-ai-service to start..." | tee ${wren-ai-service:log-file}
-  current=0
-
-  while ! nc -z ${wren-ai-service:ip} ${wren-ai-service:http-port}; do
-      sleep $INTERVAL
-      current=$((current + INTERVAL))
-      if [ $current -eq $TIMEOUT ]; then
-          echo "Timeout: wren-ai-service did not start within $TIMEOUT seconds"  | tee ${wren-ai-service:log-file}
-          exit 1
-      fi
-  done
-  echo "wren-ai-service has started." | tee ${wren-ai-service:log-file}
-
-  # Wait for wren-ui to be responsive
-  echo "Waiting for wren-ui to start..." | tee ${wren-ai-service:log-file}
-  current=0
-
-  while ! nc -z ${wren-ui:ip} ${wren-ui:http-port}; do
-      sleep $INTERVAL
-      current=$((current + INTERVAL))
-      if [ $current -eq $TIMEOUT ]; then
-          echo "Timeout: wren-ui did not start within $TIMEOUT seconds" | tee ${wren-ai-service:log-file}
-          exit 1
-      fi
-  done
-  echo "wren-ui has started." | tee ${wren-ai-service:log-file}
-
-  echo "Forcing deployment..." | tee ${wren-ai-service:log-file}
-  python -m src.force_deploy > ${wren-ai-service:log-file} 2>&1
-
-  wait $WREN_AI_SERVICE_PID
-  exit $?
-
-[wren-ai-service-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${wren-ai-service-launcher:output}
-wrapper-path = ${directory:svc}/wren-ai-service-launcher.sh
-environment =
-  PYTHONPATH=${wren-ai-service:location}:$PYTHONPATH
-  WREN_UI_ENDPOINT=${wren-ui:http-url}
-  VIRTUAL_ENV=${wren-ai-service:venv-path}
-  PATH=$VIRTUAL_ENV/bin:$PATH
-hash-files =
-  ${wren-ai-service-launcher:output}
-
-[wren-ai-service-logrotate-entry]
-<= logrotate-entry-base
-name = wren-ai-service
-log = ${wren-ai-service:log-file}
-post = kill -USR1 $(cat ${wren-ai-service:pid-file})
-
-# ---------------------------------------------------------
 # wren-ui-service configuration.
 
 [wren-ui-http-port]
@@ -324,6 +221,7 @@ output = ${directory:bin}/wren-ui-launcher.sh
 inline =
   #!/usr/bin/env bash
   set -e
+
   cd ${wren-ui:location}
   ${wren-ui:yarn-path}/bin/yarn knex migrate:latest \
     && HOSTNAME="0.0.0.0" ${wren-ui:node-path}/bin/node ${wren-ui:bin-file} \
@@ -341,8 +239,9 @@ wrapper-path = ${directory:svc}/wren-ui-launcher.sh
 environment =
   DB_TYPE=${wren-ui:db-type}
   PORT=${wren-ui:http-port}
+  SQLITE_FILE=${wren-ui:sqlite-file}
   WREN_ENGINE_ENDPOINT=${wren-engine:http-url}
-  WREN_AI_ENDPOINT=${wren-ai-service:http-url}
+  WREN_AI_ENDPOINT=${wren-ai:http-url}
   IBIS_SERVER_ENDPOINT=${ibis-server:http-url}
   GENERATION_MODEL=${wren-ui:generation-model}
   WREN_AI_SERVICE_VERSION=${wren-ui:wren-ai-service-version}
@@ -416,7 +315,8 @@ inline =
   }
   trap _interrupt SIGINT
 
-  ${qdrant:bin-file} --config-path ${directory:etc}/config.yaml > ${qdrant:log-file} 2>&1 &
+  ${qdrant:bin-file} --config-path ${directory:etc}/config.yaml \
+    > ${qdrant:log-file} 2>&1 &
 
   QDRANT_PID=$!
   echo $QDRANT_PID > ${qdrant:pid-file}
@@ -437,11 +337,120 @@ log = ${qdrant:log-file}
 post = kill -USR1 $(cat ${qdrant:pid-file})
 
 # ---------------------------------------------------------
+# wren-ai configuration.
+# This service waits until qdrant and the wren-ui are
+# running to start itself.
+
+[wren-ai-http-port]
+recipe = slapos.cookbook:free_port
+minimum = 8100
+maximum = 8110
+ip = ${slap-configuration:ipv4-random}
+
+[wren-ai]
+location = {{ parameter_list['wren_ai_service_location'] }}
+venv-path = {{ parameter_list['wren_ai_service_venv'] }}
+http-port = ${wren-ai-http-port:port}
+ip = ${slap-configuration:ipv4-random}
+log-file = ${directory:log}/wren-ai.log
+pid-file = ${directory:run}/wren-ai.pid
+http-url = http://${:ip}:${:http-port}
+
+[wren-ai-launcher]
+recipe = slapos.recipe.template
+output = ${directory:bin}/wren-ai-launcher.sh
+inline =
+  #!/usr/bin/env bash
+  set -e
+  echo "VIRTUAL_ENV: $VIRTUAL_ENV" >> ${directory:log}/wren-stack.log
+  echo "WREN_UI_ENDPOINT: $WREN_UI_ENDPOINT" >> ${directory:log}/wren-stack.log
+  echo "PYTHONPATH: $PYTHONPATH" >> ${directory:log}/wren-stack.log
+
+  INTERVAL=1
+  TIMEOUT=60
+
+  # Wait for qdrant to be responsive:
+  echo "Waiting for qdrant to start..." >> ${directory:log}/wren-stack.log
+  current=0
+
+  while ! nc -z ${qdrant:ip} ${qdrant:http-port}; do
+      sleep $INTERVAL
+      current=$((current + INTERVAL))
+      if [ $current -eq $TIMEOUT ]; then
+          echo "Timeout: qdrant did not start within $TIMEOUT seconds" >> ${directory:log}/wren-stack.log
+          exit 1
+      fi
+  done
+  echo "qdrant has started." >> ${directory:log}/wren-stack.log
+
+  # Start wren-ai in the background:
+  uvicorn src.__main__:app \
+    --host ${wren-ai:ip} \
+    --port ${wren-ai:http-port} \
+    --loop uvloop \
+    --http httptools > ${wren-ai:log-file} 2>&1 &
+
+  WREN_AI_PID=$!
+  echo $WREN_AI_PID > ${wren-ai:pid-file}
+
+  # Wait for the server to be responsive:
+  echo "Waiting for wren-ai to start..." >> ${directory:log}/wren-stack.log
+  current=0
+
+  while ! nc -z ${wren-ai:ip} ${wren-ai:http-port}; do
+      sleep $INTERVAL
+      current=$((current + INTERVAL))
+      if [ $current -eq $TIMEOUT ]; then
+          echo "Timeout: wren-ai did not start within $TIMEOUT seconds" >> ${directory:log}/wren-stack.log
+          exit 1
+      fi
+  done
+  echo "wren-ai has started." >> ${directory:log}/wren-stack.log
+
+  # Wait for wren-ui to be responsive
+  echo "Waiting for wren-ui to start..." >> ${directory:log}/wren-stack.log
+  current=0
+
+  while ! nc -z ${wren-ui:ip} ${wren-ui:http-port}; do
+      sleep $INTERVAL
+      current=$((current + INTERVAL))
+      if [ $current -eq $TIMEOUT ]; then
+          echo "Timeout: wren-ui did not start within $TIMEOUT seconds" >> ${directory:log}/wren-stack.log
+          exit 1
+      fi
+  done
+  echo "wren-ui has started." >> ${directory:log}/wren-stack.log
+
+  echo "Forcing deployment..." >> ${directory:log}/wren-stack.log
+  python -m src.force_deploy >> ${directory:log}/wren-stack.log 2>&1
+
+  wait $WREN_AI_PID
+  exit $?
+
+[wren-ai-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${wren-ai-launcher:output}
+wrapper-path = ${directory:svc}/wren-ai-launcher.sh
+environment =
+  PYTHONPATH=${wren-ai:location}:$PYTHONPATH
+  WREN_UI_ENDPOINT=${wren-ui:http-url}
+  VIRTUAL_ENV=${wren-ai:venv-path}
+  PATH=$VIRTUAL_ENV/bin:$PATH
+hash-files =
+  ${wren-ai-launcher:output}
+
+[wren-ai-logrotate-entry]
+<= logrotate-entry-base
+name = wren-ai
+log = ${wren-ai:log-file}
+post = kill -USR1 $(cat ${wren-ai:pid-file})
+
+# ---------------------------------------------------------
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 wren-engine-http-url = ${wren-engine:http-url}
 ibis-server-http-url = ${ibis-server:http-url}
-wren-ai-service-http-url = ${wren-ai-service:http-url}
+wren-ai-http-url = ${wren-ai:http-url}
 wren-ui-http-url = ${wren-ui:http-url}
 qdrant-http-url = ${qdrant:http-url}
 qdrant-grpc-endpoint = ${qdrant:grpc-endpoint}
