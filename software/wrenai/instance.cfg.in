@@ -201,19 +201,6 @@ http-url = http://${:ip}:${:http-port}
 db-type = sqlite
 sqlite-file = ${directory:var}/wren-ui.sqlite3
 generation-model = gpt-4o-mini
-wren-ai-service-version = 0.24.0
-wren-ui-version = 0.29.2
-wren-engine-version = 0.16.4
-user-uuid =
-posthog-api-key =
-posthog-host =
-telemetry-enabled = false
-next-public-user-uuid =
-next-public-posthog-api-key =
-next-public-posthog-host =
-next-public-telemetry-enabled = false
-experimental-engine-rust-version = false
-wren-product-version = 0.24.0
 
 [wren-ui-launcher]
 recipe = slapos.recipe.template
@@ -244,19 +231,19 @@ environment =
   WREN_AI_ENDPOINT=${wren-ai:http-url}
   IBIS_SERVER_ENDPOINT=${ibis-server:http-url}
   GENERATION_MODEL=${wren-ui:generation-model}
-  WREN_AI_SERVICE_VERSION=${wren-ui:wren-ai-service-version}
-  WREN_UI_VERSION=${wren-ui:wren-ui-version}
-  WREN_ENGINE_VERSION=${wren-ui:wren-engine-version}
-  USER_UUID=${wren-ui:user-uuid}
-  POSTHOG_API_KEY=${wren-ui:posthog-api-key}
-  POSTHOG_HOST=${wren-ui:posthog-host}
-  TELEMETRY_ENABLED=${wren-ui:telemetry-enabled}
-  NEXT_PUBLIC_USER_UUID=${wren-ui:user-uuid}
-  NEXT_PUBLIC_POSTHOG_API_KEY=${wren-ui:posthog-host}
-  NEXT_PUBLIC_POSTHOG_HOST=${wren-ui:posthog-host}
-  NEXT_PUBLIC_TELEMETRY_ENABLED=${wren-ui:telemetry-enabled}
-  EXPERIMENTAL_ENGINE_RUST_VERSION=${wren-ui:experimental-engine-rust-version}
-  WREN_PRODUCT_VERSION=${wren-ui:wren-product-version}
+  WREN_AI_SERVICE_VERSION=0.24.0
+  WREN_UI_VERSION=0.29.2
+  WREN_ENGINE_VERSION=0.16.4
+  USER_UUID=
+  POSTHOG_API_KEY=
+  POSTHOG_HOST=
+  TELEMETRY_ENABLED=
+  NEXT_PUBLIC_USER_UUID=
+  NEXT_PUBLIC_POSTHOG_API_KEY=
+  NEXT_PUBLIC_POSTHOG_HOST=
+  NEXT_PUBLIC_TELEMETRY_ENABLED=
+  EXPERIMENTAL_ENGINE_RUST_VERSION=false
+  WREN_PRODUCT_VERSION=0.24.0
 hash-files =
   ${wren-ui-launcher:output}
 
@@ -355,15 +342,19 @@ ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/wren-ai.log
 pid-file = ${directory:run}/wren-ai.pid
 http-url = http://${:ip}:${:http-port}
+wren-engine-sql-port = 7432
+wren-ai-service-port = 5555
+openai-api-key =
 
 [wren-ai-launcher]
 recipe = slapos.recipe.template
 output = ${directory:bin}/wren-ai-launcher.sh
 inline =
   #!/usr/bin/env bash
-  set -e
-  echo "VIRTUAL_ENV: $VIRTUAL_ENV" >> ${directory:log}/wren-stack.log
+  export PATH=$_PATH:$PATH
+  export PYTHONPATH=$_PYTHONPATH:$PYTHONPATH
   echo "WREN_UI_ENDPOINT: $WREN_UI_ENDPOINT" >> ${directory:log}/wren-stack.log
+  echo "PATH: $PATH" >> ${directory:log}/wren-stack.log
   echo "PYTHONPATH: $PYTHONPATH" >> ${directory:log}/wren-stack.log
 
   INTERVAL=1
@@ -432,10 +423,34 @@ recipe = slapos.cookbook:wrapper
 command-line = ${wren-ai-launcher:output}
 wrapper-path = ${directory:svc}/wren-ai-launcher.sh
 environment =
-  PYTHONPATH=${wren-ai:location}:$PYTHONPATH
-  WREN_UI_ENDPOINT=${wren-ui:http-url}
   VIRTUAL_ENV=${wren-ai:venv-path}
-  PATH=$VIRTUAL_ENV/bin:$PATH
+  _PYTHONPATH=${wren-ai:location}
+  _PATH=${wren-ai:venv-path}/bin
+  WREN_ENGINE_PORT=${wren-engine:http-port}
+  WREN_ENGINE_SQL_PORT=${wren-ai:wren-engine-sql-port}
+  WREN_AI_SERVICE_PORT=${wren-ai:wren-ai-service-port}
+  WREN_UI_PORT=${wren-ui:http-port}
+  IBIS_SERVER_PORT=${ibis-server:http-port}
+  WREN_UI_ENDPOINT=${wren-ui:http-url}
+  QDRANT_HOST=${qdrant:ip}
+  SHOULD_FORCE_DEPLOY=1
+  OPENAI_API_KEY=${wren-ai:openai-api-key}
+  WREN_PRODUCT_VERSION=0.24.0
+  WREN_ENGINE_VERSION=0.16.4
+  WREN_AI_SERVICE_VERSION=0.24.0
+  IBIS_SERVER_VERSION=0.16.4
+  WREN_UI_VERSION=0.29.2
+  WREN_BOOTSTRAP_VERSION=0.1.5
+  USER_UUID=
+  POSTHOG_API_KEY=
+  POSTHOG_HOST=
+  TELEMETRY_ENABLED=false
+  GENERATION_MODEL=${wren-ui:generation-model}
+  LANGFUSE_SECRET_KEY=
+  LANGFUSE_PUBLIC_KEY=
+  HOST_PORT=3000
+  AI_SERVICE_FORWARD_PORT=5555
+  EXPERIMENTAL_ENGINE_RUST_VERSION=false
 hash-files =
   ${wren-ai-launcher:output}
 
