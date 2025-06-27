@@ -149,8 +149,8 @@ includes =
    {{ include }}
 {% endfor %}
 
-# Used for ERP5 resiliency or (more probably)
-# webrunner resiliency with erp5 inside.
+# Used for Wendelin resiliency or (more probably)
+# webrunner resiliency with wendelin inside.
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = slapos.recipe.template:jinja2
