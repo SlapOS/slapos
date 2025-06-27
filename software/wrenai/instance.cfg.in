@@ -11,6 +11,7 @@ parts =
   qdrant-config-yaml
   qdrant-service
   qdrant-logrotate-entry
+  wren-ai-config-yaml
   wren-ai-service
   wren-ai-logrotate-entry
   publish-connection-information
@@ -36,6 +37,9 @@ log = ${buildout:directory}/var/log
 run = ${buildout:directory}/var/run
 etc = ${buildout:directory}/etc
 svc = ${buildout:directory}/etc/service
+etc-wren-engine = ${buildout:directory}/etc/wren-engine
+etc-wren-ai = ${buildout:directory}/etc/wren-ai
+etc-qdrant = ${buildout:directory}/etc/qdrant
 
 # ---------------------------------------------------------
 # wren-engine configuration.
@@ -48,7 +52,7 @@ ip = ${slap-configuration:ipv4-random}
 
 [wren-engine]
 jdk21_path = {{ parameter_list['jdk21_path'] }}
-path-config-properties = ${directory:etc}/config.properties
+path-config-properties = ${directory:etc-wren-engine}/config.properties
 http-port = ${wren-engine-http-port:port}
 bind-ip = ${slap-configuration:ipv4-random}
 bin-file = {{ parameter_list['wren_engine_bin'] }}
@@ -88,7 +92,7 @@ inline =
   # Required add-opens=java.nio=ALL-UNNAMED for Apache Arrow in the Snowflake.
   ${wren-engine:jdk21_path}/bin/java -Xmx${wren-engine:max-heap-size} \
        -Xms${wren-engine:min-heap-size} \
-     -Dconfig=etc/config.properties \
+     -Dconfig=${wren-engine:path-config-properties} \
      --add-opens=java.base/java.nio=ALL-UNNAMED \
      -jar ${wren-engine:bin-file} > ${wren-engine:log-file} 2>&1 &
 
@@ -270,7 +274,7 @@ maximum = 6351
 ip = ${slap-configuration:ipv4-random}
 
 [qdrant]
-path-config-yaml = ${directory:etc}/config.yaml
+path-config-yaml = ${directory:etc-qdrant}/config.yaml
 http-port = ${qdrant-http-port:port}
 grpc-port = ${qdrant-grpc-port:port}
 ip = ${slap-configuration:ipv4-random}
@@ -302,7 +306,7 @@ inline =
   }
   trap _interrupt SIGINT
 
-  ${qdrant:bin-file} --config-path ${directory:etc}/config.yaml \
+  ${qdrant:bin-file} --config-path ${directory:etc-qdrant}/config.yaml \
     > ${qdrant:log-file} 2>&1 &
 
   QDRANT_PID=$!
@@ -335,6 +339,7 @@ maximum = 8110
 ip = ${slap-configuration:ipv4-random}
 
 [wren-ai]
+path-config-yaml = ${directory:etc-wren-ai}/config.yaml
 location = {{ parameter_list['wren_ai_service_location'] }}
 venv-path = {{ parameter_list['wren_ai_service_venv'] }}
 http-port = ${wren-ai-http-port:port}
@@ -342,9 +347,22 @@ ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/wren-ai.log
 pid-file = ${directory:run}/wren-ai.pid
 http-url = http://${:ip}:${:http-port}
+wren-ui-host = ${wren-ui:ip}
+wren-ui-port = ${wren-ui:http-port}
+ibis-server-host = ${ibis-server:ip}
+ibis-server-port = ${ibis-server:http-port}
+qdrant-host = ${qdrant:ip}
+qdrant-port = ${qdrant:http-port}
 wren-engine-sql-port = 7432
 wren-ai-service-port = 5555
-openai-api-key =
+openai-api-key = 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
+
+[wren-ai-config-yaml]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_list['wren_ai_template_config_yaml'] }}
+output = ${wren-ai:path-config-yaml}
+context =
+  section param_wren_ai wren-ai
 
 [wren-ai-launcher]
 recipe = slapos.recipe.template
@@ -352,10 +370,6 @@ output = ${directory:bin}/wren-ai-launcher.sh
 inline =
   #!/usr/bin/env bash
   export PATH=$_PATH:$PATH
-  export PYTHONPATH=$_PYTHONPATH:$PYTHONPATH
-  echo "WREN_UI_ENDPOINT: $WREN_UI_ENDPOINT" >> ${directory:log}/wren-stack.log
-  echo "PATH: $PATH" >> ${directory:log}/wren-stack.log
-  echo "PYTHONPATH: $PYTHONPATH" >> ${directory:log}/wren-stack.log
 
   INTERVAL=1
   TIMEOUT=60
@@ -373,6 +387,11 @@ inline =
       fi
   done
   echo "qdrant has started." >> ${directory:log}/wren-stack.log
+
+  # The people from WrenAI expects to run the code directly from the
+  # parent directory in which the src/ directory is available (there
+  # are relative paths hard-coded that expects so), therefore cd there:
+  cd ${wren-ai:location}
 
   # Start wren-ai in the background:
   uvicorn src.__main__:app \
@@ -424,8 +443,8 @@ command-line = ${wren-ai-launcher:output}
 wrapper-path = ${directory:svc}/wren-ai-launcher.sh
 environment =
   VIRTUAL_ENV=${wren-ai:venv-path}
-  _PYTHONPATH=${wren-ai:location}
   _PATH=${wren-ai:venv-path}/bin
+  CONFIG_PATH=${wren-ai:path-config-yaml}
   WREN_ENGINE_PORT=${wren-engine:http-port}
   WREN_ENGINE_SQL_PORT=${wren-ai:wren-engine-sql-port}
   WREN_AI_SERVICE_PORT=${wren-ai:wren-ai-service-port}
