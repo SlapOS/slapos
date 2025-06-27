@@ -29,7 +29,7 @@ if os.path.exists(pid_file):
     pid = f.read()
     if pid:
       try:
-        os.kill(pid, 0)
+        os.kill(int(pid), 0)
       except OSError:
         pass
       else:
@@ -53,10 +53,12 @@ restore_snapshot_list.extend(
 )
 
 print('Deleting existing database...')
-shutil.rmtree(mariadb_data_directory, ignore_errors=True)
+if os.path.isdir(mariadb_data_directory):
+  shutil.rmtree(mariadb_data_directory)
 
 print('Restoring database...')
-shutil.rmtree(mariadb_restore_directory, ignore_errors=True)
+if os.path.isdir(mariadb_restore_directory):
+  shutil.rmtree(mariadb_restore_directory)
 os.mkdir(mariadb_restore_directory)
 mariadb_incremental_restore_directory = mariadb_restore_directory + '.inc'
 for i, snapshot in enumerate(restore_snapshot_list):
@@ -67,7 +69,8 @@ for i, snapshot in enumerate(restore_snapshot_list):
     restore_directory = mariadb_restore_directory
     extra_mariabackup_args = []
   else:
-    shutil.rmtree(mariadb_incremental_restore_directory, ignore_errors=True)
+    if os.path.isdir(mariadb_incremental_restore_directory):
+      shutil.rmtree(mariadb_incremental_restore_directory)
     os.mkdir(mariadb_incremental_restore_directory)
     restore_directory = mariadb_incremental_restore_directory
     extra_mariabackup_args = ['--incremental-dir=%s' % mariadb_incremental_restore_directory]
@@ -96,6 +99,7 @@ print(subprocess.check_output([
   mariabackup_executable, '--move-back', '--target-dir=%s' % mariadb_restore_directory,
 ]).decode('utf-8'))
 shutil.rmtree(mariadb_restore_directory)
-shutil.rmtree(mariadb_incremental_restore_directory)
+if os.path.isdir(mariadb_incremental_restore_directory):
+  shutil.rmtree(mariadb_incremental_restore_directory)
 
 print('Backup restoration successfully completed.')
