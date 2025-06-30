@@ -30,6 +30,9 @@
     "dl_earfcn": {
       "$ref": "ors-enb-common.json#/properties/dl_earfcn"
     },
+    "tdd_ul_dl_config": {
+      "$ref": "ors-enb-common.json#/properties/tdd_ul_dl_config"
+    },
     "pci": {
       "$ref": "ors-enb-common.json#/properties/pci",
       "description": "Physical Cell ID. Range 0 to 503. Equal to (ORS Serial number + 252) modulo 504 by default"
