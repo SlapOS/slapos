@@ -353,14 +353,17 @@ class TestLoki(GrafanaTestCase):
       time.sleep(i)
     else:
       self.fail(resp.text)
+    stream = result[0]['stream']
+    self.assertTrue(stream.pop('hostname'))
+    self.maxDiff = None
     self.assertEqual(
-      result[0]['stream'],
+      stream,
       {
         'app': 'TestLoki',
         'computer_id': self.slap._computer_id,
         'detected_level': 'info',
         'filename': self._logfile.name,
-        'job': 'TestLoki-test log file',
+        'log_type': 'log',
         'name': 'test log file',
         'service_name': 'TestLoki',
         'testtag': 'foo',
@@ -433,14 +436,13 @@ class TestListenInPartition(GrafanaTestCase):
         ]),
     )
 
-  def test_promtail_listen(self):
+  def test_fluent_bit_listen(self):
     self.assertEqual(
         sorted([
-            c.laddr for c in self.process_dict['promtail'].connections()
+            c.laddr for c in self.process_dict['fluent-bit'].connections()
             if c.status == 'LISTEN'
         ]),
         [
             (self._ipv4_address, 19080),
-            (self._ipv4_address, 19095),
         ],
     )
