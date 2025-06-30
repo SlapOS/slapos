@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 1.0.423 (2025-06-30)
+-------------
+
+* Fix default parameters for ORS in N28 and N39
+* Make connection parameters more readable by rounding floats to 3 decimal digits
+* ORS DUO: add TDD UL/DL ratio parameter on 2nd cell
+* ORS DUO: fix FDD
+
 Version 1.0.418 (2025-06-03)
 -------------
 
