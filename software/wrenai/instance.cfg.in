@@ -41,6 +41,27 @@ etc-wren-engine = ${buildout:directory}/etc/wren-engine
 etc-wren-ai = ${buildout:directory}/etc/wren-ai
 etc-qdrant = ${buildout:directory}/etc/qdrant
 
+[params]
+recipe = slapos.recipe.build
+auto-ipv4 = ${slap-configuration:ipv4-random}
+auto-wren-engine-port = ${wren-engine-http-port:port}
+custom-wren-engine-ipv4 = {{ custom_parameters['wren_engine_ipv4'] }}
+custom-wren-engine-port = {{ custom_parameters['wren_engine_port'] }}
+wren-engine-ipv4 =
+wren-engine-port =
+init =
+  # Initialize `wren-engine-ipv4`:
+  if len(options['custom-wren-engine-ipv4']):
+    options['wren-engine-ipv4'] = options['custom-wren-engine-ipv4']
+  else:
+    options['wren-engine-ipv4'] = options['auto-ipv4']
+  # Initialize `wren-engine-port`:
+  if len(options['custom-wren-engine-port']):
+    options['wren-engine-port'] = options['custom-wren-engine-port']
+  else:
+    options['wren-engine-port'] = options['auto-wren-engine-port']
+
+
 # ---------------------------------------------------------
 # wren-engine configuration.
 
@@ -65,7 +86,7 @@ max-heap-size = {{ common_parameters['wren_engine_max_heap_size'] }}
 min-heap-size = {{ common_parameters['wren_engine_min_heap_size'] }}
 node-environment = {{ common_parameters['wren_engine_node_environment'] }}
 experimental-enable-dynamic-fields = {{ common_parameters['wren_engine_experimental_enable_dynamic_fields'] }}
-http-url = http://${:bind-ip}:${:http-port}
+http-url = http://${params:wren-engine-ipv4}:${params:wren-engine-port}
 
 [wren-engine-config-properties]
 recipe = slapos.recipe.template:jinja2
@@ -171,11 +192,11 @@ inline =
 
   CUSTOM_IP=${ibis-server:custom-ip}
   DEFAULT_IP=${ibis-server:ip}
-  IP=$([ -z "${CUSTOM_IP}" ] && echo ${DEFAULT_IP} || echo ${CUSTOM_IP})
+  IP=$([ -z "$CUSTOM_IP" ] && echo $DEFAULT_IP || echo $CUSTOM_IP)
 
   CUSTOM_PORT=${ibis-server:custom-port}
   DEFAULT_PORT=${ibis-server:http-port}
-  PORT=$([ -z "${CUSTOM_PORT}" ] && echo ${DEFAULT_PORT} || echo ${CUSTOM_PORT})
+  PORT=$([ -z "$CUSTOM_PORT" ] && echo $DEFAULT_PORT || echo $CUSTOM_PORT)
 
   _term () {
     kill -TERM "$IBIS_SERVER_PID" 2>/dev/null
@@ -192,7 +213,7 @@ inline =
   export PATH=$VIRTUAL_ENV/bin:$PATH
 
   $VIRTUAL_ENV/bin/gunicorn app.main:app \
-    --bind ${IP}:${PORT} \
+    --bind $IP:$PORT \
     -k app.worker.WrenUvicornWorker \
     --workers ${ibis-server:num-workers} \
     --max-requests ${ibis-server:max-requests} \
