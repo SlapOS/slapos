@@ -20,7 +20,7 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
-extends = {{ parameter_list['template_monitor'] }}
+extends = {{ common_parameters['template_monitor'] }}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -51,22 +51,25 @@ maximum = 8090
 ip = ${slap-configuration:ipv4-random}
 
 [wren-engine]
-jdk21_path = {{ parameter_list['jdk21_path'] }}
+enabled = {{ custom_parameters['wren_engine_enabled'] }}
+custom-ip = {{ custom_parameters['wren_engine_ipv4'] }}
+custom-port = {{ custom_parameters['wren_engine_port'] }}
+jdk21_path = {{ common_parameters['jdk21_path'] }}
 path-config-properties = ${directory:etc-wren-engine}/config.properties
 http-port = ${wren-engine-http-port:port}
 bind-ip = ${slap-configuration:ipv4-random}
-bin-file = {{ parameter_list['wren_engine_bin'] }}
+bin-file = {{ common_parameters['wren_engine_bin'] }}
 log-file = ${directory:log}/wren-engine-http.log
 pid-file = ${directory:run}/wren-engine.pid
-max-heap-size = {{ parameter_list['wren_engine_max_heap_size'] }}
-min-heap-size = {{ parameter_list['wren_engine_min_heap_size'] }}
-node-environment = {{ parameter_list['wren_engine_node_environment'] }}
-experimental-enable-dynamic-fields = {{ parameter_list['wren_engine_experimental_enable_dynamic_fields'] }}
+max-heap-size = {{ common_parameters['wren_engine_max_heap_size'] }}
+min-heap-size = {{ common_parameters['wren_engine_min_heap_size'] }}
+node-environment = {{ common_parameters['wren_engine_node_environment'] }}
+experimental-enable-dynamic-fields = {{ common_parameters['wren_engine_experimental_enable_dynamic_fields'] }}
 http-url = http://${:bind-ip}:${:http-port}
 
 [wren-engine-config-properties]
 recipe = slapos.recipe.template:jinja2
-url = {{ parameter_list['wren_engine_template_config_properties'] }}
+url = {{ common_parameters['wren_engine_template_config_properties'] }}
 output = ${wren-engine:path-config-properties}
 context =
   section param_wrenai wren-engine
@@ -76,6 +79,17 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/wren-engine-launcher.sh
 inline =
   #!/usr/bin/env bash
+  #
+  # Check whether this WrenAI instance has a [custom-profile] defined
+  # with a `wren_engine_enabled = True`, and run the service if that is
+  # the case. Otherwise do not run.
+
+  if [ ${wren-engine:enabled} != True ]
+  then
+    echo "wren-engine is disabled in this instance." > ${wren-engine:log-file}
+    exit 0
+  fi
+
   _term () {
     kill -TERM "$WREN_ENGINE_PID" 2>/dev/null
   }
@@ -112,7 +126,7 @@ hash-files =
 <= logrotate-entry-base
 name = wren-engine
 log = ${wren-engine:log-file}
-post = kill -USR1 $(cat ${wren-engine:pid-file})
+post = [ -e "${wren-engine:pid-file}" ] && kill -USR1 $(cat ${wren-engine:pid-file})
 
 # ---------------------------------------------------------
 # ibis-server configuration.
@@ -124,16 +138,19 @@ maximum = 8100
 ip = ${slap-configuration:ipv4-random}
 
 [ibis-server]
-venv-path = {{ parameter_list['ibis_server_venv'] }}
+enabled = {{ custom_parameters['ibis_server_enabled'] }}
+custom-ip = {{ custom_parameters['ibis_server_ipv4'] }}
+custom-port = {{ custom_parameters['ibis_server_port'] }}
+venv-path = {{ common_parameters['ibis_server_venv'] }}
 http-port = ${ibis-server-http-port:port}
 ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/ibis-server.log
 pid-file = ${directory:run}/ibis-server.pid
-num-workers = {{ parameter_list['ibis_server_num_workers'] }}
-max-requests = {{ parameter_list['ibis_server_max_requests'] }}
-max-requests-jitter = {{ parameter_list['ibis_server_max_requests_jitter'] }}
-timeout = {{ parameter_list['ibis_server_timeout'] }}
-graceful-timeout = {{ parameter_list['ibis_server_graceful_timeout'] }}
+num-workers = {{ common_parameters['ibis_server_num_workers'] }}
+max-requests = {{ common_parameters['ibis_server_max_requests'] }}
+max-requests-jitter = {{ common_parameters['ibis_server_max_requests_jitter'] }}
+timeout = {{ common_parameters['ibis_server_timeout'] }}
+graceful-timeout = {{ common_parameters['ibis_server_graceful_timeout'] }}
 http-url = http://${:ip}:${:http-port}
 
 [ibis-server-launcher]
@@ -141,6 +158,25 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/ibis-server-launcher.sh
 inline =
   #!/usr/bin/env bash
+  #
+  # Check whether this WrenAI instance has a [custom-profile] defined
+  # with a `ibis_server_enabled = True`, and run the service if that is
+  # the case. Otherwise do not run.
+
+  if [ ${ibis-server:enabled} != True ]
+  then
+    echo "ibis-server is disabled in this instance." > ${ibis-server:log-file}
+    exit 0
+  fi
+
+  CUSTOM_IP=${ibis-server:custom-ip}
+  DEFAULT_IP=${ibis-server:ip}
+  IP=$([ -z "${CUSTOM_IP}" ] && echo ${DEFAULT_IP} || echo ${CUSTOM_IP})
+
+  CUSTOM_PORT=${ibis-server:custom-port}
+  DEFAULT_PORT=${ibis-server:http-port}
+  PORT=$([ -z "${CUSTOM_PORT}" ] && echo ${DEFAULT_PORT} || echo ${CUSTOM_PORT})
+
   _term () {
     kill -TERM "$IBIS_SERVER_PID" 2>/dev/null
   }
@@ -156,7 +192,7 @@ inline =
   export PATH=$VIRTUAL_ENV/bin:$PATH
 
   $VIRTUAL_ENV/bin/gunicorn app.main:app \
-    --bind ${ibis-server:ip}:${ibis-server:http-port} \
+    --bind ${IP}:${PORT} \
     -k app.worker.WrenUvicornWorker \
     --workers ${ibis-server:num-workers} \
     --max-requests ${ibis-server:max-requests} \
@@ -181,7 +217,7 @@ hash-files =
 <= logrotate-entry-base
 name = ibis-server
 log = ${ibis-server:log-file}
-post = kill -USR1 $(cat ${ibis-server:pid-file})
+post = [ -e "${ibis-server:pid-file}" ] && kill -USR1 $(cat ${ibis-server:pid-file})
 
 # ---------------------------------------------------------
 # wren-ui-service configuration.
@@ -193,9 +229,12 @@ maximum = 8120
 ip = ${slap-configuration:ipv4-random}
 
 [wren-ui]
-node-path = {{ parameter_list['node_path'] }}
-yarn-path = {{ parameter_list['yarn_path'] }}
-location = {{ parameter_list['wren_ui_location'] }}
+enabled = {{ custom_parameters['wren_ui_enabled'] }}
+custom-ip = {{ custom_parameters['wren_ui_ipv4'] }}
+custom-port = {{ custom_parameters['wren_ui_port'] }}
+node-path = {{ common_parameters['node_path'] }}
+yarn-path = {{ common_parameters['yarn_path'] }}
+location = {{ common_parameters['wren_ui_location'] }}
 http-port = ${wren-ui-http-port:port}
 ip = ${slap-configuration:ipv4-random}
 bin-file = ${:location}/.next/standalone/server.js
@@ -279,14 +318,14 @@ http-port = ${qdrant-http-port:port}
 grpc-port = ${qdrant-grpc-port:port}
 ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/qdrant.log
-bin-file = {{ parameter_list['qdrant_bin'] }}
+bin-file = {{ common_parameters['qdrant_bin'] }}
 pid-file = ${directory:run}/qdrant.pid
 http-url = http://${:ip}:${:http-port}
 grpc-endpoint = ${:ip}:${:grpc-port}
 
 [qdrant-config-yaml]
 recipe = slapos.recipe.template:jinja2
-url = {{ parameter_list['qdrant_template_config_yaml'] }}
+url = {{ common_parameters['qdrant_template_config_yaml'] }}
 output = ${qdrant:path-config-yaml}
 context =
   section param_qdrant qdrant
@@ -340,8 +379,8 @@ ip = ${slap-configuration:ipv4-random}
 
 [wren-ai]
 path-config-yaml = ${directory:etc-wren-ai}/config.yaml
-location = {{ parameter_list['wren_ai_service_location'] }}
-venv-path = {{ parameter_list['wren_ai_service_venv'] }}
+location = {{ common_parameters['wren_ai_service_location'] }}
+venv-path = {{ common_parameters['wren_ai_service_venv'] }}
 http-port = ${wren-ai-http-port:port}
 ip = ${slap-configuration:ipv4-random}
 log-file = ${directory:log}/wren-ai.log
@@ -355,11 +394,11 @@ qdrant-host = ${qdrant:ip}
 qdrant-port = ${qdrant:http-port}
 wren-engine-sql-port = 7432
 wren-ai-service-port = 5555
-openai-api-key = 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
+openai-api-key =
 
 [wren-ai-config-yaml]
 recipe = slapos.recipe.template:jinja2
-url = {{ parameter_list['wren_ai_template_config_yaml'] }}
+url = {{ common_parameters['wren_ai_template_config_yaml'] }}
 output = ${wren-ai:path-config-yaml}
 context =
   section param_wren_ai wren-ai
