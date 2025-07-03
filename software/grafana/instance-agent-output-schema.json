@@ -7,8 +7,8 @@
       "description": "Directory in telegraf partition where extra configuration file will be loaded. These files must match *.conf pattern",
       "type": "string"
     },
-    "promtail-url": {
-      "description": "URL of embedded server from promtail",
+    "fluent-bit-url": {
+      "description": "URL of embedded HTTP server from fluent-bit",
       "format": "uri",
       "type": "string"
     },

@@ -2,7 +2,7 @@
 """
   Script to run NEO test suite using Nexedi's test node framework.
 """
-import argparse, json, os, re, shutil, subprocess, sys, traceback
+import argparse, json, os, re, shutil, subprocess, sys, tarfile, traceback
 from erp5.util import taskdistribution
 from time import gmtime, sleep, strftime, time
 
@@ -119,7 +119,7 @@ def main():
     if os.path.exists(results):
       shutil.rmtree(results)
 {%- else %}
-    temp = os.path.join(TEMP_DIRECTORY, 'tests-' + adapter)
+    temp = results = os.path.join(TEMP_DIRECTORY, 'tests-' + adapter)
     if os.path.exists(temp):
       shutil.rmtree(temp)
     os.mkdir(temp)
@@ -176,6 +176,24 @@ def main():
       date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
       stderr=stderr,
       **status_dict)
+
+    try:
+      snapshot = os.environ['SLAPOS_TEST_LOG_DIRECTORY']
+    except KeyError:
+      continue
+    if os.path.exists(results):
+      i = len(results) - len(adapter)
+      try:
+        prefix = test_result.test_result_path.rsplit('/', 1)[-1] + os.sep
+      except AttributeError:
+        prefix = ''
+      with tarfile.open(os.path.join(snapshot, adapter + '.tar.gz'),
+                        'w:gz') as tar:
+        for r, _, f in os.walk(results):
+          for f in f:
+            if f.endswith('.log'):
+              f = os.path.join(r, f)
+              tar.add(f, prefix + f[i:])
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,28 @@
 Changelog
 =========
 
+Version 1.0.423 (2025-06-30)
+-------------
+
+* Fix default parameters for ORS in N28 and N39
+* Make connection parameters more readable by rounding floats to 3 decimal digits
+* ORS DUO: add TDD UL/DL ratio parameter on 2nd cell
+* ORS DUO: fix FDD
+
+Version 1.0.418 (2025-06-03)
+-------------
+
+* Add support for ORS DUO (MIMO 4x4 50 MHz and Carrier aggregation 100 MHz MIMO 2x2)
+* Major changes regarding UE power control (very important especially for deployment or long distance tests):
+  * Disable DPC algorithm
+  * Set a correct power reference signal value for UE's to properly adjust their power
+* Fix bug causing RX Gain to be zero
+* Add more connection parameters
+* Improve parameter description
+* Reduce size of software release
+* add missing /websocket in websocket frontend URL
+* set default bandwidth to 50 for 5G
+
 Version 1.0.412 (2025-05-02)
 -------------
 
