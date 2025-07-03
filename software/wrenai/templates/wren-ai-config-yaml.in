@@ -36,17 +36,17 @@ models:
 ---
 type: engine
 provider: wren_ui
-endpoint: http://{{ param_wren_ai['wren-ui-host'] }}:{{ param_wren_ai['wren-ui-port'] }}
+endpoint: http://{{ global_params['wren-ui-ipv4'] }}:{{ global_params['wren-ui-port'] }}
 
 ---
 type: engine
 provider: wren_ibis
-endpoint: http://{{ param_wren_ai['ibis-server-host'] }}:{{ param_wren_ai['ibis-server-port'] }}
+endpoint: http://{{ global_params['ibis-server-ipv4'] }}:{{ global_params['ibis-server-port'] }}
 
 ---
 type: document_store
 provider: qdrant
-location: http://{{ param_wren_ai['qdrant-host'] }}:{{ param_wren_ai['qdrant-port'] }}
+location: http://{{ global_params['qdrant-ipv4'] }}:{{ global_params['qdrant-http-port'] }}
 embedding_model_dim: 3072
 timeout: 120
 recreate_index: true

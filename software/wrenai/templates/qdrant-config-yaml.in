@@ -6,7 +6,7 @@ log_level: INFO
 logger:
   on_disk:
     enabled: true
-    log_file: {{ param_qdrant['log-file'] }}
+    log_file: {{ qdrant_params['log-file'] }}
     log_level: INFO
 
 storage:
@@ -215,15 +215,15 @@ service:
   max_workers: 0
 
   # Host to bind the service on
-  host: {{ param_qdrant['ip'] }}
+  host: {{ global_params['qdrant-ipv4'] }}
 
   # HTTP(S) port to bind the service on
-  http_port: {{ param_qdrant['http-port'] }}
+  http_port: {{ global_params['qdrant-http-port'] }}
 
   # gRPC port to bind the service on.
   # If `null` - gRPC is disabled. Default: null
   # Comment to disable gRPC:
-  grpc_port: {{ param_qdrant['grpc-port'] }}
+  grpc_port: {{ global_params['qdrant-grpc-port'] }}
 
   # Enable CORS headers in REST API.
   # If enabled, browsers would be allowed to query REST endpoints regardless of query origin.

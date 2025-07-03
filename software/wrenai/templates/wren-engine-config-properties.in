@@ -1,13 +1,5 @@
-{% if param_wrenai['custom-ip'] -%}
-node.bind-ip={{ param_wrenai['custom-ip'] }}
-{% else -%}
-node.bind-ip={{ param_wrenai['bind-ip'] }}
-{% endif -%}
-node.environment={{ param_wrenai['node-environment'] }}
-wren.experimental-enable-dynamic-fields={{ param_wrenai['experimental-enable-dynamic-fields'] }}
-{% if param_wrenai['custom-port'] -%}
-http-server.http.port={{ param_wrenai['custom-port'] }}
-{% else -%}
-http-server.http.port={{ param_wrenai['http-port'] }}
-{% endif -%}
-http-server.log.path={{ param_wrenai['log-file'] }}
+node.bind-ip={{ global_params['wren-engine-ipv4'] }}
+node.environment={{ wrenai_params['node-environment'] }}
+wren.experimental-enable-dynamic-fields={{ wrenai_params['experimental-enable-dynamic-fields'] }}
+http-server.http.port={{ global_params['wren-engine-port'] }}
+http-server.log.path={{ wrenai_params['log-file'] }}
