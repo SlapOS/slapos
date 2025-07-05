@@ -107,7 +107,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       os.path.join(self.computer_partition_root_path, 'bin', 'restic'),
       'snapshots', '--insecure-no-password', '-r', mariadb_backup,
     ])
-    self.assertIn('2025-01-01', output.decode())
+    self.assertIn('/20500101_', output.decode())
 
   def test_logrotate_and_slow_query_digest(self):
     # slow query digest needs to run after logrotate, since it operates on the rotated
