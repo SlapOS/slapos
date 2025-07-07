@@ -64,6 +64,10 @@
         "csr-to-sign": {
           "description": "PEM-encoded string representing one or more CSRs to be signed by this caucased server",
           "type": "string"
+        },
+        "external-caucased-url": {
+          "description": "Provide the URL of an external caucased server to be used in place of an embedded one",
+          "type": "string"
         }
       }
     },
