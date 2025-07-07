@@ -7,14 +7,14 @@
     "bandwidth": {
       "$ref": "cell/common.json#/properties/bandwidth",
       "enum": [
-        1.4,
-        3,
-        5,
-        10,
-        15,
-        20
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
       ],
-      "default": 20
+      "default": "20 MHz"
     },
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
