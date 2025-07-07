@@ -85,7 +85,7 @@ for i, snapshot in enumerate(restore_snapshot_list):
   print(stdout.decode('utf-8'))
   if stderr:
     print(stderr.decode('utf-8'))
-  if process_restic.returncode != 0:
+  if process_restic.wait() != 0:
     print('restic: exit %s' % process_restic.returncode)
     sys.exit(process_restic.returncode)
   if process_mbstream.returncode != 0:

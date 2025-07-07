@@ -55,7 +55,7 @@ stdout, stderr = process_restic.communicate()
 print(stdout.decode('utf-8'))
 if stderr:
   print(stderr.decode('utf-8'))
-if process_mariabackup.returncode != 0:
+if process_mariabackup.wait() != 0:
   print('mariabackup: exit %s' % process_mariabackup.returncode)
   sys.exit(process_mariabackup.returncode)
 if process_restic.returncode != 0:
