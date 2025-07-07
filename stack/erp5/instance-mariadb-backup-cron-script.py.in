@@ -57,10 +57,10 @@ if stderr:
   print(stderr.decode('utf-8'))
 if process_mariabackup.wait() != 0:
   print('mariabackup: exit %s' % process_mariabackup.returncode)
-  sys.exit(process_mariabackup.returncode)
+  sys.exit(int(process_mariabackup.returncode))
 if process_restic.returncode != 0:
   print('restic: exit %s' % process_restic.returncode)
-  sys.exit(process_restic.returncode)
+  sys.exit(int(process_restic.returncode))
 
 if full_backup_retention_days > 0:
   # We keep until the latest full backup before the target date.
