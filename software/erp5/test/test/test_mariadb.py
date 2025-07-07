@@ -672,6 +672,36 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       self.assertEqual(((1, "Hey"),(3, "Bye"),), cursor.fetchall())
 
 
+class TestMariaDBExternalCaucased(MariaDBReplicationTestCase):
+  def test(self):
+    # Request a Mariadb used only for its caucased server
+    caucased = self.requestPrimary(name='caucased')
+    external_caucased_url = json.loads(
+      caucased.getConnectionParameterDict()['_']
+    )['caucased-url']
+    # Request a Mariadb using the first mariadb's caucased as external caucased
+    primary = self.requestPrimary(
+      caucased={'external-caucased-url': external_caucased_url},
+      strict=False,
+    )
+    # Locate primary's mariadb csr to let the external caucased sign it
+    with open(os.path.join(
+        self.getComputerPartitionPath(primary),
+        'srv', 'caucase', 'mariadb', 'good.csr.pem'), 'rb') as f:
+      csr = f.read().decode('ascii')
+    # Let external caucased sign primary's mariadb csr
+    # This asserts that all partitions, including primary, converge
+    self.requestPrimary(name='caucased', caucased={'csr-to-sign': csr})
+    # Request replica Mariadb
+    replica = self.requestReplica(primary, strict=False)
+    # Let external caucased sign replica CSR
+    # This asserts that all partitions, including replica, converge
+    self.requestPrimary(name='caucased', caucased=replica)
+    # Check (primary --> replica) replication
+    self.checkReplicaState(replica)
+    self.checkDataReplication(primary, replica)
+
+
 class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
   def test(self):
     primary = upstream = self.requestPrimary(caucased=False)
