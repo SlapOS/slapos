@@ -6,8 +6,8 @@
     "default": {
       "title": "Default",
       "software-type": "default",
-      "request": "../erp5/instance-erp5-input-schema.json",
-      "response": "../erp5/instance-erp5-output-schema.json",
+      "request": "../wendelin/instance-wendelin-input-schema.json",
+      "response": "../wendelin/instance-wendelin-output-schema.json",
       "index": 0
     }
   }
