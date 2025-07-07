@@ -231,6 +231,23 @@ about laxist file mode. -#}
 {%-   do section('caucase-admin-updater') %}
 {%-   do section('caucase-admin-updater-promise') %}
 
+[caucase-mariadb-on-renew]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+proxysql-ca-path = ${directory:proxysql}/proxysql-ca.pem
+proxysql-cert-path = ${directory:proxysql}/proxysql-cert.pem
+proxysql-key-path = ${directory:proxysql}/proxysql-key.pem
+crt-and-key-path = ${directory:mariadb-ssl}/mariadb-crt-and-key.pem
+inline =
+  #! /bin/sh -e
+  # Copy for proxysql
+  cp ${directory:mariadb-ssl}/mariadb-ca.pem ${:proxysql-ca-path}
+  cp ${directory:mariadb-ssl}/mariadb-crt.pem ${:proxysql-cert-path}
+  cp ${directory:mariadb-ssl}/mariadb-key.pem ${:proxysql-key-path}
+  # Bundle mariadb
+  cat ${directory:mariadb-ssl}/mariadb-crt.pem ${directory:mariadb-ssl}/mariadb-key.pem \
+    > ${:crt-and-key-path}
+
 {{  caucase.updater(
       prefix='caucase-mariadb-updater',
       buildout_bin_directory=parameter_dict['bin-directory'],
@@ -239,34 +256,15 @@ about laxist file mode. -#}
       data_dir='${directory:srv}/caucase/mariadb',
       ca_path='${directory:mariadb-ssl}/mariadb-ca.pem',
       crl_path='${directory:mariadb-ssl}/mariadb-crl.pem',
-      crt_path='${directory:mariadb-ssl}/mariadb-crt-and-key.pem',
+      crt_path='${directory:mariadb-ssl}/mariadb-crt.pem',
+      key_path='${directory:mariadb-ssl}/mariadb-key.pem',
+      on_renew='${caucase-mariadb-on-renew:output}',
       mode='service',
       openssl_req_options='-subj /CN=' + ipv6,
       openssl='${binary-link:target-directory}/openssl',
 )}}
 {%-   do section('caucase-mariadb-updater') %}
 {%-   do section('caucase-mariadb-updater-promise') %}
-
-# TODO: Should be the same certificate as just above, but
-# proxysql and haproxy expect different naming & bundling
-# conventions, so one each is easier for now. Eventually,
-# copying - renaming - rebundling should be done instead.
-{{  caucase.updater(
-      prefix='caucase-proxysql-updater',
-      buildout_bin_directory=parameter_dict['bin-directory'],
-      updater_path='${directory:services}/caucase-proxysql-updater',
-      url=caucased_url,
-      data_dir='${directory:srv}/caucase/proxysql',
-      ca_path='${directory:proxysql}/proxysql-ca.pem',
-      crl_path='${directory:proxysql}/proxysql-crl.pem',
-      crt_path='${directory:proxysql}/proxysql-cert.pem',
-      key_path='${directory:proxysql}/proxysql-key.pem',
-      mode='service',
-      openssl_req_options='-subj /CN=' + ipv6,
-      openssl='${binary-link:target-directory}/openssl',
-)}}
-{%-   do section('caucase-proxysql-updater') %}
-{%-   do section('caucase-proxysql-updater-promise') %}
 
 [caucase-csr-to-sign]
 recipe = slapos.recipe.build
@@ -275,7 +273,7 @@ csr-to-sign = {{ dumps(caucased_csr_to_sign) }}
 init =
   import os
   self.local_csr_paths = []
-  for part in ('caucase-mariadb-updater', 'caucase-proxysql-updater'):
+  for part in ('caucase-mariadb-updater',):
     if not os.path.exists(self.buildout[part]['ca-path']):
       self.local_csr_paths.append(self.buildout[part + '-csr']['csr'])
 install =
@@ -802,7 +800,7 @@ name = mariadb_replication_bootstrap_server.py
 {% if caucased_enable -%}
 config-url = https://[{{ ipv6 }}]:{{ port - 1 }}
 config-ca-cert-file = ${caucase-mariadb-updater:ca-path}
-config-cert-file = ${caucase-mariadb-updater:crt-path}
+config-cert-file = ${caucase-mariadb-on-renew:crt-and-key-path}
 config-key-file = ${:config-cert-file}
 {%- else %}
 config-url = http://[{{ ipv6 }}]:{{ port - 1 }}
@@ -841,7 +839,7 @@ inline =
     log global
     bind {{ ipv6 }}:{{ port - 1 }}
 {%- if caucased_enable %}
-{#- NOT NL #} ssl crt ${caucase-mariadb-updater:crt-path}
+{#- NOT NL #} ssl crt ${caucase-mariadb-on-renew:crt-and-key-path}
 {#- NOT NL #} alpn h2,http/1.1
 {#- NOT NL #} verify required
 {#- NOT NL #} ca-file ${caucase-mariadb-updater:ca-path}
@@ -914,10 +912,9 @@ hash-files = ${proxysql-cfg:output}
 # so that proxysql will directly use them and not try to
 # generate its own.
 wait-for-files =
-  ${caucase-proxysql-updater:ca-path}
-  ${caucase-proxysql-updater:crl-path}
-  ${caucase-proxysql-updater:crt-path}
-  ${caucase-proxysql-updater:key-path}
+  ${caucase-mariadb-on-renew:proxysql-ca-path}
+  ${caucase-mariadb-on-renew:proxysql-cert-path}
+  ${caucase-mariadb-on-renew:proxysql-key-path}
 {%- endif %}
 {%- endif %}
 
