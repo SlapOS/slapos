@@ -191,7 +191,7 @@ inline =
 
   if [ {{ custom_parameters['wren_engine_enabled'] }} != True ]
   then
-    echo "wren-engine is disabled in this host. Using instead {{ custom_parameters['wren_engine_ipv4'] }}." > ${directory:log}/wren-stack.log
+    echo "wren-engine is disabled in this host." > ${directory:log}/wren-stack.log
     exit 0
   fi
 
@@ -265,7 +265,7 @@ inline =
 
   if [ {{ custom_parameters['ibis_server_enabled'] }} != True ]
   then
-    echo "ibis-server is disabled in this host. Using instead {{ custom_parameters['ibis_server_ipv4'] }}." > ${directory:log}/wren-stack.log
+    echo "ibis-server is disabled in this host." > ${directory:log}/wren-stack.log
     exit 0
   fi
 
@@ -343,7 +343,7 @@ inline =
   # the case. Otherwise do not run it.
   if [ {{ custom_parameters['wren_ui_enabled'] }} != True ]
   then
-    echo "wren-ui is disabled in this host. Using instead {{ custom_parameters['wren_ui_ipv4'] }}." > ${directory:log}/wren-stack.log
+    echo "wren-ui is disabled in this host." > ${directory:log}/wren-stack.log
     exit 0
   fi
 
@@ -435,7 +435,7 @@ inline =
 
   if [ {{ custom_parameters['qdrant_enabled'] }} != True ]
   then
-    echo "qdrant is disabled in this host. Using instead {{ custom_parameters['qdrant_ipv4'] }}." > ${directory:log}/wren-stack.log
+    echo "qdrant is disabled in this host." > ${directory:log}/wren-stack.log
     exit 0
   fi
 
@@ -512,7 +512,7 @@ inline =
 
   if [ {{ custom_parameters['wren_ai_service_enabled'] }} != True ]
   then
-    echo "wren-ai-service is disabled in this host. Using instead {{ custom_parameters['wren_ai_service_ipv4'] }}." > ${directory:log}/wren-stack.log
+    echo "wren-ai-service is disabled in this host." > ${directory:log}/wren-stack.log
     exit 0
   fi
 
