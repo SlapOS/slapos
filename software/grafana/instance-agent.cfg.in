@@ -789,7 +789,7 @@ init =
           },
           {
             "state": "continuation",
-            "regex": "^[^\d]+.*",
+            "regex": "^([^#].*|)$",
             "next_state": "continuation"
           }
         ]
