@@ -284,3 +284,6 @@ depends =
 {% for postfix_wrapper in postfix_wrappers -%}
   {{ "  $${" + postfix_wrapper + ":recipe}" }}
 {% endfor -%}
+
+[monitor-instance-parameter]
+password = {{ slapparameter_dict['monitor-passwd'] }}
