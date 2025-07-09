@@ -15,6 +15,7 @@ offline = true
 recipe = slapos.cookbook:request.serialised
 software-url = $${slap-connection:software-release-url}
 software-type = relay
+config-monitor-password = $${monitor-instance-parameter:password}
 {% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
