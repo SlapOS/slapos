@@ -17,6 +17,14 @@
     "domain": {
       "description": "Domain of the mail server",
       "type": "string"
+    },
+    "password-url": {
+      "title": "Password creation URL (you must use this to set your password)",
+      "type": "string"
+    },
+    "webmail-url": {
+      "title": "Webmail URL",
+      "type": "string"
     }
   },
   "type": "object"
