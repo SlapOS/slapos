@@ -1051,11 +1051,52 @@ class TestInstanceResilientBackupExporterMigratePre047(
 class TestInstanceResilientBackupExporterPartialRecovery(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
+    def assertPromiseState(partition_directory, promise, state):
+      monitor_run_promise = os.path.join(
+        partition_directory, 'software_release', 'bin',
+        'monitor.runpromise'
+      )
+      monitor_configuration = os.path.join(
+        partition_directory, 'etc', 'monitor.conf')
+
+      self.assertEqual(
+        state,
+        subprocess.call([
+          monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+          '--run-only', promise])
+      )
     self.initialBackup()
     # cover .partial file in the backup directory with fallback to full
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
+
+    # assert check-backup-directory behaviour, typical...
+    partition_path = self.getPartitionPath('kvm-export')
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
     with open(current_backup + '.partial', 'w') as fh:
       fh.write('')
+    assertPromiseState(partition_path, 'check-backup-directory.py', 1)
+
+    # ...when backup is in progress
+    check_backup_directory = self.getPartitionPath(
+      'kvm-export', 'bin', 'check-backup-directory')
+    current_backup_lock_location = self.getPartitionPath(
+      'kvm-export', 'var', 'backup-in-progress')
+    # find used flock binary
+    flock = None
+    with open(check_backup_directory) as fh:
+      for line in fh.readlines():
+        line = line.strip()
+        if 'flock' in line:
+          flock = line.split()[1]
+    self.assertIsNotNone(flock)
+
+    current_backup_lock = subprocess.Popen([
+      flock, '--nonblock', '--no-fork', current_backup_lock_location,
+      'sleep', '3600'])
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
+    current_backup_lock.terminate()
+    current_backup_lock.wait()
+
     status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
@@ -1067,9 +1108,7 @@ class TestInstanceResilientBackupExporterPartialRecovery(
       'Recovered from partial backup by removing partial',
       status_text
     )
-    self.assertTrue(os.path.exists(os.path.join(
-      self.getPartitionPath(
-        'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
 
 
 @skipUnlessKvm
