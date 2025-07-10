@@ -637,11 +637,6 @@ class TestAccessDefaultAdditionalJson(TestAccessDefaultAdditional):
       'frontend-additional-software-url': 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
     }
 
-@skipUnlessKvm
-class TestAccessDefaultAdditionalJson(
-  KvmMixinJson, TestAccessDefaultAdditional):
-  pass
-
 
 @skipUnlessKvm
 class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
