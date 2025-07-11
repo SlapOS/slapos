@@ -14,7 +14,8 @@
         "15 MHz",
         "20 MHz"
       ],
-      "default": "20 MHz"
+      "default": "20 MHz",
+      "type": "string"
     },
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
