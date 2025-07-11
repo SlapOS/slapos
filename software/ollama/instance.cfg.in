@@ -154,7 +154,8 @@ environment =
   CC={{ gcc_location }}/bin/gcc
   CXX={{ gcc_location }}/bin/g++
   CGO_ENABLED=1
-  OLLAMA_LLM_LIBRARY=cpu_avx2
+  export PATH=/usr/local/cuda/bin:$PATH
+  export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
   OLLAMA_HOST=${:ollama-host}
 
 [ollama-run-model-service]
