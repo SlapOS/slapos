@@ -1,0 +1,14 @@
+{
+  "name": "SignaturePDF",
+  "description": "SignaturePDF",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Instance Signature PDF",
+      "request": "signaturepdf-input-schema.json",
+      "response": "signaturepdf-output-schema.json",
+      "index": 0
+    }
+  }
+}
