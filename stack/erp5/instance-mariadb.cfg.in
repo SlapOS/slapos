@@ -356,7 +356,7 @@ context =
   key tmp_directory my-cnf-parameters:tmp-directory
   key mariadb_backup_directory directory:mariadb-backup-restic
   raw python_executable {{ parameter_dict['python-executable'] }}
-  raw full_backup_retention_days {{ full_backup_retention_days }}
+  raw full_backup_retention_days {{ physical_backup['retention-days'] }}
 
 [mariabackup-restore-script]
 recipe = slapos.recipe.template:jinja2
@@ -593,7 +593,7 @@ install-script =
   {%- endif %}
 
   {% if upstream_mariabackup_url -%}
-  echo "Fetching $bootstrap_url"
+  echo "Fetching and restoring mariabackup from $bootstrap_url"
   ${directory:bin}/mariabackup-restore-script --mariabackup-url="$bootstrap_url"
   {%- if upstream_caucased_url %}
   {#- NOT NL #} --cert ${caucase-replica-updater:crt-path}
@@ -946,6 +946,10 @@ recipe = slapos.cookbook:wrapper
 # will reject it.
 command-line = "{{ mariadb['location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
+
+[binary-wrap-mariabackup]
+< = binary-wrap-base
+command = mariabackup
 
 [binary-wrap-mysql]
 < = binary-wrap-base

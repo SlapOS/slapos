@@ -51,7 +51,7 @@ if args.mariabackup_url:
     [curl_executable] + curl_args + [args.mariabackup_url.rstrip('/') + '/index.txt']
   ).decode('utf-8').striplines()
 else:
-  backup_list = glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd'))
+  backup_list = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))
 restore_backup_list = [e for e in backup_list if e.endswith('.full.xb.zstd')][-1:]
 if not restore_backup_list:
   print('No full backup found. Aborting')
