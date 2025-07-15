@@ -338,38 +338,43 @@ command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:maria
 {%- endif %}
 {%- endif %}
 
-{% if physical_backup['enable'] -%}
 [mariabackup-script]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['mariabackup-script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
-most-recent = most-recent.xbstream.zstd
-inline =
-  #!{{ bash }}
-  set -euo pipefail
-  filepath="${directory:mariabackup-full}/"${dated-filename:command}.xbstream.zstd
-  "{{ mariadb['location'] }}/bin/mariadb-backup" \
-    --defaults-file="${my-cnf:output}" \
-    --backup \
-    --user=root \
-    --stream=xbstream \
-    | "{{ parameter_dict['zstd-location'] }}/bin/zstd" > "$filepath"
-  ln -sf "$filepath" "${directory:mariabackup-full}/${:most-recent}"
+logical-backup-enabled = logical_backup['enable']
+context =
+  key dash dash:dash
+  key bin_directory directory:bin
+  key tmp_directory directory:tmp
+  key mariadb_backup_directory directory:mariabackup
+  key logical_backup_enabled :logical-backup-enabled
+  raw python_executable {{ parameter_dict['python-executable'] }}
+  raw full_backup_retention_days {{ physical_backup['retention-days'] }}
+depends = ${binary-wrap-mariabackup:command}
 
+[mariabackup-restore-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['mariabackup-restore-script'] }}
+output = ${directory:bin}/${:_buildout_section_name_}
+context =
+  key dash dash:dash
+  key bin_directory directory:bin
+  key tmp_directory directory:tmp
+  key mariadb_backup_directory directory:mariabackup
+  key mariadb_data_directory my-cnf-parameters:data-directory
+  key pid_file my-cnf-parameters:pid-file
+  raw curl_executable {{ parameter_dict['curl-location'] }}/bin/curl
+  raw python_executable {{ parameter_dict['python-executable'] }}
+depends = ${binary-wrap-mariabackup:command}
+
+{% if physical_backup['enable'] -%}
 [{{ section('cron-entry-mariabackup') }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariabackup
 time = {{ dumps(physical_backup['periodicity']) }}
 command = ${mariabackup-script:output}
-
-{% if logical_backup['retention-days'] > 0 -%}
-[{{ section("cron-entry-mariabackup-expire") }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = mariabackup-expire
-time = {{ dumps(physical_backup['periodicity']) }}
-command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariabackup-full}" -maxdepth 1 -name "${dated-filename:glob}.gz"  -daystart -mtime +{{ physical_backup['retention-days'] }} -delete
-{%- endif %}
 {%- endif %}
 
 [my-cnf-parameters]
@@ -552,10 +557,6 @@ context =
 install-script =
   {% if upstream_mariabackup_url -%}
   bootstrap_url={{ six_moves.shlex_quote(upstream_mariabackup_url) }}
-  bootstrap_file="${directory:mariadb-dump-full}/bootstrap.mariabackup.gz"
-  mariabackup="{{ mariadb['location'] }}/bin/mariadb-backup"
-  mbstream="{{ mariadb['location'] }}/bin/mbstream"
-  zstdcat="{{ parameter_dict['zstd-location'] }}/bin/zstdcat"
   {% elif upstream_bootstrap_url -%}
   bootstrap_url={{ six_moves.shlex_quote(upstream_bootstrap_url) }}
   bootstrap_file="${directory:mariadb-dump-full}/bootstrap.sql.gz"
@@ -577,7 +578,7 @@ install-script =
   fi
   {%- endif %}
 
-  {% if upstream_mariabackup_url or upstream_bootstrap_url -%}
+  {% if upstream_bootstrap_url -%}
   echo "Fetching $bootstrap_url"
   "$curl" -o "$bootstrap_file" --fail "$bootstrap_url"
   {%- if upstream_caucased_url %}
@@ -589,11 +590,14 @@ install-script =
   {%- endif %}
 
   {% if upstream_mariabackup_url -%}
-  echo "Restoring $bootstrap_file"
-  "$zstdcat" "$bootstrap_file" | "$mbstream" --extract --directory="${my-cnf-parameters:data-directory}"
-
-  echo "Preparing mariabackup-restored directory"
-  "$mariabackup" --prepare --target-dir="${my-cnf-parameters:data-directory}"
+  echo "Fetching and restoring mariabackup from $bootstrap_url"
+  ${mariabackup-restore-script:output} --mariabackup-url="$bootstrap_url"
+  {%- if upstream_caucased_url %}
+  {#- NOT NL #} --cert ${caucase-replica-updater:crt-path}
+  {#- NOT NL #} --key ${caucase-replica-updater:key-path}
+  {#- NOT NL #} --cacert ${caucase-replica-updater:ca-path}
+  {#- NOT NL #} --crlfile ${caucase-replica-updater:crl-path}
+  {%- endif %}
   {%- endif %}
 
 foreground-script =
@@ -809,7 +813,7 @@ config-url = http://{{ private_ipv4 }}:{{ port - 1 }}
 # Connection information
 url = ${:config-url}
 bootstrap-url = ${:url}/mariadb-full/${mariadb-dump-script:most-recent}
-mariabackup-url = ${:url}/mariabackup-full/${mariabackup-script:most-recent}
+mariabackup-url = ${:url}/mariabackup/
 
 {% if ipv6_reverse_proxy_enable -%}
 [haproxy-cfg]
@@ -935,6 +939,10 @@ recipe = slapos.cookbook:wrapper
 command-line = "{{ mariadb['location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
 
+[binary-wrap-mariabackup]
+< = binary-wrap-base
+command = mariabackup
+
 [binary-wrap-mysql]
 < = binary-wrap-base
 command = mysql
@@ -969,7 +977,7 @@ tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
 mariadb-dump-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
-mariabackup-full = ${:backup}/mariabackup-full
+mariabackup = ${:backup}/mariabackup
 proxysql = ${:srv}/proxysql
 mariadb-ssl = ${:etc}/mariadb-ssl
 caucase-ssl = ${:etc}/caucase-ssl
