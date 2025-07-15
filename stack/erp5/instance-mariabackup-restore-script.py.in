@@ -1,5 +1,6 @@
 #!{{ python_executable }}
 import argparse
+import errno
 import glob
 import os
 import shutil
@@ -49,7 +50,7 @@ print('Checking backup...')
 if args.mariabackup_url:
   backup_list = subprocess.check_output(
     [curl_executable] + curl_args + [args.mariabackup_url.rstrip('/') + '/index.txt']
-  ).decode('utf-8').striplines()
+  ).decode('utf-8').splitlines()
 else:
   backup_list = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))
 restore_backup_list = [e for e in backup_list if e.endswith('.full.xb.zstd')][-1:]
@@ -89,7 +90,8 @@ for i, path in enumerate(restore_backup_list):
   else:
     xb_file = path
   process_zstd = subprocess.Popen([
-    zstd_executable, '-d', xb_file,
+    # zstd -dcf is equivalent to zstdcat; -c means --stdout and is required
+    zstd_executable, '-dcf', xb_file,
   ], stdout=subprocess.PIPE)
   process_mbstream = subprocess.Popen([
     mbstream_executable, '-C', restore_directory, '-x',
@@ -112,6 +114,15 @@ for i, path in enumerate(restore_backup_list):
 print(subprocess.check_output([
   mariabackup_executable, '--move-back', '--target-dir=%s' % mariadb_restore_directory,
 ]).decode('utf-8'))
+# --copy-back does not copy xtrabackup_binlog_info
+binlog_info = os.path.join(mariadb_restore_directory, 'xtrabackup_binlog_info')
+try:
+  shutil.copy(binlog_info, mariadb_data_directory)
+except OSError as e:
+  if e.errno != errno.ENOENT:
+    raise
+else:
+  print('Copied back %s' % binlog_info)
 shutil.rmtree(mariadb_restore_directory)
 if os.path.isdir(mariadb_incremental_restore_directory):
   shutil.rmtree(mariadb_incremental_restore_directory)
