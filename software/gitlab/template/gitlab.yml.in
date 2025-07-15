@@ -503,6 +503,8 @@ production: &base
     # File that contains the secret key for verifying access for gitlab-shell.
     # Default is '.gitlab_shell_secret' relative to Rails.root (i.e. root of the GitLab app).
     secret_file: {{ gitlab_shell.secret }}
+    # Repo path needed for gitlab-backup
+    repos_path: "{{ gitlab.repositories }}"
 
 
     # Git over HTTP
