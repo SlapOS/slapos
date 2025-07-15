@@ -64,9 +64,10 @@ if full_backup_retention_days > 0:
   backup_path_list = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))
   latest_full_index = 0
   for i, path in enumerate(backup_path_list):
-    if path.endswith('.full.xb.zstd'):
+    filename = os.path.basename(path)
+    if filename.endswith('.full.xb.zstd'):
       latest_full_index = i
-    if datetime.strptime(path[:13], '%Y%m%d%H%M%S') > target_date:
+    if datetime.strptime(filename[:13], '%Y%m%d%H%M%S') > target_date:
       break
   for path in backup_path_list[0:latest_full_index]:
     print('Deleting old snapshots %s...' % path)
@@ -80,6 +81,6 @@ if full_backup_retention_days > 0:
 with open(os.path.join(mariadb_backup_directory, 'index.txt'), 'w') as f:
   f.write(
     '\n'.join(sorted(
-      os.path.basename(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd'))))))
+      os.path.basename(p) for p in glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))))
 
 print('Done.')
