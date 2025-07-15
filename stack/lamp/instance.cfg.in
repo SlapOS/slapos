@@ -96,6 +96,8 @@ template-mysqld-wrapper = {{ template_mysqld_wrapper }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
+mariabackup-script = {{ mariabackup_script }}
+mariabackup-restore-script = {{ mariabackup_restore_script }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
@@ -105,6 +107,7 @@ groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plug
 check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
 bin-directory = {{ bin_directory }}
 curl-location = {{ curl_location }}
+python-executable = {{ bin_directory }}/{{ egg_interpreter }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
