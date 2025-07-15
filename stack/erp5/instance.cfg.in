@@ -175,7 +175,6 @@ coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
-zstd-location = {{ zstd_location }}
 haproxy = {{ haproxy_location }}
 xz-utils-location = {{ xz_utils_location }}
 mariadb = {{ dumps(mariadb) }}
@@ -184,6 +183,8 @@ template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
+mariabackup-script = {{ mariabackup_script }}
+mariabackup-restore-script = {{ mariabackup_restore_script }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
@@ -191,6 +192,7 @@ mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
 mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
 groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
 curl-location = {{ curl_location }}
+python-executable = {{ bin_directory }}/{{ egg_interpreter }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
