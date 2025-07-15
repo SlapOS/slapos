@@ -144,8 +144,8 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
         self.computer_partition_root_path,
         'srv',
         'backup',
-        'mariabackup-full',
-        '205001010000??.mariabackup.gz',
+        'mariabackup',
+        '205001010000??.full.xb.zst',
     )))
 
   def test_logrotate_and_slow_query_digest(self) -> None:
