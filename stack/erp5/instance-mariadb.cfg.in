@@ -345,18 +345,18 @@ command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:maria
 {%- endif %}
 {%- endif %}
 
-{% if physical_backup['enable'] -%}
 [mariabackup-script]
 recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['mariabackup-script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 context =
   key dash dash:dash
-  key bin_directory my-cnf-parameters:bin-directory
-  key tmp_directory my-cnf-parameters:tmp-directory
-  key mariadb_backup_directory directory:mariadb-backup-restic
+  key bin_directory directory:bin
+  key tmp_directory directory:tmp
+  key mariadb_backup_directory directory:mariabackup
   raw python_executable {{ parameter_dict['python-executable'] }}
   raw full_backup_retention_days {{ physical_backup['retention-days'] }}
+depends = ${binary-wrap-mariabackup:command}
 
 [mariabackup-restore-script]
 recipe = slapos.recipe.template:jinja2
@@ -364,14 +364,16 @@ url = {{ parameter_dict['mariabackup-restore-script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 context =
   key dash dash:dash
-  key bin_directory my-cnf-parameters:bin-directory
-  key tmp_directory my-cnf-parameters:tmp-directory
-  key mariadb_backup_directory directory:mariadb-backup-restic
+  key bin_directory directory:bin
+  key tmp_directory directory:tmp
+  key mariadb_backup_directory directory:mariabackup
   key mariadb_data_directory my-cnf-parameters:data-directory
   key pid_file my-cnf-parameters:pid-file
-  key curl_executable {{ parameter_dict['curl-location'] }}/bin/curl
+  raw curl_executable {{ parameter_dict['curl-location'] }}/bin/curl
   raw python_executable {{ parameter_dict['python-executable'] }}
+depends = ${binary-wrap-mariabackup:command}
 
+{% if physical_backup['enable'] -%}
 [{{ section('cron-entry-mariabackup') }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
@@ -594,7 +596,7 @@ install-script =
 
   {% if upstream_mariabackup_url -%}
   echo "Fetching and restoring mariabackup from $bootstrap_url"
-  ${directory:bin}/mariabackup-restore-script --mariabackup-url="$bootstrap_url"
+  ${mariabackup-restore-script:output} --mariabackup-url="$bootstrap_url"
   {%- if upstream_caucased_url %}
   {#- NOT NL #} --cert ${caucase-replica-updater:crt-path}
   {#- NOT NL #} --key ${caucase-replica-updater:key-path}
