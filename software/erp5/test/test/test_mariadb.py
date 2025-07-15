@@ -145,7 +145,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
         'srv',
         'backup',
         'mariabackup',
-        '205001010000??.full.xb.zst',
+        '205001010000??.full.xb.zstd',
     )))
 
   def test_logrotate_and_slow_query_digest(self) -> None:
