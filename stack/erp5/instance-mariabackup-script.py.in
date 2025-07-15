@@ -61,7 +61,7 @@ if process_zstd.returncode != 0:
 if full_backup_retention_days > 0:
   # We keep until the latest full backup before the target date.
   target_date = now - timedelta(days=full_backup_retention_days)
-  backup_path_list = glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd'))
+  backup_path_list = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))
   latest_full_index = 0
   for i, path in enumerate(backup_path_list):
     if path.endswith('.full.xb.zstd'):
