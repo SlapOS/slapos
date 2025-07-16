@@ -7,11 +7,11 @@ import subprocess
 import sys
 
 max_incremental_count = int(os.environ.get('max_incremental_count', '6'))
-mariabackup_executable = '{{ bin_directory }}/mariabackup'
-mbstream_executable = '{{ bin_directory }}/mbstream'
-zstd_executable = '{{ bin_directory }}/zstd'
-mariadb_backup_directory = '{{ mariadb_backup_directory }}'
-full_backup_retention_days = int('{{ full_backup_retention_days }}')
+mariabackup_executable = {{ repr(bin_directory) }} + '/mariabackup'
+mbstream_executable = {{ repr(bin_directory) }} + '/mbstream'
+zstd_executable = {{ repr(bin_directory) }} + '/zstd'
+mariadb_backup_directory = {{ repr(mariadb_backup_directory) }}
+full_backup_retention_days = int({{ repr(full_backup_retention_days) }})
 now = datetime.utcnow()
 timestamp = now.strftime('%Y%m%d%H%M%S')
 
