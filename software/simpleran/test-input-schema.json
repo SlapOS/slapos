@@ -4,6 +4,15 @@
   "title": "Input Parameters",
   "properties": {
     "$ref": "instance-ors-enb-input-schema.json#/properties",
+    "ors_duo_1st_cell": {
+      "$ref": "ors-duo-common.json#/properties/ors_duo_2nd_cell",
+      "title": "First Cell",
+      "oneOf": [
+        {
+          "$ref": "ors-duo-enb.json"
+        }
+      ]
+    },
     "ors_duo_2nd_cell": {
       "$ref": "ors-duo-common.json#/properties/ors_duo_2nd_cell",
       "oneOf": [
