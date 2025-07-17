@@ -20,3 +20,8 @@ GRANT PROCESS ON *.* TO `{{ user }}`@localhost IDENTIFIED BY '{{ password }}';
 {% for entry in parameter_dict['database-list'] -%}
 {{   database(entry['name'], entry.get('user'), entry.get('password'), entry.get('with-process-privilege')) }}
 {% endfor -%}
+
+{% set replication_password = parameter_dict.get('replication-password') -%}
+{% if replication_password -%}
+GRANT REPLICATION SLAVE ON *.* TO `replication_user`@`%` IDENTIFIED BY '{{ replication_password }}';
+{%- endif %}
