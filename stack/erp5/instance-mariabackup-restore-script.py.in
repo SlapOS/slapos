@@ -103,8 +103,6 @@ with tempfile.TemporaryDirectory(dir=mariadb_backup_directory) as temp_dir:
     if process_mbstream.returncode != 0:
       print('mbstream: exit %s' % process_mbstream.returncode)
       sys.exit(int(process_mbstream.returncode))
-    if args.mariabackup_url:
-      os.remove(mariadb_incremental_restore_directory)
     print(subprocess.check_output([
       mariabackup_executable, '--prepare', '--target-dir=%s' % mariadb_data_directory,
     ] + extra_mariabackup_args).decode('utf-8'))
