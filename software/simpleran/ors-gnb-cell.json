@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NR Cell",
+  "type": "object",
+  "properties": {
+    "cell_id": {
+      "$ref": "ors-common.json#/properties/cell_id"
+    },
+    "tx_power_dbm": {
+      "$ref": "ors-common.json#/properties/tx_power_dbm"
+    },
+    "tx_gain": {
+      "$ref": "ors-common.json#/properties/tx_gain"
+    },
+    "rx_gain": {
+      "$ref": "ors-common.json#/properties/rx_gain"
+    },
+    "nr_bandwidth": {
+      "$ref": "cell/common.json#/properties/bandwidth",
+      "default": 50
+    },
+    "dl_frequency": {
+      "$ref": "ors-common.json#/properties/dl_frequency"
+    },
+    "nr_band": {
+      "$ref": "cell/nr/input-schema.json#/properties/nr_band",
+      "description": "NR band number. Default depends on ORS model, please refer to the connection parameters"
+    },
+    "dl_nr_arfcn": {
+      "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
+      "title": "Expert: DL NR ARFCN",
+      "description": "Can be used instead of DL Frequency to directly set the Downlink NR Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL NR ARFCN)"
+    },
+    "ssb_pos_bitmap": {
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
+      "default": "10000000"
+    },
+    "ssb_pos_bitmap": {
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
+      "default": "10000000"
+    },
+    "tdd_ul_dl_config": {
+      "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
+    },
+    "pci": {
+      "$ref": "cell/common.json#/properties/pci",
+      "description": "Physical Cell ID. Range 0 to 1007. Equal to ORS Serial number modulo 1008 by default",
+      "description": "Physical Cell ID. Range 0 to 1007. Equal to (ORS Serial number + 504) modulo 1008 by default"
+    },
+    "root_sequence_index": {
+      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "description": "Range: 0 to 137. Equal to (ORS serial number + 79) modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+      "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LTE Cell",
+  "type": "object",
+  "properties": {
+    "cell_id": {
+      "$ref": "ors-common.json#/properties/cell_id"
+    },
+    "tx_power_dbm": {
+      "$ref": "ors-common.json#/properties/tx_power_dbm"
+    },
+    "tx_gain": {
+      "$ref": "ors-common.json#/properties/tx_gain"
+    },
+    "rx_gain": {
+      "$ref": "ors-common.json#/properties/rx_gain"
+    },
+    "bandwidth": {
+      "$ref": "cell/common.json#/properties/bandwidth",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "default": "20 MHz",
+      "type": "string"
+    },
+    "dl_frequency": {
+      "$ref": "ors-common.json#/properties/dl_frequency"
+    },
+    "lte_band": {
+      "title": "LTE band",
+      "description": "LTE band number. Default depends on ORS model, please refer to the connection parameters",
+      "type": "integer"
+    },
+    "dl_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
+      "title": "Expert: DL EARFCN",
+      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
+    },
+    "tdd_ul_dl_config": {
+      "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
+    },
+    "pci": {
+      "$ref": "cell/common.json#/properties/pci",
+      "description": "Physical Cell ID. Range 0 to 503. Equal to ORS Serial number modulo 504 by default",
+      "description": "Physical Cell ID. Range 0 to 503. Equal to (ORS Serial number + 252) modulo 504 by default"
+    },
+    "root_sequence_index": {
+      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
+      "description": "Range: 0 to 137. Equal to (ORS serial number + 79) modulo 138 by default. Sets PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
+    },
+    "tac": {
+      "$ref": "cell/lte/input-schema.json#/properties/tac",
+      "default": 1
+    }
+  }
+}
