@@ -4,13 +4,27 @@
   "title": "Input Parameters",
   "properties": {
     "$ref": "instance-ors-gnb-input-schema.json#/properties",
-    "ors_duo_2nd_cell": {
-      "$ref": "ors-duo-common.json#/properties/ors_duo_2nd_cell",
+    "ors_duo_1st_cell": {
+      "title": "First Cell",
+      "description": "Radio parameters of the first cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
       "oneOf": [
         {
-          "$ref": "ors-duo-gnb.json"
+          "$ref": "ors-gnb-cell.json"
         }
-      ]
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "ors_duo_2nd_cell": {
+      "title": "Second Cell",
+      "description": "Radio parameters of the second cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
+      "oneOf": [
+        {
+          "$ref": "ors-gnb-cell.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     },
     "n_antenna_dl": {
       "$ref": "ors-duo-common.json#/properties/n_antenna_dl"

@@ -4,29 +4,6 @@
   "title": "Input Parameters",
   "properties": {
     "$ref": "ors-common.json#/properties",
-    "nr_bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
-      "default": 50
-    },
-    "tdd_ul_dl_config": {
-      "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
-    },
-    "nr_band": {
-      "$ref": "cell/nr/input-schema.json#/properties/nr_band",
-      "description": "NR band number. Default depends on ORS model, please refer to the connection parameters"
-    },
-    "dl_nr_arfcn": {
-      "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
-      "title": "Expert: DL NR ARFCN",
-      "description": "Can be used instead of DL Frequency to directly set the Downlink NR Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL NR ARFCN)"
-    },
-    "ssb_nr_arfcn": {
-      "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
-    },
-    "ssb_pos_bitmap": {
-      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
-      "default": "10000000"
-    },
     "gnb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
       "description": "eNB ID. Equal to (ORS serial number + 524288) modulo 1048576 by default"
@@ -34,14 +11,6 @@
     "gnb_id_bits": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
       "default": 28
-    },
-    "pci": {
-      "$ref": "cell/common.json#/properties/pci",
-      "description": "Physical Cell ID. Range 0 to 1007. Equal to ORS Serial number modulo 1008 by default"
-    },
-    "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index",
-      "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
