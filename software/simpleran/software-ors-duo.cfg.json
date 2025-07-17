@@ -35,6 +35,14 @@
       "response": "sim/schema.json",
       "shared": true,
       "index": 4
+    },
+    "test": {
+      "title": "Test",
+      "description": "Test",
+      "software-type": "test",
+      "request": "test-input-schema.json",
+      "response": "test-schema.json",
+      "index": 5
     }
   }
 }

@@ -53,14 +53,6 @@
       "request": "instance-ue-item-input-schema.json",
       "response": "instance-ue-item-schema.json",
       "index": 6
-    },
-    "test": {
-      "title": "Test",
-      "description": "Test",
-      "software-type": "test",
-      "request": "test-input-schema.json",
-      "response": "test-schema.json",
-      "index": 7
     }
   }
 }
