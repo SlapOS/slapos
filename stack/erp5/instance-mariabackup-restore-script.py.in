@@ -45,13 +45,15 @@ for e in ('cert', 'key', 'cacert', 'crlfile'):
   if v:
     curl_args += ['--%s' % e, v]
 
-print('Checking backup...')
 if args.mariabackup_url:
+  print('Fetching remote backup from %s...' % args.mariabackup_url)
   backup_list = subprocess.check_output(
     [curl_executable] + curl_args + [args.mariabackup_url.rstrip('/') + '/index.txt']
   ).decode('utf-8').splitlines()
 else:
+  print('Using local backup at %s...' % mariadb_backup_directory)
   backup_list = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))
+print('Checking backup...')
 restore_backup_list = [e for e in backup_list if e.endswith('.full.xb.zstd')][-1:]
 if not restore_backup_list:
   print('No full backup found. Aborting')
@@ -65,8 +67,14 @@ if os.path.isdir(mariadb_data_directory):
   shutil.rmtree(mariadb_data_directory)
 os.mkdir(mariadb_data_directory)
 
-print('Restoring database...')
-with tempfile.TemporaryDirectory(dir=mariadb_backup_directory) as temp_dir:
+print('Setting up an intermediary directory for restoration')
+temp_dir = mariadb_data_directory + '.restore.tmp'
+if os.path.isdir(temp_dir):
+  shutil.rmtree(temp_dir)
+os.mkdir(temp_dir)
+
+try:
+  print('Restoring database...')
   for i, path in enumerate(restore_backup_list):
     print(path)
     if i == 0:
@@ -106,5 +114,7 @@ with tempfile.TemporaryDirectory(dir=mariadb_backup_directory) as temp_dir:
     print(subprocess.check_output([
       mariabackup_executable, '--prepare', '--target-dir=%s' % mariadb_data_directory,
     ] + extra_mariabackup_args).decode('utf-8'))
+finally:
+  shutil.rmtree(temp_dir)
 
 print('Backup restoration successfully completed.')
