@@ -610,6 +610,9 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
   def test_caucase_bootstrap_from_mariabackup(self):
     self.checkReplication(bootstrap='mariabackup-url')
 
+  def test_caucase_bootstrap_from_mariabackup_incremental(self):
+    self.checkReplication(bootstrap='mariabackup-url', backups=3)
+
   def test_nossl_no_boostrap(self):
     self.checkReplication(caucased=False, bootstrap=None)
 
@@ -619,7 +622,14 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
   def test_nossl_bootstrap_from_mariabackup(self):
     self.checkReplication(caucased=False, bootstrap='mariabackup-url')
 
-  def test_mariabackup_mroonga_replication(self):
+  def test_nossl_bootstrap_from_mariabackup_incremental(self):
+    self.checkReplication(
+      caucased=False,
+      bootstrap='mariabackup-url',
+      backups=3,
+    )
+
+  def test_mariabackup_mroonga_backup_and_incremental_backup(self):
     # Request primary Mariadb
     primary = self.requestPrimary(caucased=False)
     # Add fulltext data powered by Mroonga
@@ -639,6 +649,17 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
           """INSERT INTO test_mroonga_replication VALUES (1, "Hello")""")
       cnx.commit()
     # Generate mariabackup in primary
+    self.runBackup(primary, 'mariabackup-script')
+    # Add data in incremental mariabackup
+    cnx = self.getDatabaseConnection(primary)
+    with contextlib.closing(cnx):
+      cursor = cnx.cursor()
+      cursor.execute(
+          """REPLACE INTO test_mroonga_replication VALUES (1, "Hi")""")
+      cursor.execute(
+          """INSERT INTO test_mroonga_replication VALUES (2, "What's up?")""")
+      cnx.commit()
+    # Generate incremental mariabackup in primary
     self.runBackup(primary, 'mariabackup-script')
     # Request replica Mariadb
     replica = self.requestReplica(
@@ -669,7 +690,10 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
           """
           SELECT * FROM test_mroonga_replication
           """)
-      self.assertEqual(((1, "Hey"),(3, "Bye"),), cursor.fetchall())
+      self.assertEqual(
+        ((1, "Hey"),(2, "What's up?"),(3, "Bye"),),
+        cursor.fetchall()
+      )
 
 
 class TestMariaDBExternalCaucased(MariaDBReplicationTestCase):
