@@ -3,7 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "$ref": "instance-ors-gnb-input-schema.json#/properties",
     "ors_duo_1st_cell": {
       "title": "First Cell",
       "description": "Radio parameters of the first cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
