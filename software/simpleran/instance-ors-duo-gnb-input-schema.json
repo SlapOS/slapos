@@ -8,7 +8,7 @@
       "$ref": "ors-duo-common.json#/properties/ors_duo_2nd_cell",
       "oneOf": [
         {
-          "$ref": "ors-duo-gnb.json"
+          "$ref": "ors-gnb-cell.json"
         }
       ]
     },

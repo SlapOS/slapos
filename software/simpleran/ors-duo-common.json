@@ -8,7 +8,7 @@
       "description": "Radio parameters of the second cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
       "oneOf": [
         {
-          "$ref": "ors-duo-enb.json"
+          "$ref": "ors-enb-cell.json"
         }
       ],
       "type": "object",
