@@ -35,23 +35,6 @@
       ],
       "type": "object",
       "default": {}
-    },
-    "ors_gnb": {
-      "title": "gNB parameters",
-      "description": "gNB parameters",
-      "oneOf": [
-        {
-          "$ref": "ors-gnb.json"
-        },
-        {
-          "$ref": "ors-enb-gnb.json"
-        },
-        {
-          "$ref": "ors-enb-gnb-duo.json"
-        }
-      ],
-      "type": "object",
-      "default": {}
     }
   }
 }
