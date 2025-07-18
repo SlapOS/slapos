@@ -41,20 +41,17 @@
       "description": "gNB parameters",
       "oneOf": [
         {
-          "$ref": "ors-gnb-params.json"
+          "$ref": "ors-gnb.json"
+        },
+        {
+          "$ref": "ors-enb-gnb.json"
+        },
+        {
+          "$ref": "ors-enb-gnb-duo.json"
         }
       ],
       "type": "object",
       "default": {}
-    },
-    "n_antenna_dl": {
-      "$ref": "ors-duo-common.json#/properties/n_antenna_dl"
-    },
-    "n_antenna_ul": {
-      "$ref": "ors-duo-common.json#/properties/n_antenna_ul"
-    },
-    "ors_duo_mode": {
-      "$ref": "ors-duo-common.json#/properties/ors_duo_mode"
     }
   }
 }
