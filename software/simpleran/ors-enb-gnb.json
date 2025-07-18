@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "$ref": "ors-common.json#/properties",
+    "n_antenna_dl": {
+      "$ref": "ors-common.json#/properties/n_antenna_dl"
+    },
+    "n_antenna_ul": {
+      "$ref": "ors-common.json#/properties/n_antenna_ul"
+    },
+    "pci": {
+      "$ref": "cell/common.json#/properties/pci",
+      "description": "Physical Cell ID. Range 0 to 1007. Equal to ORS Serial number modulo 1008 by default"
+    },
+    "root_sequence_index": {
+      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
+    }
+  }
+}
