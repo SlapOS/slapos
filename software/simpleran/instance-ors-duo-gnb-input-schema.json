@@ -9,8 +9,10 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-gnb-cell.json",
+          "title": "NR Cell",
+          "type": "object",
           "properties": {
+            "$ref": "ors-gnb-cell.json#/properties",
             "dl_frequency": {
               "title": "TEST2",
               "description": "TEST2",
