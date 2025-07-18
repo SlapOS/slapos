@@ -9,16 +9,13 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-gnb-cell.json"
-        },
-        {
-          "type": "object",
+          "$ref": "ors-gnb-cell.json",
           "properties": {
-             "test2": {
-               "title": "TEST2",
-               "description": "TEST2",
-               "type": "number"
-             }
+            "dl_frequency": {
+              "title": "TEST2",
+              "description": "TEST2",
+              "type": "number"
+            }
           }
         }
       ],
