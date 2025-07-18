@@ -12,8 +12,6 @@
           "$ref": "ors-gnb-cell.json"
         },
         {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "title": "NR Cell",
           "type": "object",
           "properties": {
              "test2": {
