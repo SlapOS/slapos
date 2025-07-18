@@ -6,7 +6,8 @@
     "ors_duo_1st_cell": {
       "title": "First Cell",
       "description": "Radio parameters of the first cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
-      "oneOf": [
+      "unevaluatedProperties": false,
+      "allOf": [
         {
           "$ref": "ors-gnb-cell.json"
         }
@@ -20,6 +21,17 @@
       "oneOf": [
         {
           "$ref": "ors-gnb-cell.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "ors_gnb": {
+      "title": "gNB parameters",
+      "description": "gNB parameters",
+      "oneOf": [
+        {
+          "$ref": "ors-gnb-params.json"
         }
       ],
       "type": "object",
