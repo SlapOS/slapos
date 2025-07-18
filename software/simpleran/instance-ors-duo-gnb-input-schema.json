@@ -10,6 +10,11 @@
       "allOf": [
         {
           "$ref": "ors-gnb-cell.json"
+        },
+        "dl_frequency": {
+          "title": "DL Frequency TEST",
+          "description": "TEST",
+          "type": "number"
         }
       ],
       "type": "object",
