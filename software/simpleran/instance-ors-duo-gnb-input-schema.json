@@ -12,7 +12,16 @@
           "$ref": "ors-gnb-cell.json"
         },
         {
-          "$ref": "ors-gnb-cell-duo.json"
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "NR Cell",
+          "type": "object",
+          "properties": {
+             "test2": {
+               "title": "TEST2",
+               "description": "TEST2",
+               "type": "number"
+             }
+          }
         }
       ],
       "type": "object",
