@@ -3,9 +3,9 @@
   "title": "NR Cell",
   "type": "object",
   "properties": {
-    "test": {
-      "title": "TEST",
-      "description": "TEST",
+      "dl_frequency": {
+      "title": "TEST DL",
+      "description": "TEST DL",
       "type": "number"
     }
   }

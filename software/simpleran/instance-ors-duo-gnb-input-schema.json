@@ -13,16 +13,6 @@
         },
         {
           "$ref": "ors-gnb-cell-duo.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "dl_frequency": {
-              "title": "DL Frequency TEST",
-              "description": "TEST",
-              "type": "number"
-            }
-          }
         }
       ],
       "type": "object",
