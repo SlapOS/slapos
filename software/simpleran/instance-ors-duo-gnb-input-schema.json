@@ -11,10 +11,8 @@
         {
           "$ref": "ors-gnb-cell.json"
         },
-        "test2": {
-          "title": "TEST2",
-          "description": "TEST2",
-          "type": "number"
+        {
+          "$ref": "ors-gnb-cell-duo.json"
         }
       ],
       "type": "object",

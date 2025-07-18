@@ -3,10 +3,10 @@
   "title": "NR Cell",
   "type": "object",
   "properties": {
-      "dl_frequency": {
-      "title": "TEST DL",
-      "description": "TEST DL",
-      "type": "number"
-    }
+     "test2": {
+       "title": "TEST2",
+       "description": "TEST2",
+       "type": "number"
+     }
   }
 }
