@@ -12,6 +12,9 @@
           "$ref": "ors-gnb-cell.json"
         },
         {
+          "$ref": "ors-gnb-cell-duo.json"
+        },
+        {
           "type": "object",
           "properties": {
             "dl_frequency": {
