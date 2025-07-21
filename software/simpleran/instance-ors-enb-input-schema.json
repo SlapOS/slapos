@@ -18,7 +18,7 @@
       "type": "object",
       "default": {}
     },
-    "ors_enb": {
+    "ors_enb_gnb": {
       "title": "eNB Parameters",
       "description": "Parameters not related to the cell but to the eNB",
       "unevaluatedProperties": false,
