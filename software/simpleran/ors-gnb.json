@@ -3,68 +3,37 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "$ref": "ors-common.json#/properties",
-    "bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
-      "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
-      ],
-      "default": "20 MHz",
-      "type": "string"
+    "gnb_id": {
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
+      "description": "eNB ID. Equal to (ORS serial number + 524288) modulo 1048576 by default"
     },
-    "tdd_ul_dl_config": {
-      "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
+    "gnb_id_bits": {
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
+      "default": 28
     },
-    "lte_band": {
-      "title": "LTE band",
-      "description": "LTE band number. Default depends on ORS model, please refer to the connection parameters",
-      "type": "integer"
-    },
-    "dl_earfcn": {
-      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
-      "title": "Expert: DL EARFCN",
-      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
-    },
-    "tac": {
-      "$ref": "cell/lte/input-schema.json#/properties/tac",
-      "default": 1
-    },
-    "enb_id": {
-      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
-      "description": "eNB ID. Equal to ORS serial number modulo 1048576 by default"
-    },
-    "pci": {
-      "$ref": "cell/common.json#/properties/pci",
-      "description": "Physical Cell ID. Range 0 to 503. Equal to ORS Serial number modulo 504 by default"
-    },
-    "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index",
-      "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
-    },
-    "mme_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/mme_list",
+    "amf_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/amf_list",
       "default": {
         "Local core-network": {
-          "mme_addr": "127.0.1.100"
+          "amf_addr": "127.0.1.100"
         }
       }
     },
     "plmn_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
-      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
       "default": {
         "Test PLMN": {
-          "plmn": "00101"
+          "plmn": "00101",
+          "tac": 100
         }
       }
     },
-    "eutra_eutra_handover": {
-      "title": "EUTRA Handover",
+    "nssai": {
+      "$ref": "instance-enb-input-schema.json#/properties/nssai"
+    },
+    "nr_nr_handover": {
+      "title": "NR Handover",
       "type": "object",
       "default": {
         "event": {
@@ -75,7 +44,7 @@
       },
       "properties": {
         "event": {
-          "title": "EUTRA Handover event",
+          "title": "NR Handover event",
           "type": "object",
           "oneOf": [
             {
@@ -129,12 +98,12 @@
           ]
         },
         "hysteresis": {
-          "title": "EUTRA Handover hysteresis",
+          "title": "NR Handover hysteresis",
           "description": "Integer, range from 0 to 30. A3/A4/A5 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
           "type": "number"
         },
         "time_to_trigger": {
-          "title": "EUTRA Handover time to trigger",
+          "title": "NR Handover time to trigger",
           "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report.",
           "type": "number",
           "enum": [
@@ -158,8 +127,8 @@
         }
       }
     },
-    "eutra_nr_handover": {
-      "title": "NR Handover",
+    "nr_eutra_handover": {
+      "title": "EUTRA Handover",
       "type": "object",
       "default": {
         "event": {
@@ -170,7 +139,7 @@
       },
       "properties": {
         "event": {
-          "title": "NR Handover event",
+          "title": "EUTRA Handover event",
           "type": "object",
           "oneOf": [
             {
@@ -210,13 +179,13 @@
           ]
         },
         "hysteresis": {
-          "title": "NR Handover hysteresis",
-          "description": "Integer, range from 0 to 30. NR B1 or B2 hysteresis in 0.5dB steps.",
+          "title": "EUTRA Handover hysteresis",
+          "description": "Integer, range from 0 to 30. EUTRA B1 or B2 hysteresis in 0.5dB steps.",
           "type": "number"
         },
         "time_to_trigger": {
-          "title": "NR Handover time to trigger",
-          "description": "Time in ms during which the NR B1 or B2 event condition must be met before triggering the measurement report.",
+          "title": "EUTRA Handover time to trigger",
+          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report.",
           "type": "number",
           "enum": [
             0,
@@ -239,14 +208,14 @@
         }
       }
     },
-    "x2_peers": {
-      "title": "X2 Peers",
-      "description": "X2 Peers",
+    "xn_peers": {
+      "title": "XN Peers",
+      "description": "XN Peers",
       "patternProperties": {
         ".*": {
           "properties": {
-            "x2_addr": {
-              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
+            "xn_addr": {
+              "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
             }
           },
           "type": "object"
