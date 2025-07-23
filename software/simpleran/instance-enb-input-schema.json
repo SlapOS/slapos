@@ -30,6 +30,9 @@
       "description": "List of MME to which the eNodeB is connected. (must be set if there are LTE cells)",
       "patternProperties": {
         ".*": {
+          "required": [
+            "mme_addr"
+          ],
           "properties": {
             "mme_addr": {
               "title": "MME Address",
@@ -92,6 +95,9 @@
       "description": "List of AMF to which the gNodeB is connected. (must be set if there are NR cells)",
       "patternProperties": {
         ".*": {
+          "required": [
+            "amf_addr"
+          ],
           "properties": {
             "amf_addr": {
               "title": "AMF Address",
@@ -114,6 +120,10 @@
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12. (must be set if there are NR cells)",
       "patternProperties": {
         ".*": {
+          "required": [
+            "plmn",
+            "tac"
+          ],
           "properties": {
             "plmn": {
               "title": "Public Land Mobile Network",

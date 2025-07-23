@@ -37,7 +37,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software-ors.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software-ors-duo.cfg')))
 
 core_network_param_dict = {
     'testing': True,
@@ -54,6 +54,14 @@ param_dict = {
         'pci': 250,
         'tac': '0x1717',
         'root_sequence_index': '1',
+    },
+    'ors_cell2': {
+        'tx_gain': 27,
+        'rx_gain': 27,
+        'cell_id': '0x02',
+        'pci': 251,
+        'tac': '0x2727',
+        'root_sequence_index': '2',
     },
     'ors_enb_gnb': {
         'n_antenna_dl': 2,
@@ -192,12 +200,11 @@ gnb_param_dict2 = {
         },
     },
 }
-for s in "ors_cell1 ors_cell2 ors_enb_gnb ors".split(" "):
-    enb_param_dict[s].update(param_dict[s])
-    gnb_param_dict1[s].update(gnb_param_dict[s])
-    gnb_param_dict1[s].update(param_dict[s])
-    gnb_param_dict2[s].update(gnb_param_dict[s])
-    gnb_param_dict2[s].update(param_dict[s])
+enb_param_dict.update(param_dict)
+gnb_param_dict1.update(gnb_param_dict)
+gnb_param_dict1.update(param_dict)
+gnb_param_dict2.update(gnb_param_dict)
+gnb_param_dict2.update(param_dict)
 
 def load_yaml_conf(slap, name):
     conf_file = glob.glob(os.path.join(
