@@ -68,6 +68,34 @@
       "$ref": "#/properties/root_sequence_index",
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
+    },
+    "cipher_algo_pref": {
+      "title": "Preferred Cipher algorithms",
+      "decription": "Set the preferred algorithms for RRC and User Plane encryption in decreasing order of preference. If none match the UE capabilities, then NEA0 (no encryption) is selected",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "NEA1 (Snow 3G)",
+          "NEA2 (128 bit AES)",
+          "NEA3 (ZUC)"
+        ]
+      },
+      "default": []
+    },
+    "integ_algo_pref": {
+      "title": "Preferred Integrity algorithms",
+      "decription": "Set the preferred algorithms for RRC integrity (and optionally User Plane integrity) check in decreasing order of preference. If none match the UE capabilities, then NIA0 (no integrity check) is selected. (Default: NEA2, NEA1)",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "NEA1 (Snow 3G)",
+          "NEA2 (128 bit AES)",
+          "NEA3 (ZUC)"
+        ]
+      },
+      "default": ["NEA2 (128 bit AES)","NEA1 (Snow 3G)"]
     }
   },
   "$defs": {
