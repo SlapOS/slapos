@@ -22,10 +22,15 @@
       "title": "TDD Configuration",
       "type": "string",
       "enum": [
-        "[Configuration 2] 5ms 2UL 6DL (default)",
-        "[Configuration 6] 5ms 5UL 3DL (maximum uplink)"
+        "[Configuration 0] DSUUUDSUUU (5ms,  2DL/6UL), S-slot=10DL:2GP:2UL, maximum uplink",
+        "[Configuration 1] DSUUDDSUUD (5ms,  4DL/4UL), S-slot=10DL:2GP:2UL, balanced downlink and uplink",
+        "[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default",
+        "[Configuration 3] DSUUUDDDDD (10ms, 6DL/3UL), S-slot=10DL:2GP:2UL",
+        "[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink",
+        "[Configuration 5] DSUDDDDDDD (10ms, 8DL/1UL), S-slot=10DL:2GP:2UL, maximum downlink",
+        "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink"
       ],
-      "default": "[Configuration 2] 5ms 2UL 6DL (default)",
+      "default": "[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default",
       "options": {
         "dependencies": {
           "rf_mode": "tdd"
