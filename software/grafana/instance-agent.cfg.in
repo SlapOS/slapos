@@ -604,6 +604,7 @@ init =
       "path_key": "filename",
       "tag": tag,
       "db": db_path,
+      "skip_long_lines": "on",
     }
     if parser:
       inpt['parser'] = parser
@@ -788,7 +789,7 @@ init =
           },
           {
             "state": "continuation",
-            "regex": "^[^\d]+.*",
+            "regex": "^([^#].*|)$",
             "next_state": "continuation"
           }
         ]
