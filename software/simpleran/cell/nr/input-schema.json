@@ -18,17 +18,34 @@
       "$ref": "#/properties/cell_type",
       "const": "nr"
     },
+    "tdd_ul_dl_config3": {
+      "title": "TDD Configuration 2",
+      "description": "TDD Configuration 2",
+      "type": "string",
+      "oneOf": [
+        {
+          "const": "1",
+          "title": "Test 1"
+        },
+        {
+          "const": "2",
+          "title": "Test 2"
+        }
+      ]
+    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "type": "string",
       "enum": [
-        "5ms 2UL 7DL 4/6 (default)",
-        "2.5ms 1UL 3DL 2/10",
-        "5ms 6UL 3DL 10/2 (high uplink)",
-        "5ms 7UL 2DL 4/6 (EXPERIMENTAL very high uplink)",
-        "5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)"
+        "DDDDDDDSUU - 5ms 2UL 7DL 4/6 (default)",
+        "DDDSUUDDDD - 5ms 2UL 7DL 4/6",
+        "DDDSUUUUDD - 5ms 4UL 5DL 4/6 (balanced downlink and uplink)",
+        "DDDSUUUUUU - 5ms 6UL 3DL 10/2 (high uplink)",
+        "DDSUUUUUUU - 5ms 7UL 2DL 4/6 (EXPERIMENTAL very high uplink)",
+        "DSUUUUUUUU - 5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)",
+        "DDDSU - 2.5ms 1UL 3DL 2/10 (reduced latency)"
       ],
-      "default": "5ms 2UL 7DL 4/6 (default)",
+      "default": "DDDDDDDSUU - 5ms 2UL 7DL 4/6 (default)",
       "options": {
         "dependencies": {
           "rf_mode": "tdd"
