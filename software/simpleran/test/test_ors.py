@@ -122,7 +122,7 @@ enb_param_dict = {
         # ors_version for tests is B39, so earfcn needs to be within B39
         'dl_earfcn': 38450,
         'bandwidth': "10 MHz",
-        'tdd_ul_dl_config': 'DSUUUUUUUU - 5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)',
+        'tdd_ul_dl_config': 'DSUUUUUUUU (5ms,   8UL/1DL), S-slot=10DL:2GP:2UL,  EXPERIMENTAL maximum uplink)',
     },
     'ors_enb_gnb': {
         'enb_id': '0x17',
@@ -172,7 +172,7 @@ gnb_param_dict = {
 }
 gnb_param_dict1 = {
     'ors_cell1': {
-        'tdd_ul_dl_config': 'DDDSU - 2.5ms 1UL 3DL 2/10 (reduced latency)',
+        'tdd_ul_dl_config': 'DDDSU      (2.5ms, 1UL/3DL), S-slot=10DL:2GP:2UL,  reduced latency)',
     },
     'ors_enb_gnb': {
         'plmn_list': {
@@ -183,7 +183,7 @@ gnb_param_dict1 = {
 }
 gnb_param_dict2 = {
     'ors_cell1': {
-        'tdd_ul_dl_config': 'DDDSUUUUUU - 5ms 6UL 3DL 10/2 (high uplink)',
+        'tdd_ul_dl_config': 'DDDSUUUUUU (5ms,   6UL/3DL), S-slot=2DL:2GP:10UL, high uplink)',
     },
     'ors_enb_gnb': {
         'nssai': {
