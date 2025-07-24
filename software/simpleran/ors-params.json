@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "log_phy_debug": {
+      "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug"
+    },
+    "enb_stats_fetch_period": {
+      "$ref": "instance-enb-input-schema.json#/properties/enb_stats_fetch_period"
+    },
+    "enb_drb_stats_enabled": {
+      "$ref": "instance-enb-input-schema.json#/properties/enb_drb_stats_enabled"
+    },
+    "max_rx_sample_db": {
+      "$ref": "instance-enb-input-schema.json#/properties/max_rx_sample_db"
+    },
+    "min_rxtx_delay": {
+      "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
+    },
+    "xlog_enabled": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
+    },
+    "xlog_forwarding_enabled": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+    },
+    "wendelin_telecom_software_release_url": {
+      "$ref": "instance-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
+    },
+    "xlog_fluentbit_forward_host": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_host"
+    },
+    "xlog_fluentbit_forward_port": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_port"
+    },
+    "xlog_fluentbit_forward_shared_key": {
+      "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key"
+    }
+  }
+}
