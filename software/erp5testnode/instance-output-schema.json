@@ -1,13 +1,13 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by Apache Frontend instanciation",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by testnode instanciation",
   "properties": {
-    "password": {
-      "description": "Password to access shellinabox.",
-      "type": "string"
-    },
     "url": {
       "description": "IPv6 URL to access the shell in a box.",
+      "type": "string"
+    },
+    "log-frontend-url": {
+      "description": "URL to access the testnode logs.",
       "type": "string"
     }
   },
