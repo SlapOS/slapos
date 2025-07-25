@@ -50,6 +50,7 @@ def runTestSuite(args, d):
   executable_filepath = args[0]
   with open(executable_filepath, 'r') as f:
     line = f.readline()
+ env.update(d['environment'])
   argument_list = []
   if line[:2] == '#!':
     executable_filepath = line[2:].strip()
