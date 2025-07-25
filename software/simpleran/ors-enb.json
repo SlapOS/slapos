@@ -3,37 +3,29 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "gnb_id": {
-      "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
-      "description": "eNB ID. Equal to (ORS serial number + 524288) modulo 1048576 by default"
+    "enb_id": {
+      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
+      "description": "eNB ID. Equal to ORS serial number modulo 1048576 by default"
     },
-    "gnb_id_bits": {
-      "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
-      "default": 28
-    },
-    "amf_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/amf_list",
+    "mme_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/mme_list",
       "default": {
         "Local core-network": {
-          "amf_addr": "127.0.1.100"
+          "mme_addr": "127.0.1.100"
         }
       }
     },
     "plmn_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
-      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: 00101)",
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
       "default": {
         "Test PLMN": {
-          "plmn": "00101",
-          "tac": 100
+          "plmn": "00101"
         }
       }
     },
-    "nssai": {
-      "$ref": "instance-enb-input-schema.json#/properties/nssai"
-    },
-    "nr_nr_handover": {
-      "title": "NR Handover",
+    "eutra_eutra_handover": {
+      "title": "EUTRA Handover",
       "type": "object",
       "default": {
         "event": {
@@ -44,7 +36,7 @@
       },
       "properties": {
         "event": {
-          "title": "NR Handover event",
+          "title": "EUTRA Handover event",
           "type": "object",
           "oneOf": [
             {
@@ -98,12 +90,12 @@
           ]
         },
         "hysteresis": {
-          "title": "NR Handover hysteresis",
+          "title": "EUTRA Handover hysteresis",
           "description": "Integer, range from 0 to 30. A3/A4/A5 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
           "type": "number"
         },
         "time_to_trigger": {
-          "title": "NR Handover time to trigger",
+          "title": "EUTRA Handover time to trigger",
           "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report.",
           "type": "number",
           "enum": [
@@ -127,8 +119,8 @@
         }
       }
     },
-    "nr_eutra_handover": {
-      "title": "EUTRA Handover",
+    "eutra_nr_handover": {
+      "title": "NR Handover",
       "type": "object",
       "default": {
         "event": {
@@ -139,7 +131,7 @@
       },
       "properties": {
         "event": {
-          "title": "EUTRA Handover event",
+          "title": "NR Handover event",
           "type": "object",
           "oneOf": [
             {
@@ -179,13 +171,13 @@
           ]
         },
         "hysteresis": {
-          "title": "EUTRA Handover hysteresis",
-          "description": "Integer, range from 0 to 30. EUTRA B1 or B2 hysteresis in 0.5dB steps.",
+          "title": "NR Handover hysteresis",
+          "description": "Integer, range from 0 to 30. NR B1 or B2 hysteresis in 0.5dB steps.",
           "type": "number"
         },
         "time_to_trigger": {
-          "title": "EUTRA Handover time to trigger",
-          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report.",
+          "title": "NR Handover time to trigger",
+          "description": "Time in ms during which the NR B1 or B2 event condition must be met before triggering the measurement report.",
           "type": "number",
           "enum": [
             0,
@@ -208,14 +200,14 @@
         }
       }
     },
-    "xn_peers": {
-      "title": "XN Peers",
-      "description": "XN Peers",
+    "x2_peers": {
+      "title": "X2 Peers",
+      "description": "X2 Peers",
       "patternProperties": {
         ".*": {
           "properties": {
-            "xn_addr": {
-              "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
+            "x2_addr": {
+              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
             }
           },
           "type": "object"
