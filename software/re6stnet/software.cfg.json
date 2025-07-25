@@ -9,7 +9,7 @@
       "serialisation": "json-in-xml",
       "request": "instance-re6stnet-input-schema.json",
       "response": "instance-re6stnet-output-schema.json",
-      "index": 0
+      "index": 1
     },
     "default-slave": {
       "title": "Re6st Token",
@@ -18,7 +18,7 @@
       "request": "instance-re6stnet-slave-input-schema.json",
       "response": "instance-re6stnet-output-schema.json",
       "shared": true,
-      "index": 1
+      "index": 0
     }
   }
 }

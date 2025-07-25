@@ -1,6 +1,58 @@
 Changelog
 =========
 
+Version 1.0.423 (2025-06-30)
+-------------
+
+* Fix default parameters for ORS in N28 and N39
+* Make connection parameters more readable by rounding floats to 3 decimal digits
+* ORS DUO: add TDD UL/DL ratio parameter on 2nd cell
+* ORS DUO: fix FDD
+
+Version 1.0.418 (2025-06-03)
+-------------
+
+* Add support for ORS DUO (MIMO 4x4 50 MHz and Carrier aggregation 100 MHz MIMO 2x2)
+* Major changes regarding UE power control (very important especially for deployment or long distance tests):
+  * Disable DPC algorithm
+  * Set a correct power reference signal value for UE's to properly adjust their power
+* Fix bug causing RX Gain to be zero
+* Add more connection parameters
+* Improve parameter description
+* Reduce size of software release
+* add missing /websocket in websocket frontend URL
+* set default bandwidth to 50 for 5G
+
+Version 1.0.412 (2025-05-02)
+-------------
+
+* Fix published websocket URL missing "/websocket"
+
+Version 1.0.409 (2025-04-07)
+-------------
+
+**SIM Cards:**
+
+* Use MSIN and PLMN instead of IMSI in sim parameters
+* Auto-fill IMPI and IMPU based on PLMN and MSIN
+* Support Amarisoft default SIM / eSIM profile
+
+**eNB / gNB:**
+
+* Re-organize connection parameters names
+* Limit all log sizes and improve log rotation
+* Control TX power directly in dBm instead of using tx_gain
+* Set frequency by inputing frequency directly instead of earfcn / nr_arfcn
+* Fix 8UL 1DL mamimum uplink configuration
+* Fix TX power offset: this is important for UE's to correctly adjust their power based on what they receive
+
+Version 1.0.399 (2025-02-20)
+-------------
+
+* Publish SSB NR ARFCN
+* Fix SSB NR ARFCN computation, affects band N79
+* Fix bug affecting N77 ORS
+
 Version 1.0.390 (2025-01-21)
 -------------
 
@@ -43,7 +95,7 @@ Version 1.0.371 (2024-10-09)
 **eNB / gNB changes:**
 
 * add compatibility with our KPI calculation and storage platform
-* support external MBMSGW
+* support setting source S1AP address and port
 * display current frequency and band
 * add promise testing if frequency is out of bounds (ORS only)
 * fix eNB configuration for 1.4MHz bandwidth

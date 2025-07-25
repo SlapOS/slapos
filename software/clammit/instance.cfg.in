@@ -34,7 +34,7 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
-[instance-parameter]
+[slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
@@ -74,7 +74,7 @@ clamd-temporary-directory = ${directory:tmp}
 freshclam-log-file = ${directory:var.log}/freshclam.log
 freshclam-pid-file = ${directory:var.run}/freshclam.pid
 clammit-log-file = ${directory:var.log}/clammit.log
-clammit-listen-address = ${instance-parameter:ipv4-random}
+clammit-listen-address = ${slap-configuration:ipv4-random}
 clammit-listen-port = 8438
 clammit-url = http://${:clammit-listen-address}:${:clammit-listen-port}
 
@@ -253,7 +253,7 @@ csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
 
 [caucased]
 port = 19980
-ip = ${instance-parameter:ipv6-random}
+ip = ${slap-configuration:ipv6-random}
 netloc = [${:ip}]:${:port}
 url = http://${:netloc}/
 
@@ -276,7 +276,7 @@ caucase.caucased(
 ################################################################################
 
 [frontend-config]
-address = ${instance-parameter:ipv6-random}
+address = ${slap-configuration:ipv6-random}
 port = 3000
 url = https://[${:address}]:${:port}
 socket = ${directory:var.run}/haproxy.sock

@@ -433,13 +433,12 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
     """Test HTML to PDF conversion using wkhtmltopdf."""
     self.assert_pdf_conversion_metadata(
       self.html_to_pdf_libreoffice_convert,
-      expected_producer="LibreOffice 7.5",
+      expected_producer="LibreOffice 25.2.3.2 (X86_64) / LibreOffice Community",
       expected_font_mapping=LIBREOFFICE_FONT_MAPPING,
     )
 
   def test_draw_to_png(self):
     """Test Draw's ODG to PNG conversion."""
-    reference_png = PIL.Image.open("data/test_draw_to_png.png")
     with open("data/test_draw_to_png.odg", "rb") as f:
       actual_png_data = self.convert_file(
         f.read(),
@@ -449,12 +448,13 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
       actual_png = PIL.Image.open(io.BytesIO(actual_png_data))
 
     # Save a snapshot
-    with open(
-      Path(self.computer_partition_root_path) / "test_draw_to_png.png",
-      "wb",
-    ) as f:
-      f.write(actual_png_data)
+    (
+      self.computer_partition_root_path
+      / "srv"
+      / "test_draw_to_png.png"
+    ).write_bytes(actual_png_data)
 
+    reference_png = PIL.Image.open("data/test_draw_to_png.png")
     self.assertImagesSame(actual_png, reference_png)
 
   def test_html_to_text(self):

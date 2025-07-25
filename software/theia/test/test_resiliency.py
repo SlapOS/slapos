@@ -391,9 +391,15 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
 
 class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
   def test_twice(self):
+    # Create ~/exclude and ~/exclude/excluded in import partition
+    excluded_path = self.getPartitionPath('import', 'exclude', 'excluded')
+    self.writeFile(excluded_path,
+      'This file should be be kept during resilient restore (excluded from rdiff deletion)')
     # Run two synchronisations on the same instances
     # to make sure everything still works the second time
     self._doSync()
+    # Check if excluded path in import partition is not deleted
+    self.assertTrue(os.path.exists(excluded_path))
 
   def checkLog(self, log_path, initial=[], newline="Hello"):
     with open(log_path) as f:
@@ -410,6 +416,20 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     dummy_target_path = self.getPartitionPath('export', 'srv', 'project', 'dummy')
     shutil.copytree(os.path.dirname(dummy_software_url), dummy_target_path)
     self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
+
+    # the software.cfg extends slapos.cfg using a relative path, but since we
+    # copied it to another location, the relative path can no longer be resolved.
+    # Rewrite the software.cfg to replace it by an absolute path.
+    with open(self._test_software_url, 'r') as f:
+      software_cfg_content = f.read()
+    assert 'extends = ../../../../stack/slapos.cfg' in software_cfg_content
+    stack_slapos_cfg_path = os.path.join(
+      os.path.dirname(dummy_software_url), '../../../../stack/slapos.cfg')
+    with open(self._test_software_url, 'w') as f:
+      f.write(software_cfg_content.replace(
+        'extends = ../../../../stack/slapos.cfg',
+        f'extends = {stack_slapos_cfg_path}',
+      ))
 
     # Deploy dummy instance in export partition
     self._deployEmbeddedSoftware(self._test_software_url, 'dummy_instance')

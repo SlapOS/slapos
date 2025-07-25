@@ -1,0 +1,21 @@
+diff -ur matplotlib-2.1.2.orig/src/ft2font.cpp matplotlib-2.1.2/src/ft2font.cpp
+--- matplotlib-2.1.2.orig/src/ft2font.cpp	2018-01-18 03:36:16.000000000 +0200
++++ matplotlib-2.1.2/src/ft2font.cpp	2025-03-27 11:50:11.241526158 +0200
+@@ -204,7 +204,7 @@
+         v_control = v_start;
+ 
+         point = outline.points + first;
+-        tags = outline.tags + first;
++        tags = (char *)outline.tags + first;
+         tag = FT_CURVE_TAG(tags[0]);
+ 
+         // A contour cannot start with a cubic control point!
+@@ -320,7 +320,7 @@
+         v_control = v_start;
+ 
+         point = outline.points + first;
+-        tags = outline.tags + first;
++        tags = (char *)outline.tags + first;
+         tag = FT_CURVE_TAG(tags[0]);
+ 
+         double x, y;

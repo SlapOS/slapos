@@ -112,7 +112,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           do active_check_list.append('rise %s' % (slave_instance['health-check-rise'])) %}
 {%-           do active_check_list.append('fall %s' % (slave_instance['health-check-fall'])) %}
 {%-           if slave_instance['health-check-http-method'] != 'CONNECT' %}
-{%-             do active_check_option_list.append('option httpchk %s %s %s' % (slave_instance['health-check-http-method'], slave_instance['health-check-http-path'] | urlencode | replace('%', '%%'), slave_instance['health-check-http-version'])) %}
+{%-             do active_check_option_list.append('option httpchk %s %s' % (slave_instance['health-check-http-method'], slave_instance['health-check-http-path'] | urlencode | replace('%', '%%'))) %}
 {%-           endif %}
 {%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
 {%-         endif %}

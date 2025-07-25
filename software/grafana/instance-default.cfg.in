@@ -30,16 +30,22 @@ cert = ${slap-connection:cert-file}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
+bin = ${:home}/bin
 etc = ${:home}/etc
+etc-cron.d = ${:etc}/cron.d
 var = ${:home}/var
+var-crontabs = ${:var}/crontabs
+var-cronstamps = ${:var}/cronstamps
+var-log = ${:var}/log
 tmp = ${:home}/tmp
 srv = ${:home}/srv
+srv-backup = ${:srv}/backup
 service = ${:etc}/service
 promise = ${:etc}/promise
 influxdb-data-dir = ${:srv}/influxdb
 grafana-dir = ${:srv}/grafana
 grafana-data-dir = ${:grafana-dir}/data
-grafana-logs-dir = ${:var}/log
+grafana-logs-dir = ${:var-log}
 grafana-plugins-dir = ${:grafana-dir}/plugins
 grafana-provisioning-config-dir = ${:grafana-dir}/provisioning-config
 grafana-provisioning-datasources-dir = ${:grafana-provisioning-config-dir}/datasources
@@ -49,10 +55,31 @@ loki-dir = ${:srv}/loki
 loki-storage-filesystem-directory = ${:loki-dir}/chunks
 loki-compactor-working-directory = ${:loki-dir}/compactor
 srv-caucased-loki = ${:srv}/caucased/loki
-backup-caucased-loki = ${:srv}/backup/caucased/loki
+backup-caucased-loki = ${:srv-backup}/caucased/loki
 caucase-updater-loki-server = ${:srv}/caucase-updater/loki-server
 caucase-updater-loki-promise-client = ${:srv}/caucase-updater/loki-client-promise
 caucase-updater-loki-grafana-client = ${:srv}/caucase-updater/loki-client-grafana
+backup-grafana = ${:srv-backup}/grafana
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ dcron_bin }}
+cron-entries = ${directory:etc-cron.d}
+crontabs = ${directory:var-crontabs}
+cronstamps = ${directory:var-cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${directory:bin}/crond
+
+[cron-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${cron:binary}
+wrapper-path = ${directory:service}/crond
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${directory:bin}/cron_simplelogger
+log = ${directory:var-log}/cron.log
 
 # macros
 [generate-insecure-self-signed-certificate]
@@ -203,6 +230,7 @@ context =
 depends =
   ${grafana-provisioning-datasources-config-file:location}
   ${grafana-provisioning-dashboards-config-file:output}
+  ${grafana-backup-crontab-entry:command}
 
 [grafana-provisioning-datasources-config-file]
 recipe = slapos.recipe.build
@@ -260,7 +288,7 @@ install =
     "jsonData": {
       "tlsAuth": True,
       "tlsAuthWithCACert": True,
-      "maxLines": 5000,  # XXX see max_entries_limit_per_query in loki config
+      "maxLines": 1000,  # XXX see max_entries_limit_per_query in loki config
     },
     "secureJsonData": {
       # XXX maybe we can use file directly ?
@@ -309,6 +337,14 @@ command-line =
     "if .datasources[1].secureJsonData.tlsClientCert != null and .datasources[1].secureJsonData.tlsCACert != null then true else false end"
     ${grafana-provisioning-datasources-config-file:location}
 wrapper-path = ${directory:promise}/${:_buildout_section_name_}
+
+[grafana-backup-crontab-entry]
+recipe = slapos.cookbook:cron.d
+name = ${:_buildout_section_name_}
+cron-entries = ${cron:cron-entries}
+time = daily
+command = {{ sqlite3_bin }} ${grafana:data-dir}/grafana.db ".output ${directory:backup-grafana}/$(date +%F).sql" ".dump" ".exit"
+depends = ${cron-service:recipe}
 
 [loki-server]
 storage-filesystem-directory = ${directory:loki-storage-filesystem-directory}
@@ -587,7 +623,7 @@ url = http://${:netloc}/
 
 # service_auto_approve_count is 4 for the default:
 #   - server: loki
-#   - clients: loki promise, grafana, promtail
+#   - clients: loki promise, grafana, fluent-bit
 {{
 caucase.caucased(
     prefix='loki-caucased',
@@ -682,19 +718,19 @@ partition-id = ${slap-connection:partition-id}
 <= request-slapos-partition-base
 software-type = agent
 name = agent
-return = facl-script promtail-url
+return = facl-script fluent-bit-url
 config-applications = ${request-agent-config:applications}
 config-loki = ${request-agent-config:loki}
 config-influxdb = ${request-agent-config:influxdb}
 
-[agent-promtail-url]
+[agent-fluent-bit-url]
 recipe = slapos.cookbook:urlparse
-url = ${request-agent:connection-promtail-url}
+url = ${request-agent:connection-fluent-bit-url}
 
-[agent-promtail-listen-promise]
+[agent-fluent-bit-listen-promise]
 <= check-port-listening-promise
-hostname = ${agent-promtail-url:host}
-port = ${agent-promtail-url:port}
+hostname = ${agent-fluent-bit-url:host}
+port = ${agent-fluent-bit-url:port}
 
 [promises]
 recipe =
@@ -707,7 +743,7 @@ instance-promises =
   ${grafana-provisioning-datasources-config-file-promise:wrapper-path}
   ${loki-server-listen-promise:path}
   ${apache-frontend-available-promise:path}
-  ${agent-promtail-listen-promise:path}
+  ${agent-fluent-bit-listen-promise:path}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
@@ -722,4 +758,4 @@ loki-url = ${loki-server:url}
 loki-caucase-url = ${loki-caucased:url}
 url = ${apache-frontend:connection-secure_access}
 agent-facl-script = ${request-agent:connection-facl-script}
-agent-promtail-url = ${request-agent:connection-promtail-url}
+agent-fluent-bit-url = ${request-agent:connection-fluent-bit-url}

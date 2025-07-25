@@ -90,6 +90,20 @@
  #               ]
  #          },
  #
+ #       # rate limits
+ #       "rate-limits": {
+ #         "tarpit-duration": "10s",
+ #         "rules": [
+ #           {
+ #             "max-requests": 3,
+ #             "time-window": "20s",
+ #             "url-path-pattern": "/200/.*limited",
+ #             "action": "tarpit",
+ #             "expire": "20s"
+ #           },
+ #         ],
+ #       },
+ #
  #       # The mapping of zope paths.
  #       # This is a Zope specific feature used only to provide https while running
  #       # ERP5 "unit test" suite.
@@ -151,6 +165,9 @@ global
 
   stats socket {{ parameter_dict['stats-socket'] }} level admin
 
+  {% if len(parameter_dict['rate-limits']['rules']) > 3 %}
+  tune.stick-counters {{ len(parameter_dict['rate-limits']['rules']) }}
+  {% endif %}
 
 defaults
   mode http
@@ -190,11 +207,15 @@ listen {{ name }}
   bind {{ parameter_dict['ipv4'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
   bind {{ parameter_dict['ipv6'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
 
+  acl acl_verified_frontend ssl_c_used ssl_c_verify 0
+  http-request set-var(txn.client_real_ip) req.hdr(X-Forwarded-For) if acl_verified_frontend
+  http-request set-var(txn.client_real_ip) src unless acl_verified_frontend
+
   # remove X-Forwarded-For unless client presented a verified certificate
-  http-request del-header X-Forwarded-For unless { ssl_c_verify 0 } { ssl_c_used 1 }
+  http-request del-header X-Forwarded-For unless acl_verified_frontend
   # set Remote-User if client presented a verified certificate
   http-request del-header Remote-User
-  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if { ssl_c_verify 0 } { ssl_c_used 1 }
+  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if acl_verified_frontend
 
   # reject invalid host header before using it in path
   http-request deny deny_status 400 if { req.hdr(host) -m sub / }
@@ -231,6 +252,29 @@ backend {{ name }}
   timeout server {{ backend['timeout'] + 3 }}s
 {%-  endif %}
 
+  timeout tarpit {{ parameter_dict['rate-limits']['tarpit-duration'] }}
+
+{%- for rule in parameter_dict['rate-limits']['rules'] %}
+  {%- if rule['url-path-pattern'] is defined %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_match path_reg {{ rule['url-path-pattern'] }}
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded sc{{ loop.index0 }}_http_req_rate(stick_table_{{ rule['table-name'] }}) gt {{ rule['max-requests'] }}
+  {%- else %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_match always_true
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded always_true
+  {%- endif %}
+  {%- if rule['status-code'] is defined %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_status_code_hit status {{ rule['status-code'] }}
+  acl acl_rate_limit_{{ rule['table-name'] }}_status_code_exceeded sc{{ loop.index0 }}_gpc0_rate(stick_table_{{ rule['table-name'] }}) ge {{ rule['max-requests'] }}
+  http-response sc-inc-gpc0({{ loop.index0 }}) if acl_rate_limit_{{ rule['table-name'] }}_status_code_hit
+  {%- else %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_status_code_exceeded always_true
+  {%- endif %}
+  http-request track-sc{{ loop.index0 }} var(txn.client_real_ip) table stick_table_{{ rule['table-name'] }} if acl_rate_limit_{{ rule['table-name'] }}_url_match
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded sc{{ loop.index0 }}_http_req_rate(stick_table_{{ rule['table-name'] }}) gt {{ rule['max-requests'] }}
+  http-request {{ rule['action'] }} deny_status 429 if acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded acl_rate_limit_{{ rule['table-name'] }}_url_match acl_rate_limit_{{ rule['table-name'] }}_status_code_exceeded
+{% endfor %}
+
+
 {%   set has_webdav = [] -%}
 {%   for address, connection_count, webdav in backend['backend-list'] -%}
 {%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
@@ -265,4 +309,12 @@ backend backend_{{ group_name }}_{{ name }}
   timeout server 8h
   server {{ name }} {{ urllib_parse.urlparse(url).netloc }}
 {%-  endfor %}
+{% endfor %}
+
+
+{%- for rule in parameter_dict['rate-limits']['rules'] %}
+backend stick_table_{{ rule['table-name'] }}
+  stick-table type string size {{ rule['table-size'] }} expire {{ rule['expire'] }} store
+  {%- if rule['url-path-pattern'] is defined %} http_req_rate({{ rule['time-window'] }}) {% endif %}
+  {%- if rule['status-code'] is defined %} gpc0_rate({{ rule['time-window'] }}) {% endif %}
 {% endfor %}

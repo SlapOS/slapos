@@ -9,9 +9,10 @@ import zc.buildout.testing
 import zc.buildout.buildout
 import passlib.hash
 from slapos.recipe import random
+from slapos.util import str2bytes
 
 
-class TestPassword(unittest.TestCase):
+class PasswordMixin(object):
   def setUp(self):
     self.buildout = zc.buildout.testing.Buildout()
     parts_directory = tempfile.mkdtemp()
@@ -25,6 +26,8 @@ class TestPassword(unittest.TestCase):
     )
     return recipe
 
+
+class TestPassword(PasswordMixin, unittest.TestCase):
   def test_empty_options(self):
     recipe = self._makeRecipe({})
     passwd = self.buildout["random"]["passwd"]
@@ -70,35 +73,6 @@ class TestPassword(unittest.TestCase):
     self._makeRecipe({'storage-path': tf.name}, "another").install()
     self.assertEqual(self.buildout["another"]["passwd"], 'sécret')
 
-  def test_storage_path_legacy_format(self):
-    with tempfile.NamedTemporaryFile() as tf:
-      tf.write(b'secret\n')
-      tf.flush()
-
-      self._makeRecipe({'storage-path': tf.name}).install()
-      passwd = self.buildout["random"]["passwd"]
-      self.assertEqual(passwd, 'secret')
-      tf.flush()
-      with open(tf.name) as f:
-        self.assertEqual(json.load(f), {'': 'secret'})
-
-      self._makeRecipe({'storage-path': tf.name}, "another").install()
-      self.assertEqual(self.buildout["another"]["passwd"], passwd)
-
-  def test_storage_path_legacy_format_passwd_set_in_options(self):
-    with tempfile.NamedTemporaryFile() as tf:
-      tf.write(b'secret\n')
-      tf.flush()
-      self._makeRecipe({'storage-path': tf.name, 'passwd': 'secret'}).install()
-      passwd = self.buildout["random"]["passwd"]
-      self.assertEqual(passwd, 'secret')
-      tf.flush()
-      with open(tf.name) as f:
-        self.assertEqual(json.load(f), {'': 'secret'})
-
-      self._makeRecipe({'storage-path': tf.name}, "another").install()
-      self.assertEqual(self.buildout["another"]["passwd"], passwd)
-
   def test_bytes(self):
     self._makeRecipe({'bytes': '32'}).install()
     passwd = self.buildout["random"]["passwd"]
@@ -127,6 +101,8 @@ class TestPassword(unittest.TestCase):
       passlib.hash.md5_crypt.verify(
         self.buildout['random']['passwd'], hashed))
 
+    # note: bcrypt passwords are only available if bcrypt python
+    # package is installed and made available to buildout.
     hashed = self.buildout['random']['passwd-bcrypt']
     self.assertTrue(
       passlib.hash.bcrypt.verify(
@@ -204,3 +180,46 @@ class TestPassword(unittest.TestCase):
 
     self.assertNotEqual(initial_hashed, updated_hashed)
     self.assertTrue(passlib.hash.sha256_crypt.verify('updated', updated_hashed))
+
+
+class PasswordLegacyMixin(PasswordMixin):
+  def test_storage_path_legacy_format(self):
+    with tempfile.NamedTemporaryFile() as tf:
+      tf.write(str2bytes('%s\n' % (self.password,)))
+      tf.flush()
+
+      self._makeRecipe({'storage-path': tf.name}).install()
+      passwd = self.buildout["random"]["passwd"]
+      self.assertEqual(passwd, self.password)
+      tf.flush()
+      with open(tf.name) as f:
+        self.assertEqual(json.load(f), {'': self.password})
+
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
+
+  def test_storage_path_legacy_format_passwd_set_in_options(self):
+    with tempfile.NamedTemporaryFile() as tf:
+      tf.write(str2bytes('%s\n' % (self.password,)))
+      tf.flush()
+      self._makeRecipe({'storage-path': tf.name, 'passwd': self.password}).install()
+      passwd = self.buildout["random"]["passwd"]
+      self.assertEqual(passwd, self.password)
+      tf.flush()
+      with open(tf.name) as f:
+        self.assertEqual(json.load(f), {'': self.password})
+
+      self._makeRecipe({'storage-path': tf.name}, "another").install()
+      self.assertEqual(self.buildout["another"]["passwd"], passwd)
+
+
+class TestPasswordLegacyTricky(PasswordLegacyMixin, unittest.TestCase):
+  password = '902E0817'
+
+
+class TestPasswordLegacyDict(PasswordLegacyMixin, unittest.TestCase):
+  password = '{}'
+
+
+class TestPasswordLegacyString(PasswordLegacyMixin, unittest.TestCase):
+  password = 'secret'

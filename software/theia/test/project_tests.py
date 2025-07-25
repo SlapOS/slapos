@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import glob
 import gzip
 import json
 import os
@@ -212,6 +213,19 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     with gzip.open(os.path.join(mariadb_backup, mariadb_backup_dump)) as f:
       msg = "Mariadb catalog backup %s is not up to date" % mariadb_backup_dump
       self.assertIn(new_title.encode(), f.read(), msg)
+
+  def _checkSync(self):
+    super(TestTheiaResilienceERP5, self)._checkSync()
+    # Sync again and check if ZODB is not deleted and regenerated
+    # (here, ZODB is not at all updated from the previous sync, thus ZODB file is untouched
+    # and no ctime change, but in case any update happens, ZODB ctime will be updated because
+    # of rename during recovery.)
+    zodb_path ,= glob.glob(
+      self.getPartitionPath('import', 'srv', 'runner', 'instance', '*', 'srv', 'zodb', 'root.fs')
+    )
+    zodb_ctime = os.path.getctime(zodb_path)
+    self._doSync()
+    self.assertEqual(os.path.getctime(zodb_path), zodb_ctime)
 
   def _checkTakeover(self):
     super(TestTheiaResilienceERP5, self)._checkTakeover()

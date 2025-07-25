@@ -30,16 +30,19 @@ cert = ${slap-connection:cert-file}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
+bin = ${:home}/bin
 etc = ${:home}/etc
 var = ${:home}/var
 tmp = ${:home}/tmp
 srv = ${:home}/srv
 service = ${:etc}/service
 promise = ${:etc}/promise
+plugins = ${:etc}/plugin
 telegraf-dir = ${:srv}/telegraf
 telegraf-extra-config-dir = ${:telegraf-dir}/extra-config
-caucase-updater-loki-promtail-client = ${:srv}/caucase-updater/loki-client-promtail
-promtail-dir = ${:srv}/promtail
+caucase-updater-loki-fluent-bit-client = ${:srv}/caucase-updater/loki-client-fluent-bit
+fluent-bit-dir = ${:srv}/fluent-bit
+
 
 # macros
 [config-file]
@@ -80,9 +83,10 @@ port = ${influxdb-server:port}
 [telegraf]
 recipe = slapos.cookbook:wrapper
 extra-config-dir = ${directory:telegraf-extra-config-dir}
-# telegraf needs influxdb to be already listening before starting
+# telegraf needs influxdb to be already listening before starting, so we wrap this command in bash.
+# we also run a login shell so that $PATH is initialized and sensors plugin can find sensors command.
 command-line =
-   bash -c '${influxdb-listen-promise:path} && ${:nice} {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
+   bash --login -c '${influxdb-listen-promise:path} && ${:nice} {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
 wrapper-path = ${directory:service}/telegraf
 hash-files = ${telegraf-config-file:output}
 # TODO: control nice of the agent ?
@@ -162,9 +166,11 @@ init =
     }
   )
   inputs["disk"].append({})
-  inputs["io"].append({})
+  inputs["diskio"].append({})
+  inputs["mdstat"].append({"interval": "1h"})
   inputs["mem"].append({})
   inputs["net"].append({"ignore_protocol_stats": True})
+  inputs["sensors"].append({"interval": "5m"})
   inputs["system"].append({})
 
   for application in slapparameter_dict.get("applications", []):
@@ -378,9 +384,13 @@ install =
 recipe = slapos.recipe.build
 slapparameter-dict = ${slap-configuration:configuration}
 init =
+  import urllib.parse
   loki = options['slapparameter-dict']['loki']
   options['url'] = loki['url']
   options['caucase-url'] = loki['caucase-url']
+  parsed_url = urllib.parse.urlparse(loki['url'])
+  options['hostname'] = parsed_url.hostname
+  options['port'] = parsed_url.port
 
 [loki-client-certificate]
 key-file = ${directory:etc}/${:_buildout_section_name_}.key
@@ -421,37 +431,35 @@ stop-on-error = true
 csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
 
 
-[loki-promtail-client-certificate]
+[loki-fluent-bit-client-certificate]
 <= loki-client-certificate
-[loki-promtail-client-certificate-csr-config]
+[loki-fluent-bit-client-certificate-csr-config]
 <= loki-client-certificate-csr-config
 cn = loki ${slap-connection:partition-id}@${slap-connection:computer-id}
-[loki-promtail-client-certificate-prepare-csr]
+[loki-fluent-bit-client-certificate-prepare-csr]
 <= loki-client-certificate-prepare-csr
-config = ${loki-promtail-client-certificate-csr-config:output}
+config = ${loki-fluent-bit-client-certificate-csr-config:output}
 {{
 caucase.updater(
-    prefix='loki-promtail-client-certificate',
+    prefix='loki-fluent-bit-client-certificate',
     buildout_bin_directory=buildout_bin_directory,
-    updater_path='${directory:service}/loki-promtail-client-certificate-updater',
+    updater_path='${directory:service}/loki-fluent-bit-client-certificate-updater',
     url='${loki-server:caucase-url}',
-    data_dir='${directory:caucase-updater-loki-promtail-client}',
-    crt_path='${loki-promtail-client-certificate:cert-file}',
-    ca_path='${loki-promtail-client-certificate:ca-file}',
-    crl_path='${loki-promtail-client-certificate:crl-file}',
-    key_path='${loki-promtail-client-certificate:key-file}',
-    template_csr='${loki-promtail-client-certificate-prepare-csr:csr}',
+    data_dir='${directory:caucase-updater-loki-fluent-bit-client}',
+    crt_path='${loki-fluent-bit-client-certificate:cert-file}',
+    ca_path='${loki-fluent-bit-client-certificate:ca-file}',
+    crl_path='${loki-fluent-bit-client-certificate:crl-file}',
+    key_path='${loki-fluent-bit-client-certificate:key-file}',
+    template_csr='${loki-fluent-bit-client-certificate-prepare-csr:csr}',
     openssl=openssl_bin,
 )}}
 
-
-
-[promtail]
+[fluent-bit]
 recipe = slapos.cookbook:wrapper
-command-line = ${:nice} {{ promtail_bin }} -config.file=${promtail-config-file:location}
-wrapper-path = ${directory:service}/promtail
+command-line = ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
+wrapper-path = ${directory:service}/fluent-bit
 hash-files =
-  ${promtail-config-file:location}
+  ${fluent-bit-config-file:location}
 # TODO: control nice of the agent ?
 {% if 0 %}
 nice = nice -19 chrt --idle 0 ionice -c3
@@ -459,346 +467,613 @@ nice = nice -19 chrt --idle 0 ionice -c3
 nice =
 {% endif %}
 
-dir = ${directory:promtail-dir}
 http-port = 19080
-grpc-port = 19095
 ip = ${instance-parameter:ipv4-random}
 url = http://${:ip}:${:http-port}
 
-[promtail-config-file]
+[fluent-bit-config-file]
 recipe = slapos.recipe.build
 location = ${directory:etc}/${:_buildout_section_name_}.yaml
 slapparameter-dict = ${slap-configuration:configuration}
-depends = ${loki-promtail-client-certificate:recipe}
-
+filters-lua = {{ fluent_bit_filters_lua }}
+db-ip-city-lite = {{ db_ip_city_lite }}
+tail-db-base-path = ${directory:fluent-bit-dir}
+depends = ${loki-fluent-bit-client-certificate:recipe}
 {% raw %}
 init =
-  import pathlib
+  import zc.buildout
+  import pkg_resources
+
+  buildout_options = self.buildout["buildout"]
+  zc.buildout.easy_install.install(
+    ["pytz"],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[
+      buildout_options["develop-eggs-directory"],
+      buildout_options["eggs-directory"]])
+
+  import datetime
+  import itertools
   import json
+  import pathlib
+  import re
+
+  import pytz
+
   slapparameter_dict = self.options['slapparameter-dict']
   slap_connection = self.buildout["slap-connection"]
-  loki_certificate = self.buildout['loki-promtail-client-certificate']
+  fluent_bit = self.buildout["fluent-bit"]
+  loki_certificate = self.buildout['loki-fluent-bit-client-certificate']
+  db_ip_city_lite = self.options['db-ip-city-lite']
+  filters_lua = self.options['filters-lua']
 
   self._config_files = {}  # files to create during install step
   access_path_dict = {}
+  inputs = []
+  multiline_parsers = []
+  parsers = []
+  filters = []
+  outputs = []
   cfg = {
-    "server": {
-      "http_listen_address": self.buildout['promtail']['ip'],
-      "http_listen_port": int(self.buildout['promtail']['http-port']),
-      "grpc_listen_address": self.buildout['promtail']['ip'],
-      "grpc_listen_port": int(self.buildout['promtail']['grpc-port']),
-      "graceful_shutdown_timeout": 5,
-      "external_url": self.buildout['promtail']['url'],
-    },
-    "positions": {
-      "filename": "{}/positions.yaml".format(self.buildout['promtail']['dir']),
-    },
-    "clients": [
-      {
-        "url": "{}/loki/api/v1/push".format(self.buildout['loki-server']['url']),
-        "tls_config": {
-          "ca_file": loki_certificate['ca-file'],
-          "cert_file": loki_certificate['cert-file'],
-          "key_file": loki_certificate['key-file'],
-        },
-        # this might not be good for copytruncate option of logrotate
-        # see https://grafana.com/docs/loki/latest/send-data/promtail/logrotation/
-        "batchwait": "5s"
-      }
-    ],
-    "scrape_configs": []
-  }
-  def get_job_selector(partition, job_name, application_name):
-    # make a selector in LogQL, like '{job="job_name",key="value"}'
-    selector_parts = []
-    for k, v in dict(
-        partition.get('static-tags', {}),
-        app=application_name,
-        job=job_name
-      ).items():
-      selector_parts.append(f'{k}="{v}"')
-    return "{%s}" % ",".join(selector_parts)
+    "service": {
+      "batch_wait": 5,
+      "http_server": True,
+      "http_listen": fluent_bit['ip'],
+      "http_port": fluent_bit['http-port'],
+      "health_check": True,
 
-  def get_static_configs(partition, job_name, path_list, application):
-    if not isinstance(path_list, list):
-      raise ValueError(f'{path_list!r} is not a list')
+    },
+    "multiline_parsers": multiline_parsers,
+    "parsers": parsers,
+    "pipeline": {
+      "inputs": inputs,
+      "filters": filters,
+      "outputs": outputs,
+    },
+  }
+
+  def _add_parser(parser):
+    if parser['name'] not in {p['name'] for p in parsers}:
+      parsers.append(parser)
+
+  def _add_multiline_parser(parser):
+    if parser['name'] not in {p['name'] for p in multiline_parsers}:
+      multiline_parsers.append(parser)
+
+  def _add_filter(filter_):
+    if (filter_['name'], filter_['match']) not in {(f['name'], f['match']) for f in filters}:
+      filters.append(filter_)
+
+  def _safe_filename(name):
+    return re.sub(r'[^a-zA-Z0-9._-]', '_', name)
+
+  def _safe_label(name):
+    if " " in name:
+      return f'"{name}"'
+    return name
+
+  def _utc_time_offset_from_timezone(timezone):
+    # Timezone can only be specified as an offset from default time zone, see
+    # https://github.com/fluent/fluent-bit/issues/10331
+    # Our work-around approach  is to compute the offset during config file generation,
+    # in `slapos node instance` step. For timezone with daylight saving (such as Europe/Paris)
+    # this is not good, because `slapos node instance` runs once a day.
+    try:
+      tz = pytz.timezone(timezone)
+    except pytz.exceptions.UnknownTimeZoneError as e:
+      print(f"Ignoring unknown timezone {timezone} {e}")
+      return timezone
+    offset_seconds = int(tz.utcoffset(datetime.datetime.utcnow()).total_seconds())
+    sign = "+" if offset_seconds >= 0 else "-"
+    offset_seconds = abs(offset_seconds)
+    hours = offset_seconds // 3600
+    minutes = (offset_seconds % 3600) // 60
+    return f"{sign}{hours:02d}{minutes:02d}"
+
+  def _add_input_filter_tags(tag, log_type, application, partition):
+    added_keys = [
+      f"app {_safe_label(application['name'])}",
+      f"name {_safe_label(partition['name'])}",
+      f"log_type {_safe_label(log_type)}",
+    ]
+    if partition.get('reference'):
+      added_keys.append(f"partition_reference {_safe_label(partition['reference'])}")
+    for k, v in partition.get('static-tags', {}).items():
+      added_keys.append(f"field_{k} {_safe_label(v)}")
+    _add_filter(
+      {
+        "name": "modify",
+        "match": tag,
+        "Add": added_keys
+      },
+    )
+
+  def _add_tail_input(tag:str, log_type:str, application:dict, partition:dict, file_pattern:str, parser=None, multiline_parser=None, buffer_max_size=None):
+    db_path = str(pathlib.Path(self.options['tail-db-base-path']) / _safe_filename(tag)) + '.db'
+
     partition_root_directory = ''
     if partition.get('reference') and 'instance-root' in application:
       instance_root = pathlib.Path(application['instance-root'])
       partition_root_directory = instance_root / partition['reference']
-      path_list = [path.format(partition_root_directory=partition_root_directory) for path in path_list]
+      file_pattern = file_pattern.format(partition_root_directory=partition_root_directory)
 
-    for path in path_list:
-      access_path_dict[path] = 'r'
-    partition_kw = {}
-    if partition.get('reference'):
-      partition_kw['partition_reference'] = partition['reference']
-    return [
+    inpt = {
+      "name": "tail",
+      "path": file_pattern,
+      "path_key": "filename",
+      "tag": tag,
+      "db": db_path,
+      "skip_long_lines": "on",
+    }
+    if parser:
+      inpt['parser'] = parser
+    if multiline_parser:
+      inpt['multiline.parser'] = multiline_parser
+    if buffer_max_size:
+      inpt['buffer_max_size'] = buffer_max_size
+    access_path_dict[file_pattern] = "r"
+    inputs.append(inpt)
+    _add_input_filter_tags(tag, log_type, application, partition)
+
+  def _add_systemd_input(tag:str, application:dict, partition:dict, systemd_filter:str):
+    db_path = str(pathlib.Path(self.options['tail-db-base-path']) / _safe_filename(tag)) + '.db'
+
+    inpt = {
+      "name": "systemd",
+      "systemd_filter": systemd_filter,
+      "tag": tag,
+      "db": db_path,
+    }
+    access_path_dict["/var/log/journal/*/*"] = "r"
+    inputs.append(inpt)
+    _add_input_filter_tags(tag, "systemd", application, partition)
+
+  def add_erp5_balancer(application, partition):
+    _add_parser(
       {
-        "targets": [
-          "localhost"
+        "name": "parser.erp5.balancer.access_log",
+        "format": "regex",
+        "regex": r'^(?<client_ip>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>\S+))?(?: +(?<protocol>\S+))?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^"]*)" "(?<agent>[^"]*)\")?(\s|)(?<duration>[\d]*)?$',
+        "time_key": "time",
+        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "types": "size:integer, duration:integer",
+      }
+    )
+    _add_filter(
+      {
+        "name": "geoip2",
+        "match": "logs.erp5.balancer.access.*",
+        "database": db_ip_city_lite,
+        "lookup_key": "client_ip",
+        "record": [
+            "country client_ip %{country.names.en}",
+            "country_isocode client_ip %{country.iso_code}",
+            "city client_ip %{city.names.en}",
+            "latitude client_ip %{location.latitude}",
+            "longitude client_ip %{location.longitude}",
         ],
-        "labels": dict(
-          partition.get('static-tags', {}),
-          job=job_name,
-          app=application['name'],
-          name=partition['name'],
-          computer_id=slap_connection['computer-id'],
-          __path__=path,
-          **partition_kw
-        )
-      } for path in path_list
-    ]
+      },
+    )
+    _add_tail_input(
+      f"logs.erp5.balancer.access.{application['name']}-{partition['name']}",
+      "erp5.balancer.access",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/apache-access.log",
+      parser="parser.erp5.balancer.access_log",
+    )
+    _add_tail_input(
+      f"logs.erp5.balancer.error.{application['name']}-{partition['name']}",
+      "erp5.balancer.access",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/apache-error.log",
+    )
+
+  def add_erp5_zope(application, partition):
+    timezone = partition.get('timezone', 'UTC')
+    _add_multiline_parser(
+      {
+        "name": "multiline_parser.erp5.zope.event_log",
+        "type": "regex",
+        "flush_timeout": 5000,
+        "rules": [
+          {
+            "state": "start_state",
+            "regex": "^------\n",
+            "next_state": "first_line"
+          },
+          {
+            "state": "first_line",
+            "regex": r"\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2},\d{3} \S+ \S+ .*",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^[^-]+",
+            "next_state": "continuation"
+          }
+        ]
+      }
+    )
+    _add_parser(
+      {
+        "name": f"parser.erp5.zope.event.{timezone}",
+        "format": "regex",
+        "regex": r"^------\n(?<timestamp>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2},\d{3}) (?<level>\S+) .*",
+        "time_key": "timestamp",
+        "time_format": "%Y-%m-%d %H:%M:%S,%L",
+        "time_offset": _utc_time_offset_from_timezone(timezone)
+      }
+    )
+    _add_filter(
+      {
+        "name": "parser",
+        "match": f"logs.erp5.zope.event.{timezone}.*",
+        "parser": f"parser.erp5.zope.event.{timezone}",
+        "key_name": "log",
+        "preserve_key": True,
+        "reserve_data": True,
+      },
+    )
+    _add_tail_input(
+      f"logs.erp5.zope.event.{timezone}.{application['name']}-{partition['name']}",
+      "erp5.zope.event",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/zope-*-event.log",
+      multiline_parser="multiline_parser.erp5.zope.event_log",
+      buffer_max_size="512k",
+    )
+
+  def add_erp5_zope_front(application, partition):
+    _add_parser(
+      {
+        "name": "parser.erp5.zope.access_log",
+        "format": "regex",
+        "regex": r'^(?<client_ip>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>\S+))?(?: +(?<protocol>\S+))?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^"]*)" "(?<agent>[^"]*)")?(\s|)$',
+        "time_key": "time",
+        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "types": "size:integer",
+      }
+    )
+    # exclude haproxy health checks
+    _add_filter(
+      {
+        "name": "grep",
+        "match": "logs.erp5.zope.access.*",
+        "logical_op": "and",
+        "exclude": [
+          "path ^/$",
+          "method ^GET$",
+          "agent ^-$",
+        ]
+      }
+    )
+    _add_filter(
+      {
+        "name": "geoip2",
+        "match": "logs.erp5.zope.access.*",
+        "database": db_ip_city_lite,
+        "lookup_key": "client_ip",
+        "record": [
+            "country client_ip %{country.names.en}",
+            "country_isocode client_ip %{country.iso_code}",
+            "city client_ip %{city.names.en}",
+            "latitude client_ip %{location.latitude}",
+            "longitude client_ip %{location.longitude}",
+        ],
+      },
+    )
+    _add_tail_input(
+      f"logs.erp5.zope.access.{application['name']}-{partition['name']}",
+      "erp5.zope.access",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/zope-*-Z2.log",
+      parser="parser.erp5.zope.access_log"
+    )
+
+    timezone = partition.get('timezone', 'UTC')
+    _add_multiline_parser(
+      {
+        "name": "multiline_parser.erp5.zope.long_request",
+        "type": "regex",
+        "flush_timeout": 5000,
+        "rules": [
+          {
+            "state": "start_state",
+            "regex": r"^\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2},\d{3} - Thread \d+: Started on \d+.*",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^([^#].*|)$",
+            "next_state": "continuation"
+          }
+        ]
+      }
+    )
+    _add_parser(
+      {
+        "name": f"parser.erp5.zope.long_request.{timezone}",
+        "format": "regex",
+        "regex": r"^(?<timestamp>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2},\d{3}) - Thread \d+: Started on \d+.*",
+        "time_key": "timestamp",
+        "time_format": "%Y-%m-%d %H:%M:%S,%L",
+        "time_offset": _utc_time_offset_from_timezone(timezone)
+      }
+    )
+    _add_filter(
+      {
+        "name": "parser",
+        "match": f"logs.erp5.zope.long_request.{timezone}.*",
+        "parser": f"parser.erp5.zope.long_request.{timezone}",
+        "key_name": "log",
+        "preserve_key": True,
+        "reserve_data": True,
+      },
+    )
+    _add_tail_input(
+      f"logs.erp5.zope.long_request.{timezone}.{application['name']}-{partition['name']}",
+      "erp5.zope.long_request",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/longrequest_logger_zope-*.log",
+      multiline_parser="multiline_parser.erp5.zope.long_request",
+      buffer_max_size="512k",
+    )
+
+  def add_erp5_zeo(application, partition):
+    _add_multiline_parser(
+      {
+        "name": "multiline_parser.erp5.zeo.event_log",
+        "type": "regex",
+        "flush_timeout": 5000,
+        "rules": [
+          {
+            "state": "start_state",
+            "regex": "^------\n",
+            "next_state": "first_line"
+          },
+          {
+            "state": "first_line",
+            "regex": r"\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2},\d{3} \S+ \S+ .*",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^[^-]+",
+            "next_state": "continuation"
+          }
+        ]
+      }
+    )
+    _add_parser(
+      {
+        "name": "parser.erp5.zeo.event",
+        "format": "regex",
+        "regex": r"^------\n(?<timestamp>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2},\d{3}) (?<level>\S+) .*",
+        "time_key": "timestamp",
+        "time_format": "%Y-%m-%d %H:%M:%S,%L",
+      }
+    )
+    _add_filter(
+      {
+        "name": "parser",
+        "match": "logs.erp5.zeo.event.*",
+        "parser": "parser.erp5.zeo.event",
+        "key_name": "log",
+        "preserve_key": True,
+        "reserve_data": True,
+      },
+    )
+    _add_tail_input(
+      f"logs.erp5.zeo.event.{application['name']}-{partition['name']}",
+      "erp5.zeo.event",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/zeo-*.log",
+      multiline_parser="multiline_parser.erp5.zeo.event_log",
+    )
+
+  def add_mariadb(application, partition):
+    _add_parser(
+      {
+        "name": "parser.mariadb.slow_log",
+        "format": "regex",
+        # we capture `query` for the lua filter, we drop trailing ; if any to have same hashes as pt-query-digest
+        "regex": ".*Query_time: (?<field_query_time>[\d\\.]+).*\n.*\nSET timestamp=(?<timestamp>\\d+);\n(?<intermediate_query>(?:.*\n?)*)[;]*",
+        "time_key": "timestamp",
+        "time_format": "%s",
+        "types": "field_query_time:float",
+      }
+    )
+    _add_multiline_parser(
+      {
+        "name": "multiline_parser.mariadb.slow_log",
+        "type": "regex",
+        "flush_timeout": 5000,
+        "rules": [
+          {
+            "state": "start_state",
+            "regex": "^# User@Host: .*",
+            "next_state": "thread_id"
+          },
+          {
+            "state": "thread_id",
+            "regex": "^# Thread_id: (\d+).*",
+            "next_state": "query_time"
+          },
+          {
+            "state": "query_time",
+            "regex": "^# Query_time: .*",
+            "next_state": "rows_affected"
+          },
+          {
+            "state": "rows_affected",
+            "regex": "^# Rows_affected: .*",
+            "next_state": "timestamp"
+          },
+          {
+            "state": "timestamp",
+            "regex": "^SET timestamp=\d+;",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^([^#].*|)$",
+            "next_state": "continuation"
+          }
+        ]
+      }
+    )
+    # every second, a line like `# Time: 250608 18:47:19` is added to
+    # the slow log, we exclude it with this `grep`
+    _add_filter(
+      {
+        "name": "grep",
+        "match": "logs.mariadb.slow_log.*",
+        "exclude": "$log ^# Time: ",
+      }
+    )
+    _add_filter(
+      {
+        "name": "parser",
+        "match": "logs.mariadb.slow_log.*",
+        "parser": "parser.mariadb.slow_log",
+        "key_name": "log",
+        "preserve_key": True,
+        "reserve_data": True,
+      }
+    )
+    _add_filter(
+      {
+        "name": "lua",
+        "match": "logs.mariadb.slow_log.*",
+        "script": filters_lua,
+        "call": "query_fingerprint_filter"
+      }
+    )
+    _add_tail_input(
+      f"logs.mariadb.slow_log.{application['name']}-{partition['name']}",
+      "mariadb.slow_log",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/mariadb_slowquery.log",
+      multiline_parser='multiline_parser.mariadb.slow_log',
+      buffer_max_size="512k",
+    )
+    _add_tail_input(
+      f"logs.mariadb.error.{application['name']}-{partition['name']}",
+      "mariadb.error",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/mariadb_error.log",
+    )
+
+  def _add_default_filters():
+    filters.append(
+      {
+        "name": "nest",
+        "match": "logs.*",
+        "operation": "nest",
+        "wildcard": "field_*",
+        "nest_under": "fields",
+        "remove_prefix": "field_",
+      }
+    )
+    # at the end, remove intermediate fields used internally in the pipeline
+    filters.append(
+      {
+        "name": "modify",
+        "match": "logs.*",
+        "Remove_Wildcard": ["intermediate_"],
+      }
+    )
+    # remove the -----\n from zope and zeo event logs, at the end, after the
+    # parsing
+    for match in "logs.erp5.zeo.event.*", "logs.erp5.zope.event.*":
+      _add_filter(
+        {
+          "name": "lua",
+          "match": match,
+          "call": "remove_prefix",
+          "code": r"""
+            function remove_prefix(tag, timestamp, record)
+              record["log"] = string.gsub(record["log"], "^%-%-%-%-%-%-\n", "")
+              return 1, timestamp, record
+            end
+          """,
+        }
+      )
+
+  def _add_outputs():
+    outputs.append(
+      {
+        "name": "loki",
+        "match": "logs.*",
+        "host": self.buildout['loki-server']['hostname'],
+        "port": self.buildout['loki-server']['port'],
+        "labels": f"computer_id={_safe_label(slap_connection['computer-id'])}, hostname=$" + "{HOSTNAME}",
+        "tls": True,
+        "tls.ca_file": loki_certificate['ca-file'],
+        "tls.crt_file": loki_certificate['cert-file'],
+        "tls.key_file": loki_certificate['key-file'],
+        "label_keys": "$app, $filename, $level, $log_type, $name, $partition_reference",
+        "remove_keys": "$app, $fields, $filename, $level, $log_type, $partition_reference",
+        "drop_single_key": True,
+        "line_format": "key_value",
+        "structured_metadata_map_keys": "$fields"
+      }
+    )
 
   for application in slapparameter_dict.get('applications', []):
     for partition in application.get('partitions', []):
       partition.setdefault("type", "default")
-      if partition['type'] in ('erp5/zope-activity', 'erp5/zope-front'):
-        # job name include the app name because they need to be unique
-        job_name = f"{application['name']}-{partition['name']}-event-log"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "pipeline_stages": [
-            {
-              "match": {
-                "selector": get_job_selector(partition, job_name, application['name']),
-                "stages": [
-                  {
-                    "multiline": {
-                      # TODO this does not seem to work well
-                      "firstline": "^------",
-                      "max_wait_time": "5s"
-                    }
-                  },
-                  {
-                    "regex": {
-                      "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
-                    }
-                  },
-                  {
-                    "timestamp": {
-                      "format": "2021-04-04 03:57:11,242",
-                      "source": "timestamp"
-                    }
-                  },
-                  {
-                    "labels": {
-                      "level": None
-                    }
-                  }
-                ]
-              }
-            }
-          ],
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            ["{partition_root_directory}/var/log/zope-*-event.log"],
-            application,
-          )})
-        if partition['type'] == 'erp5/zope-front':
-          job_name = f"{application['name']}-{partition['name']}-access-log"
-          cfg['scrape_configs'].append({
-            "job_name": job_name,
-            # drop requests for haproxy health check
-            "pipeline_stages": [
-              {
-                "drop": {
-                  "expression": '.* "GET / HTTP/1.0" 200 .*'
-                }
-              }
-            ],
-            "static_configs": get_static_configs(
-              partition,
-              job_name,
-              ["{partition_root_directory}/var/log/zope-*-Z2.log"],
-              application,
-            )})
-          job_name = f"{application['name']}-{partition['name']}-long-request-log"
-          cfg['scrape_configs'].append({
-            "job_name": job_name,
-            "pipeline_stages": [
-              {
-                "match": {
-                  "selector": get_job_selector(partition, job_name, application['name']),
-                  "stages": [
-                    {
-                      "multiline": {
-                        "firstline": "^\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}",
-                        "max_wait_time": "5s"
-                      }
-                    },
-                    {
-                      "regex": {
-                        "expression": "^(?P<timestamp>.*) .*"
-                      }
-                    },
-                    {
-                      "timestamp": {
-                        "format": "2021-04-04 03:57:11,242",
-                        "source": "timestamp"
-                      }
-                    }
-                  ]
-                }
-              }
-            ],
-            "static_configs": get_static_configs(
-              partition,
-              job_name,
-              ["{partition_root_directory}/var/log/longrequest_logger_zope-*.log"],
-              application,
-            )})
-      if partition['type'] in ('erp5/mariadb', 'mariadb'):
-        job_name = f"{application['name']}-{partition['name']}-mariadb-slow-queries"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "pipeline_stages": [
-            {
-              "match": {
-                "selector": get_job_selector(partition, job_name, application['name']),
-                "stages": [
-                  {
-                    "multiline": {
-                      # between each slow query, slow query log has a first line like:
-                      #   # Time: 231008 16:29:01
-                      # and then a second like:
-                      #   # User@Host: user[user] @  [10.0.71.207]
-                      # but the first line is not repeated for subsequent queries that happens
-                      # at the same second
-                      "firstline": r"(^# Time: \d{2}.*\n^# User@Host:.*|^# User@Host:.*)",
-                      "max_wait_time": "5s"
-                    }
-                  },
-                  {
-                    "regex": {
-                      "expression": ".*SET timestamp=(?P<timestamp>\\d+);.*"
-                    }
-                  },
-                  {
-                    "timestamp": {
-                      "format": "Unix",
-                      "source": "timestamp"
-                    }
-                  }
-                ]
-              }
-            }
-          ],
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            ["{partition_root_directory}/var/log/mariadb_slowquery.log"],
-            application,
-          )})
-        job_name = f"{application['name']}-{partition['name']}-mariadb-error-log"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "pipeline_stages": [
-            {
-              "match": {
-                "selector": get_job_selector(partition, job_name, application['name']),
-                "stages": [
-                    {
-                      "timestamp": {
-                        "format": "2021-06-05  3:55:31",
-                        "source": "timestamp"
-                      }
-                    }
-                ]
-              }
-            }
-          ],
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            ["{partition_root_directory}/var/log/mariadb_error.log"],
-            application,
-          )})
-      if partition['type'] == 'erp5/zeo':
-        job_name = f"{application['name']}-{partition['name']}-zeo-log"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "pipeline_stages": [
-            {
-              "match": {
-                "selector": get_job_selector(partition, job_name, application['name']),
-                "stages": [
-                    {
-                      "multiline": {
-                        "firstline": "^------",
-                        "max_wait_time": "5s"
-                      }
-                    },
-                    {
-                      "regex": {
-                        "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
-                      }
-                    },
-                    {
-                      "timestamp": {
-                        "format": "2021-04-04 03:57:11,242",
-                        "source": "timestamp"
-                      }
-                    },
-                    {
-                      "labels": {
-                        "level": None,
-                      }
-                    }
-                  ]
-                }
-              }
-          ],
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            ["{partition_root_directory}/var/log/zeo-*.log"],
-            application,
-          )})
       if partition['type'] == 'erp5/balancer':
-        job_name = f"{application['name']}-{partition['name']}-balancer-access-log"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            ["{partition_root_directory}/var/log/apache-access.log"],
-            application,
-          )})
-        job_name = f"{application['name']}-{partition['name']}-balancer-error-log"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            ["{partition_root_directory}/var/log/apache-error.log"],
-            application,
-          )})
+        add_erp5_balancer(application, partition)
+      elif partition['type'] in ('erp5/zope-activity', 'erp5/zope-front'):
+        add_erp5_zope(application, partition)
+        if partition['type'] == 'erp5/zope-front':
+          add_erp5_zope_front(application, partition)
+      elif partition['type'] in ('erp5/mariadb', 'mariadb'):
+        add_mariadb(application, partition)
+      elif partition['type'] == 'erp5/zeo':
+        add_erp5_zeo(application, partition)
+      for log_file_pattern in partition.get('log-file-patterns', []):
+        _add_tail_input(
+          f"logs.log-file-patterns-{application['name']}-{partition['name']}",
+          "log",
+          application,
+          partition,
+          log_file_pattern,
+        )
+      if partition.get('systemd-filter'):
+        tag = f"logs.systemd-{application['name']}-{partition['name']}"
+        _add_systemd_input(
+          f"logs.log-file-patterns-{application['name']}-{partition['name']}",
+          application,
+          partition,
+          partition['systemd-filter'],
+        )
 
-      if partition.get('log-file-patterns'):
-        job_name = f"{application['name']}-{partition['name']}"
-        cfg['scrape_configs'].append({
-          "job_name": job_name,
-          "static_configs": get_static_configs(
-            partition,
-            job_name,
-            partition['log-file-patterns'],
-            application,
-          )})
+  _add_default_filters()
+  _add_outputs()
 
   self._config_files[options['location']] = json.dumps(cfg, indent=2)
   options['access-path-dict'] = access_path_dict
+
 install =
   for fname, content in self._config_files.items():
     with open(fname, 'w') as f:
       f.write(content)
 {% endraw %}
 
-[promtail-listen-promise]
-<= check-port-listening-promise
-hostname = ${promtail:ip}
-port = ${promtail:http-port}
+[fluent-bit-listen-promise]
+<= check-url-available-promise
+url = http://${fluent-bit:ip}:${fluent-bit:http-port}/api/v1/health
 
 [telegraf-listen-promise]
 recipe = slapos.cookbook:wrapper
@@ -809,7 +1084,7 @@ wrapper-path = ${directory:promise}/${:_buildout_section_name_}
 
 [facl-script]
 recipe = slapos.recipe.build
-promtail-access-path-dict = ${promtail-config-file:access-path-dict}
+fluent-bit-access-path-dict = ${fluent-bit-config-file:access-path-dict}
 telegraf-access-path-dict = ${telegraf-config-file:access-path-dict}
 install =
   import itertools
@@ -838,13 +1113,13 @@ install =
       parent_access[str(parent)] = 'x'
       check_parent_access(parent)
   for path_spec, access in itertools.chain(
-      options['promtail-access-path-dict'].items(),
+      options['fluent-bit-access-path-dict'].items(),
       options['telegraf-access-path-dict'].items()):
     path = pathlib.Path(path_spec)
     check_parent_access(path)
 
   for path_spec, access in sorted(itertools.chain(
-      options['promtail-access-path-dict'].items(),
+      options['fluent-bit-access-path-dict'].items(),
       options['telegraf-access-path-dict'].items(),
       parent_access.items())):
     path = pathlib.Path(path_spec)
@@ -856,11 +1131,11 @@ install =
 [promises]
 recipe =
 instance-promises =
-  ${promtail-listen-promise:path}
+  ${fluent-bit-listen-promise:path}
   ${telegraf-listen-promise:wrapper-path}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
 telegraf-extra-config-dir = ${telegraf:extra-config-dir}
 facl-script = ${facl-script:location}
-promtail-url = ${promtail:url}
+fluent-bit-url = ${fluent-bit:url}

@@ -1,0 +1,27 @@
+# Based on https://github.com/apache/httpd/commit/05297d7b00f0cb1f20d3ff14f4409097df2615fe
+
+--- a/configure
++++ b/configure
+@@ -6608,7 +6608,7 @@
+ 
+ if test "x$with_pcre" = "x" || test "$with_pcre" = "yes"; then
+   with_pcre="$PATH"
+-else if which $with_pcre 2>/dev/null; then :; else
++else if command -v $with_pcre 2>/dev/null; then :; else
+   with_pcre="$with_pcre/bin:$with_pcre"
+ fi
+ fi
+@@ -6710,11 +6710,11 @@
+ 
+   test -n "$ac_ct_PCRE_CONFIG" && break
+ done
+-test -n "$ac_ct_PCRE_CONFIG" || ac_ct_PCRE_CONFIG="`which $with_pcre 2>/dev/null`"
++test -n "$ac_ct_PCRE_CONFIG" || ac_ct_PCRE_CONFIG="`command -v $with_pcre 2>/dev/null`"
+ 
+     PCRE_CONFIG=$ac_ct_PCRE_CONFIG
+   else
+-    PCRE_CONFIG="`which $with_pcre 2>/dev/null`"
++    PCRE_CONFIG="`command -v $with_pcre 2>/dev/null`"
+   fi
+ fi
+ 

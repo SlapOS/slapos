@@ -10,7 +10,7 @@ umask 077
 
 write_backup_proof () {
   cd {{ directory['backup'] }}
-  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > {{ directory['srv'] }}/proof.signature
+  {{ backup_signature }} --action update --directory {{ directory['backup'] }} --signature-file-name backup.signature --proof-signature-path {{ directory['srv'] }}/proof.signature
   diff -ruw {{ directory['backup'] }}/backup.signature {{ directory['srv'] }}/proof.signature > {{ directory['srv'] }}/backup.diff
 }
 
@@ -31,5 +31,6 @@ else
   exit 1
 fi
 
-rm -f $VM_DIR/virtual.qcow2
-{{ qmprestore }} merge --dir $BACKUP_DIR/$disk_type --target $VM_DIR/virtual.qcow2
+rm -f $VM_DIR/virtual.qcow2 $VM_DIR/virtual.qcow2.tmp
+{{ qmprestore }} merge --dir $BACKUP_DIR/$disk_type --target $VM_DIR/virtual.qcow2.tmp
+mv $VM_DIR/virtual.qcow2.tmp $VM_DIR/virtual.qcow2

@@ -249,16 +249,6 @@
       "default": "/",
       "type": "string"
     },
-    "health-check-http-version": {
-      "title": "Health Check HTTP Version",
-      "description": "A HTTP version to use to check the backend, unused in case of CONNECT.",
-      "enum": [
-        "HTTP/1.1",
-        "HTTP/1.0"
-      ],
-      "default": "HTTP/1.1",
-      "type": "string"
-    },
     "health-check-timeout": {
       "title": "Health Check Timeout (seconds)",
       "description": "A timeout to for the request to be fulfilled, after connection happen.",

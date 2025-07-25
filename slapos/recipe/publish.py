@@ -71,10 +71,10 @@ class Serialised(Recipe):
 class Failsafe(object):
   def _setConnectionDict(self, publish_dict, slave_reference):
     error_status_file = self.options.get('-error-status-file')
-    if error_status_file:
-      self.return_list = [error_status_file]
-    else:
-      self.return_list = []
+    # Note: We can't put -error-status-file in return list as by default it is
+    #       not present, and buildout wants the section to have it, so it
+    #       Uninstalls/Installs the part instead of just Updating it
+    self.return_list = []
     try:
       super(Failsafe, self)._setConnectionDict(publish_dict, slave_reference)
     except Exception:
@@ -86,6 +86,19 @@ class Failsafe(object):
         if os.path.exists(error_status_file):
           os.unlink(error_status_file)
 
+  def update(self):
+    error_status_file = self.options.get('-error-status-file')
+    if error_status_file is not None:
+      if os.path.exists(error_status_file):
+        # last run failed, so need to reinstall
+        self.install()
+
+  def uninstall(name, options):
+    error_status_file = options.get('-error-status-file')
+    if error_status_file is not None:
+      if os.path.exists(error_status_file):
+        os.unlink(error_status_file)
+
 
 class RecipeFailsafe(Failsafe, Recipe):
   pass
@@ -93,25 +106,3 @@ class RecipeFailsafe(Failsafe, Recipe):
 
 class SerialisedFailsafe(Failsafe, Serialised):
   pass
-
-
-class PublishSection(GenericSlapRecipe):
-  """
-  Take a list of "request" sections, and publish every connection parameter.
-  
-  Input:
-    section-list: String, representing the list of sections to fetch
-                  parameters to publish, in order, separated by a space.
-  """
-  def _install(self):
-    publish_dict = dict()
-    for section in self.options['section-list'].strip().split():
-      section = section.strip()
-      options = self.buildout[section].copy()
-      for k, v in six.iteritems(options):
-        if k.startswith(CONNECTION_PARAMETER_STRING):
-          print(k, v)
-          publish_dict[k.lstrip(CONNECTION_PARAMETER_STRING)] = v
-    self.setConnectionDict(publish_dict)
-    return []
-

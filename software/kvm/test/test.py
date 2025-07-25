@@ -215,7 +215,7 @@ class KvmMixin:
     )
 
   @classmethod
-  def getPartitionId(cls, instance_type):
+  def getPartitionIdByType(cls, instance_type):
     software_url = cls.getSoftwareURL()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
       try:
@@ -235,7 +235,7 @@ class KvmMixin:
   @classmethod
   def getPartitionPath(cls, instance_type='kvm-export', *paths):
     return os.path.join(
-      cls.slap._instance_root, cls.getPartitionId(instance_type), *paths)
+      cls.slap._instance_root, cls.getPartitionIdByType(instance_type), *paths)
 
   @classmethod
   def getBackupPartitionPath(cls, *paths):
@@ -396,7 +396,7 @@ i0:whitelist-firewall-{hash} RUNNING""",
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '326b7737c4262e8eb09cd26773f3356a'
+        '6b6604d894b6d861e357be1447b370db'
       ],
       self.getRunningImageList()
     )
@@ -636,11 +636,6 @@ class TestAccessDefaultAdditionalJson(TestAccessDefaultAdditional):
     return {
       'frontend-additional-software-url': 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
     }
-
-@skipUnlessKvm
-class TestAccessDefaultAdditionalJson(
-  KvmMixinJson, TestAccessDefaultAdditional):
-  pass
 
 
 @skipUnlessKvm
@@ -885,6 +880,18 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     return result[0].stdout.decode('utf-8')
 
 
+def awaitBackup(equeue_file):
+  for f in range(30):
+    with open(equeue_file, 'r') as fh:
+      equeue_log = fh.read()
+      if 'finished successfully' in equeue_log:
+        break
+    time.sleep(1)
+  else:
+    raise ValueError('Backup not finished: %s' % (equeue_log))
+  return equeue_log
+
+
 @skipUnlessKvm
 class TestInstanceResilientBackupImporter(
   TestInstanceResilientBackupMixin, KVMTestCase):
@@ -900,16 +907,6 @@ class TestInstanceResilientBackupImporter(
     self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
     self.call_exporter()
 
-    def awaitBackup(equeue_file):
-      for f in range(30):
-        with open(equeue_file, 'r') as fh:
-          equeue_log = fh.read()
-          if 'finished successfully' in equeue_log:
-            break
-        time.sleep(1)
-      else:
-        self.fail('Backup not finished: %s' % (equeue_log))
-      return equeue_log
     equeue_log = awaitBackup(equeue_file)
     self.assertNotIn('qemu-img rebase', equeue_log)
     self.assertEqual(
@@ -943,7 +940,7 @@ class TestInstanceResilientBackupImporter(
     # check that all stabilizes after backup after takeover
     status_text = self.call_exporter()
     self.assertIn(
-      'Post take-over cleanup',
+      'Post take-over or post qmpbackup upgrade cleanup',
       status_text
     )
     self.slap.waitForInstance(max_retry=10)
@@ -957,8 +954,22 @@ class TestInstanceResilientBackupImporterIde(
 
 class TestInstanceResilientBackupExporterMixin(
   TestInstanceResilientBackupMixin):
+  def assertImported(self):
+    self.assertEqual(
+      set(sorted(os.listdir(self.getPartitionPath('kvm-import', 'srv')))),
+      set([
+        'backup', 'proof.signature', 'virtual.qcow2', 'sshkeys', 'backup.diff'
+        ,'monitor', 'cgi-bin', 'passwd', 'ssl', 'equeue.db'])
+    )
+
   def initialBackup(self):
     status_text = self.call_exporter()
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    # clean up equeue file for precise assertion
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    awaitBackup(equeue_file)
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
       1)
@@ -974,9 +985,10 @@ class TestInstanceResilientBackupExporterMixin(
       status_text
     )
     self.assertNotIn(
-      'Post take-over cleanup',
+      'Post take-over or post qmpbackup upgrade cleanup',
       status_text
     )
+    self.assertImported()
 
 
 @skipUnlessKvm
@@ -984,6 +996,15 @@ class TestInstanceResilientBackupExporter(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
     self.initialBackup()
+    # assure that additional backup run does not leave temporary files
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    # clean up equeue file for precise assertion
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    self.call_exporter()
+    awaitBackup(equeue_file)
+    self.assertImported()
 
 
 @skipUnlessKvm
@@ -1003,14 +1024,79 @@ class TestInstanceResilientBackupExporterMigrateOld(
 
 
 @skipUnlessKvm
+class TestInstanceResilientBackupExporterMigratePre047(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    # stop the VM to gain write access to the image
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    image = self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2')
+    with open(
+      glob.glob(os.path.join(
+          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
+      qemu_img = [
+        q for q in fh.readlines()
+        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+    # added bitmap like old qmpbackup would do
+    subprocess.check_call([
+      qemu_img, "bitmap", "--add", image,
+      "qmpbackup-virtio0-8a1050f7-cabd-4e29-a825-742e5eecdfea"])
+    # Simply starting the KVM will do needed migration, so all else works
+    self.requestDefaultInstance(state='started')
+    self.waitForInstanceWithPropagation()
+    self.initialBackup()
+
+
+@skipUnlessKvm
 class TestInstanceResilientBackupExporterPartialRecovery(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
+    def assertPromiseState(partition_directory, promise, state):
+      monitor_run_promise = os.path.join(
+        partition_directory, 'software_release', 'bin',
+        'monitor.runpromise'
+      )
+      monitor_configuration = os.path.join(
+        partition_directory, 'etc', 'monitor.conf')
+
+      self.assertEqual(
+        state,
+        subprocess.call([
+          monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+          '--run-only', promise])
+      )
     self.initialBackup()
     # cover .partial file in the backup directory with fallback to full
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
+
+    # assert check-backup-directory behaviour, typical...
+    partition_path = self.getPartitionPath('kvm-export')
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
     with open(current_backup + '.partial', 'w') as fh:
       fh.write('')
+    assertPromiseState(partition_path, 'check-backup-directory.py', 1)
+
+    # ...when backup is in progress
+    check_backup_directory = self.getPartitionPath(
+      'kvm-export', 'bin', 'check-backup-directory')
+    current_backup_lock_location = self.getPartitionPath(
+      'kvm-export', 'var', 'backup-in-progress')
+    # find used flock binary
+    flock = None
+    with open(check_backup_directory) as fh:
+      for line in fh.readlines():
+        line = line.strip()
+        if 'flock' in line:
+          flock = line.split()[1]
+    self.assertIsNotNone(flock)
+
+    current_backup_lock = subprocess.Popen([
+      flock, '--nonblock', '--no-fork', current_backup_lock_location,
+      'sleep', '3600'])
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
+    current_backup_lock.terminate()
+    current_backup_lock.wait()
+
     status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
@@ -1022,9 +1108,7 @@ class TestInstanceResilientBackupExporterPartialRecovery(
       'Recovered from partial backup by removing partial',
       status_text
     )
-    self.assertTrue(os.path.exists(os.path.join(
-      self.getPartitionPath(
-        'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
 
 
 @skipUnlessKvm
@@ -1090,10 +1174,11 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('PBS (kvm / 1)'))
-    cls.kvm_instance_partition_reference = cls.getPartitionId('kvm0')
+    cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType(
+      'pull-backup'))
+    cls.kvm_instance_partition_reference = cls.getPartitionIdByType('kvm-export')
     cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.kvm_instance_partition_reference)
-    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionId('kvm1'))
+    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType('kvm-import'))
 
   def test(self):
     connection_parameter_dict = self\
@@ -1379,6 +1464,8 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
       qemu_img_list + [destination_image]))
     source_image_info_json.pop('filename')
     destination_image_info_json.pop('filename')
+    source_image_info_json['children'][0]['info'].pop('filename')
+    destination_image_info_json['children'][0]['info'].pop('filename')
     # the best possible way to assure that provided image is used is by
     # comparing the result of qemu-img info for both
     self.assertEqual(
@@ -1506,7 +1593,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '326b7737c4262e8eb09cd26773f3356a'
+        '6b6604d894b6d861e357be1447b370db'
       ],
       self.getRunningImageList()
     )
@@ -1603,18 +1690,18 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
     self.assertEqual(
-      ['326b7737c4262e8eb09cd26773f3356a'],
+      ['6b6604d894b6d861e357be1447b370db'],
       os.listdir(image_repository)
     )
-    image = os.path.join(image_repository, '326b7737c4262e8eb09cd26773f3356a')
+    image = os.path.join(image_repository, '6b6604d894b6d861e357be1447b370db')
     self.assertTrue(os.path.exists(image))
     with open(image, 'rb') as fh:
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
-    self.assertEqual(image_md5sum, '326b7737c4262e8eb09cd26773f3356a')
+    self.assertEqual(image_md5sum, '6b6604d894b6d861e357be1447b370db')
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '326b7737c4262e8eb09cd26773f3356a'
+        '6b6604d894b6d861e357be1447b370db'
       ],
       self.getRunningImageList()
     )
@@ -1747,7 +1834,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       os.listdir(os.path.join(
         kvm_instance_partition, 'srv', 'boot-image-url-select-repository')),
-      ['326b7737c4262e8eb09cd26773f3356a']
+      ['6b6604d894b6d861e357be1447b370db']
     )
     self.assertEqual(
       os.listdir(os.path.join(
@@ -1759,7 +1846,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '326b7737c4262e8eb09cd26773f3356a'
+        '6b6604d894b6d861e357be1447b370db'
       ],
       self.getRunningImageList()
     )
@@ -1898,12 +1985,17 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         fh.read().strip()
       )
     with open(KVM1_config) as fh:
-      self.assertEqual(
-        '["https://shacache.nxdcdn.com/33c08e56c83d13007e4a5511b9bf2c4926c4aa'
-        '12fd5dd56d493c0653aecbab380988c5bf1671dbaea75c582827797d98c4a611f7fb'
-        '2b131fbde2c677d5258ec9#326b7737c4262e8eb09cd26773f3356a"]',
-        fh.read().strip()
+      config = fh.read().strip()
+      # we don't know where the shared directly will be so just assert begin and end of the path
+      self.assertIn(
+        '["file://',
+        config
       )
+      self.assertIn(
+        'debian-12.10.0-amd64-netinst.iso#6b6604d894b6d861e357be1447b370db"]',
+        config
+      )
+
 
 
 @skipUnlessKvm
@@ -2635,7 +2727,7 @@ class ExternalDiskModernMixin(object):
           "first disk": {
               "path": first,
               "index": 1,
-              "format": "qcow"
+              "format": "qcow2"
           },
       }
     }
@@ -2662,7 +2754,7 @@ class ExternalDiskModernMixin(object):
         if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
-      self.qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+      self.qemu_img, "create", "-f", "qcow2", self.first_disk, "1M"])
     self.second_disk_name = 'second_disk'
     self.second_disk = os.path.join(
       self.kvm_instance_partition, self.second_disk_name)
@@ -2693,7 +2785,7 @@ class TestExternalDiskModern(
       [
         'file=${partition}/srv/virtual.qcow2,if=virtio,discard=on,'
         'format=qcow2',
-        'file={}/first_disk,if=virtio,cache=writeback,format=qcow'.format(
+        'file={}/first_disk,if=virtio,cache=writeback,format=qcow2'.format(
           self.working_directory),
         'file=${partition}/second_disk,if=virtio,cache=writeback',
         'file={}/third_disk,if=virtio,cache=none'.format(
@@ -2814,7 +2906,7 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
-      qemu_img, "create", "-f", "qcow", self.first_disk, "1M"])
+      qemu_img, "create", "-f", "qcow2", self.first_disk, "1M"])
     second_disk = 'second_disk'
     self.second_disk = os.path.join(kvm_instance_partition, second_disk)
     subprocess.check_call([
@@ -2964,3 +3056,52 @@ vm""", fh.read())
 class TestInstanceHttpServerJson(
   KvmMixinJson, TestInstanceHttpServer):
   pass
+
+
+@skipUnlessKvm
+class TestDefaultDiskImageCorruption(KVMTestCase, KvmMixin):
+  __partition_reference__ = 'ddic'
+  kvm_instance_partition_reference = 'ddic0'
+
+  def assertPromiseFails(self, partition_directory, promise):
+    monitor_run_promise = os.path.join(
+      partition_directory, 'software_release', 'bin',
+      'monitor.runpromise'
+    )
+    monitor_configuration = os.path.join(
+      partition_directory, 'etc', 'monitor.conf')
+
+    try:
+      output = subprocess.check_output(
+        [monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+         '--run-only', promise],
+        stderr=subprocess.STDOUT).decode('utf-8')
+      self.fail('Promise did not failed with output %s' % (output,))
+    except subprocess.CalledProcessError as e:
+      return e.output.decode('utf-8')
+
+  def _test(self, partition_type):
+    image = self.getPartitionPath(partition_type, 'srv', 'virtual.qcow2')
+    with open(image, 'w') as fh:
+      fh.write('damage')
+    partition = self.getPartitionPath(partition_type)
+    promise = 'kvm-disk-image-corruption.py'
+    output = self.assertPromiseFails(partition, promise)
+    self.assertIn(
+      'qemu-img: This image format does not support checks', output)
+
+  def test(self):
+    self._test('default')
+
+
+@skipUnlessKvm
+class TestResilientDiskImageCorruption(TestDefaultDiskImageCorruption):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  def test(self):
+    self._test('kvm-export')
+
+  def test_kvm_import(self):
+    self._test('kvm-import')

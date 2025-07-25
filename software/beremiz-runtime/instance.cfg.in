@@ -53,9 +53,11 @@ webport = 8009
 # and in the context of SlapOS it's a plain Python without needed modules
 # adding LIBRARY_PATH / COMPILER_PATH is needed so that gcc can find
 # needed libraries and tools inside SlapOS context
+# We need to add to PATH our own gcc compiler and inkscape as
+# Beremiz uses them
 environment =
   BEREMIZPYTHONPATH = {{ buildout['bin-directory'] }}/pythonwitheggs
-  PATH={{ gcc_location }}/bin
+  PATH={{ gcc_location }}/bin:{{ inkscape_location }}/bin
   LIBRARY_PATH={{ openssl_location }}/lib
   BEREMIZ_LOCAL_HOST=${instance-parameter:ipv4-random}
 

@@ -29,7 +29,7 @@ import json
 import logging
 import os
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 
 import jsonschema
@@ -174,6 +174,9 @@ class Recipe(object):
                                             'UNKNOWN Instance')
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
                                             'UNKNOWN')
+      options['root-instance-short-title'] = parameter_dict.pop(
+                                            'root_instance_short_title',
+                                            'UNKNOWN')
       options['instance-guid'] = computer_partition.getInstanceGuid()
       ipv4_set = set()
       v4_add = ipv4_set.add
@@ -286,31 +289,34 @@ class Serialised(Recipe):
           return {}
 
 
-class BasicValidator(object):
-  def __init__(self, schema):
-    self.schema = schema
-    self.validator = jsonschema.validators.validator_for(schema)(schema)
-
-  def validate(self, instance):
-    for error in self.validator.iter_errors(instance):
-      yield error
-
-
 class DefaultValidator(object):
-  def __init__(self, schema):
+  def __init__(self, schema, set_defaults=False, unstringify=None):
     self.schema = schema
+    self.set_defaults = set_defaults
+    self.unstringify = unstringify
     self.validatorfor = v = jsonschema.validators.validator_for(schema)
     # Retain original properties validator
     validate_properties = v.VALIDATORS["properties"]
     # Define new properties validator
     def collect_defaults(validator, properties, instance, schema):
+      # Attempt to unstringify stringified values back to their expected type
+      if self.unstringify:
+        for key, subschema in properties.items():
+          unstringify = self.unstringify.get(subschema.get('type'))
+          if unstringify:
+            value = instance.get(key)
+            if type(value) is str or (str is bytes and type(value) is unicode):
+              try:
+                instance[key] = unstringify(value)
+              except ValueError:
+                pass
       # Call original properties validator
       error = False
       for e in validate_properties(validator, properties, instance, schema):
         error = True
         yield e
       # Collect defaults if the instance validates this schema
-      if not error:
+      if self.set_defaults and not error:
         for key, subschema in properties.items():
           if "default" in subschema:
             try:
@@ -337,27 +343,28 @@ class DefaultValidator(object):
         jsonschema.validators.validates(version)(self.validatorfor)
 
   def validate(self, instance):
-    # Initialise default collection
-    self.defaults = {}
-    # Validate instance
-    invalid = False
-    with self.propagate():
-      for error in self.validator.iter_errors(instance):
-        invalid = True
-        yield error
-    # Stop there in case of validation errors
-    if invalid:
-      return
-    # Apply collected defaults
-    for data, defaults in self.defaults.values():
-      for key, defaultdict in defaults.items():
-        if key not in data:
-          it = iter(defaultdict.values())
-          default = next(it)
-          if any(d != default for d in it):
-            raise UserError(
-              "Conflicting defaults for key %s: %r" % (key, defaultlist))
-          data[key] = default
+    if self.set_defaults or self.unstringify:
+      # Initialise default collection
+      self.defaults = {}
+      # Validate instance
+      invalid = False
+      with self.propagate():
+        for error in self.validator.iter_errors(instance):
+          invalid = True
+          yield error
+      # Stop there in case of validation errors
+      if invalid:
+        return
+      # Apply collected defaults
+      for data, defaults in self.defaults.values():
+        for key, defaultdict in defaults.items():
+          if key not in data:
+            it = iter(defaultdict.values())
+            default = next(it)
+            if any(d != default for d in it):
+              raise UserError(
+                "Conflicting defaults for key %s: %r" % (key, defaultlist))
+            data[key] = default
     # Validate the updated instance
     for error in self.validatorfor(self.schema).iter_errors(instance):
       yield error
@@ -371,6 +378,12 @@ class JsonSchema(Recipe):
       All instance schemas must be available at the advertised relative paths.
       Example:
         ${buildout:directory}/software.cfg.json
+    validate-parameters
+      Enum to control validating instance parameters
+      for both/neither/either-of main and shared instances.
+      Accepted values: all|main|shared|none.
+      Example:
+        shared
     set-default
       Enum to control adding defaults specified by the JSON schema
       to both/neither/either-of main and shared instance parameters.
@@ -378,14 +391,16 @@ class JsonSchema(Recipe):
       Default value: none.
       Example:
         shared
-    validate-parameters
-      Enum to control validating instance parameters
-      for both/neither/either-of main and shared instances.
+    unstringify
+      Enum to control attempting to unstringify stringified integers
+      for values that are expected to be integers by the JSON schema,
+      for both/neither/either-of main and shared instance parameters.
       Accepted values: all|main|shared|none.
+      Default value: none.
       Example:
         shared
   """
-  def _schema(self, options):
+  def _description(self, options):
     path = options['jsonschema']
     # because SoftwareReleaseSchema accepts only file:// paths
     path = path if path.startswith('file://') else 'file://' + path
@@ -393,18 +408,16 @@ class JsonSchema(Recipe):
     path = path[:-5] if path.endswith('.json') else path
     return SoftwareReleaseSchema(path, options['slap-software-type'])
 
-  def _getSharedSchema(self, software_schema):
-    t = software_schema.software_type
-    software_json_dict = software_schema.getSoftwareSchema()
+  def _getSharedSchema(self, software_description):
+    t = software_description.software_type
+    software_json_dict = software_description.getSoftwareSchema()
     for type_dict in software_json_dict['software-type'].values():
       if type_dict['software-type'] == t and type_dict.get('shared') == True:
-        url = urljoin(software_schema.software_url, type_dict['request'])
-        return software_schema._readAsJson(url, True)
+        url = urljoin(software_description.software_url, type_dict['request'])
+        return software_description._readAsJson(url, True)
 
-  def _parseParameterDict(self, software_schema, parameter_dict):
-    instance_schema = software_schema.getInstanceRequestParameterSchema()
+  def _parseParameterDict(self, validator, parameter_dict):
     instance = parameter_dict if isinstance(parameter_dict, dict) else {}
-    validator = self.Validator(instance_schema)
     errors = list(validator.validate(instance))
     if errors:
       err = SoftwareReleaseSchemaValidationError(errors).format_error(indent=2)
@@ -412,15 +425,11 @@ class JsonSchema(Recipe):
       raise UserError(msg)
     return instance
 
-  def _parseSharedParameterDict(self, software_schema, options):
-    shared_list = options.pop('slave-instance-list')
-    if not shared_list:
-      return
-    shared_schema = self._getSharedSchema(software_schema)
-    validator = self.SharedValidator(shared_schema)
+  def _parseSharedParameterDict(self, validator, shared_list):
     valid, invalid = [], []
     for instance in shared_list:
       reference = instance.pop('slave_reference')
+      instance = unwrap(instance)
       try:
         errors = list(validator.validate(instance))
       except UserError as e:
@@ -431,9 +440,9 @@ class JsonSchema(Recipe):
         invalid.append(shared_item)
       else:
         valid.append(shared_item)
-    options['valid-shared-instance-list'] = valid
-    options['invalid-shared-instance-list'] = invalid
+    return valid, invalid
 
+  ParsedOption = namedtuple('ParsedOption', ['main', 'shared'])
   def _parseOption(self, options, key, default):
     value = options.get(key, default)
     accepted = ('none', 'main', 'shared', 'all')
@@ -441,28 +450,51 @@ class JsonSchema(Recipe):
       index = accepted.index(value)
     except ValueError:
       raise UserError(
-        "%r is not a valid value for option %r"
+        "%r is not a valid value for option %r. "
         "Accepted values are %r" % (value, key, accepted)
       )
     # return: value in ('main', 'all'), value in ('shared', 'all')
-    return index & 1, index & 2
+    return self.ParsedOption(index & 1, index & 2)
 
   def _validateParameterDict(self, options, parameter_dict):
-    set_main, set_shared = self._parseOption(options, 'set-default', 'none')
-    validate_tuple = self._parseOption(options, 'validate-parameters', 'all')
-    validate_main, validate_shared = validate_tuple
-    self.Validator = DefaultValidator if set_main else BasicValidator
-    self.SharedValidator = DefaultValidator if set_shared else BasicValidator
-    software_schema = self._schema(options)
-    serialisation = software_schema.getSerialisation(strict=True)
+    validate = self._parseOption(options, 'validate-parameters', 'all')
+    set_defaults = self._parseOption(options, 'set-default', 'none')
+    unstringify = self._parseOption(options, 'unstringify', 'none')
+    software_description = self._description(options)
+    serialisation = software_description.getSerialisation(strict=True)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
-    if validate_shared:
-      self._parseSharedParameterDict(software_schema, options)
-    if validate_main:
-      parameter_dict = self._parseParameterDict(software_schema, parameter_dict)
+    if validate.main:
+      schema = software_description.getInstanceRequestParameterSchema()
+      if schema is None:
+        raise UserError(
+          "requested software-type %r seems to have no "
+          "JSON schema entry in the software.cfg.json."
+        )
+      validator = DefaultValidator(
+        schema,
+        set_defaults.main,
+        {'integer': int} if unstringify.main else None,
+      )
+      parameter_dict = self._parseParameterDict(validator, parameter_dict)
+    if validate.shared:
+      shared_list = options.pop('slave-instance-list')
+      shared_schema = self._getSharedSchema(software_description)
+      if shared_schema is None:
+        raise UserError(
+          "requested shared software-type %r seems to have no "
+          "JSON schema entry in the software.cfg.json."
+        )
+      validator = DefaultValidator(
+        shared_schema,
+        set_defaults.shared,
+        {'integer': int} if unstringify.shared else None,
+      ) if shared_list else None # optimisation: skip creating unused validator
+      valid, invalid = self._parseSharedParameterDict(validator, shared_list)
+      options['valid-shared-instance-list'] = valid
+      options['invalid-shared-instance-list'] = invalid
     options['configuration'] = parameter_dict
-    if validate_main or isinstance(parameter_dict, dict):
+    if validate.main or isinstance(parameter_dict, dict):
       return parameter_dict
     return {}
 

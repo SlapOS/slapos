@@ -1,11 +1,32 @@
 {
   "name": "VPS",
-  "description": "VPS",
+  "description": "VPS/VPSBrute service from RapidSpace",
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
-      "title": "Default",
-      "description": "Default VPS",
+      "title": "Default VPS",
+      "description": "Default VPS with 40 cores, 256GB of RAM and 1 disk of 4TB",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "vpsbrute-4disks": {
+      "title": "Default VPSBrute (4disks)",
+      "description": "Default VPSBrute with 128 cores, 1TB of RAM and 4 disks of 4TB",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "vpsbrute-6disks": {
+      "title": "VPSBrute with 6 disks",
+      "description": "VPSBrute with 128 cores, 1TB of RAM and 6 disks of 4TB",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "vpsbrute-10disks": {
+      "title": "VPSBrute with 10 disks",
+      "description": "VPSBrute with 128 cores, 1TB of RAM and 10 disks of 4TB",
       "request": "../kvm/boot-image-input-schema.json",
       "response": "../kvm/instance-kvm-output-schema.json",
       "index": 0

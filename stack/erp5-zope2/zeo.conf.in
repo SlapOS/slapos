@@ -1,0 +1,18 @@
+<zeo>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+  pid-filename {{ parameter_dict['pid-path'] }}
+</zeo>
+
+{% for (storage_name, storage_path) in parameter_dict['storage'] -%}
+<filestorage {{ storage_name }}>
+  path {{ storage_path }}
+  # pack-gc false
+</filestorage>
+{% endfor %}
+
+<eventlog>
+  <logfile>
+    dateformat
+    path {{ parameter_dict['log-path'] }}
+  </logfile>
+</eventlog>

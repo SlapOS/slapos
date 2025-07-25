@@ -365,6 +365,44 @@ class EdgeMixin(object):
         self.assertIn('bot_status', status_json)
 
 
+class TestEdgeE2E(SlapOSInstanceTestCase):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest-basic'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "check-dict": {
+        # Selected a website, which shall be always available
+        # Note: Surykatka is implemented in a way, that we can't test it
+        #       with E2E manner any other way
+        "e2e-check": {
+           "check-status-code": 200,
+           "url-list": [
+             "https://www.rapid.space/",
+           ]
+        },
+      }
+    })}
+
+  def test(self):
+    with open(os.path.join(
+      self.computer_partition_root_path, 'etc', 'surykatka-2.ini')) as fh:
+      surykatka_ini = fh.read()
+    self.assertEqual(
+      surykatka_ini,
+      """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 4
+SQLITE = %s/srv/surykatka-2.db
+ELAPSED_FAST = 2
+URL =
+  https://www.rapid.space/""" % (self.computer_partition_root_path,)
+    )
+    pass  # Nothing more to do -- promises were run, edge e2e finishes
+
+
 class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
   instance_max_retry = 40
   surykatka_dict = {}

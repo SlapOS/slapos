@@ -153,10 +153,12 @@ class GenericBaseRecipe(object):
         private_tmpfs.append(tuple(x))
     return private_tmpfs
 
-  def createWrapper(self, path, args, env=None, **kw):
+  def createWrapper(self, path, args, env=None, sig_ign=None, **kw):
     """Create a wrapper script for process replacement"""
     assert args
     if kw:
+      if sig_ign:
+        kw['sig_ign'] = sig_ign
       return self.createPythonScript(path,
         'slapos.recipe.librecipe.execute.generic_exec',
         (args, env) if env else (args,), kw)
@@ -167,8 +169,10 @@ class GenericBaseRecipe(object):
     # here (note that this can't be done correctly with a POSIX shell, because
     # the process can't be given a name).
 
-    lines = ['#!/bin/sh']
+    lines = ['#!/bin/sh -e']
 
+    if sig_ign:
+      lines.append("trap '' " + sig_ign)
     if env:
       for k, v in sorted(six.iteritems(env)):
         lines.append('export %s=%s' % (k, shlex.quote(v)))

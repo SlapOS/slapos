@@ -77,7 +77,7 @@ extra-context =
   raw dash_executable_location ${dash:location}/bin/dash
   raw dnsresolver_executable ${buildout:bin-directory}/dnsresolver
   raw dcron_executable_location ${dcron:location}/sbin/crond
-  raw boot_image_select_source_config ${boot-image-select-source-config:target}
+  raw boot_image_select_source_config ${boot-image-select-source-config:output}
   raw whitelist_domains_default ${whitelist-domains-default:target}
   raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:output}
   raw image_download_controller ${image-download-controller:output}
@@ -101,6 +101,7 @@ extra-context =
   raw template_nginx ${template-nginx:target}
   raw websockify_executable_location ${buildout:directory}/bin/websockify
   raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
+  raw disk_image_corruption ${disk-image-corruption.sh:target}
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
@@ -126,6 +127,7 @@ import-list = file parts :template-parts-destination
 recipe = slapos.cookbook:wrapper
 environment =
   PATH=${qemu:location}/bin
+  NO_COLOR=true
 wrapper-path =
   $${buildout:bin-directory}/qmpbackup
 command-line =
@@ -145,11 +147,14 @@ context =
     key slapparameter_dict slap-configuration:configuration
     key qmpbackup qmpbackup-binary:wrapper-path
     raw check_backup_directory ${check-backup-directory.sh:output}
+    raw backup_signature ${buildout:bin-directory}/backup-signature
+    raw flock ${util-linux:location}/bin/flock
 
 [qmprestore-binary]
 recipe = slapos.cookbook:wrapper
 environment =
   PATH=${qemu:location}/bin
+  NO_COLOR=true
 wrapper-path =
   $${buildout:bin-directory}/qmprestore
 command-line =
@@ -168,3 +173,5 @@ context =
     key pbsready_import_template template-pbsready-import:output
     key slapparameter_dict slap-configuration:configuration
     key qmprestore qmprestore-binary:wrapper-path
+    raw backup_signature ${buildout:bin-directory}/backup-signature
+    raw disk_image_corruption ${disk-image-corruption.sh:target}

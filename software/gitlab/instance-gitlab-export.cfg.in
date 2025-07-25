@@ -46,6 +46,7 @@ input = inline: gitlab-shell-work*
   gitlab-work*
   var/log/**
   var/backup/**
+  var/gitlab/**
   var/repositories*
   var/repositories/**
   srv/postgresql/**
@@ -55,6 +56,7 @@ input = inline: gitlab-shell-work*
   etc/service/postgres-start
   srv/redis/**
   srv/puma/puma.socket
+  .cache/**
   .cache
 output = ${directory:srv}/exporter.exclude
 

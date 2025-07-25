@@ -91,8 +91,6 @@ class TestResticRestServer(SlapOSInstanceTestCase):
   def test_backup_scenario(self):
     restic_bin = os.path.join(
         self.computer_partition_root_path,
-        'software_release',
-        'go.work',
         'bin',
         'restic',
     )
@@ -133,7 +131,7 @@ class TestResticRestServer(SlapOSInstanceTestCase):
       out = get_restic_output('snapshots')
       self.assertEqual(out.splitlines()[-1], '1 snapshots')
       snapshot_id = out.splitlines()[2].split()[0]
-      backup_path = out.splitlines()[2].split()[-1]
+      backup_path = out.splitlines()[2].split()[-3]
       restore_directory = os.path.join(work_directory, 'restore')
 
       out = get_restic_output(
@@ -142,7 +140,7 @@ class TestResticRestServer(SlapOSInstanceTestCase):
           '--target',
           restore_directory,
       )
-      self.assertIn('restoring <Snapshot', out)
+      self.assertIn('restoring snapshot', out)
       with open(os.path.join(restore_directory, backup_path, 'data')) as f:
         self.assertEqual(f.read(), 'data to backup')
 
