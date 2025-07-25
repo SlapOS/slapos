@@ -91,6 +91,12 @@
       "description": "Set to true to enable multi-SIM support",
       "type": "boolean"
     },
+    "res_len": {
+      "default": 8,
+      "title": "Response byte length",
+      "description": "Defines length of response in bytes during authentication. For TUAK authentication algorithm, the value must be 4, 8 or 16 bytes long.",
+      "type": "number"
+    },
     "impu_list": {
       "title": "IMPU list",
       "patternProperties": {
