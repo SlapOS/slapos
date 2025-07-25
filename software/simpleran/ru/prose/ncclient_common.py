@@ -88,16 +88,42 @@ class ProseNetconfClient:
     def connect(self, host, port, user, password):
         self.address = (host, port)
         self.logger.info('Connecting to %s, user %s...' % (self.address, user))
-        self.conn = manager.connect(host=host,
-                               port=port,
-                               username=user,
-                               password=password,
-                               timeout=1800,
-                               device_params={
-                                   'name': 'default'
-                               },
-                               hostkey_verify=False)
-        self.logger.info('Connection to %s successful' % (self.address,))
+
+        try:
+            # Clear any existing connection
+            if hasattr(self, 'conn'):
+                try:
+                    self.conn.close_session()
+                except:
+                    pass
+                del self.conn
+
+            # Attempt new connection
+            self.conn = manager.connect(
+                host=host,
+                port=port,
+                username=user,
+                password=password,
+                timeout=30,
+                device_params={'name': 'default'},
+                hostkey_verify=False
+            )
+
+            # Only check .connected if connection was established
+            if self.conn and not self.conn.connected:
+                raise RuntimeError("Connection established but not active")
+
+            if not self.conn:
+                raise RuntimeError("Connection failed (no connection object returned)")
+
+            self.logger.info('Connection to %s successful' % (self.address,))
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Connection failed: {str(e)}")
+            if hasattr(self, 'conn'):
+                del self.conn
+            raise
 
     def subscribe(self):
         sub = self.conn.create_subscription()
