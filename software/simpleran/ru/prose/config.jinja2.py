@@ -4,7 +4,7 @@ import time
 import sys
 import shutil
 sys.path.append({{ repr(buildout_directory_path) }})
-from ncclient_common import LopcommNetconfClient
+from ncclient_common import ProseNetconfClient
 
 def send_config(nc, templates):
     try:
@@ -39,7 +39,7 @@ def check_config_changes(src, dst, nc):
     return True
 
 def main():
-    nc = LopcommNetconfClient(log_file="{{ log_file }}")
+    nc = ProseNetconfClient(log_file="{{ log_file }}")
     last_deactivation_date = 0
 
     src = "{{ cu_config_template }}"

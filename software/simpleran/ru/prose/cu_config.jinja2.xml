@@ -124,7 +124,7 @@
                <downlink-radio-frame-offset>0</downlink-radio-frame-offset>
                <downlink-sfn-offset>0</downlink-sfn-offset>
                <!-- <gain>{{ ru.rx_gain }}</gain> -->
-               <!-- TODO(lu.xu): clarify with Lopcomm regaring rx gain -->
+               <!-- TODO(lu.xu): clarify with Prose regaring rx gain -->
                <gain-correction>0.0</gain-correction>
                <n-ta-offset>0</n-ta-offset>
             </rx-array-carriers>

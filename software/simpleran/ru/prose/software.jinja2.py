@@ -6,10 +6,10 @@ import sys
 import re
 import os
 sys.path.append({{ repr(buildout_directory_path) }})
-from ncclient_common import LopcommNetconfClient
+from ncclient_common import ProseNetconfClient
 
 if __name__ == '__main__':
-  nc = LopcommNetconfClient(
+  nc = ProseNetconfClient(
     log_file="{{ log_file }}",
     software_reply_json_log_file="{{ software_reply_json_log_file }}"
     )

@@ -158,7 +158,7 @@ Version 1.0.340 (2023-10-20)
 Version 1.0.339 (2023-10-16)
 -------------
 
-* Lopcomm firmware update
+* Prose firmware update
 * RRH reset (reboot) function added
 * Fix cpri_tx_dbm parameter
 * Print RRH IPv6 and firmware information
@@ -166,8 +166,8 @@ Version 1.0.339 (2023-10-16)
 Version 1.0.336 (2023-09-25)
 -------------
 
-* Support on Lopcomm RRH via netconf
-  - Lopcomm firmware auto-upgrade and verification
+* Support on Prose RRH via netconf
+  - Prose firmware auto-upgrade and verification
   - Up to 4T4R
   - Netconf access verification promise
   - PA output power alarm
@@ -199,9 +199,9 @@ Version 1.0.330 (2023-07-19)
 Version 1.0.326 (2023-06-14)
 -------------
 
-* Add DHCP for Lopcomm RU's M-plane
+* Add DHCP for Prose RU's M-plane
 * Add support for FDD
-* Add more parameters and tests for lopcomm RU
+* Add more parameters and tests for prose RU
 
 Version 1.0.323 (2023-05-17)
 -------------
@@ -239,7 +239,7 @@ Version 1.0.312 (2023-03-20)
 * Add promise to test if reception is saturated
 * Add gadget from SR to display on Monitor APP
 * Add IMSI in connection parameters when SIM gets attached
-* Add carrier control for Lopcomm RRH
+* Add carrier control for Prose RRH
 
 Version 1.0.308 (2023-02-09)
 ----------------------------
@@ -249,5 +249,5 @@ Version 1.0.308 (2023-02-09)
 * Add gnb_id_bits parameter
 * Use promises from slapos.toolbox repository
 * Rotate and add timestamps in enb-output.log, gnb-output.log, mme-output.log etc...
-* Add support for Lopcomm RRH
+* Add support for Prose RRH
 * Remove UE power emission limitation

@@ -2,10 +2,10 @@
 import time
 import sys
 sys.path.append({{ repr(buildout_directory_path) }})
-from ncclient_common import LopcommNetconfClient
+from ncclient_common import ProseNetconfClient
 
 if __name__ == '__main__':
-    nc = LopcommNetconfClient(log_file="{{ log_file }}")
+    nc = ProseNetconfClient(log_file="{{ log_file }}")
     try:
         nc.connect("{{ netaddr.IPAddress(vtap.gateway) }}", 830, "oranuser", "oranpassword")
         nc.reset_device()

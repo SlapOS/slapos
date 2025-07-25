@@ -34,11 +34,11 @@
         'tx_dbm':    0,
       },
 
-      'ru/lopcomm': {
+      'ru/prose': {
         'n_antenna_dl': 2,
         'n_antenna_ul': 2,
       },
-      'ru/lopcomm/cpri_link': {
+      'ru/prose/cpri_link': {
         'mapping': 'hw',
         'rx_delay': 25.11,
         'tx_delay': 14.71,
@@ -492,7 +492,7 @@
   {#- disable trx completely if all we have is only inactive sdr(s).
       do not disable if there is cpri, because for cpri whether to activate
       radio or not is natively controlled via RU-specific config.
-      See e.g. ru/lopcomm/cu_config.jinja2.xml for details #}
+      See e.g. ru/prose/cu_config.jinja2.xml for details #}
   {%- if do_sdr  and  (not do_cpri)  and
          len(iru_dict|dictsort | selectattr('1._.txrx_active', '==', 'ACTIVE') | list) == 0 %}
       name: "dummy",

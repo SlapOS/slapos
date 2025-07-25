@@ -508,12 +508,12 @@ class SDR4:
     ))
 
 
-# Lopcomm4 is mixin to verify Lopcomm driver wrt all LTE/NR x FDD/TDD modes.
-class Lopcomm4:
+# Prose4 is mixin to verify Prose driver wrt all LTE/NR x FDD/TDD modes.
+class Prose4:
   @classmethod
   def RUcfg(cls, i):
     return {
-        'ru_type':      'lopcomm',
+        'ru_type':      'prose',
         'ru_link_type': 'cpri',
         'cpri_link':    {
             'sdr_dev':  0,
@@ -712,7 +712,7 @@ class RUMultiType4:
   def RUcfg(cls, i):
     assert 1 <= i <= 4, i
     if i in (1,2):
-      return Lopcomm4.RUcfg(i)
+      return Prose4.RUcfg(i)
     else:
       return Sunwave4.RUcfg(i)
 
@@ -731,7 +731,7 @@ class RUMultiType4:
 
 # instantiate eNB tests
 class TestENB_SDR4        (ENBTestCase4, SDR4):         pass
-class TestENB_Lopcomm4    (ENBTestCase4, Lopcomm4):     pass
+class TestENB_Prose4    (ENBTestCase4, Prose4):     pass
 class TestENB_Sunwave4    (ENBTestCase4, Sunwave4):     pass
 class TestENB_RUMultiType4(ENBTestCase4, RUMultiType4): pass
 
@@ -851,7 +851,7 @@ class UEsimTestCase4(RFTestCase4):
 
 # instantiate UEsim tests
 class TestUEsim_SDR4        (UEsimTestCase4, SDR4):         pass
-class TestUEsim_Lopcomm4    (UEsimTestCase4, Lopcomm4):     pass
+class TestUEsim_Prose4    (UEsimTestCase4, Prose4):     pass
 class TestUEsim_Sunwave4    (UEsimTestCase4, Sunwave4):     pass
 class TestUEsim_RUMultiType4(UEsimTestCase4, RUMultiType4): pass
 

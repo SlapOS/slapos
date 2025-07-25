@@ -8,7 +8,7 @@ from ncclient.operations import RPCError
 from ncclient.xml_ import *
 from ncclient.devices.default import DefaultDeviceHandler
 
-class LopcommNetconfClient:
+class ProseNetconfClient:
 
     def __init__(self, log_file, json_log_file=None, cfg_json_log_file=None, supervision_json_log_file=None, ncsession_json_log_file=None, software_json_log_file=None, software_reply_json_log_file=None, supervision_reply_json_log_file=None, testing=False):
 

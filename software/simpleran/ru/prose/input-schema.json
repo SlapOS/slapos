@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Lopcomm ORAN",
+  "title": "Prose ORAN",
   "type": "object",
   "required": [
     "ru_type",
@@ -16,7 +16,7 @@
     "$ref": "../../ru/common.json#/properties",
     "ru_type": {
       "$ref": "#/properties/ru_type",
-      "const": "lopcomm"
+      "const": "prose"
     },
     "ru_link_type": {
       "$ref": "#/properties/ru_link_type",

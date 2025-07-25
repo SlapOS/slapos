@@ -5,7 +5,7 @@ import os
 import threading
 
 sys.path.append({{ repr(buildout_directory_path) }})
-from ncclient_common import LopcommNetconfClient
+from ncclient_common import ProseNetconfClient
 
 # Shared variable to indicate error occurred
 error_occurred = False
@@ -46,7 +46,7 @@ def run_supervision_reset_continuously(nc):
             nc.logger.error(f'Error in run_supervision_reset_continuously: {e}')
 
 if __name__ == '__main__':
-    nc = LopcommNetconfClient(
+    nc = ProseNetconfClient(
         log_file="{{ log_file }}",
         json_log_file="{{ json_log_file }}",
         cfg_json_log_file="{{ cfg_json_log_file }}",

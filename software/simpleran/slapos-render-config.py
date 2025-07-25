@@ -199,10 +199,10 @@ def iRU2_SDR_tLTE_tNR(ienb):
     })
 
 
-# LTE + NR cells that use CPRI-based Lopcomm radio units
-def iRU2_LOPCOMM_fLTE_fNR(ienb):
+# LTE + NR cells that use CPRI-based Prose radio units
+def iRU2_PROSE_fLTE_fNR(ienb):
     RU1 = {
-        'ru_type':      'lopcomm',
+        'ru_type':      'prose',
         'ru_link_type': 'cpri',
         'mac_addr':     '00:00:00:00:00:01',
         'cpri_link':    {
@@ -302,10 +302,10 @@ def iRU1_SDR1_fLTE2(ienb):
         }
     })
 
-def iRU2_LOPCOMM_fLTE2(ienb):
+def iRU2_PROSE_fLTE2(ienb):
     # supports: 2110 - 2170 MHz
     RU_0002 = {
-        'ru_type':      'lopcomm',
+        'ru_type':      'prose',
         'ru_link_type': 'cpri',
         'mac_addr':     '00:00:00:00:00:01',
         'cpri_link':    {
@@ -421,9 +421,9 @@ def ORS_gnb(ienb):
 def do_enb():
     for f in (iRU1_SDR_tLTE2_tNR,
               iRU2_SDR_tLTE_tNR,
-              iRU2_LOPCOMM_fLTE_fNR,
+              iRU2_PROSE_fLTE_fNR,
               iRU1_SDR1_fLTE2,
-              iRU2_LOPCOMM_fLTE2,
+              iRU2_PROSE_fLTE2,
               ORS_enb,
               ORS_gnb):
         _do_enb_with(f)
