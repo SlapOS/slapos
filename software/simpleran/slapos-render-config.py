@@ -499,11 +499,11 @@ def _do_enb_with(iru_icell_func):
             "com_ws_port": 9001,
             "com_addr": "127.0.1.2",
             "gtp_addr":     "127.0.1.1",
-            "mme_list":     {"1": {"mme_addr": "127.0.1.100"}},
-            "amf_list":     {"1": {"amf_addr": "127.0.1.100"}},
-            "plmn_list":    {"1": {"plmn": "00101"}},
-            "plmn_list_5g": {"1": {"plmn": "00101", "tac": 100}},
-            "nssai":        {"1": {"sst": 1}}
+            "mme_list":     [{"name": "1", "mme_addr": "127.0.1.100"}],
+            "amf_list":     [{"name": "1", "amf_addr": "127.0.1.100"}],
+            "plmn_list":    [{"plmn": "00101"}],
+            "plmn_list_5g": [{"plmn": "00101", "tac": 100}],
+            "nssai":        [{"sst": 1}]
         }
     }""" % locals()
 
