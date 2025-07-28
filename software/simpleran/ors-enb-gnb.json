@@ -25,13 +25,21 @@
     "ncell_list": {
       "title": "Neighbour Cell Info",
       "description": "Neighbour Cell Info",
-      "patternProperties": {
-        ".*": {
-          "$ref": "peer/cell/input-schema.json"
-        }
+      "type": "array",
+      "items": {
+        "title": "Neighbour Cell",
+        "type": "object",
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "$ref": "peer/cell/lte/input-schema.json"
+          },
+          {
+            "$ref": "peer/cell/nr/input-schema.json"
+          }
+        ]
       },
-      "type": "object",
-      "default": {}
+      "default": []
     },
     "handover_a1_rsrp": {
       "title": "Handover A1 event RSRP threshold",
