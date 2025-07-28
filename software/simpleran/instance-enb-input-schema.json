@@ -45,58 +45,68 @@
       "type": "string"
     },
     "mme_list": {
-      "title": "MME list",
+      "title": "MME List",
       "description": "List of MME to which the eNodeB is connected. (must be set if there are LTE cells)",
-      "patternProperties": {
-        ".*": {
-          "required": [
-            "mme_addr"
-          ],
-          "properties": {
-            "mme_addr": {
-              "title": "MME Address",
-              "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
-              "type": "string"
-            },
-            "s1ap_bind_addr": {
-              "title": "S1AP Bind Address",
-              "description": "Optional String. IP address and optional port on which the S1AP SCTP connection is bound.",
-              "type": "string"
-            }
+      "type": "array",
+      "items": {
+        "title": "MME",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mme_addr"
+        ],
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
           },
-          "type": "object"
+          "mme_addr": {
+            "title": "MME Address",
+            "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
+            "type": "string"
+          },
+          "s1ap_bind_addr": {
+            "title": "S1AP Bind Address",
+            "description": "Optional String. IP address and optional port on which the S1AP SCTP connection is bound.",
+            "type": "string"
+          }
         }
       },
-      "type": "object"
+      "default": []
     },
     "plmn_list": {
       "title": "PLMN list (4G)",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6. (must be set if there are LTE cells)",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "plmn": {
-              "title": "Public Land Mobile Network",
-              "description": "Public Land Mobile Network",
-              "type": "string"
-            },
-            "attach_without_pdn": {
-              "default": false,
-              "title": "Attach Without PDN",
-              "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
-              "type": "boolean"
-            },
-            "reserved": {
-              "default": false,
-              "title": "Reserved",
-              "description": "True if the cell is reserved for operator use.",
-              "type": "boolean"
-            }
+      "type": "array",
+      "items": {
+        "title": "PLMN",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "plmn"
+        ],
+        "properties": {
+          "plmn": {
+            "title": "Public Land Mobile Network",
+            "description": "Public Land Mobile Network",
+            "type": "string"
           },
-          "type": "object"
+          "attach_without_pdn": {
+            "default": false,
+            "title": "Attach Without PDN",
+            "description": "Optional boolean. Indicates if PLMN supports attach without PDN connectivity.",
+            "type": "boolean"
+          },
+          "reserved": {
+            "default": false,
+            "title": "Reserved",
+            "description": "True if the cell is reserved for operator use.",
+            "type": "boolean"
+          }
         }
       },
-      "type": "object"
+      "default": []
     },
     "gnb_id": {
       "title": "gNB ID",
@@ -112,87 +122,94 @@
     "amf_list": {
       "title": "AMF list",
       "description": "List of AMF to which the gNodeB is connected. (must be set if there are NR cells)",
-      "patternProperties": {
-        ".*": {
-          "required": [
-            "amf_addr"
-          ],
-          "properties": {
-            "amf_addr": {
-              "title": "AMF Address",
-              "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
-              "type": "string"
-            },
-            "ngap_bind_addr": {
-              "title": "NGAP Bind Address",
-              "description": "Optional string. IP address and optional port on which the NGAP SCTP connection is bound.",
-              "type": "string"
-            }
+      "type": "array",
+      "items": {
+        "title": "AMF",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "amf_addr"
+        ],
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
           },
-          "type": "object"
+          "amf_addr": {
+            "title": "AMF Address",
+            "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
+            "type": "string"
+          },
+          "ngap_bind_addr": {
+            "title": "NGAP Bind Address",
+            "description": "Optional string. IP address and optional port on which the NGAP SCTP connection is bound.",
+            "type": "string"
+          }
         }
       },
-      "type": "object"
+      "default": []
     },
     "plmn_list_5g": {
       "title": "PLMN list (5G)",
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12. (must be set if there are NR cells)",
-      "patternProperties": {
-        ".*": {
-          "required": [
-            "plmn",
-            "tac"
-          ],
-          "properties": {
-            "plmn": {
-              "title": "Public Land Mobile Network",
-              "description": "Public Land Mobile Network",
-              "type": "string"
-            },
-            "tac": {
-              "$ref": "cell/nr/input-schema.json#/$defs/tac"
-            },
-            "ranac": {
-              "title": "Optional integer (range 0 to 255)",
-              "description": "RAN Area Code",
-              "type": "number"
-            },
-            "reserved": {
-              "default": false,
-              "title": "Reserved",
-              "description": "True if the cell is reserved for operator use.",
-              "type": "boolean"
-            }
+      "type": "array",
+      "items": {
+        "title": "PLMN",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "plmn",
+          "tac"
+        ],
+        "properties": {
+          "plmn": {
+            "title": "Public Land Mobile Network",
+            "description": "Public Land Mobile Network",
+            "type": "string"
           },
-          "type": "object"
+          "tac": {
+            "$ref": "cell/nr/input-schema.json#/$defs/tac"
+          },
+          "ranac": {
+            "title": "Optional integer (range 0 to 255)",
+            "description": "RAN Area Code",
+            "type": "number"
+          },
+          "reserved": {
+            "default": false,
+            "title": "Reserved",
+            "description": "True if the cell is reserved for operator use.",
+            "type": "boolean"
+          }
         }
       },
-      "type": "object"
+      "default": []
     },
     "nssai": {
       "title": "AMF slices configuration",
       "description": "AMF slices configuration.",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "sst": {
-              "default": 1,
-              "title": "Slice Service Type",
-              "description": "Integer (range 1 to 255).",
-              "type": "number"
-            },
-            "sd": {
-              "default": "0x000032",
-              "title": "Slice Differentiator",
-              "description": "Optional integer (range 0 to 0xFFFFFE)",
-              "type": "string"
-            }
+      "type": "array",
+      "items": {
+        "title": "AMF slice",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sst": {
+            "default": 1,
+            "title": "Slice Service Type",
+            "description": "Integer (range 1 to 255).",
+            "type": "number"
           },
-          "type": "object"
+          "sd": {
+            "default": "0x000032",
+            "title": "Slice Differentiator",
+            "description": "Optional integer (range 0 to 0xFFFFFE)",
+            "type": "string"
+          }
         }
       },
-      "type": "object",
-      "default": {}
+      "default": []
     },
     "handover_a1_rsrp": {
       "title": "Handover A1 event RSRP threshold",
