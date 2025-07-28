@@ -11,9 +11,32 @@
     },
     "external_enb_gnb": {
       "default": false,
-      "title": "External eNB / gNB",
-      "description": "Set to true if external eNB / gNB will need to connect to this core network.",
+      "title": "Allow external eNB / gNB",
+      "description": "Set to true to allow external eNB / gNB to connect to this core network",
       "type": "boolean"
+    },
+    "disable_ipv4": {
+      "default": false,
+      "title": "Disable IPv4",
+      "description": "Set to true to prevent external eNB / gNB to connect to this core network using IPv4 address",
+      "type": "boolean"
+    },
+    "disable_ipv6": {
+      "default": false,
+      "title": "Disable IPv6",
+      "description": "Set to true to prevent external eNB / gNB to connect to this core network using IPv6 re6st address (IPv6 re6st address is the public IPv6 address acquired through the re6st VPN software, you will always have one)",
+      "type": "boolean"
+    },
+    "gtp_addr_list": {
+      "title": "GTP Address List",
+      "description": "Expert only: this overrides 'Allow external eNB / gNB', 'Disable IPv4' and 'Disable IPv6' parameters. Manually set the IP addresses (and an optional port) on which the GTP-U packets are received. The default port is 2152. Localhost address is 127.0.1.100",
+      "type": "array",
+      "items": {
+        "title": "Address",
+        "description": "Format: 'ip_address' or 'ip_address:port'",
+        "type": "string"
+      },
+      "default": ["127.0.1.100"]
     },
     "iperf3": {
       "default": 0,
