@@ -73,6 +73,7 @@
       "decription": "Set the preferred algorithms for RRC and User Plane encryption in decreasing order of preference. If none match the UE capabilities, then EEA0 (no encryption) is selected.",
       "type": "array",
       "items": {
+        "title": "Algorithm preference",
         "type": "string",
         "enum": [
           "EEA1 (Snow 3G)",
@@ -87,6 +88,7 @@
       "decription": " Set the preferred algorithms for RRC integrity check in decreasing order of preference. If none match the UE capabilities, then EIA0 (no integrity check) is selected. (Default: EEA2, EEA1)",
       "type": "array",
       "items": {
+        "title": "Algorithm preference",
         "type": "string",
         "enum": [
           "EEA1 (Snow 3G)",

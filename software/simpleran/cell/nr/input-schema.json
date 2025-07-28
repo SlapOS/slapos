@@ -92,6 +92,7 @@
       "type": "array",
       "items": {
         "type": "string",
+        "title": "Algorithm preference",
         "enum": [
           "NEA1 (Snow 3G)",
           "NEA2 (128 bit AES)",
@@ -106,6 +107,7 @@
       "type": "array",
       "items": {
         "type": "string",
+        "title": "Algorithm preference",
         "enum": [
           "NEA1 (Snow 3G)",
           "NEA2 (128 bit AES)",
