@@ -286,4 +286,4 @@ depends =
 {% endfor -%}
 
 [monitor-instance-parameter]
-password = {{ slapparameter_dict['monitor-passwd'] }}
+password = {{ slapparameter_dict['monitor-password'] }}

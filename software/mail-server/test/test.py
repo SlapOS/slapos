@@ -76,7 +76,8 @@ class PostfixTestCase(SlapOSInstanceTestCase):
             "example.com"
           ],
           "relay-host": "::1",
-          "relay-port": 1234
+          "relay-port": 1234,
+          "test-account": True,  # Enable test account creation
         }
       )
     }
@@ -116,7 +117,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       self.fail(f"SMTP connection failed: {e}")
 
   def test_dovecot(self):
-    self.check_imap("testmail@example.com", "MotDePasseEmail")
+    self.check_imap("testmail@example.com", "password123")
 
   def test_slaves(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])

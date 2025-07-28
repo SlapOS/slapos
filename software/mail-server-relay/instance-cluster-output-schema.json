@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by mail server cluster",
+  "type": "object",
+  "properties": {
+    "dns-entries": {
+      "description": "DNS entries for domains",
+      "type": "string"
+    }
+  }
+}

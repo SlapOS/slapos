@@ -154,10 +154,11 @@ init =
   options['new-account-dict'] = new_account_dict
   options['error-dict'] = error_dict
 
-  for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
-    test_mail = f"testmail@{domain}"
-    if test_mail not in existing_users:
-      output.append(f"{test_mail}:MotDePasseEmail::")
+  if {{ slapparameter_dict.get('test-account', False) }}:
+    for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
+      test_mail = f"testmail@{domain}"
+      if test_mail not in existing_users:
+        output.append(f"{test_mail}:password123::")
 
   self.output = output
 
