@@ -12,15 +12,11 @@
       "description": "Disables radio",
       "type": "boolean"
     },
-    "gtp_addr": {
-      "$ref": "instance-enb-input-schema.json#/properties/gtp_addr",
-      "default": "127.0.1.1"
+    "_gtp_addr": {
+      "$ref": "instance-enb-input-schema.json#/properties/_gtp_addr"
     },
     "mbmsgw_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
-    },
-    "use_ipv4": {
-      "$ref": "instance-enb-input-schema.json#/properties/use_ipv4"
     },
     "inactivity_timer": {
       "$ref": "cell/common.json#/properties/inactivity_timer",
