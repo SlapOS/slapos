@@ -538,6 +538,9 @@ foreground-script =
 )}}
 {%-   do section('caucase-replica-updater') %}
 {%-   do section('caucase-replica-updater-promise') %}
+
+[caucase-replica-updater-promise]
+config-bang-on-failure = false
 {%- endif %}
 
 [{{ section('mariadb-setup-replication') }}]
@@ -722,6 +725,7 @@ eggs =
   PyMySQL
 file = ${mariadb-replication-sense:output}
 output = ${directory:plugins}/mariadb_replication.py
+config-bang-on-failure = false
 
 [mariadb-replica-change-base]
 recipe = slapos.recipe.template:jinja2
