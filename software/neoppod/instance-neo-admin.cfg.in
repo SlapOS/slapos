@@ -27,6 +27,9 @@ config-bang-on-problem = {{ dumps(bang_on_problem) }}
 {%- if periodicity != None %}
 config-periodicity = {{ dumps(periodicity) }}
 {%- endif %}
+{%- if slapparameter_dict['upstream-cluster'] %}
+config-expected-state = BACKINGUP
+{%- endif %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ slapparameter_dict.get('monitor-port', 2052) }}
