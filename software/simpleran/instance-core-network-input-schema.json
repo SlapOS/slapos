@@ -18,7 +18,7 @@
         "description": "Format: 'ip_address' or 'ip_address:port'",
         "type": "string",
         "anyOf": [
-	  {
+          {
             "title": "Automatic address",
             "description": "IPv4 LAN: IPv4 on the ethernet LAN the Core Network is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for eNBs / gNBs running on the same machine",
             "type": "string",
@@ -26,14 +26,14 @@
               "IPv4 LAN address",
               "IPv6 Re6st address",
               "Localhost address"
-	    ],
+            ],
             "default": "IPv4 LAN address"
           },
-	  {
+          {
             "title": "Expert only: manual address",
             "type": "string"
           }
-	]
+        ]
       },
       "default": ["Localhost address"]
     },
@@ -70,30 +70,20 @@
     "pdn_list": {
       "title": "PDN list",
       "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names.",
-      "default": {
-        "internet": {
-          "name": "internet"
-        },
-        "default": {
-          "name": "default"
-        },
-        "sos": {
-          "name": "sos"
+      "type": "array",
+      "items": {
+        "title": "PDN",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "APN name",
+            "description": "APN name",
+            "type": "string"
+          }
         }
       },
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "name": {
-              "title": "APN name",
-              "description": "APN name",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
+      "default": ["internet", "default", "sos"]
     },
     "qci": {
       "default": 9,

@@ -203,18 +203,23 @@
     "x2_peers": {
       "title": "X2 Peers",
       "description": "X2 Peers",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "x2_addr": {
-              "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
-            }
+      "type": "array",
+      "items": {
+        "title": "X2 Peer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
           },
-          "type": "object"
+          "x2_addr": {
+            "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
+          }
         }
       },
-      "type": "object",
-      "default": {}
+      "default": []
     }
   }
 }

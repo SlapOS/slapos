@@ -99,19 +99,20 @@
     },
     "impu_list": {
       "title": "IMPU list",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "impu": {
-              "title": "sip URI or telephone number",
-              "description": "Example: 'sip:user', 'user', 'tel:+33123456789'",
-              "type": "string"
-            }
-          },
-          "type": "object"
+      "type": "array",
+      "items": {
+        "title": "IMPU",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "impu": {
+            "title": "sip URI or telephone number",
+            "description": "Example: 'sip:user', 'user', 'tel:+33123456789'",
+            "type": "string"
+          }
         }
       },
-      "type": "object"
+      "default": []
     },
     "enable_multicast": {
       "default": false,
@@ -133,22 +134,23 @@
     },
     "route_list": {
       "title": "Route list",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "ipv6_remote_addr_prefix": {
-              "title": "IPv6 remote address prefix",
-              "type": "string"
-            },
-            "prefix_len": {
-              "title": "Prefix length",
-              "type": "number"
-            }
+      "type": "array",
+      "items": {
+        "title": "Route",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ipv6_remote_addr_prefix": {
+            "title": "IPv6 remote address prefix",
+            "type": "string"
           },
-          "type": "object"
+          "prefix_len": {
+            "title": "Prefix length",
+            "type": "number"
+          }
         }
       },
-      "type": "object"
+      "default": []
     }
   }
 }
