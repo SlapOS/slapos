@@ -26,6 +26,12 @@
       "title": "Relay SR URL",
       "description": "A custom URL to use for the relay SR",
       "type": "string"
+    },
+    "test-account": {
+      "title": "Builtin Test Account",
+      "description": "If set, a builtin test account will be created for each domain with address testmail@<domain> and password testmail",
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
