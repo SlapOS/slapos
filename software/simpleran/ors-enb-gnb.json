@@ -19,9 +19,6 @@
     "mbmsgw_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
     },
-    "use_ipv4": {
-      "$ref": "instance-enb-input-schema.json#/properties/use_ipv4"
-    },
     "inactivity_timer": {
       "$ref": "cell/common.json#/properties/inactivity_timer",
       "default": 10000
