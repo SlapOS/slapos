@@ -14,11 +14,30 @@
       "description": "eNB ID. (must be set if there are LTE cells)",
       "type": "string"
     },
-    "gtp_addr": {
+    "_gtp_addr": {
       "title": "GTP Address",
-      "description": "String. Set the IP address (and optional port) on which the GTP-U packets are received. The default port is 2152. It is normally the IP address of the network interface connected to the core network.",
+      "description": "IP address (and an optional port) on which the GTP-U packets are received. The default port is 2152",
       "type": "string",
-      "default": "127.0.1.1"
+      "anyOf": [
+        {
+          "title": "Automatic address",
+          "description": "Automatic: based on MME / AMF list. IPv4 LAN: IPv4 on the ethernet LAN the eNB / gNB is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for core networks running on the same machine",
+          "type": "string",
+          "enum": [
+            "Automatic",
+            "IPv4 LAN address",
+            "IPv6 Re6st address",
+            "Localhost address"
+          ],
+          "default": "Automatic"
+        },
+        {
+          "title": "Expert only: manual address",
+          "description": "Format: 'ip_address', 'ipv4_address:port' or '[ipv6_address]:port",
+          "type": "string"
+        }
+      ],
+      "default": "Automatic"
     },
     "mbmsgw_addr": {
       "title": "SGW Address",
@@ -620,12 +639,6 @@
       "default": false,
       "title": "GPS synchronisation",
       "description": "True if GPS should be used for synchronisation",
-      "type": "boolean"
-    },
-    "use_ipv4": {
-      "default": false,
-      "title": "Use IPv4",
-      "description": "Set to true to use IPv4 for AMF / MME addresses",
       "type": "boolean"
     },
     "enb_stats_fetch_period": {
