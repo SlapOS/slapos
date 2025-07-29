@@ -27,6 +27,7 @@
     "eutra_eutra_handover": {
       "title": "EUTRA Handover",
       "type": "object",
+      "additionalProperties": false,
       "default": {
         "event": {
           "a3_rsrp": 6
@@ -38,6 +39,7 @@
         "event": {
           "title": "EUTRA Handover event",
           "type": "object",
+          "unevaluatedProperties": false,
           "oneOf": [
             {
               "title": "A3 event",
@@ -122,6 +124,7 @@
     "eutra_nr_handover": {
       "title": "NR Handover",
       "type": "object",
+      "additionalProperties": false,
       "default": {
         "event": {
           "b1_rsrp": -80
@@ -133,6 +136,7 @@
         "event": {
           "title": "NR Handover event",
           "type": "object",
+          "unevaluatedProperties": false,
           "oneOf": [
             {
               "title": "B1 event",

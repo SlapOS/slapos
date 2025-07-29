@@ -29,7 +29,7 @@
       "items": {
         "title": "Neighbour Cell",
         "type": "object",
-        "additionalProperties": false,
+        "unevaluatedProperties": false,
         "oneOf": [
           {
             "$ref": "peer/cell/lte/input-schema.json"
