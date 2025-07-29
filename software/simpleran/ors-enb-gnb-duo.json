@@ -3,19 +3,8 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "ors_duo_2nd_cell": {
-      "title": "Second Cell",
-      "description": "Radio parameters of the second cell of ORS Duo used in Carrier Aggregation mode (please see ORS Duo Mode parameter)",
-      "oneOf": [
-        {
-          "$ref": "ors-duo-enb.json"
-        }
-      ],
-      "type": "object",
-      "default": {}
-    },
     "n_antenna_dl": {
-      "$ref": "ors-common.json#/properties/n_antenna_dl",
+      "$ref": "ru/common.json#/properties/n_antenna_dl",
       "enum": [
         1,
         2,
@@ -24,11 +13,11 @@
       "default": 2
     },
     "n_antenna_ul": {
-      "$ref": "ors-common.json#/properties/n_antenna_dl",
+      "$ref": "ru/common.json#/properties/n_antenna_ul",
       "enum": [
         1,
         2,
-	4
+        4
       ],
       "default": 2
     },
