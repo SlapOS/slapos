@@ -224,27 +224,9 @@
       "default": 0
     },
     "handover_a1_time_to_trigger": {
+      "$ref": "#/$defs/time_to_trigger",
       "title": "Handover A1 event time to trigger",
       "description": "Time in ms during which the A1 event condition must be met before triggering the measurement report.",
-      "type": "number",
-      "enum": [
-        0,
-        40,
-        64,
-        80,
-        100,
-        128,
-        160,
-        256,
-        320,
-        480,
-        512,
-        640,
-        1024,
-        1280,
-        2560,
-        5120
-      ],
       "default": 640
     },
     "handover_a2_rsrp": {
@@ -260,27 +242,9 @@
       "default": 0
     },
     "handover_a2_time_to_trigger": {
+      "$ref": "#/$defs/time_to_trigger",
       "title": "Handover A2 event time to trigger",
       "description": "Time in ms during which the A2 event condition must be met before triggering the measurement report.",
-      "type": "number",
-      "enum": [
-        0,
-        40,
-        64,
-        80,
-        100,
-        128,
-        160,
-        256,
-        320,
-        480,
-        512,
-        640,
-        1024,
-        1280,
-        2560,
-        5120
-      ],
       "default": 640
     },
     "eutra_eutra_handover": {
@@ -356,27 +320,9 @@
           "type": "number"
         },
         "time_to_trigger": {
+          "$ref": "#/$defs/time_to_trigger",
           "title": "EUTRA Handover time to trigger",
-          "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report.",
-          "type": "number",
-          "enum": [
-            0,
-            40,
-            64,
-            80,
-            100,
-            128,
-            160,
-            256,
-            320,
-            480,
-            512,
-            640,
-            1024,
-            1280,
-            2560,
-            5120
-          ]
+          "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report."
         }
       }
     },
@@ -439,27 +385,9 @@
           "type": "number"
         },
         "time_to_trigger": {
+          "$ref": "#/$defs/time_to_trigger",
           "title": "NR Handover time to trigger",
-          "description": "Time in ms during which the NR B1 or B2 event condition must be met before triggering the measurement report.",
-          "type": "number",
-          "enum": [
-            0,
-            40,
-            64,
-            80,
-            100,
-            128,
-            160,
-            256,
-            320,
-            480,
-            512,
-            640,
-            1024,
-            1280,
-            2560,
-            5120
-          ]
+          "description": "Time in ms during which the NR B1 or B2 event condition must be met before triggering the measurement report."
         }
       }
     },
@@ -536,27 +464,9 @@
           "type": "number"
         },
         "time_to_trigger": {
+          "$ref": "#/$defs/time_to_trigger",
           "title": "NR Handover time to trigger",
-          "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report.",
-          "type": "number",
-          "enum": [
-            0,
-            40,
-            64,
-            80,
-            100,
-            128,
-            160,
-            256,
-            320,
-            480,
-            512,
-            640,
-            1024,
-            1280,
-            2560,
-            5120
-          ]
+          "description": "Time in ms during which the A3/A4/A5 event condition must be met before triggering the measurement report."
         }
       }
     },
@@ -619,27 +529,9 @@
           "type": "number"
         },
         "time_to_trigger": {
+          "$ref": "#/$defs/time_to_trigger",
           "title": "EUTRA Handover time to trigger",
-          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report.",
-          "type": "number",
-          "enum": [
-            0,
-            40,
-            64,
-            80,
-            100,
-            128,
-            160,
-            256,
-            320,
-            480,
-            512,
-            640,
-            1024,
-            1280,
-            2560,
-            5120
-          ]
+          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report."
         }
       }
     },
@@ -723,6 +615,32 @@
       "title": "Fluentbit Xlog forwarding shared key",
       "description": "Secret key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
       "type": "string"
+    }
+  },
+  "$defs": {
+    "time_to_trigger": {
+      "title": "Handover A1 event time to trigger",
+      "description": "Time in ms during which the A1 event condition must be met before triggering the measurement report.",
+      "type": "number",
+      "enum": [
+        0,
+        40,
+        64,
+        80,
+        100,
+        128,
+        160,
+        256,
+        320,
+        480,
+        512,
+        640,
+        1024,
+        1280,
+        2560,
+        5120
+      ],
+      "default": 640
     }
   }
 }
