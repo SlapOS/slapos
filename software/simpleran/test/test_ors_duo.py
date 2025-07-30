@@ -37,7 +37,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software-ors.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software-ors-duo.cfg')))
 
 core_network_param_dict = {
     'testing': True,
@@ -55,13 +55,20 @@ param_dict = {
         'tac': '0x1717',
         'root_sequence_index': '1',
     },
+    'ors_cell2': {
+        'tx_gain': 27,
+        'rx_gain': 27,
+        'cell_id': '0x02',
+        'pci': 251,
+        'tac': '0x2727',
+        'root_sequence_index': '2',
+    },
     'ors_enb_gnb': {
         'n_antenna_dl': 2,
         'n_antenna_ul': 2,
         'inactivity_timer': 17,
-        'ncell_list': [
-            {
-                'name': 'ORS1',
+        'ncell_list': {
+            'ORS1': {
                 'cell_type': 'lte',
                 'cell_kind': 'enb_peer',
                 'rat': 'eutra',
@@ -73,8 +80,7 @@ param_dict = {
                 'tac': 1,
                 'plmn': "00101"
             },
-            {
-                'name': 'ORS2',
+            'ORS2': {
                 'cell_type': 'lte',
                 'cell_kind': 'enb_peer',
                 'rat': 'eutra',
@@ -86,8 +92,7 @@ param_dict = {
                 'tac': 1,
                 'plmn': "00101"
             },
-            {
-                'name': 'ORS3',
+            'ORS3': {
                 'cell_type': 'nr',
                 'cell_kind': 'enb_peer',
                 'rat': 'nr',
@@ -102,8 +107,7 @@ param_dict = {
                 'tac': 1,
                 'plmn': "00101"
             },
-            {
-                'name': 'ORS3',
+            'ORS4': {
                 'cell_type': 'nr',
                 'cell_kind': 'enb_peer',
                 'rat': 'nr',
@@ -130,14 +134,14 @@ enb_param_dict = {
     },
     'ors_enb_gnb': {
         'enb_id': '0x17',
-        'plmn_list': [
-            {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
-            {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
-        ],
-        'mme_list': [
-            {'name': '10.0.0.1',    'mme_addr': '10.0.0.1'},
-            {'name': '2001:db8::1', 'mme_addr': '2001:db8::1'},
-        ],
+        'plmn_list': {
+            '00101': {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
+            '00102': {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
+        },
+        'mme_list': {
+            '10.0.0.1': {'mme_addr': '10.0.0.1'},
+            '2001:db8::1': {'mme_addr': '2001:db8::1'},
+        },
     },
     'ors': {
         'xlog_forwarding_enabled': False,
@@ -155,22 +159,20 @@ gnb_param_dict = {
     'ors_enb_gnb': {
         'gnb_id': '0x17',
         'gnb_id_bits': 30,
-        'amf_list': [
-            {'name': '10.0.0.1',    'amf_addr': '10.0.0.1'},
-            {'name': '2001:db8::1', 'amf_addr': '2001:db8::1'},
-        ],
+        'amf_list': {
+            '10.0.0.1': {'amf_addr': '10.0.0.1'},
+            '2001:db8::1': {'amf_addr': '2001:db8::1'},
+        },
         'nr_handover_time_to_trigger': 40,
         'nr_handover_a3_offset': 10,
-        'xn_peers': [
-            {
-                'name': '2001:db8::1',
+        'xn_peers': {
+            '2001:db8::1': {
                 'xn_addr': '2001:db8::1',
             },
-            {
-                'name': '2001:db8::2',
+            '2001:db8::2': {
                 'xn_addr': '2001:db8::2',
             },
-        ],
+        },
     },
     'ors': {
         'xlog_forwarding_enabled': False,
@@ -181,10 +183,10 @@ gnb_param_dict1 = {
         'tdd_ul_dl_config': 'DDDSU      (2.5ms, 1UL/3DL), S-slot=10DL:2GP:2UL,  reduced latency)',
     },
     'ors_enb_gnb': {
-        'plmn_list': [
-            {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
-            {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
-        ],
+        'plmn_list': {
+            '00101': {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
+            '00102': {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
+        },
     },
 }
 gnb_param_dict2 = {
@@ -192,18 +194,17 @@ gnb_param_dict2 = {
         'tdd_ul_dl_config': 'DDDSUUUUUU (5ms,   6UL/3DL), S-slot=2DL:2GP:10UL, high uplink)',
     },
     'ors_enb_gnb': {
-        'nssai': [
-            {'sd': '0x171717', 'sst': 10},
-            {'sd': '0x181818', 'sst': 20},
-        ],
+        'nssai': {
+            '0x171717': {'sd': '0x171717', 'sst': 10},
+            '0x181818': {'sd': '0x181818', 'sst': 20},
+        },
     },
 }
-for s in "ors_cell1 ors_cell2 ors_enb_gnb ors".split(" "):
-    enb_param_dict[s].update(param_dict[s])
-    gnb_param_dict1[s].update(gnb_param_dict[s])
-    gnb_param_dict1[s].update(param_dict[s])
-    gnb_param_dict2[s].update(gnb_param_dict[s])
-    gnb_param_dict2[s].update(param_dict[s])
+enb_param_dict.update(param_dict)
+gnb_param_dict1.update(gnb_param_dict)
+gnb_param_dict1.update(param_dict)
+gnb_param_dict2.update(gnb_param_dict)
+gnb_param_dict2.update(param_dict)
 
 def load_yaml_conf(slap, name):
     conf_file = glob.glob(os.path.join(
@@ -233,26 +234,20 @@ class TestENBParameters(ORSTestCase):
     self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['ors_cell1']['root_sequence_index']))
     self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
     for p in conf['cell_default']['plmn_list']:
-      for plmn in enb_param_dict['ors_enb_gnb']['plmn_list']:
-          if plmn['plmn'] == p['plmn']:
-              break
       for n in "plmn attach_without_pdn reserved".split():
-        self.assertEqual(p[n], plmn[n])
+        self.assertEqual(p[n], enb_param_dict['ors_enb_gnb']['plmn_list'][p['plmn']][n])
     for p in conf['mme_list']:
-      for mme in enb_param_dict['ors_enb_gnb']['mme_list']:
-          if mme['name'] == p['mme_addr']:
-              break
-      self.assertEqual(p['mme_addr'], mme['mme_addr'])
+      self.assertEqual(p['mme_addr'], enb_param_dict['ors_enb_gnb']['mme_list'][p['mme_addr']]['mme_addr'])
 
     for p in conf['cell_list'][0]['ncell_list']:
-      for ncell in param_dict['ors_enb_gnb']['ncell_list']:
+      for k in param_dict['ors_enb_gnb']['ncell_list']:
         if 'dl_earfcn' in p:
-          if p['dl_earfcn'] == ncell.get('dl_earfcn', 0):
+          if p['dl_earfcn'] == param_dict['ors_enb_gnb']['ncell_list'][k].get('dl_earfcn', 0):
             break
         elif 'dl_nr_arfcn' in p:
-          if p['dl_nr_arfcn'] == ncell.get('dl_nr_arfcn', 0):
+          if p['dl_nr_arfcn'] == param_dict['ors_enb_gnb']['ncell_list'][k].get('dl_nr_arfcn', 0):
             break
-      conf_ncell = ncell
+      conf_ncell = param_dict['ors_enb_gnb']['ncell_list'][k]
       if 'dl_earfcn' in p:
         self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
         self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
@@ -293,31 +288,22 @@ class TestGNBParameters1(ORSTestCase):
     self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['ors_enb_gnb']['gnb_id'], 16))
     self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['ors_enb_gnb']['gnb_id_bits'])
     for p in conf['nr_cell_default']['plmn_list']:
-      for plmn in gnb_param_dict1['ors_enb_gnb']['plmn_list']:
-          if plmn['plmn'] == p['plmn']:
-              break
       for n in "plmn ranac reserved tac".split():
-        self.assertEqual(p[n], plmn[n])
+        self.assertEqual(p[n], gnb_param_dict1['ors_enb_gnb']['plmn_list'][p['plmn']][n])
     for p in conf['amf_list']:
-      for amf in gnb_param_dict1['ors_enb_gnb']['amf_list']:
-          if amf['name'] == p['amf_addr']:
-              break
-      self.assertEqual(p['amf_addr'], amf['amf_addr'])
+      self.assertEqual(p['amf_addr'], gnb_param_dict1['ors_enb_gnb']['amf_list'][p['amf_addr']]['amf_addr'])
     for p in conf['xn_peers']:
-      for xn in gnb_param_dict1['ors_enb_gnb']['xn_peers']:
-          if xn['name'] == p['xn_addr']:
-              break
-      self.assertEqual(p, xn['xn_addr'])
+      self.assertEqual(p, gnb_param_dict1['ors_enb_gnb']['xn_peers'][p]['xn_addr'])
 
     for p in conf['nr_cell_list'][0]['ncell_list']:
-      for ncell in param_dict['ors_enb_gnb']['ncell_list']:
+      for k in param_dict['ors_enb_gnb']['ncell_list']:
         if 'dl_earfcn' in p:
-          if p['dl_earfcn'] == ncell.get('dl_earfcn', 0):
+          if p['dl_earfcn'] == param_dict['ors_enb_gnb']['ncell_list'][k].get('dl_earfcn', 0):
             break
         elif 'dl_nr_arfcn' in p:
-          if p['dl_nr_arfcn'] == ncell.get('dl_nr_arfcn', 0):
+          if p['dl_nr_arfcn'] == param_dict['ors_enb_gnb']['ncell_list'][k].get('dl_nr_arfcn', 0):
             break
-      conf_ncell = ncell
+      conf_ncell = param_dict['ors_enb_gnb']['ncell_list'][k]
       if 'dl_earfcn' in p:
         self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
         self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
@@ -357,11 +343,8 @@ class TestGNBParameters2(ORSTestCase):
 
     for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
       sd = hex(p['sd'])
-      for nssai in gnb_param_dict2['ors_enb_gnb']['nssai']:
-          if nssai['sd'] == sd:
-              break
-      self.assertEqual(sd, nssai['sd'], 16)
-      self.assertEqual(p['sst'], nssai['sst'])
+      self.assertEqual(sd, gnb_param_dict2['ors_enb_gnb']['nssai'][sd]['sd'], 16)
+      self.assertEqual(p['sst'], gnb_param_dict2['ors_enb_gnb']['nssai'][sd]['sst'])
 
     tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
     self.assertEqual(float(tdd_config['period']), 5)
