@@ -1,0 +1,13 @@
+diff --git a/src/cmd/dist/test.go b/src/cmd/dist/test.go
+index 36a20e8b2a..7736bcdab9 100644
+--- a/src/cmd/dist/test.go
++++ b/src/cmd/dist/test.go
+@@ -775,7 +775,7 @@ func (t *tester) registerTests() {
+ 
+ 	// Stub out following test on alpine until 54354 resolved.
+ 	builderName := os.Getenv("GO_BUILDER_NAME")
+-	disablePIE := strings.HasSuffix(builderName, "-alpine")
++	disablePIE := strings.HasSuffix(builderName, "-alpine") || strings.Contains(builderName, "nixos")
+ 
+ 	// Test internal linking of PIE binaries where it is supported.
+ 	if t.internalLinkPIE() && !disablePIE {
