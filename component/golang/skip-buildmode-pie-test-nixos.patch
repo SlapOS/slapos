@@ -1,0 +1,20 @@
+diff --git a/src/cmd/dist/test.go b/src/cmd/dist/test.go
+index 36a20e8b2a..c2694ad26e 100644
+--- a/src/cmd/dist/test.go
++++ b/src/cmd/dist/test.go
+@@ -779,15 +779,6 @@ func (t *tester) registerTests() {
+ 
+ 	// Test internal linking of PIE binaries where it is supported.
+ 	if t.internalLinkPIE() && !disablePIE {
+-		t.registerTest("internal linking of -buildmode=pie",
+-			&goTest{
+-				variant:   "pie_internal",
+-				timeout:   60 * time.Second,
+-				buildmode: "pie",
+-				ldflags:   "-linkmode=internal",
+-				env:       []string{"CGO_ENABLED=0"},
+-				pkg:       "reflect",
+-			})
+ 		// Also test a cgo package.
+ 		if t.cgoEnabled && t.internalLink() && !disablePIE {
+ 			t.registerTest("internal linking of -buildmode=pie",
