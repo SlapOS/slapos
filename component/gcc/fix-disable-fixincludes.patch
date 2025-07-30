@@ -1,8 +1,8 @@
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
-index 35d90f12d4c..6565a77f0d3 100644
+index 35d90f12d4c..7eb5efbd3de 100644
 --- a/gcc/Makefile.in
 +++ b/gcc/Makefile.in
-@@ -2991,28 +2991,31 @@ stmp-int-hdrs: $(STMP_FIXINC) $(USER_H) fixinc_list
+@@ -2991,24 +2991,27 @@ stmp-int-hdrs: $(STMP_FIXINC) $(USER_H) fixinc_list
  	set -e; for ml in `cat fixinc_list`; do \
  	  sysroot_headers_suffix=`echo $${ml} | sed -e 's/;.*$$//'`; \
  	  multi_dir=`echo $${ml} | sed -e 's/^[^;]*;//'`; \
@@ -15,17 +15,17 @@ index 35d90f12d4c..6565a77f0d3 100644
  	  fi; \
 -	  $(mkinstalldirs) $${fix_dir}; \
 -	  chmod a+rx $${fix_dir} || true; \
-+ 	  $(mkinstalldirs) $${include_dir}; \
-+ 	  chmod a+rx $${include_dir} || true; \
++	  $(mkinstalldirs) $${include_dir}; \
++	  chmod a+rx $${include_dir} || true; \
  	  $(SHELL) $(srcdir)/../move-if-change \
  	    tmp-xlimits.h  tmp-limits.h; \
 -	  rm -f $${fix_dir}/limits.h; \
 -	  cp -p tmp-limits.h $${fix_dir}/limits.h; \
 -	  chmod a+r $${fix_dir}/limits.h; \
-+ 	  rm -f $${include_dir}/limits.h; \
-+ 	  cp -p tmp-limits.h $${include_dir}/limits.h; \
-+ 	  chmod a+r $${include_dir}/limits.h; \
-+ 	  cp $(srcdir)/gsyslimits.h $${include_dir}/syslimits.h; \
++		rm -f $${include_dir}/limits.h; \
++		cp -p tmp-limits.h $${include_dir}/limits.h; \
++		chmod a+r $${include_dir}/limits.h; \
++	  cp $(srcdir)/gsyslimits.h $${include_dir}/syslimits.h; \
  	done
  # Install the README
 -	rm -f include-fixed/README
@@ -39,11 +39,6 @@ index 35d90f12d4c..6565a77f0d3 100644
  	$(STAMP) $@
  
  .PHONY: install-gcc-tooldir
--install-gcc-tooldir:
-+install-gcc-tooldir:  
- 	$(mkinstalldirs) $(DESTDIR)$(gcc_tooldir)
- 
- macro_list: s-macro_list; @true
 @@ -3093,13 +3096,6 @@ stmp-fixinc: gsyslimits.h macro_list fixinc_list \
  	      cd $(build_objdir)/fixincludes && \
  	      $(SHELL) ./fixinc.sh "$${gcc_dir}/$${fix_dir}" \
@@ -109,4 +104,3 @@ index d67f72df8a2..a94f2de40d5 100644
  AC_SUBST(NO_PIE_CFLAGS_FOR_BUILD)
  AC_SUBST(NO_PIE_FLAG_FOR_BUILD)
  
-
