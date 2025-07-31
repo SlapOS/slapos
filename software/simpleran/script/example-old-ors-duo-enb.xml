@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instance>
+    <parameter id="_">{
+    "ors_duo_2nd_cell": {
+        "dl_frequency": 2,
+        "cell_id": "2",
+        "tx_power_dbm": 2,
+        "tx_gain": 2,
+        "rx_gain": 2,
+        "bandwidth": "1.4 MHz",
+        "lte_band": 2,
+        "dl_earfcn": 2,
+        "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
+        "pci": 2,
+        "root_sequence_index": 2,
+        "tac": "1"
+    },
+    "n_antenna_dl": 2,
+    "n_antenna_ul": 1,
+    "ors_duo_mode": "Carrier Aggregation",
+    "gps_sync": true,
+    "tx_power_dbm": 1,
+    "tx_gain": 1,
+    "rx_gain": 1,
+    "lte_band": 2,
+    "dl_frequency": 1,
+    "dl_earfcn": 2,
+    "bandwidth": "3 MHz",
+    "tdd_ul_dl_config": "[Configuration 2] 5ms 2UL 6DL (default)",
+    "use_ipv4": false,
+    "mme_list": {
+        "1": {
+            "mme_addr": "1",
+            "s1ap_bind_addr": "33"
+        },
+        "2": {
+            "mme_addr": "2",
+            "s1ap_bind_addr": "5"
+        }
+    },
+    "plmn_list": {
+        "1": {
+            "plmn": "1",
+            "attach_without_pdn": true,
+            "reserved": true
+        }
+    },
+    "pci": 1,
+    "cell_id": "1",
+    "enb_id": "2",
+    "tac": "2",
+    "root_sequence_index": 1,
+    "ncell_list": {
+        "1": {
+            "cell_type": "lte",
+            "cell_kind": "enb_peer",
+            "e_cell_id": "1",
+            "dl_earfcn": 2,
+            "pci": 3,
+            "tac": "4",
+            "plmn": "5"
+        },
+        "2": {
+            "cell_type": "nr",
+            "cell_kind": "enb_peer",
+            "nr_cell_id": "2",
+            "gnb_id_bits": 3,
+            "dl_nr_arfcn": 4,
+            "nr_band": 5,
+            "ssb_nr_arfcn": 5,
+            "ul_nr_arfcn": 6,
+            "pci": 1,
+            "tac": 1,
+            "plmn": "1"
+        }
+    },
+    "eutra_eutra_handover": {
+        "event": {
+            "a3_rsrp": 5
+        },
+        "hysteresis": 2,
+        "time_to_trigger": 1024
+    },
+    "eutra_nr_handover": {
+        "event": {
+            "b1_rsrp": 2
+        },
+        "hysteresis": 5,
+        "time_to_trigger": 512
+    },
+    "x2_peers": {
+        "1": {
+            "x2_addr": "1"
+        }
+    },
+    "gtp_addr": "4",
+    "mbmsgw_addr": "1",
+    "handover_a1_rsrp": 1,
+    "handover_a1_hysteresis": 1,
+    "handover_a1_time_to_trigger": 320,
+    "handover_a2_rsrp": 1,
+    "handover_a2_hysteresis": 1,
+    "handover_a2_time_to_trigger": 1024,
+    "handover_meas_gap_config": "Gap Pattern 0",
+    "inactivity_timer": 1,
+    "log_phy_debug": true,
+    "disable_sdr": true,
+    "enb_stats_fetch_period": 1,
+    "enb_drb_stats_enabled": false,
+    "max_rx_sample_db": 1,
+    "min_rxtx_delay": 1,
+    "xlog_enabled": true,
+    "xlog_forwarding_enabled": false,
+    "wendelin_telecom_software_release_url": "1",
+    "xlog_fluentbit_forward_host": "1",
+    "xlog_fluentbit_forward_port": 1,
+    "xlog_fluentbit_forward_shared_key": "1",
+    "tx_power_offset": 1
+}</parameter>
+</instance>

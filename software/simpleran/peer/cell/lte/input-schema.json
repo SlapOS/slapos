@@ -19,6 +19,11 @@
     "cell_kind": {
       "$ref": "../../../peer/cell/common.json#/properties/cell_kind"
     },
+    "name": {
+      "title": "(Optional) Neighbour Cell Name",
+      "description": "Neighbour Cell name (for management purposes only)",
+      "type": "string"
+    },
     "e_cell_id": {
       "title": "E-UTRAN Cell ID",
       "description": "28 bit E-UTRAN cell identity. Concatenation of enb_id and cell_id of the neighbour cell.",
