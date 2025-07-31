@@ -118,7 +118,7 @@ param_dict = {
                 'tac': 2,
                 'plmn': "00101"
             },
-        },
+        ],
     },
 }
 enb_param_dict = {
@@ -198,12 +198,12 @@ gnb_param_dict2 = {
         ],
     },
 }
-for s in "cell1 cell2 nodeb ors".split(" "):
-    enb_param_dict[s].update(param_dict[s])
-    gnb_param_dict1[s].update(gnb_param_dict[s])
-    gnb_param_dict1[s].update(param_dict[s])
-    gnb_param_dict2[s].update(gnb_param_dict[s])
-    gnb_param_dict2[s].update(param_dict[s])
+for s in "cell1 nodeb management".split(" "):
+    enb_param_dict.setdefault(s,  {}).update(param_dict.get(s, {}))
+    gnb_param_dict1.setdefault(s, {}).update(gnb_param_dict.get(s, {}))
+    gnb_param_dict1.setdefault(s, {}).update(param_dict.get(s, {}))
+    gnb_param_dict2.setdefault(s, {}).update(gnb_param_dict.get(s, {}))
+    gnb_param_dict2.setdefault(s, {}).update(param_dict.get(s, {}))
 
 def load_yaml_conf(slap, name):
     conf_file = glob.glob(os.path.join(
