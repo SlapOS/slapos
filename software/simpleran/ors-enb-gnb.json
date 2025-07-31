@@ -12,8 +12,8 @@
       "description": "Disables radio",
       "type": "boolean"
     },
-    "_gtp_addr": {
-      "$ref": "instance-enb-input-schema.json#/properties/_gtp_addr"
+    "gtp_addr": {
+      "$ref": "instance-enb-input-schema.json#/properties/gtp_addr"
     },
     "mbmsgw_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
