@@ -37,15 +37,15 @@
       "title": "TDD Configuration",
       "type": "string",
       "enum": [
-        "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL,  default",
-        "DDDSUUDDDD (5ms,   2UL/7DL), S-slot=6DL:4GP:4UL,  same ratios as default",
-        "DDDSUUUUDD (5ms,   4UL/5DL), S-slot=6DL:4GP:4UL,  balanced downlink and uplink)",
-        "DDDSUUUUUU (5ms,   6UL/3DL), S-slot=2DL:2GP:10UL, high uplink)",
-        "DDSUUUUUUU (5ms,   7UL/2DL), S-slot=6DL:4GP:4UL,  EXPERIMENTAL very high uplink)",
-        "DSUUUUUUUU (5ms,   8UL/1DL), S-slot=10DL:2GP:2UL,  EXPERIMENTAL maximum uplink)",
-        "DDDSU      (2.5ms, 1UL/3DL), S-slot=10DL:2GP:2UL,  reduced latency)"
+        "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default",
+        "DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default",
+        "DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink",
+        "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink",
+        "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink",
+        "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
+        "DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency"
       ],
-      "default": "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL,  default",
+      "default": "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default",
       "options": {
         "dependencies": {
           "rf_mode": "tdd"

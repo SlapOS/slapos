@@ -409,7 +409,7 @@ def ORS_gnb(ienb):
         'root_sequence_index':  1,
         'pci':          500,
         'cell_id':      '0x01',
-        "tdd_ul_dl_config": "DSUUUUUUUU (5ms,   8UL/1DL), S-slot=10DL:2GP:2UL,  EXPERIMENTAL maximum uplink)",
+        "tdd_ul_dl_config": "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
         'inactivity_timer': 10000,
         'ru': {
             'ru_type': 'ru_ref',

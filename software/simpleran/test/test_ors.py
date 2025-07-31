@@ -47,7 +47,7 @@ core_network_param_dict = {
 param_dict = {
     'testing': True,
     'lte_mock': True,
-    'ors_cell1': {
+    'cell1': {
         'tx_gain': 17,
         'rx_gain': 17,
         'cell_id': '0x01',
@@ -55,7 +55,7 @@ param_dict = {
         'tac': '0x1717',
         'root_sequence_index': '1',
     },
-    'ors_enb_gnb': {
+    'nodeb': {
         'n_antenna_dl': 2,
         'n_antenna_ul': 2,
         'inactivity_timer': 17,
@@ -122,13 +122,13 @@ param_dict = {
     },
 }
 enb_param_dict = {
-    'ors_cell1': {
+    'cell1': {
         # ors_version for tests is B39, so earfcn needs to be within B39
         'dl_earfcn': 38450,
         'bandwidth': "10 MHz",
-        'tdd_ul_dl_config': 'DSUUUUUUUU (5ms,   8UL/1DL), S-slot=10DL:2GP:2UL,  EXPERIMENTAL maximum uplink)',
+        'tdd_ul_dl_config': '[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink',
     },
-    'ors_enb_gnb': {
+    'nodeb': {
         'enb_id': '0x17',
         'plmn_list': [
             {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
@@ -139,12 +139,12 @@ enb_param_dict = {
             {'name': '2001:db8::1', 'mme_addr': '2001:db8::1'},
         ],
     },
-    'ors': {
+    'management': {
         'xlog_forwarding_enabled': False,
     },
 }
 gnb_param_dict = {
-    'ors_cell1': {
+    'cell1': {
         # ors_version for tests is B39, so dl_nr_arfcn needs to be within N39
         'dl_nr_arfcn': 378000,
         'nr_band': 39,
@@ -152,7 +152,7 @@ gnb_param_dict = {
         'ssb_nr_arfcn': 378030,
         'ssb_pos_bitmap': '10',
     },
-    'ors_enb_gnb': {
+    'nodeb': {
         'gnb_id': '0x17',
         'gnb_id_bits': 30,
         'amf_list': [
@@ -172,15 +172,15 @@ gnb_param_dict = {
             },
         ],
     },
-    'ors': {
+    'management': {
         'xlog_forwarding_enabled': False,
     },
 }
 gnb_param_dict1 = {
-    'ors_cell1': {
-        'tdd_ul_dl_config': 'DDDSU      (2.5ms, 1UL/3DL), S-slot=10DL:2GP:2UL,  reduced latency)',
+    'cell1': {
+        'tdd_ul_dl_config': 'DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency',
     },
-    'ors_enb_gnb': {
+    'nodeb': {
         'plmn_list': [
             {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
             {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
@@ -188,17 +188,17 @@ gnb_param_dict1 = {
     },
 }
 gnb_param_dict2 = {
-    'ors_cell1': {
-        'tdd_ul_dl_config': 'DDDSUUUUUU (5ms,   6UL/3DL), S-slot=2DL:2GP:10UL, high uplink)',
+    'cell1': {
+        'tdd_ul_dl_config': 'DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink',
     },
-    'ors_enb_gnb': {
+    'nodeb': {
         'nssai': [
             {'sd': '0x171717', 'sst': 10},
             {'sd': '0x181818', 'sst': 20},
         ],
     },
 }
-for s in "ors_cell1 ors_cell2 ors_enb_gnb ors".split(" "):
+for s in "cell1 cell2 nodeb ors".split(" "):
     enb_param_dict[s].update(param_dict[s])
     gnb_param_dict1[s].update(gnb_param_dict[s])
     gnb_param_dict1[s].update(param_dict[s])
@@ -221,31 +221,31 @@ class TestENBParameters(ORSTestCase):
 
     conf = load_yaml_conf(self.slap, 'enb')
 
-    self.assertEqual(conf['tx_gain'], [enb_param_dict['ors_cell1']['tx_gain']] * enb_param_dict['ors_enb_gnb']['n_antenna_dl'])
-    self.assertEqual(conf['rx_gain'], [enb_param_dict['ors_cell1']['rx_gain']] * enb_param_dict['ors_enb_gnb']['n_antenna_ul'])
-    self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['ors_enb_gnb']['inactivity_timer'])
+    self.assertEqual(conf['tx_gain'], [enb_param_dict['cell1']['tx_gain']] * enb_param_dict['nodeb']['n_antenna_dl'])
+    self.assertEqual(conf['rx_gain'], [enb_param_dict['cell1']['rx_gain']] * enb_param_dict['nodeb']['n_antenna_ul'])
+    self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['nodeb']['inactivity_timer'])
     self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
-    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['ors_cell1']['dl_earfcn'])
+    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['cell1']['dl_earfcn'])
     self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
-    self.assertEqual(conf['enb_id'], int(enb_param_dict['ors_enb_gnb']['enb_id'], 16))
-    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['ors_cell1']['pci'])
-    self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['ors_cell1']['tac'], 16))
-    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['ors_cell1']['root_sequence_index']))
+    self.assertEqual(conf['enb_id'], int(enb_param_dict['nodeb']['enb_id'], 16))
+    self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['cell1']['pci'])
+    self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['cell1']['tac'], 16))
+    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['cell1']['root_sequence_index']))
     self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
     for p in conf['cell_default']['plmn_list']:
-      for plmn in enb_param_dict['ors_enb_gnb']['plmn_list']:
+      for plmn in enb_param_dict['nodeb']['plmn_list']:
           if plmn['plmn'] == p['plmn']:
               break
       for n in "plmn attach_without_pdn reserved".split():
         self.assertEqual(p[n], plmn[n])
     for p in conf['mme_list']:
-      for mme in enb_param_dict['ors_enb_gnb']['mme_list']:
+      for mme in enb_param_dict['nodeb']['mme_list']:
           if mme['name'] == p['mme_addr']:
               break
       self.assertEqual(p['mme_addr'], mme['mme_addr'])
 
     for p in conf['cell_list'][0]['ncell_list']:
-      for ncell in param_dict['ors_enb_gnb']['ncell_list']:
+      for ncell in param_dict['nodeb']['ncell_list']:
         if 'dl_earfcn' in p:
           if p['dl_earfcn'] == ncell.get('dl_earfcn', 0):
             break
@@ -282,35 +282,35 @@ class TestGNBParameters1(ORSTestCase):
 
     conf = load_yaml_conf(self.slap, 'enb')
 
-    self.assertEqual(conf['tx_gain'], [gnb_param_dict1['ors_cell1']['tx_gain']] * gnb_param_dict1['ors_enb_gnb']['n_antenna_dl'])
-    self.assertEqual(conf['rx_gain'], [gnb_param_dict1['ors_cell1']['rx_gain']] * gnb_param_dict1['ors_enb_gnb']['n_antenna_ul'])
-    self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['ors_enb_gnb']['inactivity_timer'])
-    self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['ors_cell1']['dl_nr_arfcn'])
-    self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['ors_cell1']['nr_band'])
-    self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['ors_cell1']['ssb_pos_bitmap'])
-    self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['ors_cell1']['nr_bandwidth'])
-    self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['ors_cell1']['pci'])
-    self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['ors_enb_gnb']['gnb_id'], 16))
-    self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['ors_enb_gnb']['gnb_id_bits'])
+    self.assertEqual(conf['tx_gain'], [gnb_param_dict1['cell1']['tx_gain']] * gnb_param_dict1['nodeb']['n_antenna_dl'])
+    self.assertEqual(conf['rx_gain'], [gnb_param_dict1['cell1']['rx_gain']] * gnb_param_dict1['nodeb']['n_antenna_ul'])
+    self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['nodeb']['inactivity_timer'])
+    self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['cell1']['dl_nr_arfcn'])
+    self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['cell1']['nr_band'])
+    self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['cell1']['ssb_pos_bitmap'])
+    self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['cell1']['nr_bandwidth'])
+    self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['cell1']['pci'])
+    self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['nodeb']['gnb_id'], 16))
+    self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['nodeb']['gnb_id_bits'])
     for p in conf['nr_cell_default']['plmn_list']:
-      for plmn in gnb_param_dict1['ors_enb_gnb']['plmn_list']:
+      for plmn in gnb_param_dict1['nodeb']['plmn_list']:
           if plmn['plmn'] == p['plmn']:
               break
       for n in "plmn ranac reserved tac".split():
         self.assertEqual(p[n], plmn[n])
     for p in conf['amf_list']:
-      for amf in gnb_param_dict1['ors_enb_gnb']['amf_list']:
+      for amf in gnb_param_dict1['nodeb']['amf_list']:
           if amf['name'] == p['amf_addr']:
               break
       self.assertEqual(p['amf_addr'], amf['amf_addr'])
     for p in conf['xn_peers']:
-      for xn in gnb_param_dict1['ors_enb_gnb']['xn_peers']:
+      for xn in gnb_param_dict1['nodeb']['xn_peers']:
           if xn['name'] == p['xn_addr']:
               break
       self.assertEqual(p, xn['xn_addr'])
 
     for p in conf['nr_cell_list'][0]['ncell_list']:
-      for ncell in param_dict['ors_enb_gnb']['ncell_list']:
+      for ncell in param_dict['nodeb']['ncell_list']:
         if 'dl_earfcn' in p:
           if p['dl_earfcn'] == ncell.get('dl_earfcn', 0):
             break
@@ -357,7 +357,7 @@ class TestGNBParameters2(ORSTestCase):
 
     for p in conf['nr_cell_default']['plmn_list'][0]['nssai']:
       sd = hex(p['sd'])
-      for nssai in gnb_param_dict2['ors_enb_gnb']['nssai']:
+      for nssai in gnb_param_dict2['nodeb']['nssai']:
           if nssai['sd'] == sd:
               break
       self.assertEqual(sd, nssai['sd'], 16)

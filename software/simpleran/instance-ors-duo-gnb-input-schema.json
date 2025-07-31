@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "ors_cell1": {
+    "cell1": {
       "title": "First Cell",
       "description": "Radio parameters of the first cell of ORS Duo",
       "unevaluatedProperties": false,
@@ -18,7 +18,7 @@
       "type": "object",
       "default": {}
     },
-    "ors_cell2": {
+    "cell2": {
       "title": "Second Cell",
       "description": "Radio parameters of the second cell of ORS Duo when using Carrier Aggregation mode (please see ORS Duo Mode parameter)",
       "unevaluatedProperties": false,
@@ -33,7 +33,7 @@
       "type": "object",
       "default": {}
     },
-    "ors_enb_gnb": {
+    "nodeb": {
       "title": "gNB Parameters",
       "description": "Parameters not related to a single cell but to the gNB",
       "unevaluatedProperties": false,
@@ -51,7 +51,7 @@
       "type": "object",
       "default": {}
     },
-    "ors": {
+    "management": {
       "title": "ORS Management Parameters",
       "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
       "unevaluatedProperties": false,
