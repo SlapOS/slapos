@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "ors_cell1": {
+    "cell1": {
       "title": "Cell Parameters",
       "description": "Radio parameters related to the cell",
       "unevaluatedProperties": false,
@@ -18,7 +18,7 @@
       "type": "object",
       "default": {}
     },
-    "ors_enb_gnb": {
+    "nodeb": {
       "title": "gNB Parameters",
       "description": "Parameters not related to the cell but to the eNB",
       "unevaluatedProperties": false,
@@ -36,7 +36,7 @@
       "type": "object",
       "default": {}
     },
-    "ors": {
+    "management": {
       "title": "ORS Management Parameters",
       "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
       "unevaluatedProperties": false,
