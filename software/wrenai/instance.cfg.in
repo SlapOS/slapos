@@ -3,17 +3,23 @@ parts =
   directory
   wren-engine-config-properties
   wren-engine-service
+  wren-engine-listening-promise
   wren-engine-logrotate-entry
   ibis-server-service
+  ibis-server-listening-promise
   ibis-server-logrotate-entry
   wren-ui-service
+  wren-ui-listening-promise
   wren-ui-logrotate-entry
   qdrant-config-yaml
   qdrant-service
+  qdrant-listening-promise
   qdrant-logrotate-entry
   wren-ai-config-yaml
   wren-ai-service
+  wren-ai-url-available-promise
   wren-ai-logrotate-entry
+  entrypoint-available-promise
   publish-connection-information
 
 eggs-directory = {{ buildout['eggs-directory'] }}
@@ -227,6 +233,13 @@ wrapper-path = ${directory:svc}/wren-engine-launcher.sh
 hash-files =
   ${wren-engine-launcher:output}
 
+[wren-engine-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = wren-engine-port-listening.py
+config-host = ${params:wren-engine-ipv4}
+config-port = ${params:wren-engine-port}
+
 [wren-engine-logrotate-entry]
 <= logrotate-entry-base
 name = wren-engine
@@ -304,6 +317,13 @@ command-line = ${ibis-server-launcher:output}
 wrapper-path = ${directory:svc}/ibis-server-launcher.sh
 hash-files =
   ${ibis-server-launcher:output}
+
+[ibis-server-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = ibis-server-port-listening.py
+config-host = ${params:ibis-server-ipv4}
+config-port = ${params:ibis-server-port}
 
 [ibis-server-logrotate-entry]
 <= logrotate-entry-base
@@ -400,6 +420,13 @@ environment =
 hash-files =
   ${wren-ui-launcher:output}
 
+[wren-ui-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = wren-ui-port-listening.py
+config-host = ${params:wren-ui-ipv4}
+config-port = ${params:wren-ui-port}
+
 [wren-ui-logrotate-entry]
 <= logrotate-entry-base
 name = wren-ui
@@ -478,6 +505,13 @@ command-line = ${qdrant-server:output}
 wrapper-path = ${directory:svc}/qdrant-server
 hash-files =
   ${qdrant-server:output}
+
+[qdrant-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = qdrant-http-port-listening.py
+config-host = ${params:qdrant-ipv4}
+config-port = ${params:qdrant-http-port}
 
 [qdrant-logrotate-entry]
 <= logrotate-entry-base
@@ -632,6 +666,14 @@ environment =
 hash-files =
   ${wren-ai-launcher:output}
 
+[wren-ai-url-available-promise]
+<= monitor-promise-base
+promise = check_url_available
+timeout = 5
+name = wren-ai-url-listening.py
+url = ${wren-ai:http-url}
+config-url = ${:url}
+
 [wren-ai-logrotate-entry]
 <= logrotate-entry-base
 name = wren-ai
@@ -639,6 +681,14 @@ log = ${wren-ai:log-file}
 post = [ -e "${wren-ai:pid-file}" ] && kill -USR1 $(cat ${wren-ai:pid-file})
 
 # ---------------------------------------------------------
+[entrypoint-available-promise]
+<= monitor-promise-base
+promise = check_url_available
+timeout = 5
+name = entrypoint-available.py
+url = ${wren-ui:http-url}
+config-url = ${:url}
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 wren-engine-http-url = ${wren-engine:http-url}
