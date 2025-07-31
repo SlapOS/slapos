@@ -103,7 +103,7 @@ param_dict = {
                 'plmn': "00101"
             },
             {
-                'name': 'ORS3',
+                'name': 'ORS4',
                 'cell_type': 'nr',
                 'cell_kind': 'enb_peer',
                 'rat': 'nr',
@@ -118,7 +118,7 @@ param_dict = {
                 'tac': 2,
                 'plmn': "00101"
             },
-        },
+        ],
     },
 }
 enb_param_dict = {
@@ -198,12 +198,16 @@ gnb_param_dict2 = {
         ],
     },
 }
-for s in "cell1 cell2 nodeb ors".split(" "):
-    enb_param_dict[s].update(param_dict[s])
-    gnb_param_dict1[s].update(gnb_param_dict[s])
-    gnb_param_dict1[s].update(param_dict[s])
-    gnb_param_dict2[s].update(gnb_param_dict[s])
-    gnb_param_dict2[s].update(param_dict[s])
+for s in "cell1 nodeb management".split(" "):
+    enb_param_dict.setdefault(s,  {}).update(param_dict.get(s, {}))
+    gnb_param_dict1.setdefault(s, {}).update(gnb_param_dict.get(s, {}))
+    gnb_param_dict1.setdefault(s, {}).update(param_dict.get(s, {}))
+    gnb_param_dict2.setdefault(s, {}).update(gnb_param_dict.get(s, {}))
+    gnb_param_dict2.setdefault(s, {}).update(param_dict.get(s, {}))
+
+for d in [enb_param_dict, gnb_param_dict1, gnb_param_dict2]:
+    d['testing']  = True
+    d['lte_mock'] = True
 
 def load_yaml_conf(slap, name):
     conf_file = glob.glob(os.path.join(
@@ -224,7 +228,7 @@ class TestENBParameters(ORSTestCase):
     self.assertEqual(conf['tx_gain'], [enb_param_dict['cell1']['tx_gain']] * enb_param_dict['nodeb']['n_antenna_dl'])
     self.assertEqual(conf['rx_gain'], [enb_param_dict['cell1']['rx_gain']] * enb_param_dict['nodeb']['n_antenna_ul'])
     self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['nodeb']['inactivity_timer'])
-    self.assertEqual(conf['cell_list'][0]['uldl_config'], 6)
+    self.assertEqual(conf['cell_list'][0]['uldl_config'], 4)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['cell1']['dl_earfcn'])
     self.assertEqual(conf['cell_list'][0]['n_rb_dl'], 50)
     self.assertEqual(conf['enb_id'], int(enb_param_dict['nodeb']['enb_id'], 16))
