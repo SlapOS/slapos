@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Core Network Input Parameters",
   "type": "object",
   "properties": {
@@ -85,9 +85,9 @@
         }
       },
       "default": [
-        "internet",
-        "default",
-        "sos"
+        {"name": "internet"},
+        {"name": "default"},
+        {"name": "sos"}
       ]
     },
     "qci": {
