@@ -25,9 +25,10 @@
 #
 ##############################################################################
 
+import contextlib
 import os
 import requests
-import time
+import urllib3
 
 from slapos.slap import exception
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -47,6 +48,26 @@ class WrenAITestCase(SlapOSInstanceTestCase):
       * Check that the deployment works and that the promise passes.
     """
 
+    @contextlib.contextmanager
+    def requestSession(self, base_url):
+        # This method is copy-pasted from erp5.
+        # What happens is that instantiation just create the services, but
+        # does not wait for ERP5 to be initialized. When this test run ERP5
+        # instance is instantiated, but zope is still busy creating the site
+        # and haproxy replies with 503 Service Unavailable when zope is not
+        # started yet, with 404 when erp5 site is not created, with 500 when
+        # mysql is not yet reachable, so we configure this requests session
+        # to retry.
+        with requests.Session() as session:
+            session.mount(
+                base_url,
+                requests.adapters.HTTPAdapter(
+                    max_retries=urllib3.util.retry.Retry(
+                        total=20,
+                        backoff_factor=.5,
+                        status_forcelist=(404, 500, 503))))
+            yield session
+
     def checkUrlAndGetResponse(self, url):
         response = requests.get(url)
         self.assertEqual(requests.codes['OK'], response.status_code)
@@ -61,24 +82,44 @@ class WrenAITestCase(SlapOSInstanceTestCase):
         instance = self.requestDefaultInstance()
         param_dict = instance.getConnectionParameterDict()
         assert 'ibis-server-http-url' in param_dict
+        url = param_dict['ibis-server-http-url']
+        with self.requestSession(url) as session:
+            # Allow redirects to follow from 307 to 200.
+            r = session.get(url, verify=False, allow_redirects=True)
+            self.assertEqual(r.status_code, 200)
 
     def test_wren_ai_reported_active(self):
         instance = self.requestDefaultInstance()
         param_dict = instance.getConnectionParameterDict()
         assert 'wren-ai-http-url' in param_dict
+        url = param_dict['wren-ai-http-url']
+        with self.requestSession(url) as session:
+            # Allow redirects to follow from 307 to 200.
+            r = session.get(url, verify=False, allow_redirects=True)
+            self.assertEqual(r.status_code, 200)
 
     def test_wren_ui_reported_active(self):
         self.slap.waitForInstance(self.instance_max_retry)
         instance = self.requestDefaultInstance()
         param_dict = instance.getConnectionParameterDict()
         assert 'wren-ui-http-url' in param_dict
-        time.sleep(1)
-        response = self.checkUrlAndGetResponse(param_dict['wren-ui-http-url'])
+        url = param_dict['wren-ui-http-url']
+        with self.requestSession(url) as session:
+            # It should return 200 directly.
+            r = session.get(url, verify=False, allow_redirects=False)
+            print("r.status_code:", r.status_code)
+            self.assertEqual(r.status_code, 200)
 
     def test_qdrant_http_reported_active(self):
         instance = self.requestDefaultInstance()
         param_dict = instance.getConnectionParameterDict()
         assert 'qdrant-http-url' in param_dict
+        url = param_dict['qdrant-http-url']
+        with self.requestSession(url) as session:
+            # It should return 200 directly.
+            r = session.get(url, verify=False, allow_redirects=False)
+            print("r.status_code:", r.status_code)
+            self.assertEqual(r.status_code, 200)
 
     def test_qdrant_grpc_reported_active(self):
         instance = self.requestDefaultInstance()
