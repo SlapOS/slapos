@@ -9,7 +9,7 @@
       "description": "Core Network Public Land Mobile Network",
       "type": "string"
     },
-    "_gtp_addr_list": {
+    "gtp_addr_list": {
       "title": "GTP Address List",
       "description": "IP addresses (and an optional port) on which the GTP-U packets are received. The default port is 2152",
       "type": "array",
