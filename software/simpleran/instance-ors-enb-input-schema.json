@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
     "cell1": {
@@ -9,7 +9,7 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-cell.json"
+          "$ref": "./ors-cell.json"
         },
         {
           "$ref": "ors-enb-cell.json"
