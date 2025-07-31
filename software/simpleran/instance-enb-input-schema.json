@@ -14,7 +14,7 @@
       "description": "eNB ID. (must be set if there are LTE cells)",
       "type": "string"
     },
-    "_gtp_addr": {
+    "gtp_addr": {
       "title": "GTP Address",
       "description": "IP address (and an optional port) on which the GTP-U packets are received. The default port is 2152",
       "type": "string",
