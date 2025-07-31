@@ -53,6 +53,7 @@
         }
       },
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "sdr_dev",
         "sfp_port",
