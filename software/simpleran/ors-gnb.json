@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "gnb_id": {
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
+      "description": "eNB ID. Equal to (ORS serial number + 524288) modulo 1048576 by default"
+    },
+    "gnb_id_bits": {
+      "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
+      "default": 28
+    },
+    "amf_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/amf_list",
+      "default": {
+        "Local core-network": {
+          "amf_addr": "127.0.1.100"
+        }
+      }
+    },
+    "plmn_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: PLMN 00101 and TAC 1)",
+      "default": {
+        "Test PLMN": {
+          "plmn": "00101",
+          "tac": 1
+        }
+      }
+    },
+    "nssai": {
+      "$ref": "instance-enb-input-schema.json#/properties/nssai"
+    },
+    "nr_nr_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/nr_nr_handover"
+    },
+    "nr_eutra_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/nr_eutra_handover"
+    },
+    "xn_peers": {
+      "title": "XN Peers",
+      "description": "XN Peers",
+      "type": "array",
+      "items": {
+        "title": "XN Peer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
+          },
+          "xn_addr": {
+            "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
+          }
+        }
+      },
+      "default": []
+    }
+  }
+}
