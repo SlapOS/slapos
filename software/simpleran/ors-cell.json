@@ -21,8 +21,8 @@
     },
     "rx_gain": {
       "$ref": "ru/common.json#/properties/rx_gain",
-      "description": "Rx gain (in dB), it should usually always be between 25 and 45. Please refer to the ORS Handbook to see how to fine tune this value",
-      "default": 25
+      "description": "Rx gain (in dB), default value of 40 should work for most cases, you can try to set it to 50 for long distance tests if 40 is not enough. Please refer to the ORS Handbook to see how to fine tune this value",
+      "default": 40
     },
     "cell_id": {
       "$ref": "cell/common.json#/properties/cell_id",
