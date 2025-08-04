@@ -88,14 +88,13 @@ dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
 xz-utils-location = {{ xz_utils_location }}
-mariadb-location = {{ mariadb_location }}
+mariadb = {{ dumps(mariadb) }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
-mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
@@ -110,6 +109,7 @@ bin-directory = {{ bin_directory }}
 url = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
+    key mariadb dynamic-template-mariadb-parameters:mariadb
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
     raw bin_directory {{ bin_directory }}
