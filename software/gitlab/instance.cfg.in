@@ -64,6 +64,7 @@ context =
     raw bundler_1_17_3_dir          ${bundler-4gitlab:bundle1.17.3}
     raw coreutils_location          ${coreutils:location}
     raw curl_bin                    ${curl:location}/bin/curl
+    raw curl_location               ${curl:location}
     raw dcron_bin                   ${dcron-output:crond}
     raw git                         ${git:location}/bin/git
     raw git_location                ${git:location}
