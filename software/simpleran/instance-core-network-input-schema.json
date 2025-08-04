@@ -34,7 +34,9 @@
           }
         ]
       },
-      "default": ["Localhost address"]
+      "default": [
+        "Localhost address"
+      ]
     },
     "iperf3": {
       "default": 0,
@@ -82,7 +84,11 @@
           }
         }
       },
-      "default": ["internet", "default", "sos"]
+      "default": [
+        "internet",
+        "default",
+        "sos"
+      ]
     },
     "qci": {
       "default": 9,
