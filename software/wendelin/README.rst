@@ -4,7 +4,7 @@ Available ``software-type`` values
 - ``default``
 
   Recommended for development and production use. Automatic creation of
-  erp5-site.
+  wendelin-site.
 
 Notes
 =====
@@ -12,18 +12,18 @@ Notes
 This software release is not intended to be accessed directly, but through a
 front-end instance which is expected to contains the RewriteRules_ (or
 equivalent) needed to relocate Zope's urls via its VirtualHostMonster_. See the
-``frontend`` erp5 instance parameter.
+``frontend`` wendelin instance parameter.
 
-ERP5 defaults connect to the public cloudooo on https://cloudooo.erp5.net/.
+Wendelin defaults connect to the public cloudooo on https://cloudooo.erp5.net/.
 See the ``cloudooo`` Software Release to setup a cloudooo cluster if necessary.
 
 Replication
 ===========
 
-Replication allows setting up an ERP5 instance whose data follows another
+Replication allows setting up an Wendelin instance whose data follows another
 instance.
 
-Relations between ERP5 instances in a replication graph depend in what is
+Relations between Wendelin instances in a replication graph depend in what is
 supported by individual data managers (ex: a neo cluster can replicate from a
 neo cluster which itself replicates from a 3rd).
 
@@ -63,7 +63,7 @@ In addition to your usual parameter set, you needs to provide the following para
     "zodb": [
       {
         "storage-dict": {
-          "upstream-masters": ...,  As published by to-become upstream ERP5 instance as "neo-masters"
+          "upstream-masters": ...,  As published by to-become upstream Wendelin instance as "neo-masters"
         },
         "type": "neo",              The only ZODB type supporting replication
         ...
@@ -92,7 +92,7 @@ This software release assigns the following port ranges by default:
   jupyter               8888
   ====================  ==========
 
-Non-zope partitions are unique in an ERP5 cluster, so you shouldn't have to
+Non-zope partitions are unique in an Wendelin cluster, so you shouldn't have to
 care about them as a user (but a Software Release developer needs to know
 them).
 

@@ -106,7 +106,7 @@
  #
  #       # The mapping of zope paths.
  #       # This is a Zope specific feature used only to provide https while running
- #       # ERP5 "unit test" suite.
+ #       # Wendelin "unit test" suite.
  #       # `enable_authentication` has same meaning as for `backend-dict`.
  #       "zope-virtualhost-monster-backend-dict": {
  #          # {(ip, port): ( enable_authentication, {frontend_path: ( internal_url ) }, ) }
