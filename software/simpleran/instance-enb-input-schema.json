@@ -28,8 +28,7 @@
             "IPv4 LAN address",
             "IPv6 Re6st address",
             "Localhost address"
-          ],
-          "default": "Automatic"
+          ]
         },
         {
           "title": "Expert only: manual address",

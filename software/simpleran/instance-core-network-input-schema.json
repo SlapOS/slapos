@@ -15,7 +15,6 @@
       "type": "array",
       "items": {
         "title": "Address",
-        "description": "Format: 'ip_address' or 'ip_address:port'",
         "type": "string",
         "anyOf": [
           {
@@ -26,11 +25,11 @@
               "IPv4 LAN address",
               "IPv6 Re6st address",
               "Localhost address"
-            ],
-            "default": "IPv4 LAN address"
+            ]
           },
           {
             "title": "Expert only: manual address",
+            "description": "Format: 'ip_address' or 'ip_address:port'",
             "type": "string"
           }
         ]
