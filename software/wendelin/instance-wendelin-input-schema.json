@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Parameters to instantiate ERP5",
+  "description": "Parameters to instantiate Wendelin",
   "type": "object",
   "additionalProperties": false,
   "definitions": {
@@ -500,7 +500,6 @@
       "properties": {
         "enable": {
           "description": "Whether to enable creation of associated Jupyter subinstance",
-          "default": false,
           "type": "boolean"
         },
         "zope-family": {
