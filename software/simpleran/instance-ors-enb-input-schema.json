@@ -3,66 +3,50 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "$ref": "ors-enb-common.json#/properties",
-    "n_antenna_dl": {
-      "$ref": "ors-enb-common.json#/properties/n_antenna_dl"
+    "cell1": {
+      "title": "Cell Parameters",
+      "description": "Radio parameters related to the cell",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-cell.json"
+        },
+        {
+          "$ref": "ors-enb-cell.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     },
-    "n_antenna_ul": {
-      "$ref": "ors-enb-common.json#/properties/n_antenna_ul"
+    "nodeb": {
+      "title": "eNB Parameters",
+      "description": "Parameters not related to the cell but to the eNB",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-enb-gnb-classic.json"
+        },
+        {
+          "$ref": "ors-enb-gnb.json"
+        },
+        {
+          "$ref": "ors-enb.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     },
-    "gps_sync": {
-      "$ref": "ors-enb-common.json#/properties/gps_sync"
-    },
-    "tx_power_dbm": {
-      "$ref": "ors-enb-common.json#/properties/tx_power_dbm"
-    },
-    "tx_gain": {
-      "$ref": "ors-enb-common.json#/properties/tx_gain"
-    },
-    "rx_gain": {
-      "$ref": "ors-enb-common.json#/properties/rx_gain"
-    },
-    "lte_band": {
-      "$ref": "ors-enb-common.json#/properties/lte_band"
-    },
-    "dl_frequency": {
-      "$ref": "ors-enb-common.json#/properties/dl_frequency"
-    },
-    "dl_earfcn": {
-      "$ref": "ors-enb-common.json#/properties/dl_earfcn"
-    },
-    "bandwidth": {
-      "$ref": "ors-enb-common.json#/properties/bandwidth"
-    },
-    "tdd_ul_dl_config": {
-      "$ref": "ors-enb-common.json#/properties/tdd_ul_dl_config"
-    },
-    "use_ipv4": {
-      "$ref": "ors-enb-common.json#/properties/use_ipv4"
-    },
-    "mme_list": {
-      "$ref": "ors-enb-common.json#/properties/mme_list"
-    },
-    "plmn_list": {
-      "$ref": "ors-enb-common.json#/properties/plmn_list"
-    },
-    "pci": {
-      "$ref": "ors-enb-common.json#/properties/pci"
-    },
-    "cell_id": {
-      "$ref": "ors-enb-common.json#/properties/cell_id"
-    },
-    "enb_id": {
-      "$ref": "ors-enb-common.json#/properties/enb_id"
-    },
-    "tac": {
-      "$ref": "ors-enb-common.json#/properties/tac"
-    },
-    "root_sequence_index": {
-      "$ref": "ors-enb-common.json#/properties/root_sequence_index"
-    },
-    "ncell_list": {
-      "$ref": "ors-enb-common.json#/properties/ncell_list"
+    "management": {
+      "title": "ORS Management Parameters",
+      "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-params.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     }
   }
 }
