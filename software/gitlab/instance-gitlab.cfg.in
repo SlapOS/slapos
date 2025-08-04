@@ -323,8 +323,10 @@ context-extra =
 recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
 # NOTE $HOME needed to pick gitconfig
+# LD_LIBRARY_PATH is needed for ethon gem which load libcurl from ruby code
 environment  =
     PATH = {{ node_bin_location }}:{{ gopath_bin }}:{{ yarn_location }}/bin:/usr/local/bin:/usr/bin:/bin
+    LD_LIBRARY_PATH={{ curl_location }}/lib
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
     HOME = ${directory:home}
     RAILS_ENV = production
