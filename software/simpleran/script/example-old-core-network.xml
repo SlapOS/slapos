@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instance>
+    <parameter id="_">{
+    "core_network_plmn": "1",
+    "external_enb_gnb": true,
+    "iperf3": 32,
+    "local_domain": "1",
+    "network_name": "1",
+    "network_short_name": "5",
+    "use_ipv4": true,
+    "fixed_ips": true,
+    "pdn_list": {
+        "test": {
+            "name": "a"
+        },
+        "test2": {
+            "name": "b"
+        }
+    },
+    "qci": 1,
+    "eps_5gs_interworking": "With N26",
+    "hss_addr": "sdqf",
+    "hss_bind_addr": "sqdf",
+    "s6_origin_realm": "dsqf",
+    "s6_origin_host": "sqf"
+}</parameter>
+</instance>

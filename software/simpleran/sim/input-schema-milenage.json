@@ -42,6 +42,9 @@
     "multi_sim": {
       "$ref": "common.json#/properties/multi_sim"
     },
+    "res_len": {
+      "$ref": "common.json#/properties/res_len"
+    },
     "impu_list": {
       "$ref": "common.json#/properties/impu_list"
     },

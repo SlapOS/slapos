@@ -47,7 +47,7 @@ trim() {
   i=-1
   N=$(ls -1t $2* | wc -l)
   TOTAL=$1
-  while test $TOTAL -ge $1 ; do
+  while [ $TOTAL -ge $1 ] && [ $((N-i)) -ge 1 ] ; do
     i=$((i+1))
     TOTAL=$(du -c $(ls -1t $2* | head -n$((N-i))) | tail -n1 | cut -f1)
   done
