@@ -46,22 +46,26 @@
 
       'cell/lte': {
         'inactivity_timer': 10000,
+        'cipher_algo_pref': [],
+        'integ_algo_pref': ['EEA2 (128 bit AES)','EEA1 (Snow 3G)'],
       },
       'cell/lte/fdd': {
       },
       'cell/lte/tdd': {
-        'tdd_ul_dl_config': '[Configuration 2] 5ms 2UL 6DL (default)',
+        'tdd_ul_dl_config': '[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default',
       },
 
       'cell/nr': {
         'inactivity_timer': 10000,
+        'cipher_algo_pref': [],
+        'integ_algo_pref': ['NEA2 (128 bit AES)','NEA1 (Snow 3G)'],
       },
       'cell/nr/fdd': {
         'ssb_pos_bitmap':   '1000',
       },
       'cell/nr/tdd': {
         'ssb_pos_bitmap':   '10000000',
-        'tdd_ul_dl_config': '5ms 2UL 7DL 4/6 (default)',
+        'tdd_ul_dl_config': 'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default',
       },
 
       'ue': {

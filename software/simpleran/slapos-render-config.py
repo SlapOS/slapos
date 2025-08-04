@@ -387,7 +387,7 @@ def ORS_enb(ienb):
         'root_sequence_index': 204,
         'pci':          1,
         'cell_id':      '0x01',
-        "tdd_ul_dl_config": "[Configuration 6] 5ms 5UL 3DL (maximum uplink)",
+        "tdd_ul_dl_config": "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink",
         'inactivity_timer': 10000,
         'ru': {
             'ru_type': 'ru_ref',
@@ -409,7 +409,7 @@ def ORS_gnb(ienb):
         'root_sequence_index':  1,
         'pci':          500,
         'cell_id':      '0x01',
-        "tdd_ul_dl_config": "5ms 8UL 1DL 2/10 (EXPERIMENTAL maximum uplink)",
+        "tdd_ul_dl_config": "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
         'inactivity_timer': 10000,
         'ru': {
             'ru_type': 'ru_ref',
@@ -499,11 +499,11 @@ def _do_enb_with(iru_icell_func):
             "com_ws_port": 9001,
             "com_addr": "127.0.1.2",
             "gtp_addr":     "127.0.1.1",
-            "mme_list":     {"1": {"mme_addr": "127.0.1.100"}},
-            "amf_list":     {"1": {"amf_addr": "127.0.1.100"}},
-            "plmn_list":    {"1": {"plmn": "00101"}},
-            "plmn_list_5g": {"1": {"plmn": "00101", "tac": 100}},
-            "nssai":        {"1": {"sst": 1}}
+            "mme_list":     [{"name": "1", "mme_addr": "127.0.1.100"}],
+            "amf_list":     [{"name": "1", "amf_addr": "127.0.1.100"}],
+            "plmn_list":    [{"plmn": "00101"}],
+            "plmn_list_5g": [{"plmn": "00101", "tac": 100}],
+            "nssai":        [{"sst": 1}]
         }
     }""" % locals()
 
