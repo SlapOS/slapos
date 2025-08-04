@@ -29,9 +29,14 @@
       "title": "Software path list",
       "description": "List of software precompiled by the testnode",
       "type": "array",
-      "default": ["https://lab.nexedi.com/nexedi/slapos/raw/1.0.387/software/seleniumrunner/software.cfg"]
+      "default": [
+        "https://lab.nexedi.com/nexedi/slapos/raw/1.0.387/software/seleniumrunner/software.cfg"
+      ]
     }
   },
   "additionalProperties": false,
-  "required": ["test-node-title", "test-suite-master-url"]
+  "required": [
+    "test-node-title",
+    "test-suite-master-url"
+  ]
 }
