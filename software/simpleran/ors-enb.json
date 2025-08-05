@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "enb_id": {
+      "$ref": "instance-enb-input-schema.json#/properties/enb_id",
+      "description": "eNB ID. Equal to ORS serial number modulo 1048576 by default"
+    },
+    "mme_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/mme_list",
+      "default": {
+        "Local core-network": {
+          "mme_addr": "127.0.1.100"
+        }
+      }
+    },
+    "plmn_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+      "default": {
+        "Test PLMN": {
+          "plmn": "00101"
+        }
+      }
+    },
+    "eutra_eutra_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/eutra_eutra_handover"
+    },
+    "eutra_nr_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/eutra_nr_handover"
+    },
+    "x2_peers": {
+      "title": "X2 Peers",
+      "description": "X2 Peers",
+      "type": "array",
+      "items": {
+        "title": "X2 Peer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
+          },
+          "x2_addr": {
+            "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
+          }
+        }
+      },
+      "default": []
+    }
+  }
+}

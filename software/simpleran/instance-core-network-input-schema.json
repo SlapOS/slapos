@@ -9,11 +9,34 @@
       "description": "Core Network Public Land Mobile Network",
       "type": "string"
     },
-    "external_enb_gnb": {
-      "default": false,
-      "title": "External eNB / gNB",
-      "description": "Set to true if external eNB / gNB will need to connect to this core network.",
-      "type": "boolean"
+    "gtp_addr_list": {
+      "title": "GTP Address List",
+      "description": "IP addresses (and an optional port) on which the GTP-U packets are received. The default port is 2152",
+      "type": "array",
+      "items": {
+        "title": "Address",
+        "type": "string",
+        "anyOf": [
+          {
+            "title": "Automatic address",
+            "description": "IPv4 LAN: IPv4 on the ethernet LAN the Core Network is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for eNBs / gNBs running on the same machine",
+            "type": "string",
+            "enum": [
+              "IPv4 LAN address",
+              "IPv6 Re6st address",
+              "Localhost address"
+            ]
+          },
+          {
+            "title": "Expert only: manual address",
+            "description": "Format: 'ip_address' or 'ip_address:port'",
+            "type": "string"
+          }
+        ]
+      },
+      "default": [
+        "Localhost address"
+      ]
     },
     "iperf3": {
       "default": 0,
@@ -39,12 +62,6 @@
       "type": "string",
       "default": "RAPIDSPACE"
     },
-    "use_ipv4": {
-      "default": false,
-      "title": "Use IPv4",
-      "description": "Set to true to use IPv4 for AMF / MME addresses",
-      "type": "boolean"
-    },
     "fixed_ips": {
       "default": false,
       "title": "Fixed IP for the UE",
@@ -54,30 +71,24 @@
     "pdn_list": {
       "title": "PDN list",
       "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names.",
-      "default": {
-        "internet": {
-          "name": "internet"
-        },
-        "default": {
-          "name": "default"
-        },
-        "sos": {
-          "name": "sos"
+      "type": "array",
+      "items": {
+        "title": "PDN",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "APN name",
+            "description": "APN name",
+            "type": "string"
+          }
         }
       },
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "name": {
-              "title": "APN name",
-              "description": "APN name",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
+      "default": [
+        "internet",
+        "default",
+        "sos"
+      ]
     },
     "qci": {
       "default": 9,

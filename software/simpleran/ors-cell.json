@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NR Cell",
+  "type": "object",
+  "properties": {
+    "tx_power_dbm": {
+      "title": "Tx Power in dBm",
+      "description": "Set transmission power of each antenna in dBm (WARNING: please refer to the ORS Handbook to check the maximum values for your ORS, it should not be set too high or you will get bad radio quality)",
+      "type": "number",
+      "default": 20
+    },
+    "tx_gain": {
+      "$ref": "ru/common.json#/properties/tx_gain",
+      "title": "Expert: Tx gain",
+      "description": "Expert only. Tx gain (in dB), between 0 and 89, can be used instead of Tx dBm Power to directly control tx_gain Amarisoft option (WARNING: please refer to the ORS Handbook to check the maximum values for your ORS, it should not be set too high or you will get bad radio quality) (Do not set both Tx Gain and Tx dBm Power)"
+    },
+    "tx_power_offset": {
+      "title": "Expert: TX Power Offset",
+      "description": "Expert only. Offset between Amarisoft SDR50 board power and ORS power. For fine tuning the reference signal power value. Default depends on ORS frequency, please refer to the connection parameters",
+      "type": "number"
+    },
+    "rx_gain": {
+      "$ref": "ru/common.json#/properties/rx_gain",
+      "description": "Rx gain (in dB), default value of 40 should work for most cases, you can try to set it to 50 for long distance tests if 40 is not enough. Please refer to the ORS Handbook to see how to fine tune this value",
+      "default": 40
+    },
+    "cell_id": {
+      "$ref": "cell/common.json#/properties/cell_id",
+      "description": "Cell ID. Equal to ORS Serial number modulo 256 by default"
+    }
+  }
+}
