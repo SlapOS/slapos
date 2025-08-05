@@ -42,7 +42,7 @@ smtpd_tls_dh1024_param_file = {{ dh_2048 }}
 
 smtpd_tls_security_level = encrypt
 smtpd_sasl_auth_enable = yes
-# Reject as many bogus cases as soon as possible, so errors are visible to ERP5
+# Reject as many bogus cases as soon as possible, so errors are visible to Wendelin
 # developper rather than relying on bounces.
 smtpd_recipient_restrictions =
   reject_non_fqdn_recipient
