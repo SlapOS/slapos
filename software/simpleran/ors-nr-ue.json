@@ -14,6 +14,9 @@
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
+    "ssb_nr_arfcn": {
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
+    },
     "tx_gain": {
       "$ref": "ru/common.json#/properties/tx_gain"
     },
