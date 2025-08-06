@@ -1,7 +1,7 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
-  "title": "Input Parameters",
+  "title": "NR UE Cell",
   "properties": {
     "nr_bandwidth": {
       "$ref": "cell/common.json#/properties/bandwidth",
@@ -12,7 +12,7 @@
       "default": "tdd"
     },
     "dl_nr_arfcn": {
-      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
+      "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
     "tx_gain": {
       "$ref": "ru/common.json#/properties/tx_gain"
