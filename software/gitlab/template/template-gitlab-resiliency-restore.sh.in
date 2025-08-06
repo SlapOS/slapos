@@ -81,7 +81,7 @@ $redis_executable &
 redis_pid=$!
 trap "kill $postgres_pid $redis_pid" EXIT TERM INT
 echo "Starting gitaly service..."
-$gitaly_script &
+$gitaly_script &> $var_location/log/gitaly-restore.log &
 gitaly_pid=$!
 trap "kill $gitaly_pid $postgres_pid $redis_pid" EXIT TERM INT
 echo "Starting Puma"
@@ -92,7 +92,7 @@ trap "kill $gitaly_pid $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
 sleep 200
 if [ -s "$puma_pid_file" ]; then
   puma_pid=$(head -n 1 $puma_pid_file) > /dev/null 2>&1
-  trap "kill $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
+  trap "kill $gitaly_pid $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
 fi
 echo "[OK]"
 echo "Restoring gitlab data..."

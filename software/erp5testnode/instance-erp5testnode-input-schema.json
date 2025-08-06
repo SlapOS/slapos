@@ -1,28 +1,42 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
     "test-node-title": {
-      "title": "Test Node Title",
-      "description": "Name for the Test Node which will be used at ERP5.",
+      "title": "Testnode Title",
+      "description": "Name for the testnode which will be used at ERP5.",
+      "type": "string"
+    },
+    "test-suite-master-url": {
+      "title": "Task Distribution URL",
+      "description": "Url of the task distributor master on portal_task_distribution",
       "type": "string"
     },
     "node-quantity": {
       "title": "Quantity of Parallel runs",
-      "description": "QUantity of Parallel tests will be executed on this Node.",
-      "type": "integer"
-    },
-    "test-suite-master-url": {
-      "title": "Task Distribution URL",
-      "description": "Url for the task distributor master on portal_task_distribution",
-      "type": "string"
+      "description": "Quantity of parallel tests that will be executed on this testnode.",
+      "type": "integer",
+      "default": 3
     },
     "keep-log-days": {
       "title": "Retention of test logs",
       "description": "Number of days to keep logs and snapshots",
-      "type": "number",
+      "type": "integer",
       "default": 15
+    },
+    "software-path-list": {
+      "title": "Software path list",
+      "description": "List of software precompiled by the testnode",
+      "type": "array",
+      "default": [
+        "https://lab.nexedi.com/nexedi/slapos/raw/1.0.387/software/seleniumrunner/software.cfg"
+      ]
     }
-  }
+  },
+  "additionalProperties": false,
+  "required": [
+    "test-node-title",
+    "test-suite-master-url"
+  ]
 }

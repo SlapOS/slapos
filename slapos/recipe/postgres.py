@@ -150,7 +150,7 @@ class Recipe(GenericBaseRecipe):
                     %s
                     logging_collector = on
                     log_rotation_size = 50MB
-                    max_connections = 100
+                    max_connections = %s
                     datestyle = 'iso, mdy'
 
                     lc_messages = 'C.UTF-8'
@@ -164,6 +164,7 @@ class Recipe(GenericBaseRecipe):
                     """ % (
                         ','.join(set(ipv4).union(ipv6)),
                         'port = %s' % self.options['port'] if self.options['port'] else '',
+                        self.options.get('max-connections', 100),
                         pgdata,
                         )))
 

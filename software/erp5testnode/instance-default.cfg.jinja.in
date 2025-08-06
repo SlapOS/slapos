@@ -1,6 +1,3 @@
-{%- set slapparameter_dict = dict(default_parameter_dict, **slapparameter_dict) -%}
-
-
 [buildout]
 
 eggs-directory = ${buildout:eggs-directory}
@@ -56,11 +53,7 @@ ipv4-address = {{ partition_ipv4 }}
 ipv6-address = {{ partition_ipv6 }}
 ipv6-range = {{ partition_ipv6_range }}
 test-suite-master-url = {{ slapparameter_dict['test-suite-master-url'] }}
-{%- if isinstance(slapparameter_dict['software-path-list'], str) %}
-software-path-list = {{ slapparameter_dict['software-path-list'] }}
-{%- else %}
 software-path-list = {{ json.dumps(slapparameter_dict['software-path-list']) }}
-{%- endif %}
 keep-log-days = {{ slapparameter_dict['keep-log-days'] }}
 git-binary = ${git:location}/bin/git
 slapos-binary = ${buildout:bin-directory}/slapos

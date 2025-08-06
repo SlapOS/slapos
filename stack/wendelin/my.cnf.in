@@ -1,8 +1,8 @@
 {% set socket = parameter_dict['socket'] -%}
-# ERP5 buildout my.cnf template based on my-huge.cnf shipped with mysql
+# Wendelin buildout my.cnf template based on my-huge.cnf shipped with mysql
 # The MySQL server
 [mysqld]
-# ERP5 by default requires InnoDB storage. MySQL by default fallbacks to using
+# Wendelin by default requires InnoDB storage. MySQL by default fallbacks to using
 # different engine, like MyISAM. Such behaviour generates problems only, when
 # tables requested as InnoDB are silently created with MyISAM engine.
 #
@@ -46,7 +46,7 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 {% if innodb_log_buffer_size %} innodb_log_buffer_size = {{ innodb_log_buffer_size }}{% endif %}
 
 # very important to allow parallel indexing
-# Note: this is compatible with binlog-based incremental backups, because ERP5
+# Note: this is compatible with binlog-based incremental backups, because Wendelin
 # doesn't use "insert ... select" (in any number of queries) pattern.
 innodb_locks_unsafe_for_binlog = 1
 
