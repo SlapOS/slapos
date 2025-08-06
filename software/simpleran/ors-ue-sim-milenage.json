@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Milenage Algorithm (advanced parameters)",
+  "required": [
+    "sim_algo",
+    "opc",
+    "k"
+  ],
+  "properties": {
+    "sim_algo": {
+      "$ref": "sim/common.json#/properties/sim_algo",
+      "const": "milenage"
+    },
+    "plmn": {
+      "$ref": "sim/common.json#/properties/plmn"
+    },
+    "msin": {
+      "$ref": "sim/common.json#/properties/msin"
+    },
+    "opc": {
+      "$ref": "sim/common.json#/properties/opc"
+    },
+    "k": {
+      "$ref": "sim/common.json#/properties/k"
+    },
+    "sqn": {
+      "$ref": "sim/common.json#/properties/sqn"
+    }
+  }
+}
