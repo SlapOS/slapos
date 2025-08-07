@@ -1,0 +1,5 @@
+node.bind-ip={{ global_params['wren-engine-ipv4'] }}
+node.environment={{ wrenai_params['node-environment'] }}
+wren.experimental-enable-dynamic-fields={{ wrenai_params['experimental-enable-dynamic-fields'] }}
+http-server.http.port={{ global_params['wren-engine-port'] }}
+http-server.log.path={{ wrenai_params['log-file'] }}
