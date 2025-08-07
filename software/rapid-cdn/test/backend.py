@@ -88,16 +88,22 @@ class TestHandler(BaseHTTPRequestHandler):
     if 'X-Config-Body' not in self.headers:
       config['Body'] = self.rfile.read(int(self.headers.get(
         'Content-Length', '0')))
+    if self.headers.get('X-Config-Global', '0') == '1':
+      path = '*'
+    else:
+      path = self.path
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
-    self.end_headers()
-    self.configuration[self.path] = {
+    self.configuration[path] = {
       'headers': incoming_headers,
       'configuration': config
     }
-    reply = {self.path: dict(self.configuration[self.path])}
-    self.wfile.write(json.dumps(
-      reply, indent=2, cls=ConfigurationReplyEncoder).encode())
+    reply = {path: dict(self.configuration[path])}
+    response = json.dumps(
+      reply, indent=2, cls=ConfigurationReplyEncoder).encode()
+    self.send_header('Content-Length', len(response))
+    self.end_headers()
+    self.wfile.write(response)
 
   def do_POST(self):
     return self.do_GET()
@@ -121,15 +127,13 @@ class TestHandler(BaseHTTPRequestHandler):
         },
         indent=2).encode()
 
-    identification = getattr(self, 'identification', None)
-    config = self.configuration.get(self.path, None)
+    config = self.configuration.get(
+      self.path, self.configuration.get('*', None))
     if config is None:
       self.send_response(404)
       response = generateDefaultResponse()
       self.send_header('Content-Length', len(response))
       self.send_header('Content-Type', 'application/json')
-      if identification is not None:
-        self.send_header('X-Backend-Identification', identification)
       self.end_headers()
       self.wfile.write(response)
       return
@@ -139,6 +143,8 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_response_only(int(config['configuration']['Status-Code']))
     if config['configuration']['Body'] == 'calculate':
       body = generateDefaultResponse()
+      if 'Content-Type' not in config['headers']:
+        config['headers']['Content-Type'] = 'application/json'
     else:
       body = config['configuration']['Body']
     for header, value in config['headers'].items():
@@ -155,9 +161,6 @@ class TestHandler(BaseHTTPRequestHandler):
         if value == 'calculate':
           value = '%s' % (len(body),)
       self.send_header(header, value)
-    if identification is not None:
-      if 'X-Backend-Identification' not in config['headers']:
-        self.send_header('X-Backend-Identification', identification)
     self.end_headers()
     self.wfile.write(body)
 

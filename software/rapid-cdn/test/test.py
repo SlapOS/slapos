@@ -501,6 +501,11 @@ class TestDataMixin(object):
 def fakeSetupHeaders(headers):
   if headers is None:
     headers = http.client.HTTPMessage()
+  elif isinstance(headers, dict):
+    old_headers = headers.copy()
+    headers = http.client.HTTPMessage()
+    for header_name, header_value in old_headers.items():
+      headers.add_header(header_name, header_value)
   default_header_dict = {
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
@@ -602,6 +607,21 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer', daemon=True)
     server_process.start()
+    config_result = mimikra.config(
+      cls.backend_url,
+      headers=setUpHeaders([
+        ('X-Config-Global', '1'),
+        ('X-Config-Timeout', '10'),  # more than default
+                                     # backend-connect-timeout == 5
+        ('X-Config-Body', 'calculate'),
+        ('X-Config-Reply-Header-Server', 'TestBackend'),
+        ('X-Config-Reply-Header-Content-Length', 'calculate'),
+        ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+        ('X-Config-Reply-Header-Set-Cookie',
+         'secured=value;secure, nonsecured=value'),
+      ])
+    )
+    assert config_result.status_code == http.client.CREATED
     # from now on, socket is used by server subprocess, we can close it
     server.socket.close()
     cls.logger.debug('Started process %s' % (server_process,))
@@ -2270,27 +2290,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             self.backend_url, self.backend_url)],
       }
     )
-    path = '/test-path/deep/.././deeper' * 250
-    backend_path = '/test-path/deeper' * 250
-    config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + backend_path,
-      headers=setUpHeaders([
-        ('X-Config-Timeout', '10'),
-        ('X-Config-Body', 'calculate'),
-        ('X-Config-Reply-Header-Server', 'TestBackend'),
-        ('X-Config-Reply-Header-Content-Length', 'calculate'),
-        ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
-        ('X-Config-Reply-Header-Set-Cookie', 'secured=value;secure, nonsecured=value'),
-      ])
-    )
-    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      path,
-      headers=setUpHeaders([
-        ('Accept-Encoding', 'gzip'),
-        ('User-Agent', 'TEST USER AGENT'),
-      ])
+      '/test-path/deep/.././deeper' * 250,
+      headers={
+        'Accept-Encoding': 'gzip',
+        'User-Agent': 'TEST USER AGENT',
+      }
     )
 
     self.assertEqual(
