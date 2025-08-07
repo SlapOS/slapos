@@ -59,6 +59,7 @@ class TestHandler(BaseHTTPRequestHandler):
    'Status-Code': '200',
    'Protocol-Version': 'HTTP/1.0',
    'Timeout': '0',
+   'X-Config-Reply-Header-Server': 'TestBackend',
   }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
@@ -139,6 +140,8 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_response_only(int(config['configuration']['Status-Code']))
     if config['configuration']['Body'] == 'calculate':
       body = generateDefaultResponse()
+      if 'Content-Type' not in config['headers']:
+        config['headers']['Content-Type'] = 'application/json'
     else:
       body = config['configuration']['Body']
     for header, value in config['headers'].items():

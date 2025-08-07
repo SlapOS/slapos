@@ -501,6 +501,11 @@ class TestDataMixin(object):
 def fakeSetupHeaders(headers):
   if headers is None:
     headers = http.client.HTTPMessage()
+  elif isinstance(headers, dict):
+    old_headers = headers.copy()
+    headers = http.client.HTTPMessage()
+    for header_name, header_value in old_headers.items():
+      headers.add_header(header_name, header_value)
   default_header_dict = {
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
