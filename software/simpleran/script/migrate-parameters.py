@@ -76,6 +76,22 @@ def convert_to_array(params):
         if k in params:
             params[k] = list(params[k].values())
 
+def convert_core_params(params):
+
+    if params.get('gtp_addr_list', None):
+        return
+    gtp_addr_list = ["Localhost address"]
+    if params.get('external_enb_gnb', False):
+        if params.get('use_ipv4', False):
+            gtp_addr_list.append("IPv4 LAN address")
+        else:
+            gtp_addr_list.append("IPv6 Re6st address")
+    if 'use_ipv4' in params:
+        params.pop('use_ipv4')
+    if 'external_enb_gnb' in params:
+        params.pop('external_enb_gnb')
+    params['gtp_addr_list'] = gtp_addr_list
+
 def convert_ors_params(params, new_params):
 
     if 'ors_duo_2nd_cell' in params:
@@ -134,10 +150,11 @@ def convert_ors_params(params, new_params):
         "x2_peers",
     ]
     
-    ors_params = [
+    management_params = [
         "log_phy_debug",
         "enb_stats_fetch_period",
         "enb_drb_stats_enabled",
+        "gnb_drb_stats_enabled",
         "max_rx_sample_db",
         "min_rxtx_delay",
         "xlog_enabled",
@@ -146,6 +163,10 @@ def convert_ors_params(params, new_params):
         "xlog_fluentbit_forward_host",
         "xlog_fluentbit_forward_port",
         "xlog_fluentbit_forward_shared_key",
+    ]
+
+    root_params = [
+        "amarisoft_version",
     ]
     
     for param in params:
@@ -157,8 +178,13 @@ def convert_ors_params(params, new_params):
             new_params.setdefault('cell1',   {})[param] = params[param]
         elif param in nodeb_params:
             new_params.setdefault('nodeb', {})[param] = params[param]
-        elif param in ors_params:
-            new_params.setdefault('management',         {})[param] = params[param]
+        elif param in management_params:
+            if param == "gnb_drb_stats_enabled":
+                new_params.setdefault('management',         {})["enb_drb_stats_enabled"] = params["gnb_drb_stats_enabled"]
+            else:
+                new_params.setdefault('management',         {})[param] = params[param]
+        elif param in root_params:
+            new_params[param] = params[param]
         elif param == 'use_ipv4':
             continue
         else:
@@ -170,6 +196,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bbu', action='store_true')
     parser.add_argument('--core', action='store_true')
+    parser.add_argument('--sim', action='store_true')
     args = parser.parse_args()
 
     print('Paste here the raw XML parameters to migrate:')
@@ -184,14 +211,18 @@ def main():
     params = json.loads(params_json_raw)
     new_params = {}
 
-    if not (args.bbu or args.core):
+    if args.core:
+        new_params = params
+        convert_core_params(new_params)
+        convert_to_array(new_params)
+    elif args.sim:
+        new_params = params
+        convert_to_array(new_params)
+    elif not (args.bbu):
         convert_ors_params(params, new_params)
         for p in new_params:
             convert_tdd(new_params[p])
             convert_to_array(new_params[p])
-    else:
-        convert_tdd(new_params)
-        convert_to_array(new_params)
     
     new_params_raw = """<?xml version="1.0" encoding="UTF-8"?>
     <instance>

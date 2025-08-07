@@ -32,33 +32,35 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
 
             cls.parameters = {}
             cls.parameters['enb'] = {
-                  'bandwidth': '10 MHz',
-                  'dl_earfcn': 38350,
-                  'plmn_list': {
-                    plmn: {
-                      'plmn': plmn
-                    }
-                   },
-                  'enb_drb_stats_enabled': False,
-                  'xlog_forwarding_enabled': False,
-                  'amarisoft_version': '2024-03-15.1727098076'
+                "cell1": {
+                  "bandwidth": "10 MHz",
+                  "dl_earfcn": 38350
+                },
+                "nodeb": {
+                  "plmn_list": [{"plmn": plmn}]
+                },
+                "management": {
+                  "enb_drb_stats_enabled": false,
+                  "xlog_forwarding_enabled": false
+                },
+                "amarisoft_version": "2024-03-15.1727098076"
             }
             cls.parameters['core-network#sim'] = {
-                  'sim_algo': 'milenage',
-                  'imsi': f'{plmn}0000000001',
-                  'opc': '000102030405060708090A0B0C0D0E0F',
-                  'amf': '0x9001',
-                  'sqn': '000000000000',
-                  'k': '00112233445566778899AABBCCDDEEFF',
-                  'impu': f'{plmn}0000000001',
-                  'impi': f'{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org'
+                "sim_algo": "milenage",
+                "imsi": f"{plmn}0000000001",
+                "opc": "000102030405060708090A0B0C0D0E0F",
+                "amf": "0x9001",
+                "sqn": "000000000000",
+                "k": "00112233445566778899AABBCCDDEEFF",
+                "impu": f"{plmn}0000000001",
+                "impi": f"{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org"
             }
             cls.parameters['core-network'] = {
-                   'core_network_plmn': plmn,
-                   'iperf3': True,
-                   'network_name': 'E2E Testing',
-                   'network_short_name': 'E2E Testing',
-                  'amarisoft_version': '2024-03-15.1727098076'
+                "core_network_plmn": plmn,
+                "iperf3": True,
+                "network_name": "E2E Testing",
+                "network_short_name": "E2E Testing",
+                "amarisoft_version": "2024-03-15.1727098076"
             }
             cls.parameters['ue'] = {
                   'amarisoft_version': '2022-12-16.1733497882'
