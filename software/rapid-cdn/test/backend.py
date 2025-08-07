@@ -139,6 +139,8 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_response_only(int(config['configuration']['Status-Code']))
     if config['configuration']['Body'] == 'calculate':
       body = generateDefaultResponse()
+      if 'Content-Type' not in config['headers']:
+        config['headers']['Content-Type'] = 'application/json'
     else:
       body = config['configuration']['Body']
     for header, value in config['headers'].items():
