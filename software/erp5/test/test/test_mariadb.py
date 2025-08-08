@@ -38,6 +38,8 @@ import urllib.parse
 import MySQLdb
 import MySQLdb.connections
 
+import inotify_simple
+
 from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
 
 from . import ERP5InstanceTestCase, default, matrix, setUpModule
@@ -96,6 +98,35 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         use_unicode=True,
         charset='utf8mb4'
     )
+
+
+  @classmethod
+  def waitForCaucased(cls, instance, timeout):
+    partition_path = cls.getComputerPartitionPath(instance)
+    watch_dir = os.path.join(partition_path, 'etc', 'mariadb-ssl')
+    ca_path = os.path.join(watch_dir, 'mariadb-ca.pem')
+    inotify = inotify_simple.INotify()
+    wd = inotify.add_watch(watch_dir, inotify_simple.flags.CREATE)
+    now = time.time()
+    deadline = now + timeout
+    while True:
+      if timeout < 0 or os.path.exists(ca_path):
+        return
+      for event in inotify.read(timeout): # read all events
+        pass
+      now = time.time()
+      timeout = deadline - now
+
+  @classmethod
+  def waitForInstance(cls) -> None:
+    # Caucase may take a bit more time to grant certificates
+    # Instead of increasing instance_max_retry, lets just wait
+    try:
+      cls.slap.waitForInstance(max_retry=cls.instance_max_retry - 1)
+    except SlapOSNodeCommandError:
+      instance = cls.getComputerPartition(cls.default_partition_reference)
+      cls.waitForCaucased(instance, 60)
+      cls.slap.waitForInstance(debug=cls._debug)
 
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
