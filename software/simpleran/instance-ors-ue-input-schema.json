@@ -29,6 +29,21 @@
       ],
       "type": "object",
       "default": {}
+    },
+    "sim": {
+      "title": "SIM Parameters",
+      "description": "SIM Parameters",
+      "unevaluatedProperties": false,
+      "oneOf": [
+        {
+          "$ref": "ors-ue-sim-milenage.json"
+        },
+        {
+          "$ref": "ors-ue-sim-xor.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     }
   }
 }
