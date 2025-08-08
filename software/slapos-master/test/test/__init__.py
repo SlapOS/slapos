@@ -57,12 +57,14 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase):
     return json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
 
-  def getComputerPartition(self, partition_reference):
-    for computer_partition in self.slap.computer.getComputerPartitionList():
+  @classmethod
+  def getComputerPartition(cls, partition_reference):
+    for computer_partition in cls.slap.computer.getComputerPartitionList():
       if partition_reference == computer_partition.getInstanceParameter(
           'instance_title'):
         return computer_partition
 
-  def getComputerPartitionPath(self, partition_reference):
-    partition_id = self.getComputerPartition(partition_reference).getId()
-    return os.path.join(self.slap._instance_root, partition_id)
+  @classmethod
+  def getComputerPartitionPath(cls, partition_reference):
+    partition_id = cls.getComputerPartition(partition_reference).getId()
+    return os.path.join(cls.slap._instance_root, partition_id)
