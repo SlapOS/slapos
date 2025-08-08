@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version openradio_private_1.0.429 (2025-08-08)
+-------------
+
+* Merge slapos/master branch into openradio_private
+* Rename Lopcomm to Prose or ORU (for promises)
+* Fixup some bugs
+
 Version 1.0.428 (2025-08-05)
 -------------
 
