@@ -40,8 +40,11 @@ import gzip
 import lzma
 import MySQLdb
 
+import inotify_simple
+
 from slapos.testing.utils import CrontabMixin
 from slapos.testing.utils import getPromisePluginParameterDict
+from slapos.slap.standalone import SlapOSNodeCommandError
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
@@ -93,6 +96,31 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         use_unicode=True,
         charset='utf8mb4'
     )
+
+  @classmethod
+  def waitForInstance(cls) -> None:
+    # Caucase may take a bit more time to grant certificates
+    # Instead of increasing instance_max_retry, lets just wait
+    try:
+      cls.slap.waitForInstance(max_retry=cls.instance_max_retry - 1)
+    except SlapOSNodeCommandError:
+      watch_dir = os.path.join(
+        cls.getComputerPartitionPath(cls.default_partition_reference),
+        'etc', 'mariadb-ssl',
+      )
+      ca_path = os.path.join(watch_dir, 'mariadb-ca.pem')
+      inotify = inotify_simple.INotify()
+      wd = inotify.add_watch(watch_dir, inotify_simple.flags.CREATE)
+      now = time.time()
+      deadline = now + 60
+      while True:
+        timeout = deadline - now
+        if timeout < 0 or os.path.exists(ca_path):
+          break
+        for event in inotify.read(timeout): # read all events
+          pass
+        now = time.time()
+      cls.slap.waitForInstance(debug=cls._debug)
 
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
@@ -178,7 +206,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
     self.assertEqual(
         error_context.exception.output,
 b"""\
-Threshold is lower than expected: 
+Threshold is lower than expected:
 Expected total queries : 1.0 and current is: 2
 Expected slowest query : 0.1 and current is: 3
 """)
