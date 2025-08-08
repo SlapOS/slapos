@@ -694,7 +694,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       fh.write(ca_certificate.text)
 
     class OwnTestHandler(backend.TestHandler):
-      identification = 'Auth Backend'
+      pass
 
     server_https_auth = backend.ThreadedHTTPServer(
       (self._ipv4_address, self._server_https_auth_port),
@@ -2476,7 +2476,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
+
     self.startAuthenticatedServerProcess()
+    config_result = mimikra.config(
+      self.backend_https_auth_url,
+      headers=setUpHeaders([
+        ('X-Config-Global', '1'),
+        ('X-Config-Body', 'calculate'),
+        ('X-Config-Reply-Header-Server', 'TestBackend'),
+        ('X-Config-Reply-Header-Content-Length', 'calculate'),
+        ('X-Config-Reply-X-Backend-Identification', 'Auth Backend'),
+      ])
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     try:
       # assert that you can't fetch nothing without key
       self.assertEqual(
