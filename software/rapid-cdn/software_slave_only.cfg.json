@@ -5,7 +5,6 @@
   "software-type": {
     "custom-personal-slave": {
       "description": "Custom Personal",
-      "index": 1,
       "request": "instance-slave-input-schema.json",
       "response": "instance-slave-output-schema.json",
       "shared": true,
