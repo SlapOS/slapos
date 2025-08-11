@@ -370,7 +370,12 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     # normal access on ipv4 and ipv6 and test runner access on ipv4 only
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = (p for p in all_process_info if p['name'].startswith('haproxy-'))
+    balancer_partition_id = self.getPartitionId('balancer')
+    process_info, = (
+      p for p in all_process_info
+      if p['group'] == balancer_partition_id
+      and p['name'].startswith('haproxy-')
+    )
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(

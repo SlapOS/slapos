@@ -1,4 +1,5 @@
 {%- if slapparameter_dict.get('master') != 0 %}
+
 [buildout]
 parts +=
   logrotate-master
@@ -17,6 +18,9 @@ replicas = {{ slapparameter_dict['replicas'] }}
 upstream-cluster = {{ dumps(slapparameter_dict['upstream-cluster']) }}
 upstream-masters = {{ dumps(slapparameter_dict['upstream-masters']) }}
 autostart = {{ slapparameter_dict['autostart'] }}
+{%- if slapparameter_dict['upstream-cluster'] %}
+extra-options = -B
+{%- endif %}
 # "masters" parameter is not provided when just requesting a partition.
 # No actual installation takes place at that time
 # (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So
