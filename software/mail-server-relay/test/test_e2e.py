@@ -104,7 +104,7 @@ class E2E(SlapOSInstanceTestCase):
 
   @classmethod
   def requestDefaultInstance(cls, state: str = "started"):
-    cls.ext_mail_server = cls.requestExternalServerInstance()
+    cls.ext_mail_server = cls.requestExternalServerInstance(state)
     cls.waitForInstance()
     cls._instance_parameter_dict = cls.getInstanceParameterDict(ext=True)
     default_instance = super(E2E, cls).requestDefaultInstance(state)
@@ -129,7 +129,7 @@ class E2E(SlapOSInstanceTestCase):
     )
     
   @classmethod
-  def requestExternalServerInstance(cls):
+  def requestExternalServerInstance(cls, state: str = "started"):
     param_dict = {
       "mail-domains": [
         "example.com"
@@ -143,6 +143,7 @@ class E2E(SlapOSInstanceTestCase):
       partition_reference="external-mail-server",
       partition_parameter_kw={'_': json.dumps(param_dict)},
       software_type='default',
+      state=state,
     )
     
   def test_servers(self):
