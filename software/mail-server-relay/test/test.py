@@ -80,8 +80,8 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       "mail2.domain.lan",
       "mail3.domain.lan",
     ]:
-      cls.requestSlaveInstanceForDomain(domain)
-      cls.requestSlaveInstanceForDomain(domain, suffix="-test")
+      cls.requestSlaveInstanceForDomain(domain, state=state)
+      cls.requestSlaveInstanceForDomain(domain, suffix="-test", state=state)
     return default_instance
 
   @classmethod
@@ -93,7 +93,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     }
 
   @classmethod
-  def requestSlaveInstanceForDomain(cls, domain, suffix=""):
+  def requestSlaveInstanceForDomain(cls, domain, suffix="", state: str = "started"):
     software_url = cls.getSoftwareURL()
     param_dict = cls.createParametersForDomain(domain)
     return cls.slap.request(
@@ -102,6 +102,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       partition_parameter_kw={'_': json.dumps(param_dict)},
       shared=True,
       software_type='cluster',
+      state=state,
     )
 
   def test_dns_entries(self):
