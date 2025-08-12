@@ -479,18 +479,21 @@ class JsonSchema(Recipe):
       parameter_dict = self._parseParameterDict(validator, parameter_dict)
     if validate.shared:
       shared_list = options.pop('slave-instance-list')
-      shared_schema = self._getSharedSchema(software_description)
-      if shared_schema is None:
-        raise UserError(
-          "requested shared software-type %r seems to have no "
-          "JSON schema entry in the software.cfg.json."
-        )
-      validator = DefaultValidator(
-        shared_schema,
-        set_defaults.shared,
-        {'integer': int} if unstringify.shared else None,
-      ) if shared_list else None # optimisation: skip creating unused validator
-      valid, invalid = self._parseSharedParameterDict(validator, shared_list)
+      if shared_list:
+        shared_schema = self._getSharedSchema(software_description)
+        if shared_schema is None:
+          raise UserError(
+            "requested shared software-type %r seems to have no "
+            "JSON schema entry in the software.cfg.json." % software_description.software_type
+          )
+        validator = DefaultValidator(
+          shared_schema,
+          set_defaults.shared,
+          {'integer': int} if unstringify.shared else None,
+        ) if shared_list else None # optimisation: skip creating unused validator
+        valid, invalid = self._parseSharedParameterDict(validator, shared_list)
+      else:
+        valid, invalid = [], []
       options['valid-shared-instance-list'] = valid
       options['invalid-shared-instance-list'] = invalid
     options['configuration'] = parameter_dict
