@@ -2,78 +2,39 @@
 parts =
   switch-softwaretype
 
-eggs-directory = {{ buildout_egg_directory }}
-develop-eggs-directory = {{ buildout_develop_directory }}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[default-dynamic-template-parameters]
-bin-directory = ${buildout:bin-directory}
-buildout-bin-directory = ${buildout:bin-directory}
-
-[jinja2-template-base]
+[dynamic-template-default]
 recipe = slapos.recipe.template:jinja2
-output = ${buildout:directory}/${:filename}
+output = $${buildout:directory}/$${:filename}
 extensions = jinja2.ext.do
-extra-context =
+url = ${template-default:output}
+filename = instance-default.cfg
 context =
-  key develop_eggs_directory buildout:develop-eggs-directory
-  key eggs_directory buildout:eggs-directory
-  key ipv4 slap-configuration:ipv4
-  key ipv6 slap-configuration:ipv6
+  import json_module json
+  key ipv4 slap-configuration:ipv4-random
+  key ipv6 slap-configuration:ipv6-random
+  key server_fqdn slap-configuration:instance-title
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
-  key slave_instance_list slap-configuration:slave-instance-list
-  raw template_monitor {{ template_monitor }}
-  raw openssl_location {{ openssl_location }}
-  raw logrotate_cfg {{ logrotate_cfg }}
-  ${:extra-context}
-
-[dynamic-template-default]
-<= jinja2-template-base
-url = {{ template_default }}
-filename = instance-default.cfg
-extra-context =
-    import json_module json
-    import uuid_module uuid
-    raw dovecot_conf_template {{ dovecot_conf_template }}
-    raw dovecot_passwd {{ dovecot_passwd }}
-    raw dovecot_binary {{ dovecot_binary }}
-    raw password_php {{ password_php }}
-    raw postfix_main_template {{ postfix_main_template }}
-    raw postfix_master_template {{ postfix_master_template }}
-    raw postfix_location {{ postfix_location }}
-    raw xz_utils_location {{ xz_utils_location }}
-    section apache_parameter_dict dynamic-template-apache-php-parameters
-    section slap_connection slap-connection
-    key ipv4_set slap-configuration:ipv4
-    key ipv6_set slap-configuration:ipv6
-# TODO : why commented?
-#    key slave_instance_list slap-configuration:slave-instance-list
-    raw bin_directory {{ bin_directory }}
-    raw lamp_apache_httpd {{ lamp_apache_httpd }}
-    raw snappymail_conf {{ snappymail_conf }}
-    raw snappymail_domain {{ snappymail_domain }}
-
-
-[dynamic-template-apache-php-parameters]
-{% if application_archive_root %}
-application-location = {{ application_location }}/{{ application_archive_root }}
-{% else %}
-application-location = {{ application_location }}
-{% endif %}
-template-apache-conf = {{ template_apache_conf }}
-apache-location = {{ apache_location }}
-apache-php-location = {{ apache_php_location }}
-template-php-ini = {{ template_php_ini }}
-publish-frontend = !py!{{ default_frontend }}
+  key user_name slap-configuration:user-name
+  key slave_instance_list slap-configuration:valid-shared-instance-list
 
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.cfg.json:target}
+depends =
+  ${instance-default-input-schema.json:target}
+  ${instance-slave-input-schema.json:target}
+set-default = all
+validate-parameters = all
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
