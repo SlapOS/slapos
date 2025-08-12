@@ -47,7 +47,7 @@ relay_recipient_maps =
 relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
 relayhost = [{{ relay_host }}]:{{ relay_port }}
 
-maillog_file = {{ log_directory }}/postfix.log
+maillog_file = {{ postfix_log_path }}
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
