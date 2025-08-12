@@ -81,6 +81,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       "mail3.domain.lan",
     ]:
       cls.requestSlaveInstanceForDomain(domain)
+      cls.requestSlaveInstanceForDomain(domain, suffix="-test")
     return default_instance
 
   @classmethod
@@ -92,12 +93,12 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     }
 
   @classmethod
-  def requestSlaveInstanceForDomain(cls, domain):
+  def requestSlaveInstanceForDomain(cls, domain, suffix=""):
     software_url = cls.getSoftwareURL()
     param_dict = cls.createParametersForDomain(domain)
     return cls.slap.request(
       software_release=software_url,
-      partition_reference="SLAVE-%s" % domain,
+      partition_reference="SLAVE-%s%s" % (domain, suffix),
       partition_parameter_kw={'_': json.dumps(param_dict)},
       shared=True,
       software_type='cluster',
@@ -121,3 +122,9 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       self.assertEqual(connection_dict.get("outbound-host", "<missing>"), "foobaz.lan")
       self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), "10025")
       self.assertEqual(connection_dict.get("dns-entries", "<missing>"), "") # todo
+      
+      slave_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
+      connection_dict = json.loads(slave_dup_instance.getConnectionParameterDict().get("_", "{}"))
+      error = connection_dict.get("error", "<missing>")
+      self.assertIn("duplicate", error, f"Expected duplicate error for {domain}, got {error}")
+
