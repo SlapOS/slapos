@@ -1,0 +1,24 @@
+<VirtualHost *:{{ parameter_dict['port'] }}>
+  ServerAdmin admin@example.com
+  DocumentRoot {{ parameter_dict['document-root'] }}
+
+  SetEnvIf Origin "^http(s)?://(.+\.)?(app\.officejs\.com)$" ORIGIN_DOMAIN=$0
+  Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
+  Header always set Access-Control-Allow-Credentials "true" env=ORIGIN_DOMAIN
+  Header always set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST" env=ORIGIN_DOMAIN
+  Header always set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization" env=ORIGIN_DOMAIN
+  Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
+
+  <Directory {{ parameter_dict['document-root'] }}>
+      Options +FollowSymlinks
+      AllowOverride All
+      Require all granted
+      SetEnv HOME {{ parameter_dict['document-root'] }}
+      SetEnv HTTP_HOME {{ parameter_dict['document-root'] }}
+      Dav off
+
+  </Directory>
+  ErrorLog "{{ parameter_dict['log-dir'] }}/lamp-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/lamp-access.log" combined
+
+</VirtualHost>

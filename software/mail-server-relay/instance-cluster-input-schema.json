@@ -1,0 +1,81 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Cluster Input Parameters",
+  "definitions": {
+    "relay-config": {
+      "type": "object",
+      "properties": {
+        "relay-host": {
+          "title": "Relay Host",
+          "description": "The host to relay the emails to",
+          "type": "string"
+        },
+        "relay-port": {
+          "title": "Relay Port",
+          "description": "The port used by the relay",
+          "type": "integer"
+        },
+        "relay-user": {
+          "title": "Relay User",
+          "description": "The user to authenticate with the relay host",
+          "type": "string"
+        },
+        "relay-password": {
+          "title": "Relay Password",
+          "description": "The password to authenticate with the relay host",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "default-relay-config": {
+      "$ref": "#/definitions/relay-config"
+    },
+    "outbound-domain-whitelist": {
+      "title": "Outbound Domain Whitelist",
+      "description": "List of domains allowed for outbound relay",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "relay-domain": {
+      "title": "Relay Domain",
+      "description": "The domain that will point to all relay instances",
+      "type": "string"
+    },
+    "topology": {
+      "title": "Topology",
+      "description": "Cluster topology configuration",
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z0-9-]+$": {
+          "type": "object",
+          "properties": {
+            "sla": {
+              "type": "object"
+            },
+            "state": {
+              "type": "string",
+              "enum": ["started", "destroyed", "stopped"],
+              "default": "started"
+            },
+            "config": {
+              "$ref": "#/definitions/relay-config"
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "default-relay-config",
+    "outbound-domain-whitelist",
+    "topology"
+  ]
+}
