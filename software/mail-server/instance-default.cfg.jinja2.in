@@ -1,7 +1,9 @@
 [buildout]
 extends =
   ${monitor2-template:output}
+  ${template-logrotate-base:output}
 parts =
+  cron-entry-logrotate
   directory
   lamp-frontend-promise
   snappymail
@@ -101,6 +103,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${dovecot.jinja2.conf:target}
 output = $${directory:etc}/dovecot.conf
 imap-port = 10143
+log-file = $${directory:var-log}/dovecot.log
 context =
   section directory directory
   section dovecot_directory dovecot-directory
@@ -110,6 +113,7 @@ context =
   raw imap_port $${:imap-port}
   raw postfix_auth $${postfix-directory:spool-private}/auth
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
+  raw dovecot_log_path $${:log-file}
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
@@ -188,6 +192,8 @@ pidfile = $${directory:run}/dovecot.pid
 hash-files =
   $${dovecot-conf:output}
   $${dovecot-wrapper:output}
+depends =
+  $${logrotate-entry-dovecot:recipe}
 
 [dovecot-promise]
 <= monitor-promise-base
@@ -196,6 +202,12 @@ name = imap_listen.py
 config-host = {{ ipv6 }}
 config-port = $${dovecot-conf:imap-port}
 depends = $${dovecot-service:recipe}
+
+[logrotate-entry-dovecot]
+<= logrotate-entry-base
+name = dovecot
+log = $${dovecot-conf:log-file}
+copytruncate = true
 
 
 # Postfix SMTP server
@@ -229,7 +241,9 @@ spool-trace = $${:var-spool}/trace
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
+log-file = $${directory:var-log}/postfix.log
 context =
+  raw postfix_log_path $${:log-file}
   key dovecot_passwd dovecot-passwords:target
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
@@ -304,6 +318,7 @@ hash-files =
   $${postfix-wrapper:output}
 depends =
   $${postfix-symlinks-libexec:recipe}
+  $${logrotate-entry-postfix:recipe}
 
 [postfix-service-master]
 < = base-wrapper
@@ -380,6 +395,12 @@ depends =
   {{ "  $${" + postfix_wrapper + ":recipe" }}
 {% endfor -%}
 
+[logrotate-entry-postfix]
+<= logrotate-entry-base
+name = postfix
+log = $${postfix-conf-main:log-file}
+copytruncate = true
+
 # SnappyMail Webmail
 # -------------------
 
@@ -441,10 +462,11 @@ command-line = $${ca-apache-php:wrapper}
 wrapper-path = $${directory:service}/apache-php
 hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
 depends =
- $${snappymail-files:recipe}
- $${apache-graceful:recipe}
- $${lamp-apache-httpd-conf:recipe}
- $${php.ini-conf:recipe}
+  $${logrotate-entry-apache:recipe}
+  $${snappymail-files:recipe}
+  $${apache-graceful:recipe}
+  $${lamp-apache-httpd-conf:recipe}
+  $${php.ini-conf:recipe}
 
 [apache-graceful]
 recipe = collective.recipe.template
@@ -545,6 +567,13 @@ depends = $${apache-php-service:recipe}
 <= monitor-frontend
 name = Instance Frontend
 config-url = $${apache-php-configuration:url}
+
+[logrotate-entry-apache]
+<= logrotate-entry-base
+name = apache
+log = $${directory:httpd-log}/*.log
+sharedscripts = true
+post = $${directory:script}/apache-httpd-graceful
 
 
 # Shared instances (addresses)
