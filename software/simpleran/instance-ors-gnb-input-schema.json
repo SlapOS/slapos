@@ -9,7 +9,7 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-cell.json"
+          "$ref": "./ors-cell.json"
         },
         {
           "$ref": "ors-gnb-cell.json"
