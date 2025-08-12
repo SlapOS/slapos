@@ -50,7 +50,7 @@ allow_min_user = yes
 
 local_transport = error
 
-maillog_file = {{ log_directory }}/postfix.log
+maillog_file = {{ postfix_log_path }}
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
 maillog_file_prefixes = {{ log_directory }}
 
