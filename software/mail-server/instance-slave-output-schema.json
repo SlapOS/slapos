@@ -7,8 +7,8 @@
       "title": "E-mail address",
       "type": "string"
     },
-    "password-url": {
-      "title": "Password creation URL (you must use this to set your password)",
+    "token": {
+      "title": "Password change token",
       "type": "string"
     }
   }
