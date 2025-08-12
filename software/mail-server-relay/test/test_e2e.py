@@ -68,9 +68,9 @@ class E2E(SlapOSInstanceTestCase):
     return 'cluster'
 
   @classmethod
-  def getInstanceParameterDict(cls, ext=False):
+  def getInstanceParameterDict(cls, ext=False, state: str = "started"):
     if ext:
-      external = json.loads(cls.requestExternalServerInstance().getConnectionParameterDict()['_'])
+      external = json.loads(cls.requestExternalServerInstance(state=state).getConnectionParameterDict()['_'])
       rhost = external['imap-smtp-ipv6']
       rport = int(external['smtp-port'])
       ruser = "testmail@example.com"  # we're using the test account's credentials to log in
@@ -106,16 +106,16 @@ class E2E(SlapOSInstanceTestCase):
   def requestDefaultInstance(cls, state: str = "started"):
     cls.ext_mail_server = cls.requestExternalServerInstance(state)
     cls.waitForInstance()
-    cls._instance_parameter_dict = cls.getInstanceParameterDict(ext=True)
+    cls._instance_parameter_dict = cls.getInstanceParameterDict(ext=True, state=state)
     default_instance = super(E2E, cls).requestDefaultInstance(state)
     cls.mail_server_instances = [
-      cls.requestMailServerForDomain(domain) for domain in cls.domain_list
+      cls.requestMailServerForDomain(domain, state) for domain in cls.domain_list
     ]
     cls.waitForInstance()
     return default_instance
 
   @classmethod
-  def requestMailServerForDomain(cls, domain):
+  def requestMailServerForDomain(cls, domain, state: str = "started"):
     param_dict = {
       "mail-domains": [domain],
       "relay-sr-url": cls.getSoftwareURL(),
@@ -126,6 +126,7 @@ class E2E(SlapOSInstanceTestCase):
       partition_reference=domain,
       partition_parameter_kw={'_': json.dumps(param_dict)},
       software_type='default',
+      state=state,
     )
     
   @classmethod
