@@ -127,15 +127,32 @@ init =
   existing_users = {row.split(":")[0] for row in output}
 
   new_account_dict = {}
+  error_dict = {}
+  processed_addresses = set()
 
   for slave in {{ json_module.dumps(slave_instance_list) }}:
-    if (addr := slave['parameters']['address']) not in existing_users:
+    addr = slave['parameters']['address']
+    
+    # Check if this address was already processed in this request batch
+    if addr in processed_addresses:
+      error_dict[slave['reference']] = {
+        'address': addr, 
+        'error': 'duplicate_address_in_request'
+      }
+      continue
+    
+    # Mark this address as processed
+    processed_addresses.add(addr)
+    
+    # If address doesn't exist in dovecot-passwd file, create new account
+    if addr not in existing_users:
       token = str(uuid.uuid4())
       new_account_dict[slave['reference']] = {'address': addr, 'token': token}
       output.append(f"{addr}:{token}::::::fail")
       existing_users.add(addr)
 
   options['new-account-dict'] = new_account_dict
+  options['error-dict'] = error_dict
 
   for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
     test_mail = f"testmail@{domain}"
@@ -222,7 +239,7 @@ context =
   key log_directory directory:var-log
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  raw server_fqdn {{ server_fqdn }}
+  raw server_fqdn {{ instance_title.replace(' ', '_') }}
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
   key relay_map postfix-relays:output
   raw xz_utils_location ${xz-utils:location}
@@ -243,10 +260,12 @@ context =
 [relay-info]
 host-override = {{ slapparameter_dict.get('relay-host', '') }}
 port-override = {{ slapparameter_dict.get('relay-port', '') }}
+{% if not (slapparameter_dict.get('relay-host') and slapparameter_dict.get('relay-port')) -%}
 {% for domain in slapparameter_dict['mail-domains'] -%}
 host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
 port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
 {% endfor -%}
+{% endif -%}
 
 [postfix-relays]
 recipe = slapos.recipe.template:jinja2
@@ -533,14 +552,24 @@ config-url = $${apache-php-configuration:url}
 [publish-shared]
 recipe = slapos.recipe.build
 new-account-dict = $${dovecot-passwords:new-account-dict}
+error-dict = $${dovecot-passwords:error-dict}
 init =
   for ref, content in options['new-account-dict'].items():
     self.buildout.parse(f"""
   [publish-{ref}]
-  recipe = slapos.cookbook:publish
+  recipe = slapos.cookbook:publish.serialised
   -slave-reference = {ref}
   address = {content['address']}
   token = {content['token']}
+    """)
+  
+  for ref, content in options['error-dict'].items():
+    self.buildout.parse(f"""
+  [publish-{ref}]
+  recipe = slapos.cookbook:publish.serialised
+  -slave-reference = {ref}
+  address = {content['address']}
+  error = {content['error']}
     """)
 
 
@@ -583,3 +612,4 @@ imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
+error-dict = $${dovecot-passwords:error-dict}

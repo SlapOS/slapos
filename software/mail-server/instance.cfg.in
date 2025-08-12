@@ -16,7 +16,7 @@ context =
   import json_module json
   key ipv4 slap-configuration:ipv4-random
   key ipv6 slap-configuration:ipv6-random
-  key server_fqdn slap-configuration:instance-title
+  key instance_title slap-configuration:instance-title
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
   key user_name slap-configuration:user-name
