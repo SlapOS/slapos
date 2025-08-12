@@ -6,12 +6,6 @@
     "gps_sync": {
       "$ref": "instance-enb-input-schema.json#/properties/gps_sync"
     },
-    "disable_sdr": {
-      "default": false,
-      "title": "Disable SDR",
-      "description": "Disables radio",
-      "type": "boolean"
-    },
     "gtp_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr"
     },
