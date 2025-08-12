@@ -90,12 +90,12 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       "alice@example.com",
       "bob@example.com"
     ]:
-      cls.requestSlaveInstanceForAccount(address)
-      cls.requestSlaveInstanceForAccount(address, suffix="-test")
+      cls.requestSlaveInstanceForAccount(address, state=state)
+      cls.requestSlaveInstanceForAccount(address, suffix="-test", state=state)
     return default_instance
   
   @classmethod
-  def requestSlaveInstanceForAccount(cls, address, suffix=""):
+  def requestSlaveInstanceForAccount(cls, address, suffix="", state: str = "started"):
     software_url = cls.getSoftwareURL()
     param_dict = {"address": address}
     return cls.slap.request(
@@ -104,6 +104,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       partition_parameter_kw={'_': json.dumps(param_dict)},
       shared=True,
       software_type='default',
+      state=state,
     )
 
   def test_postfix(self):
