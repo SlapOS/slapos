@@ -1,59 +1,49 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "bandwidth": {
-      "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
-      "type": "string",
-      "enum": [
-        "1.4 MHz",
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
+    "cell": {
+      "title": "Cell Parameters",
+      "description": "Radio parameters related to the cell",
+      "unevaluatedProperties": false,
+      "oneOf": [
+        {
+          "$ref": "ors-nr-ue.json"
+        },
+        {
+          "$ref": "ors-lte-ue.json"
+        }
       ],
-      "default": "20 MHz"
+      "type": "object",
+      "default": {}
     },
-    "n_antenna_dl": {
-      "$ref": "ru/common.json#/properties/n_antenna_dl",
-      "enum": [
-        1,
-        2
+    "ue": {
+      "title": "UE Parameters",
+      "description": "Parameters not related to the cell but to the UE",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-ue.json"
+        }
       ],
-      "default": 2
+      "type": "object",
+      "default": {}
     },
-    "n_antenna_ul": {
-      "$ref": "ru/common.json#/properties/n_antenna_ul",
-      "enum": [
-        1,
-        2
+    "sim": {
+      "title": "SIM Parameters",
+      "description": "SIM Parameters",
+      "unevaluatedProperties": false,
+      "oneOf": [
+        {
+          "$ref": "ors-ue-sim-milenage.json"
+        },
+        {
+          "$ref": "ors-ue-sim-xor.json"
+        }
       ],
-      "default": 2
-    },
-    "rf_mode": {
-      "$ref": "cell/common.json#/properties/rf_mode",
-      "default": "tdd"
-    },
-    "dl_earfcn": {
-      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
-    },
-    "tx_gain": {
-      "$ref": "ru/common.json#/properties/tx_gain"
-    },
-    "rx_gain": {
-      "$ref": "ru/common.json#/properties/rx_gain"
-    },
-    "log_phy_debug": {
-      "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug"
-    },
-    "disable_sdr": {
-      "default": false,
-      "title": "Disable SDR",
-      "description": "Disables radio",
-      "type": "boolean"
+      "type": "object",
+      "default": {}
     }
   }
 }
