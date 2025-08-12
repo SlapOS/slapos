@@ -1,7 +1,9 @@
 [buildout]
 extends =
   ${monitor2-template:output}
+  ${template-logrotate-base:output}
 parts =
+  cron-entry-logrotate
   directory
   monitor-base
   publish-connection-information
@@ -101,6 +103,7 @@ smtp-port = 10025
 submission-port = 10025
 mail-domains = {{ dumps(slapparameter_dict['mail-domains']) }}
 mail-hosts = {{ dumps(source_host_list) }}
+log-file = $${directory:var-log}/postfix.log
 context =
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
@@ -124,6 +127,7 @@ context =
   key mail_hosts :mail-hosts
   key postfix_cert_file postfix-generate-certificate:cert-file
   key postfix_key_file postfix-generate-certificate:key-file
+  raw postfix_log_path $${:log-file}
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -195,6 +199,7 @@ hash-files =
   $${postfix-wrapper:output}
 depends =
   $${postfix-symlinks-libexec:recipe}
+  $${logrotate-entry-postfix:recipe}
 
 [postfix-service-master]
 < = base-wrapper
@@ -284,6 +289,12 @@ depends =
 {% for postfix_wrapper in postfix_wrappers -%}
   {{ "  $${" + postfix_wrapper + ":recipe}" }}
 {% endfor -%}
+
+[logrotate-entry-postfix]
+<= logrotate-entry-base
+name = postfix
+log = $${postfix-conf-main:log-file}
+copytruncate = true
 
 [monitor-instance-parameter]
 password = {{ slapparameter_dict['monitor-password'] }}
