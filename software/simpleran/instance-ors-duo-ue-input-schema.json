@@ -1,0 +1,52 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "cell": {
+      "title": "Cell Parameters",
+      "description": "Radio parameters related to the cell",
+      "unevaluatedProperties": false,
+      "oneOf": [
+        {
+          "$ref": "ors-nr-ue.json"
+        },
+        {
+          "$ref": "ors-lte-ue.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "ue": {
+      "title": "UE Parameters",
+      "description": "Parameters not related to the cell but to the UE",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-ue.json"
+        },
+        {
+          "$ref": "ors-ue-duo.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "sim": {
+      "title": "SIM Parameters",
+      "description": "SIM Parameters",
+      "unevaluatedProperties": false,
+      "oneOf": [
+        {
+          "$ref": "ors-ue-sim-milenage.json"
+        },
+        {
+          "$ref": "ors-ue-sim-xor.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    }
+  }
+}

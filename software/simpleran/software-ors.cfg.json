@@ -27,15 +27,6 @@
       "response": "instance-ors-ue-schema.json",
       "index": 3
     },
-    "ue-slave": {
-      "title": "UE Sim Card",
-      "software-type": "ue",
-      "description": "User Equipment Sim Card Configuration",
-      "request": "sim/input-schema.json",
-      "response": "sim/schema.json",
-      "shared": true,
-      "index": 4
-    },
     "core-network": {
       "title": "Core Network",
       "software-type": "core-network",
