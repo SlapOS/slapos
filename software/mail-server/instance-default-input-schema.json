@@ -15,14 +15,15 @@
     "relay-host": {
       "title": "Relay Host",
       "description": "The host name of the relay server used for outbound mail",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "relay-port": {
       "title": "Relay Port",
       "description": "The port of the relay server used for outbound mail",
-      "type": "integer",
-      "default": 25
+      "type": "integer"
     }
-  }
+  },
+  "required": [
+    "mail-domains"
+  ]
 }
