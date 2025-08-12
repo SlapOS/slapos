@@ -50,6 +50,23 @@ def time_limit(seconds):
         signal.alarm(0)
 
 class PostfixTestCase(SlapOSInstanceTestCase):
+  def check_imap(self, address, password):
+    """Test IMAP login with given address and password"""
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      imap.login(address, password)
+      imap.select("INBOX")
+      result, data = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+    except Exception as e:
+      self.fail(f"IMAP login failed for {address}: {e}")
+    finally:
+      if imap:
+        imap.logout()
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -63,6 +80,30 @@ class PostfixTestCase(SlapOSInstanceTestCase):
         }
       )
     }
+  
+  @classmethod
+  def requestDefaultInstance(cls, state: str = "started"):
+    default_instance = super(PostfixTestCase, cls).requestDefaultInstance(state)
+    cls.waitForInstance()
+    for address in [
+      "alice@example.com",
+      "bob@example.com"
+    ]:
+      cls.requestSlaveInstanceForAccount(address)
+      cls.requestSlaveInstanceForAccount(address, suffix="-test")
+    return default_instance
+  
+  @classmethod
+  def requestSlaveInstanceForAccount(cls, address, suffix=""):
+    software_url = cls.getSoftwareURL()
+    param_dict = {"address": address}
+    return cls.slap.request(
+      software_release=software_url,
+      partition_reference="SLAVE-%s%s" % (address.replace('@', '-'), suffix),
+      partition_parameter_kw={'_': json.dumps(param_dict)},
+      shared=True,
+      software_type='default',
+    )
 
   def test_postfix(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
@@ -75,17 +116,50 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       self.fail(f"SMTP connection failed: {e}")
 
   def test_dovecot(self):
+    self.check_imap("testmail@example.com", "MotDePasseEmail")
+
+  def test_slaves(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
-    host = parameter_dict["imap-smtp-ipv6"]
-    imap = None
-    try:
-      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
-      imap.login("testmail@example.com", "MotDePasseEmail")
-      imap.select("INBOX")
-      result, data = imap.search(None, "ALL")
-      self.assertEqual(result, "OK")
-    except Exception as e:
-      self.fail(f"IMAP connection failed: {e}")
-    finally:
-      if imap:
-        imap.logout()
+    pw_url = parameter_dict.get("password-url", "<missing>")
+    self.assertTrue(pw_url.startswith("http"), "Password URL should start with http")
+    for address in ["alice@example.com", "bob@example.com"]:
+      slave_instance = self.requestSlaveInstanceForAccount(address)
+      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      self.assertEqual(connection_dict.get("address", "<missing>"), address)
+      pw_token = connection_dict.get("token", "<missing>")
+      
+      import urllib.request
+      import urllib.parse
+      import ssl
+
+      ctx = ssl.create_default_context()
+      ctx.check_hostname = False
+      ctx.verify_mode = ssl.CERT_NONE
+      
+      new_password = f"testpass_{address.split('@')[0]}"
+      data = urllib.parse.urlencode({
+        'user': address,
+        'token': pw_token,
+        'password': new_password
+      }).encode('utf-8')
+      
+      try:
+        req = urllib.request.Request(pw_url, data=data, method='POST')
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as response:
+          response_text = response.read().decode('utf-8')
+          self.assertIn("Password updated successfully", response_text)
+      except Exception as e:
+        self.fail(f"Password change failed for {address}: {e}")
+      
+      import time
+      time.sleep(2)
+
+      self.check_imap(address, new_password)
+
+    for address in ["alice@example.com", "bob@example.com"]:
+      slave_instance = self.requestSlaveInstanceForAccount(address, suffix="-test")
+      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      self.assertEqual(connection_dict.get("address", "<missing>"), address)
+      error = connection_dict.get("error", "<missing>")
+      self.assertIn("duplicate", error, f"Expected duplicate error for {address}, got {error}")
+            
