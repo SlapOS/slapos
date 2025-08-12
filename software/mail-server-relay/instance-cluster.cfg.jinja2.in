@@ -73,22 +73,67 @@ depends =
 recipe = slapos.recipe.build
 depends =
   $${request-all-relays:depends}
+# JSON store for mapping domain -> slave reference
+# Requesting same (reference, domain) again is a no-op, this happens normally
+# Error only if a different reference claims an already assigned domain
+target = $${directory:etc}/relay-domains.json
 init =
+  import json, os
   whitelist = {{ whitelist }}
-  for domain in {{ (slap_configuration.get('valid-shared-instance-list', [])) }}:
-    ref = domain['reference']
-    section = f"""
+  target = options['target']
+
+  try:
+    with open(target, 'r') as fp:
+      data = json.load(fp)
+  except Exception:
+    data = {}
+
+  persistent_mapping = dict(data)
+  current_mapping = dict(data)
+
+  slaves = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
+  for slave in slaves:
+    ref = slave['reference']
+    name = slave['parameters']['name']
+
+    base_section = f"""
   [publish-{ref}]
   recipe = slapos.cookbook:publish.serialised
-  -slave-reference = {ref}
+  -slave-reference = {ref}"""
+
+    existing_ref = current_mapping.get(name)
+
+    if existing_ref == ref:
+      pass  # nothing to do
+    elif existing_ref is None:
+      current_mapping[name] = ref  # claim it
+      if name not in persistent_mapping:
+        persistent_mapping[name] = ref
+    else:
+      error_value = 'duplicate_domain_existing' if name in persistent_mapping else 'duplicate_domain_in_request'
+      section = base_section + f"""
+  domain = {name}
+  error = {error_value}
+      """
+      self.buildout.parse(section)
+      continue
+
+    section = base_section + """
   dns-entries =
     """
-    if domain['parameters']['name'] in whitelist:
-      section += """
+    if name in whitelist:
+      section_extra = """
   outbound-host = {{ relay_host }}
-  outbound-smtp-port = 10025""" # todo?
+  outbound-smtp-port = 10025"""
     else:
-      section += """
+      section_extra = """
   outbound-host =
   outbound-smtp-port = """
-    self.buildout.parse(section)
+    self.buildout.parse(section + section_extra)
+
+  self.output = json.dumps(persistent_mapping, sort_keys=True)
+
+  options['location'] = ''  # we don't care about the part folder existing
+install =
+  with open(options['target'], 'w') as fp:
+    fp.write(self.output)
