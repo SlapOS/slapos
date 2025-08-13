@@ -491,9 +491,9 @@ class JsonSchema(Recipe):
           set_defaults.shared,
           {'integer': int} if unstringify.shared else None,
         ) if shared_list else None # optimisation: skip creating unused validator
-        valid, invalid = self._parseSharedParameterDict(validator, shared_list)
       else:
-        valid, invalid = [], []
+        validator = None
+      valid, invalid = self._parseSharedParameterDict(validator, shared_list)
       options['valid-shared-instance-list'] = valid
       options['invalid-shared-instance-list'] = invalid
     options['configuration'] = parameter_dict
