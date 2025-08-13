@@ -1,0 +1,59 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[dynamic-template-relay]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+url = ${template-relay:output}
+filename = instance-relay.cfg
+context =
+  import json_module json
+  key ipv4 slap-configuration:ipv4-random
+  key ipv6 slap-configuration:ipv6-random
+  key server_fqdn slap-configuration:instance-title
+  key slapparameter_dict slap-configuration:configuration
+  key computer_id slap-configuration:computer
+  section slap_connection slap-connection
+
+[dynamic-template-cluster]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+url = ${template-cluster:output}
+filename = cluster-default.cfg
+context =
+  import json_module json
+  key ipv4 slap-configuration:ipv4-random
+  key ipv6 slap-configuration:ipv6-random
+  key server_fqdn slap-configuration:instance-title
+  key slapparameter_dict slap-configuration:configuration
+  key computer_id slap-configuration:computer
+  section slap_connection slap-connection
+  section slap_configuration slap-configuration
+#  key slave_instance_list slap-configuration:valid-shared-instance-list
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.cfg.json:target}
+depends = 
+  ${instance-relay-input-schema.json:target}
+  ${instance-cluster-input-schema.json:target}
+  ${instance-slave-input-schema.json:target}
+set-default = all
+validate-parameters = all
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+relay = dynamic-template-relay:output
+cluster = dynamic-template-cluster:output
