@@ -19,13 +19,21 @@
       "response": "instance-ors-enb-schema.json",
       "index": 2
     },
+    "ue": {
+      "title": "UE",
+      "software-type": "ue",
+      "description": "User Equipment Configuration",
+      "request": "instance-ors-duo-ue-input-schema.json",
+      "response": "instance-ors-ue-schema.json",
+      "index": 3
+    },
     "core-network": {
       "title": "Core Network",
       "software-type": "core-network",
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 3
+      "index": 5
     },
     "core-network-slave": {
       "title": "Core Network Sim Card",
@@ -34,7 +42,7 @@
       "request": "sim/input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
-      "index": 4
+      "index": 6
     }
   }
 }

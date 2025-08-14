@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
     "cell": {
@@ -25,6 +25,9 @@
       "allOf": [
         {
           "$ref": "ors-ue.json"
+        },
+        {
+          "$ref": "ors-ue-duo.json"
         }
       ],
       "type": "object",

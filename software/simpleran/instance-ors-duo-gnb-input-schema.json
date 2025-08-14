@@ -1,15 +1,15 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
     "cell1": {
       "title": "First Cell",
-      "description": "Radio parameters of the first cell of ORS Duo",
+      "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-cell.json"
+          "$ref": "./ors-cell.json"
         },
         {
           "$ref": "ors-gnb-cell.json"
@@ -20,11 +20,11 @@
     },
     "cell2": {
       "title": "Second Cell",
-      "description": "Radio parameters of the second cell of ORS Duo when using Carrier Aggregation mode (please see ORS Duo Mode parameter)",
+      "description": "Radio parameters of the second cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-cell.json"
+          "$ref": "./ors-cell.json"
         },
         {
           "$ref": "ors-gnb-cell.json"
