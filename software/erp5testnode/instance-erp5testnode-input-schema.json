@@ -30,7 +30,7 @@
       "description": "List of software precompiled by the testnode",
       "type": "array",
       "default": [
-        "https://lab.nexedi.com/nexedi/slapos/raw/1.0.387/software/seleniumrunner/software.cfg"
+        "https://lab.nexedi.com/louis.thevenet/slapos/-/raw/libxcrypt-init/software/seleniumrunner/software.cfg"
       ]
     }
   },
