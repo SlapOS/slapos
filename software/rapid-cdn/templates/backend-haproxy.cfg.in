@@ -94,7 +94,7 @@ frontend https-backend
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-       set hostname = info_dict['hostname'] %}
 {%-       set port = info_dict['port'] %}
-{%-       set path_list = [info_dict['path'].rstrip('/')] %}
+{%-       set path_list = [info_dict['path'].rstrip('/') or '/'] %}
 {%-       set query = info_dict['query'] %}
 {%-       if query %}
 {%-         do path_list.append(query) %}
