@@ -614,6 +614,11 @@
       "title": "Fluentbit Xlog forwarding shared key",
       "description": "Secret key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
       "type": "string"
+    },
+    "amarisoft_version": {
+      "title": "Amarisoft Version",
+      "description": "Expert: force amarisoft version",
+      "type": "string"
     }
   },
   "$defs": {
