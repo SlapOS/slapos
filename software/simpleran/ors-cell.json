@@ -3,6 +3,12 @@
   "title": "NR Cell",
   "type": "object",
   "properties": {
+    "enable_cell": {
+      "title": "Enable Cell",
+      "description": "Set to false to disable cell",
+      "type": "boolean",
+      "default": true
+    },
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
       "description": "Set transmission power of each antenna in dBm (WARNING: please refer to the ORS Handbook to check the maximum values for your ORS, it should not be set too high or you will get bad radio quality)",

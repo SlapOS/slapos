@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "cell_number": {
+      "title": "Cell Number",
+      "description": "Select on which cell UE should run",
+      "enum": [
+        "First Cell",
+        "Second Cell"
+      ],
+      "default": "First Cell",
+      "type": "string"
+    }
+  }
+}
