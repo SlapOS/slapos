@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 1.0.432 (2025-08-14)
+-------------
+
+* Major update on ORS UE Mode
+  * Add UE NR Support
+  * Support UE + gNB / eNB mode on ORS Duo
+* Fix bugs preventing defaults to be set correctly on ORS
+
 Version 1.0.428 (2025-08-05)
 -------------
 
