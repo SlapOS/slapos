@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "XOR Algorithm (advanced parameters)",
+  "required": [
+    "sim_algo",
+    "k"
+  ],
+  "properties": {
+    "sim_algo": {
+      "$ref": "sim/common.json#/properties/sim_algo",
+      "const": "xor"
+    },
+    "plmn": {
+      "$ref": "sim/common.json#/properties/plmn"
+    },
+    "msin": {
+      "$ref": "sim/common.json#/properties/msin"
+    },
+    "k": {
+      "$ref": "sim/common.json#/properties/k"
+    },
+    "opc": {
+      "$ref": "sim/common.json#/properties/opc"
+    },
+    "sqn": {
+      "$ref": "sim/common.json#/properties/sqn"
+    }
+  }
+}
