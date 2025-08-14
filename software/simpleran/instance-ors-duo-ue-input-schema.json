@@ -25,6 +25,9 @@
       "allOf": [
         {
           "$ref": "ors-ue.json"
+        },
+        {
+          "$ref": "ors-ue-duo.json"
         }
       ],
       "type": "object",

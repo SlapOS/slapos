@@ -309,8 +309,8 @@ class TestGNBParameters1(ORSTestCase):
       self.assertEqual(p['amf_addr'], amf['amf_addr'])
     for p in conf['xn_peers']:
       for xn in gnb_param_dict1['nodeb']['xn_peers']:
-          if xn['name'] == p['xn_addr']:
-              break
+        if xn['name'] == p:
+            break
       self.assertEqual(p, xn['xn_addr'])
 
     for p in conf['nr_cell_list'][0]['ncell_list']:
