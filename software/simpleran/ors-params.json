@@ -35,6 +35,9 @@
     },
     "xlog_fluentbit_forward_shared_key": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_fluentbit_forward_shared_key"
+    },
+    "amarisoft_version": {
+      "$ref": "instance-enb-input-schema.json#/properties/amarisoft_version"
     }
   }
 }
