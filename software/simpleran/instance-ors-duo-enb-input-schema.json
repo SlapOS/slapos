@@ -1,15 +1,20 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
+    "test1": {
+      "title": "Test1",
+      "type": "number",
+      "default": 17
+    },
     "cell1": {
       "title": "First Cell",
       "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-cell.json"
+          "$ref": "./ors-cell.json"
         },
         {
           "$ref": "ors-enb-cell.json"
@@ -24,7 +29,7 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "$ref": "ors-cell.json"
+          "$ref": "./ors-cell.json"
         },
         {
           "$ref": "ors-enb-cell.json"
