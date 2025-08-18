@@ -1,0 +1,71 @@
+[PHP]
+engine = On
+safe_mode = Off
+expose_php = Off
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+display_errors = On
+display_startup_errors = Off
+log_errors = On
+log_errors_max_len = 1024
+ignore_repeated_errors = Off
+ignore_repeated_source = Off
+session.save_path = "{{ apache_parameter_dict['tmp-dir'] }}"
+session.auto_start = 0
+date.timezone = {{ instance_dict.get('php.date.timezone', 'Europe/Paris') }}
+file_uploads = On
+upload_max_filesize = {{ instance_dict.get('php.upload_max_filesize', '10240M') }}
+post_max_size = {{ instance_dict.get('php.post_max_size', '10240M') }}
+magic_quotes_gpc=Off
+memory_limit = {{ instance_dict.get('php.memory_limit', '512M') }}
+session.cookie_secure = True
+max_execution_time = {{ instance_dict.get('php.max_execution_time', 1800) }}
+max_input_time = {{ instance_dict.get('php.max_input_time', 3600) }}
+output_buffering = {{ instance_dict.get('php.output_buffering', 4096) }}
+max_file_uploads = {{ instance_dict.get('php.max_file_uploads', 100) }}
+
+#extension_dir="./"#
+sys_temp_dir="{{ apache_parameter_dict['tmp-dir'] }}"
+upload_tmp_dir="{{ apache_parameter_dict['php-upload-dir'] }}"
+
+
+zend_extension=opcache
+extension=apcu
+extension=redis
+extension=imagick
+
+apc.enabled=1
+apc.file_update_protection=2
+apc.optimization=0
+apc.shm_size=256M
+apc.include_once_override=0
+apc.shm_segments=1
+apc.ttl=7200
+apc.user_ttl=7200
+apc.gc_ttl=3600
+apc.num_files_hint=1024
+apc.enable_cli=1
+apc.max_file_size=5M
+apc.cache_by_default=1
+apc.use_request_time=1
+apc.slam_defense=0
+apc.mmap_file_mask="{{ apache_parameter_dict['tmp-dir'] }}/apc.XXXXXX"
+apc.stat_ctime=0
+apc.canonicalize=1
+apc.write_lock=1
+apc.report_autofilter=0
+apc.rfc1867=0
+apc.rfc1867_prefix =upload_
+apc.rfc1867_name=APC_UPLOAD_PROGRESS
+apc.rfc1867_freq=0
+apc.rfc1867_ttl=3600
+apc.lazy_classes=0
+apc.lazy_functions=0
+
+[opcache]
+opcache.enable=1
+opcache.enable_cli=1
+opcache.memory_consumption=128
+opcache.interned_strings_buffer={{ instance_dict.get('php.opcache.interned-strings-buffer', 8) }}
+opcache.max_accelerated_files=10000
+opcache.revalidate_freq={{ instance_dict.get('php.opcache.revalidate-freq', 1) }}
+opcache.save_comments=1
