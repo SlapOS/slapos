@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Slave Input Parameters",
+  "properties": {
+    "name": {
+      "title": "Domain Name",
+      "description": "The domain name for this slave instance",
+      "type": "string"
+    },
+    "mail-server-host": {
+      "title": "Mail Server Host",
+      "description": "The mail server host (IPv6 or IPv4) for this domain",
+      "type": "string"
+    },
+    "mail-server-port": {
+      "title": "Mail Server Port",
+      "description": "The mail server port for this domain",
+      "type": "integer",
+      "default": 10025
+    }
+  },
+  "required": [
+    "name",
+    "mail-server-host",
+    "mail-server-port"
+  ]
+}
