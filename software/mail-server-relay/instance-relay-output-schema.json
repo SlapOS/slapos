@@ -2,28 +2,24 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Values returned by mail server",
   "properties": {
-    "imap-port": {
-      "description": "IMAP port of the dovecot instance",
-      "type": "integer"
-    },
     "smtp-port": {
       "description": "SMTP port of the postfix instance",
       "type": "integer"
     },
-    "imap-smtp-ipv6": {
-      "description": "IPv6 address of the IMAP and SMTP instances",
+    "submission-port": {
+      "description": "Submission port of the postfix instance",
+      "type": "integer"
+    },
+    "smtp-ipv6": {
+      "description": "IPv6 address of the SMTP instance",
       "type": "string"
     },
     "domain": {
       "description": "Domain of the mail server",
       "type": "string"
     },
-    "password-url": {
-      "title": "Password creation URL (you must use this to set your password)",
-      "type": "string"
-    },
-    "webmail-url": {
-      "title": "Webmail URL",
+    "dns-entries": {
+      "description": "DNS entries to add",
       "type": "string"
     }
   },
