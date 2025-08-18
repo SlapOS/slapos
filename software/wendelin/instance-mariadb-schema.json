@@ -49,6 +49,29 @@
         {
           "enum": [{}]
         }
+      ],
+      "examples": [
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@[<ipv6>]:<port>",
+          "upstream-mariabackup-url": "https://[<ipv6>]:<port-1>/mariabackup",
+          "upstream-caucased-url": "http://[<ipv6>]:<port-3>"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@[<ipv6>]:<port>",
+          "upstream-bootstrap-url": "https://[<ipv6>]:<port-1>/mariadb-full/most-recent.sql.gz",
+          "upstream-caucased-url": "http://[<ipv6>]:<port-3>"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@[<ipv6>]:<port>",
+          "upstream-caucased-url": "http://[<ipv6>]:<port-3>"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@ipv4:<port>",
+          "upstream-mariabackup-url": "http://ipv4:<port-1>/mariabackup"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@ipv4:<port>"
+        }
       ]
     },
     "caucased": {
