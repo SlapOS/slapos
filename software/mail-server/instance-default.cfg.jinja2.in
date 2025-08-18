@@ -545,6 +545,7 @@ name = lamp-http-frontend.py
 url = $${request-frontend:connection-secure_access}
 config-url = $${:url}
 
+# TODO: use openssl like in relay at a later stage
 [ca-apache-php]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
