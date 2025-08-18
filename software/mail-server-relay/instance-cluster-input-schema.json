@@ -57,7 +57,19 @@
           "type": "object",
           "properties": {
             "sla": {
-              "type": "object"
+              "type": "object",
+              "description": "SLA parameters for the instance",
+              "properties": {
+                "instance_guid": {
+                  "type": "string",
+                  "description": "Unique identifier of the instance"
+                },
+                "computer_guid": {
+                  "type": "string",
+                  "description": "Unique identifier of the computer"
+                }
+              },
+              "additionalProperties": true
             },
             "state": {
               "type": "string",
