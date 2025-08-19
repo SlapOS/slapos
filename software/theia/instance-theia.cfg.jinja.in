@@ -605,6 +605,7 @@ shared-part-list =
 {%- else %}
   {{ """${buildout:shared-part-list}""" | indent(2) }}
 {%- endif %}
+partition-amount = {{ parameter_dict['embedded-partition-amount'] }}
 context =
   raw python_for_standalone ${python-for-standalone:executable}
   raw request_script_path $${directory:project}/request-embedded-instance.sh
@@ -618,6 +619,7 @@ context =
   key forward_frontend_requests :forward-frontend-requests
   section slap_connection slap-connection
   section config slapos-standalone-config
+  key partition_amount :partition-amount
 forward-frontend-requests = {{ parameter_dict['forward-slapos-frontend-requests'] }}
 url = ${slapos-standalone-script:output}
 
