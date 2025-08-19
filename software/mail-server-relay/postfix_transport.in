@@ -1,0 +1,3 @@
+{%- for domain in json_module.loads(mail_domains) -%}
+{{ domain['name' ]}} smtp:[{{ domain['mail-server-host'] }}]:{{ domain['mail-server-port'] }}
+{% endfor -%}
