@@ -13,6 +13,99 @@
         }
       ]
     },
+    "replication": {
+      "description": "Setup this mariadb as a replica of another mariadb",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "upstream-mariadb-url": {
+          "description": "URL of the primary mariadb to replicate from",
+          "type": "string"
+        },
+        "upstream-bootstrap-url": {
+          "description": "URL of a recent mariadb backup to bootstrap replication from",
+          "type": "string"
+        },
+        "upstream-caucased-url": {
+          "description": "URL of the caucased server of the primary mariadb to request certificates from",
+          "type": "string"
+        },
+        "seconds-behind-master-threshold": {
+          "description": "Monitoring threshold for Seconds_Behind_Master in the replica, in seconds, -1 meaning no threshold",
+          "type": "integer",
+          "minimum": -1,
+          "default": -1
+        },
+        "allow-tcp-connections-on-replica": {
+          "description": "Whether a replica should allow TCP connections",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "oneOf": [
+        {
+          "required": ["primary-url"]
+        },
+        {
+          "enum": [{}]
+        }
+      ],
+      "examples": [
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@[<ipv6>]:<port>",
+          "upstream-mariabackup-url": "https://[<ipv6>]:<port-1>/mariabackup",
+          "upstream-caucased-url": "http://[<ipv6>]:<port-3>"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@[<ipv6>]:<port>",
+          "upstream-bootstrap-url": "https://[<ipv6>]:<port-1>/mariadb-full/most-recent.sql.gz",
+          "upstream-caucased-url": "http://[<ipv6>]:<port-3>"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@[<ipv6>]:<port>",
+          "upstream-caucased-url": "http://[<ipv6>]:<port-3>"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@ipv4:<port>",
+          "upstream-mariabackup-url": "http://ipv4:<port-1>/mariabackup"
+        },
+        {
+          "upstream-mariadb-url": "mysql://<replication_user>:<password>@ipv4:<port>",
+        }
+      ]
+    },
+    "caucased": {
+      "description": "Use a caucased server to obtain certificates for mTLS. Remote services can obtain certificates by pasting their CSRs here.",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "enable": {
+          "description": "Enable an embedded caucased server running inside the mariadb partition",
+          "type": "boolean",
+          "default": true
+        },
+        "csr-to-sign": {
+          "description": "PEM-encoded string representing one or more CSRs to be signed by this caucased server",
+          "type": "string"
+        },
+        "external-caucased-url": {
+          "description": "Provide the URL of an external caucased server to be used in place of an embedded one",
+          "type": "string"
+        }
+      }
+    },
+    "ipv6-reverse-proxy": {
+      "description": "Grant IPv6 access to mariadb via a reverse-proxy. Requires caucase for mTLS.",
+      "type": "object",
+      "default": {},
+      "properties": {
+        "enable": {
+          "description": "Enable IPv6 reverse-proxy. Always disabled when no (embedded or external) caucased server is provided.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
       "default": [
@@ -47,27 +140,78 @@
       },
       "type": "array"
     },
-    "catalog-backup": {
+    "backup": {
       "description": "Backup control knobs",
       "properties": {
-        "full-retention-days": {
-          "description": "How many days full backups must be retained, -1 meaning full backups are disabled and 0 meaning no expiration",
+        "periodicity": {
+          "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM cannot be combined).",
+          "default": "daily",
+          "type": "string"
+        },
+        "retention-days": {
+          "description": "How many day backups must be retained, 0 meaning forever",
           "default": 7,
-          "minimum": -1,
+          "minimum": 0,
           "type": "integer"
         },
-        "incremental-retention-days": {
-          "description": "How many days incremental backups (binlogs) must be retained, -1 meaning incremental backups are disabled and 0 meaning no expiration, defaulting to full-retention-days' value",
-          "minimum": -1,
-          "type": "integer"
+        "logical": {
+          "description": "Logical backup (SQL dump) control knobs",
+          "properties": {
+            "enable": {
+              "description": "Enable logical backups",
+              "type": "boolean",
+              "default": true
+            },
+            "periodicity": {
+              "description": "When to SQL-dump, overriding the global backup periodicity",
+              "type": "string"
+            },
+            "retention-days": {
+              "description": "How many days SQL dumps must be retained, overriding the global backup retention value",
+              "minimum": 0,
+              "type": "integer"
+            },
+          "default": {},
+          "type": "object"
+        },
+        "physical": {
+          "description": "Physical backup (Mariabackup) control knobs",
+          "properties": {
+            "enable": {
+              "description": "Enable physical backups",
+              "type": "boolean",
+              "default": true
+            },
+            "periodicity": {
+              "description": "When to mariabackup, overriding the global backup periodicity",
+              "type": "string"
+            },
+            "retention-days": {
+              "description": "How many days mariabackups must be retained, overriding the global backup retention value",
+              "minimum": 0,
+              "type": "integer"
+            },
+          "default": {},
+          "type": "object"
+        },
+        "incremental": {
+          "description": "Incremental backup (binlogs) control knobs",
+          "properties": {
+            "enable": {
+              "description": "Enable incremental backups",
+              "type": "boolean",
+              "default": true
+            },
+            "retention-days": {
+              "description": "How many days binlogs must be retained, overriding the global backup retention value",
+              "minimum": 0,
+              "type": "integer"
+            },
+          "default": {},
+          "type": "object"
         }
       },
       "type": "object"
-    },
-    "backup-periodicity": {
-      "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined).",
-      "default": "daily",
-      "type": "string"
     },
     "innodb-buffer-pool-size": {
       "description": "See MariaDB documentation on innodb_buffer_pool_size",
