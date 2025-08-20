@@ -83,7 +83,7 @@ def setupStandalone():
   )
   standalone.start()
   try:
-    partition_count = 20
+    partition_count = {{ int(config['partition-amount']) }}{# int(): unstringify and protect from code injection #}
     logging.info("Standalone SlapOS: Formatting %d partitions", partition_count)
     standalone.format(partition_count, {{ repr(config['ipv4']) }}, {{ repr(config['ipv6']) }})
     logging.info("Standalone SlapOS for computer `%s` started", {{ repr(config['computer-id']) }})
