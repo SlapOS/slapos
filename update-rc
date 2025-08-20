@@ -25,7 +25,7 @@ git merge origin/master -m "Update Release Candidate"
 git diff HEAD..origin/master | git apply
 
 # Download patch to update revisions based on tests
-wget -O update-release.sh https://erp5.nexedi.net/portal_skins/custom/TestResultModule_getReleaseCandidateRevision
+wget -O update-release.sh https://erp5.nexedi.com/portal_skins/custom/TestResultModule_getReleaseCandidateRevision
 
 
 # Suggestion
