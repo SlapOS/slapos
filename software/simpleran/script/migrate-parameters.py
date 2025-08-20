@@ -151,7 +151,9 @@ def convert_ors_params(params, new_params):
     for param in params:
         if param == 'ors_duo_2nd_cell':
             continue
-        if param in ['cell1', 'cell2', 'nodeb', 'management']:
+        if param == 'sdr100_offset':
+            new_params.setdefault('cell1',   {})['tx_power_offset'] = params[param]
+        elif param in ['cell1', 'cell2', 'nodeb', 'management']:
             new_params.setdefault(param, {}).update(params[param])
         elif param in cell_params:
             new_params.setdefault('cell1',   {})[param] = params[param]
@@ -190,6 +192,7 @@ def main():
             convert_tdd(new_params[p])
             convert_to_array(new_params[p])
     else:
+        new_params = params
         convert_tdd(new_params)
         convert_to_array(new_params)
     
