@@ -2255,7 +2255,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
