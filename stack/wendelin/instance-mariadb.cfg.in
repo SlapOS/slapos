@@ -1,22 +1,99 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+
+{#- Mariadb parameters -#}
 {% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure', 'with-process-privilege': True}]) -%}
 {% set test_database_list = [] %}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
-{% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
-{% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
-{% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
-{% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
-{% set port = slapparameter_dict['tcpv4-port'] %}
-{% if use_ipv6 -%}
-{%   set ip = (ipv6_set | list)[0] -%}
-{% else -%}
-{%   set ip = (ipv4_set | list)[0] -%}
+
+{#- Legacy Mariadb backup parameters -#}
+{% set legacy_catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
+{% set legacy_backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
+{% set legacy_full_backup_retention_days = legacy_catalog_backup.get('full-retention-days', 7) -%}
+{% set legacy_incremental_backup_retention_days = legacy_catalog_backup.get('incremental-retention-days', legacy_full_backup_retention_days) -%}
+
+{#- Mariadb backup parameters -#}
+{% set backup = slapparameter_dict.get('backup', {}) -%}
+{% set logical_backup = backup.pop('logical', {}) -%}
+{% set physical_backup = backup.pop('physical', {}) -%}
+{% set incremental_backup = backup.pop('incremental', {}) -%}
+{#- User-specified default backup settings -#}
+{% for k in backup -%}
+{%   for d in (logical_backup, physical_backup, incremental_backup) -%}
+{%     do d.setdefault(k, backup[k]) -%}
+{%   endfor -%}
+{% endfor -%}
+{#- Legacy backwards compatibility -#}
+{% do logical_backup.setdefault('enable', legacy_full_backup_retention_days != -1) -%}
+{% do logical_backup.setdefault('periodicity', legacy_backup_periodicity) -%}
+{% do logical_backup.setdefault('retention-days', legacy_full_backup_retention_days) -%}
+{% do incremental_backup.setdefault('enable', legacy_incremental_backup_retention_days != -1) -%}
+{% do incremental_backup.setdefault('retention-days', legacy_incremental_backup_retention_days) -%}
+{% set default_backup = {'enable': True, 'periodicity': 'daily', 'retention-days': 7} -%}
+{#- Default backup settings -#}
+{% for k in default_backup -%}
+{%   for d in (logical_backup, physical_backup, incremental_backup) -%}
+{%     do d.setdefault(k, default_backup[k]) -%}
+{%   endfor -%}
+{% endfor -%}
+
+{#- Binaries -#}
+{% set bash = parameter_dict['bash'] ~ '/bin/bash' -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' -%}
+
+{#- Network parameters -#}
+{% set port = slapparameter_dict['tcpv4-port'] -%}
+{% set public_ipv6 = (ipv6_set | list)[0] -%}
+{% set private_ipv4 = (ipv4_set | list)[0] -%}
+
+{#- Legacy SSL parameters -#}
+{% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
+
+{#- Caucase parameters -#}
+{% import "caucase" as caucase with context %}
+{% set caucased = slapparameter_dict.get('caucased', {}) -%}
+{% set caucased_url = caucased.get('external-caucased-url') -%}
+{% set caucased_enable = caucased.get('enable', True) and not caucased_url -%}
+{% if caucased_enable -%}
+{# caucased https port is implicitly port - 3 + 1, i.e. port - 2 -#}
+{% set caucased_url = 'http://[%s]:%s' % (public_ipv6, port - 3) -%}
 {% endif -%}
-{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
+{% set caucased_csr_to_sign = caucased.get('csr-to-sign', '') -%}
+
+{#- Replication parameters -#}
+{% set replication = slapparameter_dict.get('replication', {}) -%}
+{% if replication -%}
+{# cast to assert types -#}
+{% set replica_threshold = int(replication.get('seconds-behind-master-threshold', -1)) -%}
+{% set replica_skip_networking = not replication.get('allow-tcp-connections-on-replica', True) -%}
+{% set upstream_mariadb_url = str(replication['upstream-mariadb-url']) -%}
+{% set upstream_mariabackup_url = replication.get('upstream-mariabackup-url') -%}
+{% set upstream_bootstrap_url = replication.get('upstream-bootstrap-url') -%}
+{% set upstream_caucased_url = replication.get('upstream-caucased-url') -%}
+{% set upstream = urllib_parse.urlsplit(upstream_mariadb_url) -%}
+{% else -%}
+{% set upstream_mariadb_url = None -%}
+{% set upstream_caucased_url = None -%}
+{% set upstream = {'hostname': None, 'port': None, 'username': None} -%}
+{% set replica_threshold = None -%}
+{% set replica_skip_networking = False -%}
+{% endif -%}
+
+{#- IPv6 reverse-proxy parameters -#}
+{% set ipv6_reverse_proxy = slapparameter_dict.get('ipv6-reverse-proxy', {}) -%}
+{% set ipv6_reverse_proxy_enable = ipv6_reverse_proxy.get('enable', True) -%}
+{#- Disallow ipv6-proxy when caucased-powered TLS is disabled -#}
+{% if not caucased_url or replica_skip_networking -%}
+{% set ipv6_reverse_proxy_enable = False -%}
+{% endif -%}
+{% if ipv6_reverse_proxy_enable -%}
+{% set replication_mariadb_netloc = '[%s]:%s' % (public_ipv6, port) -%}
+{% else -%}
+{% set replication_mariadb_netloc = '%s:%s' % (private_ipv4, port) -%}
+{% endif -%}
+
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -25,9 +102,9 @@ recipe = slapos.cookbook:publish.serialised
 {% set publish_database_list = [] -%}
 {% for database in database_list -%}
 {%   if database.get('user') -%}
-{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
+{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ private_ipv4 ~ ":" ~ port ~ "/" ~ database['name']) -%}
 {%   else -%}
-{%     do publish_database_list.append("mysql://" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
+{%     do publish_database_list.append("mysql://" ~ private_ipv4 ~ ":" ~ port ~ "/" ~ database['name']) -%}
 {%   endif -%}
 {% endfor -%}
 {{ dumps(publish_database_list) }}
@@ -35,6 +112,34 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+replication-mariabackup-url = ${mariadb-bootstrap-server-promise:mariabackup-url}
+replication-bootstrap-url = ${mariadb-bootstrap-server-promise:bootstrap-url}
+replication-primary-url = mysql://replication_user:${replication-password:passwd}@{{ replication_mariadb_netloc }}
+{% if caucased_url -%}
+caucased-url = {{ caucased_url }}
+{% else -%}
+# Publish empty caucased-url so that erp5 root instance can forward it
+# unconditionally because slapos.cookbook:request recipe only supports
+# returning connection parameters that are listed beforehand, and does
+# not support inspecting the actual full connection parameter dict, so
+# it does not play well with conditional connection parameters.
+caucased-url =
+{%- endif %}
+{% if upstream_caucased_url -%}
+-depends = ${publish-caucase-replica-updater-csr-content:recipe}
+
+[publish-caucase-replica-updater-csr-content]
+recipe = slapos.recipe.build
+csr-file = ${caucase-replica-updater-csr:csr}
+update =
+  # Hack: update publish dict once csr has been generated
+  publish = self.buildout['publish']
+  with open(options['csr-file'], 'rb') as f:
+    publish['caucased-csr-to-sign'] = f.read().decode('ascii')
+{% else -%}
+# Publish empty caucased-csr-to-sign to forward this parameter easily.
+caucased-csr-to-sign =
+{%- endif %}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
@@ -71,7 +176,6 @@ mode = {{ mode }}
 {%   do ssl_dict.__setitem__(key, path) -%}
 {{   simplefile('ssl-file-' ~ key, path, content, mode) }}
 {%- endmacro %}
-{% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
 {% if ssl_parameter_dict -%}
 {%   set base_directory = '${directory:mariadb-ssl}/' -%}
 {# Note: The key content will be stored in .installed.cfg, and this template's
@@ -87,36 +191,201 @@ about laxist file mode. -#}
 {%   endif -%}
 {%- endif %}
 
-{% if full_backup_retention_days > -1 -%}
-[{{ section('cron-entry-mariadb-backup') }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = mariadb-backup
-time = {{ dumps(backup_periodicity) }}
+{% if caucased_enable -%}
+{{  caucase.caucased(
+      prefix='caucased-mariadb',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      caucased_path='${directory:services}/caucased',
+      data_dir='${directory:srv}/caucase/caucased',
+      netloc='[%s]:%s' % (public_ipv6, port - 3),
+      tmp='${directory:tmp}',
+      service_auto_approve_count=0,
+      user_auto_approve_count=1,
+)}}
+{%-   do section('caucased-mariadb') %}
+{%-   do section('caucased-mariadb-promise') %}
+{%- endif %}
+
+{% if caucased_url -%}
+{{  caucase.updater(
+      prefix='caucase-admin-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-admin-updater',
+      url=caucased_url,
+      data_dir='${directory:srv}/caucase/admin',
+      ca_path='${directory:caucase-ssl}/admin-ca.pem',
+      crl_path='${directory:caucase-ssl}/admin-crl.pem',
+      crt_path='${directory:caucase-ssl}/admin-crt-and-key.pem',
+      mode='user',
+      openssl_req_options='-subj %r' % ('/CN=Mariadb Caucase Admin ' + public_ipv6),
+      openssl='${binary-link:target-directory}/openssl',
+      promise=caucased_enable,
+)}}
+{%-   do section('caucase-admin-updater') %}
+{%-   if caucased_enable %}
+{%-   do section('caucase-admin-updater-promise') %}
+{%-   endif %}
+
+[caucase-mariadb-on-renew]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+proxysql-ca-path = ${directory:proxysql}/proxysql-ca.pem
+proxysql-cert-path = ${directory:proxysql}/proxysql-cert.pem
+proxysql-key-path = ${directory:proxysql}/proxysql-key.pem
+crt-and-key-path = ${directory:mariadb-ssl}/mariadb-crt-and-key.pem
+inline =
+  #! /bin/sh -e
+  # Copy for proxysql
+  cp ${directory:mariadb-ssl}/mariadb-ca.pem ${:proxysql-ca-path}
+  cp ${directory:mariadb-ssl}/mariadb-crt.pem ${:proxysql-cert-path}
+  cp ${directory:mariadb-ssl}/mariadb-key.pem ${:proxysql-key-path}
+  # Bundle mariadb
+  cat ${directory:mariadb-ssl}/mariadb-crt.pem ${directory:mariadb-ssl}/mariadb-key.pem \
+    > ${:crt-and-key-path}
+
+{{  caucase.updater(
+      prefix='caucase-mariadb-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-mariadb-updater',
+      url=caucased_url,
+      data_dir='${directory:srv}/caucase/mariadb',
+      ca_path='${directory:mariadb-ssl}/mariadb-ca.pem',
+      crl_path='${directory:mariadb-ssl}/mariadb-crl.pem',
+      crt_path='${directory:mariadb-ssl}/mariadb-crt.pem',
+      key_path='${directory:mariadb-ssl}/mariadb-key.pem',
+      on_renew='${caucase-mariadb-on-renew:output}',
+      mode='service',
+      openssl_req_options='-subj /CN=%(ip)s -addext "subjectAltName=IP:%(ip)s"' % {'ip': public_ipv6},
+      openssl='${binary-link:target-directory}/openssl',
+      promise=caucased_enable,
+)}}
+{%-   do section('caucase-mariadb-updater') %}
+{%-   if caucased_enable %}
+{%-   do section('caucase-mariadb-updater-promise') %}
+{%-   endif %}
+
+[caucase-csr-to-sign]
+recipe = slapos.recipe.build
+location = ${directory:etc}/csr_to_sign.pem
+csr-to-sign = {{ dumps(caucased_csr_to_sign) }}
+init =
+  import os
+  self.local_csr_paths = []
+  for part in ('caucase-mariadb-updater',):
+    if not os.path.exists(self.buildout[part]['ca-path']):
+      self.local_csr_paths.append(self.buildout[part + '-csr']['csr'])
+install =
+  pem_bytes = []
+  for csr_path in self.local_csr_paths:
+    with open(csr_path) as f:
+      pem_bytes.append(f.read())
+  csr_to_sign = options['csr-to-sign']
+  if csr_to_sign:
+    pem_bytes.append(csr_to_sign)
+  with open(options['location'], 'w') as f:
+    f.write('\n'.join(pem_bytes) + '\n')
+
+{{  caucase.sign_csr(
+      prefix='caucase-sign-csr',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      sign_csr_path='${directory:services}/caucase-sign-csr',
+      ca_url=caucased_url,
+      ca_crt='${caucase-mariadb-updater:ca-path}',
+      user_key='${caucase-admin-updater:crt-path}',
+      csr_path='${caucase-csr-to-sign:location}'
+)}}
+{%-   do section('caucase-sign-csr') %}
+{%- endif %}
+
+[dated-filename]
+command = $("{{ parameter_dict['coreutils-location'] }}/bin/date" +%Y%m%d%H%M%S)
+{# KEEP GLOB PATTERN IN SYNC with generated filenames above
+#      YYYYmmddHHMMSS -#}
+glob = ??????????????
+
+{% if logical_backup['enable'] -%}
+[mariadb-dump-script]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+most-recent = most-recent.sql.gz
 {# When binlogs are enabled:
 # flush-logs: used so no manipulation on binlogs is needed to restore from
 #   full + binlogs. The first binlog after a dump starts from dump snapshot and
 #   can be fully restored.
 # master-data: use value "2" as we are not in a replication case
 #}
-command = "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
-{# KEEP GLOB PATTERN IN SYNC with generated filenames above
-#           YYYYmmddHHMMSS -#}
-file-glob = ??????????????.sql.gz
+inline =
+  #!{{ bash }}
+  set -euo pipefail
+  filepath="${directory:mariadb-dump-full}/"${dated-filename:command}.sql.gz
+  "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  ln -sf "$filepath" "${directory:mariadb-dump-full}/${:most-recent}"
 
-{% if full_backup_retention_days > 0 -%}
-[{{ section("cron-entry-mariadb-backup-expire") }}]
+[{{ section('cron-entry-mariadb-dump') }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
-name = mariadb-backup-expire
-time = {{ dumps(backup_periodicity) }}
-command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
+name = mariadb-dump
+time = {{ dumps(logical_backup['periodicity']) }}
+command = ${mariadb-dump-script:output}
+
+{% if logical_backup['retention-days'] > 0 -%}
+[{{ section("cron-entry-mariadb-dump-expire") }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariadb-dump-expire
+time = {{ dumps(logical_backup['periodicity']) }}
+command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-dump-full}" -maxdepth 1 -name "${dated-filename:glob}.sql.gz" -daystart -mtime +{{ logical_backup['retention-days'] }} -delete
 {%- endif %}
+{%- endif %}
+
+[mariabackup-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['mariabackup-script'] }}
+output = ${directory:bin}/${:_buildout_section_name_}
+logical-backup-enabled = logical_backup['enable']
+context =
+  key dash dash:dash
+  key bin_directory directory:bin
+  key tmp_directory directory:tmp
+  key mariadb_backup_directory directory:mariabackup
+  key logical_backup_enabled :logical-backup-enabled
+  raw python_executable {{ parameter_dict['python-executable'] }}
+  raw full_backup_retention_days {{ physical_backup['retention-days'] }}
+depends = ${binary-wrap-mariabackup:command}
+
+[mariabackup-restore-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['mariabackup-restore-script'] }}
+output = ${directory:bin}/${:_buildout_section_name_}
+context =
+  key dash dash:dash
+  key bin_directory directory:bin
+  key tmp_directory directory:tmp
+  key mariadb_backup_directory directory:mariabackup
+  key mariadb_data_directory my-cnf-parameters:data-directory
+  key pid_file my-cnf-parameters:pid-file
+  raw curl_executable {{ parameter_dict['curl-location'] }}/bin/curl
+  raw python_executable {{ parameter_dict['python-executable'] }}
+depends = ${binary-wrap-mariabackup:command}
+
+{% if physical_backup['enable'] -%}
+[{{ section('cron-entry-mariabackup') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariabackup
+time = {{ dumps(physical_backup['periodicity']) }}
+command = ${mariabackup-script:output}
 {%- endif %}
 
 [my-cnf-parameters]
-ip = {{ ip }}
+{% if replica_skip_networking -%}
+# Do not set ip/port so that skip-networking will be set, disabling TCP access
+# ip =
+# port =
+{%- else %}
+ip = {{ private_ipv4 }}
 port = {{ port }}
+{%- endif %}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
@@ -136,10 +405,10 @@ innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 character-set-server = {{ dumps(slapparameter_dict.get('character-set-server', 'utf8mb4')) }}
 collation-server = {{ dumps(slapparameter_dict.get('collation-server', 'utf8mb4_general_ci')) }}
-{% if incremental_backup_retention_days > -1 -%}
+{% if incremental_backup['enable'] -%}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
-binlog-expire-days = {{ dumps(incremental_backup_retention_days) }}
+binlog-expire-days = {{ dumps(incremental_backup['retention-days']) }}
 server-id = ${publish-early:server-id}
 {% else %}
 binlog-path =
@@ -154,9 +423,17 @@ output = ${directory:etc}/mariadb.cnf
 url = {{ parameter_dict['template-my-cnf'] }}
 context = section parameter_dict my-cnf-parameters
 
+[replication-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/mariadb-replication.password
+{% if replication -%}
+passwd = {{ upstream.password }}
+{%- endif %}
+
 [init-script-parameters]
 database-list = {{ dumps(database_list + test_database_list) }}
 mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
+replication-password = ${replication-password:passwd}
 
 [init-script]
 recipe = slapos.recipe.template:jinja2
@@ -165,22 +442,18 @@ output = ${directory:etc}/mariadb_initial_setup.sql
 url = {{ parameter_dict['template-mariadb-initial-setup'] }}
 context = section parameter_dict init-script-parameters
 
-[{{ section('update-mysql') }}]
-recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
-output = ${directory:services}/mariadb_update
-binary = ${binary-wrap-mysql_upgrade:wrapper-path}
-mysql = ${binary-wrap-mysql:wrapper-path}
-init-script = ${init-script:output}
-mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
-
 [{{ section('mysqld') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/mariadb
+command-line = ${mariadbd-server:output}
+hash-files =
+  ${mariadbd-server:output}
+  ${my-cnf:output}
+
+[mariadbd-server]
 recipe = slapos.recipe.template:jinja2
-output = ${directory:services}/mariadb
-url = {{ parameter_dict['template-mysqld-wrapper'] }}
-context =
-  key defaults_file my-cnf:output
-  key datadir my-cnf-parameters:data-directory
-  key environ :environ
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/mariadbd
+url = {{ mariadb['mariadb-service-template'] }}
 environ =
   GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
   ODBCSYSINI='${my-cnf-parameters:etc-directory}'
@@ -188,7 +461,464 @@ environ =
   {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
   {{ variable }}
   {%- endfor %}
+context =
+  key defaults_file my-cnf:output
+  key datadir my-cnf-parameters:data-directory
+  key environ :environ
+{%- if replication %}
+{%- if upstream_mariabackup_url %}
+  raw custom_install ${mariadb-setup-replication:output}
+{%- else %}
+  raw on_creation ${mariadb-setup-replication:output}
+{%- endif %}
+{%- else %}
+  raw on_creation ${mariadb-setup-db:output}
+  raw on_startup ${mariadb-on-startup:output}
+# XXX: Run upgrader and tzinfo on replication startup as well,
+# or might this break replication? In doubt, avoid.
+{%- endif %}
 
+[mariadb-setup-db]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ mariadb['mariadb-background-template'] }}
+context =
+  key mariadb_socket my-cnf-parameters:socket
+  key defaults_file my-cnf:output
+  key foreground_script :foreground-script
+  raw extra_options --skip-networking
+foreground-script =
+  "${binary-wrap-mysql:wrapper-path}" < "${init-script:output}"
+
+[pytz-path]
+recipe = slapos.recipe.build
+init =
+  import pkg_resources, os, zc.buildout.easy_install
+  buildout = self.buildout['buildout']
+  e, d = buildout['eggs-directory'], buildout['develop-eggs-directory']
+  req = pkg_resources.Requirement.parse('pytz')
+  dist = zc.buildout.easy_install.working_set(['pytz'], [e, d]).find(req)
+  options['zoneinfo'] = os.path.join(dist.location, 'pytz', 'zoneinfo')
+
+[mariadb-on-startup]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ mariadb['mariadb-background-template'] }}
+context =
+  key mariadb_socket my-cnf-parameters:socket
+  key defaults_file my-cnf:output
+  key foreground_script :foreground-script
+  raw extra_options --skip-networking
+foreground-script =
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  mysql_upgrade="${binary-wrap-mysql_upgrade:wrapper-path}"
+  mysql_tzinfo_to_sql="${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}"
+  zoneinfo="${pytz-path:zoneinfo}"
+  if [ -z "$("$mysql" -e "SHOW SLAVE STATUS")" ]
+  then
+    "$mysql_upgrade" || true
+    "mysql_tzinfo_to_sql" "$zoneinfo" | "$mysql" -B mysql || true
+  fi
+
+{% if replication -%}
+{% if upstream_caucased_url -%}
+{{  caucase.updater(
+      prefix='caucase-replica-updater',
+      buildout_bin_directory=parameter_dict['bin-directory'],
+      updater_path='${directory:services}/caucase-replica-updater',
+      url=upstream_caucased_url,
+      data_dir='${directory:srv}/caucase/replica',
+      ca_path='${directory:replica-ssl}/replica-ca.pem',
+      crl_path='${directory:replica-ssl}/replica-crl.pem',
+      crt_path='${directory:replica-ssl}/replica-crt.pem',
+      key_path='${directory:replica-ssl}/replica-key.pem',
+      mode='service',
+      openssl_req_options='-subj %r' % ('/CN=Mariadb Replica ' + public_ipv6),
+      openssl='${binary-link:target-directory}/openssl',
+)}}
+{%-   do section('caucase-replica-updater') %}
+{%-   do section('caucase-replica-updater-promise') %}
+
+[caucase-replica-updater-promise]
+config-bang-on-failure = false
+{%- endif %}
+
+[{{ section('mariadb-setup-replication') }}]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+url = {{ mariadb['mariadb-background-template'] }}
+shebang =
+  #!{{ bash }}
+  set -euo pipefail
+context =
+  key shebang :shebang
+  key mariadb_socket my-cnf-parameters:socket
+  key defaults_file my-cnf:output
+  raw extra_options --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin
+  key foreground_script :foreground-script
+  key install_script :install-script
+install-script =
+  {% if upstream_mariabackup_url -%}
+  bootstrap_url={{ six_moves.shlex_quote(upstream_mariabackup_url) }}
+  {% elif upstream_bootstrap_url -%}
+  bootstrap_url={{ six_moves.shlex_quote(upstream_bootstrap_url) }}
+  bootstrap_file="${directory:mariadb-dump-full}/bootstrap.sql.gz"
+  {%- endif %}
+  curl="{{ parameter_dict['curl-location'] }}/bin/curl"
+  zcat="{{ parameter_dict['gzip-location'] }}/bin/zcat"
+  mysql="${binary-wrap-mysql:wrapper-path}"
+
+  date
+
+  {% if upstream_caucased_url -%}
+  echo "Checking caucase certificate for authentication to primary is ready"
+  if ! { [ -f ${caucase-replica-updater:crt-path} ] &&
+         [ -f ${caucase-replica-updater:key-path} ] &&
+         [ -f ${caucase-replica-updater:ca-path} ] &&
+         [ -f ${caucase-replica-updater:crl-path} ] ; } then
+    echo "  \_ Caucase certificate is missing; ABORT"
+    exit 1
+  fi
+  {%- endif %}
+
+  {% if upstream_bootstrap_url -%}
+  echo "Fetching $bootstrap_url"
+  "$curl" -o "$bootstrap_file" --fail "$bootstrap_url"
+  {%- if upstream_caucased_url %}
+  {#- NOT NL #} --cert ${caucase-replica-updater:crt-path}
+  {#- NOT NL #} --key ${caucase-replica-updater:key-path}
+  {#- NOT NL #} --cacert ${caucase-replica-updater:ca-path}
+  {#- NOT NL #} --crlfile ${caucase-replica-updater:crl-path}
+  {%- endif %}
+  {%- endif %}
+
+  {% if upstream_mariabackup_url -%}
+  echo "Fetching and restoring mariabackup from $bootstrap_url"
+  ${mariabackup-restore-script:output} --mariabackup-url="$bootstrap_url"
+  {%- if upstream_caucased_url %}
+  {#- NOT NL #} --cert ${caucase-replica-updater:crt-path}
+  {#- NOT NL #} --key ${caucase-replica-updater:key-path}
+  {#- NOT NL #} --cacert ${caucase-replica-updater:ca-path}
+  {#- NOT NL #} --crlfile ${caucase-replica-updater:crl-path}
+  {%- endif %}
+  {%- endif %}
+
+foreground-script =
+  {% if upstream_mariabackup_url -%}
+  echo "Extracting GTID from mariabackup"
+  set +o pipefail
+  MARIABACKUP_GTID=$(cat "${my-cnf-parameters:data-directory}/xtrabackup_binlog_info" | sed 's/.*\s\+//')
+  SQL_SET_GTID="SET GLOBAL gtid_slave_pos=\"$MARIABACKUP_GTID\";"
+  set -o pipefail
+  if [ -z "$MARIABACKUP_GTID" ]; then
+    echo "  \_ GTID not found in mariabackup; ABORT"
+    exit 1
+  fi
+  echo "  \_ OK, found $SQL_SET_GTID"
+
+  {% elif upstream_bootstrap_url -%}
+  echo "Importing $bootstrap_file"
+  "$zcat" "$bootstrap_file" | "$mysql"
+
+  echo "Extracting GTID from backup"
+  set +o pipefail
+  SQL_SET_GTID=$("$zcat" "$bootstrap_file" 2>/dev/null | sed '100q; /^--\s*SET GLOBAL gtid_slave_pos=/!d; s/^--\s*//; q')
+  set -o pipefail
+  if [ -z "$SQL_SET_GTID" ]; then
+    echo "  \_ GTID not found in backup; ABORT"
+    exit 1
+  fi
+  echo "  \_ OK, found $SQL_SET_GTID"
+
+  {% else -%}
+  echo "Skipping bootstrap and using empty GTID"
+  SQL_SET_GTID='SET GLOBAL gtid_slave_pos="";'
+  echo "  \_ Using $SQL_SET_GTID"
+  {%- endif %}
+
+  echo "Configuring server as replica"
+  "$mysql" -e "$SQL_SET_GTID"
+  "$mysql" -e "
+  ${:sql-change-master-command}
+  "
+  "$mysql" -e "START SLAVE;"
+sql-change-master-command =
+  CHANGE MASTER TO
+  MASTER_HOST='{{ upstream.hostname }}',
+  MASTER_PORT={{ upstream.port }},
+  MASTER_USER='{{ upstream.username }}',
+  MASTER_PASSWORD='{{ upstream.password }}',
+  {% if upstream_caucased_url -%}
+  MASTER_SSL=1,
+  MASTER_SSL_CERT='${caucase-replica-updater:crt-path}',
+  MASTER_SSL_KEY='${caucase-replica-updater:key-path}',
+  MASTER_SSL_CA='${caucase-replica-updater:ca-path}',
+  MASTER_SSL_CRL='${caucase-replica-updater:crl-path}',
+  MASTER_SSL_VERIFY_SERVER_CERT=1,
+  {%- endif %}
+  MASTER_USE_GTID="slave_pos";
+{%- endif %}
+
+[mariadb-replication-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  from contextlib import closing
+
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  import pymysql.cursors
+
+  expected_url = {{ repr(upstream_mariadb_url) }}
+  expected = {{ repr((upstream.hostname, upstream.port, upstream.username)) }}
+  max_delay = {{ replica_threshold }}
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      conn = pymysql.connect(
+        read_default_file='${my-cnf:output}',
+        cursorclass=pymysql.cursors.DictCursor)
+      with closing(conn):
+        with closing(conn.cursor()) as cursor:
+          cursor.execute("SHOW SLAVE STATUS")
+          data = cursor.fetchone()
+      if data is None:
+        if expected_url is None:
+          self.logger.info("Mariadb is in primary mode")
+        else:
+          self.logger.error(
+            "Mariadb is not in replica mode. "
+            "If this is expected, please unset 'replication' parameter"
+          )
+        return
+      if expected_url is None:
+        self.logger.error(
+          "Mariadb is in replica mode. "
+          "If this is expected, please set 'replication' parameter"
+        )
+        return
+      primary = tuple(data.get('Master_' + k) for k in ('Host', 'Port', 'User'))
+      seconds_behind = data.get('Seconds_Behind_Master')
+      if None in primary or seconds_behind is None:
+        from pprint import pformat
+        self.logger.error("Replication is in bad state:\n%s", pformat(data))
+        return
+      if primary != expected:
+        self.logger.error(
+          "Replica is not following given primary %s\n"
+          "Instead it's following %r\n"
+          "If this is expected, please correct 'replication' parameter'",
+          expected_url,
+          primary,
+        )
+        return
+      (self.logger.error if seconds_behind > max_delay >= 0 else
+       self.logger.info)("Replica is %d seconds behind", seconds_behind)
+
+[{{ section('mariadb-replication-promise') }}]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.core
+  PyMySQL
+file = ${mariadb-replication-sense:output}
+output = ${directory:plugins}/mariadb_replication.py
+config-bang-on-failure = false
+
+[mariadb-replica-change-base]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+logfile = ${directory:log}/${:_buildout_section_name_}.log
+context =
+  key sql :sql-commands
+{% raw -%}
+inline =
+  #! /bin/sh
+  set -eu
+  mysql="${binary-wrap-mysql:wrapper-path}"
+  {
+    date
+    $mysql -e "
+      {{ sql | indent(4) }}
+    "
+    echo
+  } >> "${:logfile}"
+  echo "See ${:logfile}"
+{%- endraw %}
+
+[{{ section('mariadb-shutdown-gracefully') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  SHUTDOWN WAIT FOR ALL SLAVES;
+
+[{{ section('mariadb-replica-become-primary') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  RESET SLAVE ALL;
+  SHOW MASTER STATUS;
+  SELECT @@global.gtid_binlog_pos;
+
+{% if replication -%}
+[{{ section('mariadb-replica-change-primary') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP SLAVE;
+  ${mariadb-setup-replication:sql-change-master-command}
+  START SLAVE;
+
+[{{ section('mariadb-primary-become-replica') }}]
+<= mariadb-replica-change-base
+sql-commands =
+  STOP ALL SLAVES;
+  RESET MASTER;
+  RESET SLAVE ALL;
+  ${mariadb-setup-replication:sql-change-master-command}
+  START SLAVE;
+{%- endif %}
+
+[mariadb-bootstrap-server-script]
+recipe = slapos.cookbook:simplehttpserver
+wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
+base-path = ${directory:backup}
+log-file = ${directory:log}/${:_buildout_section_name_}.log
+{% if ipv6_reverse_proxy_enable -%}
+socketpath = ${directory:run}/bootstrap.sock
+{%- else %}
+host = {{ private_ipv4 }}
+port = {{ port - 1 }}
+{%- endif %}
+
+[{{ section('mariadb-bootstrap-server-service') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/mariadb-bootstrap-server
+command-line = ${mariadb-bootstrap-server-script:wrapper}
+hash-files = ${:command-line}
+
+[{{ section('mariadb-bootstrap-server-promise') }}]
+<= monitor-promise-base
+promise = check_url_available
+name = mariadb_replication_bootstrap_server.py
+{% if ipv6_reverse_proxy_enable -%}
+{% if caucased_url -%}
+config-url = https://[{{ public_ipv6 }}]:{{ port - 1 }}
+config-ca-cert-file = ${caucase-mariadb-updater:ca-path}
+config-cert-file = ${caucase-mariadb-on-renew:crt-and-key-path}
+config-key-file = ${:config-cert-file}
+{%- else %}
+config-url = http://[{{ public_ipv6 }}]:{{ port - 1 }}
+{%- endif %}
+{%- else %}
+config-url = http://{{ private_ipv4 }}:{{ port - 1 }}
+{%- endif %}
+# Connection information
+url = ${:config-url}
+bootstrap-url = ${:url}/mariadb-full/${mariadb-dump-script:most-recent}
+mariabackup-url = ${:url}/mariabackup/
+
+{% if ipv6_reverse_proxy_enable -%}
+[haproxy-cfg]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/haproxy.cfg
+inline =
+  global
+    maxconn 128
+    master-worker
+    pidfile ${directory:run}/haproxy.pid
+    log stdout format raw daemon
+  defaults
+    timeout connect 10s
+    timeout server 305s
+    timeout client 305s
+{%- if not caucased_url %}
+  listen mysql
+    log global
+    bind {{ public_ipv6 }}:{{ port }}
+    mode tcp
+    option tcplog
+    server mariadb unix@${my-cnf-parameters:socket} send-proxy
+{%- endif %}
+  listen bootstrap
+    log global
+    bind {{ public_ipv6 }}:{{ port - 1 }}
+{#- NOT NL #} ssl crt ${caucase-mariadb-on-renew:crt-and-key-path}
+{#- NOT NL #} alpn h2,http/1.1
+{#- NOT NL #} verify required
+{#- NOT NL #} ca-file ${caucase-mariadb-updater:ca-path}
+{#- NOT NL #} crl-file ${caucase-mariadb-updater:crl-path}
+    mode http
+    option httplog
+    server bootstrap unix@${mariadb-bootstrap-server-script:socketpath}
+  {% raw %}{# BLANKLINE #}{% endraw %}
+
+[{{ section('haproxy') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/haproxy
+command-line =
+  "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
+    -S ${directory:run}/haproxy.sock,level,operator
+    -f "${haproxy-cfg:output}"
+hash-files = ${haproxy-cfg:output}
+
+[proxysql-cfg]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:etc}/proxysql.cfg
+inline =
+  mysql_variables =
+  {
+    interfaces="[{{ public_ipv6 }}]:{{ port }}"
+    have_ssl=true
+  }
+  mysql_servers =
+  (
+    {
+      hostgroup=0
+  #   ProxySQL does not support the proxy side of the proxy protocol
+  #   so Mariadb sees this address as the origin of every connection
+  #   forwarded by ProxySQL, instead of the actual origin address of
+  #   the client.
+  #   Thus letting ProxySQL connect to Mariadb's unix socket causes
+  #   issues due to the anonymous localhost account in mariadb.
+  #   address="${my-cnf-parameters:socket}"
+  #   port=0
+      address="{{ private_ipv4 }}"
+      port={{ port }}
+      max_connections=128
+    }
+  )
+  mysql_users =
+  (
+    {
+      username="replication_user"
+      password="${replication-password:passwd}"
+      fast_forward=1
+      use_ssl=1
+    }
+  )
+
+[{{ section('proxysql') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/proxysql
+command-line =
+  "${binary-link:target-directory}/proxysql"
+    --foreground
+    -c "${proxysql-cfg:output}"
+    -D "${directory:proxysql}"
+    -S ${directory:run}/proxysql.sock
+    --reload
+# should it be --initial instead of --reload?
+hash-files = ${proxysql-cfg:output}
+# wait for caucase to obtain certificates in mariadb-ssl
+# so that proxysql will directly use them and not try to
+# generate its own.
+wait-for-files =
+  ${caucase-mariadb-on-renew:proxysql-ca-path}
+  ${caucase-mariadb-on-renew:proxysql-cert-path}
+  ${caucase-mariadb-on-renew:proxysql-key-path}
+{%- endif %}
 
 [{{ section('odbc-ini') }}]
 recipe = slapos.recipe.template
@@ -210,8 +940,12 @@ link-binary = {{ dumps(parameter_dict['link-binary']) }}
 recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
 # will reject it.
-command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
+command-line = "{{ mariadb['location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
+
+[binary-wrap-mariabackup]
+< = binary-wrap-base
+command = mariabackup
 
 [binary-wrap-mysql]
 < = binary-wrap-base
@@ -227,7 +961,7 @@ command = mysql_upgrade
 
 [binary-wrap-mysql_tzinfo_to_sql]
 < = binary-wrap-base
-command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
+command-line = "{{ mariadb['location'] }}/bin/${:command}"
 command = mysql_tzinfo_to_sql
 
 [binary-wrap-pt-digest]
@@ -245,9 +979,15 @@ plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
-mariadb-backup-full = ${:backup}/mariadb-full
+mariadb-dump-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
+mariabackup = ${:backup}/mariabackup
+proxysql = ${:srv}/proxysql
 mariadb-ssl = ${:etc}/mariadb-ssl
+caucase-ssl = ${:etc}/caucase-ssl
+{% if upstream_caucased_url -%}
+replica-ssl = ${:etc}/replica-ssl
+{%- endif %}
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
@@ -269,19 +1009,6 @@ mode = 770
 [dash]
 dash = {{ dumps(dash) }}
 
-[{{ section('start-clone-from-backup') }}]
-recipe = slapos.recipe.template:jinja2
-url = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
-output = ${directory:bin}/start-clone-from-backup
-context =
-  key dash dash:dash
-  key client binary-wrap-mysql:wrapper-path
-  key data_directory my-cnf-parameters:data-directory
-  key pid_file my-cnf-parameters:pid-file
-  key server mysqld:output
-  key update update-mysql:output
-  key socket my-cnf-parameters:socket
-
 [{{ section('resiliency-after-import-script') }}]
 # Generate after import script used by importer instance of webrunner
 recipe = slapos.recipe.template:jinja2
@@ -291,10 +1018,10 @@ context =
   key dash dash:dash
   key mysql_executable binary-wrap-mysql:wrapper-path
   key mariadb_data_directory my-cnf-parameters:data-directory
-  key mariadb_backup_directory directory:mariadb-backup-full
+  key mariadb_backup_directory directory:mariadb-dump-full
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
-  key server_executable mysqld:output
+  key server_executable mariadbd-server:output
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d
@@ -313,7 +1040,7 @@ filename = generate-mariadb-slow-query-report
 context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
-  raw dash {{ parameter_dict['dash-location'] }}/bin/dash
+  raw dash {{ dash }}
   raw xz {{ parameter_dict['xz-utils-location'] }}/bin/xz
   key output_folder directory:slowquery
 
@@ -337,10 +1064,18 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 <= monitor-promise-base
 promise = check_command_execute
 name = mariadb.py
-config-command = "${binary-wrap-mysql:wrapper-path}"  --execute ';' {% if database_list and database_list[0].get('user') %} --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}" --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}" {% endif %}
+mysql = "${binary-wrap-mysql:wrapper-path}"
+{%- if not replication and database_list and database_list[0].get('user') %}
+netloc = --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}"
+auth = --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}"
+{%- else %}
+netloc =
+auth =
+{%- endif %}
+config-command = ${:mysql} --execute ';' ${:netloc} ${:auth}
 
 [monitor-instance-parameter]
-monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-ipv6 = {{ public_ipv6 }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
