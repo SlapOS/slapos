@@ -46,6 +46,7 @@ default-parameters =
   {
     "autorun": "running",
     "initial-embedded-instance": null,
+    "embedded-partition-amount": 20,
     "forward-slapos-frontend-requests": "enabled",
     "frontend-name": "Theia Frontend",
     "frontend-sr": "$${:frontend-sr}",
