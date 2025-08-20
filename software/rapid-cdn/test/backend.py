@@ -63,6 +63,13 @@ class TestHandler(BaseHTTPRequestHandler):
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
 
+  def wfile_write(self, *args, **kwargs):
+    try:
+      self.wfile.write(*args, **kwargs)
+    except ConnectionResetError:
+      # clients can drop connection during sending data, ignore it
+      pass
+
   def do_DELETE(self):
     config = self.configuration.pop(self.path, None)
     if config is None:
@@ -72,7 +79,7 @@ class TestHandler(BaseHTTPRequestHandler):
       self.send_response(200)
       self.send_header("Content-Type", "application/json")
       self.end_headers()
-      self.wfile.write(json.dumps({self.path: config}, indent=2))
+      self.wfile_write(json.dumps({self.path: config}, indent=2))
 
   def do_CONFIG(self):
     config = self.DEFAULT_CONFIGURATION.copy()
@@ -103,7 +110,7 @@ class TestHandler(BaseHTTPRequestHandler):
       reply, indent=2, cls=ConfigurationReplyEncoder).encode()
     self.send_header('Content-Length', len(response))
     self.end_headers()
-    self.wfile.write(response)
+    self.wfile_write(response)
 
   def do_POST(self):
     return self.do_GET()
@@ -135,7 +142,7 @@ class TestHandler(BaseHTTPRequestHandler):
       self.send_header('Content-Length', len(response))
       self.send_header('Content-Type', 'application/json')
       self.end_headers()
-      self.wfile.write(response)
+      self.wfile_write(response)
       return
 
     self.protocol_version = config['configuration']['Protocol-Version']
@@ -165,7 +172,7 @@ class TestHandler(BaseHTTPRequestHandler):
           value = '%s' % (len(body),)
       self.send_header(header, value)
     self.end_headers()
-    self.wfile.write(body)
+    self.wfile_write(body)
 
 
 def server_https_weak_method(ip, port):
