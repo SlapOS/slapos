@@ -28,9 +28,11 @@
 import backend
 import glob
 import os
-from recurls import Recurls
+from recurls import Recurls, CurlException
 import http.client
 import json
+import io
+import gzip
 import multiprocessing
 import subprocess
 from unittest import skip
@@ -489,20 +491,28 @@ class TestDataMixin(object):
     self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
 
 
-def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, source_ip=SOURCE_IP):
+def fakeSetupHeaders(headers):
   if headers is None:
     headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  # Headers to tricks the whole system, like rouge user would do
-  headers.setdefault('X-Forwarded-For', '192.168.0.1')
-  headers.setdefault('X-Forwarded-Proto', 'irc')
-  headers.setdefault('X-Forwarded-Port', '17')
-  # Expose some Via to show how nicely it arrives to the backend
-  headers.setdefault('Via', 'http/1.1 clientvia')
+  default_header_dict = {
+    # workaround request problem of setting Accept-Encoding
+    # https://github.com/requests/requests/issues/2234
+    'Accept-Encoding': 'dummy',
+    # Headers to tricks the whole system, like rouge user would do
+    'X-Forwarded-For': '192.168.0.1',
+    'X-Forwarded-Proto': 'irc',
+    'X-Forwarded-Port': '17',
+    # Expose some Via to show how nicely it arrives to the backend
+    'Via': 'http/1.1 clientvia'
+  }
+  for header_name, header_value in default_header_dict.items():
+    headers.setdefault(header_name, header_value)
+  return headers
 
+
+def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
+                    headers=None, source_ip=SOURCE_IP):
+  headers = fakeSetupHeaders(headers)
   url = 'https://%s:%s/%s' % (domain, port, path)
 
   return mimikra.get(
@@ -525,18 +535,8 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  # Headers to tricks the whole system, like rouge user would do
-  headers.setdefault('X-Forwarded-For', '192.168.0.1')
-  headers.setdefault('X-Forwarded-Proto', 'irc')
-  headers.setdefault('X-Forwarded-Port', '17')
-  # Expose some Via to show how nicely it arrives to the backend
-  headers.setdefault('Via', 'http/1.1 clientvia')
-  headers['Host'] = '%s:%s' % (domain, port)
+  headers = fakeSetupHeaders(headers)
+  headers.setdefault('Host', '%s:%s' % (domain, port))
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
   return mimikra.get(
     url,
@@ -624,7 +624,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     cls.logger.debug('Started process %s' % (cls.server_https_weak_process,))
 
     class NetlocHandler(backend.TestHandler):
-      identification = 'netloc'
+      pass
 
     netloc_a_http = backend.ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_a_http_port),
@@ -680,7 +680,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       fh.write(ca_certificate.text)
 
     class OwnTestHandler(backend.TestHandler):
-      identification = 'Auth Backend'
+      pass
 
     server_https_auth = backend.ThreadedHTTPServer(
       (self._ipv4_address, self._server_https_auth_port),
@@ -845,56 +845,90 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual('1', result.effective_http_version)
 
+  def assertHeaderMessage(self, header_dict, header_message):
+    # header names are lowercase
+    for header_name in list(header_dict.keys()):
+      header_dict[header_name.lower()] = header_dict.pop(header_name)
+    message_dict = {}
+    for header_name, header_value in header_message.items():
+      if len(header_value) == 1:
+        header_value = header_value[0]
+      message_dict[header_name] = header_value
+    self.assertEqual(header_dict, message_dict)
+
   def assertResponseHeaders(
     self, result, cached=False, via=True, backend_reached=True,
-    client_version=None, alt_svc=None):
+    client_version=None, alt_svc=None, age=False):
     if client_version is None:
       client_version = self.max_client_version
     if alt_svc is None:
       alt_svc = self.alt_svc
-    headers = result.headers.copy()
-    self.assertKeyWithPop('Content-Length', headers)
-    if 'Connection' in headers and headers[
-      'Connection'].lower() == 'keep-alive':
-      headers.pop('Connection')
+    pop_header_list = []
+
+    def assertSingleHeader(header):
+      value_list = result.headers.get_all(header, [])
+      self.assertEqual(1, len(value_list))
+      return value_list[0]
+
+    def assertAndPopSingleHeader(header):
+      pop_header_list.append(header.lower())
+      return assertSingleHeader(header)
+
+    assertAndPopSingleHeader('Content-Length')
+    if 'Connection' in result.headers:
+      if assertSingleHeader('Connection').lower() == 'keep-alive':
+        pop_header_list.append('Connection'.lower())
+
     if alt_svc:
       self.assertEqual(
         'h3=":%s"; ma=3600' % (HTTPS_PORT,),
-        headers.pop('Alt-Svc', '')
+        assertAndPopSingleHeader('Alt-Svc')
       )
       self.assertEqual(
         '%s:quic' % (HTTPS_PORT,),
-        headers.pop('Alternate-Protocol', '')
+        assertAndPopSingleHeader('Alternate-Protocol')
       )
 
     if backend_reached:
-      self.assertEqual('TestBackend', headers.pop('Server', ''))
-      self.assertKeyWithPop('Date', headers)
+      self.assertEqual('TestBackend', assertAndPopSingleHeader('Server'))
+      assertAndPopSingleHeader('Date')
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
       list(self.node_information_dict['version-hash-history'].keys())[0])
+    if age:
+      pop_header_list.append('Age'.lower())
+      self.assertIn('Age', result.headers)
+    else:
+      self.assertNotIn('Age', result.headers)
+
     if via:
-      self.assertIn('Via', headers)
+      pop_header_list.append('Via'.lower())
+      via = ' '.join(result.headers.get_all('Via'))
       if cached:
         self.assertEqual(
-          'http/1.1 backendvia, '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'http/1.0 rapid-cdn-cache-%(via_id)s, '
+          'http/1.1 backendvia '
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '  # ATS adds to existing
+                                                     # header, so ","
+          'http/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          headers.pop('Via')
+          via
         )
       else:
         self.assertEqual(
-          'http/1.1 backendvia, '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
+          'http/1.1 backendvia '
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          headers.pop('Via')
+          via
         )
     else:
-      self.assertNotIn('Via', headers)
+      self.assertNotIn('Via', result.headers)
+    headers = http.client.HTTPMessage()
+    for header, value in result.headers.items():
+      if header not in pop_header_list:
+        headers.add_header(header, value)
     return headers
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
@@ -1178,6 +1212,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         partition_parameter_kw=partition_parameter_kw,
       )
 
+  x_config_timeout = '10'  # more than default backend-connect-timeout == 5
+
   @classmethod
   def setUpClass(cls):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
@@ -1196,12 +1232,54 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
+    for backend_url in [cls.backend_url, cls.backend_https_url]:
+      config_result = mimikra.config(
+        backend_url,
+        verify=None,
+        headers={
+          'X-Config-Global': '1',
+          'X-Config-Timeout': cls.x_config_timeout,
+          'X-Config-Body': 'calculate',
+          'X-Config-Reply-Header-Server': 'TestBackend',
+          'X-Config-Reply-Header-Content-Length': 'calculate',
+          'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+          'X-Config-Reply-Header-Set-Cookie':
+          'secured=value;secure, nonsecured=value',
+        }
+      )
+      assert config_result.status_code == http.client.CREATED
+    for backend_url in [
+      'http://%s:%s' % (cls._ipv4_address, cls._server_netloc_a_http_port),
+      'http://%s:%s' % (cls._ipv4_address, cls._server_netloc_b_http_port),
+    ]:
+      config_result = mimikra.config(
+        backend_url,
+        headers={
+          'X-Config-Global': '1',
+          'X-Config-Timeout': cls.x_config_timeout,
+          'X-Config-Body': 'calculate',
+          'X-Config-Reply-Header-Server': 'TestBackend',
+          'X-Config-Reply-Header-Content-Length': 'calculate',
+          'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+          'X-Config-Reply-Header-Set-Cookie':
+          'secured=value;secure, nonsecured=value',
+          'X-Config-Reply-Header-X-Backend-Identification': 'netloc',
+        }
+      )
+      assert config_result.status_code == http.client.CREATED
+
   @classmethod
   def waitForSlave(cls):
     def method():
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
         if 'domain' in parameter_dict:
-          fakeHTTPSResult(parameter_dict['domain'], '/')
+          try:
+            fakeHTTPSResult(parameter_dict['domain'], '/')
+          except CurlException as e:
+            # domains like *.customdomain.example.com will lead to
+            # CurlException
+            assert e.command_returncode == 3
+            assert 'Bad hostname' in e.command_error
     cls.waitForMethod('waitForSlave', method)
 
   @classmethod
@@ -2242,7 +2320,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       parameter_dict['domain'],
       '/test-path/deep/.././deeper' * 250,
       headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
         'Accept-Encoding': 'gzip',
         'User-Agent': 'TEST USER AGENT',
       }
@@ -2262,7 +2339,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -2409,7 +2485,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
       # ...and assure that connection is ok
       self.assertEqual(
-        http.client.OK,
+        http.client.NOT_FOUND,
         fakeHTTPSResult(parameter_dict['domain'], '/').status_code
       )
     finally:
@@ -2428,48 +2504,53 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.startAuthenticatedServerProcess()
     try:
+      frontend_backend_client_cert = glob.glob(os.path.join(
+        self.instance_path, '*', 'srv', 'backend-client',
+        'certificate.pem'))[0]
+      config_result = mimikra.config(
+        self.backend_https_auth_url,
+        certificate=frontend_backend_client_cert,
+        verify=False,
+        headers={
+          'X-Config-Global': '1',
+          'X-Config-Body': 'calculate',
+          'X-Config-Reply-Header-Server': 'TestBackend',
+          'X-Config-Reply-Header-Content-Length': 'calculate',
+          'X-Config-Reply-Header-X-Backend-Identification': 'Auth Backend',
+        }
+      )
+      self.assertEqual(config_result.status_code, http.client.CREATED)
       # assert that you can't fetch nothing without key
-      self.assertEqual(
-        0,
-        mimikra.get(self.backend_https_auth_url, verify=False).status_code,
-        'Access to %r shall be not possible without certificate' % (
-          self.backend_https_auth_url,))
+      with self.assertRaises(CurlException) as cm:
+        mimikra.get(self.backend_https_auth_url, verify=False)
+      self.assertEqual(55, cm.exception.command_returncode)
       # check that you can access this backend via frontend
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        'test-path/deep/.././deeper',
-        headers={
-          'Timeout': '10',  # more than default backend-connect-timeout == 5
-          'Accept-Encoding': 'gzip',
-        }
+        '/',
       )
 
       self.assertEqual(
         self.certificate_pem,
         result.certificate)
 
-      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+      # proof that proper backend was accessed
+      self.assertEqual(
+        'Auth Backend',
+        result.headers['X-Backend-Identification']
+      )
+
+      self.assertEqualResultJson(result, 'Path', '/')
 
       try:
         j = result.json()
       except Exception:
         raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-      self.assertEqual(j['Incoming Headers']['timeout'], '10')
-      self.assertFalse('Content-Encoding' in result.headers)
       self.assertRequestHeaders(
          j['Incoming Headers'], parameter_dict['domain'])
 
-      self.assertEqual(
-        'secured=value;secure, nonsecured=value',
-        result.headers['Set-Cookie']
-      )
-      # proof that proper backend was accessed
-      self.assertEqual(
-        'Auth Backend',
-        result.headers['X-Backend-Identification']
-      )
     finally:
       self.stopAuthenticatedServerProcess()
 
@@ -2478,20 +2559,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.startAuthenticatedServerProcess()
     try:
       # assert that you can't fetch nothing without key
-      self.assertEqual(
-        0,
-        mimikra.get(self.backend_https_auth_url, verify=False).status_code,
-        'Access to %r shall be not possible without certificate' % (
-          self.backend_https_auth_url,))
+      with self.assertRaises(CurlException) as cm:
+        mimikra.get(self.backend_https_auth_url, verify=False)
+      self.assertEqual(55, cm.exception.command_returncode)
       # check that you can access this backend via frontend
       # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        'test-path/deep/.././deeper',
-        headers={
-          'Timeout': '10',  # more than default backend-connect-timeout == 5
-          'Accept-Encoding': 'gzip',
-        }
+        '/',
       )
 
       self.assertEqual(
@@ -2511,10 +2586,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
     )
 
     self.assertEqual(
@@ -2528,14 +2599,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result.headers['Set-Cookie']
-    )
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
@@ -2553,6 +2618,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
   def test_compressed_result(self):
+    """Fix the test
+ * configure with compressed data
+ * send them from the backend
+ * compare some checksum of compressed data
+"""
     parameter_dict = self.assertSlaveBase(
       'Url',
       {
@@ -2562,36 +2632,40 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       }
     )
 
+    data = 'This is some compressed information'
+    out = io.BytesIO()
+    with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=9) as f:
+      f.write(data.encode())
+    data_compressed = out.getvalue()
+
+    path = '/compressed'
+    config_result = mimikra.config(
+      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      data=data_compressed,
+      headers={
+        'X-Config-Reply-Header-Content-Encoding': 'gzip',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result_compressed = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper',
-      headers={
-        'Accept-Encoding': 'gzip',
-        'Compress': '1',
-      }
+      path,
+      headers={'Accept-Encoding': 'gzip'}
     )
     self.assertEqual(
       'gzip',
       result_compressed.headers['Content-Encoding']
     )
-
-    # Assert that no tampering was done with the request
-    # (compression/decompression)
-    # Backend compresses with 0 level, so decompression/compression
-    # would change somthing
     self.assertEqual(
-      result_compressed.headers['Content-Length'],
-      result_compressed.headers['Backend-Content-Length']
+      len(data_compressed),
+      int(result_compressed.headers['Content-Length'])
     )
 
-    result_not_compressed = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test-path/deep/.././deeper',
-      headers={
-        'Accept-Encoding': 'gzip',
-      }
+    self.assertEqual(
+      data_compressed,
+      result_compressed.raw_bytes
     )
-    self.assertFalse('Content-Encoding' in result_not_compressed.headers)
 
   def test_no_content_type_alter(self):
     parameter_dict = self.assertSlaveBase(
@@ -2602,22 +2676,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             self.backend_url, self.backend_url)],
       }
     )
-    result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test-path/deep/.././deeper',
-      headers={
-        'Accept-Encoding': 'gzip',
-        'X-Reply-Body': base64.b64encode(
-          b"""<?xml version="1.0" encoding="UTF-8"?>
+    path = '/test_no_content_type_alter'
+    config_result = mimikra.config(
+      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      data="""<?xml version="1.0" encoding="UTF-8"?>
 <note>
   <to>Tove</to>
   <from>Jani</from>
   <heading>Reminder</heading>
   <body>Don't forget me this weekend!</body>
-</note>""").decode(),
-        'X-Drop-Header': 'Content-Type'
-      }
+</note>""",
     )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+    result = fakeHTTPSResult(parameter_dict['domain'], path)
 
     self.assertNotIn('Content-Type', result.headers)
 
@@ -2706,10 +2777,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
     )
 
     self.assertEqual(
@@ -2726,7 +2793,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertEqual(j['Incoming Headers']['timeout'], '10')
     self.assertFalse('Content-Encoding' in result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
@@ -3788,25 +3854,34 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'enable_cache_custom_domain',
       hostname='customdomainenablecache')
 
+    config_result = mimikra.config(
+      self.backend_url + 'test_enable_cache_custom_domain',
+      headers={
+        'X-Config-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+      'test_enable_cache_custom_domain')
 
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertEqualResultJson(
+      result, 'Path', '/test_enable_cache_custom_domain')
 
-    headers = self.assertResponseHeaders(result, True)
-    self.assertKeyWithPop('Age', headers)
+    headers = self.assertResponseHeaders(result, cached=True, age=True)
 
     self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
-                         'stale-if-error=3600'
-      },
-      headers
+      [
+        ('cache-control',
+         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600'),
+        ('content-type', 'application/json')
+      ],
+      headers.items()
     )
 
     backend_headers = result.json()['Incoming Headers']
@@ -3816,20 +3891,30 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_enable_cache_server_alias(self):
     parameter_dict = self.assertSlaveBase('enable_cache_server_alias')
 
-    result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test-path/deep/.././deeper', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+    path = '/enable_cache_server_alias'
+    config_result = mimikra.config(
+      self.backend_url.rstrip('/') + path,
+      headers={
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Reply-Header-Set-Cookie':
+        'secured=value;secure, nonsecured=value',
+        'X-Config-Reply-Header-Cache-Control':
+        'max-age=1, stale-while-revalidate=3600, stale-if-error=3600'
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+    result = fakeHTTPSResult(parameter_dict['domain'], path)
 
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertEqualResultJson(result, 'Path', path)
 
-    headers = self.assertResponseHeaders(result, cached=True)
+    headers = self.assertResponseHeaders(result, cached=True, age=True)
 
-    self.assertKeyWithPop('Age', headers)
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
                          'stale-if-error=3600'
@@ -3841,79 +3926,110 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
-    result = fakeHTTPResult(
-      'enablecacheserveralias1.example.com',
-      'test-path/deep/.././deeper', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+    result = fakeHTTPResult('enablecacheserveralias1.example.com', path)
     self.assertEqual(
       http.client.FOUND,
       result.status_code
     )
 
     self.assertEqual(
-      'https://enablecacheserveralias1.example.com:%s/test-path/deeper' % (
-        HTTP_PORT,),
+      'https://enablecacheserveralias1.example.com:%s%s' % (
+        HTTP_PORT, path),
       result.headers['Location']
     )
 
   def test_enable_cache_https_only_false(self):
     parameter_dict = self.assertSlaveBase('enable_cache-https-only-false')
 
+    config_result = mimikra.config(
+      self.backend_url + 'test_enable_cache_https_only_false',
+      headers={
+        'X-Config-Reply-Header-Cache-Control':
+        'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+      'test_enable_cache_https_only_false')
 
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertEqualResultJson(
+      result, 'Path', '/test_enable_cache_https_only_false')
 
-    headers = self.assertResponseHeaders(result, cached=True)
-    self.assertKeyWithPop('Age', headers)
-    self.assertEqual(
+    headers = self.assertResponseHeaders(result, cached=True, age=True)
+    self.assertHeaderMessage(
       {
         'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
                          'stale-if-error=3600'
       },
       headers
     )
 
+    config_result = mimikra.config(
+      self.backend_url + 'test_enable_cache_https_only_false' + '/HTTP',
+      headers={
+        'X-Config-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPResult(
       parameter_dict['domain'],
-      'HTTPS/test', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+      'test_enable_cache_https_only_false' + '/HTTP')
 
     self.assertEqual(http.client.OK, result.status_code)
-    self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
+    self.assertEqualResultJson(
+      result, 'Path', '/test_enable_cache_https_only_false/HTTP')
 
-    self.assertResponseHeaders(result, cached=True, client_version='1.1')
+    headers = self.assertResponseHeaders(
+      result, cached=True, client_version='1.1', age=True)
+    self.assertHeaderMessage(
+      {
+        'Content-type': 'application/json',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
     source_ip = '127.0.0.1'
+    config_result = mimikra.config(
+      self.backend_url + 'cached',
+      headers={
+        'X-Config-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600',
-      },
+      'cached',
       source_ip=source_ip
     )
 
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertEqualResultJson(result, 'Path', '/cached')
 
-    headers = self.assertResponseHeaders(result, cached=True)
+    headers = self.assertResponseHeaders(result, cached=True, age=True)
 
-    self.assertKeyWithPop('Age', headers)
-
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Content-Type': 'application/json',
         'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
                          'stale-if-error=3600'
       },
@@ -3925,22 +4041,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       backend_headers, parameter_dict['domain'], cached=True)
 
     # BEGIN: Check that squid.log is correctly filled in
-    ats_log_file_list = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
-      ))
-    self.assertEqual(1, len(ats_log_file_list))
-    ats_log_file = ats_log_file_list[0]
     direct_pattern = re.compile(
-      r'.*TCP_MISS/200 .*test-path/deeper.*enablecache.example.com'
+      r'.*TCP_MISS/200 .*cached.*enablecache.example.com'
       '.* - DIRECT*')
     # ATS needs some time to flush logs
     timeout = 10
     b = time.time()
+    ats_log_file = None
     while True:
       direct_pattern_match = 0
       if (time.time() - b) > timeout:
         break
+
+      ats_log_file_list = glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
+        ))
+      if len(ats_log_file_list) == 0:
+        continue
+      self.assertEqual(1, len(ats_log_file_list))
+      ats_log_file = ats_log_file_list[0]
       with open(ats_log_file) as fh:
         for line in fh.readlines():
           if direct_pattern.match(line):
@@ -3949,10 +4069,136 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         break
       time.sleep(0.1)
 
+    self.assertIsNotNone(ats_log_file)
     with open(ats_log_file) as fh:
       ats_log = fh.read()
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
+
+  def test_enable_cache_ims_request(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    path = 'ims'
+    delta = 10
+    data = 'some data'
+    backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
+
+    def setUpHeaders(headers):
+      result = http.client.HTTPMessage()
+      for header, value in headers:
+        result.add_header(header, value)
+      return result
+
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '200'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:%s' % (delta,)),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+      data=data
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '200'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:%s' % (delta,)),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+      data=data
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertTrue(
+      check_result.status_code,
+      http.client.OK
+    )
+    result_headers = self.assertResponseHeaders(
+      check_result, cached=True, age=True)
+    expires_value = result_headers.get('Expires')
+    last_modified_value = result_headers.get('Last-Modified')
+    self.assertEqual([
+        ('x-reveal-duplicate', 'same'),
+        ('cache-control',
+         'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+         'public' % (delta,)),
+        ('content-type', 'text/plain'),
+        ('expires', expires_value),
+        ('last-modified', last_modified_value),
+        ('x-reveal-duplicate', 'other')
+      ],
+      result_headers.items()
+    )
+    self.assertEqual(check_result.text, data)
+
+    time.sleep(delta + 2)
+
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '304'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'same'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Expires', 'delta:%s' % (delta,)),
+      ('X-Config-Reply-Header-Last-Modified', 'now'),
+      ('X-Config-Reply-Header-X-Reveal-Duplicate', 'other'),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertTrue(
+      check_result.status_code,
+      http.client.OK
+    )
+    result_headers = self.assertResponseHeaders(
+      check_result, cached=True, age=True)
+    expires_value = result_headers.get('Expires')
+    last_modified_value = result_headers.get('Last-Modified')
+    self.assertEqual(
+      [
+       ('content-type', 'text/plain'),
+       ('x-reveal-duplicate', 'same'),
+       ('cache-control',
+        'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+        'public' % (delta,)),
+       ('expires', expires_value),
+       ('last-modified', last_modified_value),
+       ('x-reveal-duplicate', 'other'),
+      ],
+      result_headers.items()
+    )
+    self.assertEqual(check_result.text, data)
 
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3975,13 +4221,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
-      result = mimikra.put(backend_url + path, headers={
-          'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
-          'X-Reply-Status-Code': status_code,
-          'X-Reply-Body': base64.b64encode(body.encode()).decode(),
-          # drop Content-Length header to ensure
-          # https://github.com/apache/trafficserver/issues/7880
-          'X-Drop-Header': 'Content-Length',
+      result = mimikra.config(
+        backend_url + path, data=body, headers={
+          'X-Config-Reply-Header-Cache-Control':
+          'max-age=%s, public' % (max_age,),
+          'X-Config-Status-Code': status_code,
+          'X-Reply-Header-Content-Length': 'calculate',
+          'Content-Length': str(len(body)),
         })
       self.assertEqual(result.status_code, http.client.CREATED)
 
@@ -4049,9 +4295,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertKeyWithPop('Age', headers)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
                          'stale-if-error=3600'
@@ -4086,14 +4332,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_enable_cache_ats_timeout(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
+    config_result = mimikra.config(
+      self.backend_url + 'test_enable_cache_ats_timeout',
+      headers={
+        'X-Config-Reply-Header-Cache-Control':
+        'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Timeout': '15',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     # check that timeout seen by ATS does not result in many queries done
     # to the backend and that next request works like a charm
     result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test_enable_cache_ats_timeout', headers={
-        'Timeout': '15',
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+      parameter_dict['domain'], 'test_enable_cache_ats_timeout')
 
     # ATS timed out
     self.assertEqual(
@@ -4157,34 +4411,41 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # the result is available immediately after
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'test-path/deep/.././deeper', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+      'test-path')
 
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_enable_cache_disable_no_cache_request(self):
     parameter_dict = self.assertSlaveBase(
       'enable_cache-disable-no-cache-request')
 
+    config_result = mimikra.config(
+      self.backend_url + 'enable_cache-disable-no-cache-request',
+      headers={
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path',
-      headers={'Pragma': 'no-cache', 'Cache-Control': 'something'})
+      parameter_dict['domain'], 'enable_cache-disable-no-cache-request',
+      headers={'Pragma': 'no-cache', 'Cache-Control': 'something'}
+    )
 
     self.assertEqual(
       self.certificate_pem,
       result.certificate)
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(
+      result, 'Path', '/enable_cache-disable-no-cache-request')
 
-    headers = self.assertResponseHeaders(result, cached=True)
+    headers = self.assertResponseHeaders(result, cached=True, age=True)
 
-    self.assertKeyWithPop('Age', headers)
-
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+        'Content-Type': 'application/json',
       },
       headers
     )
@@ -4202,23 +4463,35 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_enable_cache_disable_via_header(self):
     parameter_dict = self.assertSlaveBase('enable_cache-disable-via-header')
 
+    config_result = mimikra.config(
+      self.backend_url + 'enable_cache-disable-via-header',
+      headers={
+        'X-Config-Reply-Header-Cache-Control':
+        'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path')
+      parameter_dict['domain'], 'enable_cache-disable-via-header')
 
     self.assertEqual(
       self.certificate_pem,
       result.certificate)
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(
+      result, 'Path', '/enable_cache-disable-via-header')
 
-    headers = self.assertResponseHeaders(result, via=False)
+    headers = self.assertResponseHeaders(result, via=False, age=True)
 
-    self.assertKeyWithPop('Age', headers)
-
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
       },
       headers
     )
@@ -4242,7 +4515,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(
       result, client_version='1.1', alt_svc=False)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
@@ -4268,7 +4541,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, client_version=self.test_enable_http2_true_client_version,
       alt_svc=self.alt_svc)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
@@ -4294,9 +4567,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     headers = self.assertResponseHeaders(result)
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
       },
       headers
@@ -4321,7 +4594,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     headers = self.assertResponseHeaders(result)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
@@ -4350,7 +4623,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, alt_svc=False,
       client_version=self.test_enable_http3_false_client_version)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
@@ -4376,9 +4649,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     headers = self.assertResponseHeaders(result)
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
       },
       headers
@@ -4405,7 +4678,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(
       result, client_version='1.1', alt_svc=False)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
@@ -4431,7 +4704,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(
       result, client_version='1.1', alt_svc=False)
 
-    self.assertEqual(
+    self.assertHeaderMessage(
       {
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
@@ -4743,12 +5016,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.assertSlaveBase(frontend)
     backend_url = self.getSlaveParameterDictDict()[
       frontend]['https-url'].strip()
-    normal_path = 'normal'
-    with_date_path = 'with_date'
+    normal_path = '/normal'
+    with_date_path = '/with_date'
     specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
-    result_configure = mimikra.put(
-      backend_url + '/' + with_date_path, headers={
-        'X-Reply-Header-Date': specific_date
+    result_configure = mimikra.config(
+      backend_url.rstrip('/') + with_date_path, headers={
+        'X-Config-Reply-Header-Date': specific_date
       })
     self.assertEqual(result_configure.status_code, http.client.CREATED)
 
@@ -4990,8 +5263,20 @@ class TestReplicateSlaveOtherDestroyed(
 
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
-  def getInstanceParameterDict(cls):
+  def startServerProcess(cls):
+    super().startServerProcess()
     cls.re6st_test_url = '%sre6st.html' % (cls.backend_url,)
+    config_result = mimikra.config(
+      cls.re6st_test_url,
+      headers={
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+      }
+    )
+    assert config_result.status_code == http.client.CREATED
+
+  @classmethod
+  def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
       'port': HTTPS_PORT,
@@ -6859,6 +7144,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
 
 
 class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  x_config_timeout = '0'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -7024,10 +7311,6 @@ backend _health-check-default-http
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
-      headers={
-        'Timeout': '10',  # more than default backend-connect-timeout == 5
-        'Accept-Encoding': 'gzip',
-      }
     )
     self.assertEqual(
       self.certificate_pem,
@@ -7069,7 +7352,7 @@ backend _health-check-default-http
         'failover-url?a=b&c=',
         'failover-https-url?a=b&c='
       ]:
-        result = mimikra.put(
+        result = mimikra.config(
           self.backend_url + url + path,
           headers={
             'X-Reply-Status-Code': '503',
@@ -7080,15 +7363,14 @@ backend _health-check-default-http
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()[
         'health-check-failover-url']['https-url']
-      result = mimikra.put(
+      result = mimikra.config(
         '/'.join([backend_url, cached_path]),
         headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
           'X-Reply-Body': base64.b64encode(body.encode()).decode(),
-          # drop Content-Length header to ensure
+          # no Content-Length header to ensure
           # https://github.com/apache/trafficserver/issues/7880
-          'X-Drop-Header': 'Content-Length',
         })
       self.assertEqual(result.status_code, http.client.CREATED)
 
@@ -7111,14 +7393,14 @@ backend _health-check-default-http
     checkResult(http.client.OK, body_200)
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = mimikra.put(
+      result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7181,7 +7463,7 @@ backend _health-check-default-http
     result = fakeHTTPSResult(parameter_dict['domain'], '/path')
     self.assertNotIn('X-Backend-Identification', result.headers)
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7189,7 +7471,7 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
-      result = mimikra.put(
+      result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
         headers={})
@@ -7228,7 +7510,7 @@ backend _health-check-default-http
     self.assertNotIn('X-Backend-Identification', result.headers)
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7261,7 +7543,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7290,7 +7572,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
@@ -7320,7 +7602,7 @@ backend _health-check-default-http
     self.assertEqualResultJson(result, 'Path', '/path')
 
     # start replying with bad status code
-    result = mimikra.put(
+    result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
       headers={'X-Reply-Status-Code': '502'})
