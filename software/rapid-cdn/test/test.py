@@ -1198,13 +1198,29 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
+  ignore_status_code_slave_list = [
+    'authtobackend.example.com',
+    'authtobackendnotconfigured.example.com',
+    'badbackend.example.com',
+    'ciphers.example.com',
+    'cipherstranslationall.example.com',
+    'empty.example.com',
+    'sslproxyverifysslproxycacrtunverified.example.com',
+    'weaksslbackend.example.com',
+  ]
+
   @classmethod
   def waitForSlave(cls):
     def method():
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
         if 'domain' in parameter_dict:
           try:
-            fakeHTTPSResult(parameter_dict['domain'], '/')
+            _ = fakeHTTPSResult(parameter_dict['domain'], '/')
+            if parameter_dict['domain'] not in \
+               cls.ignore_status_code_slave_list and _.status_code >= 500:
+              raise ValueError(
+                '%s replied with code %i' % (
+                  parameter_dict['domain'], _.status_code))
           except CurlException as e:
             # domains like *.customdomain.example.com will lead to
             # CurlException
