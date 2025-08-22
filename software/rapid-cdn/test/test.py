@@ -1041,18 +1041,20 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     try_num = 0
     cls.logger.debug('%s for %is' % (name, wait_time,))
     while True:
+      elapsed = time.time() - begin
       try:
         try_num += 1
         method()
       except Exception:
-        if time.time() - begin > wait_time:
+        if elapsed > wait_time:
           cls.logger.exception(
-            "Error during %s after %.2fs" % (name, (time.time() - begin),))
+            "Error during %s after %.2fs" % (name, elapsed,))
           raise
         else:
+          cls.logger.debug('%s %.2f of %.2f' % (name, elapsed, wait_time))
           time.sleep(0.5)
       else:
-        cls.logger.info("%s took %.2fs" % (name, (time.time() - begin),))
+        cls.logger.info("%s took %.2fs" % (name, elapsed,))
         break
 
   @classmethod
