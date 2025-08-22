@@ -1204,7 +1204,11 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
         if 'domain' in parameter_dict:
           try:
-            fakeHTTPSResult(parameter_dict['domain'], '/')
+            _ = fakeHTTPSResult(parameter_dict['domain'], '/')
+            if _.status_code >= 500:
+              raise ValueError(
+                '%s replied with code %i' % (
+                  parameter_dict['domain'], _.status_code))
           except CurlException as e:
             # domains like *.customdomain.example.com will lead to
             # CurlException
