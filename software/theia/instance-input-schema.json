@@ -28,7 +28,7 @@
         },
         "embedded-partition-amount": {
           "title": "Partition amount",
-          "description":  "Number of embedded partitions inside Theia",
+          "description": "Number of embedded partitions inside Theia",
           "type": "integer",
           "default": 20
         },
