@@ -26,6 +26,7 @@ wrapper-path = {{ caucased_path }}
 environment =
   TMP={{ tmp }}
   TMPDIR={{ tmp }}
+  PYTHONUNBUFFERED=1
 {%- endif %}
 command-line = '{{ buildout_bin_directory }}/caucased'
   --db          '${ {{- prefix }}-directory:data-dir}/caucase.sqlite'
@@ -111,6 +112,8 @@ csr = ${ {{- prefix }}-directory:data-dir}/good.csr.pem
 [{{ prefix }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = {{ updater_path }}
+environment =
+ PYTHONUNBUFFERED=1
 command-line = '{{ buildout_bin_directory }}/caucase-updater'
   --ca-url '{{ url }}'
   --cas-ca '${ {{- prefix }}-directory:data-dir}/cas.crt.pem'
@@ -147,6 +150,8 @@ config-certificate-expiration-days = 15
 [{{ prefix }}]
 recipe = plone.recipe.command
 checksum-file = '{{ template }}.md5'
+environment =
+  PYTHONUNBUFFERED=1
 command =
   set -e
   md5_current=$(${buildout:executable} -c "from __future__ import print_function ; import hashlib ; print(hashlib.md5(open('{{ template }}', 'rb').read()).hexdigest())")
@@ -172,6 +177,8 @@ stop-on-error = True
 [{{ prefix }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = {{ sign_csr_path }}
+environment =
+  PYTHONUNBUFFERED=1
 command-line = '{{ buildout_bin_directory }}/caucase-sign-csr'
   --ca-url '{{ ca_url }}'
   --ca-crt '{{ ca_crt }}'
