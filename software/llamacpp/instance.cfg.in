@@ -1,0 +1,43 @@
+[buildout]
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+extends =
+  {{ monitor_template_cfg }}
+
+parts =
+  switch-softwaretype
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-llamacpp:output
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+bin = ${:home}/bin
+var = ${:home}/var
+log = ${:var}/log
+run = ${:var}/run
+cache = ${:var}/hf-cache
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_json }}
+set-default = main
+validate-parameters = main
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+extra-context =
+context =
+  section directory directory
+  key slapparameter_dict slap-configuration:configuration
+  raw LLAMA_SERVER_BIN {{ LLAMA_SERVER_BIN }}
+
+[dynamic-template-llamacpp]
+<= jinja2-template-base
+template = {{ buildout_directory }}/template.cfg
+output = instance-llamacpp.cfg
