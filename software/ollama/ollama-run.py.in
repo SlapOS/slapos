@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import logging
+import time
+import hashlib
+
+# Setup logging
+log_file = "{{ directory_log }}/ollama-run-model.log"
+logging.basicConfig(
+    filename=log_file,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def main():
+    logging.info(f"In the ollama-run.py")
+    if len(sys.argv) != 3:
+        print(f"Usage: {sys.argv[0]} <config_file> <processed_file>")
+        return 1
+
+    config_file, processed_file = sys.argv[1:]
+    logging.info(f"Ready to run the model")
+    # Read model name from config
+    try:
+        with open(config_file, 'r') as f:
+            model_name = f.read().strip()
+    except Exception as e:
+        logging.error("Failed to read config file: %s", str(e))
+        return 1
+    logging.info(f"Model name {model_name}")
+    with open(processed_file, 'r') as pf:
+        processed_content = pf.read().strip()
+    logging.info(f"Processed content XXXX {processed_content}")
+    # Check if ollama-model-download-processed-config.state is empty
+    if processed_content == '':
+        logging.info("Run the model")
+        try:
+            process = subprocess.Popen(
+                ["{{ ollama_location }}/ollama", 'run', model_name],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+            # Log download progress
+            for line in iter(process.stdout.readline, ''):
+                logging.info(line.strip())
+                sys.stdout.write(line)
+                sys.stdout.flush()
+
+            process.stdout.close()
+            return_code = process.wait()
+
+            if return_code == 0:
+                logging.info(f"Model {model_name} downloaded run successfully")
+            else:
+                logging.error(f"Model run failed with return code: {return_code}")
+        except Exception as e:
+            logging.error(f"Error during model starting: {str(e)}")
+
+    else:
+        logging.info(f"{model_name} is not ready...")
+        raise ValueError(f"{model_name} is not ready...")
+
+if __name__ == "__main__":
+    sys.exit(main())
