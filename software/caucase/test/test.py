@@ -57,14 +57,14 @@ class TestCaucase(SlapOSInstanceTestCase):
       {
         '_links': {
           'self': {
-            'href': 'http://[%s]:8009' % (self.computer_partition_ipv6_address,)
+            'href': '/'
           },
           'getCAUHAL': {
-            'href': 'http://[%s]:8009//cau' % (self.computer_partition_ipv6_address,),
+            'href': '/cau'
             'title': 'cau'
           },
           'getCASHAL': {
-            'href': 'http://[%s]:8009//cas' % (self.computer_partition_ipv6_address,),
+            'href': '/cas',
             'title': 'cas'
           }
         }
