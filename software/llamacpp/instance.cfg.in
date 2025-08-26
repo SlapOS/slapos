@@ -1,0 +1,85 @@
+[buildout]
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+extends =
+  {{ monitor_template_cfg }}
+
+parts =
+  directory
+  slap-parameter
+  supervisord
+  llamacpp
+  request-parameters
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+bin = ${:home}/bin
+var = ${:home}/var
+log = ${:var}/log
+run = ${:var}/run
+cache = ${:var}/hf-cache
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.json:target}
+set-default = main
+validate-parameters = main
+
+[slap-parameter]
+recipe = slapos.recipe.build
+slapparameter-dict = $${slap-configuration:configuration}
+home = $${buildout:directory}
+init =
+  default_parameters = options.get('slapparameter-dict')
+  options['host'] = default_parameters.get(
+    'host', "0.0.0.0")
+  options['port'] = default_parameters.get(
+    'port', 8083)
+  options['threads'] = default_parameters.get(
+    'threads', 16)
+  options['ctx'] = default_parameters.get(
+    'ctx', 2048)
+  options['ngl'] = default_parameters.get(
+    'ngl', 64)
+  options['hf_repo_id'] = default_parameters.get(
+    'hf_repo_id', "unsloth/gpt-oss-20b-GGUF")
+  options['hf_filename'] = default_parameters.get(
+    'hf_filename', "F16")
+  options['hf_token'] = default_parameters.get(
+    'hf_token', "")
+
+[slap-parameter]
+host = "0.0.0.0"
+port = 8083
+threads = 16
+ctx = 2048
+ngl = 64
+hf_repo_id = "unsloth/gpt-oss-20b-GGUF"
+hf_filename = "F16"
+hf_token = ""
+
+[supervisord]
+recipe = slapos.cookbook:supervisor
+
+[llamacpp]
+recipe = slapos.cookbook:wrapper
+command-line = {{ LLAMA_SERVER_BIN }} \
+  -hf ${slap-parameter:hf_repo_id}:${slap-parameter:hf_filename} \
+  --host ${slap-parameter:host} --port ${slap-parameter:port} \
+  --ngl ${slap-parameter:ngl} -t ${slap-parameter:threads} -c ${slap-parameter:ctx}
+wrapper-path = ${directories:bin}/service-llama
+environment =
+  LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
+  HF_HOME=${directories:cache}
+  HUGGING_FACE_HUB_TOKEN=${slap-parameter:hf_token}
+
+[request-parameters]
+recipe = slapos.cookbook:publish
+url = http://${slap-parameter:host}:${slap-parameter:port}/
+binary = {{ LLAMA_SERVER_BIN }}
+model = ${slap-parameter:hf_repo_id}:${slap-parameter:hf_filename}
+ctx = ${slap-parameter:ctx}
+ngl = ${slap-parameter:ngl}
