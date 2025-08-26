@@ -75,6 +75,18 @@ def convert_to_array(params):
             ]:
         if k in params:
             params[k] = list(params[k].values())
+    
+    # Special handling for ncell_list to add cell_type, cell_kind, and plmn
+    if 'ncell_list' in params:
+        plmn_value = None
+        if 'plmn_list' in params and len(params['plmn_list']) > 0:
+            plmn_value = params['plmn_list'][0].get('plmn', '00101')
+        
+        for cell in params['ncell_list']:
+            cell['cell_type'] = 'nr'
+            cell['cell_kind'] = 'enb_peer'
+            if plmn_value:
+                cell['plmn'] = plmn_value
 
 def convert_ors_params(params, new_params):
 
@@ -148,6 +160,12 @@ def convert_ors_params(params, new_params):
         "xlog_fluentbit_forward_shared_key",
     ]
     
+    unknown_params = {}
+    
+    # Set default gtp_addr if not present
+    if 'gtp_addr' not in params:
+        new_params.setdefault('nodeb', {})['gtp_addr'] = "Automatic"
+    
     for param in params:
         if param == 'ors_duo_2nd_cell':
             continue
@@ -164,8 +182,12 @@ def convert_ors_params(params, new_params):
         elif param == 'use_ipv4':
             continue
         else:
-            print("Unknown parameter: {}, exiting".format(param))
-            exit(1)
+            print("Unknown parameter: {}".format(param))
+            unknown_params[param] = params[param]
+    
+    # Add unknown parameters to the end
+    if unknown_params:
+        new_params['unknown_parameters'] = unknown_params
 
 def main():
 
