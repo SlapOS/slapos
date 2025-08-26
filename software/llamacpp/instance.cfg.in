@@ -1,14 +1,17 @@
 [buildout]
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
 
 extends =
   {{ monitor_template_cfg }}
 
 parts =
-  directory
-  llamacpp
-  request-parameters
+  switch-softwaretype
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-llamacpp:output
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -22,26 +25,19 @@ cache = ${:var}/hf-cache
 [slap-configuration]
 <= slap-connection
 recipe = slapos.cookbook:slapconfiguration.jsonschema
-jsonschema = ${software.json:target}
+jsonschema = {{ software_json }}
 set-default = main
 validate-parameters = main
 
-[llamacpp]
-recipe = slapos.cookbook:wrapper
-command-line = {{ LLAMA_SERVER_BIN }} \
-  -hf ${slap-configuration:configuration-hf_repo_id}:${slap-configuration:configuration-hf_filename} \
-  --host ${slap-configuration:configuration-host} --port ${slap-configuration:configuration-port} \
-  --ngl ${slap-configuration:configuration-ngl} -t ${slap-configuration:configuration-threads} -c ${slap-configuration:configuration-ctx}
-wrapper-path = ${directories:bin}/service-llama
-environment =
-  LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
-  HF_HOME=${directories:cache}
-  HUGGING_FACE_HUB_TOKEN=${slap-configuration:configuration-hf_token}
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+extra-context =
+context =
+  section directory directory
+  key slapparameter_dict slap-configuration:configuration
+  raw LLAMA_SERVER_BIN {{ LLAMA_SERVER_BIN }}
 
-[request-parameters]
-recipe = slapos.cookbook:publish
-url = http://${slap-configuration:configuration-host}:${slap-configuration:configuration-port}/
-binary = {{ LLAMA_SERVER_BIN }}
-model = ${slap-configuration:configuration-hf_repo_id}:${slap-configuration:configuration-hf_filename}
-ctx = ${slap-configuration:configuration-ctx}
-ngl = ${slap-configuration:configuration-ngl}
+[dynamic-template-llamacpp]
+<= jinja2-template-base
+template = {{ buildout_directory }}/template.cfg
+output = instance-llamacpp.cfg
