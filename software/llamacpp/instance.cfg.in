@@ -7,7 +7,6 @@ extends =
 
 parts =
   directory
-  supervisord
   llamacpp
   request-parameters
 
@@ -26,9 +25,6 @@ recipe = slapos.cookbook:slapconfiguration.jsonschema
 jsonschema = ${software.json:target}
 set-default = main
 validate-parameters = main
-
-[supervisord]
-recipe = slapos.cookbook:supervisor
 
 [llamacpp]
 recipe = slapos.cookbook:wrapper
