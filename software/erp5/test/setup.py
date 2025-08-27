@@ -42,6 +42,7 @@ setup(name=name,
       packages=find_packages(),
       install_requires=[
         'slapos.core[testing]',
+        'inotify_simple',
         'supervisor',
         'slapos.libnetworkcache',
         'erp5.util',
