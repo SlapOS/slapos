@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Script for controlling test script
+#
+# Assumption: test script returning with code 0
+#             run correctly and everything is done
+#
+# The script configuration happens by passing
+# it in text form with data-to-vm
+#
+# Format of data-to-vm is shell script:
+#  TEST_SCRIPT_WAIT_TIME=<seconds>\nTEST_SCRIPT_TRY_NUM=<amount>
+#
+# OPTIONAL values in configuration:
+#  * TEST_SCRIPT_WAIT_TIME - waiting time, before next try
+#  * TEST_SCRIPT_TRY_NUM - amount of TEST_SCRIPT_TRY_NUM
+#  * any other exported variables can be used by the test script
+# note: you need to export the variables for them to be used in the test script
+
+# Possible TODOs:
+#  * post results on each try
+#  * use function + trap to assure posting on exit
+
+LOG_FILE=/var/log/test-script.log
+
+wget --timeout=30 --output-document=/tmp/test-script.cfg."$$" --quiet http://10.0.2.100/data
+
+source /tmp/test-script.cfg."$$"
+
+if [ -z "$LOG_FILE" ] ; then
+  echo "Output log file is missing"
+  exit 1
+fi
+
+export TEST_SCRIPT_WAIT_TIME=${TEST_SCRIPT_WAIT_TIME:-360}
+echo "INFO: TEST_SCRIPT_WAIT_TIME is $TEST_SCRIPT_WAIT_TIME" >> "$LOG_FILE" 2>&1
+export TEST_SCRIPT_TRY_NUM=${TEST_SCRIPT_TRY_NUM:-80}
+echo "INFO: TEST_SCRIPT_TRY_NUM is $TEST_SCRIPT_TRY_NUM" >> "$LOG_FILE" 2>&1
+
+TEST_SCRIPT=/tmp/test-script.bash."$$"
+wget --timeout=30 --output-document="$TEST_SCRIPT" --quiet http://10.0.2.100/test-script
+
+if [[ ! -s "$TEST_SCRIPT" ]] ; then
+  echo "exit 1" > "$TEST_SCRIPT"
+fi
+
+function upload ()
+{
+  try="$1"
+  LOG_FILE="$2"
+  t=`date '+%Y%m%d%H%S'`
+  mv "$LOG_FILE" ${LOG_FILE}."$t"
+  curl -q -X POST --data-urlencode "path=test-script-result/log-file.log.$t" --data-urlencode "content@${LOG_FILE}.$t" http://10.0.2.100/
+}
+
+try=1
+while true; do
+  echo "$0: Try $try. Running '/bin/bash $TEST_SCRIPT'" >> "$LOG_FILE" 2>&1
+  /bin/bash "$TEST_SCRIPT" >> "$LOG_FILE" 2>&1
+  result="$?"
+  if [ "$result" == 0 ] ; then
+    echo "$0: Try $try. Script executed successfully." >> "$LOG_FILE" 2>&1
+    upload "$try" "$LOG_FILE"
+    break
+  fi
+  if (( try > TEST_SCRIPT_TRY_NUM )) ; then
+    echo "$0: Try $try. Amount of TEST_SCRIPT_TRY_NUM $TEST_SCRIPT_TRY_NUM exceeded, giving up." >> $LOG_FILE 2>&1
+    upload "$try" "$LOG_FILE"
+    break
+  fi
+  # wait TEST_SCRIPT_WAIT_TIME before checking the state
+  echo "$0: Try $try. Sleeping $TEST_SCRIPT_WAIT_TIME before retry." >> $LOG_FILE 2>&1
+  upload "$try" "$LOG_FILE"
+  sleep "$TEST_SCRIPT_WAIT_TIME"
+  ((try++))
+done
+
+exit "$result"
