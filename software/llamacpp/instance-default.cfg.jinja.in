@@ -1,10 +1,17 @@
 [buildout]
 parts =
+  huggingface-cli
   directory
   llamacpp
   request-parameters
-  huggingface-cli
   download-model
+
+[huggingface-cli]
+recipe = zc.recipe.egg
+eggs =
+  huggingface_hub==0.34.4
+scripts =
+  hf
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -15,13 +22,6 @@ log = $${:var}/log
 run = $${:var}/run
 cache = $${:var}/hf-cache
 models = $${:var}/models
-
-[huggingface-cli]
-recipe = zc.recipe.egg
-eggs =
-  huggingface_hub==0.34.4
-scripts =
-  hf
 
 [llamacpp]
 recipe = slapos.cookbook:wrapper
@@ -49,7 +49,7 @@ command =
   export HUGGING_FACE_HUB_TOKEN="{{ slapparameter_dict.get('hf_token', '') }}" && \
   LOG="$${directory:log}/hf-download.log" && \
   echo "[$$(date +%F' '%T)] start: repo={{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-20b-GGUF') }} file={{ slapparameter_dict.get('hf_filename', 'F16') }}" | tee -a "$LOG" && \
-  PYTHONUNBUFFERED=1 "$${buildout:bin-directory}/hf" download \
+  PYTHONUNBUFFERED=1 {{ HF_BIN }} download \
       "{{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-20b-GGUF') }}" \
       "{{ slapparameter_dict.get('hf_filename', 'F16') }}" \
       --local-dir "$${directory:models}" \

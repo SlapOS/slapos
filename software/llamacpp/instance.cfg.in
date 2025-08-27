@@ -4,6 +4,7 @@ parts =
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
@@ -19,6 +20,8 @@ validate-parameters = main
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 extra-context =
+  key HF_BIN huggingface-hub:hf-bin
+  key HF_HOME directory:cache
 context =
   key slapparameter_dict slap-configuration:configuration
 
