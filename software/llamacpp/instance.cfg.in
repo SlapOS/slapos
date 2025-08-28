@@ -1,0 +1,31 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-llamacpp:output
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.json:target}
+set-default = main
+validate-parameters = main
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+extra-context =
+  key HF_BIN huggingface-hub:hf-bin
+  key HF_HOME directory:cache
+context =
+  key slapparameter_dict slap-configuration:configuration
+
+[dynamic-template-llamacpp]
+<= jinja2-template-base
+url = ${instance-default:output}
+output = instance-default.cfg
