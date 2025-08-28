@@ -1,0 +1,60 @@
+[buildout]
+parts =
+  huggingface-cli
+  directory
+  llamacpp
+  request-parameters
+  download-model
+
+[huggingface-cli]
+recipe = zc.recipe.egg
+eggs =
+  huggingface_hub==0.34.4
+scripts =
+  hf
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+bin = $${:home}/bin
+var = $${:home}/var
+log = $${:var}/log
+run = $${:var}/run
+cache = $${:var}/hf-cache
+models = $${:var}/models
+
+[llamacpp]
+recipe = slapos.cookbook:wrapper
+command-line = ${llama-source:location}/llama-server \
+  -m $${directory:models}/{{ slapparameter_dict.get('hf_filename', 'F16') }} \
+  --host {{ slapparameter_dict.get('host', '0.0.0.0') }} --port {{ slapparameter_dict.get('port', 8083) }} \
+  --ngl {{ slapparameter_dict.get('ngl', 64) }} -t {{ slapparameter_dict.get('threads', 16) }} -c {{ slapparameter_dict.get('ctx', 2048) }}
+wrapper-path = $${directory:bin}/service-llama
+environment =
+  LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
+  HF_HOME=$${directory:cache}
+  HUGGING_FACE_HUB_TOKEN={{ slapparameter_dict.get('hf_token', '') }}
+
+[request-parameters]
+recipe = slapos.cookbook:publish
+url = http://{{ slapparameter_dict.get('host', '0.0.0.0') }}:{{ slapparameter_dict.get('port', 8083) }}/
+binary = ${llama-source:location}/llama-server
+model = {{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-20b-GGUF') }}:{{ slapparameter_dict.get('hf_filename', 'F16') }}
+ctx = {{ slapparameter_dict.get('ctx', 2048) }}
+ngl = {{ slapparameter_dict.get('ngl', 64) }}
+
+[download-model]
+recipe = plone.recipe.command
+command =
+  export HUGGING_FACE_HUB_TOKEN="{{ slapparameter_dict.get('hf_token', '') }}" && \
+  LOG="$${directory:log}/hf-download.log" && \
+  echo "[$$(date +%F' '%T)] start: repo={{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-20b-GGUF') }} file={{ slapparameter_dict.get('hf_filename', 'F16') }}" | tee -a "$LOG" && \
+  PYTHONUNBUFFERED=1 {{ HF_BIN }} download \
+      "{{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-20b-GGUF') }}" \
+      "{{ slapparameter_dict.get('hf_filename', 'F16') }}" \
+      --local-dir "$${directory:models}" \
+      --resume-download \
+      --local-dir-use-symlinks False \
+      2>&1 | tee -a "$LOG" ; \
+  status=$$? ; echo "[$$(date +%F' '%T)] end: exit=$$status" | tee -a "$LOG" ; exit $$status
+stop-on-error = false
