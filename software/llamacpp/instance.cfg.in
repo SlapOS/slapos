@@ -1,0 +1,34 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-llamacpp:output
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.json:target}
+set-default = main
+validate-parameters = main
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+context =
+  key slapparameter_dict slap-configuration:configuration
+  raw monitor_template_cfg ${monitor-template:output}
+  raw llamacpp_server_run_template ${llamacpp-server-run-template:output}
+  raw huggingface_cli_download_template ${huggingface-cli-download-template:output}
+  raw nginx_conf_in ${nginx.conf.in:target}
+  raw nginx_location ${nginx:location}
+  raw openssl_location ${openssl:location}
+
+[dynamic-template-llamacpp]
+<= jinja2-template-base
+url = ${instance-default:output}
+output = instance-default.cfg
