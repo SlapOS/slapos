@@ -33,19 +33,19 @@
       "title": "Number of GPU layers",
       "description": "Number of layers to offload to GPU",
       "type": "integer",
-      "default": 64
+      "default": 999
     },
     "hf_repo_id": {
       "title": "Hugging Face repository ID",
       "description": "Repository ID on Hugging Face Hub",
       "type": "string",
-      "default": "unsloth/gpt-oss-20b-GGUF"
+      "default": "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF"
     },
     "hf_filename": {
       "title": "Hugging Face filename",
       "description": "Model filename on Hugging Face Hub",
       "type": "string",
-      "default": "F16"
+      "default": "Qwen3-30B-A3B-Instruct-2507-UD-Q5_K_XL.gguf"
     },
     "hf_token": {
       "title": "Hugging Face token",
