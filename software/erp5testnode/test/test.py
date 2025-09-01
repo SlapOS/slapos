@@ -38,7 +38,10 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class TestnodeTest(SlapOSInstanceTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
-    return {"test-node-title": "hello"}
+    return {
+      "test-node-title": "hello",
+      "test-suite-master-url": "http://example.org"
+      }
 
   def test(self):
     connexion_parameters = self.computer_partition.getConnectionParameterDict()

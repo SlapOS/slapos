@@ -76,11 +76,23 @@ def convert_to_array(params):
         if k in params:
             params[k] = list(params[k].values())
 
+    # Special handling for ncell_list to add cell_type, cell_kind, and plmn
+    if 'ncell_list' in params:
+        plmn_value = None
+        if 'plmn_list' in params and len(params['plmn_list']) > 0:
+            plmn_value = params['plmn_list'][0].get('plmn', '00101')
+
+        for cell in params['ncell_list']:
+            cell['cell_type'] = 'nr'
+            cell['cell_kind'] = 'enb_peer'
+            if plmn_value:
+                cell['plmn'] = plmn_value
+
 def convert_ors_params(params, new_params):
 
     if 'ors_duo_2nd_cell' in params:
         new_params['cell2'] = params['ors_duo_2nd_cell']
-    
+
     cell_params = [
         "tx_power_dbm",
         "tx_gain",
@@ -133,7 +145,7 @@ def convert_ors_params(params, new_params):
         "eutra_nr_handover",
         "x2_peers",
     ]
-    
+
     ors_params = [
         "log_phy_debug",
         "enb_stats_fetch_period",
@@ -147,7 +159,13 @@ def convert_ors_params(params, new_params):
         "xlog_fluentbit_forward_port",
         "xlog_fluentbit_forward_shared_key",
     ]
-    
+
+    unknown_params = {}
+
+    # Set default gtp_addr if not present
+    if 'gtp_addr' not in params:
+        new_params.setdefault('nodeb', {})['gtp_addr'] = "Automatic"
+
     for param in params:
         if param == 'ors_duo_2nd_cell':
             continue
@@ -164,8 +182,12 @@ def convert_ors_params(params, new_params):
         elif param == 'use_ipv4':
             continue
         else:
-            print("Unknown parameter: {}, exiting".format(param))
-            exit(1)
+            print("Unknown parameter: {}".format(param))
+            unknown_params[param] = params[param]
+
+    # Add unknown parameters to the end
+    if unknown_params:
+        new_params['unknown_parameters'] = unknown_params
 
 def main():
 
@@ -181,7 +203,7 @@ def main():
         params_raw += l
         if '</instance>' in l:
             break
-    
+
     params_json_raw = '{' + params_raw.split('{', 1)[1].rsplit('}', 1)[0] + '}'
     params = json.loads(params_json_raw)
     new_params = {}
@@ -195,16 +217,16 @@ def main():
         new_params = params
         convert_tdd(new_params)
         convert_to_array(new_params)
-    
+
     new_params_raw = """<?xml version="1.0" encoding="UTF-8"?>
     <instance>
         <parameter id="_">"""
-    
-    new_params_raw += json.dumps(new_params)
-    
+
+    new_params_raw += json.dumps(new_params, indent=2)
+
     new_params_raw += """</parameter>
     </instance>"""
-    
+
     print("")
     print("Paste these parameters in raw XML parameter:")
     print("")

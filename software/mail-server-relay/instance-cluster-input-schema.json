@@ -73,7 +73,11 @@
             },
             "state": {
               "type": "string",
-              "enum": ["started", "destroyed", "stopped"],
+              "enum": [
+                "started",
+                "destroyed",
+                "stopped"
+              ],
               "default": "started"
             },
             "config": {
