@@ -396,7 +396,7 @@ i0:whitelist-firewall-{hash} RUNNING""",
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
+        '113c231b4fb992c3e563a3206e6447bb'
       ],
       self.getRunningImageList()
     )
@@ -1593,7 +1593,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
+        '113c231b4fb992c3e563a3206e6447bb'
       ],
       self.getRunningImageList()
     )
@@ -1690,18 +1690,18 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
     self.assertEqual(
-      ['6b6604d894b6d861e357be1447b370db'],
+      ['113c231b4fb992c3e563a3206e6447bb'],
       os.listdir(image_repository)
     )
-    image = os.path.join(image_repository, '6b6604d894b6d861e357be1447b370db')
+    image = os.path.join(image_repository, '113c231b4fb992c3e563a3206e6447bb')
     self.assertTrue(os.path.exists(image))
     with open(image, 'rb') as fh:
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
-    self.assertEqual(image_md5sum, '6b6604d894b6d861e357be1447b370db')
+    self.assertEqual(image_md5sum, '113c231b4fb992c3e563a3206e6447bb')
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
+        '113c231b4fb992c3e563a3206e6447bb'
       ],
       self.getRunningImageList()
     )
@@ -1834,7 +1834,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       os.listdir(os.path.join(
         kvm_instance_partition, 'srv', 'boot-image-url-select-repository')),
-      ['6b6604d894b6d861e357be1447b370db']
+      ['113c231b4fb992c3e563a3206e6447bb']
     )
     self.assertEqual(
       os.listdir(os.path.join(
@@ -1846,7 +1846,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       [
         '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
+        '113c231b4fb992c3e563a3206e6447bb'
       ],
       self.getRunningImageList()
     )
@@ -1992,7 +1992,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         config
       )
       self.assertIn(
-        'debian-12.10.0-amd64-netinst.iso#6b6604d894b6d861e357be1447b370db"]',
+        'debian-12.11.0-amd64-netinst.iso#113c231b4fb992c3e563a3206e6447bb"]',
         config
       )
 
