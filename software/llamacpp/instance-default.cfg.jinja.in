@@ -18,10 +18,17 @@ parts =
 extends =
   {{ monitor_template_cfg }}
 
+[versions]
+fsspec = 2023.5.0
+tqdm = 4.42.1
+huggingface-hub = 0.30
+
 [huggingface-cli]
 recipe = zc.recipe.egg
 eggs =
-  huggingface_hub==0.30
+  fsspec
+  tqdm
+  huggingface_hub
 scripts =
   huggingface-cli
 
