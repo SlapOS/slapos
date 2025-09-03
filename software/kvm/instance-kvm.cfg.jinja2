@@ -783,6 +783,7 @@ base-path = ${directory:public}
 wrapper = ${directory:bin}/http-server
 log-file = ${directory:log}/httpd.log
 use-hash-url = false
+allow-write = {{ slapparameter_dict.get('httpd-server-allow-write', 'false') }}
 
 [httpd-service]
 recipe = slapos.cookbook:wrapper
@@ -873,6 +874,10 @@ ipv6-network-info =
   (the configuration will be gone after the next reboot)
 {% endif %}
 {% endif %}
+{% set additional_publish_connection_information = slapparameter_dict.get('additional-publish-connection-information', {}) %}
+{% for key in sorted(additional_publish_connection_information) %}
+{{ key }} = {{ additional_publish_connection_information[key] }}
+{% endfor %}
 
 
 {% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
