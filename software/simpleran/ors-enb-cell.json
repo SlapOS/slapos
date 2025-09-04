@@ -44,7 +44,7 @@
     },
     "tac": {
       "$ref": "cell/lte/input-schema.json#/properties/tac",
-      "default": 1
+      "default": "0x0001"
     },
     "cipher_algo_pref": {
       "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
