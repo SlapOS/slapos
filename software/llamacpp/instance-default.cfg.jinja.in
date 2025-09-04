@@ -89,13 +89,18 @@ context =
     raw llama_server_bin ${llama-source:location}/build/bin/llama-server
     raw models_dir $${directory:models}
     raw log_file $${:log_filename}
-    raw model {{ slapparameter_dict.get('hf_filename', 'Seed-OSS-36B-Instruct-IQ4_NL.gguf') }}
+    raw model {{ slapparameter_dict.get('hf_filename', 'gpt-oss-120b-F16.gguf') }}
     raw host $${llamacpp-service:llamacpp-host}
     raw port {{ slapparameter_dict.get('port', 8080) }}
     raw ngl {{ slapparameter_dict.get('ngl', 64) }}
-    raw threads {{ slapparameter_dict.get('threads', 16) }}
+    raw threads  {{ slapparameter_dict.get('threads', 16) }}
+    raw threads_batch  {{ slapparameter_dict.get('threads_batch', 16) }}
+    raw batch  {{ slapparameter_dict.get('batch', 1024) }}
+    raw micro_batch  {{ slapparameter_dict.get('micro_batch', 1024) }}
+    raw cache_type_k  {{ slapparameter_dict.get('cache_type_k', 'q8_0') }}
+    raw cache_type_v  {{ slapparameter_dict.get('cache_type_v', 'q8_0') }}
     raw ctx {{ slapparameter_dict.get('ctx', 2048) }}
-    raw repo_id {{ slapparameter_dict.get('hf_repo_id', 'unsloth/Seed-OSS-36B-Instruct-GGUF') }}
+    raw repo_id {{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-120b-GGUF') }}
 
 [llamacpp-service]
 recipe = slapos.cookbook:wrapper
