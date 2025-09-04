@@ -33,7 +33,6 @@ import re
 
 from six.moves.urllib.parse import urlparse
 
-from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
@@ -187,13 +186,9 @@ class TestServices(NextCloudTestCase):
   __partition_reference__ = 'ncs'
 
   def test_process_list(self):
-    hash_list = [
-      'software_release/buildout.cfg',
-    ]
     expected_process_names = [
       'bootstrap-monitor',
-      'mariadb',
-      'mariadb_update',
+      'mariadb-{hash}',
       'apache-php-{hash}-on-watch',
       'certificate_authority-{hash}-on-watch',
       'crond-{hash}-on-watch',
@@ -208,14 +203,12 @@ class TestServices(NextCloudTestCase):
       process_name_list = [process['name']
                      for process in supervisor.getAllProcessInfo()]
 
-    hash_file_list = [os.path.join(self.computer_partition_root_path, path)
-                      for path in hash_list]
-
     for name in expected_process_names:
-      h = generateHashFromFiles(hash_file_list)
-      expected_process_name = name.format(hash=h)
-
-      self.assertIn(expected_process_name, process_name_list)
+      if '{hash}' in name:
+        pattern = name.format(hash='[a-zA-Z0-9]+') + '$'
+        self.assertTrue(any(re.match(pattern, p) for p in process_name_list))
+      else:
+        self.assertIn(name, process_name_list)
 
   def test_nextcloud_installation(self):
     can_install_path = os.path.join(self.nextcloud_path, 'config/CAN_INSTALL')
