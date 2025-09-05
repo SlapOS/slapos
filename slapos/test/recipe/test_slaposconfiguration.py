@@ -505,11 +505,18 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         {'validate-parameters': 'main'},
       )
 
-  def test_jsonschema_non_existing_shared_software_type(self):
+  def test_jsonschema_non_existing_shared_software_type_without_shared(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, software_type='nonexistent'):
+      received = self.receiveParameters({'validate-parameters': 'shared'})
+      self.assertEqual(received, parameters)
+
+  def test_jsonschema_non_existing_shared_software_type_with_shared(self):
     self.writeJsonSchema()
     parameters = {"number": 1}
     shared = [{"kind": 1}, {"kind": 2}]
-    with self.patchSlap(parameters, software_type='nonexistent'):
+    with self.patchSlap(parameters, shared=shared, software_type='nonexistent'):
       self.assertRaises(
         slapconfiguration.UserError,
         self.receiveParameters,
