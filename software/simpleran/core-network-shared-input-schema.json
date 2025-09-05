@@ -4,13 +4,13 @@
   "type": "object",
   "oneOf": [
     {
-      "$ref": "input-schema-milenage.json"
+      "$ref": "sim/input-schema-milenage.json"
     },
     {
-      "$ref": "input-schema-xor.json"
+      "$ref": "sim/input-schema-xor.json"
     },
     {
-      "$ref": "input-schema-dns.json"
+      "$ref": "core-network-local-dns-entry.json"
     }
   ]
 }
