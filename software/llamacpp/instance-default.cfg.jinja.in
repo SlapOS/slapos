@@ -56,8 +56,8 @@ context =
     raw cache_dir  $${directory:cache}
     raw log_file   $${directory:log}/hf-download.log
     raw state_file $${directory:log}/huggingface-model-download.state
-    raw repo_id    {{ slapparameter_dict.get('hf_repo_id', 'unsloth/Seed-OSS-36B-Instruct-GGUF') }}
-    raw filename   {{ slapparameter_dict.get('hf_filename', 'Seed-OSS-36B-Instruct-IQ4_NL.gguf') }}
+    raw repo_id    {{ slapparameter_dict.get('hf_repo_id') }}
+    raw filename   {{ slapparameter_dict.get('hf_filename') }}
 
 [huggingface-cli-download]
 recipe = slapos.cookbook:wrapper
@@ -84,18 +84,18 @@ context =
     raw llama_server_bin ${llama-source:location}/build/bin/llama-server
     raw models_dir $${directory:models}
     raw log_file $${:log_filename}
-    raw model {{ slapparameter_dict.get('hf_filename', 'gpt-oss-120b-F16.gguf') }}
+    raw model {{ slapparameter_dict.get('hf_filename') }}
     raw host $${llamacpp-service:llamacpp-host}
-    raw port {{ slapparameter_dict.get('port', 8080) }}
-    raw ngl {{ slapparameter_dict.get('ngl', 64) }}
-    raw threads  {{ slapparameter_dict.get('threads', 16) }}
-    raw threads_batch  {{ slapparameter_dict.get('threads_batch', 16) }}
-    raw batch  {{ slapparameter_dict.get('batch', 1024) }}
-    raw micro_batch  {{ slapparameter_dict.get('micro_batch', 1024) }}
-    raw cache_type_k  {{ slapparameter_dict.get('cache_type_k', 'q8_0') }}
-    raw cache_type_v  {{ slapparameter_dict.get('cache_type_v', 'q8_0') }}
-    raw ctx {{ slapparameter_dict.get('ctx', 2048) }}
-    raw repo_id {{ slapparameter_dict.get('hf_repo_id', 'unsloth/gpt-oss-120b-GGUF') }}
+    raw port {{ slapparameter_dict.get('port') }}
+    raw ngl {{ slapparameter_dict.get('ngl') }}
+    raw threads  {{ slapparameter_dict.get('threads') }}
+    raw threads_batch  {{ slapparameter_dict.get('threads-batch') }}
+    raw batch  {{ slapparameter_dict.get('batch') }}
+    raw micro_batch  {{ slapparameter_dict.get('micro-batch') }}
+    raw cache_type_k  {{ slapparameter_dict.get('cache-type-k') }}
+    raw cache_type_v  {{ slapparameter_dict.get('cache-type-v') }}
+    raw ctx {{ slapparameter_dict.get('ctx') }}
+    raw repo_id {{ slapparameter_dict.get('hf_repo_id') }}
 
 [llamacpp-service]
 recipe = slapos.cookbook:wrapper
@@ -103,11 +103,11 @@ command-line = $${directory:bin}/llamacpp-server-run.py
 wrapper-path = $${directory:services}/llamacpp-service
 llamacpp-host = $${slap-configuration:ipv4-random}
 wait-for-files =
-  $${directory:models}/{{ slapparameter_dict.get('hf_filename', 'Seed-OSS-36B-Instruct-IQ4_NL.gguf') }}
+  $${directory:models}/{{ slapparameter_dict.get('hf_filename') }}
 environment =
   LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
   HF_HOME=$${directory:cache}
-  HUGGING_FACE_HUB_TOKEN={{ slapparameter_dict.get('hf_token', '') }}
+  HUGGING_FACE_HUB_TOKEN={{ slapparameter_dict.get('hf_token') }}
 depends =
   $${huggingface-cli-download:recipe}
   $${huggingface-download-promise:recipe}
@@ -137,7 +137,7 @@ config-file = $${directory:etc}/nginx.conf
 access-log = $${directory:httpd-log}/nginx-access.log
 error-log = $${directory:httpd-log}/nginx-error.log
 nginx-mime-types = {{ nginx_location }}/conf/mime.types
-backend-url = http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port', 8080) }}
+backend-url = http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
 ssl-certificate = $${directory:etc}/ssl/nginx.crt
 ssl-key = $${directory:etc}/ssl/nginx.key
 
@@ -177,18 +177,18 @@ config-url = $${:url}
 
 [request-parameters]
 recipe = slapos.cookbook:publish
-url = http://{{ slapparameter_dict.get('host', '0.0.0.0') }}:{{ slapparameter_dict.get('port', 8080) }}/
-model = {{ slapparameter_dict.get('hf_repo_id', 'unsloth/Seed-OSS-36B-Instruct-GGUF') }}:{{ slapparameter_dict.get('hf_filename', 'Seed-OSS-36B-Instruct-IQ4_NL.gguf') }}
-ctx = {{ slapparameter_dict.get('ctx', 2048) }}
-ngl = {{ slapparameter_dict.get('ngl', 64) }}
+url = http://{{ slapparameter_dict.get('host') }}:{{ slapparameter_dict.get('port') }}/
+model = {{ slapparameter_dict.get('hf_repo_id') }}:{{ slapparameter_dict.get('hf_filename') }}
+ctx = {{ slapparameter_dict.get('ctx') }}
+ngl = {{ slapparameter_dict.get('ngl') }}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = $${request-frontend:connection-secure_access}
-ipv4_url =  http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port', 8080) }}
+ipv4_url =  http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
 backend-url = $${request-frontend:config-url}
-repo = {{ slapparameter_dict.get('hf_repo_id', 'unsloth/Seed-OSS-36B-Instruct-GGUF') }}
-filename = {{ slapparameter_dict.get('hf_filename', 'Seed-OSS-36B-Instruct-IQ4_NL.gguf') }}
+repo = {{ slapparameter_dict.get('hf_repo_id') }}
+filename = {{ slapparameter_dict.get('hf_filename') }}
 model = $${:repo}:$${:filename}
 model-download-log = $${directory:log}/hf-download.log
 service-log = $${directory:log}/llamacpp-server.log

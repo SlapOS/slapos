@@ -63,7 +63,7 @@ def main() -> None:
         "--host", HOST,
         "--port", str(PORT),
         "-t", str(THREADS),
-        "--threads-batch", str(THREADS_BATCH),
+        "-tb", str(THREADS_BATCH),
         "-c", str(CTX),
         "-b", str(BATCH),
         "-ub", str(MICRO_BATCH),

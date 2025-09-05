@@ -1,6 +1,6 @@
 {
-  "name": "Llama.cpp",
-  "description": "Llama.cpp server",
+  "name": "llama.cpp",
+  "description": "llama.cpp is a high-performance, C++ based inference engine for running transformer models.",
   "serialisation": "json-in-xml",
   "software-type": {
     "default": {
