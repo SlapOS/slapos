@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate Llama.cpp server",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "port": {
+      "title": "Port",
+      "description": "Port on which to listen for incoming requests",
+      "type": "integer",
+      "default": 8083
+    },
+    "threads": {
+      "title": "Threads",
+      "description": "Number of threads to use for generation",
+      "type": "integer",
+      "default": 16
+    },
+    "threads-batch": {
+      "title": "Threads batch",
+      "description": "Number of threads to use for prefill",
+      "type": "integer",
+      "default": 16
+    },
+    "ctx": {
+      "title": "Context size",
+      "description": "Context size for the model",
+      "type": "integer",
+      "default": 2048
+    },
+    "batch": {
+      "title": "Batch size",
+      "description": "Number of tokens processed together in a single forward pass during the prefill stage.",
+      "type": "integer",
+      "default": 1024
+    },
+    "micro-batch": {
+      "title": "Micro-batch size",
+      "description": "Subdivision of the main batch into smaller chunks to fit memory constraints.",
+      "type": "integer",
+      "default": 1024
+    },
+    "cache-type-k": {
+      "title": "Key cache data type",
+      "description": "Specifies the precision or quantization format used to store the Key vectors in the KV cache.",
+      "type": "string",
+      "default": "q8_0"
+    },
+    "cache-type-v": {
+      "title": "Value cache data type",
+      "description": "Specifies the precision or quantization format used to store the Value vectors in the KV cache.",
+      "type": "string",
+      "default": "q8_0"
+    },
+    "ngl": {
+      "title": "Number of GPU layers",
+      "description": "Number of layers to offload to GPU",
+      "type": "integer",
+      "default": 999
+    },
+    "hf_repo_id": {
+      "title": "Hugging Face repository ID",
+      "description": "Repository ID on Hugging Face Hub",
+      "type": "string",
+      "default": "unsloth/gpt-oss-120b-GGUF"
+    },
+    "hf_filename": {
+      "title": "Hugging Face filename",
+      "description": "Model filename on Hugging Face Hub",
+      "type": "string",
+      "default": "gpt-oss-120b-F16.gguf"
+    },
+    "hf_token": {
+      "title": "Hugging Face token",
+      "description": "Token for accessing private models on Hugging Face Hub",
+      "type": "string",
+      "default": ""
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Llama.cpp",
+  "description": "Llama.cpp server",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default Llama.cpp server configuration",
+      "request": "instance-input-schema.json",
+      "response": "",
+      "index": 0
+    }
+  }
+}

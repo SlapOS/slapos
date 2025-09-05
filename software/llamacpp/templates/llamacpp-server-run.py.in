@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+This file is rendered from `llamacpp-server-run.py.in` by slapos.recipe.template:jinja2.
+
+Injected variables (via Jinja):
+- llama_server_bin: path to llama-server binary
+- models_dir:      directory where GGUF files are stored
+- model:           GGUF filename (e.g. Seed-OSS-36B-Instruct-IQ4_NL.gguf)
+- host, port, ngl, threads, ctx: runtime parameters
+- log_file:        path to log file for stdout/stderr redirection
+"""
+
+import os
+import sys
+
+LLAMA_SERVER_BIN = "{{ llama_server_bin }}"
+MODELS_DIR       = "{{ models_dir }}"
+MODEL_FILENAME   = "{{ model }}"
+HOST             = "{{ host }}"
+PORT             = "{{ port }}"
+NGL              = "{{ ngl }}"
+THREADS          = "{{ threads }}"
+THREADS_BATCH    = "{{ threads_batch }}"
+BATCH            = "{{ batch }}"
+MICRO_BATCH      = "{{ micro_batch }}"
+CACHE_TYPE_K     = "{{ cache_type_k }}"
+CACHE_TYPE_V     = "{{ cache_type_v }}"
+CTX              = "{{ ctx }}"
+LOG_FILE         = "{{ log_file }}"
+
+def ensure_parent_dir(path: str) -> None:
+    d = os.path.dirname(os.path.abspath(path))
+    if d:
+        os.makedirs(d, exist_ok=True)
+
+def fail(msg: str, code: int = 1) -> None:
+    sys.stderr.write(msg + "\n")
+    sys.stderr.flush()
+    sys.exit(code)
+
+def main() -> None:
+    if not os.path.isabs(LLAMA_SERVER_BIN):
+        fail(f"llama-server not absolute path: {LLAMA_SERVER_BIN}")
+    if not os.path.exists(LLAMA_SERVER_BIN):
+        fail(f"llama-server not found: {LLAMA_SERVER_BIN}")
+
+    model_path = os.path.join(MODELS_DIR, MODEL_FILENAME)
+    if not os.path.exists(model_path) or os.path.getsize(model_path) <= 0:
+        fail(f"model file not ready: {model_path}")
+
+    ensure_parent_dir(LOG_FILE)
+    log_fd = os.open(LOG_FILE, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+
+    os.dup2(log_fd, 1)  # stdout -> log
+    os.dup2(log_fd, 2)  # stderr -> log
+    os.close(log_fd)
+
+    argv = [
+        LLAMA_SERVER_BIN,
+        "-m", model_path,
+        "--host", HOST,
+        "--port", str(PORT),
+        "-t", str(THREADS),
+        "--threads-batch", str(THREADS_BATCH),
+        "-c", str(CTX),
+        "-b", str(BATCH),
+        "-ub", str(MICRO_BATCH),
+        "-fa",
+        "--cache-type-k", CACHE_TYPE_K,
+        "--cache-type-v", CACHE_TYPE_V,
+        "--mlock",
+        "--no-warmup",
+        "-ngl", str(NGL),
+    ]
+
+    os.execv(LLAMA_SERVER_BIN, argv)
+
+if __name__ == "__main__":
+    main()
