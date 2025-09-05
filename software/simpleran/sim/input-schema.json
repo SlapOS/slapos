@@ -8,6 +8,9 @@
     },
     {
       "$ref": "input-schema-xor.json"
+    },
+    {
+      "$ref": "input-schema-dns.json"
     }
   ]
 }
