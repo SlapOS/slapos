@@ -1,0 +1,36 @@
+{% set part_list = [] -%}
+
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+
+{% for reference, cluster_dict in slave_dict.items() -%}
+{% do part_list.append('publish-slave-' ~ reference) -%}
+{% set protocol = cluster_dict['protocol'] -%}
+[publish-slave-{{ reference }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ reference }}
+
+{%  for _, backend_dict in cluster_dict['backend-dict'].items() -%}
+backend-url-{{ backend_dict['backend-id'] }} = https://{{ backend_dict['address'] }}
+{%  endfor %}
+{%  for _, frontend_dict in cluster_dict['frontend-dict'].items() -%}
+frontend-url-{{ loop.index }} = {% if protocol == 'http' -%} https://{% endif %}{{ frontend_dict['address'] }}
+{%  endfor %}
+{% endfor %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+parts =
+{% for part in part_list -%}
+{{ '  %s' % part }}
+{% endfor -%}
