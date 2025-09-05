@@ -39,8 +39,10 @@ content = {{ dumps(content) }}
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${ca-directory:certs}/${:name}.crt
 cert-file = ${ca-directory:certs}/${:name}.key
+ca-file = ${ca-directory:root}/cacert.pem
 executable = echo "request certificate"
 wrapper = ${directory:tmp}/ca-${:name}
+name = ${:cn}
 
 [cluster-frontend-port]
 recipe = slapos.cookbook:free_port
@@ -57,21 +59,41 @@ ip = {{ ipv6 }}
 {% set key_section_name = '${' ~ name ~ '-ssl:key-file}' -%}
 {% set port_base = port_base + 20 -%}
 
-[{{ name }}-ssl]
-<= ca-certificate-base
-name = {{ name }}
-
 {%  for frontend_name, frontend_dict in instance_dict['frontend-dict'].items() %}
 {% set frontend_port = port_base + 1 -%}
 [{{ "%s-%s-port" | format(name, frontend_name) }}]
 <= cluster-frontend-port
 minimum= {{ frontend_port }}
 
-{%    do instance_dict['frontend-dict'][frontend_name].__setitem__("address", "%s:${%s-%s-port:port}" | format(ipv6, name, frontend_name)) -%}
+[{{ "slave-%s-%s-check-port-promise" | format(name, frontend_name) }}]
+<= monitor-promise-base
+promise = check_socket_listening
+name = sozu-slave1-port-listening.py
+config-port = {{ "${%s-%s-port:port}" | format(name, frontend_name) }}
+config-host = ${sozu-parameters:ipv6}
+
+{% do part_list.append("slave-" ~ name ~ "-" ~ frontend_name ~ "-check-port-promise") -%}
+
+# XXX - possible to have more than one frontend config for {{ name }}
+[{{ name }}-ssl]
+<= ca-certificate-base
+name = {{ name }}
+cn = {{ instance_dict['frontend-dict'][frontend_name].get('hostname', frontend_name) }}
+
+[{{ name }}-chain]
+recipe = plone.recipe.command
+chain-file = ${ca-directory:certs}/{{ name }}-chain.crt
+command =
+  if [ -s {{ "${%s-ssl:cert-file}" | format(name) }} ]; then
+    cat {{ "${%s-ssl:cert-file}" | format(name) }} {{ "${%s-ssl:ca-file}" | format(name) }} > ${:chain-file}
+  fi
+update-command = ${:command}
+
+{%    do instance_dict['frontend-dict'][frontend_name].__setitem__("address", "[%s]:${%s-%s-port:port}" | format(ipv6, name, frontend_name)) -%}
 {%    if frontend_dict.get('deploy-certificate') -%}
 {%      do instance_dict['frontend-dict'][frontend_name].__setitem__("certificate", "${%s-ssl:cert-file}" | format(name)) -%}
 {%      do instance_dict['frontend-dict'][frontend_name].__setitem__('key', "${%s-ssl:key-file}" | format(name)) -%}
-{%      do instance_dict['frontend-dict'][frontend_name].__setitem__('certificate-chain', "${%s-ssl:chain-file}" | format(name)) -%}
+{%      do instance_dict['frontend-dict'][frontend_name].__setitem__('certificate-chain', "${%s-chain:chain-file}" | format(name)) -%}
 
 {%    elif frontend_dict.get('certificate') and frontend_dict.get('key') -%}
 {{ createfile("%s-%s-crt" | format(name, frontend_name), "${directory:dssl}/" ~ name ~ frontend_name ~ ".crt", frontend_dict['certificate']) }}
@@ -89,7 +111,7 @@ minimum= {{ frontend_port }}
 
 [sozu-parameters]
 #warn, info, debug, trace
-log-level = info
+log-level = debug
 log-file = ${directory:log}/sozu.log
 state-file = ${directory:etc}/sozu-state.json
 access-log-file = ${directory:log}/sozu-access.log
@@ -112,12 +134,13 @@ back-timeout = 30
 connect-timeout = 3
 # maximum time to receive a request since the connection started
 request-timeout = 10
-ip = {{ ipv6 }}
+ipv4 = {{ ipv4 }}
+ipv6 = {{ ipv6 }}
 port = 8090
 https-port = 4453
 cert-file = ${ca-directory:certs}/sozu-cert.crt
 key-file = ${ca-directory:certs}/sozu.key
-cert-chain-file = ${ca-directory:root}/cacert.pem
+cert-chain-file = ${ca-directory:root}/sozu-chain.crt
 
 [sozu-config.toml]
 recipe = slapos.recipe.template:jinja2
@@ -128,20 +151,34 @@ context =
   section parameter_dict              sozu-parameters
   section cluster_definition_dict     sozu-slave-information
 
-[sozu-wrapper]
+[sozu-bin]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ sozu_bin }} start -c ${sozu-config.toml:output}
+  {{ sozu_bin }} -c ${sozu-config.toml:output}
 wrapper-path = ${directory:bin}/sozu
+
+[sozu-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = ${sozu-bin:wrapper-path} start
+wrapper-path = ${directory:bin}/sozu-start
 
 [ca-sozu-wrapper]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${sozu-parameters:key-file}
 cert-file = ${sozu-parameters:cert-file}
-chain-file = ${ca-directory:root}/cacert.pem
+ca-file = ${ca-directory:root}/cacert.pem
 executable = ${sozu-wrapper:wrapper-path}
 wrapper = ${directory:bin}/ca-sozu
+
+[sozu-ssl-chain]
+recipe = plone.recipe.command
+chain-file = ${ca-directory:certs}/sozu-chain.crt
+command =
+  if [ -s ${ca-sozu-wrapper:cert-file} ]; then
+    cat ${ca-sozu-wrapper:cert-file} ${ca-sozu-wrapper:ca-file} > ${:chain-file}
+  fi
+update-command = ${:command}
 
 [sozu-service]
 recipe = slapos.cookbook:wrapper
@@ -149,24 +186,25 @@ command-line = ${ca-sozu-wrapper:wrapper}
 wrapper-path = ${directory:services}/sozu
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files = ${sozu-config.toml:output}
-url = http://[${sozu-parameters:ip}]:${sozu-parameters:port}
-https-url = https://[${sozu-parameters:ip}]:${sozu-parameters:https-port}
+url = http://[${sozu-parameters:ipv6}]:${sozu-parameters:port}
+https-url = https://[${sozu-parameters:ipv6}]:${sozu-parameters:https-port}
 wait-for-files =
   ${ca-directory:certs}/sozu-cert.crt
+  ${sozu-ssl-chain:chain-file}
 
 [sozu-https-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = sozu-https-backend-port-listening.py
 config-port = ${sozu-parameters:https-port}
-config-host = ${sozu-parameters:ip}
+config-host = ${sozu-parameters:ipv6}
 
 [sozu-http-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = sozu-http-backend-port-listening.py
 config-port = ${sozu-parameters:port}
-config-host = ${sozu-parameters:ip}
+config-host = ${sozu-parameters:ipv6}
 
 [sozu-frontend]
 <= slap-connection

@@ -145,7 +145,7 @@ activate_listeners = true
 protocol = "http"
 
 # listening address
-address = "[{{ parameter_dict['ip'] }}]:{{ parameter_dict['port'] }}"
+address = "[{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }}"
 
 # specify a different IP than the one the socket sees, for logs and forwarded headers
 # this option is incompatible with expect_proxy
@@ -170,7 +170,7 @@ answer_503 = "{{ parameter_dict['503-html'] }}"
 protocol = "https"
 
 # listening address
-address = "[{{ parameter_dict['ip'] }}]:{{ parameter_dict['https-port'] }}"
+address = "[{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['https-port'] }}"
 
 # specify a different IP than the one the socket sees, for logs and forwarded headers
 # this option is incompatible with expect_proxy
@@ -212,9 +212,9 @@ cipher_list = [
 # default certificate and key
 # in case you want to set up TLS without SNI, you can define the default
 # certificate here
-# certificate = "{{ parameter_dict['cert-file'] }}"
-# key = "{{ parameter_dict['key-file'] }}"
-# certificate_chain = "{{ parameter_dict['cert-chain-file'] }}"
+certificate = "{{ parameter_dict['cert-file'] }}"
+key = "{{ parameter_dict['key-file'] }}"
+certificate_chain = "{{ parameter_dict['cert-chain-file'] }}"
 
 # options specific to a TCP proxy listener
 #[[listeners]]
@@ -272,7 +272,7 @@ frontends = [
 {%        set k, v = tag.split('=') -%}
 {%        do tag_list.append(k.strip() ~ '="' ~ v.strip() ~ '"') -%}
 {%    endfor -%}
-    { address = "{{ frontend_dict['address'] }}", hostname = "{{ frontend_dict.get('hostname') }}", {% if user_tag_list -%} tags = {{ tag_list | join(',') }}, {%- endif %} path = "{{ frontend_dict.get('path', '') }}", path_type = "{{ frontend_dict.get("path-type", "PREFIX") }}" {% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", ["TLS_V12", "TLS_V13"]) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['certificate-chain'] }}" {% endif -%} },
+    { address = "{{ frontend_dict['address'] }}"{% if frontend_dict.get('hostname') -%}, hostname = "{{ frontend_dict['hostname'] }}"{% endif %}, {% if user_tag_list -%} tags = {{ tag_list | join(',') }}, {%- endif %} path = "{{ frontend_dict.get('path', '') }}", path_type = "{{ frontend_dict.get("path-type", "PREFIX") }}" {% if enable_https -%}, tls_versions = {{ frontend_dict.get("tls-versions", ["TLS_V12", "TLS_V13"]) }}, certificate = "{{ frontend_dict['certificate'] }}", key = "{{ frontend_dict['key'] }}", certificate_chain = "{{ frontend_dict['certificate-chain'] }}" {% endif -%} },
 {%  endfor -%}
 ]
 
