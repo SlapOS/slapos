@@ -49,5 +49,5 @@ class TestLlamacpp(SlapOSInstanceTestCase):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
   def test_url_get(self):
-    resp = requests.get(self.connection_parameters['url'], verify=False)
+    resp = requests.get(self.connection_parameters['backend-url'], verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
