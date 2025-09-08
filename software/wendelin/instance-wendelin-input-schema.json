@@ -119,6 +119,16 @@
         }
       ]
     },
+    "python2-data-compatibility": {
+      "description": "When running on python3, strategy for ZODB data compatibility with pickle created while running on python2. Can be set to `pygolang` to use pygolang `bstr+ustr` string types, `zodbupdate` to enable a monkey-patch running zodbupdate on each loaded object state. By default, this does not apply and compatibility, which the recommended option for instances running only python3",
+      "default": "",
+      "type": "string",
+      "enum": [
+        "",
+        "pygolang",
+        "zodbupdate"
+      ]
+    },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
       "default": {},
