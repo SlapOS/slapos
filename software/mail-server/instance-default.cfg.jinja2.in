@@ -15,6 +15,10 @@ parts =
   postfix-promise
   apache-httpd-promise
   publish-shared
+{% if slapparameter_dict['request-dns']['enable'] %}
+  request-dns-entry
+{% endif %}
+
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -630,6 +634,24 @@ depends =
   {{ "  $${" + relay_request + ":recipe" }}
 {% endfor -%}
 
+
+# Request local DNS entry
+# -----------------------
+
+[request-dns-entry]
+<= slap-connection
+name = dns-mail-entry
+recipe = slapos.cookbook:request.serialised
+software-url = {{ slapparameter_dict['request-dns']['sr-url'] }}
+software-type = {{ slapparameter_dict['request-dns']['sr-type'] }}
+shared = true
+config-name = dns-mail-entry
+config-subdomain = mail
+config-ip = {{ ipv6 }}
+sla-computer_guid = $${slap-connection:computer-id}
+return = domain ip
+
+
 # Publish connection information
 # ------------------------------
 
@@ -643,3 +665,6 @@ webmail-url = $${lamp-frontend-promise:url}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
 error-dict = $${dovecot-passwords:error-dict}
+{% if slapparameter_dict['request-dns']['enable'] %}
+domain = $${request-dns-entry:connection-domain}
+{% endif %}
