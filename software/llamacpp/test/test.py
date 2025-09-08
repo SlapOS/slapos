@@ -43,7 +43,7 @@ class TestLlamacpp(SlapOSInstanceTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({"backend-url": False})}
+    return {'_': json.dumps({})}
 
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
