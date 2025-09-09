@@ -1,0 +1,24 @@
+{
+  "name": "Sozu reverse proxy server",
+  "description": "Sōzu is a lightweight, fast, always-up reverse proxy server.",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Replication Manager",
+      "request": "instance-sozu-input-schema.json",
+      "response": "instance-sozu-output-schema.json",
+      "index": 0
+    },
+    "default-slave": {
+      "title": "Cluster definition",
+      "description": "Sozu cluster definition",
+      "serialisation": "json-in-xml",
+      "software-type": "default",
+      "request": "instance-sozu-slave-input-schema.json",
+      "response": "instance-sozu-output-schema.json",
+      "shared": true,
+      "index": 1
+    }
+  }
+}
