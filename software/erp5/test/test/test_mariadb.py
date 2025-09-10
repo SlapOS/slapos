@@ -499,6 +499,13 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
       cls.updateDict(kw, caucased=caucased)
     elif isinstance(caucased, dict):
       cls.updateDict(kw, caucased=caucased)
+    # reverse proxy parameters
+    ipv6 = kw.pop('ipv6', True)
+    if not ipv6:
+      cls.updateDict(kw, **{'ipv6-reverse-proxy': {'enable': False}})
+      replication = kw.get('replication')
+      if replication:
+        replication['replicate-with-tls'] = False
     # unique port
     port = cls.PORT_MAP.setdefault(name, cls.PORT + 10 * len(cls.PORT_MAP))
     parameter_dict = cls.getMariadbParameterDict()
@@ -654,12 +661,13 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
 
 
 class TestMariaDBReplication(MariaDBReplicationTestCase):
-  def checkReplication(self, caucased=True, bootstrap=None, backups=1):
+  def checkReplication(self, caucased=True, bootstrap=None, backups=1, **kw):
+    ipv6 = kw.get('ipv6', True)
     # Request primary Mariadb
-    primary = self.requestPrimary(caucased=caucased)
+    primary = self.requestPrimary(caucased=caucased, ipv6=ipv6)
+    connectors = json.loads(primary.getConnectionParameterDict()['_'])
     if caucased:
       # Assert bootstrap http server requires mTLS over IPv6
-      connectors = json.loads(primary.getConnectionParameterDict()['_'])
       bootstrap_url = connectors['replication-mariabackup-url']
       with warnings.catch_warnings():
         warnings.simplefilter("ignore") # verify=False triggers warning
@@ -669,6 +677,11 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
           bootstrap_url,
           verify=False,
         )
+    else:
+      # Assert disabling caucase disables the HTTP backup due to lack of mTLS
+      self.assertEqual(connectors['caucased-url'], '')
+      self.assertEqual(connectors['replication-mariabackup-url'], '')
+      self.assertEqual(connectors['replication-bootstrap-url'], '')
     # Generate backups on primary
     if bootstrap:
       script = 'mariabackup' if 'mariabackup' in bootstrap else 'mariadb-dump'
@@ -679,11 +692,12 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       primary,
       strict=not caucased, # allow promises to fail
       bootstrap=bootstrap,
+      ipv6=ipv6,
     )
     # Let primary sign replica CSR
     # This asserts that all partitions, including replica, converge
     if caucased:
-      primary = self.requestPrimary(caucased=replica)
+      primary = self.requestPrimary(caucased=replica, ipv6=ipv6)
     # Check (primary --> replica) replication
     self.checkReplicaState(replica)
     self.checkDataReplication(primary, replica)
@@ -704,20 +718,19 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
     self.checkReplication(bootstrap='mariabackup-url', backups=3)
 
   def test_no_ssl_ipv4_no_bootstrap(self):
-    self.checkReplication(caucased=False, bootstrap=None)
+    self.checkReplication(caucase=False, bootstrap=None)
 
-  def test_no_ssl_ipv4_bootstrap_from_dump(self):
-    self.checkReplication(caucased=False, bootstrap='bootstrap-url')
+  def test_caucase_ipv4_no_bootstrap(self):
+    self.checkReplication(ipv6=False, bootstrap=None)
 
-  def test_no_ssl_ipv4_bootstrap_from_mariabackup(self):
-    self.checkReplication(caucased=False, bootstrap='mariabackup-url')
+  def test_caucase_ipv4_bootstrap_from_dump(self):
+    self.checkReplication(ipv6=False, bootstrap='bootstrap-url')
 
-  def test_no_ssl_ipv4_bootstrap_from_mariabackup_incremental(self):
-    self.checkReplication(
-      caucased=False,
-      bootstrap='mariabackup-url',
-      backups=3,
-    )
+  def test_caucase_ipv4_bootstrap_from_mariabackup(self):
+    self.checkReplication(ipv6=False, bootstrap='mariabackup-url')
+
+  def test_caucase_ipv4_bootstrap_from_mariabackup_incremental(self):
+    self.checkReplication(ipv6=False, bootstrap='mariabackup-url', backups=3)
 
   def test_takeover(self):
     # Request primary Mariadb
