@@ -30,6 +30,11 @@
           "description": "URL of the caucased server of the primary mariadb to request certificates from",
           "type": "string"
         },
+        "replicate-with-tls": {
+          "description": "Setup the replica to connect upstream with mTLS using the certificate signed by caucase",
+          "type": "string",
+          "default": true
+        },
         "seconds-behind-master-threshold": {
           "description": "Monitoring threshold for Seconds_Behind_Master in the replica, in seconds, -1 meaning no threshold",
           "type": "integer",
