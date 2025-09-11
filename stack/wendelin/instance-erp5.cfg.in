@@ -252,6 +252,7 @@ config-python-hash-seed = {{ dumps(slapparameter_dict.get('python-hash-seed', ''
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+config-python2-data-compatibility = {{ dumps(slapparameter_dict.get('python2-data-compatibility', False)) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
