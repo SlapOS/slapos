@@ -24,6 +24,7 @@
   {
     "_": {
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": "8402",
       "monitor-password": "@@monitor-password@@",
@@ -51,6 +52,7 @@
     "_": {
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "enable-http3": "false",
       "extra_slave_instance_list": "[{\"slave_reference\": \"_deleted\"}, {\"slave_reference\": \"_first\"}]",
       "frontend-name": "caddy-frontend-1",
