@@ -3,7 +3,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NR UE Cell",
   "required": [
-    "nr_bandwidth",
     "rf_mode",
     "dl_nr_arfcn",
     "ssb_nr_arfcn",
