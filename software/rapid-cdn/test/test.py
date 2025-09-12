@@ -9316,6 +9316,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
+        'cluster-reference': 'local-T-0',
         'domain': 'example.com',
         'enable-http2-by-default': True,
         'enable-http3': False,
@@ -9335,6 +9336,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
         'slave-kedifa-information': '{}',
+        'xlog-fluentbit-forward-port': 24224,
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
@@ -9346,6 +9348,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
+        'cluster-reference': 'local-T-0',
         'domain': 'example.com',
         'enable-http2-by-default': True,
         'enable-http3': False,
@@ -9365,6 +9368,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
         'slave-kedifa-information': '{}',
+        'xlog-fluentbit-forward-port': 24224,
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
@@ -9376,6 +9380,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
+        'cluster-reference': 'local-T-0',
         'domain': 'example.com',
         'enable-http2-by-default': True,
         'enable-http3': False,
@@ -9394,6 +9399,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
         'slave-kedifa-information': '{}',
+        'xlog-fluentbit-forward-port': 24224,
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
