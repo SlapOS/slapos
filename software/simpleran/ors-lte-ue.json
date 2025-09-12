@@ -3,15 +3,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "LTE UE Cell",
   "required": [
-    "bandwidth",
-    "rf_mode",
-    "dl_earfcn",
-    "tx_gain",
-    "rx_gain"
+    "dl_earfcn"
   ],
   "properties": {
     "bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
       "enum": [
         "1.4 MHz",
         "3 MHz",
@@ -31,10 +28,12 @@
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
     },
     "tx_gain": {
-      "$ref": "ru/common.json#/properties/tx_gain"
+      "$ref": "ru/common.json#/properties/tx_gain",
+      "default": 50
     },
     "rx_gain": {
-      "$ref": "ru/common.json#/properties/rx_gain"
+      "$ref": "ru/common.json#/properties/rx_gain",
+      "default": 30
     }
   }
 }
