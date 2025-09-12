@@ -15,8 +15,7 @@
           "$ref": "ors-lte-ue.json"
         }
       ],
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "ue": {
       "title": "UE Parameters",
@@ -30,8 +29,7 @@
           "$ref": "ors-ue-duo.json"
         }
       ],
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "sim": {
       "title": "SIM Parameters",
@@ -45,8 +43,7 @@
           "$ref": "ors-ue-sim-xor.json"
         }
       ],
-      "type": "object",
-      "default": {}
+      "type": "object"
     }
   }
 }
