@@ -235,6 +235,40 @@
       "description": "Number of log files to keep before rotation.",
       "type": "integer",
       "default": 4000
+    },
+    "xlog-fluentbit-forward-host": {
+      "title": "Fluentbit Xlog forwarding address",
+      "description": "Address of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
+      "type": "string"
+    },
+    "xlog-fluentbit-forward-port": {
+      "title": "Fluentbit Xlog forwarding port",
+      "description": "Port of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
+      "type": "integer",
+      "default": 24224
+    },
+    "xlog-fluentbit-forward-shared-key": {
+      "title": "Fluentbit Xlog forwarding shared key",
+      "description": "Secret key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
+      "type": "string"
+    },
+    "xlog-fluentbit-forward-tls": {
+      "default": "true",
+      "title": "Fluentbit Xlog forwarding TLS",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "type": "string"
+    },
+    "xlog-fluentbit-forward-tls-verify": {
+      "default": "false",
+      "title": "Fluentbit Xlog forwarding TLS Verify",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "type": "string"
     }
   },
   "patternProperties": {
