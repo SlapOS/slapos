@@ -62,113 +62,117 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
   serialisation='json-in-xml'
   serialise = True
 
-  def writeJsonSchema(self, valid_defaults=True):
-    self.software_json_file = os.path.join(self.software_root, 'software.cfg.json')
-    software_schema = {
-      "name": "Test",
-      "serialisation": self.serialisation,
-      "software-type": {
-        "default": {
-          "title": "Default",
-          "software-type": "default",
-          "request": "instance-default-input.json",
-          "index": 0,
+  SCHEMA = "https://json-schema.org/draft/2019-09/schema"
+  FILENAME = '%s-input.json'
+
+  VALID_DEFAULTS = {
+    "string": "hello",
+    "integer": 42,
+    "object": {},
+  }
+
+  INVALID_DEFAULTS = {
+    "string": 3110,
+    "integer": "forty-two",
+    "object": None,
+  }
+
+  def writeJson(self, filename, content):
+    filepath = os.path.join(self.software_root, filename)
+    with open(filepath, 'w') as f:
+      json.dump(content, f)
+    return filepath
+
+  def writeSoftwareJson(self, main, shared):
+    schemas = []
+    schemas.extend((t, False, f) for t, f in main)
+    schemas.extend((t, True, f) for t, f in shared)
+    self.software_json_file = self.writeJson(
+      'software.cfg.json',
+      {
+        "name": "Test",
+        "serialisation": self.serialisation,
+        "software-type": {
+          t + ('/*' if s else ''): {
+            "title": t.capitalize(),
+            "software-type": t,
+            "shared": s,
+            "request": f,
+            "index": i,
+          }
+          for i, (t, s, f) in enumerate(schemas)
+        }
+      }
+    )
+
+  def writeObjectSchema(self, name, properties, required=None):
+    filename = self.FILENAME % name
+    self.writeJson(
+      filename,
+      {
+        "$schema": self.SCHEMA,
+        "$defs": {
+          name: {
+            "type": "object",
+            "properties": properties,
+            "required": required or [],
+          },
         },
-        "default/*": {
-          "title": "Default",
-          "shared": True,
-          "software-type": "default",
-          "request": "shared-default-input.json",
-          "index": 0,
+        "unevaluatedProperties": False,
+        "allOf": [{"$ref": "#/$defs/" + name},]
+      }
+    )
+    return filename
+
+  def writeJsonSchema(self, valid_defaults=True):
+    # Main parameters
+    main = self.writeObjectSchema(
+      'instance-default',
+      {
+        "letter": {
+          "type": "string",
+          "enum": ["a", "b", "c"],
+          "default": "a" if valid_defaults else 1,
+        },
+        "number": {
+          "type": "integer",
+        },
+      },
+      required=["number"],
+    )
+    # Shared parameters
+    DEFAULTS = self.VALID_DEFAULTS if valid_defaults else self.INVALID_DEFAULTS
+    one_of = []
+    for i, t in enumerate(("string", "integer"), start=1):
+      properties = {
+        "kind": {
+          "const": i,
+        },
+        "thing": {
+          "type": t,
+          "default": DEFAULTS[t]
         },
       }
-    }
-    with open(self.software_json_file, 'w') as f:
-      json.dump(software_schema, f)
-    self.instance_json_file = os.path.join(self.software_root, 'instance-default-input.json')
-    properties = {
-      "letter": {
-        "type": "string",
-        "enum": ["a", "b", "c"],
-        "default": "a" if valid_defaults else 1,
-      },
-      "number": {
-        "type": "integer",
-      },
-    }
-    default_dict = {}
-    without_default = []
-    for key, obj in properties.items():
-      default = obj.get('default')
-      if default is None:
-        without_default.append(key)
-      else:
-        default_dict[key] = default
-    self.default_dict = default_dict
-    instance_schema = {
-      "$schema": "https://json-schema.org/draft/2019-09/schema",
-      "$defs": {
-        "instance-parameters": {
-          "type": "object",
-          "properties": properties,
-          "required": without_default,
-        },
-      },
-      "unevaluatedProperties": False,
-      "allOf": [{"$ref": "#/$defs/instance-parameters" },]
-    }
-    with open(self.instance_json_file, 'w') as f:
-      json.dump(instance_schema, f)
-    self.shared_json_file = os.path.join(self.software_root, 'shared-default-input.json')
-    shared_schema = {
-      "$schema": "https://json-schema.org/draft/2019-09/schema",
-      "type": "object",
-      "oneOf": [
-        {
-          "$ref": "shared-1-default-input.json"
-        },
-        {
-          "$ref": "shared-2-default-input.json"
-        },
-      ]
-    }
-    with open(self.shared_json_file, 'w') as f:
-      json.dump(shared_schema, f)
-    self.shared_1_json_file = os.path.join(self.software_root, 'shared-1-default-input.json')
-    shared_1_schema = {
-      "$schema": "https://json-schema.org/draft/2019-09/schema",
-      "type": "object",
-      "properties": {
-        "kind": {
-          "const": 1,
-        },
-        "thing": {
-          "type": "string",
-          "default": "hello" if valid_defaults else 1,
-        },
-      },
-      "required": ["kind"],
-    }
-    with open(self.shared_1_json_file, 'w') as f:
-      json.dump(shared_1_schema, f)
-    self.shared_2_json_file = os.path.join(self.software_root, 'shared-2-default-input.json')
-    shared_2_schema = {
-      "$schema": "https://json-schema.org/draft/2019-09/schema",
-      "type": "object",
-      "properties": {
-        "kind": {
-          "const": 2,
-        },
-        "thing": {
-          "type": "integer",
-          "default": 42 if valid_defaults else "forty-two",
-        },
-      },
-      "required": ["kind"],
-    }
-    with open(self.shared_2_json_file, 'w') as f:
-      json.dump(shared_2_schema, f)
-
+      one_of.append(self.writeObjectSchema(
+        'shared-%d-default' % i,
+        properties,
+        required=["kind"]
+      ))
+    shared = 'shared-default-input.json'
+    self.writeJson(
+      shared,
+      {
+        "$schema": self.SCHEMA,
+        "type": "object",
+        "oneOf": [
+          {"$ref": ref}  for ref in one_of
+        ]
+      }
+    )
+    self.writeSoftwareJson(
+      [('default', main)],
+      [('default', shared)]
+    )
 
   def patchSlap(self, parameters, shared=None, software_type='default'):
     shared = copy.deepcopy(shared) if shared else []
@@ -208,11 +212,6 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
     invalid = {d['reference']: d['parameters'] for d in invalid}
     return valid, invalid
 
-  def checkParametersWithDefaults(self, received_parameters, sent_parameters):
-    expected_dict = dict(self.default_dict)
-    expected_dict.update(sent_parameters)
-    self.assertEqual(received_parameters, expected_dict)
-
   def recoverStrToInt(self, sent_parameters, keys):
     return {k : int(v) if k in keys else v for k, v in sent_parameters.items()}
 
@@ -222,9 +221,10 @@ class JsonSchemaTest(JsonSchemaTestCase):
   def test_jsonschema_valid_input_with_defaults(self):
     self.writeJsonSchema()
     parameters = {"number": 1}
+    expected = {"letter": "a", "number": 1}
     with self.patchSlap(parameters):
       received = self.receiveParameters()
-      self.checkParametersWithDefaults(received, parameters)
+      self.assertEqual(received, expected)
 
   def test_jsonschema_valid_input_without_defaults(self):
     self.writeJsonSchema()
@@ -243,16 +243,17 @@ class JsonSchemaTest(JsonSchemaTestCase):
   def test_jsonschema_valid_input_with_only_main_defaults(self):
     self.writeJsonSchema()
     parameters = {"number": 1}
+    expected = {"letter": "a", "number": 1}
     with self.patchSlap(parameters):
       received = self.receiveParameters({'set-default': 'main'})
-      self.checkParametersWithDefaults(received, parameters)
+      self.assertEqual(received, expected)
 
   def test_jsonschema_valid_input_full(self):
     self.writeJsonSchema()
     parameters = {"letter": "b", "number": 1}
     with self.patchSlap(parameters):
       received = self.receiveParameters()
-      self.checkParametersWithDefaults(received, parameters)
+      self.assertEqual(received, parameters)
 
   def test_jsonschema_wrong_type_input(self):
     self.writeJsonSchema()
@@ -307,8 +308,10 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     shared = [{"kind": 1}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(invalid, {})
-      self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
+      self.assertEqual(
+        (list(valid.values()), invalid),
+        ([{"kind": 1, "thing": "hello"}], {})
+      )
 
   def test_jsonschema_shared_2_valid_defaults(self):
     self.writeJsonSchema()
@@ -316,8 +319,10 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     shared = [{"kind": 2}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(invalid, {})
-      self.assertEqual(list(valid.values()), [{"kind": 2, "thing": 42}])
+      self.assertEqual(
+        (list(valid.values()), invalid),
+        ([{"kind": 2, "thing": 42}], {})
+      )
 
   def test_jsonschema_shared_1_invalid_defaults(self):
     self.writeJsonSchema(valid_defaults=False)
@@ -325,18 +330,21 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     shared = [{"kind": 1}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(valid, {})
-      self.assertEqual(list(invalid.values()), [{"kind": 1, "thing": 1}])
+      self.assertEqual(
+        (valid, list(invalid.values())),
+        ({}, [{"kind": 1, "thing": 3110}])
+      )
 
   def test_jsonschema_shared_2_invalid_defaults(self):
     self.writeJsonSchema(valid_defaults=False)
     parameters = {"number": 1, "letter": "a"}
     shared = [{"kind": 2}]
     with self.patchSlap(parameters, shared):
-      valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(valid, {})
-      invalid_values = list(invalid.values())
-      self.assertEqual(invalid_values, [{"kind": 2, "thing": "forty-two"}])
+      valid, invalid = self.receiveSharedParameters({'set-default': 'shared'})
+      self.assertEqual(
+        (valid, list(invalid.values())),
+        ({}, [{"kind": 2, "thing": "forty-two"}])
+      )
 
   def test_jsonschema_shared_2_valid_without_defaults(self):
     self.writeJsonSchema()
@@ -368,18 +376,22 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     shared = [{"kind": 1}, {"kind": 2}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(invalid, {})
       expected = [{"kind": 1, "thing": "hello"}, {"kind": 2, "thing": 42}]
-      self.assertEqual(list(valid.values()), expected)
+      self.assertEqual(
+        (list(valid.values()), invalid),
+        (expected, {})
+      )
 
   def test_jsonschema_shared_invalid_kind(self):
     self.writeJsonSchema()
     parameters = {"number": 1}
-    shared = [{"kind": 3}]
+    shared = [{"kind": 0}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(valid, {})
-      self.assertEqual(list(invalid.values()), [{"kind": 3}])
+      self.assertEqual(
+        (valid, list(invalid.values())),
+        ({}, [{"kind": 0}])
+      )
 
   def test_jsonschema_shared_1_invalid_thing(self):
     self.writeJsonSchema()
@@ -387,8 +399,10 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     shared = [{"kind": 1, "thing": {}}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(valid, {})
-      self.assertEqual(list(invalid.values()), [{"kind": 1, "thing": {}}])
+      self.assertEqual(
+        (valid, list(invalid.values())),
+        ({}, [{"kind": 1, "thing": {}}])
+      )
 
   def test_jsonschema_shared_2_invalid_thing(self):
     self.writeJsonSchema()
@@ -415,8 +429,10 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
     with self.patchSlap(parameters, shared):
       valid, invalid = self.receiveSharedParameters()
-      self.assertEqual(list(valid.values()), [{"kind": 1, "thing": "hello"}])
-      self.assertEqual(list(invalid.values()), [{"kind": 2, "thing": "hello"}])
+      self.assertEqual(
+        (list(valid.values()), list(invalid.values())),
+        ([{"kind": 1, "thing": "hello"}], [{"kind": 2, "thing": "hello"}])
+      )
 
   def test_jsonschema_shared_valid_and_invalid_skip_shared(self):
     self.writeJsonSchema()
