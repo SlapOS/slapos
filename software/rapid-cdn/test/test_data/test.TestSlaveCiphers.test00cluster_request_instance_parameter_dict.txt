@@ -75,6 +75,7 @@
       "backend-connect-timeout": 5,
       "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "domain": "example.com",
       "enable-http2-by-default": true,
       "enable-http3": false,
@@ -91,7 +92,8 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 600,
-      "slave-kedifa-information": "{\"_default_ciphers\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@default_ciphers_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@default_ciphers_key-generate-auth-url@@/@@default_ciphers_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@default_ciphers_key-generate-auth-url@@?auth=\"}, \"_own_ciphers\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@own_ciphers_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@own_ciphers_key-generate-auth-url@@/@@default_ciphers_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@own_ciphers_key-generate-auth-url@@?auth=\"}}"
+      "slave-kedifa-information": "{\"_default_ciphers\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@default_ciphers_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@default_ciphers_key-generate-auth-url@@/@@default_ciphers_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@default_ciphers_key-generate-auth-url@@?auth=\"}, \"_own_ciphers\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@own_ciphers_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@own_ciphers_key-generate-auth-url@@/@@default_ciphers_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@own_ciphers_key-generate-auth-url@@?auth=\"}}",
+      "xlog-fluentbit-forward-port": 24224
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
