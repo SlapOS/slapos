@@ -130,6 +130,69 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
       }
     )
 
+  def writeComplexVehiculeSchema(self):
+    return self.writeSchema(
+      'complex-vehicule',
+      {
+        "title": "Vehicule",
+        "type": "object",
+        "oneOf": [
+          {
+            "title": "Wheeled and motorized (e.g. Car)",
+            "type": "object",
+            "required": ["wheels", "motor"],
+            "properties": {
+              "wheels": {},
+              "motor": {},
+              "windshield-wipers": {
+                "type": "boolean",
+                "default": True,
+              },
+            }
+          },
+          {
+            "title": "Wheeled or motorized but not both",
+            # The idea is that car-like instances will validate both the
+            # bike-like and boat-like subschema, and thus not the oneOf.
+            # We need to check that defaults from these locally valid
+            # subschemas are not applied to car-like instances!
+            "oneOf": [
+              {
+                "title": "Wheeled but not motorized (e.g. Bike)",
+                "type": "object",
+                "properties": {
+                  "wheels": {},
+                  "bell": {
+                    "type": "boolean",
+                    "default": True,
+                  },
+                },
+                "required": ["wheels"],
+              },
+              {
+                "title": "Motorized but not wheeled (e.g. Boat)",
+                "type": "object",
+                "properties": {
+                  "motor": {},
+                  "propeller": {
+                    "type": "boolean",
+                    "default": True,
+                  },
+                },
+                "required": ["motor"],
+              }
+            ]
+          },
+        ]
+      }
+    )
+
+  def writeComplexJsonSchema(self):
+    self.writeSoftwareJson(
+      [('default', self.writeComplexVehiculeSchema())],
+      []
+    )
+
   def writeJsonSchema(self, valid_defaults=True, ref_thing=True):
     # Main parameters
     main = self.writeObjectSchema(
@@ -305,6 +368,18 @@ class JsonSchemaTest(JsonSchemaTestCase):
         slapconfiguration.UserError,
         self.receiveParameters,
       )
+
+  def test_complex_jsonschema_car_without_defaults(self):
+    self.writeComplexJsonSchema()
+    # This car-like instance should only obtain defaults from the
+    # 'car' schema, not the 'bike' or the 'boat' one, even though
+    # it locally validates both, because neither 'bike' nor 'boat'
+    # are part of a valid validation path for the whole instance.
+    car_parameters = { "wheels": {}, "motor": {}}
+    with self.patchSlap(car_parameters):
+      received = self.receiveParameters()
+      expected = dict(car_parameters, **{'windshield-wipers': True})
+      self.assertEqual(received, expected)
 
 
 class JsonSchemaTestUnserialised(JsonSchemaTest):
