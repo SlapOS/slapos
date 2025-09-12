@@ -20,6 +20,21 @@ Unreleased
 
 Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
 
+Frontend access-log forwarding to Fluent Bit / Fluentd
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The frontend can now forward its access logs (Xlog) to a remote
+Fluentd / Fluent Bit server. Five new cluster parameters configure it:
+``xlog-fluentbit-forward-host`` (remote server address; forwarding stays
+off while it is empty), ``xlog-fluentbit-forward-port`` (default
+``24224``), ``xlog-fluentbit-forward-tls`` and
+``xlog-fluentbit-forward-tls-verify`` (TLS transport and certificate
+verification), and ``xlog-fluentbit-forward-shared-key`` (shared-key
+authentication). A Fluent Bit service and its forwarding/health promises
+are installed only when ``xlog-fluentbit-forward-host`` is set, so
+existing clusters are unaffected until they opt in. (`!1880 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/1880>`__)
+
 1.0.495 (2026-07-09)
 --------------------
 
