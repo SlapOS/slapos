@@ -523,14 +523,19 @@ class DefaultValidator(object):
           t = self.fetch_key('type', subschema, validator.resolver)
         except KeyError:
           continue
+        # Support the general case where "type" may be an array of strings
+        if isinstance(t, self.strings):
+          t = [t]
         value = instance.get(key)
         if type(value) in self.strings:
-          f = self.unstringify.get(t)
-          if f:
-            try:
-              instance[key] = f(value)
-            except ValueError:
-              pass
+          for t in t:
+            f = self.unstringify.get(t)
+            if f:
+              try:
+                instance[key] = f(value)
+                break
+              except ValueError:
+                pass
 
 
 class JsonSchema(Recipe):
