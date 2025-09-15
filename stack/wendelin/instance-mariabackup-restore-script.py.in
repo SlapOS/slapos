@@ -1,0 +1,120 @@
+#!{{ python_executable }}
+import argparse
+import glob
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+curl_executable = {{ repr(curl_executable) }}
+mariabackup_executable = {{ repr(bin_directory) }} + '/mariabackup'
+mbstream_executable = {{ repr(bin_directory) }} + '/mbstream'
+zstd_executable = {{ repr(bin_directory) }} + '/zstd'
+mariadb_data_directory = {{ repr(mariadb_data_directory) }}
+mariadb_backup_directory = {{ repr(mariadb_backup_directory) }}
+pid_file = {{ repr(pid_file) }}
+
+# Make sure mariadb is not already running
+if os.path.exists(pid_file):
+  with open(pid_file) as f:
+    pid = f.read()
+    if pid:
+      try:
+        os.kill(int(pid), 0)
+      except OSError:
+        pass
+      else:
+        print('Mariadb is already running with pid %s. Aborting.' % pid)
+        sys.exit(1)
+
+    else:
+      print('Cannot read Mariadb pidfile, assuming running. Aborting.')
+      sys.exit(1)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--mariabackup-url')
+parser.add_argument('--cert')
+parser.add_argument('--key')
+parser.add_argument('--cacert')
+parser.add_argument('--crlfile')
+args = parser.parse_args()
+curl_args = []
+for e in ('cert', 'key', 'cacert', 'crlfile'):
+  v = getattr(args, e)
+  if v:
+    curl_args += ['--%s' % e, v]
+
+if args.mariabackup_url:
+  print('Fetching remote backup from %s...' % args.mariabackup_url)
+  backup_list = subprocess.check_output(
+    [curl_executable] + curl_args + [args.mariabackup_url.rstrip('/') + '/index.txt']
+  ).decode('utf-8').splitlines()
+else:
+  print('Using local backup at %s...' % mariadb_backup_directory)
+  backup_list = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.xb.zstd')))
+print('Checking backup...')
+restore_backup_list = [e for e in backup_list if e.endswith('.full.xb.zstd')][-1:]
+if not restore_backup_list:
+  print('No full backup found. Aborting')
+  sys.exit(1)
+restore_backup_list.extend(
+  [e for e in backup_list if e > restore_backup_list[0] and e.endswith('.inc.xb.zstd')]
+)
+
+print('Deleting existing database...')
+if os.path.isdir(mariadb_data_directory):
+  shutil.rmtree(mariadb_data_directory)
+os.mkdir(mariadb_data_directory)
+
+print('Setting up an intermediary directory for restoration')
+temp_dir = mariadb_data_directory + '.restore.tmp'
+if os.path.isdir(temp_dir):
+  shutil.rmtree(temp_dir)
+os.mkdir(temp_dir)
+
+try:
+  print('Restoring database...')
+  for i, path in enumerate(restore_backup_list):
+    print(path)
+    if i == 0:
+      restore_directory = mariadb_data_directory
+      extra_mariabackup_args = []
+    else:
+      restore_directory = os.path.join(temp_dir, 'inc')
+      if os.path.isdir(restore_directory):
+        shutil.rmtree(restore_directory)
+      os.mkdir(restore_directory)
+      extra_mariabackup_args = ['--incremental-dir=%s' % restore_directory]
+    if args.mariabackup_url:
+      xb_file = os.path.join(temp_dir, path)
+      subprocess.check_call(
+        [curl_executable] + curl_args + [args.mariabackup_url.rstrip('/') + '/' + path,
+         '-o', xb_file]
+      )
+    else:
+      xb_file = path
+    process_zstd = subprocess.Popen([
+      zstd_executable, '-dcf', xb_file,
+    ], stdout=subprocess.PIPE)
+    process_mbstream = subprocess.Popen([
+      mbstream_executable, '-C', restore_directory, '-x',
+    ], stdin=process_zstd.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process_zstd.stdout.close()
+    stdout, stderr = process_mbstream.communicate()
+    print(stdout.decode('utf-8'))
+    if stderr:
+      print(stderr.decode('utf-8'))
+    if process_zstd.wait() != 0:
+      print('zstd: exit %s' % process_zstd.returncode)
+      sys.exit(int(process_zstd.returncode))
+    if process_mbstream.returncode != 0:
+      print('mbstream: exit %s' % process_mbstream.returncode)
+      sys.exit(int(process_mbstream.returncode))
+    print(subprocess.check_output([
+      mariabackup_executable, '--prepare', '--target-dir=%s' % mariadb_data_directory,
+    ] + extra_mariabackup_args).decode('utf-8'))
+finally:
+  shutil.rmtree(temp_dir)
+
+print('Backup restoration successfully completed.')
