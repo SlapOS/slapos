@@ -434,10 +434,11 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     parameters = {"number": 1, "letter": "a"}
     shared = [{"kind": 1}]
     with self.patchSlap(parameters, shared):
+      # Invalid defaults are not applied but make the instance appear invalid
       valid, invalid = self.receiveSharedParameters()
       self.assertEqual(
         (valid, list(invalid.values())),
-        ({}, [{"kind": 1, "thing": 3110}])
+        ({}, [{"kind": 1}])
       )
 
   def test_jsonschema_shared_2_invalid_defaults(self):
@@ -445,10 +446,11 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     parameters = {"number": 1, "letter": "a"}
     shared = [{"kind": 2}]
     with self.patchSlap(parameters, shared):
-      valid, invalid = self.receiveSharedParameters({'set-default': 'shared'})
+      valid, invalid = self.receiveSharedParameters()
+      # Invalid defaults are not applied but make the instance appear invalid
       self.assertEqual(
         (valid, list(invalid.values())),
-        ({}, [{"kind": 2, "thing": "forty-two"}])
+        ({}, [{"kind": 2}])
       )
 
   def test_jsonschema_shared_2_valid_without_defaults(self):
