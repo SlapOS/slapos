@@ -471,6 +471,7 @@ class DefaultValidator(object):
   def unstringify_properties(self, validator, properties, instance):
     # Attempt to unstringify stringified values back to their expected type
     if self.unstringify:
+      string = unicode if str is bytes else str
       for key, subschema in properties.items():
         try:
           # Types may be indirectly defined behind one or several $ref.
@@ -486,14 +487,19 @@ class DefaultValidator(object):
           t = self.fetch_key('type', subschema, validator.resolver)
         except KeyError:
           continue
-        unstringify = self.unstringify.get(t)
-        if unstringify:
-          value = instance.get(key)
-          if type(value) is str or (str is bytes and type(value) is unicode):
-            try:
-              instance[key] = unstringify(value)
-            except ValueError:
-              pass
+        # Support the general case where "type" may be an array of strings
+        if isinstance(t, string):
+          t = [t]
+        for t in t:
+          unstringify = self.unstringify.get(t)
+          if unstringify:
+            value = instance.get(key)
+            if type(value) is string:
+              try:
+                instance[key] = unstringify(value)
+                break
+              except ValueError:
+                pass
 
 
 class JsonSchema(Recipe):
