@@ -585,13 +585,13 @@
       "title": "Enable eNB/gNB xlog",
       "description": "Enable eNB/gNB statistic collection (Needed for KPI computation)",
       "type": "boolean",
-      "default": "true"
+      "default": true
     },
     "xlog_forwarding_enabled": {
       "title": "Enable eNB/gNB xlog forwarding",
       "description": "Enable eNB/gNB xlog forwarding through fluentbit",
       "type": "boolean",
-      "default": "true"
+      "default": true
     },
     "wendelin_telecom_software_release_url": {
       "title": "Wendelin Telecom Software Release URL",
