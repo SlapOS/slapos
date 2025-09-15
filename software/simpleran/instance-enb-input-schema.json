@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
     "user-authorized-key": {
@@ -585,13 +585,13 @@
       "title": "Enable eNB/gNB xlog",
       "description": "Enable eNB/gNB statistic collection (Needed for KPI computation)",
       "type": "boolean",
-      "default": "true"
+      "default": true
     },
     "xlog_forwarding_enabled": {
       "title": "Enable eNB/gNB xlog forwarding",
       "description": "Enable eNB/gNB xlog forwarding through fluentbit",
       "type": "boolean",
-      "default": "true"
+      "default": true
     },
     "wendelin_telecom_software_release_url": {
       "title": "Wendelin Telecom Software Release URL",
@@ -613,6 +613,11 @@
     "xlog_fluentbit_forward_shared_key": {
       "title": "Fluentbit Xlog forwarding shared key",
       "description": "Secret key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
+      "type": "string"
+    },
+    "amarisoft_version": {
+      "title": "Amarisoft Version",
+      "description": "Expert: force amarisoft version",
       "type": "string"
     }
   },

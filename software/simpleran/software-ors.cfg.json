@@ -36,10 +36,10 @@
       "index": 5
     },
     "core-network-slave": {
-      "title": "Core Network Sim Card",
-      "description": "Core Network Sim Card Configuration",
+      "title": "Core Network Sim Card or Local DNS Entry",
+      "description": "Core Network Sim Card or Local DNS Entry Configuration",
       "software-type": "core-network",
-      "request": "sim/input-schema.json",
+      "request": "core-network-shared-input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
       "index": 6
