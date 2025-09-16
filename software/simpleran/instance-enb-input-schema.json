@@ -208,7 +208,7 @@
           }
         }
       },
-      "default": []
+      "default": [{"sst": 1, "sd": "0x000032"}]
     },
     "handover_a1_rsrp": {
       "title": "Handover A1 event RSRP threshold",
