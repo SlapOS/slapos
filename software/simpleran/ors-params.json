@@ -38,6 +38,9 @@
     },
     "amarisoft_version": {
       "$ref": "instance-enb-input-schema.json#/properties/amarisoft_version"
+    },
+    "lock": {
+      "type": "string"
     }
   }
 }
