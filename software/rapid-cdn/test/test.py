@@ -410,6 +410,16 @@ class TestDataMixin(object):
       ] = generateHashFromFiles(
         [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
       )
+    for trafficserver_config_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'trafficserver')):
+      records_config = os.path.join(
+        trafficserver_config_path, 'records.config')
+      storage_config = os.path.join(
+        trafficserver_config_path, 'storage.config')
+      partition_id = trafficserver_config_path.split('/')[-3]
+      data_replacement_dict['{hash-trafficserver-%s}' % (partition_id)] =  \
+          generateHashFromFiles([
+            storage_config, records_config] + hash_file_list)
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(
