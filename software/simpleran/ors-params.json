@@ -38,6 +38,11 @@
     },
     "amarisoft_version": {
       "$ref": "instance-enb-input-schema.json#/properties/amarisoft_version"
+    },
+    "lock": {
+      "title": "Force reprocess",
+      "description": "Expert only: change this parameter value to force reprocess of partition",
+      "type": "string"
     }
   }
 }
