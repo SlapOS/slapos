@@ -126,6 +126,11 @@
       "title": "S6 Origin Host",
       "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
       "type": "string"
+    },
+    "lock": {
+      "title": "Force reprocess",
+      "description": "Expert only: change this parameter value to force reprocess of partition",
+      "type": "string"
     }
   }
 }
