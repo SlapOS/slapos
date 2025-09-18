@@ -33,8 +33,8 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.max_retries = 1
             cls.retry_delay = 1  # seconds
 
-            mnc  = '02'
-            mcc = '001'
+            mnc  = '99'
+            mcc = '999'
             plmn = mcc + mnc
             mnc = (3 - len(mnc)) * '0' + mnc
 
