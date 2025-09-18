@@ -218,11 +218,6 @@ class Recipe(object):
               if valid_ipv4(network):
                 route_net_add(network)
 
-      # validate the parameters (only when using JsonSchema recipe)
-      # after popping the custom values sent by slapos master
-      # but before adding the value from .slapos-resources file
-      parameter_dict = self._validateParameterDict(options,parameter_dict)
-
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
 
@@ -290,84 +285,224 @@ class Serialised(Recipe):
 
 
 class DefaultValidator(object):
-  def __init__(self, schema, set_defaults=False, unstringify=None):
-    self.schema = schema
+  def __init__(self, set_defaults=False, unstringify=None):
     self.set_defaults = set_defaults
     self.unstringify = unstringify
-    self.validatorfor = v = jsonschema.validators.validator_for(schema)
-    # Retain original properties validator
-    validate_properties = v.VALIDATORS["properties"]
-    # Define new properties validator
-    def collect_defaults(validator, properties, instance, schema):
-      # Attempt to unstringify stringified values back to their expected type
-      if self.unstringify:
-        for key, subschema in properties.items():
-          unstringify = self.unstringify.get(subschema.get('type'))
-          if unstringify:
-            value = instance.get(key)
-            if type(value) is str or (str is bytes and type(value) is unicode):
-              try:
-                instance[key] = unstringify(value)
-              except ValueError:
-                pass
-      # Call original properties validator
-      error = False
-      for e in validate_properties(validator, properties, instance, schema):
-        error = True
+    self.applied_schemas = []
+    self.memoized_defaults = {}
+    self.applied_defaults = {}
+    self.VALIDATORS = {}
+    self.original_validator_for = jsonschema.validators.validator_for
+
+  def create(self, schema):
+    # Fetch standard validator class
+    v = self.original_validator_for(schema)
+    # Create new validator class with extended properties validation
+    original_properties = v.VALIDATORS['properties']
+    def properties(validator, properties, instance, schema):
+      self.unstringify_properties(validator, properties, instance)
+      e = None
+      for e in original_properties(validator, properties, instance, schema):
         yield e
-      # Collect defaults if the instance validates this schema
-      if self.set_defaults and not error:
-        for key, subschema in properties.items():
-          if "default" in subschema:
-            try:
-              _, defaults = self.defaults[id(instance)]
-            except KeyError:
-              defaults = defaultdict(dict)
-              self.defaults[id(instance)] = instance, defaults
-            defaults[key][id(subschema)] = subschema["default"]
-    # Extend validator class with extended properties validator
-    kls = jsonschema.validators.extend(v, {"properties" : collect_defaults})
-    self.validator = kls(schema)
+      if self.set_defaults and e is None:
+        # Defaults may be indirectly defined behind one or several $ref.
+        # We resolve and memoize defaults now during validation instead
+        # of later in case it affects internal $ref that refer to $defs
+        # higher in the validation path.
+        self.memoize_defaults(validator, properties)
+    kls = jsonschema.validators.extend(v, {'properties': properties})
+    # Further extend behavior to collect (sub)schemas that apply
+    #
+    # Due to conditional constructs like oneOf & anyOf, there may be
+    # instances with sub-sub-instances of sub-instances such that
+    # a) the instance as a whole valides the whole schema,
+    # b) the sub-instance I does not validate some sub-schema S,
+    # c) a sub-sub-instance I' of I valides a sub-sub-schema S' of S.
+    # Then I' validates S', but that is not enough to conclude that the
+    # defaults of S' should apply to I'.
+    #
+    # The defaults from a (sub)schema should only be applied to a (sub)instance
+    # if that (sub)instance and (sub)schema are on a valid validation path.
+    original_iter_errors = kls.iter_errors
+    def iter_errors(validator, instance, *args):
+      # *args: BBB py2 jonschema v3.0.2
+      schema = args[0] if args else validator.schema
+      e = None
+      index = len(self.applied_schemas)
+      for e in original_iter_errors(validator, instance, *args):
+        del self.applied_schemas[index:]
+        yield e
+      if e is None and schema.get('properties'):
+        # Keep validator instead of validator.schema to reuse validator.
+        # Keep base_uri to reconstruct correct resolution scope later.
+        base_uri = validator.resolver.base_uri
+        self.applied_schemas.append((validator, schema, base_uri, instance))
+    kls.iter_errors = iter_errors
+    return kls
+
+  def validator_for(self, schema, *args, **kw):
+    if isinstance(schema, bool):
+      return self.original_validator_for(schema, *args, **kw)
+    version = schema.get('$schema')
+    try:
+      return self.VALIDATORS[version]
+    except KeyError:
+      kls = self.create(schema)
+      self.VALIDATORS[version] = kls
+      return kls
 
   @contextmanager
   def propagate(self):
     # Workaround https://github.com/python-jsonschema/jsonschema/issues/994
-    # This only works if all $ref schemas have the same $schema as the first.
-    version = self.schema.get("$schema")
     try:
-      if version is not None:
-        jsonschema.validators.validates(version)(type(self.validator))
+      jsonschema.validators.validator_for = self.validator_for
       yield
     finally:
-      if version is not None:
-        jsonschema.validators.validates(version)(self.validatorfor)
+      jsonschema.validators.validator_for = self.original_validator_for
 
-  def validate(self, instance):
-    if self.set_defaults or self.unstringify:
-      # Initialise default collection
-      self.defaults = {}
-      # Validate instance
-      invalid = False
-      with self.propagate():
-        for error in self.validator.iter_errors(instance):
-          invalid = True
+  def validate(self, schema, instance):
+    with self.propagate():
+      # Validate the instance with the extended validator
+      e = None
+      for e in self.validator_for(schema)(schema).iter_errors(instance):
+        yield e
+      # Recursively collect and validate defaults of applying schemas
+      if self.set_defaults and e is None:
+        for e in self.collect_defaults():
+          yield e
+        # Apply collected defaults
+        if e is None:
+          self.apply_defaults()
+          # Validate the updated instance for sanity and safety
+          original_validator = self.original_validator_for(schema)
+          for e in original_validator(schema).iter_errors(instance):
+            yield e
+
+  def fetch_key(self, key, schema, resolver):
+    try:
+      return schema[key]
+    except KeyError:
+      pass
+    ref = schema['$ref']
+    # This uses the internal RefResolver of jsonschema now deprecated in
+    # favor of the referencing library. But we still use 4.17.3 which is
+    # still using RefResolver. Also referencing library is Python3 only.
+    with resolver.resolving(ref) as resolved:
+      return self.fetch_key(key, resolved, resolver)
+
+  def memoize_defaults(self, validator, properties):
+    # Note: this does not and does not aim to find conditional defaults,
+    # e.g. such as defaults specified behind a oneOff, like in:
+    # {
+    #   "oneOf" [
+    #     { type: "integer", "default": 1 },
+    #     { type: "string", "default": "hello" }
+    #   ]
+    # }
+    # Such defaults do not make sense anyway, as they do not allow to
+    # distinguish between the cases of the oneOf.
+    #
+    # It could be desirable to find defaults behind allOf, such as:
+    # {
+    #   "allOf" [
+    #     { "type": "integer" },
+    #     { "default": 1 }
+    #   ]
+    # }
+    # Such cases are also not supported. But this limitation is acceptable,
+    # because it is always possible to move the default outside of the allOf,
+    # and if different branches had different defaults there would be no way
+    # to choose one above the others.
+    #
+    # If needed it might be possible to solve this limitation later.
+    for subschema in properties.values():
+      if id(subschema) in self.memoized_defaults:
+        continue
+      try:
+        default = self.fetch_key('default', subschema, validator.resolver)
+      except KeyError:
+        continue
+      self.memoized_defaults[id(subschema)] = default
+
+  def collect_defaults(self):
+    index = 0
+    while index < len(self.applied_schemas):
+      validator, schema, base_uri, instance = self.applied_schemas[index]
+      index += 1 # iterate over a potentially growing list
+      properties = schema.get('properties')
+      if not properties:
+        continue
+      # Reconstruct correct resolution scope
+      validator.resolver.push_scope(base_uri)
+      # Recursively collect defaults
+      for key, subschema in properties.items():
+        # Only consider defaults that will be applied
+        if key in instance:
+          continue
+        # Obtain the default value if there is one
+        try:
+          default = self.memoized_defaults[id(subschema)]
+        except KeyError:
+          continue
+        # Record the default value and where it comes from
+        try:
+          _, record = self.applied_defaults[id(instance)]
+        except KeyError:
+          record = defaultdict(list)
+          self.applied_defaults[id(instance)] = instance, record
+        record[key].append((default, subschema, base_uri))
+        # Validate the defaults to recursively collect their defaults
+        for error in validator.descend(
+          default,
+          subschema,
+          path='default of ' + key,
+          schema_path=key,
+        ):
           yield error
-      # Stop there in case of validation errors
-      if invalid:
-        return
-      # Apply collected defaults
-      for data, defaults in self.defaults.values():
-        for key, defaultdict in defaults.items():
-          if key not in data:
-            it = iter(defaultdict.values())
-            default = next(it)
-            if any(d != default for d in it):
-              raise UserError(
-                "Conflicting defaults for key %s: %r" % (key, defaultlist))
-            data[key] = default
-    # Validate the updated instance
-    for error in self.validatorfor(self.schema).iter_errors(instance):
-      yield error
+
+  def apply_defaults(self):
+    for instance, record in self.applied_defaults.values():
+      for key, collected in record.items():
+        it = iter(collected)
+        default, _, _ = next(it)
+        if any(d != default for d, _, _ in it):
+          raise UserError(
+            "Conflicting defaults for key %s: %r" % (key, collected))
+        instance[key] = default
+
+  def unstringify_properties(self, validator, properties, instance):
+    # Attempt to unstringify stringified values back to their expected type
+    if self.unstringify:
+      # BBB Py2: Accept both str and unicode strings
+      strings = (unicode, str) if str is bytes else (str,)
+      for key, subschema in properties.items():
+        try:
+          # Types may be indirectly defined behind one or several $ref.
+          # Note: this does not and does not aim to support the case where
+          # the type is conditional, e.g. defined behind a oneOf, such as:
+          # {
+          #   "oneOf" [
+          #     { "type": "integer" },
+          #     { "type": "string" }
+          #   ]
+          # }
+          # In such cases, we do not aim to support unstringifying.
+          t = self.fetch_key('type', subschema, validator.resolver)
+        except KeyError:
+          continue
+        # Support the general case where "type" may be an array of strings
+        if isinstance(t, strings):
+          t = [t]
+        for t in t:
+          unstringify = self.unstringify.get(t)
+          if unstringify:
+            value = instance.get(key)
+            if type(value) in strings:
+              try:
+                instance[key] = unstringify(value)
+                break
+              except ValueError:
+                pass
 
 
 class JsonSchema(Recipe):
@@ -416,22 +551,22 @@ class JsonSchema(Recipe):
         url = urljoin(software_description.software_url, type_dict['request'])
         return software_description._readAsJson(url, True)
 
-  def _parseParameterDict(self, validator, parameter_dict):
+  def _validateMain(self, schema, validator, parameter_dict):
     instance = parameter_dict if isinstance(parameter_dict, dict) else {}
-    errors = list(validator.validate(instance))
+    errors = list(validator.validate(schema, instance))
     if errors:
       err = SoftwareReleaseSchemaValidationError(errors).format_error(indent=2)
       msg = "Invalid parameters:\n" + err
       raise UserError(msg)
     return instance
 
-  def _parseSharedParameterDict(self, validator, shared_list):
+  def _validateShared(self, schema, validator, shared_list):
     valid, invalid = [], []
     for instance in shared_list:
       reference = instance.pop('slave_reference')
       instance = unwrap(instance)
       try:
-        errors = list(validator.validate(instance))
+        errors = list(validator.validate(schema, instance))
       except UserError as e:
         errors = list(e.args)
       shared_item = {'reference': reference, 'parameters': instance}
@@ -442,7 +577,7 @@ class JsonSchema(Recipe):
         valid.append(shared_item)
     return valid, invalid
 
-  ParsedOption = namedtuple('ParsedOption', ['main', 'shared'])
+  ParsedOption = namedtuple("ParsedOption", ['main', 'shared'])
   def _parseOption(self, options, key, default):
     value = options.get(key, default)
     accepted = ('none', 'main', 'shared', 'all')
@@ -456,7 +591,7 @@ class JsonSchema(Recipe):
     # return: value in ('main', 'all'), value in ('shared', 'all')
     return self.ParsedOption(index & 1, index & 2)
 
-  def _validateParameterDict(self, options, parameter_dict):
+  def _expandParameterDict(self, options, parameter_dict):
     validate = self._parseOption(options, 'validate-parameters', 'all')
     set_defaults = self._parseOption(options, 'set-default', 'none')
     unstringify = self._parseOption(options, 'unstringify', 'none')
@@ -472,28 +607,27 @@ class JsonSchema(Recipe):
           "JSON schema entry in the software.cfg.json."
         )
       validator = DefaultValidator(
-        schema,
         set_defaults.main,
         {'integer': int} if unstringify.main else None,
       )
-      parameter_dict = self._parseParameterDict(validator, parameter_dict)
+      parameter_dict = self._validateMain(schema, validator, parameter_dict)
     if validate.shared:
       shared_list = options.pop('slave-instance-list')
       if shared_list:
-        shared_schema = self._getSharedSchema(software_description)
-        if shared_schema is None:
+        schema = self._getSharedSchema(software_description)
+        if schema is None:
           raise UserError(
             "requested shared software-type %r seems to have no "
-            "JSON schema entry in the software.cfg.json." % software_description.software_type
+            "JSON schema entry in the software.cfg.json."
+            % software_description.software_type
           )
         validator = DefaultValidator(
-          shared_schema,
           set_defaults.shared,
           {'integer': int} if unstringify.shared else None,
         )
       else:
-        validator = None
-      valid, invalid = self._parseSharedParameterDict(validator, shared_list)
+        schema = validator = None
+      valid, invalid = self._validateShared(schema, validator, shared_list)
       options['valid-shared-instance-list'] = valid
       options['invalid-shared-instance-list'] = invalid
     options['configuration'] = parameter_dict
