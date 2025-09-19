@@ -6,6 +6,9 @@ import time
 import slapos.testing.e2e as e2e
 from websocket import create_connection
 
+# 1758288572
+DEV = True
+
 class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
     def setUpClass(cls):
@@ -13,10 +16,15 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             super().setUpClass()
 
             cls.logger.info("Setting up class")
-
-            cls.enb_instance_name = 'e2e-ors70-enb-2'
-            cls.core_network_instance_name = 'e2e-ors70-mme-1737037360'
-            cls.core_network_sim_instance_name = 'e2e-ors70-sim-card-1737037360'
+            
+            if DEV:
+                cls.enb_instance_name = 'ors70-dev-enb'
+                cls.core_network_instance_name = 'ors70-dev-core-network'
+                cls.core_network_sim_instance_name = 'ors70-dev-sim'
+            else:
+                cls.enb_instance_name = 'e2e-ors70-enb-2'
+                cls.core_network_instance_name = 'e2e-ors70-mme-1737037360'
+                cls.core_network_sim_instance_name = 'e2e-ors70-sim-card-1737037360'
             cls.ue_instance_name = 'e2e-sb005-ue-tagged'
             cls.ue_cell_instance_name = 'e2e-sb005-ue-cell-tagged'
             cls.ue_ue_instance_name = 'e2e-sb005-ue-ue-tagged'
@@ -25,43 +33,43 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.max_retries = 1
             cls.retry_delay = 1  # seconds
 
-            mnc  = '02'
-            mcc = '001'
+            mnc  = '99'
+            mcc = '999'
             plmn = mcc + mnc
             mnc = (3 - len(mnc)) * '0' + mnc
 
             cls.parameters = {}
             cls.parameters['enb'] = {
-                  'bandwidth': '10 MHz',
-                  'dl_earfcn': 38350,
-                  'plmn_list': {
-                    plmn: {
-                      'plmn': plmn
-                    }
-                   },
-                  'enb_drb_stats_enabled': False,
-                  'xlog_forwarding_enabled': False,
-                  'amarisoft_version': '2024-03-15.1727098076'
+                "cell1": {
+                    "bandwidth": "10 MHz",
+                    "dl_earfcn": 38350,
+                },
+                "nodeb": {
+                    "plmn_list": [
+                        {
+                            "plmn": plmn,
+                        },
+                    ],
+                },
+                "management": {
+                    "xlog_enabled": False,
+                    "xlog_forwarding_enabled": False,
+                },
             }
             cls.parameters['core-network#sim'] = {
-                  'sim_algo': 'milenage',
-                  'imsi': f'{plmn}0000000001',
-                  'opc': '000102030405060708090A0B0C0D0E0F',
-                  'amf': '0x9001',
-                  'sqn': '000000000000',
-                  'k': '00112233445566778899AABBCCDDEEFF',
-                  'impu': f'{plmn}0000000001',
-                  'impi': f'{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org'
+                "sim_algo": "milenage",
+                "plmn": plmn,
+                "msin": "0000000001",
+                "opc": "000102030405060708090A0B0C0D0E0F",
+                "k": "00112233445566778899AABBCCDDEEFF",
             }
             cls.parameters['core-network'] = {
                    'core_network_plmn': plmn,
-                   'iperf3': True,
+                   'iperf3': 1,
                    'network_name': 'E2E Testing',
                    'network_short_name': 'E2E Testing',
-                  'amarisoft_version': '2024-03-15.1727098076'
             }
             cls.parameters['ue'] = {
-                  'amarisoft_version': '2022-12-16.1733497882'
             }
             cls.parameters['ue#cell'] = {
                   'cell_type': 'lte',
@@ -73,10 +81,10 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       'sdr_dev_list': [
                           0
                       ],
-                      'n_antenna_dl': 2,
-                      'n_antenna_ul': 2,
+                      'n_antenna_dl': 1,
+                      'n_antenna_ul': 1,
                       'tx_gain': 90,
-                      'rx_gain': 60,
+                      'rx_gain': 45,
                       'txrx_active': 'ACTIVE'
                   },
                   'dl_earfcn': 38350,
@@ -151,12 +159,18 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         while lock and not shared:
           cls.logger.info(f"Waiting for lock to be released for {instance_name}...")
           lock = time.time()
-          previous_lock = float(instance_infos.parameter_dict['_'].get('lock', 0))
+          if sr_type == "enb":
+            previous_lock = float(instance_infos.parameter_dict['_'].get('management', {}).get('lock', 0))
+          else:
+            previous_lock = float(instance_infos.parameter_dict['_'].get('lock', 0))
           # If previous lock is more than 6 hours old, then we assume the previous
           # test exited without properly releasing the lock
           if (lock - previous_lock) > (3600 * 6):
             parameters = json.loads(parameters['_'])
-            parameters['lock'] = lock
+            if sr_type == "enb":
+              parameters.setdefault('management', {})['lock'] = str(lock)
+            else:
+              parameters['lock'] = str(lock)
             parameters = {'_': json.dumps(parameters)}
             break
           # Sleep a random amount between 1 and 10 minutes to avoid multiple test
@@ -166,7 +180,10 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         # Unlock
         if lock == False:
           parameters = json.loads(parameters['_'])
-          parameters.pop('lock', None)
+          if sr_type == "enb":
+            parameters.setdefault('management', {}).pop('lock', None)
+          else:
+            parameters.pop('lock', None)
           parameters = {'_': json.dumps(parameters)}
 
         cls.logger.info(f"Update {instance_name}")
