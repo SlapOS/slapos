@@ -101,7 +101,7 @@ context =
 
 [llamacpp-service]
 recipe = slapos.cookbook:wrapper
-command-line = $${directory:bin}/llamacpp-server-run.py
+command-line = ${buildout:executable} $${directory:bin}/llamacpp-server-run.py
 wrapper-path = $${directory:services}/llamacpp-service
 llamacpp-host = $${slap-configuration:ipv4-random}
 wait-for-files =
