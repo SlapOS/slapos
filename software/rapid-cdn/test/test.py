@@ -1041,6 +1041,28 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertIn('testing partition 0', result.text)
     self.assertIn('Statistics Report for HAProxy', result.text)
 
+  def assertTrafficserverIntrospectionUrl(self, parameter_dict):
+    url_key = 'frontend-node-1-trafficserver-introspection-url'
+    trafficserver_introspection_url_dict = {}
+    for key in list(parameter_dict.keys()):
+      if key.startswith('frontend-node') and key.endswith(
+        'trafficserver-introspection-url'):
+        trafficserver_introspection_url_dict[key] = parameter_dict.pop(key)
+    self.assertEqual(
+      [url_key],
+      list(trafficserver_introspection_url_dict.keys())
+    )
+
+    trafficserver_introspection_url = trafficserver_introspection_url_dict[
+      url_key]
+    result = mimikra.get(
+      trafficserver_introspection_url,
+      verify=False,
+    )
+    self.assertEqual(http.client.OK, result.status_code)
+    self.assertIn('testing partition 0', result.text)
+    self.assertIn('TrafficServer Introspection Index', result.text)
+
   def assertKeyWithPop(self, key, d):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
@@ -2107,6 +2129,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -5624,6 +5647,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6131,6 +6155,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6223,6 +6248,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6481,6 +6507,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
