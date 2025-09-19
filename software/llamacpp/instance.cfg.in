@@ -16,6 +16,7 @@ recipe = slapos.cookbook:slapconfiguration.jsonschema
 jsonschema = ${software.json:target}
 set-default = main
 validate-parameters = main
+unstringify = main
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -27,6 +28,9 @@ context =
   raw nginx_conf_in ${nginx.conf.in:target}
   raw nginx_location ${nginx:location}
   raw openssl_location ${openssl:location}
+  raw prebaked_repo_id  ${prebaked-model:repo_id}
+  raw prebaked_filename ${prebaked-model:filename}
+  raw prebaked_dir      ${prebaked-model:destdir}
 
 [dynamic-template-llamacpp]
 <= jinja2-template-base

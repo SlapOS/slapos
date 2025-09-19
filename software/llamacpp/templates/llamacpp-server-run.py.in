@@ -29,6 +29,7 @@ CACHE_TYPE_K     = "{{ cache_type_k }}"
 CACHE_TYPE_V     = "{{ cache_type_v }}"
 CTX              = "{{ ctx }}"
 LOG_FILE         = "{{ log_file }}"
+EMBEDDING        = "{{ embedding }}"
 
 def ensure_parent_dir(path: str) -> None:
     d = os.path.dirname(os.path.abspath(path))
@@ -67,13 +68,16 @@ def main() -> None:
         "-c", str(CTX),
         "-b", str(BATCH),
         "-ub", str(MICRO_BATCH),
-        "-fa",
+        "-ngl", str(NGL),
         "--cache-type-k", CACHE_TYPE_K,
         "--cache-type-v", CACHE_TYPE_V,
         "--mlock",
         "--no-warmup",
-        "-ngl", str(NGL),
+        "-fa", "on",
     ]
+
+    if int(EMBEDDING) == 1:
+        argv.append("--embeddings")
 
     os.execv(LLAMA_SERVER_BIN, argv)
 

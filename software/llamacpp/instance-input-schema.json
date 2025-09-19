@@ -59,17 +59,23 @@
       "type": "integer",
       "default": 999
     },
+    "embedding": {
+      "title": "Is embedding model",
+      "description": "This service runs embedding model",
+      "type": "integer",
+      "default": 0
+    },
     "hf_repo_id": {
       "title": "Hugging Face repository ID",
       "description": "Repository ID on Hugging Face Hub",
       "type": "string",
-      "default": "unsloth/gpt-oss-120b-GGUF"
+      "default": "unsloth/embeddinggemma-300m-GGUF"
     },
     "hf_filename": {
       "title": "Hugging Face filename",
       "description": "Model filename on Hugging Face Hub",
       "type": "string",
-      "default": "gpt-oss-120b-F16.gguf"
+      "default": "embeddinggemma-300m-Q4_0.gguf"
     },
     "hf_token": {
       "title": "Hugging Face token",
