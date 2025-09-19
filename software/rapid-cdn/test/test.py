@@ -50,6 +50,8 @@ import lzma
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
+from bs4 import BeautifulSoup
+import furl
 
 import datetime
 
@@ -1041,6 +1043,77 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertIn('testing partition 0', result.text)
     self.assertIn('Statistics Report for HAProxy', result.text)
 
+  def assertTrafficserverIntrospectionUrl(self, parameter_dict):
+    url_key = 'frontend-node-1-trafficserver-introspection-url'
+    trafficserver_introspection_url_dict = {}
+    for key in list(parameter_dict.keys()):
+      if key.startswith('frontend-node') and key.endswith(
+        'trafficserver-introspection-url'):
+        trafficserver_introspection_url_dict[key] = parameter_dict.pop(key)
+    self.assertEqual(
+      [url_key],
+      list(trafficserver_introspection_url_dict.keys())
+    )
+
+    trafficserver_introspection_url = trafficserver_introspection_url_dict[
+      url_key]
+    furled = furl.furl(trafficserver_introspection_url)
+    furled.username = None
+    furled.password = None
+    trafficserver_introspection_url_no_auth = furled.tostr()
+    result = mimikra.get(
+      trafficserver_introspection_url,
+      verify=False,
+    )
+    self.assertEqual(http.client.OK, result.status_code)
+    self.assertIn('testing partition 0', result.text)
+    self.assertIn('TrafficServer Introspection Index', result.text)
+    self.assertEqual(
+      http.client.UNAUTHORIZED,
+      mimikra.get(trafficserver_introspection_url_no_auth, verify=False)
+    )
+
+    parsed_result = BeautifulSoup(result.text)
+    link_list = [q.get('href') for q in parsed_result.find_all('a')]
+    self.assertEqual(
+      [
+        '/inspect-cache-internal/',
+        '/inspect-cache/',
+        '/inspect-hostdb/',
+        '/inspect-http/',
+        '/inspect-net/'
+      ],
+      sorted(link_list)
+    )
+
+    def assertResult(link, *text_list):
+      result = mimikra.get(
+        trafficserver_introspection_url + link, verify=False)
+      self.assertEqual(result.status_code, http.client.OK)
+      for text in text_list:
+        self.assertIn(text, result.text)
+      self.assertEqual(
+        http.client.UNAUTHORIZED,
+        mimikra.get(
+          trafficserver_introspection_url_no_auth + link, verify=False)
+      )
+
+    assertResult(
+      '/inspect-cache-internal/',
+      'Cache', 'Evacuations', 'Volumes')
+    assertResult(
+      '/inspect-cache/',
+      'Cache', 'Lookup url', 'Regex lookup')
+    assertResult(
+      '/inspect-hostdb/',
+      'HostDB', 'Lookup by name', 'Show all HostDB records')
+    assertResult(
+      '/inspect-http/',
+      'Http:SM List')
+    assertResult(
+      '/inspect-net/',
+      'Net', 'Connections', 'from IP', 'from Port')
+
   def assertKeyWithPop(self, key, d):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
@@ -1417,6 +1490,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -1450,6 +1524,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -2107,6 +2182,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -5624,6 +5700,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6131,6 +6208,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6223,6 +6301,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6481,6 +6560,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
