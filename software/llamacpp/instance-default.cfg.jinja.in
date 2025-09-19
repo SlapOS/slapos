@@ -64,10 +64,8 @@ context =
 
 [huggingface-cli-download]
 recipe = slapos.cookbook:wrapper
-command-line = $${directory:bin}/huggingface-cli-download-run.py
+command-line = ${buildout:executable} $${directory:bin}/huggingface-cli-download-run.py
 wrapper-path = $${directory:services}/huggingface-cli-download
-depends =
-  $${huggingface-cli-download-script:recipe}
 
 [huggingface-download-promise]
 <= monitor-promise-base
@@ -112,9 +110,6 @@ environment =
   LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
   HF_HOME=$${directory:cache}
   HUGGING_FACE_HUB_TOKEN={{ slapparameter_dict.get('hf_token') }}
-depends =
-  $${huggingface-cli-download:recipe}
-  $${huggingface-download-promise:recipe}
 
 [nginx-certificate]
 recipe = plone.recipe.command
