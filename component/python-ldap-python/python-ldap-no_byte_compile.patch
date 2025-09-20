@@ -1,0 +1,39 @@
+From 05c20af217d23dbe210584f917a6b5117121398f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sat, 20 Sep 2025 19:15:03 +0900
+Subject: [PATCH] SlapOS: do not compile / optimize, this is not supported with
+ our old setuptools
+
+causing an error like :
+      writing byte-compilation script '/srv/slapgrid/slappart15/tmp/tmpg8tpd63v.py'
+      /srv/slapgrid/slappart15/srv/runner/shared/python3/20e6d17ef6476e3289c41edbcf6579b8/bin/python3 /srv/slapgrid/slappart15/tmp/tmpg8tpd63v.py
+      Traceback (most recent call last):
+        File "/srv/slapgrid/slappart15/tmp/tmpg8tpd63v.py", line 1, in <module>
+          from distutils.util import byte_compile
+      ModuleNotFoundError: No module named 'distutils'
+
+similar issues / discussions
+    https://github.com/NixOS/nixpkgs/pull/326321
+    https://github.com/NixOS/nixpkgs/issues/326296
+---
+ setup.cfg | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/setup.cfg b/setup.cfg
+index 39c65a9..4c83564 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -6,10 +6,6 @@ defines = HAVE_SASL HAVE_TLS
+ extra_compile_args = 
+ extra_objects = 
+ 
+-[install]
+-compile = 1
+-optimize = 1
+-
+ [bdist_rpm]
+ provides = python-ldap
+ requires = python libldap-2
+-- 
+2.48.0
+
