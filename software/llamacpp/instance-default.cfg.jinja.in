@@ -1,6 +1,5 @@
 [buildout]
 parts =
-  huggingface-cli
   directory
   llamacpp-service
   huggingface-cli-download-script
@@ -12,20 +11,10 @@ parts =
   nginx-service
   nginx-frontend-promise
   llamacpp-frontend-promise
-  request-parameters
   publish-connection-parameter
 
 extends =
   {{ monitor_template_cfg }}
-
-[huggingface-cli]
-recipe = zc.recipe.egg
-eggs =
-  fsspec
-  tqdm
-  huggingface_hub
-scripts =
-  huggingface-cli
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -173,13 +162,6 @@ promise = check_url_available
 name = llamacpp-http-frontend.py
 url = $${request-frontend:connection-secure_access}
 config-url = $${:url}
-
-[request-parameters]
-recipe = slapos.cookbook:publish
-url = http://{{ slapparameter_dict.get('host') }}:{{ slapparameter_dict.get('port') }}/
-model = {{ slapparameter_dict.get('hf_repo_id') }}:{{ slapparameter_dict.get('hf_filename') }}
-ctx = {{ slapparameter_dict.get('ctx') }}
-ngl = {{ slapparameter_dict.get('ngl') }}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
