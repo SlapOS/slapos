@@ -121,8 +121,8 @@
   "$defs": {
     "tac": {
       "title": "Tracking Area Code",
-      "description": "Integer (range 0 to 16777215)",
-      "type": "number"
+      "description": "Tracking Area Code (range: 0x0001 to 0xffffff except 0xfffffe, format: integer or hexadecimal starting by 0x)",
+      "type": "string"
     }
   }
 }
