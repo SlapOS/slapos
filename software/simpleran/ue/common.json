@@ -8,9 +8,6 @@
   ],
   "properties": {
     "$ref": "../sim/input-schema.json#/properties",
-    "ue_type": {
-      "type": "string"
-    },
     "rue_addr": {
       "title": "[Required] Remote UE address",
       "description": "[Required] Address of remote UE server. Default port is 2152.",
@@ -32,6 +29,11 @@
     "opc": {
       "$ref": "../sim/input-schema.json#/properties/opc",
       "default": "milenage"
+    }
+  },
+  "$defs": {
+    "ue_type": {
+      "type": "string"
     }
   }
 }
