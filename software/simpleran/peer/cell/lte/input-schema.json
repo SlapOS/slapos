@@ -33,7 +33,7 @@
       "$ref": "../../../cell/lte/input-schema.json#/properties/dl_earfcn"
     },
     "pci": {
-      "$ref": "../../../cell/lte/input-schema.json#/$defs/pci"
+      "$ref": "../../../cell/lte/input-schema.json#/properties/pci"
     },
     "tac": {
       "$ref": "../../../cell/lte/input-schema.json#/properties/tac"
