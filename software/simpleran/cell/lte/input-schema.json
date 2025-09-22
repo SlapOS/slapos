@@ -2,16 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "LTE Cell",
   "type": "object",
-  "required": [
-    "cell_type",
-    "rf_mode",
-    "pci",
-    "cell_id",
-    "bandwidth",
-    "ru",
-    "dl_earfcn",
-    "tac"
-  ],
   "properties": {
     "cell_type": {
       "$ref": "#/properties/cell_type",
