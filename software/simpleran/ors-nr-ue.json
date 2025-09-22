@@ -8,7 +8,7 @@
   ],
   "properties": {
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
+      "$ref": "cell/common.json#/$defs/bandwidth",
       "default": 50
     },
     "rf_mode": {

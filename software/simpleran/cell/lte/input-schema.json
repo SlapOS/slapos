@@ -61,7 +61,7 @@
     },
     "tac": {
       "title": "Tracking Area Code",
-      "description": "Tracking Area Code in hexadecimal representation (range 0x0000 to 0xffff)",
+      "description": "Tracking Area Code (range: 0x0001 to 0xffff except 0xfffe, format: integer or hexadecimal starting by 0x)",
       "type": "string"
     },
     "root_sequence_index": {
