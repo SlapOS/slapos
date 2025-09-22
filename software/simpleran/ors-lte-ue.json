@@ -7,7 +7,7 @@
   ],
   "properties": {
     "bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
+      "$ref": "cell/common.json#/$defs/bandwidth",
       "enum": [
         "1.4 MHz",
         "3 MHz",
