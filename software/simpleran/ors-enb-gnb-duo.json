@@ -4,7 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "n_antenna_dl": {
-      "$ref": "ru/common.json#/properties/n_antenna_dl",
+      "$ref": "ru/common.json#/$defs/n_antenna_dl",
       "enum": [
         1,
         2,
@@ -13,7 +13,7 @@
       "default": 2
     },
     "n_antenna_ul": {
-      "$ref": "ru/common.json#/properties/n_antenna_ul",
+      "$ref": "ru/common.json#/$defs/n_antenna_ul",
       "enum": [
         1,
         2,
