@@ -4,16 +4,7 @@
   "type": "object",
   "oneOf": [
     {
-      "$ref": "ru/input-schema.json"
-    },
-    {
       "$ref": "cell/input-schema.json"
-    },
-    {
-      "$ref": "peer/input-schema.json"
-    },
-    {
-      "$ref": "peer/cell/input-schema.json"
     }
   ]
 }

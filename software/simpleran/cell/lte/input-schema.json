@@ -12,6 +12,7 @@
     "dl_earfcn",
     "tac"
   ],
+  "unevaluatedProperties": false,
   "allOf": [{ "$ref": "../../cell/common.json" }],
   "properties": {
     "cell_type": {
