@@ -156,6 +156,9 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
             # bike-like and boat-like subschema, and thus not the oneOf.
             # We need to check that defaults from these locally valid
             # subschemas are not applied to car-like instances!
+            # We also need to check that car-like instances do not get
+            # any properties unstringified according to these locally
+            # valid subschemas!
             "oneOf": [
               {
                 "title": "Wheeled but not motorized (e.g. Bike)",
@@ -165,6 +168,9 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
                   "bell": {
                     "type": "boolean",
                     "default": True,
+                  },
+                  "lights": {
+                    "type": "integer",
                   },
                 },
                 "required": ["wheels"],
@@ -380,6 +386,17 @@ class JsonSchemaTest(JsonSchemaTestCase):
       received = self.receiveParameters()
       expected = dict(car_parameters, **{'windshield-wipers': True})
       self.assertEqual(received, expected)
+
+  def test_complex_jsonschema_car_unstringify(self):
+    self.writeComplexJsonSchema()
+    # "4" should not be unstringified, because the 'car' schema
+    # does not specify 'lights' is an 'integer', only the 'bike'
+    # schema does, and the 'bike' schema is not part of a valid
+    # validation path for the whole instance.
+    car_parameters = {"wheels": {}, "motor": {}, "lights": "4"}
+    with self.patchSlap(car_parameters):
+      received = self.receiveParameters({'unstringify': 'main'})
+      self.assertEqual(received, car_parameters)
 
 
 class JsonSchemaTestUnserialised(JsonSchemaTest):
