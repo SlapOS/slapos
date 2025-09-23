@@ -1,18 +1,14 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NR UE Cell",
   "required": [
-    "nr_bandwidth",
-    "rf_mode",
     "dl_nr_arfcn",
-    "ssb_nr_arfcn",
-    "tx_gain",
-    "rx_gain"
+    "ssb_nr_arfcn"
   ],
   "properties": {
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
+      "$ref": "cell/common.json#/$defs/bandwidth",
       "default": 50
     },
     "rf_mode": {
@@ -26,10 +22,12 @@
       "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
     },
     "tx_gain": {
-      "$ref": "ru/common.json#/properties/tx_gain"
+      "$ref": "ru/common.json#/properties/tx_gain",
+      "default": 50
     },
     "rx_gain": {
-      "$ref": "ru/common.json#/properties/rx_gain"
+      "$ref": "ru/common.json#/properties/rx_gain",
+      "default": 30
     }
   }
 }

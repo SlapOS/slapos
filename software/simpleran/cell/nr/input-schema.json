@@ -12,10 +12,11 @@
     "dl_nr_arfcn",
     "nr_band"
   ],
+  "unevaluatedProperties": false,
+  "allOf": [{ "$ref": "../../cell/common.json" }],
   "properties": {
-    "$ref": "../../cell/common.json#/properties",
     "cell_type": {
-      "$ref": "#/properties/cell_type",
+      "$ref": "../../cell/common.json#/$defs/cell_type",
       "const": "nr"
     },
     "tdd_ul_dl_config3": {
@@ -53,7 +54,7 @@
       }
     },
     "bandwidth": {
-      "$ref": "#/properties/bandwidth"
+      "$ref": "../../cell/common.json#/$defs/bandwidth"
     },
     "dl_nr_arfcn": {
       "title": "DL NR ARFCN",
@@ -82,7 +83,7 @@
       "default": "10000000"
     },
     "root_sequence_index": {
-      "$ref": "#/properties/root_sequence_index",
+      "$ref": "../../cell/common.json#/$defs/root_sequence_index",
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     },
@@ -120,8 +121,8 @@
   "$defs": {
     "tac": {
       "title": "Tracking Area Code",
-      "description": "Integer (range 0 to 16777215)",
-      "type": "number"
+      "description": "Tracking Area Code (range: 0x0001 to 0xffffff except 0xfffffe, format: integer or hexadecimal starting by 0x)",
+      "type": "string"
     }
   }
 }
