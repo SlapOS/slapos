@@ -1,0 +1,320 @@
+{# This file configures haproxy to redirect requests from ports to specific urls.
+ # It provides TLS support for server and optionnaly for client.
+ #
+ # All parameters are given through the `parameter_dict` variable, see the
+ # list entries :
+ #
+ #     parameter_dict = {
+ #       #  Path of the PID file. HAProxy will write its own PID to this file
+ #       #  Sending USR2 signal to this pid will cause haproxy to reload
+ #       #  its configuration.
+ #       "pidfile": "<file_path>",
+ #
+ #       #  AF_UNIX socket for logs. Syslog must be listening on this socket.
+ #       "log-socket": "<file_path>",
+ #
+ #       #  AF_UNIX socket for statistics and control.
+ #       #  Haproxy will listen on this socket.
+ #       "stats-socket": "<file_path>",
+ #
+ #       #  IPv4 to listen on
+ #       #  All frontends from `frontend-dict` will listen on this IP.
+ #       "ipv4": "0.0.0.0",
+ #
+ #       #  IPv6 to listen on
+ #       #  All frontends from `frontend-dict` will listen on this IP.
+ #       "ipv6": "::1",
+ #
+ #       #  Certificate and key in PEM format. All ports will serve TLS using
+ #       #  this certificate.
+ #       "cert": "<file_path>",
+ #
+ #       #  CA to verify client certificates in PEM format.
+ #       #  If set, client certificates will be verified with these CAs.
+ #       #  If not set, client certificates are not verified.
+ #       "ca-cert": "<file_path>",
+ #
+ #       #  An optional CRL in PEM format (the file can contain multiple CRL)
+ #       #  This is required if ca-cert is passed.
+ #       "crl": "<file_path>",
+ #
+ #       #  Path to use for HTTP health check on backends from `backend-dict`.
+ #       "server-check-path": "/",
+ #
+ #       #  The mapping of frontend, keyed by frontend name
+ #       "frontend-dict": {
+ #         "frontend-default": {
+ #            "port": 8080,
+ #            "client-cert-required": False,
+ #            "backend-name": "family-default",
+ #            "request-path-prepend": "/erp5",
+ #         }
+ #         "legacy-frontend-family-secure": {
+ #            "port": 8000,
+ #            "client-cert-required": False,
+ #            "backend-name": "family-secure",
+ #            "request-path-prepend": None, # None means do not rewrite the request path
+ #         }
+ #         "legacy-frontend-family-default": {
+ #            "port": 8002,
+ #            "client-cert-required": False,
+ #            "backend-name": "family-default",
+ #            "request-path-prepend": None, # None means do not rewrite the request path
+ #         }
+ #       }
+ #       #  The mapping of backends, keyed by family name
+ #       "backend-dict": {
+ #           "family-secure": {
+ #               "timeout": None,  # in seconds
+ #               "backend-list": [
+ #                   [
+ #                       '10.0.0.10:8001', # netloc str
+ #                        1, # max_connection_count int
+ #                        False, # is_web_dav bool
+ #                   ]
+ #               ]
+ #           },
+ #           "family-default": {
+ #               "timeout": None,  # in seconds
+ #               "backend-list": [
+ #                   [
+ #                      '10.0.0.10:8003', # netloc str
+ #                       1, # max_connection_count int
+ #                       False, # is_web_dav bool
+ #                   ],
+ #                   [
+ #                      '10.0.0.10:8004', # netloc str
+ #                       1, # max_connection_count int
+ #                       False, # is_web_dav bool
+ #                   ],
+ #               ]
+ #          },
+ #
+ #       # rate limits
+ #       "rate-limits": {
+ #         "tarpit-duration": "10s",
+ #         "rules": [
+ #           {
+ #             "max-requests": 3,
+ #             "time-window": "20s",
+ #             "url-path-pattern": "/200/.*limited",
+ #             "action": "tarpit",
+ #             "expire": "20s"
+ #           },
+ #         ],
+ #       },
+ #
+ #       # The mapping of zope paths.
+ #       # This is a Zope specific feature used only to provide https while running
+ #       # Wendelin "unit test" suite.
+ #       # `enable_authentication` has same meaning as for `backend-dict`.
+ #       "zope-virtualhost-monster-backend-dict": {
+ #          # {(ip, port): ( enable_authentication, {frontend_path: ( internal_url ) }, ) }
+ #          ('[::1]', 8004): (
+ #            True, {
+ #              'zope-1': 'http://10.0.0.10:8001',
+ #              'zope-2': 'http://10.0.0.10:8002',
+ #            },
+ #          ),
+ #        },
+ #     }
+ #
+ #  This sample of `parameter_dict` will make haproxy listening to :
+ #  For "frontend-default":
+ #   - 0.0.0.0:8080 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #   - [::1]:8080 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #  accepting requests from any client and rewriting the path to add a Zope rewrite rule
+ #  so that the a request on https://0.0.0.0:8080/path is rewritten to serve a Zope object at
+ #  path /erp5/path , visible as /path.
+ #  For "legacy-frontend-family-secure":
+ #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
+ #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
+ #  only accepting requests from clients providing a verified TLS certificate
+ #  emitted by a CA from `ca-cert` and not revoked in `crl`.
+ #  For "legacy-frontend-family-default":
+ #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003 or http://10.0.0.10:8004
+ #  accepting requests from any client.
+ #
+ #  For both families, X-Forwarded-For header will be stripped unless
+ #  client presents a certificate that can be verified with `ca-cert` and `crl`.
+ #
+ # From zope-virtualhost-monster-backend-dict`:
+ #   - [::1]:8004 with some path based rewrite-rules redirecting to:
+ #     * http://10.0.0.10/8001 when path matches /zope-1(.*)
+ #     * http://10.0.0.10/8002 when path matches /zope-2(.*)
+ #   with some VirtualHostMonster rewrite rules so zope writes URLs with
+ #  [::1]:8004 as server name.
+ #  For more details, refer to
+ #  https://zope.readthedocs.io/en/latest/zopebook/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
+-#}
+
+{% set server_check_path = parameter_dict['server-check-path'] -%}
+global
+  maxconn 4096
+  master-worker
+  pidfile {{ parameter_dict['pidfile'] }}
+
+  # SSL configuration was generated with mozilla SSL Configuration Generator
+  # generated 2020-10-28, Mozilla Guideline v5.6, HAProxy 2.1, OpenSSL 1.1.1g, modern configuration
+  # https://ssl-config.mozilla.org/#server=haproxy&version=2.1&config=modern&openssl=1.1.1g&guideline=5.6
+  ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+  ssl-default-bind-options prefer-client-ciphers no-sslv3 no-tlsv10 no-tlsv11 no-tlsv12 no-tls-tickets
+  ssl-default-server-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+  ssl-default-server-options no-sslv3 no-tlsv10 no-tlsv11 no-tlsv12 no-tls-tickets
+
+  stats socket {{ parameter_dict['stats-socket'] }} level admin
+
+  {% if len(parameter_dict['rate-limits']['rules']) > 3 %}
+  tune.stick-counters {{ len(parameter_dict['rate-limits']['rules']) }}
+  {% endif %}
+
+defaults
+  mode http
+  retries 1
+  option redispatch
+  maxconn 2000
+  balance roundrobin
+
+  stats uri /haproxy
+  stats realm Global\ statistics
+
+  timeout connect 10s
+  timeout queue 60s
+  timeout client 305s
+
+  option http-server-close
+
+  # compress some content types
+  compression algo gzip
+  compression type application/font-woff application/font-woff2 application/hal+json application/javascript application/json application/rss+xml application/wasm application/x-font-opentype application/x-font-ttf application/x-javascript application/xml image/svg+xml text/cache-manifest text/css text/html text/javascript text/plain text/xml
+
+  log {{ parameter_dict['log-socket'] }} local0 info
+
+{% set bind_ssl_crt = 'ssl crt ' ~ parameter_dict['cert'] ~  ' alpn h2,http/1.1' %}
+{% set family_path_routing_dict = parameter_dict['family-path-routing-dict'] %}
+{% set path_routing_list = parameter_dict['path-routing-list'] %}
+
+
+{% for name, frontend in sorted(six.iteritems(parameter_dict['frontend-dict'])) %}
+listen {{ name }}
+
+{%-  if parameter_dict.get('ca-cert') -%}
+{%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if frontend['client-cert-required'] else ' optional crt-ignore-err all' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
+{%-  else %}
+{%-    set ssl_auth = '' %}
+{%-  endif %}
+  bind {{ parameter_dict['ipv4'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
+  bind {{ parameter_dict['ipv6'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
+
+  acl acl_verified_frontend ssl_c_used ssl_c_verify 0
+  http-request set-var(txn.client_real_ip) req.hdr(X-Forwarded-For) if acl_verified_frontend
+  http-request set-var(txn.client_real_ip) src unless acl_verified_frontend
+
+  # remove X-Forwarded-For unless client presented a verified certificate
+  http-request del-header X-Forwarded-For unless acl_verified_frontend
+  # set Remote-User if client presented a verified certificate
+  http-request del-header Remote-User
+  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if acl_verified_frontend
+
+  # reject invalid host header before using it in path
+  http-request deny deny_status 400 if { req.hdr(host) -m sub / }
+
+  # logs
+  capture request header Referer len 512
+  capture request header User-Agent len 512
+  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta"
+
+{% if frontend['request-path-prepend'] is not none %}
+  http-request replace-path ^/(.*) /VirtualHostBase/https/%[req.hdr(Host)]{{ frontend['request-path-prepend'] }}/VirtualHostRoot/\1
+{% endif %}
+
+{%   for outer_prefix, inner_prefix in family_path_routing_dict.get(frontend['backend-name'], []) + path_routing_list %}
+  {%   set outer_prefix = outer_prefix.strip('/') -%}
+  http-request replace-path ^(/+VirtualHostBase/+[^/]+/+[^/]+)/+VirtualHostRoot/+{% if outer_prefix %}{{ outer_prefix }}($|/.*){% else %}(.*){% endif %} \1/{{ inner_prefix.strip('/') }}/VirtualHostRoot/{% if outer_prefix %}_vh_{{ outer_prefix.replace('/', '/_vh_') }}{% endif %}\2
+{%  endfor %}
+
+  use_backend {{ frontend['backend-name'] }}
+{% endfor %}
+
+
+{% for name, backend in sorted(six.iteritems(parameter_dict['backend-dict'])) %}
+backend {{ name }}
+  cookie SERVERID rewrite
+  http-request set-header X-Balancer-Current-Cookie SERVERID
+
+{% if backend['timeout'] %}
+  {#
+    Apply a slightly longer timeout than the zope timeout so that clients can see the
+    TimeoutReachedError from zope, that is a bit more informative than the 504 error
+    page from haproxy.
+  #}
+  timeout server {{ backend['timeout'] + 3 }}s
+{%-  endif %}
+
+  timeout tarpit {{ parameter_dict['rate-limits']['tarpit-duration'] }}
+
+{%- for rule in parameter_dict['rate-limits']['rules'] %}
+  {%- if rule['url-path-pattern'] is defined %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_match path_reg {{ rule['url-path-pattern'] }}
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded sc{{ loop.index0 }}_http_req_rate(stick_table_{{ rule['table-name'] }}) gt {{ rule['max-requests'] }}
+  {%- else %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_match always_true
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded always_true
+  {%- endif %}
+  {%- if rule['status-code'] is defined %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_status_code_hit status {{ rule['status-code'] }}
+  acl acl_rate_limit_{{ rule['table-name'] }}_status_code_exceeded sc{{ loop.index0 }}_gpc0_rate(stick_table_{{ rule['table-name'] }}) ge {{ rule['max-requests'] }}
+  http-response sc-inc-gpc0({{ loop.index0 }}) if acl_rate_limit_{{ rule['table-name'] }}_status_code_hit
+  {%- else %}
+  acl acl_rate_limit_{{ rule['table-name'] }}_status_code_exceeded always_true
+  {%- endif %}
+  http-request track-sc{{ loop.index0 }} var(txn.client_real_ip) table stick_table_{{ rule['table-name'] }} if acl_rate_limit_{{ rule['table-name'] }}_url_match
+  acl acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded sc{{ loop.index0 }}_http_req_rate(stick_table_{{ rule['table-name'] }}) gt {{ rule['max-requests'] }}
+  http-request {{ rule['action'] }} deny_status 429 if acl_rate_limit_{{ rule['table-name'] }}_url_rate_exceeded acl_rate_limit_{{ rule['table-name'] }}_url_match acl_rate_limit_{{ rule['table-name'] }}_status_code_exceeded
+{% endfor %}
+
+
+{%   set has_webdav = [] -%}
+{%   for address, connection_count, webdav in backend['backend-list'] -%}
+{%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
+{%     set server_name = name ~ '-' ~ loop.index0 %}
+  server {{ server_name }} {{ address }} cookie {{ server_name }} check inter 3s rise 1 fall 2 maxqueue 5 maxconn {{ connection_count }}
+{%-  endfor -%}
+{%-  if not has_webdav and server_check_path %}
+  option httpchk GET {{ server_check_path }}
+{%-   endif %}
+
+{% endfor %}
+
+
+{% for (ip, port), (_, backend_dict) in sorted(six.iteritems(parameter_dict['zope-virtualhost-monster-backend-dict'])) -%}
+{%   set group_name = 'testrunner_' ~ loop.index0 %}
+frontend frontend_{{ group_name }}
+  bind {{ ip }}:{{ port }} {{ bind_ssl_crt }}
+  timeout client 8h
+
+  # logs
+  capture request header Referer len 512
+  capture request header User-Agent len 512
+  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Tt"
+
+{%   for name in sorted(backend_dict.keys()) %}
+  use_backend backend_{{ group_name }}_{{ name }} if { path -m beg /{{ name }} }
+{%-   endfor %}
+
+{%   for name, url in sorted(backend_dict.items()) %}
+backend backend_{{ group_name }}_{{ name }}
+  http-request replace-path ^/{{ name }}(.*) /VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ name }}\1
+  timeout server 8h
+  server {{ name }} {{ urllib_parse.urlparse(url).netloc }}
+{%-  endfor %}
+{% endfor %}
+
+
+{%- for rule in parameter_dict['rate-limits']['rules'] %}
+backend stick_table_{{ rule['table-name'] }}
+  stick-table type string size {{ rule['table-size'] }} expire {{ rule['expire'] }} store
+  {%- if rule['url-path-pattern'] is defined %} http_req_rate({{ rule['time-window'] }}) {% endif %}
+  {%- if rule['status-code'] is defined %} gpc0_rate({{ rule['time-window'] }}) {% endif %}
+{% endfor %}

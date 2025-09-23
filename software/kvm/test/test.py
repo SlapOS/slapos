@@ -54,6 +54,12 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
 
+# To be in sync with component/vm-img/debian.cfg
+DEFAULT_IMAGE_ISONAME = 'debian-12.12.0-amd64-netinst.iso'
+DEFAULT_IMAGE_TITLE = 'Debian Bookworm 12 netinst x86_64'
+DEFAULT_IMAGE_MD5SUM = 'fed10490abd508da793071df57e9cb70'
+##
+
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
@@ -394,10 +400,7 @@ i0:whitelist-firewall-{hash} RUNNING""",
 
     # assure that the default image is used
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
 
@@ -636,11 +639,6 @@ class TestAccessDefaultAdditionalJson(TestAccessDefaultAdditional):
     return {
       'frontend-additional-software-url': 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg'
     }
-
-@skipUnlessKvm
-class TestAccessDefaultAdditionalJson(
-  KvmMixinJson, TestAccessDefaultAdditional):
-  pass
 
 
 @skipUnlessKvm
@@ -1056,11 +1054,52 @@ class TestInstanceResilientBackupExporterMigratePre047(
 class TestInstanceResilientBackupExporterPartialRecovery(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
   def test(self):
+    def assertPromiseState(partition_directory, promise, state):
+      monitor_run_promise = os.path.join(
+        partition_directory, 'software_release', 'bin',
+        'monitor.runpromise'
+      )
+      monitor_configuration = os.path.join(
+        partition_directory, 'etc', 'monitor.conf')
+
+      self.assertEqual(
+        state,
+        subprocess.call([
+          monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+          '--run-only', promise])
+      )
     self.initialBackup()
     # cover .partial file in the backup directory with fallback to full
     current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
+
+    # assert check-backup-directory behaviour, typical...
+    partition_path = self.getPartitionPath('kvm-export')
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
     with open(current_backup + '.partial', 'w') as fh:
       fh.write('')
+    assertPromiseState(partition_path, 'check-backup-directory.py', 1)
+
+    # ...when backup is in progress
+    check_backup_directory = self.getPartitionPath(
+      'kvm-export', 'bin', 'check-backup-directory')
+    current_backup_lock_location = self.getPartitionPath(
+      'kvm-export', 'var', 'backup-in-progress')
+    # find used flock binary
+    flock = None
+    with open(check_backup_directory) as fh:
+      for line in fh.readlines():
+        line = line.strip()
+        if 'flock' in line:
+          flock = line.split()[1]
+    self.assertIsNotNone(flock)
+
+    current_backup_lock = subprocess.Popen([
+      flock, '--nonblock', '--no-fork', current_backup_lock_location,
+      'sleep', '3600'])
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
+    current_backup_lock.terminate()
+    current_backup_lock.wait()
+
     status_text = self.call_exporter()
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
@@ -1072,9 +1111,7 @@ class TestInstanceResilientBackupExporterPartialRecovery(
       'Recovered from partial backup by removing partial',
       status_text
     )
-    self.assertTrue(os.path.exists(os.path.join(
-      self.getPartitionPath(
-        'kvm-export', 'etc', 'plugin', 'check-backup-directory.py'))))
+    assertPromiseState(partition_path, 'check-backup-directory.py', 0)
 
 
 @skipUnlessKvm
@@ -1557,10 +1594,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
 
     # again only default image is available in the running process
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
 
@@ -1656,19 +1690,14 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
     self.assertEqual(
-      ['6b6604d894b6d861e357be1447b370db'],
+      [DEFAULT_IMAGE_MD5SUM],
       os.listdir(image_repository)
     )
-    image = os.path.join(image_repository, '6b6604d894b6d861e357be1447b370db')
-    self.assertTrue(os.path.exists(image))
-    with open(image, 'rb') as fh:
+    with open(os.path.join(image_repository, DEFAULT_IMAGE_MD5SUM), 'rb') as fh:
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
-    self.assertEqual(image_md5sum, '6b6604d894b6d861e357be1447b370db')
+    self.assertEqual(image_md5sum, DEFAULT_IMAGE_MD5SUM)
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
     # switch the image
@@ -1800,7 +1829,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       os.listdir(os.path.join(
         kvm_instance_partition, 'srv', 'boot-image-url-select-repository')),
-      ['6b6604d894b6d861e357be1447b370db']
+      [DEFAULT_IMAGE_MD5SUM]
     )
     self.assertEqual(
       os.listdir(os.path.join(
@@ -1810,10 +1839,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
 
     # again only default image is available in the running process
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
 
@@ -1932,7 +1958,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         },
         "KVM1": {
             "disable-ansible-promise": True,
-            "boot-image-url-select": "Debian Bookworm 12 netinst x86_64"
+            "boot-image-url-select": DEFAULT_IMAGE_TITLE,
         }
       }
     })})
@@ -1958,7 +1984,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         config
       )
       self.assertIn(
-        'debian-12.10.0-amd64-netinst.iso#6b6604d894b6d861e357be1447b370db"]',
+        '%s#%s"]' % (DEFAULT_IMAGE_ISONAME, DEFAULT_IMAGE_MD5SUM),
         config
       )
 

@@ -319,22 +319,22 @@ class ENBTestCase4(RFTestCase4):
         'gnb_id_bits':  30,
         'mbmsgw_addr':  '1.4.3.2',
         'gtp_addr':  '4.2.3.1',
-        'mme_list':     {
-            '1': {'mme_addr': '1.2.3.4', 's1ap_bind_addr': '2.1.3.4'},
-            '2': {'mme_addr': '[abcd:5::1]:78'},
-        },
-        'amf_list':     {
-            '1': {'amf_addr': '4.3.2.1:77', 'ngap_bind_addr': '2.1.3.4'},
-            '2': {'amf_addr': 'dcba:5::1'},
-        },
-        'plmn_list':    {
-            '1': {'plmn': '31415'},
-            '2': {'plmn': '44444', 'attach_without_pdn': True, 'reserved': True},
-        },
-        'plmn_list_5g':     {
-            '1': {'plmn': '51413', 'tac': 0x124},
-            '2': {'plmn': '55555', 'tac': 0x125, 'ranac': 210, 'reserved': True},
-        },
+        'mme_list':     [
+          {'name': '1', 'mme_addr': '1.2.3.4', 's1ap_bind_addr': '2.1.3.4'},
+          {'name': '2', 'mme_addr': '[abcd:5::1]:78'},
+        ],
+        'amf_list':     [
+          {'name': '1', 'amf_addr': '4.3.2.1:77', 'ngap_bind_addr': '2.1.3.4'},
+          {'name': '2', 'amf_addr': 'dcba:5::1'},
+        ],
+        'plmn_list':    [
+            {'plmn': '31415'},
+            {'plmn': '44444', 'attach_without_pdn': True, 'reserved': True},
+        ],
+        'plmn_list_5g':     [
+            {'plmn': '51413', 'tac': 0x124},
+            {'plmn': '55555', 'tac': 0x125, 'ranac': 210, 'reserved': True},
+        ],
         'xlog_forwarding_enabled': False,
     })}
 
@@ -608,10 +608,8 @@ class UEsimTestCase4(RFTestCase4):
           'sim_algo': ('xor', 'milenage', 'tuak') [i-1],
           'imsi':     '%015d'     % i,
           'opc':      '%032x'     % i,
-          'amf':      '0x%04x'    % (0x9000+i),
           'sqn':      '%012x'     % i,
           'k':        'FFFF%028x' % i,
-          'impi':     'impi%d@rapid.space' % i,
       }
       return cls.requestShared(imain, 'UE%d' % i, ue)
 
@@ -624,7 +622,7 @@ class UEsimTestCase4(RFTestCase4):
     assertMatch(t, t.ue_cfg['ue_list'], [
       dict(
         as_release=13,  ue_category=13,   rue_addr='host1',
-        sim_algo='xor', amf =0x9001,      impi='impi1@rapid.space',
+        sim_algo='xor',
         sqn ='000000000001',
         imsi='000000000000001',
         opc ='00000000000000000000000000000001',
@@ -632,7 +630,7 @@ class UEsimTestCase4(RFTestCase4):
       ),
       dict(
         as_release=15,  ue_category='nr', rue_addr='host2',
-        sim_algo='milenage', amf =0x9002, impi='impi2@rapid.space',
+        sim_algo='milenage',
         sqn ='000000000002',
         imsi='000000000000002',
         opc ='00000000000000000000000000000002',
@@ -640,7 +638,7 @@ class UEsimTestCase4(RFTestCase4):
       ),
       dict(
         as_release=13,  ue_category=13,   rue_addr='host3',
-        sim_algo='tuak', amf =0x9003,     impi='impi3@rapid.space',
+        sim_algo='tuak',
         sqn ='000000000003',
         imsi='000000000000003',
         opc ='00000000000000000000000000000003',

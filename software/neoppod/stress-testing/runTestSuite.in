@@ -2,6 +2,7 @@
 from __future__ import print_function
 import argparse, curses, json, os, subprocess, sys, traceback
 from time import gmtime, strftime, time
+import six
 # These are the 2 modules to reuse when using ERP5 for managing test bots.
 # What we do here is currently too new to reuse more from testsuite.
 from erp5.util import taskdistribution
@@ -39,7 +40,7 @@ class DummyTestResult:
 
 def main():
   os.environ.update({k: v.strip() % os.environ
-    for k, v in {{parameter_dict['environment'].items()}}})
+    for k, v in {{tuple(parameter_dict['environment'].items())}}})
 
   parser = argparse.ArgumentParser(description='Run a test suite.')
   parser.add_argument('--test_suite', help='The test suite name')
@@ -72,13 +73,13 @@ def main():
 
   fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
   try:
-    os.write(fd, """\
+    os.write(fd, b"""\
 [buildout]
 offline = true
 relative-paths = true
 """)
     Buildout('buildout.cfg', ()).bootstrap(None)
-    os.write(fd, """\
+    os.write(fd, b"""\
 extends = {{parameter_dict['profile_base_location']}}/stress.cfg
 develop-eggs-directory = {{buildout['develop-eggs-directory']}}
 eggs-directory = {{buildout['eggs-directory']}}
@@ -91,7 +92,7 @@ mount.neoppod = {{parameter_dict['neoppod']}}
   finally:
     os.close(fd)
   partdir = os.path.join('parts', 'stress')
-  stderr_write = sys.stderr.write
+  stderr_write = (sys.stderr.buffer.raw if six.PY3 else sys.stderr).write
 
   while 1:
     test_result_line = test_result.start()
@@ -125,7 +126,8 @@ mount.neoppod = {{parameter_dict['neoppod']}}
       finally:
         end = time()
       del p
-      status_dict['stderr'] = ''.join(stderr)
+      status_dict['stderr'] = b''.join(stderr).decode('utf-8',
+        'backslashreplace' if six.PY3 else 'replace')
 
       if not returncode:
         os.rename(partdir, dist)
@@ -139,9 +141,10 @@ mount.neoppod = {{parameter_dict['neoppod']}}
           try:
             curses.setupterm('screen')
             rmkx = curses.tigetstr('rmkx')
-            with open(os.path.join(dist, 'stdout')) as f:
+            with open(os.path.join(dist, 'stdout'), 'rb') as f:
               stdout = f.read()
-            status_dict['stdout'] = stdout[stdout.rindex(rmkx)+len(rmkx):]
+            status_dict['stdout'] = stdout[stdout.rindex(rmkx)+len(rmkx):] \
+              .decode('utf-8', 'backslashreplace' if six.PY3 else 'replace')
           except Exception:
             status = -1
           if status:

@@ -31,16 +31,26 @@ device = ide0-hd0
 # unsupported disk-type {{ disk_type }}
 {%- endif %}
 
+[backup-info]
+file = ${directory:var}/backup-in-progress
+
 [exporter]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter
+command-line = {{ flock }} --nonblock --no-fork ${backup-info:file} ${exporter-real:output}
+
+# Resilient stack wants a "wrapper" parameter
+wrapper = ${:wrapper-path}
+
+[exporter-real]
 recipe = slapos.recipe.template:jinja2
 url = {{ template_kvm_export }}
-output = ${directory:bin}/${slap-parameter:namebase}-exporter
-# Resilient stack wants a "wrapper" parameter
-wrapper = ${:output}
+output = ${directory:bin}/${slap-parameter:namebase}-exporter-real
 context =
     section directory directory
     section buildout buildout
     key socket_path kvm-instance:socket-path
+    key backup_info backup-info:file
     section disk disk
     raw qmpbackup {{ qmpbackup }}
     raw backup_signature {{ backup_signature }}
@@ -62,10 +72,15 @@ username = {{ slapparameter_dict['monitor-username'] }}
 password = {{ slapparameter_dict['monitor-password'] }}
 {% endif -%}
 
+[check-backup-directory]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/check-backup-directory
+command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${directory:backup}/${disk:device} ${directory:tmp} ${backup-info:file}
+
 [check-backup-directory-promise]
 # Check that disk image is not corrupted
 <= monitor-promise-base
 promise = check_command_execute
 name = check-backup-directory.py
-config-command = {{ check_backup_directory }} ${directory:backup}/${disk:device} ${directory:tmp}
+config-command = ${check-backup-directory:wrapper-path}
 failure_amount = 5

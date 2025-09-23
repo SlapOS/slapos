@@ -7,22 +7,14 @@
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
 production:
-  adapter: postgresql
-  encoding: unicode
-  {# collation is mainly for mysql
-  collation: <%= @db_collation %>
-  #}
-  database: {{ pgsql.dbname }}
-  pool: {{ cfg('db_pool') }}
-  {# XXX is it ok to use superuser, even if the whole database is only for gitlab? #}
-  username: '{{ pgsql.superuser }}'
-  {# we have no password - access is via unix socket #}
-  password:
-  host:     '{{ pgsql["pgdata-directory"] }}'
-  port:
-  socket:
-  {# not needed for unix socket
-  sslmode: <%= single_quote(@db_sslmode) %>
-  sslrootcert: <%= single_quote(@db_sslrootcert) || single_quote(@db_sslca) %>
-  sslca: <%= single_quote(@db_sslca) || single_quote(@db_sslrootcert) %>
-  #}
+  main:
+    adapter: postgresql
+    encoding: unicode
+    database: {{ pgsql.dbname }}
+    pool: {{ cfg('db_pool') }}
+    username: '{{ pgsql.superuser }}'
+    {# we have no password - access is via unix socket #}
+    password:
+    host:     '{{ pgsql["pgdata-directory"] }}'
+    port:
+    socket:

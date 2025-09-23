@@ -26,6 +26,7 @@
 ##############################################################################
 
 
+import concurrent.futures
 import contextlib
 import datetime
 import glob
@@ -40,6 +41,7 @@ import sqlite3
 import ssl
 import subprocess
 import tempfile
+import textwrap
 import time
 import unittest
 import urllib.parse
@@ -368,7 +370,12 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     # normal access on ipv4 and ipv6 and test runner access on ipv4 only
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = (p for p in all_process_info if p['name'].startswith('haproxy-'))
+    balancer_partition_id = self.getPartitionId('balancer')
+    process_info, = (
+      p for p in all_process_info
+      if p['group'] == balancer_partition_id
+      and p['name'].startswith('haproxy-')
+    )
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
@@ -518,7 +525,12 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     # and there is no haproxy ports allocated for test runner
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = (p for p in all_process_info if p['name'].startswith('haproxy'))
+    balancer_partition_id = self.getPartitionId('balancer')
+    process_info, = (
+      p for p in all_process_info
+      if p['group'] == balancer_partition_id
+      and p['name'].startswith('haproxy-')
+    )
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
@@ -1160,6 +1172,177 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
 
 class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
   pass
+
+
+class TestZopeShutdown(ZopeSkinsMixin, ERP5InstanceTestCase):
+  __partition_reference__ = 's'
+  def setUp(self):
+    self.zope_base_url = self._getAuthenticatedZopeUrl('')
+    # an external method which slowly creates a file
+    external_method = (
+      pathlib.Path(self.getComputerPartitionPath('zope-1'))
+      / 'srv' / 'erp5shared' / 'Extensions' / 'TestSlowFile.py'
+    )
+    external_method.write_text(textwrap.dedent(
+      '''
+        import time
+        import logging
+        from Shared.DC.ZRDB.TM import TM
+
+        logger = logging.getLogger('TestSlowFile')
+
+        class SlowFileTM(TM):
+          def __init__(self, f, duration):
+            self._f = f
+            self._duration = duration
+
+          def tpc_begin(self, *_):
+            logger.info("begin")
+            self._f.write("begin\\n")
+            time.sleep(self._duration)
+
+          def _finish(self):
+            logger.info("_finish")
+            self._f.write("finish\\n")
+            self._f.close()
+
+          def _abort(self):
+            logger.critical("transaction aborted")
+
+
+        def Base_slowlyCreateFile(self, filepath, duration):
+          logger.info("Base_slowlyCreateFile(%r, %0.2f)", filepath, duration)
+          tm = SlowFileTM(open(filepath, 'w'), duration)
+          tm._register()
+          return "file created"
+        '''
+    ))
+    with self.getXMLRPCClient() as erp5_xmlrpc_client:
+      custom = erp5_xmlrpc_client.portal_skins.custom
+      try:
+        custom.manage_addProduct.ExternalMethod.manage_addExternalMethod(
+          'Base_slowlyCreateFile',
+          'Base_slowlyCreateFile',
+          'TestSlowFile',
+          'Base_slowlyCreateFile',
+        )
+      except xmlrpc.client.ProtocolError as e:
+        if e.errcode != 302:
+          raise
+
+    self.zope_slowly_create_file_url = urllib.parse.urljoin(
+      self.zope_base_url,
+      'Base_slowlyCreateFile',
+    )
+
+    # a script which queue some activities to create files, we'll stop zope during
+    # execution of activities to make sure it stop processing new activities and
+    # finishes the started ones.
+    tmpdir = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, tmpdir)
+    self.activity_tmpdir = pathlib.Path(tmpdir)
+
+    self._addPythonScript(
+        script_id='ERP5Site_queueLongActivities',
+        params='',
+        body=f'''if 1:
+          previous_tag = None
+          for i in range(5):
+            tag = "tag%s" % i
+            context.portal_simulation.activate(
+              tag=tag,
+              after_tag=previous_tag,
+              activity='SQLQueue',
+            ).Base_slowlyCreateFile(
+              filepath="{tmpdir}/%s" % i,
+              duration=10,
+            )
+          return "activated"
+        ''',
+    )
+    self.zope_queue_activities_url = urllib.parse.urljoin(
+      self.zope_base_url,
+      'ERP5Site_queueLongActivities',
+    )
+
+  def get_zope_process_name(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+      zope_process_name, = [
+        f"{p['group']}:{p['name']}" for p in all_process_info if p['name'].startswith('zope-')
+      ]
+    return zope_process_name
+
+  def get_zope_process_status(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      return supervisor.getProcessInfo(self.get_zope_process_name())
+
+  def stop_zope(self, after=0):
+    time.sleep(after)
+    with self.slap.instance_supervisor_rpc as supervisor:
+      supervisor.stopProcess(self.get_zope_process_name(), False)
+
+  def start_zope(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      supervisor.startProcess(self.get_zope_process_name(), False)
+
+  def assert_zope_stopped(self):
+    for _ in range(70):
+      time.sleep(1)
+      if self.get_zope_process_status()['statename'] == 'STOPPED':
+        break
+    self.assertEqual(self.get_zope_process_status()['statename'], 'STOPPED')
+    self.assertEqual(self.get_zope_process_status()['exitstatus'], 0)
+
+  def test_shutdown(self):
+    tmpfile = pathlib.Path(tempfile.NamedTemporaryFile(delete=False).name)
+    self.addCleanup(tmpfile.unlink)
+
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+      stop_zope = pool.submit(self.stop_zope, 2)
+      slowly_create_file_response_text = requests.get(
+        self.zope_slowly_create_file_url,
+        verify=False,
+        params={'filepath': tmpfile, 'duration:float': 10},
+      ).text
+      if ERP5PY3:
+        # XXX on py2, waitress does not finish serving current requests
+        self.assertEqual(slowly_create_file_response_text, 'file created')
+      self.assertIsNone(stop_zope.result(timeout=70))
+
+    self.assertEqual(
+      requests.get(self.zope_base_url, verify=False).status_code,
+      requests.status_codes.codes.service_unavailable)
+    self.assert_zope_stopped()
+    self.assertEqual(tmpfile.read_text(), 'begin\nfinish\n')
+
+    # restart zope and test activities
+    self.start_zope()
+    self.slap.waitForInstance()
+
+    # this will queue 5 files creation, taking 10 second each.
+    self.assertEqual(
+      requests.get(
+        self.zope_queue_activities_url,
+        verify=False,
+      ).text,
+      'activated')
+    # sleep long enough to create one file
+    time.sleep(13)
+    self.assertEqual((self.activity_tmpdir / '0').read_text(), 'begin\nfinish\n')
+
+    # wait the second file to be created (but not completly written)
+    for _ in range(1000):
+      time.sleep(0.1)
+      if len(list(self.activity_tmpdir.glob("*"))) > 1:
+        break
+    self.stop_zope()
+    self.assert_zope_stopped()
+
+    self.assertLessEqual(len(list(self.activity_tmpdir.glob("*"))), 3)
+    self.assertEqual((self.activity_tmpdir / '1').read_text(), 'begin\nfinish\n')
+    if (self.activity_tmpdir / '2').exists():
+      self.assertEqual((self.activity_tmpdir / '2').read_text(), 'begin\nfinish\n')
 
 
 class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):

@@ -563,6 +563,11 @@ environment =
   TS_ROOT=${buildout:directory}
   PROXY_CONFIG_CONFIG_DIR=${trafficserver-directory:configuration}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+# parameter proxy.config.cache.ram_cache.size and file storage.config are
+# not realoadable, thus they need to be hashed
+hash-files =
+  ${trafficserver-storage-config:output}
+  ${trafficserver-records-config:output}
 
 [trafficserver-reload]
 recipe = slapos.cookbook:wrapper

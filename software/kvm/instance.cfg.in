@@ -148,6 +148,7 @@ context =
     key qmpbackup qmpbackup-binary:wrapper-path
     raw check_backup_directory ${check-backup-directory.sh:output}
     raw backup_signature ${buildout:bin-directory}/backup-signature
+    raw flock ${util-linux:location}/bin/flock
 
 [qmprestore-binary]
 recipe = slapos.cookbook:wrapper

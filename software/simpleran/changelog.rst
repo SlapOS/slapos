@@ -1,6 +1,35 @@
 Changelog
 =========
 
+Version 1.0.432 (2025-08-14)
+-------------
+
+* Major update on ORS UE Mode
+  * Add UE NR Support
+  * Support UE + gNB / eNB mode on ORS Duo
+* Fix bugs preventing defaults to be set correctly on ORS
+
+Version 1.0.428 (2025-08-05)
+-------------
+
+* Reorganize and improve Input Parameters
+  * Improve parameter descriptions
+  * Organize parameters into Cell, NodeB and Management sections
+  * Make use of JSON arrays to have a more intuitive interface for Neighbour Cell, AMF, MME, PLMN, and NSSAI lists
+* Upgrade Amarisoft to 2025-06-13
+* Improve various eNB and gNB radio parameters: especially important for handover
+* Publish websocket URL on core network: useful for getting live UE list
+* Fix bug from 1.0.423 preventing to choose bandwidth in Panel for eNB services
+* Improve GTP Address parameter, remove need for "Use Ipv4" parameter
+* Publish 4G 5G subnet on core network service
+* Add DDDSUUUUDD and DDDSUUDDDD NR TDD Frame Structures
+* Add Tracking Area Code in connection parameters
+* publish UL Frequency and UL NR ARFCN / UL EARFCN
+* Add res_len = 16 parameter for better eSIM compatibility
+* Add cipher_algo_pref, integ_algo_pref parameters
+* Add all LTE TDD Frame configurations
+* Reduce log sizes to avoid disk getting full
+
 Version 1.0.423 (2025-06-30)
 -------------
 

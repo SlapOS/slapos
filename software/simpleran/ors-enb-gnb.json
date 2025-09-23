@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NR Cell",
+  "type": "object",
+  "properties": {
+    "gps_sync": {
+      "$ref": "instance-enb-input-schema.json#/properties/gps_sync"
+    },
+    "gtp_addr": {
+      "$ref": "instance-enb-input-schema.json#/properties/gtp_addr"
+    },
+    "mbmsgw_addr": {
+      "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
+    },
+    "inactivity_timer": {
+      "$ref": "cell/common.json#/properties/inactivity_timer",
+      "default": 10000
+    },
+    "ncell_list": {
+      "title": "Neighbour Cell Info",
+      "description": "Neighbour Cell Info",
+      "type": "array",
+      "items": {
+        "title": "Neighbour Cell",
+        "type": "object",
+        "unevaluatedProperties": false,
+        "oneOf": [
+          {
+            "$ref": "peer/cell/lte/input-schema.json"
+          },
+          {
+            "$ref": "peer/cell/nr/input-schema.json"
+          }
+        ]
+      },
+      "default": []
+    },
+    "handover_a1_rsrp": {
+      "title": "Handover A1 event RSRP threshold",
+      "description": "Integer, range from -140 to -43. RSRP threshold value in dBm.",
+      "type": "number",
+      "default": -70
+    },
+    "handover_a1_hysteresis": {
+      "title": "Handover A1 event hysteresis",
+      "description": "Integer, range from 0 to 30. A1 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
+      "type": "number",
+      "default": 0
+    },
+    "handover_a1_time_to_trigger": {
+      "title": "Handover A1 event time to trigger",
+      "description": "Time in ms during which the A1 event condition must be met before triggering the measurement report.",
+      "type": "number",
+      "enum": [
+        0,
+        40,
+        64,
+        80,
+        100,
+        128,
+        160,
+        256,
+        320,
+        480,
+        512,
+        640,
+        1024,
+        1280,
+        2560,
+        5120
+      ],
+      "default": 640
+    },
+    "handover_a2_rsrp": {
+      "title": "Handover A2 event RSRP threshold",
+      "description": "Integer, range from -140 to -43. RSRP threshold value in dBm.",
+      "type": "number",
+      "default": -80
+    },
+    "handover_a2_hysteresis": {
+      "title": "Handover A2 event hysteresis",
+      "description": "Integer, range from 0 to 30. A2 hysteresis in 0.5dB steps used for the measurement report triggering condition.",
+      "type": "number",
+      "default": 0
+    },
+    "handover_a2_time_to_trigger": {
+      "title": "Handover A2 event time to trigger",
+      "description": "Time in ms during which the A2 event condition must be met before triggering the measurement report.",
+      "type": "number",
+      "enum": [
+        0,
+        40,
+        64,
+        80,
+        100,
+        128,
+        160,
+        256,
+        320,
+        480,
+        512,
+        640,
+        1024,
+        1280,
+        2560,
+        5120
+      ],
+      "default": 640
+    },
+    "handover_meas_gap_config": {
+      "title": "Handover measurement gap configuration",
+      "description": "Configuration of the measurement gap. Ignored if no neighbour cells are configured.",
+      "type": "string",
+      "enum": [
+        "None",
+        "Gap Pattern 0",
+        "Gap Pattern 1"
+      ],
+      "default": "Gap Pattern 1"
+    }
+  }
+}

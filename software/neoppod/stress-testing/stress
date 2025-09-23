@@ -10,10 +10,10 @@ cmd = sys.argv[3:]
 cmd[cmd.index('--')] = 'run'
 cmd[:0] = 'bin/py', 'parts/neoppod-repository/tools/stress', '-l', '../log'
 
-p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+p = subprocess.Popen(cmd, bufsize=0, stdin=subprocess.PIPE)
 time.sleep(10)
 p.stdin.write(curses.tigetstr("kf1"))
-t = threading.Timer(duration, p.stdin.write, ('q',))
+t = threading.Timer(duration, p.stdin.write, (b'q',))
 t.daemon = True
 try:
     t.start()
@@ -21,7 +21,7 @@ try:
 finally:
     t.cancel()
 
-with open(result('status'), 'wb') as f:
+with open(result('status'), 'w') as f:
     f.write(str(returncode))
 
 if returncode:

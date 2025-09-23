@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by mail server slave instance",
+  "type": "object",
+  "properties": {
+    "outbound-host": {
+      "description": "IPv6 or IPv4 address for outbound SMTP",
+      "type": "string"
+    },
+    "outbound-smtp-port": {
+      "description": "SMTP port for outbound mail",
+      "type": "integer"
+    },
+    "dns-entries": {
+      "description": "DNS entries to add",
+      "type": "string"
+    }
+  },
+  "required": [
+    "outbound-host",
+    "outbound-smtp-port",
+    "dns-entries"
+  ]
+}
