@@ -41,6 +41,9 @@
         'request-timeout',
         'authenticate-to-backend',
         'expert-backend-allow-downgrade-ssl',
+        'xlog-fluentbit-forward-host',
+        'xlog-fluentbit-forward-port',
+        'xlog-fluentbit-forward-shared-key',
     ]
 %}
 {#- SlapOS Master (but not slapproxy!) merges slave's instance and connection parameters, so the slave information passed to nodes have to be limited only to instance related keys #}
