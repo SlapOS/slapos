@@ -12,6 +12,11 @@
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
 {%- endif %}
 {%- set BACKEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
+{%- if instance_parameter_dict.get('configuration.xlog-fluentbit-forward-host') %}
+{%-   set XLOG_FLUENTBIT_ENABLED = True %}
+{%- else %}
+{%-   set XLOG_FLUENTBIT_ENABLED = False %}
+{%- endif %}
 [buildout]
 extends =
   {{ software_parameter_dict['profile_common'] }}
@@ -1141,6 +1146,67 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${logrotate-setup-validate:state-file}
 config-state = empty
+
+{%- if XLOG_FLUENTBIT_ENABLED %}
+[comp-id]
+recipe = slapos.recipe.build
+computer = ${slap-connection:computer-id}
+title = ${slap-configuration:root-instance-title}
+init =
+  import socket
+  options['hostname'] = socket.gethostname()
+  comp_id = '_'.join(options[x] for x in ('hostname', 'computer', 'title'))
+  options['comp-id'] = comp_id
+
+[xlog-fluentbit-config]
+recipe = slapos.recipe.template
+output = ${directory:etc}/${:_buildout_section_name_}.cfg
+logfile = ${xamari-xlog-script:logfile} 
+forward-host = {{ instance_parameter_dict['configuration.xlog-fluentbit-forward-host'] }}
+forward-port = {{ instance_parameter_dict['configuration.xlog-fluentbit-forward-port'] }}
+forward-shared-key = {{ instance_parameter_dict.get('configuration.configuration.xlog-fluentbit-forward-shared-key', '') }}
+forward-self-hostname = ${comp-id:comp-id}
+monitoring-host = {{ instance_parameter_dict['ipv4-random'] }}
+monitoring-port = {{ int(instance_parameter_dict['configuration.xlog-fluentbit-forward-port']) + 1 }}
+inline =
+  [SERVICE]
+      flush           5
+      HTTP_Server     On
+      HTTP_Listen     ${:monitoring-host}
+      HTTP_PORT       ${:monitoring-port}
+      Health_Check    On
+      HC_Errors_Count 0
+      HC_Retry_Failure_Count 0
+      HC_Period       60
+  [INPUT]
+      name            tail
+      path            ${:logfile}
+      tag             ${xlog-fluentbit-tag:xlog-fluentbit-tag}
+      Read_from_Head  True
+      db              ${directory:xlog-fluentbit}/tail-state
+      Buffer_Max_Size 1M
+  [OUTPUT]
+      name            forward
+      match           *
+      Host            ${:forward-host}
+      Port            ${:forward-port}
+{%- if instance_parameter_dict.get('configuration.xlog-fluentbit-forward-shared-key') %}
+      Shared_Key      ${:forward-shared-key}
+{%- endif %}
+      Self_Hostname   ${:forward-self-hostname}
+      Retry_Limit     50
+      tls             on
+      tls.verify      off
+
+[xlog-fluentbit-service]
+recipe  = slapos.cookbook:wrapper
+fluentbit =  {{ software_parameter_dict['fluent_bit'] }}
+fluentbit-config = ${xlog-fluentbit-config:output}
+command-line = ${:fluentbit} -c ${:fluentbit-config}
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+hash-files = ${:fluentbit-config}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{%- endif %}
 
 [configuration]
 {%- for key, value in instance_parameter_dict.items() -%}
