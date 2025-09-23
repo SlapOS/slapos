@@ -293,24 +293,28 @@ class DefaultValidator(object):
     self.applied_defaults = {}
     self.VALIDATORS = {}
     self.original_validator_for = jsonschema.validators.validator_for
+    # BBB Py2: Accept both str and unicode strings for unstringifying.
+    self.strings = (unicode, str) if str is bytes else (str,)
 
   def create(self, schema):
     # Fetch standard validator class
     v = self.original_validator_for(schema)
-    # Create new validator class with extended properties validation
-    original_properties = v.VALIDATORS['properties']
-    def properties(validator, properties, instance, schema):
-      self.unstringify_properties(validator, properties, instance)
-      e = None
-      for e in original_properties(validator, properties, instance, schema):
-        yield e
-      if self.set_defaults and e is None:
-        # Defaults may be indirectly defined behind one or several $ref.
-        # We resolve and memoize defaults now during validation instead
-        # of later in case it affects internal $ref that refer to $defs
-        # higher in the validation path.
-        self.memoize_defaults(validator, properties)
-    kls = jsonschema.validators.extend(v, {'properties': properties})
+    # Create extended type checker that to check unstringified values
+    if self.unstringify:
+      original_type_checker = v.TYPE_CHECKER
+      original_is_type = original_type_checker.is_type
+      def unstringify(value, f):
+        try:
+          return f(value) if type(value) in self.strings else value
+        except ValueError:
+          return value
+      type_checker = original_type_checker.redefine_many({
+        t: lambda _, value: original_is_type(unstringify(value, f), t)
+        for t, f in self.unstringify.items()
+      })
+    else:
+      type_checker = None
+    kls = jsonschema.validators.extend(v, type_checker=type_checker)
     # Further extend behavior to collect (sub)schemas that apply
     #
     # Due to conditional constructs like oneOf & anyOf, there may be
@@ -318,11 +322,13 @@ class DefaultValidator(object):
     # a) the instance as a whole valides the whole schema,
     # b) the sub-instance I does not validate some sub-schema S,
     # c) a sub-sub-instance I' of I valides a sub-sub-schema S' of S.
-    # Then I' validates S', but that is not enough to conclude that the
-    # defaults of S' should apply to I'.
+    # Then I' validates S', but still the defaults of S' should not be
+    # applied to I', nor the values of I' unstringified according to S'.
     #
     # The defaults from a (sub)schema should only be applied to a (sub)instance
-    # if that (sub)instance and (sub)schema are on a valid validation path.
+    # if that (sub)instance and (sub)schema are on a valid validation path, and
+    # properties of a (sub)instance must only be unstringified according to the
+    # (sub)schemas that are on a valid validation path.
     original_iter_errors = kls.iter_errors
     def iter_errors(validator, instance, *args):
       # *args: BBB py2 jonschema v3.0.2
@@ -339,6 +345,12 @@ class DefaultValidator(object):
           # a correct resolution scope later.
           uri = validator.resolver.base_uri
           self.applied_schemas.append((validator, schema, uri, instance))
+          if self.set_defaults:
+            # Defaults may be indirectly defined behind one or several $ref.
+            # We resolve and memoize defaults now during validation instead
+            # of later in case it affects internal $ref that refer to $defs
+            # higher in the validation path.
+            self.memoize_defaults(validator, schema.get('properties'))
     kls.iter_errors = iter_errors
     return kls
 
@@ -368,14 +380,19 @@ class DefaultValidator(object):
       e = None
       for e in self.validator_for(schema)(schema).iter_errors(instance):
         yield e
-      # Recursively collect and validate defaults of applying schemas
-      if self.set_defaults and e is None:
-        for e in self.collect_defaults():
-          yield e
-        # Apply collected defaults
-        if e is None:
-          self.apply_defaults()
-          # Validate the updated instance for sanity and safety
+      if e is None:
+        # Unstringify properties according to schemas that apply
+        if self.unstringify:
+          self.apply_unstringify()
+        # Recursively collect and validate defaults of applying schemas
+        if self.set_defaults:
+          for e in self.collect_defaults():
+            yield e
+          if e is None:
+            # Apply collected defaults
+            self.apply_defaults()
+        # Validate the updated instance for sanity and safety
+        if self.unstringify or (self.set_defaults and e is None):
           original_validator = self.original_validator_for(schema)
           for e in original_validator(schema).iter_errors(instance):
             yield e
@@ -469,10 +486,12 @@ class DefaultValidator(object):
             "Conflicting defaults for key %s: %r" % (key, collected))
         instance[key] = default
 
-  def unstringify_properties(self, validator, properties, instance):
-    # Attempt to unstringify stringified values back to their expected type
-    if self.unstringify:
-      for key, subschema in properties.items():
+  def apply_unstringify(self):
+    for validator, schema, uri, instance in self.applied_schemas:
+      # Reconstruct correct resolution scope
+      validator.resolver.push_scope(uri)
+      # Attempt to unstringify stringified values back to their expected type
+      for key, subschema in schema['properties'].items():
         try:
           # Types may be indirectly defined behind one or several $ref.
           # Note: this does not and does not aim to support the case where
@@ -487,12 +506,12 @@ class DefaultValidator(object):
           t = self.fetch_key('type', subschema, validator.resolver)
         except KeyError:
           continue
-        unstringify = self.unstringify.get(t)
-        if unstringify:
-          value = instance.get(key)
-          if type(value) is str or (str is bytes and type(value) is unicode):
+        value = instance.get(key)
+        if type(value) in self.strings:
+          f = self.unstringify.get(t)
+          if f:
             try:
-              instance[key] = unstringify(value)
+              instance[key] = f(value)
             except ValueError:
               pass
 
