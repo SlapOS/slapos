@@ -79,7 +79,6 @@ relay-log = mariadb-relay-bin
 {{x}}innodb_flush_log_at_trx_commit = 0
 {{x}}innodb_flush_method = nosync
 {{x}}innodb_doublewrite = 0
-{{x}}innodb_change_buffering = all
 {{x}}sync_frm = 0
 
 character_set_server = {{ parameter_dict['character-set-server'] }}
