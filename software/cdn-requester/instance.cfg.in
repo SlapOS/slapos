@@ -1,0 +1,61 @@
+[buildout]
+extends = {{ software_parameter_dict['profile_common'] }}
+
+parts =
+  software-py
+  switch-softwaretype
+
+[software-py]
+recipe = software
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+output = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+    import json_module json
+    key slapparameter_dict slap-configuration:configuration
+    section instance_parameter_dict slap-configuration
+    section software_parameter_dict software-parameter-section
+    ${:extra-context}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
+import-list =
+  file caucase :caucase-jinja2-library
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-profile-master:output
+replicate = dynamic-profile-master:output
+
+[software-parameter-section]
+{% for key,value in software_parameter_dict.items() %}
+{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+[dynamic-profile-master]
+< = jinja2-template-base
+depends = ${software-py:recipe}
+url = {{ software_parameter_dict['profile_master'] }}
+filename = instance-master.cfg
+extra-context =
+    import subprocess_module subprocess
+    import functools_module functools
+    import operator_module operator
+    import validators validators
+    import software software
+# Must match the key id in [switch-softwaretype] which uses this section.
+# Keep RootSoftwareInstance for backward compatibility until all instances have
+# changed their software_type to default
+    raw software_type RootSoftwareInstance-default-custom-personal-replicate
+
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
