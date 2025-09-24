@@ -25,6 +25,7 @@ context =
   raw monitor_template_cfg ${monitor-template:output}
   raw llamacpp_server_run_template ${llamacpp-server-run-template:output}
   raw huggingface_cli_download_template ${huggingface-cli-download-template:output}
+  raw software_bin ${buildout:bin-directory}
   raw nginx_conf_in ${nginx.conf.in:target}
   raw nginx_location ${nginx:location}
   raw openssl_location ${openssl:location}
