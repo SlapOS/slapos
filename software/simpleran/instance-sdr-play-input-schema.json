@@ -18,21 +18,6 @@
           "$ref": "sdr-play-cell.json"
         }
       ]
-    },
-    "sdr_play": {
-      "title": "SDR Play parameters",
-      "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
-      "unevaluatedProperties": false,
-      "allOf": [
-        {
-          "$ref": "ors-cell.json"
-        },
-        {
-          "$ref": "ors-enb-cell.json"
-        }
-      ],
-      "type": "object",
-      "default": {}
     }
   }
 }
