@@ -8,7 +8,7 @@
       "description": "Physical Cell ID. Range 0 to 1007. Equal to ORS Serial number modulo 1008 by default"
     },
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
+      "$ref": "cell/common.json#/$defs/bandwidth",
       "default": 50
     },
     "nr_band": {
@@ -16,9 +16,7 @@
       "description": "NR band number. Default depends on ORS model, please refer to the connection parameters"
     },
     "dl_frequency": {
-      "title": "DL Frequency",
-      "description": "Downlink center frequency of the cell. Default depends on your ORS model, please refer to the connection parameters. Make sure to not set a value outside the range of your ORS",
-      "type": "number"
+      "$ref": "ors-enb-cell.json#/properties/dl_frequency"
     },
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
@@ -39,7 +37,7 @@
     },
     "root_sequence_index": {
       "title": "Expert: Root Sequence Index",
-      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "$ref": "cell/common.json#/$defs/root_sequence_index",
       "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "cipher_algo_pref": {
