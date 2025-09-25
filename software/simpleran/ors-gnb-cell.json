@@ -16,9 +16,7 @@
       "description": "NR band number. Default depends on ORS model, please refer to the connection parameters"
     },
     "dl_frequency": {
-      "title": "DL Frequency",
-      "description": "Downlink center frequency of the cell. Default depends on your ORS model, please refer to the connection parameters. Make sure to not set a value outside the range of your ORS",
-      "type": "number"
+      "$ref": "ors-enb-cell.json#/properties/dl_frequency"
     },
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
