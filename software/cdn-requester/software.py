@@ -1,14 +1,18 @@
-import caucase.client
-import caucase.utils
-import os
-import ssl
-import sys
-import urllib.error
-import urllib.parse
-import urllib.request
-from cryptography import x509
-from cryptography.hazmat.primitives import serialization
+import secrets
+import string
+import dns.resolver
+import datetime
+import logging
 
+# --- CONFIGURATION ---
+TOKEN_LENGTH = 32  # Strong, random tokens
+TOKEN_TTL = 3600   # Token expires in seconds (1 hour)
+
+# Initialize logging
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s: %(message)s",
+    level=logging.INFO
+)
 
 class Recipe(object):
   def __init__(self, *args, **kwargs):
@@ -21,103 +25,60 @@ class Recipe(object):
     return self.install()
 
 
-def validate_netloc(netloc):
-  # a bit crazy way to validate that the passed parameter is haproxy
-  # compatible server netloc
-  parsed = urllib.parse.urlparse('scheme://' + netloc)
-  if ':' in parsed.hostname:
-    hostname = '[%s]' % parsed.hostname
-  else:
-    hostname = parsed.hostname
-  return netloc == '%s:%s' % (hostname, parsed.port)
 
+# --- TOKEN MANAGEMENT ---
+class DomainVerificationManager:
+    def __init__(self):
+        self._tokens = {}  # {domain: (token, expiry)}
 
-def _check_certificate(url, certificate):
-  parsed = urllib.parse.urlparse(url)
-  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
-  if certificate.strip() != got_certificate.strip():
-    raise ValueError('Certificate for %s does not match expected one' % (url,))
+    def generate_token(self, domain):
+        # Use a cryptographically strong random token
+        token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(TOKEN_LENGTH))
+        expiry = datetime.datetime.utcnow() + datetime.timedelta(seconds=TOKEN_TTL)
+        self._tokens[domain] = (token, expiry)
+        logging.info(f"Generated verification token for {domain}, expires at {expiry}.")
+        return token
 
+    def is_token_valid(self, domain):
+        entry = self._tokens.get(domain)
+        if not entry:
+            return False, "No token issued."
+        token, expiry = entry
+        if datetime.datetime.utcnow() > expiry:
+            del self._tokens[domain]
+            return False, "Token expired."
+        return True, token
 
-def _get_exposed_csr(url, certificate):
-  _check_certificate(url, certificate)
-  self_signed = ssl.create_default_context()
-  self_signed.check_hostname = False
-  self_signed.verify_mode = ssl.CERT_NONE
-  return urllib.request.urlopen(url, context=self_signed).read().decode()
+# --- DNS LOOKUP LOGIC ---
+def verify_domain(domain, expected_token, dnssec_required=False):
+    try:
+        answers = dns.resolver.resolve(domain, 'TXT', lifetime=10)
+        for rdata in answers:
+            texts = [txt.decode() if hasattr(txt, 'decode') else txt for txt in rdata.strings]
+            if expected_token in texts:
+                logging.info(f"[{domain}] Verification token found in DNS TXT record.")
+                # (Optional) Add further DNSSEC validation here with 'dns.resolver.Resolver' config.
+                return True
+        logging.warning(f"[{domain}] Verification token not found in DNS TXT records.")
+        return False
+    except Exception as e:
+        logging.error(f"[{domain}] DNS query failed: {e}")
+        return False
 
+# --- USAGE EXAMPLE ---
+if __name__ == "__main__":
+    domain = "example.com"
+    dv = DomainVerificationManager()
+    token = dv.generate_token(domain)
+    print(f"Add this DNS TXT record to {domain}:")
+    print(f"_verify.{domain} IN TXT \"{token}\"")
 
-def _get_caucase_client(ca_url, ca_crt, user_key):
-  return caucase.client.CaucaseClient(
-    ca_url=ca_url + '/cas',
-    ca_crt_pem_list=caucase.utils.getCertList(ca_crt),
-    user_key=user_key,
-  )
+    # Wait for DNS propagation before running the check!
+    input("Press Enter when DNS TXT record has propagated...")
 
-
-def _get_caucase_csr_list(ca_url, ca_crt, user_key):
-  csr_list = []
-  for entry in _get_caucase_client(
-    ca_url, ca_crt, user_key).getPendingCertificateRequestList():
-    csr = caucase.utils.load_certificate_request(
-      caucase.utils.toBytes(entry['csr']))
-    csr_list.append({
-      'csr_id': entry['id'],
-      'csr': csr.public_bytes(serialization.Encoding.PEM).decode()
-    })
-  return csr_list
-
-
-def _csr_match(*csr_list):
-  number_list = set([])
-  for csr in csr_list:
-    number_list.add(
-      x509.load_pem_x509_csr(csr.encode()).public_key().public_numbers())
-  return len(number_list) == 1
-
-
-def _sign_csr(ca_url, ca_crt, user_key, csr, csr_list):
-  signed = False
-  client = _get_caucase_client(ca_url, ca_crt, user_key)
-  for csr_entry in csr_list:
-    if _csr_match(csr, csr_entry['csr']):
-      client.createCertificate(int(csr_entry['csr_id']))
-      print('Signed csr with id %s' % (csr_entry['csr_id'],))
-      signed = True
-      break
-  return signed
-
-
-def _mark_done(filename):
-  with open(filename, 'w') as fh:
-    fh.write('done')
-  print('Marked file %s' % (filename,))
-
-
-def _is_done(filename):
-  if os.path.exists(filename):
-    return True
-  return False
-
-
-def smart_sign():
-  ca_url, ca_crt, done_file, user_key, csr_url, \
-    csr_url_certificate = sys.argv[1:]
-  if _is_done(done_file):
-    return
-  exposed_csr = _get_exposed_csr(csr_url, csr_url_certificate)
-  caucase_csr_list = _get_caucase_csr_list(ca_url, ca_crt, user_key)
-  if _sign_csr(
-    ca_url, ca_crt, user_key, exposed_csr, caucase_csr_list):
-    _mark_done(done_file)
-  else:
-    print('Failed to sign %s' % (csr_url,))
-
-
-def caucase_csr_sign_check():
-  ca_url, ca_crt, user_key = sys.argv[1:]
-  if len(_get_caucase_csr_list(ca_url, ca_crt, user_key)) != 0:
-    print('ERR There are CSR to sign on %s' % (ca_url,))
-    sys.exit(1)
-  else:
-    print('OK No CSR to sign on %s' % (ca_url,))
+    valid, token_or_reason = dv.is_token_valid(domain)
+    if valid:
+        verified = verify_domain(f"_verify.{domain}", token_or_reason)
+        print("Domain verified!" if verified else "Verification failed.")
+    else:
+        print("Token invalid:", token_or_reason)

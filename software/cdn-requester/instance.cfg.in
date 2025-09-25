@@ -19,9 +19,6 @@ context =
     section instance_parameter_dict slap-configuration
     section software_parameter_dict software-parameter-section
     ${:extra-context}
-caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
-import-list =
-  file caucase :caucase-jinja2-library
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
