@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDR Play Input Parameters",
+  "type": "object",
+  "properties": {
+    "cell1": {
+      "$ref": "instance-ors-duo-enb-input-schema.json#/properties/cell1",
+      "allOf": [
+        {
+          "$ref": "sdr-play-cell.json"
+        }
+      ]
+    },
+    "cell2": {
+      "$ref": "instance-ors-duo-enb-input-schema.json#/properties/cell2",
+      "allOf": [
+        {
+          "$ref": "sdr-play-cell.json"
+        }
+      ]
+    }
+  }
+}
