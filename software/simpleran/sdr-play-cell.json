@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NR Cell",
+  "type": "object",
+    "properties": {
+      "enable_cell": {
+        "$ref": "ors-cell.json#/properties/enable_cell"
+      },
+      "tx_power_dbm": {
+        "$ref": "ors-cell.json#/properties/tx_power_dbm"
+      },
+      "tx_gain": {
+        "$ref": "ors-cell.json#/properties/tx_gain"
+      },
+      "bandwidth": {
+        "$ref": "ors-gnb-cell.json#/properties/nr_bandwidth"
+      },
+      "dl_frequency": {
+        "$ref": "ors-cell.json#/properties/dl_frequency"
+      },
+      "file": {
+        "title": "SDR Play mode",
+        "description": "SDR Play mode",
+        "enum": [
+          "LTE-31-10MHzBP_SR1536-FDD-ADJUSTED.bin",
+          "LTE-31-10MHzBP_SR1536-TDD-ADJUSTED.bin",
+          "LTE-31-1p4MHzBP_SR1p92-TDD-ADJUSTED.bin",
+          "LTE-31-20MHzBP_SR3072-FDD-ADJUSTED.bin",
+          "LTE-31-3MHzBP_SR3p84-TDD-ADJUSTED.bin",
+          "LTE-31-5MHzBP_SR7p68-TDD-ADJUSTED.bin",
+          "LTE-32-10MHzBP_SR1536-TDD-ADJUSTED.bin",
+          "LTE-32-20MHzBP_SR3072-TDD-ADJUSTED.bin",
+          "LTE-33-10MHzBP_SR1536-TDD-ADJUSTED.bin",
+          "LTE-33-20MHzBP_SR3072-TDD-ADJUSTED.bin",
+          "LTE-TM_31-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM11-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM11-5MHz_SR7680000-FDD-ADJUSTED.bin",
+          "NR-FR1-TM12-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM2-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM2a-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM2b-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM31-100MHz_SR122880000_SCS30kHz-FDD-ADJUSTED.bin",
+          "NR-FR1-TM31-20MHz_SR30720000-FDD-ADJUSTED.bin",
+          "NR-FR1-TM31-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM31-40MHz_SR61440000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM31-5MHz_SR7680000-FDD-ADJUSTED.bin",
+          "NR-FR1-TM_31a-20MHzBP_SC30kHz_SR30p72-FDD-ADJUSTED.bin",
+          "NR-FR1-TM31a-20MHz_SR30720000_SCS15kHz-FDD-ADJUSTED.bin",
+          "NR-FR1-TM31a-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM31a-5MHz_SR7680000-FDD-ADJUSTED.bin",
+          "NR-FR1-TM31b-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM32-20MHz_SR30720000-TDD-ADJUSTED.bin",
+          "NR-FR1-TM33-20MHz_SR30720000-TDD-ADJUSTED.bin"
+        ],
+        "default": "20 MHz",
+        "type": "string"
+      }
+    }
+}
+
