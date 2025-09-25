@@ -13,7 +13,7 @@
         "$ref": "ors-cell.json#/properties/tx_gain"
       },
       "dl_frequency": {
-        "$ref": "ors-cell.json#/properties/dl_frequency"
+        "$ref": "ors-enb-cell.json#/properties/dl_frequency"
       },
       "file": {
         "title": "SDR Play mode",
