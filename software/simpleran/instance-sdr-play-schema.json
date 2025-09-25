@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Values returned by eNB/gNB instantiation (stub)",
+  "description": "Values returned by SDR Play instantiation (stub)",
   "type": "object",
   "properties": {}
 }
