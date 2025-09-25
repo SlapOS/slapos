@@ -12,9 +12,6 @@
       "tx_gain": {
         "$ref": "ors-cell.json#/properties/tx_gain"
       },
-      "bandwidth": {
-        "$ref": "ors-gnb-cell.json#/properties/nr_bandwidth"
-      },
       "dl_frequency": {
         "$ref": "ors-cell.json#/properties/dl_frequency"
       },
