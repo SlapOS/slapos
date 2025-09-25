@@ -53,6 +53,14 @@
       "request": "instance-ue-item-input-schema.json",
       "response": "instance-ue-item-schema.json",
       "index": 6
+    },
+    "sdr-play": {
+      "title": "SDR Play",
+      "software-type": "sdr-play",
+      "description": "SDR Play",
+      "request": "instance-sdr-play-input-schema.json",
+      "response": "instance-sdr-play-schema.json",
+      "index": 7
     }
   }
 }
