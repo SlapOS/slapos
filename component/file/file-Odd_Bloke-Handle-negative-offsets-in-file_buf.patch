@@ -1,0 +1,73 @@
+From 33f3ca68239535c4bf334216dbb4e9e6bf0e0c7e Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Wed, 28 May 2025 19:22:22 +0000
+Subject: [PATCH] PR/622: Odd_Bloke: Handle negative offsets in file_buffer(),
+ when fd is not available.
+
+---
+ src/buffer.c    |  6 +++++-
+ src/softmagic.c | 17 ++++++++++++-----
+ 2 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/src/buffer.c b/src/buffer.c
+index 598db147..058fbadd 100644
+--- a/src/buffer.c
++++ b/src/buffer.c
+@@ -27,7 +27,7 @@
+ #include "file.h"
+ 
+ #ifndef	lint
+-FILE_RCSID("@(#)$File: buffer.c,v 1.13 2023/07/02 12:48:39 christos Exp $")
++FILE_RCSID("@(#)$File: buffer.c,v 1.14 2025/05/28 19:22:22 christos Exp $")
+ #endif	/* lint */
+ 
+ #include "magic.h"
+@@ -68,6 +68,10 @@ buffer_fill(const struct buffer *bb)
+ 	if (b->elen != 0)
+ 		return b->elen == FILE_BADSIZE ? -1 : 0;
+ 
++	// Nothing to refill, everything is in memory
++	if (b->fd == -1)
++		return 0;
++
+ 	if (!S_ISREG(b->st.st_mode))
+ 		goto out;
+ 
+diff --git a/src/softmagic.c b/src/softmagic.c
+index 59300a69..c0824b5b 100644
+--- a/src/softmagic.c
++++ b/src/softmagic.c
+@@ -1534,10 +1534,16 @@ msetoffset(struct magic_set *ms, struct magic *m, struct buffer *bb,
+ 			    "u at level %u", o, cont_level);
+ 			return -1;
+ 		}
+-		if (CAST(size_t, m->offset) > b->elen)
+-			return -1;
+-		buffer_init(bb, -1, NULL, b->ebuf, b->elen);
+-		ms->eoffset = ms->offset = CAST(int32_t, b->elen - m->offset);
++		if (b->fd == -1) {
++			ms->eoffset = ms->offset =
++			    CAST(int32_t, b->flen - m->offset);
++		} else {
++			if (CAST(size_t, m->offset) > b->elen)
++				return -1;
++			buffer_init(bb, -1, NULL, b->ebuf, b->elen);
++			ms->eoffset = ms->offset =
++			    CAST(int32_t, b->elen - m->offset);
++		}
+ 	} else {
+ 		offset = m->offset;
+ 		if ((m->flag & OFFPOSITIVE) || cont_level == 0) {
+@@ -1547,7 +1553,8 @@ normal:
+ 			ms->offset = offset;
+ 			ms->eoffset = 0;
+ 		} else {
+-			ms->offset = ms->eoffset + offset;
++			if (b->fd != -1)
++				ms->offset = ms->eoffset + offset;
+ 		}
+ 	}
+ 	if ((ms->flags & MAGIC_DEBUG) != 0) {
+-- 
+2.48.0
+
