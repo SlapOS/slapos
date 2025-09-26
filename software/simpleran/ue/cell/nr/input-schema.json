@@ -30,7 +30,7 @@
       "$ref": "../../../cell/nr/input-schema.json#/properties/dl_nr_arfcn"
     },
     "bandwidth": {
-      "$ref": "../../../cell/common.json#/properties/bandwidth"
+      "$ref": "../../../cell/common.json#/$defs/bandwidth"
     },
     "nr_band": {
       "$ref": "../../../cell/nr/input-schema.json#/properties/nr_band"
