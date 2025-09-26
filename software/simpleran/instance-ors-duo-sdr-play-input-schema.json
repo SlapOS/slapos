@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDR Play Input Parameters",
+  "type": "object",
+  "properties": {
+    "cell1": {
+      "$ref": "instance-sdr-play-input-schema.json#/properties/cell1",
+      "description": "Radio parameters of the first cell"
+    },
+    "cell2": {
+      "$ref": "instance-sdr-play-input-schema.json#/properties/cell1",
+      "description": "Radio parameters of the second cell"
+    }
+  }
+}
