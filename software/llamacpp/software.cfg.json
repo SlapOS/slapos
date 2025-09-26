@@ -1,0 +1,14 @@
+{
+  "name": "llama.cpp",
+  "description": "llama.cpp is a high-performance, C++ based inference engine for running transformer models.",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default Llama.cpp server configuration",
+      "request": "instance-input-schema.json",
+      "response": "",
+      "index": 0
+    }
+  }
+}
