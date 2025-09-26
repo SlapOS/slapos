@@ -85,9 +85,15 @@
         }
       },
       "default": [
-        {"name": "internet"},
-        {"name": "default"},
-        {"name": "sos"}
+        {
+          "name": "internet"
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "sos"
+        }
       ]
     },
     "qci": {
