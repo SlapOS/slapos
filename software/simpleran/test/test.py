@@ -118,7 +118,7 @@ def NR_PEER(nr_cell_id, gnb_id_bits, pci, tac, plmn):
       'nr_cell_id':   '0x%09x' % nr_cell_id,
       'gnb_id_bits':  gnb_id_bits,
       'pci':          pci,
-      'tac':          tac,
+      'tac':          '0x%x' % tac,
       'plmn':          plmn,
   }
 
@@ -332,8 +332,8 @@ class ENBTestCase4(RFTestCase4):
             {'plmn': '44444', 'attach_without_pdn': True, 'reserved': True},
         ],
         'plmn_list_5g':     [
-            {'plmn': '51413', 'tac': 0x124},
-            {'plmn': '55555', 'tac': 0x125, 'ranac': 210, 'reserved': True},
+            {'plmn': '51413', 'tac': '0x124'},
+            {'plmn': '55555', 'tac': '0x125', 'ranac': 210, 'reserved': True},
         ],
         'xlog_forwarding_enabled': False,
     })}
