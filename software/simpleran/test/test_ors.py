@@ -52,8 +52,7 @@ param_dict = {
         'rx_gain': 17,
         'cell_id': '0x01',
         'pci': 250,
-        'tac': '0x1717',
-        'root_sequence_index': '1',
+        'root_sequence_index': 1,
     },
     'nodeb': {
         'n_antenna_dl': 2,
@@ -64,58 +63,48 @@ param_dict = {
                 'name': 'ORS1',
                 'cell_type': 'lte',
                 'cell_kind': 'enb_peer',
-                'rat': 'eutra',
                 'dl_earfcn': 38450,
                 'pci': 1,
-                'n_id_cell': 1,
-                'cell_id': '0x0000001',
                 'e_cell_id': '0x0000001',
-                'tac': 1,
+                'tac': '0x01',
                 'plmn': "00101"
             },
             {
                 'name': 'ORS2',
                 'cell_type': 'lte',
                 'cell_kind': 'enb_peer',
-                'rat': 'eutra',
                 'dl_earfcn': 38050,
                 'pci': 2,
-                'n_id_cell': 2,
-                'cell_id': '0x0000002',
                 'e_cell_id': '0x0000002',
-                'tac': 1,
+                'tac': '0x01',
                 'plmn': "00101"
             },
             {
                 'name': 'ORS3',
                 'cell_type': 'nr',
                 'cell_kind': 'enb_peer',
-                'rat': 'nr',
                 'dl_nr_arfcn': 519000,
                 'ssb_nr_arfcn': 518910,
                 'ul_nr_arfcn': 519000,
                 'pci': 1,
-                'n_id_cell': 1,
                 'nr_cell_id': '0x0000001',
                 'gnb_id_bits': 28,
                 'nr_band': 41,
-                'tac': 1,
+                'tac': '0x01',
                 'plmn': "00101"
             },
             {
                 'name': 'ORS4',
                 'cell_type': 'nr',
                 'cell_kind': 'enb_peer',
-                'rat': 'nr',
                 'dl_nr_arfcn': 378000,
                 'ssb_nr_arfcn': 378030,
                 'ul_nr_arfcn': 378000,
                 'pci': 2,
-                'n_id_cell': 2,
                 'nr_cell_id': '0x0000002',
                 'gnb_id_bits': 30,
                 'nr_band': 39,
-                'tac': 2,
+                'tac': '0x02',
                 'plmn': "00101"
             },
         ],
@@ -124,6 +113,7 @@ param_dict = {
 enb_param_dict = {
     'cell1': {
         # ors_version for tests is B39, so earfcn needs to be within B39
+        'tac': '0x1717',
         'dl_earfcn': 38450,
         'bandwidth': "10 MHz",
         'tdd_ul_dl_config': '[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink',
@@ -159,8 +149,6 @@ gnb_param_dict = {
             {'name': '10.0.0.1',    'amf_addr': '10.0.0.1'},
             {'name': '2001:db8::1', 'amf_addr': '2001:db8::1'},
         ],
-        'nr_handover_time_to_trigger': 40,
-        'nr_handover_a3_offset': 10,
         'xn_peers': [
             {
                 'name': '2001:db8::1',
@@ -182,8 +170,8 @@ gnb_param_dict1 = {
     },
     'nodeb': {
         'plmn_list': [
-            {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': 1},
-            {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': 2},
+            {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': '0x01'},
+            {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': '0x02'},
         ],
     },
 }
@@ -234,7 +222,7 @@ class TestENBParameters(ORSTestCase):
     self.assertEqual(conf['enb_id'], int(enb_param_dict['nodeb']['enb_id'], 16))
     self.assertEqual(conf['cell_list'][0]['n_id_cell'], enb_param_dict['cell1']['pci'])
     self.assertEqual(conf['cell_list'][0]['tac'], int(enb_param_dict['cell1']['tac'], 16))
-    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], int(enb_param_dict['cell1']['root_sequence_index']))
+    self.assertEqual(conf['cell_list'][0]['root_sequence_index'], enb_param_dict['cell1']['root_sequence_index'])
     self.assertEqual(conf['cell_list'][0]['cell_id'], 1)
     for p in conf['cell_default']['plmn_list']:
       for plmn in enb_param_dict['nodeb']['plmn_list']:
@@ -260,8 +248,7 @@ class TestENBParameters(ORSTestCase):
       if 'dl_earfcn' in p:
         self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
         self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
-        self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
-        self.assertEqual(p['tac'],          conf_ncell['tac'])
+        self.assertEqual(p['tac'],          int(conf_ncell['tac'], 16))
         self.assertEqual(p['plmn'],          conf_ncell['plmn'])
       elif 'dl_nr_arfcn' in p:
         self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
@@ -270,7 +257,7 @@ class TestENBParameters(ORSTestCase):
         self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
         self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
         self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
-        self.assertEqual(p['tac'],          conf_ncell['tac'])
+        self.assertEqual(p['tac'],          int(conf_ncell['tac'], 16))
         self.assertEqual(p['band'],         conf_ncell['nr_band'])
         self.assertEqual(p['plmn'],          conf_ncell['plmn'])
 
@@ -300,8 +287,9 @@ class TestGNBParameters1(ORSTestCase):
       for plmn in gnb_param_dict1['nodeb']['plmn_list']:
           if plmn['plmn'] == p['plmn']:
               break
-      for n in "plmn ranac reserved tac".split():
+      for n in "plmn ranac reserved".split():
         self.assertEqual(p[n], plmn[n])
+      self.assertEqual(int(p["tac"]), int(plmn["tac"], 16))
     for p in conf['amf_list']:
       for amf in gnb_param_dict1['nodeb']['amf_list']:
           if amf['name'] == p['amf_addr']:
@@ -325,8 +313,7 @@ class TestGNBParameters1(ORSTestCase):
       if 'dl_earfcn' in p:
         self.assertEqual(p['dl_earfcn'],  conf_ncell['dl_earfcn'])
         self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
-        self.assertEqual(p['cell_id'],   int(conf_ncell['cell_id'], 16))
-        self.assertEqual(p['tac'],          conf_ncell['tac'])
+        self.assertEqual(p['tac'],          int(conf_ncell['tac'], 16))
         self.assertEqual(p['plmn'],          conf_ncell['plmn'])
       elif 'dl_nr_arfcn' in p:
         self.assertEqual(p['dl_nr_arfcn'],  conf_ncell['dl_nr_arfcn'])
@@ -335,7 +322,7 @@ class TestGNBParameters1(ORSTestCase):
         self.assertEqual(p['n_id_cell'],    conf_ncell['pci'])
         self.assertEqual(p['gnb_id_bits'],  conf_ncell['gnb_id_bits'])
         self.assertEqual(p['nr_cell_id'],   int(conf_ncell['nr_cell_id'], 16))
-        self.assertEqual(p['tac'],          conf_ncell['tac'])
+        self.assertEqual(p['tac'],          int(conf_ncell['tac'], 16))
         self.assertEqual(p['band'],         conf_ncell['nr_band'])
         self.assertEqual(p['plmn'],          conf_ncell['plmn'])
 

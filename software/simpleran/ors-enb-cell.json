@@ -8,7 +8,8 @@
       "description": "Physical Cell ID. Range 0 to 503. Equal to ORS Serial number modulo 504 by default"
     },
     "bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
       "enum": [
         "1.4 MHz",
         "3 MHz",
@@ -39,12 +40,12 @@
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
     },
     "root_sequence_index": {
-      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "$ref": "cell/common.json#/$defs/root_sequence_index",
       "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets PRACH root sequence index (SIB2.rootSequenceIndex field). It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "tac": {
       "$ref": "cell/lte/input-schema.json#/properties/tac",
-      "default": 1
+      "default": "0x0001"
     },
     "cipher_algo_pref": {
       "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
