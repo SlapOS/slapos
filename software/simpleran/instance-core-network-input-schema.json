@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Core Network Input Parameters",
   "type": "object",
   "properties": {
@@ -85,9 +85,15 @@
         }
       },
       "default": [
-        "internet",
-        "default",
-        "sos"
+        {
+          "name": "internet"
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "sos"
+        }
       ]
     },
     "qci": {
@@ -125,6 +131,11 @@
     "s6_origin_host": {
       "title": "S6 Origin Host",
       "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
+      "type": "string"
+    },
+    "lock": {
+      "title": "Force reprocess",
+      "description": "Expert only: change this parameter value to force reprocess of partition",
       "type": "string"
     }
   }
