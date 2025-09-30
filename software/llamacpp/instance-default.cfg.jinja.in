@@ -1,0 +1,175 @@
+[buildout]
+parts =
+  directory
+  llamacpp-service
+  huggingface-cli-download-script
+  huggingface-cli-download
+  huggingface-download-promise
+  llamacpp-server-run-script
+  nginx-certificate
+  nginx-conf
+  nginx-service
+  nginx-frontend-promise
+  llamacpp-frontend-promise
+  publish-connection-parameter
+
+extends =
+  {{ monitor_template_cfg }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+srv = $${:home}/srv
+bin = $${:home}/bin
+tmp = $${:home}/tmp
+log = $${:var}/log
+run = $${:var}/run
+services = $${:etc}/service
+scripts = $${:etc}/run
+models = $${:var}/models
+cache = $${:var}/hf-cache
+httpd-log = $${:var}/log/apache
+www = $${:srv}/www
+ssl = $${:etc}/ssl
+
+[huggingface-cli-download-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ huggingface_cli_download_template }}
+output = $${directory:bin}/huggingface-cli-download-run.py
+mode = 0755
+context =
+    raw hfc_bin    {{ software_bin }}/huggingface-cli
+    raw models_dir $${directory:models}
+    raw cache_dir  $${directory:cache}
+    raw log_file   $${directory:log}/hf-download.log
+    raw state_file $${directory:log}/huggingface-model-download.state
+    raw repo_id    {{ slapparameter_dict.get('hf_repo_id') }}
+    raw filename   {{ slapparameter_dict.get('hf_filename') }}
+    raw prebaked_repo_id    "{{ prebaked_repo_id }}"
+    raw prebaked_filename   "{{ prebaked_filename }}"
+    raw prebaked_dir        "{{ prebaked_dir }}"
+
+[huggingface-cli-download]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:executable} $${directory:bin}/huggingface-cli-download-run.py
+wrapper-path = $${directory:services}/huggingface-cli-download
+
+[huggingface-download-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = huggingface-download-complete.py
+config-state = empty
+filename = huggingface-model-download.state
+config-filename = $${directory:log}/$${:filename}
+
+[llamacpp-server-run-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ llamacpp_server_run_template }}
+output = $${directory:bin}/llamacpp-server-run.py
+log_filename = $${directory:log}/llamacpp-server.log
+mode = 0755
+context =
+    raw llama_server_bin ${llama-source:location}/build/bin/llama-server
+    raw models_dir $${directory:models}
+    raw log_file $${:log_filename}
+    raw model {{ slapparameter_dict.get('hf_filename') }}
+    raw host $${llamacpp-service:llamacpp-host}
+    raw port {{ slapparameter_dict.get('port') }}
+    raw ngl {{ slapparameter_dict.get('ngl') }}
+    raw threads  {{ slapparameter_dict.get('threads') }}
+    raw threads_batch  {{ slapparameter_dict.get('threads-batch') }}
+    raw batch  {{ slapparameter_dict.get('batch') }}
+    raw micro_batch  {{ slapparameter_dict.get('micro-batch') }}
+    raw cache_type_k  {{ slapparameter_dict.get('cache-type-k') }}
+    raw cache_type_v  {{ slapparameter_dict.get('cache-type-v') }}
+    raw ctx {{ slapparameter_dict.get('ctx') }}
+    raw embedding {{ slapparameter_dict.get('embedding') }}
+    raw repo_id {{ slapparameter_dict.get('hf_repo_id') }}
+
+[llamacpp-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:executable} $${directory:bin}/llamacpp-server-run.py
+wrapper-path = $${directory:services}/llamacpp-service
+llamacpp-host = $${slap-configuration:ipv4-random}
+wait-for-files =
+  $${directory:models}/{{ slapparameter_dict.get('hf_filename') }}
+environment =
+  LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
+  HF_HOME=$${directory:cache}
+  HUGGING_FACE_HUB_TOKEN={{ slapparameter_dict.get('hf_token') }}
+
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:key-file} ]
+  then
+    mkdir -p $${directory:ssl}
+    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${nginx-parameters:ipv6}" \
+      -newkey rsa -keyout $${:key-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+key-file = $${nginx-parameters:ssl-key}
+cert-file = $${nginx-parameters:ssl-certificate}
+common-name = $${nginx-parameters:ipv6}
+stop-on-error = true
+
+[nginx-parameters]
+ipv6 = $${slap-configuration:ipv6-random}
+port = 4443
+pid-file = $${directory:run}/nginx.pid
+config-file = $${directory:etc}/nginx.conf
+access-log = $${directory:httpd-log}/nginx-access.log
+error-log = $${directory:httpd-log}/nginx-error.log
+nginx-mime-types = {{ nginx_location }}/conf/mime.types
+backend-url = http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
+ssl-certificate = $${directory:etc}/ssl/nginx.crt
+ssl-key = $${directory:etc}/ssl/nginx.key
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ nginx_conf_in }}
+output = $${nginx-parameters:config-file}
+context =
+    section parameter_dict nginx-parameters
+
+[nginx-service]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_location }}/sbin/nginx -c $${nginx-conf:output} -p $${directory:srv} -g "error_log $${directory:log}/nginx-startup.log debug;"
+wrapper-path = $${directory:services}/nginx-service
+wait-for-files =
+  $${nginx-parameters:ssl-certificate}
+  $${nginx-parameters:ssl-key}
+
+[nginx-frontend-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = nginx-ipv6-port-listening.py
+config-host = $${nginx-parameters:ipv6}
+config-port = $${nginx-parameters:port}
+
+[request-frontend]
+<= monitor-frontend
+name = lllamacpp Frontend
+config-url = https://[$${nginx-parameters:ipv6}]:$${nginx-parameters:port}
+
+[llamacpp-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = llamacpp-http-frontend.py
+url = $${request-frontend:connection-secure_access}
+config-url = $${:url}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${request-frontend:connection-secure_access}
+ipv4_url =  http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
+backend-url = $${request-frontend:config-url}
+repo = {{ slapparameter_dict.get('hf_repo_id') }}
+filename = {{ slapparameter_dict.get('hf_filename') }}
+model = $${:repo}:$${:filename}
+model-download-log = $${directory:log}/hf-download.log
+service-log = $${directory:log}/llamacpp-server.log
