@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDR Play NodeB",
+  "type": "object",
+  "properties": {
+    "gps_sync": {
+      "$ref": "instance-enb-input-schema.json#/properties/gps_sync"
+    }
+  }
+}
+
