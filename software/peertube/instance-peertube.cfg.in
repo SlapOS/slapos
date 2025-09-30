@@ -153,6 +153,10 @@ name = redis
 recipe = slapos.cookbook:generate.password
 username = root
 
+[peertube-secrets-peertube]
+recipe = slapos.cookbook:generate.password
+bytes = 64
+
 [peertube-yaml]
 recipe = slapos.recipe.template
 url = {{ template_peertube_yaml }}
