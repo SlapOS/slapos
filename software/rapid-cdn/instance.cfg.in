@@ -106,6 +106,7 @@ configuration.backend-connect-retries = 3
 configuration.backend-haproxy-http-port = 21080
 configuration.backend-haproxy-https-port = 21443
 configuration.backend-haproxy-statistic-port = 21444
+configuration.trafficserver-introspection-port = 23433
 configuration.authenticate-to-backend = False
 configuration.rotate-num = 4000
 configuration.slave-introspection-https-port = 22443
