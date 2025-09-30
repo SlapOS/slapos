@@ -18,9 +18,13 @@
       "description": "IP Address to resolve",
       "type": "string"
     },
+    "domain": {
+      "title": "Root Domain",
+      "type": "string"
+    },
     "subdomain": {
       "title": "Subdomain",
-      "description": "Subdomain (Domain comes from the Core Network)",
+      "description": "Subdomain (domain comes from the Core Network unless root domain is specified)",
       "type": "string"
     }
   }
