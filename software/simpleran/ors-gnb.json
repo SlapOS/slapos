@@ -1,7 +1,7 @@
 {
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Input Parameters",
+  "title": "ORS gNB",
   "properties": {
     "gnb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
