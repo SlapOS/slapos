@@ -10,6 +10,9 @@
     "cell2": {
       "$ref": "instance-sdr-play-input-schema.json#/properties/cell1",
       "description": "Radio parameters of the second cell"
+    },
+    "nodeb": {
+      "$ref": "instance-sdr-play-input-schema.json#/properties/nodeb"
     }
   }
 }

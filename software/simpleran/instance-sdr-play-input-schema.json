@@ -14,6 +14,18 @@
         }
       ],
       "default": {}
+    },
+    "nodeb": {
+      "title": "NodeB",
+      "description": "Radio parameters not related to cell",
+      "unevaluatedProperties": false,
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "sdr-play-nodeb.json"
+        }
+      ],
+      "default": {}
     }
   }
 }
