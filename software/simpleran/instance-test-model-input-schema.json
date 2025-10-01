@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDR Play Input Parameters",
+  "type": "object",
+  "properties": {
+    "cell1": {
+      "title": "Cell",
+      "description": "Radio parameters of the cell",
+      "unevaluatedProperties": false,
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "test-model-cell.json"
+        }
+      ],
+      "default": {}
+    },
+    "nodeb": {
+      "title": "NodeB",
+      "description": "Radio parameters not related to cell",
+      "unevaluatedProperties": false,
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "test-model-nodeb.json"
+        }
+      ],
+      "default": {}
+    }
+  }
+}
