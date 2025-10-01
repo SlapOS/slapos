@@ -4,15 +4,15 @@
   "type": "object",
   "properties": {
     "cell1": {
-      "$ref": "instance-sdr-play-input-schema.json#/properties/cell1",
+      "$ref": "instance-test-model-input-schema.json#/properties/cell1",
       "description": "Radio parameters of the first cell"
     },
     "cell2": {
-      "$ref": "instance-sdr-play-input-schema.json#/properties/cell1",
+      "$ref": "instance-test-model-input-schema.json#/properties/cell1",
       "description": "Radio parameters of the second cell"
     },
     "nodeb": {
-      "$ref": "instance-sdr-play-input-schema.json#/properties/nodeb"
+      "$ref": "instance-test-model-input-schema.json#/properties/nodeb"
     }
   }
 }

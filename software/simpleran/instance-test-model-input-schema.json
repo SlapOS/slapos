@@ -10,7 +10,7 @@
       "type": "object",
       "allOf": [
         {
-          "$ref": "sdr-play-cell.json"
+          "$ref": "test-model-cell.json"
         }
       ],
       "default": {}
@@ -22,7 +22,7 @@
       "type": "object",
       "allOf": [
         {
-          "$ref": "sdr-play-nodeb.json"
+          "$ref": "test-model-nodeb.json"
         }
       ],
       "default": {}
