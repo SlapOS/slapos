@@ -268,6 +268,9 @@ config-wcfs_enable = {{ dumps(wcfs_enable) }}
 config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
+[request-zope-base:python3]
+config-dos-protection-dict = {{ dumps(slapparameter_dict.get('dos-protection-dict', {"form-memory-limit": "10MB"})) }}
+
 {% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout', 300) -%}
 {% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}

@@ -126,3 +126,12 @@ trusted-proxy 0.0.0.0
 </zodb_db>
 
 {% endfor -%}
+
+{% set dos_protection_dict = parameter_dict.get('dos-protection-dict') %}
+{% if dos_protection_dict %}
+<dos_protection>
+{% for key, value in dos_protection_dict.items() %}
+ {{ key }} {{ value }}
+{% endfor %}
+</dos_protection>
+{% endif %}
