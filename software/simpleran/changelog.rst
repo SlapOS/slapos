@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 1.0.440 (2025-10-01)
+-------------
+
+* Add test-model software type
+* Fix tx power offset not being taken into account
+
 Version 1.0.438 (2025-09-29)
 -------------
 
