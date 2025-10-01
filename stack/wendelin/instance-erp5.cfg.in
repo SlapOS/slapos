@@ -268,6 +268,7 @@ config-wcfs_enable = {{ dumps(wcfs_enable) }}
 config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
+
 {% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout', 300) -%}
 {% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}
@@ -293,6 +294,9 @@ software-type = zope
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
 {%   set current_zope_family_override_dict = zope_family_override_dict.get(zope_family, {}) -%}
 {%   do balancer_timeout_dict.__setitem__(zope_family, current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) -%}
+[{{ section_name }}:python3]
+config-dos-protection = {{ dumps(zope_parameter_dict.get('dos-protection', {"form-memory-limit": "10MB"})) }}
+
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}

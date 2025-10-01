@@ -277,6 +277,35 @@
               "default": "10MB",
               "type": "string"
             },
+            "dos-protection": {
+              "type": "object",
+              "title": "DoS Protection settings, only when run with python3",
+              "description": "Key/value pairs controlling DoS protection limits",
+              "properties": {
+                "form-memory-limit": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(KB|MB|GB)$",
+                  "description": "The maximum size for each part in a multipart post request, for the complete body in an urlencoded post request and for the complete request body when accessed as bytes (rather than a file).",
+                  "default": "1MB"
+                },
+                "form-disk-limit": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(KB|MB|GB)$",
+                  "description": "The maximum size of a POST request body",
+                  "default": "1GB"
+                },
+                "form-memfile-limit": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(KB|MB|GB)$",
+                  "description": "The value of form variables of type file with larger size are stored on disk rather than in memory.",
+                  "default": "4KB"
+                },
+                "additionalProperties": false
+              },
+              "default": {
+                "form-memory-limit": "10MB"
+              }
+            },
             "port-base": {
               "allOf": [
                 {
