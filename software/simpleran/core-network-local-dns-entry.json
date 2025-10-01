@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local DNS Entry",
+  "required": [
+    "ip",
+    "name",
+    "subdomain"
+  ],
+  "properties": {
+    "name": {
+      "title": "Name",
+      "description": "Name (not used in DNS entry, for management purposes only)",
+      "type": "string"
+    },
+    "ip": {
+      "title": "IP Address",
+      "description": "IP Address to resolve",
+      "type": "string"
+    },
+    "domain": {
+      "title": "Root Domain",
+      "type": "string"
+    },
+    "subdomain": {
+      "title": "Subdomain",
+      "description": "Subdomain (domain comes from the Core Network unless root domain is specified)",
+      "type": "string"
+    }
+  }
+}

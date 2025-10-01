@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 1.0.438 (2025-09-29)
+-------------
+
+* Publish Amarisoft configurations along with the logs
+* Ensure all defaults are set correctly
+* Fix GPS promise always failing when GPS was enabled
+
 Version 1.0.432 (2025-08-14)
 -------------
 
