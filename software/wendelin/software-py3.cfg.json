@@ -6,7 +6,7 @@
     "default": {
       "title": "Default",
       "software-type": "default",
-      "request": "instance-wendelin-input-schema.json",
+      "request": "instance-wendelin-input-schema-py3.json",
       "response": "instance-wendelin-output-schema.json",
       "index": 0
     }

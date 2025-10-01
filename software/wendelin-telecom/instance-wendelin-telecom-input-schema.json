@@ -4,7 +4,7 @@
   "type": "object",
   "allOf": [
     {
-      "$ref": "../wendelin/instance-wendelin-input-schema.json"
+      "$ref": "../wendelin/instance-wendelin-input-schema-py3.json"
     }
   ],
   "properties": {

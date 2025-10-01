@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate Wendelin for python3",
+  "allOf": [
+    {
+      "$ref": "./instance-wendelin-input-schema.json"
+    }
+  ],
+  "properties": {
+    "dos-protection-dict": {
+      "type": "object",
+      "title": "DoS Protection settings",
+      "description": "Key/value pairs controlling DoS protection limits",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9]+(KB|MB|GB)$"
+      },
+      "default": {
+        "form-memory-limit": "10MB"
+      }
+    }
+  }
+}
