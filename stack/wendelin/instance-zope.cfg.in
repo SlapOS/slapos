@@ -287,6 +287,9 @@ deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-pass
 tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
 tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% endif -%}
+{% if slapparameter_dict.get('dos-protection') -%}
+dos-protection  = {{ dumps(slapparameter_dict['dos-protection']) }}
+{% endif -%}
 
 [zope-conf-base]
 < = jinja2-template-base
