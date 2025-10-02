@@ -1167,10 +1167,8 @@ init =
 [xlog-fluentbit-config]
 recipe = slapos.recipe.template
 output = ${directory:etc}/${:_buildout_section_name_}.cfg
-# XXX
 logfile = ${frontend-directory:slave-log}/*_access_log
-# XXX
-dummy-tag = DUMMY_TAG
+tag = cdnaccess_cdn{{ slapparameter_dict['cluster-reference'] }}_{{ instance_parameter_dict['instance-guid'] }}
 forward-host = {{ instance_parameter_dict['configuration.xlog-fluentbit-forward-host'] }}
 forward-port = {{ instance_parameter_dict['configuration.xlog-fluentbit-forward-port'] }}
 forward-shared-key = {{ instance_parameter_dict.get('configuration.configuration.xlog-fluentbit-forward-shared-key', '') }}
@@ -1190,7 +1188,8 @@ inline =
   [INPUT]
       name            tail
       path            ${:logfile}
-      tag             ${:dummy-tag}
+      tag             ${:tag}_<slave_id>
+      tag_regex       .*\/(?<slave_id>.*)_access_log$
       Read_from_Head  True
       db              ${directory:xlog-fluentbit}/tail-state
       Buffer_Max_Size 1M
