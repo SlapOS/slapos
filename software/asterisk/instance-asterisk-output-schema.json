@@ -2,14 +2,9 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Values returned by instanciation",
   "properties": {
-    "ssh-command": {
-      "description": "SSH command used to access the instance",
+    "asterisk-ip": {
+      "description": "IP and port that asterisk uses to bind. It should be used in Amarisoft's IMS",
       "type": "string"
-    },
-    "ssh-url": {
-      "description": "ssh:// URL to access the instance",
-      "type": "string",
-      "format": "uri"
     }
   },
   "type": "object"
