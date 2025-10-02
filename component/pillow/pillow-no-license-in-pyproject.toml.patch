@@ -1,0 +1,14 @@
+Remove "license" keys in pyproject.toml, this was incompatible with the old version of setuptools used in SlapOS
+
+diff '--color=auto' -u -ra pillow-11.3.0.orig/pyproject.toml pillow-11.3.0/pyproject.toml
+--- pillow-11.3.0.orig/pyproject.toml	2025-09-20 15:01:42.804639022 +0900
++++ pillow-11.3.0/pyproject.toml	2025-09-20 15:01:54.292579804 +0900
+@@ -14,8 +14,6 @@
+ keywords = [
+   "Imaging",
+ ]
+-license = "MIT-CMU"
+-license-files = [ "LICENSE" ]
+ authors = [
+   { name = "Jeffrey A. Clark", email = "aclark@aclark.net" },
+ ]
