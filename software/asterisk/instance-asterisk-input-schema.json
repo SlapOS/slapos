@@ -1,12 +1,26 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "user-authorized-key": {
-      "title": "User Authorized Key",
-      "description": "SSH public key in order to connect to the SSH server of this instance.",
-      "textarea": true,
+    "bind-ip": {
+      "title": "IP where asterisk will bind",
+      "description": "This is the IPv6 or IPv4 that Asterisk will use to bind. By default it will use the local IPv4 of the partition.",
+      "type": "string"
+    },
+    "sip-trunk-server": {
+      "title": "domain name or IP of the SIP trunk",
+      "description": "This is the domaine name or the IP of the SIP trunk server to use (e.g. sbc6.fr.sip.ovh).",
+      "type": "string"
+    },
+    "sip-trunk-number": {
+      "title": "Phone number of the SIP trunk",
+      "description": "This is the phone number of the SIP trunk.",
+      "type": "string"
+    },
+    "sip-trunk-password": {
+      "title": "Password of the SIP trunk",
+      "description": "This is the password of the SIP trunk.",
       "type": "string"
     }
   }
