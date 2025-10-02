@@ -1,0 +1,60 @@
+
+  'AMPSYSLOGLEVEL' => array(CONF_TYPE_SELECT, 'FILE'),
+  'NOOPTRACE'      => array(CONF_TYPE_INT, '1'),
+  'ARI_ADMIN_PASSWORD' => array(CONF_TYPE_TEXT, 'ari_password'),
+  'CFRINGTIMERDEFAULT' => array(CONF_TYPE_SELECT, '0'),
+  
+  'AMPASTERISKWEBUSER'  => array(CONF_TYPE_TEXT, 'asterisk'),
+  'AMPASTERISKWEBGROUP' => array(CONF_TYPE_TEXT, 'asterisk'),
+  'AMPASTERISKUSER' => array(CONF_TYPE_TEXT, 'asterisk'),
+  'AMPASTERISKGROUP'  => array(CONF_TYPE_TEXT, 'asterisk'),
+  'AMPDEVUSER'     => array(CONF_TYPE_TEXT, 'apache'),
+  'AMPDEVGROUP'    => array(CONF_TYPE_TEXT, 'apache'),
+  
+  'ASTETCDIR'      => array(CONF_TYPE_DIR, '/etc/asterisk'),
+  'ASTMODDIR'      => array(CONF_TYPE_DIR, '/usr/lib/asterisk/modules'),
+  'ASTVARLIBDIR'   => array(CONF_TYPE_DIR, '/var/lib/asterisk'),
+  'ASTAGIDIR'      => array(CONF_TYPE_DIR, '/var/lib/asterisk/agi-bin'),
+  'ASTSPOOLDIR'    => array(CONF_TYPE_DIR, '/var/spool/asterisk/'),
+  'ASTRUNDIR'      => array(CONF_TYPE_DIR, '/var/run/asterisk'),
+  'ASTLOGDIR'      => array(CONF_TYPE_DIR, '/var/log/asterisk'),
+  'AMPBIN'         => array(CONF_TYPE_DIR, '/var/lib/asterisk/bin'),
+  'AMPSBIN'        => array(CONF_TYPE_DIR, '/usr/sbin'),
+  'AMPWEBROOT'     => array(CONF_TYPE_DIR, '/var/www/html'),
+  'MOHDIR'         => array(CONF_TYPE_DIR, 'mohmp3'),
+  'FPBXDBUGFILE'   => array(CONF_TYPE_DIR, '/tmp/freepbx_debug.log'),
+  
+  'ENABLECW'       => array(CONF_TYPE_BOOL, true),
+  'CWINUSEBUSY'    => array(CONF_TYPE_BOOL, true),
+  'AMPBADNUMBER'   => array(CONF_TYPE_BOOL, true),
+  'DEVEL'          => array(CONF_TYPE_BOOL, false),
+  'DEVELRELOAD'    => array(CONF_TYPE_BOOL, false),
+  'CUSTOMASERROR'  => array(CONF_TYPE_BOOL, true),
+  'DYNAMICHINTS'   => array(CONF_TYPE_BOOL, false),
+  'BADDESTABORT'   => array(CONF_TYPE_BOOL, false),
+  'SERVERINTITLE'  => array(CONF_TYPE_BOOL, false),
+  'USEDEVSTATE'    => array(CONF_TYPE_BOOL, false),
+  'MODULEADMINWGET'=> array(CONF_TYPE_BOOL, false),
+  'AMPDISABLELOG'  => array(CONF_TYPE_BOOL, true),
+  'CHECKREFERER'   => array(CONF_TYPE_BOOL, true),
+  'RELOADCONFIRM'  => array(CONF_TYPE_BOOL, true),
+  'DIVERSIONHEADER' => array(CONF_TYPE_BOOL, false),
+  'ZAP2DAHDICOMPAT' => array(CONF_TYPE_BOOL, false),
+  'XTNCONFLICTABORT' => array(CONF_TYPE_BOOL, false),
+  'AMPENABLEDEVELDEBUG' => array(CONF_TYPE_BOOL, false),
+  'DISABLECUSTOMCONTEXTS' => array(CONF_TYPE_BOOL, false),
+
+  // Time Conditions (2.9 New)
+  'TCINTERVAL'     => array(CONF_TYPE_INT, '60'),
+  'TCMAINT'        => array(CONF_TYPE_BOOL, true),
+
+  // Queues
+  'USEQUEUESTATE'  => array(CONF_TYPE_BOOL, false),
+
+  // Day Night (2.9 New)
+  'DAYNIGHTTCHOOK' => array(CONF_TYPE_BOOL, false),
+
+  // Music
+  'AMPMPG123'      => array(CONF_TYPE_BOOL, true),
+  );
+

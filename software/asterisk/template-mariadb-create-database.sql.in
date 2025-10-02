@@ -1,0 +1,6 @@
+CREATE DATABASE IF NOT EXISTS $${mariadb-freepbx-database:passwd};
+GRANT ALL PRIVILEGES ON $${mariadb-freepbx-database:passwd}.* TO $${mariadb-freepbx-login:passwd}@'%%' IDENTIFIED BY '$${mariadb-freepbx-password:passwd}';
+CREATE DATABASE IF NOT EXISTS $${mariadb-asterisk-database:passwd};
+GRANT ALL PRIVILEGES ON $${mariadb-asterisk-database:passwd}.* TO $${mariadb-asterisk-login:passwd}@'%%' IDENTIFIED BY '$${mariadb-asterisk-password:passwd}';
+FLUSH PRIVILEGES;
+EXIT;

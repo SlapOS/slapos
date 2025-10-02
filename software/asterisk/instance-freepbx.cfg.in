@@ -1,0 +1,213 @@
+###############################
+#
+# Instanciate freepbx, asterisk
+#
+###############################
+[buildout]
+parts =
+  asterisk-service
+  mariadb-service
+  mariadb-create-database
+  mariadb-init-database
+  apache-service
+  freepbx-configuration
+  freepbx-copy-configuration
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+astetc = $${:etc}/asterisk
+# bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+varlib = $${:var}/lib
+varspool = $${:var}/spool
+astmonitor = $${:varspool}/monitor
+astfax = $${:varspool}/fax
+astvarlib = $${:varlib}/asterisk
+astvarlibbin = $${:astvarlib}/bin
+astspool = $${:varspool}/asterisk
+log = $${:var}/log
+www = $${:var}/www
+wwwhtml = $${:www}/html
+wwwhtmlpanel = $${:wwwhtml}/panel
+wwwcgi = $${:www}/cgi-bin
+astlog = $${:log}/asterisk
+tmp = $${buildout:directory}/tmp
+scripts = $${:etc}/run
+services = $${:etc}/service
+mariadb-data = $${:srv}/mariadb
+apache-htdocs = $${:srv}/htdocs
+# promises = $${:etc}/promise
+# novnc-conf = $${:etc}/novnc
+run = $${:var}/run
+astrun = $${:run}/asterisk
+# ca-dir = $${:srv}/ssl
+
+[mariadb-create-database]
+recipe = slapos.recipe.template
+url = ${template-mariadb-create-database:output}
+output = $${directory:scripts}/mariadb-create-database
+mode = 0700
+
+[mariadb-init-database]
+recipe = slapos.recipe.template
+url = ${template-mariadb-init-database:output}
+output = $${directory:bin}/mariadb-init-database
+mode = 0700
+
+[mariadb-create-database-sql]
+recipe = slapos.recipe.template
+url = ${template-mariadb-create-database-sql:output}
+output = $${directory:etc}/mariadb-create-database.sql
+mode = 0600
+
+[mariadb-freepbx-database]
+passwd = asterisk
+
+[mariadb-freepbx-login]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/mariadb-freepbx-login
+bytes = 8
+
+[mariadb-freepbx-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/mariadb-freepbx-passwd
+bytes = 24
+
+[mariadb-asterisk-database]
+passwd = asteriskcdrdb
+
+[mariadb-asterisk-login]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/mariadb-asterisk-login
+bytes = 8
+
+[mariadb-asterisk-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/mariadb-asterisk-passwd
+bytes = 24
+
+[mariadb-service]
+recipe = slapos.recipe.template
+url = ${template-mariadb-service:output}
+output = $${directory:services}/mariadb
+mode = 0700
+
+[mariadb-configuration]
+recipe = slapos.recipe.template
+url = ${template-mariadb-configuration:output}
+output = $${directory:etc}/mariadb.cnf
+mode = 0600
+socket = $${directory:run}/mariadb.sock
+pid-file = $${directory:run}/mariadb.pid
+error-log = $${directory:log}/mariadb_error.log
+slow-log = $${directory:log}/mariadb_slowquery.log
+bin-log = $${directory:log}/mariadb-bin.log
+
+[apache-service]
+recipe = slapos.recipe.template
+url = ${template-apache-service:output}
+output = $${directory:services}/apache
+mode = 0700
+
+[apache-configuration]
+recipe = slapos.recipe.template
+url = ${template-apache-configuration:output}
+output = $${directory:etc}/httpd.conf
+mode = 0600
+pid-file = $${directory:run}/httpd.pid
+ip = $${slap-network-information:local-ipv4}
+port = 9080
+error-log = $${directory:log}/httpd_error.log
+access-log = $${directory:log}/httpd_access.log
+php-ini-dir = $${directory:apache-htdocs}
+document-root = $${directory:apache-htdocs}
+
+[freepbx-configuration]
+recipe = slapos.recipe.template
+url = ${template-freepbx-configuration:output}
+output = $${directory:etc}/amportal.conf
+mode = 0600
+virtual-depends = 
+  $${asterisk-version:output}
+  $${asterisk-configuration:output}
+
+[freepbx-php-configuration]
+recipe = slapos.recipe.template
+url = ${template-freepbx-php-configuration:output}
+output = $${directory:etc}/freepbx.conf
+mode = 0600
+debug-log = $${directory:log}/freepbx_debug.log
+error-log = $${directory:log}/freepbx_error.log
+
+[freepbx-copy-configuration]
+recipe = slapos.recipe.template
+url = ${template-freepbx-copy-configuration:output}
+output = $${directory:bin}/freepbx-copy-configuration
+mode = 0700
+
+[freepbx-panel-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/freepbx-panel-password
+bytes = 8
+
+[freepbx-ari-login]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/freepbx-ari-login
+bytes = 8
+
+[freepbx-ari-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/freepbx-ari-password
+bytes = 8
+
+[asterisk-configuration]
+recipe = slapos.recipe.template
+url = ${template-asterisk-configuration:output}
+output = $${directory:astetc}/asterisk.conf
+mode = 0600
+virtual-depends = 
+  $${asterisk-cdr-configuration:output}
+  $${asterisk-manager-configuration:output}
+
+[asterisk-cdr-configuration]
+recipe = slapos.recipe.template
+url = ${template-asterisk-cdr-configuration:output}
+output = $${directory:astetc}/cdr_mysql.conf
+mode = 0600
+
+[asterisk-manager-configuration]
+recipe = slapos.recipe.template
+url = ${template-asterisk-manager-configuration:output}
+output = $${directory:astetc}/manager.conf
+mode = 0600
+ip = $${slap-network-information:local-ipv4}
+port = 5038
+
+[asterisk-manager-login]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/asterisk-manager-login
+bytes = 8
+
+[asterisk-manager-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/asterisk-manager-password
+bytes = 8
+
+[asterisk-version]
+recipe = slapos.recipe.template
+url = ${template-asterisk-version:output}
+output = $${directory:astetc}/version
+mode = 0600
+
+[asterisk-service]
+recipe = slapos.recipe.template
+url = ${template-asterisk-service:output}
+output = $${directory:services}/asterisk
+mode = 0700
