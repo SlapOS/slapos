@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 curl_executable = {{ repr(curl_executable) }}
-mariabackup_executable = {{ repr(bin_directory) }} + '/mariabackup'
+mariadb_backup_executable = {{ repr(bin_directory) }} + '/mariadb-backup'
 mbstream_executable = {{ repr(bin_directory) }} + '/mbstream'
 zstd_executable = {{ repr(bin_directory) }} + '/zstd'
 mariadb_data_directory = {{ repr(mariadb_data_directory) }}
@@ -79,13 +79,13 @@ try:
     print(path)
     if i == 0:
       restore_directory = mariadb_data_directory
-      extra_mariabackup_args = []
+      extra_mariadb_backup_args = []
     else:
       restore_directory = os.path.join(temp_dir, 'inc')
       if os.path.isdir(restore_directory):
         shutil.rmtree(restore_directory)
       os.mkdir(restore_directory)
-      extra_mariabackup_args = ['--incremental-dir=%s' % restore_directory]
+      extra_mariadb_backup_args = ['--incremental-dir=%s' % restore_directory]
     if args.mariabackup_url:
       xb_file = os.path.join(temp_dir, path)
       subprocess.check_call(
@@ -112,8 +112,8 @@ try:
       print('mbstream: exit %s' % process_mbstream.returncode)
       sys.exit(int(process_mbstream.returncode))
     print(subprocess.check_output([
-      mariabackup_executable, '--prepare', '--target-dir=%s' % mariadb_data_directory,
-    ] + extra_mariabackup_args).decode('utf-8'))
+      mariadb_backup_executable, '--prepare', '--target-dir=%s' % mariadb_data_directory,
+    ] + extra_mariadb_backup_args).decode('utf-8'))
 finally:
   shutil.rmtree(temp_dir)
 
