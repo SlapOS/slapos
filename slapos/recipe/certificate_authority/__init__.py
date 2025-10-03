@@ -60,9 +60,11 @@ class Recipe(GenericBaseRecipe):
 
     for f in ['crlnumber', 'serial']:
       if not os.path.exists(os.path.join(self.ca_dir, f)):
-        open(os.path.join(self.ca_dir, f), 'w').write('01')
+        with open(os.path.join(self.ca_dir, f), 'w') as fo:
+          fo.write('01')
     if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
-      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
+      with open(os.path.join(self.ca_dir, 'index.txt'), 'w') as fo:
+        fo.write('')
     openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
     config.update(
         working_directory=self.ca_dir,
