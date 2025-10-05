@@ -791,7 +791,7 @@ recipe = slapos.cookbook:simplehttpserver
 wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
 base-path = ${directory:backup}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
-socketpath = ${directory:run}/bootstrap.sock
+socketpath = ${directory:run}/bs.sock
 
 [{{ section('mariadb-bootstrap-server-service') }}]
 recipe = slapos.cookbook:wrapper
