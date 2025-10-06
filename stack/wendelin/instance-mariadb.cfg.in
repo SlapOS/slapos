@@ -859,7 +859,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
 command-line =
   "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
-    -S ${directory:run}/haproxy.sock,level,operator
+    -S ${directory:run}/h.sock,level,operator
     -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
 
