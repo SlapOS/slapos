@@ -201,7 +201,6 @@
             "type": "number"
           },
           "sd": {
-            "default": "0x000032",
             "title": "Slice Differentiator",
             "description": "Optional integer (range 0 to 0xFFFFFE)",
             "type": "string"
