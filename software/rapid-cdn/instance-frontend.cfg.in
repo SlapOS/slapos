@@ -1193,6 +1193,7 @@ inline =
       Read_from_Head  True
       db              ${directory:xlog-fluentbit}/tail-state
       Buffer_Max_Size 1M
+      Mem_Buf_Limit   50M
   [OUTPUT]
       name            forward
       match           *
