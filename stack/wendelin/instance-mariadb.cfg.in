@@ -791,7 +791,7 @@ recipe = slapos.cookbook:simplehttpserver
 wrapper = ${buildout:parts-directory}/${:_buildout_section_name_}
 base-path = ${directory:backup}
 log-file = ${directory:log}/${:_buildout_section_name_}.log
-socketpath = ${directory:run}/bootstrap.sock
+socketpath = ${directory:run}/bs.sock
 
 [{{ section('mariadb-bootstrap-server-service') }}]
 recipe = slapos.cookbook:wrapper
@@ -859,7 +859,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
 command-line =
   "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
-    -S ${directory:run}/haproxy.sock,level,operator
+    -S ${directory:run}/h.sock,level,operator
     -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
 
@@ -998,7 +998,15 @@ slowquery = ${monitor-directory:private}/slowquery_digest
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 recipe = slapos.recipe.template:jinja2
-inline = {{ '{{ "${my-cnf-parameters:data-directory}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
+inline =
+  ${my-cnf-parameters:data-directory}/**
+  ${directory:mariadb-backup-incremental}/**
+  ${directory:log}/**
+  ${directory:tmp}/**
+  ${directory:srv}/caucase/**
+  ${directory:caucase-ssl}/**
+  ${directory:mariadb-ssl}/**
+  ${directory:proxysql}/**
 output = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
