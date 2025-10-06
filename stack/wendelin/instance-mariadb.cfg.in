@@ -872,6 +872,7 @@ inline =
   {
     interfaces="[{{ public_ipv6 }}]:{{ port }}"
     have_ssl=true
+    monitor_enabled=false
   }
   mysql_servers =
   (
