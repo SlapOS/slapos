@@ -998,7 +998,19 @@ slowquery = ${monitor-directory:private}/slowquery_digest
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 recipe = slapos.recipe.template:jinja2
-inline = {{ '{{ "${my-cnf-parameters:data-directory}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
+inline =
+  ${my-cnf-parameters:data-directory}/**
+  ${directory:mariadb-backup-incremental}/**
+  ${directory:log}/**
+  ${directory:tmp}/**
+  ${directory:srv}/caucase/**
+  ${directory:caucase-ssl}/**
+  ${directory:mariadb-ssl}/**
+  ${directory:proxysql}/**
+  {% if upstream_caucased_url -%}
+  ${directory:replica-ssl}/**
+  {%- endif %}
+  {% raw %}{# BLANKLINE #}{% endraw %}
 output = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
