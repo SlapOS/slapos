@@ -51,6 +51,21 @@
       'websocket-transparent',
     ]
 %}
+{%- set SHARED_INSTANCE_RETURN_PARAMETERS = [
+      'domain',
+      'key-generate-auth-url',
+      'key-upload-url',
+      'log-access-url',
+      'replication_number',
+      'secure_access',
+      'site_url',
+      'url',
+      'request-error-list',
+      'warning-list',
+      'kedifa-caucase-url',
+      'backend-client-caucase-url'
+    ]
+%}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL = [
       'slave_reference',
     ]
@@ -233,12 +248,15 @@ context =
 {%- endfor %}
 {%- do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
 
+{%- set publish_hosted_instance_section_list = [] %}
+
+
 [request-shared-instance-base]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
 software-type = {{ slapparameter_dict.get('cdn-software-type', "default") }}
 software-url = {{ slapparameter_dict.get('cdn-software-url', "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg")  }}
-return = domain key-generate-auth-url key-upload-url log-access-url replication_number secure_access site_url url request-error-list warning-list kedifa-caucase-url backend-client-caucase-url
+return = {{ " ".join(SHARED_INSTANCE_RETURN_PARAMETERS) }}
 {%- set sla_key = "-sla-" %}
 {%- set sla_key_length = sla_key | length %}
 {%- for key in list(slapparameter_dict.keys()) %}
@@ -247,30 +265,36 @@ sla-{{ key[sla_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {%-   endif %}
 {%- endfor %}
 
-{%-  set warning_list = [] %}
-{%- set requested_shared_instance_list = [] %}
+{%- set warning_list = [] %}
 {% for shared_instance_parameters in authorized_slave_list %}
-{%- set request_section_name = "cdn-request-" + shared_instance_parameters["slave_reference"] %}
-{%- do requested_shared_instance_list.append(request_section_name) %}
-[{{ request_section_name }}]
+{%- set shared_instance_reference =  shared_instance_parameters.pop("slave_reference") %}
+{%- set shared_instance_request_section_name =  "cdn-request-" + shared_instance_reference %}
+[{{ shared_instance_request_section_name }}]
 <= request-shared-instance-base
-name = {{ shared_instance_parameters.pop('slave_reference') }}
+name = {{ shared_instance_reference }}
 {%-   for shared_instance_key, shared_instance_value in shared_instance_parameters.items() %}
 config-{{ shared_instance_key }} = {{ shared_instance_value }}
 {%-   endfor %}
+
+{% set shared_instance_publish_section_name =  "publish-" + shared_instance_reference %}
+{%- do part_list.append(shared_instance_publish_section_name) %}
+[{{ shared_instance_publish_section_name }}]
+recipe = slapos.cookbook:publish_failsafe
+-slave-reference = {{ shared_instance_reference }}
+{%-   for return_parameter in SHARED_INSTANCE_RETURN_PARAMETERS %}
+{{ return_parameter }} = {{ "${%s:connection-%s}" % (shared_instance_request_section_name, return_parameter) }}
+{%   endfor %}
 {% endfor %}
 
 [publish-information]
-<= monitor-publish
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
+hello =
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
-rejected-slave-promise-url = ${rejected-slave-promise:config-url}
-publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
 {%- if len(warning_list) > 0 %}
 {#- sort_keys are important in order to avoid shuffling parameters on each run #}
 warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
@@ -279,14 +303,6 @@ warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 {#- sort_keys are important in order to avoid shuffling parameters on each run #}
 warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
 {%- endif %}
-
-{# Publish slave information #}
-[publish-slave-information]
-recipe = slapos.cookbook:switch-softwaretype
-default = instance-publish-slave-information:output
-replicate = instance-publish-slave-information:output
-custom-personal = instance-publish-slave-information:output
-custom-group = instance-publish-slave-information:output
 
 [rejected-slave-information]
 rejected-slave-dict = {{ dumps(rejected_slave_dict) }}
@@ -308,21 +324,6 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 {%- endfor %}
 {#- sort_keys are important in order to avoid shuffling parameters on each run #}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
-
-[instance-publish-slave-information]
-< = jinja2-template-base
-url = {{ software_parameter_dict['profile_master_publish_slave_information'] }}
-filename = instance-publish-slave-information.cfg
-extensions = jinja2.ext.do
-extra-context =
-    section slave_information slave-information
-    section rejected_slave_information rejected-slave-information
-    section active_slave_instance_dict active-slave-instance
-    section warning_slave_information warning-slave-information
-{%- for requested_instance_section in requested_shared_instance_list %}
-    section {{requested_instance_section.replace("-", "_")}} {{requested_instance_section}}
-{%- endfor %}
-
 
 [monitor-base-url-dict]
 {% for frontend in frontend_section_list %}
@@ -356,7 +357,7 @@ context =
 extends =
   {{ software_parameter_dict['profile_common'] }}
 parts =
-  publish-slave-information
+  publish-information
 {%- for part in part_list %}
 {{ '  %s' % part }}
 {%- endfor %}
