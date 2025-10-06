@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.XXX (XXXX-XX-XX)
+-------------
+
+* XXX
+
 Version 1.0.440 (2025-10-01)
 -------------
 
