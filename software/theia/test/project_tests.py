@@ -600,7 +600,7 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     output = subprocess.check_output(('git', 'clone', '-c', 'http.sslVerify=false', clone_url), universal_newlines=True)
 
     # Check the file we committed in exist and the content is matching.
-    output = subprocess.check_output(('git', 'show', 'origin/master:file.txt'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'show', 'origin/main:file.txt'), cwd=repo_path, universal_newlines=True)
     self.assertIn('This is the new file.', output)
 
   def _checkTakeover(self):
@@ -632,7 +632,7 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     repo_path = os.path.join(os.getcwd(), project_1['name'])
 
     # Check the file we committed in the original theia is exist and the content is matching.
-    output = subprocess.check_output(('git', 'show', 'origin/master:file.txt'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output(('git', 'show', 'origin/main:file.txt'), cwd=repo_path, universal_newlines=True)
     self.assertIn('This is the new file.', output)
 
 
