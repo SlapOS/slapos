@@ -1,7 +1,7 @@
 {
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Input Parameters",
+  "title": "ORS eNB / gNB Duo",
   "properties": {
     "n_antenna_dl": {
       "$ref": "ru/common.json#/$defs/n_antenna_dl",

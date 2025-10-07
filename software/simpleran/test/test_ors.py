@@ -49,7 +49,8 @@ param_dict = {
     'lte_mock': True,
     'cell1': {
         'tx_gain': 17,
-        'rx_gain': 17,
+        'rx_gain': 18,
+        'tx_power_offset': 19,
         'cell_id': '0x01',
         'pci': 250,
         'root_sequence_index': 1,
@@ -215,6 +216,7 @@ class TestENBParameters(ORSTestCase):
 
     self.assertEqual(conf['tx_gain'], [enb_param_dict['cell1']['tx_gain']] * enb_param_dict['nodeb']['n_antenna_dl'])
     self.assertEqual(conf['rx_gain'], [enb_param_dict['cell1']['rx_gain']] * enb_param_dict['nodeb']['n_antenna_ul'])
+    self.assertEqual(conf['rf_ports'][0]['tx_power_offset'], enb_param_dict['cell1']['tx_power_offset'])
     self.assertEqual(conf['cell_list'][0]['inactivity_timer'], enb_param_dict['nodeb']['inactivity_timer'])
     self.assertEqual(conf['cell_list'][0]['uldl_config'], 4)
     self.assertEqual(conf['cell_list'][0]['dl_earfcn'], enb_param_dict['cell1']['dl_earfcn'])
@@ -277,6 +279,7 @@ class TestGNBParameters1(ORSTestCase):
     self.assertEqual(conf['rx_gain'], [gnb_param_dict1['cell1']['rx_gain']] * gnb_param_dict1['nodeb']['n_antenna_ul'])
     self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['nodeb']['inactivity_timer'])
     self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], gnb_param_dict1['cell1']['dl_nr_arfcn'])
+    self.assertEqual(conf['nr_cell_list'][0]['ssb_nr_arfcn'], gnb_param_dict1['cell1']['ssb_nr_arfcn'])
     self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['cell1']['nr_band'])
     self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['cell1']['ssb_pos_bitmap'])
     self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['cell1']['nr_bandwidth'])
