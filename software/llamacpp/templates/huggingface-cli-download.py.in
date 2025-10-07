@@ -87,7 +87,7 @@ def main() -> int:
     target = os.path.join(MODELS_DIR, FILENAME)
 
     # Fast path: request == prebaked model -> link & succeed
-    _log("Ready to prebacke")
+    _log("Ready to prebake")
     if _is_prebaked_match():
         prebaked_path = os.path.join(PREBAKED_DIR, PREBAKED_FILENAME)
         if os.path.exists(prebaked_path) and os.path.getsize(prebaked_path) > 0:

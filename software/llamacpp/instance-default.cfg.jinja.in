@@ -40,7 +40,7 @@ url = {{ huggingface_cli_download_template }}
 output = $${directory:bin}/huggingface-cli-download-run.py
 mode = 0755
 context =
-    raw hfc_bin    {{ software_bin }}/huggingface-cli
+    raw hfc_bin    {{ software_bin }}/hf
     raw models_dir $${directory:models}
     raw cache_dir  $${directory:cache}
     raw log_file   $${directory:log}/hf-download.log
