@@ -1,0 +1,13 @@
+{
+  "name": "In-VM Test",
+  "description": "In-VM Test software release",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default In-VM Test",
+      "request": "instance-input-schema.json",
+      "index": 0
+    }
+  }
+}
