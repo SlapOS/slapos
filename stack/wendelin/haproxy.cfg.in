@@ -222,7 +222,7 @@ listen {{ name }}
   # logs
   capture request header Referer len 512
   capture request header User-Agent len 512
-  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta"
+  log-format "%{+Q}o %{-Q}[var(txn.client_real_ip)] - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta %{-Q}ci"
 
 {% if frontend['request-path-prepend'] is not none %}
   http-request replace-path ^/(.*) /VirtualHostBase/https/%[req.hdr(Host)]{{ frontend['request-path-prepend'] }}/VirtualHostRoot/\1
@@ -296,7 +296,7 @@ frontend frontend_{{ group_name }}
   # logs
   capture request header Referer len 512
   capture request header User-Agent len 512
-  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Tt"
+  log-format "%{+Q}o %{-Q}[var(txn.client_real_ip)] - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta %{-Q}ci"
 
 {%   for name in sorted(backend_dict.keys()) %}
   use_backend backend_{{ group_name }}_{{ name }} if { path -m beg /{{ name }} }
