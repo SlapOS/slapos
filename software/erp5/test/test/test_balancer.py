@@ -851,7 +851,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       headers={'X-Forwarded-For': '1.2.3.4'},
       verify=False,
     ).json()
-    self.assertNotIn('x-fowarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
+    self.assertNotIn('x-forwarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
     with self.assertRaisesRegex(Exception, "certificate required"):
       requests.get(
@@ -874,7 +874,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       cert=(unknown_client_certificate.cert_file, unknown_client_certificate.key_file),
       verify=False,
     ).json()
-    self.assertNotIn('x-fowarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
+    self.assertNotIn('x-forwarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
 
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
     with self.assertRaisesRegex(Exception, "unknown ca"):
