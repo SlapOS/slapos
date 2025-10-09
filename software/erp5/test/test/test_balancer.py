@@ -1165,6 +1165,14 @@ class TestRateLimiting(BalancerTestCase):
           "table-name": "errors",
           "expire": "10s"
         },
+        # one based on both path and HTTP status code
+        {
+          "max-requests": 3,
+          "time-window": "10s",
+          "url-path-pattern": "/.*/limited",
+          "status-code": "202",
+          "expire": "10s"
+        },
       ],
     }
 
@@ -1234,6 +1242,20 @@ class TestRateLimiting(BalancerTestCase):
         text=True,
       )
     )
+
+  def test_backend_rate_limiting_per_url_and_status_code(self) -> None:
+    for client_ip in ('1.2.3.5', '::2', None):
+      with self.subTest(client_ip):
+        # requests not matching the path do not count
+        for _ in range(5):
+          self.assertEqual(self.do_get('/202', client_ip).status_code, 202)
+        # requests not matching the status code do not count
+        for _ in range(5):
+          self.assertEqual(self.do_get('/201/limited', client_ip).status_code, 201)
+        for _ in range(3):
+          self.assertEqual(self.do_get('/202/limited', client_ip).status_code, 202)
+        limited_request = self.do_get('/202/limited', client_ip)
+        self.assertEqual(limited_request.status_code, requests.codes.too_many_requests)
 
   @expectedFailure
   def test_status_code_only_track_matching_status_code(self):

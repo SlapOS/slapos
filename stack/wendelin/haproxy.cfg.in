@@ -314,6 +314,10 @@ backend backend_{{ group_name }}_{{ name }}
 {%- for rule in parameter_dict['rate-limits']['rules'] %}
 backend stick_table_{{ rule['table-name'] }}
   stick-table type string size {{ rule['table-size'] }} expire {{ rule['expire'] }} store
-  {%- if rule['url-path-pattern'] is defined %} http_req_rate({{ rule['time-window'] }}) {% endif %}
-  {%- if rule['status-code'] is defined %} gpc0_rate({{ rule['time-window'] }}) {% endif %}
+  {%- if rule['url-path-pattern'] is defined %} http_req_rate({{ rule['time-window'] }})
+    {%- if rule['status-code'] is defined %},gpc0_rate({{ rule['time-window'] }})
+    {% endif %}
+  {% else %}
+    {%- if rule['status-code'] is defined %} gpc0_rate({{ rule['time-window'] }}) {% endif %}
+  {% endif %}
 {% endfor %}
