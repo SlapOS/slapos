@@ -207,15 +207,14 @@ listen {{ name }}
   bind {{ parameter_dict['ipv4'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
   bind {{ parameter_dict['ipv6'] }}:{{ frontend['port'] }} {{ bind_ssl_crt }} {{ ssl_auth }}
 
-  acl acl_verified_frontend ssl_c_used ssl_c_verify 0
-  http-request set-var(txn.client_real_ip) req.hdr(X-Forwarded-For) if acl_verified_frontend
-  http-request set-var(txn.client_real_ip) src unless acl_verified_frontend
+  http-request set-var(txn.client_real_ip) req.hdr(X-Forwarded-For) if { ssl_c_used } { ssl_c_verify 0 }
+  http-request set-var(txn.client_real_ip) src unless { ssl_c_used } { ssl_c_verify 0 }
 
   # remove X-Forwarded-For unless client presented a verified certificate
-  http-request del-header X-Forwarded-For unless acl_verified_frontend
+  http-request del-header X-Forwarded-For unless { ssl_c_used } { ssl_c_verify 0 }
   # set Remote-User if client presented a verified certificate
   http-request del-header Remote-User
-  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if acl_verified_frontend
+  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if { ssl_c_used } { ssl_c_verify 0 }
 
   # reject invalid host header before using it in path
   http-request deny deny_status 400 if { req.hdr(host) -m sub / }
@@ -223,7 +222,7 @@ listen {{ name }}
   # logs
   capture request header Referer len 512
   capture request header User-Agent len 512
-  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta"
+  log-format "%{+Q}o %{-Q}[var(txn.client_real_ip)] - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta %{-Q}ci"
 
 {% if frontend['request-path-prepend'] is not none %}
   http-request replace-path ^/(.*) /VirtualHostBase/https/%[req.hdr(Host)]{{ frontend['request-path-prepend'] }}/VirtualHostRoot/\1
@@ -297,7 +296,7 @@ frontend frontend_{{ group_name }}
   # logs
   capture request header Referer len 512
   capture request header User-Agent len 512
-  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Tt"
+  log-format "%{+Q}o %{-Q}[var(txn.client_real_ip)] - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Ta %{-Q}ci"
 
 {%   for name in sorted(backend_dict.keys()) %}
   use_backend backend_{{ group_name }}_{{ name }} if { path -m beg /{{ name }} }
@@ -315,6 +314,10 @@ backend backend_{{ group_name }}_{{ name }}
 {%- for rule in parameter_dict['rate-limits']['rules'] %}
 backend stick_table_{{ rule['table-name'] }}
   stick-table type string size {{ rule['table-size'] }} expire {{ rule['expire'] }} store
-  {%- if rule['url-path-pattern'] is defined %} http_req_rate({{ rule['time-window'] }}) {% endif %}
-  {%- if rule['status-code'] is defined %} gpc0_rate({{ rule['time-window'] }}) {% endif %}
+  {%- if rule['url-path-pattern'] is defined %} http_req_rate({{ rule['time-window'] }})
+    {%- if rule['status-code'] is defined %},gpc0_rate({{ rule['time-window'] }})
+    {% endif %}
+  {% else %}
+    {%- if rule['status-code'] is defined %} gpc0_rate({{ rule['time-window'] }}) {% endif %}
+  {% endif %}
 {% endfor %}
