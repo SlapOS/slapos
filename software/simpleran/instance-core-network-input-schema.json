@@ -133,43 +133,39 @@
       "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
       "type": "string"
     },
-    "ecc_params": {
-      "title": "ECC Params",
+    "ecc_params_profile_a": {
       "type": "object",
-      "oneOf": [
-        {
-          "type": "object",
-          "title": "Profile A",
-          "required": [
-            "profile_a_pk",
-            "profile_a_pub"
-          ],
-          "properties": {
-            "profile_a_pub": {
-              "$ref": "#/$defs/public_key"
-            },
-            "profile_a_pk": {
-              "$ref": "#/$defs/private_key"
-            }
-          }
+      "title": "Profile A",
+      "required": [
+        "profile_a_pk",
+        "profile_a_pub"
+      ],
+      "properties": {
+        "profile_a_pub": {
+          "$ref": "#/$defs/public_key"
         },
-        {
-          "type": "object",
-          "title": "Profile B",
-          "required": [
-            "profile_b_pk",
-            "profile_b_pub"
-          ],
-          "properties": {
-            "profile_b_pub": {
-              "$ref": "#/$defs/public_key"
-            },
-            "profile_b_pk": {
-              "$ref": "#/$defs/private_key"
-            }
+        "profile_a_pk": {
+          "$ref": "#/$defs/private_key"
+        }
+      }
+    },
+    "ecc_params_profile_b": {
+      {
+        "type": "object",
+        "title": "Profile B",
+        "required": [
+          "profile_b_pk",
+          "profile_b_pub"
+        ],
+        "properties": {
+          "profile_b_pub": {
+            "$ref": "#/$defs/public_key"
+          },
+          "profile_b_pk": {
+            "$ref": "#/$defs/private_key"
           }
         }
-      ]
+      }
     },
     "lock": {
       "title": "Force reprocess",
