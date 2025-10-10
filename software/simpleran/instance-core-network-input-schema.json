@@ -136,32 +136,32 @@
     "ecc_params_profile_a": {
       "type": "object",
       "title": "Profile A",
+      "description": "Home network private key for profile A protection scheme",
       "required": [
-        "profile_a_pk",
-        "profile_a_pub"
+        "profile_a_pk"
       ],
       "properties": {
-        "profile_a_pub": {
-          "$ref": "#/$defs/public_key"
-        },
         "profile_a_pk": {
           "$ref": "#/$defs/private_key"
+        },
+        "profile_a_id": {
+          "$ref": "#/$defs/key_id"
         }
       }
     },
     "ecc_params_profile_b": {
       "type": "object",
       "title": "Profile B",
+      "description": "Home network private key for profile B protection scheme",
       "required": [
-        "profile_b_pk",
-        "profile_b_pub"
+        "profile_b_pk"
       ],
       "properties": {
-        "profile_b_pub": {
-          "$ref": "#/$defs/public_key"
-        },
         "profile_b_pk": {
           "$ref": "#/$defs/private_key"
+        },
+        "profile_b_id": {
+          "$ref": "#/$defs/key_id"
         }
       }
     },
@@ -172,15 +172,16 @@
     }
   },
   "$defs": {
-    "public_key": {
-      "title": "Public Key",
-      "type": "string",
-      "textarea": true
-    },
     "private_key": {
       "title": "Private Key",
-      "type": "string",
-      "textarea": true
+      "description": "Home network private key in hexadecimal format (32 bytes)",
+      "type": "string"
+    },
+    "key_id": {
+      "title": "Key ID",
+      "description": "Home network key identifier (range 0 to 255)",
+      "type": "number",
+      "default": 1
     }
   }
 }
