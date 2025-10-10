@@ -150,20 +150,18 @@
       }
     },
     "ecc_params_profile_b": {
-      {
-        "type": "object",
-        "title": "Profile B",
-        "required": [
-          "profile_b_pk",
-          "profile_b_pub"
-        ],
-        "properties": {
-          "profile_b_pub": {
-            "$ref": "#/$defs/public_key"
-          },
-          "profile_b_pk": {
-            "$ref": "#/$defs/private_key"
-          }
+      "type": "object",
+      "title": "Profile B",
+      "required": [
+        "profile_b_pk",
+        "profile_b_pub"
+      ],
+      "properties": {
+        "profile_b_pub": {
+          "$ref": "#/$defs/public_key"
+        },
+        "profile_b_pk": {
+          "$ref": "#/$defs/private_key"
         }
       }
     },
