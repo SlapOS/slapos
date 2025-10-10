@@ -133,36 +133,48 @@
       "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
       "type": "string"
     },
-    "ecc_params_profile_a": {
-      "type": "object",
-      "title": "Profile A",
-      "description": "Home network private key for profile A protection scheme",
-      "required": [
-        "profile_a_pk"
-      ],
-      "properties": {
-        "profile_a_pk": {
-          "$ref": "#/$defs/private_key"
-        },
-        "profile_a_id": {
-          "$ref": "#/$defs/key_id"
-        }
-      }
-    },
-    "ecc_params_profile_b": {
-      "type": "object",
-      "title": "Profile B",
-      "description": "Home network private key for profile B protection scheme",
-      "required": [
-        "profile_b_pk"
-      ],
-      "properties": {
-        "profile_b_pk": {
-          "$ref": "#/$defs/private_key"
-        },
-        "profile_b_id": {
-          "$ref": "#/$defs/key_id"
-        }
+    "ecc_params": {
+      "title": "ECC Parameters",
+      "description": "Set the ECC network configuration for the SUPI protection and de-concealment of the SUCI. Applicable to 5GC only",
+      "type": "array",
+      "items": {
+        "title": "Profile",
+        "type": "object",
+        "unevaluatedProperties": false,
+        "oneOf": [
+          {
+            "type": "object",
+            "title": "Profile A",
+            "description": "Home network private key for profile A protection scheme",
+            "required": [
+              "profile_a_pk"
+            ],
+            "properties": {
+              "profile_a_pk": {
+                "$ref": "#/$defs/private_key"
+              },
+              "profile_a_id": {
+                "$ref": "#/$defs/key_id"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "Profile B",
+            "description": "Home network private key for profile B protection scheme",
+            "required": [
+              "profile_b_pk"
+            ],
+            "properties": {
+              "profile_b_pk": {
+                "$ref": "#/$defs/private_key"
+              },
+              "profile_b_id": {
+                "$ref": "#/$defs/key_id"
+              }
+            }
+          }
+        ]
       }
     },
     "lock": {
