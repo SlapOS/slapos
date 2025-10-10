@@ -8,6 +8,7 @@ Version 1.0.440 (2025-10-01)
 * Fix tx power offset not being taken into account
 * Fix wrong slice differentiator default value causing gNB to not connect to MME when choosing a PLMN in input parameters
 * Fix UE websocket
+* Add force IP option for SIM Cards (allows making sure a PDN IPv4 never changes for a specific IMSI)
 
 Version 1.0.438 (2025-09-29)
 -------------
