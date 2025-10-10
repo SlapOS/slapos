@@ -75,6 +75,8 @@ parts =
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
 
+  trafficserver-introspection-frontend
+
 [software-py]
 recipe = software
 
@@ -181,6 +183,9 @@ expose-csr-var = ${:var}/expose-csr
 
 # slave introspection
 slave-introspection-var = ${:var}/slave-introspection
+
+# trafficserver-introspection
+trafficserver-introspection-var = ${:var}/trafficserver-introspection
 
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
@@ -406,6 +411,7 @@ extra-context =
     section configuration configuration
     section frontend_haproxy_configuration frontend-haproxy-configuration
     section backend_haproxy_configuration backend-haproxy-configuration
+    section trafficserver_configuration trafficserver-configuration
     section instance_parameter_dict instance-parameter-section
     section frontend_configuration frontend-configuration
     section kedifa_configuration kedifa-configuration
@@ -608,6 +614,11 @@ filename = logging.yaml
 inline =
   map /HTTPS/ http://{{ ipv4 }}:{{ https_port }}
   map /HTTP/ http://{{ ipv4 }}:{{ http_port }}
+  map /inspect-cache/ http://{cache}
+  map /inspect-cache-internal/ http://{cache-internal}
+  map /inspect-hostdb/ http://{hostdb}
+  map /inspect-http/ http://{http}
+  map /inspect-net/ http://{net}
 {%- endraw %}
 extra-context =
   raw ipv4 {{ instance_parameter_dict['ipv4-random'] }}
@@ -1043,6 +1054,105 @@ name = backend-haproxy-statistic-frontend.py
 config-http-code = 401
 config-url =
   ${backend-haproxy-statistic-frontend:connection-secure_access}
+
+[trafficserver-configuration]
+# the introspection page
+introspection-certificate = ${self-signed-ip-access:certificate}
+introspection-port = ${configuration:trafficserver-introspection-port}
+introspection-username = ${monitor-instance-parameter:username}
+introspection-password = ${monitor-htpasswd:passwd}
+introspection-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
+introspection-frontend-secure_access = ${trafficserver-introspection-frontend:connection-secure_access}
+introspection-config = ${directory:etc}/trafficserver-introspection-nginx.conf
+introspection-access-log = ${directory:log}/trafficserver-introspection-access.log
+introspection-error-log = ${directory:log}/trafficserver-introspection-error.log
+introspection-pid-file = ${directory:run}/trafficserver-introspection.pid
+introspection-graceful-command = ${trafficserver-introspection-validate:output} && kill -HUP $(cat ${:introspection-pid-file})
+introspection-var = ${directory:trafficserver-introspection-var}
+
+[trafficserver-introspection-parameters]
+local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
+global-ipv6 = ${slap-configuration:ipv6-random}
+https-port = ${trafficserver-configuration:introspection-port}
+ip-access-certificate = ${trafficserver-configuration:introspection-certificate}
+nginx-mime = {{ software_parameter_dict['nginx_mime'] }}
+access-log = ${trafficserver-configuration:introspection-access-log}
+error-log = ${trafficserver-configuration:introspection-error-log}
+var = ${trafficserver-configuration:introspection-var}
+pid = ${trafficserver-configuration:introspection-pid-file}
+trafficserver-url-root = http://${trafficserver-variable:local-ip}:${trafficserver-variable:input-port}
+trafficserver-root = {{ software_parameter_dict['template_trafficserver_introspection_index'] }}
+inspect-list =
+  /inspect-cache/
+  /inspect-cache-internal/
+  /inspect-hostdb/
+  /inspect-http/
+  /inspect-net/
+
+[trafficserver-introspection-configuration]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_trafficserver_introspection_httpd_nginx'] }}
+output = ${trafficserver-configuration:introspection-config}
+extra-context =
+  section parameter_dict trafficserver-introspection-parameters
+
+[trafficserver-introspection-configuration-state]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_configuration_state_script'] }}
+output = ${directory:bin}/${:_buildout_section_name_}
+
+path_list = ${trafficserver-introspection-configuration:output} ${frontend-configuration:ip-access-certificate}
+sha256sum = {{ software_parameter_dict['sha256sum'] }}
+
+extra-context =
+    import os_module os
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[trafficserver-introspection-configuration-state-validate]
+<= trafficserver-introspection-configuration-state
+signature_file = ${directory:run}/trafficserver_introspection_validate_configuration_state_signature
+
+[trafficserver-introspection-validate]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_validate_script'] }}
+output = ${directory:bin}/trafficserver-introspection-validate
+last_state_file = ${directory:run}/trafficserver_introspection_configuration_last_state
+validate_command = {{ software_parameter_dict['nginx'] }} -c ${trafficserver-introspection-configuration:output} -t
+extra-context =
+    raw find_executable {{ software_parameter_dict['findutils'] }}/bin/find
+    key validate_command :validate_command
+    key configuration_state_command trafficserver-introspection-configuration-state-validate:output
+    key last_state_file :last_state_file
+
+[trafficserver-introspection]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['nginx'] }}
+  -c ${trafficserver-introspection-configuration:output}
+
+wrapper-path = ${directory:service}/trafficserver-introspection-nginx
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.trafficserver-introspection-port'] }}/
+
+[trafficserver-introspection-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Trafficserver Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${trafficserver-introspection:url}
+config-https-only = true
+return = domain secure_access
+
+[trafficserver-introspection-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = trafficserver-introspection-frontend.py
+config-http-code = 401
+config-url =
+  ${trafficserver-introspection-frontend:connection-secure_access}
 
 [slave-introspection-configuration-state]
 <= jinja2-template-base
