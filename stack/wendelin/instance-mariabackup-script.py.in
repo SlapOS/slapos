@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 max_incremental_count = int(os.environ.get('max_incremental_count', '6'))
-mariabackup_executable = {{ repr(bin_directory) }} + '/mariabackup'
+mariadb_backup_executable = {{ repr(bin_directory) }} + '/mariadb-backup'
 mbstream_executable = {{ repr(bin_directory) }} + '/mbstream'
 zstd_executable = {{ repr(bin_directory) }} + '/zstd'
 mariadb_backup_directory = {{ repr(mariadb_backup_directory) }}
@@ -31,29 +31,29 @@ else:
 
 if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_incremental_count:
   print('Doing incremental backup...')
-  extra_mariabackup_args = ['--incremental-basedir=%s' % last_meta]
+  extra_mariadb_backup_args = ['--incremental-basedir=%s' % last_meta]
   filename = '%s.inc.xb.zstd' % timestamp
   metadir = '%s.inc.meta' % timestamp
 else:
   print('Doing full backup...')
-  extra_mariabackup_args = []
+  extra_mariadb_backup_args = []
   filename = '%s.full.xb.zstd' % timestamp
   metadir = '%s.full.meta' % timestamp
-process_mariabackup = subprocess.Popen([
-  mariabackup_executable, '--backup', '--stream=xbstream',
+process_mariadb_backup = subprocess.Popen([
+  mariadb_backup_executable, '--backup', '--stream=xbstream',
   '--extra-lsndir=%s/%s' % (mariadb_backup_directory, metadir),
-] + extra_mariabackup_args, stdout=subprocess.PIPE)
+] + extra_mariadb_backup_args, stdout=subprocess.PIPE)
 process_zstd = subprocess.Popen([
   zstd_executable, '-o', os.path.join(mariadb_backup_directory, filename),
-], stdin=process_mariabackup.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-process_mariabackup.stdout.close()
+], stdin=process_mariadb_backup.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+process_mariadb_backup.stdout.close()
 stdout, stderr = process_zstd.communicate()
 print(stdout.decode('utf-8'))
 if stderr:
   print(stderr.decode('utf-8'))
-if process_mariabackup.wait() != 0:
-  print('mariabackup: exit %s' % process_mariabackup.returncode)
-  sys.exit(int(process_mariabackup.returncode))
+if process_mariadb_backup.wait() != 0:
+  print('mariadb-backup: exit %s' % process_mariadb_backup.returncode)
+  sys.exit(int(process_mariadb_backup.returncode))
 if process_zstd.returncode != 0:
   print('zstd: exit %s' % process_zstd.returncode)
   sys.exit(int(process_zstd.returncode))
@@ -75,7 +75,7 @@ if full_backup_retention_days > 0:
     shutil.rmtree(path[:-8] + '.meta')
   {% if not logical_backup_enabled -%}
   if latest_full_index > 0:
-    # remove outdated mysqldump results that are older than removed mariabackup files.
+    # remove outdated mysqldump results that are older than removed mariadb-backup files.
     for path in glob.glob(os.path.join(mariadb_backup_directory, '??????????????.sql.gz')):
       os.remove(path)
   {%- endif %}
