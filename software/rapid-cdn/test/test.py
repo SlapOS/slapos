@@ -1045,6 +1045,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertIn('testing partition 0', result.text)
     self.assertIn('Statistics Report for HAProxy', result.text)
 
+    furled = furl.furl(backend_haproxy_statistic_url)
+    furled.username = None
+    furled.password = None
+    backend_haproxy_statistic_url_no_auth = furled.tostr()
+    self.assertEqual(
+      http.client.UNAUTHORIZED,
+      mimikra.get(backend_haproxy_statistic_url_no_auth, verify=False)
+    )
+
   def assertTrafficserverIntrospectionUrl(self, parameter_dict):
     url_key = 'frontend-node-1-trafficserver-introspection-url'
     trafficserver_introspection_url_dict = {}
