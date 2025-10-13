@@ -73,6 +73,11 @@
       "title": "IMS Domain",
       "type": "string"
     },
+    "force_ip": {
+      "title": "Force IP",
+      "description": "Force IP of the SIM: Fixed IP for the UE needs to be enabled on the core network to use force the IP and the IP should be within the PDN IPv4 sub network",
+      "type": "string"
+    },
     "authent_type": {
       "title": "Authentication Type",
       "description": "Defines minimum authentication level. If client does no specify authentication algo, server will use this value. Else, server will allow authentication only if client provided algo is at least the one specified by this parameter.",
