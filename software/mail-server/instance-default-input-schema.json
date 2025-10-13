@@ -29,7 +29,7 @@
     },
     "test-account": {
       "title": "Builtin Test Account",
-      "description": "If set, a builtin test account will be created for each domain with address testmail@<domain> and password testmail",
+      "description": "If set, a builtin test account will be created for each domain with address testmail@<domain> and password password123",
       "type": "boolean",
       "default": false
     },
