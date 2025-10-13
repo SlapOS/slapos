@@ -442,6 +442,13 @@ csr-certificate = ${expose-csr-certificate-get:certificate}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
 {%-   set statistic_url = urllib_module.parse.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
+{%-   set furled = furl_module.furl(trafficserver_configuration['introspection-frontend-secure_access']) %}
+{%-   do furled.set(username = trafficserver_configuration['introspection-username']) %}
+{%-   do furled.set(password = trafficserver_configuration['introspection-password']) %}
+{%-   do furled.set(path = '/') %}
+{#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
+{%-   set statistic_url = urllib_module.parse.unquote(furled.tostr()) %}
+trafficserver-introspection-url = {{ statistic_url }}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 node-information-json = {{ json_module.dumps(node_information, sort_keys=True) }}
 

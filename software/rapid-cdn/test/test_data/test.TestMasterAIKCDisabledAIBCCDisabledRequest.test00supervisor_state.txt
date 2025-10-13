@@ -35,4 +35,5 @@ T-2:monitor-httpd-graceful EXITED
 T-2:slave-instrospection-nginx-{hash-generic}-on-watch RUNNING
 T-2:slave-introspection-safe-graceful EXITED
 T-2:trafficserver-{hash-trafficserver-T-2}-on-watch RUNNING
+T-2:trafficserver-introspection-nginx-{hash-generic}-on-watch RUNNING
 T-2:trafficserver-reload EXITED
