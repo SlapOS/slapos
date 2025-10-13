@@ -23,8 +23,8 @@
 #
 # Rules are applied in the order listed starting from the top.
 # That means you generally want to append your rules after the ones listed here.
-#
-# Allow anything on localhost, limit destructive and debug methods elsewhere.
+
+# Allow everything to the backend, we do not use Apache TrafficServer verb checks
 ip_allow:
   - apply: in
     ip_addrs: 127.0.0.1
@@ -36,17 +36,9 @@ ip_allow:
     methods: ALL
   - apply: in
     ip_addrs: 0/0
-    action: deny
-    methods:
-      - PURGE
-      - PUSH
-      - DELETE
-      - TRACE
+    action: allow
+    methods: ALL
   - apply: in
     ip_addrs: ::/0
-    action: deny
-    methods:
-      - PURGE
-      - PUSH
-      - DELETE
-      - TRACE
+    action: allow
+    methods: ALL
