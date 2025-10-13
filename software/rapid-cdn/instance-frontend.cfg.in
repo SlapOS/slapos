@@ -35,8 +35,8 @@ parts =
   trafficserver-remap-config
   trafficserver-plugin-config
   trafficserver-storage-config
-  trafficserver-ip-allow-config
   trafficserver-logging-yaml
+  trafficserver-ip-allow-yaml
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
@@ -541,7 +541,6 @@ local-ip = {{ instance_parameter_dict['ipv4-random'] }}
 input-port = 23432
 hostname = ${configuration:frontend-name}
 plugin-config =
-ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
 cache-path = ${trafficserver-directory:cache-path}
 disk-cache-size = ${configuration:disk-cache-size}
 ram-cache-size = ${configuration:ram-cache-size}
@@ -602,6 +601,11 @@ filename = storage.config
 url = {{ software_parameter_dict['template_trafficserver_logging_yaml'] }}
 filename = logging.yaml
 
+[trafficserver-ip-allow-yaml]
+< = trafficserver-jinja2-template-base
+url = {{ software_parameter_dict['template_trafficserver_ip_allow_yaml'] }}
+filename = ip_allow.yaml
+
 [trafficserver-remap-config]
 <= trafficserver-jinja2-template-base
 {%- raw %}
@@ -622,13 +626,6 @@ url = {{ software_parameter_dict['template_empty'] }}
 filename = plugin.config
 context =
     key content trafficserver-variable:plugin-config
-
-[trafficserver-ip-allow-config]
-< = trafficserver-jinja2-template-base
-url = {{ software_parameter_dict['template_empty'] }}
-filename = ip_allow.config
-context =
-    key content trafficserver-variable:ip-allow-config
 
 [trafficserver-promise-listen-port]
 <= monitor-promise-base
