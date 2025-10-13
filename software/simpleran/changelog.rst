@@ -1,7 +1,12 @@
 Changelog
 =========
 
-Version 1.0.440 (2025-10-01)
+Version 1.0.442 (2025-10-13)
+-------------
+
+* Add SUCI encryption (ECC parameters support)
+
+Version 1.0.441 (2025-10-06)
 -------------
 
 * Add test-model software type
