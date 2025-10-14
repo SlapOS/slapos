@@ -520,11 +520,12 @@ def fakeSetupHeaders(headers):
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, source_ip=SOURCE_IP):
+                    headers=None, source_ip=SOURCE_IP, verb='GET'):
   headers = fakeSetupHeaders(headers)
   url = 'https://%s:%s/%s' % (domain, port, path)
 
-  return mimikra.get(
+  return mimikra.request(
+    verb,
     url,
     headers=headers,
     verify=False,
@@ -543,11 +544,12 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
-                   headers=None, source_ip=SOURCE_IP):
+                   headers=None, source_ip=SOURCE_IP, verb='GET'):
   headers = fakeSetupHeaders(headers)
   headers.setdefault('Host', '%s:%s' % (domain, port))
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
-  return mimikra.get(
+  return mimikra.request(
+    verb,
     url,
     headers=headers,
     verify=False,
@@ -2454,6 +2456,31 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j['Incoming Headers']['x-forwarded-for']
     )
 
+    # check all verbs
+    for verb in [
+      'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']:
+      result_verb = fakeHTTPSResult(
+        parameter_dict['domain'], '/' + verb, verb=verb)
+      if verb == 'CONNECT':
+        if self.max_http_version == '1':
+          self.assertEqual(
+            http.client.BAD_REQUEST, result_verb.status_code, verb)
+          self.assertIn(
+            'Your browser sent an invalid request', result_verb.text, verb)
+        else:
+          self.assertEqual(
+            http.client.NOT_FOUND, result_verb.status_code, verb)
+          self.assertIn('Instance not found', result_verb.text, verb)
+      else:
+        self.assertEqual(http.client.OK, result_verb.status_code, verb)
+        if verb != 'HEAD':
+          try:
+            j = result_verb.json()
+          except Exception:
+            raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+          self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
+          self.assertEqual(verb, j['Verb'], verb)
+
   def test_url_trailing_slash_absent(self):
     parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
     self.assertEqual(
@@ -4110,6 +4137,36 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       ats_log = fh.read()
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
+
+    # check all verbs
+    for verb in [
+      'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']:
+      if verb in ['POST', 'PUT']:
+        headers = {'Content-Length': '0'}  # To satisfy TrafficServer
+      else:
+        headers = None
+      result_verb = fakeHTTPSResult(
+        parameter_dict['domain'], '/' + verb, verb=verb, headers=headers
+      )
+      if verb == 'CONNECT':
+        if self.max_http_version == '1':
+          self.assertEqual(
+            http.client.BAD_REQUEST, result_verb.status_code, verb)
+          self.assertIn(
+            'Your browser sent an invalid request', result_verb.text, verb)
+        else:
+          self.assertEqual(
+            http.client.NOT_FOUND, result_verb.status_code, verb)
+          self.assertIn('Instance not found', result_verb.text, verb)
+      else:
+        self.assertEqual(http.client.OK, result_verb.status_code, verb)
+        if verb != 'HEAD':
+          try:
+            j = result_verb.json()
+          except Exception:
+            raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+          self.assertEqual('/' + verb, j['Path'], verb)
+          self.assertEqual(verb, j['Verb'], verb)
 
   def test_enable_cache_ims_request(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
