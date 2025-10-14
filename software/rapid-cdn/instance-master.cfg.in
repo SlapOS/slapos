@@ -384,7 +384,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-information-json
+return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-information-json trafficserver-introspection-url
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
@@ -479,6 +479,7 @@ frontend-node-{{ index + 1 }}-kedifa-csr-url = {{ section_part }}:connection-ked
   {% set section_part = '${request-' + frontend %}
 frontend-node-{{ index + 1 }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
 frontend-node-{{ index + 1 }}-node-information-json = ${frontend-information:frontend-node-{{ index + 1 }}-node-information-json}
+frontend-node-{{ index + 1 }}-trafficserver-introspection-url = {{ section_part }}:connection-trafficserver-introspection-url}
 {%- endfor %}
 {%- if not aibcc_enabled %}
 {%- for index, frontend in enumerate(frontend_list) %}
