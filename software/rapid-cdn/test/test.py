@@ -1082,7 +1082,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertIn('TrafficServer Introspection Index', result.text)
     self.assertEqual(
       http.client.UNAUTHORIZED,
-      mimikra.get(trafficserver_introspection_url_no_auth, verify=False)
+      mimikra.get(
+        trafficserver_introspection_url_no_auth, verify=False).status_code
     )
 
     parsed_result = BeautifulSoup(result.text)
