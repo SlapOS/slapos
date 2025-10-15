@@ -2673,11 +2673,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
   def test_compressed_result(self):
-    """Fix the test
- * configure with compressed data
- * send them from the backend
- * compare some checksum of compressed data
-"""
     parameter_dict = self.assertSlaveBase(
       'Url',
       {
