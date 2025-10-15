@@ -50,9 +50,9 @@ frontend statistic
 frontend http-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-  http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
+  http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
-  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+  http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
 {%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
 {{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']], 'http') -}}
 {%- endfor %}
@@ -60,9 +60,9 @@ frontend http-backend
 frontend https-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-  http-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
+  http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
-  http-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+  http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
 {%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
 {{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']], 'https') -}}
 {%- endfor %}
