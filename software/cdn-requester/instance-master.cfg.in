@@ -77,7 +77,7 @@ output = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
-    raw profile_common {{ software_parameter_dict['profile_common'] }}
+    raw profile_common {{ software_parameter_dict['instance-common.cfg.in'] }}
     ${:extra-context}
 
 {%- set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
@@ -96,7 +96,7 @@ context =
 {%- set critical_rejected_slave_dict = {} %}
 {%- set warning_slave_dict = {} %}
 {%- set used_host_list = [] %}
-{%- for slave in sorted(instance_parameter_dict['slave-instance-list'], key=operator_module.itemgetter('slave_reference')) %}
+{%- for slave in sorted(instance_parameter_dict['valid-shared-instance-list'], key=operator_module.itemgetter('slave_reference')) %}
 {%-   set slave_error_list = [] %}
 {%-   set slave_critical_error_list = [] %}
 {%-   set slave_warning_list = [] %}
@@ -254,8 +254,9 @@ context =
 [request-shared-instance-base]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-software-type = {{ slapparameter_dict.get('cdn-software-type', "default") }}
-software-url = {{ slapparameter_dict.get('cdn-software-url', "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg")  }}
+software-type = {{ slapparameter_dict.get('cdn-software-type') }}
+software-url = {{ slapparameter_dict.get('cdn-software-url') }}
+shared = true
 return = {{ " ".join(SHARED_INSTANCE_RETURN_PARAMETERS) }}
 {%- set sla_key = "-sla-" %}
 {%- set sla_key_length = sla_key | length %}
@@ -271,7 +272,7 @@ sla-{{ key[sla_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {%- set shared_instance_request_section_name =  "cdn-request-" + shared_instance_reference %}
 [{{ shared_instance_request_section_name }}]
 <= request-shared-instance-base
-name = {{ shared_instance_reference }}
+name = cdn-request-for-{{ shared_instance_reference }}
 {%-   for shared_instance_key, shared_instance_value in shared_instance_parameters.items() %}
 config-{{ shared_instance_key }} = {{ shared_instance_value }}
 {%-   endfor %}
@@ -289,7 +290,7 @@ recipe = slapos.cookbook:publish_failsafe
 [publish-information]
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
-slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
+slave-amount = {{ instance_parameter_dict['valid-shared-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 hello =
@@ -306,6 +307,7 @@ warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=Tr
 
 [rejected-slave-information]
 rejected-slave-dict = {{ dumps(rejected_slave_dict) }}
+invalid-slave-dict = {{ json_module.dumps(instance_parameter_dict['invalid-shared-instance-list']) }}
 
 [warning-slave-information]
 warning-slave-dict = {{ dumps(warning_slave_dict) }}
@@ -317,13 +319,13 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 
 [active-slave-instance]
 {%- set active_slave_instance_list = [] %}
-{%- for slave_instance in instance_parameter_dict['slave-instance-list'] %}
+{%- for slave_instance in instance_parameter_dict['valid-shared-instance-list'] %}
 {#- Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
 {#- Note: This functionality is not yet covered by tests, please modify with care #}
 {%-   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
 {%- endfor %}
 {#- sort_keys are important in order to avoid shuffling parameters on each run #}
-active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
+active-valid-shared-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [monitor-base-url-dict]
 {% for frontend in frontend_section_list %}
@@ -355,7 +357,7 @@ context =
 
 [buildout]
 extends =
-  {{ software_parameter_dict['profile_common'] }}
+  {{ software_parameter_dict['instance-common.cfg.in'] }}
 parts =
   publish-information
 {%- for part in part_list %}

@@ -1,5 +1,5 @@
 [buildout]
-extends = {{ software_parameter_dict['profile_common'] }}
+extends = {{ software_parameter_dict['instance-common.cfg.in'] }}
 
 parts =
   software-py
@@ -20,20 +20,15 @@ context =
     section software_parameter_dict software-parameter-section
     ${:extra-context}
 
-[switch-softwaretype]
-recipe = slapos.cookbook:switch-softwaretype
-default = dynamic-profile-master:output
-replicate = dynamic-profile-master:output
-
 [software-parameter-section]
-{% for key,value in software_parameter_dict.items() %}
+{%- for key,value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
-{% endfor -%}
+{%- endfor %}
 
 [dynamic-profile-master]
 < = jinja2-template-base
 depends = ${software-py:recipe}
-url = {{ software_parameter_dict['profile_master'] }}
+url = ${software-parameter-section:instance-master.cfg.in}
 filename = instance-master.cfg
 extra-context =
     import subprocess_module subprocess
@@ -50,17 +45,19 @@ extra-context =
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.
 # Always the same.
-recipe = slapos.cookbook:slapconfiguration.serialised
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
+depends = 
+  {{ software_parameter_dict['instance-requester-input-schema.json'] }}
+  {{ software_parameter_dict['instance-slave-input-schema.json'] }}
+set-default = all
+validate-parameters = all
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-# Define default parameter(s) that will be used later, in case user didn't
-# specify it
-# All parameters are available through the configuration.XX syntax.
-# All possible parameters should have a default.
-# XXX CLN somehow this is not passed to slapparameter_dict, what is the proper way to set default???
-configuration.cdn-software-type = default
-configuration.cdn-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-configuration.-sla-computer-gqsqqsuid =
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+requester = dynamic-profile-master:output
