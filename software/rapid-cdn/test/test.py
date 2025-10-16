@@ -234,7 +234,12 @@ def subprocess_output(*args, **kwargs):
   return subprocess_status_output(*args, **kwargs)[1]
 
 
-mimikra = Recurls()
+class OwnRecurls(Recurls):
+  def config(self, url, **kwargs):
+    return self.request('CONFIG', url, **kwargs)
+
+
+mimikra = OwnRecurls()
 
 
 class AtsMixin(object):
@@ -522,7 +527,8 @@ def fakeSetupHeaders(headers):
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, source_ip=SOURCE_IP, verb='GET'):
+                    headers=None, source_ip=SOURCE_IP, verb='GET',
+                    timeout=None, http3=True):
   headers = fakeSetupHeaders(headers)
   url = 'https://%s:%s/%s' % (domain, port, path)
 
@@ -535,7 +541,9 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
     source_ip=source_ip,
     resolve_all={
       port: TEST_IP
-    }
+    },
+    timeout=timeout,
+    http3=http3
   )
   # XXX: Reassert below
   # Use a prepared request, to disable path normalization.
@@ -546,7 +554,8 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
-                   headers=None, source_ip=SOURCE_IP, verb='GET'):
+                   headers=None, source_ip=SOURCE_IP, verb='GET',
+                   timeout=None):
   headers = fakeSetupHeaders(headers)
   headers.setdefault('Host', '%s:%s' % (domain, port))
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
@@ -559,7 +568,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
     source_ip=source_ip,
     resolve_all={
       port: TEST_IP
-    }
+    },
+    timeout=timeout
   )
 
 
@@ -902,9 +912,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         assertAndPopSingleHeader('Alternate-Protocol')
       )
 
+    assertAndPopSingleHeader('Date')
     if backend_reached:
       self.assertEqual('TestBackend', assertAndPopSingleHeader('Server'))
-      assertAndPopSingleHeader('Date')
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
@@ -917,24 +927,26 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     if via:
       pop_header_list.append('Via'.lower())
-      via = ' '.join(result.headers.get_all('Via'))
+      via_header = ' '.join(result.headers.get_all('Via'))
+      if backend_reached:
+        expected_via = 'http/1.1 backendvia '
+      else:
+        expected_via = ''
       if cached:
+        # ATS adds to existing header, so ","
         self.assertEqual(
-          'http/1.1 backendvia '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '  # ATS adds to existing
-                                                     # header, so ","
+          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
           'http/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          via
+          via_header
         )
       else:
         self.assertEqual(
-          'http/1.1 backendvia '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
+          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          via
+          via_header
         )
     else:
       self.assertNotIn('Via', result.headers)
@@ -1310,8 +1322,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         partition_parameter_kw=partition_parameter_kw,
       )
 
-  x_config_timeout = '10'  # more than default backend-connect-timeout == 5
-
   @classmethod
   def setUpClass(cls):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
@@ -1322,7 +1332,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         verify=None,
         headers={
           'X-Config-Global': '1',
-          'X-Config-Timeout': cls.x_config_timeout,
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -1340,7 +1349,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         backend_url,
         headers={
           'X-Config-Global': '1',
-          'X-Config-Timeout': cls.x_config_timeout,
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -1677,14 +1685,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
-  }
+  request_timeout = 12
   max_client_version = '2.0'
   max_http_version = '2'
   alt_svc = False
@@ -1695,7 +1696,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return cls.parameter_dict
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': str(cls.request_timeout),
+    }
 
   @classmethod
   def prepareCertificate(cls):
@@ -2569,6 +2577,66 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             raise ValueError('JSON decode problem in:\n%s' % (result.text,))
           self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
           self.assertEqual(verb, j['Verb'], verb)
+    # check backend timeout behaviour
+    small_timeout_text = "Small timeout"
+    small_timeout = self.request_timeout - 5
+    self.assertGreater(small_timeout, 0)
+    big_timeout = self.request_timeout + 5
+    big_timeout_text = "Big timeout"
+    mimikra.config(
+      self.backend_url + '?a=b&c=' + '/small-timeout',
+      headers={
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Body-Timeout': str(small_timeout),
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Reply-Header-Set-Cookie':
+        'secured=value;secure, nonsecured=value',
+      },
+      data=small_timeout_text,
+    )
+    mimikra.config(
+      self.backend_url + '?a=b&c=' + '/big-timeout',
+      headers={
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Body-Timeout': str(big_timeout),
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Reply-Header-Set-Cookie':
+        'secured=value;secure, nonsecured=value',
+      },
+      data=big_timeout_text,
+    )
+    small_timeout_result = fakeHTTPSResult(
+      parameter_dict['domain'], '/small-timeout',
+      timeout=small_timeout + 2)
+    self.assertEqual(
+      small_timeout_result.status_code,
+      http.client.OK
+    )
+    self.assertGreater(
+      small_timeout_result.time_total,
+      small_timeout
+    )
+    self.assertEqual(
+      small_timeout_result.text,
+      small_timeout_text
+    )
+
+    begin = time.time()
+    with self.assertRaises(CurlException):
+      fakeHTTPSResult(
+        parameter_dict['domain'], '/big-timeout',
+        timeout=big_timeout + 2,
+        http3=False  # use HTTP/2 max in order to have meaningfull message
+      )
+    self.assertGreater(time.time() - begin, big_timeout)
+
+  def test_bad_backend(self):
+    parameter_dict = self.assertSlaveBase('bad-backend')
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], '/down')
+    self.assertResponseHeaders(result, backend_reached=False)
 
   def test_url_trailing_slash_absent(self):
     parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
@@ -2824,7 +2892,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     config_result = mimikra.config(
       self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       headers={
-        'X-Config-Timeout': self.x_config_timeout,
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
@@ -4521,7 +4588,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
-        'X-Config-Timeout': '15',
+        'X-Config-Body-Timeout': '15',
         'X-Config-Reply-Header-Content-Length': 'calculate',
       }
     )
@@ -5204,7 +5271,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result_configure = mimikra.config(
       backend_url.rstrip('/') + with_date_path, headers={
         'X-Config-Reply-Header-Date': specific_date,
-        'X-Config-Timeout': self.x_config_timeout,
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -5238,16 +5304,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
 
 class TestSlaveHttp3(TestSlave):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
-    'enable-http3': 'True',
-    'http3-port': HTTPS_PORT,
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': '12',
+      'enable-http3': 'True',
+      'http3-port': HTTPS_PORT,
+    }
   max_client_version = '3.0'
   max_http_version = '3'
   alt_svc = True
@@ -5258,15 +5326,17 @@ class TestSlaveHttp3(TestSlave):
 
 
 class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
-    'enable-http2-by-default': 'false',
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': '12',
+      'enable-http2-by-default': 'false',
+    }
   max_client_version = '1.1'
   max_http_version = '1'
   alt_svc = False
@@ -7337,8 +7407,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
 
 
 class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  x_config_timeout = '0'
-
   @classmethod
   def getInstanceParameterDict(cls):
     return {

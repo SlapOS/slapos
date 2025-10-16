@@ -58,7 +58,7 @@ class TestHandler(BaseHTTPRequestHandler):
   DEFAULT_CONFIGURATION = {
    'Status-Code': '200',
    'Protocol-Version': 'HTTP/1.0',
-   'Timeout': '0',
+   'Body-Timeout': '0',
   }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
@@ -170,7 +170,6 @@ class TestHandler(BaseHTTPRequestHandler):
       return
 
     self.protocol_version = config['configuration']['Protocol-Version']
-    time.sleep(int(config['configuration']['Timeout']))
     self.send_response_only(int(config['configuration']['Status-Code']))
     if isinstance(config['configuration']['Body'], str):
       if config['configuration']['Body'] == 'calculate':
@@ -196,6 +195,7 @@ class TestHandler(BaseHTTPRequestHandler):
           value = '%s' % (len(body),)
       self.send_header(header, value)
     self.end_headers()
+    time.sleep(int(config['configuration']['Body-Timeout']))
     self.wfile_write(body)
 
 
