@@ -771,7 +771,7 @@ sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 <= monitor-promise-base
 promise = check_url_available
 name = frontend_additional_promise.py
-config-url = ${publish-connection-information:url-additional}
+config-url = ${request-slave-frontend-additional:connection-secure_access}
 {% endif %}
 
 {% if enable_http %}
