@@ -902,9 +902,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         assertAndPopSingleHeader('Alternate-Protocol')
       )
 
+    assertAndPopSingleHeader('Date')
     if backend_reached:
       self.assertEqual('TestBackend', assertAndPopSingleHeader('Server'))
-      assertAndPopSingleHeader('Date')
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
@@ -917,24 +917,26 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     if via:
       pop_header_list.append('Via'.lower())
-      via = ' '.join(result.headers.get_all('Via'))
+      via_header = ' '.join(result.headers.get_all('Via'))
+      if backend_reached:
+        expected_via = 'http/1.1 backendvia '
+      else:
+        expected_via = ''
       if cached:
+        # ATS adds to existing header, so ","
         self.assertEqual(
-          'http/1.1 backendvia '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '  # ATS adds to existing
-                                                     # header, so ","
+          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
           'http/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          via
+          via_header
         )
       else:
         self.assertEqual(
-          'http/1.1 backendvia '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
+          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          via
+          via_header
         )
     else:
       self.assertNotIn('Via', result.headers)
@@ -2569,6 +2571,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             raise ValueError('JSON decode problem in:\n%s' % (result.text,))
           self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
           self.assertEqual(verb, j['Verb'], verb)
+
+    # check that Via header is added even if backend is unavailable
+    try:
+      # stop the backend, to have error on while connecting to it
+      self.stopServerProcess()
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], '/down')
+      headers = self.assertResponseHeaders(result, backend_reached=False)
+    finally:
+      self.startServerProcess()
 
   def test_url_trailing_slash_absent(self):
     parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
