@@ -58,7 +58,9 @@ class TestHandler(BaseHTTPRequestHandler):
   DEFAULT_CONFIGURATION = {
    'Status-Code': '200',
    'Protocol-Version': 'HTTP/1.0',
-   'Timeout': '0',
+   'Response-Timeout': '0',
+   'Header-Timeout': '0',
+   'Body-Timeout': '0',
   }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
@@ -170,7 +172,7 @@ class TestHandler(BaseHTTPRequestHandler):
       return
 
     self.protocol_version = config['configuration']['Protocol-Version']
-    time.sleep(int(config['configuration']['Timeout']))
+    time.sleep(int(config['configuration']['Response-Timeout']))
     self.send_response_only(int(config['configuration']['Status-Code']))
     if isinstance(config['configuration']['Body'], str):
       if config['configuration']['Body'] == 'calculate':
@@ -181,6 +183,7 @@ class TestHandler(BaseHTTPRequestHandler):
         body = config['configuration']['Body'].encode()
     else:
       body = config['configuration']['Body']
+    time.sleep(int(config['configuration']['Header-Timeout']))
     for header, value in config['headers'].items():
       for header_type in ['Date', 'Last-Modified']:
         if header == header_type:
@@ -196,6 +199,7 @@ class TestHandler(BaseHTTPRequestHandler):
           value = '%s' % (len(body),)
       self.send_header(header, value)
     self.end_headers()
+    time.sleep(int(config['configuration']['Body-Timeout']))
     self.wfile_write(body)
 
 
