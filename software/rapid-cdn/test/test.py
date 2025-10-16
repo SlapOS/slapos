@@ -234,7 +234,12 @@ def subprocess_output(*args, **kwargs):
   return subprocess_status_output(*args, **kwargs)[1]
 
 
-mimikra = Recurls()
+class OwnRecurls(Recurls):
+  def config(self, url, **kwargs):
+    return self.request('CONFIG', url, **kwargs)
+
+
+mimikra = OwnRecurls()
 
 
 class AtsMixin(object):
