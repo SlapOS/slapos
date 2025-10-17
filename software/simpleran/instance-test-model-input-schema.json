@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "SDR Play Input Parameters",
+  "title": "Test Model Input Parameters",
   "type": "object",
   "properties": {
     "cell1": {

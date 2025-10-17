@@ -13,8 +13,8 @@
       "$ref": "ors-enb-cell.json#/properties/dl_frequency"
     },
     "file": {
-      "title": "SDR Play mode",
-      "description": "SDR Play mode",
+      "title": "Test Model",
+      "description": "3GPP Test Model to play",
       "enum": [
         "LTE Test Mode 31  - 10 MHz  - FDD",
         "LTE Test Mode 31  - 10 MHz  - TDD",
