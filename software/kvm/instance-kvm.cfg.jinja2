@@ -83,7 +83,7 @@ storage-path = ${directory:srv}/tap_mac
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
-storage-path = ${directory:srv}/.passwd
+storage-path = ${directory:srv}/.vncpasswd
 # VNC protocol supports passwords of 8 characters max
 bytes = 8
 
@@ -771,7 +771,7 @@ sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 <= monitor-promise-base
 promise = check_url_available
 name = frontend_additional_promise.py
-config-url = ${publish-connection-information:url-additional}
+config-url = ${request-slave-frontend-additional:connection-secure_access}/vnc.html
 {% endif %}
 
 {% if enable_http %}
