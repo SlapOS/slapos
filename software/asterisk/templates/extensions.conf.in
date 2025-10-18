@@ -1,0 +1,18 @@
+[general]
+static=yes
+writeprotect=no
+clearglobalvars=no
+
+[call-amarisoft]
+exten => _X.,1, verbose(1,[${EXTEN}@${CONTEXT}] - Incoming call to public number ${EXTEN})
+     same => n, goto(call-amarisoft,01271,1)
+     same => n, hangup()
+
+exten => 01271,1, verbose(1,[${EXTEN}@${CONTEXT}] - Transfered from public context to local extension 01271)
+       same => n, dial(PJSIP/amarisoft,180)
+       same => n, hangup()
+
+[call-ovh]
+exten => _X.,1, verbose(1,[${EXTEN}@${CONTEXT}] - Incoming call from Amarisoft to number ${EXTEN})
+     same => n, dial(PJSIP/${EXTEN}@ovh)
+     same => n, hangup()
