@@ -801,7 +801,7 @@
             "rules": {
               "type": "array",
               "items": {
-                "oneOf": [
+                "anyOf": [
                   {
                     "required": [
                       "url-path-pattern",
