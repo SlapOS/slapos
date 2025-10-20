@@ -40,6 +40,7 @@ setup(name=name,
         'slapos.core',
         'slapos.cookbook',
         'slapos.libnetworkcache',
+        'bs4',
         'erp5.util',
         'requests >= 2.20.0',  # needed for recent SSL certificate fixes
         'urllib3 >= 1.24',  # needed for recent SSL certificate fixes
