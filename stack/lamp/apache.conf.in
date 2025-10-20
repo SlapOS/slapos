@@ -13,6 +13,8 @@ AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 AddType application/x-httpd-php .php .phtml .php5 .php4
 AddType application/x-httpd-php-source .phps
+AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript application/javascript image/svg+xml application/x-font-ttf application/font-woff application/font-woff2 application/x-font-opentype application/wasm
+
 # Log configuration
 ErrorLog "{{ parameter_dict['error-log'] }}"
 LogLevel warn
