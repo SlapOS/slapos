@@ -12,7 +12,7 @@
 
 set -e
 
-mysql_executable='{{ mysql_executable }}'
+mariadb_executable='{{ mariadb_executable }}'
 mariadb_data_directory='{{ mariadb_data_directory }}'
 mariadb_backup_directory='{{ mariadb_backup_directory }}'
 pid_file='{{ pid_file }}'
@@ -59,7 +59,7 @@ fi
 echo "Importing data..."
 # Use latest dump XXX can contain funny characters
 dump=$(ls -r "$mariadb_backup_directory" | head -1)
-zcat "$mariadb_backup_directory/$dump" | $mysql_executable || {
+zcat "$mariadb_backup_directory/$dump" | $mariadb_executable || {
   RESTORE_EXIT_CODE=$?
   echo 'Backup restoration failed.'
   exit $RESTORE_EXIT_CODE

@@ -245,13 +245,6 @@
       "minimum": 0,
       "type": "integer"
     },
-    "innodb-file-per-table": {
-      "description": "See MariaDB documentation on innodb_file_per_table",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0,
-      "type": "integer"
-    },
     "long-query-time": {
       "description": "Number of seconds above which long queries are logged",
       "minimum": 0,
